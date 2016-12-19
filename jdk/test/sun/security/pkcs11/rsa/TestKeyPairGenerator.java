@@ -29,7 +29,7 @@
  * @library ..
  * @library /lib/testlibrary
  * @build jdk.testlibrary.*
- * @modules jdk.crypto.pkcs11
+ * @modules jdk.crypto.token
  * @run main/othervm -Djava.security.debug=sunpkcs11 TestKeyPairGenerator
  * @run main/othervm -Djava.security.debug=sunpkcs11 TestKeyPairGenerator
  *                                                   sm TestKeyPairGenerator.policy

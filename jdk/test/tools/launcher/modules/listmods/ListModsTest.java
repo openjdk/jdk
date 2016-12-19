@@ -147,12 +147,12 @@ public class ListModsTest {
     @Test
     public void testListWithLimitMods1() throws Exception {
         OutputAnalyzer output
-            = executeTestJava("--limit-modules", "java.compact1", "--list-modules")
+            = executeTestJava("--limit-modules", "java.management", "--list-modules")
                 .outputTo(System.out)
                 .errorTo(System.out);
-        output.shouldContain("java.compact1");
+        output.shouldContain("java.rmi");
         output.shouldContain("java.base");
-        output.shouldNotContain("java.xml");
+        output.shouldNotContain("java.scripting");
         assertTrue(output.getExitValue() == 0);
     }
 
@@ -161,7 +161,7 @@ public class ListModsTest {
     public void testListWithLimitMods2() throws Exception {
         OutputAnalyzer output
             = executeTestJava("--module-path", MODS_DIR.toString(),
-                              "--limit-modules", "java.compact1",
+                              "--limit-modules", "java.management",
                               "--list-modules")
                 .outputTo(System.out)
                 .errorTo(System.out);

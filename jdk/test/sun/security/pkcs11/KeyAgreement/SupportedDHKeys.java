@@ -26,7 +26,7 @@
  * @bug 8072452
  * @summary Support DHE sizes up to 8192-bits and DSA sizes up to 3072-bits
  * @library ..
- * @modules jdk.crypto.pkcs11
+ * @modules jdk.crypto.token
  * @run main/othervm SupportedDHKeys
  * @run main/othervm SupportedDHKeys sm
  */

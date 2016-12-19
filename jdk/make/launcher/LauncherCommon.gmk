@@ -32,13 +32,13 @@ else
   ifeq ($(OPENJDK_TARGET_OS), windows)
     DISABLE_MAPFILES := true
   endif
-  ORIGIN_ARG := $(call SET_EXECUTABLE_ORIGIN,/../lib$(OPENJDK_TARGET_CPU_LIBDIR)/jli)
+  ORIGIN_ARG := $(call SET_EXECUTABLE_ORIGIN,/../lib/jli)
 
   # Applications expect to be able to link against libjawt without invoking
   # System.loadLibrary("jawt") first. This was the behaviour described in the
   # devloper documentation of JAWT and what worked with OpenJDK6.
   ifneq ($(findstring $(OPENJDK_TARGET_OS), linux solaris), )
-    ORIGIN_ARG += $(call SET_EXECUTABLE_ORIGIN,/../lib$(OPENJDK_TARGET_CPU_LIBDIR))
+    ORIGIN_ARG += $(call SET_EXECUTABLE_ORIGIN,/../lib)
   endif
 endif
 
@@ -190,9 +190,9 @@ define SetupBuildLauncherBody
           $$(ORIGIN_ARG) \
           $$($1_LDFLAGS), \
       LDFLAGS_linux := \
-          -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.base$(OPENJDK_TARGET_CPU_LIBDIR)/jli, \
+          -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.base/jli, \
       LDFLAGS_solaris := $$($1_LDFLAGS_solaris) \
-          -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.base$(OPENJDK_TARGET_CPU_LIBDIR)/jli, \
+          -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.base/jli, \
       MAPFILE := $$($1_MAPFILE), \
       LIBS := $(JDKEXE_LIBS) $$($1_LIBS), \
       LIBS_unix := $$($1_LIBS_unix), \

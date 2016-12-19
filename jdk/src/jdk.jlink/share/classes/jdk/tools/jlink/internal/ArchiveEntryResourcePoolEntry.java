@@ -80,7 +80,7 @@ final class ArchiveEntryResourcePoolEntry extends AbstractResourcePoolEntry {
             case NATIVE_LIB:
                 return Type.NATIVE_LIB;
             default:
-                return ResourcePoolEntry.Type.OTHER;
+                throw new IllegalArgumentException("Unknown archive entry type: " + entry.type());
         }
     }
 }

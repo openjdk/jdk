@@ -52,9 +52,6 @@
 #endif
 
 #ifdef __solaris__
-#  ifndef LIBARCHNAME
-#    error "The macro LIBARCHNAME was not defined on the compile line"
-#  endif
 #  include <sys/systeminfo.h>
 #  include <sys/elf.h>
 #  include <stdio.h>
@@ -188,12 +185,13 @@ JvmExists(const char *path) {
     return JNI_FALSE;
 }
 /*
- * contains a lib/$LIBARCHNAME/{server,client}/libjvm.so ?
+ * contains a lib/{server,client}/libjvm.so ?
  */
 static jboolean
 ContainsLibJVM(const char *env) {
-    char clientPattern[PATH_MAX + 1];
-    char serverPattern[PATH_MAX + 1];
+    /* the usual suspects */
+    char clientPattern[] = "lib/client";
+    char serverPattern[] = "lib/server";
     char *envpath;
     char *path;
     jboolean clientPatternFound;
@@ -203,10 +201,6 @@ ContainsLibJVM(const char *env) {
     if (env == NULL) {
         return JNI_FALSE;
     }
-
-    /* the usual suspects */
-    JLI_Snprintf(clientPattern, PATH_MAX, "lib/%s/client", LIBARCHNAME);
-    JLI_Snprintf(serverPattern, PATH_MAX, "lib/%s/server", LIBARCHNAME);
 
     /* to optimize for time, test if any of our usual suspects are present. */
     clientPatternFound = JLI_StrStr(env, clientPattern) != NULL;
@@ -322,7 +316,6 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
 
     /* Check data model flags, and exec process, if needed */
     {
-      char *arch        = LIBARCHNAME; /* like sparc or sparcv9 */
       char * jvmtype    = NULL;
       int  argc         = *pargc;
       char **argv       = *pargv;
@@ -408,12 +401,12 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
          jvmpath does not exist */
       if (wanted == running) {
         /* Find out where the JRE is that we will be using. */
-        if (!GetJREPath(jrepath, so_jrepath, arch, JNI_FALSE) ) {
+        if (!GetJREPath(jrepath, so_jrepath, JNI_FALSE) ) {
           JLI_ReportErrorMessage(JRE_ERROR1);
           exit(2);
         }
-        JLI_Snprintf(jvmcfg, so_jvmcfg, "%s%slib%s%s%sjvm.cfg",
-                     jrepath, FILESEP, FILESEP,  arch, FILESEP);
+        JLI_Snprintf(jvmcfg, so_jvmcfg, "%s%slib%s%sjvm.cfg",
+                     jrepath, FILESEP, FILESEP, FILESEP);
         /* Find the specified JVM type */
         if (ReadKnownVMs(jvmcfg, JNI_FALSE) < 1) {
           JLI_ReportErrorMessage(CFG_ERROR7);
@@ -427,7 +420,7 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
             exit(4);
         }
 
-        if (!GetJVMPath(jrepath, jvmtype, jvmpath, so_jvmpath, arch, 0 )) {
+        if (!GetJVMPath(jrepath, jvmtype, jvmpath, so_jvmpath, 0 )) {
           JLI_ReportErrorMessage(CFG_ERROR8, jvmtype, jvmpath);
           exit(4);
         }
@@ -444,21 +437,21 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
             return;
         }
 #else
-            JLI_MemFree(newargv);
-            return;
+        JLI_MemFree(newargv);
+        return;
 #endif /* SETENV_REQUIRED */
-    } else {  /* do the same speculatively or exit */
+      } else {  /* do the same speculatively or exit */
         JLI_ReportErrorMessage(JRE_ERROR2, wanted);
         exit(1);
-    }
+      }
 #ifdef SETENV_REQUIRED
         if (mustsetenv) {
             /*
              * We will set the LD_LIBRARY_PATH as follows:
              *
              *     o          $JVMPATH (directory portion only)
-             *     o          $JRE/lib/$LIBARCHNAME
-             *     o          $JRE/../lib/$LIBARCHNAME
+             *     o          $JRE/lib
+             *     o          $JRE/../lib
              *
              * followed by the user's previous effective LD_LIBRARY_PATH, if
              * any.
@@ -515,43 +508,44 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
 #endif /* __solaris__ */
 
             /* runpath contains current effective LD_LIBRARY_PATH setting */
-
-            jvmpath = JLI_StringDup(jvmpath);
-            new_runpath_size = ((runpath != NULL) ? JLI_StrLen(runpath) : 0) +
-                    2 * JLI_StrLen(jrepath) + 2 * JLI_StrLen(arch) +
+            { /* New scope to declare local variable */
+              char *new_jvmpath = JLI_StringDup(jvmpath);
+              new_runpath_size = ((runpath != NULL) ? JLI_StrLen(runpath) : 0) +
+                      2 * JLI_StrLen(jrepath) +
 #ifdef AIX
-                    /* On AIX we additionally need 'jli' in the path because ld doesn't support $ORIGIN. */
-                    JLI_StrLen(jrepath) + JLI_StrLen(arch) + JLI_StrLen("/lib//jli:") +
+                      /* On AIX we additionally need 'jli' in the path because ld doesn't support $ORIGIN. */
+                      JLI_StrLen(jrepath) + JLI_StrLen("/lib//jli:") +
 #endif
-                    JLI_StrLen(jvmpath) + 52;
-            new_runpath = JLI_MemAlloc(new_runpath_size);
-            newpath = new_runpath + JLI_StrLen(LD_LIBRARY_PATH "=");
+                      JLI_StrLen(new_jvmpath) + 52;
+              new_runpath = JLI_MemAlloc(new_runpath_size);
+              newpath = new_runpath + JLI_StrLen(LD_LIBRARY_PATH "=");
 
 
-            /*
-             * Create desired LD_LIBRARY_PATH value for target data model.
-             */
-            {
+              /*
+               * Create desired LD_LIBRARY_PATH value for target data model.
+               */
+              {
                 /* remove the name of the .so from the JVM path */
-                lastslash = JLI_StrRChr(jvmpath, '/');
+                lastslash = JLI_StrRChr(new_jvmpath, '/');
                 if (lastslash)
                     *lastslash = '\0';
 
                 sprintf(new_runpath, LD_LIBRARY_PATH "="
                         "%s:"
-                        "%s/lib/%s:"
+                        "%s/lib:"
 #ifdef AIX
-                        "%s/lib/%s/jli:" /* Needed on AIX because ld doesn't support $ORIGIN. */
+                        "%s/lib/jli:" /* Needed on AIX because ld doesn't support $ORIGIN. */
 #endif
-                        "%s/../lib/%s",
-                        jvmpath,
-                        jrepath, arch,
+                        "%s/../lib",
+                        new_jvmpath,
+                        jrepath,
 #ifdef AIX
-                        jrepath, arch,
+                        jrepath,
 #endif
-                        jrepath, arch
+                        jrepath
                         );
 
+                JLI_MemFree(new_jvmpath);
 
                 /*
                  * Check to make sure that the prefix of the current path is the
@@ -571,6 +565,7 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
                     JLI_MemFree(new_runpath);
                     return;
                 }
+              }
             }
 
             /*
@@ -638,14 +633,14 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
  */
 static jboolean
 GetJVMPath(const char *jrepath, const char *jvmtype,
-           char *jvmpath, jint jvmpathsize, const char * arch, int bitsWanted)
+           char *jvmpath, jint jvmpathsize, int bitsWanted)
 {
     struct stat s;
 
     if (JLI_StrChr(jvmtype, '/')) {
         JLI_Snprintf(jvmpath, jvmpathsize, "%s/" JVM_DLL, jvmtype);
     } else {
-        JLI_Snprintf(jvmpath, jvmpathsize, "%s/lib/%s/%s/" JVM_DLL, jrepath, arch, jvmtype);
+        JLI_Snprintf(jvmpath, jvmpathsize, "%s/lib/%s/" JVM_DLL, jrepath, jvmtype);
     }
 
     JLI_TraceLauncher("Does `%s' exist ... ", jvmpath);
@@ -663,14 +658,14 @@ GetJVMPath(const char *jrepath, const char *jvmtype,
  * Find path to JRE based on .exe's location or registry settings.
  */
 static jboolean
-GetJREPath(char *path, jint pathsize, const char * arch, jboolean speculative)
+GetJREPath(char *path, jint pathsize, jboolean speculative)
 {
     char libjava[MAXPATHLEN];
     struct stat s;
 
     if (GetApplicationHome(path, pathsize)) {
         /* Is JRE co-located with the application? */
-        JLI_Snprintf(libjava, sizeof(libjava), "%s/lib/%s/" JAVA_DLL, path, arch);
+        JLI_Snprintf(libjava, sizeof(libjava), "%s/lib/" JAVA_DLL, path);
         if (access(libjava, F_OK) == 0) {
             JLI_TraceLauncher("JRE path is %s\n", path);
             return JNI_TRUE;
@@ -681,7 +676,7 @@ GetJREPath(char *path, jint pathsize, const char * arch, jboolean speculative)
             return JNI_FALSE;
         }
         /* Does the app ship a private JRE in <apphome>/jre directory? */
-        JLI_Snprintf(libjava, sizeof(libjava), "%s/jre/lib/%s/" JAVA_DLL, path, arch);
+        JLI_Snprintf(libjava, sizeof(libjava), "%s/jre/lib/" JAVA_DLL, path);
         if (access(libjava, F_OK) == 0) {
             JLI_StrCat(path, "/jre");
             JLI_TraceLauncher("JRE path is %s\n", path);
@@ -690,7 +685,7 @@ GetJREPath(char *path, jint pathsize, const char * arch, jboolean speculative)
     }
 
     if (GetApplicationHomeFromDll(path, pathsize)) {
-        JLI_Snprintf(libjava, sizeof(libjava), "%s/lib/%s/" JAVA_DLL, path, arch);
+        JLI_Snprintf(libjava, sizeof(libjava), "%s/lib/" JAVA_DLL, path);
         if (stat(libjava, &s) == 0) {
             JLI_TraceLauncher("JRE path is %s\n", path);
             return JNI_TRUE;
@@ -856,12 +851,12 @@ void* SplashProcAddress(const char* name) {
         char jrePath[MAXPATHLEN];
         char splashPath[MAXPATHLEN];
 
-        if (!GetJREPath(jrePath, sizeof(jrePath), LIBARCHNAME, JNI_FALSE)) {
+        if (!GetJREPath(jrePath, sizeof(jrePath), JNI_FALSE)) {
             JLI_ReportErrorMessage(JRE_ERROR1);
             return NULL;
         }
-        ret = JLI_Snprintf(splashPath, sizeof(splashPath), "%s/lib/%s/%s",
-                     jrePath, LIBARCHNAME, SPLASHSCREEN_SO);
+        ret = JLI_Snprintf(splashPath, sizeof(splashPath), "%s/lib/%s",
+                     jrePath, SPLASHSCREEN_SO);
 
         if (ret >= (int) sizeof(splashPath)) {
             JLI_ReportErrorMessage(JRE_ERROR11);

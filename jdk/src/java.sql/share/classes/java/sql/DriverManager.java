@@ -41,46 +41,41 @@ import jdk.internal.reflect.Reflection;
 
 
 /**
- * <P>The basic service for managing a set of JDBC drivers.<br>
- * <B>NOTE:</B> The {@link javax.sql.DataSource} interface, new in the
- * JDBC 2.0 API, provides another way to connect to a data source.
- * The use of a <code>DataSource</code> object is the preferred means of
+ * The basic service for managing a set of JDBC drivers.
+ * <p>
+ * <strong>NOTE:</strong> The {@link javax.sql.DataSource} interface, provides
+ * another way to connect to a data source.
+ * The use of a {@code DataSource} object is the preferred means of
  * connecting to a data source.
- *
- * <P>As part of its initialization, the <code>DriverManager</code> class will
- * attempt to load the driver classes referenced in the "jdbc.drivers"
- * system property. This allows a user to customize the JDBC Drivers
- * used by their applications. For example in your
- * ~/.hotjava/properties file you might specify:
- * <pre>
- * <CODE>jdbc.drivers=foo.bah.Driver:wombat.sql.Driver:bad.taste.ourDriver</CODE>
- * </pre>
- *<P> The <code>DriverManager</code> methods <code>getConnection</code> and
- * <code>getDrivers</code> have been enhanced to support the Java Standard Edition
- * <a href="../../../technotes/guides/jar/jar.html#Service%20Provider">Service Provider</a> mechanism. JDBC 4.0 Drivers must
- * include the file <code>META-INF/services/java.sql.Driver</code>. This file contains the name of the JDBC drivers
- * implementation of <code>java.sql.Driver</code>.  For example, to load the <code>my.sql.Driver</code> class,
- * the <code>META-INF/services/java.sql.Driver</code> file would contain the entry:
- * <pre>
- * <code>my.sql.Driver</code>
- * </pre>
- *
- * <P>Applications no longer need to explicitly load JDBC drivers using <code>Class.forName()</code>. Existing programs
- * which currently load JDBC drivers using <code>Class.forName()</code> will continue to work without
- * modification.
- *
- * <P>When the method <code>getConnection</code> is called,
- * the <code>DriverManager</code> will attempt to
- * locate a suitable driver from amongst those loaded at
- * initialization and those loaded explicitly using the same classloader
- * as the current applet or application.
- *
  * <P>
- * Starting with the Java 2 SDK, Standard Edition, version 1.3, a
- * logging stream can be set only if the proper
- * permission has been granted.  Normally this will be done with
- * the tool PolicyTool, which can be used to grant <code>permission
- * java.sql.SQLPermission "setLog"</code>.
+ * As part of its initialization, the {@code DriverManager} class will
+ * attempt to load available JDBC drivers by using:
+ * <ul>
+ * <li>The {@code jdbc.drivers} system property which contains a
+ * colon separated list of fully qualified class names of JDBC drivers. Each
+ * driver is loaded using the {@linkplain ClassLoader#getSystemClassLoader
+ * system class loader}:
+ * <ul>
+ * <li>{@code jdbc.drivers=foo.bah.Driver:wombat.sql.Driver:bad.taste.ourDriver}
+ * </ul>
+ *
+ * <li>Service providers of the {@code java.sql.Driver} class, that are loaded
+ * via the {@linkplain ServiceLoader#load service-provider loading} mechanism.
+ *</ul>
+ *
+ *<P>
+ * @ImplNote
+ * {@code DriverManager} initialization is done lazily and looks up service
+ * providers using the thread context class loader.  The drivers loaded and
+ * available to an application will depend on the thread context class loader of
+ * the thread that triggers driver initialization by {@code DriverManager}.
+ *
+ * <P>When the method {@code getConnection} is called,
+ * the {@code DriverManager} will attempt to
+ * locate a suitable driver from amongst those loaded at
+ * initialization and those loaded explicitly using the same class loader
+ * as the current application.
+ *
  * @see Driver
  * @see Connection
  */
@@ -137,29 +132,15 @@ public class DriverManager {
     /**
      * Sets the logging/tracing <code>PrintWriter</code> object
      * that is used by the <code>DriverManager</code> and all drivers.
-     * <P>
-     * There is a minor versioning problem created by the introduction
-     * of the method <code>setLogWriter</code>.  The
-     * method <code>setLogWriter</code> cannot create a <code>PrintStream</code> object
-     * that will be returned by <code>getLogStream</code>---the Java platform does
-     * not provide a backward conversion.  As a result, a new application
-     * that uses <code>setLogWriter</code> and also uses a JDBC 1.0 driver that uses
-     * <code>getLogStream</code> will likely not see debugging information written
-     * by that driver.
      *<P>
-     * Starting with the Java 2 SDK, Standard Edition, version 1.3 release, this method checks
-     * to see that there is an <code>SQLPermission</code> object before setting
-     * the logging stream.  If a <code>SecurityManager</code> exists and its
-     * <code>checkPermission</code> method denies setting the log writer, this
-     * method throws a <code>java.lang.SecurityException</code>.
+     * If a security manager exists, its {@code checkPermission}
+     * method is first called with a {@code SQLPermission("setLog")}
+     * permission to check that the caller is allowed to call {@code setLogWriter}.
      *
      * @param out the new logging/tracing <code>PrintStream</code> object;
      *      <code>null</code> to disable logging and tracing
-     * @throws SecurityException
-     *    if a security manager exists and its
-     *    <code>checkPermission</code> method denies
-     *    setting the log writer
-     *
+     * @throws SecurityException if a security manager exists and its
+     * {@code checkPermission} method denies permission to set the log writer.
      * @see SecurityManager#checkPermission
      * @see #getLogWriter
      * @since 1.2
@@ -374,8 +355,9 @@ public class DriverManager {
      * If a {@code null} value is specified for the driver to be removed, then no
      * action is taken.
      * <p>
-     * If a security manager exists and its {@code checkPermission} denies
-     * permission, then a {@code SecurityException} will be thrown.
+     * If a security manager exists, its {@code checkPermission}
+     * method is first called with a {@code SQLPermission("deregisterDriver")}
+     * permission to check that the caller is allowed to deregister a JDBC Driver.
      * <p>
      * If the specified driver is not found in the list of registered drivers,
      * then no action is taken.  If the driver was found, it will be removed
@@ -501,17 +483,14 @@ public class DriverManager {
      * by the <code>DriverManager</code>
      * and all drivers.
      *<P>
-     * In the Java 2 SDK, Standard Edition, version 1.3 release, this method checks
-     * to see that there is an <code>SQLPermission</code> object before setting
-     * the logging stream.  If a <code>SecurityManager</code> exists and its
-     * <code>checkPermission</code> method denies setting the log writer, this
-     * method throws a <code>java.lang.SecurityException</code>.
+     * If a security manager exists, its {@code checkPermission}
+     * method is first called with a {@code SQLPermission("setLog")}
+     * permission to check that the caller is allowed to call {@code setLogStream}.
      *
      * @param out the new logging/tracing PrintStream; to disable, set to <code>null</code>
      * @deprecated Use {@code setLogWriter}
      * @throws SecurityException if a security manager exists and its
-     *    <code>checkPermission</code> method denies setting the log stream
-     *
+     * {@code checkPermission} method denies permission to set the log stream.
      * @see SecurityManager#checkPermission
      * @see #getLogStream
      */
