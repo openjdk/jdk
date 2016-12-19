@@ -32,6 +32,8 @@ jdk/javadoc/tool/enum/enumType/Main.java                                        
 jdk/javadoc/tool/varArgs/Main.java                                              8152313    generic-all    convert to doclet test framework
 jdk/javadoc/doclet/testIOException/TestIOException.java                         8164597    windows-all
 
+jdk/javadoc/doclet/testModules/TestModules.java                                 8171413    generic-all    jdk/javadoc/doclet/testModules/TestModules.java failed due to some subtests failed
+
 ###########################################################################
 #
 # jshell
@@ -58,6 +60,8 @@ tools/javac/annotations/typeAnnotations/referenceinfos/Lambda.java              
 tools/javac/annotations/typeAnnotations/referenceinfos/NestedTypes.java         8057687    generic-all    emit correct byte code an attributes for type annotations
 tools/javac/warnings/suppress/TypeAnnotations.java                              8057683    generic-all    improve ordering of errors with type annotations
 tools/javac/modules/T8159439/NPEForModuleInfoWithNonZeroSuperClassTest.java     8160396    generic-all    current version of jtreg needs a new promotion to include lastes version of ASM
+
+tools/javac/modules/AddLimitMods.java						8171412    generic-all    tools/javac/modules/AddLimitMods.java failed with "error: module not found"
 
 ###########################################################################
 #
