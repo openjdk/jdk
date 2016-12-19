@@ -473,8 +473,10 @@ bool os::is_allocatable(size_t bytes) {
 ////////////////////////////////////////////////////////////////////////////////
 // thread stack
 
-size_t os::Posix::_compiler_thread_min_stack_allowed = 64 * K;
-size_t os::Posix::_java_thread_min_stack_allowed = 64 * K;
+// Minimum usable stack sizes required to get to user code. Space for
+// HotSpot guard pages is added later.
+size_t os::Posix::_compiler_thread_min_stack_allowed = 32 * K;
+size_t os::Posix::_java_thread_min_stack_allowed = 32 * K;
 size_t os::Posix::_vm_internal_thread_min_stack_allowed = 64 * K;
 
 // return default stack size for thr_type

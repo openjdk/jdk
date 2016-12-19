@@ -42,6 +42,9 @@ define_pd_global(bool, UncommonNullCast,      true);  // Uncommon-trap NULLs pas
 
 #define DEFAULT_STACK_YELLOW_PAGES (2)
 #define DEFAULT_STACK_RED_PAGES (1)
+// Java_java_net_SocketOutputStream_socketWrite0() uses a 64k buffer on the
+// stack if compiled for unix and LP64. To pass stack overflow tests we need
+// 20 shadow pages.
 #define DEFAULT_STACK_SHADOW_PAGES (20 DEBUG_ONLY(+2))
 #define DEFAULT_STACK_RESERVED_PAGES (1)
 
