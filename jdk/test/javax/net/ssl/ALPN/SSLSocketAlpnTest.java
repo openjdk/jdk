@@ -26,22 +26,60 @@
 
 /*
  * @test
- * @bug 8051498 8145849
+ * @bug 8051498 8145849 8170282
  * @summary JEP 244: TLS Application-Layer Protocol Negotiation Extension
  * @compile MyX509ExtendedKeyManager.java
- * @run main/othervm SSLSocketAlpnTest h2          h2          h2
- * @run main/othervm SSLSocketAlpnTest h2          h2,http/1.1 h2
- * @run main/othervm SSLSocketAlpnTest h2,http/1.1 h2,http/1.1 h2
- * @run main/othervm SSLSocketAlpnTest http/1.1,h2 h2,http/1.1 http/1.1
- * @run main/othervm SSLSocketAlpnTest h4,h3,h2    h1,h2       h2
- * @run main/othervm SSLSocketAlpnTest EMPTY       h2,http/1.1 NONE
- * @run main/othervm SSLSocketAlpnTest h2          EMPTY       NONE
- * @run main/othervm SSLSocketAlpnTest H2          h2          ERROR
- * @run main/othervm SSLSocketAlpnTest h2          http/1.1    ERROR
+ *
+ * @run main/othervm SSLSocketAlpnTest h2          UNUSED   h2          h2
+ * @run main/othervm SSLSocketAlpnTest h2          UNUSED   h2,http/1.1 h2
+ * @run main/othervm SSLSocketAlpnTest h2,http/1.1 UNUSED   h2,http/1.1 h2
+ * @run main/othervm SSLSocketAlpnTest http/1.1,h2 UNUSED   h2,http/1.1 http/1.1
+ * @run main/othervm SSLSocketAlpnTest h4,h3,h2    UNUSED   h1,h2       h2
+ * @run main/othervm SSLSocketAlpnTest EMPTY       UNUSED   h2,http/1.1 NONE
+ * @run main/othervm SSLSocketAlpnTest h2          UNUSED   EMPTY       NONE
+ * @run main/othervm SSLSocketAlpnTest H2          UNUSED   h2          ERROR
+ * @run main/othervm SSLSocketAlpnTest h2          UNUSED   http/1.1    ERROR
+ *
+ * @run main/othervm SSLSocketAlpnTest UNUSED      h2       h2          h2
+ * @run main/othervm SSLSocketAlpnTest UNUSED      h2       h2,http/1.1 h2
+ * @run main/othervm SSLSocketAlpnTest UNUSED      h2       http/1.1,h2 h2
+ * @run main/othervm SSLSocketAlpnTest UNUSED      http/1.1 h2,http/1.1 http/1.1
+ * @run main/othervm SSLSocketAlpnTest UNUSED      EMPTY    h2,http/1.1 NONE
+ * @run main/othervm SSLSocketAlpnTest UNUSED      h2       EMPTY       NONE
+ * @run main/othervm SSLSocketAlpnTest UNUSED      H2       h2          ERROR
+ * @run main/othervm SSLSocketAlpnTest UNUSED      h2       http/1.1    ERROR
+ *
+ * @run main/othervm SSLSocketAlpnTest h2          h2       h2          h2
+ * @run main/othervm SSLSocketAlpnTest H2          h2       h2,http/1.1 h2
+ * @run main/othervm SSLSocketAlpnTest h2,http/1.1 http/1.1 h2,http/1.1 http/1.1
+ * @run main/othervm SSLSocketAlpnTest http/1.1,h2 h2       h2,http/1.1 h2
+ * @run main/othervm SSLSocketAlpnTest EMPTY       h2       h2          h2
+ * @run main/othervm SSLSocketAlpnTest h2,http/1.1 EMPTY    http/1.1    NONE
+ * @run main/othervm SSLSocketAlpnTest h2,http/1.1 h2       EMPTY       NONE
+ * @run main/othervm SSLSocketAlpnTest UNUSED      UNUSED   http/1.1,h2 NONE
+ * @run main/othervm SSLSocketAlpnTest h2          h2       http/1.1    ERROR
+ * @run main/othervm SSLSocketAlpnTest h2,http/1.1 H2       http/1.1    ERROR
+ *
  * @author Brad Wetmore
+ */
+/**
+ * A simple SSLSocket-based client/server that demonstrates the proposed API
+ * changes for JEP 244 in support of the TLS ALPN extension (RFC 7301).
+ *
+ * Usage:
+ *     java SSLSocketAlpnTest <server-APs> <callback-AP> <client-APs> <result>
+ *
+ * where:
+ *      EMPTY  indicates that ALPN is disabled
+ *      UNUSED indicates that no ALPN values are supplied (server-side only)
+ *      ERROR  indicates that an exception is expected
+ *      NONE   indicates that no ALPN is expected
+ *
+ * This example is based on our standard SSLSocketTemplate.
  */
 import java.io.*;
 import java.security.KeyStore;
+import java.util.Arrays;
 
 import javax.net.ssl.*;
 
@@ -73,6 +111,9 @@ public class SSLSocketAlpnTest {
     static String trustFilename = System.getProperty("test.src", ".") + "/"
             + pathToStores + "/" + trustStoreFile;
 
+    private static boolean hasServerAPs; // whether server APs are present
+    private static boolean hasCallback; // whether a callback is present
+
     /*
      * SSLContext
      */
@@ -89,6 +130,7 @@ public class SSLSocketAlpnTest {
     static boolean debug = false;
 
     static String[] serverAPs;
+    static String callbackAP;
     static String[] clientAPs;
     static String expectedAP;
 
@@ -136,12 +178,32 @@ public class SSLSocketAlpnTest {
         sslp.setUseCipherSuitesOrder(true); // Set server side order
 
         // Set the ALPN selection.
-        sslp.setApplicationProtocols(serverAPs);
+        if (serverAPs != null) {
+            sslp.setApplicationProtocols(serverAPs);
+        }
         sslSocket.setSSLParameters(sslp);
 
         if (sslSocket.getHandshakeApplicationProtocol() != null) {
             throw new Exception ("getHandshakeApplicationProtocol() should "
                     + "return null before the handshake starts");
+        }
+
+        // check that no callback has been registered
+        if (sslSocket.getHandshakeApplicationProtocolSelector() != null) {
+            throw new Exception("getHandshakeApplicationProtocolSelector() " +
+                "should return null");
+        }
+
+        if (hasCallback) {
+            sslSocket.setHandshakeApplicationProtocolSelector(
+                (serverSocket, clientProtocols) -> {
+                    return callbackAP.equals("EMPTY") ? "" : callbackAP;
+                });
+
+            // check that the callback can be retrieved
+            if (sslSocket.getHandshakeApplicationProtocolSelector() == null) {
+                throw new Exception("getHandshakeApplicationProtocolSelector()"                     + " should return non-null");
+            }
         }
 
         sslSocket.startHandshake();
@@ -274,14 +336,19 @@ public class SSLSocketAlpnTest {
         if (debug) {
             System.setProperty("javax.net.debug", "all");
         }
+        System.out.println("Test args: " + Arrays.toString(args));
 
         // Validate parameters
-        if (args.length != 3) {
+        if (args.length != 4) {
             throw new Exception("Invalid number of test parameters");
         }
         serverAPs = convert(args[0]);
-        clientAPs = convert(args[1]);
-        expectedAP = args[2];
+        callbackAP = args[1];
+        clientAPs = convert(args[2]);
+        expectedAP = args[3];
+
+        hasServerAPs = !args[0].equals("UNUSED"); // are server APs being used?
+        hasCallback = !callbackAP.equals("UNUSED"); // is callback being used?
 
         /*
          * Start the tests.
@@ -289,7 +356,7 @@ public class SSLSocketAlpnTest {
         try {
             new SSLSocketAlpnTest();
         } catch (SSLHandshakeException she) {
-            if (args[2].equals("ERROR")) {
+            if (args[3].equals("ERROR")) {
                 System.out.println("Caught the expected exception: " + she);
             } else {
                 throw she;
@@ -320,7 +387,8 @@ public class SSLSocketAlpnTest {
         }
 
         kms = new KeyManager[] { new MyX509ExtendedKeyManager(
-                (X509ExtendedKeyManager) kms[0], expectedAP) };
+                (X509ExtendedKeyManager) kms[0], expectedAP,
+                !hasCallback && hasServerAPs) };
 
         TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
         tmf.init(trustKS);
@@ -336,12 +404,15 @@ public class SSLSocketAlpnTest {
      * Convert a comma-separated list into an array of strings.
      */
     private static String[] convert(String list) {
-        String[] strings;
+        if (list.equals("UNUSED")) {
+            return null;
+        }
 
         if (list.equals("EMPTY")) {
             return new String[0];
         }
 
+        String[] strings;
         if (list.indexOf(',') > 0) {
             strings = list.split(",");
         } else {

@@ -26,6 +26,7 @@
 package build.tools.jigsaw;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
@@ -44,7 +45,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
-import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.*;
 import static java.lang.module.ModuleDescriptor.Requires.Modifier.TRANSITIVE;
 
 /**
@@ -69,40 +71,23 @@ public class GenGraphs {
                                   .map(ModuleReference::descriptor)
                                   .filter(m -> (m.name().startsWith("java.") &&
                                                !m.name().equals("java.smartcardio")))
-                                  .collect(Collectors.toSet()));
+                                  .collect(toSet()));
         Set<ModuleDescriptor> jdkModules
             = new TreeSet<>(finder.findAll().stream()
                                   .map(ModuleReference::descriptor)
                                   .filter(m -> !javaSEModules.contains(m))
-                                  .collect(Collectors.toSet()));
+                                  .collect(toSet()));
 
-        GenGraphs genGraphs = new GenGraphs(javaSEModules, jdkModules);
+        GenGraphs genGraphs = new GenGraphs(dir, javaSEModules, jdkModules);
         Set<String> mods = new HashSet<>();
         for (ModuleReference mref: finder.findAll()) {
-            ModuleDescriptor descriptor = mref.descriptor();
-            String name = descriptor.name();
-            mods.add(name);
-            Configuration cf = Configuration.empty()
-                    .resolveRequires(finder,
-                                     ModuleFinder.of(),
-                                     Set.of(name));
-            genGraphs.genDotFile(dir, name, cf);
+            mods.add(mref.descriptor().name());
+            genGraphs.genDotFile(mref);
         }
 
-        Configuration cf = Configuration.empty()
-                .resolveRequires(finder,
-                                 ModuleFinder.of(),
-                                 mods);
-        genGraphs.genDotFile(dir, "jdk", cf);
+        // all modules
+        genGraphs.genDotFile("jdk", mods);
 
-    }
-
-    private final Set<ModuleDescriptor> javaGroup;
-    private final Set<ModuleDescriptor> jdkGroup;
-
-    GenGraphs(Set<ModuleDescriptor> javaGroup, Set<ModuleDescriptor> jdkGroup) {
-        this.javaGroup = Collections.unmodifiableSet(javaGroup);
-        this.jdkGroup = Collections.unmodifiableSet(jdkGroup);
     }
 
     private static final String ORANGE = "#e76f00";
@@ -145,23 +130,70 @@ public class GenGraphs {
 
     }
 
-    private void genDotFile(Path dir, String name, Configuration cf) throws IOException {
-        try (PrintStream out
-                 = new PrintStream(Files.newOutputStream(dir.resolve(name + ".dot")))) {
+    private final Path dir;
+    private final Set<ModuleDescriptor> javaGroup;
+    private final Set<ModuleDescriptor> jdkGroup;
 
-            Map<String, ModuleDescriptor> nameToModule;
-            if (name.equals("java.se.ee")) {
-                nameToModule = cf.modules().stream()
-                    .map(ResolvedModule::reference)
-                    .map(ModuleReference::descriptor)
-                    .filter(md -> !md.name().startsWith("jdk."))
-                    .collect(Collectors.toMap(ModuleDescriptor::name, Function.identity()));
-            } else {
-                nameToModule = cf.modules().stream()
-                    .map(ResolvedModule::reference)
-                    .map(ModuleReference::descriptor)
-                    .collect(Collectors.toMap(ModuleDescriptor::name, Function.identity()));
+    GenGraphs(Path dir, Set<ModuleDescriptor> javaGroup, Set<ModuleDescriptor> jdkGroup) {
+        this.dir = dir;
+        this.javaGroup = Collections.unmodifiableSet(javaGroup);
+        this.jdkGroup = Collections.unmodifiableSet(jdkGroup);
+    }
+
+    /**
+     * Generates a dot file for the given module reference as the root.
+     */
+    void genDotFile(ModuleReference mref) throws IOException {
+        String name = mref.descriptor().name();
+        genDotFile(name, Set.of(name));
+    }
+
+    /**
+     * Generates a dot file for the given set of root modules.
+     */
+    void genDotFile(String name, Set<String> roots) throws IOException {
+        Configuration cf =
+            Configuration.empty().resolveRequires(ModuleFinder.ofSystem(),
+                                                  ModuleFinder.of(),
+                                                  roots);
+
+        Set<ModuleDescriptor> mds = cf.modules().stream()
+                .map(ResolvedModule::reference)
+                .map(ModuleReference::descriptor)
+                .collect(toSet());
+
+        // generate a dot file for the resolved graph
+        try (OutputStream os = Files.newOutputStream(dir.resolve(name + ".dot"));
+             PrintStream out = new PrintStream(os)) {
+            printGraph(out, name, gengraph(cf),
+                       mds.stream()
+                          .collect(toMap(ModuleDescriptor::name, Function.identity()))
+            );
+        }
+
+        if (name.equals("java.se") || name.equals("java.se.ee")) {
+            // generate a dot file for Java SE module graph
+            try (OutputStream os = Files.newOutputStream(dir.resolve(name + "-spec.dot"));
+                 PrintStream out = new PrintStream(os)) {
+                // transitive reduction on the graph of `requires transitive` edges
+                // filter out jdk.* modules which are implementation dependences
+                Graph<String> graph = requiresTransitiveGraph(cf, true);
+                printGraph(out, name, graph,
+                           mds.stream()
+                              .filter(md -> !md.name().startsWith("jdk.") &&
+                                                graph.nodes().contains(md.name()))
+                              .collect(toMap(ModuleDescriptor::name, Function.identity()))
+                );
             }
+        }
+    }
+
+    private void printGraph(PrintStream out,
+                            String name,
+                            Graph<String> graph,
+                            Map<String, ModuleDescriptor> nameToModule)
+        throws IOException
+    {
             Set<ModuleDescriptor> descriptors = new TreeSet<>(nameToModule.values());
 
             out.format("digraph \"%s\" {%n", name);
@@ -182,13 +214,13 @@ public class GenGraphs {
 
             // same ranks
             ranks.stream()
-                .forEach(group -> out.format("{rank=same %s}%n",
-                    descriptors.stream()
-                        .map(ModuleDescriptor::name)
-                        .filter(group::contains)
-                        .map(mn -> "\"" + mn + "\"")
-                        .collect(Collectors.joining(","))
-                ));
+                .map(group -> descriptors.stream()
+                                         .map(ModuleDescriptor::name)
+                                         .filter(group::contains)
+                                         .map(mn -> "\"" + mn + "\"")
+                                         .collect(joining(",")))
+                .filter(group -> group.length() > 0)
+                .forEach(group -> out.format("{rank=same %s}%n", group));
 
             descriptors.stream()
                 .filter(jdkGroup::contains)
@@ -196,30 +228,28 @@ public class GenGraphs {
                 .forEach(mn -> out.format("  \"%s\" [fontcolor=\"%s\", group=%s];%n",
                                           mn, BLUE, "jdk"));
 
-            // transitive reduction
-            Graph<String> graph = gengraph(cf);
-            descriptors.forEach(md -> {
-                String mn = md.name();
-                Set<String> requiresTransitive = md.requires().stream()
-                        .filter(d -> d.modifiers().contains(TRANSITIVE))
-                        .map(d -> d.name())
-                        .collect(Collectors.toSet());
+            descriptors.stream()
+                .forEach(md -> {
+                    String mn = md.name();
+                    Set<String> requiresTransitive = md.requires().stream()
+                            .filter(d -> d.modifiers().contains(TRANSITIVE))
+                            .map(d -> d.name())
+                            .collect(toSet());
 
-                graph.adjacentNodes(mn)
-                     .stream()
-                     .filter(nameToModule::containsKey)
-                     .forEach(dn -> {
-                         String attr = dn.equals("java.base") ? REQUIRES_BASE
-                                : (requiresTransitive.contains(dn) ? REEXPORTS : REQUIRES);
-                         int w = weightOf(mn, dn);
-                         if (w > 1)
-                             attr += "weight=" + w;
-                         out.format("  \"%s\" -> \"%s\" [%s];%n", mn, dn, attr);
-                     });
-            });
+                    graph.adjacentNodes(mn)
+                         .stream()
+                         .filter(nameToModule::containsKey)
+                         .forEach(dn -> {
+                             String attr = dn.equals("java.base") ? REQUIRES_BASE
+                                    : (requiresTransitive.contains(dn) ? REEXPORTS : REQUIRES);
+                             int w = weightOf(mn, dn);
+                             if (w > 1)
+                                 attr += "weight=" + w;
+                             out.format("  \"%s\" -> \"%s\" [%s];%n", mn, dn, attr);
+                         });
+                });
 
             out.println("}");
-        }
     }
 
     /**
@@ -239,7 +269,7 @@ public class GenGraphs {
                     .map(ResolvedModule::name)
                     .forEach(target -> builder.addEdge(mn, target));
         }
-        Graph<String> rpg = requiresTransitiveGraph(cf);
+        Graph<String> rpg = requiresTransitiveGraph(cf, false);
         return builder.build().reduce(rpg);
     }
 
@@ -247,13 +277,14 @@ public class GenGraphs {
      * Returns a Graph containing only requires transitive edges
      * with transitive reduction.
      */
-    private Graph<String> requiresTransitiveGraph(Configuration cf) {
+    private Graph<String> requiresTransitiveGraph(Configuration cf, boolean includeBase) {
         Graph.Builder<String> builder = new Graph.Builder<>();
         for (ResolvedModule resolvedModule : cf.modules()) {
             ModuleDescriptor descriptor = resolvedModule.reference().descriptor();
             String mn = descriptor.name();
             descriptor.requires().stream()
-                    .filter(d -> d.modifiers().contains(TRANSITIVE))
+                    .filter(d -> d.modifiers().contains(TRANSITIVE)
+                                    || (includeBase && d.name().equals("java.base")))
                     .map(d -> d.name())
                     .forEach(d -> builder.addEdge(mn, d));
         }
