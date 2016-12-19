@@ -28,6 +28,11 @@ corba/src/java.corba/share/classes/javax/activity : corba/src/share/classes/java
 corba/src/java.corba/share/classes/javax/rmi : corba/src/share/classes/javax/rmi
 corba/src/java.corba/share/classes/org/omg : corba/src/share/classes/org/omg
 corba/src/java.corba/share/classes/sun/corba : corba/src/share/classes/sun/corba
+corba/src/java.corba/share/classes/com/sun/jndi/cosnaming : jdk/src/share/classes/com/sun/jndi/cosnaming
+corba/src/java.corba/share/classes/com/sun/jndi/toolkit/corba : jdk/src/share/classes/com/sun/jndi/toolkit/corba
+corba/src/java.corba/share/classes/com/sun/jndi/url/corbaname : jdk/src/share/classes/com/sun/jndi/url/corbaname
+corba/src/java.corba/share/classes/com/sun/jndi/url/iiop : jdk/src/share/classes/com/sun/jndi/url/iiop
+corba/src/java.corba/share/classes/com/sun/jndi/url/iiopname : jdk/src/share/classes/com/sun/jndi/url/iiopname
 corba/src/jdk.rmic/share/classes/sun/rmi/rmic/iiop : corba/src/share/classes/sun/rmi/rmic/iiop
 jaxp/src/java.xml/share/classes/com/sun/java_cup/internal/runtime : jaxp/src/com/sun/java_cup/internal/runtime
 jaxp/src/java.xml/share/classes/com/sun/org/apache/bcel/internal : jaxp/src/com/sun/org/apache/bcel/internal
@@ -516,11 +521,6 @@ jdk/src/java.base/windows/native/libnet/TwoStacksPlainSocketImpl.c : jdk/src/win
 jdk/src/java.base/windows/native/libnio/ch : jdk/src/windows/native/sun/nio/ch
 jdk/src/java.base/windows/native/libnio/fs : jdk/src/windows/native/sun/nio/fs
 jdk/src/java.base/windows/native/libnio/MappedByteBuffer.c : jdk/src/windows/native/java/nio/MappedByteBuffer.c
-jdk/src/java.corba/share/classes/com/sun/jndi/cosnaming : jdk/src/share/classes/com/sun/jndi/cosnaming
-jdk/src/java.corba/share/classes/com/sun/jndi/toolkit/corba : jdk/src/share/classes/com/sun/jndi/toolkit/corba
-jdk/src/java.corba/share/classes/com/sun/jndi/url/corbaname : jdk/src/share/classes/com/sun/jndi/url/corbaname
-jdk/src/java.corba/share/classes/com/sun/jndi/url/iiop : jdk/src/share/classes/com/sun/jndi/url/iiop
-jdk/src/java.corba/share/classes/com/sun/jndi/url/iiopname : jdk/src/share/classes/com/sun/jndi/url/iiopname
 jdk/src/java.desktop/aix/native/libawt : jdk/src/aix/porting
 jdk/src/java.desktop/linux/conf/oblique-fonts/fonts.dir : jdk/src/solaris/classes/sun/awt/motif/java.oblique-fonts.dir
 jdk/src/java.desktop/macosx/classes/com/apple/eawt/event/package.html : jdk/src/macosx/classes/com/apple/eawt/event/package.html
