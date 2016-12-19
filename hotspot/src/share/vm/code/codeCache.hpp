@@ -26,7 +26,6 @@
 #define SHARE_VM_CODE_CODECACHE_HPP
 
 #include "code/codeBlob.hpp"
-#include "code/codeCacheExtensions.hpp"
 #include "code/nmethod.hpp"
 #include "memory/allocation.hpp"
 #include "memory/heap.hpp"
