@@ -683,7 +683,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
         }
         break;
       case T_LONG:
-        assert(sig_bt[i+1] == T_VOID, "expecting half");
+        assert((i + 1) < total_args_passed && sig_bt[i+1] == T_VOID, "expecting half");
         if (ireg < z_num_iarg_registers) {
           // Put long in register.
           regs[i].set2(z_iarg_reg[ireg]);
@@ -723,7 +723,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
         }
         break;
       case T_DOUBLE:
-        assert(sig_bt[i+1] == T_VOID, "expecting half");
+        assert((i + 1) < total_args_passed && sig_bt[i+1] == T_VOID, "expecting half");
         if (freg < z_num_farg_registers) {
           // Put double in register.
           regs[i].set2(z_farg_reg[freg]);
@@ -822,7 +822,7 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
         }
         break;
       case T_DOUBLE:
-        assert(sig_bt[i+1] == T_VOID, "expecting half");
+        assert((i + 1) < total_args_passed && sig_bt[i+1] == T_VOID, "expecting half");
         if (freg < z_num_farg_registers) {
           regs[i].set2(z_farg_reg[freg]);
           ++freg;
