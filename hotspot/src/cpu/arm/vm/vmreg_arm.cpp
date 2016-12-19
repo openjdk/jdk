@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,31 +22,30 @@
  *
  */
 
-#ifndef SHARE_VM_CODE_CODE_CACHE_EXTENSIONS_HPP
-#define SHARE_VM_CODE_CODE_CACHE_EXTENSIONS_HPP
 
-#include "memory/allocation.hpp"
+#include "precompiled.hpp"
+#include "asm/assembler.hpp"
+#include "code/vmreg.hpp"
 
-class CodeCacheExtensionsSteps: AllStatic {
-public:
-  enum Step {
-    // Support for optional fine grain initialization hooks
-    // Note: these hooks must support refining the granularity
-    // (e.g. adding intermediate steps in the ordered enum
-    // if needed for future features)
-    Start,
-    VMVersion,
-    StubRoutines1,
-    Universe,
-    TemplateInterpreter,
-    Interpreter,
-    StubRoutines2,
-    InitGlobals,
-    CreateVM,
-    LastStep
-  };
-};
+void VMRegImpl::set_regName() {
+  Register reg = ::as_Register(0);
+  int i;
+  for (i = 0; i < ConcreteRegisterImpl::max_gpr; reg = reg->successor()) {
+    for (int j = 0; j < (1 << ConcreteRegisterImpl::log_vmregs_per_gpr); j++) {
+      regName[i++] = reg->name();
+    }
+  }
+#ifndef __SOFTFP__
+  FloatRegister freg = ::as_FloatRegister(0);
+  for ( ; i < ConcreteRegisterImpl::max_fpr ; ) {
+    for (int j = 0; j < (1 << ConcreteRegisterImpl::log_vmregs_per_fpr); j++) {
+      regName[i++] = freg->name();
+    }
+    freg = freg->successor();
+  }
+#endif
 
-#include "code/codeCacheExtensions_ext.hpp"
-
-#endif // SHARE_VM_CODE_CODE_CACHE_EXTENSIONS_HPP
+  for ( ; i < ConcreteRegisterImpl::number_of_registers ; i ++ ) {
+    regName[i] = "NON-GPR-FPR";
+  }
+}
