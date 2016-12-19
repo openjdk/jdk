@@ -35,21 +35,19 @@ import java.util.ResourceBundle;
  * no {@link java.util.ResourceBundle.Control} instance can be modified with {@code
  * ResourceBundleControlProvider} implementations.
  *
- * <p>Provider implementations must be packaged using the <a
- * href="../../../../technotes/guides/extensions/index.html">Java Extension
- * Mechanism</a> as installed extensions. Refer to {@link java.util.ServiceLoader}
- * for the extension packaging. Any installed {@code
- * ResourceBundleControlProvider} implementations are loaded using {@link
- * java.util.ServiceLoader} at the {@code ResourceBundle} class loading time.
- *
- * <p>All {@code ResourceBundleControlProvider}s are ignored in named modules.
- *
  * @author Masayoshi Okutsu
  * @since 1.8
  * @see ResourceBundle#getBundle(String, java.util.Locale, ClassLoader, ResourceBundle.Control)
  *      ResourceBundle.getBundle
  * @see java.util.ServiceLoader#loadInstalled(Class)
+ * @deprecated There is no longer any mechanism to install a custom
+ * {@code ResourceBundleControlProvider} implementation defined
+ * by the platform class loader or its ancestor. The recommended
+ * way to use a custom {@code Control} implementation to load resource bundle
+ * is to use {@link java.util.ResourceBundle#getBundle(String, Control)}
+ * or other factory methods that take custom {@link java.util.ResourceBundle.Control}.
  */
+@Deprecated(since="9", forRemoval=true)
 public interface ResourceBundleControlProvider {
     /**
      * Returns a {@code ResourceBundle.Control} instance that is used
