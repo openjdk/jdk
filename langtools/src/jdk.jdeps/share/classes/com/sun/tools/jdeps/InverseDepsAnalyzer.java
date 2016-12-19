@@ -140,9 +140,8 @@ public class InverseDepsAnalyzer extends DepsAnalyzer {
             // include all target nodes
             targets().forEach(builder::addNode);
 
-            // transpose the module graph - may filter JDK module
+            // transpose the module graph
             configuration.getModules().values().stream()
-                .filter(filter::include)
                 .forEach(m -> {
                     builder.addNode(m);
                     m.descriptor().requires().stream()

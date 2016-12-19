@@ -70,6 +70,7 @@ public class JdepsConfiguration implements AutoCloseable {
     // the token for "all modules on the module path"
     public static final String ALL_MODULE_PATH = "ALL-MODULE-PATH";
     public static final String ALL_DEFAULT = "ALL-DEFAULT";
+    public static final String ALL_SYSTEM = "ALL-SYSTEM";
     public static final String MODULE_INFO = "module-info.class";
 
     private final SystemModuleFinder system;
@@ -199,12 +200,10 @@ public class JdepsConfiguration implements AutoCloseable {
         return m!= null ? Optional.of(m.descriptor()) : Optional.empty();
     }
 
-    boolean isSystem(Module m) {
-        return system.find(m.name()).isPresent();
-    }
-
     boolean isValidToken(String name) {
-        return ALL_MODULE_PATH.equals(name) || ALL_DEFAULT.equals(name);
+        return ALL_MODULE_PATH.equals(name) ||
+                ALL_DEFAULT.equals(name) ||
+                ALL_SYSTEM.equals(name);
     }
 
     /**
@@ -533,6 +532,9 @@ public class JdepsConfiguration implements AutoCloseable {
                         break;
                     case ALL_DEFAULT:
                         this.addAllDefaultModules = true;
+                        break;
+                    case ALL_SYSTEM:
+                        this.addAllSystemModules = true;
                         break;
                     default:
                         this.rootModules.add(mn);

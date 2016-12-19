@@ -386,13 +386,6 @@ class JdepsTask {
             }
         },
 
-        // Another alternative to list modules in --add-modules option
-        new HiddenOption(true, "--include-system-modules") {
-            void process(JdepsTask task, String opt, String arg) throws BadArgs {
-                task.options.includeSystemModulePattern = Pattern.compile(arg);
-            }
-        },
-
         new Option(false, "-P", "-profile") {
             void process(JdepsTask task, String opt, String arg) throws BadArgs {
                 task.options.showProfile = true;
@@ -1021,8 +1014,8 @@ class JdepsTask {
 
         // source filters
         builder.includePattern(options.includePattern);
-        builder.includeSystemModules(options.includeSystemModulePattern);
 
+        // target filters
         builder.filter(options.filterSamePackage, options.filterSameArchive);
         builder.findJDKInternals(options.findJDKInternals);
 
@@ -1043,11 +1036,6 @@ class JdepsTask {
         // -filter
         if (options.filterRegex != null)
             builder.filter(options.filterRegex);
-
-        // check if system module is set
-        config.rootModules().stream()
-              .map(Module::name)
-              .forEach(builder::includeIfSystemModule);
 
         return builder.build();
     }
@@ -1162,7 +1150,6 @@ class JdepsTask {
         Set<String> packageNames = new HashSet<>();
         Pattern regex;             // apply to the dependences
         Pattern includePattern;
-        Pattern includeSystemModulePattern;
         boolean inverse = false;
         boolean compileTimeView = false;
         String systemModulePath = System.getProperty("java.home");
@@ -1173,8 +1160,7 @@ class JdepsTask {
         Runtime.Version multiRelease;
 
         boolean hasSourcePath() {
-            return !addmods.isEmpty() || includePattern != null ||
-                        includeSystemModulePattern != null;
+            return !addmods.isEmpty() || includePattern != null;
         }
 
         boolean hasFilter() {
