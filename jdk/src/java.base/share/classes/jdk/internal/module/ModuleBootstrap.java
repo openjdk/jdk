@@ -306,6 +306,13 @@ public final class ModuleBootstrap {
                         fail(name + ": cannot be loaded from application module path");
                 }
             }
+
+            // check if module specified in --patch-module is present
+            for (String mn: patcher.patchedModules()) {
+                if (!cf.findModule(mn).isPresent()) {
+                    warnUnknownModule(PATCH_MODULE, mn);
+                }
+            }
         }
 
         // if needed check that there are no split packages in the set of
@@ -481,7 +488,7 @@ public final class ModuleBootstrap {
             String mn = e.getKey();
             Optional<Module> om = bootLayer.findModule(mn);
             if (!om.isPresent()) {
-                warn("Unknown module: " + mn);
+                warnUnknownModule(ADD_READS, mn);
                 continue;
             }
             Module m = om.get();
@@ -495,7 +502,7 @@ public final class ModuleBootstrap {
                     if (om.isPresent()) {
                         Modules.addReads(m, om.get());
                     } else {
-                        warn("Unknown module: " + name);
+                        warnUnknownModule(ADD_READS, name);
                     }
                 }
             }
@@ -527,24 +534,25 @@ public final class ModuleBootstrap {
                                                Map<String, List<String>> map,
                                                boolean opens)
     {
+        String option = opens ? ADD_OPENS : ADD_EXPORTS;
         for (Map.Entry<String, List<String>> e : map.entrySet()) {
 
             // the key is $MODULE/$PACKAGE
             String key = e.getKey();
             String[] s = key.split("/");
             if (s.length != 2)
-                fail("Unable to parse as <module>/<package>: " + key);
+                fail(unableToParse(option,  "<module>/<package>", key));
 
             String mn = s[0];
             String pn = s[1];
             if (mn.isEmpty() || pn.isEmpty())
-                fail("Module and package name must be specified: " + key);
+                fail(unableToParse(option,  "<module>/<package>", key));
 
             // The exporting module is in the boot layer
             Module m;
             Optional<Module> om = bootLayer.findModule(mn);
             if (!om.isPresent()) {
-                warn("Unknown module: " + mn);
+                warnUnknownModule(option, mn);
                 continue;
             }
 
@@ -566,7 +574,7 @@ public final class ModuleBootstrap {
                     if (om.isPresent()) {
                         other = om.get();
                     } else {
-                        warn("Unknown module: " + name);
+                        warnUnknownModule(option, name);
                         continue;
                     }
                 }
@@ -610,24 +618,30 @@ public final class ModuleBootstrap {
 
             int pos = value.indexOf('=');
             if (pos == -1)
-                fail("Unable to parse as <module>=<value>: " + value);
+                fail(unableToParse(option(prefix), "<module>=<value>", value));
             if (pos == 0)
-                fail("Missing module name in: " + value);
+                fail(unableToParse(option(prefix), "<module>=<value>", value));
 
             // key is <module> or <module>/<package>
             String key = value.substring(0, pos);
 
             String rhs = value.substring(pos+1);
             if (rhs.isEmpty())
-                fail("Unable to parse as <module>=<value>: " + value);
+                fail(unableToParse(option(prefix), "<module>=<value>", value));
 
             // value is <module>(,<module>)* or <file>(<pathsep><file>)*
             if (!allowDuplicates && map.containsKey(key))
-                fail(key + " specified more than once");
+                fail(key + " specified more than once in " + option(prefix));
             List<String> values = map.computeIfAbsent(key, k -> new ArrayList<>());
+            int ntargets = 0;
             for (String s : rhs.split(regex)) {
-                if (s.length() > 0) values.add(s);
+                if (s.length() > 0) {
+                    values.add(s);
+                    ntargets++;
+                }
             }
+            if (ntargets == 0)
+                fail("Target must be specified: " + option(prefix) + " " + value);
 
             index++;
             value = getAndRemoveProperty(prefix + index);
@@ -687,6 +701,42 @@ public final class ModuleBootstrap {
 
     static void warn(String m) {
         System.err.println("WARNING: " + m);
+    }
+
+    static void warnUnknownModule(String option, String mn) {
+        warn("Unknown module: " + mn + " specified in " + option);
+    }
+
+    static String unableToParse(String option, String text, String value) {
+        return "Unable to parse " +  option + " " + text + ": " + value;
+    }
+
+    private static final String ADD_MODULES  = "--add-modules";
+    private static final String ADD_EXPORTS  = "--add-exports";
+    private static final String ADD_OPENS    = "--add-opens";
+    private static final String ADD_READS    = "--add-reads";
+    private static final String PATCH_MODULE = "--patch-module";
+
+
+    /*
+     * Returns the command-line option name corresponds to the specified
+     * system property prefix.
+     */
+    static String option(String prefix) {
+        switch (prefix) {
+            case "jdk.module.addexports.":
+                return ADD_EXPORTS;
+            case "jdk.module.addopens.":
+                return ADD_OPENS;
+            case "jdk.module.addreads.":
+                return ADD_READS;
+            case "jdk.module.patch.":
+                return PATCH_MODULE;
+            case "jdk.module.addmods.":
+                return ADD_MODULES;
+            default:
+                throw new IllegalArgumentException(prefix);
+        }
     }
 
     static class PerfCounters {
