@@ -130,6 +130,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
     }
 
     private final Path root;
+    private final Map<String, String> launchers;
     private final Path mdir;
     private final Set<String> modules = new HashSet<>();
     private String targetOsName;
@@ -140,10 +141,9 @@ public final class DefaultImageBuilder implements ImageBuilder {
      * @param root The image root directory.
      * @throws IOException
      */
-    public DefaultImageBuilder(Path root) throws IOException {
-        Objects.requireNonNull(root);
-
-        this.root = root;
+    public DefaultImageBuilder(Path root, Map<String, String> launchers) throws IOException {
+        this.root = Objects.requireNonNull(root);
+        this.launchers = Objects.requireNonNull(launchers);
         this.mdir = root.resolve("lib");
         Files.createDirectories(mdir);
     }
@@ -235,7 +235,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
             // If native files are stripped completely, <root>/bin dir won't exist!
             // So, don't bother generating launcher scripts.
             if (Files.isDirectory(bin)) {
-                 prepareApplicationFiles(files, modules);
+                 prepareApplicationFiles(files);
             }
         } catch (IOException ex) {
             throw new PluginException(ex);
@@ -246,22 +246,44 @@ public final class DefaultImageBuilder implements ImageBuilder {
      * Generates launcher scripts.
      *
      * @param imageContent The image content.
-     * @param modules The set of modules that the runtime image contains.
      * @throws IOException
      */
-    protected void prepareApplicationFiles(ResourcePool imageContent, Set<String> modules) throws IOException {
+    protected void prepareApplicationFiles(ResourcePool imageContent) throws IOException {
         // generate launch scripts for the modules with a main class
-        for (String module : modules) {
+        for (Map.Entry<String, String> entry : launchers.entrySet()) {
+            String launcherEntry = entry.getValue();
+            int slashIdx = launcherEntry.indexOf("/");
+            String module, mainClassName;
+            if (slashIdx == -1) {
+                module = launcherEntry;
+                mainClassName = null;
+            } else {
+                module = launcherEntry.substring(0, slashIdx);
+                assert !module.isEmpty();
+                mainClassName = launcherEntry.substring(slashIdx + 1);
+                assert !mainClassName.isEmpty();
+            }
+
             String path = "/" + module + "/module-info.class";
             Optional<ResourcePoolEntry> res = imageContent.findEntry(path);
             if (!res.isPresent()) {
                 throw new IOException("module-info.class not found for " + module + " module");
             }
-            Optional<String> mainClass;
             ByteArrayInputStream stream = new ByteArrayInputStream(res.get().contentBytes());
-            mainClass = ModuleDescriptor.read(stream).mainClass();
-            if (mainClass.isPresent()) {
-                Path cmd = root.resolve("bin").resolve(module);
+            Optional<String> mainClass = ModuleDescriptor.read(stream).mainClass();
+            if (mainClassName == null && mainClass.isPresent()) {
+                mainClassName = mainClass.get();
+            }
+
+            if (mainClassName != null) {
+                // make sure main class exists!
+                if (!imageContent.findEntry("/" + module + "/" +
+                        mainClassName.replace('.', '/') + ".class").isPresent()) {
+                    throw new IllegalArgumentException(module + " does not have main class: " + mainClassName);
+                }
+
+                String launcherFile = entry.getKey();
+                Path cmd = root.resolve("bin").resolve(launcherFile);
                 // generate shell script for Unix platforms
                 StringBuilder sb = new StringBuilder();
                 sb.append("#!/bin/sh")
@@ -272,7 +294,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
                         .append("\n");
                 sb.append("$DIR/java $JLINK_VM_OPTIONS -m ")
                         .append(module).append('/')
-                        .append(mainClass.get())
+                        .append(mainClassName)
                         .append(" $@\n");
 
                 try (BufferedWriter writer = Files.newBufferedWriter(cmd,
@@ -286,7 +308,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
                 }
                 // generate .bat file for Windows
                 if (isWindows()) {
-                    Path bat = root.resolve(BIN_DIRNAME).resolve(module + ".bat");
+                    Path bat = root.resolve(BIN_DIRNAME).resolve(launcherFile + ".bat");
                     sb = new StringBuilder();
                     sb.append("@echo off")
                             .append("\r\n");
@@ -296,7 +318,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
                             .append("\r\n");
                     sb.append("\"%DIR%\\java\" %JLINK_VM_OPTIONS% -m ")
                             .append(module).append('/')
-                            .append(mainClass.get())
+                            .append(mainClassName)
                             .append(" %*\r\n");
 
                     try (BufferedWriter writer = Files.newBufferedWriter(bat,
@@ -305,6 +327,8 @@ public final class DefaultImageBuilder implements ImageBuilder {
                         writer.write(sb.toString());
                     }
                 }
+            } else {
+                throw new IllegalArgumentException(module + " doesn't contain main class & main not specified in command line");
             }
         }
     }
