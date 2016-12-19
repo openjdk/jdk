@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8159602 8170549 8171255
  * @summary Test annotations on module declaration.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -92,7 +93,7 @@ public class AnnotationsOnModules extends ModuleTestBase {
         }
     }
 
-    //Test @ignore JDK-8171255
+    @Test
     public void testSimpleJavadocDeprecationTag(Path base) throws Exception {
         Path moduleSrc = base.resolve("module-src");
         Path m1 = moduleSrc.resolve("src1/A");
