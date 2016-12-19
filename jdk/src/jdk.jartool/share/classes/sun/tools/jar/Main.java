@@ -47,7 +47,6 @@ import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -57,11 +56,11 @@ import java.util.jar.Pack200.*;
 import java.util.jar.Manifest;
 import java.text.MessageFormat;
 
-import jdk.internal.misc.JavaLangModuleAccess;
-import jdk.internal.misc.SharedSecrets;
 import jdk.internal.module.Checks;
 import jdk.internal.module.ModuleHashes;
+import jdk.internal.module.ModuleInfo;
 import jdk.internal.module.ModuleInfoExtender;
+import jdk.internal.module.ModuleResolution;
 import jdk.internal.util.jar.JarIndex;
 
 import static jdk.internal.util.jar.JarIndex.INDEX_NAME;
@@ -211,6 +210,7 @@ class Main {
     /* To support additional GNU Style informational options */
     enum Info {
         HELP(GNUStyleOptions::printHelp),
+        HELP_EXTRA(GNUStyleOptions::printHelpExtra),
         COMPAT_HELP(GNUStyleOptions::printCompatHelp),
         USAGE_TRYHELP(GNUStyleOptions::printUsageTryHelp),
         VERSION(GNUStyleOptions::printVersion);
@@ -225,6 +225,7 @@ class Main {
     /* Modular jar related options */
     Version moduleVersion;
     Pattern modulesToHash;
+    ModuleResolution moduleResolution = ModuleResolution.empty();
     ModuleFinder moduleFinder = ModuleFinder.of();
 
     private static final String MODULE_INFO = "module-info.class";
@@ -1991,12 +1992,13 @@ class Main {
                   .collect(joining(" "));
     }
 
-    private static final JavaLangModuleAccess JLMA = SharedSecrets.getJavaLangModuleAccess();
-
     private void printModuleDescriptor(InputStream entryInputStream)
         throws IOException
     {
-        ModuleDescriptor md = ModuleDescriptor.read(entryInputStream);
+        ModuleInfo.Attributes attrs = ModuleInfo.read(entryInputStream, null);
+        ModuleDescriptor md = attrs.descriptor();
+        ModuleHashes hashes = attrs.recordedHashes();
+
         StringBuilder sb = new StringBuilder();
         sb.append("\n");
         if (md.isOpen())
@@ -2043,13 +2045,22 @@ class Main {
 
         md.osVersion().ifPresent(v -> sb.append("\n  operating-system-version " + v));
 
-        JLMA.hashes(md).ifPresent(hashes ->
-                hashes.names().stream().sorted().forEach(
+        if (hashes != null) {
+            hashes.names().stream().sorted().forEach(
                     mod -> sb.append("\n  hashes ").append(mod).append(" ")
                              .append(hashes.algorithm()).append(" ")
-                             .append(hashes.hashFor(mod))));
+                             .append(toHex(hashes.hashFor(mod))));
+        }
 
         output(sb.toString());
+    }
+
+    private static String toHex(byte[] ba) {
+        StringBuilder sb = new StringBuilder(ba.length);
+        for (byte b: ba) {
+            sb.append(String.format("%02x", b & 0xff));
+        }
+        return sb.toString();
     }
 
     private static String toBinaryName(String classname) {
@@ -2212,6 +2223,10 @@ class Main {
             }
         }
 
+        if (moduleResolution.value() != 0) {
+            extender.moduleResolution(moduleResolution);
+        }
+
         extender.write(baos);
         return baos.toByteArray();
     }
@@ -2228,13 +2243,12 @@ class Main {
             // Create a module finder that finds the modular JAR
             // being created/updated
             URI uri = Paths.get(fname).toUri();
-            ModuleReference mref = new ModuleReference(descriptor, uri,
-                new Supplier<>() {
-                    @Override
-                    public ModuleReader get() {
-                        throw new UnsupportedOperationException("should not reach here");
-                    }
-                });
+            ModuleReference mref = new ModuleReference(descriptor, uri) {
+                @Override
+                public ModuleReader open() {
+                    throw new UnsupportedOperationException("should not reach here");
+                }
+            };
 
             // Compose a module finder with the module path and
             // the modular JAR being created or updated

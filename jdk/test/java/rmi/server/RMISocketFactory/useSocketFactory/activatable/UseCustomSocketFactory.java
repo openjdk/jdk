@@ -43,7 +43,7 @@ import java.rmi.*;
 import java.rmi.registry.*;
 
 public class UseCustomSocketFactory {
-    static final int REGISTRY_PORT = TestLibrary.getUnusedRandomPort();
+    static int registryPort = -1;
 
     static String[] protocol = new String[] { "", "compress", "xor" };
 
@@ -54,7 +54,8 @@ public class UseCustomSocketFactory {
         TestLibrary.suggestSecurityManager("java.rmi.RMISecurityManager");
 
         try {
-            LocateRegistry.createRegistry(REGISTRY_PORT);
+            Registry reg = LocateRegistry.createRegistry(0);
+            registryPort = TestLibrary.getRegistryPort(reg);
         } catch (RemoteException e) {
             TestLibrary.bomb("creating registry", e);
         }
@@ -90,7 +91,7 @@ public class UseCustomSocketFactory {
                                          "-Djava.security.policy=" +
                                          TestParams.defaultPolicy +
                                          " -Drmi.registry.port=" +
-                                         REGISTRY_PORT +
+                                         registryPort +
                                          " -Djava.rmi.activation.port=" +
                                          rmidPort,
                                          protocol[i]);
@@ -108,7 +109,7 @@ public class UseCustomSocketFactory {
                 long stopTime = System.currentTimeMillis() + 24000;
                 do {
                     try {
-                        echo[i] = (Echo) Naming.lookup("//:" + REGISTRY_PORT +
+                        echo[i] = (Echo) Naming.lookup("//:" + registryPort +
                                                        "/EchoServer");
                         break;
                     } catch (NotBoundException e) {
@@ -138,7 +139,7 @@ public class UseCustomSocketFactory {
             } finally {
                 serverVM.destroy();
                 try {
-                    Naming.unbind("//:" + REGISTRY_PORT + "/EchoServer");
+                    Naming.unbind("//:" + registryPort + "/EchoServer");
                 } catch (RemoteException | NotBoundException | MalformedURLException e) {
                     TestLibrary.bomb("unbinding EchoServer", e);
                 }

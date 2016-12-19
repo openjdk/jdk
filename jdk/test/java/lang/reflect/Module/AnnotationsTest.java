@@ -119,7 +119,6 @@ public class AnnotationsTest {
             List<Attribute> attrs = new ArrayList<>();
             attrs.add(new ClassFileAttributes.ModuleAttribute());
             attrs.add(new ClassFileAttributes.ModulePackagesAttribute());
-            attrs.add(new ClassFileAttributes.ModuleVersionAttribute());
             attrs.add(new ClassFileAttributes.ModuleTargetAttribute());
             cr.accept(cv, attrs.toArray(new Attribute[0]), 0);
 
