@@ -839,19 +839,20 @@ bool os::is_allocatable(size_t bytes) {
 ////////////////////////////////////////////////////////////////////////////////
 // thread stack
 
-#ifdef AMD64
-size_t os::Posix::_compiler_thread_min_stack_allowed = 64 * K;
-size_t os::Posix::_java_thread_min_stack_allowed = 64 * K;
+// Minimum usable stack sizes required to get to user code. Space for
+// HotSpot guard pages is added later.
+size_t os::Posix::_compiler_thread_min_stack_allowed = 48 * K;
+size_t os::Posix::_java_thread_min_stack_allowed = 48 * K;
+#ifdef _LP64
 size_t os::Posix::_vm_internal_thread_min_stack_allowed = 64 * K;
 #else
-size_t os::Posix::_compiler_thread_min_stack_allowed = (48 DEBUG_ONLY(+ 4)) * K;
-size_t os::Posix::_java_thread_min_stack_allowed = (48 DEBUG_ONLY(+ 4)) * K;
 size_t os::Posix::_vm_internal_thread_min_stack_allowed = (48 DEBUG_ONLY(+ 4)) * K;
+#endif // _LP64
 
+#ifndef AMD64
 #ifdef __GNUC__
 #define GET_GS() ({int gs; __asm__ volatile("movw %%gs, %w0":"=q"(gs)); gs&0xffff;})
 #endif
-
 #endif // AMD64
 
 // return default stack size for thr_type
