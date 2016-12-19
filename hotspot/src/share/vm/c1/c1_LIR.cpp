@@ -677,9 +677,7 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
 
 // LIR_Op3
     case lir_idiv:
-    case lir_irem:
-    case lir_fmad:
-    case lir_fmaf: {
+    case lir_irem: {
       assert(op->as_Op3() != NULL, "must be");
       LIR_Op3* op3= (LIR_Op3*)op;
 
@@ -697,6 +695,17 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       break;
     }
 
+    case lir_fmad:
+    case lir_fmaf: {
+      assert(op->as_Op3() != NULL, "must be");
+      LIR_Op3* op3= (LIR_Op3*)op;
+      assert(op3->_info == NULL, "no info");
+      do_input(op3->_opr1);
+      do_input(op3->_opr2);
+      do_input(op3->_opr3);
+      do_output(op3->_result);
+      break;
+    }
 
 // LIR_OpJavaCall
     case lir_static_call:
