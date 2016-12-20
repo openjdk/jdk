@@ -76,12 +76,20 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
  private:
   friend class JvmtiEnv;
   JavaThread        *_thread;
-  bool              _exception_detected;
-  bool              _exception_caught;
   bool              _hide_single_stepping;
   bool              _pending_step_for_popframe;
   bool              _pending_step_for_earlyret;
   int               _hide_level;
+
+ public:
+  enum ExceptionState {
+    ES_CLEARED,
+    ES_DETECTED,
+    ES_CAUGHT
+  };
+
+ private:
+  ExceptionState _exception_state;
 
   // Used to send class being redefined/retransformed and kind of transform
   // info to the class file load hook event handler.
@@ -161,16 +169,18 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   int count_frames();
 
   inline JavaThread *get_thread()      { return _thread;              }
-  inline bool is_exception_detected()  { return _exception_detected;  }
-  inline bool is_exception_caught()    { return _exception_caught;  }
-  inline void set_exception_detected() { _exception_detected = true;
-                                         _exception_caught = false; }
-  inline void clear_exception_detected() {
-    _exception_detected = false;
-    assert(_exception_caught == false, "_exception_caught is out of phase");
-  }
-  inline void set_exception_caught()   { _exception_caught = true;
-                                         _exception_detected = false; }
+
+  inline bool is_exception_detected()  { return _exception_state == ES_DETECTED;  }
+  inline bool is_exception_caught()    { return _exception_state == ES_CAUGHT;  }
+
+  inline void set_exception_detected() { _exception_state = ES_DETECTED; }
+  inline void set_exception_caught()   { _exception_state = ES_CAUGHT; }
+
+  inline void clear_exception_state() { _exception_state = ES_CLEARED; }
+
+  // We need to save and restore exception state inside JvmtiEventMark
+  inline ExceptionState get_exception_state() { return _exception_state; }
+  inline void restore_exception_state(ExceptionState state) { _exception_state = state; }
 
   inline void clear_hide_single_stepping() {
     if (_hide_level > 0) {
