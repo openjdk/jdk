@@ -5142,7 +5142,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1481496095
+DATE_WHEN_GENERATED=1482266922
 
 ###############################################################################
 #
@@ -52829,7 +52829,7 @@ $as_echo "yes, forced" >&6; }
 $as_echo "no, forced" >&6; }
     BUILD_GTEST="false"
   elif test "x$enable_hotspot_gtest" = "x"; then
-    if test "x$GTEST_DIR_EXISTS" = "xtrue" && test "x$OPENJDK_TARGET_OS" != "xaix"; then
+    if test "x$GTEST_DIR_EXISTS" = "xtrue"; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
       BUILD_GTEST="true"
