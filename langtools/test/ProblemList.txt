@@ -61,8 +61,6 @@ tools/javac/annotations/typeAnnotations/referenceinfos/NestedTypes.java         
 tools/javac/warnings/suppress/TypeAnnotations.java                              8057683    generic-all    improve ordering of errors with type annotations
 tools/javac/modules/T8159439/NPEForModuleInfoWithNonZeroSuperClassTest.java     8160396    generic-all    current version of jtreg needs a new promotion to include lastes version of ASM
 
-tools/javac/modules/AddLimitMods.java						8171412    generic-all    tools/javac/modules/AddLimitMods.java failed with "error: module not found"
-
 ###########################################################################
 #
 # javap
