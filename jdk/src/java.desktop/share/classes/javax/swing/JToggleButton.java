@@ -34,6 +34,7 @@ import javax.accessibility.*;
 
 import java.io.ObjectOutputStream;
 import java.io.IOException;
+import java.util.Iterator;
 
 /**
  * An implementation of a two-state button.
@@ -206,6 +207,96 @@ public class JToggleButton extends AbstractButton implements Accessible {
      */
     boolean shouldUpdateSelectedStateFromAction() {
         return true;
+    }
+
+    private JToggleButton getGroupSelection(FocusEvent.Cause cause) {
+        switch (cause) {
+          case ACTIVATION:
+          case TRAVERSAL:
+          case TRAVERSAL_UP:
+          case TRAVERSAL_DOWN:
+          case TRAVERSAL_FORWARD:
+          case TRAVERSAL_BACKWARD:
+            ButtonModel model = getModel();
+            JToggleButton selection = this;
+            if (model instanceof DefaultButtonModel) {
+                ButtonGroup group = ((DefaultButtonModel) model).getGroup();
+                if (group != null && group.getSelection() != null
+                                                  && !group.isSelected(model)) {
+                    Iterator<AbstractButton> iterator =
+                                               group.getElements().asIterator();
+                    while (iterator.hasNext()) {
+                        AbstractButton member = iterator.next();
+                        if (group.isSelected(member.getModel())) {
+                            if (member instanceof JToggleButton &&
+                                member.isVisible() && member.isDisplayable() &&
+                                member.isEnabled() && member.isFocusable()) {
+                                selection = (JToggleButton) member;
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+            return selection;
+          default:
+            return this;
+        }
+    }
+
+    /**
+     * If this toggle button is a member of the {@link ButtonGroup} which has
+     * another toggle button which is selected and can be the focus owner,
+     * and the focus cause argument denotes window activation or focus
+     * traversal action of any direction the result of the method execution
+     * is the same as calling
+     * {@link Component#requestFocus(FocusEvent.Cause)} on the toggle button
+     * selected in the group.
+     * In all other cases the result of the method is the same as calling
+     * {@link Component#requestFocus(FocusEvent.Cause)} on this toggle button.
+     *
+     * @param  cause the cause why the focus is requested
+     * @see ButtonGroup
+     * @see Component#requestFocus(FocusEvent.Cause)
+     * @see FocusEvent.Cause
+     *
+     * @since 9
+     */
+    @Override
+    public void requestFocus(FocusEvent.Cause cause) {
+        getGroupSelection(cause).requestFocusUnconditionally(cause);
+    }
+
+    private void requestFocusUnconditionally(FocusEvent.Cause cause) {
+        super.requestFocus(cause);
+    }
+
+    /**
+     * If this toggle button is a member of the {@link ButtonGroup} which has
+     * another toggle button which is selected and can be the focus owner,
+     * and the focus cause argument denotes window activation or focus
+     * traversal action of any direction the result of the method execution
+     * is the same as calling
+     * {@link Component#requestFocusInWindow(FocusEvent.Cause)} on the toggle
+     * button selected in the group.
+     * In all other cases the result of the method is the same as calling
+     * {@link Component#requestFocusInWindow(FocusEvent.Cause)} on this toggle
+     * button.
+     *
+     * @param  cause the cause why the focus is requested
+     * @see ButtonGroup
+     * @see Component#requestFocusInWindow(FocusEvent.Cause)
+     * @see FocusEvent.Cause
+     *
+     * @since 9
+     */
+    public boolean requestFocusInWindow(FocusEvent.Cause cause) {
+        return getGroupSelection(cause)
+                                    .requestFocusInWindowUnconditionally(cause);
+    }
+
+    private boolean requestFocusInWindowUnconditionally(FocusEvent.Cause cause) {
+        return super.requestFocusInWindow(cause);
     }
 
     // *********************************************************************
