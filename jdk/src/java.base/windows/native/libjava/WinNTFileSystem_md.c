@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -886,4 +886,43 @@ Java_java_io_WinNTFileSystem_getSpace0(JNIEnv *env, jobject this,
 
     free(pathbuf);
     return rv;
+}
+
+// pathname is expected to be either null or to contain the root
+// of the path terminated by a backslash
+JNIEXPORT jint JNICALL
+Java_java_io_WinNTFileSystem_getNameMax0(JNIEnv *env, jobject this,
+                                         jstring pathname)
+{
+    BOOL res = 0;
+    DWORD maxComponentLength;
+
+    if (pathname == NULL) {
+            res = GetVolumeInformationW(NULL,
+                                        NULL,
+                                        0,
+                                        NULL,
+                                        &maxComponentLength,
+                                        NULL,
+                                        NULL,
+                                        0);
+    } else {
+        WITH_UNICODE_STRING(env, pathname, path) {
+            res = GetVolumeInformationW(path,
+                                        NULL,
+                                        0,
+                                        NULL,
+                                        &maxComponentLength,
+                                        NULL,
+                                        NULL,
+                                        0);
+        } END_UNICODE_STRING(env, path);
+    }
+
+    if (res == 0) {
+        JNU_ThrowIOExceptionWithLastError(env,
+            "Could not get maximum component length");
+    }
+
+    return (jint)maxComponentLength;
 }
