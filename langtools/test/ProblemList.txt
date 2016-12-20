@@ -32,8 +32,6 @@ jdk/javadoc/tool/enum/enumType/Main.java                                        
 jdk/javadoc/tool/varArgs/Main.java                                              8152313    generic-all    convert to doclet test framework
 jdk/javadoc/doclet/testIOException/TestIOException.java                         8164597    windows-all
 
-jdk/javadoc/doclet/testModules/TestModules.java                                 8171413    generic-all    jdk/javadoc/doclet/testModules/TestModules.java failed due to some subtests failed
-
 ###########################################################################
 #
 # jshell
