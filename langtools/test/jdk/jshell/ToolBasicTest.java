@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8143037 8142447 8144095 8140265 8144906 8146138 8147887 8147886 8148316 8148317 8143955 8157953 8080347 8154714 8166649 8167643
+ * @bug 8143037 8142447 8144095 8140265 8144906 8146138 8147887 8147886 8148316 8148317 8143955 8157953 8080347 8154714 8166649 8167643 8170162
  * @summary Tests for Basic tests for REPL tool
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -49,8 +49,6 @@ import java.util.Scanner;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.prefs.BackingStoreException;
-import java.util.prefs.Preferences;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -305,22 +303,18 @@ public class ToolBasicTest extends ReplToolTesting {
     }
 
     public void testStartupFileOption() {
-        try {
-            Compiler compiler = new Compiler();
-            Path startup = compiler.getPath("StartupFileOption/startup.txt");
-            compiler.writeToFile(startup, "class A { public String toString() { return \"A\"; } }");
-            test(new String[]{"--startup", startup.toString()},
-                    (a) -> evaluateExpression(a, "A", "new A()", "A")
-            );
-            test(new String[]{"--no-startup"},
-                    (a) -> assertCommandCheckOutput(a, "printf(\"\")", assertStartsWith("|  Error:\n|  cannot find symbol"))
-            );
-            test(
-                    (a) -> assertCommand(a, "printf(\"A\")", "", "", null, "A", "")
-            );
-        } finally {
-            removeStartup();
-        }
+        Compiler compiler = new Compiler();
+        Path startup = compiler.getPath("StartupFileOption/startup.txt");
+        compiler.writeToFile(startup, "class A { public String toString() { return \"A\"; } }");
+        test(new String[]{"--startup", startup.toString()},
+                (a) -> evaluateExpression(a, "A", "new A()", "A")
+        );
+        test(new String[]{"--no-startup"},
+                (a) -> assertCommandCheckOutput(a, "printf(\"\")", assertStartsWith("|  Error:\n|  cannot find symbol"))
+        );
+        test(
+                (a) -> assertCommand(a, "printf(\"A\")", "", "", null, "A", "")
+        );
     }
 
     public void testLoadingFromArgs() {
@@ -436,45 +430,34 @@ public class ToolBasicTest extends ReplToolTesting {
         assertEquals(Files.readAllLines(path), output);
     }
 
-    public void testStartRetain() throws BackingStoreException {
-        try {
-            Compiler compiler = new Compiler();
-            Path startUpFile = compiler.getPath("startUp.txt");
-            test(
-                    (a) -> assertVariable(a, "int", "a"),
-                    (a) -> assertVariable(a, "double", "b", "10", "10.0"),
-                    (a) -> assertMethod(a, "void f() {}", "()V", "f"),
-                    (a) -> assertImport(a, "import java.util.stream.*;", "", "java.util.stream.*"),
-                    (a) -> assertCommand(a, "/save " + startUpFile.toString(), null),
-                    (a) -> assertCommand(a, "/set start -retain " + startUpFile.toString(), null)
-            );
-            Path unknown = compiler.getPath("UNKNOWN");
-            test(
-                    (a) -> assertCommandOutputStartsWith(a, "/set start -retain " + unknown.toString(),
-                            "|  File '" + unknown + "' for '/set start' is not found.")
-            );
-            test(false, new String[0],
-                    (a) -> {
-                        loadVariable(a, "int", "a");
-                        loadVariable(a, "double", "b", "10.0", "10.0");
-                        loadMethod(a, "void f() {}", "()void", "f");
-                        loadImport(a, "import java.util.stream.*;", "", "java.util.stream.*");
-                        assertCommandCheckOutput(a, "/types", assertClasses());
-                    },
-                    (a) -> assertCommandCheckOutput(a, "/vars", assertVariables()),
-                    (a) -> assertCommandCheckOutput(a, "/methods", assertMethods()),
-                    (a) -> assertCommandCheckOutput(a, "/imports", assertImports())
-            );
-        } finally {
-            removeStartup();
-        }
-    }
-
-    private void removeStartup() {
-        Preferences preferences = Preferences.userRoot().node("tool/JShell");
-        if (preferences != null) {
-            preferences.remove("STARTUP");
-        }
+    public void testStartRetain() {
+        Compiler compiler = new Compiler();
+        Path startUpFile = compiler.getPath("startUp.txt");
+        test(
+                (a) -> assertVariable(a, "int", "a"),
+                (a) -> assertVariable(a, "double", "b", "10", "10.0"),
+                (a) -> assertMethod(a, "void f() {}", "()V", "f"),
+                (a) -> assertImport(a, "import java.util.stream.*;", "", "java.util.stream.*"),
+                (a) -> assertCommand(a, "/save " + startUpFile.toString(), null),
+                (a) -> assertCommand(a, "/set start -retain " + startUpFile.toString(), null)
+        );
+        Path unknown = compiler.getPath("UNKNOWN");
+        test(
+                (a) -> assertCommandOutputStartsWith(a, "/set start -retain " + unknown.toString(),
+                        "|  File '" + unknown + "' for '/set start' is not found.")
+        );
+        test(false, new String[0],
+                (a) -> {
+                    loadVariable(a, "int", "a");
+                    loadVariable(a, "double", "b", "10.0", "10.0");
+                    loadMethod(a, "void f() {}", "()void", "f");
+                    loadImport(a, "import java.util.stream.*;", "", "java.util.stream.*");
+                    assertCommandCheckOutput(a, "/types", assertClasses());
+                },
+                (a) -> assertCommandCheckOutput(a, "/vars", assertVariables()),
+                (a) -> assertCommandCheckOutput(a, "/methods", assertMethods()),
+                (a) -> assertCommandCheckOutput(a, "/imports", assertImports())
+        );
     }
 
     public void testStartSave() throws IOException {
