@@ -83,9 +83,6 @@ UPGRADEABLE_MODULES += \
 NON_UPGRADEABLE_MODULES +=
 
 AGGREGATOR_MODULES += \
-    java.compact1 \
-    java.compact2 \
-    java.compact3 \
     java.se \
     java.se.ee \
     #
@@ -107,7 +104,7 @@ PLATFORM_MODULES += \
     jdk.accessibility \
     jdk.charsets \
     jdk.crypto.ec \
-    jdk.crypto.pkcs11 \
+    jdk.crypto.token \
     jdk.desktop \
     jdk.dynalink \
     jdk.jsobject \
@@ -122,7 +119,7 @@ PLATFORM_MODULES += \
 
 JRE_TOOL_MODULES += \
     jdk.jdwp.agent \
-    jdk.pack200 \
+    jdk.pack \
     jdk.scripting.nashorn.shell \
     #
 
@@ -297,6 +294,21 @@ FindAllUpgradeableModules = \
           ) \
         )) \
     )
+
+################################################################################
+
+LEGAL_SUBDIRS += $(OPENJDK_TARGET_OS)/legal
+ifneq ($(OPENJDK_TARGET_OS), $(OPENJDK_TARGET_OS_TYPE))
+  LEGAL_SUBDIRS += $(OPENJDK_TARGET_OS_TYPE)/legal
+endif
+LEGAL_SUBDIRS += share/legal
+
+# Find all legal dirs for a particular module
+# $1 - Module to find legal dirs for
+FindModuleLegalDirs = \
+    $(strip $(wildcard \
+        $(addsuffix /$(strip $1), $(IMPORT_MODULES_LEGAL)) \
+        $(foreach sub, $(LEGAL_SUBDIRS), $(addsuffix /$(strip $1)/$(sub), $(TOP_SRC_DIRS)))))
 
 ################################################################################
 
