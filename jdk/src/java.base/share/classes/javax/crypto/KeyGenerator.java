@@ -154,7 +154,7 @@ public class KeyGenerator {
 
         if (!skipDebug && pdebug != null) {
             pdebug.println("KeyGenerator." + algorithm + " algorithm from: " +
-                this.provider.getName());
+                getProviderName());
         }
     }
 
@@ -172,8 +172,12 @@ public class KeyGenerator {
 
         if (!skipDebug && pdebug != null) {
             pdebug.println("KeyGenerator." + algorithm + " algorithm from: " +
-                this.provider.getName());
+                getProviderName());
         }
+    }
+
+    private String getProviderName() {
+        return (provider == null) ? "(no provider)" : provider.getName();
     }
 
     /**

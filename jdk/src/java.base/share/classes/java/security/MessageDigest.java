@@ -430,13 +430,17 @@ public abstract class MessageDigest extends MessageDigestSpi {
         return digest();
     }
 
+    private String getProviderName() {
+        return (provider == null) ? "(no provider)" : provider.getName();
+    }
+
     /**
      * Returns a string representation of this message digest object.
      */
     public String toString() {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PrintStream p = new PrintStream(baos);
-        p.print(algorithm+" Message Digest from "+provider.getName()+", ");
+        p.print(algorithm+" Message Digest from "+getProviderName()+", ");
         switch (state) {
         case INITIAL:
             p.print("<initialized>");

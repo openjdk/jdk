@@ -25,7 +25,7 @@
  * @test
  * @bug 8165751
  * @summary Verify that that a subclass of Signature that does not contain a
- *     provider can be used verify.
+ *     provider can be used to verify.
  * @run main/othervm -Djava.security.debug=provider NoProvider
  */
 
