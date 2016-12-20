@@ -136,24 +136,11 @@ public class JShellTool implements MessageHandler {
     final InputStream userin;
     final PrintStream userout;
     final PrintStream usererr;
-    final Preferences prefs;
+    final PersistentStorage prefs;
     final Map<String, String> envvars;
     final Locale locale;
 
     final Feedback feedback = new Feedback();
-
-    /**
-     * Simple constructor for the tool used by main.
-     * @param in command line input
-     * @param out command line output, feedback including errors, user System.out
-     * @param err start-up errors and debugging info, user System.err
-     */
-    public JShellTool(InputStream in, PrintStream out, PrintStream err) {
-        this(in, out, err, out, null, out, err,
-                Preferences.userRoot().node("tool/JShell"),
-                System.getenv(),
-                Locale.getDefault());
-    }
 
     /**
      * The complete constructor for the tool (used by test harnesses).
@@ -164,14 +151,14 @@ public class JShellTool implements MessageHandler {
      * @param userin code execution input, or null to use IOContext
      * @param userout code execution output  -- System.out.printf("hi")
      * @param usererr code execution error stream  -- System.err.printf("Oops")
-     * @param prefs preferences to use
+     * @param prefs persistence implementation to use
      * @param envvars environment variable mapping to use
      * @param locale locale to use
      */
-    public JShellTool(InputStream cmdin, PrintStream cmdout, PrintStream cmderr,
+    JShellTool(InputStream cmdin, PrintStream cmdout, PrintStream cmderr,
             PrintStream console,
             InputStream userin, PrintStream userout, PrintStream usererr,
-            Preferences prefs, Map<String, String> envvars, Locale locale) {
+            PersistentStorage prefs, Map<String, String> envvars, Locale locale) {
         this.cmdin = cmdin;
         this.cmdout = cmdout;
         this.cmderr = cmderr;
@@ -478,16 +465,6 @@ public class JShellTool implements MessageHandler {
         }
     }
 
-    /**
-     * Normal start entry point
-     * @param args
-     * @throws Exception
-     */
-    public static void main(String[] args) throws Exception {
-        new JShellTool(System.in, System.out, System.err)
-                .start(args);
-    }
-
     public void start(String[] args) throws Exception {
         List<String> loadList = processCommandArgs(args);
         if (loadList == null) {
@@ -502,7 +479,7 @@ public class JShellTool implements MessageHandler {
     private void start(IOContext in, List<String> loadList) {
         // If startup hasn't been set by command line, set from retained/default
         if (startup == null) {
-            startup = prefs.get(STARTUP_KEY, null);
+            startup = prefs.get(STARTUP_KEY);
             if (startup == null) {
                 startup = DEFAULT_STARTUP;
             }
@@ -513,7 +490,7 @@ public class JShellTool implements MessageHandler {
         resetState(); // Initialize
 
         // Read replay history from last jshell session into previous history
-        String prevReplay = prefs.get(REPLAY_RESTORE_KEY, null);
+        String prevReplay = prefs.get(REPLAY_RESTORE_KEY);
         if (prevReplay != null) {
             replayableHistoryPrevious = Arrays.asList(prevReplay.split(RECORD_SEPARATOR));
         }
@@ -788,7 +765,7 @@ public class JShellTool implements MessageHandler {
         // These predefined modes are read-only
         feedback.markModesReadOnly();
         // Restore user defined modes retained on previous run with /set mode -retain
-        String encoded = prefs.get(MODE_KEY, null);
+        String encoded = prefs.get(MODE_KEY);
         if (encoded != null && !encoded.isEmpty()) {
             if (!feedback.restoreEncodedModes(initmh, encoded)) {
                 // Catastrophic corruption -- remove the retained modes
@@ -802,7 +779,7 @@ public class JShellTool implements MessageHandler {
             }
             commandLineFeedbackMode = null;
         } else {
-            String fb = prefs.get(FEEDBACK_KEY, null);
+            String fb = prefs.get(FEEDBACK_KEY);
             if (fb != null) {
                 // Restore the feedback mode to use that was retained
                 // on a previous run with /set feedback -retain
@@ -1485,9 +1462,9 @@ public class JShellTool implements MessageHandler {
         }
 
         // returns null if not stored in preferences
-        static EditorSetting fromPrefs(Preferences prefs) {
+        static EditorSetting fromPrefs(PersistentStorage prefs) {
             // Read retained editor setting (if any)
-            String editorString = prefs.get(EDITOR_KEY, "");
+            String editorString = prefs.get(EDITOR_KEY);
             if (editorString == null || editorString.isEmpty()) {
                 return null;
             } else if (editorString.equals(BUILT_IN_REP)) {
@@ -1504,11 +1481,11 @@ public class JShellTool implements MessageHandler {
             }
         }
 
-        static void removePrefs(Preferences prefs) {
+        static void removePrefs(PersistentStorage prefs) {
             prefs.remove(EDITOR_KEY);
         }
 
-        void toPrefs(Preferences prefs) {
+        void toPrefs(PersistentStorage prefs) {
             prefs.put(EDITOR_KEY, (this == BUILT_IN_EDITOR)
                     ? BUILT_IN_REP
                     : (wait ? WAIT_PREFIX : NORMAL_PREFIX) + String.join(RECORD_SEPARATOR, cmd));
@@ -1676,7 +1653,7 @@ public class JShellTool implements MessageHandler {
     }
 
     void showSetStart() {
-        String retained = prefs.get(STARTUP_KEY, null);
+        String retained = prefs.get(STARTUP_KEY);
         if (retained != null) {
             showSetStart(true, retained);
         }
@@ -1774,6 +1751,7 @@ public class JShellTool implements MessageHandler {
                     replayableHistory.subList(first + 1, replayableHistory.size()));
             prefs.put(REPLAY_RESTORE_KEY, hist);
         }
+        prefs.flush();
         fluffmsg("jshell.msg.goodbye");
         return true;
     }
