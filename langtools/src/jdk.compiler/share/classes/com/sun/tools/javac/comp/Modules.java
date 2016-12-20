@@ -62,7 +62,6 @@ import com.sun.tools.javac.code.Directive.RequiresDirective;
 import com.sun.tools.javac.code.Directive.RequiresFlag;
 import com.sun.tools.javac.code.Directive.UsesDirective;
 import com.sun.tools.javac.code.Flags;
-import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.ModuleFinder;
 import com.sun.tools.javac.code.Source;
@@ -112,6 +111,7 @@ import static com.sun.tools.javac.code.Flags.ABSTRACT;
 import static com.sun.tools.javac.code.Flags.ENUM;
 import static com.sun.tools.javac.code.Flags.PUBLIC;
 import static com.sun.tools.javac.code.Flags.UNATTRIBUTED;
+import static com.sun.tools.javac.code.Kinds.Kind.ERR;
 import static com.sun.tools.javac.code.Kinds.Kind.MDL;
 import static com.sun.tools.javac.code.Kinds.Kind.MTH;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
@@ -508,7 +508,7 @@ public class Modules extends JCTree.Visitor {
         public void complete(Symbol sym) throws CompletionFailure {
             ModuleSymbol msym = moduleFinder.findModule((ModuleSymbol) sym);
 
-            if (msym.kind == Kinds.Kind.ERR) {
+            if (msym.kind == ERR) {
                 log.error(Errors.ModuleNotFound(msym));
                 //make sure the module is initialized:
                 msym.directives = List.nil();
@@ -1073,7 +1073,8 @@ public class Modules extends JCTree.Visitor {
             }
         }
 
-        Predicate<ModuleSymbol> observablePred = sym -> observable == null || observable.contains(sym);
+        Predicate<ModuleSymbol> observablePred = sym ->
+             (observable == null) ? (moduleFinder.findModule(sym).kind != ERR) : observable.contains(sym);
         Predicate<ModuleSymbol> systemModulePred = sym -> (sym.flags() & Flags.SYSTEM_MODULE) != 0;
         Set<ModuleSymbol> enabledRoot = new LinkedHashSet<>();
 

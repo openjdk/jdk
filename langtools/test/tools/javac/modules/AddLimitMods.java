@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @bug 8142968 8154956 8170987 8171412
  * @summary Test --add-modules and --limit-modules; also test the "enabled" modules.
  * @library /tools/lib
  * @modules
