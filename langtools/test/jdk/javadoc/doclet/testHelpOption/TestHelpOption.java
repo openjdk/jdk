@@ -171,7 +171,7 @@ public class TestHelpOption extends JavadocTester {
                 "-notimestamp ",
                 "-sourcetab ");
 
-        checkOutput("Sample.html", !withOption,
+        checkFileAndOutput("Sample.html", !withOption,
                 "<li><a href=\"help-doc.html\">Help</a></li>");
     }
 }

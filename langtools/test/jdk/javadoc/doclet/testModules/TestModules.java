@@ -550,11 +550,11 @@ public class TestModules extends JavadocTester {
     }
 
     void checkModuleFilesAndLinks(boolean found) {
-        checkOutput("testpkgmdlA/package-summary.html", found,
+        checkFileAndOutput("testpkgmdlA/package-summary.html", found,
                 "<li><a href=\"../moduleA-summary.html\">Module</a></li>",
                 "<div class=\"subTitle\"><span class=\"moduleLabelInClass\">Module</span>&nbsp;"
                 + "<a href=\"../moduleA-summary.html\">moduleA</a></div>");
-        checkOutput("testpkgmdlA/TestClassInModuleA.html", found,
+        checkFileAndOutput("testpkgmdlA/TestClassInModuleA.html", found,
                 "<li><a href=\"../moduleA-summary.html\">Module</a></li>",
                 "<div class=\"subTitle\"><span class=\"moduleLabelInClass\">Module</span>&nbsp;"
                 + "<a href=\"../moduleA-summary.html\">moduleA</a></div>");
@@ -618,14 +618,9 @@ public class TestModules extends JavadocTester {
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Module</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Packages</th>\n"
-                + "</tr>\n"
-                + "<tbody>\n"
-                + "<tr class=\"altColor\">\n"
-                + "<th class=\"colFirst\" scope=\"row\"><a href=\"moduleB-summary.html\">moduleB</a></th>\n"
-                + "<td class=\"colLast\"><a href=\"testpkgmdlB/package-summary.html\">testpkgmdlB</a></td>\n"
-                + "</tr>\n"
-                + "</tbody>\n"
-                + "</table>");
+                + "</tr>\n",
+                "<th class=\"colFirst\" scope=\"row\"><a href=\"moduleB-summary.html\">moduleB</a></th>\n"
+                + "<td class=\"colLast\"><a href=\"testpkgmdlB/package-summary.html\">testpkgmdlB</a></td>\n");
         checkOutput("moduleB-summary.html", true,
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"testpkgmdlB/TestClassInModuleB.html\" title=\"class in testpkgmdlB\">TestClassInModuleB</a></th>\n"
                 + "<td class=\"colLast\">With a test description for uses.&nbsp;</td>");
@@ -663,14 +658,9 @@ public class TestModules extends JavadocTester {
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Module</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Packages</th>\n"
-                + "</tr>\n"
-                + "<tbody>\n"
-                + "<tr class=\"altColor\">\n"
-                + "<th class=\"colFirst\" scope=\"row\"><a href=\"moduleB-summary.html\">moduleB</a></th>\n"
-                + "<td class=\"colLast\"><a href=\"testpkgmdlB/package-summary.html\">testpkgmdlB</a></td>\n"
-                + "</tr>\n"
-                + "</tbody>\n"
-                + "</table>");
+                + "</tr>\n",
+                "<th class=\"colFirst\" scope=\"row\"><a href=\"moduleB-summary.html\">moduleB</a></th>\n"
+                + "<td class=\"colLast\"><a href=\"testpkgmdlB/package-summary.html\">testpkgmdlB</a></td>\n");
     }
 
     void checkModuleModeApi(boolean found) {
