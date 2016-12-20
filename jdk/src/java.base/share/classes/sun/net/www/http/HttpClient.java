@@ -106,6 +106,11 @@ public class HttpClient extends NetworkClient {
        if false, then NTLM connections will not be cached.
        The default value is 'true'. */
     private static final boolean cacheNTLMProp;
+    /* Value of the system property jdk.spnego.cache;
+       if false, then connections authentified using the Negotiate/Kerberos
+       scheme will not be cached.
+       The default value is 'true'. */
+    private static final boolean cacheSPNEGOProp;
 
     volatile boolean keepingAlive;    /* this is a keep-alive connection */
     volatile boolean disableKeepAlive;/* keep-alive has been disabled for this
@@ -161,6 +166,7 @@ public class HttpClient extends NetworkClient {
         String keepAlive = props.getProperty("http.keepAlive");
         String retryPost = props.getProperty("sun.net.http.retryPost");
         String cacheNTLM = props.getProperty("jdk.ntlm.cache");
+        String cacheSPNEGO = props.getProperty("jdk.spnego.cache");
 
         if (keepAlive != null) {
             keepAliveProp = Boolean.parseBoolean(keepAlive);
@@ -180,6 +186,11 @@ public class HttpClient extends NetworkClient {
             cacheNTLMProp = true;
         }
 
+        if (cacheSPNEGO != null) {
+            cacheSPNEGOProp = Boolean.parseBoolean(cacheSPNEGO);
+        } else {
+            cacheSPNEGOProp = true;
+        }
     }
 
     /**
@@ -784,9 +795,16 @@ public class HttpClient extends NetworkClient {
                 // and cacheNTLMProp is false, than we can't keep this connection
                 // alive: we will switch disableKeepAlive to true.
                 boolean canKeepAlive = !disableKeepAlive;
-                if (canKeepAlive && cacheNTLMProp == false && authenticate != null) {
+                if (canKeepAlive && (cacheNTLMProp == false || cacheSPNEGOProp == false)
+                        && authenticate != null) {
                     authenticate = authenticate.toLowerCase(Locale.US);
-                    canKeepAlive = !authenticate.startsWith("ntlm ");
+                    if (cacheNTLMProp == false) {
+                        canKeepAlive &= !authenticate.startsWith("ntlm ");
+                    }
+                    if (cacheSPNEGOProp == false) {
+                        canKeepAlive &= !authenticate.startsWith("negotiate ");
+                        canKeepAlive &= !authenticate.startsWith("kerberos ");
+                    }
                 }
                 disableKeepAlive |= !canKeepAlive;
 
