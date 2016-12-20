@@ -74,7 +74,7 @@ TEST(LinkedList, simple) {
   ASSERT_EQ(six.value(), i->value()) << "Should be 6";
 
   i = ll.find(three);
-  ASSERT_EQ(NULL, i) << "Not in the list";
+  ASSERT_TRUE(i == NULL) << "Not in the list";
 
   LinkedListNode<Integer>* node = ll.find_node(six);
   ASSERT_TRUE(node != NULL) << "6 is in the list";
