@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.types.*;
 
-public class ClassLoaderData extends VMObject {
+public class ClassLoaderDataGraph {
   static {
     VM.registerVMInitializedObserver(new Observer() {
         public void update(Observable o, Object data) {
@@ -41,42 +41,32 @@ public class ClassLoaderData extends VMObject {
   }
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-    Type type      = db.lookupType("ClassLoaderData");
-    classLoaderField = type.getOopField("_class_loader");
-    nextField = type.getAddressField("_next");
-    klassesField = type.getAddressField("_klasses");
-    isAnonymousField = new CIntField(type.getCIntegerField("_is_anonymous"), 0);
+    Type type = db.lookupType("ClassLoaderDataGraph");
+
+    headField = type.getAddressField("_head");
   }
 
-  private static sun.jvm.hotspot.types.OopField classLoaderField;
-  private static AddressField nextField;
-  private static AddressField klassesField;
-  private static CIntField isAnonymousField;
+  private static AddressField headField;
 
-  public ClassLoaderData(Address addr) {
-    super(addr);
+  public ClassLoaderData getClassLoaderGraphHead() {
+    return ClassLoaderData.instantiateWrapperFor(headField.getValue());
   }
 
-  public static ClassLoaderData instantiateWrapperFor(Address addr) {
-    if (addr == null) {
-      return null;
+  public static interface KlassVisitor {
+    public void visit(Klass k);
+  }
+
+  /** Iterate over all anonymous class loaders and the klasses in those */
+  public void allAnonymousKlassesDo(final KlassVisitor v) {
+    for (ClassLoaderData cl = getClassLoaderGraphHead();
+         cl != null;
+         cl = cl.next()) {
+      if (cl.getIsAnonymous() == true) {
+        for (Klass k = cl.getKlasses(); k != null; k = k.getNextLinkKlass()) {
+          v.visit(k);
+        }
+      }
     }
-    return new ClassLoaderData(addr);
   }
 
-  public Oop getClassLoader() {
-    return VM.getVM().getObjectHeap().newOop(classLoaderField.getValue(getAddress()));
-  }
-
-  public boolean getIsAnonymous() {
-    return isAnonymousField.getValue(this) != 0;
-  }
-
-  public ClassLoaderData next() {
-    return instantiateWrapperFor(nextField.getValue(getAddress()));
-  }
-
-  public Klass getKlasses() {
-    return (InstanceKlass)Metadata.instantiateWrapperFor(klassesField.getValue(getAddress()));
-  }
 }
