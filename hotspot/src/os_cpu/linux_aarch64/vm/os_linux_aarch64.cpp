@@ -606,8 +606,10 @@ void os::print_context(outputStream *st, const void *context) {
   st->print("  TRAPNO=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_TRAPNO]);
   st->cr();
 #else
-  for (int r = 0; r < 31; r++)
-    st->print_cr(  "R%d=" INTPTR_FORMAT, r, (size_t)uc->uc_mcontext.regs[r]);
+  for (int r = 0; r < 31; r++) {
+    st->print("R%-2d=", r);
+    print_location(st, uc->uc_mcontext.regs[r]);
+  }
 #endif
   st->cr();
 
