@@ -577,12 +577,13 @@ $(eval $(call SetupJavadocGeneration, jshellapi, \
     PACKAGES := \
         jdk.jshell \
         jdk.jshell.spi \
-        jdk.jshell.execution, \
+        jdk.jshell.execution \
+        jdk.jshell.tool, \
     API_ROOT := jdk, \
     DEST_DIR := jshell, \
-    OVERVIEW := $(LANGTOOLS_TOPDIR)/src/jdk.jshell/share/classes/jdk/jshell/overview.html, \
     TITLE := JShell API, \
     FIRST_COPYRIGHT_YEAR := 2015, \
+    SPLIT_INDEX := TRUE, \
 ))
 
 TARGETS += $(jshellapi)
