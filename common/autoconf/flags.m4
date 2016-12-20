@@ -23,6 +23,101 @@
 # questions.
 #
 
+################################################################################
+#
+# Setup ABI profile (for arm)
+#
+AC_DEFUN([FLAGS_SETUP_ABI_PROFILE],
+[
+  AC_ARG_WITH(abi-profile, [AS_HELP_STRING([--with-abi-profile],
+      [specify ABI profile for ARM builds (arm-vfp-sflt,arm-vfp-hflt,arm-sflt, armv5-vfp-sflt,armv6-vfp-hflt,arm64,aarch64) @<:@toolchain dependent@:>@ ])])
+
+  if test "x$with_abi_profile" != x; then
+    if test "x$OPENJDK_TARGET_CPU" != xarm && \
+        test "x$OPENJDK_TARGET_CPU" != xaarch64; then
+      AC_MSG_ERROR([--with-abi-profile only available on arm/aarch64])
+    fi
+
+    OPENJDK_TARGET_ABI_PROFILE=$with_abi_profile
+    AC_MSG_CHECKING([for ABI profle])
+    AC_MSG_RESULT([$OPENJDK_TARGET_ABI_PROFILE])
+
+    if test "x$OPENJDK_TARGET_ABI_PROFILE" = xarm-vfp-sflt; then
+      ARM_FLOAT_TYPE=vfp-sflt
+      ARM_ARCH_TYPE_FLAGS='-march=armv7-a -mthumb'
+    elif test "x$OPENJDK_TARGET_ABI_PROFILE" = xarm-vfp-hflt; then
+      ARM_FLOAT_TYPE=vfp-hflt
+      ARM_ARCH_TYPE_FLAGS='-march=armv7-a -mthumb'
+    elif test "x$OPENJDK_TARGET_ABI_PROFILE" = xarm-sflt; then
+      ARM_FLOAT_TYPE=sflt
+      ARM_ARCH_TYPE_FLAGS='-march=armv5t -marm'
+    elif test "x$OPENJDK_TARGET_ABI_PROFILE" = xarmv5-vfp-sflt; then
+      ARM_FLOAT_TYPE=vfp-sflt
+      ARM_ARCH_TYPE_FLAGS='-march=armv5t -marm'
+    elif test "x$OPENJDK_TARGET_ABI_PROFILE" = xarmv6-vfp-hflt; then
+      ARM_FLOAT_TYPE=vfp-hflt
+      ARM_ARCH_TYPE_FLAGS='-march=armv6 -marm'
+    elif test "x$OPENJDK_TARGET_ABI_PROFILE" = xarm64; then
+      # No special flags, just need to trigger setting JDK_ARCH_ABI_PROP_NAME
+      ARM_FLOAT_TYPE=
+      ARM_ARCH_TYPE_FLAGS=
+    elif test "x$OPENJDK_TARGET_ABI_PROFILE" = xaarch64; then
+      # No special flags, just need to trigger setting JDK_ARCH_ABI_PROP_NAME
+      ARM_FLOAT_TYPE=
+      ARM_ARCH_TYPE_FLAGS=
+    else
+      AC_MSG_ERROR([Invalid ABI profile: "$OPENJDK_TARGET_ABI_PROFILE"])
+    fi
+
+    if test "x$ARM_FLOAT_TYPE" = xvfp-sflt; then
+      ARM_FLOAT_TYPE_FLAGS='-mfloat-abi=softfp -mfpu=vfp -DFLOAT_ARCH=-vfp-sflt'
+    elif test "x$ARM_FLOAT_TYPE" = xvfp-hflt; then
+      ARM_FLOAT_TYPE_FLAGS='-mfloat-abi=hard -mfpu=vfp -DFLOAT_ARCH=-vfp-hflt'
+    elif test "x$ARM_FLOAT_TYPE" = xsflt; then
+      ARM_FLOAT_TYPE_FLAGS='-msoft-float -mfpu=vfp'
+    fi
+    AC_MSG_CHECKING([for $ARM_FLOAT_TYPE floating point flags])
+    AC_MSG_RESULT([$ARM_FLOAT_TYPE_FLAGS])
+
+    AC_MSG_CHECKING([for arch type flags])
+    AC_MSG_RESULT([$ARM_ARCH_TYPE_FLAGS])
+
+    # Now set JDK_ARCH_ABI_PROP_NAME. This is equivalent to the last part of the
+    # autoconf target triplet.
+    [ JDK_ARCH_ABI_PROP_NAME=`$ECHO $OPENJDK_TARGET_AUTOCONF_NAME | $SED -e 's/.*-\([^-]*\)$/\1/'` ]
+    # Sanity check that it is a known ABI.
+    if test "x$JDK_ARCH_ABI_PROP_NAME" != xgnu && \
+        test "x$JDK_ARCH_ABI_PROP_NAME" != xgnueabi  && \
+        test "x$JDK_ARCH_ABI_PROP_NAME" != xgnueabihf; then
+          AC_MSG_WARN([Unknown autoconf target triplet ABI: "$JDK_ARCH_ABI_PROP_NAME"])
+    fi
+    AC_MSG_CHECKING([for ABI property name])
+    AC_MSG_RESULT([$JDK_ARCH_ABI_PROP_NAME])
+    AC_SUBST(JDK_ARCH_ABI_PROP_NAME)
+
+    # Pass these on to the open part of configure as if they were set using
+    # --with-extra-c[xx]flags.
+    EXTRA_CFLAGS="$EXTRA_CFLAGS $ARM_ARCH_TYPE_FLAGS $ARM_FLOAT_TYPE_FLAGS"
+    EXTRA_CXXFLAGS="$EXTRA_CXXFLAGS $ARM_ARCH_TYPE_FLAGS $ARM_FLOAT_TYPE_FLAGS"
+    # Get rid of annoying "note: the mangling of 'va_list' has changed in GCC 4.4"
+    # FIXME: This should not really be set using extra_cflags.
+    if test "x$OPENJDK_TARGET_CPU" = xarm; then
+        EXTRA_CFLAGS="$EXTRA_CFLAGS -Wno-psabi"
+        EXTRA_CXXFLAGS="$EXTRA_CXXFLAGS -Wno-psabi"
+    fi
+    # Also add JDK_ARCH_ABI_PROP_NAME define, but only to CFLAGS.
+    EXTRA_CFLAGS="$EXTRA_CFLAGS -DJDK_ARCH_ABI_PROP_NAME='\"\$(JDK_ARCH_ABI_PROP_NAME)\"'"
+    # And pass the architecture flags to the linker as well
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS $ARM_ARCH_TYPE_FLAGS $ARM_FLOAT_TYPE_FLAGS"
+  fi
+
+  # When building with an abi profile, the name of that profile is appended on the
+  # bundle platform, which is used in bundle names.
+  if test "x$OPENJDK_TARGET_ABI_PROFILE" != x; then
+    OPENJDK_TARGET_BUNDLE_PLATFORM="$OPENJDK_TARGET_OS_BUNDLE-$OPENJDK_TARGET_ABI_PROFILE"
+  fi
+])
+
 # Reset the global CFLAGS/LDFLAGS variables and initialize them with the
 # corresponding configure arguments instead
 AC_DEFUN_ONCE([FLAGS_SETUP_USER_SUPPLIED_FLAGS],
@@ -306,9 +401,17 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_LIBS],
       PICFLAG='-fPIC'
       SHARED_LIBRARY_FLAGS='-shared'
       SET_EXECUTABLE_ORIGIN='-Wl,-rpath,\$$ORIGIN[$]1'
-      SET_SHARED_LIBRARY_ORIGIN="-Wl,-z,origin $SET_EXECUTABLE_ORIGIN"
       SET_SHARED_LIBRARY_NAME='-Wl,-soname=[$]1'
       SET_SHARED_LIBRARY_MAPFILE='-Wl,-version-script=[$]1'
+
+      # arm specific settings
+      if test "x$OPENJDK_TARGET_CPU" = "xarm"; then
+        # '-Wl,-z,origin' isn't used on arm.
+        SET_SHARED_LIBRARY_ORIGIN='-Wl,-rpath,\$$$$ORIGIN[$]1'
+      else
+        SET_SHARED_LIBRARY_ORIGIN="-Wl,-z,origin $SET_EXECUTABLE_ORIGIN"
+      fi
+
     fi
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     if test "x$OPENJDK_TARGET_CPU" = xsparcv9; then
@@ -669,6 +772,7 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_OPTIMIZATION],
 AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
 [
 
+  FLAGS_SETUP_ABI_PROFILE
   FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER([TARGET])
   FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER([BUILD], [OPENJDK_BUILD_])
 
@@ -758,6 +862,7 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
       arm )
         # on arm we don't prevent gcc to omit frame pointer but do prevent strict aliasing
         $2CFLAGS_JDK="${$2CFLAGS_JDK} -fno-strict-aliasing"
+        $2COMMON_CCXXFLAGS_JDK="${$2COMMON_CCXXFLAGS_JDK} -fsigned-char"
         ;;
       ppc )
         # on ppc we don't prevent gcc to omit frame pointer but do prevent strict aliasing

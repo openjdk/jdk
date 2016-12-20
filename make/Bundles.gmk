@@ -43,16 +43,21 @@ endif
 $(eval $(call IncludeCustomExtension, , Bundles-pre.gmk))
 ################################################################################
 # BUNDLE : Name of bundle to create
-# FILES : Files in BASE_DIR to add to bundle
-# SPECIAL_INCLUDES : List of directories inside BASE_DIR to look for additional
+# FILES : Files in BASE_DIRS to add to bundle
+# SPECIAL_INCLUDES : List of directories inside BASE_DIRS to look for additional
 #     files in. These files will not get proper dependency handling. Use when
 #     files or directories may contain spaces.
-# BASE_DIR : Base directory for the root dir in the bundle.
+# BASE_DIRS : Base directories for the root dir in the bundle.
 # SUBDIR : Optional name of root dir in bundle.
 SetupBundleFile = $(NamedParamsMacroTemplate)
 define SetupBundleFileBody
 
-  $1_RELATIVE_FILES := $$(patsubst $$($1_BASE_DIR)/%, %, $$($1_FILES))
+  $$(foreach d, $$($1_BASE_DIRS), \
+    $$(eval $1_$$d_RELATIVE_FILES := $$$$(patsubst $$d/%, %, \
+        $$$$(filter $$d/%, $$$$($1_FILES)))) \
+    $$(eval $1_$$d_LIST_FILE := \
+        $(SUPPORT_OUTPUTDIR)/bundles/_$1_$$$$(subst /,_,$$$$(patsubst $(TOPDIR)/%,%,$$d)_files)) \
+  )
 
   ifneq ($$(filter %.tar.gz, $$($1_BUNDLE_NAME)), )
     $1_TYPE := tar.gz
@@ -65,55 +70,65 @@ define SetupBundleFileBody
   $$(call SetIfEmpty, $1_UNZIP_DEBUGINFO, false)
 
   $(BUNDLES_OUTPUTDIR)/$$($1_BUNDLE_NAME): $$($1_FILES)
-	$$(eval $$(call ListPathsSafely, \
-	    $1_RELATIVE_FILES, \
-	    $(SUPPORT_OUTPUTDIR)/bundles/_$1_files))
+	$$(foreach d, $$($1_BASE_DIRS), \
+	  $$(eval $$(call ListPathsSafely, \
+	      $1_$$d_RELATIVE_FILES, $$($1_$$d_LIST_FILE))) \
+	)
 	$$(call MakeDir, $$(@D))
         ifneq ($$($1_SPECIAL_INCLUDES), )
 	  $$(foreach i, $$($1_SPECIAL_INCLUDES), \
-	      ($(CD) $$($1_BASE_DIR) && $(FIND) $$i \
-	          >> $(SUPPORT_OUTPUTDIR)/bundles/_$1_files ) ; )
+	    $$(foreach d, $$d, \
+	      ($(CD) $$d && $(FIND) $$i \
+	          >> $(SUPPORT_OUTPUTDIR)/bundles/_$1_files ) ; ))
         endif
-        ifneq ($$($1_SUBDIR), )
-          ifeq ($$($1_TYPE)-$(TAR_SUPPORTS_TRANSFORM)-$$($1_UNZIP_DEBUGINFO), tar.gz-true-false)
-	    $(CD) $$($1_BASE_DIR) \
-	        && ( $(TAR) cf - $(TAR_CREATE_EXTRA_PARAM) \
-                    -$(TAR_INCLUDE_PARAM) $(SUPPORT_OUTPUTDIR)/bundles/_$1_files \
-	            --transform 's|^|$$($1_SUBDIR)/|' $(TAR_IGNORE_EXIT_VALUE) ) \
-	        | $(GZIP) > $$@
-          else
-            # If a subdir has been specified, copy all files into a temporary
-            # location with this subdir before creating the tar file
-	    $(RM) -r $(SUPPORT_OUTPUTDIR)/bundles/$1/$$($1_SUBDIR)
-	    $(MKDIR) -p $(SUPPORT_OUTPUTDIR)/bundles/$1/$$($1_SUBDIR)
-	    ( $(CD) $$($1_BASE_DIR) \
-	        && $(TAR) cf - -$(TAR_INCLUDE_PARAM) $(SUPPORT_OUTPUTDIR)/bundles/_$1_files \
-	            $(TAR_IGNORE_EXIT_VALUE) ) \
-	        | ( $(CD) $(SUPPORT_OUTPUTDIR)/bundles/$1/$$($1_SUBDIR) && $(TAR) xf - )
-            # Unzip any zipped debuginfo files
-            ifeq ($$($1_UNZIP_DEBUGINFO), true)
-	      for f in `$(FIND) $(SUPPORT_OUTPUTDIR)/bundles/$1/$$($1_SUBDIR) -name "*.diz"`; do \
-	        $(CD) $$$${f%/*} && $(UNZIP) -q $$$${f} && $(RM) $$$${f}; \
-	      done
-            endif
-            ifeq ($$($1_TYPE), tar.gz)
-	      $(CD) $(SUPPORT_OUTPUTDIR)/bundles/$1 && \
-	          ( $(TAR) cf - $(TAR_CREATE_EXTRA_PARAM) $$($1_SUBDIR) $(TAR_IGNORE_EXIT_VALUE) ) \
-	          | $(GZIP) > $$@
-            else ifeq ($$($1_TYPE), zip)
-	      $(CD) $(SUPPORT_OUTPUTDIR)/bundles/$1 && $(ZIPEXE) -qr $$@ .
-            endif
-          endif
+        ifeq ($$($1_SUBDIR)-$$($1_TYPE)-$$($1_UNZIP_DEBUGINFO), .-zip-false)
+          # If no subdir is specified, zip can be done directly from BASE_DIRS.
+	  $$(foreach d, $$($1_BASE_DIRS), \
+	    ( $(CD) $$d \
+	    && $(ZIPEXE) -qru $$@ . -i@$$($1_$$d_LIST_FILE) \
+	    || test "$$$$?" = "12" )$$(NEWLINE))
+        else ifeq ($$($1_SUBDIR)-$$($1_TYPE)-$$($1_UNZIP_DEBUGINFO)-$$(words $$($1_BASE_DIRS)), \
+            .-tar.gz-false-1)
+          # If no subdir is specified and only one BASE_DIR, tar.gz can be done
+          # directly from BASE_DIR.
+	  $(CD) $$($1_BASE_DIRS) \
+	      && ( $(TAR) cf - $(TAR_CREATE_EXTRA_PARAM) \
+	          -$(TAR_INCLUDE_PARAM) $$($1_$$($1_BASE_DIRS)_LIST_FILE) \
+	          $(TAR_IGNORE_EXIT_VALUE) ) \
+	      | $(GZIP) > $$@
+        else ifeq ($$($1_TYPE)-$(TAR_SUPPORTS_TRANSFORM)-$$($1_UNZIP_DEBUGINFO)-$$(words $$($1_BASE_DIRS)), \
+            tar.gz-true-false-1)
+          # If only one BASE_DIR, but with a SUBDIR set, tar.gz can use the
+          # transform option to create bundle directly from the BASE_DIR.
+	  $(CD) $$($1_BASE_DIRS) \
+	      && ( $(TAR) cf - $(TAR_CREATE_EXTRA_PARAM) \
+	          -$(TAR_INCLUDE_PARAM) $$($1_$$($1_BASE_DIRS)_LIST_FILE) \
+	          $$(if $$($1_SUBDIR), --transform 's|^|$$($1_SUBDIR)/|') \
+	          $(TAR_IGNORE_EXIT_VALUE) ) \
+	      | $(GZIP) > $$@
         else
+          # In all other cases, need to copy all files into a temporary location
+          # before creation bundle.
+	  $(RM) -r $(SUPPORT_OUTPUTDIR)/bundles/$1/$$($1_SUBDIR)
+	  $(MKDIR) -p $(SUPPORT_OUTPUTDIR)/bundles/$1/$$($1_SUBDIR)
+	  $$(foreach d, $$($1_BASE_DIRS), \
+	    ( $(CD) $$d \
+	    && $(TAR) cf - -$(TAR_INCLUDE_PARAM) $$($1_$$d_LIST_FILE) \
+	        $(TAR_IGNORE_EXIT_VALUE) ) \
+	    | ( $(CD) $(SUPPORT_OUTPUTDIR)/bundles/$1/$$($1_SUBDIR) && $(TAR) xf - )$$(NEWLINE) )
+          # Unzip any zipped debuginfo files
+          ifeq ($$($1_UNZIP_DEBUGINFO), true)
+	    for f in `$(FIND) $(SUPPORT_OUTPUTDIR)/bundles/$1/$$($1_SUBDIR) -name "*.diz"`; do \
+	      $(CD) $$$${f%/*} && $(UNZIP) -q $$$${f} && $(RM) $$$${f}; \
+	    done
+          endif
           ifeq ($$($1_TYPE), tar.gz)
-	    $(CD) $$($1_BASE_DIR) \
-	        && ( $(TAR) cf - $(TAR_CREATE_EXTRA_PARAM) \
-	            -$(TAR_INCLUDE_PARAM) $(SUPPORT_OUTPUTDIR)/bundles/_$1_files \
-	            $(TAR_IGNORE_EXIT_VALUE) ) \
-	        | $(GZIP) > $$@
+	    $(CD) $(SUPPORT_OUTPUTDIR)/bundles/$1 && \
+	    ( $(TAR) cf - $(TAR_CREATE_EXTRA_PARAM) \
+	        $$(if $$($1_SUBDIR), $$($1_SUBDIR), .) $(TAR_IGNORE_EXIT_VALUE) ) \
+	    | $(GZIP) > $$@
           else ifeq ($$($1_TYPE), zip)
-	    $(CD) $$($1_BASE_DIR) \
-	        && $(ZIPEXE) -qr $$@ . -i@$(SUPPORT_OUTPUTDIR)/bundles/_$1_files
+	    $(CD) $(SUPPORT_OUTPUTDIR)/bundles/$1 && $(ZIPEXE) -qr $$@ .
           endif
         endif
 
@@ -219,7 +234,7 @@ ifneq ($(filter product-bundles, $(MAKECMDGOALS)), )
       BUNDLE_NAME := $(JDK_BUNDLE_NAME), \
       FILES := $(JDK_BUNDLE_FILES), \
       SPECIAL_INCLUDES := $(JDK_SPECIAL_INCLUDES), \
-      BASE_DIR := $(JDK_IMAGE_DIR), \
+      BASE_DIRS := $(JDK_IMAGE_DIR), \
       SUBDIR := $(JDK_BUNDLE_SUBDIR), \
   ))
 
@@ -228,7 +243,7 @@ ifneq ($(filter product-bundles, $(MAKECMDGOALS)), )
   $(eval $(call SetupBundleFile, BUILD_JRE_BUNDLE, \
       BUNDLE_NAME := $(JRE_BUNDLE_NAME), \
       FILES := $(JRE_BUNDLE_FILES), \
-      BASE_DIR := $(JRE_IMAGE_DIR), \
+      BASE_DIRS := $(JRE_IMAGE_DIR), \
       SUBDIR := $(JRE_BUNDLE_SUBDIR), \
   ))
 
@@ -237,7 +252,7 @@ ifneq ($(filter product-bundles, $(MAKECMDGOALS)), )
   $(eval $(call SetupBundleFile, BUILD_JDK_SYMBOLS_BUNDLE, \
       BUNDLE_NAME := $(JDK_SYMBOLS_BUNDLE_NAME), \
       FILES := $(JDK_SYMBOLS_BUNDLE_FILES), \
-      BASE_DIR := $(JDK_IMAGE_DIR), \
+      BASE_DIRS := $(JDK_IMAGE_DIR) $(wildcard $(SYMBOLS_IMAGE_DIR)), \
       SUBDIR := $(JDK_BUNDLE_SUBDIR), \
       UNZIP_DEBUGINFO := true, \
   ))
@@ -247,7 +262,7 @@ ifneq ($(filter product-bundles, $(MAKECMDGOALS)), )
   $(eval $(call SetupBundleFile, BUILD_JRE_SYMBOLS_BUNDLE, \
       BUNDLE_NAME := $(JRE_SYMBOLS_BUNDLE_NAME), \
       FILES := $(JRE_SYMBOLS_BUNDLE_FILES), \
-      BASE_DIR := $(JRE_IMAGE_DIR), \
+      BASE_DIRS := $(JRE_IMAGE_DIR), \
       SUBDIR := $(JRE_BUNDLE_SUBDIR), \
       UNZIP_DEBUGINFO := true, \
   ))
@@ -257,7 +272,7 @@ ifneq ($(filter product-bundles, $(MAKECMDGOALS)), )
   $(eval $(call SetupBundleFile, BUILD_DEMOS_BUNDLE, \
       BUNDLE_NAME := $(DEMOS_BUNDLE_NAME), \
       FILES := $(DEMOS_BUNDLE_FILES), \
-      BASE_DIR := $(JDK_IMAGE_DIR), \
+      BASE_DIRS := $(JDK_IMAGE_DIR), \
       SUBDIR := $(JDK_BUNDLE_SUBDIR), \
   ))
 
@@ -272,7 +287,7 @@ ifneq ($(filter test-bundles, $(MAKECMDGOALS)), )
   $(eval $(call SetupBundleFile, BUILD_TEST_BUNDLE, \
       BUNDLE_NAME := $(TEST_BUNDLE_NAME), \
       FILES := $(TEST_BUNDLE_FILES), \
-      BASE_DIR := $(TEST_IMAGE_DIR), \
+      BASE_DIRS := $(TEST_IMAGE_DIR), \
   ))
 
   TEST_TARGETS += $(BUILD_TEST_BUNDLE)
@@ -286,7 +301,7 @@ ifneq ($(filter docs-bundles, $(MAKECMDGOALS)), )
   $(eval $(call SetupBundleFile, BUILD_DOCS_BUNDLE, \
       BUNDLE_NAME := $(DOCS_BUNDLE_NAME), \
       FILES := $(DOCS_BUNDLE_FILES), \
-      BASE_DIR := $(DOCS_IMAGE_DIR), \
+      BASE_DIRS := $(DOCS_IMAGE_DIR), \
       SUBDIR := docs, \
   ))
 
