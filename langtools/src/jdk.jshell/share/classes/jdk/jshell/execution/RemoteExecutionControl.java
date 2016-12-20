@@ -65,7 +65,7 @@ public class RemoteExecutionControl extends DirectExecutionControl implements Ex
         outputs.put("out", st -> System.setOut(new PrintStream(st, true)));
         outputs.put("err", st -> System.setErr(new PrintStream(st, true)));
         Map<String, Consumer<InputStream>> input = new HashMap<>();
-        input.put("in", st -> System.setIn(st));
+        input.put("in", System::setIn);
         forwardExecutionControlAndIO(new RemoteExecutionControl(), inStream, outStream, outputs, input);
     }
 

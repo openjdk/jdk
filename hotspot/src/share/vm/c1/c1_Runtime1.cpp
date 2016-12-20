@@ -33,7 +33,6 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeBlob.hpp"
-#include "code/codeCacheExtensions.hpp"
 #include "code/compiledIC.hpp"
 #include "code/pcDesc.hpp"
 #include "code/scopeDesc.hpp"
@@ -189,52 +188,44 @@ void Runtime1::generate_blob_for(BufferBlob* buffer_blob, StubID id) {
   int frame_size;
   bool must_gc_arguments;
 
-  if (!CodeCacheExtensions::skip_compiler_support()) {
-    // bypass useless code generation
-    Compilation::setup_code_buffer(&code, 0);
+  Compilation::setup_code_buffer(&code, 0);
 
-    // create assembler for code generation
-    StubAssembler* sasm = new StubAssembler(&code, name_for(id), id);
-    // generate code for runtime stub
-    oop_maps = generate_code_for(id, sasm);
-    assert(oop_maps == NULL || sasm->frame_size() != no_frame_size,
-           "if stub has an oop map it must have a valid frame size");
+  // create assembler for code generation
+  StubAssembler* sasm = new StubAssembler(&code, name_for(id), id);
+  // generate code for runtime stub
+  oop_maps = generate_code_for(id, sasm);
+  assert(oop_maps == NULL || sasm->frame_size() != no_frame_size,
+         "if stub has an oop map it must have a valid frame size");
 
 #ifdef ASSERT
-    // Make sure that stubs that need oopmaps have them
-    switch (id) {
-      // These stubs don't need to have an oopmap
-    case dtrace_object_alloc_id:
-    case g1_pre_barrier_slow_id:
-    case g1_post_barrier_slow_id:
-    case slow_subtype_check_id:
-    case fpu2long_stub_id:
-    case unwind_exception_id:
-    case counter_overflow_id:
+  // Make sure that stubs that need oopmaps have them
+  switch (id) {
+    // These stubs don't need to have an oopmap
+  case dtrace_object_alloc_id:
+  case g1_pre_barrier_slow_id:
+  case g1_post_barrier_slow_id:
+  case slow_subtype_check_id:
+  case fpu2long_stub_id:
+  case unwind_exception_id:
+  case counter_overflow_id:
 #if defined(SPARC) || defined(PPC32)
-    case handle_exception_nofpu_id:  // Unused on sparc
+  case handle_exception_nofpu_id:  // Unused on sparc
 #endif
-      break;
+    break;
 
-      // All other stubs should have oopmaps
-    default:
-      assert(oop_maps != NULL, "must have an oopmap");
-    }
-#endif
-
-    // align so printing shows nop's instead of random code at the end (SimpleStubs are aligned)
-    sasm->align(BytesPerWord);
-    // make sure all code is in code buffer
-    sasm->flush();
-
-    frame_size = sasm->frame_size();
-    must_gc_arguments = sasm->must_gc_arguments();
-  } else {
-    /* ignored values */
-    oop_maps = NULL;
-    frame_size = 0;
-    must_gc_arguments = false;
+    // All other stubs should have oopmaps
+  default:
+    assert(oop_maps != NULL, "must have an oopmap");
   }
+#endif
+
+  // align so printing shows nop's instead of random code at the end (SimpleStubs are aligned)
+  sasm->align(BytesPerWord);
+  // make sure all code is in code buffer
+  sasm->flush();
+
+  frame_size = sasm->frame_size();
+  must_gc_arguments = sasm->must_gc_arguments();
   // create blob - distinguish a few special cases
   CodeBlob* blob = RuntimeStub::new_runtime_stub(name_for(id),
                                                  &code,

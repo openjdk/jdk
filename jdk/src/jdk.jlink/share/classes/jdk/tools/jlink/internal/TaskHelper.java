@@ -58,7 +58,7 @@ import jdk.tools.jlink.internal.Jlink.PluginsConfiguration;
 import jdk.tools.jlink.internal.plugins.PluginsResourceBundle;
 import jdk.tools.jlink.internal.plugins.DefaultCompressPlugin;
 import jdk.tools.jlink.internal.plugins.StripDebugPlugin;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.module.ModulePath;
 
 /**
  *
@@ -403,7 +403,7 @@ public final class TaskHelper {
             return null;
         }
 
-        private PluginsConfiguration getPluginsConfig(Path output
+        private PluginsConfiguration getPluginsConfig(Path output, Map<String, String> launchers
                     ) throws IOException, BadArgs {
             if (output != null) {
                 if (Files.exists(output)) {
@@ -440,9 +440,9 @@ public final class TaskHelper {
             // recreate or postprocessing don't require an output directory.
             ImageBuilder builder = null;
             if (output != null) {
-                builder = new DefaultImageBuilder(output);
-
+                builder = new DefaultImageBuilder(output, launchers);
             }
+
             return new Jlink.PluginsConfiguration(pluginsList,
                     builder, lastSorter);
         }
@@ -745,9 +745,9 @@ public final class TaskHelper {
                 + bundleHelper.getMessage(key, args));
     }
 
-    public PluginsConfiguration getPluginsConfig(Path output)
+    public PluginsConfiguration getPluginsConfig(Path output, Map<String, String> launchers)
             throws IOException, BadArgs {
-        return pluginOptions.getPluginsConfig(output);
+        return pluginOptions.getPluginsConfig(output, launchers);
     }
 
     public Path getExistingImage() {
@@ -765,9 +765,7 @@ public final class TaskHelper {
     static Layer createPluginsLayer(List<Path> paths) {
 
         Path[] dirs = paths.toArray(new Path[0]);
-        ModuleFinder finder = SharedSecrets.getJavaLangModuleAccess()
-            .newModulePath(Runtime.version(), true, dirs);
-
+        ModuleFinder finder = new ModulePath(Runtime.version(), true, dirs);
         Configuration bootConfiguration = Layer.boot().configuration();
         try {
             Configuration cf = bootConfiguration

@@ -28,7 +28,7 @@
  * @author Andreas Sterbenz
  * @library ..
  * @key randomness
- * @modules jdk.crypto.pkcs11
+ * @modules jdk.crypto.token
  * @run main/othervm TestSignatures
  * @run main/othervm TestSignatures sm rsakeys.ks.policy
  */

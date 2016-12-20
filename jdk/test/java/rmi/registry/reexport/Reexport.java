@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  *          java.rmi/sun.rmi.server
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
- * @build TestLibrary JavaVM RegistryRunner RegistryRunner_Stub
+ * @build TestLibrary REGISTRY RegistryRunner
  * @run main/othervm Reexport
  */
 
@@ -54,27 +54,20 @@ public class Reexport {
     static public void main(String[] argv) {
 
         Registry reg = null;
-        int regPort = TestLibrary.getUnusedRandomPort();
-
         try {
             System.err.println("\nregression test for 4120329\n");
 
             // establish the registry (we hope)
-            System.err.println("Starting registry on port " + regPort);
-            Reexport.makeRegistry(regPort);
+            makeRegistry();
 
             // Get a handle to the registry
             System.err.println("Creating duplicate registry, this should fail...");
-            reg = createReg(true, regPort);
-
-            if (reg != null) {
-                TestLibrary.bomb("failed was able to duplicate the registry?!?");
-            }
+            reg = createReg(true);
 
             // Kill the first registry.
             System.err.println("Bringing down the first registry");
             try {
-                Reexport.killRegistry(regPort);
+                killRegistry();
             } catch (Exception foo) {
             }
 
@@ -82,7 +75,7 @@ public class Reexport {
             System.err.println("Trying again to start our own " +
                                "registry... this should work");
 
-            reg = createReg(false, regPort);
+            reg = createReg(false);
 
             if (reg == null) {
                 TestLibrary.bomb("Could not create registry on second try");
@@ -94,17 +87,19 @@ public class Reexport {
             TestLibrary.bomb(e);
         } finally {
             // dont leave the registry around to affect other tests.
-            killRegistry(regPort);
-
+            killRegistry();
             reg = null;
         }
     }
 
-    static Registry createReg(boolean remoteOk, int port) {
+    static Registry createReg(boolean remoteOk) {
         Registry reg = null;
 
         try {
             reg = LocateRegistry.createRegistry(port);
+            if (remoteOk) {
+                TestLibrary.bomb("Remote registry is up, an Exception is expected!");
+            }
         } catch (Throwable e) {
             if (remoteOk) {
                 System.err.println("EXPECTING PORT IN USE EXCEPTION:");
@@ -114,43 +109,29 @@ public class Reexport {
                 TestLibrary.bomb((Exception) e);
             }
         }
-
         return reg;
     }
 
-    public static void makeRegistry(int p) {
-        // sadly, we can't kill a registry if we have too-close control
-        // over it.  We must make it in a subprocess, and then kill the
-        // subprocess when it has served our needs.
-
+    public static void makeRegistry() {
         try {
-            JavaVM jvm = new JavaVM("RegistryRunner", "", Integer.toString(p));
-            jvm.start();
-            Reexport.subreg = jvm;
+            subreg = REGISTRY.createREGISTRY();
+            subreg.start();
+            port = subreg.getPort();
+            System.out.println("Starting registry on port " + port);
         } catch (IOException e) {
             // one of these is summarily dropped, can't remember which one
             System.out.println ("Test setup failed - cannot run rmiregistry");
             TestLibrary.bomb("Test setup failed - cannot run test", e);
         }
-        // Slop - wait for registry to come up.  This is stupid.
-        try {
-            Thread.sleep (5000);
-        } catch (Exception whatever) {
-        }
     }
 
-    private static JavaVM subreg = null;
+    private static REGISTRY subreg = null;
+    private static int port = -1;
 
-    public static void killRegistry(int port) {
-        if (Reexport.subreg != null) {
-
-            RegistryRunner.requestExit(port);
-
-            try {
-                Reexport.subreg.waitFor();
-            } catch (InterruptedException ie) {
-            }
+    public static void killRegistry() {
+        if (subreg != null) {
+            subreg.shutdown();
+            subreg = null;
         }
-        Reexport.subreg = null;
     }
 }

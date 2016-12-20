@@ -63,6 +63,7 @@ import com.sun.source.doctree.InheritDocTree;
 import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.LiteralTree;
 import com.sun.source.doctree.ParamTree;
+import com.sun.source.doctree.ProvidesTree;
 import com.sun.source.doctree.ReferenceTree;
 import com.sun.source.doctree.ReturnTree;
 import com.sun.source.doctree.SerialDataTree;
@@ -73,6 +74,7 @@ import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.ThrowsTree;
 import com.sun.source.doctree.UnknownBlockTagTree;
 import com.sun.source.doctree.UnknownInlineTagTree;
+import com.sun.source.doctree.UsesTree;
 import com.sun.source.doctree.ValueTree;
 import com.sun.source.doctree.VersionTree;
 import com.sun.source.tree.Tree;
@@ -85,6 +87,7 @@ import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.StringUtils;
+
 import static com.sun.tools.doclint.Messages.Group.*;
 
 
@@ -131,7 +134,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         }
     }
 
-    private Deque<TagStackItem> tagStack; // TODO: maybe want to record starting tree as well
+    private final Deque<TagStackItem> tagStack; // TODO: maybe want to record starting tree as well
     private HtmlTag currHeaderTag;
 
     private final int implicitHeaderLevel;
@@ -824,6 +827,20 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
+    public Void visitProvides(ProvidesTree tree, Void ignore) {
+        Element e = env.trees.getElement(env.currPath);
+        if (e.getKind() != ElementKind.MODULE) {
+            env.messages.error(REFERENCE, tree, "dc.invalid.provides");
+        }
+        ReferenceTree serviceType = tree.getServiceType();
+        Element se = env.trees.getElement(new DocTreePath(getCurrentPath(), serviceType));
+        if (se == null) {
+            env.messages.error(REFERENCE, tree, "dc.service.not.found");
+        }
+        return super.visitProvides(tree, ignore);
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitReference(ReferenceTree tree, Void ignore) {
         String sig = tree.getSignature();
         if (sig.contains("<") || sig.contains(">"))
@@ -935,6 +952,20 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     private void checkUnknownTag(DocTree tree, String tagName) {
         if (env.customTags != null && !env.customTags.contains(tagName))
             env.messages.error(SYNTAX, tree, "dc.tag.unknown", tagName);
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public Void visitUses(UsesTree tree, Void ignore) {
+        Element e = env.trees.getElement(env.currPath);
+        if (e.getKind() != ElementKind.MODULE) {
+            env.messages.error(REFERENCE, tree, "dc.invalid.uses");
+        }
+        ReferenceTree serviceType = tree.getServiceType();
+        Element se = env.trees.getElement(new DocTreePath(getCurrentPath(), serviceType));
+        if (se == null) {
+            env.messages.error(REFERENCE, tree, "dc.service.not.found");
+        }
+        return super.visitUses(tree, ignore);
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)

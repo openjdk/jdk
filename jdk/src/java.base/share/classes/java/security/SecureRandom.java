@@ -310,8 +310,12 @@ public class SecureRandom extends java.util.Random {
 
         if (!skipDebug && pdebug != null) {
             pdebug.println("SecureRandom." + algorithm +
-                " algorithm from: " + this.provider.getName());
+                " algorithm from: " + getProviderName());
         }
+    }
+
+    private String getProviderName() {
+        return (provider == null) ? "(no provider)" : provider.getName();
     }
 
     /**

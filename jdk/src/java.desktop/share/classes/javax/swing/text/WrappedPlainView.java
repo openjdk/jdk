@@ -26,6 +26,7 @@ package javax.swing.text;
 
 import java.awt.*;
 import java.awt.font.FontRenderContext;
+import java.awt.geom.Rectangle2D;
 import java.lang.ref.SoftReference;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -750,7 +751,6 @@ public class WrappedPlainView extends BoxView implements TabExpander {
          *   valid location in the associated document
          * @see View#modelToView
          */
-        @SuppressWarnings("deprecation")
         public Shape modelToView(int pos, Shape a, Position.Bias b)
                 throws BadLocationException {
             Rectangle alloc = a.getBounds();
@@ -777,9 +777,11 @@ public class WrappedPlainView extends BoxView implements TabExpander {
             if (pos > p0) {
                 Segment segment = SegmentCache.getSharedSegment();
                 loadText(segment, p0, pos);
-                alloc.x += Utilities.getTabbedTextWidth(segment, metrics,
-                        alloc.x, WrappedPlainView.this, p0);
+                float x = alloc.x;
+                x += Utilities.getTabbedTextWidth(segment, metrics, x,
+                                                  WrappedPlainView.this, p0);
                 SegmentCache.releaseSharedSegment(segment);
+                return new Rectangle2D.Float(x, alloc.y, alloc.width, alloc.height);
             }
             return alloc;
         }

@@ -26,6 +26,7 @@ package pkg;
 /**
  * @deprecated error_test1 passes.
  */
+@Deprecated(forRemoval=true)
 public class TestError extends Error {
 
     /**

@@ -186,7 +186,7 @@ public class IntegrationTest {
             lst.add(new MyPostProcessor());
         }
         // Image builder
-        DefaultImageBuilder builder = new DefaultImageBuilder(output);
+        DefaultImageBuilder builder = new DefaultImageBuilder(output, Collections.emptyMap());
         PluginsConfiguration plugins
                 = new Jlink.PluginsConfiguration(lst, builder, null);
 

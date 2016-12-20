@@ -97,15 +97,12 @@ public class JavacTaskImpl extends BasicJavacTask {
     /* Internal version of call exposing Main.Result. */
     public Main.Result doCall() {
         try {
-            return handleExceptions(new Callable<Main.Result>() {
-                @Override
-                public Main.Result call() throws Exception {
-                    prepareCompiler(false);
-                    if (compiler.errorCount() > 0)
-                        return Main.Result.ERROR;
-                    compiler.compile(args.getFileObjects(), args.getClassNames(), processors);
-                    return (compiler.errorCount() > 0) ? Main.Result.ERROR : Main.Result.OK; // FIXME?
-                }
+            return handleExceptions(() -> {
+                prepareCompiler(false);
+                if (compiler.errorCount() > 0)
+                    return Main.Result.ERROR;
+                compiler.compile(args.getFileObjects(), args.getClassNames(), processors);
+                return (compiler.errorCount() > 0) ? Main.Result.ERROR : Main.Result.OK; // FIXME?
             }, Main.Result.SYSERR, Main.Result.ABNORMAL);
         } finally {
             try {
@@ -228,12 +225,7 @@ public class JavacTaskImpl extends BasicJavacTask {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Iterable<? extends CompilationUnitTree> parse() {
-        return handleExceptions(new Callable<Iterable<? extends CompilationUnitTree>>() {
-            @Override
-            public Iterable<? extends CompilationUnitTree> call() {
-                return parseInternal();
-            }
-        }, List.<CompilationUnitTree>nil(), List.<CompilationUnitTree>nil());
+        return handleExceptions(this::parseInternal, List.nil(), List.nil());
     }
 
     private Iterable<? extends CompilationUnitTree> parseInternal() {
@@ -360,12 +352,7 @@ public class JavacTaskImpl extends BasicJavacTask {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Iterable<? extends Element> analyze() {
-        return handleExceptions(new Callable<Iterable<? extends Element>>() {
-            @Override
-            public Iterable<? extends Element> call() {
-                return analyze(null);
-            }
-        }, List.<Element>nil(), List.<Element>nil());
+        return handleExceptions(() -> analyze(null), List.nil(), List.nil());
     }
 
     /**
@@ -427,12 +414,7 @@ public class JavacTaskImpl extends BasicJavacTask {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Iterable<? extends JavaFileObject> generate() {
-        return handleExceptions(new Callable<Iterable<? extends JavaFileObject>>() {
-            @Override
-            public Iterable<? extends JavaFileObject> call() {
-                return generate(null);
-            }
-        }, List.<JavaFileObject>nil(), List.<JavaFileObject>nil());
+        return handleExceptions(() -> generate(null), List.nil(), List.nil());
     }
 
     /**

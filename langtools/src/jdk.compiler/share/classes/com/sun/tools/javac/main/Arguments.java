@@ -582,7 +582,8 @@ public class Arguments {
                 Option.BOOT_CLASS_PATH,
                 Option.XBOOTCLASSPATH_PREPEND, Option.XBOOTCLASSPATH, Option.XBOOTCLASSPATH_APPEND,
                 Option.ENDORSEDDIRS, Option.DJAVA_ENDORSED_DIRS,
-                Option.EXTDIRS, Option.DJAVA_EXT_DIRS);
+                Option.EXTDIRS, Option.DJAVA_EXT_DIRS,
+                Option.PROFILE);
 
         checkOptionAllowed(t.compareTo(Target.JDK1_9) >= 0,
                 option -> error("err.option.not.allowed.with.target", option.getPrimaryName(), t.name),

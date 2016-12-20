@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.security.PrivilegedAction;
 import java.util.Properties;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
+import java.util.function.Supplier;
 
 /**
  * Implementation of {@link XPathFactory#newInstance(String)}.
@@ -69,11 +70,11 @@ class XPathFactoryFinder  {
     /**
      * <p>Conditional debug printing.</p>
      *
-     * @param msg to print
+     * @param msgGen Supplier function that returns debug message
      */
-    private static void debugPrintln(String msg) {
+    private static void debugPrintln(Supplier<String> msgGen) {
         if (debug) {
-            System.err.println("JAXP: " + msg);
+            System.err.println("JAXP: " + msgGen.get());
         }
     }
 
@@ -102,7 +103,7 @@ class XPathFactoryFinder  {
     private void debugDisplayClassLoader() {
         try {
             if( classLoader == ss.getContextClassLoader() ) {
-                debugPrintln("using thread context class loader ("+classLoader+") for search");
+                debugPrintln(() -> "using thread context class loader ("+classLoader+") for search");
                 return;
             }
         } catch( Throwable unused ) {
@@ -110,11 +111,11 @@ class XPathFactoryFinder  {
         }
 
         if( classLoader==ClassLoader.getSystemClassLoader() ) {
-            debugPrintln("using system class loader ("+classLoader+") for search");
+            debugPrintln(() -> "using system class loader ("+classLoader+") for search");
             return;
         }
 
-        debugPrintln("using class loader ("+classLoader+") for search");
+        debugPrintln(() -> "using class loader ("+classLoader+") for search");
     }
 
     /**
@@ -135,9 +136,9 @@ class XPathFactoryFinder  {
         }
         XPathFactory f = _newFactory(uri);
         if (f != null) {
-            debugPrintln("factory '" + f.getClass().getName() + "' was found for " + uri);
+            debugPrintln(()->"factory '" + f.getClass().getName() + "' was found for " + uri);
         } else {
-            debugPrintln("unable to find a factory for " + uri);
+            debugPrintln(()->"unable to find a factory for " + uri);
         }
         return f;
     }
@@ -156,19 +157,19 @@ class XPathFactoryFinder  {
 
         // system property look up
         try {
-            debugPrintln("Looking up system property '"+propertyName+"'" );
+            debugPrintln(()->"Looking up system property '"+propertyName+"'" );
             String r = ss.getSystemProperty(propertyName);
             if(r!=null) {
-                debugPrintln("The value is '"+r+"'");
+                debugPrintln(()->"The value is '"+r+"'");
                 xpathFactory = createInstance(r, true);
                 if (xpathFactory != null) {
                     return xpathFactory;
                 }
             } else
-                debugPrintln("The property is undefined.");
+                debugPrintln(()->"The property is undefined.");
         } catch( Throwable t ) {
             if( debug ) {
-                debugPrintln("failed to look up system property '"+propertyName+"'" );
+                debugPrintln(()->"failed to look up system property '"+propertyName+"'" );
                 t.printStackTrace();
             }
         }
@@ -185,14 +186,14 @@ class XPathFactoryFinder  {
                         File f=new File( configFile );
                         firstTime = false;
                         if(ss.doesFileExist(f)){
-                            debugPrintln("Read properties file " + f);
+                            debugPrintln(()->"Read properties file " + f);
                             cacheProps.load(ss.getFileInputStream(f));
                         }
                     }
                 }
             }
             final String factoryClassName = cacheProps.getProperty(propertyName);
-            debugPrintln("found " + factoryClassName + " in $java.home/jaxp.properties");
+            debugPrintln(()->"found " + factoryClassName + " in $java.home/jaxp.properties");
 
             if (factoryClassName != null) {
                 xpathFactory = createInstance(factoryClassName, true);
@@ -220,11 +221,11 @@ class XPathFactoryFinder  {
 
         // platform default
         if(uri.equals(XPathFactory.DEFAULT_OBJECT_MODEL_URI)) {
-            debugPrintln("attempting to use the platform default W3C DOM XPath lib");
+            debugPrintln(()->"attempting to use the platform default W3C DOM XPath lib");
             return createInstance("com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl", true);
         }
 
-        debugPrintln("all things were tried, but none was found. bailing out.");
+        debugPrintln(()->"all things were tried, but none was found. bailing out.");
         return null;
     }
 
@@ -280,15 +281,15 @@ class XPathFactoryFinder  {
     {
         XPathFactory xPathFactory = null;
 
-        debugPrintln("createInstance(" + className + ")");
+        debugPrintln(()->"createInstance(" + className + ")");
 
         // get Class from className
         Class<?> clazz = createClass(className);
         if (clazz == null) {
-            debugPrintln("failed to getClass(" + className + ")");
+            debugPrintln(()->"failed to getClass(" + className + ")");
             return null;
         }
-        debugPrintln("loaded " + className + " from " + which(clazz));
+        debugPrintln(()->"loaded " + className + " from " + which(clazz));
 
         // instantiate Class as a XPathFactory
         try {
@@ -299,19 +300,19 @@ class XPathFactoryFinder  {
                 xPathFactory = (XPathFactory) clazz.newInstance();
             }
         } catch (ClassCastException classCastException) {
-                debugPrintln("could not instantiate " + clazz.getName());
+                debugPrintln(()->"could not instantiate " + clazz.getName());
                 if (debug) {
                         classCastException.printStackTrace();
                 }
                 return null;
         } catch (IllegalAccessException illegalAccessException) {
-                debugPrintln("could not instantiate " + clazz.getName());
+                debugPrintln(()->"could not instantiate " + clazz.getName());
                 if (debug) {
                         illegalAccessException.printStackTrace();
                 }
                 return null;
         } catch (InstantiationException instantiationException) {
-                debugPrintln("could not instantiate " + clazz.getName());
+                debugPrintln(()->"could not instantiate " + clazz.getName());
                 if (debug) {
                         instantiationException.printStackTrace();
                 }

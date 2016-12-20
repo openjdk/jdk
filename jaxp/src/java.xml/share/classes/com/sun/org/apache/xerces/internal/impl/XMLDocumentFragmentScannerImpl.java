@@ -218,8 +218,8 @@ public class XMLDocumentFragmentScannerImpl
     };
 
 
-    private static final char [] cdata = {'[','C','D','A','T','A','['};
-    static final char [] xmlDecl = {'<','?','x','m','l'};
+    private static final char [] CDATA = {'[','C','D','A','T','A','['};
+    static final char [] XMLDECL = {'<','?','x','m','l'};
     // private static final char [] endTag = {'<','/'};
     // debugging
 
@@ -232,13 +232,9 @@ public class XMLDocumentFragmentScannerImpl
     /** Debug content driver scanning. */
     protected static final boolean DEBUG_START_END_ELEMENT = false;
 
-
-    /** Debug driver next */
-    protected static final boolean DEBUG_NEXT = false ;
-
     /** Debug driver next */
     protected static final boolean DEBUG = false;
-    protected static final boolean DEBUG_COALESCE = false;
+
     //
     // Data
     //
@@ -371,16 +367,16 @@ public class XMLDocumentFragmentScannerImpl
     protected XMLString fTempString2 = new XMLString();
 
     /** Array of 3 strings. */
-    private String[] fStrings = new String[3];
+    private final String[] fStrings = new String[3];
 
-    /** Making the buffer accesible to derived class -- String buffer. */
+    /** Making the buffer accessible to derived class -- String buffer. */
     protected XMLStringBuffer fStringBuffer = new XMLStringBuffer();
 
-    /** Making the buffer accesible to derived class -- String buffer. */
+    /** Making the buffer accessible to derived class -- String buffer. */
     protected XMLStringBuffer fStringBuffer2 = new XMLStringBuffer();
 
     /** stores character data. */
-    /** Making the buffer accesible to derived class -- stores PI data */
+    /** Making the buffer accessible to derived class -- stores PI data */
     protected XMLStringBuffer fContentBuffer = new XMLStringBuffer();
 
     /** Single character array. */
@@ -633,22 +629,23 @@ public class XMLDocumentFragmentScannerImpl
 
         // other settings
         // fDocumentSystemId = null;
-        fNamespaces = ((Boolean)propertyManager.getProperty(XMLInputFactory.IS_NAMESPACE_AWARE)).booleanValue();
+        fNamespaces = ((Boolean)propertyManager.getProperty(XMLInputFactory.IS_NAMESPACE_AWARE));
         fNotifyBuiltInRefs = false ;
 
         //fElementStack2.clear();
         //fReplaceEntityReferences = true;
         //fSupportExternalEntities = true;
         Boolean bo = (Boolean)propertyManager.getProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES);
-        fReplaceEntityReferences = bo.booleanValue();
+        fReplaceEntityReferences = bo;
         bo = (Boolean)propertyManager.getProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES);
-        fSupportExternalEntities = bo.booleanValue();
-        Boolean cdata = (Boolean)propertyManager.getProperty(Constants.ZEPHYR_PROPERTY_PREFIX + Constants.STAX_REPORT_CDATA_EVENT) ;
+        fSupportExternalEntities = bo;
+        Boolean cdata = (Boolean)propertyManager.getProperty(
+                Constants.ZEPHYR_PROPERTY_PREFIX + Constants.STAX_REPORT_CDATA_EVENT) ;
         if(cdata != null)
-            fReportCdataEvent = cdata.booleanValue() ;
+            fReportCdataEvent = cdata ;
         Boolean coalesce = (Boolean)propertyManager.getProperty(XMLInputFactory.IS_COALESCING) ;
         if(coalesce != null)
-            fIsCoalesce = coalesce.booleanValue();
+            fIsCoalesce = coalesce;
         fReportCdataEvent = fIsCoalesce ? false : (fReportCdataEvent && true) ;
         //if fIsCoalesce is set to true, set the value of fReplaceEntityReferences to true,
         //if fIsCoalesce is set to false, take the value of fReplaceEntityReferences as set by application
@@ -703,7 +700,7 @@ public class XMLDocumentFragmentScannerImpl
      * are recognized by this component.
      */
     public String[] getRecognizedFeatures() {
-        return (String[])(RECOGNIZED_FEATURES.clone());
+        return RECOGNIZED_FEATURES.clone();
     } // getRecognizedFeatures():String[]
 
     /**
@@ -742,7 +739,7 @@ public class XMLDocumentFragmentScannerImpl
      * are recognized by this component.
      */
     public String[] getRecognizedProperties() {
-        return (String[])(RECOGNIZED_PROPERTIES.clone());
+        return RECOGNIZED_PROPERTIES.clone();
     } // getRecognizedProperties():String[]
 
     /**
@@ -990,7 +987,8 @@ public class XMLDocumentFragmentScannerImpl
         // set standalone
         fStandaloneSet = standalone != null;
         fStandalone = fStandaloneSet && standalone.equals("yes");
-        ///xxx see where its used.. this is not used anywhere. it may be useful for entity to store this information
+        ///xxx see where its used.. this is not used anywhere.
+        //it may be useful for entity to store this information
         //but this information is only related with Document Entity.
         fEntityManager.setStandalone(fStandalone);
 
@@ -1199,7 +1197,8 @@ public class XMLDocumentFragmentScannerImpl
             if(rawname != null && skipFromTheBuffer(rawname)){
                 fLastPointerLocation++ ;
                 if(DEBUG_SKIP_ALGORITHM){
-                    System.out.println("Element " + fElementRawname + " was SKIPPED at pointer location = " + fLastPointerLocation);
+                    System.out.println("Element " + fElementRawname +
+                            " was SKIPPED at pointer location = " + fLastPointerLocation);
                 }
                 return true ;
             } else{
@@ -1233,7 +1232,8 @@ public class XMLDocumentFragmentScannerImpl
             if(fElementArray[pointer] != null && skipFromTheBuffer(fElementArray[pointer])){
                 if(DEBUG_SKIP_ALGORITHM){
                     System.out.println();
-                    System.out.println("Element " + fElementRawname + " was SKIPPED at depth = " + fElementStack.fDepth + " column = " + column );
+                    System.out.println("Element " + fElementRawname + " was SKIPPED at depth = " +
+                            fElementStack.fDepth + " column = " + column );
                     System.out.println();
                 }
                 fLastPointerLocation = pointer ;
@@ -1317,7 +1317,8 @@ public class XMLDocumentFragmentScannerImpl
             if(DEBUG)System.out.println("Element scanned in start element is " + fElementQName.toString());
             if(DEBUG_SKIP_ALGORITHM){
                 if(fAdd){
-                    System.out.println("Elements are being ADDED -- elemet added is = " + fElementQName.rawname + " at count = " + fElementStack.fCount);
+                    System.out.println("Elements are being ADDED -- elemet added is = " +
+                            fElementQName.rawname + " at count = " + fElementStack.fCount);
                 }
             }
 
@@ -1395,7 +1396,8 @@ public class XMLDocumentFragmentScannerImpl
         }
 
 
-        if (DEBUG_START_END_ELEMENT) System.out.println(this.getClass().toString() + "<<< scanStartElement(): "+fEmptyElement);
+        if (DEBUG_START_END_ELEMENT) System.out.println(this.getClass().toString() +
+                "<<< scanStartElement(): "+fEmptyElement);
         return fEmptyElement;
 
     } // scanStartElement():boolean
@@ -1434,83 +1436,8 @@ public class XMLDocumentFragmentScannerImpl
     }
 
     public boolean hasAttributes(){
-        return fAttributes.getLength() > 0 ? true : false ;
+        return fAttributes.getLength() > 0;
     }
-
-
-    /**
-     * Scans an attribute.
-     * <p>
-     * <pre>
-     * [41] Attribute ::= Name Eq AttValue
-     * </pre>
-     * <p>
-     * <strong>Note:</strong> This method assumes that the next
-     * character on the stream is the first character of the attribute
-     * name.
-     * <p>
-     * <strong>Note:</strong> This method uses the fAttributeQName and
-     * fQName variables. The contents of these variables will be
-     * destroyed.
-     *
-     * @param attributes The attributes list for the scanned attribute.
-     */
-
-    /**
-     * protected void scanAttribute(AttributeIteratorImpl attributes)
-     * throws IOException, XNIException {
-     * if (DEBUG_START_END_ELEMENT) System.out.println(">>> scanAttribute()");
-     *
-     *
-     * // name
-     * if (fNamespaces) {
-     * fEntityScanner.scanQName(fAttributeQName);
-     * }
-     * else {
-     * String name = fEntityScanner.scanName();
-     * fAttributeQName.setValues(null, name, name, null);
-     * }
-     *
-     * // equals
-     * fEntityScanner.skipSpaces();
-     * if (!fEntityScanner.skipChar('=')) {
-     * reportFatalError("EqRequiredInAttribute",
-     * new Object[]{fAttributeQName.rawname});
-     * }
-     * fEntityScanner.skipSpaces();
-     *
-     *
-     * // content
-     * int oldLen = attributes.getLength();
-     */
-    /**xxx there is one check of duplicate attribute that has been removed.
-     * attributes.addAttribute(fAttributeQName, XMLSymbols.fCDATASymbol, null);
-     *
-     * // WFC: Unique Att Spec
-     * if (oldLen == attributes.getLength()) {
-     * reportFatalError("AttributeNotUnique",
-     * new Object[]{fCurrentElement.rawname,
-     * fAttributeQName.rawname});
-     * }
-     */
-
-    /*
-        //REVISIT: one more case needs to be included: external PE and standalone is no
-        boolean isVC =  fHasExternalDTD && !fStandalone;
-        scanAttributeValue(fTempString, fTempString2,
-                           fAttributeQName.rawname, attributes,
-                           oldLen, isVC);
-
-        //attributes.setValue(oldLen, fTempString.toString());
-        //attributes.setNonNormalizedValue(oldLen, fTempString2.toString());
-        //attributes.setSpecified(oldLen, true);
-
-        AttributeImpl attribute = new AttributeImpl(fAttributeQName.prefix,fAttributeQName.localpart,fAttributeQName.uri,fTempString.toString(),fTempString2.toString(),XMLSymbols.fCDATASymbol,true);
-        fAttributes.addAttribute(attribute);
-        if (DEBUG_START_END_ELEMENT) System.out.println("<<< scanAttribute()");
-    } // scanAttribute(XMLAttributes)
-
-     */
 
     /** return the attribute iterator implementation */
     public XMLAttributesIteratorImpl getAttributeIterator(){
@@ -2624,7 +2551,7 @@ public class XMLDocumentFragmentScannerImpl
                                         null);
                             }
                             setScannerState(SCANNER_STATE_COMMENT);
-                        } else if (fEntityScanner.skipString(cdata)) {
+                        } else if (fEntityScanner.skipString(CDATA)) {
                             fCDataStart = true;
                             setScannerState(SCANNER_STATE_CDATA );
                         } else if (!scanForDoctypeHook()) {
@@ -2710,73 +2637,62 @@ public class XMLDocumentFragmentScannerImpl
         public int next() throws IOException, XNIException {
             while (true) {
             try {
-                if(DEBUG_NEXT){
-                    System.out.println("NOW IN FragmentContentDriver");
-                    System.out.println("Entering the FragmentContentDriver with = " + getScannerStateName(fScannerState));
-                }
 
                 //decide the actual sub state of the scanner.For more information refer to the javadoc of
                 //decideSubState.
 
-                switch (fScannerState) {
-                    case SCANNER_STATE_CONTENT: {
-                        final int ch = fEntityScanner.peekChar();
-                        if (ch == '<') {
-                            fEntityScanner.scanChar(null);
-                            setScannerState(SCANNER_STATE_START_OF_MARKUP);
-                        } else if (ch == '&') {
-                            fEntityScanner.scanChar(NameType.REFERENCE);
-                            setScannerState(SCANNER_STATE_REFERENCE) ; //XMLEvent.ENTITY_REFERENCE ); //SCANNER_STATE_REFERENCE
-                            break;
-                        } else {
-                            //element content is there..
-                            setScannerState(SCANNER_STATE_CHARACTER_DATA);
-                            break;
-                        }
+                if (fScannerState == SCANNER_STATE_CONTENT) {
+                    final int ch = fEntityScanner.peekChar();
+                    if (ch == '<') {
+                        fEntityScanner.scanChar(null);
+                        setScannerState(SCANNER_STATE_START_OF_MARKUP);
+                    } else if (ch == '&') {
+                        fEntityScanner.scanChar(NameType.REFERENCE);
+                        setScannerState(SCANNER_STATE_REFERENCE) ;
+                    } else {
+                        //element content is there..
+                        setScannerState(SCANNER_STATE_CHARACTER_DATA);
                     }
+                }
 
-                    case SCANNER_STATE_START_OF_MARKUP: {
-                        startOfMarkup();
-                        break;
-                    }//case: SCANNER_STATE_START_OF_MARKUP
+                if (fScannerState == SCANNER_STATE_START_OF_MARKUP) {
+                    startOfMarkup();
+                }
 
-                }//end of switch
                 //decideSubState() ;
 
                 //do some special handling if isCoalesce is set to true.
-                if(fIsCoalesce){
+                if (fIsCoalesce) {
                     fUsebuffer = true ;
                     //if the last section was character data
-                    if(fLastSectionWasCharacterData){
+                    if (fLastSectionWasCharacterData) {
 
-                        //if we dont encounter any CDATA or ENTITY REFERENCE and current state is also not SCANNER_STATE_CHARACTER_DATA
+                        //if we dont encounter any CDATA or ENTITY REFERENCE and
+                        //current state is also not SCANNER_STATE_CHARACTER_DATA
                         //return the last scanned charactrer data.
-                        if((fScannerState != SCANNER_STATE_CDATA) && (fScannerState != SCANNER_STATE_REFERENCE)
-                        && (fScannerState != SCANNER_STATE_CHARACTER_DATA)){
+                        if ((fScannerState != SCANNER_STATE_CDATA)
+                                && (fScannerState != SCANNER_STATE_REFERENCE)
+                                && (fScannerState != SCANNER_STATE_CHARACTER_DATA)) {
                             fLastSectionWasCharacterData = false;
                             return XMLEvent.CHARACTERS;
                         }
                     }//if last section was CDATA or ENTITY REFERENCE
                     //xxx: there might be another entity reference or CDATA after this
                     //<foo>blah blah &amp;&lt;<![CDATA[[aa]]>blah blah</foo>
-                    else if((fLastSectionWasCData || fLastSectionWasEntityReference)){
+                    else if ((fLastSectionWasCData || fLastSectionWasEntityReference)) {
                         //and current state is not SCANNER_STATE_CHARACTER_DATA
                         //or SCANNER_STATE_CDATA or SCANNER_STATE_REFERENCE
                         //this means there is nothing more to be coalesced.
                         //return the CHARACTERS event.
-                        if((fScannerState != SCANNER_STATE_CDATA) && (fScannerState != SCANNER_STATE_REFERENCE)
-                        && (fScannerState != SCANNER_STATE_CHARACTER_DATA)){
+                        if ((fScannerState != SCANNER_STATE_CDATA)
+                                && (fScannerState != SCANNER_STATE_REFERENCE)
+                                && (fScannerState != SCANNER_STATE_CHARACTER_DATA)){
 
                             fLastSectionWasCData = false;
                             fLastSectionWasEntityReference = false;
                             return XMLEvent.CHARACTERS;
                         }
                     }
-                }
-
-
-                if(DEBUG_NEXT){
-                    System.out.println("Actual scanner state set by decideSubState is = " + getScannerStateName(fScannerState));
                 }
 
                 switch(fScannerState){
@@ -2786,7 +2702,6 @@ public class XMLDocumentFragmentScannerImpl
 
                     case SCANNER_STATE_START_ELEMENT_TAG :{
 
-                        //xxx this function returns true when element is empty.. can be linked to end element event.
                         //returns true if the element is empty
                         fEmptyElement = scanStartElement() ;
                         //if the element is empty the next event is "end element"
@@ -2800,15 +2715,16 @@ public class XMLDocumentFragmentScannerImpl
                     }
 
                     case SCANNER_STATE_CHARACTER_DATA: {
-                        if(DEBUG_COALESCE){
-                            System.out.println("fLastSectionWasCData = " + fLastSectionWasCData);
-                            System.out.println("fIsCoalesce = " + fIsCoalesce);
-                        }
-                        //if last section was either entity reference or cdata or character data we should be using buffer
-                        fUsebuffer = fLastSectionWasEntityReference || fLastSectionWasCData || fLastSectionWasCharacterData ;
 
-                        //When coalesce is set to true and last state was REFERENCE or CDATA or CHARACTER_DATA, buffer should not be cleared.
-                        if( fIsCoalesce && (fLastSectionWasEntityReference || fLastSectionWasCData || fLastSectionWasCharacterData) ){
+                        //if last section was either entity reference or cdata or
+                        //character data we should be using buffer
+                        fUsebuffer = fLastSectionWasEntityReference || fLastSectionWasCData
+                                || fLastSectionWasCharacterData ;
+
+                        //When coalesce is set to true and last state was REFERENCE or
+                        //CDATA or CHARACTER_DATA, buffer should not be cleared.
+                        if( fIsCoalesce && (fLastSectionWasEntityReference ||
+                                fLastSectionWasCData || fLastSectionWasCharacterData) ){
                             fLastSectionWasEntityReference = false;
                             fLastSectionWasCData = false;
                             fLastSectionWasCharacterData = true ;
@@ -2822,9 +2738,7 @@ public class XMLDocumentFragmentScannerImpl
                         //scanContent sets the correct co-ordinates as per the content read
                         fTempString.length = 0;
                         int c = fEntityScanner.scanContent(fTempString);
-                        if(DEBUG){
-                            System.out.println("fTempString = " + fTempString);
-                        }
+
                         if(fEntityScanner.skipChar('<', null)){
                             //check if we have reached end of element
                             if(fEntityScanner.skipChar('/', NameType.ELEMENTEND)){
@@ -2841,21 +2755,17 @@ public class XMLDocumentFragmentScannerImpl
                                 setScannerState(SCANNER_STATE_START_OF_MARKUP);
                                 //there can be cdata ahead if coalesce is true we should call again
                                 if(fIsCoalesce){
-                                    fUsebuffer = true;
                                     fLastSectionWasCharacterData = true;
-                                    fContentBuffer.append(fTempString);
-                                    fTempString.length = 0;
+                                    bufferContent();
                                     continue;
                                 }
                             }
-                            //in case last section was either entity reference or cdata or character data -- we should be using buffer
+                            //in case last section was either entity reference or
+                            //cdata or character data -- we should be using buffer
                             if(fUsebuffer){
-                                fContentBuffer.append(fTempString);
-                                fTempString.length = 0;
+                                bufferContent();
                             }
-                            if(DEBUG){
-                                System.out.println("NOT USING THE BUFFER, STRING = " + fTempString.toString());
-                            }
+
                             if(dtdGrammarUtil!= null && dtdGrammarUtil.isIgnorableWhiteSpace(fContentBuffer)){
                                 if(DEBUG)System.out.println("Return SPACE EVENT");
                                 return XMLEvent.SPACE;
@@ -2863,13 +2773,7 @@ public class XMLDocumentFragmentScannerImpl
                                 return XMLEvent.CHARACTERS;
 
                         } else{
-                            fUsebuffer = true ;
-                            if(DEBUG){
-                                System.out.println("fContentBuffer = " + fContentBuffer);
-                                System.out.println("fTempString = " + fTempString);
-                            }
-                            fContentBuffer.append(fTempString);
-                            fTempString.length = 0;
+                            bufferContent();
                         }
                         if (c == '\r') {
                             if(DEBUG){
@@ -2969,7 +2873,8 @@ public class XMLDocumentFragmentScannerImpl
                             setScannerState(SCANNER_STATE_CONTENT);
                             //check the case when there is comment after single element document
                             //<foo/> and some comment after this
-                            return (fMarkupDepth == 0 && elementDepthIsZeroHook() ) ? XMLEvent.END_ELEMENT : XMLEvent.END_ELEMENT ;
+                            return (fMarkupDepth == 0 && elementDepthIsZeroHook() ) ?
+                                    XMLEvent.END_ELEMENT : XMLEvent.END_ELEMENT ;
 
                         } else if(scanEndElement() == 0) {
                             //It is last element of the document
@@ -3093,7 +2998,8 @@ public class XMLDocumentFragmentScannerImpl
 
                             if(fScannerState == SCANNER_STATE_REFERENCE){
                                 setScannerState(SCANNER_STATE_CONTENT);
-                                if (fReplaceEntityReferences && fEntityStore.isDeclaredEntity(fCurrentEntityName)) {
+                                if (fReplaceEntityReferences &&
+                                        fEntityStore.isDeclaredEntity(fCurrentEntityName)) {
                                     // Skip the entity reference, we don't care
                                     continue;
                                 }
@@ -3126,7 +3032,8 @@ public class XMLDocumentFragmentScannerImpl
                                         fStringBuffer.append((char)fEntityScanner.scanChar(null));
                                     }
                                 }
-                                String target = fSymbolTable.addSymbol(fStringBuffer.ch, fStringBuffer.offset, fStringBuffer.length);
+                                String target = fSymbolTable.addSymbol(fStringBuffer.ch,
+                                        fStringBuffer.offset, fStringBuffer.length);
                                 fContentBuffer.clear();
                                 scanPIData(target, fContentBuffer);
                             }
@@ -3269,7 +3176,8 @@ public class XMLDocumentFragmentScannerImpl
      */
 
     protected XMLString getString(){
-        if(fAttributeCacheUsedCount < initialCacheCount || fAttributeCacheUsedCount < attributeValueCache.size()){
+        if(fAttributeCacheUsedCount < initialCacheCount ||
+                fAttributeCacheUsedCount < attributeValueCache.size()){
             return attributeValueCache.get(fAttributeCacheUsedCount++);
         } else{
             XMLString str = new XMLString();
@@ -3299,13 +3207,20 @@ public class XMLDocumentFragmentScannerImpl
             fAttributes.refresh();
         }
         if(fScannerState == SCANNER_STATE_CHARACTER_DATA){
-            //since fTempString directly matches to the underlying main buffer
-            //store the data into buffer
-            fContentBuffer.append(fTempString);
-            //clear the XMLString so that data can't be added again.
-            fTempString.length = 0;
-            fUsebuffer = true;
+            bufferContent();
         }
     }
 
+    /**
+     * Since 'TempString' shares the buffer (a char array) with the CurrentEntity,
+     * when the cursor position reaches the end, that is, before the buffer is
+     * being loaded with new data, the content in the TempString needs to be
+     * copied into the ContentBuffer.
+     */
+    private void bufferContent() {
+        fContentBuffer.append(fTempString);
+        //clear the XMLString so that data can't be added again.
+        fTempString.length = 0;
+        fUsebuffer = true;
+    }
 } // class XMLDocumentFragmentScannerImpl

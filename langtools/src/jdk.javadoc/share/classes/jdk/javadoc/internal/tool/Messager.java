@@ -33,6 +33,7 @@ import java.util.ResourceBundle;
 import javax.lang.model.element.Element;
 import javax.tools.Diagnostic.Kind;
 
+import com.sun.tools.javac.util.Context.Factory;
 import jdk.javadoc.doclet.Reporter;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.util.DocSourcePositions;
@@ -73,20 +74,12 @@ public class Messager extends Log implements Reporter {
 
     public static void preRegister(Context context,
                                    final String programName) {
-        context.put(logKey, new Context.Factory<Log>() {
-            public Log make(Context c) {
-                return new Messager(c, programName);
-            }
-        });
+        context.put(logKey, (Factory<Log>)c -> new Messager(c, programName));
     }
 
     public static void preRegister(Context context, final String programName,
             final PrintWriter outWriter, final PrintWriter errWriter) {
-        context.put(logKey, new Context.Factory<Log>() {
-            public Log make(Context c) {
-                return new Messager(c, programName, outWriter, errWriter);
-            }
-        });
+        context.put(logKey, (Factory<Log>)c -> new Messager(c, programName, outWriter, errWriter));
     }
 
     @Override

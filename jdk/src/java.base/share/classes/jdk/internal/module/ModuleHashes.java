@@ -35,6 +35,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -49,7 +50,6 @@ public final class ModuleHashes {
     public static interface HashSupplier {
         byte[] generate(String algorithm);
     }
-
 
     private final String algorithm;
     private final Map<String, byte[]> nameToHash;
@@ -141,5 +141,38 @@ public final class ModuleHashes {
             nameToHash.put(name, computeHash(path, algorithm));
         }
         return new ModuleHashes(algorithm, nameToHash);
+    }
+
+    /**
+     * This is used by jdk.internal.module.SystemModules class
+     * generated at link time.
+     */
+    public static class Builder {
+        final String algorithm;
+        final Map<String, byte[]> nameToHash;
+
+        Builder(String algorithm, int initialCapacity) {
+            this.nameToHash = new HashMap<>(initialCapacity);
+            this.algorithm =  Objects.requireNonNull(algorithm);
+        }
+
+        /**
+         * Sets the module hash for the given module name
+         */
+        public Builder hashForModule(String mn, byte[] hash) {
+            nameToHash.put(mn, hash);
+            return this;
+        }
+
+        /**
+         * Builds a {@code ModuleHashes}.
+         */
+        public ModuleHashes build() {
+            if (!nameToHash.isEmpty()) {
+                return new ModuleHashes(algorithm, nameToHash);
+            } else {
+                return null;
+            }
+        }
     }
 }

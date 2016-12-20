@@ -60,13 +60,13 @@ public class AddReadsTest extends ModuleTestBase {
     @Test
     public void testAddReads(Path base) throws Exception {
         Path src = base.resolve("src");
-        Path src_m1 = src.resolve("m1");
+        Path src_m1 = src.resolve("m1x");
         tb.writeJavaFiles(src_m1,
-                          "module m1 { exports api; }",
+                          "module m1x { exports api; }",
                           "package api; public class Api { }");
-        Path src_m2 = src.resolve("m2");
+        Path src_m2 = src.resolve("m2x");
         tb.writeJavaFiles(src_m2,
-                          "module m2 { }",
+                          "module m2x { }",
                           "package test; public class Test extends api.Api { }");
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
@@ -85,7 +85,7 @@ public class AddReadsTest extends ModuleTestBase {
 
         //test add dependencies:
         new JavacTask(tb)
-                .options("--add-reads", "m2=m1",
+                .options("--add-reads", "m2x=m1x",
                          "--module-source-path", src.toString(),
                          "-processor", VerifyRequires.class.getName())
                 .outdir(classes)
@@ -94,18 +94,19 @@ public class AddReadsTest extends ModuleTestBase {
                 .writeAll();
 
         String decompiled = new JavapTask(tb)
-                .options("-verbose", classes.resolve("m2").resolve("module-info.class").toString())
+                .options("-verbose",
+                        classes.resolve("m2x").resolve("module-info.class").toString())
                 .run()
                 .getOutput(Task.OutputKind.DIRECT);
 
-        if (decompiled.contains("m1")) {
-            throw new Exception("Incorrectly refers to m1 module.");
+        if (decompiled.contains("m1x")) {
+            throw new Exception("Incorrectly refers to m1x module.");
         }
 
         //cyclic dependencies OK when created through addReads:
         new JavacTask(tb)
-                .options("--add-reads", "m2=m1",
-                         "--add-reads", "m1=m2",
+                .options("--add-reads", "m2x=m1x",
+                         "--add-reads", "m1x=m2x",
                          "--module-source-path", src.toString())
                 .outdir(classes)
                 .files(findJavaFiles(src))
@@ -113,10 +114,10 @@ public class AddReadsTest extends ModuleTestBase {
                 .writeAll();
 
         tb.writeJavaFiles(src_m2,
-                          "module m2 { requires m1; }");
+                          "module m2x { requires m1x; }");
 
         new JavacTask(tb)
-                .options("--add-reads", "m1=m2",
+                .options("--add-reads", "m1x=m2x",
                          "--module-source-path", src.toString())
                 .outdir(classes)
                 .files(findJavaFiles(src))
@@ -129,16 +130,16 @@ public class AddReadsTest extends ModuleTestBase {
 
         @Override
         public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-            ModuleElement m2Module = processingEnv.getElementUtils().getModuleElement("m2");
+            ModuleElement m2Module = processingEnv.getElementUtils().getModuleElement("m2x");
             if (m2Module == null) {
-                throw new AssertionError("Cannot find the m2 module!");
+                throw new AssertionError("Cannot find the m2x module!");
             }
             boolean foundM1 = false;
             for (RequiresDirective rd : ElementFilter.requiresIn(m2Module.getDirectives())) {
-                foundM1 |= rd.getDependency().getSimpleName().contentEquals("m1");
+                foundM1 |= rd.getDependency().getSimpleName().contentEquals("m1x");
             }
             if (!foundM1) {
-                throw new AssertionError("Cannot find the dependency on m1 module!");
+                throw new AssertionError("Cannot find the dependency on m1x module!");
             }
             return false;
         }
@@ -155,19 +156,19 @@ public class AddReadsTest extends ModuleTestBase {
         Path jar = prepareTestJar(base);
 
         Path moduleSrc = base.resolve("module-src");
-        Path m1 = moduleSrc.resolve("m1");
+        Path m1 = moduleSrc.resolve("m1x");
 
         Path classes = base.resolve("classes");
 
         Files.createDirectories(classes);
 
         tb.writeJavaFiles(m1,
-                          "module m1 { }",
+                          "module m1x { }",
                           "package impl; public class Impl { api.Api api; }");
 
         new JavacTask(tb)
           .options("--class-path", jar.toString(),
-                   "--add-reads", "m1=ALL-UNNAMED",
+                   "--add-reads", "m1x=ALL-UNNAMED",
                    "-XDrawDiagnostics")
           .outdir(classes)
           .files(findJavaFiles(moduleSrc))
@@ -180,21 +181,21 @@ public class AddReadsTest extends ModuleTestBase {
         Path jar = prepareTestJar(base);
 
         Path moduleSrc = base.resolve("module-src");
-        Path m1 = moduleSrc.resolve("m1");
+        Path m1 = moduleSrc.resolve("m1x");
 
         Path classes = base.resolve("classes");
 
         Files.createDirectories(classes);
 
         tb.writeJavaFiles(m1,
-                          "module m1 { }",
+                          "module m1x { }",
                           "package api; public class Api { public static void test() { } }",
                           "package impl; public class Impl { { api.Api.test(); } }");
 
         new JavacTask(tb)
           .options("--class-path", jar.toString(),
                    "--module-source-path", moduleSrc.toString(),
-                   "--add-reads", "m1=ALL-UNNAMED",
+                   "--add-reads", "m1x=ALL-UNNAMED",
                    "-XDrawDiagnostics")
           .outdir(classes)
           .files(m1.resolve("impl").resolve("Impl.java"))
@@ -279,9 +280,9 @@ public class AddReadsTest extends ModuleTestBase {
     @Test
     public void testX(Path base) throws Exception {
         Path src = base.resolve("src");
-        Path src_m1 = src.resolve("m1");
+        Path src_m1 = src.resolve("m1x");
         tb.writeJavaFiles(src_m1,
-                          "module m1 { provides java.lang.Runnable with impl.Impl; }",
+                          "module m1x { provides java.lang.Runnable with impl.Impl; }",
                           "package impl; public class Impl implements Runnable { public void run() { } }");
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
@@ -302,8 +303,8 @@ public class AddReadsTest extends ModuleTestBase {
                           "package impl; public class Impl { }");
 
         new JavacTask(tb)
-          .options("--add-reads", "m1=ALL-UNNAMED",
-                   "-Xmodule:m1",
+          .options("--add-reads", "m1x=ALL-UNNAMED",
+                   "-Xmodule:m1x",
                    "--module-path", classes.toString())
           .outdir(unnamedClasses)
           .files(findJavaFiles(unnamedSrc))
@@ -314,16 +315,16 @@ public class AddReadsTest extends ModuleTestBase {
     @Test
     public void testAddSelf(Path base) throws Exception {
         Path src = base.resolve("src");
-        Path src_m1 = src.resolve("m1");
+        Path src_m1 = src.resolve("m1x");
         tb.writeJavaFiles(src_m1,
-                          "module m1 { exports p1; }",
+                          "module m1x { exports p1; }",
                           "package p1; public class C1 { }");
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
         new JavacTask(tb)
                 .options("--module-source-path", src.toString(),
-                         "--add-reads", "m1=m1")
+                         "--add-reads", "m1x=m1x")
                 .outdir(classes)
                 .files(findJavaFiles(src))
                 .run()
@@ -357,24 +358,24 @@ public class AddReadsTest extends ModuleTestBase {
     @Test
     public void testEmptyItem(Path base) throws Exception {
         Path src = base.resolve("src");
-        Path src_m1 = src.resolve("m1");
+        Path src_m1 = src.resolve("m1x");
         tb.writeJavaFiles(src_m1,
-                          "module m1 { exports p1; }",
+                          "module m1x { exports p1; }",
                           "package p1; public class C1 { }");
-        Path src_m2 = src.resolve("m2");
+        Path src_m2 = src.resolve("m2x");
         tb.writeJavaFiles(src_m2,
-                          "module m2 { }",
+                          "module m2x { }",
                           "package p2; class C2 { }");
-        Path src_m3 = src.resolve("m3");
+        Path src_m3 = src.resolve("m3x");
         tb.writeJavaFiles(src_m3,
-                          "module m3 { }",
+                          "module m3x { }",
                           "package p3; class C3 { p1.C1 c1; }");
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
-        testEmptyItem(src, classes, "m3=,m1");
-        testEmptyItem(src, classes, "m3=m1,,m2");
-        testEmptyItem(src, classes, "m3=m1,");
+        testEmptyItem(src, classes, "m3x=,m1x");
+        testEmptyItem(src, classes, "m3x=m1x,,m2x");
+        testEmptyItem(src, classes, "m3x=m1x,");
     }
 
     private void testEmptyItem(Path src, Path classes, String option) throws Exception {
@@ -390,23 +391,23 @@ public class AddReadsTest extends ModuleTestBase {
     @Test
     public void testEmptyList(Path base) throws Exception {
         Path src = base.resolve("src");
-        Path src_m1 = src.resolve("m1");
+        Path src_m1 = src.resolve("m1x");
         tb.writeJavaFiles(src_m1,
-                          "module m1 { exports p1; }",
+                          "module m1x { exports p1; }",
                           "package p1; public class C1 { }");
-        Path src_m2 = src.resolve("m2");
+        Path src_m2 = src.resolve("m2x");
         tb.writeJavaFiles(src_m2,
-                          "module m2 { }",
+                          "module m2x { }",
                           "package p2; class C2 { }");
-        Path src_m3 = src.resolve("m3");
+        Path src_m3 = src.resolve("m3x");
         tb.writeJavaFiles(src_m3,
-                          "module m3 { }",
+                          "module m3x { }",
                           "package p3; class C3 { p1.C1 c1; }");
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
-        testEmptyList(src, classes, "m3=");
-        testEmptyList(src, classes, "m3=,");
+        testEmptyList(src, classes, "m3x=");
+        testEmptyList(src, classes, "m3x=,");
     }
 
     private void testEmptyList(Path src, Path classes, String option) throws Exception {
@@ -426,25 +427,25 @@ public class AddReadsTest extends ModuleTestBase {
     @Test
     public void testMultipleAddReads_DifferentModules(Path base) throws Exception {
         Path src = base.resolve("src");
-        Path src_m1 = src.resolve("m1");
+        Path src_m1 = src.resolve("m1x");
         tb.writeJavaFiles(src_m1,
-                          "module m1 { exports p1; }",
+                          "module m1x { exports p1; }",
                           "package p1; public class C1 { }");
-        Path src_m2 = src.resolve("m2");
+        Path src_m2 = src.resolve("m2x");
         tb.writeJavaFiles(src_m2,
-                          "module m2 { }",
+                          "module m2x { }",
                           "package p2; class C2 { p1.C1 c1; }");
-        Path src_m3 = src.resolve("m3");
+        Path src_m3 = src.resolve("m3x");
         tb.writeJavaFiles(src_m3,
-                          "module m3 { }",
+                          "module m3x { }",
                           "package p3; class C3 { p1.C1 c1; }");
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
         new JavacTask(tb)
                 .options("--module-source-path", src.toString(),
-                         "--add-reads", "m2=m1",
-                         "--add-reads", "m3=m1")
+                         "--add-reads", "m2x=m1x",
+                         "--add-reads", "m3x=m1x")
                 .outdir(classes)
                 .files(findJavaFiles(src))
                 .run()
@@ -454,25 +455,25 @@ public class AddReadsTest extends ModuleTestBase {
     @Test
     public void testMultipleAddReads_SameModule(Path base) throws Exception {
         Path src = base.resolve("src");
-        Path src_m1 = src.resolve("m1");
+        Path src_m1 = src.resolve("m1x");
         tb.writeJavaFiles(src_m1,
-                          "module m1 { exports p1; }",
+                          "module m1x { exports p1; }",
                           "package p1; public class C1 { }");
-        Path src_m2 = src.resolve("m2");
+        Path src_m2 = src.resolve("m2x");
         tb.writeJavaFiles(src_m2,
-                          "module m2 { exports p2; }",
+                          "module m2x { exports p2; }",
                           "package p2; public class C2 { }");
-        Path src_m3 = src.resolve("m3");
+        Path src_m3 = src.resolve("m3x");
         tb.writeJavaFiles(src_m3,
-                          "module m3 { }",
+                          "module m3x { }",
                           "package p3; class C3 { p1.C1 c1; p2.C2 c2; }");
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
         new JavacTask(tb)
                 .options("--module-source-path", src.toString(),
-                         "--add-reads", "m3=m1",
-                         "--add-reads", "m3=m2")
+                         "--add-reads", "m3x=m1x",
+                         "--add-reads", "m3x=m2x")
                 .outdir(classes)
                 .files(findJavaFiles(src))
                 .run()
@@ -482,20 +483,20 @@ public class AddReadsTest extends ModuleTestBase {
     @Test
     public void testDuplicateAddReads_SameOption(Path base) throws Exception {
         Path src = base.resolve("src");
-        Path src_m1 = src.resolve("m1");
+        Path src_m1 = src.resolve("m1x");
         tb.writeJavaFiles(src_m1,
-                          "module m1 { exports p1; }",
+                          "module m1x { exports p1; }",
                           "package p1; public class C1 { }");
-        Path src_m2 = src.resolve("m2");
+        Path src_m2 = src.resolve("m2x");
         tb.writeJavaFiles(src_m2,
-                          "module m2 { exports p2; }",
+                          "module m2x { exports p2; }",
                           "package p2; class C2 { p1.C1 c1; }");
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
         new JavacTask(tb)
                 .options("--module-source-path", src.toString(),
-                         "--add-reads", "m2=m1,m1")
+                         "--add-reads", "m2x=m1x,m1x")
                 .outdir(classes)
                 .files(findJavaFiles(src))
                 .run()
@@ -505,21 +506,21 @@ public class AddReadsTest extends ModuleTestBase {
     @Test
     public void testDuplicateAddReads_MultipleOptions(Path base) throws Exception {
         Path src = base.resolve("src");
-        Path src_m1 = src.resolve("m1");
+        Path src_m1 = src.resolve("m1x");
         tb.writeJavaFiles(src_m1,
-                          "module m1 { exports p1; }",
+                          "module m1x { exports p1; }",
                           "package p1; public class C1 { }");
-        Path src_m2 = src.resolve("m2");
+        Path src_m2 = src.resolve("m2x");
         tb.writeJavaFiles(src_m2,
-                          "module m2 { }",
+                          "module m2x { }",
                           "package p2; class C2 { p1.C1 c1; }");
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
         new JavacTask(tb)
                 .options("--module-source-path", src.toString(),
-                         "--add-reads", "m2=m1",
-                         "--add-reads", "m2=m1")
+                         "--add-reads", "m2x=m1x",
+                         "--add-reads", "m2x=m1x")
                 .outdir(classes)
                 .files(findJavaFiles(src))
                 .run()
@@ -529,25 +530,25 @@ public class AddReadsTest extends ModuleTestBase {
     @Test
     public void testRepeatedAddReads(Path base) throws Exception {
         Path src = base.resolve("src");
-        Path src_m1 = src.resolve("m1");
+        Path src_m1 = src.resolve("m1x");
         tb.writeJavaFiles(src_m1,
-                          "module m1 { exports p1; }",
+                          "module m1x { exports p1; }",
                           "package p1; public class C1 { }");
-        Path src_m2 = src.resolve("m2");
+        Path src_m2 = src.resolve("m2x");
         tb.writeJavaFiles(src_m2,
-                          "module m2 { exports p2; }",
+                          "module m2x { exports p2; }",
                           "package p2; public class C2 { }");
-        Path src_m3 = src.resolve("m3");
+        Path src_m3 = src.resolve("m3x");
         tb.writeJavaFiles(src_m3,
-                          "module m3 { }",
+                          "module m3x { }",
                           "package p3; class C3 { p1.C1 c1; p2.C2 c2; }");
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
         new JavacTask(tb)
                 .options("--module-source-path", src.toString(),
-                         "--add-reads", "m3=m1",
-                         "--add-reads", "m3=m2")
+                         "--add-reads", "m3x=m1x",
+                         "--add-reads", "m3x=m2x")
                 .outdir(classes)
                 .files(findJavaFiles(src))
                 .run()
@@ -563,7 +564,7 @@ public class AddReadsTest extends ModuleTestBase {
 
         String log = new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
-                         "--add-reads", "m1:m2")
+                         "--add-reads", "m1x:m2x")
                 .outdir(classes)
                 .files(findJavaFiles(src))
                 .run(Task.Expect.FAIL)
@@ -571,7 +572,7 @@ public class AddReadsTest extends ModuleTestBase {
                 .getOutput(Task.OutputKind.DIRECT);
 
         checkOutputContains(log,
-            "javac: bad value for --add-reads option: 'm1:m2'");
+            "javac: bad value for --add-reads option: 'm1x:m2x'");
     }
 
     @Test
@@ -583,7 +584,7 @@ public class AddReadsTest extends ModuleTestBase {
 
         String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics",
-                         "--add-reads", "bad*Source=m2")
+                         "--add-reads", "bad*Source=m2x")
                 .outdir(classes)
                 .files(findJavaFiles(src))
                 .run()
@@ -597,16 +598,16 @@ public class AddReadsTest extends ModuleTestBase {
     @Test
     public void testBadTargetName(Path base) throws Exception {
         Path src = base.resolve("src");
-        Path src_m1 = src.resolve("m1");
+        Path src_m1 = src.resolve("m1x");
         tb.writeJavaFiles(src_m1,
-                          "module m1 { }",
+                          "module m1x { }",
                           "package p1; class C1 { }");
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
         String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics",
-                         "--add-reads", "m1=badTarget!")
+                         "--add-reads", "m1x=badTarget!")
                 .outdir(classes)
                 .files(findJavaFiles(src))
                 .run()
@@ -620,16 +621,16 @@ public class AddReadsTest extends ModuleTestBase {
     @Test
     public void testSourceNameNotFound(Path base) throws Exception {
         Path src = base.resolve("src");
-        Path src_m1 = src.resolve("m1");
+        Path src_m1 = src.resolve("m1x");
         tb.writeJavaFiles(src_m1,
-                          "module m1 { exports p1; }",
+                          "module m1x { exports p1; }",
                           "package p1; public class C1 { }");
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
         String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics",
-                         "--add-reads", "missingSource=m1")
+                         "--add-reads", "missingSource=m")
                 .outdir(classes)
                 .files(findJavaFiles(src))
                 .run()
@@ -643,16 +644,16 @@ public class AddReadsTest extends ModuleTestBase {
     @Test
     public void testTargetNameNotFound(Path base) throws Exception {
         Path src = base.resolve("src");
-        Path src_m1 = src.resolve("m1");
+        Path src_m1 = src.resolve("m1x");
         tb.writeJavaFiles(src_m1,
-                          "module m1 { exports p1; }",
+                          "module m1x { exports p1; }",
                           "package p1; public class C1 { }");
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
         String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics",
-                         "--add-reads", "m1=missingTarget")
+                         "--add-reads", "m1x=missingTarget")
                 .outdir(classes)
                 .files(findJavaFiles(src))
                 .run()

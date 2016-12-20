@@ -27,7 +27,7 @@
  * @summary Verify that DH works properly
  * @author Andreas Sterbenz
  * @library ..
- * @modules jdk.crypto.pkcs11
+ * @modules jdk.crypto.token
  * @run main/othervm TestDH
  * @run main/othervm TestDH sm
  */

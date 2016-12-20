@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import java.rmi.server.RemoteObject;
 
 public class EmptyName {
     public static void main(String[] args) throws Exception {
-        Registry impl = TestLibrary.createRegistryOnUnusedPort();
+        Registry impl = TestLibrary.createRegistryOnEphemeralPort();
         Registry stub = (Registry) RemoteObject.toStub(impl);
         stub.bind("", stub);
         stub.lookup("");

@@ -39,22 +39,28 @@ import java.util.Set;
  * Build the profile information.
  */
 enum Profile {
-    COMPACT1("compact1", 1, "java.compact1"),
-    COMPACT2("compact2", 2, "java.compact2"),
-    COMPACT3("compact3", 3, "java.compact3", "java.smartcardio", "jdk.sctp",
-                            "jdk.httpserver", "jdk.security.auth",
-                            "jdk.naming.dns", "jdk.naming.rmi",
-                            "jdk.management"),
-    // need a way to determine JRE modules
-    SE_JRE("Java SE JRE", 4, "java.se", "jdk.charsets",
-                            "jdk.crypto.ec", "jdk.crypto.pkcs11",
-                            "jdk.crypto.mscapi", "jdk.crypto.ucrypto",
-                            "jdk.localedata", "jdk.scripting.nashorn", "jdk.zipfs"),
-    FULL_JRE("Full JRE", 5, "java.se.ee", "jdk.charsets",
-                            "jdk.crypto.ec", "jdk.crypto.pkcs11",
-                            "jdk.crypto.mscapi", "jdk.crypto.ucrypto", "jdk.jvmstat",
-                            "jdk.localedata", "jdk.scripting.nashorn",
-                            "jdk.unsupported", "jdk.zipfs");
+    COMPACT1("compact1", 1, "java.logging",
+                            "java.scripting"),
+    COMPACT2("compact2", 2, "java.rmi",
+                            "java.sql",
+                            "java.xml",
+                            "jdk.xml.dom",
+                            "jdk.httpserver"),
+    COMPACT3("compact3", 3, "java.smartcardio",
+                            "java.compiler",
+                            "java.instrument",
+                            "java.management",
+                            "java.naming",
+                            "java.prefs",
+                            "java.security.jgss",
+                            "java.security.sasl",
+                            "java.sql.rowset",
+                            "java.xml.crypto",
+                            "jdk.management",
+                            "jdk.naming.dns",
+                            "jdk.naming.rmi",
+                            "jdk.sctp",
+                            "jdk.security.auth");
 
     final String name;
     final int profile;
@@ -78,12 +84,6 @@ enum Profile {
 
     public static int getProfileCount() {
         return JDK.isEmpty() ? 0 : Profile.values().length;
-    }
-
-    Optional<Module> findModule(String name) {
-        return modules.containsKey(name)
-            ? Optional.of(modules.get(name))
-            : Optional.empty();
     }
 
     /**
@@ -137,6 +137,9 @@ enum Profile {
 
     // for debugging
     public static void main(String[] args) throws IOException {
+        // initialize Profiles
+        new JdepsConfiguration.Builder().allModules().build();
+
         // find platform modules
         if (Profile.getProfileCount() == 0) {
             System.err.println("No profile is present in this JDK");
@@ -147,6 +150,6 @@ enum Profile {
         }
         System.out.println("All JDK modules:-");
         JDK.stream().sorted(Comparator.comparing(Module::name))
-           .forEach(m -> System.out.println(m));
+           .forEach(System.out::println);
     }
 }

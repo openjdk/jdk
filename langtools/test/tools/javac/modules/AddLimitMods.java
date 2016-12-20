@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @bug 8142968 8154956 8170987 8171412
  * @summary Test --add-modules and --limit-modules; also test the "enabled" modules.
  * @library /tools/lib
  * @modules
@@ -81,22 +82,22 @@ public class AddLimitMods extends ModuleTestBase {
     @Test
     public void testManual(Path base) throws Exception {
         Path moduleSrc = base.resolve("module-src");
-        Path m1 = moduleSrc.resolve("m1");
+        Path m1 = moduleSrc.resolve("m1x");
 
         tb.writeJavaFiles(m1,
-                          "module m1 { requires m2; requires m3; }");
+                          "module m1x { requires m2x; requires m3x; }");
 
-        Path m2 = moduleSrc.resolve("m2");
+        Path m2 = moduleSrc.resolve("m2x");
 
         tb.writeJavaFiles(m2,
-                          "module m2 { requires m3; exports m2; }",
-                          "package m2; public class M2 {}");
+                          "module m2x { requires m3x; exports m2x; }",
+                          "package m2x; public class M2 {}");
 
-        Path m3 = moduleSrc.resolve("m3");
+        Path m3 = moduleSrc.resolve("m3x");
 
         tb.writeJavaFiles(m3,
-                          "module m3 { exports m3; }",
-                          "package m3; public class M3 {}");
+                          "module m3x { exports m3x; }",
+                          "package m3x; public class M3 {}");
 
         Path modulePath = base.resolve("module-path");
 
@@ -130,7 +131,7 @@ public class AddLimitMods extends ModuleTestBase {
                 .options("--module-path", modulePath.toString(),
                          "--should-stop:ifNoError=FLOW",
                          "--limit-modules", "java.base",
-                         "--add-modules", "m2")
+                         "--add-modules", "m2x")
                 .outdir(modulePath)
                 .files(findJavaFiles(m1))
                 .run(Task.Expect.FAIL)
@@ -140,7 +141,7 @@ public class AddLimitMods extends ModuleTestBase {
                 .options("--module-path", modulePath.toString(),
                          "--should-stop:ifNoError=FLOW",
                          "--limit-modules", "java.base",
-                         "--add-modules", "m2,m3")
+                         "--add-modules", "m2x,m3x")
                 .outdir(modulePath)
                 .files(findJavaFiles(m1))
                 .run()
@@ -149,7 +150,7 @@ public class AddLimitMods extends ModuleTestBase {
         new JavacTask(tb)
                 .options("--module-path", modulePath.toString(),
                          "--should-stop:ifNoError=FLOW",
-                         "--limit-modules", "m2")
+                         "--limit-modules", "m2x")
                 .outdir(modulePath)
                 .files(findJavaFiles(m1))
                 .run()
@@ -158,7 +159,7 @@ public class AddLimitMods extends ModuleTestBase {
         new JavacTask(tb)
                 .options("--module-path", modulePath.toString(),
                          "--should-stop:ifNoError=FLOW",
-                         "--limit-modules", "m3")
+                         "--limit-modules", "m3x")
                 .outdir(modulePath)
                 .files(findJavaFiles(m1))
                 .run(Task.Expect.FAIL)
@@ -167,8 +168,8 @@ public class AddLimitMods extends ModuleTestBase {
         new JavacTask(tb)
                 .options("--module-path", modulePath.toString(),
                          "--should-stop:ifNoError=FLOW",
-                         "--limit-modules", "m3",
-                         "--add-modules", "m2")
+                         "--limit-modules", "m3x",
+                         "--add-modules", "m2x")
                 .outdir(modulePath)
                 .files(findJavaFiles(m1))
                 .run()
@@ -233,10 +234,10 @@ public class AddLimitMods extends ModuleTestBase {
             tb.cleanDirectory(base);
 
         Path moduleSrc = base.resolve("module-src");
-        Path m1 = moduleSrc.resolve("m1");
+        Path m1 = moduleSrc.resolve("m1x");
 
         tb.writeJavaFiles(m1,
-                          "module m1 { exports api; }",
+                          "module m1x { exports api; }",
                           "package api; public class Api { }");
 
         Path modulePath = base.resolve("module-path");
@@ -319,7 +320,7 @@ public class AddLimitMods extends ModuleTestBase {
             throw new IllegalStateException("incorrect errors; actual=" + actual);
         }
 
-        tb.writeJavaFiles(cpSrc, "module m1 {}");
+        tb.writeJavaFiles(cpSrc, "module m1x {}");
 
         actual = new JavacTask(tb)
                    .options("-XDrawDiagnostics",
@@ -382,10 +383,10 @@ public class AddLimitMods extends ModuleTestBase {
           .run();
 
         Path moduleSrc = base.resolve("module-src");
-        Path m1 = moduleSrc.resolve("m1");
+        Path m1 = moduleSrc.resolve("m1x");
 
         tb.writeJavaFiles(m1,
-                          "module m1 { exports api; }",
+                          "module m1x { exports api; }",
                           "package api; public class Api { public void test() { } }");
 
         System.err.println("Compiling module-src files:");
@@ -405,8 +406,8 @@ public class AddLimitMods extends ModuleTestBase {
 
                 System.err.println("Running check: " + moduleInfo + "; " + Arrays.asList(options));
 
-                Path m2Runtime = base.resolve(index + "-runtime").resolve("m2");
-                Path out = base.resolve(index + "-runtime").resolve("out").resolve("m2");
+                Path m2Runtime = base.resolve(index + "-runtime").resolve("m2x");
+                Path out = base.resolve(index + "-runtime").resolve("out").resolve("m2x");
 
                 Files.createDirectories(out);
 
@@ -443,14 +444,14 @@ public class AddLimitMods extends ModuleTestBase {
                 String output;
 
                 try {
-                    System.err.println("Running m2/test.Test:");
+                    System.err.println("Running m2x/test.Test:");
                     output = new JavaTask(tb)
                        .vmOptions(augmentOptions(options,
                                                  Collections.emptyList(),
                                                  "--module-path", modulePath.toString() + File.pathSeparator + out.getParent().toString(),
                                                  "--class-path", classpathOut.toString(),
-                                                 "--add-reads", "m2=ALL-UNNAMED,automatic",
-                                                 "-m", "m2/test.Test"))
+                                                 "--add-reads", "m2x=ALL-UNNAMED,automatic",
+                                                 "-m", "m2x/test.Test"))
                        .run()
                        .writeAll()
                        .getOutput(Task.OutputKind.STDERR);
@@ -461,7 +462,7 @@ public class AddLimitMods extends ModuleTestBase {
                     output = "";
                 }
 
-                Path m2 = base.resolve(String.valueOf(index)).resolve("m2");
+                Path m2 = base.resolve(String.valueOf(index)).resolve("m2x");
 
                 tb.writeJavaFiles(m2,
                                   moduleInfo,
@@ -475,7 +476,7 @@ public class AddLimitMods extends ModuleTestBase {
                     "-XDaccessInternalAPI=true"
                 ) : Collections.emptyList();
 
-                System.err.println("Compiling/processing m2 files:");
+                System.err.println("Compiling/processing m2x files:");
                 new JavacTask(tb)
                    .options(augmentOptions(options,
                                            auxOptions,
@@ -515,8 +516,8 @@ public class AddLimitMods extends ModuleTestBase {
     private static final Map<String, String> MODULES_TO_CHECK_TO_SAMPLE_CLASS = new LinkedHashMap<>();
 
     static {
-        MODULES_TO_CHECK_TO_SAMPLE_CLASS.put("m1", "api.Api");
-        MODULES_TO_CHECK_TO_SAMPLE_CLASS.put("m2", "test.Test");
+        MODULES_TO_CHECK_TO_SAMPLE_CLASS.put("m1x", "api.Api");
+        MODULES_TO_CHECK_TO_SAMPLE_CLASS.put("m2x", "test.Test");
         MODULES_TO_CHECK_TO_SAMPLE_CLASS.put("java.base", "java.lang.Object");
     };
 
@@ -578,19 +579,19 @@ public class AddLimitMods extends ModuleTestBase {
     }
 
     private static final String[] MODULE_INFO_VARIANTS = {
-        "module m2 { exports test; }",
-        "module m2 { requires m1; exports test; }"
+        "module m2x { exports test; }",
+        "module m2x { requires m1x; exports test; }"
     };
 
     private static final String[][] OPTIONS_VARIANTS = {
         {"--add-modules", "automatic"},
-        {"--add-modules", "m1,automatic"},
+        {"--add-modules", "m1x,automatic"},
         {"--add-modules", "jdk.compiler,automatic"},
-        {"--add-modules", "m1,jdk.compiler,automatic"},
+        {"--add-modules", "m1x,jdk.compiler,automatic"},
         {"--add-modules", "ALL-SYSTEM,automatic"},
         {"--limit-modules", "java.base", "--add-modules", "automatic"},
         {"--limit-modules", "java.base", "--add-modules", "ALL-SYSTEM,automatic"},
-        {"--limit-modules", "m2", "--add-modules", "automatic"},
+        {"--limit-modules", "m2x", "--add-modules", "automatic"},
         {"--limit-modules", "jdk.compiler", "--add-modules", "automatic"},
     };
 }

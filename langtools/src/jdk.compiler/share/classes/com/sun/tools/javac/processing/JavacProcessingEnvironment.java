@@ -34,6 +34,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.regex.*;
 import java.util.stream.Collectors;
 
@@ -323,7 +324,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         if (platformProvider != null) {
             platformProcessors = platformProvider.getAnnotationProcessors()
                                                  .stream()
-                                                 .map(ap -> ap.getPlugin())
+                                                 .map(PluginInfo::getPlugin)
                                                  .collect(Collectors.toList());
         }
         List<Iterator<? extends Processor>> iterators = List.of(processorIterator,
@@ -827,12 +828,14 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
     private void discoverAndRunProcs(Set<TypeElement> annotationsPresent,
                                      List<ClassSymbol> topLevelClasses,
-                                     List<PackageSymbol> packageInfoFiles) {
+                                     List<PackageSymbol> packageInfoFiles,
+                                     List<ModuleSymbol> moduleInfoFiles) {
         Map<String, TypeElement> unmatchedAnnotations = new HashMap<>(annotationsPresent.size());
 
         for(TypeElement a  : annotationsPresent) {
-                unmatchedAnnotations.put(a.getQualifiedName().toString(),
-                                         a);
+            ModuleElement mod = elementUtils.getModuleOf(a);
+            unmatchedAnnotations.put((mod != null ? mod.getSimpleName() + "/" : "") + a.getQualifiedName().toString(),
+                                     a);
         }
 
         // Give "*" processors a chance to match
@@ -849,6 +852,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         Set<Element> rootElements = new LinkedHashSet<>();
         rootElements.addAll(topLevelClasses);
         rootElements.addAll(packageInfoFiles);
+        rootElements.addAll(moduleInfoFiles);
         rootElements = Collections.unmodifiableSet(rootElements);
 
         RoundEnvironment renv = new JavacRoundEnvironment(false,
@@ -986,7 +990,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         /** The trees that need to be cleaned - includes roots and implicitly parsed trees. */
         Set<JCCompilationUnit> treesToClean;
         /** The classes to be compiler that have were generated. */
-        Map<String, JavaFileObject> genClassFiles;
+        Map<ModuleSymbol, Map<String, JavaFileObject>> genClassFiles;
 
         /** The set of annotations to be processed this round. */
         Set<TypeElement> annotationsPresent;
@@ -994,6 +998,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         List<ClassSymbol> topLevelClasses;
         /** The set of package-info files to be processed this round. */
         List<PackageSymbol> packageInfoFiles;
+        /** The set of module-info files to be processed this round. */
+        List<ModuleSymbol> moduleInfoFiles;
 
         /** Create a round (common code). */
         private Round(int number, Set<JCCompilationUnit> treesToClean,
@@ -1011,6 +1017,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             // the following will be populated as needed
             topLevelClasses  = List.nil();
             packageInfoFiles = List.nil();
+            moduleInfoFiles = List.nil();
             this.treesToClean = treesToClean;
         }
 
@@ -1031,12 +1038,14 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
             packageInfoFiles = getPackageInfoFiles(roots);
 
+            moduleInfoFiles = getModuleInfoFiles(roots);
+
             findAnnotationsPresent();
         }
 
         /** Create a new round. */
         private Round(Round prev,
-                Set<JavaFileObject> newSourceFiles, Map<String,JavaFileObject> newClassFiles) {
+                Set<JavaFileObject> newSourceFiles, Map<ModuleSymbol, Map<String,JavaFileObject>> newClassFiles) {
             this(prev.number+1, prev.treesToClean, null);
             prev.newRound();
             this.genClassFiles = prev.genClassFiles;
@@ -1048,9 +1057,13 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             if (unrecoverableError())
                 return;
 
+            roots = compiler.initModules(roots);
+
             enterClassFiles(genClassFiles);
             List<ClassSymbol> newClasses = enterClassFiles(newClassFiles);
-            genClassFiles.putAll(newClassFiles);
+            for (Entry<ModuleSymbol, Map<String, JavaFileObject>> moduleAndClassFiles : newClassFiles.entrySet()) {
+                genClassFiles.computeIfAbsent(moduleAndClassFiles.getKey(), m -> new LinkedHashMap<>()).putAll(moduleAndClassFiles.getValue());
+            }
             enterTrees(roots);
 
             if (unrecoverableError())
@@ -1064,11 +1077,13 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                     getPackageInfoFiles(parsedFiles),
                     getPackageInfoFilesFromClasses(newClasses));
 
+            moduleInfoFiles = List.nil(); //module-info cannot be generated
+
             findAnnotationsPresent();
         }
 
         /** Create the next round to be used. */
-        Round next(Set<JavaFileObject> newSourceFiles, Map<String, JavaFileObject> newClassFiles) {
+        Round next(Set<JavaFileObject> newSourceFiles, Map<ModuleSymbol, Map<String, JavaFileObject>> newClassFiles) {
             return new Round(this, newSourceFiles, newClassFiles);
         }
 
@@ -1121,45 +1136,47 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                 annotationComputer.scan(classSym, annotationsPresent);
             for (PackageSymbol pkgSym : packageInfoFiles)
                 annotationComputer.scan(pkgSym, annotationsPresent);
+            for (ModuleSymbol mdlSym : moduleInfoFiles)
+                annotationComputer.scan(mdlSym, annotationsPresent);
         }
 
         /** Enter a set of generated class files. */
-        private List<ClassSymbol> enterClassFiles(Map<String, JavaFileObject> classFiles) {
+        private List<ClassSymbol> enterClassFiles(Map<ModuleSymbol, Map<String, JavaFileObject>> modulesAndClassFiles) {
             List<ClassSymbol> list = List.nil();
 
-            for (Map.Entry<String,JavaFileObject> entry : classFiles.entrySet()) {
-                Name name = names.fromString(entry.getKey());
-                JavaFileObject file = entry.getValue();
-                if (file.getKind() != JavaFileObject.Kind.CLASS)
-                    throw new AssertionError(file);
-                ClassSymbol cs;
-                // TODO: for now, we assume that generated code is in a default module;
-                // in time, we need a way to be able to specify the module for generated code
-                if (isPkgInfo(file, JavaFileObject.Kind.CLASS)) {
-                    Name packageName = Convert.packagePart(name);
-                    PackageSymbol p = symtab.enterPackage(defaultModule, packageName);
-                    if (p.package_info == null)
-                        p.package_info = symtab.enterClass(defaultModule, Convert.shortName(name), p);
-                    cs = p.package_info;
-                    cs.reset();
-                    if (cs.classfile == null)
+            for (Entry<ModuleSymbol, Map<String, JavaFileObject>> moduleAndClassFiles : modulesAndClassFiles.entrySet()) {
+                for (Map.Entry<String,JavaFileObject> entry : moduleAndClassFiles.getValue().entrySet()) {
+                    Name name = names.fromString(entry.getKey());
+                    JavaFileObject file = entry.getValue();
+                    if (file.getKind() != JavaFileObject.Kind.CLASS)
+                        throw new AssertionError(file);
+                    ClassSymbol cs;
+                    if (isPkgInfo(file, JavaFileObject.Kind.CLASS)) {
+                        Name packageName = Convert.packagePart(name);
+                        PackageSymbol p = symtab.enterPackage(moduleAndClassFiles.getKey(), packageName);
+                        if (p.package_info == null)
+                            p.package_info = symtab.enterClass(moduleAndClassFiles.getKey(), Convert.shortName(name), p);
+                        cs = p.package_info;
+                        cs.reset();
+                        if (cs.classfile == null)
+                            cs.classfile = file;
+                        cs.completer = initialCompleter;
+                    } else {
+                        cs = symtab.enterClass(moduleAndClassFiles.getKey(), name);
+                        cs.reset();
                         cs.classfile = file;
-                    cs.completer = initialCompleter;
-                } else {
-                    cs = symtab.enterClass(defaultModule, name);
-                    cs.reset();
-                    cs.classfile = file;
-                    cs.completer = initialCompleter;
-                    cs.owner.members().enter(cs); //XXX - OverwriteBetweenCompilations; syms.getClass is not sufficient anymore
+                        cs.completer = initialCompleter;
+                        cs.owner.members().enter(cs); //XXX - OverwriteBetweenCompilations; syms.getClass is not sufficient anymore
+                    }
+                    list = list.prepend(cs);
                 }
-                list = list.prepend(cs);
             }
             return list.reverse();
         }
 
         /** Enter a set of syntax trees. */
         private void enterTrees(List<JCCompilationUnit> roots) {
-            compiler.enterTrees(compiler.initModules(roots));
+            compiler.enterTrees(roots);
         }
 
         /** Run a processing round. */
@@ -1179,7 +1196,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                             JavacProcessingEnvironment.this);
                     discoveredProcs.iterator().runContributingProcs(renv);
                 } else {
-                    discoverAndRunProcs(annotationsPresent, topLevelClasses, packageInfoFiles);
+                    discoverAndRunProcs(annotationsPresent, topLevelClasses, packageInfoFiles, moduleInfoFiles);
                 }
             } catch (Throwable t) {
                 // we're specifically expecting Abort here, but if any Throwable
@@ -1209,8 +1226,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         /** Print info about this round. */
         private void printRoundInfo(boolean lastRound) {
             if (printRounds || verbose) {
-                List<ClassSymbol> tlc = lastRound ? List.<ClassSymbol>nil() : topLevelClasses;
-                Set<TypeElement> ap = lastRound ? Collections.<TypeElement>emptySet() : annotationsPresent;
+                List<ClassSymbol> tlc = lastRound ? List.nil() : topLevelClasses;
+                Set<TypeElement> ap = lastRound ? Collections.emptySet() : annotationsPresent;
                 log.printLines("x.print.rounds",
                         number,
                         "{" + tlc.toString(", ") + "}",
@@ -1346,14 +1363,14 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         // Free resources
         this.close();
 
-        if (!taskListener.isEmpty())
-            taskListener.finished(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING));
-
         if (errorStatus && compiler.errorCount() == 0) {
             compiler.log.nerrors++;
         }
 
         compiler.enterTreesIfNeeded(roots);
+
+        if (!taskListener.isEmpty())
+            taskListener.finished(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING));
 
         return true;
     }
@@ -1418,6 +1435,18 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         return packages.reverse();
     }
 
+    private List<ModuleSymbol> getModuleInfoFiles(List<? extends JCCompilationUnit> units) {
+        List<ModuleSymbol> modules = List.nil();
+        for (JCCompilationUnit unit : units) {
+            if (isModuleInfo(unit.sourcefile, JavaFileObject.Kind.SOURCE) &&
+                unit.defs.nonEmpty() &&
+                unit.defs.head.hasTag(Tag.MODULEDEF)) {
+                modules = modules.prepend(unit.modle);
+            }
+        }
+        return modules.reverse();
+    }
+
     // avoid unchecked warning from use of varargs
     private static <T> List<T> join(List<T> list1, List<T> list2) {
         return list1.appendList(list2);
@@ -1429,6 +1458,10 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
     private boolean isPkgInfo(ClassSymbol sym) {
         return isPkgInfo(sym.classfile, JavaFileObject.Kind.CLASS) && (sym.packge().package_info == sym);
+    }
+
+    private boolean isModuleInfo(JavaFileObject fo, JavaFileObject.Kind kind) {
+        return fo.isNameCompatible("module-info", kind);
     }
 
     /*
@@ -1625,8 +1658,21 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
      * import-style string, return a regex that won't match anything.
      */
     private static Pattern importStringToPattern(String s, Processor p, Log log) {
-        if (MatchingUtils.isValidImportString(s)) {
-            return MatchingUtils.validImportStringToPattern(s);
+        String module;
+        String pkg;
+        int slash = s.indexOf('/');
+        if (slash == (-1)) {
+            if (s.equals("*")) {
+                return MatchingUtils.validImportStringToPattern(s);
+            }
+            module = ".*/";
+            pkg = s;
+        } else {
+            module = Pattern.quote(s.substring(0, slash + 1));
+            pkg = s.substring(slash + 1);
+        }
+        if (MatchingUtils.isValidImportString(pkg)) {
+            return Pattern.compile(module + MatchingUtils.validImportStringToPatternString(pkg));
         } else {
             log.warning("proc.malformed.supported.string", s, p.getClass().getName());
             return noMatches; // won't match any valid identifier

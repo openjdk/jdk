@@ -360,7 +360,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      */
     protected void addComment(Element element, Content contentTree) {
         List<? extends DocTree> tags;
-        Content span = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, contents.deprecatedPhrase);
+        Content span = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(element));
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.addStyle(HtmlStyle.block);
         if (utils.isDeprecated(element)) {

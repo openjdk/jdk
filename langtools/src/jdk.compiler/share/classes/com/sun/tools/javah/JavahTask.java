@@ -310,15 +310,12 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
 
     private DiagnosticListener<JavaFileObject> getDiagnosticListenerForWriter(Writer w) {
         final PrintWriter pw = getPrintWriterForWriter(w);
-        return new DiagnosticListener<JavaFileObject> () {
-            @DefinedBy(Api.COMPILER)
-            public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
-                if (diagnostic.getKind() == Diagnostic.Kind.ERROR) {
-                    pw.print(getMessage("err.prefix"));
-                    pw.print(" ");
-                }
-                pw.println(diagnostic.getMessage(null));
+        return diagnostic -> {
+            if (diagnostic.getKind() == Diagnostic.Kind.ERROR) {
+                pw.print(getMessage("err.prefix"));
+                pw.print(" ");
             }
+            pw.println(diagnostic.getMessage(null));
         };
     }
 

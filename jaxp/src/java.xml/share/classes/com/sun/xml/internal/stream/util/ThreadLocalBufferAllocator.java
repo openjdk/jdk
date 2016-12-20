@@ -39,15 +39,15 @@ import java.lang.ref.*;
  * @author Santiago.PericasGeertsen@sun.com
  */
 public class ThreadLocalBufferAllocator {
-   private static ThreadLocal tlba = new ThreadLocal();
+   private static ThreadLocal<SoftReference> tlba = new ThreadLocal<>();
 
    public static BufferAllocator getBufferAllocator() {
-        SoftReference bAllocatorRef = (SoftReference) tlba.get();
+        SoftReference<BufferAllocator> bAllocatorRef = tlba.get();
         if (bAllocatorRef == null || bAllocatorRef.get() == null) {
             bAllocatorRef = new SoftReference(new BufferAllocator());
             tlba.set(bAllocatorRef);
         }
 
-        return (BufferAllocator) bAllocatorRef.get();
+        return bAllocatorRef.get();
    }
 }

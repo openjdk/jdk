@@ -246,7 +246,6 @@ public final class Layer {
          */
         public Controller addOpens(Module source, String pn, Module target) {
             Objects.requireNonNull(source);
-            Objects.requireNonNull(source);
             Objects.requireNonNull(target);
             ensureInLayer(source);
             Modules.addOpens(source, pn, target);
@@ -541,7 +540,7 @@ public final class Layer {
      * {@link ClassLoader#registerAsParallelCapable parallel-capable} so as to
      * avoid deadlocks during class loading. In addition, the entity creating
      * a new layer with this method should arrange that the class loaders are
-     * ready to load from these module before there are any attempts to load
+     * ready to load from these modules before there are any attempts to load
      * classes or resources.
      *
      * <p> Creating a {@code Layer} can fail for the following reasons: </p>
@@ -603,12 +602,8 @@ public final class Layer {
 
         checkGetClassLoaderPermission();
 
-        // For now, no two modules in the boot Layer may contain the same
-        // package so we use a simple check for the boot Layer to keep
-        // the overhead at startup to a minimum
-        if (boot() == null) {
-            checkBootModulesForDuplicatePkgs(cf);
-        } else {
+        // The boot layer is checked during module system initialization
+        if (boot() != null) {
             checkForDuplicatePkgs(cf, clf);
         }
 
@@ -655,27 +650,6 @@ public final class Layer {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
             sm.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);
-    }
-
-    /**
-     * Checks a configuration for the boot Layer to ensure that no two modules
-     * have the same package.
-     *
-     * @throws LayerInstantiationException
-     */
-    private static void checkBootModulesForDuplicatePkgs(Configuration cf) {
-        Map<String, String> packageToModule = new HashMap<>();
-        for (ResolvedModule resolvedModule : cf.modules()) {
-            ModuleDescriptor descriptor = resolvedModule.reference().descriptor();
-            String name = descriptor.name();
-            for (String p : descriptor.packages()) {
-                String other = packageToModule.putIfAbsent(p, name);
-                if (other != null) {
-                    throw fail("Package " + p + " in both module "
-                               + name + " and module " + other);
-                }
-            }
-        }
     }
 
     /**

@@ -26,7 +26,6 @@
 package com.sun.source.util;
 
 import com.sun.source.doctree.*;
-import com.sun.tools.javac.tree.DCTree.DCIndex;
 
 
 /**
@@ -326,6 +325,20 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
     }
 
     /**
+     * {@inheritDoc} This implementation scans the children in left to right order.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
+    @Override
+    public R visitProvides(ProvidesTree node, P p) {
+        R r = scan(node.getServiceType(), p);
+        r = scanAndReduce(node.getDescription(), p, r);
+        return r;
+    }
+
+    /**
      * {@inheritDoc} This implementation returns {@code null}.
      *
      * @param node  {@inheritDoc}
@@ -472,6 +485,20 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
     @Override
     public R visitUnknownInlineTag(UnknownInlineTagTree node, P p) {
         return scan(node.getContent(), p);
+    }
+
+    /**
+     * {@inheritDoc} This implementation scans the children in left to right order.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
+    @Override
+    public R visitUses(UsesTree node, P p) {
+        R r = scan(node.getServiceType(), p);
+        r = scanAndReduce(node.getDescription(), p, r);
+        return r;
     }
 
     /**

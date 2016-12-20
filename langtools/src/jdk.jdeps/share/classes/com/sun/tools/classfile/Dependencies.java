@@ -248,11 +248,7 @@ public class Dependencies {
             boolean transitiveClosure)
             throws ClassFileNotFoundException {
         final Set<Dependency> results = new HashSet<>();
-        Recorder r = new Recorder() {
-            public void addDependency(Dependency d) {
-                results.add(d);
-            }
-        };
+        Recorder r = results::add;
         findAllDependencies(classFinder, rootClassNames, transitiveClosure, r);
         return results;
     }
@@ -565,7 +561,7 @@ public class Dependencies {
         private Map<String,Location> locations = new ConcurrentHashMap<>();
 
         Location getLocation(String className) {
-            return locations.computeIfAbsent(className, cn -> new SimpleLocation(cn));
+            return locations.computeIfAbsent(className, SimpleLocation::new);
         }
 
         class Visitor implements ConstantPool.Visitor<Void,Void>, Type.Visitor<Void, Void> {
@@ -708,6 +704,10 @@ public class Dependencies {
                 return visitRef(info, p);
             }
 
+            public Void visitModule(CONSTANT_Module_info info, Void p) {
+                return null;
+            }
+
             public Void visitNameAndType(CONSTANT_NameAndType_info info, Void p) {
                 try {
                     new Signature(info.type_index).getType(constant_pool).accept(this, null);
@@ -715,6 +715,10 @@ public class Dependencies {
                 } catch (ConstantPoolException e) {
                     throw new ClassFileError(e);
                 }
+            }
+
+            public Void visitPackage(CONSTANT_Package_info info, Void p) {
+                return null;
             }
 
             public Void visitString(CONSTANT_String_info info, Void p) {

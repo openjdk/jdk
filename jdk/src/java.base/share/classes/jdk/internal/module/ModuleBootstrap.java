@@ -195,7 +195,9 @@ public final class ModuleBootstrap {
         // module is the unnamed module of the application class loader. This
         // is implemented by resolving "java.se" and all (non-java.*) modules
         // that export an API. If "java.se" is not observable then all java.*
-        // modules are resolved.
+        // modules are resolved. Modules that have the DO_NOT_RESOLVE_BY_DEFAULT
+        // bit set in their ModuleResolution attribute flags are excluded from
+        // the default set of roots.
         if (mainModule == null || addAllDefaultModules) {
             boolean hasJava = false;
             if (systemModules.find(JAVA_SE).isPresent()) {
@@ -210,6 +212,9 @@ public final class ModuleBootstrap {
             for (ModuleReference mref : systemModules.findAll()) {
                 String mn = mref.descriptor().name();
                 if (hasJava && mn.startsWith("java."))
+                    continue;
+
+                if (ModuleResolution.doNotResolveByDefault(mref))
                     continue;
 
                 // add as root if observable and exports at least one package
@@ -231,6 +236,7 @@ public final class ModuleBootstrap {
             ModuleFinder f = finder;  // observable modules
             systemModules.findAll()
                 .stream()
+                .filter(mref -> !ModuleResolution.doNotResolveByDefault(mref))
                 .map(ModuleReference::descriptor)
                 .map(ModuleDescriptor::name)
                 .filter(mn -> f.find(mn).isPresent())  // observable
@@ -277,6 +283,8 @@ public final class ModuleBootstrap {
         // time to create configuration
         PerfCounters.resolveTime.addElapsedTimeFrom(t3);
 
+        // check module names and incubating status
+        checkModuleNamesAndStatus(cf);
 
         // mapping of modules to class loaders
         Function<String, ClassLoader> clf = ModuleLoaderMap.mappingFunction(cf);
@@ -298,8 +306,32 @@ public final class ModuleBootstrap {
                         fail(name + ": cannot be loaded from application module path");
                 }
             }
+
+            // check if module specified in --patch-module is present
+            for (String mn: patcher.patchedModules()) {
+                if (!cf.findModule(mn).isPresent()) {
+                    warnUnknownModule(PATCH_MODULE, mn);
+                }
+            }
         }
 
+        // if needed check that there are no split packages in the set of
+        // resolved modules for the boot layer
+        if (SystemModules.hasSplitPackages() || needPostResolutionChecks) {
+                Map<String, String> packageToModule = new HashMap<>();
+                for (ResolvedModule resolvedModule : cf.modules()) {
+                    ModuleDescriptor descriptor =
+                        resolvedModule.reference().descriptor();
+                    String name = descriptor.name();
+                    for (String p : descriptor.packages()) {
+                        String other = packageToModule.putIfAbsent(p, name);
+                        if (other != null) {
+                            fail("Package " + p + " in both module "
+                                 + name + " and module " + other);
+                        }
+                    }
+                }
+            }
 
         long t4 = System.nanoTime();
 
@@ -456,7 +488,7 @@ public final class ModuleBootstrap {
             String mn = e.getKey();
             Optional<Module> om = bootLayer.findModule(mn);
             if (!om.isPresent()) {
-                warn("Unknown module: " + mn);
+                warnUnknownModule(ADD_READS, mn);
                 continue;
             }
             Module m = om.get();
@@ -470,7 +502,7 @@ public final class ModuleBootstrap {
                     if (om.isPresent()) {
                         Modules.addReads(m, om.get());
                     } else {
-                        warn("Unknown module: " + name);
+                        warnUnknownModule(ADD_READS, name);
                     }
                 }
             }
@@ -502,24 +534,25 @@ public final class ModuleBootstrap {
                                                Map<String, List<String>> map,
                                                boolean opens)
     {
+        String option = opens ? ADD_OPENS : ADD_EXPORTS;
         for (Map.Entry<String, List<String>> e : map.entrySet()) {
 
             // the key is $MODULE/$PACKAGE
             String key = e.getKey();
             String[] s = key.split("/");
             if (s.length != 2)
-                fail("Unable to parse: " + key);
+                fail(unableToParse(option,  "<module>/<package>", key));
 
             String mn = s[0];
             String pn = s[1];
             if (mn.isEmpty() || pn.isEmpty())
-                fail("Module and package name must be specified:" + key);
+                fail(unableToParse(option,  "<module>/<package>", key));
 
             // The exporting module is in the boot layer
             Module m;
             Optional<Module> om = bootLayer.findModule(mn);
             if (!om.isPresent()) {
-                warn("Unknown module: " + mn);
+                warnUnknownModule(option, mn);
                 continue;
             }
 
@@ -541,7 +574,7 @@ public final class ModuleBootstrap {
                     if (om.isPresent()) {
                         other = om.get();
                     } else {
-                        warn("Unknown module: " + name);
+                        warnUnknownModule(option, name);
                         continue;
                     }
                 }
@@ -585,24 +618,30 @@ public final class ModuleBootstrap {
 
             int pos = value.indexOf('=');
             if (pos == -1)
-                fail("Unable to parse: " + value);
+                fail(unableToParse(option(prefix), "<module>=<value>", value));
             if (pos == 0)
-                fail("Missing module name in: " + value);
+                fail(unableToParse(option(prefix), "<module>=<value>", value));
 
             // key is <module> or <module>/<package>
             String key = value.substring(0, pos);
 
             String rhs = value.substring(pos+1);
             if (rhs.isEmpty())
-                fail("Unable to parse: " + value);
+                fail(unableToParse(option(prefix), "<module>=<value>", value));
 
             // value is <module>(,<module>)* or <file>(<pathsep><file>)*
             if (!allowDuplicates && map.containsKey(key))
-                fail(key + " specified more than once");
+                fail(key + " specified more than once in " + option(prefix));
             List<String> values = map.computeIfAbsent(key, k -> new ArrayList<>());
+            int ntargets = 0;
             for (String s : rhs.split(regex)) {
-                if (s.length() > 0) values.add(s);
+                if (s.length() > 0) {
+                    values.add(s);
+                    ntargets++;
+                }
             }
+            if (ntargets == 0)
+                fail("Target must be specified: " + option(prefix) + " " + value);
 
             index++;
             value = getAndRemoveProperty(prefix + index);
@@ -627,6 +666,33 @@ public final class ModuleBootstrap {
     }
 
     /**
+     * Checks the names and resolution bit of each module in the configuration,
+     * emitting warnings if needed.
+     */
+    private static void checkModuleNamesAndStatus(Configuration cf) {
+        String incubating = null;
+        for (ResolvedModule rm : cf.modules()) {
+            ModuleReference mref = rm.reference();
+            String mn = mref.descriptor().name();
+
+            // emit warning if module name ends with a non-Java letter
+            if (!Checks.hasLegalModuleNameLastCharacter(mn))
+                warn("Module name \"" + mn + "\" may soon be illegal");
+
+            // emit warning if the WARN_INCUBATING module resolution bit set
+            if (ModuleResolution.hasIncubatingWarning(mref)) {
+                if (incubating == null) {
+                    incubating = mn;
+                } else {
+                    incubating += ", " + mn;
+                }
+            }
+        }
+        if (incubating != null)
+            warn("Using incubator modules: " + incubating);
+    }
+
+    /**
      * Throws a RuntimeException with the given message
      */
     static void fail(String m) {
@@ -635,6 +701,42 @@ public final class ModuleBootstrap {
 
     static void warn(String m) {
         System.err.println("WARNING: " + m);
+    }
+
+    static void warnUnknownModule(String option, String mn) {
+        warn("Unknown module: " + mn + " specified in " + option);
+    }
+
+    static String unableToParse(String option, String text, String value) {
+        return "Unable to parse " +  option + " " + text + ": " + value;
+    }
+
+    private static final String ADD_MODULES  = "--add-modules";
+    private static final String ADD_EXPORTS  = "--add-exports";
+    private static final String ADD_OPENS    = "--add-opens";
+    private static final String ADD_READS    = "--add-reads";
+    private static final String PATCH_MODULE = "--patch-module";
+
+
+    /*
+     * Returns the command-line option name corresponds to the specified
+     * system property prefix.
+     */
+    static String option(String prefix) {
+        switch (prefix) {
+            case "jdk.module.addexports.":
+                return ADD_EXPORTS;
+            case "jdk.module.addopens.":
+                return ADD_OPENS;
+            case "jdk.module.addreads.":
+                return ADD_READS;
+            case "jdk.module.patch.":
+                return PATCH_MODULE;
+            case "jdk.module.addmods.":
+                return ADD_MODULES;
+            default:
+                throw new IllegalArgumentException(prefix);
+        }
     }
 
     static class PerfCounters {

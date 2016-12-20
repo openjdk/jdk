@@ -25,16 +25,18 @@ package jdk.test.bar;
 
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Exports;
-import java.lang.module.ModuleDescriptor.Requires;
 import java.lang.module.ModuleDescriptor.Provides;
+import java.lang.module.ModuleReference;
+import java.lang.module.ResolvedModule;
+import java.lang.reflect.Module;
 import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.HashSet;
 import java.util.Set;
-
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.misc.JavaLangModuleAccess;
 import jdk.internal.module.ModuleHashes;
+import jdk.internal.module.ModuleReferenceImpl;
 import jdk.test.bar.internal.Message;
 
 public class Bar {
@@ -71,9 +73,14 @@ public class Bar {
         if (!sj.toString().equals(""))
             System.out.println("contains:" + sj.toString());
 
-        ModuleDescriptor foo = jdk.test.foo.Foo.class.getModule().getDescriptor();
-        JavaLangModuleAccess jlma = SharedSecrets.getJavaLangModuleAccess();
-        Optional<ModuleHashes> oHashes = jlma.hashes(foo);
-        System.out.println("hashes:" + oHashes.get().hashFor("bar"));
+
+        Module foo = jdk.test.foo.Foo.class.getModule();
+        Optional<ResolvedModule> om = foo.getLayer().configuration().findModule(foo.getName());
+        assert om.isPresent();
+        ModuleReference mref = om.get().reference();
+        assert mref instanceof ModuleReferenceImpl;
+        ModuleHashes hashes = ((ModuleReferenceImpl) mref).recordedHashes();
+        assert hashes != null;
+        System.out.println("hashes:" + hashes.hashFor("bar"));
     }
 }

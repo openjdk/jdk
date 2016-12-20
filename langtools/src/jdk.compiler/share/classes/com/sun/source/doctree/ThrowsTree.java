@@ -40,13 +40,13 @@ import java.util.List;
  */
 public interface ThrowsTree extends BlockTagTree {
     /**
-     * Returns a name of the exception being documented.
+     * Returns the name of the exception being documented.
      * @return the name of the exception
      */
     ReferenceTree getExceptionName();
 
     /**
-     * Returns the description of the reasons why the
+     * Returns a description of the reasons why the
      * exception may be thrown.
      * @return the description
      */

@@ -28,7 +28,7 @@
  * @author Andreas Sterbenz
  * @library ..
  * @modules java.base/sun.security.internal.spec
- *          jdk.crypto.pkcs11
+ *          jdk.crypto.token
  * @run main/othervm TestKeyMaterial
  * @run main/othervm TestKeyMaterial sm policy
  */

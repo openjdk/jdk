@@ -150,6 +150,12 @@ public interface DocTree {
         PARAM("param"),
 
         /**
+         * Used for instances of {@link ProvidesTree}
+         * representing an @provides tag.
+         */
+        PROVIDES("provides"),
+
+        /**
          * Used for instances of {@link ReferenceTree}
          * representing a reference to a element in the
          * Java programming language.
@@ -221,6 +227,12 @@ public interface DocTree {
          * representing an unknown inline tag.
          */
         UNKNOWN_INLINE_TAG,
+
+        /**
+         * Used for instances of {@link UsesTree}
+         * representing an @uses tag.
+         */
+        USES("uses"),
 
         /**
          * Used for instances of {@link ValueTree}
