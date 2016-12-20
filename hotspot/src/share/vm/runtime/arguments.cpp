@@ -28,7 +28,6 @@
 #include "classfile/moduleEntry.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
-#include "code/codeCacheExtensions.hpp"
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/referenceProcessor.hpp"
@@ -1885,7 +1884,6 @@ void Arguments::set_ergonomics_flags() {
 #endif // _LP64
 #endif // !ZERO
 
-  CodeCacheExtensions::set_ergonomics_flags();
 }
 
 void Arguments::set_parallel_gc_flags() {

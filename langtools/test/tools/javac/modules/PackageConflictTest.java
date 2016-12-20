@@ -40,7 +40,6 @@ import java.util.List;
 import toolbox.JavacTask;
 import toolbox.ModuleBuilder;
 import toolbox.Task;
-import toolbox.ToolBox;
 
 public class PackageConflictTest extends ModuleTestBase {
     public static void main(String... args) throws Exception {
@@ -70,13 +69,13 @@ public class PackageConflictTest extends ModuleTestBase {
 
     @Test
     public void testDisjoint(Path base) throws Exception {
-        Path m1 = base.resolve("m1");
-        Path m2 = base.resolve("m2");
+        Path m1 = base.resolve("m1x");
+        Path m2 = base.resolve("m2x");
         tb.writeJavaFiles(m1,
-                          "module m1 { }",
+                          "module m1x { }",
                           "package test; public class A { }");
         tb.writeJavaFiles(m2,
-                          "module m2 { }",
+                          "module m2x { }",
                           "package test; public class B { }");
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
@@ -91,17 +90,17 @@ public class PackageConflictTest extends ModuleTestBase {
 
     @Test
     public void testConflictInDependencies(Path base) throws Exception {
-        Path m1 = base.resolve("m1");
-        Path m2 = base.resolve("m2");
-        Path m3 = base.resolve("m3");
+        Path m1 = base.resolve("m1x");
+        Path m2 = base.resolve("m2x");
+        Path m3 = base.resolve("m3x");
         tb.writeJavaFiles(m1,
-                          "module m1 { exports test; }",
+                          "module m1x { exports test; }",
                           "package test; public class A { }");
         tb.writeJavaFiles(m2,
-                          "module m2 { exports test; }",
+                          "module m2x { exports test; }",
                           "package test; public class B { }");
         tb.writeJavaFiles(m3,
-                          "module m3 { requires m1; requires m2; }",
+                          "module m3x { requires m1x; requires m2x; }",
                           "package impl; public class Impl { }");
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
@@ -115,7 +114,7 @@ public class PackageConflictTest extends ModuleTestBase {
                        .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected =
-                Arrays.asList("module-info.java:1:1: compiler.err.package.clash.from.requires: m3, test, m1, m2",
+                Arrays.asList("module-info.java:1:1: compiler.err.package.clash.from.requires: m3x, test, m1x, m2x",
                               "1 error");
 
         if (!expected.equals(log)) {

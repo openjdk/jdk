@@ -529,7 +529,7 @@ public class TypeEnter implements Completer {
         protected  JCExpression enumBase(int pos, ClassSymbol c) {
             JCExpression result = make.at(pos).
                 TypeApply(make.QualIdent(syms.enumSym),
-                          List.<JCExpression>of(make.Type(c.type)));
+                          List.of(make.Type(c.type)));
             return result;
         }
 
@@ -960,9 +960,9 @@ public class TypeEnter implements Completer {
                 MethodDef(make.Modifiers(Flags.PUBLIC|Flags.STATIC),
                           names.values,
                           valuesType,
-                          List.<JCTypeParameter>nil(),
-                          List.<JCVariableDecl>nil(),
-                          List.<JCExpression>nil(), // thrown
+                          List.nil(),
+                          List.nil(),
+                          List.nil(), // thrown
                           null, //make.Block(0, Tree.emptyList.prepend(make.Return(make.Ident(names._null)))),
                           null);
             memberEnter.memberEnter(values, env);
@@ -972,12 +972,12 @@ public class TypeEnter implements Completer {
                 MethodDef(make.Modifiers(Flags.PUBLIC|Flags.STATIC),
                           names.valueOf,
                           make.Type(tree.sym.type),
-                          List.<JCTypeParameter>nil(),
+                          List.nil(),
                           List.of(make.VarDef(make.Modifiers(Flags.PARAMETER |
                                                              Flags.MANDATED),
                                                 names.fromString("name"),
                                                 make.Type(syms.stringType), null)),
-                          List.<JCExpression>nil(), // thrown
+                          List.nil(), // thrown
                           null, //make.Block(0, Tree.emptyList.prepend(make.Return(make.Ident(names._null)))),
                           null);
             memberEnter.memberEnter(valueOf, env);
@@ -1069,7 +1069,7 @@ public class TypeEnter implements Completer {
         }
         if (baseInit != null && baseInit.params != null &&
             baseInit.params.nonEmpty() && argTypesList.nonEmpty()) {
-            initParams = (initParams == null) ? List.<VarSymbol>nil() : initParams;
+            initParams = (initParams == null) ? List.nil() : initParams;
             List<VarSymbol> baseInitParams = baseInit.params;
             while (baseInitParams.nonEmpty() && argTypesList.nonEmpty()) {
                 VarSymbol param = new VarSymbol(baseInitParams.head.flags() | PARAMETER,

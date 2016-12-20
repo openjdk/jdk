@@ -967,7 +967,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
      */
 
     public void setEntityHandler(com.sun.org.apache.xerces.internal.impl.XMLEntityHandler entityHandler) {
-        fEntityHandler = (XMLEntityHandler) entityHandler;
+        fEntityHandler = entityHandler;
     } // setEntityHandler(XMLEntityHandler)
 
     //this function returns StaxXMLInputSource
@@ -1266,11 +1266,11 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         for (int i = size; i >= 0; i--) {
             Entity activeEntity = i == size
                     ? fCurrentEntity
-                    : (Entity)fEntityStack.elementAt(i);
+                    : fEntityStack.elementAt(i);
             if (activeEntity.name == entityName) {
                 String path = entityName;
                 for (int j = i + 1; j < size; j++) {
-                    activeEntity = (Entity)fEntityStack.elementAt(j);
+                    activeEntity = fEntityStack.elementAt(j);
                     path = path + " -> " + activeEntity.name;
                 }
                 path = path + " -> " + fCurrentEntity.name;
@@ -1704,7 +1704,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
      * are recognized by this component.
      */
     public String[] getRecognizedFeatures() {
-        return (String[])(RECOGNIZED_FEATURES.clone());
+        return RECOGNIZED_FEATURES.clone();
     } // getRecognizedFeatures():String[]
 
     /**
@@ -1824,7 +1824,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
      * are recognized by this component.
      */
     public String[] getRecognizedProperties() {
-        return (String[])(RECOGNIZED_PROPERTIES.clone());
+        return RECOGNIZED_PROPERTIES.clone();
     } // getRecognizedProperties():String[]
     /**
      * Returns the default state for a feature, or null if this
@@ -2952,7 +2952,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         public CharacterBuffer getBuffer(boolean external) {
             if (external) {
                 if (fExternalTop > -1) {
-                    return (CharacterBuffer)fExternalBufferPool[fExternalTop--];
+                    return fExternalBufferPool[fExternalTop--];
                 }
                 else {
                     return new CharacterBuffer(true, fExternalBufferSize);
@@ -2960,7 +2960,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
             }
             else {
                 if (fInternalTop > -1) {
-                    return (CharacterBuffer)fInternalBufferPool[fInternalTop--];
+                    return fInternalBufferPool[fInternalTop--];
                 }
                 else {
                     return new CharacterBuffer(false, fInternalBufferSize);

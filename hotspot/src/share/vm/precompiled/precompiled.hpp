@@ -66,7 +66,6 @@
 # include "classfile/vmSymbols.hpp"
 # include "code/codeBlob.hpp"
 # include "code/codeCache.hpp"
-# include "code/codeCacheExtensions.hpp"
 # include "code/compressedStream.hpp"
 # include "code/debugInfo.hpp"
 # include "code/debugInfoRec.hpp"

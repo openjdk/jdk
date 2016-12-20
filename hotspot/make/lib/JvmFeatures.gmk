@@ -154,3 +154,108 @@ else
       compiledIC_aot_x86_64.cpp compilerRuntime.cpp \
       aotCodeHeap.cpp aotCompiledMethod.cpp aotLoader.cpp compiledIC_aot.cpp
 endif
+################################################################################
+
+ifeq ($(call check-jvm-feature, link-time-opt), true)
+  # NOTE: Disable automatic opimization level and let the explicit cflag control
+  # optimization level instead. This activates O3 on slowdebug builds, just
+  # like the old build, but it's probably not right.
+  JVM_OPTIMIZATION :=
+  JVM_CFLAGS_FEATURES += -O3 -flto
+  JVM_LDFLAGS_FEATURES += -O3 -flto -fwhole-program -fno-strict-aliasing
+endif
+
+ifeq ($(call check-jvm-feature, minimal), true)
+  ifeq ($(call check-jvm-feature, link-time-opt), false)
+    JVM_OPTIMIZATION := SIZE
+    OPT_SPEED_SRC := \
+        allocation.cpp \
+        assembler.cpp \
+        assembler_linux_arm.cpp \
+        barrierSet.cpp \
+        basicLock.cpp \
+        biasedLocking.cpp \
+        bytecode.cpp \
+        bytecodeInterpreter.cpp \
+        bytecodeInterpreter_x86.cpp \
+        c1_Compilation.cpp \
+        c1_Compiler.cpp \
+        c1_GraphBuilder.cpp \
+        c1_LinearScan.cpp \
+        c1_LIR.cpp \
+        ciEnv.cpp \
+        ciObjectFactory.cpp \
+        codeBlob.cpp \
+        constantPool.cpp \
+        constMethod.cpp \
+        classLoader.cpp \
+        classLoaderData.cpp \
+        classFileParser.cpp \
+        classFileStream.cpp \
+        cpCache.cpp \
+        defNewGeneration.cpp \
+        frame_arm.cpp \
+        genCollectedHeap.cpp \
+        generation.cpp \
+        genMarkSweep.cpp \
+        growableArray.cpp \
+        handles.cpp \
+        hashtable.cpp \
+        heap.cpp \
+        icache.cpp \
+        icache_arm.cpp \
+        instanceKlass.cpp \
+        invocationCounter.cpp \
+        iterator.cpp \
+        javaCalls.cpp \
+        javaClasses.cpp \
+        jniFastGetField_arm.cpp \
+        jvm.cpp \
+        jvm_linux.cpp \
+        linkResolver.cpp \
+        klass.cpp \
+        klassVtable.cpp \
+        markSweep.cpp \
+        memRegion.cpp \
+        memoryPool.cpp \
+        method.cpp \
+        methodHandles.cpp \
+        methodHandles_arm.cpp \
+        methodLiveness.cpp \
+        metablock.cpp \
+        metaspace.cpp \
+        mutex.cpp \
+        mutex_linux.cpp \
+        mutexLocker.cpp \
+        nativeLookup.cpp \
+        objArrayKlass.cpp \
+        os_linux.cpp \
+        os_linux_arm.cpp \
+        placeHolders.cpp \
+        quickSort.cpp \
+        resourceArea.cpp \
+        rewriter.cpp \
+        sharedRuntime.cpp \
+        signature.cpp \
+        space.cpp \
+        stackMapTable.cpp \
+        symbolTable.cpp \
+        systemDictionary.cpp \
+        symbol.cpp \
+        synchronizer.cpp \
+        threadLS_bsd_x86.cpp \
+        threadLS_linux_arm.cpp \
+        threadLS_linux_x86.cpp \
+        timer.cpp \
+        typeArrayKlass.cpp \
+        unsafe.cpp \
+        utf8.cpp \
+        vmSymbols.cpp \
+        #
+
+    $(foreach s, $(OPT_SPEED_SRC), \
+        $(eval BUILD_LIBJVM_$s_OPTIMIZATION := HIGHEST_JVM))
+
+    BUILD_LIBJVM_systemDictionary.cpp_CXXFLAGS := -fno-optimize-sibling-calls
+  endif
+endif

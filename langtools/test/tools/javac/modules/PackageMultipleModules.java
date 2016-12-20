@@ -49,14 +49,14 @@ public class PackageMultipleModules extends ModuleTestBase {
 
     @Test
     public void testSimple(Path base) throws Exception {
-        Path m1 = base.resolve("m1");
-        Path m2 = base.resolve("m2");
+        Path m1 = base.resolve("m1x");
+        Path m2 = base.resolve("m2x");
         tb.writeJavaFiles(m1,
-                          "module m1 {}",
+                          "module m1x {}",
                           "package test; import test.B; public class A {}",
                           "package test; public class A1 extends A {}");
         tb.writeJavaFiles(m2,
-                          "module m2 {}",
+                          "module m2x {}",
                           "package test; import test.A; public class B {}",
                           "package test; public class B1 extends B {}");
         Path classes = base.resolve("classes");

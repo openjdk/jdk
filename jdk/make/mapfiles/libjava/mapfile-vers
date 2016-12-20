@@ -114,6 +114,7 @@ SUNWprivate_1.1 {
 		Java_java_io_UnixFileSystem_getBooleanAttributes0;
 		Java_java_io_UnixFileSystem_getLastModifiedTime;
 		Java_java_io_UnixFileSystem_getLength;
+		Java_java_io_UnixFileSystem_getNameMax0;
 		Java_java_io_UnixFileSystem_getSpace;
 		Java_java_io_UnixFileSystem_initIDs;
 		Java_java_io_UnixFileSystem_list;
@@ -150,7 +151,6 @@ SUNWprivate_1.1 {
 		Java_java_lang_StrictMath_atan;
 		Java_java_lang_StrictMath_atan2;
 		Java_java_lang_StrictMath_cos;
-		Java_java_lang_StrictMath_exp;
 		Java_java_lang_StrictMath_log;
 		Java_java_lang_StrictMath_log10;
 		Java_java_lang_StrictMath_sin;

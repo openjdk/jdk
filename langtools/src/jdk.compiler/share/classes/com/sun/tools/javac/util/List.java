@@ -134,7 +134,7 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
     /** Construct a list consisting of given element.
      */
     public static <A> List<A> of(A x1) {
-        return new List<>(x1, List.<A>nil());
+        return new List<>(x1, List.nil());
     }
 
     /** Construct a list consisting of given elements.
@@ -557,8 +557,8 @@ public class List<A> extends AbstractCollection<A> implements java.util.List<A> 
      */
     public static <Z> Collector<Z, ListBuffer<Z>, List<Z>> collector() {
         return Collector.of(ListBuffer::new,
-                (buf, el)->buf.add(el),
+                ListBuffer::add,
                 (buf1, buf2)-> { buf1.addAll(buf2); return buf1; },
-                buf->buf.toList());
+                ListBuffer::toList);
     }
 }

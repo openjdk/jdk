@@ -861,13 +861,8 @@ ExecuteWithLog = \
 ################################################################################
 # Find lib dir for module
 # Param 1 - module name
-ifeq ($(OPENJDK_TARGET_OS_TYPE), unix)
-  FindLibDirForModule = \
-      $(SUPPORT_OUTPUTDIR)/modules_libs/$(strip $1)$(OPENJDK_TARGET_CPU_LIBDIR)
-else
-  FindLibDirForModule = \
-      $(SUPPORT_OUTPUTDIR)/modules_libs/$(strip $1)
-endif
+FindLibDirForModule = \
+    $(SUPPORT_OUTPUTDIR)/modules_libs/$(strip $1)
 
 ################################################################################
 # Return a string suitable for use after a -classpath or --module-path option. It

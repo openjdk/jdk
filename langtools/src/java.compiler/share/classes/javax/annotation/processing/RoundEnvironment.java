@@ -76,14 +76,17 @@ public interface RoundEnvironment {
     /**
      * Returns the elements annotated with the given annotation type.
      * The annotation may appear directly or be inherited.  Only
-     * package elements and type elements <i>included</i> in this
+     * package elements, module elements, and type elements <i>included</i> in this
      * round of annotation processing, or declarations of members,
      * constructors, parameters, or type parameters declared within
      * those, are returned.  Included type elements are {@linkplain
      * #getRootElements root types} and any member types nested within
-     * them.  Elements in a package are not considered included simply
+     * them.  Elements of a package are not considered included simply
      * because a {@code package-info} file for that package was
      * created.
+     * Likewise, elements of a module are not considered included
+     * simply because a {@code module-info} file for that module was
+     * created
      *
      * @param a  annotation type being requested
      * @return the elements annotated with the given annotation type,
@@ -128,7 +131,7 @@ public interface RoundEnvironment {
     /**
      * Returns the elements annotated with the given annotation type.
      * The annotation may appear directly or be inherited.  Only
-     * package elements and type elements <i>included</i> in this
+     * package elements, module elements, and type elements <i>included</i> in this
      * round of annotation processing, or declarations of members,
      * constructors, parameters, or type parameters declared within
      * those, are returned.  Included type elements are {@linkplain
@@ -136,6 +139,9 @@ public interface RoundEnvironment {
      * them.  Elements in a package are not considered included simply
      * because a {@code package-info} file for that package was
      * created.
+     * Likewise, elements of a module are not considered included
+     * simply because a {@code module-info} file for that module was
+     * created
      *
      * @param a  annotation type being requested
      * @return the elements annotated with the given annotation type,

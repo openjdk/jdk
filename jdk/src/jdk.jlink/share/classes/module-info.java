@@ -36,12 +36,12 @@ module jdk.jlink {
         jdk.tools.jlink.internal.Main.JlinkToolProvider;
 
     provides jdk.tools.jlink.plugin.Plugin with
-        jdk.tools.jlink.internal.plugins.FileCopierPlugin,
         jdk.tools.jlink.internal.plugins.StripDebugPlugin,
         jdk.tools.jlink.internal.plugins.ExcludePlugin,
         jdk.tools.jlink.internal.plugins.ExcludeFilesPlugin,
         jdk.tools.jlink.internal.plugins.ExcludeJmodSectionPlugin,
-        jdk.tools.jlink.internal.plugins.SystemModuleDescriptorPlugin,
+        jdk.tools.jlink.internal.plugins.LegalNoticeFilePlugin,
+        jdk.tools.jlink.internal.plugins.SystemModulesPlugin,
         jdk.tools.jlink.internal.plugins.StripNativeCommandsPlugin,
         jdk.tools.jlink.internal.plugins.OrderResourcesPlugin,
         jdk.tools.jlink.internal.plugins.DefaultCompressPlugin,

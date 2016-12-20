@@ -81,7 +81,6 @@ class FreeBlock: public HeapBlock {
 
 class CodeHeap : public CHeapObj<mtCode> {
   friend class VMStructs;
-  friend class PregeneratedCodeHeap;
  protected:
   VirtualSpace _memory;                          // the memory holding the blocks
   VirtualSpace _segmap;                          // the memory holding the segment map

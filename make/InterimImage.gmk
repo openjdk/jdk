@@ -38,7 +38,7 @@ INTERIM_MODULES_LIST := $(call CommaList, $(INTERIM_IMAGE_MODULES))
 
 JMODS := $(patsubst %, $(INTERIM_JMODS_DIR)/%.jmod, $(INTERIM_IMAGE_MODULES))
 
-JLINK_TOOL := $(JLINK) \
+JLINK_TOOL := $(JLINK) -J-Djlink.debug=true \
     --module-path $(INTERIM_JMODS_DIR) \
     --endian $(OPENJDK_BUILD_CPU_ENDIAN)
 

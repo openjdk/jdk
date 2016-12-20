@@ -27,6 +27,7 @@ package jdk.javadoc.internal.tool;
 
 import com.sun.tools.javac.comp.*;
 import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.Context.Factory;
 
 /**
  *  Javadoc's own todo queue doesn't queue its inputs, as javadoc
@@ -41,11 +42,7 @@ import com.sun.tools.javac.util.*;
  */
 public class JavadocTodo extends Todo {
     public static void preRegister(Context context) {
-        context.put(todoKey, new Context.Factory<Todo>() {
-               public Todo make(Context c) {
-                   return new JavadocTodo(c);
-               }
-        });
+        context.put(todoKey, (Factory<Todo>)JavadocTodo::new);
     }
 
     protected JavadocTodo(Context context) {

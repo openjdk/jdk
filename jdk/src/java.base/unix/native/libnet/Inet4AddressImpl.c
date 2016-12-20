@@ -37,272 +37,9 @@
 
 #include "java_net_Inet4AddressImpl.h"
 
-#if defined(__GLIBC__) || (defined(__FreeBSD__) && (__FreeBSD_version >= 601104))
-#define HAS_GLIBC_GETHOSTBY_R   1
-#endif
-
-
-#if defined(_ALLBSD_SOURCE) && !defined(HAS_GLIBC_GETHOSTBY_R)
+#if defined(MACOSX)
 extern jobjectArray lookupIfLocalhost(JNIEnv *env, const char *hostname, jboolean includeV6);
-
-/* Use getaddrinfo(3), which is thread safe */
-/************************************************************************
- * Inet4AddressImpl
- */
-
-/*
- * Class:     java_net_Inet4AddressImpl
- * Method:    getLocalHostName
- * Signature: ()Ljava/lang/String;
- */
-JNIEXPORT jstring JNICALL
-Java_java_net_Inet4AddressImpl_getLocalHostName(JNIEnv *env, jobject this) {
-    char hostname[NI_MAXHOST+1];
-
-    hostname[0] = '\0';
-    if (gethostname(hostname, NI_MAXHOST)) {
-        /* Something went wrong, maybe networking is not setup? */
-        strcpy(hostname, "localhost");
-    } else {
-         struct addrinfo  hints, *res;
-         int error;
-
-         memset(&hints, 0, sizeof(hints));
-         hints.ai_flags = AI_CANONNAME;
-         hints.ai_family = AF_UNSPEC;
-
-         error = getaddrinfo(hostname, NULL, &hints, &res);
-
-         if (error == 0) {
-             /* host is known to name service */
-             error = getnameinfo(res->ai_addr,
-                                 res->ai_addrlen,
-                                 hostname,
-                                 NI_MAXHOST,
-                                 NULL,
-                                 0,
-                                 NI_NAMEREQD);
-
-             /* if getnameinfo fails hostname is still the value
-                from gethostname */
-
-             freeaddrinfo(res);
-        }
-    }
-    return (*env)->NewStringUTF(env, hostname);
-}
-
-/*
- * Find an internet address for a given hostname.  Note that this
- * code only works for addresses of type INET. The translation
- * of %d.%d.%d.%d to an address (int) occurs in java now, so the
- * String "host" shouldn't *ever* be a %d.%d.%d.%d string
- *
- * Class:     java_net_Inet4AddressImpl
- * Method:    lookupAllHostAddr
- * Signature: (Ljava/lang/String;)[[B
- */
-
-JNIEXPORT jobjectArray JNICALL
-Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
-                                                jstring host) {
-    const char *hostname;
-    jobject name;
-    jobjectArray ret = 0;
-    int retLen = 0;
-
-    int getaddrinfo_error=0;
-    struct addrinfo hints, *res, *resNew = NULL;
-
-    initInetAddressIDs(env);
-    JNU_CHECK_EXCEPTION_RETURN(env, NULL);
-
-    if (IS_NULL(host)) {
-        JNU_ThrowNullPointerException(env, "host is null");
-        return 0;
-    }
-    hostname = JNU_GetStringPlatformChars(env, host, JNI_FALSE);
-    CHECK_NULL_RETURN(hostname, NULL);
-
-    memset(&hints, 0, sizeof(hints));
-    hints.ai_flags = AI_CANONNAME;
-    hints.ai_family = AF_INET;
-
-    /*
-     * Workaround for Solaris bug 4160367 - if a hostname contains a
-     * white space then 0.0.0.0 is returned
-     */
-    if (isspace((unsigned char)hostname[0])) {
-        JNU_ThrowByName(env, JNU_JAVANETPKG "UnknownHostException",
-                        (char *)hostname);
-        JNU_ReleaseStringPlatformChars(env, host, hostname);
-        return NULL;
-    }
-
-
-    getaddrinfo_error = getaddrinfo(hostname, NULL, &hints, &res);
-
-#ifdef MACOSX
-    if (getaddrinfo_error) {
-        // If getaddrinfo fails try getifaddrs.
-        ret = lookupIfLocalhost(env, hostname, JNI_FALSE);
-        if (ret != NULL || (*env)->ExceptionCheck(env)) {
-            JNU_ReleaseStringPlatformChars(env, host, hostname);
-            return ret;
-        }
-    }
 #endif
-
-    if (getaddrinfo_error) {
-        /* report error */
-        NET_ThrowUnknownHostExceptionWithGaiError(
-            env, hostname, getaddrinfo_error);
-        JNU_ReleaseStringPlatformChars(env, host, hostname);
-        return NULL;
-    } else {
-        int i = 0;
-        struct addrinfo *itr, *last = NULL, *iterator = res;
-        while (iterator != NULL) {
-            int skip = 0;
-            itr = resNew;
-
-            while (itr != NULL) {
-                struct sockaddr_in *addr1, *addr2;
-
-                addr1 = (struct sockaddr_in *)iterator->ai_addr;
-                addr2 = (struct sockaddr_in *)itr->ai_addr;
-                if (addr1->sin_addr.s_addr ==
-                    addr2->sin_addr.s_addr) {
-                    skip = 1;
-                    break;
-                }
-
-                itr = itr->ai_next;
-            }
-
-            if (!skip) {
-                struct addrinfo *next
-                    = (struct addrinfo*) malloc(sizeof(struct addrinfo));
-                if (!next) {
-                    JNU_ThrowOutOfMemoryError(env, "Native heap allocation failed");
-                    ret = NULL;
-                    goto cleanupAndReturn;
-                }
-                memcpy(next, iterator, sizeof(struct addrinfo));
-                next->ai_next = NULL;
-                if (resNew == NULL) {
-                    resNew = next;
-                } else {
-                    last->ai_next = next;
-                }
-                last = next;
-                i++;
-            }
-            iterator = iterator->ai_next;
-        }
-
-        retLen = i;
-        iterator = resNew;
-        i = 0;
-
-        name = (*env)->NewStringUTF(env, hostname);
-        if (IS_NULL(name)) {
-          goto cleanupAndReturn;
-        }
-
-        ret = (*env)->NewObjectArray(env, retLen, ia_class, NULL);
-        if (IS_NULL(ret)) {
-            /* we may have memory to free at the end of this */
-            goto cleanupAndReturn;
-        }
-
-        while (iterator != NULL) {
-            /* We need 4 bytes to store ipv4 address; */
-            int len = 4;
-
-            jobject iaObj = (*env)->NewObject(env, ia4_class, ia4_ctrID);
-            if (IS_NULL(iaObj)) {
-                /* we may have memory to free at the end of this */
-                ret = NULL;
-                goto cleanupAndReturn;
-            }
-            setInetAddress_addr(env, iaObj, ntohl(((struct sockaddr_in*)(iterator->ai_addr))->sin_addr.s_addr));
-            setInetAddress_hostName(env, iaObj, name);
-            (*env)->SetObjectArrayElement(env, ret, retLen - i -1, iaObj);
-            i++;
-            iterator = iterator->ai_next;
-        }
-    }
-
-cleanupAndReturn:
-    {
-        struct addrinfo *iterator, *tmp;
-        iterator = resNew;
-        while (iterator != NULL) {
-            tmp = iterator;
-            iterator = iterator->ai_next;
-            free(tmp);
-        }
-        JNU_ReleaseStringPlatformChars(env, host, hostname);
-    }
-
-    freeaddrinfo(res);
-
-    return ret;
-
-}
-
-/*
- * Class:     java_net_Inet4AddressImpl
- * Method:    getHostByAddr
- * Signature: (I)Ljava/lang/String;
- */
-JNIEXPORT jstring JNICALL
-Java_java_net_Inet4AddressImpl_getHostByAddr(JNIEnv *env, jobject this,
-                                            jbyteArray addrArray) {
-    jstring ret = NULL;
-
-    char host[NI_MAXHOST+1];
-    jfieldID fid;
-    int error = 0;
-    jint family;
-    struct sockaddr *him ;
-    int len = 0;
-    jbyte caddr[4];
-    jint addr;
-
-    struct sockaddr_in him4;
-    struct sockaddr *sa;
-
-    /*
-         * For IPv4 addresses construct a sockaddr_in structure.
-         */
-    (*env)->GetByteArrayRegion(env, addrArray, 0, 4, caddr);
-    addr = ((caddr[0]<<24) & 0xff000000);
-    addr |= ((caddr[1] <<16) & 0xff0000);
-    addr |= ((caddr[2] <<8) & 0xff00);
-    addr |= (caddr[3] & 0xff);
-    memset((char *) &him4, 0, sizeof(him4));
-    him4.sin_addr.s_addr = htonl(addr);
-    him4.sin_family = AF_INET;
-    sa = (struct sockaddr *) &him4;
-    len = sizeof(him4);
-
-    error = getnameinfo(sa, len, host, NI_MAXHOST, NULL, 0, NI_NAMEREQD);
-
-    if (!error) {
-        ret = (*env)->NewStringUTF(env, host);
-    }
-
-    if (ret == NULL) {
-        JNU_ThrowByName(env, JNU_JAVANETPKG "UnknownHostException", NULL);
-    }
-
-    return ret;
-
-}
-
-#else /* defined(_ALLBSD_SOURCE) && !defined(HAS_GLIBC_GETHOSTBY_R) */
 
 /* the initial size of our hostent buffers */
 #ifndef NI_MAXHOST
@@ -405,6 +142,17 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
 
     error = getaddrinfo(hostname, NULL, &hints, &res);
 
+#ifdef MACOSX
+    if (error) {
+        // If getaddrinfo fails try getifaddrs, see bug 8170910.
+        ret = lookupIfLocalhost(env, hostname, JNI_FALSE);
+        if (ret != NULL || (*env)->ExceptionCheck(env)) {
+            JNU_ReleaseStringPlatformChars(env, host, hostname);
+            return ret;
+        }
+    }
+#endif
+
     if (error) {
         /* report error */
         NET_ThrowUnknownHostExceptionWithGaiError(env, hostname, error);
@@ -475,7 +223,7 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
         }
     }
 
- cleanupAndReturn:
+cleanupAndReturn:
     {
         struct addrinfo *iterator, *tmp;
         iterator = resNew;
@@ -534,8 +282,6 @@ Java_java_net_Inet4AddressImpl_getHostByAddr(JNIEnv *env, jobject this,
 
     return ret;
 }
-
-#endif /* _ALLBSD_SOURCE */
 
 #define SET_NONBLOCKING(fd) {           \
         int flags = fcntl(fd, F_GETFL); \

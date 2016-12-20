@@ -68,9 +68,10 @@ abstract class ArrayFilter extends ArrayData {
     }
 
     @Override
-    public void shiftLeft(final int by) {
+    public ArrayData shiftLeft(final int by) {
         underlying.shiftLeft(by);
         setLength(underlying.length());
+        return this;
     }
 
     @Override

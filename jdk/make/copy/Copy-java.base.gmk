@@ -100,8 +100,7 @@ else
   # Allow override by ALT_JVMCFG_SRC if it exists
   JVMCFG_SRC := $(if $(wildcard $(ALT_JVMCFG_SRC)),$(ALT_JVMCFG_SRC),$(JVMCFG_SRC))
 endif
-JVMCFG_DIR := $(LIB_DST_DIR)$(OPENJDK_TARGET_CPU_LIBDIR)
-JVMCFG := $(JVMCFG_DIR)/jvm.cfg
+JVMCFG := $(LIB_DST_DIR)/jvm.cfg
 
 # To do: should this also support -zeroshark?
 
@@ -233,3 +232,17 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
 endif
 
 ################################################################################
+
+# JDK license and assembly exception files to be packaged in JMOD
+
+JDK_LICENSE ?= $(JDK_TOPDIR)/LICENSE
+JDK_NOTICE  ?= $(JDK_TOPDIR)/ASSEMBLY_EXCEPTION
+
+$(eval $(call SetupCopyFiles, COPY_JDK_NOTICES, \
+    FILES := $(JDK_LICENSE) $(JDK_NOTICE), \
+    DEST := $(LEGAL_DST_DIR), \
+    FLATTEN := true, \
+))
+
+TARGETS += $(COPY_JDK_NOTICES)
+

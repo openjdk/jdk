@@ -31,6 +31,7 @@ import java.util.ResourceBundle;
 
 import com.sun.javadoc.*;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.Context.Factory;
 import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
 import com.sun.tools.javac.util.JavacMessages;
@@ -66,27 +67,18 @@ public class Messager extends Log implements DocErrorReporter {
 
     public static void preRegister(Context context,
                                    final String programName) {
-        context.put(logKey, new Context.Factory<Log>() {
-            public Log make(Context c) {
-                return new Messager(c,
-                                    programName);
-            }
-        });
+        context.put(logKey, (Factory<Log>)c -> new Messager(c, programName));
     }
     public static void preRegister(Context context,
                                    final String programName,
                                    final PrintWriter errWriter,
                                    final PrintWriter warnWriter,
                                    final PrintWriter noticeWriter) {
-        context.put(logKey, new Context.Factory<Log>() {
-            public Log make(Context c) {
-                return new Messager(c,
-                                    programName,
-                                    errWriter,
-                                    warnWriter,
-                                    noticeWriter);
-            }
-        });
+        context.put(logKey, (Factory<Log>)c -> new Messager(c,
+                            programName,
+                            errWriter,
+                            warnWriter,
+                            noticeWriter));
     }
 
     public class ExitJavadoc extends Error {

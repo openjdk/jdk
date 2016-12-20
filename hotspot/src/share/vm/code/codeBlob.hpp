@@ -40,9 +40,8 @@ struct CodeBlobType {
     MethodProfiled      = 1,    // Execution level 2 and 3 (profiled) nmethods
     NonNMethod          = 2,    // Non-nmethods like Buffers, Adapters and Runtime Stubs
     All                 = 3,    // All types (No code cache segmentation)
-    Pregenerated        = 4,    // Special blobs, managed by CodeCacheExtensions
-    AOT                 = 5,    // AOT methods
-    NumTypes            = 6     // Number of CodeBlobTypes
+    AOT                 = 4,    // AOT methods
+    NumTypes            = 5     // Number of CodeBlobTypes
   };
 };
 

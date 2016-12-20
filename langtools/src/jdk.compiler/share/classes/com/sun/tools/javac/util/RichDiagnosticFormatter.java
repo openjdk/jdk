@@ -556,7 +556,7 @@ public class RichDiagnosticFormatter extends
                 List<Type> bounds = (bound != null) &&
                         (bound.hasTag(CLASS) || bound.hasTag(TYPEVAR)) ?
                     types.getBounds(t) :
-                    List.<Type>nil();
+                    List.nil();
 
                 nameSimplifier.addUsage(t.tsym);
 

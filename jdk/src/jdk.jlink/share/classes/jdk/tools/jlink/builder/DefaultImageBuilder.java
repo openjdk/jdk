@@ -34,9 +34,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.lang.module.ModuleDescriptor;
 import java.nio.charset.StandardCharsets;
@@ -58,10 +58,10 @@ import java.util.Set;
 import static java.util.stream.Collectors.*;
 
 import jdk.tools.jlink.internal.BasicImageWriter;
-import jdk.tools.jlink.internal.plugins.FileCopierPlugin.SymImageFile;
 import jdk.tools.jlink.internal.ExecutableImage;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
+import jdk.tools.jlink.plugin.ResourcePoolEntry.Type;
 import jdk.tools.jlink.plugin.ResourcePoolModule;
 import jdk.tools.jlink.plugin.PluginException;
 
@@ -70,6 +70,13 @@ import jdk.tools.jlink.plugin.PluginException;
  * Default Image Builder. This builder creates the default runtime image layout.
  */
 public final class DefaultImageBuilder implements ImageBuilder {
+    // Top-level directory names in a modular runtime image
+    public static final String BIN_DIRNAME      = "bin";
+    public static final String CONF_DIRNAME     = "conf";
+    public static final String INCLUDE_DIRNAME  = "include";
+    public static final String LIB_DIRNAME      = "lib";
+    public static final String LEGAL_DIRNAME    = "legal";
+    public static final String MAN_DIRNAME      = "man";
 
     /**
      * The default java executable Image.
@@ -123,6 +130,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
     }
 
     private final Path root;
+    private final Map<String, String> launchers;
     private final Path mdir;
     private final Set<String> modules = new HashSet<>();
     private String targetOsName;
@@ -133,26 +141,11 @@ public final class DefaultImageBuilder implements ImageBuilder {
      * @param root The image root directory.
      * @throws IOException
      */
-    public DefaultImageBuilder(Path root) throws IOException {
-        Objects.requireNonNull(root);
-
-        this.root = root;
+    public DefaultImageBuilder(Path root, Map<String, String> launchers) throws IOException {
+        this.root = Objects.requireNonNull(root);
+        this.launchers = Objects.requireNonNull(launchers);
         this.mdir = root.resolve("lib");
         Files.createDirectories(mdir);
-    }
-
-    private void storeRelease(ResourcePool pool) throws IOException {
-        Properties props = new Properties();
-        Optional<ResourcePoolEntry> release = pool.findEntry("/java.base/release");
-        if (release.isPresent()) {
-            try (InputStream is = release.get().content()) {
-                props.load(is);
-            }
-        }
-        File r = new File(root.toFile(), "release");
-        try (FileOutputStream fo = new FileOutputStream(r)) {
-            props.store(fo, null);
-        }
     }
 
     @Override
@@ -172,10 +165,8 @@ public final class DefaultImageBuilder implements ImageBuilder {
                 throw new PluginException("TargetPlatform attribute is missing for java.base module");
             }
 
-            // store 'release' file
-            storeRelease(files);
+            Path bin = root.resolve(BIN_DIRNAME);
 
-            Path bin = root.resolve("bin");
             // check any duplicated resource files
             Map<Path, Set<String>> duplicates = new HashMap<>();
             files.entries()
@@ -224,19 +215,27 @@ public final class DefaultImageBuilder implements ImageBuilder {
                 }
 
                 // jspawnhelper is in lib or lib/<arch>
-                Path lib = root.resolve("lib");
+                Path lib = root.resolve(LIB_DIRNAME);
                 if (Files.isDirectory(lib)) {
                     Files.find(lib, 2, (path, attrs) -> {
                         return path.getFileName().toString().equals("jspawnhelper")
                                 || path.getFileName().toString().equals("jexec");
                     }).forEach(this::setExecutable);
                 }
+
+                // read-only legal notices/license files
+                Path legal = root.resolve(LEGAL_DIRNAME);
+                if (Files.isDirectory(legal)) {
+                    Files.find(legal, 2, (path, attrs) -> {
+                        return attrs.isRegularFile();
+                    }).forEach(this::setReadOnly);
+                }
             }
 
             // If native files are stripped completely, <root>/bin dir won't exist!
             // So, don't bother generating launcher scripts.
             if (Files.isDirectory(bin)) {
-                 prepareApplicationFiles(files, modules);
+                 prepareApplicationFiles(files);
             }
         } catch (IOException ex) {
             throw new PluginException(ex);
@@ -247,22 +246,44 @@ public final class DefaultImageBuilder implements ImageBuilder {
      * Generates launcher scripts.
      *
      * @param imageContent The image content.
-     * @param modules The set of modules that the runtime image contains.
      * @throws IOException
      */
-    protected void prepareApplicationFiles(ResourcePool imageContent, Set<String> modules) throws IOException {
+    protected void prepareApplicationFiles(ResourcePool imageContent) throws IOException {
         // generate launch scripts for the modules with a main class
-        for (String module : modules) {
+        for (Map.Entry<String, String> entry : launchers.entrySet()) {
+            String launcherEntry = entry.getValue();
+            int slashIdx = launcherEntry.indexOf("/");
+            String module, mainClassName;
+            if (slashIdx == -1) {
+                module = launcherEntry;
+                mainClassName = null;
+            } else {
+                module = launcherEntry.substring(0, slashIdx);
+                assert !module.isEmpty();
+                mainClassName = launcherEntry.substring(slashIdx + 1);
+                assert !mainClassName.isEmpty();
+            }
+
             String path = "/" + module + "/module-info.class";
             Optional<ResourcePoolEntry> res = imageContent.findEntry(path);
             if (!res.isPresent()) {
                 throw new IOException("module-info.class not found for " + module + " module");
             }
-            Optional<String> mainClass;
             ByteArrayInputStream stream = new ByteArrayInputStream(res.get().contentBytes());
-            mainClass = ModuleDescriptor.read(stream).mainClass();
-            if (mainClass.isPresent()) {
-                Path cmd = root.resolve("bin").resolve(module);
+            Optional<String> mainClass = ModuleDescriptor.read(stream).mainClass();
+            if (mainClassName == null && mainClass.isPresent()) {
+                mainClassName = mainClass.get();
+            }
+
+            if (mainClassName != null) {
+                // make sure main class exists!
+                if (!imageContent.findEntry("/" + module + "/" +
+                        mainClassName.replace('.', '/') + ".class").isPresent()) {
+                    throw new IllegalArgumentException(module + " does not have main class: " + mainClassName);
+                }
+
+                String launcherFile = entry.getKey();
+                Path cmd = root.resolve("bin").resolve(launcherFile);
                 // generate shell script for Unix platforms
                 StringBuilder sb = new StringBuilder();
                 sb.append("#!/bin/sh")
@@ -273,7 +294,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
                         .append("\n");
                 sb.append("$DIR/java $JLINK_VM_OPTIONS -m ")
                         .append(module).append('/')
-                        .append(mainClass.get())
+                        .append(mainClassName)
                         .append(" $@\n");
 
                 try (BufferedWriter writer = Files.newBufferedWriter(cmd,
@@ -287,7 +308,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
                 }
                 // generate .bat file for Windows
                 if (isWindows()) {
-                    Path bat = root.resolve("bin").resolve(module + ".bat");
+                    Path bat = root.resolve(BIN_DIRNAME).resolve(launcherFile + ".bat");
                     sb = new StringBuilder();
                     sb.append("@echo off")
                             .append("\r\n");
@@ -297,7 +318,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
                             .append("\r\n");
                     sb.append("\"%DIR%\\java\" %JLINK_VM_OPTIONS% -m ")
                             .append(module).append('/')
-                            .append(mainClass.get())
+                            .append(mainClassName)
                             .append(" %*\r\n");
 
                     try (BufferedWriter writer = Files.newBufferedWriter(bat,
@@ -306,6 +327,8 @@ public final class DefaultImageBuilder implements ImageBuilder {
                         writer.write(sb.toString());
                     }
                 }
+            } else {
+                throw new IllegalArgumentException(module + " doesn't contain main class & main not specified in command line");
             }
         }
     }
@@ -331,6 +354,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
 
         String module = "/" + entry.moduleName() + "/";
         String filename = entry.path().substring(module.length());
+
         // Remove radical native|config|...
         return filename.substring(filename.indexOf('/') + 1);
     }
@@ -344,23 +368,27 @@ public final class DefaultImageBuilder implements ImageBuilder {
                 String filename = entryToFileName(entry);
                 return Paths.get(nativeDir(filename), filename);
             case NATIVE_CMD:
-                return Paths.get("bin", entryToFileName(entry));
+                return Paths.get(BIN_DIRNAME, entryToFileName(entry));
             case CONFIG:
-                return Paths.get("conf", entryToFileName(entry));
+                return Paths.get(CONF_DIRNAME, entryToFileName(entry));
             case HEADER_FILE:
-                return Paths.get("include", entryToFileName(entry));
+                return Paths.get(INCLUDE_DIRNAME, entryToFileName(entry));
             case MAN_PAGE:
-                return Paths.get("man", entryToFileName(entry));
+                return Paths.get(MAN_DIRNAME, entryToFileName(entry));
+            case LEGAL_NOTICE:
+                return Paths.get(LEGAL_DIRNAME, entryToFileName(entry));
             case TOP:
                 return Paths.get(entryToFileName(entry));
-            case OTHER:
-                return Paths.get("other", entryToFileName(entry));
             default:
                 throw new IllegalArgumentException("invalid type: " + entry);
         }
     }
 
     private void accept(ResourcePoolEntry file) throws IOException {
+        if (file.linkedTarget() != null && file.type() != Type.LEGAL_NOTICE) {
+            throw new UnsupportedOperationException("symbolic link not implemented: " + file);
+        }
+
         try (InputStream in = file.content()) {
             switch (file.type()) {
                 case NATIVE_LIB:
@@ -373,28 +401,26 @@ public final class DefaultImageBuilder implements ImageBuilder {
                     p.toFile().setExecutable(true);
                     break;
                 case CONFIG:
-                    writeEntry(in, root.resolve(entryToImagePath(file)));
-                    break;
                 case HEADER_FILE:
-                    writeEntry(in, root.resolve(entryToImagePath(file)));
-                    break;
                 case MAN_PAGE:
                     writeEntry(in, root.resolve(entryToImagePath(file)));
                     break;
-                case TOP:
-                    break;
-                case OTHER:
-                    String filename = entryToFileName(file);
-                    if (file instanceof SymImageFile) {
-                        SymImageFile sym = (SymImageFile) file;
-                        Path target = root.resolve(sym.getTargetPath());
-                        if (!Files.exists(target)) {
-                            throw new IOException("Sym link target " + target
-                                    + " doesn't exist");
-                        }
-                        writeSymEntry(root.resolve(filename), target);
+                case LEGAL_NOTICE:
+                    Path source = entryToImagePath(file);
+                    if (file.linkedTarget() == null) {
+                        writeEntry(in, root.resolve(source));
                     } else {
-                        writeEntry(in, root.resolve(filename));
+                        Path target = entryToImagePath(file.linkedTarget());
+                        Path relPath = source.getParent().relativize(target);
+                        writeSymLinkEntry(root.resolve(source), relPath);
+                    }
+                    break;
+                case TOP:
+                    // Copy TOP files of the "java.base" module (only)
+                    if ("java.base".equals(file.moduleName())) {
+                        writeEntry(in, root.resolve(entryToImagePath(file)));
+                    } else {
+                        throw new InternalError("unexpected TOP entry: " + file.path());
                     }
                     break;
                 default:
@@ -417,16 +443,36 @@ public final class DefaultImageBuilder implements ImageBuilder {
         Files.createLink(dstFile, target);
     }
 
+    /*
+     * Create a symbolic link to the given target if the target platform
+     * supports symbolic link; otherwise, it will create a tiny file
+     * to contain the path to the target.
+     */
+    private void writeSymLinkEntry(Path dstFile, Path target) throws IOException {
+        Objects.requireNonNull(dstFile);
+        Objects.requireNonNull(target);
+        Files.createDirectories(Objects.requireNonNull(dstFile.getParent()));
+        if (!isWindows() && root.getFileSystem()
+                                .supportedFileAttributeViews()
+                                .contains("posix")) {
+            Files.createSymbolicLink(dstFile, target);
+        } else {
+            try (BufferedWriter writer = Files.newBufferedWriter(dstFile)) {
+                writer.write(String.format("Please see %s%n", target.toString()));
+            }
+        }
+    }
+
     private String nativeDir(String filename) {
         if (isWindows()) {
             if (filename.endsWith(".dll") || filename.endsWith(".diz")
                     || filename.endsWith(".pdb") || filename.endsWith(".map")) {
-                return "bin";
+                return BIN_DIRNAME;
             } else {
-                return "lib";
+                return LIB_DIRNAME;
             }
         } else {
-            return "lib";
+            return LIB_DIRNAME;
         }
     }
 
@@ -449,6 +495,21 @@ public final class DefaultImageBuilder implements ImageBuilder {
         }
     }
 
+    /**
+     * chmod ugo-w file
+     */
+    private void setReadOnly(Path file) {
+        try {
+            Set<PosixFilePermission> perms = Files.getPosixFilePermissions(file);
+            perms.remove(PosixFilePermission.OWNER_WRITE);
+            perms.remove(PosixFilePermission.GROUP_WRITE);
+            perms.remove(PosixFilePermission.OTHERS_WRITE);
+            Files.setPosixFilePermissions(file, perms);
+        } catch (IOException ioe) {
+            throw new UncheckedIOException(ioe);
+        }
+    }
+
     private static void createUtf8File(File file, String content) throws IOException {
         try (OutputStream fout = new FileOutputStream(file);
                 Writer output = new OutputStreamWriter(fout, "UTF-8")) {
@@ -465,7 +526,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
     private static void patchScripts(ExecutableImage img, List<String> args) throws IOException {
         Objects.requireNonNull(args);
         if (!args.isEmpty()) {
-            Files.find(img.getHome().resolve("bin"), 2, (path, attrs) -> {
+            Files.find(img.getHome().resolve(BIN_DIRNAME), 2, (path, attrs) -> {
                 return img.getModules().contains(path.getFileName().toString());
             }).forEach((p) -> {
                 try {
@@ -497,7 +558,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
     }
 
     public static ExecutableImage getExecutableImage(Path root) {
-        Path binDir = root.resolve("bin");
+        Path binDir = root.resolve(BIN_DIRNAME);
         if (Files.exists(binDir.resolve("java")) ||
             Files.exists(binDir.resolve("java.exe"))) {
             return new DefaultExecutableImage(root, retrieveModules(root));

@@ -68,11 +68,11 @@ public class ProvidesTest extends ModuleTestBase {
     @Test
     public void testMulti(Path base) throws Exception {
         Path src = base.resolve("src");
-        tb.writeJavaFiles(src.resolve("m1"),
-                "module m1 { exports p1; }",
+        tb.writeJavaFiles(src.resolve("m1x"),
+                "module m1x { exports p1; }",
                 "package p1; public class C1 { }");
-        tb.writeJavaFiles(src.resolve("m2"),
-                "module m2 { requires m1; provides p1.C1 with p2.C2; }",
+        tb.writeJavaFiles(src.resolve("m2x"),
+                "module m2x { requires m1x; provides p1.C1 with p2.C2; }",
                 "package p2; public class C2 extends p1.C1 { }");
         Path modules = base.resolve("modules");
         Files.createDirectories(modules);

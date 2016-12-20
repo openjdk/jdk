@@ -46,7 +46,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.prefs.BackingStoreException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -97,7 +96,7 @@ class ConsoleIOContext extends IOContext {
         List<String> persistenHistory = Stream.of(repl.prefs.keys())
                                               .filter(key -> key.startsWith(HISTORY_LINE_PREFIX))
                                               .sorted()
-                                              .map(key -> repl.prefs.get(key, null))
+                                              .map(key -> repl.prefs.get(key))
                                               .collect(Collectors.toList());
         in.setHistory(history = new EditingHistory(in, persistenHistory) {
             @Override protected boolean isComplete(CharSequence input) {
@@ -125,7 +124,7 @@ class ConsoleIOContext extends IOContext {
 
                 boolean smart = allowSmart &&
                                 suggestions.stream()
-                                           .anyMatch(s -> s.matchesType());
+                                           .anyMatch(Suggestion::matchesType);
 
                 lastTest = test;
                 lastCursor = cursor;
@@ -133,16 +132,16 @@ class ConsoleIOContext extends IOContext {
 
                 suggestions.stream()
                            .filter(s -> !smart || s.matchesType())
-                           .map(s -> s.continuation())
+                           .map(Suggestion::continuation)
                            .forEach(result::add);
 
                 boolean onlySmart = suggestions.stream()
-                                               .allMatch(s -> s.matchesType());
+                                               .allMatch(Suggestion::matchesType);
 
                 if (smart && !onlySmart) {
                     Optional<String> prefix =
                             suggestions.stream()
-                                       .map(s -> s.continuation())
+                                       .map(Suggestion::continuation)
                                        .reduce(ConsoleIOContext::commonPrefix);
 
                     String prefixStr = prefix.orElse("").substring(cursor - anchor[0]);
@@ -215,23 +214,21 @@ class ConsoleIOContext extends IOContext {
     @Override
     public void close() throws IOException {
         //save history:
-        try {
-            for (String key : repl.prefs.keys()) {
-                if (key.startsWith(HISTORY_LINE_PREFIX))
-                    repl.prefs.remove(key);
+        for (String key : repl.prefs.keys()) {
+            if (key.startsWith(HISTORY_LINE_PREFIX)) {
+                repl.prefs.remove(key);
             }
-            Collection<? extends String> savedHistory = history.save();
-            if (!savedHistory.isEmpty()) {
-                int len = (int) Math.ceil(Math.log10(savedHistory.size()+1));
-                String format = HISTORY_LINE_PREFIX + "%0" + len + "d";
-                int index = 0;
-                for (String historyLine : savedHistory) {
-                    repl.prefs.put(String.format(format, index++), historyLine);
-                }
-            }
-        } catch (BackingStoreException ex) {
-            throw new IllegalStateException(ex);
         }
+        Collection<? extends String> savedHistory = history.save();
+        if (!savedHistory.isEmpty()) {
+            int len = (int) Math.ceil(Math.log10(savedHistory.size()+1));
+            String format = HISTORY_LINE_PREFIX + "%0" + len + "d";
+            int index = 0;
+            for (String historyLine : savedHistory) {
+                repl.prefs.put(String.format(format, index++), historyLine);
+            }
+        }
+        repl.prefs.flush();
         in.shutdown();
         try {
             in.getTerminal().restore();
@@ -281,7 +278,7 @@ class ConsoleIOContext extends IOContext {
                                                               term.isAnsiSupported());
             Function<Documentation, String> convertor;
             if (firstInvocation) {
-                convertor = d -> d.signature();
+                convertor = Documentation::signature;
             } else {
                 convertor = d -> formatter.formatJavadoc(d.signature(), d.javadoc()) +
                                  (d.javadoc() == null ? repl.messageFormat("jshell.console.no.javadoc")
@@ -417,6 +414,7 @@ class ConsoleIOContext extends IOContext {
         }
     }
 
+    @Override
     public void beforeUserCode() {
         synchronized (this) {
             inputBytes = null;
@@ -424,6 +422,7 @@ class ConsoleIOContext extends IOContext {
         input.setState(State.BUFFER);
     }
 
+    @Override
     public void afterUserCode() {
         input.setState(State.WAIT);
     }

@@ -24,9 +24,7 @@
 /**
  * @test
  * @summary Verify the defining class loader of each module never delegates
- *          to its child class loader. Also sanity check java.compact2
- *          requires.
- * @modules java.compact2
+ *          to its child class loader.
  * @run testng/othervm --add-modules=ALL-SYSTEM VerifyModuleDelegation
  */
 
@@ -46,20 +44,9 @@ import static org.testng.Assert.*;
 
 public class VerifyModuleDelegation {
     private static final String JAVA_BASE = "java.base";
-    private static final String JAVA_COMPACT1 = "java.compact1";
-    private static final String JAVA_COMPACT2 = "java.compact2";
 
     private static final ModuleDescriptor BASE
         = ModuleDescriptor.module(JAVA_BASE).build();
-
-    private static final ModuleDescriptor COMPACT2
-        = ModuleDescriptor.module(JAVA_COMPACT2)
-            .requires(Set.of(MANDATED), JAVA_BASE)
-            .requires(Set.of(TRANSITIVE), JAVA_COMPACT1)
-            .requires(Set.of(TRANSITIVE), "java.rmi")
-            .requires(Set.of(TRANSITIVE), "java.sql")
-            .requires(Set.of(TRANSITIVE), "java.xml")
-            .build();
 
     private static final Set<ModuleDescriptor> MREFS
             = Layer.boot().modules().stream().map(Module::getDescriptor)
@@ -78,14 +65,6 @@ public class VerifyModuleDelegation {
                      .findFirst().orElseThrow(Error::new);
 
         check(md, BASE);
-    }
-    @Test
-    public void checkCompact2() {
-        ModuleDescriptor md =
-                MREFS.stream()
-                     .filter(d -> d.name().equals(JAVA_COMPACT2))
-                     .findFirst().orElseThrow(Error::new);
-        check(md, COMPACT2);
     }
 
     @Test

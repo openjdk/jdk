@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,8 @@
  *          java.rmi/sun.rmi.server
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
- * @build TestLibrary RMID ActivationLibrary
+ *          java.base/sun.nio.ch
+ * @build TestLibrary RMID ActivationLibrary RMIDSelectorProvider
  *     CanCreateStubs StubClassesPermitted_Stub
  * @run main/othervm/java.security.policy=security.policy/secure=java.lang.SecurityManager/timeout=240 StubClassesPermitted
  */
@@ -84,7 +85,7 @@ public class StubClassesPermitted
         try {
             TestLibrary.suggestSecurityManager("java.lang.SecurityManager");
 
-            registry = TestLibrary.createRegistryOnUnusedPort();
+            registry = TestLibrary.createRegistryOnEphemeralPort();
             registryPort = TestLibrary.getRegistryPort(registry);
 
             // must run with java.lang.SecurityManager or the test
@@ -98,7 +99,7 @@ public class StubClassesPermitted
 
             // start an rmid.
             RMID.removeLog();
-            rmid = RMID.createRMID();
+            rmid = RMID.createRMIDOnEphemeralPort();
             rmid.start();
 
             //rmid.addOptions(new String[] {"-C-Djava.rmi.server.logCalls=true"});

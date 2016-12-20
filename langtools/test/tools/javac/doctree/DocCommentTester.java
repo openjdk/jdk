@@ -498,6 +498,17 @@ public class DocCommentTester {
                 return null;
             }
 
+            public Void visitProvides(ProvidesTree node, Void p) {
+                header(node);
+                indent(+1);
+                print("serviceName", node.getServiceType());
+                print("description", node.getDescription());
+                indent(-1);
+                indent();
+                out.println("]");
+                return null;
+            }
+
             public Void visitReference(ReferenceTree node, Void p) {
                 header(node, compress(node.getSignature()));
                 return null;
@@ -611,6 +622,17 @@ public class DocCommentTester {
                 indent();
                 out.println("tag:" + node.getTagName());
                 print("content", node.getContent());
+                indent(-1);
+                indent();
+                out.println("]");
+                return null;
+            }
+
+            public Void visitUses(UsesTree node, Void p) {
+                header(node);
+                indent(+1);
+                print("serviceName", node.getServiceType());
+                print("description", node.getDescription());
                 indent(-1);
                 indent();
                 out.println("]");

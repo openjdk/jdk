@@ -27,7 +27,7 @@
  * @summary test the KeyGenerator
  * @author Andreas Sterbenz
  * @library ..
- * @modules jdk.crypto.pkcs11
+ * @modules jdk.crypto.token
  * @run main/othervm TestKeyGenerator
  * @run main/othervm TestKeyGenerator sm
  */

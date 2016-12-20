@@ -28,6 +28,7 @@
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.util
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main ClassPathWithDoubleQuotesTest
 */
@@ -36,6 +37,7 @@ import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import com.sun.tools.javac.util.Assert;
 import toolbox.TestRunner;
 import toolbox.JarTask;
 import toolbox.JavacTask;
@@ -46,9 +48,29 @@ public class ClassPathWithDoubleQuotesTest extends TestRunner {
 
     ToolBox tb;
 
-    private static final String ASrc = "public class A {}";
+    private static final String ASrc = "public class A { J j; B b;}";
+    private static final String BSrc = "public class B {}";
     private static final String JarSrc = "public class J {}";
-    private static final String[] jarArgs = {"cf", "test/J.jar", "-C", "test", "J.java"};
+    private static final String[] jarArgs = {"cf", "test/jarOut/J.jar", "-C", "test/jarSrc", "J.java"};
+    public static final String NEW_LINE = System.getProperty("line.separator");
+    private static final String expectedFailureOutput1 =
+            "A.java:1:18: compiler.err.cant.resolve.location: kindname.class, J, , , (compiler.misc.location: kindname.class, A, null)" + NEW_LINE +
+            "A.java:1:23: compiler.err.cant.resolve.location: kindname.class, B, , , (compiler.misc.location: kindname.class, A, null)" + NEW_LINE +
+            "2 errors" + NEW_LINE;
+    private static final String expectedFailureOutput2A =
+            "- compiler.warn.invalid.path: \"test/jarOut/J.jar" + NEW_LINE +
+            "- compiler.warn.invalid.path: test/src\"" + NEW_LINE +
+            "A.java:1:18: compiler.err.cant.resolve.location: kindname.class, J, , , (compiler.misc.location: kindname.class, A, null)" + NEW_LINE +
+            "A.java:1:23: compiler.err.cant.resolve.location: kindname.class, B, , , (compiler.misc.location: kindname.class, A, null)" + NEW_LINE +
+            "2 errors" + NEW_LINE +
+            "2 warnings" + NEW_LINE;
+    private static final String expectedFailureOutput2B =
+            "- compiler.warn.path.element.not.found: \"test/jarOut/J.jar" + NEW_LINE +
+            "- compiler.warn.path.element.not.found: test/src\"" + NEW_LINE +
+            "A.java:1:18: compiler.err.cant.resolve.location: kindname.class, J, , , (compiler.misc.location: kindname.class, A, null)" + NEW_LINE +
+            "A.java:1:23: compiler.err.cant.resolve.location: kindname.class, B, , , (compiler.misc.location: kindname.class, A, null)" + NEW_LINE +
+            "2 errors" + NEW_LINE +
+            "2 warnings" + NEW_LINE;
 
     public static void main(String... args) throws Exception {
         new ClassPathWithDoubleQuotesTest().runTests();
@@ -66,32 +88,56 @@ public class ClassPathWithDoubleQuotesTest extends TestRunner {
     @Test
     public void test(Path base) throws Exception {
         Path current = base.resolve(".");
-        tb.writeJavaFiles(current, ASrc, JarSrc);
+        Path jarSrc = current.resolve("jarSrc");
+        tb.writeJavaFiles(jarSrc, JarSrc);
+        Path jarOut = current.resolve("jarOut");
+        tb.createDirectories(jarOut);
         new JarTask(tb).run(jarArgs).writeAll();
 
-        executeTask(new JavacTask(tb, Task.Mode.EXEC)
-                    .envVar("CLASSPATH", "\"test/J.jar" + File.pathSeparator + "test\"")
-                    .files("test/A.java"));
+        Path src = current.resolve("src");
+        tb.writeJavaFiles(src, ASrc, BSrc);
 
-        executeTask(new JavacTask(tb)
-                    .classpath("\"test/J.jar" + File.pathSeparator + "test\"")
-                    .files("test/A.java"));
-    }
+        /** In any system there can be three possible scenarios:
+         *  1 - The system swallows the problem character (the quote in this case)
+         *      and the test case compiles
+         *  2 - The problem character gets into javac, but it's not bad enough to trigger
+         *      InvalidPathException, but it does mean you can't find the file you're looking for
+         *  3 - The problem character gets into javac and is bad enough to trigger
+         *      InvalidPathException, in which case javac needs to handle the exception in a reasonable way.
+         */
 
-    void executeTask(JavacTask task) {
-        boolean isWindows = System.getProperty("os.name").startsWith("Windows");
-        Task.Expect whatToExpect = isWindows ? Task.Expect.FAIL : Task.Expect.SUCCESS;
-        try {
-            task.run(whatToExpect);
-            if (isWindows) {
-                throw new AssertionError("exception must be thrown");
-            }
-        } catch (IllegalArgumentException iae) {
-            if (!isWindows) {
-                throw new AssertionError("exception unexpectedly thrown");
-            }
-        } catch (Throwable t) {
-            throw new AssertionError("unexpected exception thrown");
-        }
+        // testing scenario 1
+        System.err.println("invoking javac EXEC mode without double quotes in the CLASSPATH env variable");
+        new JavacTask(tb, Task.Mode.EXEC)
+                .envVar("CLASSPATH", "test/jarOut/J.jar" + File.pathSeparator + "test/src")
+                .files("test/src/A.java").run(Task.Expect.SUCCESS);
+        System.err.println("successful compilation");
+        System.err.println();
+
+        // testing scenario 2
+        System.err.println("Simulate a system in which double quotes are preserved in the environment variable," +
+                "and for which they are a legal filename character");
+        String log = new JavacTask(tb, Task.Mode.EXEC)
+                .envVar("CLASSPATH", "Ztest/jarOut/J.jar" + File.pathSeparator + "test/srcZ")
+                .options("-XDrawDiagnostics")
+                .files("test/src/A.java").run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutput(Task.OutputKind.STDERR);
+        Assert.check(log.equals(expectedFailureOutput1), "unexpected output");
+        System.err.println("compilation is expected to fail");
+        System.err.println();
+
+        // testing scenario 3
+        System.err.println("invoking javac EXEC mode with double quotes in the CLASSPATH env variable");
+        String log2 = new JavacTask(tb, Task.Mode.EXEC)
+                    .envVar("CLASSPATH", "\"test/jarOut/J.jar" + File.pathSeparator + "test/src\"")
+                    .options("-Xlint:path", "-XDrawDiagnostics")
+                    .files("test/src/A.java").run(Task.Expect.FAIL)
+                    .writeAll()
+                    .getOutput(Task.OutputKind.STDERR);
+        System.err.println();
+        System.err.println("the log:" + log2);
+        Assert.check(log2.equals(expectedFailureOutput2A) || log2.equals(expectedFailureOutput2B),
+                "unexpected output");
     }
 }

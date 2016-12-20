@@ -37,6 +37,7 @@ import java.security.AlgorithmConstraints;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.BiFunction;
 
 import javax.crypto.BadPaddingException;
 import javax.net.ssl.*;
@@ -222,6 +223,10 @@ public final class SSLSocketImpl extends BaseSSLSocketImpl {
     //
     // The value under negotiation will be obtained from handshaker.
     String applicationProtocol = null;
+
+    // Callback function that selects the application protocol value during
+    // the SSL/TLS handshake.
+    BiFunction<SSLSocket, List<String>, String> applicationProtocolSelector;
 
     /*
      * READ ME * READ ME * READ ME * READ ME * READ ME * READ ME *
@@ -1370,6 +1375,8 @@ public final class SSLSocketImpl extends BaseSSLSocketImpl {
         handshaker.setEnabledCipherSuites(enabledCipherSuites);
         handshaker.setEnableSessionCreation(enableSessionCreation);
         handshaker.setApplicationProtocols(applicationProtocols);
+        handshaker.setApplicationProtocolSelectorSSLSocket(
+            applicationProtocolSelector);
     }
 
     /**
@@ -2151,7 +2158,7 @@ public final class SSLSocketImpl extends BaseSSLSocketImpl {
                         Utilities.addToSNIServerNameList(serverNames, host);
 
                 if (!roleIsServer &&
-                        (handshaker != null) && !handshaker.started()) {
+                        (handshaker != null) && !handshaker.activated()) {
                     handshaker.setSNIServerNames(serverNames);
                 }
             }
@@ -2179,7 +2186,7 @@ public final class SSLSocketImpl extends BaseSSLSocketImpl {
         this.serverNames =
             Utilities.addToSNIServerNameList(this.serverNames, this.host);
 
-        if (!roleIsServer && (handshaker != null) && !handshaker.started()) {
+        if (!roleIsServer && (handshaker != null) && !handshaker.activated()) {
             handshaker.setSNIServerNames(serverNames);
         }
     }
@@ -2631,7 +2638,7 @@ public final class SSLSocketImpl extends BaseSSLSocketImpl {
 
         applicationProtocols = params.getApplicationProtocols();
 
-        if ((handshaker != null) && !handshaker.started()) {
+        if ((handshaker != null) && !handshaker.activated()) {
             handshaker.setIdentificationProtocol(identificationProtocol);
             handshaker.setAlgorithmConstraints(algorithmConstraints);
             handshaker.setMaximumPacketSize(maximumPacketSize);
@@ -2656,6 +2663,21 @@ public final class SSLSocketImpl extends BaseSSLSocketImpl {
             return handshaker.getHandshakeApplicationProtocol();
         }
         return null;
+    }
+
+    @Override
+    public synchronized void setHandshakeApplicationProtocolSelector(
+        BiFunction<SSLSocket, List<String>, String> selector) {
+        applicationProtocolSelector = selector;
+        if ((handshaker != null) && !handshaker.activated()) {
+            handshaker.setApplicationProtocolSelectorSSLSocket(selector);
+        }
+    }
+
+    @Override
+    public synchronized BiFunction<SSLSocket, List<String>, String>
+        getHandshakeApplicationProtocolSelector() {
+        return this.applicationProtocolSelector;
     }
 
     //

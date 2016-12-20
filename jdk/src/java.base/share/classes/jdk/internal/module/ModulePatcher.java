@@ -149,9 +149,22 @@ public final class ModulePatcher {
 
         // return a module reference to the patched module
         URI location = mref.location().orElse(null);
-        return JLMA.newPatchedModule(descriptor,
-                                     location,
-                                     () -> new PatchedModuleReader(paths, mref));
+
+        ModuleHashes recordedHashes = null;
+        ModuleResolution mres = null;
+        if (mref instanceof ModuleReferenceImpl) {
+            ModuleReferenceImpl impl = (ModuleReferenceImpl)mref;
+            recordedHashes = impl.recordedHashes();
+            mres = impl.moduleResolution();
+        }
+
+        return new ModuleReferenceImpl(descriptor,
+                                       location,
+                                       () -> new PatchedModuleReader(paths, mref),
+                                       this,
+                                       recordedHashes,
+                                       null,
+                                       mres);
 
     }
 
@@ -162,6 +175,12 @@ public final class ModulePatcher {
         return map.isEmpty();
     }
 
+    /*
+     * Returns the names of the patched modules.
+     */
+    Set<String> patchedModules() {
+        return map.keySet();
+    }
 
     /**
      * A ModuleReader that reads resources from a patched module.

@@ -235,8 +235,8 @@ class ReplParser extends JavacParser {
                             // malformed declaration, return error
                             pos = token.pos;
                             List<JCTree> err = isVoid
-                                    ? List.<JCTree>of(toP(F.at(pos).MethodDef(mods, name, t, typarams,
-                                                            List.<JCVariableDecl>nil(), List.<JCExpression>nil(), null, null)))
+                                    ? List.of(toP(F.at(pos).MethodDef(mods, name, t, typarams,
+                                                            List.nil(), List.nil(), null, null)))
                                     : null;
                             return List.<JCTree>of(syntaxError(token.pos, err, "expected", LPAREN));
                         }

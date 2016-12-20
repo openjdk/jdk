@@ -89,7 +89,7 @@ public final class UTF8OutputStreamWriter extends Writer {
         // Otherwise, encode char as defined in UTF-8
         if (c < 0x80) {
             // 1 byte, 7 bits
-            out.write((int) c);
+            out.write(c);
         }
         else if (c < 0x800) {
             // 2 bytes, 11 bits

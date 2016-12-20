@@ -114,6 +114,10 @@ ifeq ($(call check-jvm-feature, compiler2), true)
     ADLCFLAGS += -U_LP64
   endif
 
+  ifeq ($(HOTSPOT_TARGET_CPU_ARCH), arm)
+    ADLCFLAGS += -DARM=1
+  endif
+
   ##############################################################################
   # Concatenate all ad source files into a single file, which will be fed to
   # adlc. Also include a #line directive at the start of every included file

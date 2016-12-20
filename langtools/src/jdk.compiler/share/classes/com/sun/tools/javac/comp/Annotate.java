@@ -484,7 +484,7 @@ public class Annotate {
         JCIdent left = (JCIdent)assign.lhs;
         Symbol method = resolve.resolveQualifiedMethod(elidedValue ? assign.rhs.pos() : left.pos(),
                 env, thisAnnotationType,
-                left.name, List.<Type>nil(), null);
+                left.name, List.nil(), null);
         left.sym = method;
         left.type = method.type;
         if (method.owner != thisAnnotationType.tsym && !badAnnotation)
@@ -626,7 +626,7 @@ public class Annotate {
         // Special case, implicit array
         if (!tree.hasTag(NEWARRAY)) {
             tree = make.at(tree.pos).
-                    NewArray(null, List.<JCExpression>nil(), List.of(tree));
+                    NewArray(null, List.nil(), List.of(tree));
         }
 
         JCNewArray na = (JCNewArray)tree;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,9 @@
  * Names of parameters may not be recoverable from class files.
  *
  * The {@linkplain javax.lang.model.element.Modifier modifiers} on an
- * element may differ in some cases including:
+ * element created from a class file may differ in some cases from an
+ * element for the same declaration created from a source file
+ * including:
  *
  * <ul>
  * <li> {@code strictfp} on a class or interface
@@ -61,10 +63,19 @@
  * <li> {@code protected}, {@code private}, and {@code static} on classes and interfaces
  * </ul>
  *
- * Additionally, synthetic constructs in a class file, such as
- * accessor methods used in implementing nested classes and bridge
- * methods used in implementing covariant returns, are translation
- * artifacts outside of this model.
+ * Some elements which are {@linkplain
+ * javax.lang.model.util.Elements.Origin#MANDATED mandated} may not be
+ * marked as such when created from class files.
+ *
+ * Additionally, {@linkplain
+ * javax.lang.model.util.Elements.Origin#SYNTHETIC synthetic}
+ * constructs in a class file, such as accessor methods used in
+ * implementing nested classes and {@linkplain
+ * javax.lang.model.util.Elements.Origin#isBridge(ExecutableElement)
+ * bridge methods} used in implementing covariant returns, are
+ * translation artifacts strictly outside of this model. However, when
+ * operating on class files, it is helpful be able to operate on such
+ * elements, screening them out when appropriate.
  *
  * <p>During annotation processing, operating on incomplete or
  * erroneous programs is necessary; however, there are fewer
