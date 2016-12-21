@@ -716,11 +716,18 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   pthread_attr_init(&attr);
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
-  // calculate stack size if it's not specified by caller
+  // Calculate stack size if it's not specified by caller.
   size_t stack_size = os::Posix::get_initial_stack_size(thr_type, req_stack_size);
+  // In the Linux NPTL pthread implementation the guard size mechanism
+  // is not implemented properly. The posix standard requires adding
+  // the size of the guard pages to the stack size, instead Linux
+  // takes the space out of 'stacksize'. Thus we adapt the requested
+  // stack_size by the size of the guard pages to mimick proper
+  // behaviour.
+  stack_size = align_size_up(stack_size + os::Linux::default_guard_size(thr_type), vm_page_size());
   pthread_attr_setstacksize(&attr, stack_size);
 
-  // glibc guard page
+  // Configure glibc guard page.
   pthread_attr_setguardsize(&attr, os::Linux::default_guard_size(thr_type));
 
   ThreadState state;
@@ -2847,6 +2854,13 @@ bool os::Linux::libnuma_init() {
     }
   }
   return false;
+}
+
+size_t os::Linux::default_guard_size(os::ThreadType thr_type) {
+  // Creating guard page is very expensive. Java thread has HotSpot
+  // guard pages, only enable glibc guard page for non-Java threads.
+  // (Remember: compiler thread is a Java thread, too!)
+  return ((thr_type == java_thread || thr_type == compiler_thread) ? 0 : page_size());
 }
 
 // rebuild_cpu_to_node_map() constructs a table mapping cpud id to node id.
@@ -6080,6 +6094,101 @@ bool os::start_debugging(char *buf, int buflen) {
   }
   return yes;
 }
+
+
+// Java/Compiler thread:
+//
+//   Low memory addresses
+// P0 +------------------------+
+//    |                        |\  Java thread created by VM does not have glibc
+//    |    glibc guard page    | - guard page, attached Java thread usually has
+//    |                        |/  1 glibc guard page.
+// P1 +------------------------+ Thread::stack_base() - Thread::stack_size()
+//    |                        |\
+//    |  HotSpot Guard Pages   | - red, yellow and reserved pages
+//    |                        |/
+//    +------------------------+ JavaThread::stack_reserved_zone_base()
+//    |                        |\
+//    |      Normal Stack      | -
+//    |                        |/
+// P2 +------------------------+ Thread::stack_base()
+//
+// Non-Java thread:
+//
+//   Low memory addresses
+// P0 +------------------------+
+//    |                        |\
+//    |  glibc guard page      | - usually 1 page
+//    |                        |/
+// P1 +------------------------+ Thread::stack_base() - Thread::stack_size()
+//    |                        |\
+//    |      Normal Stack      | -
+//    |                        |/
+// P2 +------------------------+ Thread::stack_base()
+//
+// ** P1 (aka bottom) and size (P2 = P1 - size) are the address and stack size
+//    returned from pthread_attr_getstack().
+// ** Due to NPTL implementation error, linux takes the glibc guard page out
+//    of the stack size given in pthread_attr. We work around this for
+//    threads created by the VM. (We adapt bottom to be P1 and size accordingly.)
+//
+#ifndef ZERO
+static void current_stack_region(address * bottom, size_t * size) {
+  if (os::Linux::is_initial_thread()) {
+    // initial thread needs special handling because pthread_getattr_np()
+    // may return bogus value.
+    *bottom = os::Linux::initial_thread_stack_bottom();
+    *size   = os::Linux::initial_thread_stack_size();
+  } else {
+    pthread_attr_t attr;
+
+    int rslt = pthread_getattr_np(pthread_self(), &attr);
+
+    // JVM needs to know exact stack location, abort if it fails
+    if (rslt != 0) {
+      if (rslt == ENOMEM) {
+        vm_exit_out_of_memory(0, OOM_MMAP_ERROR, "pthread_getattr_np");
+      } else {
+        fatal("pthread_getattr_np failed with error = %d", rslt);
+      }
+    }
+
+    if (pthread_attr_getstack(&attr, (void **)bottom, size) != 0) {
+      fatal("Cannot locate current stack attributes!");
+    }
+
+    // Work around NPTL stack guard error.
+    size_t guard_size = 0;
+    rslt = pthread_attr_getguardsize(&attr, &guard_size);
+    if (rslt != 0) {
+      fatal("pthread_attr_getguardsize failed with error = %d", rslt);
+    }
+    *bottom += guard_size;
+    *size   -= guard_size;
+
+    pthread_attr_destroy(&attr);
+
+  }
+  assert(os::current_stack_pointer() >= *bottom &&
+         os::current_stack_pointer() < *bottom + *size, "just checking");
+}
+
+address os::current_stack_base() {
+  address bottom;
+  size_t size;
+  current_stack_region(&bottom, &size);
+  return (bottom + size);
+}
+
+size_t os::current_stack_size() {
+  // This stack size includes the usable stack and HotSpot guard pages
+  // (for the threads that have Hotspot guard pages).
+  address bottom;
+  size_t size;
+  current_stack_region(&bottom, &size);
+  return size;
+}
+#endif
 
 static inline struct timespec get_mtime(const char* filename) {
   struct stat st;
