@@ -313,10 +313,6 @@ class ObjectMonitor {
   void      clear();
   static void sanity_checks();  // public for -XX:+ExecuteInternalVMTests
                                 // in PRODUCT for -XX:SyncKnobs=Verbose=1
-#ifndef PRODUCT
-  void      verify();
-  void      print();
-#endif
 
   void      enter(TRAPS);
   void      exit(bool not_suspended, TRAPS);
