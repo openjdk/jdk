@@ -675,12 +675,14 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
 
     /**
      * Nulls out slots starting at array index i, upto index end.
-     * If i == end, the entire array is cleared!
+     * Condition i == end means "full" - the entire array is cleared.
      */
     private static void circularClear(Object[] items, int i, int end) {
+        // assert 0 <= i && i < items.length;
+        // assert 0 <= end && end < items.length;
         for (int to = (i < end) ? end : items.length;
              ; i = 0, to = end) {
-            Arrays.fill(items, i, to, null);
+            for (; i < to; i++) items[i] = null;
             if (to == end) break;
         }
     }
@@ -1011,6 +1013,11 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
      * expected element to remove, in lastItem.  Yes, we may fail to
      * remove lastItem from the queue if it moved due to an interleaved
      * interior remove while in detached mode.
+     *
+     * Method forEachRemaining, added in Java 8, is treated similarly
+     * to hasNext returning false, in that we switch to detached mode,
+     * but we regard it as an even stronger request to "close" this
+     * iteration, and don't bother supporting subsequent remove().
      */
     private class Itr implements Iterator<E> {
         /** Index to look for new nextItem; NONE at end */
@@ -1432,6 +1439,9 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
                     Spliterator.CONCURRENT));
     }
 
+    /**
+     * @throws NullPointerException {@inheritDoc}
+     */
     public void forEach(Consumer<? super E> action) {
         Objects.requireNonNull(action);
         final ReentrantLock lock = this.lock;

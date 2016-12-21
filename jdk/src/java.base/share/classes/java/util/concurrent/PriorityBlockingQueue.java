@@ -345,11 +345,9 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
      * promoting x up the tree until it is greater than or equal to
      * its parent, or is the root.
      *
-     * To simplify and speed up coercions and comparisons. the
+     * To simplify and speed up coercions and comparisons, the
      * Comparable and Comparator versions are separated into different
      * methods that are otherwise identical. (Similarly for siftDown.)
-     * These methods are static, with heap state as arguments, to
-     * simplify use in light of possible comparator exceptions.
      *
      * @param k the position to fill
      * @param x the item to insert
@@ -435,6 +433,7 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
     /**
      * Establishes the heap invariant (described above) in the entire tree,
      * assuming nothing about the order of the elements prior to the call.
+     * This classic algorithm due to Floyd (1964) is known to be O(size).
      */
     private void heapify() {
         Object[] array = queue;
@@ -878,8 +877,7 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
         public E next() {
             if (cursor >= array.length)
                 throw new NoSuchElementException();
-            lastRet = cursor;
-            return (E)array[cursor++];
+            return (E)array[lastRet = cursor++];
         }
 
         public void remove() {
@@ -936,15 +934,12 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
     /**
      * Immutable snapshot spliterator that binds to elements "late".
      */
-    static final class PBQSpliterator<E> implements Spliterator<E> {
-        final PriorityBlockingQueue<E> queue;
+    final class PBQSpliterator implements Spliterator<E> {
         Object[] array;
         int index;
         int fence;
 
-        PBQSpliterator(PriorityBlockingQueue<E> queue, Object[] array,
-                       int index, int fence) {
-            this.queue = queue;
+        PBQSpliterator(Object[] array, int index, int fence) {
             this.array = array;
             this.index = index;
             this.fence = fence;
@@ -953,14 +948,14 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
         final int getFence() {
             int hi;
             if ((hi = fence) < 0)
-                hi = fence = (array = queue.toArray()).length;
+                hi = fence = (array = toArray()).length;
             return hi;
         }
 
-        public PBQSpliterator<E> trySplit() {
+        public PBQSpliterator trySplit() {
             int hi = getFence(), lo = index, mid = (lo + hi) >>> 1;
             return (lo >= mid) ? null :
-                new PBQSpliterator<E>(queue, array, lo, index = mid);
+                new PBQSpliterator(array, lo, index = mid);
         }
 
         @SuppressWarnings("unchecked")
@@ -969,7 +964,7 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
             if (action == null)
                 throw new NullPointerException();
             if ((a = array) == null)
-                fence = (a = queue.toArray()).length;
+                fence = (a = toArray()).length;
             if ((hi = fence) <= a.length &&
                 (i = index) >= 0 && i < (index = hi)) {
                 do { action.accept((E)a[i]); } while (++i < hi);
@@ -987,7 +982,7 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
             return false;
         }
 
-        public long estimateSize() { return (long)(getFence() - index); }
+        public long estimateSize() { return getFence() - index; }
 
         public int characteristics() {
             return Spliterator.NONNULL | Spliterator.SIZED | Spliterator.SUBSIZED;
@@ -1012,7 +1007,7 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
      * @since 1.8
      */
     public Spliterator<E> spliterator() {
-        return new PBQSpliterator<E>(this, null, 0, -1);
+        return new PBQSpliterator(null, 0, -1);
     }
 
     // VarHandle mechanics
