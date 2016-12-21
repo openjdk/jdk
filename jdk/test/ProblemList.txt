@@ -217,8 +217,6 @@ sun/security/tools/jarsigner/warnings/BadKeyUsageTest.java      8026393 generic-
 
 sun/security/ssl/SSLSocketImpl/AsyncSSLSocketClose.java         8161232 macosx-all
 
-sun/net/www/protocol/https/HttpsClient/ServerIdentityTest.java  8171043 windows-all
-
 javax/net/ssl/DTLS/PacketLossRetransmission.java                8169086 macosx-x64
 
 ############################################################################
@@ -231,8 +229,6 @@ javax/sound/sampled/DataLine/LongFramePosition.java    8055097 generic-all
 javax/sound/sampled/Clip/Drain/ClipDrain.java          7062792 generic-all
 
 javax/sound/sampled/Mixers/DisabledAssertionCrash.java 7067310 generic-all
-
-javax/sound/sampled/Clip/OpenNonIntegralNumberOfSampleframes.java 8168881 generic-all
 
 ############################################################################
 
