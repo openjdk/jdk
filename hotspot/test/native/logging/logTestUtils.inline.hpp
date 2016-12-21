@@ -59,6 +59,20 @@ static inline void create_directory(const char* name) {
   assert(!failed, "failed to create directory %s", name);
 }
 
+static inline void delete_empty_directory(const char* name) {
+#ifdef _WINDOWS
+  if (!file_exists(name)) {
+    return;
+  }
+  bool failed;
+  failed = !RemoveDirectory(name);
+  EXPECT_FALSE(failed) << "failed to remove directory '" << name
+          << "': LastError = " << GetLastError();
+#else
+  delete_file(name);
+#endif
+}
+
 static inline void init_log_file(const char* filename, const char* options = "") {
   LogStreamHandle(Error, logging) stream;
   bool success = LogConfiguration::parse_log_arguments(filename, "logging=trace", "", options, &stream);
