@@ -95,17 +95,17 @@ public class RegistryRunner extends UnicastRemoteObject
         return port;
     }
 
-    public static void main(String[] args) {
-
+    /**
+     * port 0 means to use ephemeral port to start registry.
+     */
+    protected static int init(String[] args) {
         try {
             if (args.length == 0) {
                 System.err.println("Usage: <port>");
                 System.exit(0);
             }
             int port = -1;
-            try {
-                port = Integer.parseInt(args[0]);
-            } catch (NumberFormatException ignore) { }
+            port = Integer.parseInt(args[0]);
 
             // create a registry
             registry = LocateRegistry.createRegistry(port);
@@ -118,14 +118,30 @@ public class RegistryRunner extends UnicastRemoteObject
             Naming.rebind("rmi://localhost:" + port +
                           "/RemoteExiter", exiter);
 
-            // this output is important for REGISTRY to get the port
-            // where rmiregistry is serving
-            System.out.println(PORT_LABEL_START + port + PORT_LABEL_END);
-
+            return port;
         } catch (Exception e) {
             System.err.println(e.getMessage());
             e.printStackTrace();
             System.exit(-1);
         }
+        return -1;
+    }
+
+    /**
+     * REGISTRY.start() will filter the output of registry subprocess,
+     * when valid port is detected, REGISTRY.start() returns.
+     * So, for subclass, it's important to call this method after registry
+     * is initialized and necessary remote objects have been bound.
+     */
+    protected static void notify(int port) {
+        // this output is important for REGISTRY to get the port
+        // where rmiregistry is serving
+        System.out.println(PORT_LABEL_START + port + PORT_LABEL_END);
+        System.out.flush();
+    }
+
+    public static void main(String[] args) {
+        int port = init(args);
+        notify(port);
     }
 }
