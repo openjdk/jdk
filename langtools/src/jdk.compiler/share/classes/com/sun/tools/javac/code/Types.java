@@ -2050,19 +2050,12 @@ public class Types {
             int value = ((Number)t.constValue()).intValue();
             switch (s.getTag()) {
             case BYTE:
-                if (Byte.MIN_VALUE <= value && value <= Byte.MAX_VALUE)
-                    return true;
-                break;
             case CHAR:
-                if (Character.MIN_VALUE <= value && value <= Character.MAX_VALUE)
-                    return true;
-                break;
             case SHORT:
-                if (Short.MIN_VALUE <= value && value <= Short.MAX_VALUE)
+            case INT:
+                if (s.getTag().checkRange(value))
                     return true;
                 break;
-            case INT:
-                return true;
             case CLASS:
                 switch (unboxedType(s).getTag()) {
                 case BYTE:
