@@ -459,6 +459,8 @@ static void *CCalloc(context_type *context, int size, jboolean zero);
 
 static fullinfo_type cp_index_to_class_fullinfo(context_type *, int, int);
 
+static const char* get_result_signature(const char* signature);
+
 static char signature_to_fieldtype(context_type *context,
                                    const char **signature_p, fullinfo_type *info);
 
@@ -2789,7 +2791,7 @@ push_stack(context_type *context, unsigned int inumber, stack_info_type *new_sta
                                                                 operand);
             const char *result_signature;
             check_and_push(context, signature, VM_STRING_UTF);
-            result_signature = strchr(signature, JVM_SIGNATURE_ENDFUNC);
+            result_signature = get_result_signature(signature);
             if (result_signature++ == NULL) {
                 CCerror(context, "Illegal signature %s", signature);
             }
@@ -3710,6 +3712,42 @@ CFerror(context_type *context, char *format, ...)
     }
     context->err_code = CC_ClassFormatError;
     longjmp(context->jump_buffer, 1);
+}
+
+/*
+ * Need to scan the entire signature to find the result type because
+ * types in the arg list and the result type could contain embedded ')'s.
+ */
+static const char* get_result_signature(const char* signature) {
+    const char *p;
+    for (p = signature; *p != JVM_SIGNATURE_ENDFUNC; p++) {
+        switch (*p) {
+          case JVM_SIGNATURE_BOOLEAN:
+          case JVM_SIGNATURE_BYTE:
+          case JVM_SIGNATURE_CHAR:
+          case JVM_SIGNATURE_SHORT:
+          case JVM_SIGNATURE_INT:
+          case JVM_SIGNATURE_FLOAT:
+          case JVM_SIGNATURE_DOUBLE:
+          case JVM_SIGNATURE_LONG:
+          case JVM_SIGNATURE_FUNC:  /* ignore initial (, if given */
+            break;
+          case JVM_SIGNATURE_CLASS:
+            while (*p != JVM_SIGNATURE_ENDCLASS) p++;
+            break;
+          case JVM_SIGNATURE_ARRAY:
+            while (*p == JVM_SIGNATURE_ARRAY) p++;
+            /* If an array of classes, skip over class name, too. */
+            if (*p == JVM_SIGNATURE_CLASS) {
+                while (*p != JVM_SIGNATURE_ENDCLASS) p++;
+            }
+            break;
+          default:
+            /* Indicate an error. */
+            return NULL;
+        }
+    }
+    return p++; /* skip over ')'. */
 }
 
 static char
