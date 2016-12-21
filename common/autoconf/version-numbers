@@ -26,6 +26,9 @@
 # Default version numbers to use unless overridden by configure
 
 DEFAULT_VERSION_MAJOR=9
+DEFAULT_VERSION_MINOR=0
+DEFAULT_VERSION_SECURITY=0
+DEFAULT_VERSION_PATCH=0
 
 LAUNCHER_NAME=openjdk
 PRODUCT_NAME=OpenJDK
