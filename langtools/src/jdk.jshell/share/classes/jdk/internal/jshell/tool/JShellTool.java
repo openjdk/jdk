@@ -197,6 +197,7 @@ public class JShellTool implements MessageHandler {
     public boolean testPrompt = false;
     private String cmdlineClasspath = null;
     private String startup = null;
+    private String executionControlSpec = null;
     private EditorSetting editor = BUILT_IN_EDITOR;
 
     private static final String[] EDITOR_ENV_VARS = new String[] {
@@ -546,6 +547,7 @@ public class JShellTool implements MessageHandler {
         OptionSpec<String> st = parser.accepts("startup").withRequiredArg();
         parser.acceptsAll(asList("n", "no-startup"));
         OptionSpec<String> fb = parser.accepts("feedback").withRequiredArg();
+        OptionSpec<String> ec = parser.accepts("execution").withRequiredArg();
         parser.accepts("q");
         parser.accepts("s");
         parser.accepts("v");
@@ -648,6 +650,9 @@ public class JShellTool implements MessageHandler {
             remoteVMOptions.add("--add-modules");
             remoteVMOptions.addAll(options.valuesOf(amods));
         }
+        if (options.has(ec)) {
+            executionControlSpec = options.valueOf(ec);
+        }
 
         if (options.has(addExports)) {
             List<String> exports = options.valuesOf(addExports).stream()
@@ -718,18 +723,21 @@ public class JShellTool implements MessageHandler {
         // Reset the replayable history, saving the old for restore
         replayableHistoryPrevious = replayableHistory;
         replayableHistory = new ArrayList<>();
-
-        state = JShell.builder()
+        JShell.Builder builder =
+               JShell.builder()
                 .in(userin)
                 .out(userout)
                 .err(usererr)
-                .tempVariableNameGenerator(()-> "$" + currentNameSpace.tidNext())
+                .tempVariableNameGenerator(() -> "$" + currentNameSpace.tidNext())
                 .idGenerator((sn, i) -> (currentNameSpace == startNamespace || state.status(sn).isActive())
                         ? currentNameSpace.tid(sn)
                         : errorNamespace.tid(sn))
                 .remoteVMOptions(remoteVMOptions.stream().toArray(String[]::new))
-                .compilerOptions(compilerOptions.stream().toArray(String[]::new))
-                .build();
+                .compilerOptions(compilerOptions.stream().toArray(String[]::new));
+        if (executionControlSpec != null) {
+            builder.executionEngine(executionControlSpec);
+        }
+        state = builder.build();
         shutdownSubscription = state.onShutdown((JShell deadState) -> {
             if (deadState == state) {
                 hardmsg("jshell.msg.terminated");

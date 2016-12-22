@@ -33,9 +33,6 @@
 
 import org.testng.annotations.Test;
 import org.testng.annotations.BeforeMethod;
-import jdk.jshell.execution.JdiDefaultExecutionControl;
-import static jdk.jshell.execution.JdiDefaultExecutionControl.defaultTimeout;
-import static jdk.jshell.execution.Util.failOverExecutionControlGenerator;
 
 @Test
 public class FailOverExecutionControlHangingLaunchTest extends ExecutionControlTestBase {
@@ -43,12 +40,7 @@ public class FailOverExecutionControlHangingLaunchTest extends ExecutionControlT
     @BeforeMethod
     @Override
     public void setUp() {
-        setUp(builder -> builder.executionEngine(failOverExecutionControlGenerator(
-                JdiDefaultExecutionControl.create(
-                        HangingRemoteAgent.class.getName(),
-                        true,
-                        null,
-                        defaultTimeout()),
-                JdiDefaultExecutionControl.launch())));
+        setUp(builder -> builder.executionEngine(
+                "failover:0(jdi:remoteAgent(HangingRemoteAgent),launch(true)), 1(jdi:launch(true))"));
     }
 }

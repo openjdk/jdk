@@ -56,6 +56,7 @@ module jdk.jshell {
     requires transitive java.compiler;
     requires transitive jdk.jdi;
     requires transitive java.prefs;
+    requires java.logging;
     requires jdk.compiler;
     requires jdk.internal.le;
     requires jdk.internal.ed;
@@ -66,7 +67,14 @@ module jdk.jshell {
     exports jdk.jshell.execution;
     exports jdk.jshell.tool;
 
+    uses jdk.jshell.spi.ExecutionControlProvider;
     uses jdk.internal.editor.spi.BuildInEditorProvider;
 
     provides javax.tools.Tool with jdk.internal.jshell.tool.JShellToolProvider;
+    provides jdk.jshell.spi.ExecutionControlProvider
+        with jdk.jshell.execution.JdiExecutionControlProvider;
+    provides jdk.jshell.spi.ExecutionControlProvider
+        with jdk.jshell.execution.LocalExecutionControlProvider;
+    provides jdk.jshell.spi.ExecutionControlProvider
+        with jdk.jshell.execution.FailOverExecutionControlProvider;
 }

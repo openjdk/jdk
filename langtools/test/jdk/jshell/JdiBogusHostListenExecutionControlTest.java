@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8169519
+ * @bug 8169519 8168615
  * @summary Tests for JDI connector failure
  * @modules jdk.jshell/jdk.jshell jdk.jshell/jdk.jshell.spi jdk.jshell/jdk.jshell.execution
  * @run testng JdiBogusHostListenExecutionControlTest
@@ -31,7 +31,6 @@
 
 import org.testng.annotations.Test;
 import jdk.jshell.JShell;
-import jdk.jshell.execution.JdiDefaultExecutionControl;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
@@ -44,7 +43,7 @@ public class JdiBogusHostListenExecutionControlTest {
     public void badOptionListenTest() {
         try {
             JShell.builder()
-                    .executionEngine(JdiDefaultExecutionControl.listen("BattyRumbleBuckets-Snurfle-99-Blip"))
+                    .executionEngine("jdi:hostname(BattyRumbleBuckets-Snurfle-99-Blip)")
                     .build();
         } catch (IllegalStateException ex) {
             assertTrue(ex.getMessage().startsWith(EXPECTED_ERROR), ex.getMessage());

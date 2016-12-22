@@ -63,74 +63,12 @@ import static jdk.jshell.execution.Util.remoteInputOutput;
  */
 public class JdiDefaultExecutionControl extends JdiExecutionControl {
 
-    /**
-     * Default time-out expressed in milliseconds.
-     */
-    private static final int DEFAULT_TIMEOUT = 5000;
-
     private VirtualMachine vm;
     private Process process;
+    private final String remoteAgent;
 
     private final Object STOP_LOCK = new Object();
     private boolean userCodeRunning = false;
-
-    /**
-     * Creates an ExecutionControl instance based on a JDI
-     * {@code LaunchingConnector}. Same as
-     * {@code JdiDefaultExecutionControl.create(defaultRemoteAgent(), true, null, defaultTimeout())}.
-     *
-     * @return the generator
-     */
-    public static ExecutionControl.Generator launch() {
-        return create(defaultRemoteAgent(), true, null, defaultTimeout());
-    }
-
-    /**
-     * Creates an ExecutionControl instance based on a JDI
-     * {@code ListeningConnector}. Same as
-     * {@code JdiDefaultExecutionControl.create(defaultRemoteAgent(), false, host, defaultTimeout())}.
-     *
-     * @param host explicit hostname to use, if null use discovered
-     * hostname, applies to listening only (!isLaunch)
-     * @return the generator
-     */
-    public static ExecutionControl.Generator listen(String host) {
-        return create(defaultRemoteAgent(), false, host, defaultTimeout());
-    }
-
-    /**
-     * Creates a JDI based ExecutionControl instance.
-     *
-     * @param remoteAgent the remote agent to launch
-     * @param isLaunch does JDI do the launch? That is, LaunchingConnector,
-     * otherwise we start explicitly and use ListeningConnector
-     * @param host explicit hostname to use, if null use discovered
-     * hostname, applies to listening only (!isLaunch)
-     * @param timeout the start-up time-out in milliseconds
-     * @return the generator
-     */
-    public static ExecutionControl.Generator create(String remoteAgent,
-            boolean isLaunch, String host, int timeout) {
-        return env -> create(env, remoteAgent, isLaunch, host, timeout);
-    }
-
-    /**
-     * Default remote agent.
-     *
-     * @return the name of the standard remote agent
-     */
-    public static String defaultRemoteAgent() {
-        return RemoteExecutionControl.class.getName();
-    }
-
-    /**
-     * Default remote connection time-out
-     *
-     * @return time to wait for connection before failing, expressed in milliseconds.
-     */
-    public static int defaultTimeout() {
-        return DEFAULT_TIMEOUT;
-    }
 
     /**
      * Creates an ExecutionControl instance based on a JDI
@@ -150,7 +88,7 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
      * @return the channel
      * @throws IOException if there are errors in set-up
      */
-    private static ExecutionControl create(ExecutionEnv env, String remoteAgent,
+    static ExecutionControl create(ExecutionEnv env, String remoteAgent,
             boolean isLaunch, String host, int timeout) throws IOException {
         try (final ServerSocket listener = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
             // timeout on I/O-socket
@@ -181,7 +119,8 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
             outputs.put("err", env.userErr());
             Map<String, InputStream> input = new HashMap<>();
             input.put("in", env.userIn());
-            return remoteInputOutput(socket.getInputStream(), out, outputs, input, (objIn, objOut) -> new JdiDefaultExecutionControl(objOut, objIn, vm, process, deathListeners));
+            return remoteInputOutput(socket.getInputStream(), out, outputs, input,
+                    (objIn, objOut) -> new JdiDefaultExecutionControl(objOut, objIn, vm, process, remoteAgent, deathListeners));
         }
     }
 
@@ -192,10 +131,12 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
      * @param cmdin the input for responses
      */
     private JdiDefaultExecutionControl(ObjectOutput cmdout, ObjectInput cmdin,
-            VirtualMachine vm, Process process, List<Consumer<String>> deathListeners) {
+            VirtualMachine vm, Process process, String remoteAgent,
+            List<Consumer<String>> deathListeners) {
         super(cmdout, cmdin);
         this.vm = vm;
         this.process = process;
+        this.remoteAgent = remoteAgent;
         deathListeners.add(s -> disposeVM());
     }
 
@@ -237,7 +178,7 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
                 for (ThreadReference thread : vm().allThreads()) {
                     // could also tag the thread (e.g. using name), to find it easier
                     for (StackFrame frame : thread.frames()) {
-                        if (defaultRemoteAgent().equals(frame.location().declaringType().name()) &&
+                        if (remoteAgent.equals(frame.location().declaringType().name()) &&
                                 (    "invoke".equals(frame.location().method().name())
                                 || "varValue".equals(frame.location().method().name()))) {
                             ObjectReference thiz = frame.thisObject();
