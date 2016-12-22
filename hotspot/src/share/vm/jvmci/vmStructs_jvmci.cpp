@@ -30,6 +30,7 @@
 #include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/jvmciEnv.hpp"
 #include "jvmci/jvmciRuntime.hpp"
+#include "jvmci/vmStructs_compiler_runtime.hpp"
 #include "jvmci/vmStructs_jvmci.hpp"
 #include "oops/oop.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -42,7 +43,6 @@
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/g1/heapRegion.hpp"
 #endif
-
 
 #define VM_STRUCTS(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field) \
   static_field(CompilerToVM::Data,             Klass_vtable_start_offset,              int)                                          \
@@ -280,8 +280,25 @@
   static_field(StubRoutines,                _aescrypt_decryptBlock,                           address)                               \
   static_field(StubRoutines,                _cipherBlockChaining_encryptAESCrypt,             address)                               \
   static_field(StubRoutines,                _cipherBlockChaining_decryptAESCrypt,             address)                               \
+  static_field(StubRoutines,                _counterMode_AESCrypt,                            address)                               \
+  static_field(StubRoutines,                _ghash_processBlocks,                             address)                               \
+  static_field(StubRoutines,                _sha1_implCompress,                               address)                               \
+  static_field(StubRoutines,                _sha1_implCompressMB,                             address)                               \
+  static_field(StubRoutines,                _sha256_implCompress,                             address)                               \
+  static_field(StubRoutines,                _sha256_implCompressMB,                           address)                               \
+  static_field(StubRoutines,                _sha512_implCompress,                             address)                               \
+  static_field(StubRoutines,                _sha512_implCompressMB,                           address)                               \
   static_field(StubRoutines,                _updateBytesCRC32,                                address)                               \
   static_field(StubRoutines,                _crc_table_adr,                                   address)                               \
+  static_field(StubRoutines,                _crc32c_table_addr,                               address)                               \
+  static_field(StubRoutines,                _updateBytesCRC32C,                               address)                               \
+  static_field(StubRoutines,                _updateBytesAdler32,                              address)                               \
+  static_field(StubRoutines,                _multiplyToLen,                                   address)                               \
+  static_field(StubRoutines,                _squareToLen,                                     address)                               \
+  static_field(StubRoutines,                _mulAdd,                                          address)                               \
+  static_field(StubRoutines,                _montgomeryMultiply,                              address)                               \
+  static_field(StubRoutines,                _montgomerySquare,                                address)                               \
+  static_field(StubRoutines,                _vectorizedMismatch,                              address)                               \
                                                                                                                                      \
   nonstatic_field(Thread,                   _tlab,                                            ThreadLocalAllocBuffer)                \
   nonstatic_field(Thread,                   _allocated_bytes,                                 jlong)                                 \
@@ -413,6 +430,8 @@
   declare_constant(CodeInstaller::HEAP_END_ADDRESS)                       \
   declare_constant(CodeInstaller::NARROW_KLASS_BASE_ADDRESS)              \
   declare_constant(CodeInstaller::CRC_TABLE_ADDRESS)                      \
+  declare_constant(CodeInstaller::LOG_OF_HEAP_REGION_GRAIN_BYTES)         \
+  declare_constant(CodeInstaller::INLINE_CONTIGUOUS_ALLOCATION_SUPPORTED) \
   declare_constant(CodeInstaller::INVOKE_INVALID)                         \
                                                                           \
   declare_constant(ConstantPool::CPCACHE_INDEX_TAG)                       \
@@ -879,7 +898,9 @@ VMAddressEntry JVMCIVMStructs::localHotSpotVMAddresses[] = {
   VM_ADDRESSES(GENERATE_VM_ADDRESS_ENTRY,
                GENERATE_PREPROCESSOR_VM_ADDRESS_ENTRY,
                GENERATE_VM_FUNCTION_ENTRY)
-
+  VM_ADDRESSES_COMPILER_RUNTIME(GENERATE_VM_ADDRESS_ENTRY,
+               GENERATE_PREPROCESSOR_VM_ADDRESS_ENTRY,
+               GENERATE_VM_FUNCTION_ENTRY)
   VM_ADDRESSES_OS(GENERATE_VM_ADDRESS_ENTRY,
                   GENERATE_PREPROCESSOR_VM_ADDRESS_ENTRY,
                   GENERATE_VM_FUNCTION_ENTRY)

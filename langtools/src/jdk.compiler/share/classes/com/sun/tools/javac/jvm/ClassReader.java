@@ -161,9 +161,6 @@ public class ClassReader {
      */
     protected ModuleSymbol currentModule = null;
 
-    // FIXME: temporary compatibility code
-    private boolean readNewModuleAttribute;
-
     /** The buffer containing the currently read class file.
      */
     byte[] buf = new byte[INITIAL_BUFFER_SIZE];
@@ -392,6 +389,8 @@ public class ClassReader {
             case CONSTANT_Class:
             case CONSTANT_String:
             case CONSTANT_MethodType:
+            case CONSTANT_Module:
+            case CONSTANT_Package:
                 bp = bp + 2;
                 break;
             case CONSTANT_MethodHandle:
@@ -481,6 +480,11 @@ public class ClassReader {
         case CONSTANT_InvokeDynamic:
             skipBytes(5);
             break;
+        case CONSTANT_Module:
+        case CONSTANT_Package:
+            // this is temporary for now: treat as a simple reference to the underlying Utf8.
+            poolObj[i] = readName(getChar(index + 1));
+            break;
         default:
             throw badClassFile("bad.const.pool.tag", Byte.toString(tag));
         }
@@ -567,40 +571,12 @@ public class ClassReader {
         return (NameAndType)obj;
     }
 
-    /** Read the class name of a module-info.class file.
-     * The name is stored in a CONSTANT_Class entry, where the
-     * class name is of the form module-name.module-info.
-     */
-    Name readModuleInfoName(int i) {
-        if (majorVersion < Version.V53.major) {
-            throw badClassFile("anachronistic.module.info",
-                    Integer.toString(majorVersion),
-                    Integer.toString(minorVersion));
-        }
-        int classIndex = poolIdx[i];
-        if (buf[classIndex] == CONSTANT_Class) {
-            int utf8Index = poolIdx[getChar(classIndex + 1)];
-            if (buf[utf8Index] == CONSTANT_Utf8) {
-                int len = getChar(utf8Index + 1);
-                int start = utf8Index + 3;
-                return names.fromUtf(internalize(buf, start, len));
-            }
-        }
-        throw badClassFile("bad.module-info.name");
-    }
-
     /** Read the name of a module.
-     * The name is stored in a CONSTANT_Utf8 entry, in
-     * JVMS 4.2 internal form (with '/' instead of '.')
+     * The name is stored in a CONSTANT_Module entry, in
+     * JVMS 4.2 binary form (using ".", not "/")
      */
     Name readModuleName(int i) {
-        Name name = readName(i);
-        // FIXME: temporary compatibility code
-        if (readNewModuleAttribute) {
-            return names.fromUtf(internalize(name));
-        } else {
-            return name;
-        }
+        return readName(i);
     }
 
     /** Read module_flags.
@@ -608,6 +584,17 @@ public class ClassReader {
     Set<ModuleFlags> readModuleFlags(int flags) {
         Set<ModuleFlags> set = EnumSet.noneOf(ModuleFlags.class);
         for (ModuleFlags f : ModuleFlags.values()) {
+            if ((flags & f.value) != 0)
+                set.add(f);
+        }
+        return set;
+    }
+
+    /** Read resolution_flags.
+     */
+    Set<ModuleResolutionFlags> readModuleResolutionFlags(int flags) {
+        Set<ModuleResolutionFlags> set = EnumSet.noneOf(ModuleResolutionFlags.class);
+        for (ModuleResolutionFlags f : ModuleResolutionFlags.values()) {
             if ((flags & f.value) != 0)
                 set.add(f);
         }
@@ -792,7 +779,7 @@ public class ClassReader {
                 try {
                     return (outer == Type.noType) ?
                             t.erasure(types) :
-                        new ClassType(outer, List.<Type>nil(), t);
+                        new ClassType(outer, List.nil(), t);
                 } finally {
                     sbp = startSbp;
                 }
@@ -865,7 +852,7 @@ public class ClassReader {
                     t = enterClass(names.fromUtf(signatureBuffer,
                                                  startSbp,
                                                  sbp - startSbp));
-                    outer = new ClassType(outer, List.<Type>nil(), t);
+                    outer = new ClassType(outer, List.nil(), t);
                 }
                 signatureBuffer[sbp++] = (byte)'$';
                 continue;
@@ -1282,21 +1269,20 @@ public class ClassReader {
                         ModuleSymbol msym = (ModuleSymbol) sym.owner;
                         ListBuffer<Directive> directives = new ListBuffer<>();
 
-                        // FIXME: temporary compatibility code
-                        if (readNewModuleAttribute) {
-                            Name moduleName = readModuleName(nextChar());
-                            if (currentModule.name != moduleName) {
-                                throw badClassFile("module.name.mismatch", moduleName, currentModule.name);
-                            }
+                        Name moduleName = readModuleName(nextChar());
+                        if (currentModule.name != moduleName) {
+                            throw badClassFile("module.name.mismatch", moduleName, currentModule.name);
                         }
 
                         msym.flags.addAll(readModuleFlags(nextChar()));
+                        msym.version = readName(nextChar());
 
                         ListBuffer<RequiresDirective> requires = new ListBuffer<>();
                         int nrequires = nextChar();
                         for (int i = 0; i < nrequires; i++) {
                             ModuleSymbol rsym = syms.enterModule(readModuleName(nextChar()));
                             Set<RequiresFlag> flags = readRequiresFlags(nextChar());
+                            nextChar(); // skip compiled version
                             requires.add(new RequiresDirective(rsym, flags));
                         }
                         msym.requires = requires.toList();
@@ -1372,7 +1358,7 @@ public class ClassReader {
                 }
             },
 
-            new AttributeReader(names.ModuleVersion, V53, CLASS_ATTRIBUTE) {
+            new AttributeReader(names.ModuleResolution, V53, CLASS_ATTRIBUTE) {
                 @Override
                 protected boolean accepts(AttributeKind kind) {
                     return super.accepts(kind) && allowModules;
@@ -1380,7 +1366,7 @@ public class ClassReader {
                 protected void read(Symbol sym, int attrLen) {
                     if (sym.kind == TYP && sym.owner.kind == MDL) {
                         ModuleSymbol msym = (ModuleSymbol) sym.owner;
-                        msym.version = readName(nextChar());
+                        msym.resolutionFlags.addAll(readModuleResolutionFlags(nextChar()));
                     }
                 }
             },
@@ -2071,9 +2057,9 @@ public class ClassReader {
             // type (typeof null) as return type because this type is
             // a subtype of all reference types and can be converted
             // to primitive types by unboxing.
-            MethodType mt = new MethodType(List.<Type>nil(),
+            MethodType mt = new MethodType(List.nil(),
                                            syms.botType,
-                                           List.<Type>nil(),
+                                           List.nil(),
                                            syms.methodClass);
             return new MethodSymbol(PUBLIC | ABSTRACT, name, mt, container.tsym);
         }
@@ -2277,7 +2263,7 @@ public class ClassReader {
 
         TypeAnnotationCompleter(Symbol sym,
                 List<TypeAnnotationProxy> proxies) {
-            super(sym, List.<CompoundAnnotationProxy>nil());
+            super(sym, List.nil());
             this.proxies = proxies;
         }
 
@@ -2564,24 +2550,15 @@ public class ClassReader {
                                    self.flatname);
             }
         } else {
+            if (majorVersion < Version.V53.major) {
+                throw badClassFile("anachronistic.module.info",
+                        Integer.toString(majorVersion),
+                        Integer.toString(minorVersion));
+            }
             c.flags_field = flags;
             currentModule = (ModuleSymbol) c.owner;
             int this_class = nextChar();
-            // FIXME: temporary compatibility code
-            if (this_class == 0) {
-                readNewModuleAttribute = true;
-            } else {
-                Name modInfoName = readModuleInfoName(this_class);
-                if (currentModule.name.append('.', names.module_info) != modInfoName) {
-                    //strip trailing .module-info, if exists:
-                    int modInfoStart = modInfoName.length() - names.module_info.length();
-                    modInfoName = modInfoName.subName(modInfoStart, modInfoName.length()) == names.module_info &&
-                                  modInfoName.charAt(modInfoStart - 1) == '.' ?
-                                      modInfoName.subName(0, modInfoStart - 1) : modInfoName;
-                    throw badClassFile("module.name.mismatch", modInfoName, currentModule.name);
-                }
-                readNewModuleAttribute = false;
-            }
+            // temp, no check on this_class
         }
 
         // class attributes must be read before class

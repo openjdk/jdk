@@ -52,9 +52,9 @@ public class CheckModuleTest {
     private static final Path SRC_DIR = Paths.get(TEST_SRC, "src");
     private static final Path MODS_DIR = Paths.get("mods");
 
-    // m4 and m5 are analyzed.  Others are compiled to make sure they are present
+    // mIV and mV are analyzed.  Others are compiled to make sure they are present
     // on the module path for analysis
-    private static final Set<String> modules = Set.of("unsafe", "m4", "m5", "mVI", "mVII", "m8");
+    private static final Set<String> modules = Set.of("unsafe", "mIV", "mV", "mVI", "mVII", "mVIII");
 
     private static final String JAVA_BASE = "java.base";
 
@@ -97,39 +97,39 @@ public class CheckModuleTest {
     @DataProvider(name = "modules")
     public Object[][] unnamed() {
         return new Object[][]{
-            { "m4", new ModuleMetaData[] {
+            { "mIV", new ModuleMetaData[] {
                         // original
-                        new ModuleMetaData("m4")
+                        new ModuleMetaData("mIV")
                             .requiresTransitive("java.compiler")
                             .requires("java.logging")
                             // unnused exports
                             .exports("p4.internal", Set.of("mVI", "mVII")),
                         // suggested version
-                        new ModuleMetaData("m4")
+                        new ModuleMetaData("mIV")
                             .requires("java.compiler"),
                         // reduced version
-                        new ModuleMetaData("m4")
+                        new ModuleMetaData("mIV")
                             .requires("java.compiler")
                     }
             },
-            { "m5", new ModuleMetaData[] {
+            { "mV", new ModuleMetaData[] {
                         // original
-                        new ModuleMetaData("m5")
+                        new ModuleMetaData("mV")
                             .requiresTransitive("java.compiler")
                             .requiresTransitive("java.logging")
                             .requires("java.sql")
-                            .requiresTransitive("m4"),
+                            .requiresTransitive("mIV"),
                         // suggested version
-                        new ModuleMetaData("m5")
+                        new ModuleMetaData("mV")
                             .requiresTransitive("java.compiler")
                             .requires("java.logging")
                             .requiresTransitive("java.sql")
-                            .requiresTransitive("m4"),
+                            .requiresTransitive("mIV"),
                         // reduced version
-                        new ModuleMetaData("m5")
+                        new ModuleMetaData("mV")
                             .requiresTransitive("java.compiler")
                             .requiresTransitive("java.sql")
-                            .requiresTransitive("m4"),
+                            .requiresTransitive("mIV"),
                     }
             },
         };

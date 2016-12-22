@@ -58,14 +58,14 @@ public class ModulesAndClassPathTest extends ModuleTestBase {
         Path jar = prepareTestJar(base);
 
         Path moduleSrc = base.resolve("module-src");
-        Path m1 = moduleSrc.resolve("m1");
+        Path m1 = moduleSrc.resolve("m");
 
         Path classes = base.resolve("classes");
 
         Files.createDirectories(classes);
 
         tb.writeJavaFiles(m1,
-                          "module m1 { }",
+                          "module m { }",
                           "package impl; public class Impl { api.Api api; }");
 
         List<String> modLog = new JavacTask(tb)
@@ -86,7 +86,7 @@ public class ModulesAndClassPathTest extends ModuleTestBase {
 
         new JavacTask(tb)
           .options("--class-path", jar.toString(),
-                   "--add-reads", "m1=ALL-UNNAMED")
+                   "--add-reads", "m=ALL-UNNAMED")
           .outdir(classes)
           .files(findJavaFiles(moduleSrc))
           .run()
@@ -95,7 +95,7 @@ public class ModulesAndClassPathTest extends ModuleTestBase {
 
         new JavacTask(tb)
           .options("--class-path", jar.toString() + File.pathSeparator + System.getProperty("test.classes"),
-                   "--add-reads", "m1=ALL-UNNAMED",
+                   "--add-reads", "m=ALL-UNNAMED",
                    "-processor", ProcessorImpl.class.getName())
           .outdir(classes)
           .files(findJavaFiles(moduleSrc))
@@ -109,14 +109,14 @@ public class ModulesAndClassPathTest extends ModuleTestBase {
         Path jar = prepareTestJar(base);
 
         Path moduleSrc = base.resolve("module-src");
-        Path m1 = moduleSrc.resolve("m1");
+        Path m1 = moduleSrc.resolve("m");
 
         Path classes = base.resolve("classes");
 
         Files.createDirectories(classes);
 
         tb.writeJavaFiles(m1,
-                          "module m1 { }",
+                          "module m { }",
                           "package impl; public class Impl { api.Api api; }");
 
         List<String> modLog = new JavacTask(tb)
@@ -142,14 +142,14 @@ public class ModulesAndClassPathTest extends ModuleTestBase {
         Path jar = prepareTestJar(base);
 
         Path moduleSrc = base.resolve("module-src");
-        Path m1 = moduleSrc.resolve("m1");
+        Path m1 = moduleSrc.resolve("m");
 
         Path classes = base.resolve("classes");
 
         Files.createDirectories(classes);
 
         tb.writeJavaFiles(m1,
-                          "module m1 { }",
+                          "module m { }",
                           "package impl; public class Impl { api.Api api; }");
 
         new JavacTask(tb)
@@ -222,14 +222,14 @@ public class ModulesAndClassPathTest extends ModuleTestBase {
     @Test
     public void testClassOutputVisibleForIncrementalCompilation(Path base) throws Exception {
         Path moduleSrc = base.resolve("module-src");
-        Path m1 = moduleSrc.resolve("m1");
+        Path m1 = moduleSrc.resolve("m");
 
         Path classes = base.resolve("classes");
 
         Files.createDirectories(classes);
 
         tb.writeJavaFiles(m1,
-                          "module m1 { exports impl; }",
+                          "module m { exports impl; }",
                           "package impl; public class Impl { }",
                           "package src; public class Src { }",
                           "package test; public class TestCP extends impl.Impl { }",

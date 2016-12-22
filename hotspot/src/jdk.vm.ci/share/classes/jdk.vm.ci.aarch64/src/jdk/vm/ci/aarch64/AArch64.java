@@ -84,6 +84,10 @@ public class AArch64 extends Architecture {
 
     public static final Register lr = r30;
 
+    // Used by runtime code: cannot be compiler-allocated.
+    public static final Register rscratch1 = r8;
+    public static final Register rscratch2 = r9;
+
     // @formatter:off
     public static final RegisterArray cpuRegisters = new RegisterArray(
         r0,  r1,  r2,  r3,  r4,  r5,  r6,  r7,

@@ -29,6 +29,7 @@ package javax.lang.model.util;
 import java.util.List;
 import java.util.Map;
 
+import javax.lang.model.AnnotatedConstruct;
 import javax.lang.model.element.*;
 
 
@@ -47,10 +48,11 @@ import javax.lang.model.element.*;
 public interface Elements {
 
     /**
-     * Returns a package given its fully qualified name.
+     * Returns a package given its fully qualified name if the package is unique in the environment.
+     * If running with modules, all modules in the modules graph are searched for matching packages.
      *
      * @param name  fully qualified package name, or an empty string for an unnamed package
-     * @return the named package, or {@code null} if it cannot be found
+     * @return the named package, or {@code null} if it cannot be uniquely found
      */
     PackageElement getPackageElement(CharSequence name);
 
@@ -65,10 +67,12 @@ public interface Elements {
     PackageElement getPackageElement(ModuleElement module, CharSequence name);
 
     /**
-     * Returns a type element given its canonical name.
+     * Returns a type element given its canonical name if the type element is unique in the environment.
+     * If running with modules, all modules in the modules graph are searched for matching
+     * type elements.
      *
      * @param name  the canonical name
-     * @return the named type element, or {@code null} if it cannot be found
+     * @return the named type element, or {@code null} if it cannot be uniquely found
      */
     TypeElement getTypeElement(CharSequence name);
 
@@ -84,6 +88,10 @@ public interface Elements {
 
     /**
      * Returns a module element given its fully qualified name.
+     * If the named module cannot be found, null is returned. One situation where a module
+     * cannot be found is if the environment does not include modules, such as
+     * an annotation processing environment configured for
+     * a {@linkplain ProcessingEnvironment#getSourceVersion source version} without modules.      *
      *
      * @param name  the name
      * @return the named module element, or {@code null} if it cannot be found
@@ -136,6 +144,167 @@ public interface Elements {
     boolean isDeprecated(Element e);
 
     /**
+     * Returns the <em>origin</em> of the given element.
+     *
+     * <p>Note that if this method returns {@link Origin#EXPLICIT
+     * EXPLICIT} and the element was created from a class file, then
+     * the element may not, in fact, correspond to an explicitly
+     * declared construct in source code. This is due to limitations
+     * of the fidelity of the class file format in preserving
+     * information from source code. For example, at least some
+     * versions of the class file format do not preserve whether a
+     * constructor was explicitly declared by the programmer or was
+     * implicitly declared as the <em>default constructor</em>.
+     *
+     * @implSpec The default implementation of this method returns
+     * {@link Origin#EXPLICIT EXPLICIT}.
+     *
+     * @param e  the element being examined
+     * @return the origin of the given element
+     * @since 9
+     */
+    default Origin getOrigin(Element e) {
+        return Origin.EXPLICIT;
+    }
+
+    /**
+     * Returns the <em>origin</em> of the given annotation mirror.
+     *
+     * An annotation mirror is {@linkplain Origin#MANDATED mandated}
+     * if it is an implicitly declared <em>container annotation</em>
+     * used to hold repeated annotations of a repeatable annotation
+     * type.
+     *
+     * <p>Note that if this method returns {@link Origin#EXPLICIT
+     * EXPLICIT} and the annotation mirror was created from a class
+     * file, then the element may not, in fact, correspond to an
+     * explicitly declared construct in source code. This is due to
+     * limitations of the fidelity of the class file format in
+     * preserving information from source code. For example, at least
+     * some versions of the class file format do not preserve whether
+     * an annotation was explicitly declared by the programmer or was
+     * implicitly declared as a <em>container annotation</em>.
+     *
+     * @implSpec The default implementation of this method returns
+     * {@link Origin#EXPLICIT EXPLICIT}.
+     *
+     * @param c the construct the annotation mirror modifies
+     * @param a the annotation mirror being examined
+     * @return the origin of the given annotation mirror
+     * @jls 9.6.3 Repeatable Annotation Types
+     * @jls 9.7.5 Multiple Annotations of the Same Type
+     * @since 9
+     */
+    default Origin getOrigin(AnnotatedConstruct c,
+                             AnnotationMirror a) {
+        return Origin.EXPLICIT;
+    }
+
+    /**
+     * Returns the <em>origin</em> of the given module directive.
+     *
+     * <p>Note that if this method returns {@link Origin#EXPLICIT
+     * EXPLICIT} and the module directive was created from a class
+     * file, then the module directive may not, in fact, correspond to
+     * an explicitly declared construct in source code. This is due to
+     * limitations of the fidelity of the class file format in
+     * preserving information from source code. For example, at least
+     * some versions of the class file format do not preserve whether
+     * a {@code uses} directive was explicitly declared by the
+     * programmer or was added as a synthetic construct.
+     *
+     * <p>Note that an implementation may not be able to reliably
+     * determine the origin status of the directive if the directive
+     * is created from a class file due to limitations of the fidelity
+     * of the class file format in preserving information from source
+     * code.
+     *
+     * @implSpec The default implementation of this method returns
+     * {@link Origin#EXPLICIT EXPLICIT}.
+     *
+     * @param m the module of the directive
+     * @param directive  the module directive being examined
+     * @return the origin of the given directive
+     * @since 9
+     */
+    default Origin getOrigin(ModuleElement m,
+                             ModuleElement.Directive directive) {
+        return Origin.EXPLICIT;
+    }
+
+    /**
+     * The <em>origin</em> of an element or other language model
+     * item. The origin of an element or item models how a construct
+     * in a program is declared in the source code, explicitly,
+     * implicitly, etc.
+     *
+     * <p>Note that it is possible additional kinds of origin values
+     * will be added in future versions of the platform.
+     *
+     * @jls 13.1 The Form of a Binary
+     * @since 9
+     */
+    public enum Origin {
+        /**
+         * Describes a construct explicitly declared in source code.
+         */
+        EXPLICIT,
+
+       /**
+         * A mandated construct is one that is not explicitly declared
+         * in the source code, but whose presence is mandated by the
+         * specification. Such a construct is said to be implicitly
+         * declared.
+         *
+         * One example of a mandated element is a <em>default
+         * constructor</em> in a class that contains no explicit
+         * constructor declarations.
+         *
+         * Another example of a mandated construct is an implicitly
+         * declared <em>container annotation</em> used to hold
+         * multiple annotations of a repeatable annotation type.
+         *
+         * @jls 8.8.9 Default Constructor
+         * @jls 9.6.3 Repeatable Annotation Types
+         * @jls 9.7.5 Multiple Annotations of the Same Type
+         */
+        MANDATED,
+
+       /**
+         * A synthetic construct is one that is neither implicitly nor
+         * explicitly declared in the source code. Such a construct is
+         * typically a translation artifact created by a compiler.
+         */
+        SYNTHETIC;
+
+        /**
+         * Returns {@code true} for values corresponding to constructs
+         * that are implicitly or explicitly declared, {@code false}
+         * otherwise.
+         * @return {@code true} for {@link EXPLICIT} and {@link
+         * MANDATED}, {@code false} otherwise.
+         */
+        public boolean isDeclared() {
+            return this != SYNTHETIC;
+        }
+    }
+
+    /**
+     * Returns {@code true} if the executable element is a bridge
+     * method, {@code false} otherwise.
+     *
+     * @implSpec The default implementation of this method returns {@code false}.
+     *
+     * @param e  the executable being examined
+     * @return {@code true} if the executable element is a bridge
+     * method, {@code false} otherwise
+     * @since 9
+     */
+    default boolean isBridge(ExecutableElement e) {
+        return false;
+    }
+
+    /**
      * Returns the <i>binary name</i> of a type element.
      *
      * @param type  the type element being examined
@@ -159,6 +328,10 @@ public interface Elements {
     /**
      * Returns the module of an element.  The module of a module is
      * itself.
+     * If there is no module for the element, null is returned. One situation where there is
+     * no module for an element is if the environment does not include modules, such as
+     * an annotation processing environment configured for
+     * a {@linkplain ProcessingEnvironment#getSourceVersion source version} without modules.      *
      *
      * @param type the element being examined
      * @return the module of an element

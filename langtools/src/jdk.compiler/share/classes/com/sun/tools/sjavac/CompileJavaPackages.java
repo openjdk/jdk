@@ -222,7 +222,7 @@ public class CompileJavaPackages implements Transformer {
                 CompilationSubResult result = sjavac.compile("n/a",
                                                              chunkId,
                                                              args.prepJavacArgs(),
-                                                             Collections.<File>emptyList(),
+                                                             Collections.emptyList(),
                                                              cc.srcs,
                                                              visibleSources);
                 synchronized (lock) {

@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "aot/aotLoader.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.hpp"
@@ -670,6 +671,8 @@ jint universe_init() {
   }
 
   Metaspace::global_initialize();
+
+  AOTLoader::universe_init();
 
   // Checks 'AfterMemoryInit' constraints.
   if (!CommandLineFlagConstraintList::check_constraints(CommandLineFlagConstraint::AfterMemoryInit)) {

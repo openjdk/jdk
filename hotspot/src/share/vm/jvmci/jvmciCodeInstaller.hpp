@@ -43,6 +43,21 @@ private:
   char *_buffer;
 };
 
+class AOTOopRecorder : public OopRecorder {
+public:
+  AOTOopRecorder(Arena* arena = NULL, bool deduplicate = false);
+
+  virtual int find_index(Metadata* h);
+  virtual int find_index(jobject h);
+  int nr_meta_strings() const;
+  const char* meta_element(int pos) const;
+
+private:
+  void record_meta_string(const char* name, int index);
+
+  GrowableArray<const char*>* _meta_strings;
+};
+
 class CodeMetadata {
 public:
   CodeMetadata() {}
@@ -57,6 +72,8 @@ public:
 
   RelocBuffer* get_reloc_buffer() { return &_reloc_buffer; }
 
+  AOTOopRecorder* get_oop_recorder() { return _oop_recorder; }
+
   ExceptionHandlerTable* get_exception_table() { return _exception_table; }
 
   void set_pc_desc(PcDesc* desc, int count) {
@@ -67,6 +84,10 @@ public:
   void set_scopes(u_char* scopes, int size) {
     _scopes_desc = scopes;
     _nr_scopes_desc = size;
+  }
+
+  void set_oop_recorder(AOTOopRecorder* recorder) {
+    _oop_recorder = recorder;
   }
 
   void set_exception_table(ExceptionHandlerTable* table) {
@@ -82,6 +103,7 @@ private:
   int _nr_scopes_desc;
 
   RelocBuffer _reloc_buffer;
+  AOTOopRecorder* _oop_recorder;
   ExceptionHandlerTable* _exception_table;
 };
 
@@ -92,27 +114,29 @@ class CodeInstaller : public StackObj {
   friend class JVMCIVMStructs;
 private:
   enum MarkId {
-    VERIFIED_ENTRY             = 1,
-    UNVERIFIED_ENTRY           = 2,
-    OSR_ENTRY                  = 3,
-    EXCEPTION_HANDLER_ENTRY    = 4,
-    DEOPT_HANDLER_ENTRY        = 5,
-    INVOKEINTERFACE            = 6,
-    INVOKEVIRTUAL              = 7,
-    INVOKESTATIC               = 8,
-    INVOKESPECIAL              = 9,
-    INLINE_INVOKE              = 10,
-    POLL_NEAR                  = 11,
-    POLL_RETURN_NEAR           = 12,
-    POLL_FAR                   = 13,
-    POLL_RETURN_FAR            = 14,
-    CARD_TABLE_ADDRESS         = 15,
-    CARD_TABLE_SHIFT           = 16,
-    HEAP_TOP_ADDRESS           = 17,
-    HEAP_END_ADDRESS           = 18,
-    NARROW_KLASS_BASE_ADDRESS  = 19,
-    CRC_TABLE_ADDRESS          = 20,
-    INVOKE_INVALID             = -1
+    VERIFIED_ENTRY                         = 1,
+    UNVERIFIED_ENTRY                       = 2,
+    OSR_ENTRY                              = 3,
+    EXCEPTION_HANDLER_ENTRY                = 4,
+    DEOPT_HANDLER_ENTRY                    = 5,
+    INVOKEINTERFACE                        = 6,
+    INVOKEVIRTUAL                          = 7,
+    INVOKESTATIC                           = 8,
+    INVOKESPECIAL                          = 9,
+    INLINE_INVOKE                          = 10,
+    POLL_NEAR                              = 11,
+    POLL_RETURN_NEAR                       = 12,
+    POLL_FAR                               = 13,
+    POLL_RETURN_FAR                        = 14,
+    CARD_TABLE_ADDRESS                     = 15,
+    CARD_TABLE_SHIFT                       = 16,
+    HEAP_TOP_ADDRESS                       = 17,
+    HEAP_END_ADDRESS                       = 18,
+    NARROW_KLASS_BASE_ADDRESS              = 19,
+    CRC_TABLE_ADDRESS                      = 20,
+    LOG_OF_HEAP_REGION_GRAIN_BYTES         = 21,
+    INLINE_CONTIGUOUS_ALLOCATION_SUPPORTED = 22,
+    INVOKE_INVALID                         = -1
   };
 
   Arena         _arena;
@@ -146,6 +170,8 @@ private:
   Dependencies*             _dependencies;
   ExceptionHandlerTable     _exception_handler_table;
 
+  bool _immutable_pic_compilation;  // Installer is called for Immutable PIC compilation.
+
   static ConstantOopWriteValue* _oop_null_scope_value;
   static ConstantIntValue*    _int_m1_scope_value;
   static ConstantIntValue*    _int_0_scope_value;
@@ -173,7 +199,7 @@ private:
 
 public:
 
-  CodeInstaller() : _arena(mtCompiler) {}
+  CodeInstaller(bool immutable_pic_compilation) : _arena(mtCompiler), _immutable_pic_compilation(immutable_pic_compilation) {}
 
   JVMCIEnv::CodeInstallResult gather_metadata(Handle target, Handle compiled_code, CodeMetadata& metadata, TRAPS);
   JVMCIEnv::CodeInstallResult install(JVMCICompiler* compiler, Handle target, Handle compiled_code, CodeBlob*& cb, Handle installed_code, Handle speculation_log, TRAPS);

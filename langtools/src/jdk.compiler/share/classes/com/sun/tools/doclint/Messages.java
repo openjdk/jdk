@@ -315,12 +315,7 @@ public class Messages {
          */
         private static class Table {
 
-            private static final Comparator<Integer> DECREASING = new Comparator<Integer>() {
-
-                public int compare(Integer o1, Integer o2) {
-                    return o2.compareTo(o1);
-                }
-            };
+            private static final Comparator<Integer> DECREASING = (o1, o2) -> o2.compareTo(o1);
             private final TreeMap<Integer, Set<String>> map = new TreeMap<>(DECREASING);
 
             void put(String label, int n) {

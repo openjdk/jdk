@@ -278,7 +278,6 @@
       </classpath>
       <fileset dir="${dynalink.module.src.dir}" includes="**/*.java"/>
       <fileset dir="${nashorn.module.src.dir}" includes="**/*.java"/>
-      <fileset dir="${nashorn.shell.module.src.dir}" includes="**/*.java"/>
       <link href="http://docs.oracle.com/javase/8/docs/api/"/>
     </javadoc>
   </target>

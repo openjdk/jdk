@@ -37,7 +37,6 @@ import java.nio.file.Path;
 
 import toolbox.JavacTask;
 import toolbox.Task;
-import toolbox.ToolBox;
 
 public class DuplicateClassTest extends ModuleTestBase {
 
@@ -48,13 +47,13 @@ public class DuplicateClassTest extends ModuleTestBase {
 
     @Test
     public void testSimple(Path base) throws Exception {
-        Path m1 = base.resolve("m1");
-        Path m2 = base.resolve("m2");
+        Path m1 = base.resolve("m1x");
+        Path m2 = base.resolve("m2x");
         tb.writeJavaFiles(m1,
-                          "module m1 { }",
+                          "module m1x { }",
                           "package impl; public class Impl { }");
         tb.writeJavaFiles(m2,
-                          "module m2 { }",
+                          "module m2x { }",
                           "package impl; public class Impl { }");
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);

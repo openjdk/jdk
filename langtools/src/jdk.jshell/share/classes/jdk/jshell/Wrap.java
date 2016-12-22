@@ -359,7 +359,7 @@ abstract class Wrap implements GeneralWrap {
 
         @Override
         public String toString() {
-            return "CompoundWrap(" + Arrays.stream(os).map(u -> u.toString()).collect(joining(",")) + ")";
+            return "CompoundWrap(" + Arrays.stream(os).map(Object::toString).collect(joining(",")) + ")";
         }
     }
 

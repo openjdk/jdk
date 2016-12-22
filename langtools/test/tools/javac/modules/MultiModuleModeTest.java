@@ -51,10 +51,10 @@ public class MultiModuleModeTest extends ModuleTestBase {
     @Test
     public void testDuplicateModules(Path base) throws Exception {
         Path src = base.resolve("src");
-        Path src_m1 = src.resolve("m1");
-        tb.writeJavaFiles(src_m1, "module m1 { }");
-        Path src_m2 = src.resolve("m2");
-        tb.writeJavaFiles(src_m2, "module m1 { }");
+        Path src_m1 = src.resolve("m1x");
+        tb.writeJavaFiles(src_m1, "module m1x { }");
+        Path src_m2 = src.resolve("m2x");
+        tb.writeJavaFiles(src_m2, "module m1x { }");
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
@@ -67,15 +67,15 @@ public class MultiModuleModeTest extends ModuleTestBase {
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
 
-        if (!log.contains("module-info.java:1:1: compiler.err.duplicate.module: m1"))
+        if (!log.contains("module-info.java:1:1: compiler.err.duplicate.module: m1x"))
             throw new Exception("expected output not found");
     }
 
     @Test
     public void testCantFindModule(Path base) throws Exception {
         Path src = base.resolve("src");
-        Path src_m1 = src.resolve("m1");
-        tb.writeJavaFiles(src_m1, "module m1 { }");
+        Path src_m1 = src.resolve("m1x");
+        tb.writeJavaFiles(src_m1, "module m1x { }");
         Path misc = base.resolve("misc");
         tb.writeJavaFiles(misc, "package p; class C { }");
         Path classes = base.resolve("classes");
@@ -97,8 +97,8 @@ public class MultiModuleModeTest extends ModuleTestBase {
     @Test
     public void testModuleNameMismatch(Path base) throws Exception {
         Path src = base.resolve("src");
-        Path src_m1 = src.resolve("m1");
-        tb.writeJavaFiles(src_m1, "module m2 { }");
+        Path src_m1 = src.resolve("m1x");
+        tb.writeJavaFiles(src_m1, "module m2x { }");
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
@@ -111,22 +111,22 @@ public class MultiModuleModeTest extends ModuleTestBase {
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
 
-        if (!log.contains("module-info.java:1:8: compiler.err.module.name.mismatch: m2, m1"))
+        if (!log.contains("module-info.java:1:8: compiler.err.module.name.mismatch: m2x, m1x"))
             throw new Exception("expected output not found");
     }
 
     @Test
     public void testImplicitModuleSource(Path base) throws Exception {
         Path src = base.resolve("src");
-        tb.writeJavaFiles(src.resolve("m1"), "module m1 { }");
-        tb.writeJavaFiles(src.resolve("m2"), "module m2 { requires m1; }");
+        tb.writeJavaFiles(src.resolve("m1x"), "module m1x { }");
+        tb.writeJavaFiles(src.resolve("m2x"), "module m2x { requires m1x; }");
         Path modules = base.resolve("modules");
         Files.createDirectories(modules);
 
         new JavacTask(tb)
                 .options("--module-source-path", src.toString())
                 .outdir(modules)
-                .files(src.resolve("m2/module-info.java"))
+                .files(src.resolve("m2x/module-info.java"))
                 .run()
                 .writeAll();
     }
@@ -134,19 +134,19 @@ public class MultiModuleModeTest extends ModuleTestBase {
     @Test
     public void testImplicitModuleClass(Path base) throws Exception {
         Path src1 = base.resolve("src1");
-        tb.writeJavaFiles(src1.resolve("m1"), "module m1 { }");
+        tb.writeJavaFiles(src1.resolve("m1x"), "module m1x { }");
         Path modules1 = base.resolve("modules1");
         Files.createDirectories(modules1);
 
         new JavacTask(tb)
                 .options("--module-source-path", src1.toString())
                 .outdir(modules1)
-                .files(src1.resolve("m1/module-info.java"))
+                .files(src1.resolve("m1x/module-info.java"))
                 .run()
                 .writeAll();
 
         Path src2= base.resolve("src2");
-        tb.writeJavaFiles(src2.resolve("m2"), "module m2 { requires m1; }");
+        tb.writeJavaFiles(src2.resolve("m2x"), "module m2x { requires m1x; }");
         Path modules2 = base.resolve("modules2");
         Files.createDirectories(modules2);
 
@@ -154,7 +154,7 @@ public class MultiModuleModeTest extends ModuleTestBase {
                 .options("--module-path", modules1.toString(),
                         "--module-source-path", src2.toString())
                 .outdir(modules2)
-                .files(src2.resolve("m2/module-info.java"))
+                .files(src2.resolve("m2x/module-info.java"))
                 .run()
                 .writeAll();
     }

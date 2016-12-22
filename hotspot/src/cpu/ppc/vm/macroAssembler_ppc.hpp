@@ -755,7 +755,9 @@ class MacroAssembler: public Assembler {
            is_trap_range_check_g(x) || is_trap_range_check_ge(x);
   }
 
-  void clear_memory_doubleword(Register base_ptr, Register cnt_dwords, Register tmp = R0);
+  void clear_memory_unrolled(Register base_ptr, int cnt_dwords, Register tmp = R0, int offset = 0);
+  void clear_memory_constlen(Register base_ptr, int cnt_dwords, Register tmp = R0);
+  void clear_memory_doubleword(Register base_ptr, Register cnt_dwords, Register tmp = R0, long const_cnt = -1);
 
 #ifdef COMPILER2
   // Intrinsics for CompactStrings

@@ -149,8 +149,7 @@ class Corraller extends Pretty {
             }
             JCNewClass exp = make.NewClass(null,
                     null, expClass, List.of(make.Literal(keyIndex)), null);
-            resolutionExceptionBlock = make.Block(0L, List.<JCStatement>of(
-                    make.Throw(exp)));
+            resolutionExceptionBlock = make.Block(0L, List.of(make.Throw(exp)));
         }
         return resolutionExceptionBlock;
     }

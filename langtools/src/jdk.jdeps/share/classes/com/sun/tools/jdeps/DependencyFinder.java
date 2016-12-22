@@ -32,6 +32,7 @@ import com.sun.tools.classfile.AccessFlags;
 import com.sun.tools.classfile.ClassFile;
 import com.sun.tools.classfile.ConstantPoolException;
 import com.sun.tools.classfile.Dependencies;
+import com.sun.tools.classfile.Dependencies.ClassFileError;
 import com.sun.tools.classfile.Dependency;
 import com.sun.tools.classfile.Dependency.Location;
 
@@ -172,43 +173,41 @@ class DependencyFinder {
         parsedArchives.get(finder).add(archive);
 
         trace("parsing %s %s%n", archive.getName(), archive.path());
-        FutureTask<Set<Location>> task = new FutureTask<>(new Callable<>() {
-            public Set<Location> call() throws Exception {
-                Set<Location> targets = new HashSet<>();
-                for (ClassFile cf : archive.reader().getClassFiles()) {
-                    if (cf.access_flags.is(AccessFlags.ACC_MODULE))
-                        continue;
+        FutureTask<Set<Location>> task = new FutureTask<>(() -> {
+            Set<Location> targets = new HashSet<>();
+            for (ClassFile cf : archive.reader().getClassFiles()) {
+                if (cf.access_flags.is(AccessFlags.ACC_MODULE))
+                    continue;
 
-                    String classFileName;
-                    try {
-                        classFileName = cf.getName();
-                    } catch (ConstantPoolException e) {
-                        throw new Dependencies.ClassFileError(e);
-                    }
-
-                    // filter source class/archive
-                    String cn = classFileName.replace('/', '.');
-                    if (!finder.accept(archive, cn, cf.access_flags))
-                        continue;
-
-                    // tests if this class matches the -include
-                    if (!filter.matches(cn))
-                        continue;
-
-                    for (Dependency d : finder.findDependencies(cf)) {
-                        if (filter.accepts(d)) {
-                            archive.addClass(d.getOrigin(), d.getTarget());
-                            targets.add(d.getTarget());
-                        } else {
-                            // ensure that the parsed class is added the archive
-                            archive.addClass(d.getOrigin());
-                        }
-                        parsedClasses.putIfAbsent(d.getOrigin(), archive);
-                    }
+                String classFileName;
+                try {
+                    classFileName = cf.getName();
+                } catch (ConstantPoolException e) {
+                    throw new ClassFileError(e);
                 }
 
-                return targets;
+                // filter source class/archive
+                String cn = classFileName.replace('/', '.');
+                if (!finder.accept(archive, cn, cf.access_flags))
+                    continue;
+
+                // tests if this class matches the -include
+                if (!filter.matches(cn))
+                    continue;
+
+                for (Dependency d : finder.findDependencies(cf)) {
+                    if (filter.accepts(d)) {
+                        archive.addClass(d.getOrigin(), d.getTarget());
+                        targets.add(d.getTarget());
+                    } else {
+                        // ensure that the parsed class is added the archive
+                        archive.addClass(d.getOrigin());
+                    }
+                    parsedClasses.putIfAbsent(d.getOrigin(), archive);
+                }
             }
+
+            return targets;
         });
         tasks.add(task);
         pool.submit(task);

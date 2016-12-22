@@ -882,7 +882,7 @@ class Feedback {
 
         void showTruncationSettings(Mode sm) {
             if (sm == null) {
-                modeMap.values().forEach(m -> showTruncationSettings(m));
+                modeMap.values().forEach(this::showTruncationSettings);
             } else {
                 List<Mode.Setting> trunc = sm.cases.get(TRUNCATION_FIELD);
                 if (trunc != null) {
@@ -897,7 +897,7 @@ class Feedback {
 
         void showPromptSettings(Mode sm) {
             if (sm == null) {
-                modeMap.values().forEach(m -> showPromptSettings(m));
+                modeMap.values().forEach(this::showPromptSettings);
             } else {
                 hard("/set prompt %s %s %s",
                         sm.name,
@@ -908,7 +908,7 @@ class Feedback {
 
         void showModeSettings(String umode, String msg) {
             if (umode == null) {
-                modeMap.values().forEach(n -> showModeSettings(n));
+                modeMap.values().forEach(this::showModeSettings);
             } else {
                 Mode m;
                 String retained = retainedMap.get(umode);
@@ -1272,7 +1272,7 @@ class Feedback {
                 return null;
             }
             if (at.isQuoted() ||
-                    !id.codePoints().allMatch(cp -> Character.isJavaIdentifierPart(cp))) {
+                    !id.codePoints().allMatch(Character::isJavaIdentifierPart)) {
                 errorat(err, id);
                 return null;
             }
@@ -1307,8 +1307,8 @@ class Feedback {
             // Failing an exact match, go searching
             Mode[] matches = modeMap.entrySet().stream()
                     .filter(e -> e.getKey().startsWith(umode))
-                    .map(e -> e.getValue())
-                    .toArray(size -> new Mode[size]);
+                    .map(Entry::getValue)
+                    .toArray(Mode[]::new);
             if (matches.length == 1) {
                 return matches[0];
             } else {

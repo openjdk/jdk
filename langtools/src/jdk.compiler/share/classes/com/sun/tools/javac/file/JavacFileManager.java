@@ -71,6 +71,7 @@ import com.sun.tools.javac.file.RelativePath.RelativeDirectory;
 import com.sun.tools.javac.file.RelativePath.RelativeFile;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.Context.Factory;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.List;
@@ -134,12 +135,8 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
      * Register a Context.Factory to create a JavacFileManager.
      */
     public static void preRegister(Context context) {
-        context.put(JavaFileManager.class, new Context.Factory<JavaFileManager>() {
-            @Override
-            public JavaFileManager make(Context c) {
-                return new JavacFileManager(c, true, null);
-            }
-        });
+        context.put(JavaFileManager.class,
+                (Factory<JavaFileManager>)c -> new JavacFileManager(c, true, null));
     }
 
     /**
@@ -950,12 +947,10 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
     @Override @DefinedBy(Api.COMPILER)
     public Location getLocationForModule(Location location, String moduleName) throws IOException {
-        Objects.requireNonNull(location);
-        if (!location.isOutputLocation() && !location.isModuleOrientedLocation())
-            throw new IllegalArgumentException(
-                    "location is not an output location or a module-oriented location: "
-                            + location.getName());
+        checkModuleOrientedOrOutputLocation(location);
         nullCheck(moduleName);
+        if (location == SOURCE_OUTPUT && getSourceOutDir() == null)
+            location = CLASS_OUTPUT;
         return locations.getLocationForModule(location, moduleName);
     }
 
@@ -978,7 +973,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
     @Override @DefinedBy(Api.COMPILER)
     public Location getLocationForModule(Location location, JavaFileObject fo, String pkgName) throws IOException {
-        checkModuleOrientedLocation(location);
+        checkModuleOrientedOrOutputLocation(location);
         if (!(fo instanceof PathFileObject))
             throw new IllegalArgumentException(fo.getName());
         int depth = 1; // allow 1 for filename
@@ -1012,7 +1007,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
     @Override @DefinedBy(Api.COMPILER)
     public Iterable<Set<Location>> listLocationsForModules(Location location) throws IOException {
-        checkModuleOrientedLocation(location);
+        checkModuleOrientedOrOutputLocation(location);
         return locations.listLocationsForModules(location);
     }
 
@@ -1098,10 +1093,12 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
             throw new IllegalArgumentException("location is not an output location: " + location.getName());
     }
 
-    private void checkModuleOrientedLocation(Location location) {
+    private void checkModuleOrientedOrOutputLocation(Location location) {
         Objects.requireNonNull(location);
-        if (!location.isModuleOrientedLocation())
-            throw new IllegalArgumentException("location is not module-oriented: " + location.getName());
+        if (!location.isModuleOrientedLocation() && !location.isOutputLocation())
+            throw new IllegalArgumentException(
+                    "location is not an output location or a module-oriented location: "
+                            + location.getName());
     }
 
     private void checkNotModuleOrientedLocation(Location location) {

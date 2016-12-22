@@ -1052,8 +1052,8 @@ public class Attr extends JCTree.Visitor {
                             !TreeInfo.isSelfCall(body.stats.head)) {
                         body.stats = body.stats.
                                 prepend(typeEnter.SuperCall(make.at(body.pos),
-                                        List.<Type>nil(),
-                                        List.<JCVariableDecl>nil(),
+                                        List.nil(),
+                                        List.nil(),
                                         false));
                     } else if ((env.enclClass.sym.flags() & ENUM) != 0 &&
                             (tree.mods.flags & GENERATEDCONSTR) == 0 &&
@@ -1453,8 +1453,8 @@ public class Attr extends JCTree.Visitor {
                         env,
                         types.skipTypeVars(resource, false),
                         names.close,
-                        List.<Type>nil(),
-                        List.<Type>nil());
+                        List.nil(),
+                        List.nil());
             }
             finally {
                 log.popDiagnosticHandler(discardHandler);
@@ -1915,7 +1915,7 @@ public class Attr extends JCTree.Visitor {
                     argtypes.isEmpty()) {
                 // as a special case, x.getClass() has type Class<? extends |X|>
                 return new ClassType(restype.getEnclosingType(),
-                        List.<Type>of(new WildcardType(types.erasure(qualifierType),
+                        List.of(new WildcardType(types.erasure(qualifierType),
                                 BoundKind.EXTENDS,
                                 syms.boundClass)),
                         restype.tsym,
@@ -1953,7 +1953,7 @@ public class Attr extends JCTree.Visitor {
         /** Obtain a method type with given argument types.
          */
         Type newMethodTemplate(Type restype, List<Type> argtypes, List<Type> typeargtypes) {
-            MethodType mt = new MethodType(argtypes, restype, List.<Type>nil(), syms.methodClass);
+            MethodType mt = new MethodType(argtypes, restype, List.nil(), syms.methodClass);
             return (typeargtypes == null) ? mt : (Type)new ForAll(typeargtypes, mt);
         }
 
@@ -2635,7 +2635,7 @@ public class Attr extends JCTree.Visitor {
                     return new MethodType(argtypes, Type.recoveryType,
                             List.of(syms.throwableType), syms.methodClass);
                 case REFERENCE:
-                    return new MethodType(List.<Type>nil(), Type.recoveryType,
+                    return new MethodType(List.nil(), Type.recoveryType,
                             List.of(syms.throwableType), syms.methodClass);
                 default:
                     Assert.error("Cannot get here!");
@@ -2651,12 +2651,8 @@ public class Attr extends JCTree.Visitor {
         private void checkAccessibleTypes(final DiagnosticPosition pos, final Env<AttrContext> env,
                 final InferenceContext inferenceContext, final List<Type> ts) {
             if (inferenceContext.free(ts)) {
-                inferenceContext.addFreeTypeListener(ts, new FreeTypeListener() {
-                    @Override
-                    public void typesInferred(InferenceContext inferenceContext) {
-                        checkAccessibleTypes(pos, env, inferenceContext, inferenceContext.asInstTypes(ts));
-                    }
-                });
+                inferenceContext.addFreeTypeListener(ts,
+                        solvedContext -> checkAccessibleTypes(pos, env, solvedContext, solvedContext.asInstTypes(ts)));
             } else {
                 for (Type t : ts) {
                     rs.checkAccessibleType(env, t);
@@ -2801,11 +2797,11 @@ public class Attr extends JCTree.Visitor {
                      */
                     MethodSymbol clinit = clinits.get(enclClass);
                     if (clinit == null) {
-                        Type clinitType = new MethodType(List.<Type>nil(),
-                                syms.voidType, List.<Type>nil(), syms.methodClass);
+                        Type clinitType = new MethodType(List.nil(),
+                                syms.voidType, List.nil(), syms.methodClass);
                         clinit = new MethodSymbol(STATIC | SYNTHETIC | PRIVATE,
                                 names.clinit, clinitType, enclClass);
-                        clinit.params = List.<VarSymbol>nil();
+                        clinit.params = List.nil();
                         clinits.put(enclClass, clinit);
                     }
                     newScopeOwner = clinit;
@@ -3094,12 +3090,9 @@ public class Attr extends JCTree.Visitor {
     private void setFunctionalInfo(final Env<AttrContext> env, final JCFunctionalExpression fExpr,
             final Type pt, final Type descriptorType, final Type primaryTarget, final CheckContext checkContext) {
         if (checkContext.inferenceContext().free(descriptorType)) {
-            checkContext.inferenceContext().addFreeTypeListener(List.of(pt, descriptorType), new FreeTypeListener() {
-                public void typesInferred(InferenceContext inferenceContext) {
-                    setFunctionalInfo(env, fExpr, pt, inferenceContext.asInstType(descriptorType),
-                            inferenceContext.asInstType(primaryTarget), checkContext);
-                }
-            });
+            checkContext.inferenceContext().addFreeTypeListener(List.of(pt, descriptorType),
+                    inferenceContext -> setFunctionalInfo(env, fExpr, pt, inferenceContext.asInstType(descriptorType),
+                    inferenceContext.asInstType(primaryTarget), checkContext));
         } else {
             ListBuffer<Type> targets = new ListBuffer<>();
             if (pt.hasTag(CLASS)) {
@@ -3723,7 +3716,7 @@ public class Attr extends JCTree.Visitor {
                             normOuter = types.erasure(ownOuter);
                         if (normOuter != ownOuter)
                             owntype = new ClassType(
-                                normOuter, List.<Type>nil(), owntype.tsym,
+                                normOuter, List.nil(), owntype.tsym,
                                 owntype.getMetadata());
                     }
                 }
@@ -4224,8 +4217,8 @@ public class Attr extends JCTree.Visitor {
             }
             JCClassDecl cd = make.at(tree).ClassDef(
                 make.Modifiers(PUBLIC | ABSTRACT),
-                names.empty, List.<JCTypeParameter>nil(),
-                extending, implementing, List.<JCTree>nil());
+                names.empty, List.nil(),
+                extending, implementing, List.nil());
 
             ClassSymbol c = (ClassSymbol)owntype.tsym;
             Assert.check((c.flags() & COMPOUND) != 0);
@@ -4444,7 +4437,7 @@ public class Attr extends JCTree.Visitor {
         ModuleSymbol msym = tree.sym;
         Lint lint = env.outer.info.lint = env.outer.info.lint.augment(msym);
         Lint prevLint = chk.setLint(lint);
-
+        chk.checkModuleName(tree);
         chk.checkDeprecatedAnnotation(tree, msym);
 
         try {
@@ -4574,13 +4567,8 @@ public class Attr extends JCTree.Visitor {
             }
         }
 
-        public static final Filter<Symbol> anyNonAbstractOrDefaultMethod = new Filter<Symbol>() {
-            @Override
-            public boolean accepts(Symbol s) {
-                return s.kind == MTH &&
-                       (s.flags() & (DEFAULT | ABSTRACT)) != ABSTRACT;
-            }
-        };
+        public static final Filter<Symbol> anyNonAbstractOrDefaultMethod = s ->
+                s.kind == MTH && (s.flags() & (DEFAULT | ABSTRACT)) != ABSTRACT;
 
         /** get a diagnostic position for an attribute of Type t, or null if attribute missing */
         private DiagnosticPosition getDiagnosticPosition(JCClassDecl tree, Type t) {
@@ -4907,8 +4895,8 @@ public class Attr extends JCTree.Visitor {
                 if (prim.typetag == VOID)
                     restype = syms.voidType;
             }
-            return new MethodType(List.<Type>nil(), restype,
-                                  List.<Type>nil(), syms.methodClass);
+            return new MethodType(List.nil(), restype,
+                                  List.nil(), syms.methodClass);
         }
         private Type dummyMethodType() {
             return dummyMethodType(null);

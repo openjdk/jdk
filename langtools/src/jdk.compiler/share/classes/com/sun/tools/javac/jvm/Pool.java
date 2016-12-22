@@ -365,16 +365,8 @@ public class Pool {
             Assert.check(!refSym.owner.isInterface() || interfaceOwner);
         }
         //where
-                Filter<Name> nonInitFilter = new Filter<Name>() {
-                    public boolean accepts(Name n) {
-                        return n != n.table.names.init && n != n.table.names.clinit;
-                    }
-                };
+                Filter<Name> nonInitFilter = n -> (n != n.table.names.init && n != n.table.names.clinit);
 
-                Filter<Name> initFilter = new Filter<Name>() {
-                    public boolean accepts(Name n) {
-                        return n == n.table.names.init;
-                    }
-                };
+                Filter<Name> initFilter = n -> n == n.table.names.init;
     }
 }

@@ -140,7 +140,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
      */
     public List<Attribute.Compound> getRawAttributes() {
         return (metadata == null)
-                ? List.<Attribute.Compound>nil()
+                ? List.nil()
                 : metadata.getDeclarationAttributes();
     }
 
@@ -150,7 +150,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
      */
     public List<Attribute.TypeCompound> getRawTypeAttributes() {
         return (metadata == null)
-                ? List.<Attribute.TypeCompound>nil()
+                ? List.nil()
                 : metadata.getTypeAttributes();
     }
 
@@ -192,13 +192,13 @@ public abstract class Symbol extends AnnoConstruct implements Element {
 
     public List<Attribute.TypeCompound> getClassInitTypeAttributes() {
         return (metadata == null)
-                ? List.<Attribute.TypeCompound>nil()
+                ? List.nil()
                 : metadata.getClassInitTypeAttributes();
     }
 
     public List<Attribute.TypeCompound> getInitTypeAttributes() {
         return (metadata == null)
-                ? List.<Attribute.TypeCompound>nil()
+                ? List.nil()
                 : metadata.getInitTypeAttributes();
     }
 
@@ -212,7 +212,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
 
     public List<Attribute.Compound> getDeclarationAttributes() {
         return (metadata == null)
-                ? List.<Attribute.Compound>nil()
+                ? List.nil()
                 : metadata.getDeclarationAttributes();
     }
 
@@ -925,6 +925,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
 
         public Completer usesProvidesCompleter = Completer.NULL_COMPLETER;
         public final Set<ModuleFlags> flags = EnumSet.noneOf(ModuleFlags.class);
+        public final Set<ModuleResolutionFlags> resolutionFlags = EnumSet.noneOf(ModuleResolutionFlags.class);
 
         /**
          * Create a ModuleSymbol with an associated module-info ClassSymbol.
@@ -1037,7 +1038,26 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         }
 
         public final int value;
+    }
 
+    public enum ModuleResolutionFlags {
+        DO_NOT_RESOLVE_BY_DEFAULT(0x0001),
+        WARN_DEPRECATED(0x0002),
+        WARN_DEPRECATED_REMOVAL(0x0004),
+        WARN_INCUBATOR(0x0008);
+
+        public static int value(Set<ModuleResolutionFlags> s) {
+            int v = 0;
+            for (ModuleResolutionFlags f: s)
+                v |= f.value;
+            return v;
+        }
+
+        private ModuleResolutionFlags(int value) {
+            this.value = value;
+        }
+
+        public final int value;
     }
 
     /** A class for package symbols
@@ -1228,7 +1248,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         public Type erasure(Types types) {
             if (erasure_field == null)
                 erasure_field = new ClassType(types.erasure(type.getEnclosingType()),
-                                              List.<Type>nil(), this,
+                                              List.nil(), this,
                                               type.getMetadata());
             return erasure_field;
         }
@@ -1529,11 +1549,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
                                       final Attr attr,
                                       final JCVariableDecl variable)
         {
-            setData(new Callable<Object>() {
-                public Object call() {
-                    return attr.attribLazyConstantValue(env, variable, type);
-                }
-            });
+            setData((Callable<Object>)() -> attr.attribLazyConstantValue(env, variable, type));
         }
 
         /**
@@ -1836,12 +1852,8 @@ public abstract class Symbol extends AnnoConstruct implements Element {
             return implementation(origin, types, checkResult, implementation_filter);
         }
         // where
-            public static final Filter<Symbol> implementation_filter = new Filter<Symbol>() {
-                public boolean accepts(Symbol s) {
-                    return s.kind == MTH &&
-                            (s.flags() & SYNTHETIC) == 0;
-                }
-            };
+            public static final Filter<Symbol> implementation_filter = s ->
+                    s.kind == MTH && (s.flags() & SYNTHETIC) == 0;
 
         public MethodSymbol implementation(TypeSymbol origin, Types types, boolean checkResult, Filter<Symbol> implFilter) {
             MethodSymbol res = types.implementation(this, origin, checkResult, implFilter);

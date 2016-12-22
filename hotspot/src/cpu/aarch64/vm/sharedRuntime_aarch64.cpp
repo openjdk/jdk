@@ -2388,6 +2388,7 @@ void SharedRuntime::generate_deopt_blob() {
 
     __ movw(rcpool, (int32_t)Deoptimization::Unpack_reexecute);
     __ mov(c_rarg0, rthread);
+    __ movw(c_rarg2, rcpool); // exec mode
     __ lea(rscratch1,
            RuntimeAddress(CAST_FROM_FN_PTR(address,
                                            Deoptimization::uncommon_trap)));

@@ -35,13 +35,30 @@
 
 /*
  * @test
- * @summary JSR-166 tck tests
+ * @summary JSR-166 tck tests (conformance testing mode)
+ * @build *
+ * @modules java.management
+ * @run junit/othervm/timeout=1000 JSR166TestCase
+ */
+
+/*
+ * @test
+ * @summary JSR-166 tck tests (whitebox tests allowed)
+ * @build *
  * @modules java.base/java.util.concurrent:open
  *          java.management
- * @build *
- * @run junit/othervm/timeout=1000 -Djsr166.testImplementationDetails=true JSR166TestCase
- * @run junit/othervm/timeout=1000 -Djava.util.concurrent.ForkJoinPool.common.parallelism=0 -Djsr166.testImplementationDetails=true JSR166TestCase
- * @run junit/othervm/timeout=1000 -Djava.util.concurrent.ForkJoinPool.common.parallelism=1 -Djava.util.secureRandomSeed=true JSR166TestCase
+ * @run junit/othervm/timeout=1000
+ *      -Djsr166.testImplementationDetails=true
+ *      JSR166TestCase
+ * @run junit/othervm/timeout=1000
+ *      -Djsr166.testImplementationDetails=true
+ *      -Djava.util.concurrent.ForkJoinPool.common.parallelism=0
+ *      JSR166TestCase
+ * @run junit/othervm/timeout=1000
+ *      -Djsr166.testImplementationDetails=true
+ *      -Djava.util.concurrent.ForkJoinPool.common.parallelism=1
+ *      -Djava.util.secureRandomSeed=true
+ *      JSR166TestCase
  */
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -543,6 +560,8 @@ public class JSR166TestCase extends TestCase {
                 "DoubleAdderTest",
                 "ForkJoinPool8Test",
                 "ForkJoinTask8Test",
+                "LinkedBlockingDeque8Test",
+                "LinkedBlockingQueue8Test",
                 "LongAccumulatorTest",
                 "LongAdderTest",
                 "SplittableRandomTest",

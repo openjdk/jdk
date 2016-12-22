@@ -364,12 +364,7 @@ public class Log extends AbstractLog {
 
         final Options options = Options.instance(context);
         initOptions(options);
-        options.addListener(new Runnable() {
-            @Override
-            public void run() {
-                initOptions(options);
-            }
-        });
+        options.addListener(() -> initOptions(options));
     }
     // where
         private void initOptions(Options options) {

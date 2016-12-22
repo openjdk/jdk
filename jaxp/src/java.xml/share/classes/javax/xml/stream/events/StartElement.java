@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +23,10 @@
  * questions.
  */
 
-/*
- * Copyright (c) 2009 by Oracle Corporation. All Rights Reserved.
- */
-
 package javax.xml.stream.events;
 
 import javax.xml.namespace.QName;
 import javax.xml.namespace.NamespaceContext;
-
-import java.util.Map;
 import java.util.Iterator;
 
 /**
@@ -62,7 +57,7 @@ public interface StartElement extends XMLEvent {
    * @return a readonly Iterator over Attribute interfaces, or an
    * empty iterator
    */
-  public Iterator getAttributes();
+  public Iterator<Attribute> getAttributes();
 
   /**
    * Returns an Iterator of namespaces declared on this element.
@@ -87,7 +82,7 @@ public interface StartElement extends XMLEvent {
    * empty iterator
    *
    */
-  public Iterator getNamespaces();
+  public Iterator<Namespace> getNamespaces();
 
   /**
    * Returns the attribute referred to by this name

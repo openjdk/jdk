@@ -529,9 +529,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
             buildInheritedSummary(writer, visibleMemberMap, summaryTreeList);
         if (!summaryTreeList.isEmpty()) {
             Content memberTree = writer.getMemberSummaryHeader(typeElement, memberSummaryTree);
-            summaryTreeList.stream().forEach((aSummaryTreeList) -> {
-                memberTree.addContent(aSummaryTreeList);
-            });
+            summaryTreeList.stream().forEach(memberTree::addContent);
             writer.addMemberTree(memberSummaryTree, memberTree);
         }
     }

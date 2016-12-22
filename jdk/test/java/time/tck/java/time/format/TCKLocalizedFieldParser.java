@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,9 +66,11 @@ import java.text.ParsePosition;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 import java.time.temporal.WeekFields;
+import java.util.Locale;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -79,12 +81,17 @@ import test.java.time.format.AbstractTestPrinterParser;
  */
 @Test
 public class TCKLocalizedFieldParser extends AbstractTestPrinterParser {
-
+    public static final WeekFields WEEKDEF = WeekFields.of(Locale.US);
+    public static final TemporalField WEEK_BASED_YEAR = WEEKDEF.weekBasedYear();
+    public static final TemporalField WEEK_OF_WEEK_BASED_YEAR = WEEKDEF.weekOfWeekBasedYear();
+    public static final TemporalField DAY_OF_WEEK = WEEKDEF.dayOfWeek();
     //-----------------------------------------------------------------------
     @DataProvider(name="FieldPatterns")
     Object[][] provider_fieldPatterns() {
         return new Object[][] {
-            {"e",  "6", 0, 1, 6},
+            {"e", "6", 0, 1, 6},
+            {"ee", "06", 0, 2, 6},
+            {"c",  "6", 0, 1 , 6},
             {"W",  "3", 0, 1, 3},
             {"w",  "29", 0, 2, 29},
             {"ww", "29", 0, 2, 29},
@@ -99,6 +106,7 @@ public class TCKLocalizedFieldParser extends AbstractTestPrinterParser {
         WeekFields weekDef = WeekFields.of(locale);
         TemporalField field = null;
         switch(pattern.charAt(0)) {
+            case 'c' :
             case 'e' :
                 field = weekDef.dayOfWeek();
                 break;
@@ -176,9 +184,9 @@ public class TCKLocalizedFieldParser extends AbstractTestPrinterParser {
             {"Y-w-e",  "2008-01-1", 0, 9, LocalDate.of(2007, 12, 30)},
             {"Y-w-e",  "2008-52-1", 0, 9, LocalDate.of(2008, 12, 21)},
             {"Y-w-e",  "2008-52-7", 0, 9, LocalDate.of(2008, 12, 27)},
-            {"Y-w-e",  "2009-01-01", 0, 10, LocalDate.of(2008, 12, 28)},
-            {"Y-w-e",  "2009-01-04", 0, 10, LocalDate.of(2008, 12, 31)},
-            {"Y-w-e",  "2009-01-05", 0, 10, LocalDate.of(2009, 1, 1)},
+            {"Y-w-e",  "2009-01-1", 0, 9, LocalDate.of(2008, 12, 28)},
+            {"Y-w-e",  "2009-01-4", 0, 9, LocalDate.of(2008, 12, 31)},
+            {"Y-w-e",  "2009-01-5", 0, 9, LocalDate.of(2009, 1, 1)},
        };
     }
 
@@ -202,4 +210,77 @@ public class TCKLocalizedFieldParser extends AbstractTestPrinterParser {
         }
     }
 
+    //-----------------------------------------------------------------------
+    @DataProvider(name = "adjacentValuePatterns1")
+    Object[][] provider_adjacentValuePatterns1() {
+        return new Object[][] {
+                {"YYww", WEEK_BASED_YEAR, WEEK_OF_WEEK_BASED_YEAR, "1612", 2016, 12},
+                {"YYYYww", WEEK_BASED_YEAR, WEEK_OF_WEEK_BASED_YEAR, "201612", 2016, 12},
+        };
+    }
+
+    @Test(dataProvider = "adjacentValuePatterns1")
+    public void test_adjacentValuePatterns1(String pattern, TemporalField field1, TemporalField field2,
+            String text, int expected1, int expected2) {
+        DateTimeFormatter df = new DateTimeFormatterBuilder()
+                .appendPattern(pattern).toFormatter(Locale.US);
+        ParsePosition ppos = new ParsePosition(0);
+        TemporalAccessor parsed = df.parseUnresolved(text, ppos);
+        assertEquals(parsed.get(field1), expected1);
+        assertEquals(parsed.get(field2), expected2);
+    }
+
+    @DataProvider(name = "adjacentValuePatterns2")
+    Object[][] provider_adjacentValuePatterns2() {
+        return new Object[][] {
+                {"YYYYwwc", WEEK_BASED_YEAR, WEEK_OF_WEEK_BASED_YEAR, DAY_OF_WEEK,
+                        "2016121", 2016, 12, 1},
+                {"YYYYwwee", WEEK_BASED_YEAR, WEEK_OF_WEEK_BASED_YEAR, DAY_OF_WEEK,
+                        "20161201", 2016, 12, 1},
+                {"YYYYwwe", WEEK_BASED_YEAR, WEEK_OF_WEEK_BASED_YEAR, DAY_OF_WEEK,
+                        "2016121", 2016, 12, 1},
+        };
+    }
+
+    @Test(dataProvider = "adjacentValuePatterns2")
+    public void test_adjacentValuePatterns2(String pattern, TemporalField field1, TemporalField field2,
+            TemporalField field3, String text, int expected1, int expected2, int expected3) {
+        DateTimeFormatter df = new DateTimeFormatterBuilder()
+                .appendPattern(pattern).toFormatter(Locale.US);
+        ParsePosition ppos = new ParsePosition(0);
+        TemporalAccessor parsed = df.parseUnresolved(text, ppos);
+        assertEquals(parsed.get(field1), expected1);
+        assertEquals(parsed.get(field2), expected2);
+        assertEquals(parsed.get(field3), expected3);
+    }
+
+    @Test
+    public void test_adjacentValuePatterns3() {
+        String pattern = "yyyyMMddwwc";
+        String text =  "20120720296";
+        DateTimeFormatter df = new DateTimeFormatterBuilder()
+                .appendPattern(pattern).toFormatter(Locale.US);
+        ParsePosition ppos = new ParsePosition(0);
+        TemporalAccessor parsed = df.parseUnresolved(text, ppos);
+        assertEquals(parsed.get(DAY_OF_WEEK), 6);
+        assertEquals(parsed.get(WEEK_OF_WEEK_BASED_YEAR), 29);
+        LocalDate result = LocalDate.parse(text, df);
+        LocalDate expectedValue = LocalDate.of(2012, 07, 20);
+        assertEquals(result, expectedValue, "LocalDate incorrect for " + pattern);
+    }
+
+    @DataProvider(name = "invalidPatterns")
+    Object[][] provider_invalidPatterns() {
+        return new Object[][] {
+            {"W", "01"},
+            {"c", "01"},
+            {"e", "01"},
+            {"yyyyMMddwwc", "201207202906"}, //  1 extra digit in the input
+        };
+    }
+
+    @Test(dataProvider = "invalidPatterns", expectedExceptions = DateTimeParseException.class)
+    public void test_invalidPatterns(String pattern, String value) {
+        DateTimeFormatter.ofPattern(pattern).parse(value);
+    }
 }

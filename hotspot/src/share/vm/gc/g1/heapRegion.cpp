@@ -352,89 +352,101 @@ void HeapRegion::note_self_forwarding_removal_end(bool during_initial_mark,
   _prev_marked_bytes = marked_bytes;
 }
 
+// Humongous objects are allocated directly in the old-gen.  Need
+// special handling for concurrent processing encountering an
+// in-progress allocation.
+static bool do_oops_on_card_in_humongous(MemRegion mr,
+                                         FilterOutOfRegionClosure* cl,
+                                         HeapRegion* hr,
+                                         G1CollectedHeap* g1h) {
+  assert(hr->is_humongous(), "precondition");
+  HeapRegion* sr = hr->humongous_start_region();
+  oop obj = oop(sr->bottom());
+
+  // If concurrent and klass_or_null is NULL, then space has been
+  // allocated but the object has not yet been published by setting
+  // the klass.  That can only happen if the card is stale.  However,
+  // we've already set the card clean, so we must return failure,
+  // since the allocating thread could have performed a write to the
+  // card that might be missed otherwise.
+  if (!g1h->is_gc_active() && (obj->klass_or_null_acquire() == NULL)) {
+    return false;
+  }
+
+  // We have a well-formed humongous object at the start of sr.
+  // Only filler objects follow a humongous object in the containing
+  // regions, and we can ignore those.  So only process the one
+  // humongous object.
+  if (!g1h->is_obj_dead(obj, sr)) {
+    if (obj->is_objArray() || (sr->bottom() < mr.start())) {
+      // objArrays are always marked precisely, so limit processing
+      // with mr.  Non-objArrays might be precisely marked, and since
+      // it's humongous it's worthwhile avoiding full processing.
+      // However, the card could be stale and only cover filler
+      // objects.  That should be rare, so not worth checking for;
+      // instead let it fall out from the bounded iteration.
+      obj->oop_iterate(cl, mr);
+    } else {
+      // If obj is not an objArray and mr contains the start of the
+      // obj, then this could be an imprecise mark, and we need to
+      // process the entire object.
+      obj->oop_iterate(cl);
+    }
+  }
+  return true;
+}
+
 bool HeapRegion::oops_on_card_seq_iterate_careful(MemRegion mr,
-                                                  FilterOutOfRegionClosure* cl,
-                                                  jbyte* card_ptr) {
-  assert(card_ptr != NULL, "pre-condition");
+                                                  FilterOutOfRegionClosure* cl) {
+  assert(MemRegion(bottom(), end()).contains(mr), "Card region not in heap region");
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  // If we're within a stop-world GC, then we might look at a card in a
-  // GC alloc region that extends onto a GC LAB, which may not be
-  // parseable.  Stop such at the "scan_top" of the region.
-  if (g1h->is_gc_active()) {
-    mr = mr.intersection(MemRegion(bottom(), scan_top()));
-  } else {
-    mr = mr.intersection(used_region());
+  // Special handling for humongous regions.
+  if (is_humongous()) {
+    return do_oops_on_card_in_humongous(mr, cl, this, g1h);
   }
-  if (mr.is_empty()) {
-    return true;
-  }
-  // Otherwise, find the obj that extends onto mr.start().
+  assert(is_old(), "precondition");
 
-  // The intersection of the incoming mr (for the card) and the
-  // allocated part of the region is non-empty. This implies that
-  // we have actually allocated into this region. The code in
-  // G1CollectedHeap.cpp that allocates a new region sets the
-  // is_young tag on the region before allocating. Thus we
-  // safely know if this region is young.
-  if (is_young()) {
-    return true;
-  }
-
-  // We can only clean the card here, after we make the decision that
-  // the card is not young.
-  *card_ptr = CardTableModRefBS::clean_card_val();
-  // We must complete this write before we do any of the reads below.
-  OrderAccess::storeload();
+  // Because mr has been trimmed to what's been allocated in this
+  // region, the parts of the heap that are examined here are always
+  // parsable; there's no need to use klass_or_null to detect
+  // in-progress allocation.
 
   // Cache the boundaries of the memory region in some const locals
   HeapWord* const start = mr.start();
   HeapWord* const end = mr.end();
 
-  // Update BOT as needed while finding start of (potential) object.
+  // Find the obj that extends onto mr.start().
+  // Update BOT as needed while finding start of (possibly dead)
+  // object containing the start of the region.
   HeapWord* cur = block_start(start);
-  assert(cur <= start, "Postcondition");
 
-  oop obj;
-
-  HeapWord* next = cur;
-  do {
-    cur = next;
-    obj = oop(cur);
-    if (obj->klass_or_null() == NULL) {
-      // Ran into an unparseable point.
-      assert(!g1h->is_gc_active(),
-             "Unparsable heap during GC at " PTR_FORMAT, p2i(cur));
-      return false;
-    }
-    // Otherwise...
-    next = cur + block_size(cur);
-  } while (next <= start);
-
-  // If we finish the above loop...We have a parseable object that
-  // begins on or before the start of the memory region, and ends
-  // inside or spans the entire region.
-  assert(cur <= start, "Loop postcondition");
-  assert(obj->klass_or_null() != NULL, "Loop postcondition");
+#ifdef ASSERT
+  {
+    assert(cur <= start,
+           "cur: " PTR_FORMAT ", start: " PTR_FORMAT, p2i(cur), p2i(start));
+    HeapWord* next = cur + block_size(cur);
+    assert(start < next,
+           "start: " PTR_FORMAT ", next: " PTR_FORMAT, p2i(start), p2i(next));
+  }
+#endif
 
   do {
-    obj = oop(cur);
-    assert((cur + block_size(cur)) > (HeapWord*)obj, "Loop invariant");
-    if (obj->klass_or_null() == NULL) {
-      // Ran into an unparseable point.
-      assert(!g1h->is_gc_active(),
-             "Unparsable heap during GC at " PTR_FORMAT, p2i(cur));
-      return false;
-    }
+    oop obj = oop(cur);
+    assert(obj->is_oop(true), "Not an oop at " PTR_FORMAT, p2i(cur));
+    assert(obj->klass_or_null() != NULL,
+           "Unparsable heap at " PTR_FORMAT, p2i(cur));
 
-    // Advance the current pointer. "obj" still points to the object to iterate.
-    cur = cur + block_size(cur);
-
-    if (!g1h->is_obj_dead(obj)) {
-      // Non-objArrays are sometimes marked imprecise at the object start. We
-      // always need to iterate over them in full.
-      // We only iterate over object arrays in full if they are completely contained
-      // in the memory region.
+    if (g1h->is_obj_dead(obj, this)) {
+      // Carefully step over dead object.
+      cur += block_size(cur);
+    } else {
+      // Step over live object, and process its references.
+      cur += obj->size();
+      // Non-objArrays are usually marked imprecise at the object
+      // start, in which case we need to iterate over them in full.
+      // objArrays are precisely marked, but can still be iterated
+      // over in full if completely covered.
       if (!obj->is_objArray() || (((HeapWord*)obj) >= start && cur <= end)) {
         obj->oop_iterate(cl);
       } else {
@@ -516,7 +528,7 @@ public:
     _hr(hr), _failures(false) {}
 
   void do_code_blob(CodeBlob* cb) {
-    nmethod* nm = (cb == NULL) ? NULL : cb->as_nmethod_or_null();
+    nmethod* nm = (cb == NULL) ? NULL : cb->as_compiled_method()->as_nmethod_or_null();
     if (nm != NULL) {
       // Verify that the nemthod is live
       if (!nm->is_alive()) {

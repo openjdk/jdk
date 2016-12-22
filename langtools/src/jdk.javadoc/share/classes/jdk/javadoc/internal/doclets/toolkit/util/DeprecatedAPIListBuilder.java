@@ -52,6 +52,7 @@ public class DeprecatedAPIListBuilder {
     private final Configuration configuration;
     private final Utils utils;
     public static enum DeprElementKind {
+        REMOVAL,
         MODULE,
         PACKAGE,
         INTERFACE,
@@ -90,9 +91,13 @@ public class DeprecatedAPIListBuilder {
      * @param configuration the current configuration of the doclet.
      */
     private void buildDeprecatedAPIInfo() {
+        SortedSet<Element> rset = deprecatedMap.get(DeprElementKind.REMOVAL);
         SortedSet<ModuleElement> modules = configuration.modules;
         SortedSet<Element> mset = deprecatedMap.get(DeprElementKind.MODULE);
         for (Element me : modules) {
+            if (utils.isDeprecatedForRemoval(me)) {
+                rset.add(me);
+            }
             if (utils.isDeprecated(me)) {
                 mset.add(me);
             }
@@ -100,6 +105,9 @@ public class DeprecatedAPIListBuilder {
         SortedSet<PackageElement> packages = configuration.packages;
         SortedSet<Element> pset = deprecatedMap.get(DeprElementKind.PACKAGE);
         for (Element pe : packages) {
+            if (utils.isDeprecatedForRemoval(pe)) {
+                rset.add(pe);
+            }
             if (utils.isDeprecated(pe)) {
                 pset.add(pe);
             }
@@ -107,6 +115,9 @@ public class DeprecatedAPIListBuilder {
         for (Element e : configuration.getIncludedTypeElements()) {
             TypeElement te = (TypeElement)e;
             SortedSet<Element> eset;
+            if (utils.isDeprecatedForRemoval(e)) {
+                rset.add(e);
+            }
             if (utils.isDeprecated(e)) {
                 switch (e.getKind()) {
                     case ANNOTATION_TYPE:
@@ -133,18 +144,18 @@ public class DeprecatedAPIListBuilder {
                         break;
                 }
             }
-            composeDeprecatedList(deprecatedMap.get(DeprElementKind.FIELD),
+            composeDeprecatedList(rset, deprecatedMap.get(DeprElementKind.FIELD),
                     utils.getFields(te));
-            composeDeprecatedList(deprecatedMap.get(DeprElementKind.METHOD),
+            composeDeprecatedList(rset, deprecatedMap.get(DeprElementKind.METHOD),
                     utils.getMethods(te));
-            composeDeprecatedList(deprecatedMap.get(DeprElementKind.CONSTRUCTOR),
+            composeDeprecatedList(rset, deprecatedMap.get(DeprElementKind.CONSTRUCTOR),
                     utils.getConstructors(te));
             if (utils.isEnum(e)) {
-                composeDeprecatedList(deprecatedMap.get(DeprElementKind.ENUM_CONSTANT),
+                composeDeprecatedList(rset, deprecatedMap.get(DeprElementKind.ENUM_CONSTANT),
                         utils.getEnumConstants(te));
             }
             if (utils.isAnnotationType(e)) {
-                composeDeprecatedList(deprecatedMap.get(DeprElementKind.ANNOTATION_TYPE_MEMBER),
+                composeDeprecatedList(rset, deprecatedMap.get(DeprElementKind.ANNOTATION_TYPE_MEMBER),
                         utils.getAnnotationMembers(te));
 
             }
@@ -154,11 +165,16 @@ public class DeprecatedAPIListBuilder {
     /**
      * Add the members into a single list of deprecated members.
      *
+     * @param rset set of elements deprecated for removal.
+     * @param sset set of deprecated elements.
      * @param list List of all the particular deprecated members, e.g. methods.
      * @param members members to be added in the list.
      */
-    private void composeDeprecatedList(SortedSet<Element> sset, List<? extends Element> members) {
+    private void composeDeprecatedList(SortedSet<Element> rset, SortedSet<Element> sset, List<? extends Element> members) {
         for (Element member : members) {
+            if (utils.isDeprecatedForRemoval(member)) {
+                rset.add(member);
+            }
             if (utils.isDeprecated(member)) {
                 sset.add(member);
             }

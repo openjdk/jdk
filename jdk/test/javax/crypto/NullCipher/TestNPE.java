@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,12 @@
 
 /*
  * @test
- * @bug 4937853
+ * @bug 4937853 8170876
  * @summary Make sure normal calls of NullCipher does not throw NPE.
  * @author Valerie Peng
  * @key randomness
+ * @run main TestNPE
+ * @run main/othervm -Djava.security.debug=provider TestNPE
  */
 import java.util.Arrays;
 import java.security.AlgorithmParameters;

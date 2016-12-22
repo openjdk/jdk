@@ -72,19 +72,19 @@ public class SymbolMetadata {
      * Type attributes for this symbol.
      * This field should never be null.
      */
-    private List<Attribute.TypeCompound> type_attributes = List.<Attribute.TypeCompound>nil();
+    private List<Attribute.TypeCompound> type_attributes = List.nil();
 
     /*
      * Type attributes of initializers in this class.
      * Unused if the current symbol is not a ClassSymbol.
      */
-    private List<Attribute.TypeCompound> init_type_attributes = List.<Attribute.TypeCompound>nil();
+    private List<Attribute.TypeCompound> init_type_attributes = List.nil();
 
     /*
      * Type attributes of class initializers in this class.
      * Unused if the current symbol is not a ClassSymbol.
      */
-    private List<Attribute.TypeCompound> clinit_type_attributes = List.<Attribute.TypeCompound>nil();
+    private List<Attribute.TypeCompound> clinit_type_attributes = List.nil();
 
     /*
      * The Symbol this SymbolMetadata instance belongs to
@@ -248,7 +248,7 @@ public class SymbolMetadata {
 
     private List<Attribute.Compound> filterDeclSentinels(List<Attribute.Compound> a) {
         return (a == DECL_IN_PROGRESS || a == DECL_NOT_STARTED)
-                ? List.<Attribute.Compound>nil()
+                ? List.nil()
                 : a;
     }
 

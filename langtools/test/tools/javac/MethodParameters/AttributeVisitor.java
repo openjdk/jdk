@@ -47,8 +47,8 @@ class AttributeVisitor<R, P> implements Attribute.Visitor<R, P> {
     public R visitModuleHashes(ModuleHashes_attribute attr, P p) { return null; }
     public R visitModuleMainClass(ModuleMainClass_attribute attr, P p) { return null; }
     public R visitModulePackages(ModulePackages_attribute attr, P p) { return null; }
+    public R visitModuleResolution(ModuleResolution_attribute attr, P p) { return null; }
     public R visitModuleTarget(ModuleTarget_attribute attr, P p) { return null; }
-    public R visitModuleVersion(ModuleVersion_attribute attr, P p) { return null; }
     public R visitRuntimeVisibleAnnotations(RuntimeVisibleAnnotations_attribute attr, P p) { return null; }
     public R visitRuntimeInvisibleAnnotations(RuntimeInvisibleAnnotations_attribute attr, P p) { return null; }
     public R visitRuntimeVisibleParameterAnnotations(RuntimeVisibleParameterAnnotations_attribute attr, P p) { return null; }

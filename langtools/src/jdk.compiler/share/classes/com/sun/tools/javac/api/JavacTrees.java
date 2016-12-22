@@ -437,7 +437,7 @@ public class JavacTrees extends DocTrees {
                 Type t = attr.attribType(ref.qualifierExpression, env);
                 if (t.isErroneous()) {
                     JCCompilationUnit toplevel =
-                        treeMaker.TopLevel(List.<JCTree>nil());
+                        treeMaker.TopLevel(List.nil());
                     final ModuleSymbol msym = modules.getDefaultModule();
                     toplevel.modle = msym;
                     toplevel.packge = msym.unnamedPackage;

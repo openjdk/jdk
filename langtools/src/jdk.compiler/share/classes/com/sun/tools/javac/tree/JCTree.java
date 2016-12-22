@@ -551,7 +551,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @DefinedBy(Api.COMPILER_TREE)
         public List<JCAnnotation> getPackageAnnotations() {
             JCPackageDecl pd = getPackage();
-            return pd != null ? pd.getAnnotations() : List.<JCAnnotation>nil();
+            return pd != null ? pd.getAnnotations() : List.nil();
         }
         @DefinedBy(Api.COMPILER_TREE)
         public ExpressionTree getPackageName() {
@@ -1619,7 +1619,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
                         JCExpression meth,
                         List<JCExpression> args)
         {
-            this.typeargs = (typeargs == null) ? List.<JCExpression>nil()
+            this.typeargs = (typeargs == null) ? List.nil()
                                                : typeargs;
             this.meth = meth;
             this.args = args;
@@ -1673,7 +1673,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
                            JCClassDecl def)
         {
             this.encl = encl;
-            this.typeargs = (typeargs == null) ? List.<JCExpression>nil()
+            this.typeargs = (typeargs == null) ? List.nil()
                                                : typeargs;
             this.clazz = clazz;
             this.args = args;

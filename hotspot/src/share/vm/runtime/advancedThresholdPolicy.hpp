@@ -205,6 +205,8 @@ class AdvancedThresholdPolicy : public SimpleThresholdPolicy {
 
   double _increase_threshold_at_ratio;
 
+  bool maybe_switch_to_aot(methodHandle mh, CompLevel cur_level, CompLevel next_level, JavaThread* thread);
+
 protected:
   void print_specific(EventType type, methodHandle mh, methodHandle imh, int bci, CompLevel level);
 

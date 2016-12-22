@@ -23,6 +23,8 @@
 
 package com.sun.org.apache.xalan.internal.utils;
 
+import java.util.function.Supplier;
+
 /**
  * This class is duplicated for each JAXP subpackage so keep it in sync.
  * It is package private and therefore is not exposed as part of the JAXP
@@ -46,9 +48,9 @@ public class ObjectFactory {
 
 
     /** Prints a message to standard error if debugging is enabled. */
-    private static void debugPrintln(String msg) {
+    private static void debugPrintln(Supplier<String> msgGen) {
         if (DEBUG) {
-            System.err.println("JAXP: " + msg);
+            System.err.println("JAXP: " + msgGen.get());
         }
     } // debugPrintln(String)
 
@@ -125,8 +127,8 @@ public class ObjectFactory {
         try{
             Class providerClass = findProviderClass(className, cl, doFallback);
             Object instance = providerClass.newInstance();
-            if (DEBUG) debugPrintln("created new instance of " + providerClass +
-                   " using ClassLoader: " + cl);
+            debugPrintln(()->"created new instance of " + providerClass +
+                             " using ClassLoader: " + cl);
             return instance;
         } catch (ClassNotFoundException x) {
             throw new ConfigurationError(

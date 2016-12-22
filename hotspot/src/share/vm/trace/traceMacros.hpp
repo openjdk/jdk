@@ -31,13 +31,9 @@ typedef u8 traceid;
 #define EVENT_THREAD_DESTRUCT(thread)
 #define TRACE_KLASS_CREATION(k, p, t)
 
-#define TRACE_INIT_KLASS_ID(k)
-#define TRACE_REMOVE_KLASS_ID(k)
-#define TRACE_RESTORE_KLASS_ID(k)
-
-#define TRACE_INIT_MODULE_ID(m)
-#define TRACE_INIT_PACKAGE_ID(p)
-#define TRACE_INIT_THREAD_ID(td)
+#define TRACE_INIT_ID(k)
+#define TRACE_REMOVE_ID(k)
+#define TRACE_RESTORE_ID(k)
 #define TRACE_DATA TraceThreadData
 
 #define THREAD_TRACE_ID(thread) ((traceid)thread->osthread()->thread_id())

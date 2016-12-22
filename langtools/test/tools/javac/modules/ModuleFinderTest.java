@@ -38,7 +38,6 @@ import java.nio.file.Path;
 import toolbox.JarTask;
 import toolbox.JavacTask;
 import toolbox.Task;
-import toolbox.ToolBox;
 
 public class ModuleFinderTest extends ModuleTestBase {
 
@@ -50,7 +49,7 @@ public class ModuleFinderTest extends ModuleTestBase {
     @Test
     public void testDuplicateModulesOnPath(Path base) throws Exception {
         Path src = base.resolve("src");
-        tb.writeJavaFiles(src, "module m1 { }");
+        tb.writeJavaFiles(src, "module m1x { }");
 
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
@@ -63,18 +62,18 @@ public class ModuleFinderTest extends ModuleTestBase {
                 .run()
                 .writeAll();
 
-        new JarTask(tb, modules.resolve("m1-1.jar"))
+        new JarTask(tb, modules.resolve("m1x-1.jar"))
                 .baseDir(classes)
                 .files(".")
                 .run();
 
-        new JarTask(tb, modules.resolve("m1-2.jar"))
+        new JarTask(tb, modules.resolve("m1x-2.jar"))
                 .baseDir(classes)
                 .files(".")
                 .run();
 
         Path src2 = base.resolve("src2");
-        tb.writeJavaFiles(src2, "module m2 { requires m1; }");
+        tb.writeJavaFiles(src2, "module m2x { requires m1x; }");
 
 
         String log = new JavacTask(tb, Task.Mode.CMDLINE)
@@ -85,7 +84,7 @@ public class ModuleFinderTest extends ModuleTestBase {
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
 
-        if (!log.contains("- compiler.err.duplicate.module.on.path: (compiler.misc.locn.module_path), m1"))
+        if (!log.contains("- compiler.err.duplicate.module.on.path: (compiler.misc.locn.module_path), m1x"))
             throw new Exception("expected output not found");
     }
 }

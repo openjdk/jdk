@@ -302,13 +302,6 @@ class nmethod : public CompiledMethod {
   address entry_point() const                     { return _entry_point;             } // normal entry point
   address verified_entry_point() const            { return _verified_entry_point;    } // if klass is correct
 
-  enum { in_use       = 0,   // executable nmethod
-         not_entrant  = 1,   // marked for deoptimization but activations may still exist,
-                             // will be transformed to zombie when all activations are gone
-         zombie       = 2,   // no activations exist, nmethod is ready for purge
-         unloaded     = 3 }; // there should be no activations, should not be called,
-                             // will be transformed to zombie immediately
-
   // flag accessing and manipulation
   bool  is_in_use() const                         { return _state == in_use; }
   bool  is_alive() const                          { unsigned char s = _state; return s < zombie; }
@@ -583,6 +576,14 @@ public:
   static int state_offset()                       { return offset_of(nmethod, _state); }
 
   virtual void metadata_do(void f(Metadata*));
+
+  NativeCallWrapper* call_wrapper_at(address call) const;
+  NativeCallWrapper* call_wrapper_before(address return_pc) const;
+  address call_instruction_address(address pc) const;
+
+  virtual CompiledStaticCall* compiledStaticCall_at(Relocation* call_site) const;
+  virtual CompiledStaticCall* compiledStaticCall_at(address addr) const;
+  virtual CompiledStaticCall* compiledStaticCall_before(address addr) const;
 };
 
 // Locks an nmethod so its code will not get removed and it will not

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,17 @@ import javax.lang.model.SourceVersion;
  * the root elements of a round. For this purpose, a type parameter is
  * considered to be enclosed by its {@linkplain
  * TypeParameterElement#getGenericElement generic
- * element}. Annotations on {@linkplain
+ * element}.
+
+ * For this purpose, a package element is <em>not</em> considered to
+ * enclose the top-level types within that package. (A root element
+ * representing a package is created when a {@code package-info} file
+ * is processed.) Likewise, for this purpose, a module element is
+ * <em>not</em> considered to enclose the packages within that
+ * module. (A root element representing a module is created when a
+ * {@code module-info} file is processed.)
+ *
+ * Annotations on {@linkplain
  * java.lang.annotation.ElementType#TYPE_USE type uses}, as opposed to
  * annotations on elements, are ignored when computing whether or not
  * an annotation type is present.
@@ -235,12 +245,20 @@ public interface Processor {
      * (fully qualified) name of a supported annotation type.
      * Alternately it may be of the form &quot;<tt><i>name</i>.*</tt>&quot;
      * representing the set of all annotation types with canonical
-     * names beginning with &quot;<tt><i>name.</i></tt>&quot;.  Finally, {@code
-     * "*"} by itself represents the set of all annotation types,
-     * including the empty set.  Note that a processor should not
-     * claim {@code "*"} unless it is actually processing all files;
-     * claiming unnecessary annotations may cause a performance
-     * slowdown in some environments.
+     * names beginning with &quot;<tt><i>name.</i></tt>&quot;.
+     *
+     * In either of those cases, the name of the annotation type can
+     * be optionally preceded by a module name followed by a {@code
+     * "/"} character. For example, if a processor supports {@code
+     * "a.B"}, this can include multiple annotation types named {@code
+     * a.B} which reside in different modules. To only support {@code
+     * a.B} in the {@code Foo} module, instead use {@code "Foo/a.B"}.
+     *
+     * Finally, {@code "*"} by itself represents the set of all
+     * annotation types, including the empty set.  Note that a
+     * processor should not claim {@code "*"} unless it is actually
+     * processing all files; claiming unnecessary annotations may
+     * cause a performance slowdown in some environments.
      *
      * <p>Each string returned in the set must be accepted by the
      * following grammar:
@@ -248,8 +266,11 @@ public interface Processor {
      * <blockquote>
      * <dl>
      * <dt><i>SupportedAnnotationTypeString:</i>
-     * <dd><i>TypeName</i> <i>DotStar</i><sub><i>opt</i></sub>
+     * <dd><i>ModulePrefix</i><sub><i>opt</i></sub> <i>TypeName</i> <i>DotStar</i><sub><i>opt</i></sub>
      * <dd><tt>*</tt>
+     *
+     * <dt><i>ModulePrefix:</i>
+     * <dd><i>TypeName</i> <tt>/</tt>
      *
      * <dt><i>DotStar:</i>
      * <dd><tt>.</tt> <tt>*</tt>

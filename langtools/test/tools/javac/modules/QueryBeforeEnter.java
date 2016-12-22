@@ -77,17 +77,17 @@ public class QueryBeforeEnter extends ModuleTestBase {
     @Test
     public void testUnnamed(Path base) throws Exception {
         Path moduleSrc = base.resolve("module-src");
-        Path m1 = moduleSrc.resolve("m1");
+        Path m1 = moduleSrc.resolve("m1x");
 
         tb.writeJavaFiles(m1,
-                          "module m1 { exports m1; }",
-                          "package m1; public class M1 {}");
+                          "module m1x { exports m1x; }",
+                          "package m1x; public class M1 {}");
 
-        Path m2 = moduleSrc.resolve("m2");
+        Path m2 = moduleSrc.resolve("m2x");
 
         tb.writeJavaFiles(m2,
-                          "module m2 { exports m2; }",
-                          "package m2; public class M2 {}");
+                          "module m2x { exports m2x; }",
+                          "package m2x; public class M2 {}");
 
         Path modulePath = base.resolve("module-path");
 
@@ -138,32 +138,32 @@ public class QueryBeforeEnter extends ModuleTestBase {
                                                               fm.getJavaFileObjects(src.resolve("test").resolve("Test2.java")));
             assertNotNull(task.getElements().getTypeElement("java.lang.String"));
             assertNotNull(task.getElements().getTypeElement("javax.tools.ToolProvider"));
-            assertNull(task.getElements().getTypeElement("m1.M1"));
-            assertNull(task.getElements().getTypeElement("m2.M2"));
+            assertNull(task.getElements().getTypeElement("m1x.M1"));
+            assertNull(task.getElements().getTypeElement("m2x.M2"));
             assertNotNull(task.getElements().getTypeElement("cp.CP"));
             assertNotNull(task.getElements().getTypeElement("test.Test1"));
             assertNotNull(task.getElements().getTypeElement("test.Test2"));
             assertNotNull(task.getElements().getModuleElement("java.base"));
             assertNotNull(task.getElements().getModuleElement("java.compiler"));
-            assertNull(task.getElements().getModuleElement("m1"));
-            assertNull(task.getElements().getModuleElement("m2"));
+            assertNull(task.getElements().getModuleElement("m1x"));
+            assertNull(task.getElements().getModuleElement("m2x"));
         }
     }
 
     @Test
     public void testSingleNamed(Path base) throws Exception {
         Path moduleSrc = base.resolve("module-src");
-        Path m1 = moduleSrc.resolve("m1");
+        Path m1 = moduleSrc.resolve("m1x");
 
         tb.writeJavaFiles(m1,
-                          "module m1 { exports m1; }",
-                          "package m1; public class M1 {}");
+                          "module m1x { exports m1x; }",
+                          "package m1x; public class M1 {}");
 
-        Path m2 = moduleSrc.resolve("m2");
+        Path m2 = moduleSrc.resolve("m2x");
 
         tb.writeJavaFiles(m2,
-                          "module m2 { exports m2; }",
-                          "package m2; public class M2 {}");
+                          "module m2x { exports m2x; }",
+                          "package m2x; public class M2 {}");
 
         Path modulePath = base.resolve("module-path");
 
@@ -194,7 +194,7 @@ public class QueryBeforeEnter extends ModuleTestBase {
         Path src = base.resolve("src");
 
         tb.writeJavaFiles(src,
-                          "module test { requires java.base; requires m1; } ",
+                          "module test { requires java.base; requires m1x; } ",
                           "package test; public class Test {}");
 
         Path out = base.resolve("out");
@@ -214,13 +214,13 @@ public class QueryBeforeEnter extends ModuleTestBase {
                                                               fm.getJavaFileObjects(findJavaFiles(src)));
             assertNotNull(task.getElements().getTypeElement("java.lang.String"));
             assertNull(task.getElements().getTypeElement("javax.tools.ToolProvider"));
-            assertNotNull(task.getElements().getTypeElement("m1.M1"));
-            assertNull(task.getElements().getTypeElement("m2.M2"));
+            assertNotNull(task.getElements().getTypeElement("m1x.M1"));
+            assertNull(task.getElements().getTypeElement("m2x.M2"));
             assertNotNull(task.getElements().getTypeElement("test.Test"));
             assertNotNull(task.getElements().getModuleElement("java.base"));
             assertNull(task.getElements().getModuleElement("java.compiler"));
-            assertNotNull(task.getElements().getModuleElement("m1"));
-            assertNull(task.getElements().getModuleElement("m2"));
+            assertNotNull(task.getElements().getModuleElement("m1x"));
+            assertNull(task.getElements().getModuleElement("m2x"));
             assertNotNull(task.getElements().getModuleElement("test"));
         }
     }
@@ -228,17 +228,17 @@ public class QueryBeforeEnter extends ModuleTestBase {
     @Test
     public void testMultiModule(Path base) throws Exception {
         Path modulePathSrc = base.resolve("module-path-src");
-        Path m1 = modulePathSrc.resolve("m1");
+        Path m1 = modulePathSrc.resolve("m1x");
 
         tb.writeJavaFiles(m1,
-                          "module m1 { exports m1; }",
-                          "package m1; public class M1 {}");
+                          "module m1x { exports m1x; }",
+                          "package m1x; public class M1 {}");
 
-        Path m2 = modulePathSrc.resolve("m2");
+        Path m2 = modulePathSrc.resolve("m2x");
 
         tb.writeJavaFiles(m2,
-                          "module m2 { exports m2; }",
-                          "package m2; public class M2 {}");
+                          "module m2x { exports m2x; }",
+                          "package m2x; public class M2 {}");
 
         Path modulePath = base.resolve("module-path");
 
@@ -267,17 +267,17 @@ public class QueryBeforeEnter extends ModuleTestBase {
                 .writeAll();
 
         Path moduleSrc = base.resolve("module-src");
-        Path m3 = moduleSrc.resolve("m3");
+        Path m3 = moduleSrc.resolve("m3x");
 
         tb.writeJavaFiles(m3,
-                          "module m3 { requires m1; exports m3; }",
-                          "package m3; public class M3 {  }");
+                          "module m3x { requires m1x; exports m3x; }",
+                          "package m3x; public class M3 {  }");
 
-        Path m4 = moduleSrc.resolve("m4");
+        Path m4 = moduleSrc.resolve("m4x");
 
         tb.writeJavaFiles(m4,
-                          "module m4 { exports m4; }",
-                          "package m4; public class M4 {}");
+                          "module m4x { exports m4x; }",
+                          "package m4x; public class M4 {}");
 
         Path out = base.resolve("out");
 
@@ -297,16 +297,16 @@ public class QueryBeforeEnter extends ModuleTestBase {
                                                               fm.getJavaFileObjects(findJavaFiles(moduleSrc)));
             assertNotNull(task.getElements().getTypeElement("java.lang.String"));
             assertNull(task.getElements().getTypeElement("javax.tools.ToolProvider"));
-            assertNotNull(task.getElements().getTypeElement("m1.M1"));
-            assertNull(task.getElements().getTypeElement("m2.M2"));
-            assertNotNull(task.getElements().getTypeElement("m3.M3"));
-            assertNotNull(task.getElements().getTypeElement("m4.M4"));
+            assertNotNull(task.getElements().getTypeElement("m1x.M1"));
+            assertNull(task.getElements().getTypeElement("m2x.M2"));
+            assertNotNull(task.getElements().getTypeElement("m3x.M3"));
+            assertNotNull(task.getElements().getTypeElement("m4x.M4"));
             assertNotNull(task.getElements().getModuleElement("java.base"));
             assertNull(task.getElements().getModuleElement("java.compiler"));
-            assertNotNull(task.getElements().getModuleElement("m1"));
-            assertNull(task.getElements().getModuleElement("m2"));
-            assertNotNull(task.getElements().getModuleElement("m3"));
-            assertNotNull(task.getElements().getModuleElement("m4"));
+            assertNotNull(task.getElements().getModuleElement("m1x"));
+            assertNull(task.getElements().getModuleElement("m2x"));
+            assertNotNull(task.getElements().getModuleElement("m3x"));
+            assertNotNull(task.getElements().getModuleElement("m4x"));
         }
     }
 

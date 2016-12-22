@@ -36,7 +36,6 @@ import java.nio.file.Path;
 
 import toolbox.JavacTask;
 import toolbox.Task;
-import toolbox.ToolBox;
 
 public class LimitModulesTest extends ModuleTestBase {
     public static void main(String... args) throws Exception {
@@ -78,18 +77,18 @@ public class LimitModulesTest extends ModuleTestBase {
     @Test
     public void testEmptyItem(Path base) throws Exception {
         Path src = base.resolve("src");
-        Path src_m1 = src.resolve("m1");
+        Path src_m1 = src.resolve("m1x");
         tb.writeJavaFiles(src_m1,
-                          "module m1 { }");
-        Path src_m2 = src.resolve("m2");
+                          "module m1x { }");
+        Path src_m2 = src.resolve("m2x");
         tb.writeJavaFiles(src_m2,
-                          "module m2 { }");
+                          "module m2x { }");
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
         new JavacTask(tb)
                 .options("--module-source-path", src.toString(),
-                         "--limit-modules", ",m1")
+                         "--limit-modules", ",m1x")
                 .outdir(classes)
                 .files(findJavaFiles(src))
                 .run()
@@ -97,7 +96,7 @@ public class LimitModulesTest extends ModuleTestBase {
 
         new JavacTask(tb)
                 .options("--module-source-path", src.toString(),
-                         "--limit-modules", "m1,,m2")
+                         "--limit-modules", "m1x,,m2x")
                 .outdir(classes)
                 .files(findJavaFiles(src))
                 .run()
@@ -105,7 +104,7 @@ public class LimitModulesTest extends ModuleTestBase {
 
         new JavacTask(tb)
                 .options("--module-source-path", src.toString(),
-                         "--limit-modules", "m1,")
+                         "--limit-modules", "m1x,")
                 .outdir(classes)
                 .files(findJavaFiles(src))
                 .run()

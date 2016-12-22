@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "code/codeCacheExtensions.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/virtualspace.hpp"
@@ -592,7 +591,7 @@ ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment, bool large) 
 ReservedCodeSpace::ReservedCodeSpace(size_t r_size,
                                      size_t rs_align,
                                      bool large) :
-  ReservedSpace(r_size, rs_align, large, /*executable*/ CodeCacheExtensions::support_dynamic_code()) {
+  ReservedSpace(r_size, rs_align, large, /*executable*/ true) {
   MemTracker::record_virtual_memory_type((address)base(), mtCode);
 }
 

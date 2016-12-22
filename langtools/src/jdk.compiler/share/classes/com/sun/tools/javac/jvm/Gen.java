@@ -476,8 +476,8 @@ public class Gen extends JCTree.Visitor {
                 STATIC | (c.flags() & STRICTFP),
                 names.clinit,
                 new MethodType(
-                    List.<Type>nil(), syms.voidType,
-                    List.<Type>nil(), syms.methodClass),
+                    List.nil(), syms.voidType,
+                    List.nil(), syms.methodClass),
                 c);
             c.members().enter(clinit);
             List<JCStatement> clinitStats = clinitCode.toList();
@@ -1037,11 +1037,11 @@ public class Gen extends JCTree.Visitor {
     }
 
     public void visitDoLoop(JCDoWhileLoop tree) {
-        genLoop(tree, tree.body, tree.cond, List.<JCExpressionStatement>nil(), false);
+        genLoop(tree, tree.body, tree.cond, List.nil(), false);
     }
 
     public void visitWhileLoop(JCWhileLoop tree) {
-        genLoop(tree, tree.body, tree.cond, List.<JCExpressionStatement>nil(), true);
+        genLoop(tree, tree.body, tree.cond, List.nil(), true);
     }
 
     public void visitForLoop(JCForLoop tree) {
@@ -1321,7 +1321,7 @@ public class Gen extends JCTree.Visitor {
             }
         };
         syncEnv.info.gaps = new ListBuffer<>();
-        genTry(tree.body, List.<JCCatch>nil(), syncEnv);
+        genTry(tree.body, List.nil(), syncEnv);
         code.endScopes(limit);
     }
 
@@ -1903,7 +1903,7 @@ public class Gen extends JCTree.Visitor {
                     List.of(syms.objectType), true);
         } else {
             callMethod(pos, syms.objectType, names.getClass,
-                    List.<Type>nil(), false);
+                    List.nil(), false);
         }
         code.emitop0(pop);
     }

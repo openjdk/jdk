@@ -81,7 +81,6 @@ ifeq ($(JPRT_TARGET), $(DEFAULT_MAKE_TARGET))
   # Optional symbols bundle
   ifeq ($(GCOV_ENABLED), true)
     jprt_bundle: $(JPRT_ARCHIVE_SYMBOLS_BUNDLE)
-    zip-bundles: $(SYMBOLS_ZIP_BUNDLE)
 
     $(JPRT_ARCHIVE_SYMBOLS_BUNDLE): product-images
 	$(call MakeDir, $(@D))

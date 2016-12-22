@@ -103,6 +103,10 @@ class Method : public Metadata {
   CompiledMethod* volatile _code;                       // Points to the corresponding piece of native code
   volatile address           _from_interpreted_entry; // Cache of _code ? _adapter->i2c_entry() : _i2i_entry
 
+#if INCLUDE_AOT && defined(TIERED)
+  CompiledMethod* _aot_code;
+#endif
+
   // Constructor
   Method(ConstMethod* xconst, AccessFlags access_flags);
  public:
@@ -386,7 +390,20 @@ class Method : public Metadata {
       mcs->set_rate(rate);
     }
   }
-#endif
+
+#if INCLUDE_AOT
+  void set_aot_code(CompiledMethod* aot_code) {
+    _aot_code = aot_code;
+  }
+
+  CompiledMethod* aot_code() const {
+    return _aot_code;
+  }
+#else
+  CompiledMethod* aot_code() const { return NULL; }
+#endif // INCLUDE_AOT
+#endif // TIERED
+
   int nmethod_age() const {
     if (method_counters() == NULL) {
       return INT_MAX;
@@ -647,6 +664,10 @@ class Method : public Metadata {
   // NOTE: code() is inherently racy as deopt can be clearing code
   // simultaneously. Use with caution.
   bool has_compiled_code() const                 { return code() != NULL; }
+
+#ifdef TIERED
+  bool has_aot_code() const                      { return aot_code() != NULL; }
+#endif
 
   // sizing
   static int header_size()                       { return sizeof(Method)/wordSize; }

@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8136421
- * @requires (vm.simpleArch == "x64" | vm.simpleArch == "sparcv9" | vm.simpleArch == "aarch64")
+ * @requires vm.jvmci
  *         & (vm.compMode != "Xcomp" | vm.opt.TieredCompilation == null | vm.opt.TieredCompilation == true)
  * @summary no "-Xcomp -XX:-TieredCompilation" combination allowed until JDK-8140018 is resolved
  * @library / /test/lib

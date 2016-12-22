@@ -28,6 +28,7 @@ package jdk.javadoc.internal.doclets.formats.html.markup;
 import java.io.*;
 import java.util.*;
 
+import jdk.javadoc.doclet.DocletEnvironment.ModuleMode;
 import jdk.javadoc.internal.doclets.toolkit.Configuration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
@@ -35,7 +36,8 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
-import jdk.javadoc.internal.doclets.toolkit.util.MethodTypes;
+import jdk.javadoc.internal.doclets.toolkit.util.ModulePackageTypes;
+import jdk.javadoc.internal.doclets.toolkit.util.TableTabTypes;
 
 
 /**
@@ -64,32 +66,37 @@ public class HtmlWriter {
     protected Configuration configuration;
 
     /**
-     * Header for table displaying modules and description..
+     * Header for table displaying modules and description.
      */
     protected final List<String> moduleTableHeader;
 
     /**
-     * Header for tables displaying packages and description..
+     * Header for tables displaying packages and description.
      */
     protected final List<String> packageTableHeader;
 
     /**
-     * Header for tables displaying modules and description..
+     * Header for tables displaying modules and description.
      */
     protected final List<String> requiresTableHeader;
 
     /**
-     * Header for tables displaying packages and description..
+     * Header for tables displaying packages and description.
      */
     protected final List<String> exportedPackagesTableHeader;
 
     /**
-     * Header for tables displaying types and description..
+     * Header for tables displaying modules and exported packages.
+     */
+    protected final List<String> additionalPackagesTableHeader;
+
+    /**
+     * Header for tables displaying types and description.
      */
     protected final List<String> usesTableHeader;
 
     /**
-     * Header for tables displaying types and description..
+     * Header for tables displaying types and description.
      */
     protected final List<String> providesTableHeader;
 
@@ -129,12 +136,18 @@ public class HtmlWriter {
         packageTableHeader.add(resources.getText("doclet.Package"));
         packageTableHeader.add(resources.getText("doclet.Description"));
         requiresTableHeader = new ArrayList<>();
+        requiresTableHeader.add(resources.getText("doclet.Modifier"));
         requiresTableHeader.add(resources.getText("doclet.Module"));
         requiresTableHeader.add(resources.getText("doclet.Description"));
         exportedPackagesTableHeader = new ArrayList<>();
         exportedPackagesTableHeader.add(resources.getText("doclet.Package"));
+        if (configuration.docEnv.getModuleMode() == ModuleMode.ALL) {
         exportedPackagesTableHeader.add(resources.getText("doclet.Module"));
+        }
         exportedPackagesTableHeader.add(resources.getText("doclet.Description"));
+        additionalPackagesTableHeader = new ArrayList<>();
+        additionalPackagesTableHeader.add(resources.getText("doclet.Module"));
+        additionalPackagesTableHeader.add(resources.getText("doclet.Packages"));
         usesTableHeader = new ArrayList<>();
         usesTableHeader.add(resources.getText("doclet.Type"));
         usesTableHeader.add(resources.getText("doclet.Description"));
@@ -317,12 +330,15 @@ public class HtmlWriter {
      * Generated javascript variables for the document.
      *
      * @param typeMap map comprising of method and type relationship
-     * @param methodTypes set comprising of all methods types for this class
+     * @param tabTypes set comprising of all table tab types for this class
+     * @param elementName packages or methods table for which tabs need to be displayed
      */
-    public void generateMethodTypesScript(Map<String,Integer> typeMap,
-            Set<MethodTypes> methodTypes) {
+    public void generateTableTabTypesScript(Map<String,Integer> typeMap,
+            Set<? extends TableTabTypes> tabTypes, String elementName) {
         String sep = "";
-        StringBuilder vars = new StringBuilder("var methods = {");
+        StringBuilder vars = new StringBuilder("var ");
+        vars.append(elementName)
+                .append(" = {");
         for (Map.Entry<String,Integer> entry : typeMap.entrySet()) {
             vars.append(sep);
             sep = ",";
@@ -334,18 +350,18 @@ public class HtmlWriter {
         vars.append("};").append(DocletConstants.NL);
         sep = "";
         vars.append("var tabs = {");
-        for (MethodTypes entry : methodTypes) {
+        for (TableTabTypes entry : tabTypes) {
             vars.append(sep);
             sep = ",";
-            vars.append(entry.value())
+            vars.append(entry.tableTabs().value())
                     .append(":")
                     .append("[")
                     .append("\"")
-                    .append(entry.tabId())
+                    .append(entry.tableTabs().tabId())
                     .append("\"")
                     .append(sep)
                     .append("\"")
-                    .append(configuration.getText(entry.resourceKey()))
+                    .append(configuration.getText(entry.tableTabs().resourceKey()))
                     .append("\"]");
         }
         vars.append("};")

@@ -221,7 +221,7 @@ public class Start extends ToolOption.Helper {
      * Main program - external wrapper
      */
     public int begin(String... argv) {
-        boolean ok = begin(null, argv, Collections.<JavaFileObject> emptySet());
+        boolean ok = begin(null, argv, Collections.emptySet());
         return ok ? 0 : 1;
     }
 

@@ -33,6 +33,7 @@
 #include "jvmci/jvmciRuntime.hpp"
 #endif
 
+#ifdef TIERED
 
 void SimpleThresholdPolicy::print_counters(const char* prefix, methodHandle mh) {
   int invocation_count = mh->invocation_count();
@@ -242,6 +243,23 @@ void SimpleThresholdPolicy::compile(const methodHandle& mh, int bci, CompLevel l
   if (level == CompLevel_none) {
     return;
   }
+  if (level == CompLevel_aot) {
+    if (mh->has_aot_code()) {
+      if (PrintTieredEvents) {
+        print_event(COMPILE, mh, mh, bci, level);
+      }
+      MutexLocker ml(Compile_lock);
+      NoSafepointVerifier nsv;
+      if (mh->has_aot_code() && mh->code() != mh->aot_code()) {
+        mh->aot_code()->make_entrant();
+        if (mh->has_compiled_code()) {
+          mh->code()->make_not_entrant();
+        }
+        Method::set_code(mh, mh->aot_code());
+      }
+    }
+    return;
+  }
 
   // Check if the method can be compiled. If it cannot be compiled with C1, continue profiling
   // in the interpreter and then compile with C2 (the transition function will request that,
@@ -275,6 +293,9 @@ void SimpleThresholdPolicy::submit_compile(const methodHandle& mh, int bci, Comp
 // are passed to common() transition function).
 bool SimpleThresholdPolicy::loop_predicate(int i, int b, CompLevel cur_level, Method* method) {
   switch(cur_level) {
+  case CompLevel_aot: {
+    return loop_predicate_helper<CompLevel_aot>(i, b, 1.0, method);
+  }
   case CompLevel_none:
   case CompLevel_limited_profile: {
     return loop_predicate_helper<CompLevel_none>(i, b, 1.0, method);
@@ -289,6 +310,9 @@ bool SimpleThresholdPolicy::loop_predicate(int i, int b, CompLevel cur_level, Me
 
 bool SimpleThresholdPolicy::call_predicate(int i, int b, CompLevel cur_level, Method* method) {
   switch(cur_level) {
+  case CompLevel_aot: {
+    return call_predicate_helper<CompLevel_aot>(i, b, 1.0, method);
+  }
   case CompLevel_none:
   case CompLevel_limited_profile: {
     return call_predicate_helper<CompLevel_none>(i, b, 1.0, method);
@@ -321,10 +345,16 @@ CompLevel SimpleThresholdPolicy::common(Predicate p, Method* method, CompLevel c
   int i = method->invocation_count();
   int b = method->backedge_count();
 
-  if (is_trivial(method)) {
+  if (is_trivial(method) && cur_level != CompLevel_aot) {
     next_level = CompLevel_simple;
   } else {
     switch(cur_level) {
+    case CompLevel_aot: {
+      if ((this->*p)(i, b, cur_level, method)) {
+        next_level = CompLevel_full_profile;
+      }
+    }
+    break;
     case CompLevel_none:
       // If we were at full profile level, would we switch to full opt?
       if (common(p, method, CompLevel_full_profile) == CompLevel_full_optimization) {
@@ -438,3 +468,5 @@ void SimpleThresholdPolicy::method_back_branch_event(const methodHandle& mh, con
     }
   }
 }
+
+#endif

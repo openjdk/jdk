@@ -163,12 +163,7 @@ public class ClassFinder {
     /**
      * Completer that delegates to the complete-method of this class.
      */
-    private final Completer thisCompleter = new Completer() {
-        @Override
-        public void complete(Symbol sym) throws CompletionFailure {
-            ClassFinder.this.complete(sym);
-        }
-    };
+    private final Completer thisCompleter = this::complete;
 
     public Completer getCompleter() {
         return thisCompleter;
@@ -516,7 +511,7 @@ public class ClassFinder {
 
         ModuleSymbol msym = p.modle;
 
-        Assert.checkNonNull(msym, () -> p.toString());
+        Assert.checkNonNull(msym, p::toString);
 
         msym.complete();
 

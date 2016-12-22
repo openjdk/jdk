@@ -411,10 +411,16 @@ public class CopyOnWriteArraySet<E> extends AbstractSet<E>
                 && compareSets(al.getArray(), (Set<?>) o) == 0);
     }
 
+    /**
+     * @throws NullPointerException {@inheritDoc}
+     */
     public boolean removeIf(Predicate<? super E> filter) {
         return al.removeIf(filter);
     }
 
+    /**
+     * @throws NullPointerException {@inheritDoc}
+     */
     public void forEach(Consumer<? super E> action) {
         al.forEach(action);
     }
