@@ -71,9 +71,9 @@ public class ScheduledExecutorSubclassTest extends JSR166TestCase {
     }
 
     static class CustomTask<V> implements RunnableScheduledFuture<V> {
-        RunnableScheduledFuture<V> task;
+        private final RunnableScheduledFuture<V> task;
         volatile boolean ran;
-        CustomTask(RunnableScheduledFuture<V> t) { task = t; }
+        CustomTask(RunnableScheduledFuture<V> task) { this.task = task; }
         public boolean isPeriodic() { return task.isPeriodic(); }
         public void run() {
             ran = true;
