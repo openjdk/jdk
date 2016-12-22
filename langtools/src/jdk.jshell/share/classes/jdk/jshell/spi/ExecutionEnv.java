@@ -28,7 +28,6 @@ package jdk.jshell.spi;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.List;
-import jdk.jshell.JShell;
 
 /**
  * Functionality made available to a pluggable JShell execution engine.  It is

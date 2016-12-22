@@ -34,9 +34,6 @@
 import java.net.InetAddress;
 import org.testng.annotations.Test;
 import org.testng.annotations.BeforeMethod;
-import jdk.jshell.execution.JdiDefaultExecutionControl;
-import static jdk.jshell.execution.JdiDefaultExecutionControl.defaultTimeout;
-import static jdk.jshell.execution.Util.failOverExecutionControlGenerator;
 
 @Test
 public class FailOverExecutionControlHangingListenTest extends ExecutionControlTestBase {
@@ -45,12 +42,8 @@ public class FailOverExecutionControlHangingListenTest extends ExecutionControlT
     @Override
     public void setUp() {
         String loopback = InetAddress.getLoopbackAddress().getHostAddress();
-        setUp(builder -> builder.executionEngine(failOverExecutionControlGenerator(
-                JdiDefaultExecutionControl.create(
-                        HangingRemoteAgent.class.getName(),
-                        false,
-                        loopback,
-                        defaultTimeout()),
-                JdiDefaultExecutionControl.listen(loopback))));
+         setUp(builder -> builder.executionEngine(
+                "failover:0(jdi:remoteAgent(HangingRemoteAgent),hostname(" + loopback + ")),"
+                 + "1(jdi:hostname(" + loopback + "))"));
     }
 }

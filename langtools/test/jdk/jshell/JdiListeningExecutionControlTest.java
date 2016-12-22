@@ -33,7 +33,6 @@
 
 import org.testng.annotations.Test;
 import org.testng.annotations.BeforeMethod;
-import jdk.jshell.execution.JdiDefaultExecutionControl;
 
 @Test
 public class JdiListeningExecutionControlTest extends ExecutionControlTestBase {
@@ -41,6 +40,6 @@ public class JdiListeningExecutionControlTest extends ExecutionControlTestBase {
     @BeforeMethod
     @Override
     public void setUp() {
-        setUp(builder -> builder.executionEngine(JdiDefaultExecutionControl.listen(null)));
+        setUp(builder -> builder.executionEngine("jdi"));
     }
 }
