@@ -50,8 +50,7 @@ JvmtiThreadState::JvmtiThreadState(JavaThread* thread)
   : _thread_event_enable() {
   assert(JvmtiThreadState_lock->is_locked(), "sanity check");
   _thread               = thread;
-  _exception_detected   = false;
-  _exception_caught     = false;
+  _exception_state      = ES_CLEARED;
   _debuggable           = true;
   _hide_single_stepping = false;
   _hide_level           = 0;
@@ -310,7 +309,7 @@ void JvmtiThreadState::process_pending_step_for_popframe() {
   // an exception.
   //
   if (is_exception_detected()) {
-    clear_exception_detected();
+    clear_exception_state();
   }
   // If step is pending for popframe then it may not be
   // a repeat step. The new_bci and method_id is same as current_bci
@@ -385,7 +384,7 @@ void JvmtiThreadState::process_pending_step_for_earlyret() {
   // an exception.
   //
   if (is_exception_detected()) {
-    clear_exception_detected();
+    clear_exception_state();
   }
   // If step is pending for earlyret then it may not be a repeat step.
   // The new_bci and method_id is same as current_bci and current

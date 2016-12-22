@@ -320,12 +320,6 @@ size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
   return s;
 }
 
-size_t os::Linux::default_guard_size(os::ThreadType thr_type) {
-  // Only enable glibc guard pages for non-Java threads
-  // (Java threads have HotSpot guard pages)
-  return (thr_type == java_thread ? 0 : page_size());
-}
-
 static void current_stack_region(address *bottom, size_t *size) {
   pthread_attr_t attr;
   int res = pthread_getattr_np(pthread_self(), &attr);
@@ -334,7 +328,7 @@ static void current_stack_region(address *bottom, size_t *size) {
       vm_exit_out_of_memory(0, OOM_MMAP_ERROR, "pthread_getattr_np");
     }
     else {
-      fatal("pthread_getattr_np failed with errno = %d", res);
+      fatal("pthread_getattr_np failed with error = %d", res);
     }
   }
 
@@ -342,7 +336,7 @@ static void current_stack_region(address *bottom, size_t *size) {
   size_t stack_bytes;
   res = pthread_attr_getstack(&attr, (void **) &stack_bottom, &stack_bytes);
   if (res != 0) {
-    fatal("pthread_attr_getstack failed with errno = %d", res);
+    fatal("pthread_attr_getstack failed with error = %d", res);
   }
   address stack_top = stack_bottom + stack_bytes;
 

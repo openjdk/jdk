@@ -426,15 +426,16 @@ void Rewriter::scan_method(Method* method, bool reverse, bool* invokespecial_err
               Symbol* field_sig = cp->signature_ref_at(bc_index);
 
               fieldDescriptor fd;
-              klass->find_field(field_name, field_sig, &fd);
-              if (fd.access_flags().is_final()) {
-                if (fd.access_flags().is_static()) {
-                  if (!method->is_static_initializer()) {
-                    fd.set_has_initialized_final_update(true);
-                  }
-                } else {
-                  if (!method->is_object_initializer()) {
-                    fd.set_has_initialized_final_update(true);
+              if (klass->find_field(field_name, field_sig, &fd) != NULL) {
+                if (fd.access_flags().is_final()) {
+                  if (fd.access_flags().is_static()) {
+                    if (!method->is_static_initializer()) {
+                      fd.set_has_initialized_final_update(true);
+                    }
+                  } else {
+                    if (!method->is_object_initializer()) {
+                      fd.set_has_initialized_final_update(true);
+                    }
                   }
                 }
               }
