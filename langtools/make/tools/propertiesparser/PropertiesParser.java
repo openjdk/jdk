@@ -57,7 +57,7 @@ public class PropertiesParser {
     }
 
     public static boolean run(String[] args, PrintStream out) {
-        PropertiesParser pp = new PropertiesParser(msg -> out.println(msg));
+        PropertiesParser pp = new PropertiesParser(out::println);
         return pp.run(args);
     }
 
@@ -76,7 +76,7 @@ public class PropertiesParser {
             return false;
         }
         try {
-            optionsMap.forEach((propfile, outfile) -> compilePropertyFile(propfile, outfile));
+            optionsMap.forEach(this::compilePropertyFile);
             return true;
         } catch (RuntimeException ex) {
             ex.printStackTrace();

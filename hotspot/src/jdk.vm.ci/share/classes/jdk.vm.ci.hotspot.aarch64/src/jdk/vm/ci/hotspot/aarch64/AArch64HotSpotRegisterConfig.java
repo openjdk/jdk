@@ -25,18 +25,19 @@ package jdk.vm.ci.hotspot.aarch64;
 import static jdk.vm.ci.aarch64.AArch64.lr;
 import static jdk.vm.ci.aarch64.AArch64.r0;
 import static jdk.vm.ci.aarch64.AArch64.r1;
-import static jdk.vm.ci.aarch64.AArch64.r12;
 import static jdk.vm.ci.aarch64.AArch64.r2;
-import static jdk.vm.ci.aarch64.AArch64.r27;
-import static jdk.vm.ci.aarch64.AArch64.r28;
-import static jdk.vm.ci.aarch64.AArch64.r29;
 import static jdk.vm.ci.aarch64.AArch64.r3;
-import static jdk.vm.ci.aarch64.AArch64.r31;
 import static jdk.vm.ci.aarch64.AArch64.r4;
 import static jdk.vm.ci.aarch64.AArch64.r5;
 import static jdk.vm.ci.aarch64.AArch64.r6;
 import static jdk.vm.ci.aarch64.AArch64.r7;
-import static jdk.vm.ci.aarch64.AArch64.r9;
+import static jdk.vm.ci.aarch64.AArch64.rscratch1;
+import static jdk.vm.ci.aarch64.AArch64.rscratch2;
+import static jdk.vm.ci.aarch64.AArch64.r12;
+import static jdk.vm.ci.aarch64.AArch64.r27;
+import static jdk.vm.ci.aarch64.AArch64.r28;
+import static jdk.vm.ci.aarch64.AArch64.r29;
+import static jdk.vm.ci.aarch64.AArch64.r31;
 import static jdk.vm.ci.aarch64.AArch64.sp;
 import static jdk.vm.ci.aarch64.AArch64.v0;
 import static jdk.vm.ci.aarch64.AArch64.v1;
@@ -114,7 +115,7 @@ public class AArch64HotSpotRegisterConfig implements RegisterConfig {
     private final RegisterArray nativeGeneralParameterRegisters = new RegisterArray(r0, r1, r2, r3, r4, r5, r6, r7);
     private final RegisterArray simdParameterRegisters = new RegisterArray(v0, v1, v2, v3, v4, v5, v6, v7);
 
-    public static final Register inlineCacheRegister = r9;
+    public static final Register inlineCacheRegister = rscratch2;
 
     /**
      * Vtable stubs expect the metaspace Method in r12.
@@ -125,7 +126,8 @@ public class AArch64HotSpotRegisterConfig implements RegisterConfig {
     public static final Register threadRegister = r28;
     public static final Register fp = r29;
 
-    private static final RegisterArray reservedRegisters = new RegisterArray(threadRegister, fp, lr, r31, zr, sp);
+    private static final RegisterArray reservedRegisters
+        = new RegisterArray(rscratch1, rscratch2, threadRegister, fp, lr, r31, zr, sp);
 
     private static RegisterArray initAllocatable(Architecture arch, boolean reserveForHeapBase) {
         RegisterArray allRegisters = arch.getAvailableValueRegisters();

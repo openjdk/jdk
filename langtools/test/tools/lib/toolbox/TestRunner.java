@@ -90,7 +90,7 @@ public abstract class TestRunner {
                 } catch (InvocationTargetException e) {
                     errorCount++;
                     Throwable cause = e.getCause();
-                    out.println("Exception: " + e.getCause());
+                    out.println("Exception running test " + testName + ": " + e.getCause());
                     cause.printStackTrace(out);
                 }
                 out.println();

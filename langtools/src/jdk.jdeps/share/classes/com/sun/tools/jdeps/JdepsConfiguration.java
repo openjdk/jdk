@@ -70,6 +70,7 @@ public class JdepsConfiguration implements AutoCloseable {
     // the token for "all modules on the module path"
     public static final String ALL_MODULE_PATH = "ALL-MODULE-PATH";
     public static final String ALL_DEFAULT = "ALL-DEFAULT";
+    public static final String ALL_SYSTEM = "ALL-SYSTEM";
     public static final String MODULE_INFO = "module-info.class";
 
     private final SystemModuleFinder system;
@@ -199,12 +200,10 @@ public class JdepsConfiguration implements AutoCloseable {
         return m!= null ? Optional.of(m.descriptor()) : Optional.empty();
     }
 
-    boolean isSystem(Module m) {
-        return system.find(m.name()).isPresent();
-    }
-
     boolean isValidToken(String name) {
-        return ALL_MODULE_PATH.equals(name) || ALL_DEFAULT.equals(name);
+        return ALL_MODULE_PATH.equals(name) ||
+                ALL_DEFAULT.equals(name) ||
+                ALL_SYSTEM.equals(name);
     }
 
     /**
@@ -394,29 +393,29 @@ public class JdepsConfiguration implements AutoCloseable {
                 ModuleDescriptor descriptor = dropHashes(ModuleDescriptor.read(bin));
                 String mn = descriptor.name();
                 URI uri = URI.create("jrt:/" + path.getFileName().toString());
-                Supplier<ModuleReader> readerSupplier = new Supplier<>() {
+                Supplier<ModuleReader> readerSupplier = () -> new ModuleReader() {
                     @Override
-                    public ModuleReader get() {
-                        return new ModuleReader() {
-                            @Override
-                            public Optional<URI> find(String name) throws IOException {
-                                return name.equals(mn)
-                                    ? Optional.of(uri) : Optional.empty();
-                            }
+                    public Optional<URI> find(String name) throws IOException {
+                        return name.equals(mn)
+                            ? Optional.of(uri) : Optional.empty();
+                    }
 
-                            @Override
-                            public Stream<String> list() {
-                                return Stream.empty();
-                            }
+                    @Override
+                    public Stream<String> list() {
+                        return Stream.empty();
+                    }
 
-                            @Override
-                            public void close() {
-                            }
-                        };
+                    @Override
+                    public void close() {
                     }
                 };
 
-                return new ModuleReference(descriptor, uri, readerSupplier);
+                return new ModuleReference(descriptor, uri) {
+                    @Override
+                    public ModuleReader open() {
+                        return readerSupplier.get();
+                    }
+                };
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -533,6 +532,9 @@ public class JdepsConfiguration implements AutoCloseable {
                         break;
                     case ALL_DEFAULT:
                         this.addAllDefaultModules = true;
+                        break;
+                    case ALL_SYSTEM:
+                        this.addAllSystemModules = true;
                         break;
                     default:
                         this.rootModules.add(mn);

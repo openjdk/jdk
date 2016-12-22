@@ -487,7 +487,7 @@ public class JavacState {
             Set<String> deps = pkg.typeDependencies()
                                   .values()
                                   .stream()
-                                  .flatMap(s -> s.stream())
+                                  .flatMap(Collection::stream)
                                   .collect(Collectors.toSet());
             for (String dep : deps) {
                 String depPkg = ":" + dep.substring(0, dep.lastIndexOf('.'));

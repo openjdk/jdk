@@ -644,6 +644,7 @@ void frame::print_C_frame(outputStream* st, char* buf, int buflen, address pc) {
 //
 // First letter indicates type of the frame:
 //    J: Java frame (compiled)
+//    A: Java frame (aot compiled)
 //    j: Java frame (interpreted)
 //    V: VM frame (C/C++)
 //    v: Other frames running VM generated code (e.g. stubs, adapters, etc.)
@@ -664,8 +665,10 @@ void frame::print_on_error(outputStream* st, char* buf, int buflen, bool verbose
         if (module->is_named()) {
           module->name()->as_C_string(buf, buflen);
           st->print(" %s", buf);
-          module->version()->as_C_string(buf, buflen);
-          st->print("@%s", buf);
+          if (module->version() != NULL) {
+            module->version()->as_C_string(buf, buflen);
+            st->print("@%s", buf);
+          }
         }
       } else {
         st->print("j  " PTR_FORMAT, p2i(pc()));
@@ -683,7 +686,9 @@ void frame::print_on_error(outputStream* st, char* buf, int buflen, bool verbose
       CompiledMethod* cm = (CompiledMethod*)_cb;
       Method* m = cm->method();
       if (m != NULL) {
-        if (cm->is_nmethod()) {
+        if (cm->is_aot()) {
+          st->print("A %d ", cm->compile_id());
+        } else if (cm->is_nmethod()) {
           nmethod* nm = cm->as_nmethod();
           st->print("J %d%s", nm->compile_id(), (nm->is_osr_method() ? "%" : ""));
           st->print(" %s", nm->compiler_name());
@@ -694,8 +699,10 @@ void frame::print_on_error(outputStream* st, char* buf, int buflen, bool verbose
         if (module->is_named()) {
           module->name()->as_C_string(buf, buflen);
           st->print(" %s", buf);
-          module->version()->as_C_string(buf, buflen);
-          st->print("@%s", buf);
+          if (module->version() != NULL) {
+            module->version()->as_C_string(buf, buflen);
+            st->print("@%s", buf);
+          }
         }
         st->print(" (%d bytes) @ " PTR_FORMAT " [" PTR_FORMAT "+" INTPTR_FORMAT "]",
                   m->code_size(), p2i(_pc), p2i(_cb->code_begin()), _pc - _cb->code_begin());
@@ -1262,8 +1269,10 @@ void frame::describe(FrameValues& values, int frame_no) {
     // For now just label the frame
     CompiledMethod* cm = (CompiledMethod*)cb();
     values.describe(-1, info_address,
-                    FormatBuffer<1024>("#%d nmethod " INTPTR_FORMAT " for method %s%s", frame_no,
-                                       p2i(cm), cm->method()->name_and_sig_as_C_string(),
+                    FormatBuffer<1024>("#%d nmethod " INTPTR_FORMAT " for method %s%s%s", frame_no,
+                                       p2i(cm),
+                                       (cm->is_aot() ? "A ": "J "),
+                                       cm->method()->name_and_sig_as_C_string(),
                                        (_deopt_state == is_deoptimized) ?
                                        " (deoptimized)" :
                                        ((_deopt_state == unknown) ? " (state unknown)" : "")),

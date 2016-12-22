@@ -23,6 +23,8 @@
 
 package dom.ls;
 
+import static org.w3c.dom.ls.DOMImplementationLS.MODE_SYNCHRONOUS;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringReader;
@@ -35,22 +37,22 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.testng.Assert;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
-import org.w3c.dom.DOMConfiguration;
 import org.w3c.dom.DOMError;
 import org.w3c.dom.DOMErrorHandler;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 import org.w3c.dom.ls.DOMImplementationLS;
 import org.w3c.dom.ls.LSException;
+import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSOutput;
+import org.w3c.dom.ls.LSParser;
 import org.w3c.dom.ls.LSSerializer;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-
 /*
  * @test
- * @bug 6439439 8080906
+ * @bug 8080906 8114834
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @run testng/othervm -DrunSecMngr=true dom.ls.LSSerializerTest
  * @run testng/othervm dom.ls.LSSerializerTest
@@ -58,7 +60,6 @@ import org.xml.sax.SAXException;
  */
 @Listeners({jaxp.library.BasePolicy.class})
 public class LSSerializerTest {
-    private static final String DOM_FORMAT_PRETTY_PRINT = "format-pretty-print";
 
     class DOMErrorHandlerImpl implements DOMErrorHandler {
 
@@ -167,101 +168,6 @@ public class LSSerializerTest {
     }
 
     @Test
-    public void testFormatPrettyPrint() {
-
-        final String XML_DOCUMENT = "<?xml version=\"1.0\" encoding=\"UTF-16\"?>\n" + "<hello>" + "world" + "<child><children/><children/></child>"
-                + "</hello>";
-        /**JDK-8035467
-         * no newline in default output
-         */
-        final String XML_DOCUMENT_DEFAULT_PRINT =
-                "<?xml version=\"1.0\" encoding=\"UTF-16\"?>"
-                + "<hello>"
-                + "world"
-                + "<child><children/><children/></child>"
-                + "</hello>";
-
-        final String XML_DOCUMENT_PRETTY_PRINT = "<?xml version=\"1.0\" encoding=\"UTF-16\"?>" + "<hello>" + "world" + "<child>" + "\n" + "        "
-                + "<children/>" + "\n" + "        " + "<children/>" + "\n" + "    " + "</child>" + "\n" + "</hello>" + "\n";
-
-        // it all begins with a Document
-        DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder documentBuilder = null;
-        try {
-            documentBuilder = documentBuilderFactory.newDocumentBuilder();
-        } catch (ParserConfigurationException parserConfigurationException) {
-            parserConfigurationException.printStackTrace();
-            Assert.fail(parserConfigurationException.toString());
-        }
-        Document document = null;
-
-        StringReader stringReader = new StringReader(XML_DOCUMENT);
-        InputSource inputSource = new InputSource(stringReader);
-        try {
-            document = documentBuilder.parse(inputSource);
-        } catch (SAXException saxException) {
-            saxException.printStackTrace();
-            Assert.fail(saxException.toString());
-        } catch (IOException ioException) {
-            ioException.printStackTrace();
-            Assert.fail(ioException.toString());
-        }
-
-        // query DOM Interfaces to get to a LSSerializer
-        DOMImplementation domImplementation = documentBuilder.getDOMImplementation();
-        DOMImplementationLS domImplementationLS = (DOMImplementationLS) domImplementation;
-        LSSerializer lsSerializer = domImplementationLS.createLSSerializer();
-
-        System.out.println("Serializer is: " + lsSerializer.getClass().getName() + " " + lsSerializer);
-
-        // get configuration
-        DOMConfiguration domConfiguration = lsSerializer.getDomConfig();
-
-        // query current configuration
-        Boolean defaultFormatPrettyPrint = (Boolean) domConfiguration.getParameter(DOM_FORMAT_PRETTY_PRINT);
-        Boolean canSetFormatPrettyPrintFalse = (Boolean) domConfiguration.canSetParameter(DOM_FORMAT_PRETTY_PRINT, Boolean.FALSE);
-        Boolean canSetFormatPrettyPrintTrue = (Boolean) domConfiguration.canSetParameter(DOM_FORMAT_PRETTY_PRINT, Boolean.TRUE);
-
-        System.out.println(DOM_FORMAT_PRETTY_PRINT + " default/can set false/can set true = " + defaultFormatPrettyPrint + "/"
-                + canSetFormatPrettyPrintFalse + "/" + canSetFormatPrettyPrintTrue);
-
-        // test values
-        Assert.assertEquals(defaultFormatPrettyPrint, Boolean.FALSE, "Default value of " + DOM_FORMAT_PRETTY_PRINT + " should be " + Boolean.FALSE);
-
-        Assert.assertEquals(canSetFormatPrettyPrintFalse, Boolean.TRUE, "Can set " + DOM_FORMAT_PRETTY_PRINT + " to " + Boolean.FALSE + " should be "
-                + Boolean.TRUE);
-
-        Assert.assertEquals(canSetFormatPrettyPrintTrue, Boolean.TRUE, "Can set " + DOM_FORMAT_PRETTY_PRINT + " to " + Boolean.TRUE + " should be "
-                + Boolean.TRUE);
-
-        // get default serialization
-        String prettyPrintDefault = lsSerializer.writeToString(document);
-        System.out.println("(default) " + DOM_FORMAT_PRETTY_PRINT + "==" + (Boolean) domConfiguration.getParameter(DOM_FORMAT_PRETTY_PRINT)
-                + ": \n\"" + prettyPrintDefault + "\"");
-
-        Assert.assertEquals(XML_DOCUMENT_DEFAULT_PRINT, prettyPrintDefault, "Invalid serialization with default value, " + DOM_FORMAT_PRETTY_PRINT + "=="
-                + (Boolean) domConfiguration.getParameter(DOM_FORMAT_PRETTY_PRINT));
-
-        // configure LSSerializer to not format-pretty-print
-        domConfiguration.setParameter(DOM_FORMAT_PRETTY_PRINT, Boolean.FALSE);
-        String prettyPrintFalse = lsSerializer.writeToString(document);
-        System.out.println("(FALSE) " + DOM_FORMAT_PRETTY_PRINT + "==" + (Boolean) domConfiguration.getParameter(DOM_FORMAT_PRETTY_PRINT)
-                + ": \n\"" + prettyPrintFalse + "\"");
-
-        Assert.assertEquals(XML_DOCUMENT_DEFAULT_PRINT, prettyPrintFalse, "Invalid serialization with FALSE value, " + DOM_FORMAT_PRETTY_PRINT + "=="
-                + (Boolean) domConfiguration.getParameter(DOM_FORMAT_PRETTY_PRINT));
-
-        // configure LSSerializer to format-pretty-print
-        domConfiguration.setParameter(DOM_FORMAT_PRETTY_PRINT, Boolean.TRUE);
-        String prettyPrintTrue = lsSerializer.writeToString(document);
-        System.out.println("(TRUE) " + DOM_FORMAT_PRETTY_PRINT + "==" + (Boolean) domConfiguration.getParameter(DOM_FORMAT_PRETTY_PRINT)
-                + ": \n\"" + prettyPrintTrue + "\"");
-
-        Assert.assertEquals(XML_DOCUMENT_PRETTY_PRINT, prettyPrintTrue, "Invalid serialization with TRUE value, " + DOM_FORMAT_PRETTY_PRINT + "=="
-                + (Boolean) domConfiguration.getParameter(DOM_FORMAT_PRETTY_PRINT));
-    }
-
-    @Test
     public void testXML11() {
 
         /**
@@ -317,5 +223,110 @@ public class LSSerializerTest {
 
         // output should == input
         Assert.assertEquals(XML11_DOCUMENT_OUTPUT, defaultSerialization, "Invalid serialization of XML 1.1 document: ");
+    }
+
+    /*
+     * @bug 8114834 test entity reference, nested entity reference when entities
+     * is true and false
+     */
+    @Test
+    public void testEntityReference() throws Exception {
+        final String XML_DOCUMENT = "<?xml version=\"1.1\" encoding=\"UTF-16\"?>\n" +
+                "<!DOCTYPE author [\n" +
+                " <!ENTITY name \"Jo Smith\">" +
+                " <!ENTITY name1 \"&name;\">" +
+                " <!ENTITY name2 \"&name1;\">" +
+                "<!ENTITY ele \"<aa><bb>text</bb></aa>\">" +
+                " <!ENTITY ele1 \"&ele;\">" +
+                " <!ENTITY ele2 \"&ele1;\">" +
+                " ]>" +
+                " <author><a>&name1;</a>" +
+                "<b>b &name2; &name1; b</b>" +
+                "<c> &name; </c>" +
+                "<d>&ele1;d</d>" +
+                "<e> &ele2;eee </e>" +
+                "<f>&lt;att&gt;</f>" +
+                "<g> &ele; g</g>" +
+                "<h>&ele2;</h></author>" ;
+
+
+        DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
+
+        DOMImplementation domImplementation = documentBuilder.getDOMImplementation();
+        DOMImplementationLS domImplementationLS = (DOMImplementationLS) domImplementation;
+
+        LSParser domParser = domImplementationLS.createLSParser(MODE_SYNCHRONOUS, null);
+        domParser.getDomConfig().setParameter("entities", Boolean.TRUE);
+
+        LSInput src = domImplementationLS.createLSInput();
+        src.setStringData(XML_DOCUMENT);
+        Document document = domParser.parse(src);
+
+        LSSerializer lsSerializer = domImplementationLS.createLSSerializer();
+
+        lsSerializer.getDomConfig().setParameter("format-pretty-print", true);
+        System.out.println("test with default entities is " + lsSerializer.getDomConfig().getParameter("entities"));
+        Assert.assertEquals(lsSerializer.writeToString(document),
+                "<?xml version=\"1.1\" encoding=\"UTF-16\"?><!DOCTYPE author [ \n" +
+                "<!ENTITY name 'Jo Smith'>\n" +
+                "<!ENTITY name1 '&name;'>\n" +
+                "<!ENTITY name2 '&name1;'>\n" +
+                "<!ENTITY ele '<aa><bb>text</bb></aa>'>\n" +
+                "<!ENTITY ele1 '&ele;'>\n" +
+                "<!ENTITY ele2 '&ele1;'>\n" +
+                "]>\n" +
+                "<author>\n" +
+                "    <a>&name1;Jo Smith</a>\n" +
+                "    <b>b &name2;Jo Smith &name1;Jo Smith b</b>\n" +
+                "    <c> &name;Jo Smith </c>\n" +
+                "    <d>&ele1;d</d>\n" +
+                "    <e> &ele2;eee </e>\n" +
+                "    <f>&lt;att&gt;</f>\n" +
+                "    <g> &ele; g</g>\n" +
+                "    <h>&ele2;</h>\n" +
+                "</author>\n");
+
+        lsSerializer.getDomConfig().setParameter("entities", Boolean.FALSE);
+        System.out.println("test with entities is false");
+        Assert.assertEquals(lsSerializer.writeToString(document),
+                "<?xml version=\"1.1\" encoding=\"UTF-16\"?><!DOCTYPE author [ \n" +
+                "<!ENTITY name 'Jo Smith'>\n" +
+                "<!ENTITY name1 '&name;'>\n" +
+                "<!ENTITY name2 '&name1;'>\n" +
+                "<!ENTITY ele '<aa><bb>text</bb></aa>'>\n" +
+                "<!ENTITY ele1 '&ele;'>\n" +
+                "<!ENTITY ele2 '&ele1;'>\n" +
+                "]>\n" +
+                "<author>\n" +
+                "    <a>&name;Jo Smith</a>\n" +
+                "    <b>b &name;Jo Smith &name;Jo Smith b</b>\n" +
+                "    <c> &name;Jo Smith </c>\n" +
+                "    <d>\n" +
+                "        <aa>\n" +
+                "            <bb>text</bb>\n" +
+                "        </aa>\n" +
+                "        d\n" +
+                "    </d>\n" +
+                "    <e>\n" +
+                "        <aa>\n" +
+                "            <bb>text</bb>\n" +
+                "        </aa>\n" +
+                "        eee \n" +
+                "    </e>\n" +
+                "    <f>&lt;att&gt;</f>\n" +
+                "    <g>\n" +
+                "        <aa>\n" +
+                "            <bb>text</bb>\n" +
+                "        </aa>\n" +
+                "         g\n" +
+                "    </g>\n" +
+                "    <h>\n" +
+                "        <aa>\n" +
+                "            <bb>text</bb>\n" +
+                "        </aa>\n" +
+                "    </h>\n" +
+                "</author>\n");
+
     }
 }

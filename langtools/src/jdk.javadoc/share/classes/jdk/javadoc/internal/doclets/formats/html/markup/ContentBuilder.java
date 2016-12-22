@@ -37,7 +37,7 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
  * A sequence of Content nodes.
  */
 public class ContentBuilder extends Content {
-    protected List<Content> contents = Collections.<Content>emptyList();
+    protected List<Content> contents = Collections.emptyList();
 
     @Override
     public void addContent(Content content) {

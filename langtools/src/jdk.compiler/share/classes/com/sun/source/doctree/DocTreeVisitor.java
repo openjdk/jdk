@@ -185,6 +185,14 @@ public interface DocTreeVisitor<R,P> {
     R visitParam(ParamTree node, P p);
 
     /**
+     * Visits a ProvidesTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
+    R visitProvides(ProvidesTree node, P p);
+
+    /**
      * Visits a ReferenceTree node.
      * @param node the node being visited
      * @param p a parameter value
@@ -279,6 +287,14 @@ public interface DocTreeVisitor<R,P> {
      * @return a result value
      */
     R visitUnknownInlineTag(UnknownInlineTagTree node, P p);
+
+    /**
+     * Visits a UsesTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
+    R visitUses(UsesTree node, P p);
 
     /**
      * Visits a ValueTree node.

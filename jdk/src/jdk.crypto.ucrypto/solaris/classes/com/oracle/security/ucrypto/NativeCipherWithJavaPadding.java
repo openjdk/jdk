@@ -28,6 +28,7 @@ package com.oracle.security.ucrypto;
 import java.nio.ByteBuffer;
 import java.util.Set;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.lang.ref.*;
 
@@ -262,7 +263,7 @@ public class NativeCipherWithJavaPadding extends CipherSpi {
         throws NoSuchAlgorithmException, NoSuchPaddingException {
         this.nc = nc;
         this.blockSize = nc.engineGetBlockSize();
-        if (paddingScheme.toUpperCase().equals("PKCS5PADDING")) {
+        if (paddingScheme.toUpperCase(Locale.ROOT).equals("PKCS5PADDING")) {
             padding = new PKCS5Padding(blockSize);
         } else {
             throw new NoSuchAlgorithmException("Unsupported padding scheme: " + paddingScheme);

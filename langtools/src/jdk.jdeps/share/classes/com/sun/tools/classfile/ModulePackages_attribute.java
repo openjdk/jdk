@@ -27,6 +27,8 @@ package com.sun.tools.classfile;
 
 import java.io.IOException;
 
+import com.sun.tools.classfile.ConstantPool.CONSTANT_Package_info;
+
 /**
  * See JVMS, section 4.8.15.
  *
@@ -61,7 +63,8 @@ public class ModulePackages_attribute extends Attribute {
 
     public String getPackage(int index, ConstantPool constant_pool) throws ConstantPoolException {
         int package_index = packages_index[index];
-        return constant_pool.getUTF8Value(package_index);
+        CONSTANT_Package_info info = constant_pool.getPackageInfo(package_index);
+        return info.getName();
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,9 +16,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
-/*
- * $Id: AbstractTranslet.java,v 1.6 2006/06/19 19:49:03 spericas Exp $
  */
 
 package com.sun.org.apache.xalan.internal.xsltc.runtime;
@@ -685,7 +682,8 @@ public abstract class AbstractTranslet implements Translet {
                     handler.setVersion(_version);
                 }
                 handler.setIndent(_indent);
-                handler.setIndentAmount(_indentamount);
+                if (_indentamount >= 0)
+                    handler.setIndentAmount(_indentamount);
                 if (_doctypeSystem != null) {
                     handler.setDoctype(_doctypeSystem, _doctypePublic);
                 }

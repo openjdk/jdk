@@ -158,7 +158,7 @@ public class Context {
          * Since we found a key of type Key<T>, the value must
          * be of type T.
          */
-        return Context.<T>uncheckedCast(o);
+        return Context.uncheckedCast(o);
     }
 
     public Context() {}

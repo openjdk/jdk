@@ -120,7 +120,7 @@ public class Infer {
         dependenciesFolder = options.get("debug.dumpInferenceGraphsTo");
         pendingGraphs = List.nil();
 
-        emptyContext = new InferenceContext(this, List.<Type>nil());
+        emptyContext = new InferenceContext(this, List.nil());
     }
 
     /** A value for prototypes that admit any type, including polymorphic ones. */

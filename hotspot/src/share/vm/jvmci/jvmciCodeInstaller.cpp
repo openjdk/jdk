@@ -172,6 +172,69 @@ OopMap* CodeInstaller::create_oop_map(Handle debug_info, TRAPS) {
   return map;
 }
 
+AOTOopRecorder::AOTOopRecorder(Arena* arena, bool deduplicate) : OopRecorder(arena, deduplicate) {
+  _meta_strings = new GrowableArray<const char*>();
+}
+
+int AOTOopRecorder::nr_meta_strings() const {
+  return _meta_strings->length();
+}
+
+const char* AOTOopRecorder::meta_element(int pos) const {
+  return _meta_strings->at(pos);
+}
+
+int AOTOopRecorder::find_index(Metadata* h) {
+  int index =  this->OopRecorder::find_index(h);
+
+  Klass* klass = NULL;
+  if (h->is_klass()) {
+    klass = (Klass*) h;
+    record_meta_string(klass->signature_name(), index);
+  } else if (h->is_method()) {
+    Method* method = (Method*) h;
+    // Need klass->signature_name() in method name
+    klass = method->method_holder();
+    const char* klass_name = klass->signature_name();
+    int klass_name_len  = (int)strlen(klass_name);
+    Symbol* method_name = method->name();
+    Symbol* signature   = method->signature();
+    int method_name_len = method_name->utf8_length();
+    int method_sign_len = signature->utf8_length();
+    int len             = klass_name_len + 1 + method_name_len + method_sign_len;
+    char* dest          = NEW_RESOURCE_ARRAY(char, len + 1);
+    strcpy(dest, klass_name);
+    dest[klass_name_len] = '.';
+    strcpy(&dest[klass_name_len + 1], method_name->as_C_string());
+    strcpy(&dest[klass_name_len + 1 + method_name_len], signature->as_C_string());
+    dest[len] = 0;
+    record_meta_string(dest, index);
+  }
+
+  return index;
+}
+
+int AOTOopRecorder::find_index(jobject h) {
+  if (h == NULL) {
+    return 0;
+  }
+  oop javaMirror = JNIHandles::resolve(h);
+  Klass* klass = java_lang_Class::as_Klass(javaMirror);
+  return find_index(klass);
+}
+
+void AOTOopRecorder::record_meta_string(const char* name, int index) {
+  assert(index > 0, "must be 1..n");
+  index -= 1; // reduce by one to convert to array index
+
+  if (index < _meta_strings->length()) {
+    assert(strcmp(name, _meta_strings->at(index)) == 0, "must match");
+  } else {
+    assert(index == _meta_strings->length(), "must be last");
+    _meta_strings->append(name);
+  }
+}
+
 void* CodeInstaller::record_metadata_reference(CodeSection* section, address dest, Handle constant, TRAPS) {
   /*
    * This method needs to return a raw (untyped) pointer, since the value of a pointer to the base
@@ -481,7 +544,10 @@ void RelocBuffer::ensure_size(size_t bytes) {
 JVMCIEnv::CodeInstallResult CodeInstaller::gather_metadata(Handle target, Handle compiled_code, CodeMetadata& metadata, TRAPS) {
   CodeBuffer buffer("JVMCI Compiler CodeBuffer for Metadata");
   jobject compiled_code_obj = JNIHandles::make_local(compiled_code());
-  initialize_dependencies(JNIHandles::resolve(compiled_code_obj), NULL, CHECK_OK);
+  AOTOopRecorder* recorder = new AOTOopRecorder(&_arena, true);
+  initialize_dependencies(JNIHandles::resolve(compiled_code_obj), recorder, CHECK_OK);
+
+  metadata.set_oop_recorder(recorder);
 
   // Get instructions and constants CodeSections early because we need it.
   _instructions = buffer.insts();
@@ -553,7 +619,7 @@ JVMCIEnv::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler, Hand
                                        stack_slots, _debug_recorder->_oopmaps, &_exception_handler_table,
                                        compiler, _debug_recorder, _dependencies, env, id,
                                        has_unsafe_access, _has_wide_vector, installed_code, compiled_code, speculation_log);
-    cb = nm;
+    cb = nm->as_codeblob_or_null();
     if (nm != NULL && env == NULL) {
       DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, compiler);
       bool printnmethods = directive->PrintAssemblyOption || directive->PrintNMethodsOption;
@@ -623,25 +689,40 @@ void CodeInstaller::initialize_fields(oop target, oop compiled_code, TRAPS) {
 }
 
 int CodeInstaller::estimate_stubs_size(TRAPS) {
-  // Estimate the number of static call stubs that might be emitted.
+  // Estimate the number of static and aot call stubs that might be emitted.
   int static_call_stubs = 0;
+  int aot_call_stubs = 0;
   objArrayOop sites = this->sites();
   for (int i = 0; i < sites->length(); i++) {
     oop site = sites->obj_at(i);
-    if (site != NULL && site->is_a(site_Mark::klass())) {
-      oop id_obj = site_Mark::id(site);
-      if (id_obj != NULL) {
-        if (!java_lang_boxing_object::is_instance(id_obj, T_INT)) {
-          JVMCI_ERROR_0("expected Integer id, got %s", id_obj->klass()->signature_name());
+    if (site != NULL) {
+      if (site->is_a(site_Mark::klass())) {
+        oop id_obj = site_Mark::id(site);
+        if (id_obj != NULL) {
+          if (!java_lang_boxing_object::is_instance(id_obj, T_INT)) {
+            JVMCI_ERROR_0("expected Integer id, got %s", id_obj->klass()->signature_name());
+          }
+          jint id = id_obj->int_field(java_lang_boxing_object::value_offset_in_bytes(T_INT));
+          if (id == INVOKESTATIC || id == INVOKESPECIAL) {
+            static_call_stubs++;
+          }
         }
-        jint id = id_obj->int_field(java_lang_boxing_object::value_offset_in_bytes(T_INT));
-        if (id == INVOKESTATIC || id == INVOKESPECIAL) {
-          static_call_stubs++;
+      }
+      if (UseAOT && site->is_a(site_Call::klass())) {
+        oop target = site_Call::target(site);
+        InstanceKlass* target_klass = InstanceKlass::cast(target->klass());
+        if (!target_klass->is_subclass_of(SystemDictionary::HotSpotForeignCallTarget_klass())) {
+          // Add far aot trampolines.
+          aot_call_stubs++;
         }
       }
     }
   }
-  return static_call_stubs * CompiledStaticCall::to_interp_stub_size();
+  int size = static_call_stubs * CompiledStaticCall::to_interp_stub_size();
+#if INCLUDE_AOT
+  size += aot_call_stubs * CompiledStaticCall::to_aot_stub_size();
+#endif
+  return size;
 }
 
 // perform data and call relocation on the CodeBuffer
@@ -1063,6 +1144,10 @@ void CodeInstaller::site_Call(CodeBuffer& buffer, jint pc_offset, Handle site, T
 
   if (foreign_call.not_null()) {
     jlong foreign_call_destination = HotSpotForeignCallTarget::address(foreign_call);
+    if (_immutable_pic_compilation) {
+      // Use fake short distance during PIC compilation.
+      foreign_call_destination = (jlong)(_instructions->start() + pc_offset);
+    }
     CodeInstaller::pd_relocate_ForeignCall(inst, foreign_call_destination, CHECK);
   } else { // method != NULL
     if (debug_info.is_null()) {
@@ -1075,6 +1160,10 @@ void CodeInstaller::site_Call(CodeBuffer& buffer, jint pc_offset, Handle site, T
       // Need a static call stub for transitions from compiled to interpreted.
       CompiledStaticCall::emit_to_interp_stub(buffer, _instructions->start() + pc_offset);
     }
+#if INCLUDE_AOT
+    // Trampoline to far aot code.
+    CompiledStaticCall::emit_to_aot_stub(buffer, _instructions->start() + pc_offset);
+#endif
   }
 
   _next_call_type = INVOKE_INVALID;
@@ -1093,9 +1182,18 @@ void CodeInstaller::site_DataPatch(CodeBuffer& buffer, jint pc_offset, Handle si
     if (constant.is_null()) {
       THROW(vmSymbols::java_lang_NullPointerException());
     } else if (constant->is_a(HotSpotObjectConstantImpl::klass())) {
-      pd_patch_OopConstant(pc_offset, constant, CHECK);
+      if (!_immutable_pic_compilation) {
+        // Do not patch during PIC compilation.
+        pd_patch_OopConstant(pc_offset, constant, CHECK);
+      }
     } else if (constant->is_a(HotSpotMetaspaceConstantImpl::klass())) {
-      pd_patch_MetaspaceConstant(pc_offset, constant, CHECK);
+      if (!_immutable_pic_compilation) {
+        pd_patch_MetaspaceConstant(pc_offset, constant, CHECK);
+      }
+    } else if (constant->is_a(HotSpotSentinelConstant::klass())) {
+      if (!_immutable_pic_compilation) {
+        JVMCI_ERROR("sentinel constant not supported for normal compiles: %s", constant->klass()->signature_name());
+      }
     } else {
       JVMCI_ERROR("unknown constant type in data patch: %s", constant->klass()->signature_name());
     }
@@ -1158,6 +1256,8 @@ void CodeInstaller::site_Mark(CodeBuffer& buffer, jint pc_offset, Handle site, T
       case HEAP_END_ADDRESS:
       case NARROW_KLASS_BASE_ADDRESS:
       case CRC_TABLE_ADDRESS:
+      case LOG_OF_HEAP_REGION_GRAIN_BYTES:
+      case INLINE_CONTIGUOUS_ALLOCATION_SUPPORTED:
         break;
       default:
         JVMCI_ERROR("invalid mark id: %d", id);

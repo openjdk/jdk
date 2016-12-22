@@ -308,15 +308,6 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS_HELPER],
   fi
   AC_SUBST(OPENJDK_$1_CPU_LEGACY_LIB)
 
-  # This is the name of the cpu (but using i386 and amd64 instead of
-  # x86 and x86_64, respectively), preceeded by a /, to be used when
-  # locating libraries. On macosx, it's empty, though.
-  OPENJDK_$1_CPU_LIBDIR="/$OPENJDK_$1_CPU_LEGACY_LIB"
-  if test "x$OPENJDK_$1_OS" = xmacosx; then
-    OPENJDK_$1_CPU_LIBDIR=""
-  fi
-  AC_SUBST(OPENJDK_$1_CPU_LIBDIR)
-
   # OPENJDK_$1_CPU_ISADIR is normally empty. On 64-bit Solaris systems, it is set to
   # /amd64 or /sparcv9. This string is appended to some library paths, like this:
   # /usr/lib${OPENJDK_$1_CPU_ISADIR}/libexample.so
@@ -348,16 +339,6 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS_HELPER],
     # On all platforms except macosx, we replace x86_64 with amd64.
     OPENJDK_$1_CPU_JLI="amd64"
   fi
-  # Now setup the -D flags for building libjli.
-  OPENJDK_$1_CPU_JLI_CFLAGS="-DLIBARCHNAME='\"$OPENJDK_$1_CPU_JLI\"'"
-  if test "x$OPENJDK_$1_OS" = xsolaris; then
-    if test "x$OPENJDK_$1_CPU_ARCH" = xsparc; then
-      OPENJDK_$1_CPU_JLI_CFLAGS="$OPENJDK_$1_CPU_JLI_CFLAGS -DLIBARCH32NAME='\"sparc\"' -DLIBARCH64NAME='\"sparcv9\"'"
-    elif test "x$OPENJDK_$1_CPU_ARCH" = xx86; then
-      OPENJDK_$1_CPU_JLI_CFLAGS="$OPENJDK_$1_CPU_JLI_CFLAGS -DLIBARCH32NAME='\"i386\"' -DLIBARCH64NAME='\"amd64\"'"
-    fi
-  fi
-  AC_SUBST(OPENJDK_$1_CPU_JLI_CFLAGS)
 
   if test "x$OPENJDK_$1_OS" = xmacosx; then
       OPENJDK_$1_OS_EXPORT_DIR=macosx

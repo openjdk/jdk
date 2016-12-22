@@ -27,7 +27,6 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
-#include "code/codeCacheExtensions.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -1199,7 +1198,6 @@ address SignatureHandlerLibrary::set_handler(CodeBuffer* buffer) {
     ICache::invalidate_range(handler, insts_size);
     _handler = handler + insts_size;
   }
-  CodeCacheExtensions::handle_generated_handler(handler, buffer->name(), _handler);
   return handler;
 }
 
@@ -1208,7 +1206,7 @@ void SignatureHandlerLibrary::add(const methodHandle& method) {
     // use slow signature handler if we can't do better
     int handler_index = -1;
     // check if we can use customized (fast) signature handler
-    if (UseFastSignatureHandlers && CodeCacheExtensions::support_fast_signature_handlers() && method->size_of_parameters() <= Fingerprinter::max_size_of_parameters) {
+    if (UseFastSignatureHandlers && method->size_of_parameters() <= Fingerprinter::max_size_of_parameters) {
       // use customized signature handler
       MutexLocker mu(SignatureHandlerLibrary_lock);
       // make sure data structure is initialized
@@ -1225,15 +1223,6 @@ void SignatureHandlerLibrary::add(const methodHandle& method) {
           round_to((intptr_t)_buffer, CodeEntryAlignment) - (address)_buffer;
         CodeBuffer buffer((address)(_buffer + align_offset),
                           SignatureHandlerLibrary::buffer_size - align_offset);
-        if (!CodeCacheExtensions::support_dynamic_code()) {
-          // we need a name for the signature (for lookups or saving)
-          const int SYMBOL_SIZE = 50;
-          char *symbolName = NEW_RESOURCE_ARRAY(char, SYMBOL_SIZE);
-          // support for named signatures
-          jio_snprintf(symbolName, SYMBOL_SIZE,
-                       "native_" UINT64_FORMAT, fingerprint);
-          buffer.set_name(symbolName);
-        }
         InterpreterRuntime::SignatureHandlerGenerator(method, &buffer).generate(fingerprint);
         // copy into code heap
         address handler = set_handler(&buffer);
@@ -1251,7 +1240,6 @@ void SignatureHandlerLibrary::add(const methodHandle& method) {
                           fingerprint,
                           buffer.insts_size());
             if (buffer.insts_size() > 0) {
-              // buffer may be empty for pregenerated handlers
               Disassembler::decode(handler, handler + buffer.insts_size());
             }
 #ifndef PRODUCT

@@ -26,10 +26,10 @@ package pkg;
 @Deprecated()
 public class DeprecatedClassByAnnotation {
 
-    @Deprecated()
+    @Deprecated(forRemoval=true)
     public int field;
 
-    @Deprecated()
+    @Deprecated(forRemoval=true)
     public DeprecatedClassByAnnotation() {}
 
     @Deprecated()

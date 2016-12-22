@@ -2244,7 +2244,7 @@ public final class SSLEngineImpl extends SSLEngine {
         }
         applicationProtocols = params.getApplicationProtocols();
 
-        if ((handshaker != null) && !handshaker.started()) {
+        if ((handshaker != null) && !handshaker.activated()) {
             handshaker.setIdentificationProtocol(identificationProtocol);
             handshaker.setAlgorithmConstraints(algorithmConstraints);
             handshaker.setMaximumPacketSize(maximumPacketSize);

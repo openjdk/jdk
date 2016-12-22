@@ -1338,7 +1338,7 @@ public abstract class SSLEngine {
     /**
      * Registers a callback function that selects an application protocol
      * value for a SSL/TLS/DTLS handshake.
-     * The function overrides any values set using
+     * The function overrides any values supplied using
      * {@link SSLParameters#setApplicationProtocols
      * SSLParameters.setApplicationProtocols} and it supports the following
      * type parameters:
@@ -1354,6 +1354,8 @@ public abstract class SSLEngine {
      * <dt> {@code String}
      * <dd> The function's result is an application protocol name, or null to
      *      indicate that none of the advertised names are acceptable.
+     *      If the return value is an empty {@code String} then application
+     *      protocol indications will not be used.
      *      If the return value is null (no value chosen) or is a value that
      *      was not advertised by the peer, the underlying protocol will
      *      determine what action to take. (For example, ALPN will send a

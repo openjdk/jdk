@@ -62,27 +62,9 @@ AC_DEFUN_ONCE([SRCDIRS_SETUP_OUTPUT_DIRS],
 [
   BUILD_OUTPUT="$OUTPUT_ROOT"
   AC_SUBST(BUILD_OUTPUT)
-
-  HOTSPOT_DIST="$OUTPUT_ROOT/hotspot/dist"
-  BUILD_HOTSPOT=true
-  AC_SUBST(HOTSPOT_DIST)
-  AC_SUBST(BUILD_HOTSPOT)
-  AC_ARG_WITH(import-hotspot, [AS_HELP_STRING([--with-import-hotspot],
-  [import hotspot binaries from this jdk image or hotspot build dist dir instead of building from source])])
-  if test "x$with_import_hotspot" != x; then
-    CURDIR="$PWD"
-    cd "$with_import_hotspot"
-    HOTSPOT_DIST="`pwd`"
-    cd "$CURDIR"
-    if ! (test -d $HOTSPOT_DIST/lib && test -d $HOTSPOT_DIST/jre/lib); then
-      AC_MSG_ERROR([You have to import hotspot from a full jdk image or hotspot build dist dir!])
-    fi
-    AC_MSG_CHECKING([if hotspot should be imported])
-    AC_MSG_RESULT([yes from $HOTSPOT_DIST])
-    BUILD_HOTSPOT=false
-  fi
-
   JDK_OUTPUTDIR="$OUTPUT_ROOT/jdk"
+
+  BASIC_DEPRECATED_ARG_WITH(import_hotspot)
 ])
 
 ################################################################################
@@ -123,6 +105,12 @@ AC_DEFUN_ONCE([SRCDIRS_SETUP_IMPORT_MODULES],
   if test -d "$IMPORT_MODULES_TOPDIR/modules_conf"; then
     IMPORT_MODULES_CONF="$IMPORT_MODULES_TOPDIR/modules_conf"
   fi
+  if test -d "$IMPORT_MODULES_TOPDIR/modules_legal"; then
+    IMPORT_MODULES_LEGAL="$IMPORT_MODULES_TOPDIR/modules_legal"
+  fi
+  if test -d "$IMPORT_MODULES_TOPDIR/modules_man"; then
+    IMPORT_MODULES_MAN="$IMPORT_MODULES_TOPDIR/modules_man"
+  fi
   if test -d "$IMPORT_MODULES_TOPDIR/modules_src"; then
     IMPORT_MODULES_SRC="$IMPORT_MODULES_TOPDIR/modules_src"
   fi
@@ -140,6 +128,8 @@ AC_DEFUN_ONCE([SRCDIRS_SETUP_IMPORT_MODULES],
   AC_SUBST(IMPORT_MODULES_CMDS)
   AC_SUBST(IMPORT_MODULES_LIBS)
   AC_SUBST(IMPORT_MODULES_CONF)
+  AC_SUBST(IMPORT_MODULES_LEGAL)
+  AC_SUBST(IMPORT_MODULES_MAN)
   AC_SUBST(IMPORT_MODULES_SRC)
   AC_SUBST(IMPORT_MODULES_MAKE)
 ])

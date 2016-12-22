@@ -38,7 +38,6 @@ import java.util.List;
 
 import toolbox.JavacTask;
 import toolbox.Task;
-import toolbox.ToolBox;
 
 public class AnnotationProcessorsInModulesTest extends ModuleTestBase {
 
@@ -47,7 +46,7 @@ public class AnnotationProcessorsInModulesTest extends ModuleTestBase {
     }
 
     private static final String annotationProcessorModule1 =
-            "module anno_proc1 {\n" +
+            "module anno_proc1x {\n" +
             "    requires java.compiler;\n" +
             "\n" +
             "    provides javax.annotation.processing.Processor\n" +
@@ -55,7 +54,7 @@ public class AnnotationProcessorsInModulesTest extends ModuleTestBase {
             "}";
 
     private static final String annotationProcessorModule2 =
-            "module anno_proc2 {\n" +
+            "module anno_proc2x {\n" +
             "    requires java.compiler;\n" +
             "\n" +
             "    provides javax.annotation.processing.Processor\n" +
@@ -118,8 +117,8 @@ public class AnnotationProcessorsInModulesTest extends ModuleTestBase {
 
     void initialization(Path base) throws Exception {
         moduleSrc = base.resolve("anno_proc_src");
-        Path anno_proc1 = moduleSrc.resolve("anno_proc1");
-        Path anno_proc2 = moduleSrc.resolve("anno_proc2");
+        Path anno_proc1 = moduleSrc.resolve("anno_proc1x");
+        Path anno_proc2 = moduleSrc.resolve("anno_proc2x");
 
         processorCompiledModules = base.resolve("mods");
 

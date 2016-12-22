@@ -76,8 +76,8 @@ public class ModuleSourcePathTest extends ModuleTestBase {
     @Test
     public void testUnnormalizedPath1(Path base) throws Exception {
         Path src = base.resolve("src");
-        Path src_m1 = src.resolve("m1");
-        tb.writeJavaFiles(src_m1, "module m1 { }");
+        Path src_m1 = src.resolve("m1x");
+        tb.writeJavaFiles(src_m1, "module m1x { }");
         Path modules = base.resolve("modules");
         Files.createDirectories(modules);
 
@@ -93,8 +93,8 @@ public class ModuleSourcePathTest extends ModuleTestBase {
     @Test
     public void testUnnormalizedPath2(Path base) throws Exception {
         Path src = base.resolve("src");
-        Path src_m1 = src.resolve("m1");
-        tb.writeJavaFiles(src_m1, "module m1 { }");
+        Path src_m1 = src.resolve("m1x");
+        tb.writeJavaFiles(src_m1, "module m1x { }");
         Path modules = base.resolve("modules");
         Files.createDirectories(modules);
 
@@ -124,15 +124,15 @@ public class ModuleSourcePathTest extends ModuleTestBase {
         new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "--module-source-path", base + "/{src1,src2/inner_dir}")
-                .files(base.resolve("src1/m0/pkg0/A.java"), base.resolve("src2/inner_dir/m1/pkg1/A.java"))
+                .files(base.resolve("src1/m0x/pkg0/A.java"), base.resolve("src2/inner_dir/m1x/pkg1/A.java"))
                 .outdir(modules)
                 .run()
                 .writeAll();
 
-        checkFiles(modules.resolve("m0/pkg0/A.class"),
-                modules.resolve("m1/pkg1/A.class"),
-                modules.resolve("m0/module-info.class"),
-                modules.resolve("m1/module-info.class"));
+        checkFiles(modules.resolve("m0x/pkg0/A.class"),
+                modules.resolve("m1x/pkg1/A.class"),
+                modules.resolve("m0x/module-info.class"),
+                modules.resolve("m1x/module-info.class"));
     }
 
     @Test
@@ -191,9 +191,9 @@ public class ModuleSourcePathTest extends ModuleTestBase {
                 .writeAll();
 
         for (int i = 0; i < modulePaths.length; i++) {
-            checkFiles(modules.resolve("m" + i + "/module-info.class"));
+            checkFiles(modules.resolve("m" + i + "x/module-info.class"));
         }
-        checkFiles(modules.resolve("m8/pkg8/A.class"));
+        checkFiles(modules.resolve("m8x/pkg8/A.class"));
     }
 
     @Test
@@ -298,7 +298,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
     @Test
     public void duplicatePaths(Path base) throws Exception {
         Path src = base.resolve("src");
-        tb.writeJavaFiles(src.resolve("m1"), "module m1 { }", "package a; class A { }");
+        tb.writeJavaFiles(src.resolve("m1x"), "module m1x { }", "package a; class A { }");
 
         final Path modules = base.resolve("modules");
         tb.createDirectories(modules);
@@ -306,17 +306,17 @@ public class ModuleSourcePathTest extends ModuleTestBase {
         new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "--module-source-path", base + "/{src,src,src}")
-                .files(src.resolve("m1/a/A.java"))
+                .files(src.resolve("m1x/a/A.java"))
                 .outdir(modules)
                 .run()
                 .writeAll();
 
-        checkFiles(modules.resolve("m1/module-info.class"));
+        checkFiles(modules.resolve("m1x/module-info.class"));
     }
 
     @Test
     public void notExistentPaths(Path base) throws Exception {
-        tb.writeJavaFiles(base.resolve("m1"), "module m1 { requires m0; }", "package a; class A { }");
+        tb.writeJavaFiles(base.resolve("m1x"), "module m1x { requires m0x; }", "package a; class A { }");
 
         final Path modules = base.resolve("modules");
         tb.createDirectories(modules);
@@ -324,18 +324,18 @@ public class ModuleSourcePathTest extends ModuleTestBase {
         String log = new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "--module-source-path", base + "/not_exist" + PATH_SEP + base + "/{not_exist,}")
-                .files(base.resolve("m1/a/A.java"))
+                .files(base.resolve("m1x/a/A.java"))
                 .outdir(modules)
                 .run(Task.Expect.FAIL)
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
-        if (!log.contains("compiler.err.module.not.found: m0"))
+        if (!log.contains("compiler.err.module.not.found: m0x"))
             throw new Exception("expected output for not existent module source path not found");
     }
 
     @Test
     public void notExistentPathShouldBeSkipped(Path base) throws Exception {
-        tb.writeJavaFiles(base.resolve("m1"), "module m1 { }", "package a; class A { }");
+        tb.writeJavaFiles(base.resolve("m1x"), "module m1x { }", "package a; class A { }");
 
         final Path modules = base.resolve("modules");
         tb.createDirectories(modules);
@@ -343,18 +343,18 @@ public class ModuleSourcePathTest extends ModuleTestBase {
         new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "--module-source-path", base + "{/not_exist,/}")
-                .files(base.resolve("m1/a/A.java"))
+                .files(base.resolve("m1x/a/A.java"))
                 .outdir(modules)
                 .run()
                 .writeAll();
 
-        checkFiles(modules.resolve("m1/module-info.class"));
+        checkFiles(modules.resolve("m1x/module-info.class"));
     }
 
     @Test
     public void commas(Path base) throws Exception {
         Path src = base.resolve("src");
-        tb.writeJavaFiles(src.resolve("m1"), "module m1 { }", "package a; class A { }");
+        tb.writeJavaFiles(src.resolve("m1x"), "module m1x { }", "package a; class A { }");
 
         final Path modules = base.resolve("modules");
         tb.createDirectories(modules);
@@ -362,12 +362,12 @@ public class ModuleSourcePathTest extends ModuleTestBase {
         new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "--module-source-path", base + "/{,{,,,,src,,,}}")
-                .files(src.resolve("m1/a/A.java"))
+                .files(src.resolve("m1x/a/A.java"))
                 .outdir(modules)
                 .run()
                 .writeAll();
 
-        checkFiles(modules.resolve("m1/module-info.class"));
+        checkFiles(modules.resolve("m1x/module-info.class"));
     }
 
     @Test
@@ -444,8 +444,8 @@ public class ModuleSourcePathTest extends ModuleTestBase {
 
     private void generateModules(Path base, String... paths) throws IOException {
         for (int i = 0; i < paths.length; i++) {
-            String moduleName = "m" + i;
-            String dependency = i > 0 ? "requires m" + (i - 1) + ";" : "";
+            String moduleName = "m" + i + "x";
+            String dependency = i > 0 ? "requires m" + (i - 1) + "x;" : "";
             tb.writeJavaFiles(base.resolve(paths[i]).resolve(moduleName),
                     "module " + moduleName + " { " + dependency + " }",
                     "package pkg" + i + "; class A { }");

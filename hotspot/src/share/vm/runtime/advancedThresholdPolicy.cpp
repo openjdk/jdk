@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "code/codeCache.hpp"
-#include "compiler/compileTask.hpp"
 #include "runtime/advancedThresholdPolicy.hpp"
 #include "runtime/simpleThresholdPolicy.inline.hpp"
 #if INCLUDE_JVMCI
@@ -206,7 +205,6 @@ CompileTask* AdvancedThresholdPolicy::select_task(CompileQueue* compile_queue) {
         if (PrintTieredEvents) {
           print_event(REMOVE_FROM_QUEUE, method, method, task->osr_bci(), (CompLevel)task->comp_level());
         }
-        task->log_task_dequeued("stale");
         compile_queue->remove_and_mark_stale(task);
         method->clear_queued_for_compilation();
         task = next_task;
@@ -276,6 +274,10 @@ double AdvancedThresholdPolicy::threshold_scale(CompLevel level, int feedback_k)
 // the threshold values double.
 bool AdvancedThresholdPolicy::loop_predicate(int i, int b, CompLevel cur_level, Method* method) {
   switch(cur_level) {
+  case CompLevel_aot: {
+    double k = threshold_scale(CompLevel_full_profile, Tier3LoadFeedback);
+    return loop_predicate_helper<CompLevel_aot>(i, b, k, method);
+  }
   case CompLevel_none:
   case CompLevel_limited_profile: {
     double k = threshold_scale(CompLevel_full_profile, Tier3LoadFeedback);
@@ -292,6 +294,10 @@ bool AdvancedThresholdPolicy::loop_predicate(int i, int b, CompLevel cur_level, 
 
 bool AdvancedThresholdPolicy::call_predicate(int i, int b, CompLevel cur_level, Method* method) {
   switch(cur_level) {
+  case CompLevel_aot: {
+    double k = threshold_scale(CompLevel_full_profile, Tier3LoadFeedback);
+    return call_predicate_helper<CompLevel_aot>(i, b, k, method);
+  }
   case CompLevel_none:
   case CompLevel_limited_profile: {
     double k = threshold_scale(CompLevel_full_profile, Tier3LoadFeedback);
@@ -394,31 +400,49 @@ CompLevel AdvancedThresholdPolicy::common(Predicate p, Method* method, CompLevel
     next_level = CompLevel_simple;
   } else {
     switch(cur_level) {
+    case CompLevel_aot: {
+      // If we were at full profile level, would we switch to full opt?
+      if (common(p, method, CompLevel_full_profile, disable_feedback) == CompLevel_full_optimization) {
+        next_level = CompLevel_full_optimization;
+      } else if (disable_feedback || (CompileBroker::queue_size(CompLevel_full_optimization) <=
+                               Tier3DelayOff * compiler_count(CompLevel_full_optimization) &&
+                               (this->*p)(i, b, cur_level, method))) {
+        next_level = CompLevel_full_profile;
+      }
+    }
+    break;
     case CompLevel_none:
       // If we were at full profile level, would we switch to full opt?
       if (common(p, method, CompLevel_full_profile, disable_feedback) == CompLevel_full_optimization) {
         next_level = CompLevel_full_optimization;
       } else if ((this->*p)(i, b, cur_level, method)) {
 #if INCLUDE_JVMCI
-        if (UseJVMCICompiler) {
+        if (EnableJVMCI && UseJVMCICompiler) {
           // Since JVMCI takes a while to warm up, its queue inevitably backs up during
-          // early VM execution.
+          // early VM execution. As of 2014-06-13, JVMCI's inliner assumes that the root
+          // compilation method and all potential inlinees have mature profiles (which
+          // includes type profiling). If it sees immature profiles, JVMCI's inliner
+          // can perform pathologically bad (e.g., causing OutOfMemoryErrors due to
+          // exploring/inlining too many graphs). Since a rewrite of the inliner is
+          // in progress, we simply disable the dialing back heuristic for now and will
+          // revisit this decision once the new inliner is completed.
           next_level = CompLevel_full_profile;
-          break;
-        }
+        } else
 #endif
-        // C1-generated fully profiled code is about 30% slower than the limited profile
-        // code that has only invocation and backedge counters. The observation is that
-        // if C2 queue is large enough we can spend too much time in the fully profiled code
-        // while waiting for C2 to pick the method from the queue. To alleviate this problem
-        // we introduce a feedback on the C2 queue size. If the C2 queue is sufficiently long
-        // we choose to compile a limited profiled version and then recompile with full profiling
-        // when the load on C2 goes down.
-        if (!disable_feedback && CompileBroker::queue_size(CompLevel_full_optimization) >
-            Tier3DelayOn * compiler_count(CompLevel_full_optimization)) {
-          next_level = CompLevel_limited_profile;
-        } else {
-          next_level = CompLevel_full_profile;
+        {
+          // C1-generated fully profiled code is about 30% slower than the limited profile
+          // code that has only invocation and backedge counters. The observation is that
+          // if C2 queue is large enough we can spend too much time in the fully profiled code
+          // while waiting for C2 to pick the method from the queue. To alleviate this problem
+          // we introduce a feedback on the C2 queue size. If the C2 queue is sufficiently long
+          // we choose to compile a limited profiled version and then recompile with full profiling
+          // when the load on C2 goes down.
+          if (!disable_feedback && CompileBroker::queue_size(CompLevel_full_optimization) >
+              Tier3DelayOn * compiler_count(CompLevel_full_optimization)) {
+            next_level = CompLevel_limited_profile;
+          } else {
+            next_level = CompLevel_full_profile;
+          }
         }
       }
       break;
@@ -437,6 +461,13 @@ CompLevel AdvancedThresholdPolicy::common(Predicate p, Method* method, CompLevel
             }
           } else {
             next_level = CompLevel_full_optimization;
+          }
+        } else {
+          // If there is no MDO we need to profile
+          if (disable_feedback || (CompileBroker::queue_size(CompLevel_full_optimization) <=
+                                   Tier3DelayOff * compiler_count(CompLevel_full_optimization) &&
+                                   (this->*p)(i, b, cur_level, method))) {
+            next_level = CompLevel_full_profile;
           }
         }
       }
@@ -514,15 +545,39 @@ void AdvancedThresholdPolicy::submit_compile(const methodHandle& mh, int bci, Co
   CompileBroker::compile_method(mh, bci, level, mh, hot_count, CompileTask::Reason_Tiered, thread);
 }
 
+bool AdvancedThresholdPolicy::maybe_switch_to_aot(methodHandle mh, CompLevel cur_level, CompLevel next_level, JavaThread* thread) {
+  if (UseAOT && !delay_compilation_during_startup()) {
+    if (cur_level == CompLevel_full_profile || cur_level == CompLevel_none) {
+      // If the current level is full profile or interpreter and we're switching to any other level,
+      // activate the AOT code back first so that we won't waste time overprofiling.
+      compile(mh, InvocationEntryBci, CompLevel_aot, thread);
+      // Fall through for JIT compilation.
+    }
+    if (next_level == CompLevel_limited_profile && cur_level != CompLevel_aot && mh->has_aot_code()) {
+      // If the next level is limited profile, use the aot code (if there is any),
+      // since it's essentially the same thing.
+      compile(mh, InvocationEntryBci, CompLevel_aot, thread);
+      // Not need to JIT, we're done.
+      return true;
+    }
+  }
+  return false;
+}
+
+
 // Handle the invocation event.
 void AdvancedThresholdPolicy::method_invocation_event(const methodHandle& mh, const methodHandle& imh,
                                                       CompLevel level, CompiledMethod* nm, JavaThread* thread) {
   if (should_create_mdo(mh(), level)) {
     create_mdo(mh, thread);
   }
-  if (is_compilation_enabled() && !CompileBroker::compilation_is_in_queue(mh)) {
-    CompLevel next_level = call_event(mh(), level, thread);
-    if (next_level != level) {
+  CompLevel next_level = call_event(mh(), level, thread);
+  if (next_level != level) {
+    if (maybe_switch_to_aot(mh, level, next_level, thread)) {
+      // No JITting necessary
+      return;
+    }
+    if (is_compilation_enabled() && !CompileBroker::compilation_is_in_queue(mh)) {
       compile(mh, InvocationEntryBci, next_level, thread);
     }
   }
@@ -552,46 +607,56 @@ void AdvancedThresholdPolicy::method_back_branch_event(const methodHandle& mh, c
     // enough calls.
     CompLevel cur_level, next_level;
     if (mh() != imh()) { // If there is an enclosing method
-      guarantee(nm != NULL, "Should have nmethod here");
-      cur_level = comp_level(mh());
-      next_level = call_event(mh(), cur_level, thread);
+      if (level == CompLevel_aot) {
+        // Recompile the enclosing method to prevent infinite OSRs. Stay at AOT level while it's compiling.
+        if (max_osr_level != CompLevel_none && !CompileBroker::compilation_is_in_queue(mh)) {
+          compile(mh, InvocationEntryBci, MIN2((CompLevel)TieredStopAtLevel, CompLevel_full_profile), thread);
+        }
+      } else {
+        // Current loop event level is not AOT
+        guarantee(nm != NULL, "Should have nmethod here");
+        cur_level = comp_level(mh());
+        next_level = call_event(mh(), cur_level, thread);
 
-      if (max_osr_level == CompLevel_full_optimization) {
-        // The inlinee OSRed to full opt, we need to modify the enclosing method to avoid deopts
-        bool make_not_entrant = false;
-        if (nm->is_osr_method()) {
-          // This is an osr method, just make it not entrant and recompile later if needed
-          make_not_entrant = true;
-        } else {
-          if (next_level != CompLevel_full_optimization) {
-            // next_level is not full opt, so we need to recompile the
-            // enclosing method without the inlinee
-            cur_level = CompLevel_none;
+        if (max_osr_level == CompLevel_full_optimization) {
+          // The inlinee OSRed to full opt, we need to modify the enclosing method to avoid deopts
+          bool make_not_entrant = false;
+          if (nm->is_osr_method()) {
+            // This is an osr method, just make it not entrant and recompile later if needed
             make_not_entrant = true;
+          } else {
+            if (next_level != CompLevel_full_optimization) {
+              // next_level is not full opt, so we need to recompile the
+              // enclosing method without the inlinee
+              cur_level = CompLevel_none;
+              make_not_entrant = true;
+            }
+          }
+          if (make_not_entrant) {
+            if (PrintTieredEvents) {
+              int osr_bci = nm->is_osr_method() ? nm->osr_entry_bci() : InvocationEntryBci;
+              print_event(MAKE_NOT_ENTRANT, mh(), mh(), osr_bci, level);
+            }
+            nm->make_not_entrant();
           }
         }
-        if (make_not_entrant) {
-          if (PrintTieredEvents) {
-            int osr_bci = nm->is_osr_method() ? nm->osr_entry_bci() : InvocationEntryBci;
-            print_event(MAKE_NOT_ENTRANT, mh(), mh(), osr_bci, level);
-          }
-          nm->make_not_entrant();
-        }
-      }
-      if (!CompileBroker::compilation_is_in_queue(mh)) {
         // Fix up next_level if necessary to avoid deopts
         if (next_level == CompLevel_limited_profile && max_osr_level == CompLevel_full_profile) {
           next_level = CompLevel_full_profile;
         }
         if (cur_level != next_level) {
-          compile(mh, InvocationEntryBci, next_level, thread);
+          if (!maybe_switch_to_aot(mh, cur_level, next_level, thread) && !CompileBroker::compilation_is_in_queue(mh)) {
+            compile(mh, InvocationEntryBci, next_level, thread);
+          }
         }
       }
     } else {
-      cur_level = comp_level(imh());
-      next_level = call_event(imh(), cur_level, thread);
-      if (!CompileBroker::compilation_is_in_queue(imh) && (next_level != cur_level)) {
-        compile(imh, InvocationEntryBci, next_level, thread);
+      cur_level = comp_level(mh());
+      next_level = call_event(mh(), cur_level, thread);
+      if (next_level != cur_level) {
+        if (!maybe_switch_to_aot(mh, cur_level, next_level, thread) && !CompileBroker::compilation_is_in_queue(mh)) {
+          compile(mh, InvocationEntryBci, next_level, thread);
+        }
       }
     }
   }

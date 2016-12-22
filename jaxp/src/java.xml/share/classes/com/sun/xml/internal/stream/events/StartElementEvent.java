@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,35 +23,33 @@
  * questions.
  */
 
-package com.sun.xml.internal.stream.events ;
+package com.sun.xml.internal.stream.events;
 
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Iterator;
+import com.sun.xml.internal.stream.util.ReadOnlyIterator;
 import java.util.ArrayList;
 import java.util.Collection;
-
-import javax.xml.namespace.QName;
-import javax.xml.stream.events.StartElement;
-import javax.xml.stream.events.Attribute;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import javax.xml.namespace.NamespaceContext;
-import java.io.Writer;
-import com.sun.xml.internal.stream.util.ReadOnlyIterator;
+import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.events.Attribute;
 import javax.xml.stream.events.Namespace;
+import javax.xml.stream.events.StartElement;
 
-/** Implementation of StartElementEvent.
+/**
+ * Implementation of StartElementEvent.
  *
  * @author Neeraj Bajaj Sun Microsystems,Inc.
  * @author K.Venugopal Sun Microsystems,Inc.
  */
-
 public class StartElementEvent extends DummyEvent
-implements StartElement {
+        implements StartElement {
 
-    private Map fAttributes;
-    private List fNamespaces;
+    private Map<QName, Attribute> fAttributes;
+    private List<Namespace> fNamespaces;
     private NamespaceContext fNamespaceContext = null;
     private QName fQName;
 
@@ -70,12 +68,13 @@ implements StartElement {
         addNamespaceAttributes(startelement.getNamespaces());
     }
 
-    protected void init() {
+    protected final void init() {
         setEventType(XMLStreamConstants.START_ELEMENT);
-        fAttributes = new HashMap();
-        fNamespaces = new ArrayList();
+        fAttributes = new HashMap<>();
+        fNamespaces = new ArrayList<>();
     }
 
+    @Override
     public QName getName() {
         return fQName;
     }
@@ -84,50 +83,60 @@ implements StartElement {
         this.fQName = qname;
     }
 
-    public Iterator getAttributes() {
-        if(fAttributes != null){
-            Collection coll = fAttributes.values();
-            return new ReadOnlyIterator(coll.iterator());
+    @Override
+    public Iterator<Attribute> getAttributes() {
+        if (fAttributes != null) {
+            Collection<Attribute> coll = fAttributes.values();
+            return new ReadOnlyIterator<>(coll.iterator());
         }
-        return new ReadOnlyIterator();
+        return new ReadOnlyIterator<>();
     }
 
-    public Iterator getNamespaces() {
-        if(fNamespaces != null){
-            return new ReadOnlyIterator(fNamespaces.iterator());
+    @Override
+    public Iterator<Namespace> getNamespaces() {
+        if (fNamespaces != null) {
+            return new ReadOnlyIterator<>(fNamespaces.iterator());
         }
-        return new ReadOnlyIterator();
+        return new ReadOnlyIterator<>();
     }
 
+    @Override
     public Attribute getAttributeByName(QName qname) {
-        if(qname == null)
+        if (qname == null) {
             return null;
-        return (Attribute)fAttributes.get(qname);
+        }
+        return fAttributes.get(qname);
     }
 
-    public String getNamespace(){
+    public String getNamespace() {
         return fQName.getNamespaceURI();
     }
 
+    @Override
     public String getNamespaceURI(String prefix) {
         //check that URI was supplied when creating this startElement event and prefix matches
-        if( getNamespace() != null && fQName.getPrefix().equals(prefix)) return getNamespace();
+        if (getNamespace() != null && fQName.getPrefix().equals(prefix)) {
+            return getNamespace();
+        }
         //else check the namespace context
-        if(fNamespaceContext != null)
+        if (fNamespaceContext != null) {
             return fNamespaceContext.getNamespaceURI(prefix);
+        }
         return null;
     }
 
     /**
-     * <p>Return a <code>String</code> representation of this
+     * <p>
+     * Return a <code>String</code> representation of this
      * <code>StartElement</code> formatted as XML.</p>
      *
      * @return <code>String</code> representation of this
-     *   <code>StartElement</code> formatted as XML.
+     * <code>StartElement</code> formatted as XML.
      */
+    @Override
     public String toString() {
 
-        StringBuffer startElement = new StringBuffer();
+        StringBuilder startElement = new StringBuilder();
 
         // open element
         startElement.append("<");
@@ -135,10 +144,10 @@ implements StartElement {
 
         // add any attributes
         if (fAttributes != null) {
-            Iterator it = this.getAttributes();
-            Attribute attr = null;
+            Iterator<Attribute> it = this.getAttributes();
+            Attribute attr;
             while (it.hasNext()) {
-                attr = (Attribute) it.next();
+                attr = it.next();
                 startElement.append(" ");
                 startElement.append(attr.toString());
             }
@@ -146,12 +155,12 @@ implements StartElement {
 
         // add any namespaces
         if (fNamespaces != null) {
-            Iterator it = fNamespaces.iterator();
-            Namespace attr = null;
+            Iterator<Namespace> it = fNamespaces.iterator();
+            Namespace ns;
             while (it.hasNext()) {
-                attr = (Namespace) it.next();
+                ns = it.next();
                 startElement.append(" ");
-                startElement.append(attr.toString());
+                startElement.append(ns.toString());
             }
         }
 
@@ -162,26 +171,31 @@ implements StartElement {
         return startElement.toString();
     }
 
-    /** Return this event as String
+    /**
+     * Return this event as String
+     *
      * @return String Event returned as string.
      */
     public String nameAsString() {
-        if("".equals(fQName.getNamespaceURI()))
+        if ("".equals(fQName.getNamespaceURI())) {
             return fQName.getLocalPart();
-        if(fQName.getPrefix() != null)
-            return "['" + fQName.getNamespaceURI() + "']:" + fQName.getPrefix() + ":" + fQName.getLocalPart();
-        else
+        }
+        if (fQName.getPrefix() != null) {
+            return "['" + fQName.getNamespaceURI() + "']:" + fQName.getPrefix()
+                    + ":" + fQName.getLocalPart();
+        } else {
             return "['" + fQName.getNamespaceURI() + "']:" + fQName.getLocalPart();
+        }
     }
 
-
-    /** Gets a read-only namespace context. If no context is
-     * available this method will return an empty namespace context.
-     * The NamespaceContext contains information about all namespaces
-     * in scope for this StartElement.
+    /**
+     * Gets a read-only namespace context. If no context is available this
+     * method will return an empty namespace context. The NamespaceContext
+     * contains information about all namespaces in scope for this StartElement.
      *
      * @return the current namespace context
      */
+    @Override
     public NamespaceContext getNamespaceContext() {
         return fNamespaceContext;
     }
@@ -190,40 +204,43 @@ implements StartElement {
         fNamespaceContext = nc;
     }
 
+    @Override
     protected void writeAsEncodedUnicodeEx(java.io.Writer writer)
-    throws java.io.IOException
-    {
+            throws java.io.IOException {
         writer.write(toString());
     }
 
-    void addAttribute(Attribute attr){
-        if(attr.isNamespace()){
-            fNamespaces.add(attr);
-        }else{
-            fAttributes.put(attr.getName(),attr);
+    void addAttribute(Attribute attr) {
+        if (attr.isNamespace()) {
+            fNamespaces.add((Namespace) attr);
+        } else {
+            fAttributes.put(attr.getName(), attr);
         }
     }
 
-    void addAttributes(Iterator attrs){
-        if(attrs == null)
+    final void addAttributes(Iterator<? extends Attribute> attrs) {
+        if (attrs == null) {
             return;
-        while(attrs.hasNext()){
-            Attribute attr = (Attribute)attrs.next();
-            fAttributes.put(attr.getName(),attr);
+        }
+        while (attrs.hasNext()) {
+            Attribute attr = attrs.next();
+            fAttributes.put(attr.getName(), attr);
         }
     }
 
-    void addNamespaceAttribute(Namespace attr){
-        if(attr == null)
+    void addNamespaceAttribute(Namespace attr) {
+        if (attr == null) {
             return;
+        }
         fNamespaces.add(attr);
     }
 
-    void addNamespaceAttributes(Iterator attrs){
-        if(attrs == null)
+    final void addNamespaceAttributes(Iterator<? extends Namespace> attrs) {
+        if (attrs == null) {
             return;
-        while(attrs.hasNext()){
-            Namespace attr = (Namespace)attrs.next();
+        }
+        while (attrs.hasNext()) {
+            Namespace attr = attrs.next();
             fNamespaces.add(attr);
         }
     }

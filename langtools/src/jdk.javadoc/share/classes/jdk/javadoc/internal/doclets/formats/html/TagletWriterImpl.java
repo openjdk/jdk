@@ -178,7 +178,7 @@ public class TagletWriterImpl extends TagletWriter {
         if (utils.isTypeElement(element)) {
             if (utils.isDeprecated(element)) {
                 result.addContent(HtmlTree.SPAN(HtmlStyle.deprecatedLabel,
-                        new StringContent(configuration.getText("doclet.Deprecated"))));
+                        htmlWriter.getDeprecatedPhrase(element)));
                 result.addContent(RawHtml.nbsp);
                 if (!deprs.isEmpty()) {
                     List<? extends DocTree> commentTags = ch.getDescription(configuration, deprs.get(0));
@@ -190,7 +190,7 @@ public class TagletWriterImpl extends TagletWriter {
         } else {
             if (utils.isDeprecated(element)) {
                 result.addContent(HtmlTree.SPAN(HtmlStyle.deprecatedLabel,
-                        new StringContent(configuration.getText("doclet.Deprecated"))));
+                        htmlWriter.getDeprecatedPhrase(element)));
                 result.addContent(RawHtml.nbsp);
                 if (!deprs.isEmpty()) {
                     List<? extends DocTree> bodyTags = ch.getBody(configuration, deprs.get(0));
@@ -199,9 +199,10 @@ public class TagletWriterImpl extends TagletWriter {
                         result.addContent(HtmlTree.SPAN(HtmlStyle.deprecationComment, body));
                 }
             } else {
-                if (utils.isDeprecated(utils.getEnclosingTypeElement(element))) {
+                Element ee = utils.getEnclosingTypeElement(element);
+                if (utils.isDeprecated(ee)) {
                     result.addContent(HtmlTree.SPAN(HtmlStyle.deprecatedLabel,
-                            new StringContent(configuration.getText("doclet.Deprecated"))));
+                        htmlWriter.getDeprecatedPhrase(ee)));
                     result.addContent(RawHtml.nbsp);
                 }
             }

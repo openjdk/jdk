@@ -48,10 +48,10 @@ public class GetLocationForModuleTest extends ModuleTestBase {
     public void run(Path base) throws Exception {
         // Set up some trivial modules
         Path moduleSrc = base.resolve("module-src");
-        Path m1 = moduleSrc.resolve("m1");
-        tb.writeJavaFiles(m1, "module m1 { }");
-        Path m2 = moduleSrc.resolve("m2");
-        tb.writeJavaFiles(m2, "module m2 { }");
+        Path m1 = moduleSrc.resolve("m1x");
+        tb.writeJavaFiles(m1, "module m1x { }");
+        Path m2 = moduleSrc.resolve("m2x");
+        tb.writeJavaFiles(m2, "module m2x { }");
 
         Path modulePath = base.resolve("module-path");
         Files.createDirectories(modulePath);
@@ -69,7 +69,7 @@ public class GetLocationForModuleTest extends ModuleTestBase {
 
         // Test
         test(fm, StandardLocation.SYSTEM_MODULES, "java.base", "java.compiler");
-        test(fm, StandardLocation.MODULE_PATH, "m1", "m2");
+        test(fm, StandardLocation.MODULE_PATH, "m1x", "m2x");
     }
 
     void test(JavaFileManager fm, JavaFileManager.Location locn, String... mods) throws IOException {

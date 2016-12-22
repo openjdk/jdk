@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
-#include "code/codeCacheExtensions.hpp"
 #include "code/relocInfo.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/bytecode.hpp"
@@ -228,7 +227,6 @@ BufferBlob* BufferBlob::create(const char* name, int buffer_size) {
 
   BufferBlob* blob = NULL;
   unsigned int size = sizeof(BufferBlob);
-  CodeCacheExtensions::size_blob(name, &buffer_size);
   // align the size to CodeEntryAlignment
   size = CodeBlob::align_code_offset(size);
   size += round_to(buffer_size, oopSize);
@@ -312,7 +310,6 @@ MethodHandlesAdapterBlob* MethodHandlesAdapterBlob::create(int buffer_size) {
 
   MethodHandlesAdapterBlob* blob = NULL;
   unsigned int size = sizeof(MethodHandlesAdapterBlob);
-  CodeCacheExtensions::size_blob("MethodHandles adapters", &buffer_size);
   // align the size to CodeEntryAlignment
   size = CodeBlob::align_code_offset(size);
   size += round_to(buffer_size, oopSize);
@@ -354,13 +351,11 @@ RuntimeStub* RuntimeStub::new_runtime_stub(const char* stub_name,
 {
   RuntimeStub* stub = NULL;
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
-  if (!CodeCacheExtensions::skip_code_generation()) {
-    // bypass useless code generation
+  {
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     unsigned int size = CodeBlob::allocation_size(cb, sizeof(RuntimeStub));
     stub = new (size) RuntimeStub(stub_name, cb, size, frame_complete, frame_size, oop_maps, caller_must_gc_arguments);
   }
-  stub = (RuntimeStub*) CodeCacheExtensions::handle_generated_blob(stub, stub_name);
 
   trace_new_stub(stub, "RuntimeStub - ", stub_name);
 

@@ -103,10 +103,10 @@ public class ListBuffer<A> extends AbstractQueue<A> {
         if (elems.nonEmpty()) {
             List<A> orig = elems;
 
-            elems = last = List.<A>of(orig.head);
+            elems = last = List.of(orig.head);
 
             while ((orig = orig.tail).nonEmpty()) {
-                last.tail = List.<A>of(orig.head);
+                last.tail = List.of(orig.head);
                 last = last.tail;
             }
         }
@@ -126,7 +126,7 @@ public class ListBuffer<A> extends AbstractQueue<A> {
     public ListBuffer<A> append(A x) {
         Assert.checkNonNull(x);
         if (shared) copy();
-        List<A> newLast = List.<A>of(x);
+        List<A> newLast = List.of(x);
         if (last != null) {
             last.tail = newLast;
             last = newLast;

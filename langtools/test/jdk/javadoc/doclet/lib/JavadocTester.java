@@ -373,6 +373,25 @@ public abstract class JavadocTester {
      *  or the name of one of the output buffers, identifying
      *  where to look for the search strings.
      * @param expectedFound true if all of the search strings are expected
+     *  to be found, or false if the file is not expected to be found
+     * @param strings the strings to be searched for
+     */
+    public void checkFileAndOutput(String path, boolean expectedFound, String... strings) {
+        if (expectedFound) {
+            checkOutput(path, true, strings);
+        } else {
+            checkFiles(false, path);
+        }
+    }
+
+    /**
+     * Check for content in (or not in) the generated output.
+     * Within the search strings, the newline character \n
+     * will be translated to the platform newline character sequence.
+     * @param path a path within the most recent output directory
+     *  or the name of one of the output buffers, identifying
+     *  where to look for the search strings.
+     * @param expectedFound true if all of the search strings are expected
      *  to be found, or false if all of the strings are expected to be
      *  not found
      * @param strings the strings to be searched for
@@ -383,11 +402,9 @@ public abstract class JavadocTester {
         try {
             fileString = readFile(outputDir, path);
         } catch (Error e) {
-            if (!expectedFound) {
-                failed("Error reading file: " + e);
-                return;
-            }
-            throw e;
+            checking("Read file");
+            failed("Error reading file: " + e);
+            return;
         }
         checkOutput(path, fileString, expectedFound, strings);
     }
@@ -413,10 +430,10 @@ public abstract class JavadocTester {
             // Find string in file's contents
             boolean isFound = findString(fileString, stringToFind);
             if (isFound == expectedFound) {
-                passed(path + ": " + (isFound ? "found:" : "not found:") + "\n"
+                passed(path + ": following text " + (isFound ? "found:" : "not found:") + "\n"
                         + stringToFind + "\n");
             } else {
-                failed(path + ": " + (isFound ? "found:" : "not found:") + "\n"
+                failed(path + ": following text " + (isFound ? "found:" : "not found:") + "\n"
                         + stringToFind + "\n");
             }
         }
@@ -464,9 +481,9 @@ public abstract class JavadocTester {
             File file = new File(outputDir, path);
             boolean isFound = file.exists();
             if (isFound == expectedFound) {
-                passed(path + ": " + (isFound ? "found:" : "not found:") + "\n");
+                passed(path + ": file " + (isFound ? "found:" : "not found:") + "\n");
             } else {
-                failed(path + ": " + (isFound ? "found:" : "not found:") + "\n");
+                failed(path + ": file " + (isFound ? "found:" : "not found:") + "\n");
             }
         }
     }
@@ -619,11 +636,9 @@ public abstract class JavadocTester {
             fileContentCache.put(file, new SoftReference<>(content));
             return content;
         } catch (FileNotFoundException e) {
-            System.err.println(e);
-            throw new Error("File not found: " + fileName);
+            throw new Error("File not found: " + fileName + ": " + e);
         } catch (IOException e) {
-            System.err.println(e);
-            throw new Error("Error reading file: " + fileName);
+            throw new Error("Error reading file: " + fileName + ": " + e);
         }
     }
 

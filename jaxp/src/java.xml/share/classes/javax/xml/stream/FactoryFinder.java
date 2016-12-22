@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.util.Iterator;
 import java.util.Properties;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
+import java.util.function.Supplier;
 
 /**
  * <p>Implements pluggable streams.</p>
@@ -81,9 +82,9 @@ class FactoryFinder {
         }
     }
 
-    private static void dPrint(String msg) {
+    private static void dPrint(Supplier<String> msgGen) {
         if (debug) {
-            System.err.println("JAXP: " + msg);
+            System.err.println("JAXP: " + msgGen.get());
         }
     }
 
@@ -191,10 +192,9 @@ class FactoryFinder {
                 throw new ClassCastException(className + " cannot be cast to " + type.getName());
             }
             Object instance = providerClass.newInstance();
-            if (debug) {    // Extra check to avoid computing cl strings
-                dPrint("created new instance of " + providerClass +
-                       " using ClassLoader: " + cl);
-            }
+            final ClassLoader clD = cl;
+            dPrint(()->"created new instance of " + providerClass +
+                       " using ClassLoader: " + clD);
             return type.cast(instance);
         }
         catch (ClassNotFoundException x) {
@@ -249,7 +249,7 @@ class FactoryFinder {
     static <T> T find(Class<T> type, String factoryId, ClassLoader cl, String fallbackClassName)
         throws FactoryConfigurationError
     {
-        dPrint("find factoryId =" + factoryId);
+        dPrint(()->"find factoryId =" + factoryId);
 
         // Use the system property first
         try {
@@ -261,7 +261,7 @@ class FactoryFinder {
                 systemProp = System.getProperty(factoryId);
             }
             if (systemProp != null) {
-                dPrint("found system property, value=" + systemProp);
+                dPrint(()->"found system property, value=" + systemProp);
                 return newInstance(type, systemProp, cl, true);
             }
         }
@@ -279,19 +279,19 @@ class FactoryFinder {
                     if (firstTime) {
                         configFile = ss.getSystemProperty("java.home") + File.separator +
                             "lib" + File.separator + "stax.properties";
-                        File f = new File(configFile);
+                        final File fStax = new File(configFile);
                         firstTime = false;
-                        if (ss.doesFileExist(f)) {
-                            dPrint("Read properties file "+f);
-                            cacheProps.load(ss.getFileInputStream(f));
+                        if (ss.doesFileExist(fStax)) {
+                            dPrint(()->"Read properties file "+fStax);
+                            cacheProps.load(ss.getFileInputStream(fStax));
                         }
                         else {
                             configFile = ss.getSystemProperty("java.home") + File.separator +
                                 "conf" + File.separator + "jaxp.properties";
-                            f = new File(configFile);
-                            if (ss.doesFileExist(f)) {
-                                dPrint("Read properties file "+f);
-                                cacheProps.load(ss.getFileInputStream(f));
+                            final File fJaxp = new File(configFile);
+                            if (ss.doesFileExist(fJaxp)) {
+                                dPrint(()->"Read properties file "+fJaxp);
+                                cacheProps.load(ss.getFileInputStream(fJaxp));
                             }
                         }
                     }
@@ -300,7 +300,8 @@ class FactoryFinder {
             final String factoryClassName = cacheProps.getProperty(factoryId);
 
             if (factoryClassName != null) {
-                dPrint("found in " + configFile + " value=" + factoryClassName);
+                final String foundIn = configFile;
+                dPrint(()->"found in " + foundIn + " value=" + factoryClassName);
                 return newInstance(type, factoryClassName, cl, true);
             }
         }
@@ -325,7 +326,7 @@ class FactoryFinder {
                 "Provider for " + factoryId + " cannot be found", null);
         }
 
-        dPrint("loaded from fallback value: " + fallbackClassName);
+        dPrint(()->"loaded from fallback value: " + fallbackClassName);
         return newInstance(type, fallbackClassName, cl, true);
     }
 

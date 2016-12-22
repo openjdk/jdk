@@ -683,7 +683,7 @@ public class DocCommentParser {
             }
         }
 
-        return List.<DCTree>of(erroneous("dc.unterminated.inline.tag", pos));
+        return List.of(erroneous("dc.unterminated.inline.tag", pos));
     }
 
     protected void entity(ListBuffer<DCTree> list) {
@@ -1160,6 +1160,16 @@ public class DocCommentParser {
                 }
             },
 
+            // @provides service-name description
+            new TagParser(Kind.BLOCK, DCTree.Kind.PROVIDES) {
+                public DCTree parse(int pos) throws ParseException {
+                    skipWhitespace();
+                    DCReference ref = reference(true);
+                    List<DCTree> description = blockContent();
+                    return m.at(pos).newProvidesTree(ref, description);
+                }
+            },
+
             // @return description
             new TagParser(Kind.BLOCK, DCTree.Kind.RETURN) {
                 public DCTree parse(int pos) {
@@ -1258,6 +1268,16 @@ public class DocCommentParser {
                     DCReference ref = reference(false);
                     List<DCTree> description = blockContent();
                     return m.at(pos).newThrowsTree(ref, description);
+                }
+            },
+
+            // @uses service-name description
+            new TagParser(Kind.BLOCK, DCTree.Kind.USES) {
+                public DCTree parse(int pos) throws ParseException {
+                    skipWhitespace();
+                    DCReference ref = reference(true);
+                    List<DCTree> description = blockContent();
+                    return m.at(pos).newUsesTree(ref, description);
                 }
             },
 

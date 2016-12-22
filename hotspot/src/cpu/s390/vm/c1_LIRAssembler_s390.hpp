@@ -46,9 +46,10 @@
   }
 
   enum {
-    call_stub_size = 512, // See Compile::MAX_stubs_size and CompiledStaticCall::emit_to_interp_stub.
-    exception_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(128),
-    deopt_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(64)
+    _call_stub_size = 512, // See Compile::MAX_stubs_size and CompiledStaticCall::emit_to_interp_stub.
+    _call_aot_stub_size = 0,
+    _exception_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(128),
+    _deopt_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(64)
   };
 
 #endif // CPU_S390_VM_C1_LIRASSEMBLER_S390_HPP

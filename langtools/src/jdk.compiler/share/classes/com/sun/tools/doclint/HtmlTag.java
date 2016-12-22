@@ -556,11 +556,11 @@ public enum HtmlTag {
     private final Map<Attr,AttrKind> attrs;
 
     HtmlTag(BlockType blockType, EndKind endKind, AttrMap... attrMaps) {
-        this(HtmlVersion.ALL, blockType, endKind, Collections.<Flag>emptySet(), attrMaps);
+        this(HtmlVersion.ALL, blockType, endKind, Collections.emptySet(), attrMaps);
     }
 
     HtmlTag(HtmlVersion allowedVersion, BlockType blockType, EndKind endKind, AttrMap... attrMaps) {
-        this(allowedVersion, blockType, endKind, Collections.<Flag>emptySet(), attrMaps);
+        this(allowedVersion, blockType, endKind, Collections.emptySet(), attrMaps);
     }
 
     HtmlTag(BlockType blockType, EndKind endKind, Set<Flag> flags, AttrMap... attrMaps) {

@@ -44,6 +44,8 @@ import com.sun.source.doctree.IdentifierTree;
 import com.sun.source.doctree.ReferenceTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
+import com.sun.source.doctree.ProvidesTree;
+import com.sun.source.doctree.UsesTree;
 import com.sun.source.util.DocTreeFactory;
 import com.sun.tools.doclint.HtmlTag;
 import com.sun.tools.javac.api.JavacTrees;
@@ -67,6 +69,7 @@ import com.sun.tools.javac.tree.DCTree.DCInheritDoc;
 import com.sun.tools.javac.tree.DCTree.DCLink;
 import com.sun.tools.javac.tree.DCTree.DCLiteral;
 import com.sun.tools.javac.tree.DCTree.DCParam;
+import com.sun.tools.javac.tree.DCTree.DCProvides;
 import com.sun.tools.javac.tree.DCTree.DCReference;
 import com.sun.tools.javac.tree.DCTree.DCReturn;
 import com.sun.tools.javac.tree.DCTree.DCSee;
@@ -79,6 +82,7 @@ import com.sun.tools.javac.tree.DCTree.DCText;
 import com.sun.tools.javac.tree.DCTree.DCThrows;
 import com.sun.tools.javac.tree.DCTree.DCUnknownBlockTag;
 import com.sun.tools.javac.tree.DCTree.DCUnknownInlineTag;
+import com.sun.tools.javac.tree.DCTree.DCUses;
 import com.sun.tools.javac.tree.DCTree.DCValue;
 import com.sun.tools.javac.tree.DCTree.DCVersion;
 import com.sun.tools.javac.util.Context;
@@ -334,6 +338,13 @@ public class DocTreeMaker implements DocTreeFactory {
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCProvides newProvidesTree(ReferenceTree name, List<? extends DocTree> description) {
+        DCProvides tree = new DCProvides((DCReference) name, cast(description));
+        tree.pos = pos;
+        return tree;
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public DCReference newReferenceTree(String signature) {
         try {
             ReferenceParser.Reference ref = referenceParser.parse(signature);
@@ -425,6 +436,13 @@ public class DocTreeMaker implements DocTreeFactory {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public DCUnknownInlineTag newUnknownInlineTagTree(Name name, List<? extends DocTree> content) {
         DCUnknownInlineTag tree = new DCUnknownInlineTag(name, cast(content));
+        tree.pos = pos;
+        return tree;
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCUses newUsesTree(ReferenceTree name, List<? extends DocTree> description) {
+        DCUses tree = new DCUses((DCReference) name, cast(description));
         tree.pos = pos;
         return tree;
     }

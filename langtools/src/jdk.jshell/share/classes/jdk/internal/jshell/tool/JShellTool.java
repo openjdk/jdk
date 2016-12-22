@@ -136,24 +136,11 @@ public class JShellTool implements MessageHandler {
     final InputStream userin;
     final PrintStream userout;
     final PrintStream usererr;
-    final Preferences prefs;
+    final PersistentStorage prefs;
     final Map<String, String> envvars;
     final Locale locale;
 
     final Feedback feedback = new Feedback();
-
-    /**
-     * Simple constructor for the tool used by main.
-     * @param in command line input
-     * @param out command line output, feedback including errors, user System.out
-     * @param err start-up errors and debugging info, user System.err
-     */
-    public JShellTool(InputStream in, PrintStream out, PrintStream err) {
-        this(in, out, err, out, null, out, err,
-                Preferences.userRoot().node("tool/JShell"),
-                System.getenv(),
-                Locale.getDefault());
-    }
 
     /**
      * The complete constructor for the tool (used by test harnesses).
@@ -164,14 +151,14 @@ public class JShellTool implements MessageHandler {
      * @param userin code execution input, or null to use IOContext
      * @param userout code execution output  -- System.out.printf("hi")
      * @param usererr code execution error stream  -- System.err.printf("Oops")
-     * @param prefs preferences to use
+     * @param prefs persistence implementation to use
      * @param envvars environment variable mapping to use
      * @param locale locale to use
      */
-    public JShellTool(InputStream cmdin, PrintStream cmdout, PrintStream cmderr,
+    JShellTool(InputStream cmdin, PrintStream cmdout, PrintStream cmderr,
             PrintStream console,
             InputStream userin, PrintStream userout, PrintStream usererr,
-            Preferences prefs, Map<String, String> envvars, Locale locale) {
+            PersistentStorage prefs, Map<String, String> envvars, Locale locale) {
         this.cmdin = cmdin;
         this.cmdout = cmdout;
         this.cmderr = cmderr;
@@ -452,7 +439,7 @@ public class JShellTool implements MessageHandler {
     <T> void hardPairs(Stream<T> stream, Function<T, String> a, Function<T, String> b) {
         Map<String, String> a2b = stream.collect(toMap(a, b,
                 (m1, m2) -> m1,
-                () -> new LinkedHashMap<>()));
+                LinkedHashMap::new));
         for (Entry<String, String> e : a2b.entrySet()) {
             hard("%s", e.getKey());
             rawout(prefix(e.getValue(), feedback.getPre() + "\t", feedback.getPost()));
@@ -478,16 +465,6 @@ public class JShellTool implements MessageHandler {
         }
     }
 
-    /**
-     * Normal start entry point
-     * @param args
-     * @throws Exception
-     */
-    public static void main(String[] args) throws Exception {
-        new JShellTool(System.in, System.out, System.err)
-                .start(args);
-    }
-
     public void start(String[] args) throws Exception {
         List<String> loadList = processCommandArgs(args);
         if (loadList == null) {
@@ -502,7 +479,7 @@ public class JShellTool implements MessageHandler {
     private void start(IOContext in, List<String> loadList) {
         // If startup hasn't been set by command line, set from retained/default
         if (startup == null) {
-            startup = prefs.get(STARTUP_KEY, null);
+            startup = prefs.get(STARTUP_KEY);
             if (startup == null) {
                 startup = DEFAULT_STARTUP;
             }
@@ -513,7 +490,7 @@ public class JShellTool implements MessageHandler {
         resetState(); // Initialize
 
         // Read replay history from last jshell session into previous history
-        String prevReplay = prefs.get(REPLAY_RESTORE_KEY, null);
+        String prevReplay = prefs.get(REPLAY_RESTORE_KEY);
         if (prevReplay != null) {
             replayableHistoryPrevious = Arrays.asList(prevReplay.split(RECORD_SEPARATOR));
         }
@@ -788,7 +765,7 @@ public class JShellTool implements MessageHandler {
         // These predefined modes are read-only
         feedback.markModesReadOnly();
         // Restore user defined modes retained on previous run with /set mode -retain
-        String encoded = prefs.get(MODE_KEY, null);
+        String encoded = prefs.get(MODE_KEY);
         if (encoded != null && !encoded.isEmpty()) {
             if (!feedback.restoreEncodedModes(initmh, encoded)) {
                 // Catastrophic corruption -- remove the retained modes
@@ -802,7 +779,7 @@ public class JShellTool implements MessageHandler {
             }
             commandLineFeedbackMode = null;
         } else {
-            String fb = prefs.get(FEEDBACK_KEY, null);
+            String fb = prefs.get(FEEDBACK_KEY);
             if (fb != null) {
                 // Restore the feedback mode to use that was retained
                 // on a previous run with /set feedback -retain
@@ -953,7 +930,7 @@ public class JShellTool implements MessageHandler {
                        .stream()
                        .filter(filter)
                        .filter(command -> command.command.startsWith(cmd))
-                       .toArray(size -> new Command[size]);
+                       .toArray(Command[]::new);
     }
 
     private static Path toPathResolvingUserHome(String pathString) {
@@ -1125,7 +1102,7 @@ public class JShellTool implements MessageHandler {
                                 ? Stream.of(String.valueOf(k.id()) + " ", ((DeclarationSnippet) k).name() + " ")
                                 : Stream.of(String.valueOf(k.id()) + " "))
                         .filter(k -> k.startsWith(argPrefix))
-                        .map(k -> new ArgSuggestion(k))
+                        .map(ArgSuggestion::new)
                         .collect(Collectors.toList());
         };
     }
@@ -1154,7 +1131,7 @@ public class JShellTool implements MessageHandler {
                 result = new FixedCompletionProvider(commands.values().stream()
                         .filter(cmd -> cmd.kind.showInHelp || cmd.kind == CommandKind.HELP_SUBJECT)
                         .map(c -> c.command + " ")
-                        .toArray(size -> new String[size]))
+                        .toArray(String[]::new))
                         .completionSuggestions(code, cursor, anchor);
             } else if (code.startsWith("/se")) {
                 result = new FixedCompletionProvider(SET_SUBCOMMANDS)
@@ -1264,33 +1241,33 @@ public class JShellTool implements MessageHandler {
 
     {
         registerCommand(new Command("/list",
-                arg -> cmdList(arg),
+                this::cmdList,
                 snippetWithOptionCompletion(SNIPPET_HISTORY_OPTION_COMPLETION_PROVIDER,
                         this::allSnippets)));
         registerCommand(new Command("/edit",
-                arg -> cmdEdit(arg),
+                this::cmdEdit,
                 snippetWithOptionCompletion(SNIPPET_OPTION_COMPLETION_PROVIDER,
                         this::allSnippets)));
         registerCommand(new Command("/drop",
-                arg -> cmdDrop(arg),
+                this::cmdDrop,
                 snippetCompletion(this::dropableSnippets),
                 CommandKind.REPLAY));
         registerCommand(new Command("/save",
-                arg -> cmdSave(arg),
+                this::cmdSave,
                 saveCompletion()));
         registerCommand(new Command("/open",
-                arg -> cmdOpen(arg),
+                this::cmdOpen,
                 FILE_COMPLETION_PROVIDER));
         registerCommand(new Command("/vars",
-                arg -> cmdVars(arg),
+                this::cmdVars,
                 snippetWithOptionCompletion(SNIPPET_OPTION_COMPLETION_PROVIDER,
                         this::allVarSnippets)));
         registerCommand(new Command("/methods",
-                arg -> cmdMethods(arg),
+                this::cmdMethods,
                 snippetWithOptionCompletion(SNIPPET_OPTION_COMPLETION_PROVIDER,
                         this::allMethodSnippets)));
         registerCommand(new Command("/types",
-                arg -> cmdTypes(arg),
+                this::cmdTypes,
                 snippetWithOptionCompletion(SNIPPET_OPTION_COMPLETION_PROVIDER,
                         this::allTypeSnippets)));
         registerCommand(new Command("/imports",
@@ -1303,24 +1280,24 @@ public class JShellTool implements MessageHandler {
                 arg -> cmdReset(),
                 EMPTY_COMPLETION_PROVIDER));
         registerCommand(new Command("/reload",
-                arg -> cmdReload(arg),
+                this::cmdReload,
                 reloadCompletion()));
         registerCommand(new Command("/classpath",
-                arg -> cmdClasspath(arg),
+                this::cmdClasspath,
                 classPathCompletion(),
                 CommandKind.REPLAY));
         registerCommand(new Command("/history",
                 arg -> cmdHistory(),
                 EMPTY_COMPLETION_PROVIDER));
         registerCommand(new Command("/debug",
-                arg -> cmdDebug(arg),
+                this::cmdDebug,
                 EMPTY_COMPLETION_PROVIDER,
                 CommandKind.HIDDEN));
         registerCommand(new Command("/help",
-                arg -> cmdHelp(arg),
+                this::cmdHelp,
                 helpCompletion()));
         registerCommand(new Command("/set",
-                arg -> cmdSet(arg),
+                this::cmdSet,
                 new ContinuousCompletionProvider(Map.of(
                         // need more completion for format for usability
                         "format", feedback.modeCompletions(),
@@ -1335,7 +1312,7 @@ public class JShellTool implements MessageHandler {
                         STARTSWITH_MATCHER)));
         registerCommand(new Command("/?",
                 "help.quest",
-                arg -> cmdHelp(arg),
+                this::cmdHelp,
                 helpCompletion(),
                 CommandKind.NORMAL));
         registerCommand(new Command("/!",
@@ -1450,7 +1427,7 @@ public class JShellTool implements MessageHandler {
         }
         String[] matches = Arrays.stream(subs)
                 .filter(s -> s.startsWith(sub))
-                .toArray(size -> new String[size]);
+                .toArray(String[]::new);
         if (matches.length == 0) {
             // There are no matching sub-commands
             errormsg("jshell.err.arg", cmd, sub);
@@ -1485,9 +1462,9 @@ public class JShellTool implements MessageHandler {
         }
 
         // returns null if not stored in preferences
-        static EditorSetting fromPrefs(Preferences prefs) {
+        static EditorSetting fromPrefs(PersistentStorage prefs) {
             // Read retained editor setting (if any)
-            String editorString = prefs.get(EDITOR_KEY, "");
+            String editorString = prefs.get(EDITOR_KEY);
             if (editorString == null || editorString.isEmpty()) {
                 return null;
             } else if (editorString.equals(BUILT_IN_REP)) {
@@ -1504,11 +1481,11 @@ public class JShellTool implements MessageHandler {
             }
         }
 
-        static void removePrefs(Preferences prefs) {
+        static void removePrefs(PersistentStorage prefs) {
             prefs.remove(EDITOR_KEY);
         }
 
-        void toPrefs(Preferences prefs) {
+        void toPrefs(PersistentStorage prefs) {
             prefs.put(EDITOR_KEY, (this == BUILT_IN_EDITOR)
                     ? BUILT_IN_REP
                     : (wait ? WAIT_PREFIX : NORMAL_PREFIX) + String.join(RECORD_SEPARATOR, cmd));
@@ -1676,7 +1653,7 @@ public class JShellTool implements MessageHandler {
     }
 
     void showSetStart() {
-        String retained = prefs.get(STARTUP_KEY, null);
+        String retained = prefs.get(STARTUP_KEY);
         if (retained != null) {
             showSetStart(true, retained);
         }
@@ -1774,6 +1751,7 @@ public class JShellTool implements MessageHandler {
                     replayableHistory.subList(first + 1, replayableHistory.size()));
             prefs.put(REPLAY_RESTORE_KEY, hist);
         }
+        prefs.flush();
         fluffmsg("jshell.msg.goodbye");
         return true;
     }
@@ -1784,7 +1762,7 @@ public class JShellTool implements MessageHandler {
         if (subject != null) {
             Command[] matches = commands.values().stream()
                     .filter(c -> c.command.startsWith(subject))
-                    .toArray(size -> new Command[size]);
+                    .toArray(Command[]::new);
             if (matches.length == 1) {
                 String cmd = matches[0].command;
                 if (cmd.equals("/set")) {
@@ -2414,7 +2392,7 @@ public class JShellTool implements MessageHandler {
      */
     List<Diag> errorsOnly(List<Diag> diagnostics) {
         return diagnostics.stream()
-                .filter(d -> d.isError())
+                .filter(Diag::isError)
                 .collect(toList());
     }
 

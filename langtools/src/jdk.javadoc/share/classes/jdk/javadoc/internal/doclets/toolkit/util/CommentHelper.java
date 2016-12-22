@@ -50,6 +50,7 @@ import com.sun.source.doctree.InlineTagTree;
 import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.LiteralTree;
 import com.sun.source.doctree.ParamTree;
+import com.sun.source.doctree.ProvidesTree;
 import com.sun.source.doctree.ReferenceTree;
 import com.sun.source.doctree.ReturnTree;
 import com.sun.source.doctree.SeeTree;
@@ -61,6 +62,7 @@ import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.ThrowsTree;
 import com.sun.source.doctree.UnknownBlockTagTree;
+import com.sun.source.doctree.UsesTree;
 import com.sun.source.doctree.ValueTree;
 import com.sun.source.doctree.VersionTree;
 import com.sun.source.util.DocTreePath;
@@ -107,12 +109,14 @@ public class CommentHelper {
             case AUTHOR:
             case DEPRECATED:
             case PARAM:
+            case PROVIDES:
             case RETURN:
             case SEE:
             case SERIAL_DATA:
             case SERIAL_FIELD:
             case THROWS:
             case UNKNOWN_BLOCK_TAG:
+            case USES:
             case VERSION:
                 return ((BlockTagTree)dtree).getTagName();
             case UNKNOWN_INLINE_TAG:
@@ -441,6 +445,11 @@ public class CommentHelper {
             }
 
             @Override
+            public Element visitProvides(ProvidesTree node, Void p) {
+                return visit(node.getServiceType(), null);
+            }
+
+            @Override
             public Element visitValue(ValueTree node, Void p) {
                 return visit(node.getReference(), null);
             }
@@ -456,10 +465,23 @@ public class CommentHelper {
             }
 
             @Override
+            public Element visitUses(UsesTree node, Void p) {
+                return visit(node.getServiceType(), null);
+            }
+
+            @Override
             protected Element defaultAction(DocTree node, Void p) {
                return null;
             }
         }.visit(dtree, null);
+    }
+
+    public TypeElement getServiceType(Configuration c, DocTree dtree) {
+        Element e = getReferencedElement(c, dtree);
+        if (e != null) {
+            return c.utils.isTypeElement(e) ? (TypeElement) e : null;
+        }
+        return null;
     }
 
     public  String getReferencedSignature(DocTree dtree) {
@@ -554,6 +576,11 @@ public class CommentHelper {
             }
 
             @Override
+            public List<? extends DocTree> visitProvides(ProvidesTree node, Void p) {
+                 return node.getDescription();
+            }
+
+            @Override
             public List<? extends DocTree> visitSince(SinceTree node, Void p) {
                 return node.getBody();
             }
@@ -606,6 +633,11 @@ public class CommentHelper {
             @Override
             public List<? extends DocTree> visitUnknownBlockTag(UnknownBlockTagTree node, Void p) {
                 return node.getContent();
+            }
+
+            @Override
+            public List<? extends DocTree> visitUses(UsesTree node, Void p) {
+                 return node.getDescription();
             }
 
             @Override

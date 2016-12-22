@@ -2158,7 +2158,7 @@ public final class SSLSocketImpl extends BaseSSLSocketImpl {
                         Utilities.addToSNIServerNameList(serverNames, host);
 
                 if (!roleIsServer &&
-                        (handshaker != null) && !handshaker.started()) {
+                        (handshaker != null) && !handshaker.activated()) {
                     handshaker.setSNIServerNames(serverNames);
                 }
             }
@@ -2186,7 +2186,7 @@ public final class SSLSocketImpl extends BaseSSLSocketImpl {
         this.serverNames =
             Utilities.addToSNIServerNameList(this.serverNames, this.host);
 
-        if (!roleIsServer && (handshaker != null) && !handshaker.started()) {
+        if (!roleIsServer && (handshaker != null) && !handshaker.activated()) {
             handshaker.setSNIServerNames(serverNames);
         }
     }
@@ -2638,7 +2638,7 @@ public final class SSLSocketImpl extends BaseSSLSocketImpl {
 
         applicationProtocols = params.getApplicationProtocols();
 
-        if ((handshaker != null) && !handshaker.started()) {
+        if ((handshaker != null) && !handshaker.activated()) {
             handshaker.setIdentificationProtocol(identificationProtocol);
             handshaker.setAlgorithmConstraints(algorithmConstraints);
             handshaker.setMaximumPacketSize(maximumPacketSize);

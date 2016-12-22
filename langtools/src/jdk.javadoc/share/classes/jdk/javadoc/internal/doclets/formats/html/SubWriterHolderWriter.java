@@ -97,7 +97,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         Content caption;
         if (showTabs) {
             caption = getTableCaption(mw.methodTypes);
-            generateMethodTypesScript(mw.typeMap, mw.methodTypes);
+            generateTableTabTypesScript(mw.typeMap, mw.methodTypes, "methods");
         }
         else {
             caption = getTableCaption(mw.getCaption());
@@ -123,13 +123,13 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         for (MethodTypes type : methodTypes) {
             Content captionSpan;
             Content span;
-            if (type.isDefaultTab()) {
-                captionSpan = HtmlTree.SPAN(configuration.getContent(type.resourceKey()));
-                span = HtmlTree.SPAN(type.tabId(),
+            if (type.tableTabs().isDefaultTab()) {
+                captionSpan = HtmlTree.SPAN(configuration.getContent(type.tableTabs().resourceKey()));
+                span = HtmlTree.SPAN(type.tableTabs().tabId(),
                         HtmlStyle.activeTableTab, captionSpan);
             } else {
                 captionSpan = HtmlTree.SPAN(getMethodTypeLinks(type));
-                span = HtmlTree.SPAN(type.tabId(),
+                span = HtmlTree.SPAN(type.tableTabs().tabId(),
                         HtmlStyle.tableTab, captionSpan);
             }
             Content tabSpan = HtmlTree.SPAN(HtmlStyle.tabEnd, Contents.SPACE);
@@ -146,8 +146,8 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      * @return the content tree for the method type link
      */
     public Content getMethodTypeLinks(MethodTypes methodType) {
-        String jsShow = "javascript:show(" + methodType.value() +");";
-        HtmlTree link = HtmlTree.A(jsShow, configuration.getContent(methodType.resourceKey()));
+        String jsShow = "javascript:show(" + methodType.tableTabs().value() +");";
+        HtmlTree link = HtmlTree.A(jsShow, configuration.getContent(methodType.tableTabs().resourceKey()));
         return link;
     }
 
@@ -187,7 +187,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         List<? extends DocTree> deprs = utils.getBlockTags(member, DocTree.Kind.DEPRECATED);
         Content div;
         if (utils.isDeprecated(member)) {
-            Content deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, contents.deprecatedPhrase);
+            Content deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(member));
             div = HtmlTree.DIV(HtmlStyle.block, deprLabel);
             div.addContent(Contents.SPACE);
             if (!deprs.isEmpty()) {
@@ -198,7 +198,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         } else {
             Element te = member.getEnclosingElement();
             if (te != null &&  utils.isTypeElement(te) && utils.isDeprecated(te)) {
-                Content deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, contents.deprecatedPhrase);
+                Content deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(te));
                 div = HtmlTree.DIV(HtmlStyle.block, deprLabel);
                 div.addContent(Contents.SPACE);
                 tdSummary.addContent(div);

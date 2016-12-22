@@ -109,13 +109,6 @@ public class ConstantWriter extends BasicWriter {
                 return 2;
             }
 
-            public Integer visitNameAndType(CONSTANT_NameAndType_info info, Void p) {
-                print("#" + info.name_index + ":#" + info.type_index);
-                tab();
-                println("// " + stringValue(info));
-                return 1;
-            }
-
             public Integer visitMethodref(CONSTANT_Methodref_info info, Void p) {
                 print("#" + info.class_index + ".#" + info.name_and_type_index);
                 tab();
@@ -134,6 +127,27 @@ public class ConstantWriter extends BasicWriter {
                 print("#" + info.descriptor_index);
                 tab();
                 println("//  " + stringValue(info));
+                return 1;
+            }
+
+            public Integer visitModule(CONSTANT_Module_info info, Void p) {
+                print("#" + info.name_index);
+                tab();
+                println("// " + stringValue(info));
+                return 1;
+            }
+
+            public Integer visitNameAndType(CONSTANT_NameAndType_info info, Void p) {
+                print("#" + info.name_index + ":#" + info.type_index);
+                tab();
+                println("// " + stringValue(info));
+                return 1;
+            }
+
+            public Integer visitPackage(CONSTANT_Package_info info, Void p) {
+                print("#" + info.name_index);
+                tab();
+                println("// " + stringValue(info));
                 return 1;
             }
 
@@ -304,11 +318,27 @@ public class ConstantWriter extends BasicWriter {
             return info.value + "l";
         }
 
+        public String visitModule(CONSTANT_Module_info info, Void p) {
+            try {
+                return checkName(info.getName());
+            } catch (ConstantPoolException e) {
+                return report(e);
+            }
+        }
+
         public String visitNameAndType(CONSTANT_NameAndType_info info, Void p) {
             return getCheckedName(info) + ":" + getType(info);
         }
 
         String getCheckedName(CONSTANT_NameAndType_info info) {
+            try {
+                return checkName(info.getName());
+            } catch (ConstantPoolException e) {
+                return report(e);
+            }
+        }
+
+        public String visitPackage(CONSTANT_Package_info info, Void p) {
             try {
                 return checkName(info.getName());
             } catch (ConstantPoolException e) {

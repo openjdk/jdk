@@ -171,6 +171,8 @@ frame os::get_sender_for_C_frame(frame* fr) {
 }
 
 frame os::current_frame() {
+  // Expected to return the stack pointer of this method.
+  // But if inlined, returns the stack pointer of our caller!
   intptr_t* csp = (intptr_t*) *((intptr_t*) os::current_stack_pointer());
   assert (csp != NULL, "sp should not be NULL");
   // Pass a dummy pc. This way we don't have to load it from the
@@ -184,8 +186,13 @@ frame os::current_frame() {
     assert(senderFrame.pc() != NULL, "Sender pc should not be NULL");
     // Return sender of sender of current topframe which hopefully
     // both have pc != NULL.
+#ifdef _NMT_NOINLINE_   // Is set in slowdebug builds.
+    // Current_stack_pointer is not inlined, we must pop one more frame.
     frame tmp = os::get_sender_for_C_frame(&topframe);
     return os::get_sender_for_C_frame(&tmp);
+#else
+    return os::get_sender_for_C_frame(&topframe);
+#endif
   }
 }
 
@@ -374,7 +381,7 @@ JVM_handle_linux_signal(int sig,
         // BugId 4454115: A read from a MappedByteBuffer can fault here if the
         // underlying file has been truncated. Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
-        nmethod* nm = (cb != NULL && cb->is_nmethod()) ? (nmethod*)cb : NULL;
+        CompiledMethod* nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
         if (nm != NULL && nm->has_unsafe_access()) {
           // We don't really need a stub here! Just set the pending exeption and
           // continue at the next instruction after the faulting read. Returning
