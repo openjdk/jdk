@@ -42,7 +42,7 @@ import javax.swing.text.WrappedPlainView;
 
 /**
  * @test
- * @bug 8156217
+ * @bug 8156217 8169922
  * @key headful
  * @summary Selected text is shifted on HiDPI display
  * @run main FPMethodCalledTest
