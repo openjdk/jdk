@@ -629,16 +629,7 @@ public class UIManager implements Serializable
         }
         else {
             Class<?> lnfClass = SwingUtilities.loadSystemClass(className);
-            try {
-                LookAndFeel laf =
-                    (LookAndFeel)lnfClass.newInstance();
-                setLookAndFeel(laf);
-            } catch (ReflectiveOperationException | IllegalArgumentException e) {
-                InstantiationException ex =
-                    new InstantiationException("Wrapped Exception");
-                ex.initCause(e);
-                throw ex;
-            }
+            setLookAndFeel((LookAndFeel)(lnfClass.newInstance()));
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -353,12 +353,13 @@ class FileTreeWalker implements Closeable {
                 }
             }
 
-            // no next entry so close and pop directory, creating corresponding event
+            // no next entry so close and pop directory,
+            // creating corresponding event
             if (entry == null) {
                 try {
                     top.stream().close();
                 } catch (IOException e) {
-                    if (ioe != null) {
+                    if (ioe == null) {
                         ioe = e;
                     } else {
                         ioe.addSuppressed(e);

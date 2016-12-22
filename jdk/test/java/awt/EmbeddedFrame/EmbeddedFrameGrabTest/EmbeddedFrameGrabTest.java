@@ -23,12 +23,12 @@
 
 /*
  @test
- @bug 6345002
+ @bug 6345003 8171363
  @summary grab problems with EmbeddedFrame
  @requires (os.family == "windows")
  @modules java.desktop/java.awt.peer
  @modules java.desktop/sun.awt
- @modules java.desktop/sun.awt.windows
+ @modules java.desktop/sun.awt.windows:open
  @author Oleg.Semenov@sun.com area=EmbeddedFrame
  @run main EmbeddedFrameGrabTest
  */

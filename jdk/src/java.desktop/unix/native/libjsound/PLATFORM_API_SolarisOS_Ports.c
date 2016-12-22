@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -390,6 +390,7 @@ void PORT_GetControls(void* id, INT32 portIndex, PortControlCreator* creator) {
     int controlCount = 0;
     INT32 type;
     int selectable = 1;
+    memset(controls, 0, sizeof(controls));
 
     TRACE4(">PORT_GetControls(id=%p, portIndex=%d). controlIDs=%p, maxControlCount=%d\n",
            id, portIndex, info->controlIDs, info->maxControlCount);

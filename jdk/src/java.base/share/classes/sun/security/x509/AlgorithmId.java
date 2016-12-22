@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1009,7 +1009,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
      * @return the default alg, might be null if unsupported
      */
     public static String getDefaultSigAlgForKey(PrivateKey k) {
-        switch (k.getAlgorithm().toUpperCase()) {
+        switch (k.getAlgorithm().toUpperCase(Locale.ROOT)) {
             case "EC":
                 return ecStrength(KeyUtil.getKeySize(k))
                     + "withECDSA";

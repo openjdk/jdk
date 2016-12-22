@@ -1306,8 +1306,7 @@ public class ScheduledThreadPoolExecutor
             public Runnable next() {
                 if (cursor >= array.length)
                     throw new NoSuchElementException();
-                lastRet = cursor;
-                return array[cursor++];
+                return array[lastRet = cursor++];
             }
 
             public void remove() {

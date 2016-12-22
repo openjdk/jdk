@@ -29,7 +29,7 @@
  *          java.rmi/sun.rmi.server
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
- * @build TestLibrary JavaVM
+ * @build TestLibrary REGISTRY RegistryRunner
  * @run main/othervm DeadCachedConnection
  */
 
@@ -60,73 +60,65 @@ import java.rmi.registry.*;
 import java.rmi.server.*;
 
 public class DeadCachedConnection {
-    static public final int regport = TestLibrary.getUnusedRandomPort();
 
     static public void main(String[] argv)
         throws Exception {
-        // establish the registry (we hope)
-        System.err.println ("Starting registry on port " + regport);
-        DeadCachedConnection.makeRegistry(regport);
-
-        // Get a handle to the registry
-        Registry reg = null;
-        System.err.println ("Locating just-started registry...");
         try {
-            reg = LocateRegistry.getRegistry(regport);
-        } catch (RemoteException e) {
-            throw new InternalError ("Can't find registry after starting it.");
-        }
+            Registry reg = null;
+            int port = makeRegistry(0);
 
-        // Contact the registry by invoking something on it.
-        System.err.println ("Connecting to registry...");
-        String[] junk = reg.list();
+            // Get a handle to the registry
+            System.err.println ("Locating just-started registry...");
+            try {
+                reg = LocateRegistry.getRegistry(port);
+            } catch (RemoteException e) {
+                throw new InternalError ("Can't find registry after starting it.");
+            }
 
-        // Kill and restart the registry
-        System.err.println("Killing registry...");
-        DeadCachedConnection.killRegistry();
-        System.err.println("Restarting registry...");
-        DeadCachedConnection.makeRegistry(regport);
+            // Contact the registry by invoking something on it.
+            System.err.println ("Connecting to registry...");
+            String[] junk = reg.list();
 
-        // Try again (this is the test)
-        System.err.println("Trying to use registry in spite of stale cache...");
-        junk = reg.list();
+            // Kill and restart the registry
+            System.err.println("Killing registry...");
+            killRegistry();
+            System.err.println("Restarting registry...");
+            makeRegistry(port);
 
-        // we're happy
-        System.err.println("Test succeeded.");
-        try {
-            DeadCachedConnection.killRegistry();
-        } catch (Exception foo) {
+            // Try again (this is the test)
+            System.err.println("Trying to use registry in spite of stale cache...");
+            junk = reg.list();
+
+            System.err.println("Test succeeded.");
+        } catch (Exception e) {
+            TestLibrary.bomb(e);
+        } finally {
+            // dont leave the registry around to affect other tests.
+            killRegistry();
         }
     }
 
-    public static void makeRegistry(int p) {
-        // sadly, we can't kill a registry if we have too-close control
-        // over it.  We must make it in a subprocess, and then kill the
-        // subprocess when it has served our needs.
-
+    public static int makeRegistry(int port) {
         try {
-            JavaVM jvm =
-                new JavaVM("sun.rmi.registry.RegistryImpl", "", Integer.toString(p));
-            jvm.start();
-            DeadCachedConnection.subreg = jvm;
-
+            subreg = REGISTRY.createREGISTRY(System.out, System.err, "", port);
+            subreg.start();
+            int regPort = subreg.getPort();
+            System.out.println("Starting registry on port " + regPort);
+            return regPort;
         } catch (IOException e) {
             // one of these is summarily dropped, can't remember which one
             System.out.println ("Test setup failed - cannot run rmiregistry");
             TestLibrary.bomb("Test setup failed - cannot run test", e);
         }
-        // Slop - wait for registry to come up.  This is stupid.
-        try {
-            Thread.sleep (5000);
-        } catch (Exception whatever) {
-        }
+        return -1;
     }
-    private static JavaVM subreg = null;
+
+    private static REGISTRY subreg = null;
 
     public static void killRegistry() throws InterruptedException {
-        if (DeadCachedConnection.subreg != null) {
-            DeadCachedConnection.subreg.terminate();
+        if (subreg != null) {
+            subreg.shutdown();
+            subreg = null;
         }
-        DeadCachedConnection.subreg = null;
     }
 }

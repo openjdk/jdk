@@ -758,16 +758,6 @@ public class DateFormatSymbols implements Serializable, Cloneable {
                     dfs = y;
                 }
             }
-            // If the bundle's locale isn't the target locale, put another cache
-            // entry for the bundle's locale.
-            Locale bundleLocale = resource.getLocale();
-            if (!bundleLocale.equals(locale)) {
-                SoftReference<DateFormatSymbols> z
-                    = cachedInstances.putIfAbsent(bundleLocale, ref);
-                if (z != null && z.get() == null) {
-                    cachedInstances.replace(bundleLocale, z, ref);
-                }
-            }
         }
 
         // Copy the field values from dfs to this instance.
