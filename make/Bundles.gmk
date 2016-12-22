@@ -103,7 +103,7 @@ define SetupBundleFileBody
 	  $(CD) $$($1_BASE_DIRS) \
 	      && ( $(TAR) cf - $(TAR_CREATE_EXTRA_PARAM) \
 	          -$(TAR_INCLUDE_PARAM) $$($1_$$($1_BASE_DIRS)_LIST_FILE) \
-	          $$(if $$($1_SUBDIR), --transform 's|^|$$($1_SUBDIR)/|') \
+	          $$(if $$($1_SUBDIR), --transform 's|^|$$($1_SUBDIR)/|S') \
 	          $(TAR_IGNORE_EXIT_VALUE) ) \
 	      | $(GZIP) > $$@
         else
