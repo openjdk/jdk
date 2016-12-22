@@ -86,9 +86,6 @@ void SharedPathsMiscInfo::print_path(int type, const char* path) {
   case REQUIRED:
     out->print("Expecting that file %s must exist and is not altered", path);
     break;
-  case PATCH_MOD:
-    out->print("Expecting --patch-module=%s", path);
-    break;
   default:
     ShouldNotReachHere();
   }
@@ -163,26 +160,6 @@ bool SharedPathsMiscInfo::check(jint type, const char* path) {
         }
         if (filesize != st.st_size) {
           return fail("File size mismatch");
-        }
-      }
-    }
-    break;
-  case PATCH_MOD:
-    {
-      GrowableArray<ModulePatchPath*>* patch_mod_args = Arguments::get_patch_mod_prefix();
-      if (patch_mod_args != NULL) {
-        int num_of_entries = patch_mod_args->length();
-        for (int i = 0; i < num_of_entries; i++) {
-          const char* module_name = (patch_mod_args->at(i))->module_name();
-          const char* path_string = (patch_mod_args->at(i))->path_string();
-          size_t n = strlen(module_name);
-          // path contains the module name, followed by '=', and one or more entries.
-          // E.g.: "java.base=foo" or "java.naming=dir1:dir2:dir3"
-          if ((strncmp(module_name, path, n) != 0) ||
-              (path[n] != '=') ||
-              (strcmp(path + n + 1, path_string) != 0)) {
-            return fail("--patch-module mismatch, path not found in run time: ", path);
-          }
         }
       }
     }

@@ -716,11 +716,18 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   pthread_attr_init(&attr);
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
-  // calculate stack size if it's not specified by caller
+  // Calculate stack size if it's not specified by caller.
   size_t stack_size = os::Posix::get_initial_stack_size(thr_type, req_stack_size);
+  // In the Linux NPTL pthread implementation the guard size mechanism
+  // is not implemented properly. The posix standard requires adding
+  // the size of the guard pages to the stack size, instead Linux
+  // takes the space out of 'stacksize'. Thus we adapt the requested
+  // stack_size by the size of the guard pages to mimick proper
+  // behaviour.
+  stack_size = align_size_up(stack_size + os::Linux::default_guard_size(thr_type), vm_page_size());
   pthread_attr_setstacksize(&attr, stack_size);
 
-  // glibc guard page
+  // Configure glibc guard page.
   pthread_attr_setguardsize(&attr, os::Linux::default_guard_size(thr_type));
 
   ThreadState state;
@@ -920,9 +927,21 @@ static bool find_vma(address addr, address* vma_low, address* vma_high) {
 
 // Locate initial thread stack. This special handling of initial thread stack
 // is needed because pthread_getattr_np() on most (all?) Linux distros returns
-// bogus value for initial thread.
+// bogus value for the primordial process thread. While the launcher has created
+// the VM in a new thread since JDK 6, we still have to allow for the use of the
+// JNI invocation API from a primordial thread.
 void os::Linux::capture_initial_stack(size_t max_size) {
-  // stack size is the easy part, get it from RLIMIT_STACK
+
+  // max_size is either 0 (which means accept OS default for thread stacks) or
+  // a user-specified value known to be at least the minimum needed. If we
+  // are actually on the primordial thread we can make it appear that we have a
+  // smaller max_size stack by inserting the guard pages at that location. But we
+  // cannot do anything to emulate a larger stack than what has been provided by
+  // the OS or threading library. In fact if we try to use a stack greater than
+  // what is set by rlimit then we will crash the hosting process.
+
+  // Maximum stack size is the easy part, get it from RLIMIT_STACK.
+  // If this is "unlimited" then it will be a huge value.
   struct rlimit rlim;
   getrlimit(RLIMIT_STACK, &rlim);
   size_t stack_size = rlim.rlim_cur;
@@ -932,17 +951,6 @@ void os::Linux::capture_initial_stack(size_t max_size) {
   //   so we won't install guard page on ld.so's data section.
   stack_size -= 2 * page_size();
 
-  // 4441425: avoid crash with "unlimited" stack size on SuSE 7.1 or Redhat
-  //   7.1, in both cases we will get 2G in return value.
-  // 4466587: glibc 2.2.x compiled w/o "--enable-kernel=2.4.0" (RH 7.0,
-  //   SuSE 7.2, Debian) can not handle alternate signal stack correctly
-  //   for initial thread if its stack size exceeds 6M. Cap it at 2M,
-  //   in case other parts in glibc still assumes 2M max stack size.
-  // FIXME: alt signal stack is gone, maybe we can relax this constraint?
-  // Problem still exists RH7.2 (IA64 anyway) but 2MB is a little small
-  if (stack_size > 2 * K * K IA64_ONLY(*2)) {
-    stack_size = 2 * K * K IA64_ONLY(*2);
-  }
   // Try to figure out where the stack base (top) is. This is harder.
   //
   // When an application is started, glibc saves the initial stack pointer in
@@ -1102,14 +1110,29 @@ void os::Linux::capture_initial_stack(size_t max_size) {
   // stack_top could be partially down the page so align it
   stack_top = align_size_up(stack_top, page_size());
 
-  if (max_size && stack_size > max_size) {
-    _initial_thread_stack_size = max_size;
+  // Allowed stack value is minimum of max_size and what we derived from rlimit
+  if (max_size > 0) {
+    _initial_thread_stack_size = MIN2(max_size, stack_size);
   } else {
-    _initial_thread_stack_size = stack_size;
+    // Accept the rlimit max, but if stack is unlimited then it will be huge, so
+    // clamp it at 8MB as we do on Solaris
+    _initial_thread_stack_size = MIN2(stack_size, 8*M);
   }
-
   _initial_thread_stack_size = align_size_down(_initial_thread_stack_size, page_size());
   _initial_thread_stack_bottom = (address)stack_top - _initial_thread_stack_size;
+
+  assert(_initial_thread_stack_bottom < (address)stack_top, "overflow!");
+
+  if (log_is_enabled(Info, os, thread)) {
+    // See if we seem to be on primordial process thread
+    bool primordial = uintptr_t(&rlim) > uintptr_t(_initial_thread_stack_bottom) &&
+                      uintptr_t(&rlim) < stack_top;
+
+    log_info(os, thread)("Capturing initial stack in %s thread: req. size: " SIZE_FORMAT "K, actual size: "
+                         SIZE_FORMAT "K, top=" INTPTR_FORMAT ", bottom=" INTPTR_FORMAT,
+                         primordial ? "primordial" : "user", max_size / K,  _initial_thread_stack_size / K,
+                         stack_top, intptr_t(_initial_thread_stack_bottom));
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2831,6 +2854,13 @@ bool os::Linux::libnuma_init() {
     }
   }
   return false;
+}
+
+size_t os::Linux::default_guard_size(os::ThreadType thr_type) {
+  // Creating guard page is very expensive. Java thread has HotSpot
+  // guard pages, only enable glibc guard page for non-Java threads.
+  // (Remember: compiler thread is a Java thread, too!)
+  return ((thr_type == java_thread || thr_type == compiler_thread) ? 0 : page_size());
 }
 
 // rebuild_cpu_to_node_map() constructs a table mapping cpud id to node id.
@@ -6064,6 +6094,101 @@ bool os::start_debugging(char *buf, int buflen) {
   }
   return yes;
 }
+
+
+// Java/Compiler thread:
+//
+//   Low memory addresses
+// P0 +------------------------+
+//    |                        |\  Java thread created by VM does not have glibc
+//    |    glibc guard page    | - guard page, attached Java thread usually has
+//    |                        |/  1 glibc guard page.
+// P1 +------------------------+ Thread::stack_base() - Thread::stack_size()
+//    |                        |\
+//    |  HotSpot Guard Pages   | - red, yellow and reserved pages
+//    |                        |/
+//    +------------------------+ JavaThread::stack_reserved_zone_base()
+//    |                        |\
+//    |      Normal Stack      | -
+//    |                        |/
+// P2 +------------------------+ Thread::stack_base()
+//
+// Non-Java thread:
+//
+//   Low memory addresses
+// P0 +------------------------+
+//    |                        |\
+//    |  glibc guard page      | - usually 1 page
+//    |                        |/
+// P1 +------------------------+ Thread::stack_base() - Thread::stack_size()
+//    |                        |\
+//    |      Normal Stack      | -
+//    |                        |/
+// P2 +------------------------+ Thread::stack_base()
+//
+// ** P1 (aka bottom) and size (P2 = P1 - size) are the address and stack size
+//    returned from pthread_attr_getstack().
+// ** Due to NPTL implementation error, linux takes the glibc guard page out
+//    of the stack size given in pthread_attr. We work around this for
+//    threads created by the VM. (We adapt bottom to be P1 and size accordingly.)
+//
+#ifndef ZERO
+static void current_stack_region(address * bottom, size_t * size) {
+  if (os::Linux::is_initial_thread()) {
+    // initial thread needs special handling because pthread_getattr_np()
+    // may return bogus value.
+    *bottom = os::Linux::initial_thread_stack_bottom();
+    *size   = os::Linux::initial_thread_stack_size();
+  } else {
+    pthread_attr_t attr;
+
+    int rslt = pthread_getattr_np(pthread_self(), &attr);
+
+    // JVM needs to know exact stack location, abort if it fails
+    if (rslt != 0) {
+      if (rslt == ENOMEM) {
+        vm_exit_out_of_memory(0, OOM_MMAP_ERROR, "pthread_getattr_np");
+      } else {
+        fatal("pthread_getattr_np failed with error = %d", rslt);
+      }
+    }
+
+    if (pthread_attr_getstack(&attr, (void **)bottom, size) != 0) {
+      fatal("Cannot locate current stack attributes!");
+    }
+
+    // Work around NPTL stack guard error.
+    size_t guard_size = 0;
+    rslt = pthread_attr_getguardsize(&attr, &guard_size);
+    if (rslt != 0) {
+      fatal("pthread_attr_getguardsize failed with error = %d", rslt);
+    }
+    *bottom += guard_size;
+    *size   -= guard_size;
+
+    pthread_attr_destroy(&attr);
+
+  }
+  assert(os::current_stack_pointer() >= *bottom &&
+         os::current_stack_pointer() < *bottom + *size, "just checking");
+}
+
+address os::current_stack_base() {
+  address bottom;
+  size_t size;
+  current_stack_region(&bottom, &size);
+  return (bottom + size);
+}
+
+size_t os::current_stack_size() {
+  // This stack size includes the usable stack and HotSpot guard pages
+  // (for the threads that have Hotspot guard pages).
+  address bottom;
+  size_t size;
+  current_stack_region(&bottom, &size);
+  return size;
+}
+#endif
 
 static inline struct timespec get_mtime(const char* filename) {
   struct stat st;

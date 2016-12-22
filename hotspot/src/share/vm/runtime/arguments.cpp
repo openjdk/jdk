@@ -1323,26 +1323,32 @@ void Arguments::check_unsupported_dumping_properties() {
                                            "jdk.module.limitmods",
                                            "jdk.module.path",
                                            "jdk.module.upgrade.path",
-                                           "jdk.module.addmods.0" };
-  const char* unsupported_options[] = { "-m",
-                                        "--limit-modules",
-                                        "--module-path",
-                                        "--upgrade-module-path",
-                                        "--add-modules" };
+                                           "jdk.module.addmods.0",
+                                           "jdk.module.patch.0" };
+  const char* unsupported_options[] = { "-m", // cannot use at dump time
+                                        "--limit-modules", // ignored at dump time
+                                        "--module-path", // ignored at dump time
+                                        "--upgrade-module-path", // ignored at dump time
+                                        "--add-modules", // ignored at dump time
+                                        "--patch-module" // ignored at dump time
+                                      };
   assert(ARRAY_SIZE(unsupported_properties) == ARRAY_SIZE(unsupported_options), "must be");
-  // If a vm option is found in the unsupported_options array with index less than the warning_idx,
-  // vm will exit with an error message. Otherwise, it will result in a warning message.
-  uint warning_idx = 2;
+  // If a vm option is found in the unsupported_options array with index less than the info_idx,
+  // vm will exit with an error message. Otherwise, it will print an informational message if
+  // PrintSharedSpaces is enabled.
+  uint info_idx = 1;
   SystemProperty* sp = system_properties();
   while (sp != NULL) {
     for (uint i = 0; i < ARRAY_SIZE(unsupported_properties); i++) {
       if (strcmp(sp->key(), unsupported_properties[i]) == 0) {
-        if (i < warning_idx) {
+        if (i < info_idx) {
           vm_exit_during_initialization(
             "Cannot use the following option when dumping the shared archive", unsupported_options[i]);
         } else {
-          warning(
-            "the %s option is ignored when dumping the shared archive", unsupported_options[i]);
+          if (PrintSharedSpaces) {
+            tty->print_cr(
+              "Info: the %s option is ignored when dumping the shared archive", unsupported_options[i]);
+          }
         }
       }
     }
@@ -1419,10 +1425,8 @@ void Arguments::set_mode_flags(Mode mode) {
   }
 }
 
-#if defined(COMPILER2) || INCLUDE_JVMCI || defined(_LP64) || !INCLUDE_CDS
 // Conflict: required to use shared spaces (-Xshare:on), but
 // incompatible command line options were chosen.
-
 static void no_shared_spaces(const char* message) {
   if (RequireSharedSpaces) {
     jio_fprintf(defaultStream::error_stream(),
@@ -1432,7 +1436,6 @@ static void no_shared_spaces(const char* message) {
     FLAG_SET_DEFAULT(UseSharedSpaces, false);
   }
 }
-#endif
 
 // Returns threshold scaled with the value of scale.
 // If scale < 0.0, threshold is returned without scaling.
@@ -2679,6 +2682,12 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *java_tool_options_args,
   if (result != JNI_OK) {
     return result;
   }
+
+#if INCLUDE_CDS
+  if (UseSharedSpaces && patch_mod_javabase) {
+    no_shared_spaces("CDS is disabled when " JAVA_BASE_NAME " module is patched.");
+  }
+#endif
 
   return JNI_OK;
 }
@@ -4408,7 +4417,6 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
 }
 
 jint Arguments::apply_ergo() {
-
   // Set flags based on ergonomics.
   set_ergonomics_flags();
 

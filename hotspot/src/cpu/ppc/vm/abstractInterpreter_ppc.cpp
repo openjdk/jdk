@@ -51,19 +51,25 @@ int AbstractInterpreter::BasicType_as_index(BasicType type) {
   return i;
 }
 
-// Support abs and sqrt like in compiler.
-// For others we can use a normal (native) entry.
-bool AbstractInterpreter::math_entry_available(AbstractInterpreter::MethodKind kind) {
-  if (!InlineIntrinsics) return false;
-
-  return ((kind==Interpreter::java_lang_math_sqrt && VM_Version::has_fsqrt()) ||
-          (kind==Interpreter::java_lang_math_abs));
-}
-
 // These should never be compiled since the interpreter will prefer
 // the compiled version to the intrinsic version.
 bool AbstractInterpreter::can_be_compiled(methodHandle m) {
-  return !math_entry_available(method_kind(m));
+  switch (method_kind(m)) {
+    case Interpreter::java_lang_math_sin     : // fall thru
+    case Interpreter::java_lang_math_cos     : // fall thru
+    case Interpreter::java_lang_math_tan     : // fall thru
+    case Interpreter::java_lang_math_abs     : // fall thru
+    case Interpreter::java_lang_math_log     : // fall thru
+    case Interpreter::java_lang_math_log10   : // fall thru
+    case Interpreter::java_lang_math_sqrt    : // fall thru
+    case Interpreter::java_lang_math_pow     : // fall thru
+    case Interpreter::java_lang_math_exp     : // fall thru
+    case Interpreter::java_lang_math_fmaD    : // fall thru
+    case Interpreter::java_lang_math_fmaF    :
+      return false;
+    default:
+      return true;
+  }
 }
 
 // How much stack a method activation needs in stack slots.

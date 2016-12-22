@@ -7249,6 +7249,171 @@ instruct mulD_reg_mem(regD dst, memoryRX src)%{
   ins_pipe(pipe_class_dummy);
 %}
 
+// Multiply-Accumulate
+// src1 * src2 + dst
+instruct maddF_reg_reg(regF dst, regF src1, regF src2) %{
+  match(Set dst (FmaF dst (Binary src1 src2)));
+  // CC unchanged by MUL-ADD.
+  ins_cost(ALU_REG_COST);
+  size(4);
+  format %{ "MAEBR    $dst, $src1, $src2" %}
+  ins_encode %{
+    __ z_maebr($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+// src1 * src2 + dst
+instruct maddD_reg_reg(regD dst, regD src1, regD src2) %{
+  match(Set dst (FmaD dst (Binary src1 src2)));
+  // CC unchanged by MUL-ADD.
+  ins_cost(ALU_REG_COST);
+  size(4);
+  format %{ "MADBR    $dst, $src1, $src2" %}
+  ins_encode %{
+    __ z_madbr($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+// src1 * src2 - dst
+instruct msubF_reg_reg(regF dst, regF src1, regF src2) %{
+  match(Set dst (FmaF (NegF dst) (Binary src1 src2)));
+  // CC unchanged by MUL-SUB.
+  ins_cost(ALU_REG_COST);
+  size(4);
+  format %{ "MSEBR    $dst, $src1, $src2" %}
+  ins_encode %{
+    __ z_msebr($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+// src1 * src2 - dst
+instruct msubD_reg_reg(regD dst, regD src1, regD src2) %{
+  match(Set dst (FmaD (NegD dst) (Binary src1 src2)));
+  // CC unchanged by MUL-SUB.
+  ins_cost(ALU_REG_COST);
+  size(4);
+  format %{ "MSDBR    $dst, $src1, $src2" %}
+  ins_encode %{
+    __ z_msdbr($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+// src1 * src2 + dst
+instruct maddF_reg_mem(regF dst, regF src1, memoryRX src2) %{
+  match(Set dst (FmaF dst (Binary src1 (LoadF src2))));
+  // CC unchanged by MUL-ADD.
+  ins_cost(ALU_MEMORY_COST);
+  size(6);
+  format %{ "MAEB     $dst, $src1, $src2" %}
+  ins_encode %{
+    __ z_maeb($dst$$FloatRegister, $src1$$FloatRegister,
+              Address(reg_to_register_object($src2$$base), $src2$$index$$Register, $src2$$disp));
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+// src1 * src2 + dst
+instruct maddD_reg_mem(regD dst, regD src1, memoryRX src2) %{
+  match(Set dst (FmaD dst (Binary src1 (LoadD src2))));
+  // CC unchanged by MUL-ADD.
+  ins_cost(ALU_MEMORY_COST);
+  size(6);
+  format %{ "MADB     $dst, $src1, $src2" %}
+  ins_encode %{
+    __ z_madb($dst$$FloatRegister, $src1$$FloatRegister,
+              Address(reg_to_register_object($src2$$base), $src2$$index$$Register, $src2$$disp));
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+// src1 * src2 - dst
+instruct msubF_reg_mem(regF dst, regF src1, memoryRX src2) %{
+  match(Set dst (FmaF (NegF dst) (Binary src1 (LoadF src2))));
+  // CC unchanged by MUL-SUB.
+  ins_cost(ALU_MEMORY_COST);
+  size(6);
+  format %{ "MSEB     $dst, $src1, $src2" %}
+  ins_encode %{
+    __ z_mseb($dst$$FloatRegister, $src1$$FloatRegister,
+              Address(reg_to_register_object($src2$$base), $src2$$index$$Register, $src2$$disp));
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+// src1 * src2 - dst
+instruct msubD_reg_mem(regD dst, regD src1, memoryRX src2) %{
+  match(Set dst (FmaD (NegD dst) (Binary src1 (LoadD src2))));
+  // CC unchanged by MUL-SUB.
+  ins_cost(ALU_MEMORY_COST);
+  size(6);
+  format %{ "MSDB    $dst, $src1, $src2" %}
+  ins_encode %{
+    __ z_msdb($dst$$FloatRegister, $src1$$FloatRegister,
+              Address(reg_to_register_object($src2$$base), $src2$$index$$Register, $src2$$disp));
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+// src1 * src2 + dst
+instruct maddF_mem_reg(regF dst, memoryRX src1, regF src2) %{
+  match(Set dst (FmaF dst (Binary (LoadF src1) src2)));
+  // CC unchanged by MUL-ADD.
+  ins_cost(ALU_MEMORY_COST);
+  size(6);
+  format %{ "MAEB     $dst, $src1, $src2" %}
+  ins_encode %{
+    __ z_maeb($dst$$FloatRegister, $src2$$FloatRegister,
+              Address(reg_to_register_object($src1$$base), $src1$$index$$Register, $src1$$disp));
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+// src1 * src2 + dst
+instruct maddD_mem_reg(regD dst, memoryRX src1, regD src2) %{
+  match(Set dst (FmaD dst (Binary (LoadD src1) src2)));
+  // CC unchanged by MUL-ADD.
+  ins_cost(ALU_MEMORY_COST);
+  size(6);
+  format %{ "MADB     $dst, $src1, $src2" %}
+  ins_encode %{
+    __ z_madb($dst$$FloatRegister, $src2$$FloatRegister,
+              Address(reg_to_register_object($src1$$base), $src1$$index$$Register, $src1$$disp));
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+// src1 * src2 - dst
+instruct msubF_mem_reg(regF dst, memoryRX src1, regF src2) %{
+  match(Set dst (FmaF (NegF dst) (Binary (LoadF src1) src2)));
+  // CC unchanged by MUL-SUB.
+  ins_cost(ALU_MEMORY_COST);
+  size(6);
+  format %{ "MSEB     $dst, $src1, $src2" %}
+  ins_encode %{
+    __ z_mseb($dst$$FloatRegister, $src2$$FloatRegister,
+              Address(reg_to_register_object($src1$$base), $src1$$index$$Register, $src1$$disp));
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+// src1 * src2 - dst
+instruct msubD_mem_reg(regD dst, memoryRX src1, regD src2) %{
+  match(Set dst (FmaD (NegD dst) (Binary (LoadD src1) src2)));
+  // CC unchanged by MUL-SUB.
+  ins_cost(ALU_MEMORY_COST);
+  size(6);
+  format %{ "MSDB    $dst, $src1, $src2" %}
+  ins_encode %{
+    __ z_msdb($dst$$FloatRegister, $src2$$FloatRegister,
+              Address(reg_to_register_object($src1$$base), $src1$$index$$Register, $src1$$disp));
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
 //  DIV
 
 //  Div float single precision

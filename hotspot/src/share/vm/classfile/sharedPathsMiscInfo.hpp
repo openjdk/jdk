@@ -104,27 +104,9 @@ public:
     add_path(path, NON_EXIST);
   }
 
-  // The path must exist and have required size and modification time
-  void add_required_file(const char* path) {
-    add_path(path, REQUIRED);
-
-    struct stat st;
-    if (os::stat(path, &st) != 0) {
-      assert(0, "sanity");
-#if INCLUDE_CDS
-      ClassLoader::exit_with_path_failure("failed to os::stat(%s)", path); // should not happen
-#endif
-    }
-    write_time(st.st_mtime);
-    write_long(st.st_size);
-  }
-
   // The path must exist, and must contain exactly <num_entries> files/dirs
   void add_boot_classpath(const char* path) {
     add_path(path, BOOT);
-  }
-  void add_patch_mod_classpath(const char* path) {
-    add_path(path, PATCH_MOD);
   }
   int write_jint(jint num) {
     write(&num, sizeof(num));
@@ -147,8 +129,7 @@ public:
   enum {
     BOOT      = 1,
     NON_EXIST = 2,
-    REQUIRED  = 3,
-    PATCH_MOD = 4
+    REQUIRED  = 3
   };
 
   virtual const char* type_name(int type) {
@@ -156,7 +137,6 @@ public:
     case BOOT:      return "BOOT";
     case NON_EXIST: return "NON_EXIST";
     case REQUIRED:  return "REQUIRED";
-    case PATCH_MOD: return "PATCH_MOD";
     default:        ShouldNotReachHere(); return "?";
     }
   }

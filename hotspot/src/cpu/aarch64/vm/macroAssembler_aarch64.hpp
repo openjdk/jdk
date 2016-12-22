@@ -857,6 +857,7 @@ public:
     Label&   slow_case                 // continuation point if fast allocation fails
   );
   Register tlab_refill(Label& retry_tlab, Label& try_eden, Label& slow_case); // returns TLS address
+  void zero_memory(Register addr, Register len, Register t1);
   void verify_tlab();
 
   void incr_allocated_bytes(Register thread,
