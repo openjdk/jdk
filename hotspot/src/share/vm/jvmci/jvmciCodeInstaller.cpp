@@ -967,7 +967,7 @@ GrowableArray<ScopeValue*>* CodeInstaller::record_virtual_objects(Handle debug_i
   return objects;
 }
 
-void CodeInstaller::record_scope(jint pc_offset, Handle debug_info, ScopeMode scope_mode, TRAPS) {
+void CodeInstaller::record_scope(jint pc_offset, Handle debug_info, ScopeMode scope_mode, bool return_oop, TRAPS) {
   Handle position = DebugInfo::bytecodePosition(debug_info);
   if (position.is_null()) {
     // Stubs do not record scope info, just oop maps
@@ -980,10 +980,10 @@ void CodeInstaller::record_scope(jint pc_offset, Handle debug_info, ScopeMode sc
   } else {
     objectMapping = NULL;
   }
-  record_scope(pc_offset, position, scope_mode, objectMapping, CHECK);
+  record_scope(pc_offset, position, scope_mode, objectMapping, return_oop, CHECK);
 }
 
-void CodeInstaller::record_scope(jint pc_offset, Handle position, ScopeMode scope_mode, GrowableArray<ScopeValue*>* objects, TRAPS) {
+void CodeInstaller::record_scope(jint pc_offset, Handle position, ScopeMode scope_mode, GrowableArray<ScopeValue*>* objects, bool return_oop, TRAPS) {
   Handle frame;
   if (scope_mode == CodeInstaller::FullFrame) {
     if (!position->is_a(BytecodeFrame::klass())) {
@@ -993,7 +993,7 @@ void CodeInstaller::record_scope(jint pc_offset, Handle position, ScopeMode scop
   }
   Handle caller_frame = BytecodePosition::caller(position);
   if (caller_frame.not_null()) {
-    record_scope(pc_offset, caller_frame, scope_mode, objects, CHECK);
+    record_scope(pc_offset, caller_frame, scope_mode, objects, return_oop, CHECK);
   }
 
   Handle hotspot_method = BytecodePosition::method(position);
@@ -1083,7 +1083,7 @@ void CodeInstaller::record_scope(jint pc_offset, Handle position, ScopeMode scop
     throw_exception = BytecodeFrame::rethrowException(frame) == JNI_TRUE;
   }
 
-  _debug_recorder->describe_scope(pc_offset, method, NULL, bci, reexecute, throw_exception, false, false,
+  _debug_recorder->describe_scope(pc_offset, method, NULL, bci, reexecute, throw_exception, false, return_oop,
                                   locals_token, expressions_token, monitors_token);
 }
 
@@ -1139,7 +1139,10 @@ void CodeInstaller::site_Call(CodeBuffer& buffer, jint pc_offset, Handle site, T
   if (debug_info.not_null()) {
     OopMap *map = create_oop_map(debug_info, CHECK);
     _debug_recorder->add_safepoint(next_pc_offset, map);
-    record_scope(next_pc_offset, debug_info, CodeInstaller::FullFrame, CHECK);
+
+    bool return_oop = hotspot_method.not_null() && getMethodFromHotSpotMethod(hotspot_method())->is_returning_oop();
+
+    record_scope(next_pc_offset, debug_info, CodeInstaller::FullFrame, return_oop, CHECK);
   }
 
   if (foreign_call.not_null()) {
