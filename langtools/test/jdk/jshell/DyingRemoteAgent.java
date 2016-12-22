@@ -21,10 +21,11 @@
  * questions.
  */
 
+import java.util.Map;
 import jdk.jshell.JShell;
-import jdk.jshell.execution.JdiDefaultExecutionControl;
+import jdk.jshell.execution.JdiExecutionControlProvider;
 import jdk.jshell.execution.RemoteExecutionControl;
-import static jdk.jshell.execution.JdiDefaultExecutionControl.defaultTimeout;
+import jdk.jshell.spi.ExecutionControlProvider;
 
 class DyingRemoteAgent extends RemoteExecutionControl {
 
@@ -39,11 +40,13 @@ class DyingRemoteAgent extends RemoteExecutionControl {
     }
 
     static JShell state(boolean isLaunch, String host) {
-        return JShell.builder().executionEngine(
-                JdiDefaultExecutionControl.create(
-                        DyingRemoteAgent.class.getName(),
-                        isLaunch,
-                        host,
-                        defaultTimeout())).build();
+        ExecutionControlProvider ecp = new JdiExecutionControlProvider();
+        Map<String,String> pm = ecp.defaultParameters();
+        pm.put(JdiExecutionControlProvider.PARAM_REMOTE_AGENT, DyingRemoteAgent.class.getName());
+        pm.put(JdiExecutionControlProvider.PARAM_HOST_NAME, host==null? "" : host);
+        pm.put(JdiExecutionControlProvider.PARAM_LAUNCH, ""+isLaunch);
+        return JShell.builder()
+                .executionEngine(ecp, pm)
+                .build();
     }
 }

@@ -64,36 +64,6 @@ public class Util {
     private Util() {}
 
     /**
-     * Create a composite {@link ExecutionControl.Generator} instance that, when
-     * generating, will try each specified generator until successfully creating
-     * an {@link ExecutionControl} instance, or, if all fail, will re-throw the
-     * first exception.
-     *
-     * @param gec0 the first instance to try
-     * @param gecs the second through Nth instance to try
-     * @return the fail-over generator
-     */
-    public static ExecutionControl.Generator failOverExecutionControlGenerator(
-            ExecutionControl.Generator gec0, ExecutionControl.Generator... gecs) {
-        return (ExecutionEnv env) -> {
-            Throwable thrown;
-            try {
-                return gec0.generate(env);
-            } catch (Throwable ex) {
-                thrown = ex;
-            }
-            for (ExecutionControl.Generator gec : gecs) {
-                try {
-                    return gec.generate(env);
-                } catch (Throwable ignore) {
-                    // only care about the first, and only if they all fail
-                }
-            }
-            throw thrown;
-        };
-    }
-
-    /**
      * Forward commands from the input to the specified {@link ExecutionControl}
      * instance, then responses back on the output.
      * @param ec the direct instance of {@link ExecutionControl} to process commands

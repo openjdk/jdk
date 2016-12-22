@@ -31,7 +31,6 @@
 
 import org.testng.annotations.Test;
 import jdk.jshell.JShell;
-import jdk.jshell.execution.JdiDefaultExecutionControl;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
@@ -44,7 +43,7 @@ public class JdiBadOptionListenExecutionControlTest {
     public void badOptionListenTest() {
         try {
             JShell.builder()
-                    .executionEngine(JdiDefaultExecutionControl.listen(null))
+                    .executionEngine("jdi")
                     .remoteVMOptions("-BadBadOption")
                     .build();
         } catch (IllegalStateException ex) {

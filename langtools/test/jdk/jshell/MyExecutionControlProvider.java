@@ -21,25 +21,27 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8164518
- * @summary Tests for alternate JDI connector -- listening to "localhost"
- * @modules jdk.jshell/jdk.jshell.execution
- * @build KullaTesting ExecutionControlTestBase
- * @run testng JdiListeningLocalhostExecutionControlTest
- */
+import java.util.Map;
+import jdk.jshell.spi.ExecutionControl;
+import jdk.jshell.spi.ExecutionControlProvider;
+import jdk.jshell.spi.ExecutionEnv;
 
+public class MyExecutionControlProvider implements ExecutionControlProvider {
 
-import org.testng.annotations.Test;
-import org.testng.annotations.BeforeMethod;
+    private final UserJdiUserRemoteTest test;
 
-@Test
-public class JdiListeningLocalhostExecutionControlTest extends ExecutionControlTestBase {
-
-    @BeforeMethod
-    @Override
-    public void setUp() {
-        setUp(builder -> builder.executionEngine("jdi:hostname(localhost)"));
+    MyExecutionControlProvider(UserJdiUserRemoteTest test) {
+        this.test = test;
     }
+
+    @Override
+    public String name() {
+        return "my";
+    }
+
+    @Override
+    public ExecutionControl generate(ExecutionEnv env, Map<String, String> parameters) throws Throwable {
+        return MyExecutionControl.make(env, test);
+    }
+
 }
