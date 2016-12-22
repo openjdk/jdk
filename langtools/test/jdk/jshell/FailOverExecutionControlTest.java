@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8131029 8160127 8159935
+ * @bug 8131029 8160127 8159935 8168615
  * @summary Test that fail-over works for fail-over ExecutionControl generators.
  * @modules jdk.jshell/jdk.jshell.execution
  *          jdk.jshell/jdk.jshell.spi
@@ -33,10 +33,6 @@
 
 import org.testng.annotations.Test;
 import org.testng.annotations.BeforeMethod;
-import jdk.jshell.execution.JdiDefaultExecutionControl;
-import jdk.jshell.spi.ExecutionControl;
-import jdk.jshell.spi.ExecutionEnv;
-import static jdk.jshell.execution.Util.failOverExecutionControlGenerator;
 
 @Test
 public class FailOverExecutionControlTest extends ExecutionControlTestBase {
@@ -44,18 +40,7 @@ public class FailOverExecutionControlTest extends ExecutionControlTestBase {
     @BeforeMethod
     @Override
     public void setUp() {
-        setUp(builder -> builder.executionEngine(failOverExecutionControlGenerator(
-                new AlwaysFailingGenerator(),
-                new AlwaysFailingGenerator(),
-                JdiDefaultExecutionControl.launch())));
+        setUp(builder -> builder.executionEngine("failover:0(nonExistent), 1(nonExistent), 2(jdi:launch(true))"));
     }
 
-    class AlwaysFailingGenerator implements ExecutionControl.Generator {
-
-        @Override
-        public ExecutionControl generate(ExecutionEnv env) throws UnsupportedOperationException {
-            throw new UnsupportedOperationException("This operation intentionally broken.");
-        }
-
-    }
 }

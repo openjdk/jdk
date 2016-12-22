@@ -25,6 +25,11 @@
 package jdk.jshell.spi;
 
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.ServiceLoader;
+import java.util.Set;
 
 /**
  * This interface specifies the functionality that must provided to implement a
@@ -40,29 +45,8 @@ import java.io.Serializable;
  * <p>
  * Methods defined in this interface should only be called by the core JShell
  * implementation.
- * <p>
- * To install an {@code ExecutionControl}, its {@code Generator} is passed to
- * {@link jdk.jshell.JShell.Builder#executionEngine(ExecutionControl.Generator)  }.
  */
 public interface ExecutionControl extends AutoCloseable {
-
-    /**
-     * Defines a functional interface for creating {@link ExecutionControl}
-     * instances.
-     */
-    @FunctionalInterface
-    public interface Generator {
-
-        /**
-         * Generates an execution engine, given an execution environment.
-         *
-         * @param env the context in which the {@link ExecutionControl} is to
-         * be created
-         * @return the created instance
-         * @throws Throwable if problems occurred
-         */
-        ExecutionControl generate(ExecutionEnv env) throws Throwable;
-    }
 
     /**
      * Attempts to load new classes.
@@ -176,7 +160,149 @@ public interface ExecutionControl extends AutoCloseable {
      * <p>
      * No calls to methods on this interface should be made after close.
      */
+    @Override
     void close();
+
+    /**
+     * Search for a provider, then create and return the
+     * {@code ExecutionControl} instance.
+     *
+     * @param env the execution environment (provided by JShell)
+     * @param name the name of provider
+     * @param parameters the parameter map.
+     * @return the execution engine
+     * @throws Throwable an exception that occurred attempting to find or create
+     * the execution engine.
+     * @throws IllegalArgumentException if no ExecutionControlProvider has the
+     * specified {@code name} and {@code parameters}.
+     */
+    static ExecutionControl generate(ExecutionEnv env, String name, Map<String, String> parameters)
+            throws Throwable {
+        Set<String> keys = parameters == null
+                ? Collections.emptySet()
+                : parameters.keySet();
+        for (ExecutionControlProvider p : ServiceLoader.load(ExecutionControlProvider.class)) {
+            if (p.name().equals(name)
+                && p.defaultParameters().keySet().containsAll(keys)) {
+                return p.generate(env, parameters);
+            }
+        }
+        throw new IllegalArgumentException("No ExecutionControlProvider with name '"
+                + name + "' and parameter keys: " + keys.toString());
+    }
+
+    /**
+     * Search for a provider, then create and return the
+     * {@code ExecutionControl} instance.
+     *
+     * @param env the execution environment (provided by JShell)
+     * @param spec the {@code ExecutionControl} spec, which is described in
+     * the documentation of this
+     * {@linkplain jdk.jshell.spi package documentation}.
+     * @return the execution engine
+     * @throws Throwable an exception that occurred attempting to find or create
+     * the execution engine.
+     * @throws IllegalArgumentException if no ExecutionControlProvider has the
+     * specified {@code name} and {@code parameters}.
+     * @throws IllegalArgumentException if {@code spec} is malformed
+     */
+    static ExecutionControl generate(ExecutionEnv env, String spec)
+            throws Throwable {
+        class SpecReader {
+
+            int len = spec.length();
+            int i = -1;
+
+            char ch;
+
+            SpecReader() {
+                next();
+            }
+
+            boolean more() {
+                return i < len;
+            }
+
+            char current() {
+                return ch;
+            }
+
+            final boolean next() {
+                ++i;
+                if (i < len) {
+                    ch = spec.charAt(i);
+                    return true;
+                }
+                i = len;
+                return false;
+            }
+
+            void skipWhite() {
+                while (more() && Character.isWhitespace(ch)) {
+                    next();
+                }
+            }
+
+            String readId() {
+                skipWhite();
+                StringBuilder sb = new StringBuilder();
+                while (more() && Character.isJavaIdentifierPart(ch)) {
+                    sb.append(ch);
+                    next();
+                }
+                skipWhite();
+                String id = sb.toString();
+                if (id.isEmpty()) {
+                    throw new IllegalArgumentException("Expected identifier in " + spec);
+                }
+                return id;
+            }
+
+            void expect(char exp) {
+                skipWhite();
+                if (!more() || ch != exp) {
+                    throw new IllegalArgumentException("Expected '" + exp + "' in " + spec);
+                }
+                next();
+                skipWhite();
+            }
+
+            String readValue() {
+                expect('(');
+                int parenDepth = 1;
+                StringBuilder sb = new StringBuilder();
+                while (more()) {
+                    if (ch == ')') {
+                        --parenDepth;
+                        if (parenDepth == 0) {
+                            break;
+                        }
+                    } else if (ch == '(') {
+                        ++parenDepth;
+                    }
+                    sb.append(ch);
+                    next();
+                }
+                expect(')');
+                return sb.toString();
+            }
+        }
+        Map<String, String> parameters = new HashMap<>();
+        SpecReader sr = new SpecReader();
+        String name = sr.readId();
+        if (sr.more()) {
+            sr.expect(':');
+            while (sr.more()) {
+                String key = sr.readId();
+                String value = sr.readValue();
+                parameters.put(key, value);
+                if (sr.more()) {
+                    sr.expect(',');
+                }
+            }
+        }
+        return generate(env, name, parameters);
+    }
 
     /**
      * Bundles class name with class bytecodes.
