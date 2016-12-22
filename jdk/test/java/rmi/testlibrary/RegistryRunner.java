@@ -36,7 +36,7 @@ public class RegistryRunner extends UnicastRemoteObject
     implements RemoteExiter
 {
     private static final String PORT_LABEL_START = "RegistryRunner.port.start:";
-    private static final String PORT_LABEL_END = "RegistryRunner.port.end";
+    private static final String PORT_LABEL_END = ":RegistryRunner.port.end";
 
     private static Registry registry = null;
     private static RemoteExiter exiter = null;
