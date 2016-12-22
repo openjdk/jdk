@@ -2018,7 +2018,7 @@ public class BasicTableUI extends TableUI
             int y = damagedArea.y;
             for (int row = rMin; row <= rMax; row++) {
                 y += table.getRowHeight(row);
-                g.drawLine(damagedArea.x, y - 1, tableWidth - 1, y - 1);
+                SwingUtilities2.drawHLine(g, damagedArea.x, tableWidth - 1, y - 1);
             }
         }
         if (table.getShowVerticalLines()) {
@@ -2030,14 +2030,14 @@ public class BasicTableUI extends TableUI
                 for (int column = cMin; column <= cMax; column++) {
                     int w = cm.getColumn(column).getWidth();
                     x += w;
-                    g.drawLine(x - 1, 0, x - 1, tableHeight - 1);
+                    SwingUtilities2.drawVLine(g, x - 1, 0, tableHeight - 1);
                 }
             } else {
                 x = damagedArea.x;
                 for (int column = cMax; column >= cMin; column--) {
                     int w = cm.getColumn(column).getWidth();
                     x += w;
-                    g.drawLine(x - 1, 0, x - 1, tableHeight - 1);
+                    SwingUtilities2.drawVLine(g, x - 1, 0, tableHeight - 1);
                 }
             }
         }
