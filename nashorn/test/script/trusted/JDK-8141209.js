@@ -25,8 +25,8 @@
  * JDK-8141209 : $EXEC should allow streaming
  *
  * @test
+ * @fork
  * @option -scripting
- * @runif os.not.windows
  * @run
  */
 
