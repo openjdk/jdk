@@ -51,10 +51,7 @@
 static bool verify_module_name(char *module_name) {
   if (module_name == NULL) return false;
   int len = (int)strlen(module_name);
-  return (len > 0 && len <= Symbol::max_length() &&
-    UTF8::is_legal_utf8((unsigned char *)module_name, len, false) &&
-    ClassFileParser::verify_unqualified_name(module_name, len,
-    ClassFileParser::LegalModule));
+  return (len > 0 && len <= Symbol::max_length());
 }
 
 bool Modules::verify_package_name(char *package_name) {
@@ -179,18 +176,18 @@ static void define_javabase_module(jobject module, jstring version,
 
     if (string_obj == NULL || !string_obj->is_a(SystemDictionary::String_klass())) {
       THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-                "Bad package name for module: java.base");
+                "Bad package name for module: " JAVA_BASE_NAME);
     }
     char *package_name = java_lang_String::as_utf8_string(string_obj);
     if (!Modules::verify_package_name(package_name)) {
       THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-                err_msg("Invalid package name: %s for module: java.base", package_name));
+                err_msg("Invalid package name: %s for module: " JAVA_BASE_NAME, package_name));
     }
     Symbol* pkg_symbol = SymbolTable::new_symbol(package_name, CHECK);
     // append_if_missing() returns FALSE if entry already exists.
     if (!pkg_list->append_if_missing(pkg_symbol)) {
       THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-                err_msg("Duplicate package name: %s for module java.base",
+                err_msg("Duplicate package name: %s for module " JAVA_BASE_NAME,
                         package_name));
     }
   }
@@ -208,7 +205,7 @@ static void define_javabase_module(jobject module, jstring version,
   assert(pkg_list->length() == 0 || package_table != NULL, "Bad package_table");
 
   // Ensure java.base's ModuleEntry has been created
-  assert(ModuleEntryTable::javabase_moduleEntry() != NULL, "No ModuleEntry for java.base");
+  assert(ModuleEntryTable::javabase_moduleEntry() != NULL, "No ModuleEntry for " JAVA_BASE_NAME);
 
   bool duplicate_javabase = false;
   {
@@ -229,7 +226,7 @@ static void define_javabase_module(jobject module, jstring version,
         // Some of java.base's packages were added early in bootstrapping, ignore duplicates.
         if (package_table->lookup_only(pkg_list->at(x)) == NULL) {
           pkg = package_table->locked_create_entry_or_null(pkg_list->at(x), ModuleEntryTable::javabase_moduleEntry());
-          assert(pkg != NULL, "Unable to create a java.base package entry");
+          assert(pkg != NULL, "Unable to create a " JAVA_BASE_NAME " package entry");
         }
         // Unable to have a GrowableArray of TempNewSymbol.  Must decrement the refcount of
         // the Symbol* that was created above for each package. The refcount was incremented
@@ -243,7 +240,7 @@ static void define_javabase_module(jobject module, jstring version,
   }
   if (duplicate_javabase) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-              "Module java.base is already defined");
+              "Module " JAVA_BASE_NAME " is already defined");
   }
 
   // Only the thread that actually defined the base module will get here,
@@ -252,15 +249,15 @@ static void define_javabase_module(jobject module, jstring version,
   // Patch any previously loaded class's module field with java.base's java.lang.reflect.Module.
   ModuleEntryTable::patch_javabase_entries(module_handle);
 
-  log_debug(modules)("define_javabase_module(): Definition of module: java.base,"
-                     " version: %s, location: %s, package #: %d",
+  log_debug(modules)("define_javabase_module(): Definition of module: "
+                     JAVA_BASE_NAME ", version: %s, location: %s, package #: %d",
                      module_version != NULL ? module_version : "NULL",
                      module_location != NULL ? module_location : "NULL",
                      pkg_list->length());
 
   // packages defined to java.base
   for (int x = 0; x < pkg_list->length(); x++) {
-    log_trace(modules)("define_javabase_module(): creation of package %s for module java.base",
+    log_trace(modules)("define_javabase_module(): creation of package %s for module " JAVA_BASE_NAME,
                        (pkg_list->at(x))->as_C_string());
   }
 }
@@ -285,7 +282,7 @@ void Modules::define_module(jobject module, jstring version,
   }
 
   // Special handling of java.base definition
-  if (strcmp(module_name, "java.base") == 0) {
+  if (strcmp(module_name, JAVA_BASE_NAME) == 0) {
     define_javabase_module(module, version, location, packages, CHECK);
     return;
   }
@@ -608,7 +605,8 @@ void Modules::add_reads_module(jobject from_module, jobject to_module, TRAPS) {
 
 // This method is called by JFR and JNI.
 jobject Modules::get_module(jclass clazz, TRAPS) {
-  assert(ModuleEntryTable::javabase_defined(), "Attempt to call get_module before java.base is defined");
+  assert(ModuleEntryTable::javabase_defined(),
+         "Attempt to call get_module before " JAVA_BASE_NAME " is defined");
 
   if (clazz == NULL) {
     THROW_MSG_(vmSymbols::java_lang_NullPointerException(),
@@ -654,7 +652,7 @@ jobject Modules::get_module(jclass clazz, TRAPS) {
 jobject Modules::get_module_by_package_name(jobject loader, jstring package, TRAPS) {
   ResourceMark rm(THREAD);
   assert(ModuleEntryTable::javabase_defined(),
-         "Attempt to call get_module_from_pkg before java.base is defined");
+         "Attempt to call get_module_from_pkg before " JAVA_BASE_NAME " is defined");
 
   if (NULL == package) {
     THROW_MSG_(vmSymbols::java_lang_NullPointerException(),
@@ -691,7 +689,7 @@ jobject Modules::get_module_by_package_name(jobject loader, jstring package, TRA
 
 jobject Modules::get_named_module(Handle h_loader, const char* package_str, TRAPS) {
   assert(ModuleEntryTable::javabase_defined(),
-         "Attempt to call get_named_module before java.base is defined");
+         "Attempt to call get_named_module before " JAVA_BASE_NAME " is defined");
   assert(h_loader.is_null() || java_lang_ClassLoader::is_subclass(h_loader->klass()),
          "Class loader is not a subclass of java.lang.ClassLoader");
   assert(package_str != NULL, "the package_str should not be NULL");

@@ -72,7 +72,7 @@ final class DiagList extends ArrayList<Diag> {
 
     @Override
     public boolean addAll(Collection<? extends Diag> c) {
-        return c.stream().filter(d -> add(d)).count() > 0;
+        return c.stream().filter(this::add).count() > 0;
     }
 
     @Override
@@ -110,7 +110,7 @@ final class DiagList extends ArrayList<Diag> {
                     Snippet snn = d.snippetOrNull();
                     return snn == u.snippet();
                 })
-                .collect(Collectors.toCollection(() -> new DiagList()));
+                .collect(Collectors.toCollection(DiagList::new));
     }
 
     boolean hasErrors() {

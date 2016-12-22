@@ -69,21 +69,16 @@ public class ModuleExportsAnalyzer extends DepsAnalyzer {
 
         // A visitor to record the module-level dependences as well as
         // use of JDK internal APIs
-        Analyzer.Visitor visitor = new Analyzer.Visitor() {
-            @Override
-            public void visitDependence(String origin, Archive originArchive,
-                                        String target, Archive targetArchive)
-            {
-                Set<String> jdkInternals =
-                    deps.computeIfAbsent(originArchive, _k -> new HashMap<>())
-                        .computeIfAbsent(targetArchive, _k -> new HashSet<>());
+        Analyzer.Visitor visitor = (origin, originArchive, target, targetArchive) -> {
+            Set<String> jdkInternals =
+                deps.computeIfAbsent(originArchive, _k -> new HashMap<>())
+                    .computeIfAbsent(targetArchive, _k -> new HashSet<>());
 
-                Module module = targetArchive.getModule();
-                if (originArchive.getModule() != module &&
-                        module.isJDK() && !module.isExported(target)) {
-                    // use of JDK internal APIs
-                    jdkInternals.add(target);
-                }
+            Module module = targetArchive.getModule();
+            if (originArchive.getModule() != module &&
+                    module.isJDK() && !module.isExported(target)) {
+                // use of JDK internal APIs
+                jdkInternals.add(target);
             }
         };
 

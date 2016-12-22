@@ -76,11 +76,6 @@ class CPSelector implements ConstantPool.Visitor<Void,CPEntries> {
     }
 
     @Override
-    public Void visitNameAndType(ConstantPool.CONSTANT_NameAndType_info info, CPEntries p) {
-        return null;
-    }
-
-    @Override
     public Void visitMethodref(ConstantPool.CONSTANT_Methodref_info info, CPEntries p) {
         p.methodRefs.add(info);
         return null;
@@ -93,6 +88,21 @@ class CPSelector implements ConstantPool.Visitor<Void,CPEntries> {
 
     @Override
     public Void visitMethodType(ConstantPool.CONSTANT_MethodType_info info, CPEntries p) {
+        return null;
+    }
+
+    @Override
+    public Void visitModule(ConstantPool.CONSTANT_Module_info info, CPEntries p) {
+        return null;
+    }
+
+    @Override
+    public Void visitNameAndType(ConstantPool.CONSTANT_NameAndType_info info, CPEntries p) {
+        return null;
+    }
+
+    @Override
+    public Void visitPackage(ConstantPool.CONSTANT_Package_info info, CPEntries p) {
         return null;
     }
 

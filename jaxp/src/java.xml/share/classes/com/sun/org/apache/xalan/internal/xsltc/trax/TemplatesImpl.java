@@ -32,7 +32,6 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.Constants;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
 import com.sun.org.apache.xalan.internal.xsltc.runtime.AbstractTranslet;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.io.NotSerializableException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -42,6 +41,7 @@ import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
+import java.lang.module.ModuleReader;
 import java.lang.reflect.Layer;
 import java.lang.reflect.Module;
 import java.security.AccessController;
@@ -403,10 +403,12 @@ public final class TemplatesImpl implements Templates, Serializable {
     private Module createModule(ModuleDescriptor descriptor, ClassLoader loader) {
         String mn = descriptor.name();
 
-        ModuleReference mref = new ModuleReference(descriptor, null, () -> {
-            IOException ioe = new IOException("<dynamic module>");
-            throw new UncheckedIOException(ioe);
-        });
+        ModuleReference mref = new ModuleReference(descriptor, null) {
+            @Override
+            public ModuleReader open() {
+                throw new UnsupportedOperationException();
+            }
+        };
 
         ModuleFinder finder = new ModuleFinder() {
             @Override

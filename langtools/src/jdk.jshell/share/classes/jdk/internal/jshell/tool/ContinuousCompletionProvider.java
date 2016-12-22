@@ -38,10 +38,8 @@ import jdk.jshell.SourceCodeAnalysis.Suggestion;
 
 class ContinuousCompletionProvider implements CompletionProvider {
 
-    static final BiPredicate<String, String> STARTSWITH_MATCHER =
-            (word, input) -> word.startsWith(input);
-    static final BiPredicate<String, String> PERFECT_MATCHER =
-            (word, input) -> word.equals(input);
+    static final BiPredicate<String, String> STARTSWITH_MATCHER = String::startsWith;
+    static final BiPredicate<String, String> PERFECT_MATCHER = String::equals;
 
     private final Supplier<Map<String, CompletionProvider>> wordCompletionProviderSupplier;
     private final BiPredicate<String, String> matcher;

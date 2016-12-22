@@ -317,7 +317,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         List<? extends DocTree> deprs = utils.getBlockTags(annotationType, DocTree.Kind.DEPRECATED);
         if (utils.isDeprecated(annotationType)) {
             CommentHelper ch = utils.getCommentHelper(annotationType);
-            Content deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, contents.deprecatedPhrase);
+            Content deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(annotationType));
             Content div = HtmlTree.DIV(HtmlStyle.block, deprLabel);
             if (!deprs.isEmpty()) {
 

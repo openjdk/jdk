@@ -75,7 +75,7 @@ public class ExportsUnexported extends ModuleTestBase {
                 System.err.println("testing: " + test);
 
                 Path src = base.resolve("src");
-                Path src_m1 = src.resolve("m1");
+                Path src_m1 = src.resolve("m1x");
                 StringBuilder testCode = new StringBuilder();
                 List<String> expectedLog = new ArrayList<>();
                 int line = 1;
@@ -99,7 +99,9 @@ public class ExportsUnexported extends ModuleTestBase {
                             default:
                                 throw new AssertionError(typeName.toString());
                         }
-                        expectedLog.add("Api.java:" + line + ":" + col + ": compiler.warn.leaks.not.accessible.unexported: " + kindName + ", impl.impl." + typeName + ", m1");
+                        expectedLog.add("Api.java:" + line + ":" + col
+                                + ": compiler.warn.leaks.not.accessible.unexported: "
+                                + kindName + ", impl.impl." + typeName + ", m1x");
                         continue;
                     }
 
@@ -121,7 +123,7 @@ public class ExportsUnexported extends ModuleTestBase {
                 Collections.sort(expectedLog);
 
                 tb.writeJavaFiles(src_m1,
-                                  "module m1 { exports api; }",
+                                  "module m1x { exports api; }",
                                   testCode.toString(),
                                   "package impl.impl; public class Cls { }",
                                   "package impl.impl; public class Exc extends Exception { }",
@@ -155,22 +157,22 @@ public class ExportsUnexported extends ModuleTestBase {
     @Test
     public void testAccessibleToSpecificOrAll(Path base) throws Exception {
         Path src = base.resolve("src");
-        Path src_lib1 = src.resolve("lib1");
+        Path src_lib1 = src.resolve("lib1x");
         tb.writeJavaFiles(src_lib1,
-                          "module lib1 { exports lib1; }",
+                          "module lib1x { exports lib1; }",
                           "package lib1; public class Lib1 {}");
-        Path src_lib2 = src.resolve("lib2");
+        Path src_lib2 = src.resolve("lib2x");
         tb.writeJavaFiles(src_lib2,
-                          "module lib2 { exports lib2; }",
+                          "module lib2x { exports lib2; }",
                           "package lib2; public class Lib2 {}");
         Path src_api = src.resolve("api");
         tb.writeJavaFiles(src_api,
                           "module api {\n" +
                           "    exports api;\n" +
-                          "    exports qapi1 to qual1;\n" +
-                          "    exports qapi2 to qual1, qual2;\n" +
-                          "    requires transitive lib1;\n" +
-                          "    requires lib2;\n" +
+                          "    exports qapi1 to qual1x;\n" +
+                          "    exports qapi2 to qual1x, qual2x;\n" +
+                          "    requires transitive lib1x;\n" +
+                          "    requires lib2x;\n" +
                           "}\n",
                           "package api;\n" +
                           "public class Api {\n" +
@@ -190,10 +192,10 @@ public class ExportsUnexported extends ModuleTestBase {
                           "package impl;\n" +
                           "public class Impl {\n" +
                           "}");
-        Path src_qual1 = src.resolve("qual1");
-        tb.writeJavaFiles(src_qual1, "module qual1 { }");
-        Path src_qual2 = src.resolve("qual2");
-        tb.writeJavaFiles(src_qual2, "module qual2 { }");
+        Path src_qual1 = src.resolve("qual1x");
+        tb.writeJavaFiles(src_qual1, "module qual1x { }");
+        Path src_qual2 = src.resolve("qual2x");
+        tb.writeJavaFiles(src_qual2, "module qual2x { }");
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
@@ -209,7 +211,7 @@ public class ExportsUnexported extends ModuleTestBase {
                 .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList(
-            "Api.java:4:16: compiler.warn.leaks.not.accessible.not.required.transitive: kindname.class, lib2.Lib2, lib2",
+            "Api.java:4:16: compiler.warn.leaks.not.accessible.not.required.transitive: kindname.class, lib2.Lib2, lib2x",
             "Api.java:5:17: compiler.warn.leaks.not.accessible.unexported.qualified: kindname.class, qapi1.QApi1, api",
             "Api.java:6:16: compiler.warn.leaks.not.accessible.unexported: kindname.class, impl.Impl, api",
             "- compiler.err.warnings.and.werror",

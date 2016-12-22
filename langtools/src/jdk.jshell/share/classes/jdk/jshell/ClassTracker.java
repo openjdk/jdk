@@ -126,6 +126,6 @@ class ClassTracker {
 
     // Lookup the ClassInfo by class name, create if it does not exist.
     ClassInfo get(String className) {
-        return map.computeIfAbsent(className, k -> new ClassInfo(k));
+        return map.computeIfAbsent(className, ClassInfo::new);
     }
 }

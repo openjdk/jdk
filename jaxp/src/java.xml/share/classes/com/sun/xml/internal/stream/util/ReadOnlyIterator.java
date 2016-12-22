@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,35 +31,32 @@ package com.sun.xml.internal.stream.util;
 
 import java.util.Iterator;
 
-public class ReadOnlyIterator implements Iterator {
+public class ReadOnlyIterator<T> implements Iterator<T> {
 
-    Iterator iterator = null;
+    Iterator<T> iterator = null;
 
     public ReadOnlyIterator(){
     }
 
-    public ReadOnlyIterator(Iterator itr){
+    public ReadOnlyIterator(Iterator<T> itr){
         iterator = itr;
     }
 
-    /**
-     * @return
-     */
+    @Override
     public boolean hasNext() {
         if(iterator  != null)
             return iterator.hasNext();
         return false;
     }
 
-    /**
-     * @return
-     */
-    public Object next() {
+    @Override
+    public T next() {
         if(iterator  != null)
             return iterator.next();
         return null;
     }
 
+    @Override
     public void remove() {
         throw new  UnsupportedOperationException("Remove operation is not supported");
     }

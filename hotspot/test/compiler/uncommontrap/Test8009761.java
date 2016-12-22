@@ -40,14 +40,12 @@
 package compiler.uncommontrap;
 
 import sun.hotspot.WhiteBox;
-
 import java.lang.reflect.Method;
+import compiler.whitebox.CompilerWhiteBoxTest;
 
 public class Test8009761 {
 
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
-    private static int COMP_LEVEL_SIMPLE = 1;
-    private static int COMP_LEVEL_FULL_OPTIMIZATION = 4;
     private static Method m3 = null;
 
     static Object m1(boolean deopt) {
@@ -263,9 +261,9 @@ public class Test8009761 {
         c1 = count;
 
         // Force the compilation of m3() that will inline m1()
-        if(!WHITE_BOX.enqueueMethodForCompilation(m3, COMP_LEVEL_FULL_OPTIMIZATION)) {
+        if(!WHITE_BOX.enqueueMethodForCompilation(m3, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION)) {
             // C2 compiler not available, compile with C1
-            WHITE_BOX.enqueueMethodForCompilation(m3, COMP_LEVEL_SIMPLE);
+            WHITE_BOX.enqueueMethodForCompilation(m3, CompilerWhiteBoxTest.COMP_LEVEL_SIMPLE);
         }
 
         // Because background compilation is disabled, method should now be compiled

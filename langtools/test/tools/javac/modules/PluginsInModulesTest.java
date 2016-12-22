@@ -39,7 +39,6 @@ import java.util.List;
 
 import toolbox.JavacTask;
 import toolbox.Task;
-import toolbox.ToolBox;
 
 public class PluginsInModulesTest extends ModuleTestBase {
 
@@ -48,7 +47,7 @@ public class PluginsInModulesTest extends ModuleTestBase {
     }
 
     private static final String pluginModule1 =
-            "module pluginMod1 {\n" +
+            "module pluginMod1x {\n" +
             "    requires jdk.compiler;\n" +
             "\n" +
             "    provides com.sun.source.util.Plugin\n" +
@@ -95,7 +94,7 @@ public class PluginsInModulesTest extends ModuleTestBase {
 
     void initialization(Path base) throws Exception {
         moduleSrc = base.resolve("plugin_mods_src");
-        Path pluginMod1 = moduleSrc.resolve("pluginMod1");
+        Path pluginMod1 = moduleSrc.resolve("pluginMod1x");
 
         processorCompiledModules = base.resolve("mods");
 

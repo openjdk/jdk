@@ -58,6 +58,8 @@ import com.sun.tools.classfile.Type.TypeParamType;
 import com.sun.tools.classfile.Type.WildcardType;
 
 import static com.sun.tools.classfile.AccessFlags.*;
+import static com.sun.tools.classfile.ConstantPool.CONSTANT_Module;
+import static com.sun.tools.classfile.ConstantPool.CONSTANT_Package;
 
 /*
  *  The main javap class to write the contents of a class file as text.
@@ -166,7 +168,12 @@ public class ClassWriter extends BasicWriter {
                 Module_attribute modAttr = (Module_attribute) attr;
                 String name;
                 try {
-                    name = getJavaName(constant_pool.getUTF8Value(modAttr.module_name));
+                    // FIXME: compatibility code
+                    if (constant_pool.get(modAttr.module_name).getTag() == CONSTANT_Module) {
+                        name = getJavaName(constant_pool.getModuleInfo(modAttr.module_name).getName());
+                    } else {
+                        name = getJavaName(constant_pool.getUTF8Value(modAttr.module_name));
+                    }
                 } catch (ConstantPoolException e) {
                     name = report(e);
                 }
@@ -175,6 +182,10 @@ public class ClassWriter extends BasicWriter {
                 }
                 print("module ");
                 print(name);
+                if (modAttr.module_version_index != 0) {
+                    print("@");
+                    print(getUTF8Value(modAttr.module_version_index));
+                }
             } else {
                 // fallback for malformed class files
                 print("class ");
@@ -602,19 +613,31 @@ public class ClassWriter extends BasicWriter {
             if ((entry.requires_flags & Module_attribute.ACC_TRANSITIVE) != 0)
                 print(" transitive");
             print(" ");
-            print(getUTF8Value(entry.requires_index).replace('/', '.'));
+            String mname;
+            try {
+                mname = getModuleName(entry.requires_index);
+            } catch (ConstantPoolException e) {
+                mname = report(e);
+            }
+            print(mname);
             println(";");
         }
 
         for (Module_attribute.ExportsEntry entry: m.exports) {
             print("exports");
             print(" ");
-            print(getUTF8Value(entry.exports_index).replace('/', '.'));
+            String pname;
+            try {
+                pname = getPackageName(entry.exports_index).replace('/', '.');
+            } catch (ConstantPoolException e) {
+                pname = report(e);
+            }
+            print(pname);
             boolean first = true;
             for (int i: entry.exports_to_index) {
                 String mname;
                 try {
-                    mname = classFile.constant_pool.getUTF8Value(i).replace('/', '.');
+                    mname = getModuleName(i);
                 } catch (ConstantPoolException e) {
                     mname = report(e);
                 }
@@ -635,12 +658,18 @@ public class ClassWriter extends BasicWriter {
         for (Module_attribute.OpensEntry entry: m.opens) {
             print("opens");
             print(" ");
-            print(getUTF8Value(entry.opens_index).replace('/', '.'));
+            String pname;
+            try {
+                pname = getPackageName(entry.opens_index).replace('/', '.');
+            } catch (ConstantPoolException e) {
+                pname = report(e);
+            }
+            print(pname);
             boolean first = true;
             for (int i: entry.opens_to_index) {
                 String mname;
                 try {
-                    mname = classFile.constant_pool.getUTF8Value(i).replace('/', '.');
+                    mname = getModuleName(i);
                 } catch (ConstantPoolException e) {
                     mname = report(e);
                 }
@@ -681,6 +710,22 @@ public class ClassWriter extends BasicWriter {
             println(";");
             if (!first)
                 indent(-1);
+        }
+    }
+
+    String getModuleName(int index) throws ConstantPoolException {
+        if (constant_pool.get(index).getTag() == CONSTANT_Module) {
+            return constant_pool.getModuleInfo(index).getName();
+        } else {
+            return constant_pool.getUTF8Value(index);
+        }
+    }
+
+    String getPackageName(int index) throws ConstantPoolException {
+        if (constant_pool.get(index).getTag() == CONSTANT_Package) {
+            return constant_pool.getPackageInfo(index).getName();
+        } else {
+            return constant_pool.getUTF8Value(index);
         }
     }
 

@@ -203,6 +203,26 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     __ mov(sp, r13);
     generate_transcendental_entry(kind, 2);
     break;
+  case Interpreter::java_lang_math_fmaD :
+    if (UseFMA) {
+      entry_point = __ pc();
+      __ ldrd(v0, Address(esp, 4 * Interpreter::stackElementSize));
+      __ ldrd(v1, Address(esp, 2 * Interpreter::stackElementSize));
+      __ ldrd(v2, Address(esp));
+      __ fmaddd(v0, v0, v1, v2);
+      __ mov(sp, r13); // Restore caller's SP
+    }
+    break;
+  case Interpreter::java_lang_math_fmaF :
+    if (UseFMA) {
+      entry_point = __ pc();
+      __ ldrs(v0, Address(esp, 2 * Interpreter::stackElementSize));
+      __ ldrs(v1, Address(esp, Interpreter::stackElementSize));
+      __ ldrs(v2, Address(esp));
+      __ fmadds(v0, v0, v1, v2);
+      __ mov(sp, r13); // Restore caller's SP
+    }
+    break;
   default:
     ;
   }
@@ -883,7 +903,7 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   //   and so we don't need to call the G1 pre-barrier. Thus we can use the
   //   regular method entry code to generate the NPE.
   //
-  // This code is based on generate_accessor_enty.
+  // This code is based on generate_accessor_entry.
   //
   // rmethod: Method*
   // r13: senderSP must preserve for slow path, set SP to it on fast path
@@ -901,11 +921,11 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
     __ ldr(local_0, Address(esp, 0));
     __ cbz(local_0, slow_path);
 
-
     // Load the value of the referent field.
     const Address field_address(local_0, referent_offset);
     __ load_heap_oop(local_0, field_address);
 
+    __ mov(r19, r13);   // Move senderSP to a callee-saved register
     // Generate the G1 pre-barrier code to log the value of
     // the referent field in an SATB buffer.
     __ enter(); // g1_write may call runtime
@@ -917,7 +937,7 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
                             true /* expand_call */);
     __ leave();
     // areturn
-    __ andr(sp, r13, -16);  // done with stack
+    __ andr(sp, r19, -16);  // done with stack
     __ ret(lr);
 
     // generate a vanilla interpreter entry as the slow path

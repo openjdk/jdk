@@ -1085,6 +1085,13 @@ public class DPrinter {
             return visitBlockTag(node, null);
         }
 
+        public Void visitProvides(ProvidesTree node, Void p) {
+            printString("kind", node.getKind().name());
+            printDocTree("serviceType", node.getServiceType());
+            printList("description", node.getDescription());
+            return visitBlockTag(node, null);
+        }
+
         public Void visitReference(ReferenceTree node, Void p) {
             printString("signature", node.getSignature());
             return visitTree(node, null);
@@ -1150,6 +1157,13 @@ public class DPrinter {
             printString("name", node.getTagName());
             printList("content", node.getContent());
             return visitInlineTag(node, null);
+        }
+
+        public Void visitUses(UsesTree node, Void p) {
+            printString("kind", node.getKind().name());
+            printDocTree("serviceType", node.getServiceType());
+            printList("description", node.getDescription());
+            return visitBlockTag(node, null);
         }
 
         public Void visitValue(ValueTree node, Void p) {

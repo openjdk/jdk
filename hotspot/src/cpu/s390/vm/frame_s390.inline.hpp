@@ -39,7 +39,7 @@ inline void frame::find_codeblob_and_set_pc_and_deopt_state(address pc) {
 
   _fp = (intptr_t *) own_abi()->callers_sp;
 
-  address original_pc = nmethod::get_deopt_original_pc(this);
+  address original_pc = CompiledMethod::get_deopt_original_pc(this);
   if (original_pc != NULL) {
     _pc = original_pc;
     _deopt_state = is_deoptimized;

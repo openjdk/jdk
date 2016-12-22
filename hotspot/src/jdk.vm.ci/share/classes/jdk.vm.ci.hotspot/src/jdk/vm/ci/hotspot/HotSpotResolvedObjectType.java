@@ -103,6 +103,8 @@ public interface HotSpotResolvedObjectType extends ResolvedJavaType {
 
     int layoutHelper();
 
+    long getFingerprint();
+
     HotSpotResolvedObjectType getEnclosingType();
 
     ResolvedJavaMethod getClassInitializer();

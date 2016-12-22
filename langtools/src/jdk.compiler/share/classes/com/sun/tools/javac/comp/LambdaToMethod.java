@@ -179,7 +179,7 @@ public class LambdaToMethod extends TreeTranslator {
             appendedMethodList = new ListBuffer<>();
             deserializeCases = new HashMap<>();
             MethodType type = new MethodType(List.of(syms.serializedLambdaType), syms.objectType,
-                    List.<Type>nil(), syms.methodClass);
+                    List.nil(), syms.methodClass);
             deserMethodSym = makePrivateSyntheticMethod(STATIC, names.deserializeLambda, type, clazz.sym);
             deserParamSym = new VarSymbol(FINAL, names.fromString("lambda"),
                     syms.serializedLambdaType, deserMethodSym);
@@ -310,10 +310,10 @@ public class LambdaToMethod extends TreeTranslator {
         JCMethodDecl lambdaDecl = make.MethodDef(make.Modifiers(sym.flags_field),
                 sym.name,
                 make.QualIdent(lambdaType.getReturnType().tsym),
-                List.<JCTypeParameter>nil(),
+                List.nil(),
                 localContext.syntheticParams,
                 lambdaType.getThrownTypes() == null ?
-                    List.<JCExpression>nil() :
+                    List.nil() :
                     make.Types(lambdaType.getThrownTypes()),
                 null,
                 null);
@@ -447,7 +447,7 @@ public class LambdaToMethod extends TreeTranslator {
                 throw new InternalError("Should not have an invalid kind");
         }
 
-        List<JCExpression> indy_args = init==null? List.<JCExpression>nil() : translate(List.of(init), localContext.prev);
+        List<JCExpression> indy_args = init==null? List.nil() : translate(List.of(init), localContext.prev);
 
 
         //build a sam instance using an indy call to the meta-factory
@@ -556,7 +556,7 @@ public class LambdaToMethod extends TreeTranslator {
                 //target is void:
                 // BODY;
                 JCStatement stat = make.at(expr).Exec(expr);
-                return make.Block(0, List.<JCStatement>of(stat));
+                return make.Block(0, List.of(stat));
             } else if (isLambda_void && isTarget_Void) {
                 //void to Void conversion:
                 // BODY; return null;
@@ -568,7 +568,7 @@ public class LambdaToMethod extends TreeTranslator {
                 //non-void to non-void conversion:
                 // return (TYPE)BODY;
                 JCExpression retExpr = transTypes.coerce(attrEnv, expr, restype);
-                return make.at(retExpr).Block(0, List.<JCStatement>of(make.Return(retExpr)));
+                return make.at(retExpr).Block(0, List.of(make.Return(retExpr)));
             }
         } finally {
             make.at(prevPos);
@@ -602,7 +602,7 @@ public class LambdaToMethod extends TreeTranslator {
                     // { TYPE $loc = RET-EXPR; return; }
                     VarSymbol loc = makeSyntheticVar(0, names.fromString("$loc"), tree.expr.type, lambdaMethodDecl.sym);
                     JCVariableDecl varDef = make.VarDef(loc, tree.expr);
-                    result = make.Block(0, List.<JCStatement>of(varDef, make.Return(null)));
+                    result = make.Block(0, List.of(varDef, make.Return(null)));
                 } else if (!isTarget_void || !isLambda_void) {
                     //non-void to non-void conversion:
                     // return (TYPE)RET-EXPR;
@@ -637,17 +637,17 @@ public class LambdaToMethod extends TreeTranslator {
         for (JCBreak br : breaks) {
             br.target = sw;
         }
-        JCBlock body = make.Block(0L, List.<JCStatement>of(
+        JCBlock body = make.Block(0L, List.of(
                 sw,
                 make.Throw(makeNewClass(
                     syms.illegalArgumentExceptionType,
-                    List.<JCExpression>of(make.Literal("Invalid lambda deserialization"))))));
+                    List.of(make.Literal("Invalid lambda deserialization"))))));
         JCMethodDecl deser = make.MethodDef(make.Modifiers(kInfo.deserMethodSym.flags()),
                         names.deserializeLambda,
                         make.QualIdent(kInfo.deserMethodSym.getReturnType().tsym),
-                        List.<JCTypeParameter>nil(),
+                        List.nil(),
                         List.of(make.VarDef(kInfo.deserParamSym, null)),
-                        List.<JCExpression>nil(),
+                        List.nil(),
                         body,
                         null);
         deser.sym = kInfo.deserMethodSym;
@@ -675,7 +675,7 @@ public class LambdaToMethod extends TreeTranslator {
      */
     JCNewClass makeNewClass(Type ctype, List<JCExpression> args) {
         return makeNewClass(ctype, args,
-                rs.resolveConstructor(null, attrEnv, ctype, TreeInfo.types(args), List.<Type>nil()));
+                rs.resolveConstructor(null, attrEnv, ctype, TreeInfo.types(args), List.nil()));
      }
 
     private void addDeserializationCase(int implMethodKind, Symbol refSym, Type targetType, MethodSymbol samSym,
@@ -736,12 +736,12 @@ public class LambdaToMethod extends TreeTranslator {
     }
 
     private JCExpression deserTest(JCExpression prev, String func, String lit) {
-        MethodType eqmt = new MethodType(List.of(syms.objectType), syms.booleanType, List.<Type>nil(), syms.methodClass);
-        Symbol eqsym = rs.resolveQualifiedMethod(null, attrEnv, syms.objectType, names.equals, List.of(syms.objectType), List.<Type>nil());
+        MethodType eqmt = new MethodType(List.of(syms.objectType), syms.booleanType, List.nil(), syms.methodClass);
+        Symbol eqsym = rs.resolveQualifiedMethod(null, attrEnv, syms.objectType, names.equals, List.of(syms.objectType), List.nil());
         JCMethodInvocation eqtest = make.Apply(
-                List.<JCExpression>nil(),
+                List.nil(),
                 make.Select(deserGetter(func, syms.stringType), eqsym).setType(eqmt),
-                List.<JCExpression>of(make.Literal(lit)));
+                List.of(make.Literal(lit)));
         eqtest.setType(syms.booleanType);
         JCBinary compound = make.Binary(JCTree.Tag.AND, prev, eqtest);
         compound.operator = operators.resolveBinary(compound, JCTree.Tag.AND, syms.booleanType, syms.booleanType);
@@ -750,14 +750,14 @@ public class LambdaToMethod extends TreeTranslator {
     }
 
     private JCExpression deserGetter(String func, Type type) {
-        return deserGetter(func, type, List.<Type>nil(), List.<JCExpression>nil());
+        return deserGetter(func, type, List.nil(), List.nil());
     }
 
     private JCExpression deserGetter(String func, Type type, List<Type> argTypes, List<JCExpression> args) {
-        MethodType getmt = new MethodType(argTypes, type, List.<Type>nil(), syms.methodClass);
-        Symbol getsym = rs.resolveQualifiedMethod(null, attrEnv, syms.serializedLambdaType, names.fromString(func), argTypes, List.<Type>nil());
+        MethodType getmt = new MethodType(argTypes, type, List.nil(), syms.methodClass);
+        Symbol getsym = rs.resolveQualifiedMethod(null, attrEnv, syms.serializedLambdaType, names.fromString(func), argTypes, List.nil());
         return make.Apply(
-                    List.<JCExpression>nil(),
+                    List.nil(),
                     make.Select(make.Ident(kInfo.deserParamSym).setType(syms.serializedLambdaType), getsym).setType(getmt),
                     args).setType(type);
     }
@@ -961,7 +961,7 @@ public class LambdaToMethod extends TreeTranslator {
             select.type = tree.sym.erasure(types);
 
             //create the method call expression
-            JCExpression apply = make.Apply(List.<JCExpression>nil(), select,
+            JCExpression apply = make.Apply(List.nil(), select,
                     convertArgs(tree.sym, args.toList(), tree.varargsElement)).
                     setType(tree.sym.erasure(types).getReturnType());
 
@@ -989,7 +989,7 @@ public class LambdaToMethod extends TreeTranslator {
                 //note that method reference syntax does not allow an explicit
                 //enclosing class (so the enclosing class is null)
                 JCNewClass newClass = make.NewClass(null,
-                        List.<JCExpression>nil(),
+                        List.nil(),
                         make.Type(tree.getQualifierExpression().type),
                         convertArgs(tree.sym, args.toList(), tree.varargsElement),
                         null);
@@ -1028,7 +1028,7 @@ public class LambdaToMethod extends TreeTranslator {
         JCFunctionalExpression tree = context.tree;
         //determine the static bsm args
         MethodSymbol samSym = (MethodSymbol) types.findDescriptorSymbol(tree.type.tsym);
-        List<Object> staticArgs = List.<Object>of(
+        List<Object> staticArgs = List.of(
                 typeToMethodType(samSym.type),
                 new Pool.MethodHandle(refKind, refSym, types),
                 typeToMethodType(tree.getDescriptorType(types)));
@@ -1042,7 +1042,7 @@ public class LambdaToMethod extends TreeTranslator {
         //finally, compute the type of the indy call
         MethodType indyType = new MethodType(indy_args_types.toList(),
                 tree.type,
-                List.<Type>nil(),
+                List.nil(),
                 syms.methodClass);
 
         Name metafactoryName = context.needsAltMetafactory() ?
@@ -1108,7 +1108,7 @@ public class LambdaToMethod extends TreeTranslator {
                     syms.methodTypeType).appendList(bsmStaticArgToTypes(staticArgs));
 
             Symbol bsm = rs.resolveInternalMethod(pos, attrEnv, site,
-                    bsmName, bsm_staticArgs, List.<Type>nil());
+                    bsmName, bsm_staticArgs, List.nil());
 
             DynamicMethodSymbol dynSym =
                     new DynamicMethodSymbol(methName,
@@ -1124,7 +1124,7 @@ public class LambdaToMethod extends TreeTranslator {
             qualifier.sym = dynSym;
             qualifier.type = indyType.getReturnType();
 
-            JCMethodInvocation proxyCall = make.Apply(List.<JCExpression>nil(), qualifier, indyArgs);
+            JCMethodInvocation proxyCall = make.Apply(List.nil(), qualifier, indyArgs);
             proxyCall.type = indyType.getReturnType();
             return proxyCall;
         } finally {
@@ -1622,8 +1622,8 @@ public class LambdaToMethod extends TreeTranslator {
                      */
                     clinit = makePrivateSyntheticMethod(STATIC,
                             names.clinit,
-                            new MethodType(List.<Type>nil(), syms.voidType,
-                                List.<Type>nil(), syms.methodClass),
+                            new MethodType(List.nil(), syms.voidType,
+                                List.nil(), syms.methodClass),
                             csym);
                     clinits.put(csym, clinit);
                 }

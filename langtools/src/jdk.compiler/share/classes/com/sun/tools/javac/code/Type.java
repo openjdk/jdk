@@ -1164,7 +1164,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
     public static class ErasedClassType extends ClassType {
         public ErasedClassType(Type outer, TypeSymbol tsym,
                                TypeMetadata metadata) {
-            super(outer, List.<Type>nil(), tsym, metadata);
+            super(outer, List.nil(), tsym, metadata);
         }
 
         @Override
@@ -1235,7 +1235,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         public IntersectionClassType(List<Type> bounds, ClassSymbol csym, boolean allInterfaces) {
             // Presently no way to refer to this type directly, so we
             // cannot put annotations directly on it.
-            super(Type.noType, List.<Type>nil(), csym);
+            super(Type.noType, List.nil(), csym);
             this.allInterfaces = allInterfaces;
             Assert.check((csym.flags() & COMPOUND) != 0);
             supertype_field = bounds.head;
@@ -2082,6 +2082,21 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
 
         /** add a bound of a given kind - this might trigger listener notification */
         public final void addBound(InferenceBound ib, Type bound, Types types) {
+            // Per JDK-8075793: in pre-8 sources, follow legacy javac behavior
+            // when capture variables are inferred as bounds: for lower bounds,
+            // map to the capture variable's upper bound; for upper bounds,
+            // if the capture variable has a lower bound, map to that type
+            if (types.mapCapturesToBounds) {
+                switch (ib) {
+                    case LOWER:
+                        bound = types.cvarUpperBound(bound);
+                        break;
+                    case UPPER:
+                        Type altBound = types.cvarLowerBound(bound);
+                        if (!altBound.hasTag(TypeTag.BOT)) bound = altBound;
+                        break;
+                }
+            }
             addBound(ib, bound, types, false);
         }
 
@@ -2123,11 +2138,9 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             UndetVarListener prevListener = listener;
             try {
                 //setup new listener for keeping track of changed bounds
-                listener = new UndetVarListener() {
-                    public void varBoundChanged(UndetVar uv, InferenceBound ib, Type t, boolean _ignored) {
-                        Assert.check(uv == UndetVar.this);
-                        boundsChanged.add(new Pair<>(ib, t));
-                    }
+                listener = (uv, ib, t, _ignored) -> {
+                    Assert.check(uv == UndetVar.this);
+                    boundsChanged.add(new Pair<>(ib, t));
                 };
                 for (Map.Entry<InferenceBound, List<Type>> _entry : bounds.entrySet()) {
                     InferenceBound ib = _entry.getKey();
@@ -2303,14 +2316,14 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         }
 
         public ErrorType(Type originalType, TypeSymbol tsym) {
-            super(noType, List.<Type>nil(), null);
+            super(noType, List.nil(), null);
             this.tsym = tsym;
             this.originalType = (originalType == null ? noType : originalType);
         }
 
         private ErrorType(Type originalType, TypeSymbol tsym,
                           TypeMetadata metadata) {
-            super(noType, List.<Type>nil(), null, metadata);
+            super(noType, List.nil(), null, metadata);
             this.tsym = tsym;
             this.originalType = (originalType == null ? noType : originalType);
         }

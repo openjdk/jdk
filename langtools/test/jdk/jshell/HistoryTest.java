@@ -32,13 +32,29 @@
  */
 
 import java.lang.reflect.Field;
+import java.util.Locale;
 import jdk.internal.jline.extra.EditingHistory;
 import org.testng.annotations.Test;
+import jdk.internal.jshell.tool.JShellTool;
+import jdk.internal.jshell.tool.JShellToolBuilder;
 import static org.testng.Assert.*;
 
-@Test
 public class HistoryTest extends ReplToolTesting {
 
+    private JShellTool repl;
+
+    @Override
+    protected void testRawRun(Locale locale, String[] args) {
+        repl = ((JShellToolBuilder) builder(locale))
+                .rawTool();
+        try {
+            repl.start(args);
+        } catch (Exception ex) {
+            fail("Repl tool died with exception", ex);
+        }
+    }
+
+    @Test
     public void testHistory() {
         test(
              a -> {if (!a) setCommandInput("void test() {\n");},
@@ -76,6 +92,7 @@ public class HistoryTest extends ReplToolTesting {
              });
     }
 
+    @Test
     public void test8166744() {
         test(
              a -> {if (!a) setCommandInput("class C {\n");},

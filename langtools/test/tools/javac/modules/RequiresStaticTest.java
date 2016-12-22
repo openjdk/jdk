@@ -146,19 +146,19 @@ public class RequiresStaticTest extends ModuleTestBase {
 
     /*
      * Set up the following module graph
-     *     m1 -> m2 => m3 -=-> m4 --> m5
+     *     m1x -> m2x => m3x -=-> m4x --> m5
      *            \           /
      *              \       /
      *                v   v
-     *                  m6 => m7 --> m8
+     *                  m6x => m7x --> m8
      * where -> is requires, => is requires transitive, --> is requires static, -=-> is requires transitive static
      */
     Path getComplexSrc(Path base, String m1_extraImports, String m1_extraUses) throws Exception {
         Path src = base.resolve("src");
 
-        Path src_m1 = src.resolve("m1");
+        Path src_m1 = src.resolve("m1x");
         tb.writeJavaFiles(src_m1,
-                "module m1 { requires m2; }",
+                "module m1x { requires m2x; }",
                 "package p1;\n"
                 + "import p2.C2;\n"
                 + "import p3.C3;\n"
@@ -169,49 +169,49 @@ public class RequiresStaticTest extends ModuleTestBase {
                 + m1_extraUses
                 + "}\n");
 
-        Path src_m2 = src.resolve("m2");
+        Path src_m2 = src.resolve("m2x");
         tb.writeJavaFiles(src_m2,
-                "module m2 {\n"
-                + "  requires transitive m3;\n"
-                + "  requires static m6;\n"
+                "module m2x {\n"
+                + "  requires transitive m3x;\n"
+                + "  requires static m6x;\n"
                 + "  exports p2;\n"
                 + "}",
                 "package p2;\n"
                 + "public class C2 {p7.C7 c7; p6.C6 c6; p4.C4 c4;}\n");
 
-        Path src_m3 = src.resolve("m3");
+        Path src_m3 = src.resolve("m3x");
         tb.writeJavaFiles(src_m3,
-                "module m3 { requires transitive static m4; exports p3; }",
+                "module m3x { requires transitive static m4x; exports p3; }",
                 "package p3;\n"
                 + "public class C3 { }\n");
 
-        Path src_m4 = src.resolve("m4");
+        Path src_m4 = src.resolve("m4x");
         tb.writeJavaFiles(src_m4,
-                "module m4 { requires m5; requires static m6; exports p4; }",
+                "module m4x { requires m5x; requires static m6x; exports p4; }",
                 "package p4;\n"
                 + "public class C4 { p6.C6 c6; p7.C7 c7;}\n");
 
-        Path src_m5 = src.resolve("m5");
+        Path src_m5 = src.resolve("m5x");
         tb.writeJavaFiles(src_m5,
-                "module m5 { exports p5; }",
+                "module m5x { exports p5; }",
                 "package p5;\n"
                 + "public class C5 { }\n");
 
-        Path src_m6 = src.resolve("m6");
+        Path src_m6 = src.resolve("m6x");
         tb.writeJavaFiles(src_m6,
-                "module m6 { requires transitive m7; exports p6; }",
+                "module m6x { requires transitive m7x; exports p6; }",
                 "package p6;\n"
                 + "public class C6 { p7.C7 c7; }\n");
 
-        Path src_m7 = src.resolve("m7");
+        Path src_m7 = src.resolve("m7x");
         tb.writeJavaFiles(src_m7,
-                "module m7 { requires static m8; exports p7; }",
+                "module m7x { requires static m8x; exports p7; }",
                 "package p7;\n"
                 + "public class C7 { p8.C8 c8; }\n");
 
-        Path src_m8 = src.resolve("m8");
+        Path src_m8 = src.resolve("m8x");
         tb.writeJavaFiles(src_m8,
-                "module m8 { exports p8; }",
+                "module m8x { exports p8; }",
                 "package p8;\n"
                         + "public class C8 { }\n");
 
@@ -221,14 +221,14 @@ public class RequiresStaticTest extends ModuleTestBase {
     @Test
     public void testRequiresStatic(Path base) throws Exception {
         Path src = base.resolve("src");
-        Path m1 = src.resolve("m1");
+        Path m1 = src.resolve("m1x");
         tb.writeJavaFiles(m1,
-                "module m1 { exports m1; }",
-                "package m1;" +
+                "module m1x { exports m1x; }",
+                "package m1x;" +
                 "public class Api { }\n");
 
         Path classes = base.resolve("classes");
-        Path m1Classes = classes.resolve("m1");
+        Path m1Classes = classes.resolve("m1x");
         Files.createDirectories(m1Classes);
 
         new JavacTask(tb, Task.Mode.CMDLINE)
@@ -237,25 +237,25 @@ public class RequiresStaticTest extends ModuleTestBase {
                 .run()
                 .writeAll();
 
-        Path m3 = src.resolve("m3");
+        Path m3 = src.resolve("m3x");
         tb.writeJavaFiles(m3,
-                "module m3 { requires static m1; }",
-                "package m3;\n" +
+                "module m3x { requires static m1x; }",
+                "package m3x;\n" +
                 "public class Test {\n" +
                 "    public static void main(String... args) {\n" +
                 "        try {\n" +
-                "           Class.forName(\"m1.Api\");\n" +
+                "           Class.forName(\"m1x.Api\");\n" +
                 "        } catch (ClassNotFoundException e) {\n" +
                 "            System.err.println(\"ok\");\n" +
                 "        }\n" +
                 "    }\n" +
                 "}",
-                "package m3;\n" +
+                "package m3x;\n" +
                 "public class ApiUse{\n" +
-                "    m1.Api api;\n" +
+                "    m1x.Api api;\n" +
                 "}");
 
-        Path m3Classes = classes.resolve("m3");
+        Path m3Classes = classes.resolve("m3x");
         Files.createDirectories(m3Classes);
 
         new JavacTask(tb, Task.Mode.CMDLINE)
@@ -266,8 +266,8 @@ public class RequiresStaticTest extends ModuleTestBase {
                 .writeAll();
 
         String log = new JavaTask(tb)
-                .vmOptions("--module-path", m3Classes.toString(), "--add-modules", "m3")
-                .className("m3.Test")
+                .vmOptions("--module-path", m3Classes.toString(), "--add-modules", "m3x")
+                .className("m3x.Test")
                 .run()
                 .writeAll()
                 .getOutput(OutputKind.STDERR);
@@ -282,14 +282,14 @@ public class RequiresStaticTest extends ModuleTestBase {
     @Test
     public void testRequiresTransitiveStatic(Path base) throws Exception {
         Path src = base.resolve("src");
-        Path m1 = src.resolve("m1");
+        Path m1 = src.resolve("m1x");
         tb.writeJavaFiles(m1,
-                "module m1 { exports m1; }",
-                "package m1;" +
+                "module m1x { exports m1x; }",
+                "package m1x;" +
                 "public class Api { }\n");
 
         Path classes = base.resolve("classes");
-        Path m1Classes = classes.resolve("m1");
+        Path m1Classes = classes.resolve("m1x");
         Files.createDirectories(m1Classes);
 
         new JavacTask(tb, Task.Mode.CMDLINE)
@@ -298,11 +298,11 @@ public class RequiresStaticTest extends ModuleTestBase {
                 .run()
                 .writeAll();
 
-        Path m2 = src.resolve("m2");
+        Path m2 = src.resolve("m2x");
         tb.writeJavaFiles(m2,
-                "module m2 { requires transitive static m1; }");
+                "module m2x { requires transitive static m1x; }");
 
-        Path m2Classes = classes.resolve("m2");
+        Path m2Classes = classes.resolve("m2x");
         Files.createDirectories(m2Classes);
 
         new JavacTask(tb, Task.Mode.CMDLINE)
@@ -312,25 +312,25 @@ public class RequiresStaticTest extends ModuleTestBase {
                 .run()
                 .writeAll();
 
-        Path m3 = src.resolve("m3");
+        Path m3 = src.resolve("m3x");
         tb.writeJavaFiles(m3,
-                "module m3 { requires m2; }",
-                "package m3;\n" +
+                "module m3x { requires m2x; }",
+                "package m3x;\n" +
                 "public class Test {\n" +
                 "    public static void main(String... args) {\n" +
                 "        try {\n" +
-                "           Class.forName(\"m1.Api\");\n" +
+                "           Class.forName(\"m1x.Api\");\n" +
                 "        } catch (ClassNotFoundException e) {\n" +
                 "            System.err.println(\"ok\");\n" +
                 "        }\n" +
                 "    }\n" +
                 "}",
-                "package m3;\n" +
+                "package m3x;\n" +
                 "public class ApiUse{\n" +
-                "    m1.Api api;\n" +
+                "    m1x.Api api;\n" +
                 "}");
 
-        Path m3Classes = classes.resolve("m3");
+        Path m3Classes = classes.resolve("m3x");
         Files.createDirectories(m3Classes);
 
         new JavacTask(tb, Task.Mode.CMDLINE)
@@ -342,8 +342,8 @@ public class RequiresStaticTest extends ModuleTestBase {
 
         String log = new JavaTask(tb)
                 .vmOptions("--module-path", m2Classes.toString() + File.pathSeparator + m3Classes.toString(),
-                           "--add-modules", "m3")
-                .className("m3.Test")
+                           "--add-modules", "m3x")
+                .className("m3x.Test")
                 .run()
                 .writeAll()
                 .getOutput(OutputKind.STDERR);
@@ -358,14 +358,14 @@ public class RequiresStaticTest extends ModuleTestBase {
     @Test
     public void testRequiresStaticTransitive(Path base) throws Exception {
         Path src = base.resolve("src");
-        Path m1 = src.resolve("m1");
+        Path m1 = src.resolve("m1x");
         tb.writeJavaFiles(m1,
-                "module m1 { exports m1; }",
-                "package m1;" +
+                "module m1x { exports m1x; }",
+                "package m1x;" +
                 "public class Api { }\n");
 
         Path classes = base.resolve("classes");
-        Path m1Classes = classes.resolve("m1");
+        Path m1Classes = classes.resolve("m1x");
         Files.createDirectories(m1Classes);
 
         new JavacTask(tb, Task.Mode.CMDLINE)
@@ -374,11 +374,11 @@ public class RequiresStaticTest extends ModuleTestBase {
                 .run()
                 .writeAll();
 
-        Path m2 = src.resolve("m2");
+        Path m2 = src.resolve("m2x");
         tb.writeJavaFiles(m2,
-                "module m2 { requires transitive static m1; }");
+                "module m2x { requires transitive static m1x; }");
 
-        Path m2Classes = classes.resolve("m2");
+        Path m2Classes = classes.resolve("m2x");
         Files.createDirectories(m2Classes);
 
         new JavacTask(tb, Task.Mode.CMDLINE)

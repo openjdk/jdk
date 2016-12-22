@@ -29,11 +29,8 @@ import com.sun.tools.classfile.Dependency;
 import com.sun.tools.classfile.Dependency.Location;
 
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /*
  * Filter configured based on the input jdeps option
@@ -59,7 +56,6 @@ public class JdepsFilter implements Dependency.Filter, Analyzer.Filter {
     private final boolean filterSameArchive;
     private final boolean findJDKInternals;
     private final Pattern includePattern;
-    private final Pattern includeSystemModules;
 
     private final Set<String> requires;
 
@@ -69,7 +65,6 @@ public class JdepsFilter implements Dependency.Filter, Analyzer.Filter {
                         boolean filterSameArchive,
                         boolean findJDKInternals,
                         Pattern includePattern,
-                        Pattern includeSystemModules,
                         Set<String> requires) {
         this.filter = filter;
         this.filterPattern = filterPattern;
@@ -77,7 +72,6 @@ public class JdepsFilter implements Dependency.Filter, Analyzer.Filter {
         this.filterSameArchive = filterSameArchive;
         this.findJDKInternals = findJDKInternals;
         this.includePattern = includePattern;
-        this.includeSystemModules = includeSystemModules;
         this.requires = requires;
     }
 
@@ -112,16 +106,8 @@ public class JdepsFilter implements Dependency.Filter, Analyzer.Filter {
         return hasTargetFilter();
     }
 
-    public boolean include(Archive source) {
-        Module module = source.getModule();
-        // skip system module by default; or if includeSystemModules is set
-        // only include the ones matching the pattern
-        return  !module.isSystem() || (includeSystemModules != null &&
-            includeSystemModules.matcher(module.name()).matches());
-    }
-
     public boolean hasIncludePattern() {
-        return includePattern != null || includeSystemModules != null;
+        return includePattern != null;
     }
 
     public boolean hasTargetFilter() {
@@ -197,7 +183,6 @@ public class JdepsFilter implements Dependency.Filter, Analyzer.Filter {
     }
 
     public static class Builder {
-        static Pattern SYSTEM_MODULE_PATTERN = Pattern.compile("java\\..*|jdk\\..*|javafx\\..*");
         Pattern filterPattern;
         Pattern regex;
         boolean filterSamePackage;
@@ -205,9 +190,10 @@ public class JdepsFilter implements Dependency.Filter, Analyzer.Filter {
         boolean findJDKInterals;
         // source filters
         Pattern includePattern;
-        Pattern includeSystemModules;
         Set<String> requires = new HashSet<>();
         Set<String> targetPackages = new HashSet<>();
+
+        public Builder() {};
 
         public Builder packages(Set<String> packageNames) {
             this.targetPackages.addAll(packageNames);
@@ -229,8 +215,6 @@ public class JdepsFilter implements Dependency.Filter, Analyzer.Filter {
         public Builder requires(String name, Set<String> packageNames) {
             this.requires.add(name);
             this.targetPackages.addAll(packageNames);
-
-            includeIfSystemModule(name);
             return this;
         }
         public Builder findJDKInternals(boolean value) {
@@ -239,17 +223,6 @@ public class JdepsFilter implements Dependency.Filter, Analyzer.Filter {
         }
         public Builder includePattern(Pattern regex) {
             this.includePattern = regex;
-            return this;
-        }
-        public Builder includeSystemModules(Pattern regex) {
-            this.includeSystemModules = regex;
-            return this;
-        }
-        public Builder includeIfSystemModule(String name) {
-            if (includeSystemModules == null &&
-                    SYSTEM_MODULE_PATTERN.matcher(name).matches()) {
-                this.includeSystemModules = SYSTEM_MODULE_PATTERN;
-            }
             return this;
         }
 
@@ -266,7 +239,6 @@ public class JdepsFilter implements Dependency.Filter, Analyzer.Filter {
                                    filterSameArchive,
                                    findJDKInterals,
                                    includePattern,
-                                   includeSystemModules,
                                    requires);
         }
 

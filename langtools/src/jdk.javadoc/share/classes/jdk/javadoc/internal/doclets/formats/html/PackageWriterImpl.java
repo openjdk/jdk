@@ -125,8 +125,8 @@ public class PackageWriterImpl extends HtmlDocletWriter
         }
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.addStyle(HtmlStyle.header);
-        ModuleElement mdle = configuration.docEnv.getElementUtils().getModuleOf(packageElement);
         if (configuration.showModules) {
+            ModuleElement mdle = configuration.docEnv.getElementUtils().getModuleOf(packageElement);
             Content classModuleLabel = HtmlTree.SPAN(HtmlStyle.moduleLabelInClass, contents.moduleLabel);
             Content moduleNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, classModuleLabel);
             moduleNameDiv.addContent(Contents.SPACE);
@@ -172,7 +172,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
             CommentHelper ch = utils.getCommentHelper(packageElement);
             HtmlTree deprDiv = new HtmlTree(HtmlTag.DIV);
             deprDiv.addStyle(HtmlStyle.deprecatedContent);
-            Content deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, contents.deprecatedPhrase);
+            Content deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(packageElement));
             deprDiv.addContent(deprPhrase);
             if (!deprs.isEmpty()) {
                 List<? extends DocTree> commentTags = ch.getDescription(configuration, deprs.get(0));
@@ -223,7 +223,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
                 HtmlTree tdClassDescription = new HtmlTree(HtmlTag.TD);
                 tdClassDescription.addStyle(HtmlStyle.colLast);
                 if (utils.isDeprecated(klass)) {
-                    tdClassDescription.addContent(contents.deprecatedLabel);
+                    tdClassDescription.addContent(getDeprecatedPhrase(klass));
                     List<? extends DocTree> tags = utils.getDeprecatedTrees(klass);
                     if (!tags.isEmpty()) {
                         addSummaryDeprecatedComment(klass, tags.get(0), tdClassDescription);

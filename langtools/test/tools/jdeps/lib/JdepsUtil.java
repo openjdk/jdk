@@ -147,11 +147,6 @@ public final class JdepsUtil {
             return this;
         }
 
-        public Command includeSystemMoudles(String regex) {
-            filter.includeSystemModules(Pattern.compile(regex));
-            return this;
-        }
-
         public Command apiOnly() {
             this.apiOnly = true;
             return this;

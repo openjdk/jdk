@@ -59,9 +59,9 @@ public class JavadocTaskImpl implements DocumentationTask {
         this.context = context;
         this.docletClass = docletClass;
 
-        this.options = (options == null) ? Collections.<String>emptySet()
+        this.options = (options == null) ? Collections.emptySet()
                 : nullCheck(options);
-        this.fileObjects = (fileObjects == null) ? Collections.<JavaFileObject>emptySet()
+        this.fileObjects = (fileObjects == null) ? Collections.emptySet()
                 : nullCheck(fileObjects);
         setLocale(Locale.getDefault());
     }

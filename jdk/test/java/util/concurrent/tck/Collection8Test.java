@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.ConcurrentModificationException;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -369,9 +370,112 @@ public class Collection8Test extends JSR166TestCase {
     }
 
     /**
+     * All elements removed in the middle of CONCURRENT traversal.
+     */
+    public void testElementRemovalDuringTraversal() {
+        Collection c = impl.emptyCollection();
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        int n = rnd.nextInt(6);
+        ArrayList copy = new ArrayList();
+        for (int i = 0; i < n; i++) {
+            Object x = impl.makeElement(i);
+            copy.add(x);
+            c.add(x);
+        }
+        ArrayList iterated = new ArrayList();
+        ArrayList spliterated = new ArrayList();
+        Spliterator s = c.spliterator();
+        Iterator it = c.iterator();
+        for (int i = rnd.nextInt(n + 1); --i >= 0; ) {
+            assertTrue(s.tryAdvance(spliterated::add));
+            if (rnd.nextBoolean()) assertTrue(it.hasNext());
+            iterated.add(it.next());
+        }
+        Consumer alwaysThrows = e -> { throw new AssertionError(); };
+        if (s.hasCharacteristics(Spliterator.CONCURRENT)) {
+            c.clear();          // TODO: many more removal methods
+            if (testImplementationDetails
+                && !(c instanceof java.util.concurrent.ArrayBlockingQueue)) {
+                if (rnd.nextBoolean())
+                    assertFalse(s.tryAdvance(alwaysThrows));
+                else
+                    s.forEachRemaining(alwaysThrows);
+            }
+            if (it.hasNext()) iterated.add(it.next());
+            if (rnd.nextBoolean()) assertIteratorExhausted(it);
+        }
+        assertTrue(copy.containsAll(iterated));
+        assertTrue(copy.containsAll(spliterated));
+    }
+
+    /**
+     * Some elements randomly disappear in the middle of traversal.
+     */
+    public void testRandomElementRemovalDuringTraversal() {
+        Collection c = impl.emptyCollection();
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        int n = rnd.nextInt(6);
+        ArrayList copy = new ArrayList();
+        for (int i = 0; i < n; i++) {
+            Object x = impl.makeElement(i);
+            copy.add(x);
+            c.add(x);
+        }
+        ArrayList iterated = new ArrayList();
+        ArrayList spliterated = new ArrayList();
+        ArrayList removed = new ArrayList();
+        Spliterator s = c.spliterator();
+        Iterator it = c.iterator();
+        if (! (s.hasCharacteristics(Spliterator.CONCURRENT) ||
+               s.hasCharacteristics(Spliterator.IMMUTABLE)))
+            return;
+        for (int i = rnd.nextInt(n + 1); --i >= 0; ) {
+            assertTrue(s.tryAdvance(e -> {}));
+            if (rnd.nextBoolean()) assertTrue(it.hasNext());
+            it.next();
+        }
+        Consumer alwaysThrows = e -> { throw new AssertionError(); };
+        // TODO: many more removal methods
+        if (rnd.nextBoolean()) {
+            for (Iterator z = c.iterator(); z.hasNext(); ) {
+                Object e = z.next();
+                if (rnd.nextBoolean()) {
+                    try {
+                        z.remove();
+                    } catch (UnsupportedOperationException ok) { return; }
+                    removed.add(e);
+                }
+            }
+        } else {
+            Predicate randomlyRemove = e -> {
+                if (rnd.nextBoolean()) { removed.add(e); return true; }
+                else return false;
+            };
+            c.removeIf(randomlyRemove);
+        }
+        s.forEachRemaining(spliterated::add);
+        while (it.hasNext())
+            iterated.add(it.next());
+        assertTrue(copy.containsAll(iterated));
+        assertTrue(copy.containsAll(spliterated));
+        assertTrue(copy.containsAll(removed));
+        if (s.hasCharacteristics(Spliterator.CONCURRENT)) {
+            ArrayList iteratedAndRemoved = new ArrayList(iterated);
+            ArrayList spliteratedAndRemoved = new ArrayList(spliterated);
+            iteratedAndRemoved.retainAll(removed);
+            spliteratedAndRemoved.retainAll(removed);
+            assertTrue(iteratedAndRemoved.size() <= 1);
+            assertTrue(spliteratedAndRemoved.size() <= 1);
+            if (testImplementationDetails
+                && !(c instanceof java.util.concurrent.ArrayBlockingQueue))
+                assertTrue(spliteratedAndRemoved.isEmpty());
+        }
+    }
+
+    /**
      * Various ways of traversing a collection yield same elements
      */
-    public void testIteratorEquivalence() {
+    public void testTraversalEquivalence() {
         Collection c = impl.emptyCollection();
         ThreadLocalRandom rnd = ThreadLocalRandom.current();
         int n = rnd.nextInt(6);
@@ -436,6 +540,43 @@ public class Collection8Test extends JSR166TestCase {
             assertEquals(iterated, descending);
             assertEquals(iterated, descendingForEachRemaining);
         }
+    }
+
+    /**
+     * Iterator.forEachRemaining has same behavior as Iterator's
+     * default implementation.
+     */
+    public void testForEachRemainingConsistentWithDefaultImplementation() {
+        Collection c = impl.emptyCollection();
+        if (!testImplementationDetails
+            || c.getClass() == java.util.LinkedList.class)
+            return;
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        int n = 1 + rnd.nextInt(3);
+        for (int i = 0; i < n; i++) c.add(impl.makeElement(i));
+        ArrayList iterated = new ArrayList();
+        ArrayList iteratedForEachRemaining = new ArrayList();
+        Iterator it1 = c.iterator();
+        Iterator it2 = c.iterator();
+        assertTrue(it1.hasNext());
+        assertTrue(it2.hasNext());
+        c.clear();
+        Object r1, r2;
+        try {
+            while (it1.hasNext()) iterated.add(it1.next());
+            r1 = iterated;
+        } catch (ConcurrentModificationException ex) {
+            r1 = ConcurrentModificationException.class;
+            assertFalse(impl.isConcurrent());
+        }
+        try {
+            it2.forEachRemaining(iteratedForEachRemaining::add);
+            r2 = iteratedForEachRemaining;
+        } catch (ConcurrentModificationException ex) {
+            r2 = ConcurrentModificationException.class;
+            assertFalse(impl.isConcurrent());
+        }
+        assertEquals(r1, r2);
     }
 
     /**
@@ -577,6 +718,41 @@ public class Collection8Test extends JSR166TestCase {
         assertTrue(found.isEmpty());
     }
 
+    /** TODO: promote to a common utility */
+    static <T> T chooseOne(T ... ts) {
+        return ts[ThreadLocalRandom.current().nextInt(ts.length)];
+    }
+
+    /** TODO: more random adders and removers */
+    static <E> Runnable adderRemover(Collection<E> c, E e) {
+        return chooseOne(
+            () -> {
+                assertTrue(c.add(e));
+                assertTrue(c.contains(e));
+                assertTrue(c.remove(e));
+                assertFalse(c.contains(e));
+            },
+            () -> {
+                assertTrue(c.add(e));
+                assertTrue(c.contains(e));
+                assertTrue(c.removeIf(x -> x == e));
+                assertFalse(c.contains(e));
+            },
+            () -> {
+                assertTrue(c.add(e));
+                assertTrue(c.contains(e));
+                for (Iterator it = c.iterator();; )
+                    if (it.next() == e) {
+                        try { it.remove(); }
+                        catch (UnsupportedOperationException ok) {
+                            c.remove(e);
+                        }
+                        break;
+                    }
+                assertFalse(c.contains(e));
+            });
+    }
+
     /**
      * Motley crew of threads concurrently randomly hammer the collection.
      */
@@ -616,17 +792,20 @@ public class Collection8Test extends JSR166TestCase {
             () -> checkArraySanity.accept(c.toArray()),
             () -> checkArraySanity.accept(c.toArray(emptyArray)),
             () -> {
-                assertTrue(c.add(one));
-                assertTrue(c.contains(one));
-                assertTrue(c.remove(one));
-                assertFalse(c.contains(one));
-            },
-            () -> {
-                assertTrue(c.add(two));
-                assertTrue(c.contains(two));
-                assertTrue(c.remove(two));
-                assertFalse(c.contains(two));
-            },
+                Object[] a = new Object[5];
+                Object three = impl.makeElement(3);
+                Arrays.fill(a, 0, a.length, three);
+                Object[] x = c.toArray(a);
+                if (x == a)
+                    for (int i = 0; i < a.length && a[i] != null; i++)
+                        checkSanity.accept(a[i]);
+                    // A careful reading of the spec does not support:
+                    // for (i++; i < a.length; i++) assertSame(three, a[i]);
+                else
+                    checkArraySanity.accept(x);
+                },
+            adderRemover(c, one),
+            adderRemover(c, two),
         };
         final List<Runnable> tasks =
             Arrays.stream(frobbers)
@@ -681,6 +860,22 @@ public class Collection8Test extends JSR166TestCase {
             assertEquals(1L, count.get());
             assertFalse(split.tryAdvance(e -> { throw new AssertionError(); }));
             assertTrue(c.contains(one));
+        }
+    }
+
+    /**
+     * Spliterator.getComparator throws IllegalStateException iff the
+     * spliterator does not report SORTED.
+     */
+    public void testGetComparator_IllegalStateException() {
+        Collection c = impl.emptyCollection();
+        Spliterator s = c.spliterator();
+        boolean reportsSorted = s.hasCharacteristics(Spliterator.SORTED);
+        try {
+            s.getComparator();
+            assertTrue(reportsSorted);
+        } catch (IllegalStateException ex) {
+            assertFalse(reportsSorted);
         }
     }
 

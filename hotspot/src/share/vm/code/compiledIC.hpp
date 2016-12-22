@@ -68,6 +68,7 @@ class CompiledICInfo : public StackObj {
   bool    _is_icholder;          // Is the cached value a CompiledICHolder*
   bool    _is_optimized;       // it is an optimized virtual call (i.e., can be statically bound)
   bool    _to_interpreter;     // Call it to interpreter
+  bool    _to_aot;             // Call it to aot code
   bool    _release_icholder;
  public:
   address entry() const        { return _entry; }
@@ -81,12 +82,14 @@ class CompiledICInfo : public StackObj {
     return icholder;
   }
   bool    is_optimized() const { return _is_optimized; }
-  bool         to_interpreter() const  { return _to_interpreter; }
+  bool  to_interpreter() const { return _to_interpreter; }
+  bool          to_aot() const { return _to_aot; }
 
   void set_compiled_entry(address entry, Klass* klass, bool is_optimized) {
     _entry      = entry;
     _cached_value = (void*)klass;
     _to_interpreter = false;
+    _to_aot = false;
     _is_icholder = false;
     _is_optimized = is_optimized;
     _release_icholder = false;
@@ -96,6 +99,17 @@ class CompiledICInfo : public StackObj {
     _entry      = entry;
     _cached_value = (void*)method;
     _to_interpreter = true;
+    _to_aot = false;
+    _is_icholder = false;
+    _is_optimized = true;
+    _release_icholder = false;
+  }
+
+  void set_aot_entry(address entry, Method* method) {
+    _entry      = entry;
+    _cached_value = (void*)method;
+    _to_interpreter = false;
+    _to_aot = true;
     _is_icholder = false;
     _is_optimized = true;
     _release_icholder = false;
@@ -105,13 +119,14 @@ class CompiledICInfo : public StackObj {
     _entry      = entry;
     _cached_value = (void*)icholder;
     _to_interpreter = true;
+    _to_aot = false;
     _is_icholder = true;
     _is_optimized = false;
     _release_icholder = true;
   }
 
   CompiledICInfo(): _entry(NULL), _cached_value(NULL), _is_icholder(false),
-                    _to_interpreter(false), _is_optimized(false), _release_icholder(false) {
+                    _to_interpreter(false), _to_aot(false), _is_optimized(false), _release_icholder(false) {
   }
   ~CompiledICInfo() {
     // In rare cases the info is computed but not used, so release any
@@ -125,15 +140,36 @@ class CompiledICInfo : public StackObj {
   }
 };
 
+class NativeCallWrapper: public ResourceObj {
+public:
+  virtual address destination() const = 0;
+  virtual address instruction_address() const = 0;
+  virtual address next_instruction_address() const = 0;
+  virtual address return_address() const = 0;
+  virtual address get_resolve_call_stub(bool is_optimized) const = 0;
+  virtual void set_destination_mt_safe(address dest) = 0;
+  virtual void set_to_interpreted(const methodHandle& method, CompiledICInfo& info) = 0;
+  virtual void verify() const = 0;
+  virtual void verify_resolve_call(address dest) const = 0;
+
+  virtual bool is_call_to_interpreted(address dest) const = 0;
+  virtual bool is_safe_for_patching() const = 0;
+
+  virtual NativeInstruction* get_load_instruction(virtual_call_Relocation* r) const = 0;
+
+  virtual void *get_data(NativeInstruction* instruction) const = 0;
+  virtual void set_data(NativeInstruction* instruction, intptr_t data) = 0;
+};
+
 class CompiledIC: public ResourceObj {
   friend class InlineCacheBuffer;
   friend class ICStub;
 
-
  private:
-  NativeCall*   _ic_call;       // the call instruction
-  NativeMovConstReg* _value;    // patchable value cell for this IC
+  NativeCallWrapper* _call;
+  NativeInstruction* _value;    // patchable value cell for this IC
   bool          _is_optimized;  // an optimized virtual call (i.e., no compiled IC)
+  CompiledMethod* _method;
 
   CompiledIC(CompiledMethod* cm, NativeCall* ic_call);
   CompiledIC(RelocIterator* iter);
@@ -177,8 +213,8 @@ class CompiledIC: public ResourceObj {
   // This is used to release CompiledICHolder*s from nmethods that
   // are about to be freed.  The callsite might contain other stale
   // values of other kinds so it must be careful.
-  static void cleanup_call_site(virtual_call_Relocation* call_site);
-  static bool is_icholder_call_site(virtual_call_Relocation* call_site);
+  static void cleanup_call_site(virtual_call_Relocation* call_site, const CompiledMethod* cm);
+  static bool is_icholder_call_site(virtual_call_Relocation* call_site, const CompiledMethod* cm);
 
   // Return the cached_metadata/destination associated with this inline cache. If the cache currently points
   // to a transition stub, it will read the values from the transition stub.
@@ -190,6 +226,14 @@ class CompiledIC: public ResourceObj {
   Metadata* cached_metadata() const {
     assert(!is_icholder_call(), "must be");
     return (Metadata*) cached_value();
+  }
+
+  void* get_data() const {
+    return _call->get_data(_value);
+  }
+
+  void set_data(intptr_t data) {
+    _call->set_data(_value, data);
   }
 
   address ic_destination() const;
@@ -204,7 +248,7 @@ class CompiledIC: public ResourceObj {
 
   bool is_icholder_call() const;
 
-  address end_of_call() { return  _ic_call->return_address(); }
+  address end_of_call() { return  _call->return_address(); }
 
   // MT-safe patching of inline caches. Note: Only safe to call is_xxx when holding the CompiledIC_ock
   // so you are guaranteed that no patching takes place. The same goes for verify.
@@ -223,10 +267,11 @@ class CompiledIC: public ResourceObj {
   bool set_to_megamorphic(CallInfo* call_info, Bytecodes::Code bytecode, TRAPS);
 
   static void compute_monomorphic_entry(const methodHandle& method, KlassHandle receiver_klass,
-                                        bool is_optimized, bool static_bound, CompiledICInfo& info, TRAPS);
+                                        bool is_optimized, bool static_bound, bool caller_is_nmethod,
+                                        CompiledICInfo& info, TRAPS);
 
   // Location
-  address instruction_address() const { return _ic_call->instruction_address(); }
+  address instruction_address() const { return _call->instruction_address(); }
 
   // Misc
   void print()             PRODUCT_RETURN;
@@ -278,42 +323,38 @@ inline CompiledIC* CompiledIC_at(RelocIterator* reloc_iter) {
 //  Interpreted code: Calls to stub that set Method* reference
 //
 //
-class CompiledStaticCall;
 
 class StaticCallInfo {
  private:
   address      _entry;          // Entrypoint
   methodHandle _callee;         // Callee (used when calling interpreter)
   bool         _to_interpreter; // call to interpreted method (otherwise compiled)
+  bool         _to_aot;         // call to aot method (otherwise compiled)
 
   friend class CompiledStaticCall;
+  friend class CompiledDirectStaticCall;
+  friend class CompiledPltStaticCall;
  public:
   address      entry() const    { return _entry;  }
   methodHandle callee() const   { return _callee; }
 };
 
-
-class CompiledStaticCall: public NativeCall {
-  friend class CompiledIC;
-
-  // Also used by CompiledIC
-  void set_to_interpreted(methodHandle callee, address entry);
-  bool is_optimized_virtual();
-
+class CompiledStaticCall : public ResourceObj {
  public:
-  friend CompiledStaticCall* compiledStaticCall_before(address return_addr);
-  friend CompiledStaticCall* compiledStaticCall_at(address native_call);
-  friend CompiledStaticCall* compiledStaticCall_at(Relocation* call_site);
-
   // Code
   static address emit_to_interp_stub(CodeBuffer &cbuf, address mark = NULL);
   static int to_interp_stub_size();
   static int reloc_to_interp_stub();
+  static void emit_to_aot_stub(CodeBuffer &cbuf, address mark = NULL);
+  static int to_aot_stub_size();
+  static int reloc_to_aot_stub();
 
-  // State
-  bool is_clean() const;
-  bool is_call_to_compiled() const;
-  bool is_call_to_interpreted() const;
+  // Compute entry point given a method
+  static void compute_entry(const methodHandle& m, bool caller_is_nmethod, StaticCallInfo& info);
+
+public:
+  // Clean static call (will force resolving on next use)
+  virtual address destination() const = 0;
 
   // Clean static call (will force resolving on next use)
   void set_to_clean();
@@ -323,33 +364,77 @@ class CompiledStaticCall: public NativeCall {
   // a OptoRuntime::resolve_xxx.
   void set(const StaticCallInfo& info);
 
-  // Compute entry point given a method
-  static void compute_entry(const methodHandle& m, StaticCallInfo& info);
+  // State
+  bool is_clean() const;
+  bool is_call_to_compiled() const;
+  virtual bool is_call_to_interpreted() const = 0;
+
+  virtual address instruction_address() const = 0;
+protected:
+  virtual address resolve_call_stub() const = 0;
+  virtual void set_destination_mt_safe(address dest) = 0;
+#if INCLUDE_AOT
+  virtual void set_to_far(const methodHandle& callee, address entry) = 0;
+#endif
+  virtual void set_to_interpreted(const methodHandle& callee, address entry) = 0;
+  virtual const char* name() const = 0;
+
+  void set_to_compiled(address entry);
+};
+
+class CompiledDirectStaticCall : public CompiledStaticCall {
+private:
+  friend class CompiledIC;
+  friend class DirectNativeCallWrapper;
+
+  // Also used by CompiledIC
+  void set_to_interpreted(const methodHandle& callee, address entry);
+#if INCLUDE_AOT
+  void set_to_far(const methodHandle& callee, address entry);
+#endif
+  address instruction_address() const { return _call->instruction_address(); }
+  void set_destination_mt_safe(address dest) { _call->set_destination_mt_safe(dest); }
+
+  NativeCall* _call;
+
+  CompiledDirectStaticCall(NativeCall* call) : _call(call) {}
+
+ public:
+  static inline CompiledDirectStaticCall* before(address return_addr) {
+    CompiledDirectStaticCall* st = new CompiledDirectStaticCall(nativeCall_before(return_addr));
+    st->verify();
+    return st;
+  }
+
+  static inline CompiledDirectStaticCall* at(address native_call) {
+    CompiledDirectStaticCall* st = new CompiledDirectStaticCall(nativeCall_at(native_call));
+    st->verify();
+    return st;
+  }
+
+  static inline CompiledDirectStaticCall* at(Relocation* call_site) {
+    return at(call_site->addr());
+  }
+
+  // Delegation
+  address destination() const { return _call->destination(); }
+
+  // State
+  virtual bool is_call_to_interpreted() const;
+  bool is_call_to_far() const;
 
   // Stub support
-  address find_stub();
+  static address find_stub_for(address instruction, bool is_aot);
+  address find_stub(bool is_aot);
   static void set_stub_to_clean(static_stub_Relocation* static_stub);
 
   // Misc.
   void print()  PRODUCT_RETURN;
   void verify() PRODUCT_RETURN;
+
+ protected:
+  virtual address resolve_call_stub() const;
+  virtual const char* name() const { return "CompiledDirectStaticCall"; }
 };
-
-
-inline CompiledStaticCall* compiledStaticCall_before(address return_addr) {
-  CompiledStaticCall* st = (CompiledStaticCall*)nativeCall_before(return_addr);
-  st->verify();
-  return st;
-}
-
-inline CompiledStaticCall* compiledStaticCall_at(address native_call) {
-  CompiledStaticCall* st = (CompiledStaticCall*)native_call;
-  st->verify();
-  return st;
-}
-
-inline CompiledStaticCall* compiledStaticCall_at(Relocation* call_site) {
-  return compiledStaticCall_at(call_site->addr());
-}
 
 #endif // SHARE_VM_CODE_COMPILEDIC_HPP

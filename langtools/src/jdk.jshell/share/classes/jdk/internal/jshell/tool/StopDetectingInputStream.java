@@ -51,36 +51,33 @@ public final class StopDetectingInputStream extends InputStream {
             throw new IllegalStateException("Already initialized.");
         initialized = true;
 
-        Thread reader = new Thread() {
-            @Override
-            public void run() {
-                try {
-                    int read;
-                    while (true) {
-                        //to support external terminal editors, the "cmdin.read" must not run when
-                        //an external editor is running. At the same time, it needs to run while the
-                        //user's code is running (so Ctrl-C is detected). Hence waiting here until
-                        //there is a confirmed need for input.
-                        StopDetectingInputStream.State currentState = waitInputNeeded();
-                        if (currentState == StopDetectingInputStream.State.CLOSED) {
-                            break;
-                        }
-                        if ((read = input.read()) == (-1)) {
-                            break;
-                        }
-                        if (read == 3 && currentState == StopDetectingInputStream.State.BUFFER) {
-                            stop.run();
-                        } else {
-                            write(read);
-                        }
+        Thread reader = new Thread(() -> {
+            try {
+                int read;
+                while (true) {
+                    //to support external terminal editors, the "cmdin.read" must not run when
+                    //an external editor is running. At the same time, it needs to run while the
+                    //user's code is running (so Ctrl-C is detected). Hence waiting here until
+                    //there is a confirmed need for input.
+                    State currentState = waitInputNeeded();
+                    if (currentState == State.CLOSED) {
+                        break;
                     }
-                } catch (IOException ex) {
-                    errorHandler.accept(ex);
-                } finally {
-                    shutdown();
+                    if ((read = input.read()) == (-1)) {
+                        break;
+                    }
+                    if (read == 3 && currentState == State.BUFFER) {
+                        stop.run();
+                    } else {
+                        write(read);
+                    }
                 }
+            } catch (IOException ex) {
+                errorHandler.accept(ex);
+            } finally {
+                shutdown();
             }
-        };
+        });
         reader.setDaemon(true);
         reader.start();
 

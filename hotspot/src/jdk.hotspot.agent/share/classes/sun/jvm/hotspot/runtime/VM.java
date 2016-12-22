@@ -861,6 +861,12 @@ public class VM {
       return (flag == null) ? false: flag.getBool();
   }
 
+  public boolean getCommandLineBooleanFlag(String name) {
+    Flag flag = getCommandLineFlag(name);
+    return (flag == null) ? Boolean.FALSE:
+      (flag.getBool()? Boolean.TRUE: Boolean.FALSE);
+  }
+
   // returns null, if not available.
   public Flag[] getCommandLineFlags() {
     if (commandLineFlags == null) {

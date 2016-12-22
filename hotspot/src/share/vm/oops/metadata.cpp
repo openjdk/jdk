@@ -42,7 +42,7 @@ void Metadata::print_on(outputStream* st) const {
 }
 
 char* Metadata::print_value_string() const {
-  char buf[100];
+  char buf[256];
   stringStream st(buf, sizeof(buf));
   if (this == NULL) {
     st.print("NULL");

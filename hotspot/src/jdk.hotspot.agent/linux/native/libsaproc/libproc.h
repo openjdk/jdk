@@ -72,9 +72,12 @@ combination of ptrace and /proc calls.
 #include <asm/ptrace.h>
 #define user_regs_struct  pt_regs
 #endif
-#if defined(aarch64)
+#if defined(aarch64) || defined(arm64)
 #include <asm/ptrace.h>
 #define user_regs_struct user_pt_regs
+#elif defined(arm)
+#include <asm/ptrace.h>
+#define user_regs_struct  pt_regs
 #endif
 #if defined(s390x)
 #include <asm/ptrace.h>

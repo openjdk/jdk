@@ -114,6 +114,7 @@ SUNWprivate_1.1 {
 		Java_java_io_UnixFileSystem_getBooleanAttributes0;
 		Java_java_io_UnixFileSystem_getLastModifiedTime;
 		Java_java_io_UnixFileSystem_getLength;
+		Java_java_io_UnixFileSystem_getNameMax0;
 		Java_java_io_UnixFileSystem_getSpace;
 		Java_java_io_UnixFileSystem_initIDs;
 		Java_java_io_UnixFileSystem_list;

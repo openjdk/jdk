@@ -37,7 +37,7 @@
 
 // ----------------------------------------------------------------------------
 
-// A PPC CompiledStaticCall looks like this:
+// A PPC CompiledDirectStaticCall looks like this:
 //
 // >>>> consts
 //
@@ -163,13 +163,13 @@ int CompiledStaticCall::reloc_to_interp_stub() {
   return 5;
 }
 
-void CompiledStaticCall::set_to_interpreted(methodHandle callee, address entry) {
-  address stub = find_stub();
+void CompiledDirectStaticCall::set_to_interpreted(const methodHandle& callee, address entry) {
+  address stub = find_stub(/*is_aot*/ false);
   guarantee(stub != NULL, "stub not found");
 
   if (TraceICs) {
     ResourceMark rm;
-    tty->print_cr("CompiledStaticCall@" INTPTR_FORMAT ": set_to_interpreted %s",
+    tty->print_cr("CompiledDirectStaticCall@" INTPTR_FORMAT ": set_to_interpreted %s",
                   p2i(instruction_address()),
                   callee->name_and_sig_as_C_string());
   }
@@ -196,7 +196,7 @@ void CompiledStaticCall::set_to_interpreted(methodHandle callee, address entry) 
   set_destination_mt_safe(stub);
 }
 
-void CompiledStaticCall::set_stub_to_clean(static_stub_Relocation* static_stub) {
+void CompiledDirectStaticCall::set_stub_to_clean(static_stub_Relocation* static_stub) {
   assert (CompiledIC_lock->is_locked() || SafepointSynchronize::is_at_safepoint(), "mt unsafe call");
   // Reset stub.
   address stub = static_stub->addr();
@@ -212,15 +212,15 @@ void CompiledStaticCall::set_stub_to_clean(static_stub_Relocation* static_stub) 
 // Non-product mode code
 #ifndef PRODUCT
 
-void CompiledStaticCall::verify() {
+void CompiledDirectStaticCall::verify() {
   // Verify call.
-  NativeCall::verify();
+  _call->verify();
   if (os::is_MP()) {
-    verify_alignment();
+    _call->verify_alignment();
   }
 
   // Verify stub.
-  address stub = find_stub();
+  address stub = find_stub(/*is_aot*/ false);
   assert(stub != NULL, "no stub found for static call");
   // Creation also verifies the object.
   NativeMovConstReg* method_holder = nativeMovConstReg_at(stub + IC_pos_in_java_to_interp_stub);

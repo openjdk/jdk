@@ -105,14 +105,15 @@ class Metaspace : public CHeapObj<mtClass> {
   };
 
  private:
+  static void verify_global_initialization();
+
   void initialize(Mutex* lock, MetaspaceType type);
 
-  // Get the first chunk for a Metaspace.  Used for
+  // Initialize the first chunk for a Metaspace.  Used for
   // special cases such as the boot class loader, reflection
   // class loader and anonymous class loader.
-  Metachunk* get_initialization_chunk(MetadataType mdtype,
-                                      size_t chunk_word_size,
-                                      size_t chunk_bunch);
+  void initialize_first_chunk(MetaspaceType type, MetadataType mdtype);
+  Metachunk* get_initialization_chunk(MetaspaceType type, MetadataType mdtype);
 
   // Align up the word size to the allocation word size
   static size_t align_word_size_up(size_t);
@@ -139,6 +140,10 @@ class Metaspace : public CHeapObj<mtClass> {
 
   SpaceManager* _class_vsm;
   SpaceManager* class_vsm() const { return _class_vsm; }
+  SpaceManager* get_space_manager(MetadataType mdtype) {
+    assert(mdtype != MetadataTypeCount, "MetadaTypeCount can't be used as mdtype");
+    return mdtype == ClassType ? class_vsm() : vsm();
+  }
 
   // Allocate space for metadata of type mdtype. This is space
   // within a Metachunk and is used by

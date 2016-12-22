@@ -145,11 +145,11 @@ public class UsesTest extends ModuleTestBase {
     @Test
     public void testMulti(Path base) throws Exception {
         Path src = base.resolve("src");
-        tb.writeJavaFiles(src.resolve("m1"),
-                "module m1 { exports p; }",
+        tb.writeJavaFiles(src.resolve("m1x"),
+                "module m1x { exports p; }",
                 "package p; public class C { }");
-        tb.writeJavaFiles(src.resolve("m2"),
-                "module m2 { requires m1; uses p.C; }");
+        tb.writeJavaFiles(src.resolve("m2x"),
+                "module m2x { requires m1x; uses p.C; }");
         Path modules = base.resolve("modules");
         Files.createDirectories(modules);
 
@@ -165,19 +165,19 @@ public class UsesTest extends ModuleTestBase {
     public void testMultiOnModulePath(Path base) throws Exception {
         Path modSrc = base.resolve("modSrc");
         Path modules = base.resolve("modules");
-        new ModuleBuilder(tb, "m1")
+        new ModuleBuilder(tb, "m1x")
                 .exports("p")
                 .classes("package p; public class C { }")
                 .build(modules);
-        new ModuleBuilder(tb, "m2")
-                .requires("m1")
+        new ModuleBuilder(tb, "m2x")
+                .requires("m1x")
                 .uses("p.C")
                 .write(modSrc);
 
         new JavacTask(tb)
                 .options("-p", modules.toString())
                 .outdir(modules)
-                .files(findJavaFiles(modSrc.resolve("m2")))
+                .files(findJavaFiles(modSrc.resolve("m2x")))
                 .run(Task.Expect.SUCCESS)
                 .writeAll();
     }
@@ -186,19 +186,19 @@ public class UsesTest extends ModuleTestBase {
     public void testMultiOnModulePathInner(Path base) throws Exception {
         Path modSrc = base.resolve("modSrc");
         Path modules = base.resolve("modules");
-        new ModuleBuilder(tb, "m1")
+        new ModuleBuilder(tb, "m1x")
                 .exports("p")
                 .classes("package p; public class C { public class Inner { } }")
                 .build(modules);
-        new ModuleBuilder(tb, "m2")
-                .requires("m1")
+        new ModuleBuilder(tb, "m2x")
+                .requires("m1x")
                 .uses("p.C.Inner")
                 .write(modSrc);
 
         new JavacTask(tb)
                 .options("-p", modules.toString())
                 .outdir(modules)
-                .files(findJavaFiles(modSrc.resolve("m2")))
+                .files(findJavaFiles(modSrc.resolve("m2x")))
                 .run(Task.Expect.SUCCESS)
                 .writeAll();
     }
@@ -248,11 +248,11 @@ public class UsesTest extends ModuleTestBase {
     @Test
     public void testUsesUnexportedService(Path base) throws Exception {
         Path src = base.resolve("src");
-        tb.writeJavaFiles(src.resolve("m1"),
-                "module m1 { }",
+        tb.writeJavaFiles(src.resolve("m1x"),
+                "module m1x { }",
                 "package p; public class C { }");
-        tb.writeJavaFiles(src.resolve("m2"),
-                "module m2 { requires m1; uses p.C; }");
+        tb.writeJavaFiles(src.resolve("m2x"),
+                "module m2x { requires m1x; uses p.C; }");
 
         List<String> output = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "--module-source-path", src.toString())
@@ -262,7 +262,7 @@ public class UsesTest extends ModuleTestBase {
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
 
-        List<String> expected = Arrays.asList("module-info.java:1:32: compiler.err.not.def.access.package.cant.access: p.C, p",
+        List<String> expected = Arrays.asList("module-info.java:1:34: compiler.err.not.def.access.package.cant.access: p.C, p",
                 "1 error");
         if (!output.containsAll(expected)) {
             throw new Exception("Expected output not found");
@@ -272,11 +272,11 @@ public class UsesTest extends ModuleTestBase {
     @Test
     public void testUsesUnexportedButProvidedService(Path base) throws Exception {
         Path src = base.resolve("src");
-        tb.writeJavaFiles(src.resolve("m1"),
-                "module m1 { provides p.C with p.C; }",
+        tb.writeJavaFiles(src.resolve("m1x"),
+                "module m1x { provides p.C with p.C; }",
                 "package p; public class C { }");
-        tb.writeJavaFiles(src.resolve("m2"),
-                "module m2 { requires m1; uses p.C; }");
+        tb.writeJavaFiles(src.resolve("m2x"),
+                "module m2x { requires m1x; uses p.C; }");
 
         List<String> output = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "--module-source-path", src.toString())
@@ -286,7 +286,7 @@ public class UsesTest extends ModuleTestBase {
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
 
-        List<String> expected = Arrays.asList("module-info.java:1:32: compiler.err.not.def.access.package.cant.access: p.C, p",
+        List<String> expected = Arrays.asList("module-info.java:1:34: compiler.err.not.def.access.package.cant.access: p.C, p",
                 "1 error");
         if (!output.containsAll(expected)) {
             throw new Exception("Expected output not found");

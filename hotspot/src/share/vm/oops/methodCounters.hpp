@@ -34,6 +34,9 @@ class MethodCounters: public MetaspaceObj {
  friend class VMStructs;
  friend class JVMCIVMStructs;
  private:
+#if INCLUDE_AOT
+  Method*           _method;                     // Back link to Method
+#endif
 #if defined(COMPILER2) || INCLUDE_JVMCI
   int               _interpreter_invocation_count; // Count of times invoked (reused as prev_event_count in tiered)
   u2                _interpreter_throwout_count; // Count of times method was exited via exception while interpreting
@@ -64,7 +67,11 @@ class MethodCounters: public MetaspaceObj {
   u1                _highest_osr_comp_level;      // Same for OSR level
 #endif
 
-  MethodCounters(methodHandle mh) : _nmethod_age(INT_MAX)
+  MethodCounters(methodHandle mh) :
+#if INCLUDE_AOT
+                                    _method(mh()),
+#endif
+                                    _nmethod_age(INT_MAX)
 #ifdef TIERED
                                  , _rate(0),
                                    _prev_time(0),
@@ -106,6 +113,8 @@ class MethodCounters: public MetaspaceObj {
 
   void deallocate_contents(ClassLoaderData* loader_data) {}
   DEBUG_ONLY(bool on_stack() { return false; })  // for template
+
+  AOT_ONLY(Method* method() const { return _method; })
 
   static int size() { return sizeof(MethodCounters) / wordSize; }
 
