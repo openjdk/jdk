@@ -404,7 +404,7 @@
     interfaces are more appropriate than <jvmti/> for many tools. 
     For more information on the Java Platform Debugger Architecture, 
     see the 
-    <externallink id="http://docs.oracle.com/javase/7/docs/technotes/guides/jpda/architecture.html">Java 
+    <externallink id="docs/technotes/guides/jpda/architecture.html">Java 
       Platform Debugger Architecture website</externallink>. 
   </intro>
 
@@ -764,7 +764,8 @@ Agent_OnUnload_L(JavaVM *vm)</example>
     An agent creates a <jvmti/> environment 
     by passing a <jvmti/> version 
     as the interface ID to the JNI Invocation API function 
-    <externallink id="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/invocation.html#GetEnv"><code>GetEnv</code></externallink>.
+    <externallink id="docs/technotes/guides/jni/spec/invocation.html#GetEnv">
+      <code>GetEnv</code></externallink>.
     See <internallink id="jvmtiEnvAccess">Accessing <jvmti/> Functions</internallink>
     for more details on the creation and use of 
     <jvmti/> environments.
@@ -883,7 +884,7 @@ Agent_OnUnload_L(JavaVM *vm)</example>
     Modified UTF-8 differs 
     from standard UTF-8 in the representation of supplementary characters 
     and of the null character. See the
-    <externallink id="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/types.html#wp16542">
+    <externallink id="docs/technotes/guides/jni/spec/types.html#modified_utf_8_strings">
       Modified UTF-8 Strings</externallink>
     section of the JNI specification for details.
   </intro>
@@ -913,7 +914,7 @@ Agent_OnUnload_L(JavaVM *vm)</example>
     by calling <jvmti/> functions. 
     Access to <jvmti/> functions is by use of an interface pointer
     in the same manner as 
-    <externallink id="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/design.html">Java 
+    <externallink id="docs/technotes/guides/jni/spec/design.html">Java 
       Native Interface (JNI) functions</externallink> are accessed.
     The <jvmti/> interface pointer is called the 
     <i>environment pointer</i>.
@@ -1005,7 +1006,8 @@ jvmtiEnv *jvmti;
     local references--these local references are created 
     during the <jvmti/> call.
     Local references are a resource that must be managed (see the 
-    <externallink id="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html#wp18654">JNI Documentation</externallink>).  
+    <externallink id="docs/technotes/guides/jni/spec/functions.html#local_references">
+      JNI Documentation</externallink>).  
     When threads return from native code all local references
     are freed.  Note that some threads, including typical
     agent threads, will never return from native code.
@@ -1040,7 +1042,7 @@ jvmtiEnv *jvmti;
       <jvmti/> function.
       See the
       <externallink 
-        id="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/design.html#wp770"
+        id="docs/technotes/guides/jni/spec/design.html#java_exceptions"
              >Java Exceptions</externallink>
       section of the JNI specification for information on handling exceptions.
     </intro>
@@ -2105,8 +2107,8 @@ jvmtiEnv *jvmti;
         <functionlink id="GetAllStackTraces"/>).
 	<p/>
 	Upon execution of <code>proc</code>, the new thread will be attached to the
-	VM--see the JNI documentation on 
-	<externallink id="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/invocation.html#wp1060"
+	VM -- see the JNI documentation on 
+	<externallink id="docs/technotes/guides/jni/spec/invocation.html#attaching_to_the_vm"
 		      >Attaching to the VM</externallink>.
       </description>
       <origin>jvmdiClone</origin>
@@ -3370,7 +3372,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
 	  </constant>
 	  <constant id="JVMTI_HEAP_REFERENCE_SUPERCLASS" num="10">
             Reference from a class to its superclass. 
-            A callback is bot sent if the superclass is <code>java.lang.Object</code>.
+            A callback is not sent if the superclass is <code>java.lang.Object</code>.
             Note: loaded classes define superclasses via a constant pool
             reference, so the referenced superclass may also be reported with 
             a <code>JVMTI_HEAP_REFERENCE_CONSTANT_POOL</code> reference kind.
@@ -6869,7 +6871,7 @@ class C2 extends C1 implements I2 {
       <synopsis>Get Class Signature</synopsis>
       <description>
         For the class indicated by <code>klass</code>, return the 
-        <externallink id="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/types.html#wp16432">JNI 
+        <externallink id="docs/technotes/guides/jni/spec/types.html#type_signatures">JNI 
             type signature</externallink> 
         and the generic signature of the class.
         For example, <code>java.util.List</code> is <code>"Ljava/util/List;"</code>
@@ -7989,8 +7991,9 @@ class C2 extends C1 implements I2 {
 	return the field name via <paramlink id="name_ptr"/> and field signature via
 	<paramlink id="signature_ptr"/>.
 	<p/>
-        Field signatures are defined in the JNI Specification and 
-        are referred to as <code>field descriptors</code> in
+        Field signatures are defined in the
+        <externallink id="docs/technotes/guides/jni/spec/jniTOC.html">JNI Specification</externallink>
+        and are referred to as <code>field descriptors</code> in
         <vmspec chapter="4.3.2"/>.
       </description>
       <origin>jvmdiClone</origin>
@@ -8185,8 +8188,9 @@ class C2 extends C1 implements I2 {
 	return the method name via <code>name_ptr</code> and method signature via
 	<code>signature_ptr</code>.
         <p/>
-        Method signatures are defined in the JNI Specification and are 
-        referred to as <code>method descriptors</code> in 
+        Method signatures are defined in the
+        <externallink id="docs/technotes/guides/jni/spec/jniTOC.html">JNI Specification</externallink>
+        and are referred to as <code>method descriptors</code> in 
         <vmspec chapter="4.3.3"/>.
 	Note this is different
 	than method signatures as defined in the <i>Java Language Specification</i>.
@@ -9158,7 +9162,7 @@ method(wrapped_foo) -> nativeImplementation(foo)</example>
       Provides the ability to intercept and resend 
       Java Native Interface (JNI) function calls
       by manipulating the JNI function table.
-      See <externallink id="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html">JNI
+      See <externallink id="docs/technotes/guides/jni/spec/functions.html">JNI
 	Functions</externallink> in the <i>Java Native Interface Specification</i>.
       <p/>
       The following example illustrates intercepting the 
@@ -10859,7 +10863,7 @@ myInit() {
 	  for a class. The segment is typically a directory or JAR file.
 	  <p/>	  
 	  In the live phase the <paramlink id="segment"/> may be used to specify any platform-dependent
-	  path to a <externallink id="http://docs.oracle.com/javase/7/docs/technotes/guides/jar/jar.html">
+	  path to a <externallink id="docs/technotes/guides/jar/jar.html">
 	  JAR file</externallink>. The agent should take care that the JAR file does not
           contain any classes or resources other than those to be defined by the bootstrap
           class loader for the purposes of instrumentation.
@@ -10906,8 +10910,8 @@ myInit() {
 	  search path segment to be searched after the system class loader unsuccessfully searches
 	  for a class. The segment is typically a directory or JAR file.
 	  <p/>	  
-	  In the live phase the <paramlink id="segment"/> is a platform-dependent path to a <externallink 
-	  id="http://docs.oracle.com/javase/7/docs/technotes/guides/jar/jar.html">JAR file</externallink> to be
+	  In the live phase the <paramlink id="segment"/> is a platform-dependent path to a
+	  <externallink id="docs/technotes/guides/jar/jar.html">JAR file</externallink> to be
 	  searched after the system class loader unsuccessfully searches for a class. The agent should
           take care that the JAR file does not contain any classes or resources other than those to be
           defined by the system class loader for the purposes of instrumentation.
@@ -13741,7 +13745,8 @@ typedef void (JNICALL *jvmtiEventVMInit)
       <description>
 	Typedef for the JNI function table <code>JNINativeInterface</code>
 	defined in the 
-	<externallink id="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html#wp23720">JNI Specification</externallink>.
+	<externallink id="docs/technotes/guides/jni/spec/functions.html#interface_function_table">
+          JNI Specification</externallink>.
 	The JNI reference implementation defines this with an underscore.
       </description>
     </basetype>

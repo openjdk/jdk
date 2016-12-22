@@ -77,13 +77,14 @@ class KlassDepChange;
 class CodeCache : AllStatic {
   friend class VMStructs;
   friend class JVMCIVMStructs;
-  friend class NMethodIterator;
-  friend class CompiledMethodIterator;
+  template <class T, class Filter> friend class CodeBlobIterator;
   friend class WhiteBox;
   friend class CodeCacheLoader;
  private:
   // CodeHeaps of the cache
   static GrowableArray<CodeHeap*>* _heaps;
+  static GrowableArray<CodeHeap*>* _compiled_heaps;
+  static GrowableArray<CodeHeap*>* _nmethod_heaps;
 
   static address _low_bound;                            // Lower bound of CodeHeap addresses
   static address _high_bound;                           // Upper bound of CodeHeap addresses
@@ -110,8 +111,7 @@ class CodeCache : AllStatic {
   // Iteration
   static CodeBlob* first_blob(CodeHeap* heap);                // Returns the first CodeBlob on the given CodeHeap
   static CodeBlob* first_blob(int code_blob_type);            // Returns the first CodeBlob of the given type
-  static CodeBlob* next_blob(CodeHeap* heap, CodeBlob* cb);   // Returns the first alive CodeBlob on the given CodeHeap
-  static CodeBlob* next_blob(CodeBlob* cb);                   // Returns the next CodeBlob of the given type succeeding the given CodeBlob
+  static CodeBlob* next_blob(CodeHeap* heap, CodeBlob* cb);   // Returns the next CodeBlob on the given CodeHeap
 
   static size_t bytes_allocated_in_freelists();
   static int    allocated_segments();
@@ -121,9 +121,19 @@ class CodeCache : AllStatic {
   static void prune_scavenge_root_nmethods();
   static void unlink_scavenge_root_nmethod(nmethod* nm, nmethod* prev);
 
+  // Make private to prevent unsafe calls.  Not all CodeBlob*'s are embedded in a CodeHeap.
+  static bool contains(CodeBlob *p) { fatal("don't call me!"); return false; }
+
  public:
   // Initialization
   static void initialize();
+
+  static int code_heap_compare(CodeHeap* const &lhs, CodeHeap* const &rhs);
+
+  static void add_heap(CodeHeap* heap);
+  static const GrowableArray<CodeHeap*>* heaps() { return _heaps; }
+  static const GrowableArray<CodeHeap*>* compiled_heaps() { return _compiled_heaps; }
+  static const GrowableArray<CodeHeap*>* nmethod_heaps() { return _nmethod_heaps; }
 
   // Allocation/administration
   static CodeBlob* allocate(int size, int code_blob_type, int orig_code_blob_type = CodeBlobType::All); // allocates a new CodeBlob
@@ -132,6 +142,7 @@ class CodeCache : AllStatic {
   static int  alignment_offset();                          // guaranteed offset of first CodeBlob byte within alignment unit (i.e., allocation header)
   static void free(CodeBlob* cb);                          // frees a CodeBlob
   static bool contains(void *p);                           // returns whether p is included
+  static bool contains(nmethod* nm);                       // returns whether nm is included
   static void blobs_do(void f(CodeBlob* cb));              // iterates over all CodeBlobs
   static void blobs_do(CodeBlobClosure* f);                // iterates over all CodeBlobs
   static void nmethods_do(void f(nmethod* nm));            // iterates over all nmethods
@@ -192,6 +203,9 @@ class CodeCache : AllStatic {
   static address high_bound()                         { return _high_bound; }
   static address high_bound(int code_blob_type);
 
+  // Have to use far call instructions to call this pc.
+  static bool is_far_target(address pc);
+
   // Profiling
   static size_t capacity();
   static size_t unallocated_capacity(int code_blob_type);
@@ -208,9 +222,19 @@ class CodeCache : AllStatic {
   // Returns true if an own CodeHeap for the given CodeBlobType is available
   static bool heap_available(int code_blob_type);
 
-  // Returns the CodeBlobType for the given nmethod
+  // Returns the CodeBlobType for the given CompiledMethod
   static int get_code_blob_type(CompiledMethod* cm) {
     return get_code_heap(cm)->code_blob_type();
+  }
+
+  static bool code_blob_type_accepts_compiled(int type) {
+    bool result = type == CodeBlobType::All || type <= CodeBlobType::MethodProfiled;
+    AOT_ONLY( result = result || type == CodeBlobType::AOT; )
+    return result;
+  }
+
+  static bool code_blob_type_accepts_nmethod(int type) {
+    return type == CodeBlobType::All || type <= CodeBlobType::MethodProfiled;
   }
 
   // Returns the CodeBlobType for the given compilation level
@@ -264,35 +288,47 @@ class CodeCache : AllStatic {
 
 
 // Iterator to iterate over nmethods in the CodeCache.
-class NMethodIterator : public StackObj {
+template <class T, class Filter> class CodeBlobIterator : public StackObj {
  private:
   CodeBlob* _code_blob;   // Current CodeBlob
-  int _code_blob_type;    // Refers to current CodeHeap
+  GrowableArrayIterator<CodeHeap*> _heap;
+  GrowableArrayIterator<CodeHeap*> _end;
 
  public:
-  NMethodIterator() {
-    initialize(NULL); // Set to NULL, initialized by first call to next()
+  CodeBlobIterator(T* nm = NULL) {
+    if (Filter::heaps() == NULL) {
+      return;
+    }
+    _heap = Filter::heaps()->begin();
+    _end = Filter::heaps()->end();
+    // If set to NULL, initialized by first call to next()
+    _code_blob = (CodeBlob*)nm;
+    if (nm != NULL) {
+      address start = nm->code_begin();
+      while(!(*_heap)->contains(start)) {
+        ++_heap;
+      }
+      assert((*_heap)->contains(start), "match not found");
+    }
   }
 
-  NMethodIterator(nmethod* nm) {
-    initialize(nm);
-  }
-
-  // Advance iterator to next nmethod
+  // Advance iterator to next blob
   bool next() {
     assert_locked_or_safepoint(CodeCache_lock);
-    assert(_code_blob_type < CodeBlobType::NumTypes, "end reached");
 
-    bool result = next_nmethod();
-    while (!result && (_code_blob_type < CodeBlobType::MethodProfiled)) {
-      // Advance to next code heap if segmented code cache
-      _code_blob_type++;
-      result = next_nmethod();
+    bool result = next_blob();
+    while (!result && _heap != _end) {
+      // Advance to next code heap of segmented code cache
+      if (++_heap == _end) {
+        break;
+      }
+      result = next_blob();
     }
+
     return result;
   }
 
-  // Advance iterator to next alive nmethod
+  // Advance iterator to next alive blob
   bool next_alive() {
     bool result = next();
     while(result && !_code_blob->is_alive()) {
@@ -302,90 +338,48 @@ class NMethodIterator : public StackObj {
   }
 
   bool end()        const   { return _code_blob == NULL; }
-  nmethod* method() const   { return (nmethod*)_code_blob; }
+  T* method() const   { return (T*)_code_blob; }
 
 private:
-  // Initialize iterator to given nmethod
-  void initialize(nmethod* nm) {
-    _code_blob = (CodeBlob*)nm;
-    if (!SegmentedCodeCache) {
-      // Iterate over all CodeBlobs
-      _code_blob_type = CodeBlobType::All;
-    } else if (nm != NULL) {
-      _code_blob_type = CodeCache::get_code_blob_type(nm);
-    } else {
-      // Only iterate over method code heaps, starting with non-profiled
-      _code_blob_type = CodeBlobType::MethodNonProfiled;
-    }
-  }
 
-  // Advance iterator to the next nmethod in the current code heap
-  bool next_nmethod() {
+  // Advance iterator to the next blob in the current code heap
+  bool next_blob() {
+    if (_heap == _end) {
+      return false;
+    }
+    CodeHeap *heap = *_heap;
     // Get first method CodeBlob
     if (_code_blob == NULL) {
-      _code_blob = CodeCache::first_blob(_code_blob_type);
+      _code_blob = CodeCache::first_blob(heap);
       if (_code_blob == NULL) {
         return false;
-      } else if (_code_blob->is_nmethod()) {
+      } else if (Filter::apply(_code_blob)) {
         return true;
       }
     }
     // Search for next method CodeBlob
-    _code_blob = CodeCache::next_blob(_code_blob);
-    while (_code_blob != NULL && !_code_blob->is_nmethod()) {
-      _code_blob = CodeCache::next_blob(_code_blob);
+    _code_blob = CodeCache::next_blob(heap, _code_blob);
+    while (_code_blob != NULL && !Filter::apply(_code_blob)) {
+      _code_blob = CodeCache::next_blob(heap, _code_blob);
     }
     return _code_blob != NULL;
   }
 };
 
-// Iterator to iterate over compiled methods in the CodeCache.
-class CompiledMethodIterator : public StackObj {
- private:
-  CodeBlob* _code_blob;   // Current CodeBlob
-  int _code_blob_type;    // Refers to current CodeHeap
 
- public:
-  CompiledMethodIterator() {
-    initialize(NULL); // Set to NULL, initialized by first call to next()
-  }
-
-  CompiledMethodIterator(CompiledMethod* cm) {
-    initialize(cm);
-  }
-
-  // Advance iterator to next compiled method
-  bool next() {
-    assert_locked_or_safepoint(CodeCache_lock);
-    assert(_code_blob_type < CodeBlobType::NumTypes, "end reached");
-
-    bool result = next_compiled_method();
-    while (!result && (_code_blob_type < CodeBlobType::MethodProfiled)) {
-      // Advance to next code heap if segmented code cache
-      _code_blob_type++;
-      result = next_compiled_method();
-    }
-    return result;
-  }
-
-  // Advance iterator to next alive compiled method
-  bool next_alive() {
-    bool result = next();
-    while(result && !_code_blob->is_alive()) {
-      result = next();
-    }
-    return result;
-  }
-
-  bool end()        const   { return _code_blob == NULL; }
-  CompiledMethod* method() const   { return (_code_blob != NULL) ? _code_blob->as_compiled_method() : NULL; }
-
-private:
-  // Initialize iterator to given compiled method
-  void initialize(CompiledMethod* cm);
-
-  // Advance iterator to the next compiled method in the current code heap
-  bool next_compiled_method();
+struct CompiledMethodFilter {
+  static bool apply(CodeBlob* cb) { return cb->is_compiled(); }
+  static const GrowableArray<CodeHeap*>* heaps() { return CodeCache::compiled_heaps(); }
 };
+
+
+struct NMethodFilter {
+  static bool apply(CodeBlob* cb) { return cb->is_nmethod(); }
+  static const GrowableArray<CodeHeap*>* heaps() { return CodeCache::nmethod_heaps(); }
+};
+
+
+typedef CodeBlobIterator<CompiledMethod, CompiledMethodFilter> CompiledMethodIterator;
+typedef CodeBlobIterator<nmethod, NMethodFilter> NMethodIterator;
 
 #endif // SHARE_VM_CODE_CODECACHE_HPP

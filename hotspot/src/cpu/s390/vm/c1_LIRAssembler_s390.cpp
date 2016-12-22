@@ -153,7 +153,7 @@ int LIR_Assembler::emit_exception_handler() {
   __ nop();
 
   // Generate code for exception handler.
-  address handler_base = __ start_a_stub(exception_handler_size);
+  address handler_base = __ start_a_stub(exception_handler_size());
   if (handler_base == NULL) {
     // Not enough space left for the handler.
     bailout("exception handler overflow");
@@ -166,7 +166,7 @@ int LIR_Assembler::emit_exception_handler() {
   address call_addr = emit_call_c(a);
   CHECK_BAILOUT_(-1);
   __ should_not_reach_here();
-  guarantee(code_offset() - offset <= exception_handler_size, "overflow");
+  guarantee(code_offset() - offset <= exception_handler_size(), "overflow");
   __ end_a_stub();
 
   return offset;
@@ -251,7 +251,7 @@ int LIR_Assembler::emit_deopt_handler() {
   __ nop();
 
   // Generate code for exception handler.
-  address handler_base = __ start_a_stub(deopt_handler_size);
+  address handler_base = __ start_a_stub(deopt_handler_size());
   if (handler_base == NULL) {
     // Not enough space left for the handler.
     bailout("deopt handler overflow");
@@ -260,7 +260,7 @@ int LIR_Assembler::emit_deopt_handler() {
   // Size must be constant (see HandlerImpl::emit_deopt_handler).
   __ load_const(Z_R1_scratch, SharedRuntime::deopt_blob()->unpack());
   __ call(Z_R1_scratch);
-  guarantee(code_offset() - offset <= deopt_handler_size, "overflow");
+  guarantee(code_offset() - offset <= deopt_handler_size(), "overflow");
   __ end_a_stub();
 
   return offset;
@@ -1075,8 +1075,7 @@ void LIR_Assembler::reg2mem(LIR_Opr from, LIR_Opr dest_opr, BasicType type,
       {
         if (UseCompressedOops && !wide) {
           Register compressed_src = Z_R14;
-          __ z_lgr(compressed_src, from->as_register());
-          __ encode_heap_oop(compressed_src);
+          __ oop_encoder(compressed_src, from->as_register(), true, (disp_reg != Z_R1) ? Z_R1 : Z_R0, -1, true);
           offset = code_offset();
           if (short_disp) {
             __ z_st(compressed_src,  disp_value, disp_reg, dest);
@@ -1158,7 +1157,7 @@ void LIR_Assembler::emit_static_call_stub() {
   // compiled code to calling interpreted code.
 
   address call_pc = __ pc();
-  address stub = __ start_a_stub(call_stub_size);
+  address stub = __ start_a_stub(call_stub_size());
   if (stub == NULL) {
     bailout("static call stub overflow");
     return;
@@ -1181,7 +1180,7 @@ void LIR_Assembler::emit_static_call_stub() {
   }
 
   __ z_br(Z_R1);
-  assert(__ offset() - start <= call_stub_size, "stub too big");
+  assert(__ offset() - start <= call_stub_size(), "stub too big");
   __ end_a_stub(); // Update current stubs pointer and restore insts_end.
 }
 

@@ -824,8 +824,12 @@ public class KeyStore {
 
         if (!skipDebug && pdebug != null) {
             pdebug.println("KeyStore." + type.toUpperCase() + " type from: " +
-                this.provider.getName());
+                getProviderName());
         }
+    }
+
+    private String getProviderName() {
+        return (provider == null) ? "(no provider)" : provider.getName();
     }
 
     /**

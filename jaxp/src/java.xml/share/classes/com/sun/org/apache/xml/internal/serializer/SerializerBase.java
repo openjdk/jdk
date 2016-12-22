@@ -93,9 +93,11 @@ public abstract class SerializerBase
     protected AttributesImplSerializer m_attributes = new AttributesImplSerializer();
 
     /**
-     * Tells if we're in an EntityRef event.
+     * Tells if we're in an EntityRef event, true if it's greater than 0. Use
+     * integer type to handle nested entity reference, increase m_inEntityRef in
+     * startEntity, decrease m_inEntityRef in endEntity.
      */
-    protected boolean m_inEntityRef = false;
+    protected int m_inEntityRef = 0;
 
     /** This flag is set while receiving events from the external DTD */
     protected boolean m_inExternalDTD = false;
@@ -144,7 +146,7 @@ public abstract class SerializerBase
     /**
      * Amount to indent.
      */
-    protected int m_indentAmount = 0;
+    protected int m_indentAmount = 4;
 
     /**
      * Tells the XML version, for writing out to the XML decl.
@@ -444,10 +446,21 @@ public abstract class SerializerBase
     public void endEntity(String name) throws org.xml.sax.SAXException {
         if (name.equals("[dtd]"))
             m_inExternalDTD = false;
-        m_inEntityRef = false;
+
+        if (!m_inExternalDTD)
+            m_inEntityRef--;
 
         if (m_tracer != null)
             this.fireEndEntity(name);
+    }
+
+    /**
+     * This method checks if current node is in entity reference.
+     *
+     * @return True if current node is in entity reference.
+     */
+    protected boolean isInEntityRef() {
+        return m_inEntityRef > 0;
     }
 
     /**
@@ -1139,8 +1152,8 @@ public abstract class SerializerBase
         this.m_doctypePublic = null;
         this.m_doctypeSystem = null;
         this.m_doIndent = false;
-        this.m_indentAmount = 0;
-        this.m_inEntityRef = false;
+        this.m_indentAmount = 4;
+        this.m_inEntityRef = 0;
         this.m_inExternalDTD = false;
         this.m_mediatype = null;
         this.m_needToCallStartDocument = true;

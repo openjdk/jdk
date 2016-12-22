@@ -146,16 +146,16 @@ public class ArrayDeque<E> extends AbstractCollection<E>
         if (jump < needed
             || (newCapacity = (oldCapacity + jump)) - MAX_ARRAY_SIZE > 0)
             newCapacity = newCapacity(needed, jump);
-        elements = Arrays.copyOf(elements, newCapacity);
+        final Object[] es = elements = Arrays.copyOf(elements, newCapacity);
         // Exceptionally, here tail == head needs to be disambiguated
-        if (tail < head || (tail == head && elements[head] != null)) {
+        if (tail < head || (tail == head && es[head] != null)) {
             // wrap around; slide first leg forward to end of array
             int newSpace = newCapacity - oldCapacity;
-            System.arraycopy(elements, head,
-                             elements, head + newSpace,
+            System.arraycopy(es, head,
+                             es, head + newSpace,
                              oldCapacity - head);
-            Arrays.fill(elements, head, head + newSpace, null);
-            head += newSpace;
+            for (int i = head, to = (head += newSpace); i < to; i++)
+                es[i] = null;
         }
     }
 
@@ -873,6 +873,9 @@ public class ArrayDeque<E> extends AbstractCollection<E>
         }
     }
 
+    /**
+     * @throws NullPointerException {@inheritDoc}
+     */
     public void forEach(Consumer<? super E> action) {
         Objects.requireNonNull(action);
         final Object[] es = elements;
@@ -1035,11 +1038,14 @@ public class ArrayDeque<E> extends AbstractCollection<E>
 
     /**
      * Nulls out slots starting at array index i, upto index end.
+     * Condition i == end means "empty" - nothing to do.
      */
     private static void circularClear(Object[] es, int i, int end) {
+        // assert 0 <= i && i < es.length;
+        // assert 0 <= end && end < es.length;
         for (int to = (i <= end) ? end : es.length;
              ; i = 0, to = end) {
-            Arrays.fill(es, i, to, null);
+            for (; i < to; i++) es[i] = null;
             if (to == end) break;
         }
     }

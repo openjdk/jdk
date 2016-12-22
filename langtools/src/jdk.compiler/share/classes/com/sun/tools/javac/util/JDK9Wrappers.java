@@ -86,6 +86,58 @@ public class JDK9Wrappers {
     }
 
     /**
+     * Wrapper class for java.lang.module.ModuleDescriptor and ModuleDescriptor.Version.
+     */
+    public static class ModuleDescriptor {
+        public static class Version {
+            public static final String CLASSNAME = "java.lang.module.ModuleDescriptor$Version";
+            private final Object theRealVersion;
+
+            private Version(Object version) {
+                this.theRealVersion = version;
+            }
+
+            public static Version parse(String v) {
+                try {
+                    init();
+                    Object result = parseMethod.invoke(null, v);
+                    Version version = new Version(result);
+                    return version;
+                } catch (InvocationTargetException ex) {
+                    if (ex.getCause() instanceof IllegalArgumentException) {
+                        throw (IllegalArgumentException) ex.getCause();
+                    } else {
+                        throw new Abort(ex);
+                    }
+                } catch (IllegalAccessException | IllegalArgumentException | SecurityException ex) {
+                    throw new Abort(ex);
+                }
+            }
+
+            @Override
+            public String toString() {
+                return theRealVersion.toString();
+            }
+
+            // -----------------------------------------------------------------------------------------
+
+            private static Class<?> versionClass = null;
+            private static Method parseMethod = null;
+
+            private static void init() {
+                if (versionClass == null) {
+                    try {
+                        versionClass = Class.forName(CLASSNAME, false, null);
+                        parseMethod = versionClass.getDeclaredMethod("parse", String.class);
+                    } catch (ClassNotFoundException | NoSuchMethodException | SecurityException ex) {
+                        throw new Abort(ex);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * Wrapper class for java.lang.module.ModuleFinder.
      */
     public static class ModuleFinder {
@@ -338,7 +390,7 @@ public class JDK9Wrappers {
      * Helper class for new method in jdk.internal.misc.VM.
      */
     public static final class VMHelper {
-        public static final String VM_CLASSNAME = "jdk.internal.misc.VM";
+        public static final String CLASSNAME = "jdk.internal.misc.VM";
 
         @SuppressWarnings("unchecked")
         public static String[] getRuntimeArguments() {
@@ -360,7 +412,7 @@ public class JDK9Wrappers {
         private static void init() {
             if (vmClass == null) {
                 try {
-                    vmClass = Class.forName(VM_CLASSNAME, false, null);
+                    vmClass = Class.forName(CLASSNAME, false, null);
                     getRuntimeArgumentsMethod = vmClass.getDeclaredMethod("getRuntimeArguments");
                 } catch (ClassNotFoundException | NoSuchMethodException | SecurityException ex) {
                     throw new Abort(ex);

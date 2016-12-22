@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8142968 8166568
+ * @bug 8142968 8166568 8166286 8170618
  * @summary Basic test for jmod
  * @library /lib/testlibrary
  * @modules jdk.compiler
@@ -112,6 +112,27 @@ public class JmodTest {
              "--class-path", classesDir.toString(),
              jmod.toString())
             .assertSuccess();
+    }
+
+    // JDK-8170618 - jmod should validate if any exported or open package is missing
+    @Test
+    public void testMissingPackages() throws IOException {
+        Path apaDir = EXPLODED_DIR.resolve("apa");
+        Path classesDir = EXPLODED_DIR.resolve("apa").resolve("classes");
+        if (Files.exists(classesDir))
+            FileUtils.deleteFileTreeWithRetry(classesDir);
+        assertTrue(compileModule("apa", classesDir));
+        FileUtils.deleteFileTreeWithRetry(classesDir.resolve("jdk"));
+        Path jmod = MODS_DIR.resolve("apa.jmod");
+        jmod("create",
+             "--class-path", classesDir.toString(),
+             jmod.toString())
+            .assertFailure()
+            .resultChecker(r -> {
+                assertContains(r.output, "Packages that are exported or open in apa are not present: [jdk.test.apa]");
+            });
+        if (Files.exists(classesDir))
+            FileUtils.deleteFileTreeWithRetry(classesDir);
     }
 
     @Test

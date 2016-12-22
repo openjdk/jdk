@@ -61,14 +61,14 @@ public class OpenModulesTest extends ModuleTestBase {
 
     @Test
     public void testStrongModule(Path base) throws Exception {
-        Path m1 = base.resolve("m1");
+        Path m1 = base.resolve("m1x");
         tb.writeJavaFiles(m1,
-                          "module m1 { exports api1; opens api2; }",
+                          "module m1x { exports api1; opens api2; }",
                           "package api1; public class Api1 {}",
                           "package api2; public class Api2 {}",
                           "package impl; public class Impl {}");
         Path classes = base.resolve("classes");
-        Path m1Classes = classes.resolve("m1");
+        Path m1Classes = classes.resolve("m1x");
         tb.createDirectories(m1Classes);
 
         String log = new JavacTask(tb)
@@ -87,9 +87,10 @@ public class OpenModulesTest extends ModuleTestBase {
                 .run()
                 .writeAll()
                 .getOutput(OutputKind.DIRECT)
-                .replace(System.getProperty("line.separator"), "\n");
+                .replace(System.getProperty("line.separator"), "\n")
+                .replaceAll("@[^;]*;", ";");
 
-        String expected = "module m1 {\n" +
+        String expected = "module m1x {\n" +
                           "  requires java.base;\n" +
                           "  exports api1;\n" +
                           "  opens api2;\n" +
@@ -100,11 +101,11 @@ public class OpenModulesTest extends ModuleTestBase {
         }
 
         //compiling against a strong module read from binary:
-        Path m2 = base.resolve("m2");
+        Path m2 = base.resolve("m2x");
         tb.writeJavaFiles(m2,
-                          "module m2 { requires m1; }",
+                          "module m2x { requires m1x; }",
                           "package test; public class Test { api1.Api1 a1; api2.Api2 a2; }");
-        Path m2Classes = classes.resolve("m2");
+        Path m2Classes = classes.resolve("m2x");
         tb.createDirectories(m2Classes);
 
         List<String> log2 = new JavacTask(tb)
@@ -124,14 +125,14 @@ public class OpenModulesTest extends ModuleTestBase {
 
     @Test
     public void testOpenModule(Path base) throws Exception {
-        Path m1 = base.resolve("m1");
+        Path m1 = base.resolve("m1x");
         tb.writeJavaFiles(m1,
-                          "open module m1 { exports api1; }",
+                          "open module m1x { exports api1; }",
                           "package api1; public class Api1 {}",
                           "package api2; public class Api2 {}",
                           "package impl; public class Impl {}");
         Path classes = base.resolve("classes");
-        Path m1Classes = classes.resolve("m1");
+        Path m1Classes = classes.resolve("m1x");
         tb.createDirectories(m1Classes);
 
         String log = new JavacTask(tb)
@@ -150,9 +151,10 @@ public class OpenModulesTest extends ModuleTestBase {
                 .run()
                 .writeAll()
                 .getOutput(OutputKind.DIRECT)
-                .replace(System.getProperty("line.separator"), "\n");
+                .replace(System.getProperty("line.separator"), "\n")
+                .replaceAll("@[^;]*;", ";");
 
-        String expected = "open module m1 {\n" +
+        String expected = "open module m1x {\n" +
                           "  requires java.base;\n" +
                           "  exports api1;\n" +
                           "}";
@@ -162,11 +164,11 @@ public class OpenModulesTest extends ModuleTestBase {
         }
 
         //compiling against a ordinary module read from binary:
-        Path m2 = base.resolve("m2");
+        Path m2 = base.resolve("m2x");
         tb.writeJavaFiles(m2,
-                          "module m2 { requires m1; }",
+                          "module m2x { requires m1x; }",
                           "package test; public class Test { api1.Api1 a1; api2.Api2 a2; }");
-        Path m2Classes = classes.resolve("m2");
+        Path m2Classes = classes.resolve("m2x");
         tb.createDirectories(m2Classes);
 
         List<String> log2 = new JavacTask(tb)
@@ -186,14 +188,14 @@ public class OpenModulesTest extends ModuleTestBase {
 
     @Test
     public void testOpenModuleNoOpens(Path base) throws Exception {
-        Path m1 = base.resolve("m1");
+        Path m1 = base.resolve("m1x");
         tb.writeJavaFiles(m1,
-                          "open module m1 { exports api1; opens api2; }",
+                          "open module m1x { exports api1; opens api2; }",
                           "package api1; public class Api1 {}",
                           "package api2; public class Api2 {}",
                           "package impl; public class Impl {}");
         Path classes = base.resolve("classes");
-        Path m1Classes = classes.resolve("m1");
+        Path m1Classes = classes.resolve("m1x");
         tb.createDirectories(m1Classes);
 
         List<String> log = new JavacTask(tb)
@@ -204,7 +206,7 @@ public class OpenModulesTest extends ModuleTestBase {
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
 
-        List<String> expected = Arrays.asList("module-info.java:1:32: compiler.err.no.opens.unless.strong",
+        List<String> expected = Arrays.asList("module-info.java:1:33: compiler.err.no.opens.unless.strong",
                                               "1 error");
 
         if (!expected.equals(log))
@@ -214,12 +216,12 @@ public class OpenModulesTest extends ModuleTestBase {
 
     @Test
     public void testNonZeroOpensInOpen(Path base) throws Exception {
-        Path m1 = base.resolve("m1");
+        Path m1 = base.resolve("m1x");
         tb.writeJavaFiles(m1,
-                          "module m1 { opens api; }",
+                          "module m1x { opens api; }",
                           "package api; public class Api {}");
         Path classes = base.resolve("classes");
-        Path m1Classes = classes.resolve("m1");
+        Path m1Classes = classes.resolve("m1x");
         tb.createDirectories(m1Classes);
 
         new JavacTask(tb)
@@ -235,6 +237,7 @@ public class OpenModulesTest extends ModuleTestBase {
         Module_attribute newModule = new Module_attribute(module.attribute_name_index,
                                                           module.module_name,
                                                           module.module_flags | Module_attribute.ACC_OPEN,
+                                                          module.module_version_index,
                                                           module.requires,
                                                           module.exports,
                                                           module.opens,
@@ -270,14 +273,17 @@ public class OpenModulesTest extends ModuleTestBase {
         List<String> log = new JavacTask(tb)
                 .options("-XDrawDiagnostics",
                          "--module-path", classes.toString(),
-                         "--add-modules", "m1")
+                         "--add-modules", "m1x")
                 .outdir(testClasses)
                 .files(findJavaFiles(test))
                 .run(Expect.FAIL)
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
 
-        List<String> expected = Arrays.asList("- compiler.err.cant.access: m1.module-info, (compiler.misc.bad.class.file.header: module-info.class, (compiler.misc.module.non.zero.opens: m1))",
+        List<String> expected = Arrays.asList(
+                "- compiler.err.cant.access: m1x.module-info, "
+                        + "(compiler.misc.bad.class.file.header: module-info.class, "
+                        + "(compiler.misc.module.non.zero.opens: m1x))",
                                               "1 error");
 
         if (!expected.equals(log))

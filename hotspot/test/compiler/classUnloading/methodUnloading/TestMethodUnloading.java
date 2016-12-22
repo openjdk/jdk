@@ -46,14 +46,13 @@ import sun.hotspot.WhiteBox;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
+import compiler.whitebox.CompilerWhiteBoxTest;
 
 public class TestMethodUnloading {
     private static final String workerClassName = "compiler.classUnloading.methodUnloading.WorkerClass";
     private static int work = -1;
 
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
-    private static int COMP_LEVEL_SIMPLE = 1;
-    private static int COMP_LEVEL_FULL_OPTIMIZATION = 4;
 
     /**
      * Does some work by either using the workerClass or locally producing values.
@@ -93,9 +92,9 @@ public class TestMethodUnloading {
         // Check if already compiled
         if (!WHITE_BOX.isMethodCompiled(m)) {
             // If not, try to compile it with C2
-            if(!WHITE_BOX.enqueueMethodForCompilation(m, COMP_LEVEL_FULL_OPTIMIZATION)) {
+            if(!WHITE_BOX.enqueueMethodForCompilation(m, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION)) {
                 // C2 compiler not available, try to compile with C1
-                WHITE_BOX.enqueueMethodForCompilation(m, COMP_LEVEL_SIMPLE);
+                WHITE_BOX.enqueueMethodForCompilation(m, CompilerWhiteBoxTest.COMP_LEVEL_SIMPLE);
             }
             // Because background compilation is disabled, method should now be compiled
             if(!WHITE_BOX.isMethodCompiled(m)) {

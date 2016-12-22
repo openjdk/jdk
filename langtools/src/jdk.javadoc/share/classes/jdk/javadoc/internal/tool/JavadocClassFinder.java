@@ -33,6 +33,7 @@ import com.sun.tools.javac.api.JavacTrees;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.ClassFinder;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.Context.Factory;
 
 /** Javadoc uses an extended class finder that records package.html entries
  *
@@ -53,11 +54,7 @@ public class JavadocClassFinder extends ClassFinder {
     }
 
     public static void preRegister(Context context) {
-        context.put(classFinderKey, new Context.Factory<ClassFinder>() {
-            public ClassFinder make(Context c) {
-                return new JavadocClassFinder(c);
-            }
-        });
+        context.put(classFinderKey, (Factory<ClassFinder>)JavadocClassFinder::new);
     }
 
     private ToolEnvironment toolEnv;

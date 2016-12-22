@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.Context.Factory;
 
 /**
  * Caching implementation of FSInfo.
@@ -47,13 +48,11 @@ public class CacheFSInfo extends FSInfo {
      * Register a Context.Factory to create a CacheFSInfo.
      */
     public static void preRegister(Context context) {
-        context.put(FSInfo.class, new Context.Factory<FSInfo>() {
-            public FSInfo make(Context c) {
+        context.put(FSInfo.class, (Factory<FSInfo>)c -> {
                 FSInfo instance = new CacheFSInfo();
                 c.put(FSInfo.class, instance);
                 return instance;
-            }
-        });
+            });
     }
 
     public void clearCache() {

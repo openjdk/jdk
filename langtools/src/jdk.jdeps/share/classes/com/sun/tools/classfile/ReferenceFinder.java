@@ -136,14 +136,6 @@ public final class ReferenceFinder {
             return false;
         }
 
-        public Boolean visitInterfaceMethodref(CONSTANT_InterfaceMethodref_info info, ConstantPool cpool) {
-            return filter.accept(cpool, info);
-        }
-
-        public Boolean visitMethodref(CONSTANT_Methodref_info info, ConstantPool cpool) {
-            return filter.accept(cpool, info);
-        }
-
         public Boolean visitFieldref(CONSTANT_Fieldref_info info, ConstantPool cpool) {
             return filter.accept(cpool, info);
         }
@@ -160,6 +152,10 @@ public final class ReferenceFinder {
             return false;
         }
 
+        public Boolean visitInterfaceMethodref(CONSTANT_InterfaceMethodref_info info, ConstantPool cpool) {
+            return filter.accept(cpool, info);
+        }
+
         public Boolean visitInvokeDynamic(CONSTANT_InvokeDynamic_info info, ConstantPool cpool) {
             return false;
         }
@@ -168,15 +164,27 @@ public final class ReferenceFinder {
             return false;
         }
 
-        public Boolean visitNameAndType(CONSTANT_NameAndType_info info, ConstantPool cpool) {
-            return false;
-        }
-
         public Boolean visitMethodHandle(CONSTANT_MethodHandle_info info, ConstantPool cpool) {
             return false;
         }
 
+        public Boolean visitMethodref(CONSTANT_Methodref_info info, ConstantPool cpool) {
+            return filter.accept(cpool, info);
+        }
+
         public Boolean visitMethodType(CONSTANT_MethodType_info info, ConstantPool cpool) {
+            return false;
+        }
+
+        public Boolean visitModule(CONSTANT_Module_info info, ConstantPool cpool) {
+            return false;
+        }
+
+        public Boolean visitNameAndType(CONSTANT_NameAndType_info info, ConstantPool cpool) {
+            return false;
+        }
+
+        public Boolean visitPackage(CONSTANT_Package_info info, ConstantPool cpool) {
             return false;
         }
 

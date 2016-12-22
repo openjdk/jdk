@@ -61,8 +61,8 @@ public class SingleModuleModeTest extends ModuleTestBase{
     @Test
     public void testTooManyModules(Path base) throws Exception {
         Path src = base.resolve("src");
-        tb.writeJavaFiles(src.resolve("m1"), "module m1 { }");
-        tb.writeJavaFiles(src.resolve("m2"), "module m2 { }");
+        tb.writeJavaFiles(src.resolve("m1x"), "module m1x { }");
+        tb.writeJavaFiles(src.resolve("m2x"), "module m2x { }");
 
         String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics")

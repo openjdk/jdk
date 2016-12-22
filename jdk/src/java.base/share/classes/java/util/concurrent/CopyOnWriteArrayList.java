@@ -793,6 +793,9 @@ public class CopyOnWriteArrayList<E>
         }
     }
 
+    /**
+     * @throws NullPointerException {@inheritDoc}
+     */
     public void forEach(Consumer<? super E> action) {
         if (action == null) throw new NullPointerException();
         for (Object x : getArray()) {
@@ -801,6 +804,9 @@ public class CopyOnWriteArrayList<E>
         }
     }
 
+    /**
+     * @throws NullPointerException {@inheritDoc}
+     */
     public boolean removeIf(Predicate<? super E> filter) {
         if (filter == null) throw new NullPointerException();
         return bulkRemove(filter);

@@ -48,8 +48,8 @@ import com.sun.tools.doclets.formats.html.markup.HtmlAttr.Role;
 public class HtmlTree extends Content {
 
     private HtmlTag htmlTag;
-    private Map<HtmlAttr,String> attrs = Collections.<HtmlAttr,String>emptyMap();
-    private List<Content> content = Collections.<Content>emptyList();
+    private Map<HtmlAttr,String> attrs = Collections.emptyMap();
+    private List<Content> content = Collections.emptyList();
     public static final Content EMPTY = new StringContent("");
 
     /**

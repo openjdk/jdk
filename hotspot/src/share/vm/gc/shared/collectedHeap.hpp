@@ -612,9 +612,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
     return false;
   }
 
-  /////////////// Unit tests ///////////////
-
-  NOT_PRODUCT(static void test_is_in();)
 };
 
 // Class to set and reset the GC cause for a CollectedHeap.

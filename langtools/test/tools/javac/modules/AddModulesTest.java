@@ -36,7 +36,6 @@ import java.nio.file.Path;
 
 import toolbox.JavacTask;
 import toolbox.Task;
-import toolbox.ToolBox;
 
 public class AddModulesTest extends ModuleTestBase {
     public static void main(String... args) throws Exception {
@@ -70,18 +69,18 @@ public class AddModulesTest extends ModuleTestBase {
     @Test
     public void testEmptyItem(Path base) throws Exception {
         Path src = base.resolve("src");
-        Path src_m1 = src.resolve("m1");
+        Path src_m1 = src.resolve("m1x");
         tb.writeJavaFiles(src_m1,
-                          "module m1 { }");
-        Path src_m2 = src.resolve("m2");
+                          "module m1x { }");
+        Path src_m2 = src.resolve("m2x");
         tb.writeJavaFiles(src_m2,
-                          "module m2 { }");
+                          "module m2x { }");
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
-        testEmptyItem(src, classes, ",m1");
-        testEmptyItem(src, classes, "m1,,m2");
-        testEmptyItem(src, classes, "m1,");
+        testEmptyItem(src, classes, ",m1x");
+        testEmptyItem(src, classes, "m1x,,m2x");
+        testEmptyItem(src, classes, "m1x,");
     }
 
     private void testEmptyItem(Path src, Path classes, String option) throws Exception {
@@ -159,9 +158,9 @@ public class AddModulesTest extends ModuleTestBase {
         Path src = base.resolve("src");
 
         // setup a utility module
-        Path src_m1 = src.resolve("m1");
+        Path src_m1 = src.resolve("m1x");
         tb.writeJavaFiles(src_m1,
-                          "module m1 { exports p1; }",
+                          "module m1x { exports p1; }",
                           "package p1; public class C1 { }");
         Path modules = base.resolve("modules");
         tb.createDirectories(modules);
@@ -182,7 +181,7 @@ public class AddModulesTest extends ModuleTestBase {
 
         new JavacTask(tb)
                 .options("--module-path", modules.toString(),
-                         "--add-modules", "m1,m1")
+                         "--add-modules", "m1x,m1x")
                 .outdir(classes)
                 .files(findJavaFiles(src2))
                 .run()
@@ -194,13 +193,13 @@ public class AddModulesTest extends ModuleTestBase {
         Path src = base.resolve("src");
 
         // setup some utility modules
-        Path src_m1 = src.resolve("m1");
+        Path src_m1 = src.resolve("m1x");
         tb.writeJavaFiles(src_m1,
-                          "module m1 { exports p1; }",
+                          "module m1x { exports p1; }",
                           "package p1; public class C1 { }");
-        Path src_m2 = src.resolve("m2");
+        Path src_m2 = src.resolve("m2x");
         tb.writeJavaFiles(src_m2,
-                          "module m2 { exports p2; }",
+                          "module m2x { exports p2; }",
                           "package p2; public class C2 { }");
         Path modules = base.resolve("modules");
         tb.createDirectories(modules);
@@ -221,8 +220,8 @@ public class AddModulesTest extends ModuleTestBase {
 
         new JavacTask(tb)
                 .options("--module-path", modules.toString(),
-                         "--add-modules", "m1",
-                         "--add-modules", "m2")
+                         "--add-modules", "m1x",
+                         "--add-modules", "m2x")
                 .outdir(classes)
                 .files(findJavaFiles(src2))
                 .run()

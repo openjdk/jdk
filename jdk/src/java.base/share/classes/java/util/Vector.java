@@ -306,9 +306,9 @@ public class Vector<E>
         modCount++;
         if (newSize > elementData.length)
             grow(newSize);
-        for (int i = newSize; i < elementCount; i++)
-            elementData[i] = null;
-        elementCount = newSize;
+        final Object[] es = elementData;
+        for (int to = elementCount, i = elementCount = newSize; i < to; i++)
+            es[i] = null;
     }
 
     /**
@@ -675,9 +675,10 @@ public class Vector<E>
      * method (which is part of the {@link List} interface).
      */
     public synchronized void removeAllElements() {
-        Arrays.fill(elementData, 0, elementCount, null);
+        final Object[] es = elementData;
+        for (int to = elementCount, i = elementCount = 0; i < to; i++)
+            es[i] = null;
         modCount++;
-        elementCount = 0;
     }
 
     /**
@@ -980,6 +981,9 @@ public class Vector<E>
         return bulkRemove(e -> !c.contains(e));
     }
 
+    /**
+     * @throws NullPointerException {@inheritDoc}
+     */
     @Override
     public boolean removeIf(Predicate<? super E> filter) {
         Objects.requireNonNull(filter);
@@ -1024,7 +1028,8 @@ public class Vector<E>
             for (i = beg; i < end; i++)
                 if (isClear(deathRow, i - beg))
                     es[w++] = es[i];
-            Arrays.fill(es, elementCount = w, end, null);
+            for (i = elementCount = w; i < end; i++)
+                es[i] = null;
             return true;
         } else {
             if (modCount != expectedModCount)
@@ -1152,19 +1157,25 @@ public class Vector<E>
      * (If {@code toIndex==fromIndex}, this operation has no effect.)
      */
     protected synchronized void removeRange(int fromIndex, int toIndex) {
-        final Object[] es = elementData;
-        final int oldSize = elementCount;
-        System.arraycopy(es, toIndex, es, fromIndex, oldSize - toIndex);
-
         modCount++;
-        Arrays.fill(es, elementCount -= (toIndex - fromIndex), oldSize, null);
+        shiftTailOverGap(elementData, fromIndex, toIndex);
+    }
+
+    /** Erases the gap from lo to hi, by sliding down following elements. */
+    private void shiftTailOverGap(Object[] es, int lo, int hi) {
+        System.arraycopy(es, hi, es, lo, elementCount - hi);
+        for (int to = elementCount, i = (elementCount -= hi - lo); i < to; i++)
+            es[i] = null;
     }
 
     /**
-     * Save the state of the {@code Vector} instance to a stream (that
-     * is, serialize it).
+     * Saves the state of the {@code Vector} instance to a stream
+     * (that is, serializes it).
      * This method performs synchronization to ensure the consistency
      * of the serialized data.
+     *
+     * @param s the stream
+     * @throws java.io.IOException if an I/O error occurs
      */
     private void writeObject(java.io.ObjectOutputStream s)
             throws java.io.IOException {
@@ -1337,6 +1348,9 @@ public class Vector<E>
         }
     }
 
+    /**
+     * @throws NullPointerException {@inheritDoc}
+     */
     @Override
     public synchronized void forEach(Consumer<? super E> action) {
         Objects.requireNonNull(action);
@@ -1349,6 +1363,9 @@ public class Vector<E>
             throw new ConcurrentModificationException();
     }
 
+    /**
+     * @throws NullPointerException {@inheritDoc}
+     */
     @Override
     public synchronized void replaceAll(UnaryOperator<E> operator) {
         Objects.requireNonNull(operator);
@@ -1387,21 +1404,19 @@ public class Vector<E>
      */
     @Override
     public Spliterator<E> spliterator() {
-        return new VectorSpliterator<>(this, null, 0, -1, 0);
+        return new VectorSpliterator(null, 0, -1, 0);
     }
 
     /** Similar to ArrayList Spliterator */
-    static final class VectorSpliterator<E> implements Spliterator<E> {
-        private final Vector<E> list;
+    final class VectorSpliterator implements Spliterator<E> {
         private Object[] array;
         private int index; // current index, modified on advance/split
         private int fence; // -1 until used; then one past last index
         private int expectedModCount; // initialized when fence set
 
-        /** Create new spliterator covering the given range */
-        VectorSpliterator(Vector<E> list, Object[] array, int origin, int fence,
+        /** Creates new spliterator covering the given range. */
+        VectorSpliterator(Object[] array, int origin, int fence,
                           int expectedModCount) {
-            this.list = list;
             this.array = array;
             this.index = origin;
             this.fence = fence;
@@ -1411,10 +1426,10 @@ public class Vector<E>
         private int getFence() { // initialize on first use
             int hi;
             if ((hi = fence) < 0) {
-                synchronized (list) {
-                    array = list.elementData;
-                    expectedModCount = list.modCount;
-                    hi = fence = list.elementCount;
+                synchronized (Vector.this) {
+                    array = elementData;
+                    expectedModCount = modCount;
+                    hi = fence = elementCount;
                 }
             }
             return hi;
@@ -1423,8 +1438,7 @@ public class Vector<E>
         public Spliterator<E> trySplit() {
             int hi = getFence(), lo = index, mid = (lo + hi) >>> 1;
             return (lo >= mid) ? null :
-                new VectorSpliterator<>(list, array, lo, index = mid,
-                                        expectedModCount);
+                new VectorSpliterator(array, lo, index = mid, expectedModCount);
         }
 
         @SuppressWarnings("unchecked")
@@ -1435,7 +1449,7 @@ public class Vector<E>
             if (getFence() > (i = index)) {
                 index = i + 1;
                 action.accept((E)array[i]);
-                if (list.modCount != expectedModCount)
+                if (modCount != expectedModCount)
                     throw new ConcurrentModificationException();
                 return true;
             }
@@ -1444,28 +1458,15 @@ public class Vector<E>
 
         @SuppressWarnings("unchecked")
         public void forEachRemaining(Consumer<? super E> action) {
-            int i, hi; // hoist accesses and checks from loop
-            Vector<E> lst; Object[] a;
             if (action == null)
                 throw new NullPointerException();
-            if ((lst = list) != null) {
-                if ((hi = fence) < 0) {
-                    synchronized (lst) {
-                        expectedModCount = lst.modCount;
-                        a = array = lst.elementData;
-                        hi = fence = lst.elementCount;
-                    }
-                }
-                else
-                    a = array;
-                if (a != null && (i = index) >= 0 && (index = hi) <= a.length) {
-                    while (i < hi)
-                        action.accept((E) a[i++]);
-                    if (lst.modCount == expectedModCount)
-                        return;
-                }
-            }
-            throw new ConcurrentModificationException();
+            final int hi = getFence();
+            final Object[] a = array;
+            int i;
+            for (i = index, index = hi; i < hi; i++)
+                action.accept((E) a[i]);
+            if (modCount != expectedModCount)
+                throw new ConcurrentModificationException();
         }
 
         public long estimateSize() {

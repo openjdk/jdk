@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.util.*;
 import java.rmi.registry.*;
 import java.rmi.server.*;
 
-public class TestImpl extends UnicastRemoteObject
+public class TestImpl extends RegistryRunner
     implements Test {
     static Thread locker = null;
     static TestImpl foo = null;
@@ -53,12 +53,8 @@ public class TestImpl extends UnicastRemoteObject
     }
 
     static public void main(String[] args) {
-        Registry registry = null;
-
         try {
-            int registryPort = Integer.parseInt(System.getProperty("rmi.registry.port"));
-            registry = java.rmi.registry.LocateRegistry.
-                createRegistry(registryPort);
+            int registryPort = RegistryRunner.init(args);
 
             //export "Foo"
             foo = new TestImpl();
@@ -75,16 +71,11 @@ public class TestImpl extends UnicastRemoteObject
             } catch (Exception e) {
                 throw new RemoteException(e.getMessage());
             }
-            Thread.sleep(DGCDeadLock.TEST_FAIL_TIME);
-            System.err.println("object vm exiting...");
-            System.exit(0);
 
+            RegistryRunner.notify(registryPort);
         } catch (Exception e) {
             System.err.println(e.getMessage());
             e.printStackTrace();
-        } finally {
-            TestLibrary.unexport(registry);
-            registry = null;
         }
     }
 

@@ -260,7 +260,7 @@ public:
   }
 
   // ModRefBS functions.
-  virtual void invalidate(MemRegion mr, bool whole_heap = false);
+  virtual void invalidate(MemRegion mr);
   void clear(MemRegion mr);
   void dirty(MemRegion mr);
 

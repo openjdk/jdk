@@ -27,6 +27,8 @@ package com.sun.tools.classfile;
 
 import java.io.IOException;
 
+import com.sun.tools.classfile.ConstantPool.CONSTANT_Module_info;
+
 /**
  * See Jigsaw.
  *
@@ -47,6 +49,8 @@ public class Module_attribute extends Attribute {
 
         module_name = cr.readUnsignedShort();
         module_flags = cr.readUnsignedShort();
+
+        module_version_index = cr.readUnsignedShort();
 
         requires_count = cr.readUnsignedShort();
         requires = new RequiresEntry[requires_count];
@@ -77,6 +81,7 @@ public class Module_attribute extends Attribute {
     public Module_attribute(int name_index,
             int module_name,
             int module_flags,
+            int module_version_index,
             RequiresEntry[] requires,
             ExportsEntry[] exports,
             OpensEntry[] opens,
@@ -85,6 +90,7 @@ public class Module_attribute extends Attribute {
         super(name_index, 2);
         this.module_name = module_name;
         this.module_flags = module_flags;
+        this.module_version_index = module_version_index;
         requires_count = requires.length;
         this.requires = requires;
         exports_count = exports.length;
@@ -109,6 +115,7 @@ public class Module_attribute extends Attribute {
 
     public final int module_name;
     public final int module_flags;
+    public final int module_version_index;
     public final int requires_count;
     public final RequiresEntry[] requires;
     public final int exports_count;
@@ -124,21 +131,25 @@ public class Module_attribute extends Attribute {
         RequiresEntry(ClassReader cr) throws IOException {
             requires_index = cr.readUnsignedShort();
             requires_flags = cr.readUnsignedShort();
+            requires_version_index = cr.readUnsignedShort();
         }
 
-        public RequiresEntry(int index, int flags) {
+        public RequiresEntry(int index, int flags, int version_index) {
             this.requires_index = index;
             this.requires_flags = flags;
+            this.requires_version_index = version_index;
         }
 
         public String getRequires(ConstantPool constant_pool) throws ConstantPoolException {
-            return constant_pool.getUTF8Value(requires_index);
+            CONSTANT_Module_info info = constant_pool.getModuleInfo(requires_index);
+            return info.getName();
         }
 
         public static final int length = 4;
 
         public final int requires_index;
         public final int requires_flags;
+        public final int requires_version_index;
     }
 
     public static class ExportsEntry {

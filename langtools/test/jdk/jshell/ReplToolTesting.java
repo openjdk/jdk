@@ -25,7 +25,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -36,17 +35,15 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.prefs.AbstractPreferences;
 import java.util.prefs.BackingStoreException;
-import java.util.prefs.Preferences;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import jdk.internal.jshell.tool.JShellTool;
-import jdk.jshell.SourceCodeAnalysis.Suggestion;
 
 import org.testng.annotations.BeforeMethod;
 
+import jdk.jshell.tool.JavaShellToolBuilder;
 import static java.util.stream.Collectors.toList;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
@@ -92,10 +89,8 @@ public class ReplToolTesting {
     private Map<String, ClassInfo> classes;
     private Map<String, ImportInfo> imports;
     private boolean isDefaultStartUp = true;
-    private Preferences prefs;
+    private Map<String, String> prefsMap;
     private Map<String, String> envvars;
-
-    public JShellTool repl = null;
 
     public interface ReplTest {
         void run(boolean after);
@@ -202,6 +197,10 @@ public class ReplToolTesting {
         test(Locale.ROOT, isDefaultStartUp, args, DEFAULT_STARTUP_MESSAGE, tests);
     }
 
+    public void testNoStartUp(ReplTest... tests) {
+        test(Locale.ROOT, false, new String[] {"--no-startup"}, DEFAULT_STARTUP_MESSAGE, tests);
+    }
+
     public void test(Locale locale, boolean isDefaultStartUp, String[] args, String startUpMessage, ReplTest... tests) {
         this.isDefaultStartUp = isDefaultStartUp;
         initSnippets();
@@ -232,7 +231,7 @@ public class ReplToolTesting {
 
     @BeforeMethod
     public void setUp() {
-        prefs = new MemoryPreferences();
+        prefsMap = new HashMap<>();
         envvars = new HashMap<>();
     }
 
@@ -240,7 +239,25 @@ public class ReplToolTesting {
         envvars.put(name, value);
     }
 
-    public void testRaw(Locale locale, String[] args, ReplTest... tests) {
+    protected JavaShellToolBuilder builder(Locale locale) {
+        return JavaShellToolBuilder
+                    .builder()
+                    .in(cmdin, userin)
+                    .out(new PrintStream(cmdout), new PrintStream(console), new PrintStream(userout))
+                    .err(new PrintStream(cmderr), new PrintStream(usererr))
+                    .persistence(prefsMap)
+                    .env(envvars)
+                    .locale(locale)
+                    .promptCapture(true);
+    }
+
+    private void testRaw(Locale locale, String[] args, ReplTest... tests) {
+        testRawInit(tests);
+        testRawRun(locale, args);
+        testRawCheck(locale);
+    }
+
+    private void testRawInit(ReplTest... tests) {
         cmdin = new WaitingTestingInputStream();
         cmdout = new ByteArrayOutputStream();
         cmderr = new ByteArrayOutputStream();
@@ -248,23 +265,18 @@ public class ReplToolTesting {
         userin = new TestingInputStream();
         userout = new ByteArrayOutputStream();
         usererr = new ByteArrayOutputStream();
-        repl = new JShellTool(
-                cmdin,
-                new PrintStream(cmdout),
-                new PrintStream(cmderr),
-                new PrintStream(console),
-                userin,
-                new PrintStream(userout),
-                new PrintStream(usererr),
-                prefs,
-                envvars,
-                locale);
-        repl.testPrompt = true;
+    }
+
+    protected void testRawRun(Locale locale, String[] args) {
         try {
-            repl.start(args);
+            builder(locale)
+                    .run(args);
         } catch (Exception ex) {
             fail("Repl tool died with exception", ex);
         }
+    }
+
+    private void testRawCheck(Locale locale) {
         // perform internal consistency checks on state, if desired
         String cos = getCommandOutput();
         String ceos = getCommandErrorOutput();
@@ -272,9 +284,9 @@ public class ReplToolTesting {
         String ueos = getUserErrorOutput();
         assertTrue((cos.isEmpty() || cos.startsWith("|  Goodbye") || !locale.equals(Locale.ROOT)),
                 "Expected a goodbye, but got: " + cos);
-        assertTrue(ceos.isEmpty(), "Expected empty error output, got: " + ceos);
-        assertTrue(uos.isEmpty(), "Expected empty output, got: " + uos);
-        assertTrue(ueos.isEmpty(), "Expected empty error output, got: " + ueos);
+        assertTrue(ceos.isEmpty(), "Expected empty command error output, got: " + ceos);
+        assertTrue(uos.isEmpty(), "Expected empty user output, got: " + uos);
+        assertTrue(ueos.isEmpty(), "Expected empty user error output, got: " + ueos);
     }
 
     public void assertReset(boolean after, String cmd) {
@@ -452,36 +464,6 @@ public class ReplToolTesting {
             assertOutput(getUserOutput(), print, "user output: " + cmd);
             assertOutput(getUserErrorOutput(), usererr, "user error: " + cmd);
         }
-    }
-
-    public void assertCompletion(boolean after, String code, boolean isSmart, String... expected) {
-        if (!after) {
-            setCommandInput("\n");
-        } else {
-            assertCompletion(code, isSmart, expected);
-        }
-    }
-
-    public void assertCompletion(String code, boolean isSmart, String... expected) {
-        List<String> completions = computeCompletions(code, isSmart);
-        assertEquals(completions, Arrays.asList(expected), "Command: " + code + ", output: " +
-                completions.toString());
-    }
-
-    private List<String> computeCompletions(String code, boolean isSmart) {
-        JShellTool js = this.repl != null ? this.repl
-                                      : new JShellTool(null, null, null, null, null, null, null,
-                                              prefs, envvars, Locale.ROOT);
-        int cursor =  code.indexOf('|');
-        code = code.replace("|", "");
-        assertTrue(cursor > -1, "'|' not found: " + code);
-        List<Suggestion> completions =
-                js.commandCompletionSuggestions(code, cursor, new int[] {-1}); //XXX: ignoring anchor for now
-        return completions.stream()
-                          .filter(s -> isSmart == s.matchesType())
-                          .map(s -> s.continuation())
-                          .distinct()
-                          .collect(Collectors.toList());
     }
 
     public Consumer<String> assertStartsWith(String prefix) {

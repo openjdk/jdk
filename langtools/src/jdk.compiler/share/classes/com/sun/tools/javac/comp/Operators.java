@@ -296,7 +296,7 @@ public class Operators {
          */
         private OperatorSymbol[] initOperators() {
             OperatorSymbol[] operators = operatorSuppliers.stream()
-                    .map(op -> op.get())
+                    .map(Supplier::get)
                     .toArray(OperatorSymbol[]::new);
             alternatives = Optional.of(operators);
             operatorSuppliers = null; //let GC do its work

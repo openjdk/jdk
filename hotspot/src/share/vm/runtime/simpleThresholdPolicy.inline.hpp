@@ -27,6 +27,8 @@
 
 #include "compiler/compilerOracle.hpp"
 
+#ifdef TIERED
+
 template<CompLevel level>
 bool SimpleThresholdPolicy::call_predicate_helper(int i, int b, double scale, Method* method) {
   double threshold_scaling;
@@ -34,6 +36,9 @@ bool SimpleThresholdPolicy::call_predicate_helper(int i, int b, double scale, Me
     scale *= threshold_scaling;
   }
   switch(level) {
+  case CompLevel_aot:
+    return (i >= Tier3AOTInvocationThreshold * scale) ||
+           (i >= Tier3AOTMinInvocationThreshold * scale && i + b >= Tier3AOTCompileThreshold * scale);
   case CompLevel_none:
   case CompLevel_limited_profile:
     return (i >= Tier3InvocationThreshold * scale) ||
@@ -52,6 +57,8 @@ bool SimpleThresholdPolicy::loop_predicate_helper(int i, int b, double scale, Me
     scale *= threshold_scaling;
   }
   switch(level) {
+  case CompLevel_aot:
+    return b >= Tier3AOTBackEdgeThreshold * scale;
   case CompLevel_none:
   case CompLevel_limited_profile:
     return b >= Tier3BackEdgeThreshold * scale;
@@ -86,5 +93,7 @@ bool SimpleThresholdPolicy::is_trivial(Method* method) {
   }
   return false;
 }
+
+#endif // TIERED
 
 #endif // SHARE_VM_RUNTIME_SIMPLETHRESHOLDPOLICY_INLINE_HPP

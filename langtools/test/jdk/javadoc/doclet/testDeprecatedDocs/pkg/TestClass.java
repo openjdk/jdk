@@ -26,6 +26,7 @@ package pkg;
 /**
  * @deprecated class_test1 passes.
  */
+@Deprecated(forRemoval=true)
 public class TestClass {
 
     /**
@@ -36,6 +37,7 @@ public class TestClass {
     /**
      * @deprecated class_test3 passes.
      */
+    @Deprecated(forRemoval=true)
     public TestClass() {}
 
     /**

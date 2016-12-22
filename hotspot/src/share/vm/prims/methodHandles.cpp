@@ -26,7 +26,6 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "code/codeCache.hpp"
-#include "code/codeCacheExtensions.hpp"
 #include "code/dependencyContext.hpp"
 #include "compiler/compileBroker.hpp"
 #include "interpreter/interpreter.hpp"
@@ -94,7 +93,6 @@ void MethodHandlesAdapterGenerator::generate() {
     StubCodeMark mark(this, "MethodHandle::interpreter_entry", vmIntrinsics::name_at(iid));
     address entry = MethodHandles::generate_method_handle_interpreter_entry(_masm, iid);
     if (entry != NULL) {
-      CodeCacheExtensions::handle_generated_pc(entry, vmIntrinsics::name_at(iid));
       Interpreter::set_entry_for_kind(mk, entry);
     }
     // If the entry is not set, it will throw AbstractMethodError.

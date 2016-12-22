@@ -965,10 +965,7 @@ static int cc_to_biint(int cc, int flags_reg) {
 // is the number of bytes (not instructions) which will be inserted before
 // the instruction. The padding must match the size of a NOP instruction.
 
-int inlineCallClearArrayNode::compute_padding(int current_offset) const {
-  int desired_padding = (2*4-current_offset)&31; // see MacroAssembler::clear_memory_doubleword
-  return (desired_padding <= 3*4) ? desired_padding : 0;
-}
+// Currently not used on this platform.
 
 //=============================================================================
 
@@ -4062,6 +4059,14 @@ operand immP_0or1() %{
 operand immL() %{
   match(ConL);
   op_cost(40);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immLmax30() %{
+  predicate((n->get_long() <= 30));
+  match(ConL);
+  op_cost(0);
   format %{ %}
   interface(CONST_INTER);
 %}
@@ -9580,6 +9585,19 @@ instruct andI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
   ins_pipe(pipe_class_default);
 %}
 
+// Left shifted Immediate And
+instruct andI_reg_immIhi16(iRegIdst dst, iRegIsrc src1, immIhi16  src2, flagsRegCR0 cr0) %{
+  match(Set dst (AndI src1 src2));
+  effect(KILL cr0);
+  format %{ "ANDIS   $dst, $src1, $src2.hi" %}
+  size(4);
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_andis_);
+    __ andis_($dst$$Register, $src1$$Register, (int)((unsigned short)(($src2$$constant & 0xFFFF0000) >> 16)));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 // Immediate And
 instruct andI_reg_uimm16(iRegIdst dst, iRegIsrc src1, uimmI16 src2, flagsRegCR0 cr0) %{
   match(Set dst (AndI src1 src2));
@@ -11722,18 +11740,44 @@ instruct array_size(iRegLdst dst, iRegPsrc end, iRegPsrc start) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Clear-array with dynamic array-size.
-instruct inlineCallClearArray(rarg1RegL cnt, rarg2RegP base, Universe dummy, regCTR ctr) %{
+// Clear-array with constant short array length. The versions below can use dcbz with cnt > 30.
+instruct inlineCallClearArrayShort(immLmax30 cnt, rarg2RegP base, Universe dummy, regCTR ctr) %{
   match(Set dummy (ClearArray cnt base));
-  effect(USE_KILL cnt, USE_KILL base, KILL ctr);
-  ins_cost(MEMORY_REF_COST);
-
-  ins_alignment(4); // 'compute_padding()' gets called, up to this number-1 nops will get inserted.
+  effect(USE_KILL base, KILL ctr);
+  ins_cost(2 * MEMORY_REF_COST);
 
   format %{ "ClearArray $cnt, $base" %}
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_compound);
-    __ clear_memory_doubleword($base$$Register, $cnt$$Register); // kills cnt, base, R0
+    __ clear_memory_constlen($base$$Register, $cnt$$constant, R0); // kills base, R0
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// Clear-array with constant large array length.
+instruct inlineCallClearArrayLarge(immL cnt, rarg2RegP base, Universe dummy, iRegLdst tmp, regCTR ctr) %{
+  match(Set dummy (ClearArray cnt base));
+  effect(USE_KILL base, TEMP tmp, KILL ctr);
+  ins_cost(3 * MEMORY_REF_COST);
+
+  format %{ "ClearArray $cnt, $base \t// KILL $tmp" %}
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    __ clear_memory_doubleword($base$$Register, $tmp$$Register, R0, $cnt$$constant); // kills base, R0
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// Clear-array with dynamic array length.
+instruct inlineCallClearArray(rarg1RegL cnt, rarg2RegP base, Universe dummy, regCTR ctr) %{
+  match(Set dummy (ClearArray cnt base));
+  effect(USE_KILL cnt, USE_KILL base, KILL ctr);
+  ins_cost(4 * MEMORY_REF_COST);
+
+  format %{ "ClearArray $cnt, $base" %}
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    __ clear_memory_doubleword($base$$Register, $cnt$$Register, R0); // kills cnt, base, R0
   %}
   ins_pipe(pipe_class_default);
 %}

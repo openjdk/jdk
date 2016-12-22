@@ -408,22 +408,20 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
 
     private DiagnosticListener<JavaFileObject> getDiagnosticListenerForWriter(Writer w) {
         final PrintWriter pw = getPrintWriterForWriter(w);
-        return new DiagnosticListener<JavaFileObject> () {
-            public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
-                switch (diagnostic.getKind()) {
-                    case ERROR:
-                        pw.print(getMessage("err.prefix"));
-                        break;
-                    case WARNING:
-                        pw.print(getMessage("warn.prefix"));
-                        break;
-                    case NOTE:
-                        pw.print(getMessage("note.prefix"));
-                        break;
-                }
-                pw.print(" ");
-                pw.println(diagnostic.getMessage(null));
+        return diagnostic -> {
+            switch (diagnostic.getKind()) {
+                case ERROR:
+                    pw.print(getMessage("err.prefix"));
+                    break;
+                case WARNING:
+                    pw.print(getMessage("warn.prefix"));
+                    break;
+                case NOTE:
+                    pw.print(getMessage("note.prefix"));
+                    break;
             }
+            pw.print(" ");
+            pw.println(diagnostic.getMessage(null));
         };
     }
 
@@ -643,9 +641,15 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
 
         ClassFileInfo cfInfo = read(fo);
         if (!className.endsWith(".class")) {
-            String cfName = cfInfo.cf.getName();
-            if (!cfName.replaceAll("[/$]", ".").equals(className.replaceAll("[/$]", "."))) {
-                reportWarning("warn.unexpected.class", className, cfName.replace('/', '.'));
+            if (cfInfo.cf.this_class == 0) {
+                if (!className.equals("module-info")) {
+                    reportWarning("warn.unexpected.class", fo.getName(), className);
+                }
+            } else {
+                String cfName = cfInfo.cf.getName();
+                if (!cfName.replaceAll("[/$]", ".").equals(className.replaceAll("[/$]", "."))) {
+                    reportWarning("warn.unexpected.class", fo.getName(), className);
+                }
             }
         }
         write(cfInfo);
