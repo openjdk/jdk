@@ -150,8 +150,6 @@ java/io/pathNames/GeneralWin32.java                             8156595 windows-
 com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java 8030957 aix-all
 com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957 aix-all
 
-com/sun/management/DiagnosticCommandMBean/DcmdMBeanPermissionsTest.java 8169575 generic-all
-
 ############################################################################
 
 # jdk_jmx
