@@ -25,6 +25,7 @@
 
 #include "aot/aotCodeHeap.hpp"
 #include "aot/aotLoader.hpp"
+#include "classfile/javaAssertions.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "interpreter/abstractInterpreter.hpp"
@@ -706,6 +707,12 @@ bool AOTCodeHeap::load_klass_data(instanceKlassHandle kh, Thread* thread) {
     return false;
   }
 
+  if (_lib->config()->_omitAssertions && JavaAssertions::enabled(kh->name()->as_C_string(), kh->class_loader() == NULL)) {
+    // Assertions are omitted in the compiled code, but are enabled right now. Bail out.
+    sweep_dependent_methods(klass_data);
+    return false;
+  }
+
   NOT_PRODUCT( aot_klasses_found++; )
 
   log_trace(aot, class, load)("found  %s  in  %s for classloader %p tid=" INTPTR_FORMAT, kh->internal_name(), _lib->name(), kh->class_loader_data(), p2i(thread));
@@ -714,7 +721,7 @@ bool AOTCodeHeap::load_klass_data(instanceKlassHandle kh, Thread* thread) {
   // Set klass's Resolve (second) got cell.
   _metaspace_got[klass_data->_got_index] = kh();
 
-  // Initialize global symbols of the DSO to the correspondingVM symbol values.
+  // Initialize global symbols of the DSO to the corresponding VM symbol values.
   link_global_lib_symbols();
 
   int methods_offset = klass_data->_compiled_methods_offset;
