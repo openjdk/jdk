@@ -345,6 +345,12 @@ public class ReflectionFactory {
         return langReflectAccess().getExecutableTypeAnnotationBytes(ex);
     }
 
+    /** Gets the shared array of parameter types of an Executable.
+     */
+    public Class<?>[] getExecutableSharedParameterTypes(Executable ex) {
+        return langReflectAccess().getExecutableSharedParameterTypes(ex);
+    }
+
     //--------------------------------------------------------------------------
     //
     // Routines used by serialization
