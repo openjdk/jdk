@@ -36,8 +36,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -54,7 +55,7 @@ public class FilterNotMostSpecific {
         for (MethodDesc expected : expectedMethods) {
             if (expected.isGetMethodReturn()) {
                 try {
-                    Method m = iface.getMethod(expected.name(), expected.parameterTypes());
+                    Method m = iface.getMethod(expected.name());
                     if (!assertMatch(expected, m))
                         fail(failMsg(expected, m, iface));
                     else
@@ -71,18 +72,26 @@ public class FilterNotMostSpecific {
     public void testGetMethods(Class<?> iface) {
         List<Method> foundMethods = filterObjectMethods(iface.getMethods());
         MethodDesc[] expectedMethods = iface.getAnnotationsByType(MethodDesc.class);
+        Set<Method> used = new HashSet<>();
 
         for (MethodDesc expected : expectedMethods) {
             boolean found = false;
+
             for (Method m : foundMethods) {
-                if (assertMatch(expected, m)) {
+                if (used.contains(m))
+                    continue;
+
+                if(expected.name().equals(m.getName()) &&
+                    expected.declaringClass() ==m.getDeclaringClass()) {
+
                     found = true;
+                    assertMatch(expected, m);
+                    used.add(m);
                     break;
                 }
             }
-            if (!found)
-                fail("On: "+ iface +"\nDid not find " + toMethodString(expected) +
-                     " among " + foundMethods);
+            if (! found)
+                fail("On: "+ iface +"\nDid not find " + toMethodString(expected) + " among " + foundMethods);
         }
         assertEquals(foundMethods.size(), expectedMethods.length,
                 "\non: " + iface +
@@ -94,11 +103,6 @@ public class FilterNotMostSpecific {
         if (!expected.name().equals(m.getName()))
             return false;
         if (expected.declaringClass() != m.getDeclaringClass())
-            return false;
-        if (!Arrays.equals(expected.parameterTypes(), m.getParameterTypes()))
-            return false;
-        if (expected.returnType() != NotSpecified.class &&
-            expected.returnType() != m.getReturnType())
             return false;
 
         if (expected.kind() == MethodKind.ABSTRACT)
@@ -124,13 +128,8 @@ public class FilterNotMostSpecific {
     }
 
     private String toMethodString(MethodDesc m) {
-        return (m.returnType() != NotSpecified.class
-                ? m.returnType().getSimpleName() + " "
-                : "") +
-               m.declaringClass().getSimpleName().toString() + "." +
-               m.name() + Stream.of(m.parameterTypes())
-                                .map(cl -> cl.getSimpleName())
-                                .collect(Collectors.joining(", ", "(", ")"));
+        return m.declaringClass().getSimpleName().toString() + "." +
+            m.name() + "()";
     }
 
     private List<String> toMethodStrings(MethodDesc[] m) {
@@ -143,15 +142,10 @@ public class FilterNotMostSpecific {
     @Repeatable(MethodDescs.class)
     public @interface MethodDesc {
         String name();
-        Class<?> returnType() default NotSpecified.class;
-        Class<?>[] parameterTypes() default {};
         Class<?> declaringClass();
         MethodKind kind() default MethodKind.ABSTRACT;
         boolean isGetMethodReturn() default false;
     }
-
-    // special type marking a not-specified return type in @MethodDesc
-    interface NotSpecified {}
 
     @Retention(RetentionPolicy.RUNTIME)
     public @interface MethodDescs {
@@ -178,18 +172,22 @@ public class FilterNotMostSpecific {
 
     @MethodDesc(name="nonDefault", declaringClass=Jbis.class,
             isGetMethodReturn=true)
+    @MethodDesc(name="nonDefault", declaringClass=I.class)
     interface P2 extends Jbis, Jprim {}
 
     @MethodDesc(name="nonDefault", declaringClass=Jbis.class,
             isGetMethodReturn=true)
+    @MethodDesc(name="nonDefault", declaringClass=I.class)
     interface P3 extends Jbis, Jprim, I {}
 
-    @MethodDesc(name="nonDefault", declaringClass=J.class,
+    @MethodDesc(name="nonDefault", declaringClass=I.class,
             isGetMethodReturn=true)
+    @MethodDesc(name="nonDefault", declaringClass=J.class)
     interface P4 extends I, J {}
 
     @MethodDesc(name="nonDefault", declaringClass=J.class,
             isGetMethodReturn=true)
+    @MethodDesc(name="nonDefault", declaringClass=I.class)
     interface P5 extends J, I {}
 
     @MethodDesc(name="nonDefault", declaringClass=J.class,
@@ -200,12 +198,14 @@ public class FilterNotMostSpecific {
             isGetMethodReturn=true)
     interface K1M extends J { void nonDefault(); }
 
-    @MethodDesc(name="nonDefault", declaringClass=J.class,
-             isGetMethodReturn=true)
-   interface K2 extends I, J {}
+    @MethodDesc(name="nonDefault", declaringClass=I.class,
+            isGetMethodReturn=true)
+    @MethodDesc(name="nonDefault", declaringClass=J.class)
+    interface K2 extends I, J {}
 
     @MethodDesc(name="nonDefault", declaringClass=J.class,
             isGetMethodReturn=true)
+    @MethodDesc(name="nonDefault", declaringClass=I.class)
     interface K2O extends J, I {}
 
     @MethodDesc(name="nonDefault", declaringClass=K2M.class,
@@ -244,18 +244,21 @@ public class FilterNotMostSpecific {
 
     @MethodDesc(name="isDefault", declaringClass=M.class,
             kind=MethodKind.DEFAULT, isGetMethodReturn=true)
+    @MethodDesc(name="nonDefault", declaringClass=L.class)
     @MethodDesc(name="nonDefault", declaringClass=M.class,
             isGetMethodReturn=true)
     interface N2 extends M, L {}
 
     @MethodDesc(name="isDefault", declaringClass=M.class,
             kind=MethodKind.DEFAULT, isGetMethodReturn=true)
-    @MethodDesc(name="nonDefault", declaringClass=M.class,
+    @MethodDesc(name="nonDefault", declaringClass=L.class,
             isGetMethodReturn=true)
+    @MethodDesc(name="nonDefault", declaringClass=M.class)
     interface N22 extends L, M {}
 
     @MethodDesc(name="isDefault", declaringClass=N2D.class,
             kind=MethodKind.DEFAULT, isGetMethodReturn=true)
+    @MethodDesc(name="nonDefault", declaringClass=L.class)
     @MethodDesc(name="nonDefault", declaringClass=M.class,
             isGetMethodReturn=true)
     interface N2D extends M, L { default void isDefault() {}}
@@ -274,36 +277,48 @@ public class FilterNotMostSpecific {
 
     @MethodDesc(name="isDefault", declaringClass=N2DN.class,
             kind=MethodKind.DEFAULT, isGetMethodReturn=true)
-    @MethodDesc(name="nonDefault", declaringClass=N2DN.class,
+    @MethodDesc(name="nonDefault", declaringClass=L.class,
             isGetMethodReturn=true)
+    @MethodDesc(name="nonDefault", declaringClass=M.class)
+    @MethodDesc(name="nonDefault", declaringClass=N2DN.class)
     interface O1 extends L, M, N2DN {}
 
     @MethodDesc(name="isDefault", declaringClass=N2DN.class,
             kind=MethodKind.DEFAULT, isGetMethodReturn=true)
-    @MethodDesc(name="nonDefault", declaringClass=N2DN.class,
+    @MethodDesc(name="nonDefault", declaringClass=L.class)
+    @MethodDesc(name="nonDefault", declaringClass=M.class,
             isGetMethodReturn=true)
+    @MethodDesc(name="nonDefault", declaringClass=N2DN.class)
     interface O2 extends M, N2DN, L {}
 
     @MethodDesc(name="isDefault", declaringClass=N2DN.class,
             kind=MethodKind.DEFAULT, isGetMethodReturn=true)
+    @MethodDesc(name="nonDefault", declaringClass=L.class)
+    @MethodDesc(name="nonDefault", declaringClass=M.class)
     @MethodDesc(name="nonDefault", declaringClass=N2DN.class,
             isGetMethodReturn=true)
     interface O3 extends N2DN, L, M {}
 
     @MethodDesc(name="isDefault", declaringClass=N2DN.class,
             kind=MethodKind.DEFAULT, isGetMethodReturn=true)
-    @MethodDesc(name="nonDefault", declaringClass=N2DN.class,
+    @MethodDesc(name="nonDefault", declaringClass=L.class,
             isGetMethodReturn=true)
+    @MethodDesc(name="nonDefault", declaringClass=M.class)
+    @MethodDesc(name="nonDefault", declaringClass=N2DN.class)
     abstract class C1 implements L, M, N2DN {}
 
     @MethodDesc(name="isDefault", declaringClass=N2DN.class,
             kind=MethodKind.DEFAULT, isGetMethodReturn=true)
-    @MethodDesc(name="nonDefault", declaringClass=N2DN.class,
+    @MethodDesc(name="nonDefault", declaringClass=L.class)
+    @MethodDesc(name="nonDefault", declaringClass=M.class,
             isGetMethodReturn=true)
+    @MethodDesc(name="nonDefault", declaringClass=N2DN.class)
     abstract class C2 implements M, N2DN, L {}
 
     @MethodDesc(name="isDefault", declaringClass=N2DN.class,
             kind=MethodKind.DEFAULT, isGetMethodReturn=true)
+    @MethodDesc(name="nonDefault", declaringClass=L.class)
+    @MethodDesc(name="nonDefault", declaringClass=M.class)
     @MethodDesc(name="nonDefault", declaringClass=N2DN.class,
             isGetMethodReturn=true)
     abstract class C3 implements N2DN, L, M {}
@@ -330,54 +345,88 @@ public class FilterNotMostSpecific {
 
     @MethodDesc(name="isDefault", declaringClass=R1.class,
             isGetMethodReturn=true)
-    @MethodDesc(name="nonDefault", declaringClass=N2DN.class,
+    @MethodDesc(name="nonDefault", declaringClass=L.class,
             isGetMethodReturn=true)
+    @MethodDesc(name="nonDefault", declaringClass=M.class)
+    @MethodDesc(name="nonDefault", declaringClass=N2DN.class)
     interface R1 extends L, M, N2DN { void isDefault(); }
 
     @MethodDesc(name="isDefault", declaringClass=R2.class,
             isGetMethodReturn=true)
-    @MethodDesc(name="nonDefault", declaringClass=N2DN.class,
+    @MethodDesc(name="nonDefault", declaringClass=L.class)
+    @MethodDesc(name="nonDefault", declaringClass=M.class,
             isGetMethodReturn=true)
+    @MethodDesc(name="nonDefault", declaringClass=N2DN.class)
     interface R2 extends M, N2DN, L { void isDefault(); }
 
     @MethodDesc(name="isDefault", declaringClass=R3.class,
             isGetMethodReturn=true)
+    @MethodDesc(name="nonDefault", declaringClass=L.class)
+    @MethodDesc(name="nonDefault", declaringClass=M.class)
     @MethodDesc(name="nonDefault", declaringClass=N2DN.class,
             isGetMethodReturn=true)
     interface R3 extends N2DN, L, M { void isDefault(); }
 
-    @MethodDesc(name="isDefault", declaringClass=R1.class,
+    // this one is strange but logical, getMethod finds N2DN first, which is
+    // default but not the most specific
+    @MethodDesc(name="isDefault", declaringClass=N2DN.class,
+            kind=MethodKind.DEFAULT, isGetMethodReturn=true)
+    @MethodDesc(name="isDefault", declaringClass=R1.class)
+    @MethodDesc(name="nonDefault", declaringClass=L.class,
             isGetMethodReturn=true)
-    @MethodDesc(name="nonDefault", declaringClass=N2DN.class,
-            isGetMethodReturn=true)
+    @MethodDesc(name="nonDefault", declaringClass=M.class)
+    @MethodDesc(name="nonDefault", declaringClass=N2DN.class)
     interface R4 extends L, M, N2DN, R1 {}
 
-    @MethodDesc(name="isDefault", declaringClass=R2.class,
+    // this one is strange but logical, getMethod finds N2DN first, which is
+    // default but not the most specific
+    @MethodDesc(name="isDefault", declaringClass=N2DN.class,
+            kind=MethodKind.DEFAULT, isGetMethodReturn=true)
+    @MethodDesc(name="isDefault", declaringClass=R2.class)
+    @MethodDesc(name="nonDefault", declaringClass=L.class)
+    @MethodDesc(name="nonDefault", declaringClass=M.class,
             isGetMethodReturn=true)
-    @MethodDesc(name="nonDefault", declaringClass=N2DN.class,
-            isGetMethodReturn=true)
+    @MethodDesc(name="nonDefault", declaringClass=N2DN.class)
     interface R5 extends M, N2DN, R2, L {}
 
-    @MethodDesc(name="isDefault", declaringClass=R3.class,
-            isGetMethodReturn=true)
+    // this one is strange but logical, getMethod finds N2DN first, which is
+    // default but not the most specific
+    @MethodDesc(name="isDefault", declaringClass=N2DN.class,
+            kind=MethodKind.DEFAULT, isGetMethodReturn=true)
+    @MethodDesc(name="isDefault", declaringClass=R3.class)
+    @MethodDesc(name="nonDefault", declaringClass=L.class)
+    @MethodDesc(name="nonDefault", declaringClass=M.class)
     @MethodDesc(name="nonDefault", declaringClass=N2DN.class,
             isGetMethodReturn=true)
     interface R6 extends N2DN, R3, L, M {}
 
+    // the following three finds the "right" one
     @MethodDesc(name="isDefault", declaringClass=R1.class,
             isGetMethodReturn=true)
-    @MethodDesc(name="nonDefault", declaringClass=N2DN.class,
+    @MethodDesc(name="isDefault", declaringClass=N2DN.class,
+            kind=MethodKind.DEFAULT)
+    @MethodDesc(name="nonDefault", declaringClass=L.class,
             isGetMethodReturn=true)
+    @MethodDesc(name="nonDefault", declaringClass=M.class)
+    @MethodDesc(name="nonDefault", declaringClass=N2DN.class)
     interface R7 extends L, M, R1, N2DN {}
 
     @MethodDesc(name="isDefault", declaringClass=R2.class,
             isGetMethodReturn=true)
-    @MethodDesc(name="nonDefault", declaringClass=N2DN.class,
+    @MethodDesc(name="isDefault", declaringClass=N2DN.class,
+            kind=MethodKind.DEFAULT)
+    @MethodDesc(name="nonDefault", declaringClass=L.class)
+    @MethodDesc(name="nonDefault", declaringClass=M.class,
             isGetMethodReturn=true)
+    @MethodDesc(name="nonDefault", declaringClass=N2DN.class)
     interface R8 extends M, R2, N2DN, L {}
 
     @MethodDesc(name="isDefault", declaringClass=R3.class,
             isGetMethodReturn=true)
+    @MethodDesc(name="isDefault", declaringClass=N2DN.class,
+            kind=MethodKind.DEFAULT)
+    @MethodDesc(name="nonDefault", declaringClass=L.class)
+    @MethodDesc(name="nonDefault", declaringClass=M.class)
     @MethodDesc(name="nonDefault", declaringClass=N2DN.class,
             isGetMethodReturn=true)
     interface R9 extends R3, N2DN, L, M {}
@@ -396,40 +445,51 @@ public class FilterNotMostSpecific {
 
     interface Z3 extends Z2, Z1 { void z(); }
 
-    @MethodDesc(name="z", declaringClass=Z3.class,
-            isGetMethodReturn = true)
+    @MethodDesc(name="z", declaringClass=Z2.class,
+            kind=MethodKind.DEFAULT, isGetMethodReturn=true)
+    @MethodDesc(name="z", declaringClass=Z3.class)
     interface Z41 extends Z1, Z2, Z3 { }
 
-    @MethodDesc(name="z", declaringClass=Z3.class,
-            isGetMethodReturn = true)
+    @MethodDesc(name="z", declaringClass=Z2.class,
+            kind=MethodKind.DEFAULT, isGetMethodReturn=true)
+    @MethodDesc(name="z", declaringClass=Z3.class)
     interface Z42 extends Z2, Z3, Z1 { }
 
     @MethodDesc(name="z", declaringClass=Z3.class,
-            isGetMethodReturn = true)
+            isGetMethodReturn=true)
+    @MethodDesc(name="z", declaringClass=Z2.class,
+            kind=MethodKind.DEFAULT)
     interface Z43 extends Z3, Z1, Z2 { }
 
-    @MethodDesc(name="z", declaringClass=Z3.class,
-            isGetMethodReturn = true)
+    @MethodDesc(name="z", declaringClass=Z2.class,
+            kind=MethodKind.DEFAULT, isGetMethodReturn=true)
+    @MethodDesc(name="z", declaringClass=Z3.class)
     abstract class ZC41 implements Z1, Z2, Z3 { }
 
-    @MethodDesc(name="z", declaringClass=Z3.class,
-            isGetMethodReturn = true)
+    @MethodDesc(name="z", declaringClass=Z2.class,
+            kind=MethodKind.DEFAULT, isGetMethodReturn=true)
+    @MethodDesc(name="z", declaringClass=Z3.class)
     abstract class ZC42 implements Z2, Z3, Z1 { }
 
     @MethodDesc(name="z", declaringClass=Z3.class,
-            isGetMethodReturn = true)
+            isGetMethodReturn=true)
+    @MethodDesc(name="z", declaringClass=Z2.class,
+            kind=MethodKind.DEFAULT)
     abstract class ZC43 implements Z3, Z1, Z2 { }
 
     // More reabstraction + concretization
     interface X1 { default void x() {} }
     interface X2 extends X1 { void x(); }
 
-    @MethodDesc(name="x", declaringClass=X2.class,
-            isGetMethodReturn=true)
+    @MethodDesc(name="x", declaringClass=X1.class,
+            kind=MethodKind.DEFAULT, isGetMethodReturn=true)
+    @MethodDesc(name="x", declaringClass=X2.class)
     interface X31 extends X1, X2 {}
 
     @MethodDesc(name="x", declaringClass=X2.class,
             isGetMethodReturn=true)
+    @MethodDesc(name="x", declaringClass=X1.class,
+            kind=MethodKind.DEFAULT)
     interface X32 extends X2, X1 {}
 
     @MethodDesc(name="x", declaringClass=X3.class,
@@ -464,106 +524,84 @@ public class FilterNotMostSpecific {
 
     interface K extends I, J { void nonDefault(); }
 
-    @MethodDesc(name="nonDefault", declaringClass=K.class,
+    @MethodDesc(name="nonDefault", declaringClass=I.class,
             isGetMethodReturn=true)
+    @MethodDesc(name="nonDefault", declaringClass=J.class)
+    @MethodDesc(name="nonDefault", declaringClass=K.class)
     abstract class ZZ1 implements I, J, K {}
 
-    @MethodDesc(name="nonDefault", declaringClass=K.class,
+    @MethodDesc(name="nonDefault", declaringClass=I.class,
             isGetMethodReturn=true)
+    @MethodDesc(name="nonDefault", declaringClass=J.class)
+    @MethodDesc(name="nonDefault", declaringClass=K.class)
     abstract class ZZ2 extends ZZ1 implements K, I, J {}
 
-    @MethodDesc(name="nonDefault", declaringClass=K.class,
+    @MethodDesc(name="nonDefault", declaringClass=I.class,
             isGetMethodReturn=true)
+    @MethodDesc(name="nonDefault", declaringClass=J.class)
+    @MethodDesc(name="nonDefault", declaringClass=K.class)
     abstract class ZZ3 extends ZZ2 implements J, K, I {}
 
-    // bridges...
+    // bridges
+    interface B1A { Object m(); }
+    interface B1B extends B1A { Map m(); }
 
-    interface B1 { Object m(); }
-    interface B2A extends B1 { Map m(); }
-    interface B2B extends B1 { HashMap m(); }
-
-    @MethodDesc(name="m", returnType=Object.class, declaringClass=B3A.class,
-            kind = MethodKind.DEFAULT)
-    @MethodDesc(name="m", returnType=Map.class, declaringClass=B3A.class,
-            kind = MethodKind.DEFAULT)
-    @MethodDesc(name="m", returnType=HashMap.class, declaringClass=B3A.class,
+    @MethodDesc(name="m", declaringClass=B1C.class,
             isGetMethodReturn=true)
-    interface B3A extends B2A { HashMap m(); }
+    @MethodDesc(name="m", declaringClass=B1C.class,
+            kind=MethodKind.DEFAULT)
+    @MethodDesc(name="m", declaringClass=B1C.class,
+            kind=MethodKind.DEFAULT)
+    interface B1C extends B1B { HashMap m(); }
 
-    @MethodDesc(name="m", returnType=Object.class, declaringClass=B4A.class,
-            kind = MethodKind.DEFAULT)
-    @MethodDesc(name="m", returnType=Map.class, declaringClass=B4A.class,
-            kind = MethodKind.DEFAULT)
-    @MethodDesc(name="m", returnType=HashMap.class, declaringClass= B4A.class,
+    @MethodDesc(name="m", declaringClass=B2.class,
             isGetMethodReturn=true)
-    interface B4A extends B3A { HashMap m(); }
+    @MethodDesc(name="m", declaringClass=B2.class,
+            kind=MethodKind.DEFAULT)
+    @MethodDesc(name="m", declaringClass=B2.class,
+            kind=MethodKind.DEFAULT)
+    interface B2 extends B1C { HashMap m(); }
 
-    @MethodDesc(name="m", returnType=Object.class, declaringClass=B4A.class,
-            kind = MethodKind.DEFAULT)
-    @MethodDesc(name="m", returnType=Map.class, declaringClass=B4A.class,
-            kind = MethodKind.DEFAULT)
-    @MethodDesc(name="m", returnType=HashMap.class, declaringClass= B4A.class,
+    @MethodDesc(name="m", declaringClass=B2.class, //HahsMap
             isGetMethodReturn=true)
-    interface B5A2 extends B4A, B1 {}
+    @MethodDesc(name="m", declaringClass=B2.class, //Map
+            kind=MethodKind.DEFAULT)
+    @MethodDesc(name="m", declaringClass=B2.class, //Object
+            kind=MethodKind.DEFAULT)
+    interface B3A extends B2, B1A {}
 
-    @MethodDesc(name="m", returnType=Object.class, declaringClass=B4A.class,
-            kind = MethodKind.DEFAULT)
-    @MethodDesc(name="m", returnType=Map.class, declaringClass=B4A.class,
-            kind = MethodKind.DEFAULT)
-    @MethodDesc(name="m", returnType=HashMap.class, declaringClass= B4A.class,
+    // this one is funny since HashMap isn't a bridge thus not a default
+    @MethodDesc(name="m", declaringClass=B2.class, //HashMap
             isGetMethodReturn=true)
-    interface B5A4A extends B4A, B3A {}
-
-    // ... + most specific return type for getMethod from two unrelated interfaces
-
-    @MethodDesc(name="m", returnType=Object.class, declaringClass=B2A.class,
-            kind = MethodKind.DEFAULT)
-    @MethodDesc(name="m", returnType=Object.class, declaringClass=B2B.class,
-            kind = MethodKind.DEFAULT)
-    @MethodDesc(name="m", returnType=Map.class, declaringClass=B2A.class)
-    @MethodDesc(name="m", returnType=HashMap.class, declaringClass=B2B.class,
-            isGetMethodReturn=true)
-    interface B3AB extends B2A, B2B {}
-
-    @MethodDesc(name="m", returnType=Object.class, declaringClass=B2A.class,
-            kind = MethodKind.DEFAULT)
-    @MethodDesc(name="m", returnType=Object.class, declaringClass=B2B.class,
-            kind = MethodKind.DEFAULT)
-    @MethodDesc(name="m", returnType=Map.class, declaringClass=B2A.class)
-    @MethodDesc(name="m", returnType=HashMap.class, declaringClass=B2B.class,
-            isGetMethodReturn=true)
-    interface B3BA extends B2B, B2A {}
+    @MethodDesc(name="m", declaringClass=B2.class, //Map
+            kind=MethodKind.DEFAULT)
+    @MethodDesc(name="m", declaringClass=B2.class, //Object
+            kind=MethodKind.DEFAULT)
+    @MethodDesc(name="m", declaringClass=B1C.class) //HashMap
+    interface B3B extends B2, B1C {}
 
     // same name different params type
     interface A1 { void m(); void m(int i); void m(int i, int j); }
     interface A2A extends A1 { void m(); void m(int i); void m(int i, int j); }
     interface A2B extends A1 { void m(); void m(int i); default void m(int i, int j) {} }
 
-    @MethodDesc(name="m", parameterTypes = {}, declaringClass=A2A.class,
+    @MethodDesc(name="m", declaringClass=A1.class,
             isGetMethodReturn=true)
-    @MethodDesc(name="m", parameterTypes = {int.class}, declaringClass=A2A.class,
-            isGetMethodReturn=true)
-    @MethodDesc(name="m", parameterTypes = {int.class, int.class}, declaringClass=A2A.class,
-            isGetMethodReturn=true)
+    @MethodDesc(name="m", declaringClass=A1.class)
+    @MethodDesc(name="m", declaringClass=A1.class)
+    @MethodDesc(name="m", declaringClass=A2A.class)
+    @MethodDesc(name="m", declaringClass=A2A.class)
+    @MethodDesc(name="m", declaringClass=A2A.class)
     interface A3A extends A1, A2A {}
 
-    @MethodDesc(name="m", parameterTypes = {}, declaringClass=A2B.class,
+    @MethodDesc(name="m", declaringClass=A1.class,
             isGetMethodReturn=true)
-    @MethodDesc(name="m", parameterTypes = {int.class}, declaringClass=A2B.class,
-            isGetMethodReturn=true)
-    @MethodDesc(name="m", parameterTypes = {int.class, int.class}, declaringClass=A2B.class,
-            kind = MethodKind.DEFAULT, isGetMethodReturn=true)
+    @MethodDesc(name="m", declaringClass=A1.class)
+    @MethodDesc(name="m", declaringClass=A2B.class)
+    @MethodDesc(name="m", declaringClass=A2B.class)
+    @MethodDesc(name="m", declaringClass=A2B.class,
+            kind=MethodKind.DEFAULT)
     interface A3B extends A1, A2B {}
-
-    // method in directly implemented interface overrides interface method
-    // inherited by superclass
-
-    interface E { void m(); }
-    interface F extends E { void m(); }
-    abstract class G implements E {}
-
-    @MethodDesc(name="m", declaringClass=F.class, isGetMethodReturn=true)
-    abstract class H extends G implements F {}
 
     @DataProvider
     public Object[][] getCases() { return CASES; }
@@ -642,16 +680,12 @@ public class FilterNotMostSpecific {
         { XC42.class },
         { XC43.class },
 
+        { B1C.class },
+        { B2.class },
         { B3A.class },
-        { B4A.class },
-        { B5A2.class },
-        { B5A4A.class },
-        { B3AB.class },
-        { B3BA.class },
+        { B3B.class },
 
         { A3A.class },
         { A3B.class },
-
-        { H.class },
     };
 }
