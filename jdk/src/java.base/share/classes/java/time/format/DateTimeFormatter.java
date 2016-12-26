@@ -297,7 +297,7 @@ import java.util.Set;
  *   a       am-pm-of-day                text              PM
  *   h       clock-hour-of-am-pm (1-12)  number            12
  *   K       hour-of-am-pm (0-11)        number            0
- *   k       clock-hour-of-am-pm (1-24)  number            0
+ *   k       clock-hour-of-day (1-24)    number            24
  *
  *   H       hour-of-day (0-23)          number            0
  *   m       minute-of-hour              number            30
