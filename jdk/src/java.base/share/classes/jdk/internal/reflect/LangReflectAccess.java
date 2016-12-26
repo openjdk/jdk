@@ -96,9 +96,6 @@ public interface LangReflectAccess {
     /** Gets the "parameterAnnotations" field from a Constructor (used for serialization) */
     public byte[] getConstructorParameterAnnotations(Constructor<?> c);
 
-    /** Gets the shared array of parameter types of an Executable. */
-    public Class<?>[] getExecutableSharedParameterTypes(Executable ex);
-
     //
     // Copying routines, needed to quickly fabricate new Field,
     // Method, and Constructor objects from templates
