@@ -148,10 +148,10 @@ $(CORE_PACKAGES_LIST_FILE): $(CORE_PACKAGES_VARDEPS_FILE)
 # arg 2: copyright url (optional)
 # arg 3: free-form text snippet (optional)
 define GenerateBottom
-  <font size="-1">$(if $(strip $3), $(strip $3))<br> $(if \
+  <span style="font-size:smaller">$(if $(strip $3), $(strip $3))<br> $(if \
       $(strip $2),<a href="$(strip $2)">Copyright</a>,Copyright) \
       &copy; $(strip $1), $(COPYRIGHT_YEAR), $(FULL_COMPANY_NAME). \
-      $(COMPANY_ADDRESS). All rights reserved.</font>
+      $(COMPANY_ADDRESS). All rights reserved.</span>
 endef
 
 # Speed up finding by filling cache
