@@ -292,7 +292,7 @@ void JVMTIAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
       char *opt = (char *)os::malloc(opt_len, mtInternal);
       if (opt == NULL) {
         output()->print_cr("JVMTI agent attach failed: "
-                           "Could not allocate %zu bytes for argument.",
+                           "Could not allocate " SIZE_FORMAT " bytes for argument.",
                            opt_len);
         return;
       }

@@ -45,6 +45,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -54,8 +55,14 @@ import jdk.tools.jaotc.collect.ClassCollector;
 import jdk.tools.jaotc.utils.Timer;
 
 import org.graalvm.compiler.api.runtime.GraalJVMCICompiler;
+import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.HotSpotGraalRuntimeProvider;
 import org.graalvm.compiler.hotspot.HotSpotHostBackend;
+import org.graalvm.compiler.java.GraphBuilderPhase;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
+import org.graalvm.compiler.phases.BasePhase;
+import org.graalvm.compiler.phases.PhaseSuite;
+import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.runtime.RuntimeProvider;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
@@ -144,10 +151,15 @@ public class Main implements LogPrinter {
         void process(Main task, String opt, String arg) {
             task.options.methodList = arg;
         }
-    }, new Option("  --compile-for-tiered       Generated profiling code for tiered compilation", false, "--compile-for-tiered") {
+    }, new Option("  --compile-for-tiered       Generate profiling code for tiered compilation", false, "--compile-for-tiered") {
         @Override
         void process(Main task, String opt, String arg) {
             TieredAOT.setValue(true);
+        }
+    }, new Option("  --compile-with-assertions  Compile assertions", false, "--compile-with-assertions") {
+        @Override
+        void process(Main task, String opt, String arg) {
+            task.options.compileWithAssertions = true;
         }
     }, new Option("  --classpath <path>         Specify where to find user class files", true, "--classpath", "--class-path") {
         @Override
@@ -225,15 +237,16 @@ public class Main implements LogPrinter {
          */
         private static final int COMPILER_THREADS = 16;
 
-        int threads = Integer.min(COMPILER_THREADS, Runtime.getRuntime().availableProcessors());
+        public int threads = Integer.min(COMPILER_THREADS, Runtime.getRuntime().availableProcessors());
 
         public boolean ignoreClassLoadingErrors;
         public boolean exitOnError;
-        boolean info;
-        boolean verbose;
-        boolean debug;
-        boolean help;
-        boolean version;
+        public boolean info;
+        public boolean verbose;
+        public boolean debug;
+        public boolean help;
+        public boolean version;
+        public boolean compileWithAssertions;
     }
 
     /* package */final Options options = new Options();
@@ -356,6 +369,11 @@ public class Main implements LogPrinter {
             AOTCompiler compiler = new AOTCompiler(this, aotBackend, options.threads);
             classes = compiler.compileClasses(classes);
 
+            GraalHotSpotVMConfig graalHotSpotVMConfig = runtime.getVMConfig();
+            PhaseSuite<HighTierContext> graphBuilderSuite = aotBackend.getGraphBuilderSuite();
+            ListIterator<BasePhase<? super HighTierContext>> iterator = graphBuilderSuite.findPhase(GraphBuilderPhase.class);
+            GraphBuilderConfiguration graphBuilderConfig = ((GraphBuilderPhase) iterator.previous()).getGraphBuilderConfig();
+
             // Free memory!
             try (Timer t = options.verbose ? new Timer(this, "Freeing memory") : null) {
                 printMemoryUsage();
@@ -364,7 +382,7 @@ public class Main implements LogPrinter {
                 System.gc();
             }
 
-            BinaryContainer binaryContainer = new BinaryContainer(runtime.getVMConfig(), JVM_VERSION);
+            BinaryContainer binaryContainer = new BinaryContainer(graalHotSpotVMConfig, graphBuilderConfig, JVM_VERSION);
             DataBuilder dataBuilder = new DataBuilder(this, backend, classes, binaryContainer);
             dataBuilder.prepareData();
 
