@@ -65,7 +65,7 @@ LogMessageTest::~LogMessageTest() {
 
 // Verify that messages with multiple levels are written
 // to outputs configured for all the corresponding levels
-TEST_F(LogMessageTest, level_inclusion) {
+TEST_VM_F(LogMessageTest, level_inclusion) {
   const size_t message_count = 10;
   LogMessageBuffer msg[message_count];
 
@@ -119,7 +119,7 @@ LOG_LEVEL_LIST
 }
 
 // Verify that messages are logged in the order they are added to the log message
-TEST_F(LogMessageTest, line_order) {
+TEST_VM_F(LogMessageTest, line_order) {
   LogMessageBuffer msg;
   msg.info("info line").error("error line").trace("trace line")
       .error("another error").warning("warning line").debug("debug line");
@@ -131,7 +131,7 @@ TEST_F(LogMessageTest, line_order) {
     << "output missing or in incorrect order";
 }
 
-TEST_F(LogMessageTest, long_message) {
+TEST_VM_F(LogMessageTest, long_message) {
   // Write 10K bytes worth of log data
   LogMessageBuffer msg;
   const size_t size = 10 * K;
@@ -155,7 +155,7 @@ TEST_F(LogMessageTest, long_message) {
   FREE_C_HEAP_ARRAY(char, data);
 }
 
-TEST_F(LogMessageTest, message_with_many_lines) {
+TEST_VM_F(LogMessageTest, message_with_many_lines) {
   const size_t lines = 100;
   const size_t line_length = 16;
 
@@ -188,7 +188,7 @@ static size_t dummy_prefixer(char* buf, size_t len) {
   return prefix_len;
 }
 
-TEST_F(LogMessageTest, prefixing) {
+TEST_VM_F(LogMessageTest, prefixing) {
   LogMessageBuffer msg;
   msg.set_prefix(dummy_prefixer);
   for (int i = 0; i < 3; i++) {
@@ -209,7 +209,7 @@ TEST_F(LogMessageTest, prefixing) {
     << "error in prefixed output";
 }
 
-TEST_F(LogMessageTest, scoped_messages) {
+TEST_VM_F(LogMessageTest, scoped_messages) {
   {
     LogMessage(logging) msg;
     msg.info("scoped info");
@@ -223,7 +223,7 @@ TEST_F(LogMessageTest, scoped_messages) {
     << "missing output from scoped log message";
 }
 
-TEST_F(LogMessageTest, scoped_flushing) {
+TEST_VM_F(LogMessageTest, scoped_flushing) {
   {
     LogMessage(logging) msg;
     msg.info("manual flush info");
@@ -236,7 +236,7 @@ TEST_F(LogMessageTest, scoped_flushing) {
     << "log file contains duplicate lines from single scoped log message";
 }
 
-TEST_F(LogMessageTest, scoped_reset) {
+TEST_VM_F(LogMessageTest, scoped_reset) {
   {
     LogMessage(logging) msg, partial;
     msg.info("%s", "info reset msg");
