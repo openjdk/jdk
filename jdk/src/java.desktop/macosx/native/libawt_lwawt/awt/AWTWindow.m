@@ -639,6 +639,14 @@ AWT_ASSERT_APPKIT_THREAD;
 AWT_ASSERT_APPKIT_THREAD;
 
     self.isMinimizing = YES;
+
+    JNIEnv *env = [ThreadUtilities getJNIEnv];
+    jobject platformWindow = [self.javaPlatformWindow jObjectWithEnv:env];
+    if (platformWindow != NULL) {
+        static JNF_MEMBER_CACHE(jm_windowWillMiniaturize, jc_CPlatformWindow, "windowWillMiniaturize", "()V");
+        JNFCallVoidMethod(env, platformWindow, jm_windowWillMiniaturize);
+        (*env)->DeleteLocalRef(env, platformWindow);
+    }
     // Excplicitly make myself a key window to avoid possible
     // negative visual effects during iconify operation
     [self.nsWindow makeKeyAndOrderFront:self.nsWindow];
