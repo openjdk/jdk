@@ -1029,8 +1029,14 @@ final class XWM
         }
         XToolkit.awtLock();
         try {
-            Rectangle shellBounds = window.getShellBounds();
-            shellBounds.translate(-window.currentInsets.left, -window.currentInsets.top);
+            Rectangle shellBounds;
+            if (getWMID() != UNITY_COMPIZ_WM) {
+                shellBounds = window.getShellBounds();
+                shellBounds.translate(-window.currentInsets.left,
+                                      -window.currentInsets.top);
+            } else {
+                shellBounds = window.getDimensions().getScreenBounds();
+            }
             window.updateSizeHints(window.getDimensions());
             requestWMExtents(window.getWindow());
             XlibWrapper.XMoveResizeWindow(XToolkit.getDisplay(),
