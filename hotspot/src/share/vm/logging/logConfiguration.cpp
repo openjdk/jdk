@@ -478,7 +478,7 @@ void LogConfiguration::describe(outputStream* out) {
 
 void LogConfiguration::print_command_line_help(FILE* out) {
   jio_fprintf(out, "-Xlog Usage: -Xlog[:[what][:[output][:[decorators][:output-options]]]]\n"
-              "\t where 'what' is a combination of tags and levels on the form tag1[+tag2...][*][=level][,...]\n"
+              "\t where 'what' is a combination of tags and levels of the form tag1[+tag2...][*][=level][,...]\n"
               "\t Unless wildcard (*) is specified, only log messages tagged with exactly the tags specified will be matched.\n\n");
 
   jio_fprintf(out, "Available log levels:\n");
