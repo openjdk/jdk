@@ -227,7 +227,7 @@ protected:
   int estimate_stubs_size(TRAPS);
 
   // perform data and call relocation on the CodeBuffer
-  JVMCIEnv::CodeInstallResult initialize_buffer(CodeBuffer& buffer, TRAPS);
+  JVMCIEnv::CodeInstallResult initialize_buffer(CodeBuffer& buffer, bool check_size, TRAPS);
 
   void assumption_NoFinalizableSubclass(Handle assumption);
   void assumption_ConcreteSubtype(Handle assumption);
