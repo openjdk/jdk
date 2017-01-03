@@ -3190,7 +3190,7 @@ public class Resolve {
             if (TreeInfo.isStaticSelector(referenceTree.expr, names)) {
                 if (argtypes.nonEmpty() &&
                         (argtypes.head.hasTag(NONE) ||
-                        types.isSubtypeUnchecked(inferenceContext.asUndetVar(argtypes.head), site))) {
+                        types.isSubtypeUnchecked(inferenceContext.asUndetVar(argtypes.head), originalSite))) {
                     return new UnboundMethodReferenceLookupHelper(referenceTree, name,
                             originalSite, argtypes, typeargtypes, maxPhase);
                 } else {
