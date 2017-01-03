@@ -514,6 +514,14 @@ void LogConfiguration::print_command_line_help(FILE* out) {
               " -Xlog:gc\n"
               "\t Log messages tagged with 'gc' tag using 'info' level to stdout, with default decorations.\n\n"
 
+              " -Xlog:gc,safepoint\n"
+              "\t Log messages tagged either with 'gc' or 'safepoint' tags, both using 'info' level, to stdout, with default decorations.\n"
+              "\t (Messages tagged with both 'gc' and 'safepoint' will not be logged.)\n\n"
+
+              " -Xlog:gc+ref=debug\n"
+              "\t Log messages tagged with both 'gc' and 'ref' tags, using 'debug' level, to stdout, with default decorations.\n"
+              "\t (Messages tagged only with one of the two tags will not be logged.)\n\n"
+
               " -Xlog:gc=debug:file=gc.txt:none\n"
               "\t Log messages tagged with 'gc' tag using 'debug' level to file 'gc.txt' with no decorations.\n\n"
 
