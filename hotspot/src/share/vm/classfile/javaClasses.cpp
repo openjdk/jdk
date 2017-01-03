@@ -163,8 +163,8 @@ void java_lang_String::compute_offsets() {
 
   Klass* k = SystemDictionary::String_klass();
   compute_offset(value_offset,           k, vmSymbols::value_name(),  vmSymbols::byte_array_signature());
-  compute_optional_offset(hash_offset,   k, vmSymbols::hash_name(),   vmSymbols::int_signature());
-  compute_optional_offset(coder_offset,  k, vmSymbols::coder_name(),  vmSymbols::byte_signature());
+  compute_offset(hash_offset,            k, vmSymbols::hash_name(),   vmSymbols::int_signature());
+  compute_offset(coder_offset,           k, vmSymbols::coder_name(),  vmSymbols::byte_signature());
 
   initialized = true;
 }
@@ -3977,12 +3977,8 @@ void JavaClasses::check_offsets() {
   // java.lang.String
 
   CHECK_OFFSET("java/lang/String", java_lang_String, value, "[B");
-  if (java_lang_String::has_hash_field()) {
-    CHECK_OFFSET("java/lang/String", java_lang_String, hash, "I");
-  }
-  if (java_lang_String::has_coder_field()) {
-    CHECK_OFFSET("java/lang/String", java_lang_String, coder, "B");
-  }
+  CHECK_OFFSET("java/lang/String", java_lang_String, hash, "I");
+  CHECK_OFFSET("java/lang/String", java_lang_String, coder, "B");
 
   // java.lang.Class
 
