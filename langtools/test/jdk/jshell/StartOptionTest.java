@@ -22,7 +22,7 @@
  */
 
 /*
- * @test 8151754 8080883 8160089 8170162 8166581
+ * @test 8151754 8080883 8160089 8170162 8166581 8172102
  * @summary Testing start-up options.
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -33,17 +33,14 @@
  * @run testng StartOptionTest
  */
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Locale;
-import java.util.ServiceLoader;
 import java.util.function.Consumer;
 
-import javax.tools.Tool;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -157,9 +154,8 @@ public class StartOptionTest {
         Path p = compiler.getPath("file.txt");
         compiler.writeToFile(p);
         start("", "Argument to startup missing.", "--startup");
-        start("", "Only one --startup or --no-startup option may be used.", "--startup", p.toString(), "--startup", p.toString());
-        start("", "Only one --startup or --no-startup option may be used.", "--no-startup", "--startup", p.toString());
-        start("", "Only one --startup or --no-startup option may be used.", "--startup", p.toString(), "--no-startup");
+        start("", "Conflicting options: both --startup and --no-startup were used.", "--no-startup", "--startup", p.toString());
+        start("", "Conflicting options: both --startup and --no-startup were used.", "--startup", p.toString(), "--no-startup");
         start("", "Argument to startup missing.", "--no-startup", "--startup");
     }
 
@@ -176,6 +172,7 @@ public class StartOptionTest {
 
     public void testStartupUnknown() throws Exception {
         start("", "File 'UNKNOWN' for '--startup' is not found.", "--startup", "UNKNOWN");
+        start("", "File 'UNKNOWN' for '--startup' is not found.", "--startup", "DEFAULT", "--startup", "UNKNOWN");
     }
 
     public void testClasspath() throws Exception {

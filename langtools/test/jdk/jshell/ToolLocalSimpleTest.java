@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8168615
+ * @bug 8168615 8172102
  * @summary Test all the ToolSimpleTest tests, but in local execution. Verify --execution flag
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -65,6 +65,15 @@ public class ToolLocalSimpleTest extends ToolSimpleTest {
         test(new String[]{"-R-Dthe.sound=blorp", "--no-startup"},
                 (a) -> assertCommand(a, "System.getProperty(\"the.sound\")",
                         "$1 ==> null")
+        );
+    }
+
+    @Override
+    @Test
+    public void testCompoundStart() {
+        test(new String[]{"--startup", "DEFAULT", "--startup", "PRINTING"},
+                (a) -> assertCommandOutputContains(a, "/list -start",
+                        "System.out.println", "import java.util.concurrent")
         );
     }
 

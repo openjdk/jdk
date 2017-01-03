@@ -25,6 +25,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -54,22 +55,45 @@ public class ReplToolTesting {
 
     private final static String DEFAULT_STARTUP_MESSAGE = "|  Welcome to";
     final static List<ImportInfo> START_UP_IMPORTS = Stream.of(
-                    "java.util.*",
                     "java.io.*",
                     "java.math.*",
                     "java.net.*",
+                    "java.nio.file.*",
+                    "java.util.*",
                     "java.util.concurrent.*",
+                    "java.util.function.*",
                     "java.util.prefs.*",
-                    "java.util.regex.*")
+                    "java.util.regex.*",
+                    "java.util.stream.*")
                     .map(s -> new ImportInfo("import " + s + ";", "", s))
                     .collect(toList());
-    final static List<MethodInfo> START_UP_METHODS = Stream.of(
-                    new MethodInfo("void printf(String format, Object... args) { System.out.printf(format, args); }",
-                            "(String,Object...)void", "printf"))
+    final static List<MethodInfo> START_UP_METHODS = Stream.<MethodInfo>of()
                     .collect(toList());
-    final static List<String> START_UP_CMD_METHOD = Stream.of(
-                    "|    printf (String,Object...)void")
+    final static List<String> START_UP_CMD_METHOD = Stream.<String>of()
                     .collect(toList());
+    final static List<String> PRINTING_CMD_METHOD = Stream.of(
+            "|    print (boolean)void",
+            "|    print (char)void",
+            "|    print (int)void",
+            "|    print (long)void",
+            "|    print (float)void",
+            "|    print (double)void",
+            "|    print (char s[])void",
+            "|    print (String)void",
+            "|    print (Object)void",
+            "|    println ()void",
+            "|    println (boolean)void",
+            "|    println (char)void",
+            "|    println (int)void",
+            "|    println (long)void",
+            "|    println (float)void",
+            "|    println (double)void",
+            "|    println (char s[])void",
+            "|    println (String)void",
+            "|    println (Object)void",
+            "|    printf (Locale,String,Object...)void",
+            "|    printf (String,Object...)void")
+            .collect(toList());
     final static List<String> START_UP = Collections.unmodifiableList(
             Stream.concat(START_UP_IMPORTS.stream(), START_UP_METHODS.stream())
             .map(s -> s.getSource())
@@ -432,9 +456,14 @@ public class ReplToolTesting {
         assertCommand(after, cmd, out, "", null, "", "");
     }
 
-    public void assertCommandOutputContains(boolean after, String cmd, String has) {
-        assertCommandCheckOutput(after, cmd, (s) ->
-                        assertTrue(s.contains(has), "Output: \'" + s + "' does not contain: " + has));
+    public void assertCommandOutputContains(boolean after, String cmd, String... hasThese) {
+        assertCommandCheckOutput(after, cmd, (s)
+                -> assertTrue(Arrays.stream(hasThese)
+                                    .allMatch(has -> s.contains(has)),
+                        "Output: \'" + s + "' does not contain: "
+                                + Arrays.stream(hasThese)
+                                        .filter(has -> !s.contains(has))
+                                        .collect(Collectors.joining(", "))));
     }
 
     public void assertCommandOutputStartsWith(boolean after, String cmd, String starts) {
@@ -467,7 +496,7 @@ public class ReplToolTesting {
     }
 
     public Consumer<String> assertStartsWith(String prefix) {
-        return (output) -> assertTrue(output.startsWith(prefix), "Output: \'" + output + "' does not start with: " + prefix);
+        return (output) -> assertTrue(output.trim().startsWith(prefix), "Output: \'" + output + "' does not start with: " + prefix);
     }
 
     public void assertOutput(String got, String expected, String display) {
