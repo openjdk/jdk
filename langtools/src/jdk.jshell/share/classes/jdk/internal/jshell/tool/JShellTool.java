@@ -25,15 +25,18 @@
 
 package jdk.internal.jshell.tool;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.FileSystems;
@@ -196,6 +199,7 @@ public class JShellTool implements MessageHandler {
     private boolean debug = false;
     public boolean testPrompt = false;
     private String cmdlineClasspath = null;
+    private String defaultStartup = null;
     private String startup = null;
     private String executionControlSpec = null;
     private EditorSetting editor = BUILT_IN_EDITOR;
@@ -213,16 +217,9 @@ public class JShellTool implements MessageHandler {
     static final String MODE_KEY     = "MODE";
     static final String REPLAY_RESTORE_KEY = "REPLAY_RESTORE";
 
-    static final String DEFAULT_STARTUP =
-            "\n" +
-            "import java.util.*;\n" +
-            "import java.io.*;\n" +
-            "import java.math.*;\n" +
-            "import java.net.*;\n" +
-            "import java.util.concurrent.*;\n" +
-            "import java.util.prefs.*;\n" +
-            "import java.util.regex.*;\n" +
-            "void printf(String format, Object... args) { System.out.printf(format, args); }\n";
+    static final String DEFAULT_STARTUP_NAME = "DEFAULT";
+    static final Pattern BUILTIN_FILE_PATTERN = Pattern.compile("\\w+");
+    static final String BUILTIN_FILE_PATH_FORMAT = "jrt:/jdk.jshell/jdk/jshell/tool/resources/%s.jsh";
 
     // Tool id (tid) mapping: the three name spaces
     NameSpace mainNamespace;
@@ -482,7 +479,7 @@ public class JShellTool implements MessageHandler {
         if (startup == null) {
             startup = prefs.get(STARTUP_KEY);
             if (startup == null) {
-                startup = DEFAULT_STARTUP;
+                startup = defaultStartup();
             }
         }
 
@@ -606,14 +603,19 @@ public class JShellTool implements MessageHandler {
         }
         if (options.has(st)) {
             List<String> sts = options.valuesOf(st);
-            if (sts.size() != 1 || options.has("no-startup")) {
-                startmsg("jshell.err.opt.startup.one");
+            if (options.has("no-startup")) {
+                startmsg("jshell.err.opt.startup.conflict");
                 return null;
             }
-            startup = readFile(sts.get(0), "--startup");
-            if (startup == null) {
-                return null;
+            StringBuilder sb = new StringBuilder();
+            for (String fn : sts) {
+                String s = readFile(fn, "--startup");
+                if (s == null) {
+                    return null;
+                }
+                sb.append(s);
             }
+            startup = sb.toString();
         } else if (options.has("no-startup")) {
             startup = "";
         }
@@ -798,7 +800,7 @@ public class JShellTool implements MessageHandler {
 
     //where
     private void startUpRun(String start) {
-        try (IOContext suin = new FileScannerIOContext(new StringReader(start))) {
+        try (IOContext suin = new ScannerIOContext(new StringReader(start))) {
             run(suin);
         } catch (Exception ex) {
             hardmsg("jshell.err.startup.unexpected.exception", ex);
@@ -1623,14 +1625,17 @@ public class JShellTool implements MessageHandler {
     // The sub-command:  /set start <start-file>
     boolean setStart(ArgTokenizer at) {
         at.allowedOptions("-default", "-none", "-retain");
-        String fn = at.next();
+        List<String> fns = new ArrayList<>();
+        while (at.next() != null) {
+            fns.add(at.val());
+        }
         if (!checkOptionsAndRemainingInput(at)) {
             return false;
         }
         boolean defaultOption = at.hasOption("-default");
         boolean noneOption = at.hasOption("-none");
         boolean retainOption = at.hasOption("-retain");
-        boolean hasFile = fn != null;
+        boolean hasFile = !fns.isEmpty();
 
         int argCount = (defaultOption ? 1 : 0) + (noneOption ? 1 : 0) + (hasFile ? 1 : 0);
         if (argCount > 1) {
@@ -1643,13 +1648,17 @@ public class JShellTool implements MessageHandler {
             return true;
         }
         if (hasFile) {
-            String init = readFile(fn, "/set start");
-            if (init == null) {
-                return false;
+            StringBuilder sb = new StringBuilder();
+            for (String fn : fns) {
+                String s = readFile(fn, "/set start");
+                if (s == null) {
+                    return false;
+                }
+                sb.append(s);
             }
-            startup = init;
+            startup = sb.toString();
         } else if (defaultOption) {
-            startup = DEFAULT_STARTUP;
+            startup = defaultStartup();
         } else if (noneOption) {
             startup = "";
         }
@@ -1673,7 +1682,7 @@ public class JShellTool implements MessageHandler {
     void showSetStart(boolean isRetained, String start) {
         String cmd = "/set start" + (isRetained ? " -retain " : " ");
         String stset;
-        if (start.equals(DEFAULT_STARTUP)) {
+        if (start.equals(defaultStartup())) {
             stset = cmd + "-default";
         } else if (start.isEmpty()) {
             stset = cmd + "-none";
@@ -2166,7 +2175,16 @@ public class JShellTool implements MessageHandler {
     private boolean runFile(String filename, String context) {
         if (!filename.isEmpty()) {
             try {
-                run(new FileScannerIOContext(toPathResolvingUserHome(filename).toString()));
+                Path path = toPathResolvingUserHome(filename);
+                Reader reader;
+                String resource;
+                if (!Files.exists(path) && (resource = getResource(filename)) != null) {
+                    // Not found as file, but found as resource
+                    reader = new StringReader(resource);
+                } else {
+                    reader = new FileReader(path.toString());
+                }
+                run(new ScannerIOContext(reader));
                 return true;
             } catch (FileNotFoundException e) {
                 errormsg("jshell.err.file.not.found", context, filename, e.getMessage());
@@ -2189,11 +2207,16 @@ public class JShellTool implements MessageHandler {
     String readFile(String filename, String context) {
         if (filename != null) {
             try {
-                byte[] encoded = Files.readAllBytes(Paths.get(filename));
+                byte[] encoded = Files.readAllBytes(toPathResolvingUserHome(filename));
                 return new String(encoded);
             } catch (AccessDeniedException e) {
                 errormsg("jshell.err.file.not.accessible", context, filename, e.getMessage());
             } catch (NoSuchFileException e) {
+                String resource = getResource(filename);
+                if (resource != null) {
+                    // Not found as file, but found as resource
+                    return resource;
+                }
                 errormsg("jshell.err.file.not.found", context, filename);
             } catch (Exception e) {
                 errormsg("jshell.err.file.exception", context, filename, e);
@@ -2203,6 +2226,44 @@ public class JShellTool implements MessageHandler {
         }
         return null;
 
+    }
+
+    // Read a built-in file from resources or null
+    String getResource(String name) {
+        if (BUILTIN_FILE_PATTERN.matcher(name).matches()) {
+            try {
+                return readResource(name);
+            } catch (Throwable t) {
+                // Fall-through to null
+            }
+        }
+        return null;
+    }
+
+    // Read a built-in file from resources
+    String readResource(String name) throws IOException {
+        // Attempt to find the file as a resource
+        String spec = String.format(BUILTIN_FILE_PATH_FORMAT, name);
+        URL url = new URL(spec);
+        BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
+        return reader.lines().collect(Collectors.joining("\n"));
+    }
+
+    // retrieve the default startup string
+    String defaultStartup() {
+        if (defaultStartup == null) {
+            defaultStartup = ""; // failure case
+            try {
+                defaultStartup = readResource(DEFAULT_STARTUP_NAME);
+            } catch (AccessDeniedException e) {
+                errormsg("jshell.err.file.not.accessible", "jshell", DEFAULT_STARTUP_NAME, e.getMessage());
+            } catch (NoSuchFileException e) {
+                errormsg("jshell.err.file.not.found", "jshell", DEFAULT_STARTUP_NAME);
+            } catch (Exception e) {
+                errormsg("jshell.err.file.exception", "jshell", DEFAULT_STARTUP_NAME, e);
+            }
+        }
+        return defaultStartup;
     }
 
     private boolean cmdReset() {
@@ -2910,6 +2971,10 @@ class ScannerIOContext extends NonInteractiveIOContext {
         this.scannerIn = scannerIn;
     }
 
+    ScannerIOContext(Reader rdr) throws FileNotFoundException {
+        this(new Scanner(rdr));
+    }
+
     @Override
     public String readLine(String prompt, String prefix) {
         if (scannerIn.hasNextLine()) {
@@ -2927,17 +2992,6 @@ class ScannerIOContext extends NonInteractiveIOContext {
     @Override
     public int readUserInput() {
         return -1;
-    }
-}
-
-class FileScannerIOContext extends ScannerIOContext {
-
-    FileScannerIOContext(String fn) throws FileNotFoundException {
-        this(new FileReader(fn));
-    }
-
-    FileScannerIOContext(Reader rdr) throws FileNotFoundException {
-        super(new Scanner(rdr));
     }
 }
 

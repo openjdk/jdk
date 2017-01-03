@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128 8154513 8170015 8170368
+ * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128 8154513 8170015 8170368 8172102
  * @summary Simple jshell tool tests
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -391,8 +391,8 @@ public class ToolSimpleTest extends ReplToolTesting {
                         s -> checkLineToList(s, START_UP)),
                 a -> assertCommandCheckOutput(a, "/list -all",
                         s -> checkLineToList(s, startVarList)),
-                a -> assertCommandCheckOutput(a, "/list printf",
-                        s -> assertTrue(s.contains("void printf"))),
+                a -> assertCommandOutputStartsWith(a, "/list s3",
+                        "s3 : import"),
                 a -> assertCommandOutputStartsWith(a, "/list " + arg,
                         "|  No such snippet: " + arg)
         );
@@ -417,8 +417,8 @@ public class ToolSimpleTest extends ReplToolTesting {
                         s -> checkLineToList(s, startVarList)),
                 a -> assertCommandOutputStartsWith(a, "/vars -all",
                         "|    int aardvark = 0\n|    int a = "),
-                a -> assertCommandOutputStartsWith(a, "/vars printf",
-                        "|  This command does not accept the snippet 'printf'"),
+                a -> assertCommandOutputStartsWith(a, "/vars f",
+                        "|  This command does not accept the snippet 'f'"),
                 a -> assertCommand(a, "/var " + arg,
                         "|  No such snippet: " + arg)
         );
@@ -427,16 +427,18 @@ public class ToolSimpleTest extends ReplToolTesting {
     @Test
     public void testMethodsArgs() {
         String arg = "qqqq";
-        List<String> startMethodList = new ArrayList<>(START_UP_CMD_METHOD);
-        test(
+        List<String> printingMethodList = new ArrayList<>(PRINTING_CMD_METHOD);
+        test(new String[]{"--startup", "PRINTING"},
                 a -> assertCommandCheckOutput(a, "/methods -all",
-                        s -> checkLineToList(s, startMethodList)),
+                        s -> checkLineToList(s, printingMethodList)),
                 a -> assertCommandCheckOutput(a, "/methods -start",
-                        s -> checkLineToList(s, startMethodList)),
-                a -> assertCommandCheckOutput(a, "/methods printf",
-                        s -> checkLineToList(s, startMethodList)),
+                        s -> checkLineToList(s, printingMethodList)),
+                a -> assertCommandCheckOutput(a, "/methods print println printf",
+                        s -> checkLineToList(s, printingMethodList)),
+                a -> assertCommandCheckOutput(a, "/methods println",
+                        s -> assertEquals(s.trim().split("\n").length, 10)),
                 a -> assertCommandCheckOutput(a, "/methods",
-                        s -> checkLineToList(s, startMethodList)),
+                        s -> checkLineToList(s, printingMethodList)),
                 a -> assertCommandOutputStartsWith(a, "/methods " + arg,
                         "|  No such snippet: " + arg),
                 a -> assertMethod(a, "int f() { return 0; }", "()int", "f"),
@@ -448,9 +450,9 @@ public class ToolSimpleTest extends ReplToolTesting {
                 a -> assertCommandOutputStartsWith(a, "/methods aardvark",
                         "|  This command does not accept the snippet 'aardvark' : int aardvark"),
                 a -> assertCommandCheckOutput(a, "/methods -start",
-                        s -> checkLineToList(s, startMethodList)),
-                a -> assertCommandCheckOutput(a, "/methods printf",
-                        s -> checkLineToList(s, startMethodList)),
+                        s -> checkLineToList(s, printingMethodList)),
+                a -> assertCommandCheckOutput(a, "/methods print println printf",
+                        s -> checkLineToList(s, printingMethodList)),
                 a -> assertCommandOutputStartsWith(a, "/methods g",
                         "|    g ()void"),
                 a -> assertCommandOutputStartsWith(a, "/methods f",
@@ -490,6 +492,22 @@ public class ToolSimpleTest extends ReplToolTesting {
                         "|  No such snippet: " + arg),
                 a -> assertCommandCheckOutput(a, "/types -start",
                         s -> checkLineToList(s, startTypeList))
+        );
+    }
+
+    @Test
+    public void testCompoundStart() {
+        test(new String[]{"--startup", "DEFAULT", "--startup", "PRINTING"},
+                (a) -> assertCommand(a, "printf(\"%4.2f\", Math.PI)",
+                        "", "", null, "3.14", "")
+        );
+    }
+
+    @Test
+    public void testJavaSeStart() {
+        test(new String[]{"--startup", "JAVASE"},
+                (a) -> assertCommand(a, "ZoneOffsetTransitionRule.TimeDefinition.WALL",
+                        "$1 ==> WALL")
         );
     }
 
