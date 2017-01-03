@@ -295,6 +295,8 @@ void AOTCodeHeap::publish_aot(const methodHandle& mh, AOTMethodData* method_data
     // When the AOT compiler compiles something big we fail to generate metadata
     // in CodeInstaller::gather_metadata. In that case the scopes_pcs_begin == scopes_pcs_end.
     // In all successful cases we always have 2 entries of scope pcs.
+    log_info(aot, class, resolve)("Failed to load %s (no metadata available)", mh->name_and_sig_as_C_string());
+    _code_to_aot[code_id]._state = invalid;
     return;
   }
 
