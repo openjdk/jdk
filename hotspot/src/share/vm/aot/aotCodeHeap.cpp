@@ -710,7 +710,7 @@ bool AOTCodeHeap::load_klass_data(instanceKlassHandle kh, Thread* thread) {
   }
 
   if (_lib->config()->_omitAssertions && JavaAssertions::enabled(kh->name()->as_C_string(), kh->class_loader() == NULL)) {
-    // Assertions are omitted in the compiled code, but are enabled right now. Bail out.
+    log_trace(aot, class, load)("class  %s  in  %s does not have java assertions in compiled code, but assertions are enabled for this execution.", kh->internal_name(), _lib->name());
     sweep_dependent_methods(klass_data);
     return false;
   }
