@@ -57,6 +57,7 @@ public class CheckModuleTest {
     private static final Set<String> modules = Set.of("unsafe", "mIV", "mV", "mVI", "mVII", "mVIII");
 
     private static final String JAVA_BASE = "java.base";
+    private static final String JAVA_COMPILER = "java.compiler";
 
     /**
      * Compiles classes used by the test
@@ -72,6 +73,8 @@ public class CheckModuleTest {
     public Object[][] base() {
         return new Object[][] {
             { JAVA_BASE, new ModuleMetaData(JAVA_BASE)
+            },
+            { JAVA_COMPILER, new ModuleMetaData(JAVA_BASE)
             },
         };
     };
