@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,6 +154,11 @@ public class Main {
                 errs += Integer.valueOf(m.group(2));
                 if (m.group(3) != null)
                     overflow++;
+            } else if ((m = countPattern2.matcher(line)).matches()) {
+                warns += Integer.valueOf(m.group(1));
+                errs += Integer.valueOf(m.group(2));
+                if (m.group(3) != null)
+                    overflow++;
             } else if ((m = guardPattern.matcher(line)).matches()) {
                 boolean found = false;
                 for (Pattern p: patterns) {
@@ -183,6 +188,7 @@ public class Main {
 
     Pattern okPattern = Pattern.compile("No warnings or errors were found.");
     Pattern countPattern = Pattern.compile("([0-9]+) warnings, ([0-9]+) errors were found!.*?(Not all warnings/errors were shown.)?");
+    Pattern countPattern2 = Pattern.compile("Tidy found ([0-9]+) warning[s]? and ([0-9]+) error[s]?!.*?(Not all warnings/errors were shown.)?");
     Pattern cssPattern = Pattern.compile("You are recommended to use CSS.*");
     Pattern guardPattern = Pattern.compile("line [0-9]+ column [0-9]+ - (Error|Warning):.*");
 
@@ -221,7 +227,11 @@ public class Main {
         Pattern.compile(".*Warning: trimming empty <.*>"),
         Pattern.compile(".*Warning: unescaped & or unknown entity \".*\""),
         Pattern.compile(".*Warning: unescaped & which should be written as &amp;"),
-        Pattern.compile(".*Warning: using <br> in place of <p>")
+        Pattern.compile(".*Warning: using <br> in place of <p>"),
+        Pattern.compile(".*Warning: <.*> element removed from HTML5"),
+        Pattern.compile(".*Warning: <.*> attribute \".*\" not allowed for HTML5"),
+        Pattern.compile(".*Warning: The summary attribute on the <table> element is obsolete in HTML5"),
+        Pattern.compile(".*Warning: replacing invalid UTF-8 bytes \\(char. code U\\+.*\\)")
     };
 
     int files;
