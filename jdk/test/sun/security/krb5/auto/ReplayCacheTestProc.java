@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7152176 8168518
+ * @bug 7152176 8168518 8172017
  * @summary More krb5 tests
  * @library ../../../../java/security/testlibrary/ /test/lib
  * @run main/othervm/timeout=300 ReplayCacheTestProc
@@ -75,18 +75,27 @@ public class ReplayCacheTestProc {
     private static String HOST = "localhost";
 
     private static final String SERVICE;
+    private static long uid;
+    private static String cwd;
 
     static {
         String tmp = System.getProperty("test.service");
         SERVICE = (tmp == null) ? "service" : tmp;
+        uid = jdk.internal.misc.VM.geteuid();
+        // Where should the rcache be saved. KRB5RCACHEDIR is not
+        // recognized on Solaris (might be supported on Solaris 12),
+        // and directory name is different when launched by root.
+        // See manpage krb5envvar(5) on KRB5RCNAME.
+        if (System.getProperty("os.name").startsWith("SunOS")) {
+            if (uid == 0) {
+                cwd = "/var/krb5/rcache/root/";
+            } else {
+                cwd = "/var/krb5/rcache/";
+            }
+        } else {
+            cwd = System.getProperty("user.dir");
+        }
     }
-
-    // Where should the rcache be saved. It seems KRB5RCACHEDIR is not
-    // recognized on Solaris. Maybe version too low? I see 1.6.
-    private static String cwd =
-            System.getProperty("os.name").startsWith("SunOS") ?
-                "/var/krb5/rcache/" :
-                System.getProperty("user.dir");
 
     private static MessageDigest md5, sha256;
 
@@ -99,7 +108,6 @@ public class ReplayCacheTestProc {
         }
     }
 
-    private static long uid;
 
     public static void main0(String[] args) throws Exception {
         System.setProperty("java.security.krb5.conf", OneKDC.KRB5_CONF);
@@ -113,8 +121,6 @@ public class ReplayCacheTestProc {
                             // N<suffix>=<libname>: another native lib
             Ex[] result;
             int numPerType = 2; // number of acceptors per type
-
-            uid = jdk.internal.misc.VM.geteuid();
 
             KDC kdc = KDC.create(OneKDC.REALM, HOST, 0, true);
             for (int i=0; i<nc; i++) {
