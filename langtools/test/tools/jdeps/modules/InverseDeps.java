@@ -26,7 +26,9 @@
  * @summary Tests split packages
  * @library ../lib
  * @build CompilerUtils JdepsUtil
- * @modules jdk.jdeps/com.sun.tools.jdeps
+ * @modules java.logging
+ *          jdk.jdeps/com.sun.tools.jdeps
+ *          jdk.unsupported
  * @run testng InverseDeps
  */
 
@@ -87,6 +89,44 @@ public class InverseDeps {
             }
         }
     }
+    @DataProvider(name = "jdkModules")
+    public Object[][] jdkModules() {
+        return new Object[][]{
+            // --require and a subset of dependences
+            { "jdk.compiler", new String[][] {
+                    new String[] {"jdk.compiler", "jdk.jshell"},
+                    new String[] {"jdk.compiler", "jdk.rmic"},
+                    new String[] {"jdk.compiler", "jdk.javadoc", "jdk.rmic"},
+                }
+            },
+            { "java.compiler", new String[][] {
+                    new String[] {"java.compiler", "jdk.jshell"},
+                    new String[] {"java.compiler", "jdk.compiler", "jdk.jshell"},
+                    new String[] {"java.compiler", "jdk.compiler", "jdk.rmic"},
+                    new String[] {"java.compiler", "jdk.compiler", "jdk.javadoc", "jdk.rmic"},
+                    new String[] {"java.compiler", "java.se", "java.se.ee"},
+                }
+            },
+        };
+    }
+
+    @Test(dataProvider = "jdkModules")
+    public void testJDKModule(String moduleName, String[][] expected) throws Exception {
+        // this invokes the jdeps launcher so that all system modules are observable
+        JdepsRunner jdeps = JdepsRunner.run(
+            "--inverse", "--require", moduleName
+        );
+        List<String> output = Arrays.stream(jdeps.output())
+            .map(s -> s.trim())
+            .collect(Collectors.toList());
+
+        // verify the dependences
+        assertTrue(Arrays.stream(expected)
+                         .map(path -> Arrays.stream(path)
+                         .collect(Collectors.joining(" <- ")))
+                         .anyMatch(output::contains));
+    }
+
 
     @DataProvider(name = "testrequires")
     public Object[][] expected1() {

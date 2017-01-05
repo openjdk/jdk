@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,18 @@
  * @test
  * @bug 8143852
  * @summary Test that generic function interface method bounds are the same
- * @compile MostSpecific20.java
  */
-class MostSpecific20 {
+public class MostSpecific20 {
+    public static void main(String[] args) {
+        new MostSpecific20().test();
+    }
+
     interface F1 { <X extends Iterable<X>> Object apply(X arg); }
     interface F2 { <Y extends Iterable<Y>> String apply(Y arg); }
 
-    static void m1(F1 f) {}
+    static void m1(F1 f) {
+        throw new AssertionError("Less-specific method invocation.");
+    }
     static void m1(F2 f) {}
 
     static String foo(Object in) { return "a"; }
@@ -39,5 +44,4 @@ class MostSpecific20 {
     void test() {
         m1(MostSpecific20::foo);
     }
-
 }
