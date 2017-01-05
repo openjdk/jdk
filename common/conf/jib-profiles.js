@@ -263,6 +263,7 @@ var getJibProfilesCommon = function (input, data) {
         labels: "open"
     };
 
+    common.configure_args_64bit = ["--with-target-bits=64"];
     common.configure_args_32bit = ["--with-target-bits=32"];
 
     /**
@@ -419,7 +420,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: "linux",
             target_cpu: "x64",
             dependencies: ["devkit"],
-            configure_args: ["--with-zlib=system"],
+            configure_args: concat(common.configure_args_64bit, "--with-zlib=system"),
             default_make_targets: ["docs-bundles"],
         },
 
@@ -436,27 +437,30 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: "macosx",
             target_cpu: "x64",
             dependencies: ["devkit"],
-            configure_args: concat(common.configure_args, "--with-zlib=system"),
+            configure_args: concat(common.configure_args_64bit, "--with-zlib=system"),
         },
 
         "solaris-x64": {
             target_os: "solaris",
             target_cpu: "x64",
             dependencies: ["devkit", "cups"],
-            configure_args: ["--with-zlib=system", "--enable-dtrace"],
+            configure_args: concat(common.configure_args_64bit,
+                "--with-zlib=system", "--enable-dtrace"),
         },
 
         "solaris-sparcv9": {
             target_os: "solaris",
             target_cpu: "sparcv9",
             dependencies: ["devkit", "cups"],
-            configure_args: ["--with-zlib=system", "--enable-dtrace"],
+            configure_args: concat(common.configure_args_64bit,
+                "--with-zlib=system", "--enable-dtrace"),
         },
 
         "windows-x64": {
             target_os: "windows",
             target_cpu: "x64",
             dependencies: ["devkit", "freetype"],
+            configure_args: concat(common.configure_args_64bit),
         },
 
         "windows-x86": {
@@ -518,11 +522,11 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: "linux",
             target_cpu: "x64",
             dependencies: ["devkit"],
-            configure_args: [
+            configure_args: concat(common.configure_args_64bit, [
                 "--with-zlib=system",
                 "--with-jvm-variants=zero",
                 "--enable-libffi-bundling"
-            ]
+            ])
         },
 
         "linux-x86-zero": {
