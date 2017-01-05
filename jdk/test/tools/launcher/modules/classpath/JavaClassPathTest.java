@@ -95,19 +95,20 @@ public class JavaClassPathTest {
     public Object[][] classpath() {
         return new Object[][]{
             // true indicates that class path default to current working directory
-            { "",                              "."  },
-            { "-Djava.class.path",             "."  },
-            { "-Djava.class.path=",            ""  },
-            { "-Djava.class.path=.",           "."  },
+            { List.of(),                          "." },
+            { List.of("-cp", ""),                 "" },
+            { List.of("-cp", "."),                "." },
+            { List.of("-Djava.class.path"),       "." },
+            { List.of("-Djava.class.path="),      ""  },
+            { List.of("-Djava.class.path=."),     "." },
         };
     }
 
     @Test(dataProvider = "classpath")
-    public void testUnnamedModule(String option, String expected) throws Throwable {
-        List<String> args = new ArrayList<>();
-        if (!option.isEmpty()) {
-            args.add(option);
-        }
+    public void testUnnamedModule(List<String> options, String expected)
+        throws Throwable
+    {
+        List<String> args = new ArrayList<>(options);
         args.add(TEST_MAIN);
         args.add(Boolean.toString(true));
         args.add(expected);
@@ -195,8 +196,12 @@ public class JavaClassPathTest {
     }
 
     private OutputAnalyzer execute(List<String> options) throws Throwable {
-        ProcessBuilder pb =
-            createJavaProcessBuilder(options.toArray(new String[0]));
+        ProcessBuilder pb = createJavaProcessBuilder(
+            options.stream()
+                   .map(this::autoQuote)
+                   .toArray(String[]::new)
+        );
+
         Map<String,String> env = pb.environment();
         // remove CLASSPATH environment variable
         String value = env.remove("CLASSPATH");
@@ -205,4 +210,16 @@ public class JavaClassPathTest {
                     .errorTo(System.out);
     }
 
+    private static final boolean IS_WINDOWS
+        = System.getProperty("os.name").startsWith("Windows");
+
+    /*
+     * Autoquote empty string argument on Windows
+     */
+    private String autoQuote(String arg) {
+        if (IS_WINDOWS && arg.isEmpty()) {
+            return "\"\"";
+        }
+        return arg;
+    }
 }
