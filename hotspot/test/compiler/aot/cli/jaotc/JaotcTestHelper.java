@@ -71,7 +71,11 @@ public class JaotcTestHelper {
         }
     }
 
-    public static String getClassAotCompilationName(Class<?> classToCompile) {
+    public static String getClassAotCompilationFilename(Class<?> classToCompile) {
         return classToCompile.getName().replaceAll("\\.", File.separator) + ".class";
+    }
+
+    public static String getClassAotCompilationName(Class<?> classToCompile) {
+        return classToCompile.getName();
     }
 }
