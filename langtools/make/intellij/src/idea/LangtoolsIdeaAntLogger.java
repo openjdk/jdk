@@ -84,6 +84,8 @@ public final class LangtoolsIdeaAntLogger extends DefaultLogger {
         JAVAC_WARNING(StringBinaryPredicate.CONTAINS, MSG_WARN, "warning:", "compiler.warn"),
         /** a javac note */
         JAVAC_NOTE(StringBinaryPredicate.CONTAINS, MSG_INFO, "note:", "compiler.note"),
+        /** a javac raw error (these typically come from a build misconfiguration - such as a bad javac flag) */
+        JAVAC_RAW_ERROR(StringBinaryPredicate.STARTS_WITH, MSG_INFO, "javac: "),
         /** continuation of some javac error message */
         JAVAC_NESTED_DIAG(StringBinaryPredicate.STARTS_WITH, MSG_INFO, "  "),
         /** a javac crash */
@@ -126,7 +128,7 @@ public final class LangtoolsIdeaAntLogger extends DefaultLogger {
     enum Task {
         /** exec task - invoked during compilation */
         JAVAC("exec", MessageKind.JAVAC_ERROR, MessageKind.JAVAC_WARNING, MessageKind.JAVAC_NOTE,
-                       MessageKind.JAVAC_NESTED_DIAG, MessageKind.JAVAC_CRASH),
+                       MessageKind.JAVAC_RAW_ERROR, MessageKind.JAVAC_NESTED_DIAG, MessageKind.JAVAC_CRASH),
         /** jtreg task - invoked during test execution */
         JTREG("jtreg", MessageKind.JTREG_TEST_PASSED, MessageKind.JTREG_TEST_FAILED, MessageKind.JTREG_TEST_ERROR, MessageKind.JTREG_TEST_REPORT),
         /** initial synthetic task when the logger is created */
