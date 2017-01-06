@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,76 +25,33 @@
 
 package sun.security.validator;
 
-import java.io.*;
-import java.util.*;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Collections;
+import java.util.Enumeration;
 
-import java.security.*;
-import java.security.cert.*;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.cert.X509Certificate;
 import java.security.cert.Certificate;
 
-import sun.security.action.*;
-
 /**
- * Collection of static utility methods related to KeyStores.
+ * Collection of static utility methods related to trust anchor KeyStores.
  *
  * @author Andreas Sterbenz
  */
-public class KeyStores {
+public final class TrustStoreUtil {
 
-    private KeyStores() {
+    private TrustStoreUtil() {
         // empty
     }
 
-    // in the future, all accesses to the system cacerts keystore should
-    // go through this class. but not right now.
-/*
-    private static final String javaHome =
-        (String)AccessController.doPrivileged(new GetPropertyAction("java.home"));
-
-    private static final char SEP = File.separatorChar;
-
-    private static KeyStore caCerts;
-
-    private static KeyStore getKeyStore(String type, String name,
-            char[] password) throws IOException {
-        if (type == null) {
-            type = "JKS";
-        }
-        try {
-            KeyStore ks = KeyStore.getInstance(type);
-            FileInputStream in = (FileInputStream)AccessController.doPrivileged
-                                        (new OpenFileInputStreamAction(name));
-            ks.load(in, password);
-            return ks;
-        } catch (GeneralSecurityException e) {
-            // XXX
-            throw new IOException();
-        } catch (PrivilegedActionException e) {
-            throw (IOException)e.getCause();
-        }
-    }
-
     /**
-     * Return a KeyStore with the contents of the lib/security/cacerts file.
-     * The file is only opened once per JVM invocation and the contents
-     * cached subsequently.
-     *
-    public static synchronized KeyStore getCaCerts() throws IOException {
-        if (caCerts != null) {
-            return caCerts;
-        }
-        String name = javaHome + SEP + "lib" + SEP + "security" + SEP + "cacerts";
-        caCerts = getKeyStore(null, name, null);
-        return caCerts;
-    }
-*/
-
-    /**
-     * Return a Set with all trusted X509Certificates contained in
-     * this KeyStore.
+     * Return an unmodifiable Set with all trusted X509Certificates contained
+     * in the specified KeyStore.
      */
     public static Set<X509Certificate> getTrustedCerts(KeyStore ks) {
-        Set<X509Certificate> set = new HashSet<X509Certificate>();
+        Set<X509Certificate> set = new HashSet<>();
         try {
             for (Enumeration<String> e = ks.aliases(); e.hasMoreElements(); ) {
                 String alias = e.nextElement();
@@ -113,8 +70,10 @@ public class KeyStores {
             }
         } catch (KeyStoreException e) {
             // ignore
+            //
+            // This should be rare, but better to log this in the future.
         }
-        return set;
-    }
 
+        return Collections.unmodifiableSet(set);
+    }
 }
