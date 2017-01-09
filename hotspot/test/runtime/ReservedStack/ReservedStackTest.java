@@ -199,7 +199,8 @@ public class ReservedStackTest {
             // corruptions are still possible.
             boolean supportedPlatform =
                 Platform.isAix() ||
-                (Platform.isLinux() && (Platform.isPPC() || Platform.isX64() || Platform.isX86())) ||
+                (Platform.isLinux() &&
+                  (Platform.isPPC() || Platform.isS390x() || Platform.isX64() || Platform.isX86())) ||
                 Platform.isOSX() ||
                 Platform.isSolaris();
             if (supportedPlatform && !result.contains("PASSED")) {

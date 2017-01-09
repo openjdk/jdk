@@ -478,7 +478,7 @@ void LogConfiguration::describe(outputStream* out) {
 
 void LogConfiguration::print_command_line_help(FILE* out) {
   jio_fprintf(out, "-Xlog Usage: -Xlog[:[what][:[output][:[decorators][:output-options]]]]\n"
-              "\t where 'what' is a combination of tags and levels on the form tag1[+tag2...][*][=level][,...]\n"
+              "\t where 'what' is a combination of tags and levels of the form tag1[+tag2...][*][=level][,...]\n"
               "\t Unless wildcard (*) is specified, only log messages tagged with exactly the tags specified will be matched.\n\n");
 
   jio_fprintf(out, "Available log levels:\n");
@@ -513,6 +513,14 @@ void LogConfiguration::print_command_line_help(FILE* out) {
 
               " -Xlog:gc\n"
               "\t Log messages tagged with 'gc' tag using 'info' level to stdout, with default decorations.\n\n"
+
+              " -Xlog:gc,safepoint\n"
+              "\t Log messages tagged either with 'gc' or 'safepoint' tags, both using 'info' level, to stdout, with default decorations.\n"
+              "\t (Messages tagged with both 'gc' and 'safepoint' will not be logged.)\n\n"
+
+              " -Xlog:gc+ref=debug\n"
+              "\t Log messages tagged with both 'gc' and 'ref' tags, using 'debug' level, to stdout, with default decorations.\n"
+              "\t (Messages tagged only with one of the two tags will not be logged.)\n\n"
 
               " -Xlog:gc=debug:file=gc.txt:none\n"
               "\t Log messages tagged with 'gc' tag using 'debug' level to file 'gc.txt' with no decorations.\n\n"

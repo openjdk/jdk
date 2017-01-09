@@ -31,7 +31,7 @@
  *        "..................................H"
  *     3. invoke gc and check that memory returned to the system (amount of committed memory got down)
  *
- * @library /test/lib
+ * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management/sun.management
  */
@@ -39,10 +39,12 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
 import java.util.ArrayList;
 import java.util.List;
+import java.text.NumberFormat;
 import static jdk.test.lib.Asserts.*;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import com.sun.management.HotSpotDiagnosticMXBean;
+import gc.testlibrary.Helpers;
 
 public class TestShrinkDefragmentedHeap {
     // Since we store all the small objects, they become old and old regions are also allocated at the bottom of the heap
@@ -114,8 +116,8 @@ public class TestShrinkDefragmentedHeap {
 
         private void allocate() {
             System.out.format("Will allocate objects of small size = %s and humongous size = %s",
-                    MemoryUsagePrinter.humanReadableByteCount(SMALL_OBJS_SIZE, false),
-                    MemoryUsagePrinter.humanReadableByteCount(HUMONG_OBJS_SIZE, false)
+                    MemoryUsagePrinter.NF.format(SMALL_OBJS_SIZE),
+                    MemoryUsagePrinter.NF.format(HUMONG_OBJS_SIZE)
             );
 
             for (int i = 0; i < ALLOCATE_COUNT; i++) {
@@ -170,24 +172,16 @@ public class TestShrinkDefragmentedHeap {
      */
     static class MemoryUsagePrinter {
 
-        public static String humanReadableByteCount(long bytes, boolean si) {
-            int unit = si ? 1000 : 1024;
-            if (bytes < unit) {
-                return bytes + " B";
-            }
-            int exp = (int) (Math.log(bytes) / Math.log(unit));
-            String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp - 1) + (si ? "" : "i");
-            return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
-        }
+        public static final NumberFormat NF = Helpers.numberFormatter();
 
         public static void printMemoryUsage(String label) {
             MemoryUsage memusage = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
             float freeratio = 1f - (float) memusage.getUsed() / memusage.getCommitted();
             System.out.format("[%-24s] init: %-7s, used: %-7s, comm: %-7s, freeRatio ~= %.1f%%%n",
                     label,
-                    humanReadableByteCount(memusage.getInit(), false),
-                    humanReadableByteCount(memusage.getUsed(), false),
-                    humanReadableByteCount(memusage.getCommitted(), false),
+                    NF.format(memusage.getInit()),
+                    NF.format(memusage.getUsed()),
+                    NF.format(memusage.getCommitted()),
                     freeratio * 100
             );
         }
