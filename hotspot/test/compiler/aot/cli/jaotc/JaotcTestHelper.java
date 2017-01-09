@@ -44,6 +44,7 @@ public class JaotcTestHelper {
         for (String vmOpt : Utils.getTestJavaOpts()) {
             launcher.addVMArg(vmOpt);
         }
+        launcher.addToolArg("--compile-with-assertions");
         for (String arg : args) {
             launcher.addToolArg(arg);
         }

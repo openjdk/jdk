@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,28 @@
  * questions.
  */
 
-import java.util.ArrayList;
-import java.util.List;
-import jdk.test.lib.process.ProcessTools;
+/**
+ * @test
+ * @bug 7200264
+ * @summary 7192963 changes disabled shift vectors
+ * @requires vm.cpu.features ~= ".*sse2.*" & vm.debug & vm.flavor == "server"
+ * @library /test/lib /
+ * @run driver compiler.c2.cr7200264.TestSSE2IntVect
+ */
 
-import sun.management.VMManagement;
+package compiler.c2.cr7200264;
 
-public class JMapHProfLargeHeapProc {
-    private static final List<byte[]> heapGarbage = new ArrayList<>();
-
-    public static void main(String[] args) throws Exception {
-
-        buildLargeHeap(args);
-
-        // Print our pid on stdout
-        System.out.println("PID[" + ProcessTools.getProcessId() + "]");
-
-        // Wait for input before termination
-        System.in.read();
+public class TestSSE2IntVect {
+    public static void main(String[] args) throws Throwable {
+        TestDriver test = new TestDriver();
+        test.addExpectedVectorization("AddVI", 4);
+        test.addExpectedVectorization("SubVI", 4);
+        test.addExpectedVectorization("AndV", 3);
+        test.addExpectedVectorization("OrV", 3);
+        test.addExpectedVectorization("XorV", 3);
+        test.addExpectedVectorization("LShiftVI", 5);
+        test.addExpectedVectorization("RShiftVI", 3);
+        test.addExpectedVectorization("URShiftVI", 3);
+        test.run();
     }
-
-    private static void buildLargeHeap(String[] args) {
-        for (long i = 0; i < Integer.parseInt(args[0]); i++) {
-            heapGarbage.add(new byte[1024]);
-        }
-    }
-
 }

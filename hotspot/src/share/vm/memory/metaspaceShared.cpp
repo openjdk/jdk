@@ -145,10 +145,6 @@ void MetaspaceShared::serialize(SerializeClosure* soc, GrowableArray<MemRegion> 
   StringTable::serialize(soc, string_space, space_size);
   soc->do_tag(--tag);
 
-  // Dump/restore the misc information for system dictionary
-  SystemDictionaryShared::serialize(soc);
-  soc->do_tag(--tag);
-
   soc->do_tag(666);
 }
 

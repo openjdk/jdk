@@ -93,6 +93,7 @@ public class AotCompiler {
             }
         }
         List<String> args = new ArrayList<>();
+        args.add("--compile-with-assertions");
         args.add("--output");
         args.add(libName);
         if (file != null) {
