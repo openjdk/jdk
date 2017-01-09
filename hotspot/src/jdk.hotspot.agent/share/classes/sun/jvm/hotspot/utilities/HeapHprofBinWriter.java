@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.runtime.*;
+import sun.jvm.hotspot.classfile.*;
 
 /*
  * This class writes Java heap in hprof binary format. This format is
@@ -379,6 +380,8 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     private static final int JVM_SIGNATURE_ARRAY   = '[';
     private static final int JVM_SIGNATURE_CLASS   = 'L';
 
+    int serialNum = 1;
+
     public synchronized void write(String fileName) throws IOException {
         // open file stream and create buffered data output stream
         fos = new FileOutputStream(fileName);
@@ -516,8 +519,22 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
 
     private void writeClassDumpRecords() throws IOException {
         SystemDictionary sysDict = VM.getVM().getSystemDictionary();
+        ClassLoaderDataGraph cldGraph = VM.getVM().getClassLoaderDataGraph();
         try {
             sysDict.allClassesDo(new SystemDictionary.ClassVisitor() {
+                            public void visit(Klass k) {
+                                try {
+                                    writeHeapRecordPrologue();
+                                    writeClassDumpRecord(k);
+                                    writeHeapRecordEpilogue();
+                                } catch (IOException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            }
+                        });
+             // Add the anonymous classes also which are not present in the
+             // System Dictionary
+             cldGraph.allAnonymousKlassesDo(new ClassLoaderDataGraph.KlassVisitor() {
                             public void visit(Klass k) {
                                 try {
                                     writeHeapRecordPrologue();
@@ -799,17 +816,6 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         writeObjectID(klass.getJavaMirror());
 
         ClassData cd = (ClassData) classDataCache.get(klass);
-        if (cd == null) {
-            // The class is not present in the system dictionary, probably Lambda.
-            // Add it to cache here
-            if (klass instanceof InstanceKlass) {
-                InstanceKlass ik = (InstanceKlass) klass;
-                List fields = getInstanceFields(ik);
-                int instSize = getSizeForFields(fields);
-                cd = new ClassData(instSize, fields);
-                classDataCache.put(ik, cd);
-            }
-        }
 
         if (Assert.ASSERTS_ENABLED) {
             Assert.that(cd != null, "can not get class data for " + klass.getName().asString() + klass.getAddress());
@@ -950,9 +956,24 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     private void writeClasses() throws IOException {
         // write class list (id, name) association
         SystemDictionary sysDict = VM.getVM().getSystemDictionary();
+        ClassLoaderDataGraph cldGraph = VM.getVM().getClassLoaderDataGraph();
         try {
             sysDict.allClassesDo(new SystemDictionary.ClassVisitor() {
-                private int serialNum = 1;
+                public void visit(Klass k) {
+                    try {
+                        Instance clazz = k.getJavaMirror();
+                        writeHeader(HPROF_LOAD_CLASS, 2 * (OBJ_ID_SIZE + 4));
+                        out.writeInt(serialNum);
+                        writeObjectID(clazz);
+                        out.writeInt(DUMMY_STACK_TRACE_ID);
+                        writeSymbolID(k.getName());
+                        serialNum++;
+                    } catch (IOException exp) {
+                        throw new RuntimeException(exp);
+                    }
+                }
+            });
+            cldGraph.allAnonymousKlassesDo(new ClassLoaderDataGraph.KlassVisitor() {
                 public void visit(Klass k) {
                     try {
                         Instance clazz = k.getJavaMirror();

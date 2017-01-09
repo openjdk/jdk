@@ -222,6 +222,10 @@ public abstract class Executable extends AccessibleObject
      */
     public abstract TypeVariable<?>[] getTypeParameters();
 
+    // returns shared array of parameter types - must never give it out
+    // to the untrusted code...
+    abstract Class<?>[] getSharedParameterTypes();
+
     /**
      * Returns an array of {@code Class} objects that represent the formal
      * parameter types, in declaration order, of the executable

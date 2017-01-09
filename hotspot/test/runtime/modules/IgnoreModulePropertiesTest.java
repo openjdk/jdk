@@ -72,6 +72,6 @@ public class IgnoreModulePropertiesTest {
         testOption("--add-reads", "xyzz=yyzd", "jdk.module.addreads.0", "WARNING: Unknown module: xyzz");
         testOption("--add-exports", "java.base/xyzz=yyzd", "jdk.module.addexports.0",
                    "WARNING: package xyzz not in java.base");
-        testOption("--patch-module", "=d", "jdk.module.patch.0", "Missing module name");
+        testOption("--patch-module", "=d", "jdk.module.patch.0", "Unable to parse --patch-module");
     }
 }

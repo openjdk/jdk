@@ -161,6 +161,10 @@ class TaskFactory {
         @Override
         public Diag diag(Diagnostic<? extends JavaFileObject> d) {
             SourceMemoryJavaFileObject smjfo = (SourceMemoryJavaFileObject) d.getSource();
+            if (smjfo == null) {
+                // Handle failure that doesn't preserve mapping
+                return new StringSourceHandler().diag(d);
+            }
             OuterWrap w = (OuterWrap) smjfo.getOrigin();
             return w.wrapDiag(d);
         }

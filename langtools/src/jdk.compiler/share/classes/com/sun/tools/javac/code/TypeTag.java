@@ -241,4 +241,21 @@ public enum TypeTag {
         }
     }
 
+    /** Returns true if the given value is within the allowed range for this type. */
+    public boolean checkRange(int value) {
+        switch (this) {
+            case BOOLEAN:
+                return 0 <= value && value <= 1;
+            case BYTE:
+                return Byte.MIN_VALUE <= value && value <= Byte.MAX_VALUE;
+            case CHAR:
+                return Character.MIN_VALUE <= value && value <= Character.MAX_VALUE;
+            case SHORT:
+                return Short.MIN_VALUE <= value && value <= Short.MAX_VALUE;
+            case INT:
+                return true;
+            default:
+                throw new AssertionError();
+        }
+    }
 }

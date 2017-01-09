@@ -219,7 +219,7 @@ public abstract class EditorTestBase extends ReplToolTesting {
     public void testStartup() {
         testEditor(true, new String[0],
                 a -> assertEditInput(a, "/ed", s -> assertTrue(s.isEmpty(), "Checking of startup: " + s), this::cancel),
-                a -> assertEditInput(a, "/ed printf", assertStartsWith("void printf"), this::cancel));
+                a -> assertEditInput(a, "/ed s1", assertStartsWith("import"), this::cancel));
     }
 
     @Test

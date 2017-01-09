@@ -82,14 +82,18 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 }
 
 static
-jint throw_exc(JNIEnv *env, char *msg) {
+void throw_exc(JNIEnv *env, char *msg) {
     jclass exc_class = JNI_ENV_PTR(env)->FindClass(JNI_ENV_ARG(env, EXC_CNAME));
+    jint rt = JNI_OK;
 
     if (exc_class == NULL) {
         printf("throw_exc: Error in FindClass(env, %s)\n", EXC_CNAME);
-        return -1;
+        return;
     }
-    return JNI_ENV_PTR(env)->ThrowNew(JNI_ENV_ARG(env, exc_class), msg);
+    rt = JNI_ENV_PTR(env)->ThrowNew(JNI_ENV_ARG(env, exc_class), msg);
+    if (rt == JNI_ERR) {
+        printf("throw_exc: Error in JNI ThrowNew(env, %s)\n", msg);
+    }
 }
 
 static

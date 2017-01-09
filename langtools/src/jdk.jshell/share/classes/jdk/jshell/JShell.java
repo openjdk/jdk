@@ -48,11 +48,10 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import jdk.internal.jshell.debug.InternalDebugControl;
 import jdk.jshell.Snippet.Status;
-import jdk.jshell.execution.JdiDefaultExecutionControl;
 import jdk.jshell.spi.ExecutionControl.EngineTerminationException;
 import jdk.jshell.spi.ExecutionControl.ExecutionControlException;
+import jdk.jshell.spi.ExecutionControlProvider;
 import jdk.jshell.spi.ExecutionEnv;
-import static jdk.jshell.execution.Util.failOverExecutionControlGenerator;
 import static jdk.jshell.Util.expunge;
 
 /**
@@ -116,15 +115,20 @@ public class JShell implements AutoCloseable {
         this.idGenerator = b.idGenerator;
         this.extraRemoteVMOptions = b.extraRemoteVMOptions;
         this.extraCompilerOptions = b.extraCompilerOptions;
-        ExecutionControl.Generator executionControlGenerator = b.executionControlGenerator==null
-                ? failOverExecutionControlGenerator(
-                        JdiDefaultExecutionControl.listen(InetAddress.getLoopbackAddress().getHostAddress()),
-                        JdiDefaultExecutionControl.launch(),
-                        JdiDefaultExecutionControl.listen(null)
-                  )
-                : b.executionControlGenerator;
         try {
-            executionControl = executionControlGenerator.generate(new ExecutionEnvImpl());
+            if (b.executionControlProvider != null) {
+                executionControl = b.executionControlProvider.generate(new ExecutionEnvImpl(),
+                        b.executionControlParameters == null
+                                ? b.executionControlProvider.defaultParameters()
+                                : b.executionControlParameters);
+            } else {
+                String loopback = InetAddress.getLoopbackAddress().getHostAddress();
+                String spec = b.executionControlSpec == null
+                        ? "failover:0(jdi:hostname(" + loopback + ")),"
+                          + "1(jdi:launch(true)), 2(jdi)"
+                        : b.executionControlSpec;
+                executionControl = ExecutionControl.generate(new ExecutionEnvImpl(), spec);
+            }
         } catch (Throwable ex) {
             throw new IllegalStateException("Launching JShell execution engine threw: " + ex.getMessage(), ex);
         }
@@ -164,7 +168,9 @@ public class JShell implements AutoCloseable {
         BiFunction<Snippet, Integer, String> idGenerator = null;
         List<String> extraRemoteVMOptions = new ArrayList<>();
         List<String> extraCompilerOptions = new ArrayList<>();
-        ExecutionControl.Generator executionControlGenerator;
+        ExecutionControlProvider executionControlProvider;
+        Map<String,String> executionControlParameters;
+        String executionControlSpec;
 
         Builder() { }
 
@@ -322,14 +328,39 @@ public class JShell implements AutoCloseable {
 
         /**
          * Sets the custom engine for execution. Snippet execution will be
-         * provided by the specified {@link ExecutionControl} instance.
+         * provided by the {@link ExecutionControl} instance selected by the
+         * specified execution control spec.
+         * Use, at most, one of these overloaded {@code executionEngine} builder
+         * methods.
          *
-         * @param executionControlGenerator the execution engine generator
+         * @param executionControlSpec the execution control spec,
+         * which is documented in the {@link jdk.jshell.spi}
+         * package documentation.
          * @return the {@code Builder} instance (for use in chained
          * initialization)
          */
-        public Builder executionEngine(ExecutionControl.Generator executionControlGenerator) {
-            this.executionControlGenerator = executionControlGenerator;
+        public Builder executionEngine(String executionControlSpec) {
+            this.executionControlSpec = executionControlSpec;
+            return this;
+        }
+
+        /**
+         * Sets the custom engine for execution. Snippet execution will be
+         * provided by the specified {@link ExecutionControl} instance.
+         * Use, at most, one of these overloaded {@code executionEngine} builder
+         * methods.
+         *
+         * @param executionControlProvider the provider to supply the execution
+         * engine
+         * @param executionControlParameters the parameters to the provider, or
+         * {@code null} for default parameters
+         * @return the {@code Builder} instance (for use in chained
+         * initialization)
+         */
+        public Builder executionEngine(ExecutionControlProvider executionControlProvider,
+                Map<String,String> executionControlParameters) {
+            this.executionControlProvider = executionControlProvider;
+            this.executionControlParameters = executionControlParameters;
             return this;
         }
 

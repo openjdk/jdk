@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,10 +44,14 @@ public class ClassLoaderData extends VMObject {
     Type type      = db.lookupType("ClassLoaderData");
     classLoaderField = type.getOopField("_class_loader");
     nextField = type.getAddressField("_next");
+    klassesField = type.getAddressField("_klasses");
+    isAnonymousField = new CIntField(type.getCIntegerField("_is_anonymous"), 0);
   }
 
   private static sun.jvm.hotspot.types.OopField classLoaderField;
   private static AddressField nextField;
+  private static AddressField klassesField;
+  private static CIntField isAnonymousField;
 
   public ClassLoaderData(Address addr) {
     super(addr);
@@ -62,5 +66,17 @@ public class ClassLoaderData extends VMObject {
 
   public Oop getClassLoader() {
     return VM.getVM().getObjectHeap().newOop(classLoaderField.getValue(getAddress()));
+  }
+
+  public boolean getIsAnonymous() {
+    return isAnonymousField.getValue(this) != 0;
+  }
+
+  public ClassLoaderData next() {
+    return instantiateWrapperFor(nextField.getValue(getAddress()));
+  }
+
+  public Klass getKlasses() {
+    return (InstanceKlass)Metadata.instantiateWrapperFor(klassesField.getValue(getAddress()));
   }
 }

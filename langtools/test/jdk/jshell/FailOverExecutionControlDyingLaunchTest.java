@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8131029 8160127 8159935 8169519
+ * @bug 8131029 8160127 8159935 8169519 8168615
  * @summary Test that fail-over works for fail-over ExecutionControl generators.
  * @modules jdk.jshell/jdk.jshell.execution
  *          jdk.jshell/jdk.jshell.spi
@@ -33,9 +33,6 @@
 
 import org.testng.annotations.Test;
 import org.testng.annotations.BeforeMethod;
-import jdk.jshell.execution.JdiDefaultExecutionControl;
-import static jdk.jshell.execution.JdiDefaultExecutionControl.defaultTimeout;
-import static jdk.jshell.execution.Util.failOverExecutionControlGenerator;
 
 @Test
 public class FailOverExecutionControlDyingLaunchTest extends ExecutionControlTestBase {
@@ -43,12 +40,7 @@ public class FailOverExecutionControlDyingLaunchTest extends ExecutionControlTes
     @BeforeMethod
     @Override
     public void setUp() {
-        setUp(builder -> builder.executionEngine(failOverExecutionControlGenerator(
-                JdiDefaultExecutionControl.create(
-                        DyingRemoteAgent.class.getName(),
-                        true,
-                        null,
-                        defaultTimeout()),
-                JdiDefaultExecutionControl.launch())));
+        setUp(builder -> builder.executionEngine(
+                "failover:0(jdi:remoteAgent(DyingRemoteAgent),launch(true)), 4(jdi:launch(true))"));
     }
 }

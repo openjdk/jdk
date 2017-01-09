@@ -1248,6 +1248,7 @@ ParseArguments(int *pargc, char ***pargv,
         char *value = NULL;
         int kind = GetOpt(&argc, &argv, &option, &value);
         jboolean has_arg = value != NULL && JLI_StrLen(value) > 0;
+        jboolean has_arg_any_len = value != NULL;
 
 /*
  * Option to set main entry point
@@ -1269,7 +1270,7 @@ ParseArguments(int *pargc, char ***pargv,
                    JLI_StrCCmp(arg, "--class-path=") == 0 ||
                    JLI_StrCmp(arg, "-classpath") == 0 ||
                    JLI_StrCmp(arg, "-cp") == 0) {
-            REPORT_ERROR (has_arg, ARG_ERROR1, arg);
+            REPORT_ERROR (has_arg_any_len, ARG_ERROR1, arg);
             SetClassPath(value);
             mode = LM_CLASS;
         } else if (JLI_StrCmp(arg, "--list-modules") == 0 ||

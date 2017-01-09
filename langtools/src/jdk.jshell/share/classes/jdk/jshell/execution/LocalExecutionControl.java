@@ -27,7 +27,6 @@ package jdk.jshell.execution;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicReference;
-import jdk.jshell.spi.ExecutionControl;
 
 /**
  * An implementation of {@link jdk.jshell.spi.ExecutionControl} which executes
@@ -40,15 +39,6 @@ public class LocalExecutionControl extends DirectExecutionControl {
     private final Object STOP_LOCK = new Object();
     private boolean userCodeRunning = false;
     private ThreadGroup execThreadGroup;
-
-    /**
-     * Creates a local ExecutionControl instance.
-     *
-     * @return the generator
-     */
-    public static ExecutionControl.Generator create() {
-        return env -> new LocalExecutionControl();
-    }
 
     /**
      * Creates an instance, delegating loader operations to the specified

@@ -254,8 +254,11 @@ protected:
     FullFrame
   };
 
-  void record_scope(jint pc_offset, Handle debug_info, ScopeMode scope_mode, TRAPS);
-  void record_scope(jint pc_offset, Handle position, ScopeMode scope_mode, GrowableArray<ScopeValue*>* objects, TRAPS);
+  void record_scope(jint pc_offset, Handle debug_info, ScopeMode scope_mode, bool return_oop, TRAPS);
+  void record_scope(jint pc_offset, Handle debug_info, ScopeMode scope_mode, TRAPS) {
+    record_scope(pc_offset, debug_info, scope_mode, false /* return_oop */, THREAD);
+  }
+  void record_scope(jint pc_offset, Handle position, ScopeMode scope_mode, GrowableArray<ScopeValue*>* objects, bool return_oop, TRAPS);
   void record_object_value(ObjectValue* sv, Handle value, GrowableArray<ScopeValue*>* objects, TRAPS);
 
   GrowableArray<ScopeValue*>* record_virtual_objects(Handle debug_info, TRAPS);

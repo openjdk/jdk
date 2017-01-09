@@ -1486,12 +1486,12 @@ public final class DateTimeFormatterBuilder {
      *   W       week-of-month               number            4
      *   E       day-of-week                 text              Tue; Tuesday; T
      *   e/c     localized day-of-week       number/text       2; 02; Tue; Tuesday; T
-     *   F       week-of-month               number            3
+     *   F       day-of-week-in-month        number            3
      *
      *   a       am-pm-of-day                text              PM
      *   h       clock-hour-of-am-pm (1-12)  number            12
      *   K       hour-of-am-pm (0-11)        number            0
-     *   k       clock-hour-of-am-pm (1-24)  number            0
+     *   k       clock-hour-of-day (1-24)    number            24
      *
      *   H       hour-of-day (0-23)          number            0
      *   m       minute-of-hour              number            30

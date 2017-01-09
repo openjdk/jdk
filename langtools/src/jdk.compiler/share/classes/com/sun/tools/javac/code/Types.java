@@ -2050,19 +2050,12 @@ public class Types {
             int value = ((Number)t.constValue()).intValue();
             switch (s.getTag()) {
             case BYTE:
-                if (Byte.MIN_VALUE <= value && value <= Byte.MAX_VALUE)
-                    return true;
-                break;
             case CHAR:
-                if (Character.MIN_VALUE <= value && value <= Character.MAX_VALUE)
-                    return true;
-                break;
             case SHORT:
-                if (Short.MIN_VALUE <= value && value <= Short.MAX_VALUE)
+            case INT:
+                if (s.getTag().checkRange(value))
                     return true;
                 break;
-            case INT:
-                return true;
             case CLASS:
                 switch (unboxedType(s).getTag()) {
                 case BYTE:
@@ -3852,20 +3845,26 @@ public class Types {
             return bounds.head;
         } else {                            // length > 1
             int classCount = 0;
+            List<Type> cvars = List.nil();
             List<Type> lowers = List.nil();
             for (Type bound : bounds) {
                 if (!bound.isInterface()) {
                     classCount++;
                     Type lower = cvarLowerBound(bound);
-                    if (bound != lower && !lower.hasTag(BOT))
-                        lowers = insert(lowers, lower);
+                    if (bound != lower && !lower.hasTag(BOT)) {
+                        cvars = cvars.append(bound);
+                        lowers = lowers.append(lower);
+                    }
                 }
             }
             if (classCount > 1) {
-                if (lowers.isEmpty())
+                if (lowers.isEmpty()) {
                     return createErrorType(errT);
-                else
-                    return glbFlattened(union(bounds, lowers), errT);
+                } else {
+                    // try again with lower bounds included instead of capture variables
+                    List<Type> newBounds = bounds.diff(cvars).appendList(lowers);
+                    return glb(newBounds);
+                }
             }
         }
         return makeIntersectionType(bounds);
