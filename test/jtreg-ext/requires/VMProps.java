@@ -33,6 +33,8 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import sun.hotspot.cpuinfo.CPUInfo;
 import sun.hotspot.gc.GC;
 import sun.hotspot.WhiteBox;
 
@@ -62,6 +64,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.simpleArch", vmArch());
         map.put("vm.debug", vmDebug());
         map.put("vm.jvmci", vmJvmci());
+        map.put("vm.cpu.features", cpuFeatures());
         vmGC(map); // vm.gc.X = true/false
 
         VMProps.dump(map);
@@ -163,6 +166,13 @@ public class VMProps implements Callable<Map<String, String>> {
     protected String vmJvmci() {
         // builds with jvmci have this flag
         return "" + (WB.getBooleanVMFlag("EnableJVMCI") != null);
+    }
+
+    /**
+     * @return supported CPU features
+     */
+    protected String cpuFeatures() {
+        return CPUInfo.getFeatures().toString();
     }
 
     /**
