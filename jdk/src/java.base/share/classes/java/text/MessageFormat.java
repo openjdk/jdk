@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -356,6 +356,8 @@ public class MessageFormat extends Format {
      *
      * @param pattern the pattern for this message format
      * @exception IllegalArgumentException if the pattern is invalid
+     * @exception NullPointerException if {@code pattern} is
+     *            {@code null}
      */
     public MessageFormat(String pattern) {
         this.locale = Locale.getDefault(Locale.Category.FORMAT);
@@ -373,6 +375,8 @@ public class MessageFormat extends Format {
      * @param pattern the pattern for this message format
      * @param locale the locale for this message format
      * @exception IllegalArgumentException if the pattern is invalid
+     * @exception NullPointerException if {@code pattern} is
+     *            {@code null}
      * @since 1.4
      */
     public MessageFormat(String pattern, Locale locale) {
@@ -420,6 +424,8 @@ public class MessageFormat extends Format {
      *
      * @param pattern the pattern for this message format
      * @exception IllegalArgumentException if the pattern is invalid
+     * @exception NullPointerException if {@code pattern} is
+     *            {@code null}
      */
     @SuppressWarnings("fallthrough") // fallthrough in switch is expected, suppress it
     public void applyPattern(String pattern) {
@@ -814,6 +820,7 @@ public class MessageFormat extends Format {
      * @exception IllegalArgumentException if an argument in the
      *            <code>arguments</code> array is not of the type
      *            expected by the format element(s) that use it.
+     * @exception NullPointerException if {@code result} is {@code null}
      */
     public final StringBuffer format(Object[] arguments, StringBuffer result,
                                      FieldPosition pos)
@@ -835,6 +842,7 @@ public class MessageFormat extends Format {
      *            or if an argument in the <code>arguments</code> array
      *            is not of the type expected by the format element(s)
      *            that use it.
+     * @exception NullPointerException if {@code pattern} is {@code null}
      */
     public static String format(String pattern, Object ... arguments) {
         MessageFormat temp = new MessageFormat(pattern);
@@ -858,6 +866,7 @@ public class MessageFormat extends Format {
      * @exception IllegalArgumentException if an argument in the
      *            <code>arguments</code> array is not of the type
      *            expected by the format element(s) that use it.
+     * @exception NullPointerException if {@code result} is {@code null}
      */
     public final StringBuffer format(Object arguments, StringBuffer result,
                                      FieldPosition pos)
@@ -947,6 +956,8 @@ public class MessageFormat extends Format {
      * @param source the string to parse
      * @param pos    the parse position
      * @return an array of parsed objects
+     * @exception NullPointerException if {@code pos} is {@code null}
+     *            for a non-null {@code source} string.
      */
     public Object[] parse(String source, ParsePosition pos) {
         if (source == null) {
