@@ -67,14 +67,17 @@ ifneq ($(LIBS_DIR), )
     # or risk invalidating the build output from external changes.
     ifeq ($(filter $(OUTPUT_ROOT)/%, $(LIBS_DIR)), )
       LINK_MACRO := install-file
+      LOG_ACTION := Copying
     else
       LINK_MACRO := link-file-relative
+      LOG_ACTION := Creating symlink
     endif
     $(eval $(call SetupCopyFiles, LINK_LIBS, \
         SRC := $(LIBS_DIR), \
         DEST := $(JDK_OUTPUTDIR)/lib, \
         FILES := $(filter-out %$(SHARED_LIBRARY_SUFFIX), $(call CacheFind, $(LIBS_DIR))), \
         MACRO := $(LINK_MACRO), \
+        LOG_ACTION := $(LOG_ACTION), \
     ))
     TARGETS += $(COPY_LIBS) $(LINK_LIBS)
   endif
