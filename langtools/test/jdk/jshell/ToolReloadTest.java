@@ -24,7 +24,7 @@
 /*
  * @test
  * @key intermittent
- * @bug 8081845 8147898 8143955
+ * @bug 8081845 8147898 8143955  8165405
  * @summary Tests for /reload in JShell tool
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -70,8 +70,8 @@ public class ToolReloadTest extends ReplToolTesting {
         compiler.compile(outDir, prog.apply("A"));
         Path classpath = compiler.getPath(outDir);
         test(
-                (a) -> assertCommand(a, "/classpath " + classpath,
-                        String.format("|  Path '%s' added to classpath", classpath)),
+                (a) -> assertCommand(a, "/env --class-path " + classpath,
+                        "|  Setting new options and restoring state."),
                 (a) -> assertMethod(a, "String foo() { return (new pkg.A()).toString(); }",
                         "()String", "foo"),
                 (a) -> assertVariable(a, "String", "v", "foo()", "\"A\""),
@@ -79,7 +79,6 @@ public class ToolReloadTest extends ReplToolTesting {
                        if (!a) compiler.compile(outDir, prog.apply("Aprime"));
                        assertCommand(a, "/reload",
                         "|  Restarting and restoring state.\n" +
-                        "-: /classpath " + classpath + "\n" +
                         "-: String foo() { return (new pkg.A()).toString(); }\n" +
                         "-: String v = foo();\n");
                        },

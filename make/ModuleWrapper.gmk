@@ -76,6 +76,7 @@ else
           $(filter $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE)/%, \
           $(TARGETS))), \
       MACRO := link-file-relative, \
+      LOG_ACTION := Creating symlink, \
   ))
 endif
 

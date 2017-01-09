@@ -63,10 +63,15 @@ public class SplitPackage {
 
     @Test
     public void runTest() throws Exception {
-        // Test jdeps classes
-        runTest(null);
-        // Test jdeps --add-modules
+        // split package detected if java.annotation.common is in the root set
         runTest(JAVA_ANNOTATIONS_COMMON, SPLIT_PKG_NAME);
+        runTest("ALL-SYSTEM", SPLIT_PKG_NAME);
+        // default
+        runTest(null, SPLIT_PKG_NAME);
+
+        // Test jdeps classes
+        runTest("ALL-DEFAULT");
+
     }
 
     private void runTest(String root, String... splitPackages) throws Exception {

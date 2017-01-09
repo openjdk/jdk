@@ -202,12 +202,27 @@ public class DirectExecutionControl implements ExecutionControl {
         } else if (value instanceof Character) {
             return "'" + value + "'";
         } else if (value.getClass().isArray()) {
-            String tn = value.getClass().getTypeName();
+            int dims = 0;
+            Class<?> t = value.getClass();
+            while (true) {
+                Class<?> ct = t.getComponentType();
+                if (ct == null) {
+                    break;
+                }
+                ++dims;
+                t = ct;
+            }
+            String tn = t.getTypeName();
             int len = Array.getLength(value);
             StringBuilder sb = new StringBuilder();
-            sb.append(tn.substring(tn.lastIndexOf('.') + 1, tn.length() - 1));
+            sb.append(tn.substring(tn.lastIndexOf('.') + 1, tn.length()));
+            sb.append("[");
             sb.append(len);
-            sb.append("] { ");
+            sb.append("]");
+            for (int i = 1; i < dims; ++i) {
+                sb.append("[]");
+            }
+            sb.append(" { ");
             for (int i = 0; i < len; ++i) {
                 sb.append(valueString(Array.get(value, i)));
                 if (i < len - 1) {

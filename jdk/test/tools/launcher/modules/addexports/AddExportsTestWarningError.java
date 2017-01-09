@@ -27,7 +27,7 @@
  * @summary Basic argument validation for --add-exports
  * @library /lib/testlibrary
  * @modules jdk.compiler
- * @build AddExportsTestWarningError CompilerUtils ModuleSourceBuilder
+ * @build AddExportsTestWarningError CompilerUtils ModuleInfoMaker
  * @build jdk.testlibrary.*
  * @run testng AddExportsTestWarningError
  */
@@ -59,7 +59,7 @@ public class AddExportsTestWarningError {
 
     @BeforeTest
     public void setup() throws Exception {
-        ModuleSourceBuilder builder = new ModuleSourceBuilder(SRC_DIR);
+        ModuleInfoMaker builder = new ModuleInfoMaker(SRC_DIR);
         builder.writeJavaFiles("m1",
             "module m1 { }",
             "package p1; public class C1 { " +

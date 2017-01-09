@@ -64,7 +64,7 @@ import jdk.internal.reflect.Reflection;
  *</ul>
  *
  *<P>
- * @ImplNote
+ * @implNote
  * {@code DriverManager} initialization is done lazily and looks up service
  * providers using the thread context class loader.  The drivers loaded and
  * available to an application will depend on the thread context class loader of

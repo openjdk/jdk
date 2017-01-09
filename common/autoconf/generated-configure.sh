@@ -854,9 +854,6 @@ SYSROOT_CFLAGS
 EXTRA_LDFLAGS
 EXTRA_CXXFLAGS
 EXTRA_CFLAGS
-LEGACY_EXTRA_LDFLAGS
-LEGACY_EXTRA_CXXFLAGS
-LEGACY_EXTRA_CFLAGS
 EXE_SUFFIX
 OBJ_SUFFIX
 STATIC_LIBRARY
@@ -5170,7 +5167,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1482168759
+DATE_WHEN_GENERATED=1483542685
 
 ###############################################################################
 #
@@ -24677,7 +24674,7 @@ $as_echo "$as_me: WARNING: Value for VERSION_MINOR has been sanitized from '$wit
   else
     if test "x$NO_DEFAULT_VERSION_PARTS" != xtrue; then
       # Default is 0, if unspecified
-      VERSION_MINOR=0
+      VERSION_MINOR=$DEFAULT_VERSION_MINOR
     fi
   fi
 
@@ -24724,7 +24721,7 @@ $as_echo "$as_me: WARNING: Value for VERSION_SECURITY has been sanitized from '$
   else
     if test "x$NO_DEFAULT_VERSION_PARTS" != xtrue; then
       # Default is 0, if unspecified
-      VERSION_SECURITY=0
+      VERSION_SECURITY=$DEFAULT_VERSION_SECURITY
     fi
   fi
 
@@ -24771,7 +24768,7 @@ $as_echo "$as_me: WARNING: Value for VERSION_PATCH has been sanitized from '$wit
   else
     if test "x$NO_DEFAULT_VERSION_PARTS" != xtrue; then
       # Default is 0, if unspecified
-      VERSION_PATCH=0
+      VERSION_PATCH=$DEFAULT_VERSION_PATCH
     fi
   fi
 
@@ -30665,24 +30662,9 @@ $as_echo "$tool_specified" >&6; }
   BOOT_JDK_SOURCETARGET="-source 8 -target 8"
 
 
-
-  $ECHO "Check if jvm arg is ok: --patch-module foo=bar" >&5
-  $ECHO "Command: $JAVA --patch-module foo=bar -version" >&5
-  OUTPUT=`$JAVA --patch-module foo=bar -version 2>&1`
-  FOUND_WARN=`$ECHO "$OUTPUT" | $GREP -i warn`
-  FOUND_VERSION=`$ECHO $OUTPUT | $GREP " version \""`
-  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-    dummy="$dummy --patch-module foo=bar"
-    JVM_ARG_OK=true
-  else
-    $ECHO "Arg failed:" >&5
-    $ECHO "$OUTPUT" >&5
-    JVM_ARG_OK=false
-  fi
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if Boot JDK supports modules" >&5
 $as_echo_n "checking if Boot JDK supports modules... " >&6; }
-  if test "x$JVM_ARG_OK" = "xtrue"; then
+  if "$JAVA" --list-modules > /dev/null 2>&1; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
     BOOT_JDK_MODULAR="true"
@@ -31305,8 +31287,6 @@ $as_echo "yes" >&6; }
       as_fn_error $? "--enable-static-build is only supported for macosx builds" "$LINENO" 5
     fi
     STATIC_BUILD_CFLAGS="-DSTATIC_BUILD=1"
-    LEGACY_EXTRA_CFLAGS="$LEGACY_EXTRA_CFLAGS $STATIC_BUILD_CFLAGS"
-    LEGACY_EXTRA_CXXFLAGS="$LEGACY_EXTRA_CXXFLAGS $STATIC_BUILD_CFLAGS"
     CFLAGS_JDKLIB_EXTRA="$CFLAGS_JDKLIB_EXTRA $STATIC_BUILD_CFLAGS"
     CXXFLAGS_JDKLIB_EXTRA="$CXXFLAGS_JDKLIB_EXTRA $STATIC_BUILD_CFLAGS"
     STATIC_BUILD=true
@@ -31508,15 +31488,6 @@ fi
   EXTRA_CXXFLAGS="$with_extra_cxxflags"
   EXTRA_LDFLAGS="$with_extra_ldflags"
 
-  # Hotspot needs these set in their legacy form
-  LEGACY_EXTRA_CFLAGS="$LEGACY_EXTRA_CFLAGS $EXTRA_CFLAGS"
-  LEGACY_EXTRA_CXXFLAGS="$LEGACY_EXTRA_CXXFLAGS $EXTRA_CXXFLAGS"
-  LEGACY_EXTRA_LDFLAGS="$LEGACY_EXTRA_LDFLAGS $EXTRA_LDFLAGS"
-
-
-
-
-
 
 
 
@@ -31548,10 +31519,6 @@ fi
       SYSROOT_CFLAGS="-isysroot $SYSROOT"
       SYSROOT_LDFLAGS="-isysroot $SYSROOT"
     fi
-    # Propagate the sysroot args to hotspot
-    LEGACY_EXTRA_CFLAGS="$LEGACY_EXTRA_CFLAGS $SYSROOT_CFLAGS"
-    LEGACY_EXTRA_CXXFLAGS="$LEGACY_EXTRA_CXXFLAGS $SYSROOT_CFLAGS"
-    LEGACY_EXTRA_LDFLAGS="$LEGACY_EXTRA_LDFLAGS $SYSROOT_LDFLAGS"
     # The global CFLAGS and LDFLAGS variables need these for configure to function
     CFLAGS="$CFLAGS $SYSROOT_CFLAGS"
     CPPFLAGS="$CPPFLAGS $SYSROOT_CFLAGS"
@@ -44068,10 +44035,6 @@ $as_echo "$BUILD_DEVKIT_ROOT" >&6; }
       BUILD_SYSROOT_CFLAGS="-isysroot $BUILD_SYSROOT"
       BUILD_SYSROOT_LDFLAGS="-isysroot $BUILD_SYSROOT"
     fi
-    # Propagate the sysroot args to hotspot
-    BUILD_LEGACY_EXTRA_CFLAGS="$BUILD_LEGACY_EXTRA_CFLAGS $BUILD_SYSROOT_CFLAGS"
-    BUILD_LEGACY_EXTRA_CXXFLAGS="$BUILD_LEGACY_EXTRA_CXXFLAGS $BUILD_SYSROOT_CFLAGS"
-    BUILD_LEGACY_EXTRA_LDFLAGS="$BUILD_LEGACY_EXTRA_LDFLAGS $BUILD_SYSROOT_LDFLAGS"
     # The global CFLAGS and LDFLAGS variables need these for configure to function
     BUILD_CFLAGS="$BUILD_CFLAGS $BUILD_SYSROOT_CFLAGS"
     BUILD_CPPFLAGS="$BUILD_CPPFLAGS $BUILD_SYSROOT_CFLAGS"
@@ -52794,9 +52757,8 @@ $as_echo_n "checking if native coverage is enabled... " >&6; }
 $as_echo "yes" >&6; }
       GCOV_CFLAGS="-fprofile-arcs -ftest-coverage -fno-inline"
       GCOV_LDFLAGS="-fprofile-arcs"
-      LEGACY_EXTRA_CFLAGS="$LEGACY_EXTRA_CFLAGS $GCOV_CFLAGS"
-      LEGACY_EXTRA_CXXFLAGS="$LEGACY_EXTRA_CXXFLAGS $GCOV_CFLAGS"
-      LEGACY_EXTRA_LDFLAGS="$LEGACY_EXTRA_LDFLAGS $GCOV_LDFLAGS"
+      JVM_CFLAGS="$JVM_CFLAGS $GCOV_CFLAGS"
+      JVM_LDFLAGS="$JVM_LDFLAGS $GCOV_LDFLAGS"
       CFLAGS_JDKLIB="$CFLAGS_JDKLIB $GCOV_CFLAGS"
       CFLAGS_JDKEXE="$CFLAGS_JDKEXE $GCOV_CFLAGS"
       CXXFLAGS_JDKLIB="$CXXFLAGS_JDKLIB $GCOV_CFLAGS"
@@ -52997,7 +52959,7 @@ $as_echo "yes, forced" >&6; }
 $as_echo "no, forced" >&6; }
     BUILD_GTEST="false"
   elif test "x$enable_hotspot_gtest" = "x"; then
-    if test "x$GTEST_DIR_EXISTS" = "xtrue" && test "x$OPENJDK_TARGET_OS" != "xaix"; then
+    if test "x$GTEST_DIR_EXISTS" = "xtrue"; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
       BUILD_GTEST="true"

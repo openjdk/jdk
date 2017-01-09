@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,19 @@
  * @test
  * @bug 8034223
  * @summary Return type Object is not more specific than return type String
- * @compile MostSpecific11.java
  */
-class MostSpecific11 {
+public class MostSpecific11 {
+
+    public static void main(String[] args) {
+        new MostSpecific11().test();
+    }
 
     interface I { Object run(); }
     interface J { String run(); }
 
-    void m(I arg) {}
+    void m(I arg) {
+        throw new RuntimeException("Less-specific method invocation.");
+    }
     void m(J arg) {}
 
     void test() {

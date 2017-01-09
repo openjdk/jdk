@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8133884 8162711 8133896
+ * @bug 8133884 8162711 8133896 8172158
  * @summary Verify that annotation processing works.
  * @library /tools/lib
  * @modules
@@ -973,6 +973,38 @@ public class AnnotationProcessing extends ModuleTestBase {
                                  "SelectAnnotationBTestAP",
                                  "SelectAnnotationATestAP",
                                  "SelectAnnotationBTestAP");
+
+        if (!expected.equals(log)) {
+            throw new AssertionError("Output does not match; output: " + log);
+        }
+    }
+
+    @Test
+    public void testDisambiguateAnnotationsNoModules(Path base) throws Exception {
+        Path classes = base.resolve("classes");
+
+        Files.createDirectories(classes);
+
+        Path src = base.resolve("src");
+
+        tb.writeJavaFiles(src,
+                          "package api; public @interface A {}",
+                          "package api; public @interface B {}",
+                          "package impl; import api.*; @A @B public class T {}");
+
+        List<String> log = new JavacTask(tb)
+            .options("-processor", SelectAnnotationATestAP.class.getName() + "," + SelectAnnotationBTestAP.class.getName(),
+                     "-source", "8", "-target", "8")
+            .outdir(classes)
+            .files(findJavaFiles(src))
+            .run()
+            .writeAll()
+            .getOutputLines(OutputKind.STDERR);
+
+        List<String> expected = Arrays.asList("SelectAnnotationATestAP",
+                                              "SelectAnnotationBTestAP",
+                                              "SelectAnnotationATestAP",
+                                              "SelectAnnotationBTestAP");
 
         if (!expected.equals(log)) {
             throw new AssertionError("Output does not match; output: " + log);

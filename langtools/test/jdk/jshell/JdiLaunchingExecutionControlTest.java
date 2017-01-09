@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8164518
+ * @bug 8164518 8168615
  * @summary Tests for standard JDI connector (without failover) -- launching
  * @modules jdk.jshell/jdk.jshell.execution
  * @build KullaTesting ExecutionControlTestBase
@@ -33,7 +33,6 @@
 
 import org.testng.annotations.Test;
 import org.testng.annotations.BeforeMethod;
-import jdk.jshell.execution.JdiDefaultExecutionControl;
 
 @Test
 public class JdiLaunchingExecutionControlTest extends ExecutionControlTestBase {
@@ -41,6 +40,6 @@ public class JdiLaunchingExecutionControlTest extends ExecutionControlTestBase {
     @BeforeMethod
     @Override
     public void setUp() {
-        setUp(builder -> builder.executionEngine(JdiDefaultExecutionControl.launch()));
+        setUp(builder -> builder.executionEngine("jdi:launch(true)"));
     }
 }

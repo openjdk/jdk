@@ -215,7 +215,7 @@ public abstract class CiReplayBase {
         try(BufferedReader br = new BufferedReader(new FileReader(REPLAY_FILE_NAME))) {
             return br.lines()
                     .filter(s -> s.startsWith("compile "))
-                    .map(s -> s.substring(s.lastIndexOf(' ') + 1))
+                    .map(s -> s.split("\\s+")[5])
                     .map(Integer::parseInt)
                     .findAny()
                     .get();

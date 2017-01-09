@@ -26,7 +26,6 @@
 package sun.net.www;
 
 import java.util.BitSet;
-import java.io.UnsupportedEncodingException;
 import java.io.File;
 import java.net.URL;
 import java.net.MalformedURLException;
@@ -49,7 +48,7 @@ public class ParseUtil {
     static BitSet encodedInPath;
 
     static {
-        encodedInPath = new BitSet(256);
+        encodedInPath = new BitSet(128);
 
         // Set the bits corresponding to characters that are encoded in the
         // path component of a URI.
@@ -102,14 +101,45 @@ public class ParseUtil {
      * dependent File.separatorChar.
      */
     public static String encodePath(String path, boolean flag) {
-        char[] retCC = new char[path.length() * 2 + 16];
-        int    retLen = 0;
-        char[] pathCC = path.toCharArray();
+        if (flag && File.separatorChar != '/') {
+            return encodePath(path, 0, File.separatorChar);
+        } else {
+            int index = firstEncodeIndex(path);
+            if (index > -1) {
+                return encodePath(path, index, '/');
+            } else {
+                return path;
+            }
+        }
+    }
 
-        int n = path.length();
-        for (int i=0; i<n; i++) {
+    private static int firstEncodeIndex(String path) {
+        int len = path.length();
+        for (int i = 0; i < len; i++) {
+            char c = path.charAt(i);
+            if (c == '/' || c == '.' ||
+                    c >= 'a' && c <= 'z' ||
+                    c >= 'A' && c <= 'Z' ||
+                    c >= '0' && c <= '9') {
+                continue;
+            } else if (c > 0x007F || encodedInPath.get(c)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static String encodePath(String path, int index, char sep) {
+        char[] pathCC = path.toCharArray();
+        char[] retCC = new char[pathCC.length * 2 + 16 - index];
+        if (index > 0) {
+            System.arraycopy(pathCC, 0, retCC, 0, index);
+        }
+        int retLen = index;
+
+        for (int i = index; i < pathCC.length; i++) {
             char c = pathCC[i];
-            if ((!flag && c == '/') || (flag && c == File.separatorChar))
+            if (c == sep)
                 retCC[retLen++] = '/';
             else {
                 if (c <= 0x007F) {
@@ -117,11 +147,11 @@ public class ParseUtil {
                         c >= 'A' && c <= 'Z' ||
                         c >= '0' && c <= '9') {
                         retCC[retLen++] = c;
-                    } else
-                    if (encodedInPath.get(c))
+                    } else if (encodedInPath.get(c)) {
                         retLen = escape(retCC, c, retLen);
-                    else
+                    } else {
                         retCC[retLen++] = c;
+                    }
                 } else if (c > 0x07FF) {
                     retLen = escape(retCC, (char)(0xE0 | ((c >> 12) & 0x0F)), retLen);
                     retLen = escape(retCC, (char)(0x80 | ((c >>  6) & 0x3F)), retLen);

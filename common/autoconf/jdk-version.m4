@@ -226,7 +226,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   else
     if test "x$NO_DEFAULT_VERSION_PARTS" != xtrue; then
       # Default is 0, if unspecified
-      VERSION_MINOR=0
+      VERSION_MINOR=$DEFAULT_VERSION_MINOR
     fi
   fi
 
@@ -248,7 +248,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   else
     if test "x$NO_DEFAULT_VERSION_PARTS" != xtrue; then
       # Default is 0, if unspecified
-      VERSION_SECURITY=0
+      VERSION_SECURITY=$DEFAULT_VERSION_SECURITY
     fi
   fi
 
@@ -270,7 +270,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   else
     if test "x$NO_DEFAULT_VERSION_PARTS" != xtrue; then
       # Default is 0, if unspecified
-      VERSION_PATCH=0
+      VERSION_PATCH=$DEFAULT_VERSION_PATCH
     fi
   fi
 

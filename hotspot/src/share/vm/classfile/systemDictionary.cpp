@@ -1231,6 +1231,8 @@ instanceKlassHandle SystemDictionary::load_shared_class(
 bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
                                                instanceKlassHandle ik,
                                                Handle class_loader, TRAPS) {
+  assert(!ModuleEntryTable::javabase_moduleEntry()->is_patched(),
+         "Cannot use sharing if java.base is patched");
   ResourceMark rm;
   int path_index = ik->shared_classpath_index();
   SharedClassPathEntry* ent =
@@ -1256,6 +1258,12 @@ bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
     if (pkg_entry != NULL) {
       mod_entry = pkg_entry->module();
     }
+  }
+
+  // If the archived class is from a module that has been patched at runtime,
+  // the class cannot be loaded from the archive.
+  if (mod_entry != NULL && mod_entry->is_patched()) {
+    return false;
   }
 
   if (class_loader.is_null()) {

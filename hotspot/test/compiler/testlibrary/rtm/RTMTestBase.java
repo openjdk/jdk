@@ -241,7 +241,7 @@ public class RTMTestBase {
                 CommandLineOptionTest.UNLOCK_DIAGNOSTIC_VM_OPTIONS,
                 CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
                 "-Xbootclasspath/a:.", "-XX:+WhiteBoxAPI",
-                "-XaddExports:java.base/jdk.internal.misc=ALL-UNNAMED");
+                "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED");
 
         if (test != null) {
             for (String method : test.getMethodsToCompileNames()) {

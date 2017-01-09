@@ -244,7 +244,7 @@ EXIT = exit
 EXIT_IF_FATAL = status=$$?; if [ $$status -ge $(1) ]; then exit $$status ; fi
 
 # Root of all test results
-TEST_OUTPUT_DIR = $(TEST_ROOT)/../build/$(PLATFORM)-$(ARCH)/test/langtools
+TEST_OUTPUT_DIR ?= $(TEST_ROOT)/../build/$(PLATFORM)-$(ARCH)/test/langtools
 ABS_TEST_OUTPUT_DIR := \
 	$(shell mkdir -p $(TEST_OUTPUT_DIR); \
 		cd  $(TEST_OUTPUT_DIR); \

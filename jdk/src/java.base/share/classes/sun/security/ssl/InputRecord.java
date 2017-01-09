@@ -242,8 +242,9 @@ class InputRecord implements Record, Closeable {
         //  2: ClientHello.client_version
         // 32: ClientHello.random
         //  1: length byte of ClientHello.session_id
+        //  2: length bytes of ClientHello.cipher_suites
         //  2: empty ClientHello.compression_methods
-        int requiredSize = 46 + sessionIdLen + ((cipherSpecLen * 2 ) / 3 );
+        int requiredSize = 48 + sessionIdLen + ((cipherSpecLen * 2 ) / 3 );
         byte[] converted = new byte[requiredSize];
 
         /*
