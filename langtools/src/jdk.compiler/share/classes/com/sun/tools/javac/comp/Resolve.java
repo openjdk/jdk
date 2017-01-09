@@ -98,8 +98,6 @@ public class Resolve {
     private final boolean compactMethodDiags;
     final EnumSet<VerboseResolutionMode> verboseResolutionMode;
 
-    private final boolean checkModuleAccess;
-
     WriteableScope polymorphicSignatureScope;
 
     protected Resolve(Context context) {
@@ -135,10 +133,6 @@ public class Resolve {
         inapplicableMethodException = new InapplicableMethodException(diags);
 
         allowModules = source.allowModules();
-
-        // The following is required, for now, to support building
-        // Swing beaninfo via javadoc.
-        checkModuleAccess = !options.isSet("noModules");
     }
 
     /** error symbols, which are returned when resolution fails
@@ -322,7 +316,7 @@ public class Resolve {
                 break;
             case PUBLIC:
                 isAccessible = true;
-                if (allowModules && checkModuleAccess) {
+                if (allowModules) {
                     ModuleSymbol currModule = env.toplevel.modle;
                     currModule.complete();
                     PackageSymbol p = c.packge();
