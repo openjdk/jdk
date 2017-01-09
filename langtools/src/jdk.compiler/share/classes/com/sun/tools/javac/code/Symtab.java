@@ -61,7 +61,6 @@ import com.sun.tools.javac.util.JavacMessages;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
-import com.sun.tools.javac.util.Options;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
@@ -469,9 +468,7 @@ public class Symtab {
         scope.enter(errSymbol);
 
         Source source = Source.instance(context);
-        Options options = Options.instance(context);
-        boolean noModules = options.isSet("noModules");
-        if (source.allowModules() && !noModules) {
+        if (source.allowModules()) {
             java_base = enterModule(names.java_base);
             //avoid completing java.base during the Symtab initialization
             java_base.completer = Completer.NULL_COMPLETER;
