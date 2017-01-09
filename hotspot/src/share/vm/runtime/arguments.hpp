@@ -638,6 +638,7 @@ class Arguments : AllStatic {
 #if INCLUDE_JVMCI
   // Check consistency of jvmci vm argument settings.
   static bool check_jvmci_args_consistency();
+  static void set_jvmci_specific_flags();
 #endif
   // Check for consistency in the selection of the garbage collector.
   static bool check_gc_consistency();        // Check user-selected gc
