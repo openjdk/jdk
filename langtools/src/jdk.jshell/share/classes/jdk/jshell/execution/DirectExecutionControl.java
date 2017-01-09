@@ -131,12 +131,6 @@ public class DirectExecutionControl implements ExecutionControl {
         loaderDelegate.addToClasspath(cp);
     }
 
-    @Override
-    public void setClasspath(String path)
-            throws EngineTerminationException, InternalException {
-        loaderDelegate.setClasspath(path);
-    }
-
     /**
      * {@inheritDoc}
      * <p>
