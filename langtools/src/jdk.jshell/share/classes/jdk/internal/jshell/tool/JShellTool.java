@@ -119,6 +119,7 @@ import static jdk.internal.jshell.debug.InternalDebugControl.DBG_DEP;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_EVNT;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_FMGR;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_GEN;
+import static jdk.internal.jshell.debug.InternalDebugControl.DBG_WRAP;
 import static jdk.internal.jshell.tool.ContinuousCompletionProvider.STARTSWITH_MATCHER;
 
 /**
@@ -1919,9 +1920,13 @@ public class JShellTool implements MessageHandler {
                         flags |= DBG_EVNT;
                         fluff("Event debugging on");
                         break;
+                    case 'w':
+                        flags |= DBG_WRAP;
+                        fluff("Wrap debugging on");
+                        break;
                     default:
                         hard("Unknown debugging option: %c", ch);
-                        fluff("Use: 0 r g f c d");
+                        fluff("Use: 0 r g f c d e w");
                         return false;
                 }
             }
