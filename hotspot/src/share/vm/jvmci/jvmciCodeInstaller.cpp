@@ -1258,6 +1258,7 @@ void CodeInstaller::site_Mark(CodeBuffer& buffer, jint pc_offset, Handle site, T
       case HEAP_TOP_ADDRESS:
       case HEAP_END_ADDRESS:
       case NARROW_KLASS_BASE_ADDRESS:
+      case NARROW_OOP_BASE_ADDRESS:
       case CRC_TABLE_ADDRESS:
       case LOG_OF_HEAP_REGION_GRAIN_BYTES:
       case INLINE_CONTIGUOUS_ALLOCATION_SUPPORTED:
