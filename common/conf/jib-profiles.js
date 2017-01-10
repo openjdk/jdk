@@ -501,7 +501,7 @@ var getJibProfilesProfiles = function (input, common, data) {
     // extra default target.
     var openOnlyProfilesExtra = {
         "linux-x86-open": {
-            default_make_targets: "profiles",
+            default_make_targets: "profiles-bundles",
             configure_args: "--with-jvm-variants=client,server"
         }
     };
@@ -587,6 +587,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             ],
             work_dir: input.get("src.full", "install_path") + "/test",
             environment: {
+                "JT_JAVA": common.boot_jdk_home,
                 "PRODUCT_HOME": input.get(testedProfile + ".jdk", "home_path"),
                 "TEST_IMAGE_DIR": input.get(testedProfile + ".test", "home_path"),
                 "TEST_OUTPUT_DIR": input.src_top_dir
@@ -710,10 +711,15 @@ var getJibProfilesProfiles = function (input, common, data) {
                     local: "bundles/\\(jdk.*bin.tar.gz\\)",
                     remote: "bundles/openjdk/GPL/profile/linux-x86/\\1",
                 },
-                jre: {
-                    local: "bundles/\\(jre.*[0-9]_linux-x86_bin.tar.gz\\)",
+                jdk_symbols: {
+                    local: "bundles/\\(jdk.*bin-symbols.tar.gz\\)",
                     remote: "bundles/openjdk/GPL/profile/linux-x86/\\1",
-                },/* The build does not create these
+                },
+                jre: {
+                    // This regexp needs to not match the compact* files below
+                    local: "bundles/\\(jre.*[+][0-9]\\{1,\\}_linux-x86_bin.tar.gz\\)",
+                    remote: "bundles/openjdk/GPL/profile/linux-x86/\\1",
+                },
                 jre_compact1: {
                     local: "bundles/\\(jre.*-compact1_linux-x86_bin.tar.gz\\)",
                     remote: "bundles/openjdk/GPL/profile/linux-x86/\\1",
@@ -725,7 +731,7 @@ var getJibProfilesProfiles = function (input, common, data) {
                 jre_compact3: {
                     local: "bundles/\\(jre.*-compact3_linux-x86_bin.tar.gz\\)",
                     remote: "bundles/openjdk/GPL/profile/linux-x86/\\1",
-                },*/
+                },
             }
         },
 
