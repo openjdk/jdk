@@ -133,9 +133,10 @@ private:
     HEAP_TOP_ADDRESS                       = 17,
     HEAP_END_ADDRESS                       = 18,
     NARROW_KLASS_BASE_ADDRESS              = 19,
-    CRC_TABLE_ADDRESS                      = 20,
-    LOG_OF_HEAP_REGION_GRAIN_BYTES         = 21,
-    INLINE_CONTIGUOUS_ALLOCATION_SUPPORTED = 22,
+    NARROW_OOP_BASE_ADDRESS                = 20,
+    CRC_TABLE_ADDRESS                      = 21,
+    LOG_OF_HEAP_REGION_GRAIN_BYTES         = 22,
+    INLINE_CONTIGUOUS_ALLOCATION_SUPPORTED = 23,
     INVOKE_INVALID                         = -1
   };
 
