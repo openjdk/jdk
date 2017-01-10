@@ -86,7 +86,7 @@ else
     DRAFT_WINDOW_TITLE_MARKER := $(SPACE)[build $(VERSION_BUILD)]
   endif
   EARLYACCESS_TOP := \
-      <div style="background-color: $$(HASH)EEEEEE"><div style="padding: 6px; \
+      <div style="background-color: $(HASH)EEEEEE"><div style="padding: 6px; \
       margin-top: 2px; margin-bottom: 6px; margin-left: 6px; margin-right: \
       6px; text-align: justify; font-size: 80%; font-family: Helvetica, Arial, \
       sans-serif; font-weight: normal;">Please note that the specifications \
