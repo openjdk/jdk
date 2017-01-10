@@ -41,7 +41,7 @@ import javax.lang.model.type.TypeMirror;
  * implementing this interface are used to operate on a value when the
  * type of that value is unknown at compile time.  When a visitor is
  * passed to a value's {@link AnnotationValue#accept accept} method,
- * the <tt>visit<i>XYZ</i></tt> method applicable to that value is
+ * the <code>visit<i>XYZ</i></code> method applicable to that value is
  * invoked.
  *
  * <p> Classes implementing this interface may or may not throw a
