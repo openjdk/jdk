@@ -32,7 +32,7 @@ import javax.lang.model.element.*;
  * visitor design pattern.  Classes implementing this
  * interface are used to operate on a type when the kind of
  * type is unknown at compile time.  When a visitor is passed to a
- * type's {@link TypeMirror#accept accept} method, the <tt>visit<i>XYZ</i></tt>
+ * type's {@link TypeMirror#accept accept} method, the <code>visit<i>XYZ</i></code>
  * method most applicable to that type is invoked.
  *
  * <p> Classes implementing this interface may or may not throw a

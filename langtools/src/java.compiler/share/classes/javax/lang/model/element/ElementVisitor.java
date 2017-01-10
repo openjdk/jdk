@@ -32,7 +32,7 @@ import javax.lang.model.util.*;
  * pattern.  Classes implementing this interface are used to operate
  * on an element when the kind of element is unknown at compile time.
  * When a visitor is passed to an element's {@link Element#accept
- * accept} method, the <tt>visit<i>XYZ</i></tt> method most applicable
+ * accept} method, the <code>visit<i>XYZ</i></code> method most applicable
  * to that element is invoked.
  *
  * <p> Classes implementing this interface may or may not throw a
