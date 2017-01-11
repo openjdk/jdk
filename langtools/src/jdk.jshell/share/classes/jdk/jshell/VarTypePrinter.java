@@ -181,9 +181,7 @@ class VarTypePrinter extends TypePrinter {
                 Type outer = t.getEnclosingType();
                 Type outer1 = visit(outer, upward);
                 List<Type> typarams = t.getTypeArguments();
-                List<Type> typarams1 = typarams.stream()
-                        .map(ta -> mapTypeArgument(ta, upward))
-                        .collect(List.collector());
+                List<Type> typarams1 = typarams.map(ta -> mapTypeArgument(ta, upward));
                 if (typarams1.stream().anyMatch(ta -> ta.hasTag(BOT))) {
                     //not defined
                     return syms.botType;
