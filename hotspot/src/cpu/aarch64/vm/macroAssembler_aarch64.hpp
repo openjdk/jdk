@@ -957,6 +957,9 @@ public:
   // stack overflow + shadow pages.  Also, clobbers tmp
   void bang_stack_size(Register size, Register tmp);
 
+  // Check for reserved stack access in method being exited (for JIT)
+  void reserved_stack_check();
+
   virtual RegisterOrConstant delayed_value_impl(intptr_t* delayed_value_addr,
                                                 Register tmp,
                                                 int offset);
