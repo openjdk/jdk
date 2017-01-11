@@ -54,14 +54,19 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import javax.lang.model.element.ElementVisitor;
 
+import com.sun.tools.javac.code.Directive.ExportsDirective;
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.BLOCK;
 import static com.sun.tools.javac.code.Flags.STATIC;
@@ -69,6 +74,8 @@ import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.comp.Resolve.MethodResolutionPhase.*;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
+import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
 /** Helper class for name resolution, used mostly by the attribution phase.
@@ -89,6 +96,7 @@ public class Resolve {
     Check chk;
     Infer infer;
     ClassFinder finder;
+    ModuleFinder moduleFinder;
     Types types;
     JCDiagnostic.Factory diags;
     public final boolean allowMethodHandles;
@@ -116,6 +124,7 @@ public class Resolve {
         chk = Check.instance(context);
         infer = Infer.instance(context);
         finder = ClassFinder.instance(context);
+        moduleFinder = ModuleFinder.instance(context);
         types = Types.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
         Source source = Source.instance(context);
@@ -315,7 +324,6 @@ public class Resolve {
                 isAccessible = true;
                 break;
             case PUBLIC:
-                isAccessible = true;
                 if (allowModules) {
                     ModuleSymbol currModule = env.toplevel.modle;
                     currModule.complete();
@@ -491,7 +499,7 @@ public class Resolve {
         public Void visitClassType(ClassType t, Env<AttrContext> env) {
             visit(t.getTypeArguments(), env);
             if (!isAccessible(env, t, true)) {
-                accessBase(new AccessError(t.tsym), env.tree.pos(), env.enclClass.sym, t, t.tsym.name, true);
+                accessBase(new AccessError(env, null, t.tsym), env.tree.pos(), env.enclClass.sym, t, t.tsym.name, true);
             }
             return null;
         }
@@ -1965,7 +1973,7 @@ public class Resolve {
     Symbol loadClass(Env<AttrContext> env, Name name) {
         try {
             ClassSymbol c = finder.loadClass(env.toplevel.modle, name);
-            return isAccessible(env, c) ? c : new AccessError(c);
+            return isAccessible(env, c) ? c : new AccessError(env, null, c);
         } catch (ClassFinder.BadClassFile err) {
             throw err;
         } catch (CompletionFailure ex) {
@@ -1983,26 +1991,113 @@ public class Resolve {
         Symbol loadClass(Env<AttrContext> env, Name name);
     }
 
-    private RecoveryLoadClass recoveryLoadClass = (env, name) -> {
-        //even if a class cannot be found in the current module and packages in modules it depends on that
-        //are exported for any or this module, the class may exist internally in some of these modules,
-        //or may exist in a module on which this module does not depend. Provide better diagnostic in
-        //such cases by looking for the class in any module:
-        for (ModuleSymbol ms : syms.getAllModules()) {
-            //do not load currently unloaded classes, to avoid too eager completion of random things in other modules:
-            ClassSymbol clazz = syms.getClass(ms, name);
+    private RecoveryLoadClass recoveryLoadClass = new RecoveryLoadClass() {
+        @Override
+        public Symbol loadClass(Env<AttrContext> env, Name name) {
+            if (allowModules) {
+                Scope importScope = env.toplevel.namedImportScope;
+                Symbol existing = importScope.findFirst(Convert.shortName(name),
+                                                        sym -> sym.kind == TYP && sym.flatName() == name);
 
-            if (clazz != null) {
-                return new AccessError(clazz);
+                if (existing != null) {
+                    return new InvisibleSymbolError(env, true, existing);
+                }
+
+                return lookupInvisibleSymbol(env, name, syms::getClass, (ms, n) -> {
+                    try {
+                        return finder.loadClass(ms, n);
+                    } catch (CompletionFailure cf) {
+                        //ignore
+                        return null;
+                    }
+                }, sym -> sym.kind == Kind.TYP, false, typeNotFound);
             }
+            return null;
         }
-        return null;
     };
 
     public RecoveryLoadClass setRecoveryLoadClass(RecoveryLoadClass recovery) {
         RecoveryLoadClass prev = recoveryLoadClass;
         recoveryLoadClass = recovery;
         return prev;
+    }
+
+    Symbol lookupPackage(Env<AttrContext> env, Name name) {
+        PackageSymbol pack = syms.lookupPackage(env.toplevel.modle, name);
+
+        if (allowModules && isImportOnDemand(env, name)) {
+            pack.complete();
+            if (!pack.exists()) {
+                Name nameAndDot = name.append('.', names.empty);
+                boolean prefixOfKnown =
+                        env.toplevel.modle.visiblePackages.values()
+                                                          .stream()
+                                                          .anyMatch(p -> p.fullname.startsWith(nameAndDot));
+
+                return lookupInvisibleSymbol(env, name, syms::getPackage, syms::enterPackage, sym -> {
+                    sym.complete();
+                    return sym.exists();
+                }, prefixOfKnown, pack);
+            }
+        }
+
+        return pack;
+    }
+
+    private boolean isImportOnDemand(Env<AttrContext> env, Name name) {
+        if (!env.tree.hasTag(IMPORT))
+            return false;
+
+        JCTree qualid = ((JCImport) env.tree).qualid;
+
+        if (!qualid.hasTag(SELECT))
+            return false;
+
+        if (TreeInfo.name(qualid) != names.asterisk)
+            return false;
+
+        return TreeInfo.fullName(((JCFieldAccess) qualid).selected) == name;
+    }
+
+    private Symbol lookupInvisibleSymbol(Env<AttrContext> env,
+                                         Name name,
+                                         BiFunction<ModuleSymbol, Name, Symbol> get,
+                                         BiFunction<ModuleSymbol, Name, Symbol> load,
+                                         Predicate<Symbol> validate,
+                                         boolean suppressError,
+                                         Symbol defaultResult) {
+        //even if a class/package cannot be found in the current module and among packages in modules
+        //it depends on that are exported for any or this module, the class/package may exist internally
+        //in some of these modules, or may exist in a module on which this module does not depend.
+        //Provide better diagnostic in such cases by looking for the class in any module:
+        Set<ModuleSymbol> recoverableModules = new HashSet<>(syms.getAllModules());
+
+        recoverableModules.remove(env.toplevel.modle);
+
+        for (ModuleSymbol ms : recoverableModules) {
+            Symbol sym = get.apply(ms, name);
+
+            //avoid overly eager completing classes from source-based modules, as those
+            //may not be completable with the current compiler settings:
+            if (sym == null && (ms.sourceLocation == null)) {
+                if (ms.classLocation == null) {
+                    ms = moduleFinder.findModule(ms);
+                }
+
+                if (ms.kind != ERR) {
+                    sym = load.apply(ms, name);
+                }
+            }
+
+            if (sym == null)
+                continue;
+
+            if (validate.test(sym)) {
+                return new InvisibleSymbolError(env, suppressError, sym);
+            }
+        }
+
+        return defaultResult;
     }
 
     /**
@@ -2205,7 +2300,7 @@ public class Resolve {
         }
 
         if (kind.contains(KindSelector.PCK))
-            return syms.lookupPackage(env.toplevel.modle, name);
+            return lookupPackage(env, name);
         else return bestSoFar;
     }
 
@@ -2219,11 +2314,6 @@ public class Resolve {
                               Name name, KindSelector kind) {
         Name fullname = TypeSymbol.formFullName(name, pck);
         Symbol bestSoFar = typeNotFound;
-        PackageSymbol pack = null;
-        if (kind.contains(KindSelector.PCK)) {
-            pack = syms.lookupPackage(env.toplevel.modle, fullname);
-            if (pack.exists()) return pack;
-        }
         if (kind.contains(KindSelector.TYP)) {
             Symbol sym = loadClass(env, fullname);
             if (sym.exists()) {
@@ -2232,7 +2322,10 @@ public class Resolve {
             }
             else bestSoFar = bestOf(bestSoFar, sym);
         }
-        return (pack != null) ? pack : bestSoFar;
+        if (kind.contains(KindSelector.PCK)) {
+            return lookupPackage(env, fullname);
+        }
+        return bestSoFar;
     }
 
     /** Find an identifier among the members of a given type `site'.
@@ -3941,10 +4034,6 @@ public class Resolve {
         private Env<AttrContext> env;
         private Type site;
 
-        AccessError(Symbol sym) {
-            this(null, null, sym);
-        }
-
         AccessError(Env<AttrContext> env, Type site, Symbol sym) {
             super(HIDDEN, sym, "access error");
             this.env = env;
@@ -3977,7 +4066,14 @@ public class Resolve {
                 if (sym.owner.kind == PCK) {
                     return diags.create(dkind, log.currentSource(),
                             pos, "not.def.access.package.cant.access",
-                        sym, sym.location());
+                        sym, sym.location(), inaccessiblePackageReason(env, sym.packge()));
+                } else if (   sym.packge() != syms.rootPackage
+                           && sym.packge().modle != env.toplevel.modle
+                           && !isAccessible(env, sym.outermostClass())) {
+                    return diags.create(dkind, log.currentSource(),
+                            pos, "not.def.access.class.intf.cant.access.reason",
+                            sym, sym.location(), sym.location().packge(),
+                            inaccessiblePackageReason(env, sym.packge()));
                 } else {
                     return diags.create(dkind, log.currentSource(),
                             pos, "not.def.access.class.intf.cant.access",
@@ -4006,6 +4102,90 @@ public class Resolve {
                 sb.append("]");
             }
             return sb.toString();
+        }
+    }
+
+    class InvisibleSymbolError extends InvalidSymbolError {
+
+        private final Env<AttrContext> env;
+        private final boolean suppressError;
+
+        InvisibleSymbolError(Env<AttrContext> env, boolean suppressError, Symbol sym) {
+            super(HIDDEN, sym, "invisible class error");
+            this.env = env;
+            this.suppressError = suppressError;
+            this.name = sym.name;
+        }
+
+        @Override
+        JCDiagnostic getDiagnostic(JCDiagnostic.DiagnosticType dkind,
+                DiagnosticPosition pos,
+                Symbol location,
+                Type site,
+                Name name,
+                List<Type> argtypes,
+                List<Type> typeargtypes) {
+            if (suppressError)
+                return null;
+
+            if (sym.kind == PCK) {
+                JCDiagnostic details = inaccessiblePackageReason(env, sym.packge());
+                return diags.create(dkind, log.currentSource(),
+                        pos, "package.not.visible", sym, details);
+            }
+
+            JCDiagnostic details = inaccessiblePackageReason(env, sym.packge());
+
+            if (pos.getTree() != null && pos.getTree().hasTag(SELECT) && sym.owner.kind == PCK) {
+                pos = ((JCFieldAccess) pos.getTree()).selected.pos();
+
+                return diags.create(dkind, log.currentSource(),
+                        pos, "package.not.visible", sym.packge(), details);
+            }
+
+            return diags.create(dkind, log.currentSource(),
+                    pos, "not.def.access.package.cant.access", sym, sym.packge(), details);
+        }
+    }
+
+    JCDiagnostic inaccessiblePackageReason(Env<AttrContext> env, PackageSymbol sym) {
+        //no dependency:
+        if (!env.toplevel.modle.readModules.contains(sym.modle)) {
+            //does not read:
+            if (sym.modle != syms.unnamedModule) {
+                if (env.toplevel.modle != syms.unnamedModule) {
+                    return diags.fragment(Fragments.NotDefAccessDoesNotRead(env.toplevel.modle,
+                                                                            sym,
+                                                                            sym.modle));
+                } else {
+                    return diags.fragment(Fragments.NotDefAccessDoesNotReadFromUnnamed(sym,
+                                                                                       sym.modle));
+                }
+            } else {
+                return diags.fragment(Fragments.NotDefAccessDoesNotReadUnnamed(sym,
+                                                                               env.toplevel.modle));
+            }
+        } else {
+            if (sym.packge().modle.exports.stream().anyMatch(e -> e.packge == sym)) {
+                //not exported to this module:
+                if (env.toplevel.modle != syms.unnamedModule) {
+                    return diags.fragment(Fragments.NotDefAccessNotExportedToModule(sym,
+                                                                                    sym.modle,
+                                                                                    env.toplevel.modle));
+                } else {
+                    return diags.fragment(Fragments.NotDefAccessNotExportedToModuleFromUnnamed(sym,
+                                                                                               sym.modle));
+                }
+            } else {
+                //not exported:
+                if (env.toplevel.modle != syms.unnamedModule) {
+                    return diags.fragment(Fragments.NotDefAccessNotExported(sym,
+                                                                            sym.modle));
+                } else {
+                    return diags.fragment(Fragments.NotDefAccessNotExportedFromUnnamed(sym,
+                                                                                       sym.modle));
+                }
+            }
         }
     }
 

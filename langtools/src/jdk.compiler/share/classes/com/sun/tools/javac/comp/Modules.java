@@ -1327,6 +1327,7 @@ public class Modules extends JCTree.Visitor {
         initAddExports();
 
         msym.visiblePackages = new LinkedHashMap<>();
+        msym.readModules = new HashSet<>(readable);
 
         Map<Name, ModuleSymbol> seen = new HashMap<>();
 
