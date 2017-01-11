@@ -57,6 +57,12 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
+/*
+ * @test
+ * @modules jdk.localedata
+ */
+
 package test.java.time.format;
 
 import static java.time.temporal.ChronoField.AMPM_OF_DAY;
@@ -74,61 +80,59 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 /**
- * Test SimpleDateTimeTextProvider.
+ * Test SimpleDateTimeTextProviderWithLocale.
  */
 @Test
-public class TestDateTimeTextProvider extends AbstractTestPrinterParser {
+public class TestDateTimeTextProviderWithLocale extends AbstractTestPrinterParser {
 
     Locale enUS = new Locale("en", "US");
+    Locale ptBR = new Locale("pt", "BR");
 
     //-----------------------------------------------------------------------
     @DataProvider(name = "Text")
     Object[][] data_text() {
         return new Object[][] {
-            {DAY_OF_WEEK, 1, TextStyle.SHORT, enUS, "Mon"},
-            {DAY_OF_WEEK, 2, TextStyle.SHORT, enUS, "Tue"},
-            {DAY_OF_WEEK, 3, TextStyle.SHORT, enUS, "Wed"},
-            {DAY_OF_WEEK, 4, TextStyle.SHORT, enUS, "Thu"},
-            {DAY_OF_WEEK, 5, TextStyle.SHORT, enUS, "Fri"},
-            {DAY_OF_WEEK, 6, TextStyle.SHORT, enUS, "Sat"},
-            {DAY_OF_WEEK, 7, TextStyle.SHORT, enUS, "Sun"},
+            {DAY_OF_WEEK, 1, TextStyle.SHORT, ptBR, "seg"},
+            {DAY_OF_WEEK, 2, TextStyle.SHORT, ptBR, "ter"},
+            {DAY_OF_WEEK, 3, TextStyle.SHORT, ptBR, "qua"},
+            {DAY_OF_WEEK, 4, TextStyle.SHORT, ptBR, "qui"},
+            {DAY_OF_WEEK, 5, TextStyle.SHORT, ptBR, "sex"},
+            {DAY_OF_WEEK, 6, TextStyle.SHORT, ptBR, "s\u00E1b"},
+            {DAY_OF_WEEK, 7, TextStyle.SHORT, ptBR, "dom"},
 
-            {DAY_OF_WEEK, 1, TextStyle.FULL, enUS, "Monday"},
-            {DAY_OF_WEEK, 2, TextStyle.FULL, enUS, "Tuesday"},
-            {DAY_OF_WEEK, 3, TextStyle.FULL, enUS, "Wednesday"},
-            {DAY_OF_WEEK, 4, TextStyle.FULL, enUS, "Thursday"},
-            {DAY_OF_WEEK, 5, TextStyle.FULL, enUS, "Friday"},
-            {DAY_OF_WEEK, 6, TextStyle.FULL, enUS, "Saturday"},
-            {DAY_OF_WEEK, 7, TextStyle.FULL, enUS, "Sunday"},
+            {DAY_OF_WEEK, 1, TextStyle.FULL, ptBR, "segunda-feira"},
+            {DAY_OF_WEEK, 2, TextStyle.FULL, ptBR, "ter\u00E7a-feira"},
+            {DAY_OF_WEEK, 3, TextStyle.FULL, ptBR, "quarta-feira"},
+            {DAY_OF_WEEK, 4, TextStyle.FULL, ptBR, "quinta-feira"},
+            {DAY_OF_WEEK, 5, TextStyle.FULL, ptBR, "sexta-feira"},
+            {DAY_OF_WEEK, 6, TextStyle.FULL, ptBR, "s\u00E1bado"},
+            {DAY_OF_WEEK, 7, TextStyle.FULL, ptBR, "domingo"},
 
-            {MONTH_OF_YEAR, 1, TextStyle.SHORT, enUS, "Jan"},
-            {MONTH_OF_YEAR, 2, TextStyle.SHORT, enUS, "Feb"},
-            {MONTH_OF_YEAR, 3, TextStyle.SHORT, enUS, "Mar"},
-            {MONTH_OF_YEAR, 4, TextStyle.SHORT, enUS, "Apr"},
-            {MONTH_OF_YEAR, 5, TextStyle.SHORT, enUS, "May"},
-            {MONTH_OF_YEAR, 6, TextStyle.SHORT, enUS, "Jun"},
-            {MONTH_OF_YEAR, 7, TextStyle.SHORT, enUS, "Jul"},
-            {MONTH_OF_YEAR, 8, TextStyle.SHORT, enUS, "Aug"},
-            {MONTH_OF_YEAR, 9, TextStyle.SHORT, enUS, "Sep"},
-            {MONTH_OF_YEAR, 10, TextStyle.SHORT, enUS, "Oct"},
-            {MONTH_OF_YEAR, 11, TextStyle.SHORT, enUS, "Nov"},
-            {MONTH_OF_YEAR, 12, TextStyle.SHORT, enUS, "Dec"},
+            {MONTH_OF_YEAR, 1, TextStyle.SHORT, ptBR, "jan"},
+            {MONTH_OF_YEAR, 2, TextStyle.SHORT, ptBR, "fev"},
+            {MONTH_OF_YEAR, 3, TextStyle.SHORT, ptBR, "mar"},
+            {MONTH_OF_YEAR, 4, TextStyle.SHORT, ptBR, "abr"},
+            {MONTH_OF_YEAR, 5, TextStyle.SHORT, ptBR, "mai"},
+            {MONTH_OF_YEAR, 6, TextStyle.SHORT, ptBR, "jun"},
+            {MONTH_OF_YEAR, 7, TextStyle.SHORT, ptBR, "jul"},
+            {MONTH_OF_YEAR, 8, TextStyle.SHORT, ptBR, "ago"},
+            {MONTH_OF_YEAR, 9, TextStyle.SHORT, ptBR, "set"},
+            {MONTH_OF_YEAR, 10, TextStyle.SHORT, ptBR, "out"},
+            {MONTH_OF_YEAR, 11, TextStyle.SHORT, ptBR, "nov"},
+            {MONTH_OF_YEAR, 12, TextStyle.SHORT, ptBR, "dez"},
 
-            {MONTH_OF_YEAR, 1, TextStyle.FULL, enUS, "January"},
-            {MONTH_OF_YEAR, 2, TextStyle.FULL, enUS, "February"},
-            {MONTH_OF_YEAR, 3, TextStyle.FULL, enUS, "March"},
-            {MONTH_OF_YEAR, 4, TextStyle.FULL, enUS, "April"},
-            {MONTH_OF_YEAR, 5, TextStyle.FULL, enUS, "May"},
-            {MONTH_OF_YEAR, 6, TextStyle.FULL, enUS, "June"},
-            {MONTH_OF_YEAR, 7, TextStyle.FULL, enUS, "July"},
-            {MONTH_OF_YEAR, 8, TextStyle.FULL, enUS, "August"},
-            {MONTH_OF_YEAR, 9, TextStyle.FULL, enUS, "September"},
-            {MONTH_OF_YEAR, 10, TextStyle.FULL, enUS, "October"},
-            {MONTH_OF_YEAR, 11, TextStyle.FULL, enUS, "November"},
-            {MONTH_OF_YEAR, 12, TextStyle.FULL, enUS, "December"},
-
-            {AMPM_OF_DAY, 0, TextStyle.SHORT, enUS, "AM"},
-            {AMPM_OF_DAY, 1, TextStyle.SHORT, enUS, "PM"},
+            {MONTH_OF_YEAR, 1, TextStyle.FULL, ptBR, "janeiro"},
+            {MONTH_OF_YEAR, 2, TextStyle.FULL, ptBR, "fevereiro"},
+            {MONTH_OF_YEAR, 3, TextStyle.FULL, ptBR, "mar\u00E7o"},
+            {MONTH_OF_YEAR, 4, TextStyle.FULL, ptBR, "abril"},
+            {MONTH_OF_YEAR, 5, TextStyle.FULL, ptBR, "maio"},
+            {MONTH_OF_YEAR, 6, TextStyle.FULL, ptBR, "junho"},
+            {MONTH_OF_YEAR, 7, TextStyle.FULL, ptBR, "julho"},
+            {MONTH_OF_YEAR, 8, TextStyle.FULL, ptBR, "agosto"},
+            {MONTH_OF_YEAR, 9, TextStyle.FULL, ptBR, "setembro"},
+            {MONTH_OF_YEAR, 10, TextStyle.FULL, ptBR, "outubro"},
+            {MONTH_OF_YEAR, 11, TextStyle.FULL, ptBR, "novembro"},
+            {MONTH_OF_YEAR, 12, TextStyle.FULL, ptBR, "dezembro"},
 
         };
     }
