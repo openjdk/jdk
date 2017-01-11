@@ -410,7 +410,7 @@ public class TypeEnter implements Completer {
                     importNamedStatic(tree, p, name, localEnv);
                     chk.checkCanonical(imp.selected);
                 } else {
-                    TypeSymbol c = attribImportType(imp, localEnv).tsym;
+                    TypeSymbol c = attribImportType(imp, localEnv).getOriginalType().tsym;
                     chk.checkCanonical(imp);
                     importNamed(tree.pos(), c, env, tree);
                 }

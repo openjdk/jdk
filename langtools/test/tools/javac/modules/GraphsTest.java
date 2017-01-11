@@ -134,9 +134,9 @@ public class GraphsTest extends ModuleTestBase {
                 .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList(
-                "Negative.java:1:43: compiler.err.doesnt.exist: closedO",
-                "Negative.java:1:56: compiler.err.doesnt.exist: closedN",
-                "Negative.java:1:69: compiler.err.doesnt.exist: closedL");
+                "Negative.java:1:36: compiler.err.package.not.visible: closedO, (compiler.misc.not.def.access.not.exported: closedO, O)",
+                "Negative.java:1:49: compiler.err.package.not.visible: closedN, (compiler.misc.not.def.access.not.exported: closedN, N)",
+                "Negative.java:1:62: compiler.err.package.not.visible: closedL, (compiler.misc.not.def.access.not.exported: closedL, L)");
         if (!log.containsAll(expected)) {
             throw new Exception("Expected output not found");
         }
@@ -153,9 +153,9 @@ public class GraphsTest extends ModuleTestBase {
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
         expected = Arrays.asList(
-                "Negative.java:1:43: compiler.err.not.def.access.package.cant.access: closedO.O, closedO",
-                "Negative.java:1:56: compiler.err.not.def.access.package.cant.access: closedN.N, closedN",
-                "Negative.java:1:69: compiler.err.not.def.access.package.cant.access: closedL.L, closedL");
+                "Negative.java:1:36: compiler.err.package.not.visible: closedO, (compiler.misc.not.def.access.not.exported: closedO, O)",
+                "Negative.java:1:49: compiler.err.package.not.visible: closedN, (compiler.misc.not.def.access.not.exported: closedN, N)",
+                "Negative.java:1:62: compiler.err.package.not.visible: closedL, (compiler.misc.not.def.access.not.exported: closedL, L)");
         if (!out.containsAll(expected)) {
             throw new Exception("Expected output not found");
         }
@@ -201,7 +201,7 @@ public class GraphsTest extends ModuleTestBase {
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
 
-        String expected = "A.java:1:35: compiler.err.not.def.access.package.cant.access: pack.Clazz, pack";
+        String expected = "A.java:1:31: compiler.err.package.not.visible: pack, (compiler.misc.not.def.access.not.exported.to.module: pack, N, L)";
         if (!log.contains(expected)) {
             throw new Exception("Expected output not found");
         }

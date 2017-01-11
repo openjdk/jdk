@@ -288,7 +288,7 @@ public class XModuleTest extends ModuleTestBase {
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
 
-        List<String> expected = Arrays.asList("A.java:1:36: compiler.err.doesnt.exist: pkg2",
+        List<String> expected = Arrays.asList("A.java:1:32: compiler.err.package.not.visible: pkg2, (compiler.misc.not.def.access.does.not.read: m1, pkg2, m2)",
                 "1 error");
 
         if (!expected.equals(log))
