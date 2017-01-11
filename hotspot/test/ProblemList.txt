@@ -77,5 +77,7 @@ serviceability/sa/sadebugd/SADebugDTest.java 8163805 generic-all
 
 # :hotspot_misc
 
+testlibrary_tests/ctw/JarDirTest.java 8172457 windows-all
+
 #############################################################################
 
