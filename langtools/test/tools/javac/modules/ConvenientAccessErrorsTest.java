@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8169197 8172668
  * @summary Check convenient errors are produced for inaccessible classes.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -510,6 +511,86 @@ public class ConvenientAccessErrorsTest extends ModuleTestBase {
                 .files(findJavaFiles(src))
                 .run()
                 .writeAll();
+    }
+
+    @Test
+    public void testUnresolvableInImport(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path src_m1 = src.resolve("m1x");
+        tb.writeJavaFiles(src_m1,
+                          "module m1x { }",
+                          "package api; import can.not.resolve; public class Api { }");
+        Path classes = base.resolve("classes");
+        tb.createDirectories(classes);
+
+        List<String> log = new JavacTask(tb)
+                .options("-XDrawDiagnostics",
+                         "--module-source-path", src.toString())
+                .outdir(classes)
+                .files(findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        List<String> expected = Arrays.asList(
+                "Api.java:1:28: compiler.err.doesnt.exist: can.not",
+                "1 error");
+
+        if (!expected.equals(log))
+            throw new Exception("expected output not found; actual: " + log);
+    }
+
+    @Test
+    public void testMissingKnownClass(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path src_m1 = src.resolve("m1x");
+        tb.writeJavaFiles(src_m1,
+                          "module m1x { exports api; }",
+                          "package api; public class Base { }",
+                          "package api; public class Sub extends Base { }");
+        Path classes = base.resolve("classes");
+        tb.createDirectories(classes);
+        Path m1xClasses = classes.resolve("m1x");
+        tb.createDirectories(m1xClasses);
+
+        new JavacTask(tb)
+                .options("-XDrawDiagnostics")
+                .outdir(m1xClasses)
+                .files(findJavaFiles(src_m1))
+                .run(Task.Expect.SUCCESS)
+                .writeAll();
+
+        Files.delete(m1xClasses.resolve("api").resolve("Base.class"));
+
+        Path src_m2 = src.resolve("m2x");
+        tb.writeJavaFiles(src_m2,
+                          "module m2x { requires m1x; }",
+                          "package test;\n" +
+                          "import api.Sub;\n" +
+                          "import api.Base;\n" +
+                          "public class Test {\n" +
+                          "    Sub a2;\n" +
+                          "    Base a;\n" +
+                          "}\n");
+        Path m2xClasses = classes.resolve("m2x");
+        tb.createDirectories(m2xClasses);
+        List<String> log = new JavacTask(tb)
+                .options("-XDrawDiagnostics",
+                         "--module-path", classes.toString(),
+                         "-XDdev")
+                .outdir(m2xClasses)
+                .files(findJavaFiles(src_m2))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        List<String> expected = Arrays.asList(
+                "Test.java:3:11: compiler.err.cant.resolve.location: kindname.class, Base, , , (compiler.misc.location: kindname.package, api, null)",
+                "Test.java:6:5: compiler.err.cant.resolve.location: kindname.class, Base, , , (compiler.misc.location: kindname.class, test.Test, null)",
+                "2 errors");
+
+        if (!expected.equals(log))
+            throw new Exception("expected output not found; actual: " + log);
     }
 
 }
