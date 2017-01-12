@@ -209,7 +209,7 @@ bool os::Linux::get_frame_at_stack_banging_point(JavaThread* thread, ucontext_t*
       // belong to the caller.
       intptr_t* fp = os::Linux::ucontext_get_fp(uc);
       intptr_t* sp = os::Linux::ucontext_get_sp(uc);
-      void* pc = (void*)(uc->uc_mcontext.regs[REG_LR]
+      address pc = (address)(uc->uc_mcontext.regs[REG_LR]
                          - NativeInstruction::instruction_size);
       *fr = frame(sp, fp, pc);
       if (!fr->is_java_frame()) {
