@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,41 +220,6 @@ public class JavacElements implements Elements {
         } catch (CompletionFailure e) {
             return null;
         }
-    }
-
-    public JavacSourcePosition getSourcePosition(Element e) {
-        Pair<JCTree, JCCompilationUnit> treeTop = getTreeAndTopLevel(e);
-        if (treeTop == null)
-            return null;
-        JCTree tree = treeTop.fst;
-        JCCompilationUnit toplevel = treeTop.snd;
-        JavaFileObject sourcefile = toplevel.sourcefile;
-        if (sourcefile == null)
-            return null;
-        return new JavacSourcePosition(sourcefile, tree.pos, toplevel.lineMap);
-    }
-
-    public JavacSourcePosition getSourcePosition(Element e, AnnotationMirror a) {
-        Pair<JCTree, JCCompilationUnit> treeTop = getTreeAndTopLevel(e);
-        if (treeTop == null)
-            return null;
-        JCTree tree = treeTop.fst;
-        JCCompilationUnit toplevel = treeTop.snd;
-        JavaFileObject sourcefile = toplevel.sourcefile;
-        if (sourcefile == null)
-            return null;
-
-        JCTree annoTree = matchAnnoToTree(a, e, tree);
-        if (annoTree == null)
-            return null;
-        return new JavacSourcePosition(sourcefile, annoTree.pos,
-                                       toplevel.lineMap);
-    }
-
-    public JavacSourcePosition getSourcePosition(Element e, AnnotationMirror a,
-                                            AnnotationValue v) {
-        // TODO: better accuracy in getSourcePosition(... AnnotationValue)
-        return getSourcePosition(e, a);
     }
 
     /**
