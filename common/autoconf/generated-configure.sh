@@ -3731,6 +3731,8 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 
+
+
 # Check if build directory is on local disk. If not possible to determine,
 # we prefer to claim it's local.
 # Argument 1: directory to test
@@ -5178,7 +5180,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1484135958
+DATE_WHEN_GENERATED=1484228046
 
 ###############################################################################
 #
@@ -21249,6 +21251,29 @@ $as_echo "$TAR_TYPE" >&6; }
 
 
 
+
+
+  # Test that grep supports -Fx with a list of pattern which includes null pattern.
+  # This is a problem for the grep resident on AIX.
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking that grep ($GREP) -Fx handles empty lines in the pattern list correctly" >&5
+$as_echo_n "checking that grep ($GREP) -Fx handles empty lines in the pattern list correctly... " >&6; }
+  # Multiple subsequent spaces..
+  STACK_SPACES='aaa   bbb   ccc'
+  # ..converted to subsequent newlines, causes STACK_LIST to be a list with some empty
+  # patterns in it.
+  STACK_LIST=${STACK_SPACES// /$'\n'}
+  NEEDLE_SPACES='ccc bbb aaa'
+  NEEDLE_LIST=${NEEDLE_SPACES// /$'\n'}
+  RESULT="$($GREP -Fvx "$STACK_LIST" <<< "$NEEDLE_LIST")"
+  if test "x$RESULT" == "x"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+  else
+    if test "x$OPENJDK_TARGET_OS" = "xaix"; then
+      ADDINFO="Please make sure you use GNU grep, usually found at /opt/freeware/bin."
+    fi
+    as_fn_error $? "grep does not handle -Fx correctly. ${ADDINFO}" "$LINENO" 5
+  fi
 
 
   # These tools might not be installed by default,
