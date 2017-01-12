@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 /**/
 
 public class TestSecurityManager extends SecurityManager {
+    public static final int EXIT_VALUE = 123;
+
     public TestSecurityManager() {
     }
 
@@ -36,7 +38,7 @@ public class TestSecurityManager extends SecurityManager {
         // by the main test process to detect that the proper security
         // manager has been installed in the relevant VMs.
         //
-        System.exit(1);
+        System.exit(EXIT_VALUE);
     }
 
     public void checkExit(int status) {
