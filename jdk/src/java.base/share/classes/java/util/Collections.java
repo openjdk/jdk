@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4354,6 +4354,11 @@ public class Collections {
         private Object readResolve() {
             return EMPTY_SET;
         }
+
+        @Override
+        public int hashCode() {
+            return 0;
+        }
     }
 
     /**
@@ -4786,6 +4791,10 @@ public class Collections {
         public boolean removeIf(Predicate<? super E> filter) {
             throw new UnsupportedOperationException();
         }
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(element);
+        }
     }
 
     /**
@@ -4847,6 +4856,10 @@ public class Collections {
         @Override
         public Spliterator<E> spliterator() {
             return singletonSpliterator(element);
+        }
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(element);
         }
     }
 
@@ -4969,6 +4982,11 @@ public class Collections {
         public V merge(K key, V value,
                 BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
             throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(k) ^ Objects.hashCode(v);
         }
     }
 
