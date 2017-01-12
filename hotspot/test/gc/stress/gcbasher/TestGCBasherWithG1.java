@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import java.io.IOException;
  * @requires vm.gc.G1
  * @requires vm.flavor == "server"
  * @summary Stress the G1 GC by trying to make old objects more likely to be garbage than young objects.
- * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx128m -server -XX:+UseG1GC TestGCBasherWithG1 120000
+ * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx256m -server -XX:+UseG1GC TestGCBasherWithG1 120000
  */
 public class TestGCBasherWithG1 {
     public static void main(String[] args) throws IOException {
