@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,18 +140,6 @@ public class RMID extends JavaVM {
     }
 
     private static String makeArgs(boolean includePortArg, int port) {
-        String propagateManager = null;
-
-        // rmid will run with a security manager set, but no policy
-        // file - it should not need one.
-        if (System.getSecurityManager() == null) {
-            propagateManager = MANAGER_OPTION +
-                TestParams.defaultSecurityManager;
-        } else {
-            propagateManager = MANAGER_OPTION +
-                System.getSecurityManager().getClass().getName();
-        }
-
         // getAbsolutePath requires permission to read user.dir
         String args =
             " -log " + (new File(LOGDIR, log)).getAbsolutePath();
@@ -210,7 +198,30 @@ public class RMID extends JavaVM {
                                   boolean debugExec, boolean includePortArg,
                                   int port)
     {
+        return createRMIDWithOptions(out, err, debugExec, includePortArg, port, "");
+    }
+
+    /**
+     * Create a RMID on a specified port capturing stdout and stderr
+     * with additional command line options and whether to print out
+     * debugging information that is used for spawning activation groups.
+     *
+     * @param out the OutputStream where the normal output of the
+     *            rmid subprocess goes
+     * @param err the OutputStream where the error output of the
+     *            rmid subprocess goes
+     * @param debugExec whether to print out debugging information
+     * @param includePortArg whether to include port argument
+     * @param port the port on which rmid accepts requests
+     * @param additionalOptions additional command line options
+     * @return a RMID instance
+     */
+    public static RMID createRMIDWithOptions(OutputStream out, OutputStream err,
+                                  boolean debugExec, boolean includePortArg,
+                                  int port, String additionalOptions)
+    {
         String options = makeOptions(port, debugExec, false);
+        options += " " + additionalOptions;
         String args = makeArgs(includePortArg, port);
         RMID rmid = new RMID("sun.rmi.server.Activation", options, args,
                              out, err, port);
@@ -221,6 +232,19 @@ public class RMID extends JavaVM {
 
     public static RMID createRMIDOnEphemeralPort() {
         return createRMID(System.out, System.err, true, false, 0);
+    }
+
+    /**
+     * Create a RMID on an ephemeral port capturing stdout and stderr
+     * with additional command line options.
+     *
+     * @param additionalOptions additional command line options
+     * @return a RMID instance
+     */
+    public static RMID createRMIDOnEphemeralPortWithOptions(
+                                            String additionalOptions) {
+        return createRMIDWithOptions(System.out, System.err,
+                                     true, false, 0, additionalOptions);
     }
 
     public static RMID createRMIDOnEphemeralPort(OutputStream out,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,8 @@ public class MapFactories {
             a(Map.of(0, "a", 1, "b", 2, "c", 3, "d", 4, "e", 5, "f", 6, "g", 7, "h"), genMap(8)),
             a(Map.of(0, "a", 1, "b", 2, "c", 3, "d", 4, "e", 5, "f", 6, "g", 7, "h", 8, "i"), genMap(9)),
             a(Map.of(0, "a", 1, "b", 2, "c", 3, "d", 4, "e", 5, "f", 6, "g", 7, "h", 8, "i", 9, "j"), genMap(10)),
+            a(Map.of(0, "a", 1, "b", 2, "c", 3, "d", 4, "e", 5, "f", 6, "g", 7, "h", 8, "i", 9, "j"),
+              Map.of(4, "e", 5, "f", 6, "g", 7, "h", 8, "i", 9, "j", 0, "a", 1, "b", 2, "c", 3, "d")),
             a(Map.ofEntries(genEntries(MAX_ENTRIES)), genMap(MAX_ENTRIES))
         ).iterator();
     }
@@ -133,6 +135,18 @@ public class MapFactories {
     @Test(dataProvider="all")
     public void contentsMatch(Map<Integer,String> act, Map<Integer,String> exp) {
         assertEquals(act, exp);
+    }
+
+    @Test(dataProvider="all")
+    public void containsAllKeys(Map<Integer,String> act, Map<Integer,String> exp) {
+        assertTrue(act.keySet().containsAll(exp.keySet()));
+        assertTrue(exp.keySet().containsAll(act.keySet()));
+    }
+
+    @Test(dataProvider="all")
+    public void containsAllValues(Map<Integer,String> act, Map<Integer,String> exp) {
+        assertTrue(act.values().containsAll(exp.values()));
+        assertTrue(exp.values().containsAll(act.values()));
     }
 
     @Test(expectedExceptions=IllegalArgumentException.class)
@@ -190,6 +204,11 @@ public class MapFactories {
         Map.Entry<Integer,String>[] entries = genEntries(MAX_ENTRIES);
         entries[MAX_ENTRIES-1] = Map.entry(0, "xxx");
         Map<Integer, String> map = Map.ofEntries(entries);
+    }
+
+    @Test(dataProvider="all")
+    public void hashCodeEquals(Map<Integer,String> act, Map<Integer,String> exp) {
+        assertEquals(act.hashCode(), exp.hashCode());
     }
 
     @Test(expectedExceptions=NullPointerException.class)

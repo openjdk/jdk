@@ -1088,34 +1088,58 @@ public class JmodTask {
         }
     }
 
-    static class ClassPathConverter implements ValueConverter<Path> {
-        static final ValueConverter<Path> INSTANCE = new ClassPathConverter();
+    /**
+     * An abstract converter that given a string representing a list of paths,
+     * separated by the File.pathSeparator, returns a List of java.nio.Path's.
+     * Specific subclasses should do whatever validation is required on the
+     * individual path elements, if any.
+     */
+    static abstract class AbstractPathConverter implements ValueConverter<List<Path>> {
+        @Override
+        public List<Path> convert(String value) {
+            List<Path> paths = new ArrayList<>();
+            String[] pathElements = value.split(File.pathSeparator);
+            for (String pathElement : pathElements) {
+                paths.add(toPath(pathElement));
+            }
+            return paths;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public Class<List<Path>> valueType() {
+            return (Class<List<Path>>)(Object)List.class;
+        }
+
+        @Override public String valuePattern() { return "path"; }
+
+        abstract Path toPath(String path);
+    }
+
+    static class ClassPathConverter extends AbstractPathConverter {
+        static final ValueConverter<List<Path>> INSTANCE = new ClassPathConverter();
 
         @Override
-        public Path convert(String value) {
+        public Path toPath(String value) {
             try {
                 Path path = CWD.resolve(value);
                 if (Files.notExists(path))
                     throw new CommandException("err.path.not.found", path);
-                if (! (Files.isDirectory(path) ||
-                       (Files.isRegularFile(path) && path.toString().endsWith(".jar"))))
+                if (!(Files.isDirectory(path) ||
+                        (Files.isRegularFile(path) && path.toString().endsWith(".jar"))))
                     throw new CommandException("err.invalid.class.path.entry", path);
                 return path;
             } catch (InvalidPathException x) {
                 throw new CommandException("err.path.not.valid", value);
             }
         }
-
-        @Override  public Class<Path> valueType() { return Path.class; }
-
-        @Override  public String valuePattern() { return "path"; }
     }
 
-    static class DirPathConverter implements ValueConverter<Path> {
-        static final ValueConverter<Path> INSTANCE = new DirPathConverter();
+    static class DirPathConverter extends AbstractPathConverter {
+        static final ValueConverter<List<Path>> INSTANCE = new DirPathConverter();
 
         @Override
-        public Path convert(String value) {
+        public Path toPath(String value) {
             try {
                 Path path = CWD.resolve(value);
                 if (Files.notExists(path))
@@ -1127,10 +1151,6 @@ public class JmodTask {
                 throw new CommandException("err.path.not.valid", value);
             }
         }
-
-        @Override  public Class<Path> valueType() { return Path.class; }
-
-        @Override  public String valuePattern() { return "path"; }
     }
 
     static class ExtractDirPathConverter implements ValueConverter<Path> {
@@ -1142,12 +1162,6 @@ public class JmodTask {
                 if (Files.exists(path)) {
                     if (!Files.isDirectory(path))
                         throw new CommandException("err.cannot.create.dir", path);
-                } else {
-                    try {
-                        Files.createDirectories(path);
-                    } catch (IOException ioe) {
-                        throw new CommandException("err.cannot.create.dir", path);
-                    }
                 }
                 return path;
             } catch (InvalidPathException x) {
@@ -1316,22 +1330,19 @@ public class JmodTask {
         options = new Options();
         parser.formatHelpWith(new JmodHelpFormatter(options));
 
-        OptionSpec<Path> classPath
+        OptionSpec<List<Path>> classPath
                 = parser.accepts("class-path", getMessage("main.opt.class-path"))
                         .withRequiredArg()
-                        .withValuesSeparatedBy(File.pathSeparatorChar)
                         .withValuesConvertedBy(ClassPathConverter.INSTANCE);
 
-        OptionSpec<Path> cmds
+        OptionSpec<List<Path>> cmds
                 = parser.accepts("cmds", getMessage("main.opt.cmds"))
                         .withRequiredArg()
-                        .withValuesSeparatedBy(File.pathSeparatorChar)
                         .withValuesConvertedBy(DirPathConverter.INSTANCE);
 
-        OptionSpec<Path> config
+        OptionSpec<List<Path>> config
                 = parser.accepts("config", getMessage("main.opt.config"))
                         .withRequiredArg()
-                        .withValuesSeparatedBy(File.pathSeparatorChar)
                         .withValuesConvertedBy(DirPathConverter.INSTANCE);
 
         OptionSpec<Path> dir
@@ -1359,22 +1370,19 @@ public class JmodTask {
         OptionSpec<Void> helpExtra
                 = parser.accepts("help-extra", getMessage("main.opt.help-extra"));
 
-        OptionSpec<Path> headerFiles
+        OptionSpec<List<Path>> headerFiles
                 = parser.accepts("header-files", getMessage("main.opt.header-files"))
                         .withRequiredArg()
-                        .withValuesSeparatedBy(File.pathSeparatorChar)
                         .withValuesConvertedBy(DirPathConverter.INSTANCE);
 
-        OptionSpec<Path> libs
+        OptionSpec<List<Path>> libs
                 = parser.accepts("libs", getMessage("main.opt.libs"))
                         .withRequiredArg()
-                        .withValuesSeparatedBy(File.pathSeparatorChar)
                         .withValuesConvertedBy(DirPathConverter.INSTANCE);
 
-        OptionSpec<Path> legalNotices
+        OptionSpec<List<Path>> legalNotices
                 = parser.accepts("legal-notices", getMessage("main.opt.legal-notices"))
                         .withRequiredArg()
-                        .withValuesSeparatedBy(File.pathSeparatorChar)
                         .withValuesConvertedBy(DirPathConverter.INSTANCE);
 
 
@@ -1383,17 +1391,15 @@ public class JmodTask {
                         .withRequiredArg()
                         .describedAs(getMessage("main.opt.main-class.arg"));
 
-        OptionSpec<Path> manPages
+        OptionSpec<List<Path>> manPages
                 = parser.accepts("man-pages", getMessage("main.opt.man-pages"))
                         .withRequiredArg()
-                        .withValuesSeparatedBy(File.pathSeparatorChar)
                         .withValuesConvertedBy(DirPathConverter.INSTANCE);
 
-        OptionSpec<Path> modulePath
+        OptionSpec<List<Path>> modulePath
                 = parser.acceptsAll(Set.of("p", "module-path"),
                                     getMessage("main.opt.module-path"))
                         .withRequiredArg()
-                        .withValuesSeparatedBy(File.pathSeparatorChar)
                         .withValuesConvertedBy(DirPathConverter.INSTANCE);
 
         OptionSpec<Version> moduleVersion
@@ -1452,48 +1458,48 @@ public class JmodTask {
             }
 
             if (opts.has(classPath))
-                options.classpath = opts.valuesOf(classPath);
+                options.classpath = getLastElement(opts.valuesOf(classPath));
             if (opts.has(cmds))
-                options.cmds = opts.valuesOf(cmds);
+                options.cmds = getLastElement(opts.valuesOf(cmds));
             if (opts.has(config))
-                options.configs = opts.valuesOf(config);
+                options.configs = getLastElement(opts.valuesOf(config));
             if (opts.has(dir))
-                options.extractDir = opts.valueOf(dir);
+                options.extractDir = getLastElement(opts.valuesOf(dir));
             if (opts.has(dryrun))
                 options.dryrun = true;
             if (opts.has(excludes))
-                options.excludes = opts.valuesOf(excludes);
+                options.excludes = opts.valuesOf(excludes);  // excludes is repeatable
             if (opts.has(libs))
-                options.libs = opts.valuesOf(libs);
+                options.libs = getLastElement(opts.valuesOf(libs));
             if (opts.has(headerFiles))
-                options.headerFiles = opts.valuesOf(headerFiles);
+                options.headerFiles = getLastElement(opts.valuesOf(headerFiles));
             if (opts.has(manPages))
-                options.manPages = opts.valuesOf(manPages);
+                options.manPages = getLastElement(opts.valuesOf(manPages));
             if (opts.has(legalNotices))
-                options.legalNotices = opts.valuesOf(legalNotices);
+                options.legalNotices = getLastElement(opts.valuesOf(legalNotices));
             if (opts.has(modulePath)) {
-                Path[] dirs = opts.valuesOf(modulePath).toArray(new Path[0]);
+                Path[] dirs = getLastElement(opts.valuesOf(modulePath)).toArray(new Path[0]);
                 options.moduleFinder = new ModulePath(Runtime.version(), true, dirs);
             }
             if (opts.has(moduleVersion))
-                options.moduleVersion = opts.valueOf(moduleVersion);
+                options.moduleVersion = getLastElement(opts.valuesOf(moduleVersion));
             if (opts.has(mainClass))
-                options.mainClass = opts.valueOf(mainClass);
+                options.mainClass = getLastElement(opts.valuesOf(mainClass));
             if (opts.has(osName))
-                options.osName = opts.valueOf(osName);
+                options.osName = getLastElement(opts.valuesOf(osName));
             if (opts.has(osArch))
-                options.osArch = opts.valueOf(osArch);
+                options.osArch = getLastElement(opts.valuesOf(osArch));
             if (opts.has(osVersion))
-                options.osVersion = opts.valueOf(osVersion);
+                options.osVersion = getLastElement(opts.valuesOf(osVersion));
             if (opts.has(warnIfResolved))
-                options.moduleResolution = opts.valueOf(warnIfResolved);
+                options.moduleResolution = getLastElement(opts.valuesOf(warnIfResolved));
             if (opts.has(doNotResolveByDefault)) {
                 if (options.moduleResolution == null)
                     options.moduleResolution = ModuleResolution.empty();
                 options.moduleResolution = options.moduleResolution.withDoNotResolveByDefault();
             }
             if (opts.has(hashModules)) {
-                options.modulesToHash = opts.valueOf(hashModules);
+                options.modulesToHash = getLastElement(opts.valuesOf(hashModules));
                 // if storing hashes then the module path is required
                 if (options.moduleFinder == null)
                     throw new CommandException("err.modulepath.must.be.specified")
@@ -1531,6 +1537,13 @@ public class JmodTask {
                 throw new CommandException("err.classpath.must.be.specified").showUsage(true);
             if (options.mainClass != null && !isValidJavaIdentifier(options.mainClass))
                 throw new CommandException("err.invalid.main-class", options.mainClass);
+            if (options.mode.equals(Mode.EXTRACT) && options.extractDir != null) {
+                try {
+                    Files.createDirectories(options.extractDir);
+                } catch (IOException ioe) {
+                    throw new CommandException("err.cannot.create.dir", options.extractDir);
+                }
+            }
         } catch (OptionException e) {
              throw new CommandException(e.getMessage());
         }
@@ -1556,6 +1569,12 @@ public class JmodTask {
             return false;
 
         return true;
+    }
+
+    static <E> E getLastElement(List<E> list) {
+        if (list.size() == 0)
+            throw new InternalError("Unexpected 0 list size");
+        return list.get(list.size() - 1);
     }
 
     private void reportError(String message) {

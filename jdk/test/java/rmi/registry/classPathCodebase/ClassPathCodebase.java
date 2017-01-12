@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
  *          java.rmi/sun.rmi.server
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
- * @build TestLibrary Dummy
+ * @build TestLibrary Dummy RegistryVM RMIRegistryRunner
  * @run main/othervm/policy=security.policy
  *     -Djava.rmi.server.useCodebaseOnly=false ClassPathCodebase
  */
@@ -48,8 +48,9 @@ import java.util.Arrays;
 
 public class ClassPathCodebase {
 
-    /** wait 10 seconds for the registry process to be ready to call */
-    private final static long REGISTRY_WAIT = 15000;
+    /** wait dozens of seconds for the registry process to be ready to call */
+    private static final long REGISTRY_WAIT =
+            (long)(10000 * TestLibrary.getTimeoutFactor());
 
     private final static String dummyClassName = "Dummy";
 
@@ -64,7 +65,7 @@ public class ClassPathCodebase {
 
         TestLibrary.suggestSecurityManager("java.lang.SecurityManager");
 
-        Process rmiregistry = null;
+        RegistryVM rmiregistry = null;
 
         try {
             /*
@@ -82,27 +83,13 @@ public class ClassPathCodebase {
              * Spawn an rmiregistry in the "import" codebase directory.
              */
             File rmiregistryDir =
-                new File(System.getProperty("user.dir", "."), importCodebase);
-
-            String rmiregistryCommand =
-                System.getProperty("java.home") + File.separator +
-                "bin" + File.separator + "rmiregistry";
-
-            int port = TestLibrary.getUnusedRandomPort();
-            String cmdarray[] = new String[] {
-                rmiregistryCommand,
-                "-J-Denv.class.path=.",
-                "-J-Djava.rmi.server.codebase=" + exportCodebaseURL,
-                Integer.toString(port) };
-
-            System.err.println("\nCommand used to spawn rmiregistry process:");
-            System.err.println("\t" + Arrays.asList(cmdarray).toString());
-
-            rmiregistry = Runtime.getRuntime().exec(cmdarray, null, rmiregistryDir);
-
-            // pipe rmiregistry output to our output, for debugging failures
-            StreamPipe.plugTogether(rmiregistry.getInputStream(), System.err);
-            StreamPipe.plugTogether(rmiregistry.getErrorStream(), System.err);
+                  new File(System.getProperty("user.dir", "."), importCodebase);
+            rmiregistry = RegistryVM.createRegistryVMWithRunner("RMIRegistryRunner",
+                            " -Denv.class.path=."
+                            + " -Djava.rmi.server.codebase=" + exportCodebaseURL
+                            + " -Duser.dir=" + rmiregistryDir.getAbsolutePath());
+            rmiregistry.start();
+            int port = rmiregistry.getPort();
 
             /*
              * Wait for the registry to initialize and be ready to call.
@@ -174,7 +161,7 @@ public class ClassPathCodebase {
             throw new RuntimeException("TEST FAILED: " + e.toString());
         } finally {
             if (rmiregistry != null) {
-                rmiregistry.destroy();
+                rmiregistry.cleanup();
             }
         }
     }

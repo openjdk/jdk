@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.rmi.server.*;
 
 /**
  * Class to run a registry whose VM can be told to exit remotely; using
- * the rmiregistry in this fashion makes tests more robust under
+ * a registry (in a sub-process) in this fashion makes tests more robust under
  * windows where Process.destroy() seems not to be 100% reliable.
  */
 public class RegistryRunner extends UnicastRemoteObject
@@ -38,8 +38,8 @@ public class RegistryRunner extends UnicastRemoteObject
     private static final String PORT_LABEL_START = "RegistryRunner.port.start:";
     private static final String PORT_LABEL_END = ":RegistryRunner.port.end";
 
-    private static Registry registry = null;
-    private static RemoteExiter exiter = null;
+    protected static Registry registry = null;
+    protected static RemoteExiter exiter = null;
 
     public RegistryRunner() throws RemoteException {
     }
@@ -72,6 +72,7 @@ public class RegistryRunner extends UnicastRemoteObject
             } catch (RemoteException re) {
             }
             e = null;
+
         } catch (java.net.MalformedURLException mfue) {
             // will not happen
         } catch (NotBoundException nbe) {
@@ -97,6 +98,9 @@ public class RegistryRunner extends UnicastRemoteObject
 
     /**
      * port 0 means to use ephemeral port to start registry.
+     *
+     * @param args command line arguments passed in from main
+     * @return the port number on which registry accepts requests
      */
     protected static int init(String[] args) {
         try {
@@ -128,13 +132,15 @@ public class RegistryRunner extends UnicastRemoteObject
     }
 
     /**
-     * REGISTRY.start() will filter the output of registry subprocess,
-     * when valid port is detected, REGISTRY.start() returns.
+     * RegistryVM.start() will filter the output of registry subprocess,
+     * when valid port is detected, RegistryVM.start() returns.
      * So, for subclass, it's important to call this method after registry
      * is initialized and necessary remote objects have been bound.
+     *
+     * @param port the port on which registry accepts requests
      */
     protected static void notify(int port) {
-        // this output is important for REGISTRY to get the port
+        // this output is important for RegistryVM to get the port
         // where rmiregistry is serving
         System.out.println(PORT_LABEL_START + port + PORT_LABEL_END);
         System.out.flush();
