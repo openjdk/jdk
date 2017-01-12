@@ -4859,7 +4859,7 @@ public class Collections {
         }
         @Override
         public int hashCode() {
-            return Objects.hashCode(element);
+            return 31 + Objects.hashCode(element);
         }
     }
 
