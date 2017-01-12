@@ -77,9 +77,8 @@ define SetupBundleFileBody
 	$$(call MakeDir, $$(@D))
         ifneq ($$($1_SPECIAL_INCLUDES), )
 	  $$(foreach i, $$($1_SPECIAL_INCLUDES), \
-	    $$(foreach d, $$d, \
-	      ($(CD) $$d && $(FIND) $$i \
-	          >> $(SUPPORT_OUTPUTDIR)/bundles/_$1_files ) ; ))
+	    $$(foreach d, $$($1_BASE_DIRS), \
+	      ($(CD) $$d && $(FIND) $$i >> $$($1_$$d_LIST_FILE)) ; ))
         endif
         ifeq ($$($1_SUBDIR)-$$($1_TYPE)-$$($1_UNZIP_DEBUGINFO), .-zip-false)
           # If no subdir is specified, zip can be done directly from BASE_DIRS.
