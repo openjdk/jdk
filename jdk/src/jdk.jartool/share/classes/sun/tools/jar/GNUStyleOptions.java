@@ -169,9 +169,9 @@ class GNUStyleOptions {
             new Option(true, OptionType.CREATE_UPDATE, "--warn-if-resolved") {
                 void process(Main jartool, String opt, String arg) throws BadArgs {
                     ModuleResolution mres = ModuleResolution.empty();
-                    if (jartool.moduleResolution.doNotResolveByDefault())
+                    if (jartool.moduleResolution.doNotResolveByDefault()) {
                         mres.withDoNotResolveByDefault();
-
+                    }
                     if (arg.equals("deprecated")) {
                         jartool.moduleResolution = mres.withDeprecated();
                     } else if (arg.equals("deprecated-for-removal")) {
@@ -201,26 +201,27 @@ class GNUStyleOptions {
             // Other options
             new Option(true, true, OptionType.OTHER, "--help", "-h") {
                 void process(Main jartool, String opt, String arg) throws BadArgs {
-                    if (arg == null) {
-                        jartool.info = Main.Info.HELP;
-                        return;
+                    if (jartool.info == null) {
+                        if (arg == null) {
+                            jartool.info = GNUStyleOptions::printHelp;  //  Main.Info.HELP;
+                            return;
+                        }
+                        if (!arg.equals("compat"))
+                            throw new BadArgs("error.illegal.option", arg).showUsage(true);
+                        // jartool.info = Main.Info.COMPAT_HELP;
+                        jartool.info = GNUStyleOptions::printCompatHelp;
                     }
-
-                    if (!arg.equals("compat"))
-                        throw new BadArgs("error.illegal.option", arg).showUsage(true);
-
-                    jartool.info = Main.Info.COMPAT_HELP;
                 }
             },
             new Option(false, OptionType.OTHER, "--help-extra") {
                 void process(Main jartool, String opt, String arg) throws BadArgs {
-                    jartool.info = Main.Info.HELP_EXTRA;
+                    jartool.info = GNUStyleOptions::printHelpExtra;
                 }
             },
             new Option(false, OptionType.OTHER, "--version") {
                 void process(Main jartool, String opt, String arg) {
                     if (jartool.info == null)
-                        jartool.info = Main.Info.VERSION;
+                        jartool.info = GNUStyleOptions::printVersion;
                 }
             }
     };
@@ -279,14 +280,14 @@ class GNUStyleOptions {
     static int parseOptions(Main jartool, String[] args) throws BadArgs {
         int count = 0;
         if (args.length == 0) {
-            jartool.info = Main.Info.USAGE_TRYHELP;
+            jartool.info = GNUStyleOptions::printUsageTryHelp;  //  never be here
             return 0;
         }
 
         // process options
         for (; count < args.length; count++) {
-            if (args[count].charAt(0) != '-' || args[count].equals("-C")
-                || args[count].equals("--release"))
+            if (args[count].charAt(0) != '-' || args[count].equals("-C") ||
+                args[count].equals("--release"))
                 break;
 
             String name = args[count];
@@ -322,15 +323,15 @@ class GNUStyleOptions {
         throw new BadArgs("error.unrecognized.option", name).showUsage(true);
     }
 
-    static void printHelp(PrintWriter out) {
-        printHelp(out, false);
-    }
-
     static void printHelpExtra(PrintWriter out) {
-        printHelp(out, true);
+        printHelp0(out, true);
     }
 
-    private static void printHelp(PrintWriter out, boolean printExtra) {
+    static void printHelp(PrintWriter out) {
+        printHelp0(out, false);
+    }
+
+    private static void printHelp0(PrintWriter out, boolean printExtra) {
         out.format("%s%n", Main.getMsg("main.help.preopt"));
         for (OptionType type : OptionType.values()) {
             boolean typeHeadingWritten = false;

@@ -62,15 +62,20 @@ public class Basic1 {
         Path source = Paths.get(src, "data", test, "base", "version");
         javac(classes, source.resolve("Main.java"), source.resolve("Version.java"));
 
-        Path v9 = Paths.get("v9").resolve("META-INF").resolve("versions").resolve("9");
+        Path v9 = Paths.get("v9");
         Files.createDirectories(v9);
         source = Paths.get(src, "data", test, "v9", "version");
         javac(v9, source.resolve("Version.java"));
 
-        Path v10 = Paths.get("v10").resolve("META-INF").resolve("versions").resolve("10");
+        Path v10 = Paths.get("v10");
         Files.createDirectories(v10);
         source = Paths.get(src, "data", test, "v10", "version");
         javac(v10, source.resolve("Version.java"));
+
+        Path v10_1 = Paths.get("v10_1").resolve("META-INF").resolve("versions").resolve("v10");
+        Files.createDirectories(v10_1);
+        source = Paths.get(src, "data", test, "v10", "version");
+        javac(v10_1, source.resolve("Version.java"));
     }
 
     @Test
@@ -95,27 +100,29 @@ public class Basic1 {
             new String[] {"classes", "base", "version", "Version.class"},
 
             "META-INF/versions/9/version/Version.class",
-            new String[] {"v9", "META-INF", "versions", "9", "version", "Version.class"},
+            new String[] {"v9", "version", "Version.class"},
 
             "META-INF/versions/10/version/Version.class",
-            new String[] {"v10", "META-INF", "versions", "10", "version", "Version.class"}
+            new String[] {"v10", "version", "Version.class"}
         );
 
         compare(jarfile, names);
     }
 
+
     @Test
     public void testFail() throws IOException {
         String jarfile = "test.jar";
         Path classes = Paths.get("classes");
-        Path v9 = Paths.get("v9");
-        Path v10 = Paths.get("v10");
+        Path v10 = Paths.get("v10_1");
 
         jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
-            "--release", "9", "-C", v10.toString(), ".")
+            "--release", "10", "-C", v10.toString(), ".")
             .assertFailure()
             .outputContains("unexpected versioned entry META-INF/versions/");
     }
+
+
 
     private void checkMultiRelease(String jarFile, boolean expected) throws IOException {
         try (JarFile jf = new JarFile(new File(jarFile), true, ZipFile.OPEN_READ,
