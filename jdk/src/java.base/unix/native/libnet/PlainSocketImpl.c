@@ -244,7 +244,7 @@ Java_java_net_PlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
     /* fd is an int field on iaObj */
     jint fd;
 
-    SOCKETADDRESS him;
+    SOCKETADDRESS sa;
     /* The result of the connection */
     int connect_rv = -1;
 
@@ -260,17 +260,18 @@ Java_java_net_PlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
     }
 
     /* connect */
-    if (NET_InetAddressToSockaddr(env, iaObj, port, &him.sa, &len, JNI_TRUE) != 0) {
+    if (NET_InetAddressToSockaddr(env, iaObj, port, &sa, &len,
+                                  JNI_TRUE) != 0) {
         return;
     }
-    setDefaultScopeID(env, &him.sa);
+    setDefaultScopeID(env, &sa.sa);
 
     if (trafficClass != 0 && ipv6_available()) {
-        NET_SetTrafficClass(&him.sa, trafficClass);
+        NET_SetTrafficClass(&sa, trafficClass);
     }
 
     if (timeout <= 0) {
-        connect_rv = NET_Connect(fd, &him.sa, len);
+        connect_rv = NET_Connect(fd, &sa.sa, len);
 #ifdef __solaris__
         if (connect_rv == -1 && errno == EINPROGRESS ) {
 
@@ -319,7 +320,7 @@ Java_java_net_PlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
         SET_NONBLOCKING(fd);
 
         /* no need to use NET_Connect as non-blocking */
-        connect_rv = connect(fd, &him.sa, len);
+        connect_rv = connect(fd, &sa.sa, len);
 
         /* connection not established immediately */
         if (connect_rv != 0) {
@@ -467,11 +468,11 @@ Java_java_net_PlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
          * that the system chose for us and store it in the Socket object.
          */
         socklen_t slen = sizeof(SOCKETADDRESS);
-        if (getsockname(fd, &him.sa, &slen) == -1) {
+        if (getsockname(fd, &sa.sa, &slen) == -1) {
             JNU_ThrowByNameWithMessageAndLastError
                 (env, JNU_JAVANETPKG "SocketException", "Error getting socket name");
         } else {
-            localport = NET_GetPortFromSockaddr(&him.sa);
+            localport = NET_GetPortFromSockaddr(&sa);
             (*env)->SetIntField(env, this, psi_localportID, localport);
         }
     }
@@ -490,8 +491,8 @@ Java_java_net_PlainSocketImpl_socketBind(JNIEnv *env, jobject this,
     jobject fdObj = (*env)->GetObjectField(env, this, psi_fdID);
     /* fd is an int field on fdObj */
     int fd;
-    int len;
-    SOCKETADDRESS him;
+    int len = 0;
+    SOCKETADDRESS sa;
 
     if (IS_NULL(fdObj)) {
         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
@@ -506,13 +507,13 @@ Java_java_net_PlainSocketImpl_socketBind(JNIEnv *env, jobject this,
     }
 
     /* bind */
-    if (NET_InetAddressToSockaddr(env, iaObj, localport, &him.sa,
+    if (NET_InetAddressToSockaddr(env, iaObj, localport, &sa,
                                   &len, JNI_TRUE) != 0) {
         return;
     }
-    setDefaultScopeID(env, &him.sa);
+    setDefaultScopeID(env, &sa.sa);
 
-    if (NET_Bind(fd, &him.sa, len) < 0) {
+    if (NET_Bind(fd, &sa, len) < 0) {
         if (errno == EADDRINUSE || errno == EADDRNOTAVAIL ||
             errno == EPERM || errno == EACCES) {
             NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "BindException",
@@ -533,12 +534,12 @@ Java_java_net_PlainSocketImpl_socketBind(JNIEnv *env, jobject this,
         /* Now that we're a connected socket, let's extract the port number
          * that the system chose for us and store it in the Socket object.
          */
-        if (getsockname(fd, &him.sa, &slen) == -1) {
+        if (getsockname(fd, &sa.sa, &slen) == -1) {
             JNU_ThrowByNameWithMessageAndLastError
                 (env, JNU_JAVANETPKG "SocketException", "Error getting socket name");
             return;
         }
-        localport = NET_GetPortFromSockaddr(&him.sa);
+        localport = NET_GetPortFromSockaddr(&sa);
         (*env)->SetIntField(env, this, psi_localportID, localport);
     } else {
         (*env)->SetIntField(env, this, psi_localportID, localport);
@@ -606,7 +607,7 @@ Java_java_net_PlainSocketImpl_socketAccept(JNIEnv *env, jobject this,
     /* accepted fd */
     jint newfd;
 
-    SOCKETADDRESS him;
+    SOCKETADDRESS sa;
     socklen_t slen = sizeof(SOCKETADDRESS);
 
     if (IS_NULL(fdObj)) {
@@ -661,7 +662,7 @@ Java_java_net_PlainSocketImpl_socketAccept(JNIEnv *env, jobject this,
             return;
         }
 
-        newfd = NET_Accept(fd, &him.sa, &slen);
+        newfd = NET_Accept(fd, &sa.sa, &slen);
 
         /* connection accepted */
         if (newfd >= 0) {
@@ -709,7 +710,7 @@ Java_java_net_PlainSocketImpl_socketAccept(JNIEnv *env, jobject this,
     /*
      * fill up the remote peer port and address in the new socket structure.
      */
-    socketAddressObj = NET_SockaddrToInetAddress(env, &him.sa, &port);
+    socketAddressObj = NET_SockaddrToInetAddress(env, &sa, &port);
     if (socketAddressObj == NULL) {
         /* should be pending exception */
         close(newfd);
@@ -944,19 +945,19 @@ Java_java_net_PlainSocketImpl_socketGetOption
      * SO_BINDADDR isn't a socket option
      */
     if (cmd == java_net_SocketOptions_SO_BINDADDR) {
-        SOCKETADDRESS him;
+        SOCKETADDRESS sa;
         socklen_t len = sizeof(SOCKETADDRESS);
         int port;
         jobject iaObj;
         jclass iaCntrClass;
         jfieldID iaFieldID;
 
-        if (getsockname(fd, &him.sa, &len) < 0) {
+        if (getsockname(fd, &sa.sa, &len) < 0) {
             JNU_ThrowByNameWithMessageAndLastError
                 (env, JNU_JAVANETPKG "SocketException", "Error getting socket name");
             return -1;
         }
-        iaObj = NET_SockaddrToInetAddress(env, &him.sa, &port);
+        iaObj = NET_SockaddrToInetAddress(env, &sa, &port);
         CHECK_NULL_RETURN(iaObj, -1);
 
         iaCntrClass = (*env)->GetObjectClass(env, iaContainerObj);

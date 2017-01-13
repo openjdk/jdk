@@ -112,7 +112,7 @@ Java_sun_nio_ch_ServerSocketChannelImpl_accept0(JNIEnv *env, jobject this,
     }
 
     (*env)->SetIntField(env, newfdo, fd_fdID, newfd);
-    remote_ia = NET_SockaddrToInetAddress(env, &sa.sa, (int *)&remote_port);
+    remote_ia = NET_SockaddrToInetAddress(env, &sa, (int *)&remote_port);
     CHECK_NULL_RETURN(remote_ia, IOS_THROWN);
     isa = (*env)->NewObject(env, isa_class, isa_ctorID, remote_ia, remote_port);
     CHECK_NULL_RETURN(isa, IOS_THROWN);
