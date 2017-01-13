@@ -66,7 +66,7 @@ public final class StopDetectingInputStream extends InputStream {
                     if ((read = input.read()) == (-1)) {
                         break;
                     }
-                    if (read == 3 && currentState == State.BUFFER) {
+                    if (read == 3 && getState() == State.BUFFER) {
                         stop.run();
                     } else {
                         write(read);
@@ -139,6 +139,10 @@ public final class StopDetectingInputStream extends InputStream {
             this.state = state;
             notifyAll();
         }
+    }
+
+    private synchronized State getState() {
+        return state;
     }
 
     private synchronized State waitInputNeeded() {

@@ -81,7 +81,7 @@ public class AddReadsTest extends ModuleTestBase {
                 .getOutput(Task.OutputKind.DIRECT);
 
         checkOutputContains(log,
-            "Test.java:1:44: compiler.err.not.def.access.package.cant.access: api.Api, api");
+            "Test.java:1:41: compiler.err.package.not.visible: api, (compiler.misc.not.def.access.does.not.read: m2x, api, m1x)");
 
         //test add dependencies:
         new JavacTask(tb)

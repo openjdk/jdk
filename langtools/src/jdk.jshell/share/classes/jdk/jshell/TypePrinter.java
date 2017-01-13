@@ -22,7 +22,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package jdk.jshell;
 
 import static com.sun.tools.javac.code.Flags.COMPOUND;
@@ -41,15 +40,19 @@ import java.util.function.BinaryOperator;
  * Print types in source form.
  */
 class TypePrinter extends Printer {
+
     private static final String OBJECT = "Object";
 
     private final JavacMessages messages;
     private final BinaryOperator<String> fullClassNameAndPackageToClass;
-    private boolean useWildCard = false;
 
-    TypePrinter(JavacMessages messages, BinaryOperator<String> fullClassNameAndPackageToClass, Type typeToPrint) {
+    TypePrinter(JavacMessages messages, BinaryOperator<String> fullClassNameAndPackageToClass) {
         this.messages = messages;
         this.fullClassNameAndPackageToClass = fullClassNameAndPackageToClass;
+    }
+
+    String toString(Type t) {
+        return visit(t, Locale.getDefault());
     }
 
     @Override
@@ -68,18 +71,6 @@ class TypePrinter extends Printer {
     }
 
     @Override
-    public String visitWildcardType(Type.WildcardType wt, Locale locale) {
-        if (useWildCard) { // at TypeArgument(ex: List<? extends T>)
-            return super.visitWildcardType(wt, locale);
-        } else { // at TopLevelType(ex: ? extends List<T>, ? extends Number[][])
-            Type extendsBound = wt.getExtendsBound();
-            return extendsBound == null
-                    ? OBJECT
-                    : visit(extendsBound, locale);
-        }
-    }
-
-    @Override
     public String visitType(Type t, Locale locale) {
         String s = (t.tsym == null || t.tsym.name == null)
                 ? OBJECT // none
@@ -87,20 +78,9 @@ class TypePrinter extends Printer {
         return s;
     }
 
-    @Override
-    public String visitClassType(ClassType ct, Locale locale) {
-        boolean prevUseWildCard = useWildCard;
-        try {
-            useWildCard = true;
-            return super.visitClassType(ct, locale);
-        } finally {
-            useWildCard = prevUseWildCard;
-        }
-    }
-
     /**
-     * Converts a class name into a (possibly localized) string. Anonymous
-     * inner classes get converted into a localized string.
+     * Converts a class name into a (possibly localized) string. Anonymous inner
+     * classes get converted into a localized string.
      *
      * @param t the type of the class whose name is to be rendered
      * @param longform if set, the class' fullname is displayed - if unset the
@@ -112,21 +92,13 @@ class TypePrinter extends Printer {
     protected String className(ClassType t, boolean longform, Locale locale) {
         Symbol sym = t.tsym;
         if (sym.name.length() == 0 && (sym.flags() & COMPOUND) != 0) {
-            /***
-            StringBuilder s = new StringBuilder(visit(t.supertype_field, locale));
-            for (List<Type> is = t.interfaces_field; is.nonEmpty(); is = is.tail) {
-                s.append('&');
-                s.append(visit(is.head, locale));
-            }
-            return s.toString();
-            ***/
             return OBJECT;
         } else if (sym.name.length() == 0) {
             // Anonymous
             String s;
             ClassType norm = (ClassType) t.tsym.type;
             if (norm == null) {
-                s = "object";
+                s = OBJECT;
             } else if (norm.interfaces_field != null && norm.interfaces_field.nonEmpty()) {
                 s = visit(norm.interfaces_field.head, locale);
             } else {
@@ -160,7 +132,7 @@ class TypePrinter extends Printer {
     @Override
     public String visitPackageSymbol(PackageSymbol s, Locale locale) {
         return s.isUnnamed()
-                ? ""   // Unnamed package
+                ? "" // Unnamed package
                 : s.fullname.toString();
     }
 

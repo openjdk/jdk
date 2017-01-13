@@ -49,6 +49,7 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import jdk.jshell.ExpressionToTypeInfo.ExpressionInfo;
 import jdk.jshell.Key.ErroneousKey;
 import jdk.jshell.Key.MethodKey;
 import jdk.jshell.Key.TypeDeclKey;
@@ -58,7 +59,6 @@ import jdk.jshell.TaskFactory.AnalyzeTask;
 import jdk.jshell.TaskFactory.BaseTask;
 import jdk.jshell.TaskFactory.CompileTask;
 import jdk.jshell.TaskFactory.ParseTask;
-import jdk.jshell.TreeDissector.ExpressionInfo;
 import jdk.jshell.Wrap.Range;
 import jdk.jshell.Snippet.Status;
 import jdk.jshell.spi.ExecutionControl.ClassBytecodes;
@@ -296,7 +296,7 @@ class Eval {
 
     private List<Snippet> processExpression(String userSource, String compileSource) {
         String name = null;
-        ExpressionInfo ei = typeOfExpression(compileSource);
+        ExpressionInfo ei = ExpressionToTypeInfo.expressionInfo(compileSource, state);
         ExpressionTree assignVar;
         Wrap guts;
         Snippet snip;
@@ -497,16 +497,6 @@ class Eval {
         snip.setOuterWrap(outer);
 
         return singletonList(snip);
-    }
-
-    private ExpressionInfo typeOfExpression(String expression) {
-        Wrap guts = Wrap.methodReturnWrap(expression);
-        TaskFactory.AnalyzeTask at = trialCompile(guts);
-        if (!at.hasErrors() && at.firstCuTree() != null) {
-            return TreeDissector.createByFirstClass(at)
-                    .typeOfReturnStatement(at, state);
-        }
-        return null;
     }
 
     /**

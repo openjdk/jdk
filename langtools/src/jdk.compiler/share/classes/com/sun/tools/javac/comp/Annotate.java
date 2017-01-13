@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import java.util.*;
 import static com.sun.tools.javac.code.Flags.SYNTHETIC;
 import static com.sun.tools.javac.code.Kinds.Kind.MDL;
 import static com.sun.tools.javac.code.Kinds.Kind.MTH;
+import static com.sun.tools.javac.code.Kinds.Kind.PCK;
 import static com.sun.tools.javac.code.Kinds.Kind.VAR;
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.TypeTag.ARRAY;
@@ -228,7 +229,14 @@ public class Annotate {
         s.resetAnnotations(); // mark Annotations as incomplete for now
 
         normal(() -> {
-            Assert.check(s.annotationsPendingCompletion());
+            // Packages are unusual, in that they are the only type of declaration that can legally appear
+            // more than once in a compilation, and in all cases refer to the same underlying symbol.
+            // This means they are the only kind of declaration that syntactically may have multiple sets
+            // of annotations, each on a different package declaration, even though that is ultimately
+            // forbidden by JLS 8 section 7.4.
+            // The corollary here is that all of the annotations on a package symbol may have already
+            // been handled, meaning that the set of annotations pending completion is now empty.
+            Assert.check(s.kind == PCK || s.annotationsPendingCompletion());
             JavaFileObject prev = log.useSource(localEnv.toplevel.sourcefile);
             DiagnosticPosition prevLintPos =
                     deferPos != null
