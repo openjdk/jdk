@@ -74,8 +74,8 @@ final class Validator {
         loadModuleDescriptor();
     }
 
-    static boolean validate(Main main, File f) throws IOException {
-        return new Validator(main, new JarFile(f)).validate();
+    static boolean validate(Main main, JarFile jf) throws IOException {
+        return new Validator(main, jf).validate();
     }
 
     private boolean validate() {
