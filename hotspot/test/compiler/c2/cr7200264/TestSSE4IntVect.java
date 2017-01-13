@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,22 +19,23 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-import java.io.IOException;
-
-/*
- * @test TestGCBasherWithG1
- * @key gc
- * @key stress
- * @requires vm.gc.G1
- * @requires vm.flavor == "server"
- * @summary Stress the G1 GC by trying to make old objects more likely to be garbage than young objects.
- * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx256m -server -XX:+UseG1GC TestGCBasherWithG1 120000
+/**
+ * @test
+ * @bug 7200264
+ * @summary 7192963 changes disabled shift vectors
+ * @requires vm.cpu.features ~= ".*sse4\\.1.*" & vm.debug & vm.flavor == "server"
+ * @library /test/lib /
+ * @run driver compiler.c2.cr7200264.TestSSE4IntVect
  */
-public class TestGCBasherWithG1 {
-    public static void main(String[] args) throws IOException {
-        TestGCBasher.run(args);
+
+package compiler.c2.cr7200264;
+
+public class TestSSE4IntVect {
+    public static void main(String[] args) throws Throwable {
+        TestDriver test = new TestDriver();
+        test.addExpectedVectorization("MulVI", 2);
+        test.run();
     }
 }

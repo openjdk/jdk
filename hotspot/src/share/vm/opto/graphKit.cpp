@@ -4348,20 +4348,16 @@ Node* GraphKit::load_String_value(Node* ctrl, Node* str) {
 }
 
 Node* GraphKit::load_String_coder(Node* ctrl, Node* str) {
-  if (java_lang_String::has_coder_field()) {
-    if (!CompactStrings) {
-      return intcon(java_lang_String::CODER_UTF16);
-    }
-    int coder_offset = java_lang_String::coder_offset_in_bytes();
-    const TypeInstPtr* string_type = TypeInstPtr::make(TypePtr::NotNull, C->env()->String_klass(),
-                                                       false, NULL, 0);
-    const TypePtr* coder_field_type = string_type->add_offset(coder_offset);
-    int coder_field_idx = C->get_alias_index(coder_field_type);
-    return make_load(ctrl, basic_plus_adr(str, str, coder_offset),
-                     TypeInt::BYTE, T_BYTE, coder_field_idx, MemNode::unordered);
-  } else {
-    return intcon(0); // false
+  if (!CompactStrings) {
+    return intcon(java_lang_String::CODER_UTF16);
   }
+  int coder_offset = java_lang_String::coder_offset_in_bytes();
+  const TypeInstPtr* string_type = TypeInstPtr::make(TypePtr::NotNull, C->env()->String_klass(),
+                                                     false, NULL, 0);
+  const TypePtr* coder_field_type = string_type->add_offset(coder_offset);
+  int coder_field_idx = C->get_alias_index(coder_field_type);
+  return make_load(ctrl, basic_plus_adr(str, str, coder_offset),
+                   TypeInt::BYTE, T_BYTE, coder_field_idx, MemNode::unordered);
 }
 
 void GraphKit::store_String_value(Node* ctrl, Node* str, Node* value) {

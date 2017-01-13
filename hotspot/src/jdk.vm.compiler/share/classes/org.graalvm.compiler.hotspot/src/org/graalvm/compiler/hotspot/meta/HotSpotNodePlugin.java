@@ -22,7 +22,6 @@
  */
 package org.graalvm.compiler.hotspot.meta;
 
-import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
 import static org.graalvm.compiler.hotspot.meta.HotSpotGraalConstantFieldProvider.FieldReadEnabledInImmutableCode;
 
@@ -110,11 +109,6 @@ public final class HotSpotNodePlugin implements NodePlugin, TypePlugin {
         if (!ImmutableCode.getValue() || b.parsingIntrinsic()) {
             if (tryReadField(b, field, null)) {
                 return true;
-            }
-        }
-        if (GeneratePIC.getValue()) {
-            if (field.isSynthetic() && field.getName().startsWith("$assertionsDisabled")) {
-                return tryReadField(b, field, null);
             }
         }
         if (b.parsingIntrinsic() && wordOperationPlugin.handleLoadStaticField(b, field)) {

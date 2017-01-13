@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
       -buildBase $(call FixPath, $(IDE_OUTPUTDIR)/vs-output) \
       -buildSpace $(call FixPath, $(IDE_OUTPUTDIR)) \
       -makeBinary $(call FixPath, $(MAKE)) \
-      -makeOutput $(call FixPath, $(HOTSPOT_OUTPUTDIR)/variant-%f/libjvm) \
+      -makeOutput $(call FixPath, $(JDK_OUTPUTDIR)/bin/server) \
       -absoluteInclude $(call FixPath, $(HOTSPOT_OUTPUTDIR)/variant-server/gensrc) \
       -absoluteSrcInclude $(call FixPath, $(HOTSPOT_OUTPUTDIR)/variant-server/gensrc) \
       $(EXTRACTED_DEFINES_client) \

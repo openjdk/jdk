@@ -4676,8 +4676,11 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_throw_StackOverflowError_entry =
       generate_throw_exception("StackOverflowError throw_exception",
                                CAST_FROM_FN_PTR(address,
-                                                SharedRuntime::
-                                                throw_StackOverflowError));
+                                                SharedRuntime::throw_StackOverflowError));
+    StubRoutines::_throw_delayed_StackOverflowError_entry =
+      generate_throw_exception("delayed StackOverflowError throw_exception",
+                               CAST_FROM_FN_PTR(address,
+                                                SharedRuntime::throw_delayed_StackOverflowError));
     if (UseCRC32Intrinsics) {
       // set table address before stub generation which use it
       StubRoutines::_crc_table_adr = (address)StubRoutines::aarch64::_crc_table;
