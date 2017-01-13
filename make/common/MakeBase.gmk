@@ -435,7 +435,7 @@ define NamedParamsMacroTemplate
       Too many named arguments to macro, please update MAX_PARAMS in MakeBase.gmk))
   # Iterate over 2 3 4... and evaluate the named parameters with $1_ as prefix
   $(foreach i,$(PARAM_SEQUENCE), $(if $(strip $($i)),\
-    $(strip $1)_$(strip $(call DoubleDollar, $($i))))$(NEWLINE))
+    $(strip $1)_$(strip $(call EscapeHash, $(call DoubleDollar, $($i))))$(NEWLINE)))
   # Debug print all named parameter names and values
   $(if $(findstring $(LOG_LEVEL),debug trace), \
     $(info $0 $(strip $1) $(foreach i,$(PARAM_SEQUENCE), \
