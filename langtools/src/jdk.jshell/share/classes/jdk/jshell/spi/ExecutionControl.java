@@ -118,16 +118,6 @@ public interface ExecutionControl extends AutoCloseable {
             throws EngineTerminationException, InternalException;
 
     /**
-     * Sets the execution class path to the specified path.
-     *
-     * @param path the path to add
-     * @throws EngineTerminationException the execution engine has terminated
-     * @throws InternalException an internal problem occurred
-     */
-    void setClasspath(String path)
-            throws EngineTerminationException, InternalException;
-
-    /**
      * Interrupts a running invoke.
      *
      * @throws EngineTerminationException the execution engine has terminated

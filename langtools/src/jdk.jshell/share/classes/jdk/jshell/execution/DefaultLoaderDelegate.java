@@ -115,12 +115,6 @@ class DefaultLoaderDelegate implements LoaderDelegate {
     }
 
     @Override
-    public void setClasspath(String path)
-            throws EngineTerminationException, InternalException {
-        throw new NotImplementedException("setClasspath: Not supported yet.");
-    }
-
-    @Override
     public Class<?> findClass(String name) throws ClassNotFoundException {
         Class<?> klass = klasses.get(name);
         if (klass == null) {

@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8171385
  * @summary Test JShell#stop
  * @modules jdk.jshell/jdk.internal.jshell.tool
  * @build KullaTesting TestingInputStream
@@ -30,9 +31,13 @@
  */
 
 import java.io.IOException;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
+import java.util.function.Consumer;
 
 import jdk.internal.jshell.tool.StopDetectingInputStream;
 import jdk.internal.jshell.tool.StopDetectingInputStream.State;
@@ -128,4 +133,31 @@ public class StopExecutionTest extends KullaTesting {
         }
     }
 
+    public void testStopDetectingInputBufferWaitStop() throws Exception {
+        Runnable shouldNotHappenRun =
+                () -> { throw new AssertionError("Should not happen."); };
+        Consumer<Exception> shouldNotHappenExc =
+                exc -> { throw new AssertionError("Should not happen.", exc); };
+        StopDetectingInputStream sd = new StopDetectingInputStream(shouldNotHappenRun, shouldNotHappenExc);
+        CountDownLatch reading = new CountDownLatch(1);
+        PipedInputStream is = new PipedInputStream() {
+            @Override
+            public int read() throws IOException {
+                reading.countDown();
+                return super.read();
+            }
+        };
+        PipedOutputStream os = new PipedOutputStream(is);
+
+        sd.setInputStream(is);
+        sd.setState(State.BUFFER);
+        reading.await();
+        sd.setState(State.WAIT);
+        os.write(3);
+        int value = sd.read();
+
+        if (value != 3) {
+            throw new AssertionError();
+        }
+    }
 }

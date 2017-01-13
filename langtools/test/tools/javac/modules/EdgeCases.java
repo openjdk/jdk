@@ -178,7 +178,7 @@ public class EdgeCases extends ModuleTestBase {
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
 
-        if (!log.contains("Test.java:1:52: compiler.err.not.def.access.class.intf.cant.access: call(), api1.Api1") ||
+        if (!log.contains("Test.java:1:52: compiler.err.not.def.access.class.intf.cant.access.reason: call(), api1.Api1, api1, (compiler.misc.not.def.access.does.not.read: m3x, api1, m1x)") ||
             !log.contains("Test.java:1:76: compiler.err.not.def.access.class.intf.cant.access: toString(), java.lang.Object"))
             throw new Exception("expected output not found");
     }
