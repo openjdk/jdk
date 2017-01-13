@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ final class CatalogResolverImpl implements CatalogResolver {
         systemId = Normalizer.normalizeURI(Util.getNotNullOrEmpty(systemId));
         publicId = Normalizer.normalizePublicId(Normalizer.decodeURN(Util.getNotNullOrEmpty(publicId)));
 
-        //check whether systemId is an urn
+        //check whether systemId is a urn
         if (systemId != null && systemId.startsWith(Util.URN)) {
             systemId = Normalizer.decodeURN(systemId);
             if (publicId != null && !publicId.equals(systemId)) {
@@ -123,7 +123,7 @@ final class CatalogResolverImpl implements CatalogResolver {
             return null;
         }
 
-        //check whether uri is an urn
+        //check whether uri is a urn
         if (uri != null && uri.startsWith(Util.URN)) {
             String publicId = Normalizer.decodeURN(uri);
             if (publicId != null) {
@@ -131,7 +131,7 @@ final class CatalogResolverImpl implements CatalogResolver {
             }
         }
 
-        //if no match with a public id, continue search for an URI
+        //if no match with a public id, continue search for a URI
         if (result == null) {
             //remove fragment if any.
             int hashPos = uri.indexOf("#");

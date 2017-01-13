@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import java.util.stream.Stream;
  * <ul>
  * <li>Locate the external resources with a public or system identifier;
  * </li>
- * <li>Locate an alternate URI reference with an URI.
+ * <li>Locate an alternate URI reference with a URI.
  * </li>
  * </ul>
  * <p>
@@ -84,7 +84,7 @@ public interface Catalog {
      *
      * @param systemId the system identifier of the entity to be matched
      *
-     * @return an URI string if a mapping is found, or null otherwise
+     * @return a URI string if a mapping is found, or null otherwise
      */
     public String matchSystem(String systemId);
 
@@ -108,7 +108,7 @@ public interface Catalog {
      *
      * @param publicId the public identifier of the entity to be matched
      * @see CatalogFeatures.Feature
-     * @return an URI string if a mapping is found, or null otherwise
+     * @return a URI string if a mapping is found, or null otherwise
      */
     public String matchPublic(String publicId);
 
@@ -134,7 +134,7 @@ public interface Catalog {
      *
      * @param uri the URI reference of the entity to be matched
      *
-     * @return an URI string if a mapping is found, or null otherwise
+     * @return a URI string if a mapping is found, or null otherwise
      */
     public String matchURI(String uri);
 
