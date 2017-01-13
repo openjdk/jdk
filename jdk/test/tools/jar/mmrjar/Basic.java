@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,36 +23,43 @@
 
 /*
  * @test
- * @bug 8146486
+ * @bug 8146486 8172432
  * @summary Fail to create a MR modular JAR with a versioned entry in
  *          base-versioned empty package
- * @modules jdk.compiler
+ * @modules java.base/jdk.internal.module
+ *          jdk.compiler
  *          jdk.jartool
  * @library /lib/testlibrary
  * @build jdk.testlibrary.FileUtils
- * @run testng ConcealedPackage
+ * @run testng Basic
  */
 
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
+import java.lang.module.ModuleDescriptor;
+import java.lang.module.ModuleDescriptor.Version;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.Set;
 import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.zip.ZipFile;
 
+import jdk.internal.module.ModuleInfoExtender;
 import jdk.testlibrary.FileUtils;
 
-public class ConcealedPackage {
+public class Basic {
     private static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")
            .orElseThrow(() -> new RuntimeException("jar tool not found"));
     private static final ToolProvider JAVAC_TOOL = ToolProvider.findFirst("javac")
@@ -65,7 +72,7 @@ public class ConcealedPackage {
     private final ByteArrayOutputStream errbytes = new ByteArrayOutputStream();
     private final PrintStream err = new PrintStream(errbytes, true);
 
-    public ConcealedPackage() throws IOException {
+    public Basic() throws IOException {
         testsrc = Paths.get(System.getProperty("test.src"));
         userdir = Paths.get(System.getProperty("user.dir", "."));
 
@@ -205,6 +212,7 @@ public class ConcealedPackage {
                 "META-INF/versions/9/module-info.class",
                 "p/",
                 "p/Hi.class",
+                "META-INF/versions/9/",
                 "META-INF/versions/9/p/",
                 "META-INF/versions/9/p/Hi.class",
                 "META-INF/versions/9/p/internal/",
@@ -247,6 +255,7 @@ public class ConcealedPackage {
                 "META-INF/MANIFEST.MF",
                 "p/",
                 "p/Hi.class",
+                "META-INF/versions/9/",
                 "META-INF/versions/9/p/",
                 "META-INF/versions/9/p/Hi.class",
                 "META-INF/versions/9/p/internal/",
@@ -277,10 +286,12 @@ public class ConcealedPackage {
                 "META-INF/MANIFEST.MF",
                 "p/",
                 "p/Hi.class",
+                "META-INF/versions/9/",
                 "META-INF/versions/9/p/",
                 "META-INF/versions/9/p/Hi.class",
                 "META-INF/versions/9/p/internal/",
                 "META-INF/versions/9/p/internal/Bar.class",
+                "META-INF/versions/10/",
                 "META-INF/versions/10/p/",
                 "META-INF/versions/10/p/internal/",
                 "META-INF/versions/10/p/internal/bar/",
@@ -302,6 +313,116 @@ public class ConcealedPackage {
         Assert.assertEquals(actual, expected);
     }
 
+    // root and versioned module-info entries have different main-class, version
+    // attributes
+    @Test
+    public void test6() throws IOException {
+        // create a directory for this tests special files
+        Files.createDirectory(Paths.get("test6"));
+        Files.createDirectory(Paths.get("test6-v9"));
+
+        // compile the classes directory
+        Path src = testsrc.resolve("src").resolve("classes");
+        Path dst = Paths.get("test6");
+        javac(src, dst);
+
+        byte[] mdBytes = Files.readAllBytes(Paths.get("module-info.class"));
+
+        ModuleInfoExtender mie = ModuleInfoExtender.newExtender(
+            new ByteArrayInputStream(mdBytes));
+
+        mie.mainClass("foo.main");
+        mie.version(Version.parse("1.0"));
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        mie.write(baos);
+        Files.write(Paths.get("test6", "module-info.class"), baos.toByteArray());
+        Files.write(Paths.get("test6-v9", "module-info.class"), baos.toByteArray());
+
+        int rc = jar("--create --file mmr.jar -C test6 . --release 9 -C test6-v9 .");
+        Assert.assertEquals(rc, 0);
+
+
+        // different main-class
+        mie = ModuleInfoExtender.newExtender(new ByteArrayInputStream(mdBytes));
+        mie.mainClass("foo.main2");
+        mie.version(Version.parse("1.0"));
+        baos.reset();
+        mie.write(baos);
+        Files.write(Paths.get("test6-v9", "module-info.class"), baos.toByteArray());
+
+        rc = jar("--create --file mmr.jar -C test6 . --release 9 -C test6-v9 .");
+        Assert.assertEquals(rc, 1);
+
+        Assert.assertTrue(Message.CONTAINS_DIFFERENT_MAINCLASS.match(
+            new String(errbytes.toByteArray()),
+            "META-INF/versions/9/module-info.class"));
+
+        // different version
+        mie = ModuleInfoExtender.newExtender(new ByteArrayInputStream(mdBytes));
+        mie.mainClass("foo.main");
+        mie.version(Version.parse("2.0"));
+        baos.reset();
+        mie.write(baos);
+        Files.write(Paths.get("test6-v9", "module-info.class"), baos.toByteArray());
+
+        rc = jar("--create --file mmr.jar -C test6 . --release 9 -C test6-v9 .");
+        Assert.assertEquals(rc, 1);
+
+        Assert.assertTrue(Message.CONTAINS_DIFFERENT_VERSION.match(
+            new String(errbytes.toByteArray()),
+            "META-INF/versions/9/module-info.class"));
+
+    }
+
+    // versioned mmr without root module-info.class
+    @Test
+    public void test7() throws IOException {
+        // create a directory for this tests special files
+        Files.createDirectory(Paths.get("test7"));
+        Files.createDirectory(Paths.get("test7-v9"));
+        Files.createDirectory(Paths.get("test7-v10"));
+
+        // compile the classes directory
+        Path src = testsrc.resolve("src").resolve("classes");
+        Path dst = Paths.get("test7");
+        javac(src, dst);
+
+        // move module-info.class to v9 later use
+        Files.copy(Paths.get("module-info.class"),
+                   Paths.get("test7-v9", "module-info.class"));
+
+        Files.copy(Paths.get("test7-v9", "module-info.class"),
+                   Paths.get("test7-v10", "module-info.class"));
+
+        int rc = jar("--create --file mmr.jar --main-class=foo.main -C test7 . --release 9 -C test7-v9 . --release 10 -C test7-v10 .");
+
+System.out.println("-----------------------");
+System.out.println( new String(errbytes.toByteArray()));
+
+
+        Assert.assertEquals(rc, 0);
+
+
+        jar("-tf mmr.jar");
+
+System.out.println("-----------------------");
+System.out.println( new String(outbytes.toByteArray()));
+
+        Optional<String> exp = Optional.of("foo.main");
+        try (ZipFile zf = new ZipFile("mmr.jar")) {
+            Assert.assertTrue(zf.getEntry("module-info.class") == null);
+
+            ModuleDescriptor md = ModuleDescriptor.read(
+                zf.getInputStream(zf.getEntry("META-INF/versions/9/module-info.class")));
+            Assert.assertEquals(md.mainClass(), exp);
+
+            md = ModuleDescriptor.read(
+                zf.getInputStream(zf.getEntry("META-INF/versions/10/module-info.class")));
+            Assert.assertEquals(md.mainClass(), exp);
+        }
+    }
+
     private static Set<String> lines(ByteArrayOutputStream baos) {
         String s = new String(baos.toByteArray());
         return Arrays.stream(s.split("\\R"))
@@ -311,6 +432,12 @@ public class ConcealedPackage {
     }
 
     static enum Message {
+        CONTAINS_DIFFERENT_MAINCLASS(
+          ": module-info.class in a versioned directory contains different \"main-class\""
+        ),
+        CONTAINS_DIFFERENT_VERSION(
+          ": module-info.class in a versioned directory contains different \"version\""
+        ),
         NOT_FOUND_IN_BASE_ENTRY(
           ", contains a new public class not found in base entries"
         ),
