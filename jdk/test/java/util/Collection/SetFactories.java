@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,8 @@ public class SetFactories {
               hashSetOf("a", "b", "c", "d", "e", "f", "g", "h", "i")),
             a(   Set.of("a", "b", "c", "d", "e", "f", "g", "h", "i", "j"),
               hashSetOf("a", "b", "c", "d", "e", "f", "g", "h", "i", "j")),
+            a(   Set.of("a", "b", "c", "d", "e", "f", "g", "h", "i", "j"),
+                 Set.of("j", "i", "h", "g", "f", "e", "d", "c", "b", "a")),
             a(   Set.of(stringArray),
               hashSetOf(stringArray))
         ).iterator();
@@ -181,6 +183,17 @@ public class SetFactories {
         String[] array = stringArray.clone();
         array[0] = array[1];
         Set<String> set = Set.of(array);
+    }
+
+    @Test(dataProvider="all")
+    public void hashCodeEqual(Set<String> act, Set<String> exp) {
+        assertEquals(act.hashCode(), exp.hashCode());
+    }
+
+    @Test(dataProvider="all")
+    public void containsAll(Set<String> act, Set<String> exp) {
+        assertTrue(act.containsAll(exp));
+        assertTrue(exp.containsAll(act));
     }
 
     @Test(expectedExceptions=NullPointerException.class)
