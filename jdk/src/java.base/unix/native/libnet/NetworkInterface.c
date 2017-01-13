@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -791,7 +791,7 @@ static netif *enumInterfaces(JNIEnv *env) {
     int sock;
 
     sock = openSocket(env, AF_INET);
-    if (sock < 0 && (*env)->ExceptionOccurred(env)) {
+    if (sock < 0) {
         return NULL;
     }
 
@@ -809,7 +809,7 @@ static netif *enumInterfaces(JNIEnv *env) {
     // so we have to call ipv6_available()
     if (ipv6_available()) {
         sock = openSocket(env, AF_INET6);
-        if (sock < 0 && (*env)->ExceptionOccurred(env)) {
+        if (sock < 0) {
             freeif(ifs);
             return NULL;
         }
