@@ -434,8 +434,8 @@ public class Main {
 
     private void validateAndClose(File tmpfile) throws IOException {
         if (ok && isMultiRelease) {
-            try {
-                ok = Validator.validate(this, tmpfile);
+            try (JarFile jf = new JarFile(tmpfile)) {
+                ok = Validator.validate(this, jf);
                 if (!ok) {
                     error(formatMsg("error.validator.jarfile.invalid", fname));
                 }
