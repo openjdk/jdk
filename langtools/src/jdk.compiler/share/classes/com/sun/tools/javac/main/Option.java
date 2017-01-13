@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,6 +153,8 @@ public enum Option {
             helper.put(XDOCLINT_PACKAGE.primaryName, next);
         }
     },
+
+    DOCLINT_FORMAT("--doclint-format", "opt.doclint.format", EXTENDED, BASIC, ONEOF, "html4", "html5"),
 
     // -nowarn is retained for command-line backward compatibility
     NOWARN("-nowarn", "opt.nowarn", STANDARD, BASIC) {
@@ -1216,10 +1218,12 @@ public enum Option {
         sb.append(name);
         if (argsNameKey == null) {
             if (choices != null) {
+                if (!name.endsWith(":"))
+                    sb.append(" ");
                 String sep = "{";
                 for (String choice : choices) {
                     sb.append(sep);
-                    sb.append(choices);
+                    sb.append(choice);
                     sep = ",";
                 }
                 sb.append("}");
