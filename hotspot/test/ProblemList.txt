@@ -55,7 +55,6 @@ compiler/types/correctness/OffTest.java 8066173 generic-all
 
 gc/g1/humongousObjects/objectGraphTest/TestObjectGraphAfterGC.java 8156755 generic-all
 gc/survivorAlignment/TestPromotionToSurvivor.java 8129886 generic-all
-gc/stress/TestStressG1Humongous.java 8171045 generic-all
 
 #############################################################################
 
@@ -77,6 +76,8 @@ serviceability/sa/sadebugd/SADebugDTest.java 8163805 generic-all
 #############################################################################
 
 # :hotspot_misc
+
+testlibrary_tests/ctw/JarDirTest.java 8172457 windows-all
 
 #############################################################################
 

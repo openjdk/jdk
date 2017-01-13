@@ -90,6 +90,9 @@ public class JMapHProfLargeHeapTest {
         try (Scanner largeHeapScanner = new Scanner(
                 largeHeapProc.getInputStream());) {
             String pidstring = null;
+            if (!largeHeapScanner.hasNext()) {
+                throw new RuntimeException ("Test failed: could not open largeHeapScanner.");
+            }
             while ((pidstring = largeHeapScanner.findInLine("PID\\[[0-9].*\\]")) == null) {
                 Thread.sleep(500);
             }

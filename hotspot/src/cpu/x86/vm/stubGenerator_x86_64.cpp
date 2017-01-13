@@ -3207,7 +3207,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register len_reg     = c_rarg4;  // src len (must be multiple of blocksize 16)
 #else
     const Address  len_mem(rbp, 6 * wordSize);  // length is on stack on Win64
-    const Register len_reg     = r10;      // pick the first volatile windows register
+    const Register len_reg     = r11;      // pick the volatile windows register
 #endif
     const Register pos         = rax;
 
@@ -3404,7 +3404,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register len_reg     = c_rarg4;  // src len (must be multiple of blocksize 16)
 #else
     const Address  len_mem(rbp, 6 * wordSize);  // length is on stack on Win64
-    const Register len_reg     = r10;      // pick the first volatile windows register
+    const Register len_reg     = r11;      // pick the volatile windows register
 #endif
     const Register pos         = rax;
 
@@ -3930,7 +3930,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ push(rbx); // Save RBX
     __ movdqu(xmm_curr_counter, Address(counter, 0x00)); // initialize counter with initial counter
-    __ movdqu(xmm_counter_shuf_mask, ExternalAddress(StubRoutines::x86::counter_shuffle_mask_addr()));
+    __ movdqu(xmm_counter_shuf_mask, ExternalAddress(StubRoutines::x86::counter_shuffle_mask_addr()), pos); // pos as scratch
     __ pshufb(xmm_curr_counter, xmm_counter_shuf_mask); //counter is shuffled
     __ movptr(pos, 0);
 
@@ -3953,7 +3953,7 @@ class StubGenerator: public StubCodeGenerator {
     __ movl(Address(used_addr, 0), used);
 
     // key length could be only {11, 13, 15} * 4 = {44, 52, 60}
-    __ movdqu(xmm_key_shuf_mask, ExternalAddress(StubRoutines::x86::key_shuffle_mask_addr()));
+    __ movdqu(xmm_key_shuf_mask, ExternalAddress(StubRoutines::x86::key_shuffle_mask_addr()), rbx); // rbx as scratch
     __ movl(rbx, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
     __ cmpl(rbx, 52);
     __ jcc(Assembler::equal, L_multiBlock_loopTop[1]);

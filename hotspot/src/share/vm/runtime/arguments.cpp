@@ -1854,6 +1854,34 @@ void Arguments::select_gc() {
   }
 }
 
+#if INCLUDE_JVMCI
+void Arguments::set_jvmci_specific_flags() {
+  if (UseJVMCICompiler) {
+    if (FLAG_IS_DEFAULT(TypeProfileWidth)) {
+      FLAG_SET_DEFAULT(TypeProfileWidth, 8);
+    }
+    if (FLAG_IS_DEFAULT(OnStackReplacePercentage)) {
+      FLAG_SET_DEFAULT(OnStackReplacePercentage, 933);
+    }
+    if (FLAG_IS_DEFAULT(ReservedCodeCacheSize)) {
+      FLAG_SET_DEFAULT(ReservedCodeCacheSize, 64*M);
+    }
+    if (FLAG_IS_DEFAULT(InitialCodeCacheSize)) {
+      FLAG_SET_DEFAULT(InitialCodeCacheSize, 16*M);
+    }
+    if (FLAG_IS_DEFAULT(MetaspaceSize)) {
+      FLAG_SET_DEFAULT(MetaspaceSize, 12*M);
+    }
+    if (FLAG_IS_DEFAULT(NewSizeThreadIncrease)) {
+      FLAG_SET_DEFAULT(NewSizeThreadIncrease, 4*K);
+    }
+    if (FLAG_IS_DEFAULT(TypeProfileLevel)) {
+      FLAG_SET_DEFAULT(TypeProfileLevel, 0);
+    }
+  }
+}
+#endif
+
 void Arguments::set_ergonomics_flags() {
   select_gc();
 
@@ -2462,14 +2490,6 @@ bool Arguments::check_vm_args_consistency() {
     if (!ScavengeRootsInCode) {
       warning("forcing ScavengeRootsInCode non-zero because JVMCI is enabled");
       ScavengeRootsInCode = 1;
-    }
-    if (FLAG_IS_DEFAULT(TypeProfileLevel)) {
-      TypeProfileLevel = 0;
-    }
-    if (UseJVMCICompiler) {
-      if (FLAG_IS_DEFAULT(TypeProfileWidth)) {
-        TypeProfileWidth = 8;
-      }
     }
   }
 #endif
@@ -4419,6 +4439,10 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
 jint Arguments::apply_ergo() {
   // Set flags based on ergonomics.
   set_ergonomics_flags();
+
+#if INCLUDE_JVMCI
+  set_jvmci_specific_flags();
+#endif
 
   set_shared_spaces_flags();
 

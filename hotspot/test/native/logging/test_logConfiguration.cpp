@@ -297,7 +297,7 @@ TEST_VM_F(LogConfigurationTest, parse_log_arguments) {
   }
 }
 
-TEST_F(LogConfigurationTest, configure_stdout) {
+TEST_VM_F(LogConfigurationTest, configure_stdout) {
   // Start out with all logging disabled
   LogConfiguration::disable_logging();
 
@@ -355,7 +355,7 @@ static void Test_logconfiguration_subscribe_helper() {
   Test_logconfiguration_subscribe_triggered++;
 }
 
-TEST_F(LogConfigurationTest, subscribe) {
+TEST_VM_F(LogConfigurationTest, subscribe) {
   ResourceMark rm;
   Log(logging) log;
   set_log_config("stdout", "logging*=trace");

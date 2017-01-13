@@ -57,6 +57,7 @@ class MarkProcessor {
             case HEAP_TOP_ADDRESS:
             case HEAP_END_ADDRESS:
             case NARROW_KLASS_BASE_ADDRESS:
+            case NARROW_OOP_BASE_ADDRESS:
             case CRC_TABLE_ADDRESS:
             case LOG_OF_HEAP_REGION_GRAIN_BYTES:
             case INLINE_CONTIGUOUS_ALLOCATION_SUPPORTED:
@@ -77,6 +78,9 @@ class MarkProcessor {
                         break;
                     case NARROW_KLASS_BASE_ADDRESS:
                         vmSymbolName = binaryContainer.getNarrowKlassBaseAddressSymbolName();
+                        break;
+                    case NARROW_OOP_BASE_ADDRESS:
+                        vmSymbolName = binaryContainer.getNarrowOopBaseAddressSymbolName();
                         break;
                     case CRC_TABLE_ADDRESS:
                         vmSymbolName = binaryContainer.getCrcTableAddressSymbolName();
