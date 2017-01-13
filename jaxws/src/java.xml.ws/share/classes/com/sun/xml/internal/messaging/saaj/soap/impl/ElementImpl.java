@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,8 +127,11 @@ public class ElementImpl
     }
 
     public SOAPElement addChildElement(String localName) throws SOAPException {
-        return (SOAPElement) addChildElement(
-            NameImpl.createFromUnqualifiedName(localName));
+        String nsUri = getNamespaceURI("");
+        Name name = (nsUri == null || nsUri.isEmpty())
+                ?  NameImpl.createFromUnqualifiedName(localName)
+                :  NameImpl.createFromQualifiedName(localName, nsUri);
+        return addChildElement(name);
     }
 
     public SOAPElement addChildElement(String localName, String prefix)
@@ -372,13 +375,13 @@ public class ElementImpl
     protected SOAPElement addElement(Name name) throws SOAPException {
         SOAPElement newElement = createElement(name);
         addNode(newElement);
-        return circumventBug5034339(newElement);
+        return newElement;
     }
 
     protected SOAPElement addElement(QName name) throws SOAPException {
         SOAPElement newElement = createElement(name);
         addNode(newElement);
-        return circumventBug5034339(newElement);
+        return newElement;
     }
 
     protected SOAPElement createElement(Name name) {
@@ -1224,26 +1227,6 @@ public class ElementImpl
 
     protected boolean isNamespaceQualified(QName name) {
         return !"".equals(name.getNamespaceURI());
-    }
-
-    protected SOAPElement circumventBug5034339(SOAPElement element) {
-
-        Name elementName = element.getElementName();
-        if (!isNamespaceQualified(elementName)) {
-            String prefix = elementName.getPrefix();
-            String defaultNamespace = getNamespaceURI(prefix);
-            if (defaultNamespace != null) {
-                Name newElementName =
-                    NameImpl.create(
-                        elementName.getLocalName(),
-                        elementName.getPrefix(),
-                        defaultNamespace);
-                SOAPElement newElement = createElement(newElementName);
-                replaceChild(newElement, element);
-                return newElement;
-            }
-        }
-        return element;
     }
 
     //TODO: This is a temporary SAAJ workaround for optimizing XWS
