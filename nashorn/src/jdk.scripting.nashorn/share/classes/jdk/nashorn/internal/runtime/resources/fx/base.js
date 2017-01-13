@@ -108,7 +108,7 @@ function LOAD_FX_CLASSES(global, module) {
         }
     });
 
-    Files.walkFileTree(rootDirectories[0], new JRTFSWalker());
+    Files.walkFileTree(rootDirectories.toArray()[0], new JRTFSWalker());
 })();
 
 LOAD_FX_CLASSES(this, "javafx.base");
