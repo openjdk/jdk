@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
-   @bug 4152178
+   @bug 4152178 8152272
    @summary Check various temp-file prefix/suffix cases */
 
 import java.io.File;
@@ -66,6 +66,7 @@ public class Patterns {
         cky("xxx", "");
         cky("xxx", "y");
         cky("xxx", ".y");
+        cky("xyz", "Directory" + System.getProperty("file.separator"));
     }
 
 }
