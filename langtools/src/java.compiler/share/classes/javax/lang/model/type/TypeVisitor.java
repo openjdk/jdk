@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import javax.lang.model.element.*;
  * visitor design pattern.  Classes implementing this
  * interface are used to operate on a type when the kind of
  * type is unknown at compile time.  When a visitor is passed to a
- * type's {@link TypeMirror#accept accept} method, the <code>visit<i>XYZ</i></code>
+ * type's {@link TypeMirror#accept accept} method, the <code>visit<i>Xyz</i></code>
  * method most applicable to that type is invoked.
  *
  * <p> Classes implementing this interface may or may not throw a
@@ -56,9 +56,9 @@ import javax.lang.model.element.*;
  * be added in a source <em>compatible</em> way if they were added as
  * <em>default methods</em>.  However, default methods are only
  * available on Java SE 8 and higher releases and the {@code
- * javax.lang.model.*} packages bundled in Java SE 8 are required to
+ * javax.lang.model.*} packages bundled in Java SE 8 were required to
  * also be runnable on Java SE 7.  Therefore, default methods
- * <em>cannot</em> be used when extending {@code javax.lang.model.*}
+ * were <em>not</em> used when extending {@code javax.lang.model.*}
  * to cover Java SE 8 language features.  However, default methods may
  * be used in subsequent revisions of the {@code javax.lang.model.*}
  * packages that are only required to run on Java SE 8 and higher
