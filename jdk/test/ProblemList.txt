@@ -141,8 +141,6 @@ java/lang/management/MemoryMXBean/PendingAllGC.sh               8158837 generic-
 
 # jdk_io
 
-java/io/pathNames/GeneralWin32.java                             8156595 windows-all
-
 ############################################################################
 
 # jdk_management
