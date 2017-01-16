@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -239,7 +239,7 @@ static void define_javabase_module(jobject module, jstring version,
     }
   }
   if (duplicate_javabase) {
-    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
+    THROW_MSG(vmSymbols::java_lang_InternalError(),
               "Module " JAVA_BASE_NAME " is already defined");
   }
 
@@ -259,6 +259,20 @@ static void define_javabase_module(jobject module, jstring version,
   for (int x = 0; x < pkg_list->length(); x++) {
     log_trace(modules)("define_javabase_module(): creation of package %s for module " JAVA_BASE_NAME,
                        (pkg_list->at(x))->as_C_string());
+  }
+}
+
+// Caller needs ResourceMark.
+void throw_dup_pkg_exception(const char* module_name, PackageEntry* package, TRAPS) {
+  const char* package_name = package->name()->as_C_string();
+  if (package->module()->is_named()) {
+    THROW_MSG(vmSymbols::java_lang_IllegalStateException(),
+      err_msg("Package %s for module %s is already in another module, %s, defined to the class loader",
+              package_name, module_name, package->module()->name()->as_C_string()));
+  } else {
+    THROW_MSG(vmSymbols::java_lang_IllegalStateException(),
+      err_msg("Package %s for module %s is already in the unnamed module defined to the class loader",
+              package_name, module_name));
   }
 }
 
@@ -347,7 +361,6 @@ void Modules::define_module(jobject module, jstring version,
   // Create symbol* entry for module name.
   TempNewSymbol module_symbol = SymbolTable::new_symbol(module_name, CHECK);
 
-  int dupl_pkg_index = -1;
   bool dupl_modules = false;
 
   // Create symbol* entry for module version.
@@ -373,6 +386,7 @@ void Modules::define_module(jobject module, jstring version,
   assert(loader_data != NULL, "class loader data shouldn't be null");
 
   PackageEntryTable* package_table = NULL;
+  PackageEntry* existing_pkg = NULL;
   {
     MutexLocker ml(Module_lock, THREAD);
 
@@ -382,13 +396,12 @@ void Modules::define_module(jobject module, jstring version,
 
       // Check that none of the packages exist in the class loader's package table.
       for (int x = 0; x < pkg_list->length(); x++) {
-        if (package_table->lookup_only(pkg_list->at(x)) != NULL) {
+        existing_pkg = package_table->lookup_only(pkg_list->at(x));
+        if (existing_pkg != NULL) {
           // This could be because the module was already defined.  If so,
           // report that error instead of the package error.
           if (module_table->lookup_only(module_symbol) != NULL) {
             dupl_modules = true;
-          } else {
-            dupl_pkg_index = x;
           }
           break;
         }
@@ -396,9 +409,8 @@ void Modules::define_module(jobject module, jstring version,
     }  // if (num_packages > 0)...
 
     // Add the module and its packages.
-    if (!dupl_modules && dupl_pkg_index == -1) {
+    if (!dupl_modules && existing_pkg == NULL) {
       // Create the entry for this module in the class loader's module entry table.
-
       ModuleEntry* module_entry = module_table->locked_create_entry_or_null(module_handle, module_symbol,
                                     version_symbol, location_symbol, loader_data);
 
@@ -426,13 +438,10 @@ void Modules::define_module(jobject module, jstring version,
 
   // any errors ?
   if (dupl_modules) {
-     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
+     THROW_MSG(vmSymbols::java_lang_IllegalStateException(),
                err_msg("Module %s is already defined", module_name));
-  }
-  if (dupl_pkg_index != -1) {
-    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-              err_msg("Package %s for module %s already exists for class loader",
-                      pkg_list->at(dupl_pkg_index)->as_C_string(), module_name));
+  } else if (existing_pkg != NULL) {
+      throw_dup_pkg_exception(module_name, existing_pkg, CHECK);
   }
 
   if (log_is_enabled(Debug, modules)) {
@@ -776,21 +785,19 @@ void Modules::add_module_package(jobject module, jstring package, TRAPS) {
   PackageEntryTable* package_table = loader_data->packages();
   assert(package_table != NULL, "Missing package_table");
 
-  bool pkg_exists = false;
+  PackageEntry* existing_pkg = NULL;
   {
     MutexLocker ml(Module_lock, THREAD);
 
     // Check that the package does not exist in the class loader's package table.
-    if (!package_table->lookup_only(pkg_symbol)) {
+    existing_pkg = package_table->lookup_only(pkg_symbol);
+    if (existing_pkg == NULL) {
       PackageEntry* pkg = package_table->locked_create_entry_or_null(pkg_symbol, module_entry);
       assert(pkg != NULL, "Unable to create a module's package entry");
-    } else {
-      pkg_exists = true;
     }
   }
-  if (pkg_exists) {
-    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-              err_msg("Package %s already exists for class loader", package_name));
+  if (existing_pkg != NULL) {
+    throw_dup_pkg_exception(module_entry->name()->as_C_string(), existing_pkg, CHECK);
   }
 }
 
