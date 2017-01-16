@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+
+import jdk.internal.module.ModulePath;
 import jdk.internal.module.ModuleResolution;
 
 /**
@@ -155,8 +157,8 @@ class GNUStyleOptions {
                     for (String dir : dirs) {
                         paths[i++] = Paths.get(dir);
                     }
-                    jartool.moduleFinder = ModuleFinder.compose(jartool.moduleFinder,
-                                                                ModuleFinder.of(paths));
+                    jartool.moduleFinder =
+                        new ModulePath(Runtime.version(), true, paths);
                 }
             },
             new Option(false, OptionType.CREATE_UPDATE, "--do-not-resolve-by-default") {
