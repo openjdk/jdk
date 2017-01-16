@@ -47,7 +47,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -60,6 +59,7 @@ import java.text.MessageFormat;
 
 import jdk.internal.module.Checks;
 import jdk.internal.module.ModuleHashes;
+import jdk.internal.module.ModuleHashesBuilder;
 import jdk.internal.module.ModuleInfo;
 import jdk.internal.module.ModuleInfoExtender;
 import jdk.internal.module.ModuleResolution;
@@ -68,7 +68,6 @@ import jdk.internal.util.jar.JarIndex;
 import static jdk.internal.util.jar.JarIndex.INDEX_NAME;
 import static java.util.jar.JarFile.MANIFEST_NAME;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toSet;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 /**
@@ -1930,8 +1929,7 @@ public class Main {
             if (moduleHashes != null) {
                 extender.hashes(moduleHashes);
             } else {
-                // should it issue warning or silent?
-                System.out.println("warning: no module is recorded in hash in " + mn);
+                warn("warning: no module is recorded in hash in " + mn);
             }
         }
 
@@ -1947,10 +1945,9 @@ public class Main {
      * Compute and record hashes
      */
     private class Hasher {
+        final ModuleHashesBuilder hashesBuilder;
         final ModuleFinder finder;
-        final Map<String, Path> moduleNameToPath;
         final Set<String> modules;
-        final Configuration configuration;
         Hasher(ModuleDescriptor descriptor, String fname) throws IOException {
             // Create a module finder that finds the modular JAR
             // being created/updated
@@ -1980,119 +1977,46 @@ public class Main {
                     }
                 });
 
-            // Determine the modules that matches the modulesToHash pattern
-            this.modules = moduleFinder.findAll().stream()
-                .map(moduleReference -> moduleReference.descriptor().name())
+            // Determine the modules that matches the pattern {@code modulesToHash}
+            Set<String> roots = finder.findAll().stream()
+                .map(ref -> ref.descriptor().name())
                 .filter(mn -> modulesToHash.matcher(mn).find())
                 .collect(Collectors.toSet());
 
-            // a map from a module name to Path of the modular JAR
-            this.moduleNameToPath = moduleFinder.findAll().stream()
-                .map(ModuleReference::descriptor)
-                .map(ModuleDescriptor::name)
-                .collect(Collectors.toMap(Function.identity(), mn -> moduleToPath(mn)));
-
-            Configuration config = null;
-            try {
-                config = Configuration.empty()
-                    .resolveRequires(ModuleFinder.ofSystem(), finder, modules);
-            } catch (ResolutionException e) {
-                // should it throw an error?  or emit a warning
-                System.out.println("warning: " + e.getMessage());
+            // use system module path unless it creates a modular JAR for
+            // a module that is present in the system image e.g. upgradeable
+            // module
+            ModuleFinder system;
+            String name = descriptor.name();
+            if (name != null && ModuleFinder.ofSystem().find(name).isPresent()) {
+                system = ModuleFinder.of();
+            } else {
+                system = ModuleFinder.ofSystem();
             }
-            this.configuration = config;
+            // get a resolved module graph
+            Configuration config =
+                Configuration.empty().resolveRequires(system, finder, roots);
+
+            // filter modules resolved from the system module finder
+            this.modules = config.modules().stream()
+                .map(ResolvedModule::name)
+                .filter(mn -> roots.contains(mn) && !system.find(mn).isPresent())
+                .collect(Collectors.toSet());
+
+            this.hashesBuilder = new ModuleHashesBuilder(config, modules);
         }
 
         /**
-         * Compute hashes of the modules that depend upon the specified
+         * Compute hashes of the specified module.
+         *
+         * It records the hashing modules that depend upon the specified
          * module directly or indirectly.
          */
         ModuleHashes computeHashes(String name) {
-            // the transposed graph includes all modules in the resolved graph
-            Map<String, Set<String>> graph = transpose();
-
-            // find the modules that transitively depend upon the specified name
-            Deque<String> deque = new ArrayDeque<>();
-            deque.add(name);
-            Set<String> mods = visitNodes(graph, deque);
-
-            // filter modules matching the pattern specified in --hash-modules,
-            // as well as the modular jar file that is being created / updated
-            Map<String, Path> modulesForHash = mods.stream()
-                .filter(mn -> !mn.equals(name) && modules.contains(mn))
-                .collect(Collectors.toMap(Function.identity(), moduleNameToPath::get));
-
-            if (modulesForHash.isEmpty())
+            if (hashesBuilder == null)
                 return null;
 
-            return ModuleHashes.generate(modulesForHash, "SHA-256");
-        }
-
-        /**
-         * Returns all nodes traversed from the given roots.
-         */
-        private Set<String> visitNodes(Map<String, Set<String>> graph,
-                                       Deque<String> roots) {
-            Set<String> visited = new HashSet<>();
-            while (!roots.isEmpty()) {
-                String mn = roots.pop();
-                if (!visited.contains(mn)) {
-                    visited.add(mn);
-
-                    // the given roots may not be part of the graph
-                    if (graph.containsKey(mn)) {
-                        for (String dm : graph.get(mn)) {
-                            if (!visited.contains(dm))
-                                roots.push(dm);
-                        }
-                    }
-                }
-            }
-            return visited;
-        }
-
-        /**
-         * Returns a transposed graph from the resolved module graph.
-         */
-        private Map<String, Set<String>> transpose() {
-            Map<String, Set<String>> transposedGraph = new HashMap<>();
-            Deque<String> deque = new ArrayDeque<>(modules);
-
-            Set<String> visited = new HashSet<>();
-            while (!deque.isEmpty()) {
-                String mn = deque.pop();
-                if (!visited.contains(mn)) {
-                    visited.add(mn);
-
-                    // add an empty set
-                    transposedGraph.computeIfAbsent(mn, _k -> new HashSet<>());
-
-                    ResolvedModule resolvedModule = configuration.findModule(mn).get();
-                    for (ResolvedModule dm : resolvedModule.reads()) {
-                        String name = dm.name();
-                        if (!visited.contains(name)) {
-                            deque.push(name);
-                        }
-                        // reverse edge
-                        transposedGraph.computeIfAbsent(name, _k -> new HashSet<>())
-                                       .add(mn);
-                    }
-                }
-            }
-            return transposedGraph;
-        }
-
-        private Path moduleToPath(String name) {
-            ModuleReference mref = moduleFinder.find(name).orElseThrow(
-                () -> new InternalError(formatMsg2("error.hash.dep",name , name)));
-
-            URI uri = mref.location().get();
-            Path path = Paths.get(uri);
-            String fn = path.getFileName().toString();
-            if (!fn.endsWith(".jar")) {
-                throw new UnsupportedOperationException(path + " is not a modular JAR");
-            }
-            return path;
+            return hashesBuilder.computeHashes(Set.of(name)).get(name);
         }
     }
 }
