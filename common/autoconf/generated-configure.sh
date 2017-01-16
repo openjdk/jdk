@@ -5180,7 +5180,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1484228046
+DATE_WHEN_GENERATED=1484571183
 
 ###############################################################################
 #
@@ -49945,11 +49945,6 @@ $as_echo "$supports" >&6; }
     CXXFLAGS_JDK="${CXXFLAGS_JDK} -D__solaris__"
   fi
 
-  if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-    CFLAGS_JDK="${CFLAGS_JDK} -D__solaris__"
-    CXXFLAGS_JDK="${CXXFLAGS_JDK} -D__solaris__"
-  fi
-
   CFLAGS_JDK="${CFLAGS_JDK} ${EXTRA_CFLAGS}"
   CXXFLAGS_JDK="${CXXFLAGS_JDK} ${EXTRA_CXXFLAGS}"
   LDFLAGS_JDK="${LDFLAGS_JDK} ${EXTRA_LDFLAGS}"
@@ -50763,11 +50758,6 @@ $as_echo "$supports" >&6; }
     OPENJDK_BUILD_JVM_CFLAGS="${OPENJDK_BUILD_JVM_CFLAGS} ${OPENJDK_BUILD_CXXSTD_CXXFLAG}"
 
   fi
-  if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-    OPENJDK_BUILD_CFLAGS_JDK="${OPENJDK_BUILD_CFLAGS_JDK} -D__solaris__"
-    OPENJDK_BUILD_CXXFLAGS_JDK="${OPENJDK_BUILD_CXXFLAGS_JDK} -D__solaris__"
-  fi
-
   if test "x$OPENJDK_TARGET_OS" = xsolaris; then
     OPENJDK_BUILD_CFLAGS_JDK="${OPENJDK_BUILD_CFLAGS_JDK} -D__solaris__"
     OPENJDK_BUILD_CXXFLAGS_JDK="${OPENJDK_BUILD_CXXFLAGS_JDK} -D__solaris__"
