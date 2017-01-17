@@ -67,15 +67,15 @@ import static javax.lang.model.SourceVersion.*;
  * @see AbstractElementVisitor8
  * @see AbstractElementVisitor9
  * @since 1.6
- * @deprecated Release 6 is obsolete; update to a visitor for a newer
- * release level.
  */
-@Deprecated
 @SupportedSourceVersion(RELEASE_6)
 public abstract class AbstractElementVisitor6<R, P> implements ElementVisitor<R, P> {
     /**
      * Constructor for concrete subclasses to call.
+     * @deprecated Release 6 is obsolete; update to a visitor for a newer
+     * release level.
      */
+    @Deprecated
     protected AbstractElementVisitor6(){}
 
     /**

@@ -76,16 +76,16 @@ import static javax.lang.model.SourceVersion.*;
  * @see TypeKindVisitor7
  * @see TypeKindVisitor8
  * @since 1.6
- * @deprecated Release 6 is obsolete; update to a visitor for a newer
- * release level.
  */
-@Deprecated
 @SupportedSourceVersion(RELEASE_6)
 public class TypeKindVisitor6<R, P> extends SimpleTypeVisitor6<R, P> {
     /**
      * Constructor for concrete subclasses to call; uses {@code null}
      * for the default value.
+     * @deprecated Release 6 is obsolete; update to a visitor for a newer
+     * release level.
      */
+    @Deprecated
     protected TypeKindVisitor6() {
         super(null);
     }
@@ -96,7 +96,10 @@ public class TypeKindVisitor6<R, P> extends SimpleTypeVisitor6<R, P> {
      * for the default value.
      *
      * @param defaultValue the value to assign to {@link #DEFAULT_VALUE}
+     * @deprecated Release 6 is obsolete; update to a visitor for a newer
+     * release level.
      */
+    @Deprecated
     protected TypeKindVisitor6(R defaultValue) {
         super(defaultValue);
     }
