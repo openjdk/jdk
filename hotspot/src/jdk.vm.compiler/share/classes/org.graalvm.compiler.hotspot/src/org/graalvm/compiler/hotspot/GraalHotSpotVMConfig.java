@@ -479,7 +479,6 @@ public class GraalHotSpotVMConfig extends HotSpotVMConfigAccess {
     public final int methodCompiledEntryOffset = getFieldOffset("Method::_from_compiled_entry", Integer.class, "address");
     public final int methodCodeOffset = getFieldOffset("Method::_code", Integer.class, isJDK8 ? "nmethod*" : "CompiledMethod*");
 
-    public final int methodFlagsJfrTowrite = getConstant("Method::_jfr_towrite", Integer.class);
     public final int methodFlagsCallerSensitive = getConstant("Method::_caller_sensitive", Integer.class);
     public final int methodFlagsForceInline = getConstant("Method::_force_inline", Integer.class);
     public final int methodFlagsDontInline = getConstant("Method::_dont_inline", Integer.class);
