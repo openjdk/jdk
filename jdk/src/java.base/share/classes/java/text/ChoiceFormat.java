@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,6 +172,8 @@ public class ChoiceFormat extends NumberFormat {
     /**
      * Sets the pattern.
      * @param newPattern See the class description.
+     * @exception NullPointerException if {@code newPattern}
+     *            is {@code null}
      */
     public void applyPattern(String newPattern) {
         StringBuffer[] segments = new StringBuffer[2];
@@ -309,6 +311,8 @@ public class ChoiceFormat extends NumberFormat {
      * Constructs with limits and corresponding formats based on the pattern.
      *
      * @param newPattern the new pattern string
+     * @exception NullPointerExcpetion if {@code newPattern} is
+     *            {@code null}
      * @see #applyPattern
      */
     public ChoiceFormat(String newPattern)  {
@@ -320,6 +324,8 @@ public class ChoiceFormat extends NumberFormat {
      *
      * @param limits limits in ascending order
      * @param formats corresponding format strings
+     * @exception NullPointerException if {@code limits} or {@code formats}
+     *            is {@code null}
      * @see #setChoices
      */
     public ChoiceFormat(double[] limits, String[] formats) {
@@ -339,6 +345,8 @@ public class ChoiceFormat extends NumberFormat {
      * When formatting with object Y,
      * if the object is a NumberFormat, then ((NumberFormat) Y).format(X)
      * is called. Otherwise Y.toString() is called.
+     * @exception NullPointerException if {@code limits} or
+     *            {@code formats} is {@code null}
      */
     public void setChoices(double[] limits, String formats[]) {
         if (limits.length != formats.length) {
@@ -386,6 +394,8 @@ public class ChoiceFormat extends NumberFormat {
      * @param number number to be formatted and substituted.
      * @param toAppendTo where text is appended.
      * @param status ignore no useful status is returned.
+     * @exception NullPointerException if {@code toAppendTo}
+     *            is {@code null}
      */
    public StringBuffer format(double number, StringBuffer toAppendTo,
                                FieldPosition status) {
@@ -414,6 +424,9 @@ public class ChoiceFormat extends NumberFormat {
      * status.index is unchanged and status.errorIndex is set to the
      * first index of the character that caused the parse to fail.
      * @return A Number representing the value of the number parsed.
+     * @exception NullPointerException if {@code status} is {@code null}
+     *            or if {@code text} is {@code null} and the list of
+     *            choice strings is not empty.
      */
     public Number parse(String text, ParsePosition status) {
         // find the best number (defined as the one with the longest parse)

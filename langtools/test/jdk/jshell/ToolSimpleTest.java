@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128 8154513 8170015 8170368 8172102
+ * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128 8154513 8170015 8170368 8172102 8172103  8165405
  * @summary Simple jshell tool tests
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -196,7 +196,7 @@ public class ToolSimpleTest extends ReplToolTesting {
 
     @Test
     public void testEmptyClassPath() {
-        test(after -> assertCommand(after, "/classpath", "|  The /classpath command requires a path argument."));
+        test(after -> assertCommand(after, "/env --class-path", "|  Argument to class-path missing."));
     }
 
     @Test
@@ -603,6 +603,13 @@ public class ToolSimpleTest extends ReplToolTesting {
                 (a) -> assertCommand(a, "System.getProperty(\"the.sound\")",
                         "$1 ==> \"blorp\"")
         );
+    }
+
+    @Test
+    public void testWrapSourceHandlerDiagCrash() {
+        test(new String[]{"--add-exports", "jdk.javadoc/ALL-UNNAMED"},
+                (a) -> assertCommand(a, "1+1", "$1 ==> 2")
+         );
     }
 
     @Test

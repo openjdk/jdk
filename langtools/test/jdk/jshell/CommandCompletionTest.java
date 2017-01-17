@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8144095 8164825 8169818 8153402
+ * @bug 8144095 8164825 8169818 8153402 8165405
  * @summary Test Command Completion
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -138,7 +138,7 @@ public class CommandCompletionTest extends ReplToolTesting {
     @Test
     public void testEdit() {
         test(false, new String[]{"--no-startup"},
-                a -> assertCompletion(a, "/e|", false, "/edit ", "/exit "),
+                a -> assertCompletion(a, "/e|", false, "/edit ", "/env ", "/exit "),
                 a -> assertCompletion(a, "/ed|", false, "/edit "),
                 a -> assertClass(a, "class cTest {}", "class", "cTest"),
                 a -> assertMethod(a, "int mTest() { return 0; }", "()I", "mTest"),
@@ -158,15 +158,17 @@ public class CommandCompletionTest extends ReplToolTesting {
     public void testHelp() {
         testNoStartUp(
                 a -> assertCompletion(a, "/help |", false,
-                "/! ", "/-<n> ", "/<id> ", "/? ", "/classpath ", "/drop ",
-                "/edit ", "/exit ", "/help ", "/history ", "/imports ",
+                "/! ", "/-<n> ", "/<id> ", "/? ", "/drop ",
+                "/edit ", "/env ", "/exit ",
+                "/help ", "/history ", "/imports ",
                 "/list ", "/methods ", "/open ", "/reload ", "/reset ",
-                "/save ", "/set ", "/types ", "/vars ", "intro ", "shortcuts "),
+                "/save ", "/set ", "/types ", "/vars ", "context ", "intro ", "shortcuts "),
                 a -> assertCompletion(a, "/? |", false,
-                "/! ", "/-<n> ", "/<id> ", "/? ", "/classpath ", "/drop ",
-                "/edit ", "/exit ", "/help ", "/history ", "/imports ",
+                "/! ", "/-<n> ", "/<id> ", "/? ", "/drop ",
+                "/edit ", "/env ", "/exit ",
+                "/help ", "/history ", "/imports ",
                 "/list ", "/methods ", "/open ", "/reload ", "/reset ",
-                "/save ", "/set ", "/types ", "/vars ", "intro ", "shortcuts "),
+                "/save ", "/set ", "/types ", "/vars ", "context ", "intro ", "shortcuts "),
                 a -> assertCompletion(a, "/help /s|", false,
                 "/save ", "/set "),
                 a -> assertCompletion(a, "/help /set |", false,
@@ -177,17 +179,63 @@ public class CommandCompletionTest extends ReplToolTesting {
 
     @Test
     public void testReload() {
+        String[] ropts = new String[] { "-add-exports ", "-add-modules ",
+            "-class-path ", "-module-path ", "-quiet ", "-restore " };
+        String[] dropts = new String[] { "--add-exports ", "--add-modules ",
+            "--class-path ", "--module-path ", "--quiet ", "--restore " };
         testNoStartUp(
-                a -> assertCompletion(a, "/reload |", false, "-quiet ", "-restore "),
-                a -> assertCompletion(a, "/reload -restore |", false, "-quiet"),
-                a -> assertCompletion(a, "/reload -quiet |", false, "-restore"),
-                a -> assertCompletion(a, "/reload -restore -quiet |", false)
+                a -> assertCompletion(a, "/reloa |", false, ropts),
+                a -> assertCompletion(a, "/relo               |", false, ropts),
+                a -> assertCompletion(a, "/reload -|", false, ropts),
+                a -> assertCompletion(a, "/reload --|", false, dropts),
+                a -> assertCompletion(a, "/reload -restore |", false, ropts),
+                a -> assertCompletion(a, "/reload -restore --|", false, dropts),
+                a -> assertCompletion(a, "/reload -rest|", false, "-restore "),
+                a -> assertCompletion(a, "/reload --r|", false, "--restore "),
+                a -> assertCompletion(a, "/reload -q|", false, "-quiet "),
+                a -> assertCompletion(a, "/reload -add|", false, "-add-exports ", "-add-modules "),
+                a -> assertCompletion(a, "/reload -class-path . -quiet |", false, ropts)
+        );
+    }
+
+    @Test
+    public void testEnv() {
+        String[] ropts = new String[] { "-add-exports ", "-add-modules ",
+            "-class-path ", "-module-path " };
+        String[] dropts = new String[] { "--add-exports ", "--add-modules ",
+            "--class-path ", "--module-path " };
+        testNoStartUp(
+                a -> assertCompletion(a, "/env |", false, ropts),
+                a -> assertCompletion(a, "/env -|", false, ropts),
+                a -> assertCompletion(a, "/env --|", false, dropts),
+                a -> assertCompletion(a, "/env --a|", false, "--add-exports ", "--add-modules "),
+                a -> assertCompletion(a, "/env -add-|", false, "-add-exports ", "-add-modules "),
+                a -> assertCompletion(a, "/env -class-path . |", false, ropts),
+                a -> assertCompletion(a, "/env -class-path . --|", false, dropts)
+        );
+    }
+
+    @Test
+    public void testReset() {
+        String[] ropts = new String[] { "-add-exports ", "-add-modules ",
+            "-class-path ", "-module-path " };
+        String[] dropts = new String[] { "--add-exports ", "--add-modules ",
+            "--class-path ", "--module-path " };
+        testNoStartUp(
+                a -> assertCompletion(a, "/reset    |", false, ropts),
+                a -> assertCompletion(a, "/res -m|", false, "-module-path "),
+                a -> assertCompletion(a, "/res -module-|", false, "-module-path "),
+                a -> assertCompletion(a, "/res --m|", false, "--module-path "),
+                a -> assertCompletion(a, "/res --module-|", false, "--module-path "),
+                a -> assertCompletion(a, "/reset -add|", false, "-add-exports ", "-add-modules "),
+                a -> assertCompletion(a, "/rese -class-path . |", false, ropts),
+                a -> assertCompletion(a, "/rese -class-path . --|", false, dropts)
         );
     }
 
     @Test
     public void testVarsMethodsTypes() {
-        test(false, new String[]{"--no-startup"},
+        testNoStartUp(
                 a -> assertCompletion(a, "/v|", false, "/vars "),
                 a -> assertCompletion(a, "/m|", false, "/methods "),
                 a -> assertCompletion(a, "/t|", false, "/types "),
@@ -245,9 +293,6 @@ public class CommandCompletionTest extends ReplToolTesting {
 
     @Test
     public void testClassPath() throws IOException {
-        testNoStartUp(
-                a -> assertCompletion(a, "/classp|", false, "/classpath ")
-        );
         Compiler compiler = new Compiler();
         Path outDir = compiler.getPath("testClasspathCompletion");
         Files.createDirectories(outDir);
@@ -259,8 +304,13 @@ public class CommandCompletionTest extends ReplToolTesting {
         compiler.jar(outDir, jarName, "pkg/A.class");
         compiler.getPath(outDir).resolve(jarName);
         List<String> paths = listFiles(outDir, CLASSPATH_FILTER);
+        String[] pathArray = paths.toArray(new String[paths.size()]);
         testNoStartUp(
-                a -> assertCompletion(a, "/classpath " + outDir + "/|", false, paths.toArray(new String[paths.size()]))
+                a -> assertCompletion(a, "/env -class-path " + outDir + "/|", false, pathArray),
+                a -> assertCompletion(a, "/env --class-path " + outDir + "/|", false, pathArray),
+                a -> assertCompletion(a, "/env -clas    " + outDir + "/|", false, pathArray),
+                a -> assertCompletion(a, "/env --class-p    " + outDir + "/|", false, pathArray),
+                a -> assertCompletion(a, "/env --module-path . --class-p    " + outDir + "/|", false, pathArray)
         );
     }
 
@@ -275,7 +325,7 @@ public class CommandCompletionTest extends ReplToolTesting {
                                  .collect(Collectors.toList());
         }
         testNoStartUp(
-                a -> assertCompletion(a, "/classpath ~/|", false, completions.toArray(new String[completions.size()]))
+                a -> assertCompletion(a, "/env --class-path ~/|", false, completions.toArray(new String[completions.size()]))
         );
     }
 

@@ -114,6 +114,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     private final boolean fatalErrors;
     private final boolean werror;
     private final boolean showResolveErrors;
+    private final boolean allowModules;
 
     private final JavacFiler filer;
     private final JavacMessager messager;
@@ -178,7 +179,6 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     private final Enter enter;
     private final Completer initialCompleter;
     private final Check chk;
-    private final ModuleSymbol defaultModule;
 
     private final Context context;
 
@@ -230,8 +230,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         chk = Check.instance(context);
         initProcessorLoader();
 
-        defaultModule = source.allowModules() && options.isUnset("noModules")
-                ? symtab.unnamedModule : symtab.noModule;
+        allowModules = source.allowModules() && options.isUnset("noModules");
     }
 
     public void setProcessors(Iterable<? extends Processor> processors) {
@@ -665,7 +664,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         private ArrayList<Pattern> supportedAnnotationPatterns;
         private ArrayList<String>  supportedOptionNames;
 
-        ProcessorState(Processor p, Log log, Source source, ProcessingEnvironment env) {
+        ProcessorState(Processor p, Log log, Source source, boolean allowModules, ProcessingEnvironment env) {
             processor = p;
             contributed = false;
 
@@ -676,7 +675,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
                 supportedAnnotationPatterns = new ArrayList<>();
                 for (String importString : processor.getSupportedAnnotationTypes()) {
-                    supportedAnnotationPatterns.add(importStringToPattern(importString,
+                    supportedAnnotationPatterns.add(importStringToPattern(allowModules,
+                                                                          importString,
                                                                           processor,
                                                                           log));
                 }
@@ -768,7 +768,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
                 if (psi.processorIterator.hasNext()) {
                     ProcessorState ps = new ProcessorState(psi.processorIterator.next(),
-                                                           log, source, JavacProcessingEnvironment.this);
+                                                           log, source, allowModules,
+                                                           JavacProcessingEnvironment.this);
                     psi.procStateList.add(ps);
                     return ps;
                 } else
@@ -834,7 +835,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
         for(TypeElement a  : annotationsPresent) {
             ModuleElement mod = elementUtils.getModuleOf(a);
-            unmatchedAnnotations.put((mod != null ? mod.getSimpleName() + "/" : "") + a.getQualifiedName().toString(),
+            String moduleSpec = allowModules && mod != null ? mod.getSimpleName() + "/" : "";
+            unmatchedAnnotations.put(moduleSpec + a.getQualifiedName().toString(),
                                      a);
         }
 
@@ -1657,7 +1659,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
      * regex matching that string.  If the string is not a valid
      * import-style string, return a regex that won't match anything.
      */
-    private static Pattern importStringToPattern(String s, Processor p, Log log) {
+    private static Pattern importStringToPattern(boolean allowModules, String s, Processor p, Log log) {
         String module;
         String pkg;
         int slash = s.indexOf('/');
@@ -1672,7 +1674,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             pkg = s.substring(slash + 1);
         }
         if (MatchingUtils.isValidImportString(pkg)) {
-            return Pattern.compile(module + MatchingUtils.validImportStringToPatternString(pkg));
+            return Pattern.compile((allowModules ? module : "") + MatchingUtils.validImportStringToPatternString(pkg));
         } else {
             log.warning("proc.malformed.supported.string", s, p.getClass().getName());
             return noMatches; // won't match any valid identifier

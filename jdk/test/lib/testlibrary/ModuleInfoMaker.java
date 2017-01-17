@@ -35,7 +35,7 @@ import static org.testng.Assert.assertTrue;
 /**
  * Utility class for creating test modules.
  */
-public class ModuleSourceBuilder {
+public class ModuleInfoMaker {
     private static String MODULE_INFO_JAVA = "module-info.java";
     private static Pattern MODULE_PATTERN =
         Pattern.compile("module\\s+((?:\\w+\\.)*)");
@@ -45,7 +45,7 @@ public class ModuleSourceBuilder {
           Pattern.compile("(?:public\\s+)?(?:class|enum|interface)\\s+(\\w+)");
 
     private final Path dir;
-    public ModuleSourceBuilder(Path dir) {
+    public ModuleInfoMaker(Path dir) {
         this.dir = dir;
     }
 

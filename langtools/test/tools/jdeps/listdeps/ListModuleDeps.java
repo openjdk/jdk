@@ -83,6 +83,28 @@ public class ListModuleDeps {
         ));
     }
 
+    @DataProvider(name = "jdkModules")
+    public Object[][] jdkModules() {
+        return new Object[][]{
+            {"jdk.compiler", new String[]{
+                                "java.base/sun.reflect.annotation",
+                                "java.compiler",
+                             }
+            },
+        };
+    }
+
+    @Test(dataProvider = "jdkModules")
+    public void testJDKModule(String moduleName, String[] expected) {
+        JdepsRunner jdeps = JdepsRunner.run(
+            "--list-deps", "-m", moduleName
+        );
+        String[] output = Arrays.stream(jdeps.output())
+                                .map(s -> s.trim())
+                                .toArray(String[]::new);
+        assertEquals(output, expected);
+    }
+
     @Test(dataProvider = "listdeps")
     public void testListDeps(Path classes, String[] expected) {
         JdepsRunner jdeps = JdepsRunner.run(

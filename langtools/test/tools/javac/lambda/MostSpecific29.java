@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,20 @@
  * @test
  * @bug 8144767
  * @summary Correct most-specific test when wildcards appear in functional interface type
- * @compile MostSpecific29.java
  */
-class MostSpecific29 {
+public class MostSpecific29 {
+
+    public static void main(String[] args) {
+        new MostSpecific29().test();
+    }
 
     interface Pred<T> { boolean test(T arg); }
     interface Fun<T,R> { R apply(T arg); }
 
     static void m1(Pred<? super Integer> f) {}
-    static void m1(Fun<Integer, Boolean> f) {}
+    static void m1(Fun<Integer, Boolean> f) {
+        throw new AssertionError("Less-specific method invocation.");
+    }
 
     void test() {
         m1((Integer n) -> true);

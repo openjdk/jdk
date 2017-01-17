@@ -694,8 +694,9 @@ define AddFileToCopy
   # 2 : Dest file
   # 3 : Variable to add targets to
   # 4 : Macro to call for copy operation
+  # 5 : Action text to log
   $2: $1
-	$$(call LogInfo, Copying $$(patsubst $(OUTPUT_ROOT)/%,%,$$@))
+	$$(call LogInfo, $(strip $5) $$(patsubst $(OUTPUT_ROOT)/%,%,$$@))
 	$$($$(strip $4))
 
   $3 += $2
@@ -721,6 +722,7 @@ identity = \
 #             Default is 'install-file'
 #   NAME_MACRO : Optionally supply a macro that rewrites the target file name
 #                based on the source file name
+#   LOG_ACTION : Optionally specify a different action text for log messages
 SetupCopyFiles = $(NamedParamsMacroTemplate)
 define SetupCopyFilesBody
 
@@ -737,6 +739,10 @@ define SetupCopyFilesBody
     $1_NAME_MACRO := identity
   endif
 
+  ifeq ($$($1_LOG_ACTION), )
+    $1_LOG_ACTION := Copying
+  endif
+
   # Remove any trailing slash from SRC and DEST
   $1_SRC := $$(patsubst %/,%,$$($1_SRC))
   $1_DEST := $$(patsubst %/,%,$$($1_DEST))
@@ -744,7 +750,7 @@ define SetupCopyFilesBody
   $$(foreach f, $$(patsubst $$($1_SRC)/%,%,$$($1_FILES)), \
       $$(eval $$(call AddFileToCopy, $$($1_SRC)/$$f, \
       $$($1_DEST)/$$(call $$(strip $$($1_NAME_MACRO)),$$(if $$($1_FLATTEN),$$(notdir $$f),$$f)), \
-      $1, $$($1_MACRO))))
+      $1, $$($1_MACRO), $$($1_LOG_ACTION))))
 
 endef
 

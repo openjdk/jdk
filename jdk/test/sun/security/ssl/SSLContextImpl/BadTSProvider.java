@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,21 @@
  * questions.
  */
 
+//
+// SunJSSE does not support dynamic system properties, no way to re-use
+// system properties in samevm/agentvm mode.
+//
+
 /*
  * @test
  * @bug 4919147
  * @summary Support for token-based KeyStores
  * @run main/othervm BadTSProvider
- *
- *     SunJSSE does not support dynamic system properties, no way to re-use
- *     system properties in samevm/agentvm mode.
  */
 
 import java.io.*;
 import java.net.*;
+import java.security.*;
 import javax.net.ssl.*;
 
 public class BadTSProvider {
@@ -179,13 +182,19 @@ public class BadTSProvider {
             // XXX this test must be updated if the exception message changes
 
             Throwable cause = se.getCause();
-            if (cause instanceof java.security.NoSuchAlgorithmException == false) {
+            if (!(cause instanceof NoSuchAlgorithmException)) {
                 se.printStackTrace();
                 throw new Exception("Unexpected exception" + se);
             }
 
             cause = cause.getCause();
-            if (cause instanceof java.security.NoSuchProviderException == false) {
+            if (!(cause instanceof KeyStoreException)) {
+                se.printStackTrace();
+                throw new Exception("Unexpected exception" + se);
+            }
+
+            cause = cause.getCause();
+            if (!(cause instanceof NoSuchProviderException)) {
                 se.printStackTrace();
                 throw new Exception("Unexpected exception" + se);
             }

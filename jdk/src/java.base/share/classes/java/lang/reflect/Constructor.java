@@ -240,6 +240,11 @@ public final class Constructor<T> extends Executable {
     }
 
 
+    @Override
+    Class<?>[] getSharedParameterTypes() {
+        return parameterTypes;
+    }
+
     /**
      * {@inheritDoc}
      */
