@@ -507,7 +507,7 @@ struct Feature
   { return this+featureParams; }
 
   inline bool sanitize (hb_sanitize_context_t *c,
-                        const Record<Feature>::sanitize_closure_t *closure) const
+                        const Record<Feature>::sanitize_closure_t *closure = NULL) const
   {
     TRACE_SANITIZE (this);
     if (unlikely (!(c->check_struct (this) && lookupIndex.sanitize (c))))
@@ -731,8 +731,8 @@ struct CoverageFormat1
     inline void init (const struct CoverageFormat1 &c_) { c = &c_; i = 0; };
     inline bool more (void) { return i < c->glyphArray.len; }
     inline void next (void) { i++; }
-    inline uint16_t get_glyph (void) { return c->glyphArray[i]; }
-    inline uint16_t get_coverage (void) { return i; }
+    inline hb_codepoint_t get_glyph (void) { return c->glyphArray[i]; }
+    inline unsigned int get_coverage (void) { return i; }
 
     private:
     const struct CoverageFormat1 *c;
@@ -829,26 +829,33 @@ struct CoverageFormat2
 
   public:
   /* Older compilers need this to be public. */
-  struct Iter {
-    inline void init (const CoverageFormat2 &c_) {
+  struct Iter
+  {
+    inline void init (const CoverageFormat2 &c_)
+    {
       c = &c_;
       coverage = 0;
       i = 0;
       j = c->rangeRecord.len ? c_.rangeRecord[0].start : 0;
     }
     inline bool more (void) { return i < c->rangeRecord.len; }
-    inline void next (void) {
-      coverage++;
-      if (j == c->rangeRecord[i].end) {
+    inline void next (void)
+    {
+      if (j >= c->rangeRecord[i].end)
+      {
         i++;
         if (more ())
+        {
           j = c->rangeRecord[i].start;
+          coverage = c->rangeRecord[i].value;
+        }
         return;
       }
+      coverage++;
       j++;
     }
-    inline uint16_t get_glyph (void) { return j; }
-    inline uint16_t get_coverage (void) { return coverage; }
+    inline hb_codepoint_t get_glyph (void) { return j; }
+    inline unsigned int get_coverage (void) { return coverage; }
 
     private:
     const struct CoverageFormat2 *c;
@@ -957,14 +964,14 @@ struct Coverage
       default:                   break;
       }
     }
-    inline uint16_t get_glyph (void) {
+    inline hb_codepoint_t get_glyph (void) {
       switch (format) {
       case 1: return u.format1.get_glyph ();
       case 2: return u.format2.get_glyph ();
       default:return 0;
       }
     }
-    inline uint16_t get_coverage (void) {
+    inline unsigned int get_coverage (void) {
       switch (format) {
       case 1: return u.format1.get_coverage ();
       case 2: return u.format2.get_coverage ();
@@ -1162,11 +1169,380 @@ struct ClassDef
 
 
 /*
+ * Item Variation Store
+ */
+
+struct VarRegionAxis
+{
+  inline float evaluate (int coord) const
+  {
+    int start = startCoord, peak = peakCoord, end = endCoord;
+
+    /* TODO Move these to sanitize(). */
+    if (unlikely (start > peak || peak > end))
+      return 1.;
+    if (unlikely (start < 0 && end > 0 && peak != 0))
+      return 1.;
+
+    if (peak == 0 || coord == peak)
+      return 1.;
+
+    if (coord <= start || end <= coord)
+      return 0.;
+
+    /* Interpolate */
+    if (coord < peak)
+      return float (coord - start) / (peak - start);
+    else
+      return float (end - coord) / (end - peak);
+  }
+
+  inline bool sanitize (hb_sanitize_context_t *c) const
+  {
+    TRACE_SANITIZE (this);
+    return_trace (c->check_struct (this));
+    /* TODO Handle invalid start/peak/end configs, so we don't
+     * have to do that at runtime. */
+  }
+
+  public:
+  F2DOT14       startCoord;
+  F2DOT14       peakCoord;
+  F2DOT14       endCoord;
+  public:
+  DEFINE_SIZE_STATIC (6);
+};
+
+struct VarRegionList
+{
+  inline float evaluate (unsigned int region_index,
+                         int *coords, unsigned int coord_len) const
+  {
+    if (unlikely (region_index >= regionCount))
+      return 0.;
+
+    const VarRegionAxis *axes = axesZ + (region_index * axisCount);
+
+    float v = 1.;
+    unsigned int count = MIN (coord_len, (unsigned int) axisCount);
+    for (unsigned int i = 0; i < count; i++)
+    {
+      float factor = axes[i].evaluate (coords[i]);
+      if (factor == 0.)
+        return 0.;
+      v *= factor;
+    }
+    return v;
+  }
+
+  inline bool sanitize (hb_sanitize_context_t *c) const
+  {
+    TRACE_SANITIZE (this);
+    return_trace (c->check_struct (this) &&
+                  c->check_array (axesZ, axesZ[0].static_size,
+                                  (unsigned int) axisCount * (unsigned int) regionCount));
+  }
+
+  protected:
+  USHORT        axisCount;
+  USHORT        regionCount;
+  VarRegionAxis axesZ[VAR];
+  public:
+  DEFINE_SIZE_ARRAY (4, axesZ);
+};
+
+struct VarData
+{
+  inline unsigned int get_row_size (void) const
+  { return shortCount + regionIndices.len; }
+
+  inline unsigned int get_size (void) const
+  { return itemCount * get_row_size (); }
+
+  inline float get_delta (unsigned int inner,
+                          int *coords, unsigned int coord_count,
+                          const VarRegionList &regions) const
+  {
+    if (unlikely (inner >= itemCount))
+      return 0.;
+
+   unsigned int count = regionIndices.len;
+   unsigned int scount = shortCount;
+
+   const BYTE *bytes = &StructAfter<BYTE> (regionIndices);
+   const BYTE *row = bytes + inner * (scount + count);
+
+   float delta = 0.;
+   unsigned int i = 0;
+
+   const SHORT *scursor = reinterpret_cast<const SHORT *> (row);
+   for (; i < scount; i++)
+   {
+     float scalar = regions.evaluate (regionIndices.array[i], coords, coord_count);
+     delta += scalar * *scursor++;
+   }
+   const INT8 *bcursor = reinterpret_cast<const INT8 *> (scursor);
+   for (; i < count; i++)
+   {
+     float scalar = regions.evaluate (regionIndices.array[i], coords, coord_count);
+     delta += scalar * *bcursor++;
+   }
+
+   return delta;
+  }
+
+  inline bool sanitize (hb_sanitize_context_t *c) const
+  {
+    TRACE_SANITIZE (this);
+    return_trace (c->check_struct (this) &&
+                  regionIndices.sanitize(c) &&
+                  shortCount <= regionIndices.len &&
+                  c->check_array (&StructAfter<BYTE> (regionIndices),
+                                  get_row_size (), itemCount));
+  }
+
+  protected:
+  USHORT                itemCount;
+  USHORT                shortCount;
+  ArrayOf<USHORT>       regionIndices;
+  BYTE                  bytesX[VAR];
+  public:
+  DEFINE_SIZE_ARRAY2 (6, regionIndices, bytesX);
+};
+
+struct VariationStore
+{
+  inline float get_delta (unsigned int outer, unsigned int inner,
+                          int *coords, unsigned int coord_count) const
+  {
+    if (unlikely (outer >= dataSets.len))
+      return 0.;
+
+    return (this+dataSets[outer]).get_delta (inner,
+                                             coords, coord_count,
+                                             this+regions);
+  }
+
+  inline bool sanitize (hb_sanitize_context_t *c) const
+  {
+    TRACE_SANITIZE (this);
+    return_trace (c->check_struct (this) &&
+                  format == 1 &&
+                  regions.sanitize (c, this) &&
+                  dataSets.sanitize (c, this));
+  }
+
+  protected:
+  USHORT                                format;
+  OffsetTo<VarRegionList, ULONG>        regions;
+  OffsetArrayOf<VarData, ULONG>         dataSets;
+  public:
+  DEFINE_SIZE_ARRAY (8, dataSets);
+};
+
+/*
+ * Feature Variations
+ */
+
+struct ConditionFormat1
+{
+  friend struct Condition;
+
+  private:
+  inline bool evaluate (const int *coords, unsigned int coord_len) const
+  {
+    int coord = axisIndex < coord_len ? coords[axisIndex] : 0;
+    return filterRangeMinValue <= coord && coord <= filterRangeMaxValue;
+  }
+
+  inline bool sanitize (hb_sanitize_context_t *c) const
+  {
+    TRACE_SANITIZE (this);
+    return_trace (c->check_struct (this));
+  }
+
+  protected:
+  USHORT        format;         /* Format identifier--format = 1 */
+  USHORT        axisIndex;
+  F2DOT14       filterRangeMinValue;
+  F2DOT14       filterRangeMaxValue;
+  public:
+  DEFINE_SIZE_STATIC (8);
+};
+
+struct Condition
+{
+  inline bool evaluate (const int *coords, unsigned int coord_len) const
+  {
+    switch (u.format) {
+    case 1: return u.format1.evaluate (coords, coord_len);
+    default:return false;
+    }
+  }
+
+  inline bool sanitize (hb_sanitize_context_t *c) const
+  {
+    TRACE_SANITIZE (this);
+    if (!u.format.sanitize (c)) return_trace (false);
+    switch (u.format) {
+    case 1: return_trace (u.format1.sanitize (c));
+    default:return_trace (true);
+    }
+  }
+
+  protected:
+  union {
+  USHORT                format;         /* Format identifier */
+  ConditionFormat1      format1;
+  } u;
+  public:
+  DEFINE_SIZE_UNION (2, format);
+};
+
+struct ConditionSet
+{
+  inline bool evaluate (const int *coords, unsigned int coord_len) const
+  {
+    unsigned int count = conditions.len;
+    for (unsigned int i = 0; i < count; i++)
+      if (!(this+conditions.array[i]).evaluate (coords, coord_len))
+        return false;
+    return true;
+  }
+
+  inline bool sanitize (hb_sanitize_context_t *c) const
+  {
+    TRACE_SANITIZE (this);
+    return_trace (conditions.sanitize (c, this));
+  }
+
+  protected:
+  OffsetArrayOf<Condition, ULONG> conditions;
+  public:
+  DEFINE_SIZE_ARRAY (2, conditions);
+};
+
+struct FeatureTableSubstitutionRecord
+{
+  friend struct FeatureTableSubstitution;
+
+  inline bool sanitize (hb_sanitize_context_t *c, const void *base) const
+  {
+    TRACE_SANITIZE (this);
+    return_trace (c->check_struct (this) && feature.sanitize (c, base));
+  }
+
+  protected:
+  USHORT                        featureIndex;
+  OffsetTo<Feature, ULONG>      feature;
+  public:
+  DEFINE_SIZE_STATIC (6);
+};
+
+struct FeatureTableSubstitution
+{
+  inline const Feature *find_substitute (unsigned int feature_index) const
+  {
+    unsigned int count = substitutions.len;
+    for (unsigned int i = 0; i < count; i++)
+    {
+      const FeatureTableSubstitutionRecord &record = substitutions.array[i];
+      if (record.featureIndex == feature_index)
+        return &(this+record.feature);
+    }
+    return NULL;
+  }
+
+  inline bool sanitize (hb_sanitize_context_t *c) const
+  {
+    TRACE_SANITIZE (this);
+    return_trace (version.sanitize (c) &&
+                  likely (version.major == 1) &&
+                  substitutions.sanitize (c, this));
+  }
+
+  protected:
+  FixedVersion<>        version;        /* Version--0x00010000u */
+  ArrayOf<FeatureTableSubstitutionRecord>
+                        substitutions;
+  public:
+  DEFINE_SIZE_ARRAY (6, substitutions);
+};
+
+struct FeatureVariationRecord
+{
+  friend struct FeatureVariations;
+
+  inline bool sanitize (hb_sanitize_context_t *c, const void *base) const
+  {
+    TRACE_SANITIZE (this);
+    return_trace (conditions.sanitize (c, base) &&
+                  substitutions.sanitize (c, base));
+  }
+
+  protected:
+  OffsetTo<ConditionSet, ULONG>
+                        conditions;
+  OffsetTo<FeatureTableSubstitution, ULONG>
+                        substitutions;
+  public:
+  DEFINE_SIZE_STATIC (8);
+};
+
+struct FeatureVariations
+{
+  static const unsigned int NOT_FOUND_INDEX = 0xFFFFFFFFu;
+
+  inline bool find_index (const int *coords, unsigned int coord_len,
+                          unsigned int *index) const
+  {
+    unsigned int count = varRecords.len;
+    for (unsigned int i = 0; i < count; i++)
+    {
+      const FeatureVariationRecord &record = varRecords.array[i];
+      if ((this+record.conditions).evaluate (coords, coord_len))
+      {
+        *index = i;
+        return true;
+      }
+    }
+    *index = NOT_FOUND_INDEX;
+    return false;
+  }
+
+  inline const Feature *find_substitute (unsigned int variations_index,
+                                         unsigned int feature_index) const
+  {
+    const FeatureVariationRecord &record = varRecords[variations_index];
+    return (this+record.substitutions).find_substitute (feature_index);
+  }
+
+  inline bool sanitize (hb_sanitize_context_t *c) const
+  {
+    TRACE_SANITIZE (this);
+    return_trace (version.sanitize (c) &&
+                  likely (version.major == 1) &&
+                  varRecords.sanitize (c, this));
+  }
+
+  protected:
+  FixedVersion<>        version;        /* Version--0x00010000u */
+  ArrayOf<FeatureVariationRecord, ULONG>
+                        varRecords;
+  public:
+  DEFINE_SIZE_ARRAY (8, varRecords);
+};
+
+
+/*
  * Device Tables
  */
 
-struct Device
+struct HintingDevice
 {
+  friend struct Device;
+
+  private:
 
   inline hb_position_t get_x_delta (hb_font_t *font) const
   { return get_delta (font->x_ppem, font->x_scale); }
@@ -1233,6 +1609,101 @@ struct Device
   USHORT        deltaValue[VAR];        /* Array of compressed data */
   public:
   DEFINE_SIZE_ARRAY (6, deltaValue);
+};
+
+struct VariationDevice
+{
+  friend struct Device;
+
+  private:
+
+  inline hb_position_t get_x_delta (hb_font_t *font, const VariationStore &store) const
+  { return font->em_scalef_x (get_delta (font, store)); }
+
+  inline hb_position_t get_y_delta (hb_font_t *font, const VariationStore &store) const
+  { return font->em_scalef_y (get_delta (font, store)); }
+
+  inline bool sanitize (hb_sanitize_context_t *c) const
+  {
+    TRACE_SANITIZE (this);
+    return_trace (c->check_struct (this));
+  }
+
+  private:
+
+  inline float get_delta (hb_font_t *font, const VariationStore &store) const
+  {
+    return store.get_delta (outerIndex, innerIndex, font->coords, font->num_coords);
+  }
+
+  protected:
+  USHORT        outerIndex;
+  USHORT        innerIndex;
+  USHORT        deltaFormat;    /* Format identifier for this table: 0x0x8000 */
+  public:
+  DEFINE_SIZE_STATIC (6);
+};
+
+struct DeviceHeader
+{
+  protected:
+  USHORT                reserved1;
+  USHORT                reserved2;
+  public:
+  USHORT                format;         /* Format identifier */
+  public:
+  DEFINE_SIZE_STATIC (6);
+};
+
+struct Device
+{
+  inline hb_position_t get_x_delta (hb_font_t *font, const VariationStore &store=Null(VariationStore)) const
+  {
+    switch (u.b.format)
+    {
+    case 1: case 2: case 3:
+      return u.hinting.get_x_delta (font);
+    case 0x8000:
+      return u.variation.get_x_delta (font, store);
+    default:
+      return 0;
+    }
+  }
+  inline hb_position_t get_y_delta (hb_font_t *font, const VariationStore &store=Null(VariationStore)) const
+  {
+    switch (u.b.format)
+    {
+    case 1: case 2: case 3:
+      return u.hinting.get_y_delta (font);
+    case 0x8000:
+      return u.variation.get_y_delta (font, store);
+    default:
+      return 0;
+    }
+  }
+
+  inline bool sanitize (hb_sanitize_context_t *c) const
+  {
+    TRACE_SANITIZE (this);
+    if (!u.b.format.sanitize (c)) return_trace (false);
+    switch (u.b.format) {
+    case 1: case 2: case 3:
+      return_trace (u.hinting.sanitize (c));
+    case 0x8000:
+      return_trace (u.variation.sanitize (c));
+    default:
+      return_trace (true);
+    }
+  }
+
+  protected:
+  union {
+  DeviceHeader          b;
+  HintingDevice         hinting;
+  VariationDevice       variation;
+  } u;
+  public:
+  DEFINE_SIZE_UNION (6, b);
 };
 
 
