@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,34 +26,37 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 
-public class readTest {
+public class RegistryLookup {
+    public static final int EXIT_FAIL = 1;
 
     public static void main(String args[]) throws Exception {
+        Registry registry = null;
+        int exit = 0;
         try {
-            testPkg.Server obj = new testPkg.Server();
-            testPkg.Hello stub = (testPkg.Hello) UnicastRemoteObject.exportObject(obj, 0);
-            // Bind the remote object's stub in the registry
-            Registry registry =
-                LocateRegistry.getRegistry(TestLibrary.READTEST_REGISTRY_PORT);
-            registry.bind("Hello", stub);
+            int port = Integer.valueOf(args[0]);
 
+            testPkg.Server obj = new testPkg.Server();
+            testPkg.Hello stub =
+                    (testPkg.Hello) UnicastRemoteObject.exportObject(obj, 0);
+            // Bind the remote object's stub in the registry
+            registry = LocateRegistry.getRegistry(port);
+            registry.bind("Hello", stub);
             System.err.println("Server ready");
 
-            // now, let's test client
-            testPkg.Client client =
-                new testPkg.Client(TestLibrary.READTEST_REGISTRY_PORT);
+            testPkg.Client client = new testPkg.Client(port);
             String testStubReturn = client.testStub();
             if(!testStubReturn.equals(obj.hello)) {
-                throw new RuntimeException("Test Fails : unexpected string from stub call");
-            } else {
-                System.out.println("Test passed");
+                throw new RuntimeException("Test Fails : "
+                        + "unexpected string from stub call");
             }
             registry.unbind("Hello");
-
-        } catch (Exception e) {
-            System.err.println("Server exception: " + e.toString());
-            e.printStackTrace();
+            System.out.println("Test passed");
+        } catch (Exception ex) {
+            exit = EXIT_FAIL;
+            ex.printStackTrace();
         }
-
+        // need to exit explicitly, and parent process uses exit value
+        // to tell if the test passed.
+        System.exit(exit);
     }
 }

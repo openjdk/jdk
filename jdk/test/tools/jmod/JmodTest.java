@@ -580,36 +580,24 @@ public class JmodTest {
     }
 
     @Test
-    public void testTmpFileAlreadyExists() throws IOException {
-        // Implementation detail: jmod tool creates <jmod-file>.tmp
-        // Ensure that there are no problems if existing
-
-        Path jmod = MODS_DIR.resolve("testTmpFileAlreadyExists.jmod");
-        Path tmp = MODS_DIR.resolve("testTmpFileAlreadyExists.jmod.tmp");
-        FileUtils.deleteFileIfExistsWithRetry(jmod);
-        FileUtils.deleteFileIfExistsWithRetry(tmp);
-        Files.createFile(tmp);
-        String cp = EXPLODED_DIR.resolve("foo").resolve("classes").toString();
-
-        jmod("create",
-             "--class-path", cp,
-             jmod.toString())
-            .assertSuccess()
-            .resultChecker(r ->
-                assertTrue(Files.notExists(tmp), "Unexpected tmp file:" + tmp)
-            );
-    }
-
-    @Test
     public void testTmpFileRemoved() throws IOException {
         // Implementation detail: jmod tool creates <jmod-file>.tmp
         // Ensure that it is removed in the event of a failure.
         // The failure in this case is a class in the unnamed package.
 
-        Path jmod = MODS_DIR.resolve("testTmpFileRemoved.jmod");
-        Path tmp = MODS_DIR.resolve("testTmpFileRemoved.jmod.tmp");
+        String filename = "testTmpFileRemoved.jmod";
+        Path jmod = MODS_DIR.resolve(filename);
+
+        // clean up files
         FileUtils.deleteFileIfExistsWithRetry(jmod);
-        FileUtils.deleteFileIfExistsWithRetry(tmp);
+        findTmpFiles(filename).forEach(tmp -> {
+            try {
+                FileUtils.deleteFileIfExistsWithRetry(tmp);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        });
+
         String cp = EXPLODED_DIR.resolve("foo").resolve("classes") + File.pathSeparator +
                     EXPLODED_DIR.resolve("foo").resolve("classes")
                                 .resolve("jdk").resolve("test").resolve("foo").toString();
@@ -620,8 +608,20 @@ public class JmodTest {
              .assertFailure()
              .resultChecker(r -> {
                  assertContains(r.output, "unnamed package");
-                 assertTrue(Files.notExists(tmp), "Unexpected tmp file:" + tmp);
+                 Set<Path> tmpfiles = findTmpFiles(filename).collect(toSet());
+                 assertTrue(tmpfiles.isEmpty(), "Unexpected tmp file:" + tmpfiles);
              });
+    }
+
+    private Stream<Path> findTmpFiles(String prefix) {
+        try {
+            Path tmpdir = Paths.get(System.getProperty("java.io.tmpdir"));
+            return Files.find(tmpdir, 1, (p, attrs) ->
+                p.getFileName().toString().startsWith(prefix)
+                    && p.getFileName().toString().endsWith(".tmp"));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     // ---

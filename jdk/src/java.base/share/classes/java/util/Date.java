@@ -82,16 +82,18 @@ import sun.util.calendar.ZoneInfo;
  * well; for example, the time scale used by the satellite-based
  * global positioning system (GPS) is synchronized to UTC but is
  * <i>not</i> adjusted for leap seconds. An interesting source of
- * further information is the U.S. Naval Observatory, particularly
- * the Directorate of Time at:
+ * further information is the United States Naval Observatory (USNO):
  * <blockquote><pre>
- *     <a href="http://www.usno.navy.mil">http://www.usno.navy.mil</a>
+ *     <a href="http://www.usno.navy.mil/USNO">http://www.usno.navy.mil/USNO</a>
  * </pre></blockquote>
  * <p>
- * and their definitions of "Systems of Time" at:
+ * and the material regarding "Systems of Time" at:
  * <blockquote><pre>
  *     <a href="http://www.usno.navy.mil/USNO/time/master-clock/systems-of-time">http://www.usno.navy.mil/USNO/time/master-clock/systems-of-time</a>
  * </pre></blockquote>
+ * <p>
+ * which has descriptions of various different time systems including
+ * UT, UT1, and UTC.
  * <p>
  * In all methods of class {@code Date} that accept or return
  * year, month, date, hours, minutes, and seconds values, the
