@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8143037 8142447 8144095 8140265 8144906 8146138 8147887 8147886 8148316 8148317 8143955 8157953 8080347 8154714 8166649 8167643 8170162 8172102
+ * @bug 8143037 8142447 8144095 8140265 8144906 8146138 8147887 8147886 8148316 8148317 8143955 8157953 8080347 8154714 8166649 8167643 8170162 8172102 8165405
  * @summary Tests for Basic tests for REPL tool
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -263,7 +263,8 @@ public class ToolBasicTest extends ReplToolTesting {
         compiler.compile(outDir, "package pkg; public class A { public String toString() { return \"A\"; } }");
         Path classpath = compiler.getPath(outDir);
         test(
-                (a) -> assertCommand(a, "/classpath " + classpath, String.format("|  Path '%s' added to classpath", classpath)),
+                (a) -> assertCommand(a, "/env --class-path " + classpath,
+                        "|  Setting new options and restoring state."),
                 (a) -> evaluateExpression(a, "pkg.A", "new pkg.A();", "A")
         );
         test(new String[] { "--class-path", classpath.toString() },
@@ -279,7 +280,8 @@ public class ToolBasicTest extends ReplToolTesting {
         compiler.jar(outDir, jarName, "pkg/A.class");
         Path jarPath = compiler.getPath(outDir).resolve(jarName);
         test(
-                (a) -> assertCommand(a, "/classpath " + jarPath, String.format("|  Path '%s' added to classpath", jarPath)),
+                (a) -> assertCommand(a, "/env --class-path " + jarPath,
+                        "|  Setting new options and restoring state."),
                 (a) -> evaluateExpression(a, "pkg.A", "new pkg.A();", "A")
         );
         test(new String[] { "--class-path", jarPath.toString() },

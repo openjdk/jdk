@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,19 @@
  * @test
  * @bug 8143852
  * @summary Most specific inference constraints derived from both functional interface method parameters and tparam bounds
- * @compile MostSpecific22.java
  */
-class MostSpecific22 {
+
+public class MostSpecific22 {
+    public static void main(String[] args) {
+        new MostSpecific22().test();
+    }
+
     interface F1<T> { <X extends T> Object apply(T arg); }
     interface F2 { <Y extends Number> String apply(Number arg); }
 
-    static <T> T m1(F1<T> f) { return null; }
+    static <T> T m1(F1<T> f) {
+        throw new AssertionError("Less-specific method invocation.");
+    }
     static Object m1(F2 f) { return null; }
 
     static String foo(Object in) { return "a"; }
