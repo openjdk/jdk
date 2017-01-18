@@ -1819,6 +1819,25 @@ bool Arguments::gc_selected() {
 #endif // INCLUDE_ALL_GCS
 }
 
+#ifdef TIERED
+bool Arguments::compilation_mode_selected() {
+ return !FLAG_IS_DEFAULT(TieredCompilation) || !FLAG_IS_DEFAULT(TieredStopAtLevel) ||
+        !FLAG_IS_DEFAULT(UseAOT) JVMCI_ONLY(|| !FLAG_IS_DEFAULT(EnableJVMCI) || !FLAG_IS_DEFAULT(UseJVMCICompiler));
+
+}
+
+void Arguments::select_compilation_mode_ergonomically() {
+#if defined(_WINDOWS) && !defined(_LP64)
+  if (FLAG_IS_DEFAULT(NeverActAsServerClassMachine)) {
+    NeverActAsServerClassMachine = true;
+  }
+#endif
+  if (NeverActAsServerClassMachine) {
+    set_client_compilation_mode();
+  }
+}
+#endif //TIERED
+
 void Arguments::select_gc_ergonomically() {
 #if INCLUDE_ALL_GCS
   if (os::is_server_class_machine()) {
@@ -1883,6 +1902,11 @@ void Arguments::set_jvmci_specific_flags() {
 #endif
 
 void Arguments::set_ergonomics_flags() {
+#ifdef TIERED
+  if (!compilation_mode_selected()) {
+    select_compilation_mode_ergonomically();
+  }
+#endif
   select_gc();
 
 #if defined(COMPILER2) || INCLUDE_JVMCI
@@ -1891,7 +1915,7 @@ void Arguments::set_ergonomics_flags() {
   // server performance.  When -server is specified, keep the default off
   // unless it is asked for.  Future work: either add bytecode rewriting
   // at link time, or rewrite bytecodes in non-shared methods.
-  if (!DumpSharedSpaces && !RequireSharedSpaces &&
+  if (is_server_compilation_mode_vm() && !DumpSharedSpaces && !RequireSharedSpaces &&
       (FLAG_IS_DEFAULT(UseSharedSpaces) || !UseSharedSpaces)) {
     no_shared_spaces("COMPILER2 default: -Xshare:auto | off, have to manually setup to on.");
   }
@@ -3711,6 +3735,12 @@ jint Arguments::finalize_vm_init_args() {
     return JNI_ERR;
   }
 
+#if INCLUDE_JVMCI
+  if (UseJVMCICompiler) {
+    Compilation_mode = CompMode_server;
+  }
+#endif
+
   return JNI_OK;
 }
 
@@ -4456,7 +4486,9 @@ jint Arguments::apply_ergo() {
   } else {
     int max_compilation_policy_choice = 1;
 #ifdef COMPILER2
-    max_compilation_policy_choice = 2;
+    if (is_server_compilation_mode_vm()) {
+      max_compilation_policy_choice = 2;
+    }
 #endif
     // Check if the policy is valid.
     if (CompilationPolicyChoice >= max_compilation_policy_choice) {

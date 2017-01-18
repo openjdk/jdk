@@ -57,11 +57,11 @@ void ReferenceProcessor::init_statics() {
   java_lang_ref_SoftReference::set_clock(_soft_ref_timestamp_clock);
 
   _always_clear_soft_ref_policy = new AlwaysClearPolicy();
-#if defined(COMPILER2) || INCLUDE_JVMCI
-  _default_soft_ref_policy      = new LRUMaxHeapPolicy();
-#else
-  _default_soft_ref_policy      = new LRUCurrentHeapPolicy();
-#endif
+  if (is_server_compilation_mode_vm()) {
+    _default_soft_ref_policy = new LRUMaxHeapPolicy();
+  } else {
+    _default_soft_ref_policy = new LRUCurrentHeapPolicy();
+  }
   if (_always_clear_soft_ref_policy == NULL || _default_soft_ref_policy == NULL) {
     vm_exit_during_initialization("Could not allocate reference policy object");
   }

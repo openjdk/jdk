@@ -28,6 +28,7 @@
  * @summary Test that C2 flag UseCountedLoopSafepoints ensures a safepoint is kept in a CountedLoop
  * @library /test/lib /
  * @requires vm.compMode != "Xint" & vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4) & vm.debug == true
+ * @requires !vm.emulatedClient
  * @modules java.base/jdk.internal.misc
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
@@ -37,6 +38,7 @@
 
 package compiler.loopopts;
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import java.util.List;
@@ -51,6 +53,9 @@ import jdk.test.lib.Asserts;
 public class UseCountedLoopSafepointsTest {
 
     public static void main (String args[]) {
+        if (!Platform.isServer() || Platform.isEmulatedClient()) {
+            throw new Error("TESTBUG: Not server mode");
+        }
         check(true); // check ideal graph with UseCountedLoopSafepoint enabled
         check(false); // ... and disabled
     }

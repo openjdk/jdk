@@ -131,19 +131,32 @@ const char* Abstract_VM_Version::vm_info_string() {
       return UseSharedSpaces ? "interpreted mode, sharing" : "interpreted mode";
     case Arguments::_mixed:
       if (UseSharedSpaces) {
-          if (UseAOT) {
-            return "mixed mode, aot, sharing";
-          } else {
-            return "mixed mode, sharing";
-          }
+        if (UseAOT) {
+          return "mixed mode, aot, sharing";
+#ifdef TIERED
+        } else if(is_client_compilation_mode_vm()) {
+          return "mixed mode, emulated-client, sharing";
+#endif
+        } else {
+          return "mixed mode, sharing";
+         }
       } else {
         if (UseAOT) {
           return "mixed mode, aot";
+#ifdef TIERED
+        } else if(is_client_compilation_mode_vm()) {
+          return "mixed mode, emulated-client";
+#endif
         } else {
           return "mixed mode";
         }
       }
     case Arguments::_comp:
+#ifdef TIERED
+      if (is_client_compilation_mode_vm()) {
+         return UseSharedSpaces ? "compiled mode, emulated-client, sharing" : "compiled mode, emulated-client";
+      }
+#endif
       return UseSharedSpaces ? "compiled mode, sharing"    : "compiled mode";
   };
   ShouldNotReachHere();

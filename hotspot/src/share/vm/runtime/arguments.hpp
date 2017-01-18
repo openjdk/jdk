@@ -455,6 +455,10 @@ class Arguments : AllStatic {
   static intx _Tier3InvokeNotifyFreqLog;
   static intx _Tier4InvocationThreshold;
 
+  // Compilation mode.
+  static bool compilation_mode_selected();
+  static void select_compilation_mode_ergonomically();
+
   // Tiered
   static void set_tiered_flags();
   // CMS/ParNew garbage collectors

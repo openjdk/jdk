@@ -29,7 +29,7 @@ import java.io.IOException;
  * @key gc
  * @key stress
  * @requires vm.gc.G1
- * @requires vm.flavor == "server"
+ * @requires vm.flavor == "server" & !vm.emulatedClient
  * @summary Stress the G1 GC by trying to make old objects more likely to be garbage than young objects.
  * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx256m -server -XX:+UseG1GC TestGCBasherWithG1 120000
  */

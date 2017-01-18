@@ -29,7 +29,7 @@ import java.io.IOException;
  * @key gc
  * @key stress
  * @requires vm.gc.Serial
- * @requires vm.flavor == "server"
+ * @requires vm.flavor == "server" & !vm.emulatedClient
  * @summary Stress the Serial GC by trying to make old objects more likely to be garbage than young objects.
  * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx256m -server -XX:+UseSerialGC TestGCBasherWithSerial 120000
  */
