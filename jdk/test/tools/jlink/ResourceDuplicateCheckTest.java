@@ -27,6 +27,7 @@
  * @summary Detect duplicated resources in packaged modules
  * @modules jdk.jlink/jdk.tools.jlink.builder
  *          jdk.jlink/jdk.tools.jlink.internal
+ *          jdk.jlink/jdk.tools.jlink.plugin
  * @run build ResourceDuplicateCheckTest
  * @run main ResourceDuplicateCheckTest
  */
