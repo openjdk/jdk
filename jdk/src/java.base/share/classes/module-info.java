@@ -290,6 +290,8 @@ module java.base {
         jdk.crypto.token,
         jdk.jartool,
         jdk.security.auth;
+    exports sun.security.validator to
+        jdk.jartool;
     exports sun.text.resources to
         jdk.localedata;
     exports sun.util.cldr to
