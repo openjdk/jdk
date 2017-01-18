@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ import javax.swing.plaf.basic.BasicBorders;
 import javax.swing.plaf.basic.BasicComboBoxRenderer;
 import javax.swing.plaf.basic.BasicComboBoxEditor;
 
+import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
 import sun.awt.OSInfo;
 
@@ -179,7 +180,9 @@ public class MotifLookAndFeel extends BasicLookAndFeel
      * used for getting localized defaults.
      */
     private void initResourceBundle(UIDefaults table) {
-        table.addResourceBundle( "com.sun.java.swing.plaf.motif.resources.motif" );
+        SwingAccessor.getUIDefaultsAccessor()
+                     .addInternalBundle(table,
+                             "com.sun.java.swing.plaf.motif.resources.motif");
     }
 
 
