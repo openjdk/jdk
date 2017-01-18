@@ -48,6 +48,7 @@ import jdk.tools.jlink.plugin.ResourcePool;
  * @author Jean-Francois Denise
  * @modules jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.builder
+ *          jdk.jlink/jdk.tools.jlink.plugin
  *          java.base/jdk.internal.jimage
  * @run main/othervm -verbose:gc -Xmx1g ImageFileCreatorTest
  */
