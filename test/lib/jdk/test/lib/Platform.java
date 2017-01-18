@@ -63,6 +63,10 @@ public class Platform {
         return vmName.contains("Embedded");
     }
 
+    public static boolean isEmulatedClient() {
+        return vmInfo.contains(" emulated-client");
+    }
+
     public static boolean isTieredSupported() {
         return compiler.contains("Tiered Compilers");
     }
