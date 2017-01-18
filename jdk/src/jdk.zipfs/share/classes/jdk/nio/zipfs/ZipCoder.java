@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,33 +34,64 @@ import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 import java.util.Arrays;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+
 /**
  * Utility class for zipfile name and comment decoding and encoding
  *
  * @author  Xueming Shen
  */
 
-final class ZipCoder {
+class ZipCoder {
 
-    String toString(byte[] ba, int length) {
-        CharsetDecoder cd = decoder().reset();
-        int len = (int)(length * cd.maxCharsPerByte());
-        char[] ca = new char[len];
-        if (len == 0)
-            return new String(ca);
-        ByteBuffer bb = ByteBuffer.wrap(ba, 0, length);
-        CharBuffer cb = CharBuffer.wrap(ca);
-        CoderResult cr = cd.decode(bb, cb, true);
-        if (!cr.isUnderflow())
-            throw new IllegalArgumentException(cr.toString());
-        cr = cd.flush(cb);
-        if (!cr.isUnderflow())
-            throw new IllegalArgumentException(cr.toString());
-        return new String(ca, 0, cb.position());
+    static class UTF8 extends ZipCoder {
+        UTF8() {
+            super(UTF_8);
+        }
+
+        @Override
+        byte[] getBytes(String s) {        // fast pass for ascii
+            for (int i = 0; i < s.length(); i++) {
+                if (s.charAt(i) > 0x7f) return super.getBytes(s);
+            }
+            return s.getBytes(ISO_8859_1);
+        }
+
+        @Override
+        String toString(byte[] ba) {
+            for (byte b : ba) {
+                if (b < 0) return super.toString(ba);
+            }
+            return new String(ba, ISO_8859_1);
+        }
+    }
+
+    private static ZipCoder utf8 = new UTF8();
+
+    public static ZipCoder get(String csn) {
+        Charset cs = Charset.forName(csn);
+        if (cs.name().equals("UTF-8")) {
+            return utf8;
+        }
+        return new ZipCoder(cs);
     }
 
     String toString(byte[] ba) {
-        return toString(ba, ba.length);
+        CharsetDecoder cd = decoder().reset();
+        int clen = (int)(ba.length * cd.maxCharsPerByte());
+        char[] ca = new char[clen];
+        if (clen == 0)
+        return new String(ca);
+        ByteBuffer bb = ByteBuffer.wrap(ba, 0, ba.length);
+        CharBuffer cb = CharBuffer.wrap(ca);
+        CoderResult cr = cd.decode(bb, cb, true);
+        if (!cr.isUnderflow())
+        throw new IllegalArgumentException(cr.toString());
+        cr = cd.flush(cb);
+        if (!cr.isUnderflow())
+        throw new IllegalArgumentException(cr.toString());
+        return new String(ca, 0, cb.position());
     }
 
     byte[] getBytes(String s) {
@@ -69,62 +100,29 @@ final class ZipCoder {
         int len = (int)(ca.length * ce.maxBytesPerChar());
         byte[] ba = new byte[len];
         if (len == 0)
-            return ba;
+        return ba;
         ByteBuffer bb = ByteBuffer.wrap(ba);
         CharBuffer cb = CharBuffer.wrap(ca);
         CoderResult cr = ce.encode(cb, bb, true);
         if (!cr.isUnderflow())
-            throw new IllegalArgumentException(cr.toString());
+        throw new IllegalArgumentException(cr.toString());
         cr = ce.flush(bb);
         if (!cr.isUnderflow())
-            throw new IllegalArgumentException(cr.toString());
+        throw new IllegalArgumentException(cr.toString());
         if (bb.position() == ba.length)  // defensive copy?
-            return ba;
+        return ba;
         else
-            return Arrays.copyOf(ba, bb.position());
-    }
-
-    // assume invoked only if "this" is not utf8
-    byte[] getBytesUTF8(String s) {
-        if (isutf8)
-            return getBytes(s);
-        if (utf8 == null)
-            utf8 = new ZipCoder(Charset.forName("UTF-8"));
-        return utf8.getBytes(s);
-    }
-
-    String toStringUTF8(byte[] ba, int len) {
-        if (isutf8)
-            return toString(ba, len);
-        if (utf8 == null)
-            utf8 = new ZipCoder(Charset.forName("UTF-8"));
-        return utf8.toString(ba, len);
+        return Arrays.copyOf(ba, bb.position());
     }
 
     boolean isUTF8() {
-        return isutf8;
+        return cs == UTF_8;
     }
 
     private Charset cs;
-    private boolean isutf8;
-    private ZipCoder utf8;
 
     private ZipCoder(Charset cs) {
         this.cs = cs;
-        this.isutf8 = cs.name().equals("UTF-8");
-    }
-
-    static ZipCoder get(Charset charset) {
-        return new ZipCoder(charset);
-    }
-
-    static ZipCoder get(String csn) {
-        try {
-            return new ZipCoder(Charset.forName(csn));
-        } catch (Throwable t) {
-            t.printStackTrace();
-        }
-        return new ZipCoder(Charset.defaultCharset());
     }
 
     private final ThreadLocal<CharsetDecoder> decTL = new ThreadLocal<>();
@@ -133,10 +131,10 @@ final class ZipCoder {
     private CharsetDecoder decoder() {
         CharsetDecoder dec = decTL.get();
         if (dec == null) {
-            dec = cs.newDecoder()
-              .onMalformedInput(CodingErrorAction.REPORT)
-              .onUnmappableCharacter(CodingErrorAction.REPORT);
-            decTL.set(dec);
+        dec = cs.newDecoder()
+            .onMalformedInput(CodingErrorAction.REPORT)
+            .onUnmappableCharacter(CodingErrorAction.REPORT);
+        decTL.set(dec);
         }
         return dec;
     }
@@ -144,10 +142,10 @@ final class ZipCoder {
     private CharsetEncoder encoder() {
         CharsetEncoder enc = encTL.get();
         if (enc == null) {
-            enc = cs.newEncoder()
-              .onMalformedInput(CodingErrorAction.REPORT)
-              .onUnmappableCharacter(CodingErrorAction.REPORT);
-            encTL.set(enc);
+        enc = cs.newEncoder()
+            .onMalformedInput(CodingErrorAction.REPORT)
+            .onUnmappableCharacter(CodingErrorAction.REPORT);
+        encTL.set(enc);
         }
         return enc;
     }
