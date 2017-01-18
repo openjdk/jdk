@@ -53,10 +53,10 @@ public class CompilerUtils {
                     "TieredStopAtLevel has value out of int capacity");
             return IntStream.rangeClosed(1, maxLevel).toArray();
         } else {
-            if (Platform.isServer()) {
+            if (Platform.isServer() && !Platform.isEmulatedClient()) {
                 return new int[]{4};
             }
-            if (Platform.isClient() || Platform.isMinimal()) {
+            if (Platform.isClient() || Platform.isMinimal() || Platform.isEmulatedClient()) {
                 return new int[]{1};
             }
         }
