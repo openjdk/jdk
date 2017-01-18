@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -608,6 +608,14 @@ public class XMLStreamReaderImpl implements javax.xml.stream.XMLStreamReader {
                     && versionStr != null
                     && versionStr.equals("1.1")) {
                 switchToXML11Scanner();
+            }
+
+            if (fEventType == XMLStreamConstants.CHARACTERS ||
+                    fEventType == XMLStreamConstants.ENTITY_REFERENCE ||
+                    fEventType == XMLStreamConstants.PROCESSING_INSTRUCTION ||
+                    fEventType == XMLStreamConstants.COMMENT ||
+                    fEventType == XMLStreamConstants.CDATA) {
+                    fEntityScanner.checkNodeCount(fEntityScanner.fCurrentEntity);
             }
 
             return fEventType;
