@@ -26,6 +26,7 @@
  * @summary Test a pool containing external files.
  * @author Andrei Eremeev
  * @modules jdk.jlink/jdk.tools.jlink.internal
+ *          jdk.jlink/jdk.tools.jlink.plugin
  * @run build ImageFilePoolTest
  * @run main ImageFilePoolTest
  */
