@@ -298,111 +298,24 @@ keystore.type.compat=true
 
 #
 # List of comma-separated packages that start with or equal this string
-# will cause a security exception to be thrown when
-# passed to checkPackageAccess unless the
-# corresponding RuntimePermission ("accessClassInPackage."+package) has
-# been granted.
-package.access=sun.,\
-               com.sun.xml.internal.,\
-               com.sun.imageio.,\
-               com.sun.istack.internal.,\
-               com.sun.jmx.,\
-               com.sun.media.sound.,\
-               com.sun.naming.internal.,\
-               com.sun.proxy.,\
-               com.sun.corba.se.,\
-               com.sun.org.apache.bcel.internal.,\
-               com.sun.org.apache.regexp.internal.,\
-               com.sun.org.apache.xerces.internal.,\
-               com.sun.org.apache.xpath.internal.,\
-               com.sun.org.apache.xalan.internal.extensions.,\
-               com.sun.org.apache.xalan.internal.lib.,\
-               com.sun.org.apache.xalan.internal.res.,\
-               com.sun.org.apache.xalan.internal.templates.,\
-               com.sun.org.apache.xalan.internal.utils.,\
-               com.sun.org.apache.xalan.internal.xslt.,\
-               com.sun.org.apache.xalan.internal.xsltc.cmdline.,\
-               com.sun.org.apache.xalan.internal.xsltc.compiler.,\
-               com.sun.org.apache.xalan.internal.xsltc.trax.,\
-               com.sun.org.apache.xalan.internal.xsltc.util.,\
-               com.sun.org.apache.xml.internal.res.,\
-               com.sun.org.apache.xml.internal.security.,\
-               com.sun.org.apache.xml.internal.serializer.dom3.,\
-               com.sun.org.apache.xml.internal.serializer.utils.,\
-               com.sun.org.apache.xml.internal.utils.,\
-               com.sun.org.glassfish.,\
-               com.sun.tools.script.,\
-               com.oracle.xmlns.internal.,\
-               com.oracle.webservices.internal.,\
-               org.jcp.xml.dsig.internal.,\
-               jdk.internal.,\
-               jdk.nashorn.internal.,\
-               jdk.nashorn.tools.,\
-               jdk.tools.jimage.,\
-               com.sun.activation.registries.,\
-               com.sun.java.accessibility.util.internal.,\
-#ifdef windows
-               com.sun.java.accessibility.internal.,\
-#endif
-#ifdef macosx
-               apple.,\
-#endif
+# will cause a security exception to be thrown when passed to the
+# SecurityManager::checkPackageAccess method unless the corresponding
+# RuntimePermission("accessClassInPackage."+package) has been granted.
+#
+package.access=sun.misc.,\
+               sun.reflect.,\
 
 #
 # List of comma-separated packages that start with or equal this string
-# will cause a security exception to be thrown when
-# passed to checkPackageDefinition unless the
-# corresponding RuntimePermission ("defineClassInPackage."+package) has
-# been granted.
+# will cause a security exception to be thrown when passed to the
+# SecurityManager::checkPackageDefinition method unless the corresponding
+# RuntimePermission("defineClassInPackage."+package) has been granted.
 #
-# by default, none of the class loaders supplied with the JDK call
+# By default, none of the class loaders supplied with the JDK call
 # checkPackageDefinition.
 #
-package.definition=sun.,\
-                   com.sun.xml.internal.,\
-                   com.sun.imageio.,\
-                   com.sun.istack.internal.,\
-                   com.sun.jmx.,\
-                   com.sun.media.sound.,\
-                   com.sun.naming.internal.,\
-                   com.sun.proxy.,\
-                   com.sun.corba.se.,\
-                   com.sun.org.apache.bcel.internal.,\
-                   com.sun.org.apache.regexp.internal.,\
-                   com.sun.org.apache.xerces.internal.,\
-                   com.sun.org.apache.xpath.internal.,\
-                   com.sun.org.apache.xalan.internal.extensions.,\
-                   com.sun.org.apache.xalan.internal.lib.,\
-                   com.sun.org.apache.xalan.internal.res.,\
-                   com.sun.org.apache.xalan.internal.templates.,\
-                   com.sun.org.apache.xalan.internal.utils.,\
-                   com.sun.org.apache.xalan.internal.xslt.,\
-                   com.sun.org.apache.xalan.internal.xsltc.cmdline.,\
-                   com.sun.org.apache.xalan.internal.xsltc.compiler.,\
-                   com.sun.org.apache.xalan.internal.xsltc.trax.,\
-                   com.sun.org.apache.xalan.internal.xsltc.util.,\
-                   com.sun.org.apache.xml.internal.res.,\
-                   com.sun.org.apache.xml.internal.security.,\
-                   com.sun.org.apache.xml.internal.serializer.dom3.,\
-                   com.sun.org.apache.xml.internal.serializer.utils.,\
-                   com.sun.org.apache.xml.internal.utils.,\
-                   com.sun.org.glassfish.,\
-                   com.sun.tools.script.,\
-                   com.oracle.xmlns.internal.,\
-                   com.oracle.webservices.internal.,\
-                   org.jcp.xml.dsig.internal.,\
-                   jdk.internal.,\
-                   jdk.nashorn.internal.,\
-                   jdk.nashorn.tools.,\
-                   jdk.tools.jimage.,\
-                   com.sun.activation.registries.,\
-                   com.sun.java.accessibility.util.internal.,\
-#ifdef windows
-                   com.sun.java.accessibility.internal.,\
-#endif
-#ifdef macosx
-                   apple.,\
-#endif
+package.definition=sun.misc.,\
+                   sun.reflect.,\
 
 #
 # Determines whether this properties file can be appended to

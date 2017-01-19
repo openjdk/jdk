@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,12 @@
  * questions.
  */
 
-grant codeBase "jrt:/java.corba" {
-        permission java.security.AllPermission;
+grant {
+  permission java.util.PropertyPermission "*", "read";
+  permission java.io.FilePermission "<<ALL FILES>>", "read, execute";
 };
 
-grant {
-  permission java.io.FilePermission "./-", "read,write,execute";
-  permission java.io.FilePermission "*", "read";
+grant codeBase "file:${test.classes}/*" {
   permission java.net.SocketPermission "*:*", "connect, accept, listen, resolve";
-  permission java.util.PropertyPermission "*", "read, write";
-  permission java.lang.reflect.ReflectPermission "suppressAccessChecks";
-  permission java.io.SerializablePermission "enableSubclassImplementation";
-  permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.misc";
-  permission java.lang.RuntimePermission "accessClassInPackage.sun.corba";
-  permission java.lang.RuntimePermission "defineClassInPackage.sun.corba";
-  permission java.lang.RuntimePermission "reflectionFactoryAccess";
-  permission sun.corba.BridgePermission "getBridge";
-  permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.reflect";
-  permission java.util.PropertyPermission "*", "read, write";
-  permission java.io.FilePermission "<<ALL FILES>>", "read,write,execute";
+  permission java.lang.RuntimePermission "accessClassInPackage.com.sun.jndi.cosnaming";
 };
