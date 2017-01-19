@@ -249,7 +249,6 @@ module java.base {
         jdk.crypto.token;
     exports sun.security.jca to
         java.smartcardio,
-        java.xml.crypto,
         jdk.crypto.ec,
         jdk.crypto.token,
         jdk.naming.dns;
