@@ -830,19 +830,38 @@ void AOTCodeHeap::oops_do(OopClosure* f) {
   }
 }
 
-// Scan only metaspace_got cells which should have only Klass*,
-// metadata_got cells are scanned only for alive AOT methods
-// by AOTCompiledMethod::metadata_do().
+// Yes, this is faster than going through the relocations,
+// but there are two problems:
+// 1) GOT slots are sometimes patched with non-Metadata values
+// 2) We don't want to scan metadata for dead methods
+// Unfortunately we don't know if the metadata belongs to
+// live aot methods or not, so process them all.  If this
+// is for mark_on_stack, some old methods may stick around
+// forever instead of getting cleaned up.
 void AOTCodeHeap::got_metadata_do(void f(Metadata*)) {
   for (int i = 1; i < _metaspace_got_size; i++) {
     Metadata** p = &_metaspace_got[i];
     Metadata* md = *p;
     if (md == NULL)  continue;  // skip non-oops
+    intptr_t meta = (intptr_t)md;
+    if (meta == -1)  continue;  // skip non-oops
     if (Metaspace::contains(md)) {
       f(md);
+    }
+  }
+  for (int i = 1; i < _metadata_got_size; i++) {
+    Metadata** p = &_metadata_got[i];
+    Metadata* md = *p;
+    intptr_t meta = (intptr_t)md;
+    if ((meta & 1) == 1) {
+      // already resolved
+      md = (Metadata*)(meta & ~1);
     } else {
-      intptr_t meta = (intptr_t)md;
-      fatal("Invalid value in _metaspace_got[%d] = " INTPTR_FORMAT, i, meta);
+      continue;
+    }
+    if (md == NULL)  continue;  // skip non-oops
+    if (Metaspace::contains(md)) {
+      f(md);
     }
   }
 }
@@ -891,6 +910,8 @@ void AOTCodeHeap::metadata_do(void f(Metadata*)) {
       aot->metadata_do(f);
     }
   }
-  // Scan metaspace_got cells.
+#if 0
+  // With the marking above, this call doesn't seem to be needed
   got_metadata_do(f);
+#endif
 }

@@ -37,7 +37,6 @@ import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 final class JavaCallSiteRelocationSymbol extends CallSiteRelocationSymbol {
 
     private static final byte[] zeroSlot = new byte[8];
-    // -1 represents Universe::non_oop_word() value
     private static final byte[] minusOneSlot = {-1, -1, -1, -1, -1, -1, -1, -1};
 
     public JavaCallSiteRelocationSymbol(CompiledMethodInfo mi, Call call, CallSiteRelocationInfo callSiteRelocation, BinaryContainer binaryContainer) {
@@ -80,39 +79,30 @@ final class JavaCallSiteRelocationSymbol extends CallSiteRelocationSymbol {
         }
 
         // Add relocation to GOT cell for call resolution jump.
-        // This GOT cell will be initialized during JVM startup with address
-        // of JVM runtime call resolution function.
         String gotSymbolName = "got." + getResolveSymbolName(binaryContainer, mi, call);
         Symbol gotSymbol = binaryContainer.getGotSymbol(gotSymbolName);
         addExternalPltToGotRelocation(binaryContainer, gotSymbol, stub.getResolveJumpOffset());
 
         // Add relocation to resolve call jump instruction address for GOT cell.
-        // This GOT cell will be initialized with address of resolution jump instruction and
-        // will be updated with call destination address by JVM runtime call resolution code.
         String pltJmpSymbolName = relocationSymbolName("plt.jmp", mi, call, callSiteRelocation);
         addCodeContainerRelocation(binaryContainer, pltJmpSymbolName, stub.getResolveJumpStart(), gotStartOffset);
 
         // Add relocation to GOT cell for dispatch jump.
-        // The dispatch jump loads destination address from this GOT cell.
         String gotEntrySymbolName = relocationSymbolName("got.entry", mi, call, callSiteRelocation);
         addExtLinkageGotContainerRelocation(binaryContainer, gotEntrySymbolName, gotStartOffset, stub.getDispatchJumpOffset());
 
-        // Virtual call needs initial -1 value for Klass pointer.
-        // Non virtual call needs initial 0 value for Method pointer to call c2i adapter.
+        // Virtual call needs initial -1 value.
         byte[] slot = isVirtualCall ? minusOneSlot : zeroSlot;
-        final int gotMetaOffset = binaryContainer.appendExtLinkageGotBytes(slot, 0, slot.length);
+        final int gotMetaOffset = binaryContainer.appendMetaspaceGotBytes(slot, 0, slot.length);
 
         // Add relocation to GOT cell for move instruction (Klass* for virtual, Method* otherwise).
         String gotMoveSymbolName = relocationSymbolName("got.move", mi, call, callSiteRelocation);
-        addExtLinkageGotContainerRelocation(binaryContainer, gotMoveSymbolName, gotMetaOffset, stub.getMovOffset());
+        addMetaspaceGotRelocation(binaryContainer, gotMoveSymbolName, gotMetaOffset, stub.getMovOffset());
 
         if (isVirtualCall) {
             // Nothing.
         } else {
             // Add relocation to GOT cell for c2i adapter jump.
-            // The c2i jump instruction loads destination address from this GOT cell.
-            // This GOT cell is initialized with -1 and will be updated
-            // by JVM runtime call resolution code.
             String gotC2ISymbolName = relocationSymbolName("got.c2i", mi, call, callSiteRelocation);
             addExtLinkageGotContainerRelocation(binaryContainer, gotC2ISymbolName, gotStartOffset + 8, stub.getC2IJumpOffset());
         }
