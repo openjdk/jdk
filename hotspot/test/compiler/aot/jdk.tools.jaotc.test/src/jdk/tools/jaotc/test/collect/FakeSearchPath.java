@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,28 +20,28 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.tools.jaotc.test.collect;
 
-/*
- * @test
- * @library / /testlibrary/ /test/lib
- * @modules java.base/jdk.internal.misc
- * @requires vm.bits == "64" & os.arch == "amd64" & os.family == "linux"
- * @compile data/HelloWorldOne.java
- * @run driver compiler.aot.cli.jaotc.ClasspathOptionUnknownClassTest
- * @summary check jaotc can't compile class not from classpath
- */
+import java.nio.file.FileSystem;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Set;
 
-package compiler.aot.cli.jaotc;
+import static jdk.tools.jaotc.test.collect.Utils.set;
 
-import java.io.File;
-import jdk.test.lib.Asserts;
-import jdk.test.lib.process.OutputAnalyzer;
+public class FakeSearchPath extends SearchPath {
+    private Path path = null;
+    public Set<String> entries = set();
 
-public class ClasspathOptionUnknownClassTest {
-    public static void main(String[] args) {
-        OutputAnalyzer oa = JaotcTestHelper.compileLibrary("--classname", "HelloWorldOne");
-        Asserts.assertNE(oa.getExitValue(), 0, "Unexpected compilation exit code");
-        File compiledLibrary = new File(JaotcTestHelper.DEFAULT_LIB_PATH);
-        Asserts.assertFalse(compiledLibrary.exists(), "Compiler library unexpectedly exists");
+    public FakeSearchPath(String name) {
+        if (name != null) {
+            path = Paths.get(name);
+        }
+    }
+
+    @Override
+    public Path find(FileSystem fileSystem, Path entry, String... defaults) {
+        entries.add(entry.toString());
+        return path;
     }
 }
