@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,7 @@ class Example implements Comparable<Example> {
         modulePathFiles = new ArrayList<File>();
         classPathFiles = new ArrayList<File>();
         additionalFiles = new ArrayList<File>();
+        nonEmptySrcFiles = new ArrayList<File>();
 
         findFiles(file, srcFiles);
         for (File f: srcFiles) {
@@ -99,11 +100,11 @@ class Example implements Comparable<Example> {
                 }
             }
         } else if (f.isFile()) {
-                if (f.getName().endsWith(".java")) {
-                    files.add(f);
-                } else if (f.getName().equals("modulesourcepath")) {
-                    moduleSourcePathDir = f;
-                }
+            if (f.getName().endsWith(".java")) {
+                files.add(f);
+            } else if (f.getName().equals("modulesourcepath")) {
+                moduleSourcePathDir = f;
+            }
         }
     }
 
@@ -132,8 +133,10 @@ class Example implements Comparable<Example> {
                     foundInfo(f);
                     runOpts = Arrays.asList(runMatch.group(1).trim().split(" +"));
                 }
-                if (javaPat.matcher(line).matches())
+                if (javaPat.matcher(line).matches()) {
+                    nonEmptySrcFiles.add(f);
                     break;
+                }
             }
         } catch (IOException e) {
             throw new Error(e);
@@ -264,7 +267,9 @@ class Example implements Comparable<Example> {
         if (moduleSourcePathDir != null) {
             opts.add("--module-source-path");
             opts.add(moduleSourcePathDir.getPath());
-            files = moduleSourcePathFiles;
+            files = new ArrayList<>();
+            files.addAll(moduleSourcePathFiles);
+            files.addAll(nonEmptySrcFiles); // srcFiles containing declarations
         }
 
         if (additionalFiles.size() > 0) {
@@ -344,6 +349,7 @@ class Example implements Comparable<Example> {
     List<File> modulePathFiles;
     List<File> classPathFiles;
     List<File> additionalFiles;
+    List<File> nonEmptySrcFiles;
     File infoFile;
     private List<String> runOpts;
     private List<String> options;
