@@ -37,6 +37,9 @@ package java.util.concurrent.locks;
 
 import jdk.internal.misc.Unsafe;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+
 /**
  * Basic thread blocking primitives for creating locks and other
  * synchronization classes.
@@ -139,7 +142,7 @@ public class LockSupport {
 
     private static void setBlocker(Thread t, Object arg) {
         // Even though volatile, hotspot doesn't need a write barrier here.
-        U.putObject(t, PARKBLOCKER, arg);
+        THREAD_PARKBLOCKER.set(t, arg);
     }
 
     /**
@@ -289,7 +292,7 @@ public class LockSupport {
     public static Object getBlocker(Thread t) {
         if (t == null)
             throw new NullPointerException();
-        return U.getObjectVolatile(t, PARKBLOCKER);
+        return THREAD_PARKBLOCKER.getVolatile(t);
     }
 
     /**
@@ -396,14 +399,14 @@ public class LockSupport {
     static final int nextSecondarySeed() {
         int r;
         Thread t = Thread.currentThread();
-        if ((r = U.getInt(t, SECONDARY)) != 0) {
+        if ((r = (int) THREAD_SECONDARY.get(t)) != 0) {
             r ^= r << 13;   // xorshift
             r ^= r >>> 17;
             r ^= r << 5;
         }
         else if ((r = java.util.concurrent.ThreadLocalRandom.current().nextInt()) == 0)
             r = 1; // avoid zero
-        U.putInt(t, SECONDARY, r);
+        THREAD_SECONDARY.set(t, r);
         return r;
     }
 
@@ -414,23 +417,32 @@ public class LockSupport {
      * ways that do not preserve unique mappings.
      */
     static final long getThreadId(Thread thread) {
-        return U.getLongVolatile(thread, TID);
+        return (long) THREAD_TID.getVolatile(thread);
     }
 
     // Hotspot implementation via intrinsics API
     private static final Unsafe U = Unsafe.getUnsafe();
-    private static final long PARKBLOCKER;
-    private static final long SECONDARY;
-    private static final long TID;
+    // VarHandle mechanics
+    private static final VarHandle THREAD_PARKBLOCKER;
+    private static final VarHandle THREAD_SECONDARY;
+    private static final VarHandle THREAD_TID;
     static {
         try {
-            PARKBLOCKER = U.objectFieldOffset
-                (Thread.class.getDeclaredField("parkBlocker"));
-            SECONDARY = U.objectFieldOffset
-                (Thread.class.getDeclaredField("threadLocalRandomSecondarySeed"));
-            TID = U.objectFieldOffset
-                (Thread.class.getDeclaredField("tid"));
-
+            MethodHandles.Lookup l = java.security.AccessController.doPrivileged(
+                    new java.security.PrivilegedAction<>() {
+                        public MethodHandles.Lookup run() {
+                            try {
+                                return MethodHandles.privateLookupIn(Thread.class, MethodHandles.lookup());
+                            } catch (ReflectiveOperationException e) {
+                                throw new Error(e);
+                            }
+                        }});
+            THREAD_PARKBLOCKER = l.findVarHandle(Thread.class,
+                    "parkBlocker", Object.class);
+            THREAD_SECONDARY = l.findVarHandle(Thread.class,
+                    "threadLocalRandomSecondarySeed", int.class);
+            THREAD_TID = l.findVarHandle(Thread.class,
+                    "tid", long.class);
         } catch (ReflectiveOperationException e) {
             throw new Error(e);
         }
