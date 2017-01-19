@@ -143,6 +143,7 @@ public class ParameterNamesAreNotCopiedToAnonymousInitTest {
                     Arrays.asList(new File(System.getProperty("test.src"),
                     this.getClass().getName() + ".java")));
             java.util.List<String> options = Arrays.asList(
+                "--add-modules", "jdk.jdeps",
                 "--add-exports", "jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED",
                 "--add-exports", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
                 "--add-exports", "jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",

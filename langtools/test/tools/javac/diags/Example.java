@@ -236,6 +236,7 @@ class Example implements Comparable<Example> {
             // source for import statements or a magic comment
             for (File pf: procFiles) {
                 if (pf.getName().equals("CreateBadClassFile.java")) {
+                    pOpts.add("--add-modules=jdk.jdeps");
                     pOpts.add("--add-exports=jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED");
                 }
             }

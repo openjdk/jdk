@@ -42,6 +42,7 @@ public class T7004698 {
         File srcFile = new File(srcDir, T7004698.class.getSimpleName() + ".java");
         File classesDir = new File(".");
         compile("-Xjcov",
+                "--add-modules", "jdk.jdeps",
                 "--add-exports", "jdk.jdeps/com.sun.tools.javap=ALL-UNNAMED",
                 "-d", classesDir.getPath(),
                 srcFile.getPath());
