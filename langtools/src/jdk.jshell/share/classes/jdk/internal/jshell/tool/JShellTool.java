@@ -2191,9 +2191,18 @@ public class JShellTool implements MessageHandler {
                 case ASSIGNMENT_SUBKIND:
                 case OTHER_EXPRESSION_SUBKIND:
                 case TEMP_VAR_EXPRESSION_SUBKIND:
-                case STATEMENT_SUBKIND:
                 case UNKNOWN_SUBKIND:
                     if (!src.endsWith(";")) {
+                        src = src + ";";
+                    }
+                    srcSet.add(src);
+                    break;
+                case STATEMENT_SUBKIND:
+                    if (src.endsWith("}")) {
+                        // Could end with block or, for example, new Foo() {...}
+                        // so, we need deeper analysis to know if it needs a semicolon
+                        src = analysis.analyzeCompletion(src).source();
+                    } else if (!src.endsWith(";")) {
                         src = src + ";";
                     }
                     srcSet.add(src);

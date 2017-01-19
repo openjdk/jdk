@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Testing external editor.
- * @bug 8143955 8080843 8163816 8143006 8169828
+ * @bug 8143955 8080843 8163816 8143006 8169828 8171130
  * @modules jdk.jshell/jdk.internal.jshell.tool
  * @build ReplToolTesting CustomEditor EditorTestBase
  * @run testng ExternalEditorTest
@@ -50,6 +50,7 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
 
 public class ExternalEditorTest extends EditorTestBase {
@@ -117,6 +118,28 @@ public class ExternalEditorTest extends EditorTestBase {
                 assertStartsWith("|  Editor set to: " + executionScript));
         System.arraycopy(tests, 0, t, 1, tests.length);
         super.testEditor(defaultStartup, args, t);
+    }
+
+    @Test
+    public void testStatementSemicolonAddition() {
+        testEditor(
+                a -> assertCommand(a, "if (true) {}", ""),
+                a -> assertCommand(a, "if (true) {} else {}", ""),
+                a -> assertCommand(a, "Object o", "o ==> null"),
+                a -> assertCommand(a, "if (true) o = new Object() { int x; }", ""),
+                a -> assertCommand(a, "if (true) o = new Object() { int y; }", ""),
+                a -> assertCommand(a, "System.err.flush()", ""), // test still ; for expression statement
+                a -> assertEditOutput(a, "/ed", "", () -> {
+                    assertEquals(getSource(),
+                            "if (true) {}\n" +
+                            "if (true) {} else {}\n" +
+                            "Object o;\n" +
+                            "if (true) o = new Object() { int x; };\n" +
+                            "if (true) o = new Object() { int y; };\n" +
+                            "System.err.flush();\n");
+                    exit();
+                })
+        );
     }
 
     private static boolean isWindows() {
