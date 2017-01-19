@@ -23,7 +23,7 @@
  * questions.
  */
 
-module jdk.jvmstat {
+module jdk.internal.jvmstat {
     exports sun.jvmstat.monitor to
         jdk.attach,
         jdk.jcmd,
