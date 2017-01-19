@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,7 +178,7 @@ module java.base {
     exports jdk.internal.perf to
         java.desktop,
         java.management,
-        jdk.jvmstat;
+        jdk.internal.jvmstat;
     exports jdk.internal.ref to
         java.desktop,
         jdk.unsupported;
@@ -199,7 +199,7 @@ module java.base {
         jdk.jlink;
     exports jdk.internal.vm to
         java.management,
-        jdk.jvmstat;
+        jdk.internal.jvmstat;
     exports sun.net to
         jdk.incubator.httpclient;
     exports sun.net.ext to
