@@ -1137,6 +1137,7 @@ Java_sun_font_FontConfigManager_getFontConfig
                 JNU_CHECK_EXCEPTION(env);
 
                 (*env)->SetObjectArrayElement(env, cacheDirArray, cnt++, jstr);
+                (*env)->DeleteLocalRef(env, jstr);
             }
             (*FcStrListDone)(cacheDirs);
         }
@@ -1163,10 +1164,13 @@ Java_sun_font_FontConfigManager_getFontConfig
             (jstring)((*env)->GetObjectField(env, fcCompFontObj, fcNameID));
         fcName = (*env)->GetStringUTFChars(env, fcNameStr, 0);
         if (fcName == NULL) {
+            (*env)->DeleteLocalRef(env, fcCompFontObj);
+            (*env)->DeleteLocalRef(env, fcNameStr);
             continue;
         }
         pattern = (*FcNameParse)((FcChar8 *)fcName);
         (*env)->ReleaseStringUTFChars(env, fcNameStr, (const char*)fcName);
+        (*env)->DeleteLocalRef(env, fcNameStr);
         if (pattern == NULL) {
             closeFontConfig(libfontconfig, JNI_FALSE);
             return;
@@ -1326,20 +1330,24 @@ Java_sun_font_FontConfigManager_getFontConfig
                 jstr = (*env)->NewStringUTF(env, (const char*)family[j]);
                 if (IS_NULL(jstr)) break;
                 (*env)->SetObjectField(env, fcFont, familyNameID, jstr);
+                (*env)->DeleteLocalRef(env, jstr);
                 if (file[j] != NULL) {
                     jstr = (*env)->NewStringUTF(env, (const char*)file[j]);
                     if (IS_NULL(jstr)) break;
                     (*env)->SetObjectField(env, fcFont, fontFileID, jstr);
+                    (*env)->DeleteLocalRef(env, jstr);
                 }
                 if (styleStr[j] != NULL) {
                     jstr = (*env)->NewStringUTF(env, (const char*)styleStr[j]);
                     if (IS_NULL(jstr)) break;
                     (*env)->SetObjectField(env, fcFont, styleNameID, jstr);
+                    (*env)->DeleteLocalRef(env, jstr);
                 }
                 if (fullname[j] != NULL) {
                     jstr = (*env)->NewStringUTF(env, (const char*)fullname[j]);
                     if (IS_NULL(jstr)) break;
                     (*env)->SetObjectField(env, fcFont, fullNameID, jstr);
+                    (*env)->DeleteLocalRef(env, jstr);
                 }
                 if (fn==0) {
                     (*env)->SetObjectField(env, fcCompFontObj,
@@ -1348,10 +1356,16 @@ Java_sun_font_FontConfigManager_getFontConfig
                 if (includeFallbacks) {
                     (*env)->SetObjectArrayElement(env, fcFontArr, fn++,fcFont);
                 } else {
+                    (*env)->DeleteLocalRef(env, fcFont);
                     break;
                 }
+                (*env)->DeleteLocalRef(env, fcFont);
             }
         }
+        if (includeFallbacks) {
+            (*env)->DeleteLocalRef(env, fcFontArr);
+        }
+        (*env)->DeleteLocalRef(env, fcCompFontObj);
         (*FcFontSetDestroy)(fontset);
         (*FcPatternDestroy)(pattern);
         free(family);
