@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,28 +20,23 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.tools.jaotc.collect.classname;
 
-/*
- * @test
- * @library / /testlibrary/ /test/lib
- * @modules java.base/jdk.internal.misc
- * @requires vm.bits == "64" & os.arch == "amd64" & os.family == "linux"
- * @compile data/HelloWorldOne.java
- * @run driver compiler.aot.cli.jaotc.ClasspathOptionUnknownClassTest
- * @summary check jaotc can't compile class not from classpath
- */
+import jdk.tools.jaotc.collect.ClassSource;
 
-package compiler.aot.cli.jaotc;
+import java.util.function.BiConsumer;
 
-import java.io.File;
-import jdk.test.lib.Asserts;
-import jdk.test.lib.process.OutputAnalyzer;
+public class ClassNameSource implements ClassSource {
+    private final String name;
+    private final ClassLoader classLoader;
 
-public class ClasspathOptionUnknownClassTest {
-    public static void main(String[] args) {
-        OutputAnalyzer oa = JaotcTestHelper.compileLibrary("--classname", "HelloWorldOne");
-        Asserts.assertNE(oa.getExitValue(), 0, "Unexpected compilation exit code");
-        File compiledLibrary = new File(JaotcTestHelper.DEFAULT_LIB_PATH);
-        Asserts.assertFalse(compiledLibrary.exists(), "Compiler library unexpectedly exists");
+    public ClassNameSource(String name, ClassLoader classLoader) {
+        this.name = name;
+        this.classLoader = classLoader;
+    }
+
+    @Override
+    public void eachClass(BiConsumer<String, ClassLoader> consumer) {
+        consumer.accept(name, classLoader);
     }
 }
