@@ -29,7 +29,7 @@
  * @modules jdk.compiler
  *          jdk.jlink
  * @build jdk.testlibrary.FileUtils CompilerUtils
- * @run testng JmodTest
+ * @run testng/othervm -Djava.io.tmpdir=. JmodTest
  */
 
 import java.io.*;
@@ -40,8 +40,10 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.spi.ToolProvider;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.testlibrary.FileUtils;
+import jdk.testlibrary.JDKToolFinder;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
@@ -593,9 +595,7 @@ public class JmodTest {
         findTmpFiles(filename).forEach(tmp -> {
             try {
                 FileUtils.deleteFileIfExistsWithRetry(tmp);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
+            } catch (IOException e) {}
         });
 
         String cp = EXPLODED_DIR.resolve("foo").resolve("classes") + File.pathSeparator +
@@ -608,17 +608,25 @@ public class JmodTest {
              .assertFailure()
              .resultChecker(r -> {
                  assertContains(r.output, "unnamed package");
-                 Set<Path> tmpfiles = findTmpFiles(filename).collect(toSet());
+                 List<Path> tmpfiles = findTmpFiles(filename);
                  assertTrue(tmpfiles.isEmpty(), "Unexpected tmp file:" + tmpfiles);
              });
     }
 
-    private Stream<Path> findTmpFiles(String prefix) {
-        try {
-            Path tmpdir = Paths.get(System.getProperty("java.io.tmpdir"));
-            return Files.find(tmpdir, 1, (p, attrs) ->
-                p.getFileName().toString().startsWith(prefix)
-                    && p.getFileName().toString().endsWith(".tmp"));
+    /*
+     * Returns the list of writeable tmp files with the given prefix.
+     *
+     * Ignore the non-writeable tmp files because this test is possibly
+     * running by another user.
+     */
+    private List<Path> findTmpFiles(String prefix) {
+        Path tmpdir = Paths.get(System.getProperty("java.io.tmpdir"));
+        try (Stream<Path> stream = Files.list(tmpdir)) {
+            return stream.filter(p -> {
+                        String fn = p.getFileName().toString();
+                        return Files.isWritable(p)
+                                && fn.startsWith(prefix) && fn.endsWith(".tmp");
+                    }).collect(Collectors.toList());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

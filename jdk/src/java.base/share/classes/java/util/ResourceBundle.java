@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2134,7 +2134,7 @@ public abstract class ResourceBundle {
 
     /**
      * Removes all resource bundles from the cache that have been loaded
-     * by the caller's module using the caller's class loader.
+     * by the caller's module.
      *
      * @since 1.6
      * @see ResourceBundle.Control#getTimeToLive(String,Locale)
@@ -2142,50 +2142,26 @@ public abstract class ResourceBundle {
     @CallerSensitive
     public static final void clearCache() {
         Class<?> caller = Reflection.getCallerClass();
-        clearCacheImpl(caller.getModule(), caller.getClassLoader());
+        cacheList.keySet().removeIf(
+            key -> key.getCallerModule() == caller.getModule()
+        );
     }
 
     /**
      * Removes all resource bundles from the cache that have been loaded
-     * by the caller's module using the given class loader.
+     * by the given class loader.
      *
      * @param loader the class loader
      * @exception NullPointerException if <code>loader</code> is null
      * @since 1.6
      * @see ResourceBundle.Control#getTimeToLive(String,Locale)
      */
-    @CallerSensitive
     public static final void clearCache(ClassLoader loader) {
         Objects.requireNonNull(loader);
-        Class<?> caller = Reflection.getCallerClass();
-        clearCacheImpl(caller.getModule(), loader);
-    }
-
-    /**
-     * Removes all resource bundles from the cache that have been loaded by the
-     * given {@code module}.
-     *
-     * @param module the module
-     * @throws NullPointerException
-     *         if {@code module} is {@code null}
-     * @throws SecurityException
-     *         if the caller doesn't have the permission to
-     *         {@linkplain Module#getClassLoader() get the class loader}
-     *         of the given {@code module}
-     * @since 9
-     * @see ResourceBundle.Control#getTimeToLive(String,Locale)
-     */
-    public static final void clearCache(Module module) {
-        Objects.requireNonNull(module);
-        clearCacheImpl(module, module.getClassLoader());
-    }
-
-    private static void clearCacheImpl(Module callerModule, ClassLoader loader) {
         cacheList.keySet().removeIf(
             key -> {
                 Module m;
-                return key.getCallerModule() == callerModule &&
-                       (m = key.getModule()) != null &&
+                return (m = key.getModule()) != null &&
                        getLoader(m) == loader;
             }
         );
