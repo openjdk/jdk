@@ -71,6 +71,15 @@ static void metadata_oops_do(Metadata** metadata_begin, Metadata **metadata_end,
 }
 #endif
 
+void AOTCompiledMethod::oops_do(OopClosure* f) {
+  if (_oop != NULL) {
+    f->do_oop(&_oop);
+  }
+#if 0
+  metadata_oops_do(metadata_begin(), metadata_end(), f);
+#endif
+}
+
 bool AOTCompiledMethod::do_unloading_oops(address low_boundary, BoolObjectClosure* is_alive, bool unloading_occurred) {
   return false;
 }
@@ -152,6 +161,9 @@ Metadata* AOTCompiledMethod::metadata_at(int index) const {
       *entry = (Metadata*)meta; // Should be atomic on x64
       return (Metadata*)m;
     }
+    // need to resolve it here..., patching of GOT need to be CAS or atomic operation.
+    // FIXIT: need methods for debuginfo.
+    // return _method;
   }
   ShouldNotReachHere(); return NULL;
 }
@@ -276,18 +288,10 @@ void AOTCompiledMethod::metadata_do(void f(Metadata*)) {
           f(cichk->holder_method());
           f(cichk->holder_klass());
         } else {
-          // Get Klass* or NULL (if value is -1) from GOT cell of virtual call PLT stub.
           Metadata* ic_oop = ic->cached_metadata();
           if (ic_oop != NULL) {
             f(ic_oop);
           }
-        }
-      } else if (iter.type() == relocInfo::static_call_type ||
-                 iter.type() == relocInfo::opt_virtual_call_type){
-        // Check Method* in AOT c2i stub for other calls.
-        Metadata* meta = (Metadata*)nativeLoadGot_at(nativePltCall_at(iter.addr())->plt_c2i_stub())->data();
-        if (meta != NULL) {
-          f(meta);
         }
       }
     }
@@ -328,12 +332,7 @@ void AOTCompiledMethod::print_on(outputStream* st, const char* msg) const {
     st->print("%4d ", _aot_id);    // print compilation number
     st->print("    aot[%2d]", _heap->dso_id());
     // Stubs have _method == NULL
-    if (_method == NULL) {
-      st->print("   %s", _name);
-    } else {
-      ResourceMark m;
-      st->print("   %s", _method->name_and_sig_as_C_string());
-    }
+    st->print("   %s", (_method == NULL ? _name : _method->name_and_sig_as_C_string()));
     if (Verbose) {
       st->print(" entry at " INTPTR_FORMAT, p2i(_code));
     }

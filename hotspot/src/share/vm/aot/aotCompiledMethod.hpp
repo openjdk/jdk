@@ -257,6 +257,8 @@ private:
     return (int) (*_state_adr);
   }
 
+  virtual void oops_do(OopClosure* f);
+
   // inlined and non-virtual for AOTCodeHeap::oops_do
   void do_oops(OopClosure* f) {
     assert(_is_alive(), "");
