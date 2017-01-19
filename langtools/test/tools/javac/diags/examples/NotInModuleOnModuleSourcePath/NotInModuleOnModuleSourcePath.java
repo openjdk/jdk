@@ -21,4 +21,7 @@
  * questions.
  */
 
-// key: compiler.err.unnamed.pkg.not.allowed.named.modules
+// key: compiler.err.not.in.module.on.module.source.path
+
+package p; class C { }
+

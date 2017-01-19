@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -374,6 +374,9 @@ public class Modules extends JCTree.Visitor {
                                 log.error(decl.qualId, Errors.ModuleNameMismatch(msym.name, name));
                             }
                         } else {
+                            if (tree.getPackage() == null) {
+                                log.error(tree.pos(), Errors.UnnamedPkgNotAllowedNamedModules);
+                            }
                             msym = syms.enterModule(name);
                         }
                         if (msym.sourceLocation == null) {
@@ -388,7 +391,11 @@ public class Modules extends JCTree.Visitor {
                     } else if (c != null && c.packge().modle == syms.unnamedModule) {
                         tree.modle = syms.unnamedModule;
                     } else {
-                        log.error(tree.pos(), Errors.UnnamedPkgNotAllowedNamedModules);
+                        if (tree.getModuleDecl() != null) {
+                            log.error(tree.pos(), Errors.ModuleNotFoundOnModuleSourcePath);
+                        } else {
+                            log.error(tree.pos(), Errors.NotInModuleOnModuleSourcePath);
+                        }
                         tree.modle = syms.errModule;
                     }
                 } catch (IOException e) {
@@ -457,19 +464,27 @@ public class Modules extends JCTree.Visitor {
         }
     }
 
+    /**
+     * Determine the location for the module on the module source path
+     * or source output directory which contains a given CompilationUnit.
+     * If the source output directory is unset, the class output directory
+     * will be checked instead.
+     * {@code null} is returned if no such module can be found.
+     * @param tree the compilation unit tree
+     * @return the location for the enclosing module
+     * @throws IOException if there is a problem while searching for the module.
+     */
     private Location getModuleLocation(JCCompilationUnit tree) throws IOException {
+        Name pkgName;
         if (tree.getModuleDecl() != null) {
-            return getModuleLocation(tree.sourcefile, null);
-        } else if (tree.getPackage() != null) {
-            JCPackageDecl pkg = tree.getPackage();
-            return getModuleLocation(tree.sourcefile, TreeInfo.fullName(pkg.pid));
+            pkgName = null;
         } else {
-            // code in unnamed module
-            return null;
+            JCPackageDecl pkg = tree.getPackage();
+            pkgName = (pkg == null) ? names.empty : TreeInfo.fullName(pkg.pid);
         }
-    }
 
-    private Location getModuleLocation(JavaFileObject fo, Name pkgName) throws IOException {
+        JavaFileObject fo = tree.sourcefile;
+
         // For now, just check module source path.
         // We may want to check source path as well.
         Location loc =
@@ -482,7 +497,6 @@ public class Modules extends JCTree.Visitor {
                 fileManager.getLocationForModule(sourceOutput,
                                                  fo, (pkgName == null) ? null : pkgName.toString());
         }
-
         return loc;
     }
 
