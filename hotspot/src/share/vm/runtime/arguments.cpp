@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3869,6 +3869,9 @@ jint Arguments::parse_options_environment_variable(const char* name,
   if ((buffer = os::strdup(buffer)) == NULL) {
     return JNI_ENOMEM;
   }
+
+  jio_fprintf(defaultStream::error_stream(),
+              "Picked up %s: %s\n", name, buffer);
 
   int retcode = parse_options_buffer(name, buffer, strlen(buffer), vm_args);
 
