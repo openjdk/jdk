@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8154283 8167320 8171098 8172809
+ * @bug 8154283 8167320 8171098 8172809 8173117
  * @summary tests for multi-module mode compilation
  * @library /tools/lib
  * @modules
@@ -493,6 +493,33 @@ public class EdgeCases extends ModuleTestBase {
         if (!expected.equals(log)) {
             throw new AssertionError("Unexpected output: " + log);
         }
+    }
+
+    @Test
+    public void testInvisibleClassVisiblePackageClash(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path src_m1 = src.resolve("m1x");
+        tb.writeJavaFiles(src_m1,
+                          "module m1x { }",
+                          "package m1x;\n" +
+                          "import m1x.a.*; public class Test { A a; }\n",
+                          "package m1x.a;\n" +
+                          "public class A { }\n");
+        Path src_m2 = src.resolve("m2x");
+        tb.writeJavaFiles(src_m2,
+                          "module m2x { }",
+                          "package m1x;\n" +
+                          "public class a { public static class A { } }\n");
+        Path classes = base.resolve("classes");
+        tb.createDirectories(classes);
+
+        new JavacTask(tb)
+            .options("--module-source-path", src.toString(),
+                     "-XDrawDiagnostics")
+            .outdir(classes)
+            .files(findJavaFiles(src))
+            .run()
+            .writeAll();
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -817,5 +817,13 @@ public class Symtab {
 
     public Collection<ModuleSymbol> getAllModules() {
         return modules.values();
+    }
+
+    public Iterable<ClassSymbol> getClassesForName(Name candidate) {
+        return classes.getOrDefault(candidate, Collections.emptyMap()).values();
+    }
+
+    public Iterable<PackageSymbol> getPackagesForName(Name candidate) {
+        return packages.getOrDefault(candidate, Collections.emptyMap()).values();
     }
 }
