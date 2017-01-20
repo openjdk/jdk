@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -347,7 +347,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                   +", unwrapping parameters using classLoaderWithRepository.");
 
         values =
-            nullIsEmpty(unwrap(params, classLoaderWithRepository, Object[].class));
+            nullIsEmpty(unwrap(params, classLoaderWithRepository, Object[].class,delegationSubject));
 
         try {
             final Object params2[] =
@@ -411,7 +411,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         values = nullIsEmpty(unwrap(params,
                                     getClassLoader(loaderName),
                                     defaultClassLoader,
-                                    Object[].class));
+                                    Object[].class,delegationSubject));
 
         try {
             final Object params2[] =
@@ -522,7 +522,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                  "connectionId=" + connectionId
                  +" unwrapping query with defaultClassLoader.");
 
-        queryValue = unwrap(query, defaultContextClassLoader, QueryExp.class);
+        queryValue = unwrap(query, defaultContextClassLoader, QueryExp.class, delegationSubject);
 
         try {
             final Object params[] = new Object[] { name, queryValue };
@@ -557,7 +557,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                  "connectionId=" + connectionId
                  +" unwrapping query with defaultClassLoader.");
 
-        queryValue = unwrap(query, defaultContextClassLoader, QueryExp.class);
+        queryValue = unwrap(query, defaultContextClassLoader, QueryExp.class, delegationSubject);
 
         try {
             final Object params[] = new Object[] { name, queryValue };
@@ -707,7 +707,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         attr = unwrap(attribute,
                       getClassLoaderFor(name),
                       defaultClassLoader,
-                      Attribute.class);
+                      Attribute.class, delegationSubject);
 
         try {
             final Object params[] = new Object[] { name, attr };
@@ -758,7 +758,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
             unwrap(attributes,
                    getClassLoaderFor(name),
                    defaultClassLoader,
-                   AttributeList.class);
+                   AttributeList.class, delegationSubject);
 
         try {
             final Object params[] = new Object[] { name, attrlist };
@@ -810,7 +810,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         values = nullIsEmpty(unwrap(params,
                                     getClassLoaderFor(name),
                                     defaultClassLoader,
-                                    Object[].class));
+                                    Object[].class, delegationSubject));
 
         try {
             final Object params2[] =
@@ -990,7 +990,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
 
                 filterValues[i] =
                     unwrap(filters[i], targetCl, defaultClassLoader,
-                           NotificationFilter.class);
+                           NotificationFilter.class, sbjs[i]);
 
                 if (debug) logger.debug("addNotificationListener"+
                                         "(ObjectName,NotificationFilter)",
@@ -1058,7 +1058,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                  +" unwrapping filter with target extended ClassLoader.");
 
         filterValue =
-            unwrap(filter, targetCl, defaultClassLoader, NotificationFilter.class);
+            unwrap(filter, targetCl, defaultClassLoader, NotificationFilter.class, delegationSubject);
 
         if (debug) logger.debug("addNotificationListener"+
                  "(ObjectName,ObjectName,NotificationFilter,Object)",
@@ -1066,7 +1066,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                  +" unwrapping handback with target extended ClassLoader.");
 
         handbackValue =
-            unwrap(handback, targetCl, defaultClassLoader, Object.class);
+            unwrap(handback, targetCl, defaultClassLoader, Object.class, delegationSubject);
 
         try {
             final Object params[] =
@@ -1197,7 +1197,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                  +" unwrapping filter with target extended ClassLoader.");
 
         filterValue =
-            unwrap(filter, targetCl, defaultClassLoader, NotificationFilter.class);
+            unwrap(filter, targetCl, defaultClassLoader, NotificationFilter.class, delegationSubject);
 
         if (debug) logger.debug("removeNotificationListener"+
                  "(ObjectName,ObjectName,NotificationFilter,Object)",
@@ -1205,7 +1205,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                  +" unwrapping handback with target extended ClassLoader.");
 
         handbackValue =
-            unwrap(handback, targetCl, defaultClassLoader, Object.class);
+            unwrap(handback, targetCl, defaultClassLoader, Object.class, delegationSubject);
 
         try {
             final Object params[] =
@@ -1549,20 +1549,38 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
-    private static <T> T unwrap(final MarshalledObject<?> mo,
+    private <T> T unwrap(final MarshalledObject<?> mo,
                                 final ClassLoader cl,
-                                final Class<T> wrappedClass)
+                                final Class<T> wrappedClass,
+                                Subject delegationSubject)
             throws IOException {
         if (mo == null) {
             return null;
         }
         try {
             final ClassLoader old = AccessController.doPrivileged(new SetCcl(cl));
-            try {
-                return wrappedClass.cast(mo.get());
-            } catch (ClassNotFoundException cnfe) {
-                throw new UnmarshalException(cnfe.toString(), cnfe);
-            } finally {
+            try{
+                final AccessControlContext reqACC;
+                if (delegationSubject == null)
+                    reqACC = acc;
+                else {
+                    if (subject == null) {
+                        final String msg =
+                            "Subject delegation cannot be enabled unless " +
+                            "an authenticated subject is put in place";
+                        throw new SecurityException(msg);
+                    }
+                    reqACC = subjectDelegator.delegatedContext(
+                        acc, delegationSubject, removeCallerContext);
+                }
+                if(reqACC != null){
+                    return AccessController.doPrivileged(
+                            (PrivilegedExceptionAction<T>) () ->
+                                    wrappedClass.cast(mo.get()), reqACC);
+                }else{
+                    return wrappedClass.cast(mo.get());
+                }
+            }finally{
                 AccessController.doPrivileged(new SetCcl(old));
             }
         } catch (PrivilegedActionException pe) {
@@ -1575,14 +1593,19 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
             }
             logger.warning("unwrap", "Failed to unmarshall object: " + e);
             logger.debug("unwrap", e);
+        }catch (ClassNotFoundException ex) {
+            logger.warning("unwrap", "Failed to unmarshall object: " + ex);
+            logger.debug("unwrap", ex);
+            throw new UnmarshalException(ex.toString(), ex);
         }
         return null;
     }
 
-    private static <T> T unwrap(final MarshalledObject<?> mo,
+    private <T> T unwrap(final MarshalledObject<?> mo,
                                 final ClassLoader cl1,
                                 final ClassLoader cl2,
-                                final Class<T> wrappedClass)
+                                final Class<T> wrappedClass,
+                                Subject delegationSubject)
         throws IOException {
         if (mo == null) {
             return null;
@@ -1596,7 +1619,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                     }
                 }
             );
-            return unwrap(mo, orderCL, wrappedClass);
+            return unwrap(mo, orderCL, wrappedClass,delegationSubject);
         } catch (PrivilegedActionException pe) {
             Exception e = extractException(pe);
             if (e instanceof IOException) {

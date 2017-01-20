@@ -418,7 +418,6 @@ public class LdapLoginModule implements LoginModule {
             constraints = new SearchControls();
             constraints.setSearchScope(SearchControls.SUBTREE_SCOPE);
             constraints.setReturningAttributes(new String[0]); //return no attrs
-            constraints.setReturningObjFlag(true); // to get the full DN
         }
 
         authzIdentity = (String)options.get(AUTHZ_IDENTITY);
@@ -878,11 +877,7 @@ public class LdapLoginModule implements LoginModule {
             // (Use the first entry if more than one is returned)
             if (results.hasMore()) {
                 SearchResult entry = results.next();
-
-                // %%% - use the SearchResult.getNameInNamespace method
-                //        available in JDK 1.5 and later.
-                //        (can remove call to constraints.setReturningObjFlag)
-                userDN = ((Context)entry.getObject()).getNameInNamespace();
+                userDN = entry.getNameInNamespace();
 
                 if (debug) {
                     System.out.println("\t\t[LdapLoginModule] found entry: " +

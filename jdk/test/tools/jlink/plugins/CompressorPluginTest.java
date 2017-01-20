@@ -28,6 +28,7 @@
  * @modules java.base/jdk.internal.jimage.decompressor
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.internal.plugins
+ *          jdk.jlink/jdk.tools.jlink.plugin
  * @run main CompressorPluginTest
  */
 import java.net.URI;

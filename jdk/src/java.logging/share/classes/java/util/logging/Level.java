@@ -692,11 +692,14 @@ public class Level implements java.io.Serializable {
                     Level levelObject = ref.get();
                     if (levelObject == null) continue;
                     Level other = ref.mirroredLevel;
+                    Class<? extends Level> type = levelObject.getClass();
                     if (l.value == other.value &&
                            (l.resourceBundleName == other.resourceBundleName ||
                                (l.resourceBundleName != null &&
                                 l.resourceBundleName.equals(other.resourceBundleName)))) {
-                        return Optional.of(levelObject);
+                        if (type == l.getClass()) {
+                            return Optional.of(levelObject);
+                        }
                     }
                 }
             }
