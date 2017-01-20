@@ -162,7 +162,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
             });
 
             if (this.targetOsName == null) {
-                throw new PluginException("TargetPlatform attribute is missing for java.base module");
+                throw new PluginException("ModuleTarget attribute is missing for java.base module");
             }
 
             checkResourcePool(files);
