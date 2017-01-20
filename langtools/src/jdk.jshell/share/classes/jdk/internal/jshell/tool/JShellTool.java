@@ -987,7 +987,7 @@ public class JShellTool implements MessageHandler {
                     break;
                 }
                 String trimmed = trimEnd(raw);
-                if (!trimmed.isEmpty()) {
+                if (!trimmed.isEmpty() || !incomplete.isEmpty()) {
                     String line = incomplete + trimmed;
 
                     // No commands in the middle of unprocessed source
