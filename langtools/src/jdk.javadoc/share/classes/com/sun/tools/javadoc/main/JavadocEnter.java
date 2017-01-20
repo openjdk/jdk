@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
 
 import static com.sun.tools.javac.code.Kinds.Kind.*;
+import com.sun.tools.javac.main.JavaCompiler;
 
 /**
  *  Javadoc's own enter phase does a few things above and beyond that
@@ -65,16 +66,19 @@ public class JavadocEnter extends Enter {
         super(context);
         messager = Messager.instance0(context);
         docenv = DocEnv.instance(context);
+        compiler = JavaCompiler.instance(context);
     }
 
     final Messager messager;
     final DocEnv docenv;
+    final JavaCompiler compiler;
 
     @Override
     public void main(List<JCCompilationUnit> trees) {
         // count all Enter errors as warnings.
         int nerrors = messager.nerrors;
         super.main(trees);
+        compiler.enterDone();
         messager.nwarnings += (messager.nerrors - nerrors);
         messager.nerrors = nerrors;
     }

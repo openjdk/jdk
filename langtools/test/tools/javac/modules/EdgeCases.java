@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8154283 8167320
+ * @bug 8154283 8167320 8171098
  * @summary tests for multi-module mode compilation
  * @library /tools/lib
  * @modules
@@ -484,4 +484,58 @@ public class EdgeCases extends ModuleTestBase {
             throw new AssertionError("Unexpected output: " + log);
         }
     }
+
+    @Test
+    public void testOnDemandCompletionModuleInfoJava(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path src_m1 = src.resolve("m1x");
+        tb.writeJavaFiles(src_m1,
+                          "@Deprecated module m1x { }");
+        Path src_m2 = src.resolve("m2x");
+        tb.writeJavaFiles(src_m2,
+                          "module m2x { requires m1x; }");
+        Path src_m3 = src.resolve("m3x");
+        tb.writeJavaFiles(src_m3,
+                          "module m3x { requires m2x; requires m1x; }");
+        Path classes = base.resolve("classes");
+        tb.createDirectories(classes);
+
+        List<String> log;
+        List<String> expected;
+
+        log = new JavacTask(tb)
+                .options("--module-source-path", src.toString())
+                .outdir(classes)
+                .files(findJavaFiles(src_m1))
+                .run()
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        expected = Arrays.asList("");
+
+        if (!expected.equals(log)) {
+            throw new IllegalStateException(log.toString());
+        }
+
+        log = new JavacTask(tb)
+                .options("--module-source-path", src.toString(),
+                         "-XDrawDiagnostics",
+                         "-Xlint:deprecation")
+                .outdir(classes)
+                .files(findJavaFiles(src_m3))
+                .run()
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        expected = Arrays.asList(
+                "module-info.java:1:23: compiler.warn.has.been.deprecated.module: m1x",
+                "module-info.java:1:37: compiler.warn.has.been.deprecated.module: m1x",
+                "2 warnings"
+        );
+
+        if (!expected.equals(log)) {
+            throw new IllegalStateException(log.toString());
+        }
+    }
+
 }
