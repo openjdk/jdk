@@ -182,7 +182,7 @@ public class Messager extends Log implements Reporter {
     }
 
     private String getDiagSource(DocTreePath path) {
-        if (path == null) {
+        if (path == null || path.getTreePath() == null) {
             return programName;
         }
         JavacTrees trees = JavacTrees.instance(context);

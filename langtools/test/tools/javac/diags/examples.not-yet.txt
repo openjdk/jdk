@@ -103,6 +103,7 @@ compiler.warn.annotation.method.not.found.reason        # ClassReader
 compiler.warn.big.major.version                         # ClassReader
 compiler.warn.future.attr                               # ClassReader
 compiler.warn.illegal.char.for.encoding
+compiler.warn.incubating.modules                        # requires adjusted classfile
 compiler.warn.invalid.archive.file
 compiler.warn.override.bridge
 compiler.warn.position.overflow                         # CRTable: caused by files with long lines >= 1024 chars

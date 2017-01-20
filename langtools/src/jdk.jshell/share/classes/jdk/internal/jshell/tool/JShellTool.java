@@ -128,9 +128,8 @@ import static jdk.internal.jshell.tool.ContinuousCompletionProvider.STARTSWITH_M
  */
 public class JShellTool implements MessageHandler {
 
-    private static final String LINE_SEP = System.getProperty("line.separator");
     private static final Pattern LINEBREAK = Pattern.compile("\\R");
-    private static final String RECORD_SEPARATOR = "\u241E";
+            static final String RECORD_SEPARATOR = "\u241E";
     private static final String RB_NAME_PREFIX  = "jdk.internal.jshell.tool.resources";
     private static final String VERSION_RB_NAME = RB_NAME_PREFIX + ".version";
     private static final String L10N_RB_NAME    = RB_NAME_PREFIX + ".l10n";
@@ -199,7 +198,7 @@ public class JShellTool implements MessageHandler {
     private boolean debug = false;
     public boolean testPrompt = false;
     private String defaultStartup = null;
-    private String startup = null;
+    private Startup startup = null;
     private String executionControlSpec = null;
     private EditorSetting editor = BUILT_IN_EDITOR;
 
@@ -216,7 +215,6 @@ public class JShellTool implements MessageHandler {
     static final String MODE_KEY     = "MODE";
     static final String REPLAY_RESTORE_KEY = "REPLAY_RESTORE";
 
-    static final String DEFAULT_STARTUP_NAME = "DEFAULT";
     static final Pattern BUILTIN_FILE_PATTERN = Pattern.compile("\\w+");
     static final String BUILTIN_FILE_PATH_FORMAT = "/jdk/jshell/tool/resources/%s.jsh";
 
@@ -431,13 +429,13 @@ public class JShellTool implements MessageHandler {
         private final OptionSpecBuilder argX = parser.accepts("X");
 
         private String feedbackMode = null;
-        private String initialStartup = null;
+        private Startup initialStartup = null;
 
         String feedbackMode() {
             return feedbackMode;
         }
 
-        String startup() {
+        Startup startup() {
             return initialStartup;
         }
 
@@ -485,22 +483,15 @@ public class JShellTool implements MessageHandler {
                     startmsg("jshell.err.opt.startup.conflict");
                     return null;
                 }
-                StringBuilder sb = new StringBuilder();
-                for (String fn : sts) {
-                    String s = readFile(fn, "--startup");
-                    if (s == null) {
-                        return null;
-                    }
-                    sb.append(s);
-                }
-                initialStartup = sb.toString();
-            } else if (options.has(argNoStart)) {
-                initialStartup = "";
-            } else {
-                initialStartup = prefs.get(STARTUP_KEY);
+                initialStartup = Startup.fromFileList(sts, "--startup", new InitMessageHandler());
                 if (initialStartup == null) {
-                    initialStartup = defaultStartup();
+                    return null;
                 }
+            } else if (options.has(argNoStart)) {
+                initialStartup = Startup.noStartup();
+            } else {
+                String packedStartup = prefs.get(STARTUP_KEY);
+                initialStartup = Startup.unpack(packedStartup, new InitMessageHandler());
             }
             if (options.has(argExecution)) {
                 executionControlSpec = options.valueOf(argExecution);
@@ -639,6 +630,11 @@ public class JShellTool implements MessageHandler {
             return "";
         }
         String pp = s.replaceAll("\\R", post + pre);
+        if (pp.endsWith(post + pre)) {
+            // prevent an extra prefix char and blank line when the string
+            // already terminates with newline
+            pp = pp.substring(0, pp.length() - (post + pre).length());
+        }
         return pre + pp + post;
     }
 
@@ -893,7 +889,7 @@ public class JShellTool implements MessageHandler {
         analysis = state.sourceCodeAnalysis();
         live = true;
 
-        startUpRun(startup);
+        startUpRun(startup.toString());
         currentNameSpace = mainNamespace;
     }
 
@@ -1077,7 +1073,7 @@ public class JShellTool implements MessageHandler {
                        .toArray(Command[]::new);
     }
 
-    private static Path toPathResolvingUserHome(String pathString) {
+    static Path toPathResolvingUserHome(String pathString) {
         if (pathString.replace(File.separatorChar, '/').startsWith("~/"))
             return Paths.get(System.getProperty("user.home"), pathString.substring(2));
         else
@@ -1838,48 +1834,43 @@ public class JShellTool implements MessageHandler {
             return true;
         }
         if (hasFile) {
-            StringBuilder sb = new StringBuilder();
-            for (String fn : fns) {
-                String s = readFile(fn, "/set start");
-                if (s == null) {
-                    return false;
-                }
-                sb.append(s);
+            startup = Startup.fromFileList(fns, "/set start", this);
+            if (startup == null) {
+                return false;
             }
-            startup = sb.toString();
         } else if (defaultOption) {
-            startup = defaultStartup();
+            startup = Startup.defaultStartup(this);
         } else if (noneOption) {
-            startup = "";
+            startup = Startup.noStartup();
         }
         if (retainOption) {
             // retain startup setting
-            prefs.put(STARTUP_KEY, startup);
+            prefs.put(STARTUP_KEY, startup.storedForm());
         }
         return true;
     }
 
+    // show the "/set start" settings (retained and, if different, current)
+    // as commands (and file contents).  All commands first, then contents.
     void showSetStart() {
+        StringBuilder sb = new StringBuilder();
         String retained = prefs.get(STARTUP_KEY);
         if (retained != null) {
-            showSetStart(true, retained);
-        }
-        if (retained == null || !startup.equals(retained)) {
-            showSetStart(false, startup);
-        }
-    }
-
-    void showSetStart(boolean isRetained, String start) {
-        String cmd = "/set start" + (isRetained ? " -retain " : " ");
-        String stset;
-        if (start.equals(defaultStartup())) {
-            stset = cmd + "-default";
-        } else if (start.isEmpty()) {
-            stset = cmd + "-none";
+            Startup retainedStart = Startup.unpack(retained, this);
+            boolean currentDifferent = !startup.equals(retainedStart);
+            sb.append(retainedStart.show(true));
+            if (currentDifferent) {
+                sb.append(startup.show(false));
+            }
+            sb.append(retainedStart.showDetail());
+            if (currentDifferent) {
+                sb.append(startup.showDetail());
+            }
         } else {
-            stset = "startup.jsh:\n" + start + "\n" + cmd + "startup.jsh";
+            sb.append(startup.show(false));
+            sb.append(startup.showDetail());
         }
-        hard(stset);
+        hard(sb.toString());
     }
 
     boolean cmdDebug(String arg) {
@@ -2200,9 +2191,18 @@ public class JShellTool implements MessageHandler {
                 case ASSIGNMENT_SUBKIND:
                 case OTHER_EXPRESSION_SUBKIND:
                 case TEMP_VAR_EXPRESSION_SUBKIND:
-                case STATEMENT_SUBKIND:
                 case UNKNOWN_SUBKIND:
                     if (!src.endsWith(";")) {
+                        src = src + ";";
+                    }
+                    srcSet.add(src);
+                    break;
+                case STATEMENT_SUBKIND:
+                    if (src.endsWith("}")) {
+                        // Could end with block or, for example, new Foo() {...}
+                        // so, we need deeper analysis to know if it needs a semicolon
+                        src = analysis.analyzeCompletion(src).source();
+                    } else if (!src.endsWith(";")) {
                         src = src + ";";
                     }
                     srcSet.add(src);
@@ -2380,38 +2380,7 @@ public class JShellTool implements MessageHandler {
         return false;
     }
 
-    /**
-     * Read an external file. Error messages accessed via keyPrefix
-     *
-     * @param filename file to access or null
-     * @param context printable non-natural language context for errors
-     * @return contents of file as string
-     */
-    String readFile(String filename, String context) {
-        if (filename != null) {
-            try {
-                byte[] encoded = Files.readAllBytes(toPathResolvingUserHome(filename));
-                return new String(encoded);
-            } catch (AccessDeniedException e) {
-                errormsg("jshell.err.file.not.accessible", context, filename, e.getMessage());
-            } catch (NoSuchFileException e) {
-                String resource = getResource(filename);
-                if (resource != null) {
-                    // Not found as file, but found as resource
-                    return resource;
-                }
-                errormsg("jshell.err.file.not.found", context, filename);
-            } catch (Exception e) {
-                errormsg("jshell.err.file.exception", context, filename, e);
-            }
-        } else {
-            errormsg("jshell.err.file.filename", context);
-        }
-        return null;
-
-    }
-
-    String getResource(String name) {
+    static String getResource(String name) {
         if (BUILTIN_FILE_PATTERN.matcher(name).matches()) {
             try {
                 return readResource(name);
@@ -2423,31 +2392,14 @@ public class JShellTool implements MessageHandler {
     }
 
     // Read a built-in file from resources
-    String readResource(String name) throws IOException {
+    static String readResource(String name) throws IOException {
         // Attempt to find the file as a resource
         String spec = String.format(BUILTIN_FILE_PATH_FORMAT, name);
 
         try (InputStream in = JShellTool.class.getResourceAsStream(spec);
-             BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
-            return reader.lines().collect(Collectors.joining("\n"));
+                BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
+            return reader.lines().collect(Collectors.joining("\n", "", "\n"));
         }
-    }
-
-    // retrieve the default startup string
-    String defaultStartup() {
-        if (defaultStartup == null) {
-            defaultStartup = ""; // failure case
-            try {
-                defaultStartup = readResource(DEFAULT_STARTUP_NAME);
-            } catch (AccessDeniedException e) {
-                errormsg("jshell.err.file.not.accessible", "jshell", DEFAULT_STARTUP_NAME, e.getMessage());
-            } catch (NoSuchFileException e) {
-                errormsg("jshell.err.file.not.found", "jshell", DEFAULT_STARTUP_NAME);
-            } catch (Exception e) {
-                errormsg("jshell.err.file.exception", "jshell", DEFAULT_STARTUP_NAME, e);
-            }
-        }
-        return defaultStartup;
     }
 
     private boolean cmdReset(String rawargs) {
@@ -2551,7 +2503,7 @@ public class JShellTool implements MessageHandler {
                     writer.write("\n");
                 }
             } else if (at.hasOption("-start")) {
-                writer.append(startup);
+                writer.append(startup.toString());
             } else {
                 String sources = (at.hasOption("-all")
                         ? state.snippets()

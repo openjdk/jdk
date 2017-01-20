@@ -65,17 +65,17 @@ import javax.annotation.processing.SupportedSourceVersion;
  * @see AbstractAnnotationValueVisitor8
  * @see AbstractAnnotationValueVisitor9
  * @since 1.6
- * @deprecated Release 6 is obsolete; update to a visitor for a newer
- * release level.
  */
-@Deprecated
 @SupportedSourceVersion(RELEASE_6)
 public abstract class AbstractAnnotationValueVisitor6<R, P>
     implements AnnotationValueVisitor<R, P> {
 
     /**
      * Constructor for concrete subclasses to call.
+     * @deprecated Release 6 is obsolete; update to a visitor for a newer
+     * release level.
      */
+    @Deprecated
     protected AbstractAnnotationValueVisitor6() {}
 
     /**

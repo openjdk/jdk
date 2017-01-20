@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.util.List;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.PackageElement;
 import javax.tools.Diagnostic;
 import javax.tools.FileObject;
 import javax.tools.JavaCompiler.CompilationTask;
@@ -127,17 +128,22 @@ public abstract class DocTrees extends Trees {
 
     /**
      * Returns a doc tree path containing the doc comment tree of the given file.
-     * The file must be an HTML file, in which case the doc comment tree represents the
-     * contents of the &lt;body&gt; tag, and any enclosing tags are ignored.
+     * The file must be an HTML file, in which case the doc comment tree represents
+     * the contents of the {@code <body>} tag, and any enclosing tags are ignored.
+     * Any references to source code elements contained in {@code @see} and
+     * {@code {@link}} tags in the doc comment tree will be evaluated in the
+     * context of the given package element.
      * Returns {@code null} if no doc comment was found.
-     * Future releases may support additional file types.
      *
-     * @param fileObject the content container
-     * @return a doc tree path containing the doc comment read from the given file.
+     * @param fileObject a file object encapsulating the HTML content
+     * @param packageElement a package element to associate with the given file object
+     * representing a legacy package.html, null otherwise
+     * @return a doc tree path containing the doc comment parsed from the given file
+     * @throws IllegalArgumentException if the fileObject is not an HTML file
      *
      * @since 9
      */
-    public abstract DocTreePath getDocTreePath(FileObject fileObject);
+    public abstract DocTreePath getDocTreePath(FileObject fileObject, PackageElement packageElement);
 
     /**
      * Returns the language model element referred to by the leaf node of the given

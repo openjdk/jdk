@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ClassType;
 import com.sun.tools.javac.code.TypeTag;
 import com.sun.tools.javac.code.Types;
+import com.sun.tools.javac.comp.Annotate;
 import com.sun.tools.javac.comp.Check;
 import com.sun.tools.javac.comp.CompileStates;
 import com.sun.tools.javac.comp.Enter;
@@ -95,6 +96,7 @@ class ReusableContext extends Context implements TaskListener {
             Types.instance(this).newRound();
             Check.instance(this).newRound();
             Modules.instance(this).newRound();
+            Annotate.instance(this).newRound();
             CompileStates.instance(this).clear();
             MultiTaskListener.instance(this).clear();
 
