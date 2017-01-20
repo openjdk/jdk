@@ -41,6 +41,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.lang.model.SourceVersion;
@@ -114,6 +115,7 @@ import static com.sun.tools.javac.code.Flags.UNATTRIBUTED;
 import static com.sun.tools.javac.code.Kinds.Kind.ERR;
 import static com.sun.tools.javac.code.Kinds.Kind.MDL;
 import static com.sun.tools.javac.code.Kinds.Kind.MTH;
+import com.sun.tools.javac.code.Symbol.ModuleResolutionFlags;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 
 /**
@@ -1090,6 +1092,10 @@ public class Modules extends JCTree.Visitor {
         Predicate<ModuleSymbol> observablePred = sym ->
              (observable == null) ? (moduleFinder.findModule(sym).kind != ERR) : observable.contains(sym);
         Predicate<ModuleSymbol> systemModulePred = sym -> (sym.flags() & Flags.SYSTEM_MODULE) != 0;
+        Predicate<ModuleSymbol> noIncubatorPred = sym -> {
+            sym.complete();
+            return !sym.resolutionFlags.contains(ModuleResolutionFlags.DO_NOT_RESOLVE_BY_DEFAULT);
+        };
         Set<ModuleSymbol> enabledRoot = new LinkedHashSet<>();
 
         if (rootModules.contains(syms.unnamedModule)) {
@@ -1108,7 +1114,7 @@ public class Modules extends JCTree.Visitor {
             }
 
             for (ModuleSymbol sym : new HashSet<>(syms.getAllModules())) {
-                if (systemModulePred.test(sym) && observablePred.test(sym) && jdkModulePred.test(sym)) {
+                if (systemModulePred.test(sym) && observablePred.test(sym) && jdkModulePred.test(sym) && noIncubatorPred.test(sym)) {
                     enabledRoot.add(sym);
                 }
             }
@@ -1128,14 +1134,14 @@ public class Modules extends JCTree.Visitor {
                 Stream<ModuleSymbol> modules;
                 switch (added) {
                     case ALL_SYSTEM:
-                        modules = syms.getAllModules()
-                                      .stream()
-                                      .filter(systemModulePred.and(observablePred));
+                        modules = new HashSet<>(syms.getAllModules())
+                                .stream()
+                                .filter(systemModulePred.and(observablePred).and(noIncubatorPred));
                         break;
                     case ALL_MODULE_PATH:
-                        modules = syms.getAllModules()
-                                      .stream()
-                                      .filter(systemModulePred.negate().and(observablePred));
+                        modules = new HashSet<>(syms.getAllModules())
+                                .stream()
+                                .filter(systemModulePred.negate().and(observablePred));
                         break;
                     default:
                         if (!isValidName(added))
@@ -1154,6 +1160,15 @@ public class Modules extends JCTree.Visitor {
         Set<ModuleSymbol> result = computeTransitiveClosure(enabledRoot, observable);
 
         result.add(syms.unnamedModule);
+
+        String incubatingModules = result.stream()
+                .filter(msym -> msym.resolutionFlags.contains(ModuleResolutionFlags.WARN_INCUBATING))
+                .map(msym -> msym.name.toString())
+                .collect(Collectors.joining(","));
+
+        if (!incubatingModules.isEmpty()) {
+            log.warning(Warnings.IncubatingModules(incubatingModules));
+        }
 
         allModules = result;
 
