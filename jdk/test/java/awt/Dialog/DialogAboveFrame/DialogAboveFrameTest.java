@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8169589
+ * @bug 8169589 8171909
  * @summary Activating a dialog puts to back another dialog owned by the same frame
  * @author Dmitry Markov
  * @library ../../regtesthelpers
@@ -68,7 +68,7 @@ public class DialogAboveFrameTest {
         int y = point.y + (int)(dialog1.getHeight() * 0.9);
 
         try {
-            if (!robot.getPixelColor(x, y).equals(dialog1.getBackground())) {
+            if (!Util.testPixelColor(x, y, dialog1.getBackground(), 10, 100, robot)) {
                 throw new RuntimeException("Test FAILED: Dialog is behind the frame");
             }
         } finally {

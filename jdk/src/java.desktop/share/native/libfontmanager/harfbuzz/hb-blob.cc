@@ -247,7 +247,7 @@ hb_blob_destroy (hb_blob_t *blob)
  * @destroy: callback to call when @data is not needed anymore.
  * @replace: whether to replace an existing data with the same key.
  *
- * Return value:
+ * Return value: 
  *
  * Since: 0.9.2
  **/
@@ -266,9 +266,9 @@ hb_blob_set_user_data (hb_blob_t          *blob,
  * @blob: a blob.
  * @key: key for data to get.
  *
+ * 
  *
- *
- * Return value: (transfer none):
+ * Return value: (transfer none): 
  *
  * Since: 0.9.2
  **/
@@ -284,7 +284,7 @@ hb_blob_get_user_data (hb_blob_t          *blob,
  * hb_blob_make_immutable:
  * @blob: a blob.
  *
- *
+ * 
  *
  * Since: 0.9.2
  **/
@@ -301,7 +301,7 @@ hb_blob_make_immutable (hb_blob_t *blob)
  * hb_blob_is_immutable:
  * @blob: a blob.
  *
- *
+ * 
  *
  * Return value: TODO
  *
@@ -318,7 +318,7 @@ hb_blob_is_immutable (hb_blob_t *blob)
  * hb_blob_get_length:
  * @blob: a blob.
  *
- *
+ * 
  *
  * Return value: the length of blob data in bytes.
  *
@@ -335,9 +335,9 @@ hb_blob_get_length (hb_blob_t *blob)
  * @blob: a blob.
  * @length: (out):
  *
+ * 
  *
- *
- * Returns: (transfer none) (array length=length):
+ * Returns: (transfer none) (array length=length): 
  *
  * Since: 0.9.2
  **/

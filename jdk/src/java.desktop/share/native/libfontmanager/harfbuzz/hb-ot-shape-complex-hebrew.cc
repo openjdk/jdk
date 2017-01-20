@@ -154,6 +154,18 @@ compose_hebrew (const hb_ot_shape_normalize_context_t *c,
   return found;
 }
 
+static bool
+disable_otl_hebrew (const hb_ot_shape_plan_t *plan)
+{
+  /* For Hebrew shaper, use fallback if GPOS does not have 'hebr'
+   * script.  This matches Uniscribe better, and makes fonts like
+   * Arial that have GSUB/GPOS/GDEF but no data for Hebrew work.
+   * See:
+   * https://github.com/behdad/harfbuzz/issues/347#issuecomment-267838368
+   */
+  return plan->map.chosen_script[1] != HB_TAG ('h','e','b','r');
+}
+
 
 const hb_ot_complex_shaper_t _hb_ot_complex_shaper_hebrew =
 {
@@ -168,6 +180,7 @@ const hb_ot_complex_shaper_t _hb_ot_complex_shaper_hebrew =
   NULL, /* decompose */
   compose_hebrew,
   NULL, /* setup_masks */
+  disable_otl_hebrew,
   HB_OT_SHAPE_ZERO_WIDTH_MARKS_BY_GDEF_LATE,
   true, /* fallback_position */
 };

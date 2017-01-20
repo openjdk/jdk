@@ -97,7 +97,7 @@ struct CaretValueFormat1
   friend struct CaretValue;
 
   private:
-  inline hb_position_t get_caret_value (hb_font_t *font, hb_direction_t direction, hb_codepoint_t glyph_id HB_UNUSED) const
+  inline hb_position_t get_caret_value (hb_font_t *font, hb_direction_t direction) const
   {
     return HB_DIRECTION_IS_HORIZONTAL (direction) ? font->em_scale_x (coordinate) : font->em_scale_y (coordinate);
   }
@@ -146,11 +146,11 @@ struct CaretValueFormat3
 {
   friend struct CaretValue;
 
-  inline hb_position_t get_caret_value (hb_font_t *font, hb_direction_t direction, hb_codepoint_t glyph_id HB_UNUSED) const
+  inline hb_position_t get_caret_value (hb_font_t *font, hb_direction_t direction, const VariationStore &var_store) const
   {
     return HB_DIRECTION_IS_HORIZONTAL (direction) ?
-           font->em_scale_x (coordinate) + (this+deviceTable).get_x_delta (font) :
-           font->em_scale_y (coordinate) + (this+deviceTable).get_y_delta (font);
+           font->em_scale_x (coordinate) + (this+deviceTable).get_x_delta (font, var_store) :
+           font->em_scale_y (coordinate) + (this+deviceTable).get_y_delta (font, var_store);
   }
 
   inline bool sanitize (hb_sanitize_context_t *c) const
@@ -172,12 +172,15 @@ struct CaretValueFormat3
 
 struct CaretValue
 {
-  inline hb_position_t get_caret_value (hb_font_t *font, hb_direction_t direction, hb_codepoint_t glyph_id) const
+  inline hb_position_t get_caret_value (hb_font_t *font,
+                                        hb_direction_t direction,
+                                        hb_codepoint_t glyph_id,
+                                        const VariationStore &var_store) const
   {
     switch (u.format) {
-    case 1: return u.format1.get_caret_value (font, direction, glyph_id);
+    case 1: return u.format1.get_caret_value (font, direction);
     case 2: return u.format2.get_caret_value (font, direction, glyph_id);
-    case 3: return u.format3.get_caret_value (font, direction, glyph_id);
+    case 3: return u.format3.get_caret_value (font, direction, var_store);
     default:return 0;
     }
   }
@@ -210,6 +213,7 @@ struct LigGlyph
   inline unsigned int get_lig_carets (hb_font_t *font,
                                       hb_direction_t direction,
                                       hb_codepoint_t glyph_id,
+                                      const VariationStore &var_store,
                                       unsigned int start_offset,
                                       unsigned int *caret_count /* IN/OUT */,
                                       hb_position_t *caret_array /* OUT */) const
@@ -218,7 +222,7 @@ struct LigGlyph
       const OffsetTo<CaretValue> *array = carets.sub_array (start_offset, caret_count);
       unsigned int count = *caret_count;
       for (unsigned int i = 0; i < count; i++)
-        caret_array[i] = (this+array[i]).get_caret_value (font, direction, glyph_id);
+        caret_array[i] = (this+array[i]).get_caret_value (font, direction, glyph_id, var_store);
     }
 
     return carets.len;
@@ -244,6 +248,7 @@ struct LigCaretList
   inline unsigned int get_lig_carets (hb_font_t *font,
                                       hb_direction_t direction,
                                       hb_codepoint_t glyph_id,
+                                      const VariationStore &var_store,
                                       unsigned int start_offset,
                                       unsigned int *caret_count /* IN/OUT */,
                                       hb_position_t *caret_array /* OUT */) const
@@ -256,7 +261,7 @@ struct LigCaretList
       return 0;
     }
     const LigGlyph &lig_glyph = this+ligGlyph[index];
-    return lig_glyph.get_lig_carets (font, direction, glyph_id, start_offset, caret_count, caret_array);
+    return lig_glyph.get_lig_carets (font, direction, glyph_id, var_store, start_offset, caret_count, caret_array);
   }
 
   inline bool sanitize (hb_sanitize_context_t *c) const
@@ -367,11 +372,17 @@ struct GDEF
                                       unsigned int start_offset,
                                       unsigned int *caret_count /* IN/OUT */,
                                       hb_position_t *caret_array /* OUT */) const
-  { return (this+ligCaretList).get_lig_carets (font, direction, glyph_id, start_offset, caret_count, caret_array); }
+  { return (this+ligCaretList).get_lig_carets (font,
+                                               direction, glyph_id, get_var_store(),
+                                               start_offset, caret_count, caret_array); }
 
-  inline bool has_mark_sets (void) const { return version.to_int () >= 0x00010002u && markGlyphSetsDef[0] != 0; }
+  inline bool has_mark_sets (void) const { return version.to_int () >= 0x00010002u && markGlyphSetsDef != 0; }
   inline bool mark_set_covers (unsigned int set_index, hb_codepoint_t glyph_id) const
-  { return version.to_int () >= 0x00010002u && (this+markGlyphSetsDef[0]).covers (set_index, glyph_id); }
+  { return version.to_int () >= 0x00010002u && (this+markGlyphSetsDef).covers (set_index, glyph_id); }
+
+  inline bool has_var_store (void) const { return version.to_int () >= 0x00010003u && varStore != 0; }
+  inline const VariationStore &get_var_store (void) const
+  { return version.to_int () >= 0x00010003u ? this+varStore : Null(VariationStore); }
 
   inline bool sanitize (hb_sanitize_context_t *c) const
   {
@@ -382,9 +393,9 @@ struct GDEF
                   attachList.sanitize (c, this) &&
                   ligCaretList.sanitize (c, this) &&
                   markAttachClassDef.sanitize (c, this) &&
-                  (version.to_int () < 0x00010002u || markGlyphSetsDef[0].sanitize (c, this)));
+                  (version.to_int () < 0x00010002u || markGlyphSetsDef.sanitize (c, this)) &&
+                  (version.to_int () < 0x00010003u || varStore.sanitize (c, this)));
   }
-
 
   /* glyph_props is a 16-bit integer where the lower 8-bit have bits representing
    * glyph class and other bits, and high 8-bit gthe mark attachment type (if any).
@@ -410,7 +421,7 @@ struct GDEF
 
   protected:
   FixedVersion<>version;                /* Version of the GDEF table--currently
-                                         * 0x00010002u */
+                                         * 0x00010003u */
   OffsetTo<ClassDef>
                 glyphClassDef;          /* Offset to class definition table
                                          * for glyph type--from beginning of
@@ -428,12 +439,17 @@ struct GDEF
                                          * mark attachment type--from beginning
                                          * of GDEF header (may be Null) */
   OffsetTo<MarkGlyphSets>
-                markGlyphSetsDef[VAR];  /* Offset to the table of mark set
+                markGlyphSetsDef;       /* Offset to the table of mark set
                                          * definitions--from beginning of GDEF
                                          * header (may be NULL).  Introduced
-                                         * in version 00010002. */
+                                         * in version 0x00010002. */
+  OffsetTo<VariationStore, ULONG>
+                varStore;               /* Offset to the table of Item Variation
+                                         * Store--from beginning of GDEF
+                                         * header (may be NULL).  Introduced
+                                         * in version 0x00010003. */
   public:
-  DEFINE_SIZE_ARRAY (12, markGlyphSetsDef);
+  DEFINE_SIZE_MIN (12);
 };
 
 
