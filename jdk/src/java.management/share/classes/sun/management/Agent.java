@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -502,19 +502,9 @@ public class Agent {
                }
             }
 
-            // Rebuilding service URL to broadcast it
-            String jmxremotePort = props.getProperty(JMXREMOTE_PORT);
-            String rmiPort = props.getProperty(RMI_PORT);
-
-            JMXServiceURL url = jmxServer.getAddress();
-            String hostname = url.getHost();
-
-            String jmxUrlStr = (rmiPort != null)
-                    ? String.format(
-                    "service:jmx:rmi://%s:%s/jndi/rmi://%s:%s/jmxrmi",
-                    hostname, rmiPort, hostname, jmxremotePort)
-                    : String.format(
-                    "service:jmx:rmi:///jndi/rmi://%s:%s/jmxrmi", hostname, jmxremotePort);
+            // Get service URL to broadcast it
+            Map<String,String> remoteProps = ConnectorAddressLink.importRemoteFrom(0);
+            String jmxUrlStr = remoteProps.get("sun.management.JMXConnectorServer.0.remoteAddress");
 
             String instanceName = props.getProperty("com.sun.management.jdp.name");
 
