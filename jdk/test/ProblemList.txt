@@ -118,6 +118,35 @@
 
 java/beans/Introspector/8132566/OverridePropertyInfoTest.java   8132565 generic-all
 java/beans/Introspector/8132566/OverrideUserDefPropertyInfoTest.java 8132565 generic-all
+java/beans/PropertyEditor/TestBooleanClass.java                 8173082 generic-all
+java/beans/PropertyEditor/TestByteClass.java                    8173082 generic-all
+java/beans/PropertyEditor/TestColorClass.java                   8173082 generic-all
+java/beans/PropertyEditor/TestDoubleClass.java                  8173082 generic-all
+java/beans/PropertyEditor/TestFloatClass.java                   8173082 generic-all
+java/beans/PropertyEditor/TestFontClass.java                    8173082 generic-all
+java/beans/PropertyEditor/TestIntegerClass.java                 8173082 generic-all
+java/beans/PropertyEditor/TestLongClass.java                    8173082 generic-all
+java/beans/PropertyEditor/TestShortClass.java                   8173082 generic-all
+java/beans/PropertyEditor/TestStringClass.java                  8173082 generic-all
+java/beans/XMLEncoder/Test6570354.java                          8173082 generic-all
+java/beans/XMLDecoder/spec/TestObject.java                      8173082 macosx-all
+java/beans/XMLEncoder/Test4631471.java                          8173082 macosx-all
+java/beans/XMLEncoder/Test4652928.java                          8173082 macosx-all
+java/beans/XMLEncoder/Test4903007.java                          8173082 macosx-all
+java/beans/XMLEncoder/Test6437265.java                          8173082 macosx-all
+java/beans/XMLEncoder/Test6501431.java                          8173082 macosx-all
+java/beans/XMLEncoder/java_awt_BorderLayout.java                8173082 macosx-all
+java/beans/XMLEncoder/java_awt_CardLayout.java                  8173082 macosx-all
+java/beans/XMLEncoder/java_awt_GridBagLayout.java               8173082 macosx-all
+java/beans/XMLEncoder/javax_swing_BoxLayout.java                8173082 macosx-all
+java/beans/XMLEncoder/javax_swing_DefaultCellEditor.java        8173082 macosx-all
+java/beans/XMLEncoder/javax_swing_JButton.java                  8173082 macosx-all
+java/beans/XMLEncoder/javax_swing_JLayeredPane.java             8173082 macosx-all
+java/beans/XMLEncoder/javax_swing_JSplitPane.java               8173082 macosx-all
+java/beans/XMLEncoder/javax_swing_JTree.java                    8173082 macosx-all
+java/beans/XMLEncoder/javax_swing_OverlayLayout.java            8173082 macosx-all
+java/beans/XMLEncoder/javax_swing_border_TitledBorder.java      8173082 macosx-all
+java/beans/XMLEncoder/javax_swing_plaf_BorderUIResource_TitledBorderUIResource.java 8173082 macosx-all
 
 ############################################################################
 
