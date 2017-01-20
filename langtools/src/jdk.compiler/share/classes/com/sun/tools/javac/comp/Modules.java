@@ -978,7 +978,7 @@ public class Modules extends JCTree.Visitor {
 
         @Override
         public void visitRequires(JCRequires tree) {
-            if (tree.directive != null) {
+            if (tree.directive != null && allModules().contains(tree.directive.module)) {
                 chk.checkDeprecated(tree.moduleName.pos(), msym, tree.directive.module);
                 msym.directives = msym.directives.prepend(tree.directive);
             }
@@ -1263,7 +1263,6 @@ public class Modules extends JCTree.Visitor {
         msym.requires = msym.requires.appendList(List.from(addReads.getOrDefault(msym, Collections.emptySet())));
 
         List<RequiresDirective> requires = msym.requires;
-        List<RequiresDirective> previous = null;
 
         while (requires.nonEmpty()) {
             if (!allModules().contains(requires.head.module)) {
@@ -1278,13 +1277,7 @@ public class Modules extends JCTree.Visitor {
                 } else {
                     Assert.check((msym.flags() & Flags.AUTOMATIC_MODULE) == 0);
                 }
-                if (previous != null) {
-                    previous.tail = requires.tail;
-                } else {
-                    msym.requires.tail = requires.tail;
-                }
-            } else {
-                previous = requires;
+                msym.requires = List.filter(msym.requires, requires.head);
             }
             requires = requires.tail;
         }
