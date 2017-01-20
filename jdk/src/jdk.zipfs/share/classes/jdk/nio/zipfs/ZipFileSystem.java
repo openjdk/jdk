@@ -2294,16 +2294,17 @@ class ZipFileSystem extends FileSystem {
                             locPos += locSZ;
                              continue;
                         }
+                        int end = locPos + locSZ - 4;
                         int flag = CH(buf, locPos++);
-                        if ((flag & 0x1) != 0) {
+                        if ((flag & 0x1) != 0 && locPos <= end) {
                             mtime = unixToJavaTime(LG(buf, locPos));
                             locPos += 4;
                         }
-                        if ((flag & 0x2) != 0) {
+                        if ((flag & 0x2) != 0 && locPos <= end) {
                             atime = unixToJavaTime(LG(buf, locPos));
                             locPos += 4;
                         }
-                        if ((flag & 0x4) != 0) {
+                        if ((flag & 0x4) != 0 && locPos <= end) {
                             ctime = unixToJavaTime(LG(buf, locPos));
                             locPos += 4;
                         }

@@ -67,7 +67,7 @@ class ZipCoder {
         }
     }
 
-    private static ZipCoder utf8 = new UTF8();
+    private static final ZipCoder utf8 = new UTF8();
 
     public static ZipCoder get(String csn) {
         Charset cs = Charset.forName(csn);
@@ -82,15 +82,15 @@ class ZipCoder {
         int clen = (int)(ba.length * cd.maxCharsPerByte());
         char[] ca = new char[clen];
         if (clen == 0)
-        return new String(ca);
+            return new String(ca);
         ByteBuffer bb = ByteBuffer.wrap(ba, 0, ba.length);
         CharBuffer cb = CharBuffer.wrap(ca);
         CoderResult cr = cd.decode(bb, cb, true);
         if (!cr.isUnderflow())
-        throw new IllegalArgumentException(cr.toString());
+            throw new IllegalArgumentException(cr.toString());
         cr = cd.flush(cb);
         if (!cr.isUnderflow())
-        throw new IllegalArgumentException(cr.toString());
+            throw new IllegalArgumentException(cr.toString());
         return new String(ca, 0, cb.position());
     }
 
@@ -100,19 +100,19 @@ class ZipCoder {
         int len = (int)(ca.length * ce.maxBytesPerChar());
         byte[] ba = new byte[len];
         if (len == 0)
-        return ba;
+            return ba;
         ByteBuffer bb = ByteBuffer.wrap(ba);
         CharBuffer cb = CharBuffer.wrap(ca);
         CoderResult cr = ce.encode(cb, bb, true);
         if (!cr.isUnderflow())
-        throw new IllegalArgumentException(cr.toString());
+            throw new IllegalArgumentException(cr.toString());
         cr = ce.flush(bb);
         if (!cr.isUnderflow())
-        throw new IllegalArgumentException(cr.toString());
+            throw new IllegalArgumentException(cr.toString());
         if (bb.position() == ba.length)  // defensive copy?
-        return ba;
+            return ba;
         else
-        return Arrays.copyOf(ba, bb.position());
+            return Arrays.copyOf(ba, bb.position());
     }
 
     boolean isUTF8() {
