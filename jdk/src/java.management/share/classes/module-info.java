@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
  */
 module java.management {
     requires transitive java.rmi;
-    requires java.logging;
     requires java.naming;
 
     exports java.lang.management;
@@ -55,4 +54,3 @@ module java.management {
     provides javax.security.auth.spi.LoginModule
         with com.sun.jmx.remote.security.FileLoginModule;
 }
-
