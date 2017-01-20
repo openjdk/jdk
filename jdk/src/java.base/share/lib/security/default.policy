@@ -81,6 +81,8 @@ grant codeBase "jrt:/java.xml.bind" {
 };
 
 grant codeBase "jrt:/java.xml.crypto" {
+    permission java.lang.RuntimePermission
+                   "accessClassInPackage.sun.security.util";
     permission java.util.PropertyPermission "*", "read";
     permission java.security.SecurityPermission "putProviderProperty.XMLDSig";
     permission java.security.SecurityPermission
@@ -91,9 +93,19 @@ grant codeBase "jrt:/java.xml.crypto" {
                    "com.sun.org.apache.xml.internal.security.register";
     permission java.security.SecurityPermission
                    "getProperty.jdk.xml.dsig.secureValidationPolicy";
+    permission java.lang.RuntimePermission
+                   "accessClassInPackage.com.sun.org.apache.xml.internal.*";
+    permission java.lang.RuntimePermission
+                   "accessClassInPackage.com.sun.org.apache.xpath.internal";
+    permission java.lang.RuntimePermission
+                   "accessClassInPackage.com.sun.org.apache.xpath.internal.*";
 };
 
 grant codeBase "jrt:/java.xml.ws" {
+    permission java.lang.RuntimePermission
+                   "accessClassInPackage.com.sun.org.apache.xml.internal.resolver";
+    permission java.lang.RuntimePermission
+                   "accessClassInPackage.com.sun.org.apache.xml.internal.resolver.tools";
     permission java.lang.RuntimePermission
                    "accessClassInPackage.com.sun.xml.internal.*";
     permission java.lang.RuntimePermission
@@ -186,3 +198,10 @@ grant codeBase "jrt:/jdk.zipfs" {
     permission java.util.PropertyPermission "os.name", "read";
 };
 
+grant codeBase "jrt:/jdk.accessibility" {
+    permission java.lang.RuntimePermission "accessClassInPackage.sun.awt";
+};
+
+grant codeBase "jrt:/jdk.desktop" {
+    permission java.lang.RuntimePermission "accessClassInPackage.com.sun.awt";
+};

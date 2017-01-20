@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,29 +26,28 @@
 package sun.lwawt.macosx;
 
 import java.awt.CheckboxMenuItem;
-import java.awt.EventQueue;
 import java.awt.event.ItemEvent;
 import java.awt.peer.CheckboxMenuItemPeer;
 
 import sun.awt.SunToolkit;
 
 public class CCheckboxMenuItem extends CMenuItem implements CheckboxMenuItemPeer {
-    boolean fAutoToggle = true;
-    boolean fIsIndeterminate = false;
+    volatile boolean fAutoToggle = true;
+    volatile boolean fIsIndeterminate = false;
 
     private native void nativeSetState(long modelPtr, boolean state);
     private native void nativeSetIsCheckbox(long modelPtr);
 
-    CCheckboxMenuItem(CheckboxMenuItem target) {
+    CCheckboxMenuItem(final CheckboxMenuItem target) {
         super(target);
-        nativeSetIsCheckbox(getModel());
+        execute(this::nativeSetIsCheckbox);
         setState(target.getState());
     }
 
     // MenuItemPeer implementation
     @Override
-    public void setState(boolean state) {
-        nativeSetState(getModel(), state);
+    public void setState(final boolean state) {
+        execute(ptr -> nativeSetState(ptr, state));
     }
 
     public void handleAction(final boolean state) {

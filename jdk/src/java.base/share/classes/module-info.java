@@ -249,7 +249,6 @@ module java.base {
         jdk.crypto.token;
     exports sun.security.jca to
         java.smartcardio,
-        java.xml.crypto,
         jdk.crypto.ec,
         jdk.crypto.token,
         jdk.naming.dns;
@@ -279,6 +278,7 @@ module java.base {
         java.security.jgss,
         java.security.sasl,
         java.smartcardio,
+        java.xml.crypto,
         jdk.crypto.ec,
         jdk.crypto.token,
         jdk.jartool,
@@ -290,6 +290,8 @@ module java.base {
         jdk.crypto.token,
         jdk.jartool,
         jdk.security.auth;
+    exports sun.security.validator to
+        jdk.jartool;
     exports sun.text.resources to
         jdk.localedata;
     exports sun.util.cldr to
