@@ -92,10 +92,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see ElementScanner8
  * @see ElementScanner9
  * @since 1.6
- * @deprecated Release 6 is obsolete; update to a visitor for a newer
- * release level.
  */
-@Deprecated
 @SupportedSourceVersion(RELEASE_6)
 public class ElementScanner6<R, P> extends AbstractElementVisitor6<R, P> {
     /**
@@ -106,7 +103,10 @@ public class ElementScanner6<R, P> extends AbstractElementVisitor6<R, P> {
     /**
      * Constructor for concrete subclasses; uses {@code null} for the
      * default value.
+     * @deprecated Release 6 is obsolete; update to a visitor for a newer
+     * release level.
      */
+    @Deprecated
     protected ElementScanner6(){
         DEFAULT_VALUE = null;
     }
@@ -116,7 +116,10 @@ public class ElementScanner6<R, P> extends AbstractElementVisitor6<R, P> {
      * default value.
      *
      * @param defaultValue the default value
+     * @deprecated Release 6 is obsolete; update to a visitor for a newer
+     * release level.
      */
+    @Deprecated
     protected ElementScanner6(R defaultValue){
         DEFAULT_VALUE = defaultValue;
     }

@@ -174,7 +174,6 @@ public class JavacTrees extends DocTrees {
     private JavaFileManager fileManager;
     private ParserFactory parser;
     private Symtab syms;
-    private Map<JavaFileObject, PackageSymbol> javaFileObjectToPackageMap;
 
     // called reflectively from Trees.instance(CompilationTask task)
     public static JavacTrees instance(JavaCompiler.CompilationTask task) {
@@ -198,7 +197,6 @@ public class JavacTrees extends DocTrees {
     }
 
     protected JavacTrees(Context context) {
-        javaFileObjectToPackageMap = new HashMap<>();
         this.breakIterator = null;
         context.put(JavacTrees.class, this);
         init(context);
@@ -1039,10 +1037,11 @@ public class JavacTrees extends DocTrees {
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
-    public DocTreePath getDocTreePath(FileObject fileObject) {
+    public DocTreePath getDocTreePath(FileObject fileObject, PackageElement packageElement) {
         JavaFileObject jfo = asJavaFileObject(fileObject);
         DocCommentTree docCommentTree = getDocCommentTree(jfo);
-        return new DocTreePath(makeTreePath(jfo, docCommentTree), docCommentTree);
+        TreePath treePath = makeTreePath((PackageSymbol)packageElement, jfo, docCommentTree);
+        return new DocTreePath(treePath, docCommentTree);
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
@@ -1160,17 +1159,8 @@ public class JavacTrees extends DocTrees {
         }
     }
 
-    /**
-     * Register a file object, such as for a package.html, that provides
-     * doc comments for a package.
-     * @param psym the PackageSymbol representing the package.
-     * @param jfo  the JavaFileObject for the given package.
-     */
-    public void putJavaFileObject(PackageSymbol psym, JavaFileObject jfo) {
-        javaFileObjectToPackageMap.putIfAbsent(jfo, psym);
-    }
-
-    private TreePath makeTreePath(final JavaFileObject jfo, DocCommentTree dcTree) {
+    private TreePath makeTreePath(final PackageSymbol psym, final JavaFileObject jfo,
+            DocCommentTree dcTree) {
         JCCompilationUnit jcCompilationUnit = new JCCompilationUnit(List.nil()) {
             public int getPos() {
                 return Position.FIRSTPOS;
@@ -1190,9 +1180,6 @@ public class JavacTrees extends DocTrees {
                 return null;
             }
         };
-
-        PackageSymbol psym = javaFileObjectToPackageMap.getOrDefault(jfo,
-                syms.unnamedModule.unnamedPackage);
 
         jcCompilationUnit.docComments = new DocCommentTable() {
             @Override
