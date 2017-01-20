@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -823,10 +823,7 @@ void Modules::add_module_exports_to_all_unnamed(jobject module, const char* pack
                        package_entry->name()->as_C_string(),
                        module_entry->name()->as_C_string());
 
-    // Mark package as exported to all unnamed modules, unless already
-    // unqualifiedly exported.
-    if (!package_entry->is_unqual_exported()) {
-      package_entry->set_is_exported_allUnnamed();
-    }
+    // Mark package as exported to all unnamed modules.
+    package_entry->set_is_exported_allUnnamed();
   }
 }
