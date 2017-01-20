@@ -3466,7 +3466,7 @@ void TemplateTable::invokevirtual_helper(Register index,
   __ z_sllg(index, index, exact_log2(vtableEntry::size_in_bytes()));
   __ mem2reg_opt(method,
                  Address(Z_tmp_2, index,
-                         InstanceKlass::vtable_start_offset() + in_ByteSize(vtableEntry::method_offset_in_bytes())));
+                         Klass::vtable_start_offset() + in_ByteSize(vtableEntry::method_offset_in_bytes())));
   __ profile_arguments_type(Z_ARG4, method, Z_ARG5, true);
   __ jump_from_interpreted(method, Z_ARG4);
   BLOCK_COMMENT("} invokevirtual_helper");
