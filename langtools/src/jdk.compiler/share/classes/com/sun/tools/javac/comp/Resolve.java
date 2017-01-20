@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import com.sun.tools.javac.comp.Resolve.MethodResolutionDiagHelper.Template;
 import com.sun.tools.javac.comp.Resolve.ReferenceLookupResult.StaticKind;
 import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.main.Option;
+import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.JCTree.JCMemberReference.ReferenceKind;
@@ -61,12 +62,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import javax.lang.model.element.ElementVisitor;
 
-import com.sun.tools.javac.code.Directive.ExportsDirective;
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.BLOCK;
 import static com.sun.tools.javac.code.Flags.STATIC;
@@ -74,9 +75,8 @@ import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.comp.Resolve.MethodResolutionPhase.*;
-import com.sun.tools.javac.resources.CompilerProperties.Errors;
-import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
+import static com.sun.tools.javac.util.Iterators.createCompoundIterator;
 
 /** Helper class for name resolution, used mostly by the attribution phase.
  *
@@ -1970,7 +1970,7 @@ public class Resolve {
      *  @param env       The current environment.
      *  @param name      The fully qualified name of the class to be loaded.
      */
-    Symbol loadClass(Env<AttrContext> env, Name name) {
+    Symbol loadClass(Env<AttrContext> env, Name name, RecoveryLoadClass recoveryLoadClass) {
         try {
             ClassSymbol c = finder.loadClass(env.toplevel.modle, name);
             return isAccessible(env, c) ? c : new AccessError(env, null, c);
@@ -1987,40 +1987,60 @@ public class Resolve {
         }
     }
 
-    public static interface RecoveryLoadClass {
+    public interface RecoveryLoadClass {
         Symbol loadClass(Env<AttrContext> env, Name name);
     }
 
-    private RecoveryLoadClass recoveryLoadClass = new RecoveryLoadClass() {
-        @Override
-        public Symbol loadClass(Env<AttrContext> env, Name name) {
-            if (allowModules) {
-                Scope importScope = env.toplevel.namedImportScope;
-                Symbol existing = importScope.findFirst(Convert.shortName(name),
-                                                        sym -> sym.kind == TYP && sym.flatName() == name);
+    private final RecoveryLoadClass noRecovery = (env, name) -> null;
 
-                if (existing != null) {
-                    return new InvisibleSymbolError(env, true, existing);
-                }
-
-                return lookupInvisibleSymbol(env, name, syms::getClass, (ms, n) -> {
+    private final RecoveryLoadClass doRecoveryLoadClass = new RecoveryLoadClass() {
+        @Override public Symbol loadClass(Env<AttrContext> env, Name name) {
+            List<Name> candidates = Convert.classCandidates(name);
+            return lookupInvisibleSymbol(env, name,
+                                         n -> () -> createCompoundIterator(candidates,
+                                                                           c -> syms.getClassesForName(c)
+                                                                                    .iterator()),
+                                         (ms, n) -> {
+                for (Name candidate : candidates) {
                     try {
-                        return finder.loadClass(ms, n);
+                        return finder.loadClass(ms, candidate);
                     } catch (CompletionFailure cf) {
                         //ignore
-                        return null;
                     }
-                }, sym -> sym.kind == Kind.TYP, false, typeNotFound);
-            }
-            return null;
+                }
+                return null;
+            }, sym -> sym.kind == Kind.TYP, false, typeNotFound);
         }
     };
 
-    public RecoveryLoadClass setRecoveryLoadClass(RecoveryLoadClass recovery) {
-        RecoveryLoadClass prev = recoveryLoadClass;
-        recoveryLoadClass = recovery;
-        return prev;
-    }
+    private final RecoveryLoadClass namedImportScopeRecovery = (env, name) -> {
+        Scope importScope = env.toplevel.namedImportScope;
+        Symbol existing = importScope.findFirst(Convert.shortName(name),
+                                                sym -> sym.kind == TYP && sym.flatName() == name);
+
+        if (existing != null) {
+            return new InvisibleSymbolError(env, true, existing);
+        }
+        return null;
+    };
+
+    private final RecoveryLoadClass starImportScopeRecovery = (env, name) -> {
+        Scope importScope = env.toplevel.starImportScope;
+        Symbol existing = importScope.findFirst(Convert.shortName(name),
+                                                sym -> sym.kind == TYP && sym.flatName() == name);
+
+        if (existing != null) {
+            try {
+                existing = finder.loadClass(existing.packge().modle, name);
+
+                return new InvisibleSymbolError(env, true, existing);
+            } catch (CompletionFailure cf) {
+                //ignore
+            }
+        }
+
+        return null;
+    };
 
     Symbol lookupPackage(Env<AttrContext> env, Name name) {
         PackageSymbol pack = syms.lookupPackage(env.toplevel.modle, name);
@@ -2034,7 +2054,7 @@ public class Resolve {
                                                           .stream()
                                                           .anyMatch(p -> p.fullname.startsWith(nameAndDot));
 
-                return lookupInvisibleSymbol(env, name, syms::getPackage, syms::enterPackage, sym -> {
+                return lookupInvisibleSymbol(env, name, syms::getPackagesForName, syms::enterPackage, sym -> {
                     sym.complete();
                     return sym.exists();
                 }, prefixOfKnown, pack);
@@ -2059,41 +2079,43 @@ public class Resolve {
         return TreeInfo.fullName(((JCFieldAccess) qualid).selected) == name;
     }
 
-    private Symbol lookupInvisibleSymbol(Env<AttrContext> env,
-                                         Name name,
-                                         BiFunction<ModuleSymbol, Name, Symbol> get,
-                                         BiFunction<ModuleSymbol, Name, Symbol> load,
-                                         Predicate<Symbol> validate,
-                                         boolean suppressError,
-                                         Symbol defaultResult) {
+    private <S extends Symbol> Symbol lookupInvisibleSymbol(Env<AttrContext> env,
+                                                            Name name,
+                                                            Function<Name, Iterable<S>> get,
+                                                            BiFunction<ModuleSymbol, Name, S> load,
+                                                            Predicate<S> validate,
+                                                            boolean suppressError,
+                                                            Symbol defaultResult) {
         //even if a class/package cannot be found in the current module and among packages in modules
         //it depends on that are exported for any or this module, the class/package may exist internally
         //in some of these modules, or may exist in a module on which this module does not depend.
         //Provide better diagnostic in such cases by looking for the class in any module:
+        Iterable<? extends S> candidates = get.apply(name);
+
+        for (S sym : candidates) {
+            if (validate.test(sym))
+                return new InvisibleSymbolError(env, suppressError, sym);
+        }
+
         Set<ModuleSymbol> recoverableModules = new HashSet<>(syms.getAllModules());
 
         recoverableModules.remove(env.toplevel.modle);
 
         for (ModuleSymbol ms : recoverableModules) {
-            Symbol sym = get.apply(ms, name);
-
             //avoid overly eager completing classes from source-based modules, as those
             //may not be completable with the current compiler settings:
-            if (sym == null && (ms.sourceLocation == null)) {
+            if (ms.sourceLocation == null) {
                 if (ms.classLocation == null) {
                     ms = moduleFinder.findModule(ms);
                 }
 
                 if (ms.kind != ERR) {
-                    sym = load.apply(ms, name);
+                    S sym = load.apply(ms, name);
+
+                    if (sym != null && validate.test(sym)) {
+                        return new InvisibleSymbolError(env, suppressError, sym);
+                    }
                 }
-            }
-
-            if (sym == null)
-                continue;
-
-            if (validate.test(sym)) {
-                return new InvisibleSymbolError(env, suppressError, sym);
             }
         }
 
@@ -2186,10 +2208,10 @@ public class Resolve {
      *  @param scope     The scope in which to look for the type.
      *  @param name      The type's name.
      */
-    Symbol findGlobalType(Env<AttrContext> env, Scope scope, Name name) {
+    Symbol findGlobalType(Env<AttrContext> env, Scope scope, Name name, RecoveryLoadClass recoveryLoadClass) {
         Symbol bestSoFar = typeNotFound;
         for (Symbol s : scope.getSymbolsByName(name)) {
-            Symbol sym = loadClass(env, s.flatName());
+            Symbol sym = loadClass(env, s.flatName(), recoveryLoadClass);
             if (bestSoFar.kind == TYP && sym.kind == TYP &&
                 bestSoFar != sym)
                 return new AmbiguityError(bestSoFar, sym);
@@ -2260,15 +2282,15 @@ public class Resolve {
         }
 
         if (!env.tree.hasTag(IMPORT)) {
-            sym = findGlobalType(env, env.toplevel.namedImportScope, name);
+            sym = findGlobalType(env, env.toplevel.namedImportScope, name, namedImportScopeRecovery);
             if (sym.exists()) return sym;
             else bestSoFar = bestOf(bestSoFar, sym);
 
-            sym = findGlobalType(env, env.toplevel.packge.members(), name);
+            sym = findGlobalType(env, env.toplevel.packge.members(), name, noRecovery);
             if (sym.exists()) return sym;
             else bestSoFar = bestOf(bestSoFar, sym);
 
-            sym = findGlobalType(env, env.toplevel.starImportScope, name);
+            sym = findGlobalType(env, env.toplevel.starImportScope, name, starImportScopeRecovery);
             if (sym.exists()) return sym;
             else bestSoFar = bestOf(bestSoFar, sym);
         }
@@ -2315,7 +2337,11 @@ public class Resolve {
         Name fullname = TypeSymbol.formFullName(name, pck);
         Symbol bestSoFar = typeNotFound;
         if (kind.contains(KindSelector.TYP)) {
-            Symbol sym = loadClass(env, fullname);
+            RecoveryLoadClass recoveryLoadClass =
+                    allowModules && !kind.contains(KindSelector.PCK) &&
+                    !pck.exists() && !env.info.isSpeculative ?
+                        doRecoveryLoadClass : noRecovery;
+            Symbol sym = loadClass(env, fullname, recoveryLoadClass);
             if (sym.exists()) {
                 // don't allow programs to use flatnames
                 if (name == sym.name) return sym;
@@ -4136,11 +4162,21 @@ public class Resolve {
 
             JCDiagnostic details = inaccessiblePackageReason(env, sym.packge());
 
-            if (pos.getTree() != null && pos.getTree().hasTag(SELECT) && sym.owner.kind == PCK) {
-                pos = ((JCFieldAccess) pos.getTree()).selected.pos();
+            if (pos.getTree() != null) {
+                Symbol o = sym;
+                JCTree tree = pos.getTree();
 
-                return diags.create(dkind, log.currentSource(),
-                        pos, "package.not.visible", sym.packge(), details);
+                while (o.kind != PCK && tree.hasTag(SELECT)) {
+                    o = o.owner;
+                    tree = ((JCFieldAccess) tree).selected;
+                }
+
+                if (o.kind == PCK) {
+                    pos = tree.pos();
+
+                    return diags.create(dkind, log.currentSource(),
+                            pos, "package.not.visible", o, details);
+                }
             }
 
             return diags.create(dkind, log.currentSource(),
