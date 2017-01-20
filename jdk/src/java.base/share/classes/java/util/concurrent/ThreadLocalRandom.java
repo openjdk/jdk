@@ -36,8 +36,6 @@
 package java.util.concurrent;
 
 import java.io.ObjectStreamField;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
 import java.security.AccessControlContext;
 import java.util.Random;
 import java.util.Spliterator;
@@ -50,6 +48,7 @@ import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.StreamSupport;
+import jdk.internal.misc.Unsafe;
 
 /**
  * A random number generator isolated to the current thread.  Like the
@@ -109,7 +108,7 @@ public class ThreadLocalRandom extends Random {
      * though, we use only a single 64bit gamma.
      *
      * Because this class is in a different package than class Thread,
-     * field access methods use VarHandles to bypass access control rules.
+     * field access methods use Unsafe to bypass access control rules.
      * To conform to the requirements of the Random superclass
      * constructor, the common static ThreadLocalRandom maintains an
      * "initialized" field for the sake of rejecting user calls to
@@ -164,8 +163,8 @@ public class ThreadLocalRandom extends Random {
         int probe = (p == 0) ? 1 : p; // skip 0
         long seed = mix64(seeder.getAndAdd(SEEDER_INCREMENT));
         Thread t = Thread.currentThread();
-        SEED.set(t, seed);
-        PROBE.set(t, probe);
+        U.putLong(t, SEED, seed);
+        U.putInt(t, PROBE, probe);
     }
 
     /**
@@ -174,7 +173,7 @@ public class ThreadLocalRandom extends Random {
      * @return the current thread's {@code ThreadLocalRandom}
      */
     public static ThreadLocalRandom current() {
-        if ((int) PROBE.get(Thread.currentThread()) == 0)
+        if (U.getInt(Thread.currentThread(), PROBE) == 0)
             localInit();
         return instance;
     }
@@ -193,8 +192,8 @@ public class ThreadLocalRandom extends Random {
 
     final long nextSeed() {
         Thread t; long r; // read and update per-thread seed
-        SEED.set(t = Thread.currentThread(),
-                 (r = (long) SEED.get(t)) + GAMMA);
+        U.putLong(t = Thread.currentThread(), SEED,
+                  r = U.getLong(t, SEED) + GAMMA);
         return r;
     }
 
@@ -939,7 +938,7 @@ public class ThreadLocalRandom extends Random {
      * can be used to force initialization on zero return.
      */
     static final int getProbe() {
-        return (int) PROBE.get(Thread.currentThread());
+        return U.getInt(Thread.currentThread(), PROBE);
     }
 
     /**
@@ -950,7 +949,7 @@ public class ThreadLocalRandom extends Random {
         probe ^= probe << 13;   // xorshift
         probe ^= probe >>> 17;
         probe ^= probe << 5;
-        PROBE.set(Thread.currentThread(), probe);
+        U.putInt(Thread.currentThread(), PROBE, probe);
         return probe;
     }
 
@@ -960,14 +959,14 @@ public class ThreadLocalRandom extends Random {
     static final int nextSecondarySeed() {
         int r;
         Thread t = Thread.currentThread();
-        if ((r = (int) SECONDARY.get(t)) != 0) {
+        if ((r = U.getInt(t, SECONDARY)) != 0) {
             r ^= r << 13;   // xorshift
             r ^= r >>> 17;
             r ^= r << 5;
         }
         else if ((r = mix32(seeder.getAndAdd(SEEDER_INCREMENT))) == 0)
             r = 1; // avoid zero
-        SECONDARY.set(t, r);
+        U.putInt(t, SECONDARY, r);
         return r;
     }
 
@@ -977,13 +976,13 @@ public class ThreadLocalRandom extends Random {
      * Erases ThreadLocals by nulling out Thread maps.
      */
     static final void eraseThreadLocals(Thread thread) {
-        THREADLOCALS.set(thread, null);
-        INHERITABLETHREADLOCALS.set(thread, null);
+        U.putObject(thread, THREADLOCALS, null);
+        U.putObject(thread, INHERITABLETHREADLOCALS, null);
     }
 
     static final void setInheritedAccessControlContext(Thread thread,
                                                        AccessControlContext acc) {
-        INHERITEDACCESSCONTROLCONTEXT.setRelease(thread, acc);
+        U.putObjectRelease(thread, INHERITEDACCESSCONTROLCONTEXT, acc);
     }
 
     // Serialization support
@@ -1010,7 +1009,7 @@ public class ThreadLocalRandom extends Random {
         throws java.io.IOException {
 
         java.io.ObjectOutputStream.PutField fields = s.putFields();
-        fields.put("rnd", (long) SEED.get(Thread.currentThread()));
+        fields.put("rnd", U.getLong(Thread.currentThread(), SEED));
         fields.put("initialized", true);
         s.writeFields();
     }
@@ -1049,38 +1048,28 @@ public class ThreadLocalRandom extends Random {
     static final String BAD_RANGE = "bound must be greater than origin";
     static final String BAD_SIZE  = "size must be non-negative";
 
-    // VarHandle mechanics
-    private static final VarHandle SEED;
-    private static final VarHandle PROBE;
-    private static final VarHandle SECONDARY;
-    private static final VarHandle THREADLOCALS;
-    private static final VarHandle INHERITABLETHREADLOCALS;
-    private static final VarHandle INHERITEDACCESSCONTROLCONTEXT;
+    // Unsafe mechanics
+    private static final Unsafe U = Unsafe.getUnsafe();
+    private static final long SEED;
+    private static final long PROBE;
+    private static final long SECONDARY;
+    private static final long THREADLOCALS;
+    private static final long INHERITABLETHREADLOCALS;
+    private static final long INHERITEDACCESSCONTROLCONTEXT;
     static {
         try {
-            MethodHandles.Lookup l = java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<>() {
-                        public MethodHandles.Lookup run() {
-                            try {
-                                return MethodHandles.privateLookupIn(Thread.class,
-                                        MethodHandles.lookup());
-                            } catch (ReflectiveOperationException e) {
-                                throw new Error(e);
-                            }
-                        }});
-            SEED = l.findVarHandle(Thread.class,
-                    "threadLocalRandomSeed", long.class);
-            PROBE = l.findVarHandle(Thread.class,
-                    "threadLocalRandomProbe", int.class);
-            SECONDARY = l.findVarHandle(Thread.class,
-                    "threadLocalRandomSecondarySeed", int.class);
-            Class<?> tlm = Class.forName("java.lang.ThreadLocal$ThreadLocalMap");
-            THREADLOCALS = l.findVarHandle(Thread.class,
-                    "threadLocals", tlm);
-            INHERITABLETHREADLOCALS = l.findVarHandle(Thread.class,
-                    "inheritableThreadLocals", tlm);
-            INHERITEDACCESSCONTROLCONTEXT = l.findVarHandle(Thread.class,
-                    "inheritedAccessControlContext", AccessControlContext.class);
+            SEED = U.objectFieldOffset
+                    (Thread.class.getDeclaredField("threadLocalRandomSeed"));
+            PROBE = U.objectFieldOffset
+                    (Thread.class.getDeclaredField("threadLocalRandomProbe"));
+            SECONDARY = U.objectFieldOffset
+                    (Thread.class.getDeclaredField("threadLocalRandomSecondarySeed"));
+            THREADLOCALS = U.objectFieldOffset
+                    (Thread.class.getDeclaredField("threadLocals"));
+            INHERITABLETHREADLOCALS = U.objectFieldOffset
+                    (Thread.class.getDeclaredField("inheritableThreadLocals"));
+            INHERITEDACCESSCONTROLCONTEXT = U.objectFieldOffset
+                    (Thread.class.getDeclaredField("inheritedAccessControlContext"));
         } catch (ReflectiveOperationException e) {
             throw new Error(e);
         }
