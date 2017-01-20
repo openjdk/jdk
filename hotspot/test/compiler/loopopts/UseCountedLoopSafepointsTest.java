@@ -53,9 +53,6 @@ import jdk.test.lib.Asserts;
 public class UseCountedLoopSafepointsTest {
 
     public static void main (String args[]) {
-        if (!Platform.isServer() || Platform.isEmulatedClient()) {
-            throw new Error("TESTBUG: Not server mode");
-        }
         check(true); // check ideal graph with UseCountedLoopSafepoint enabled
         check(false); // ... and disabled
     }
