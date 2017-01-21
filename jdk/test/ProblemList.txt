@@ -291,8 +291,6 @@ tools/jlink/multireleasejar/JLinkMultiReleaseJarTest.java       8169971 windows-
 
 tools/jlink/CustomPluginTest.java                               8172864 generic-all
 
-tools/jmod/JmodTest.java                                        8172870 windows-all
-
 ############################################################################
 
 # jdk_jdi
