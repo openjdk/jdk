@@ -38,6 +38,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
 import java.net.URLStreamHandlerFactory;
+import java.security.AccessControlContext;
 import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.CodeSigner;
@@ -83,6 +84,7 @@ public class URLClassPath {
     private static final String JAVA_VERSION;
     private static final boolean DEBUG;
     private static final boolean DISABLE_JAR_CHECKING;
+    private static final boolean DISABLE_ACC_CHECKING;
 
     static {
         Properties props = GetPropertyAction.privilegedGetProperties();
@@ -90,6 +92,9 @@ public class URLClassPath {
         DEBUG = (props.getProperty("sun.misc.URLClassPath.debug") != null);
         String p = props.getProperty("sun.misc.URLClassPath.disableJarChecking");
         DISABLE_JAR_CHECKING = p != null ? p.equals("true") || p.equals("") : false;
+
+        p = props.getProperty("jdk.net.URLClassPath.disableRestrictedPermissions");
+        DISABLE_ACC_CHECKING = p != null ? p.equals("true") || p.equals("") : false;
     }
 
     /* The original search path of URLs. */
@@ -110,6 +115,11 @@ public class URLClassPath {
     /* Whether this URLClassLoader has been closed yet */
     private boolean closed = false;
 
+    /* The context to be used when loading classes and resources.  If non-null
+     * this is the context that was captured during the creation of the
+     * URLClassLoader. null implies no additional security restrictions. */
+    private final AccessControlContext acc;
+
     /**
      * Creates a new URLClassPath for the given URLs. The URLs will be
      * searched in the order specified for classes and resources. A URL
@@ -119,8 +129,12 @@ public class URLClassPath {
      * @param urls the directory and JAR file URLs to search for classes
      *        and resources
      * @param factory the URLStreamHandlerFactory to use when creating new URLs
+     * @param acc the context to be used when loading classes and resources, may
+     *            be null
      */
-    public URLClassPath(URL[] urls, URLStreamHandlerFactory factory) {
+    public URLClassPath(URL[] urls,
+                        URLStreamHandlerFactory factory,
+                        AccessControlContext acc) {
         for (int i = 0; i < urls.length; i++) {
             path.add(urls[i]);
         }
@@ -128,10 +142,22 @@ public class URLClassPath {
         if (factory != null) {
             jarHandler = factory.createURLStreamHandler("jar");
         }
+        if (DISABLE_ACC_CHECKING)
+            this.acc = null;
+        else
+            this.acc = acc;
     }
 
+    /**
+     * Constructs a URLClassPath with no additional security restrictions.
+     * Used by code that implements the class path.
+     */
     public URLClassPath(URL[] urls) {
-        this(urls, null);
+        this(urls, null, null);
+    }
+
+    public URLClassPath(URL[] urls, AccessControlContext acc) {
+        this(urls, null, acc);
     }
 
     public synchronized List<IOException> closeLoaders() {
@@ -356,6 +382,14 @@ public class URLClassPath {
             } catch (IOException e) {
                 // Silently ignore for now...
                 continue;
+            } catch (SecurityException se) {
+                // Always silently ignore. The context, if there is one, that
+                // this URLClassPath was given during construction will never
+                // have permission to access the URL.
+                if (DEBUG) {
+                    System.err.println("Failed to access " + url + ", " + se );
+                }
+                continue;
             }
             // Finally, add the Loader to the search path.
             loaders.add(loader);
@@ -378,7 +412,7 @@ public class URLClassPath {
                             && file != null && (file.indexOf("!/") == file.length() - 2)) {
                         // extract the nested URL
                         URL nestedUrl = new URL(file.substring(0, file.length() - 2));
-                        return new JarLoader(nestedUrl, jarHandler, lmap);
+                        return new JarLoader(nestedUrl, jarHandler, lmap, acc);
                     } else if (file != null && file.endsWith("/")) {
                         if ("file".equals(protocol)) {
                             return new FileLoader(url);
@@ -386,10 +420,10 @@ public class URLClassPath {
                             return new Loader(url);
                         }
                     } else {
-                        return new JarLoader(url, jarHandler, lmap);
+                        return new JarLoader(url, jarHandler, lmap, acc);
                     }
                 }
-            });
+            }, acc);
         } catch (java.security.PrivilegedActionException pae) {
             throw (IOException)pae.getException();
         }
@@ -585,10 +619,11 @@ public class URLClassPath {
      */
     static class JarLoader extends Loader {
         private JarFile jar;
-        private URL csu;
+        private final URL csu;
         private JarIndex index;
         private URLStreamHandler handler;
-        private HashMap<String, Loader> lmap;
+        private final HashMap<String, Loader> lmap;
+        private final AccessControlContext acc;
         private boolean closed = false;
         private static final JavaUtilZipFileAccess zipAccess =
                 SharedSecrets.getJavaUtilZipFileAccess();
@@ -598,13 +633,15 @@ public class URLClassPath {
          * a JAR file.
          */
         JarLoader(URL url, URLStreamHandler jarHandler,
-                  HashMap<String, Loader> loaderMap)
+                  HashMap<String, Loader> loaderMap,
+                  AccessControlContext acc)
             throws IOException
         {
             super(new URL("jar", "", -1, url + "!/", jarHandler));
             csu = url;
             handler = jarHandler;
             lmap = loaderMap;
+            this.acc = acc;
 
             ensureOpen();
         }
@@ -663,8 +700,7 @@ public class URLClassPath {
                                 }
                                 return null;
                             }
-                        }
-                    );
+                        }, acc);
                 } catch (java.security.PrivilegedActionException pae) {
                     throw (IOException)pae.getException();
                 }
@@ -859,9 +895,9 @@ public class URLClassPath {
                                 new PrivilegedExceptionAction<>() {
                                     public JarLoader run() throws IOException {
                                         return new JarLoader(url, handler,
-                                            lmap);
+                                            lmap, acc);
                                     }
-                                });
+                                }, acc);
 
                             /* this newly opened jar file has its own index,
                              * merge it into the parent's index, taking into

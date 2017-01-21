@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,9 @@ import java.io.*;
 import java.math.*;
 import java.util.*;
 import java.text.*;
+import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 
 import javax.sql.rowset.*;
 import javax.sql.rowset.spi.*;
@@ -357,8 +360,16 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         }
 
         // set the Reader, this maybe overridden latter
-        provider =
-        SyncFactory.getInstance(DEFAULT_SYNC_PROVIDER);
+        try {
+            provider = AccessController.doPrivileged(new PrivilegedExceptionAction<>() {
+                @Override
+                public SyncProvider run() throws SyncFactoryException {
+                    return SyncFactory.getInstance(DEFAULT_SYNC_PROVIDER);
+                }
+            }, null, new RuntimePermission("accessClassInPackage.com.sun.rowset.providers"));
+        } catch (PrivilegedActionException pae) {
+            throw (SyncFactoryException) pae.getException();
+        }
 
         if (!(provider instanceof RIOptimisticProvider)) {
             throw new SQLException(resBundle.handleGetObject("cachedrowsetimpl.invalidp").toString());
