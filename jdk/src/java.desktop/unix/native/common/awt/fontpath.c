@@ -289,6 +289,12 @@ static void AddFontsToX11FontPath ( fDirRecord *fDirP )
         onePath = SAFE_SIZE_ARRAY_ALLOC(malloc, strlen (fDirP->name[index]) + 2, sizeof( char ) );
         if (onePath == NULL) {
             free ( ( void *) appendDirList );
+
+            for ( index = origIndex; index < nPaths; index++ ) {
+                free( newFontPath[index] );
+            }
+
+            free( ( void *) newFontPath);
             XFreeFontPath ( origFontPath );
             return;
         }
