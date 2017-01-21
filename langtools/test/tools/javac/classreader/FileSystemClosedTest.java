@@ -68,7 +68,7 @@ public class FileSystemClosedTest {
         JavaCompiler comp = ToolProvider.getSystemJavaCompiler();
         PrintWriter out = new PrintWriter(System.err, true);
         StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null);
-        List<String> options = Arrays.asList("-classpath", jar.toString());
+        List<String> options = Arrays.asList("-classpath", jar.toString(), "-proc:none");
         Iterable<? extends JavaFileObject> files = fm.getJavaFileObjects(src.resolve("C.java"));
         com.sun.source.util.JavacTask task =
                 (com.sun.source.util.JavacTask) comp.getTask(out, fm, null, options, null, files);
@@ -92,7 +92,7 @@ public class FileSystemClosedTest {
             TypeElement p2C2 = elems.getTypeElement("p2.C2");
             System.err.println("p2: " + p2 + ";  p2C2: " + p2C2);
             if (p2C2 != null) {
-                throw new Exception("p1.C1 found unexpectedly");
+                throw new Exception("p2.C2 found unexpectedly");
             }
         } catch (ClosedFileSystemException e) {
             throw new Exception("unexpected exception thrown", e);
