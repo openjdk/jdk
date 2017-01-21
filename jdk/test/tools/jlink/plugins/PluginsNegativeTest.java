@@ -25,8 +25,9 @@
  * @test
  * @summary Negative test for ImagePluginStack.
  * @author Andrei Eremeev
- * @modules jdk.jlink/jdk.tools.jlink.internal
- *          jdk.jlink/jdk.tools.jlink
+ * @modules jdk.jlink/jdk.tools.jlink
+ *          jdk.jlink/jdk.tools.jlink.internal
+ *          jdk.jlink/jdk.tools.jlink.plugin
  * @run main/othervm PluginsNegativeTest
  */
 import java.lang.reflect.Layer;

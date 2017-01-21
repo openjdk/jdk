@@ -33,7 +33,10 @@
 
 #include "hb-font-private.hh"
 
+#include "hb-cache-private.hh" // Maybe use in the future?
+
 #include FT_ADVANCES_H
+#include FT_MULTIPLE_MASTERS_H
 #include FT_TRUETYPE_TABLES_H
 
 
@@ -111,7 +114,7 @@ _hb_ft_font_destroy (hb_ft_font_t *ft_font)
  * @font:
  * @load_flags:
  *
- *
+ * 
  *
  * Since: 1.0.5
  **/
@@ -133,7 +136,7 @@ hb_ft_font_set_load_flags (hb_font_t *font, int load_flags)
  * hb_ft_font_get_load_flags:
  * @font:
  *
- *
+ * 
  *
  * Return value:
  * Since: 1.0.5
@@ -504,12 +507,12 @@ reference_table  (hb_face_t *face HB_UNUSED, hb_tag_t tag, void *user_data)
 
 /**
  * hb_ft_face_create:
- * @ft_face: (destroy destroy) (scope notified):
+ * @ft_face: (destroy destroy) (scope notified): 
  * @destroy:
  *
+ * 
  *
- *
- * Return value: (transfer full):
+ * Return value: (transfer full): 
  * Since: 0.9.2
  **/
 hb_face_t *
@@ -541,9 +544,9 @@ hb_ft_face_create (FT_Face           ft_face,
  * hb_ft_face_create_referenced:
  * @ft_face:
  *
+ * 
  *
- *
- * Return value: (transfer full):
+ * Return value: (transfer full): 
  * Since: 0.9.38
  **/
 hb_face_t *
@@ -561,11 +564,11 @@ hb_ft_face_finalize (FT_Face ft_face)
 
 /**
  * hb_ft_face_create_cached:
- * @ft_face:
+ * @ft_face: 
  *
+ * 
  *
- *
- * Return value: (transfer full):
+ * Return value: (transfer full): 
  * Since: 0.9.2
  **/
 hb_face_t *
@@ -586,12 +589,12 @@ hb_ft_face_create_cached (FT_Face ft_face)
 
 /**
  * hb_ft_font_create:
- * @ft_face: (destroy destroy) (scope notified):
+ * @ft_face: (destroy destroy) (scope notified): 
  * @destroy:
  *
+ * 
  *
- *
- * Return value: (transfer full):
+ * Return value: (transfer full): 
  * Since: 0.9.2
  **/
 hb_font_t *
@@ -606,12 +609,29 @@ hb_ft_font_create (FT_Face           ft_face,
   hb_face_destroy (face);
   _hb_ft_font_set_funcs (font, ft_face, false);
   hb_font_set_scale (font,
-                     (int) (((uint64_t) ft_face->size->metrics.x_scale * (uint64_t) ft_face->units_per_EM + (1<<15)) >> 16),
-                     (int) (((uint64_t) ft_face->size->metrics.y_scale * (uint64_t) ft_face->units_per_EM + (1<<15)) >> 16));
+                     (int) (((uint64_t) ft_face->size->metrics.x_scale * (uint64_t) ft_face->units_per_EM + (1u<<15)) >> 16),
+                     (int) (((uint64_t) ft_face->size->metrics.y_scale * (uint64_t) ft_face->units_per_EM + (1u<<15)) >> 16));
 #if 0 /* hb-ft works in no-hinting model */
   hb_font_set_ppem (font,
                     ft_face->size->metrics.x_ppem,
                     ft_face->size->metrics.y_ppem);
+#endif
+
+#ifdef HAVE_FT_GET_VAR_BLEND_COORDINATES
+  FT_MM_Var *mm_var = NULL;
+  if (!FT_Get_MM_Var (ft_face, &mm_var))
+  {
+    FT_Fixed coords[mm_var->num_axis];
+    int hbCoords[mm_var->num_axis];
+    if (!FT_Get_Var_Blend_Coordinates (ft_face, mm_var->num_axis, coords))
+    {
+      for (int i = 0; i < mm_var->num_axis; ++i)
+        hbCoords[i] = coords[i] >> 2;
+
+      hb_font_set_var_coords_normalized (font, hbCoords, mm_var->num_axis);
+    }
+  }
+  free (mm_var);
 #endif
 
   return font;
@@ -621,9 +641,9 @@ hb_ft_font_create (FT_Face           ft_face,
  * hb_ft_font_create_referenced:
  * @ft_face:
  *
+ * 
  *
- *
- * Return value: (transfer full):
+ * Return value: (transfer full): 
  * Since: 0.9.38
  **/
 hb_font_t *

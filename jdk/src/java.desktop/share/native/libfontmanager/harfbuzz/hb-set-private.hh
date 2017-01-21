@@ -313,7 +313,7 @@ struct hb_set_t
     for (unsigned int i = 0; i < ELTS; i++)
       if (elts[i])
         for (unsigned int j = 0; j < BITS; j++)
-          if (elts[i] & (1 << j))
+          if (elts[i] & (1u << j))
             return i * BITS + j;
     return INVALID;
   }
@@ -322,7 +322,7 @@ struct hb_set_t
     for (unsigned int i = ELTS; i; i--)
       if (elts[i - 1])
         for (unsigned int j = BITS; j; j--)
-          if (elts[i - 1] & (1 << (j - 1)))
+          if (elts[i - 1] & (1u << (j - 1)))
             return (i - 1) * BITS + (j - 1);
     return INVALID;
   }

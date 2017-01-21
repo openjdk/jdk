@@ -105,7 +105,7 @@ static inline Type& StructAfter(TObject &X)
   inline unsigned int get_size (void) const { return (size); }
 
 #define DEFINE_SIZE_UNION(size, _member) \
-  DEFINE_INSTANCE_ASSERTION (this->u._member.static_size == (size)); \
+  DEFINE_INSTANCE_ASSERTION (0*sizeof(this->u._member.static_size) + sizeof(this->u._member) == (size)); \
   static const unsigned int min_size = (size)
 
 #define DEFINE_SIZE_MIN(size) \
@@ -650,7 +650,9 @@ struct IntType
   DEFINE_SIZE_STATIC (Size);
 };
 
+typedef IntType<int8_t  , 1> CHAR;      /* 8-bit signed integer. */
 typedef IntType<uint8_t , 1> BYTE;      /* 8-bit unsigned integer. */
+typedef IntType<int8_t  , 1> INT8;      /* 8-bit signed integer. */
 typedef IntType<uint16_t, 2> USHORT;    /* 16-bit unsigned integer. */
 typedef IntType<int16_t,  2> SHORT;     /* 16-bit signed integer. */
 typedef IntType<uint32_t, 4> ULONG;     /* 32-bit unsigned integer. */
@@ -805,6 +807,7 @@ struct OffsetTo : Offset<OffsetType>
     if (unlikely (!c->check_struct (this))) return_trace (false);
     unsigned int offset = *this;
     if (unlikely (!offset)) return_trace (true);
+    if (unlikely (!c->check_range (base, offset))) return_trace (false);
     const Type &obj = StructAtOffset<Type> (base, offset);
     return_trace (likely (obj.sanitize (c)) || neuter (c));
   }
@@ -815,6 +818,7 @@ struct OffsetTo : Offset<OffsetType>
     if (unlikely (!c->check_struct (this))) return_trace (false);
     unsigned int offset = *this;
     if (unlikely (!offset)) return_trace (true);
+    if (unlikely (!c->check_range (base, offset))) return_trace (false);
     const Type &obj = StructAtOffset<Type> (base, offset);
     return_trace (likely (obj.sanitize (c, user_data)) || neuter (c));
   }
@@ -948,8 +952,8 @@ struct ArrayOf
 };
 
 /* Array of Offset's */
-template <typename Type>
-struct OffsetArrayOf : ArrayOf<OffsetTo<Type> > {};
+template <typename Type, typename OffsetType=USHORT>
+struct OffsetArrayOf : ArrayOf<OffsetTo<Type, OffsetType> > {};
 
 /* Array of offsets relative to the beginning of the array itself. */
 template <typename Type>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.logging.Level;
+import java.lang.System.Logger.Level;
 
 // JMX import
 import javax.management.Attribute;
@@ -258,19 +258,16 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
 
         /* Load the appropriate class. */
         if (withDefaultLoaderRepository) {
-            if (MBEANSERVER_LOGGER.isLoggable(Level.FINER)) {
-                MBEANSERVER_LOGGER.logp(Level.FINER,
-                        DefaultMBeanServerInterceptor.class.getName(),
-                        "createMBean",
+            if (MBEANSERVER_LOGGER.isLoggable(Level.TRACE)) {
+                MBEANSERVER_LOGGER.log(Level.TRACE,
                         "ClassName = " + className + ", ObjectName = " + name);
             }
             theClass =
                 instantiator.findClassWithDefaultLoaderRepository(className);
         } else if (loaderName == null) {
-            if (MBEANSERVER_LOGGER.isLoggable(Level.FINER)) {
-                MBEANSERVER_LOGGER.logp(Level.FINER,
-                        DefaultMBeanServerInterceptor.class.getName(),
-                        "createMBean", "ClassName = " + className +
+            if (MBEANSERVER_LOGGER.isLoggable(Level.TRACE)) {
+                MBEANSERVER_LOGGER.log(Level.TRACE,
+                        "ClassName = " + className +
                         ", ObjectName = " + name + ", Loader name = null");
             }
 
@@ -279,10 +276,9 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
         } else {
             loaderName = nonDefaultDomain(loaderName);
 
-            if (MBEANSERVER_LOGGER.isLoggable(Level.FINER)) {
-                MBEANSERVER_LOGGER.logp(Level.FINER,
-                        DefaultMBeanServerInterceptor.class.getName(),
-                        "createMBean", "ClassName = " + className +
+            if (MBEANSERVER_LOGGER.isLoggable(Level.TRACE)) {
+                MBEANSERVER_LOGGER.log(Level.TRACE,
+                        "ClassName = " + className +
                         ", ObjectName = " + name +
                         ", Loader name = " + loaderName);
             }
@@ -633,10 +629,8 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
 
         name = nonDefaultDomain(name);
 
-        if (MBEANSERVER_LOGGER.isLoggable(Level.FINER)) {
-            MBEANSERVER_LOGGER.logp(Level.FINER,
-                    DefaultMBeanServerInterceptor.class.getName(),
-                    "getAttribute",
+        if (MBEANSERVER_LOGGER.isLoggable(Level.TRACE)) {
+            MBEANSERVER_LOGGER.log(Level.TRACE,
                     "Attribute = " + attribute + ", ObjectName = " + name);
         }
 
@@ -670,10 +664,8 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
 
         name = nonDefaultDomain(name);
 
-        if (MBEANSERVER_LOGGER.isLoggable(Level.FINER)) {
-            MBEANSERVER_LOGGER.logp(Level.FINER,
-                    DefaultMBeanServerInterceptor.class.getName(),
-                    "getAttributes", "ObjectName = " + name);
+        if (MBEANSERVER_LOGGER.isLoggable(Level.TRACE)) {
+            MBEANSERVER_LOGGER.log(Level.TRACE, "ObjectName = " + name);
         }
 
         final DynamicMBean instance = getMBean(name);
@@ -732,10 +724,8 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
 
         name = nonDefaultDomain(name);
 
-        if (MBEANSERVER_LOGGER.isLoggable(Level.FINER)) {
-            MBEANSERVER_LOGGER.logp(Level.FINER,
-                    DefaultMBeanServerInterceptor.class.getName(),
-                    "setAttribute", "ObjectName = " + name +
+        if (MBEANSERVER_LOGGER.isLoggable(Level.TRACE)) {
+            MBEANSERVER_LOGGER.log(Level.TRACE, "ObjectName = " + name +
                     ", Attribute = " + attribute.getName());
         }
 
@@ -910,10 +900,9 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
 
         name = nonDefaultDomain(name);
 
-        if (MBEANSERVER_LOGGER.isLoggable(Level.FINER)) {
-            MBEANSERVER_LOGGER.logp(Level.FINER,
-                    DefaultMBeanServerInterceptor.class.getName(),
-                    "registerMBean", "ObjectName = " + name);
+        if (MBEANSERVER_LOGGER.isLoggable(Level.TRACE)) {
+            MBEANSERVER_LOGGER.log(Level.TRACE,
+                    "ObjectName = " + name);
         }
 
         ObjectName logicalName = preRegister(mbean, server, name);
@@ -1023,14 +1012,14 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
             if (mbean instanceof MBeanRegistration)
                 ((MBeanRegistration) mbean).postRegister(registrationDone);
         } catch (RuntimeException e) {
-            MBEANSERVER_LOGGER.fine("While registering MBean ["+logicalName+
+            MBEANSERVER_LOGGER.log(Level.DEBUG, "While registering MBean ["+logicalName+
                     "]: " + "Exception thrown by postRegister: " +
                     "rethrowing <"+e+">, but keeping the MBean registered");
             throw new RuntimeMBeanException(e,
                       "RuntimeException thrown in postRegister method: "+
                       "rethrowing <"+e+">, but keeping the MBean registered");
         } catch (Error er) {
-            MBEANSERVER_LOGGER.fine("While registering MBean ["+logicalName+
+            MBEANSERVER_LOGGER.log(Level.DEBUG, "While registering MBean ["+logicalName+
                     "]: " + "Error thrown by postRegister: " +
                     "rethrowing <"+er+">, but keeping the MBean registered");
             throw new RuntimeErrorException(er,
@@ -1053,7 +1042,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
         try {
             moi.postDeregister();
         } catch (RuntimeException e) {
-            MBEANSERVER_LOGGER.fine("While unregistering MBean ["+mbean+
+            MBEANSERVER_LOGGER.log(Level.DEBUG, "While unregistering MBean ["+mbean+
                     "]: " + "Exception thrown by postDeregister: " +
                     "rethrowing <"+e+">, although the MBean is succesfully " +
                     "unregistered");
@@ -1062,7 +1051,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
                       "rethrowing <"+e+
                       ">, although the MBean is sucessfully unregistered");
         } catch (Error er) {
-            MBEANSERVER_LOGGER.fine("While unregistering MBean ["+mbean+
+            MBEANSERVER_LOGGER.log(Level.DEBUG, "While unregistering MBean ["+mbean+
                     "]: " + "Error thrown by postDeregister: " +
                     "rethrowing <"+er+">, although the MBean is succesfully " +
                     "unregistered");
@@ -1087,10 +1076,9 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
         }
         DynamicMBean obj = repository.retrieve(name);
         if (obj == null) {
-            if (MBEANSERVER_LOGGER.isLoggable(Level.FINER)) {
-                MBEANSERVER_LOGGER.logp(Level.FINER,
-                        DefaultMBeanServerInterceptor.class.getName(),
-                        "getMBean", name + " : Found no object");
+            if (MBEANSERVER_LOGGER.isLoggable(Level.TRACE)) {
+                MBEANSERVER_LOGGER.log(Level.TRACE,
+                        name + " : Found no object");
             }
             throw new InstanceNotFoundException(name.toString());
         }
@@ -1176,10 +1164,8 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
 
         // ------------------------------
         // ------------------------------
-        if (MBEANSERVER_LOGGER.isLoggable(Level.FINER)) {
-            MBEANSERVER_LOGGER.logp(Level.FINER,
-                    DefaultMBeanServerInterceptor.class.getName(),
-                    "addNotificationListener", "ObjectName = " + name);
+        if (MBEANSERVER_LOGGER.isLoggable(Level.TRACE)) {
+            MBEANSERVER_LOGGER.log(Level.TRACE, "ObjectName = " + name);
         }
 
         DynamicMBean instance = getMBean(name);
@@ -1226,10 +1212,8 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
         // ----------------
         // Add a listener on an MBean
         // ----------------
-        if (MBEANSERVER_LOGGER.isLoggable(Level.FINER)) {
-            MBEANSERVER_LOGGER.logp(Level.FINER,
-                    DefaultMBeanServerInterceptor.class.getName(),
-                    "addNotificationListener",
+        if (MBEANSERVER_LOGGER.isLoggable(Level.TRACE)) {
+            MBEANSERVER_LOGGER.log(Level.TRACE,
                     "ObjectName = " + name + ", Listener = " + listener);
         }
         server.addNotificationListener(name,(NotificationListener) resource,
@@ -1255,10 +1239,8 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
             throws InstanceNotFoundException, ListenerNotFoundException {
         NotificationListener instance = getListener(listener);
 
-        if (MBEANSERVER_LOGGER.isLoggable(Level.FINER)) {
-            MBEANSERVER_LOGGER.logp(Level.FINER,
-                    DefaultMBeanServerInterceptor.class.getName(),
-                    "removeNotificationListener",
+        if (MBEANSERVER_LOGGER.isLoggable(Level.TRACE)) {
+            MBEANSERVER_LOGGER.log(Level.TRACE,
                     "ObjectName = " + name + ", Listener = " + listener);
         }
         server.removeNotificationListener(name, instance);
@@ -1272,10 +1254,8 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
 
         NotificationListener instance = getListener(listener);
 
-        if (MBEANSERVER_LOGGER.isLoggable(Level.FINER)) {
-            MBEANSERVER_LOGGER.logp(Level.FINER,
-                    DefaultMBeanServerInterceptor.class.getName(),
-                    "removeNotificationListener",
+        if (MBEANSERVER_LOGGER.isLoggable(Level.TRACE)) {
+            MBEANSERVER_LOGGER.log(Level.TRACE,
                     "ObjectName = " + name + ", Listener = " + listener);
         }
         server.removeNotificationListener(name, instance, filter, handback);
@@ -1313,10 +1293,8 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
                                             boolean removeAll)
             throws InstanceNotFoundException, ListenerNotFoundException {
 
-        if (MBEANSERVER_LOGGER.isLoggable(Level.FINER)) {
-            MBEANSERVER_LOGGER.logp(Level.FINER,
-                    DefaultMBeanServerInterceptor.class.getName(),
-                    "removeNotificationListener", "ObjectName = " + name);
+        if (MBEANSERVER_LOGGER.isLoggable(Level.TRACE)) {
+            MBEANSERVER_LOGGER.log(Level.TRACE, "ObjectName = " + name);
         }
 
         DynamicMBean instance = getMBean(name);
@@ -1421,10 +1399,9 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
             return classNameClass.isAssignableFrom(resourceClass);
         } catch (Exception x) {
             /* Could be SecurityException or ClassNotFoundException */
-            if (MBEANSERVER_LOGGER.isLoggable(Level.FINEST)) {
-                MBEANSERVER_LOGGER.logp(Level.FINEST,
-                        DefaultMBeanServerInterceptor.class.getName(),
-                        "isInstanceOf", "Exception calling isInstanceOf", x);
+            if (MBEANSERVER_LOGGER.isLoggable(Level.DEBUG)) {
+                MBEANSERVER_LOGGER.log(Level.DEBUG,
+                        "Exception calling isInstanceOf", x);
             }
             return false;
         }
@@ -1489,10 +1466,8 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
         MBeanServerNotification notif = new MBeanServerNotification(
             NotifType,MBeanServerDelegate.DELEGATE_NAME,0,name);
 
-        if (MBEANSERVER_LOGGER.isLoggable(Level.FINER)) {
-            MBEANSERVER_LOGGER.logp(Level.FINER,
-                    DefaultMBeanServerInterceptor.class.getName(),
-                    "sendNotification", NotifType + " " + name);
+        if (MBEANSERVER_LOGGER.isLoggable(Level.TRACE)) {
+            MBEANSERVER_LOGGER.log(Level.TRACE, NotifType + " " + name);
         }
 
         delegate.sendNotification(notif);
@@ -1594,10 +1569,8 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
         try {
             return getClassName(mbean);
         } catch (Exception e) {
-            if (MBEANSERVER_LOGGER.isLoggable(Level.FINEST)) {
-                MBEANSERVER_LOGGER.logp(Level.FINEST,
-                        DefaultMBeanServerInterceptor.class.getName(),
-                        "safeGetClassName",
+            if (MBEANSERVER_LOGGER.isLoggable(Level.DEBUG)) {
+                MBEANSERVER_LOGGER.log(Level.DEBUG,
                         "Exception getting MBean class name", e);
             }
             return null;
@@ -1885,10 +1858,9 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
         // ---------------------
         // Send create event
         // ---------------------
-        if (MBEANSERVER_LOGGER.isLoggable(Level.FINER)) {
-            MBEANSERVER_LOGGER.logp(Level.FINER,
-                    DefaultMBeanServerInterceptor.class.getName(),
-                    "addObject", "Send create notification of object " +
+        if (MBEANSERVER_LOGGER.isLoggable(Level.TRACE)) {
+            MBEANSERVER_LOGGER.log(Level.TRACE,
+                    "Send create notification of object " +
                     logicalName.getCanonicalName());
         }
 
@@ -1926,10 +1898,9 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
         // ---------------------
         // Send deletion event
         // ---------------------
-        if (MBEANSERVER_LOGGER.isLoggable(Level.FINER)) {
-            MBEANSERVER_LOGGER.logp(Level.FINER,
-                    DefaultMBeanServerInterceptor.class.getName(),
-                    "unregisterMBean", "Send delete notification of object " +
+        if (MBEANSERVER_LOGGER.isLoggable(Level.TRACE)) {
+            MBEANSERVER_LOGGER.log(Level.TRACE,
+                    "Send delete notification of object " +
                     logicalName.getCanonicalName());
         }
 
