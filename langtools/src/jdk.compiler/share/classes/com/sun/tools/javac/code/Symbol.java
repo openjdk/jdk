@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1045,7 +1045,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         DO_NOT_RESOLVE_BY_DEFAULT(0x0001),
         WARN_DEPRECATED(0x0002),
         WARN_DEPRECATED_REMOVAL(0x0004),
-        WARN_INCUBATOR(0x0008);
+        WARN_INCUBATING(0x0008);
 
         public static int value(Set<ModuleResolutionFlags> s) {
             int v = 0;
