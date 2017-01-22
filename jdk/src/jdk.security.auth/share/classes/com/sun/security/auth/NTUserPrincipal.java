@@ -61,9 +61,8 @@ public class NTUserPrincipal implements Principal, java.io.Serializable {
     public NTUserPrincipal(String name) {
         if (name == null) {
             java.text.MessageFormat form = new java.text.MessageFormat
-                (sun.security.util.ResourcesMgr.getString
-                        ("invalid.null.input.value",
-                        "sun.security.util.AuthResources"));
+                (sun.security.util.ResourcesMgr.getAuthResourceString
+                        ("invalid.null.input.value"));
             Object[] source = {"name"};
             throw new NullPointerException(form.format(source));
         }
@@ -86,9 +85,8 @@ public class NTUserPrincipal implements Principal, java.io.Serializable {
      */
     public String toString() {
         java.text.MessageFormat form = new java.text.MessageFormat
-                (sun.security.util.ResourcesMgr.getString
-                        ("NTUserPrincipal.name",
-                        "sun.security.util.AuthResources"));
+                (sun.security.util.ResourcesMgr.getAuthResourceString
+                        ("NTUserPrincipal.name"));
         Object[] source = {name};
         return form.format(source);
     }

@@ -34,6 +34,7 @@ import java.lang.reflect.Constructor;
 
 import javax.security.auth.Subject;
 import sun.security.provider.PolicyParser.PrincipalEntry;
+import sun.security.util.ResourcesMgr;
 
 /**
  * <p> This <code>SubjectCodeSource</code> class contains
@@ -46,15 +47,6 @@ import sun.security.provider.PolicyParser.PrincipalEntry;
 class SubjectCodeSource extends CodeSource implements java.io.Serializable {
 
     private static final long serialVersionUID = 6039418085604715275L;
-
-    private static final java.util.ResourceBundle rb =
-        java.security.AccessController.doPrivileged
-        (new java.security.PrivilegedAction<java.util.ResourceBundle>() {
-            public java.util.ResourceBundle run() {
-                return (java.util.ResourceBundle.getBundle
-                        ("sun.security.util.AuthResources"));
-            }
-        });
 
     private Subject subject;
     private LinkedList<PrincipalEntry> principals;
@@ -391,7 +383,7 @@ class SubjectCodeSource extends CodeSource implements java.io.Serializable {
             ListIterator<PrincipalEntry> li = principals.listIterator();
             while (li.hasNext()) {
                 PrincipalEntry pppe = li.next();
-                returnMe = returnMe + rb.getString("NEWLINE") +
+                returnMe = returnMe + ResourcesMgr.getAuthResourceString("NEWLINE") +
                         pppe.getPrincipalClass() + " " +
                         pppe.getPrincipalName();
             }
