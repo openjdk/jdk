@@ -27,8 +27,6 @@
 package com.sun.security.auth.module;
 
 import java.io.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.text.MessageFormat;
 import java.util.*;
 
@@ -45,6 +43,7 @@ import sun.security.krb5.*;
 import sun.security.jgss.krb5.Krb5Util;
 import sun.security.krb5.Credentials;
 import sun.security.util.HexDumpEncoder;
+import static sun.security.util.ResourcesMgr.getAuthResourceString;
 
 /**
  * This {@code LoginModule} authenticates users using
@@ -419,8 +418,6 @@ public class Krb5LoginModule implements LoginModule {
 
     private static final String NAME = "javax.security.auth.login.name";
     private static final String PWD = "javax.security.auth.login.password";
-    private static final ResourceBundle rb =
-        ResourceBundle.getBundle("sun.security.util.AuthResources");
 
     /**
      * Initialize this {@code LoginModule}.
@@ -831,7 +828,7 @@ public class Krb5LoginModule implements LoginModule {
 
                 Callback[] callbacks = new Callback[1];
                 MessageFormat form = new MessageFormat(
-                                       rb.getString(
+                                       getAuthResourceString(
                                        "Kerberos.username.defUsername."));
                 Object[] source =  {defUsername};
                 callbacks[0] = new NameCallback(form.format(source));
@@ -886,7 +883,7 @@ public class Krb5LoginModule implements LoginModule {
                 Callback[] callbacks = new Callback[1];
                 String userName = krb5PrincName.toString();
                 MessageFormat form = new MessageFormat(
-                                         rb.getString(
+                                         getAuthResourceString(
                                          "Kerberos.password.for.username."));
                 Object[] source = {userName};
                 callbacks[0] = new PasswordCallback(
