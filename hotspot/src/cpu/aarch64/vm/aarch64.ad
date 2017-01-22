@@ -9994,7 +9994,7 @@ instruct weakCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP ne
 // END This section of the file is automatically generated. Do not edit --------------
 // ---------------------------------------------------------------------
 
-instruct get_and_setI(indirect mem, iRegINoSp newv, iRegI prev) %{
+instruct get_and_setI(indirect mem, iRegI newv, iRegINoSp prev) %{
   match(Set prev (GetAndSetI mem newv));
   format %{ "atomic_xchgw  $prev, $newv, [$mem]" %}
   ins_encode %{
@@ -10003,7 +10003,7 @@ instruct get_and_setI(indirect mem, iRegINoSp newv, iRegI prev) %{
   ins_pipe(pipe_serial);
 %}
 
-instruct get_and_setL(indirect mem, iRegLNoSp newv, iRegL prev) %{
+instruct get_and_setL(indirect mem, iRegL newv, iRegLNoSp prev) %{
   match(Set prev (GetAndSetL mem newv));
   format %{ "atomic_xchg  $prev, $newv, [$mem]" %}
   ins_encode %{
@@ -10012,7 +10012,7 @@ instruct get_and_setL(indirect mem, iRegLNoSp newv, iRegL prev) %{
   ins_pipe(pipe_serial);
 %}
 
-instruct get_and_setN(indirect mem, iRegNNoSp newv, iRegI prev) %{
+instruct get_and_setN(indirect mem, iRegN newv, iRegINoSp prev) %{
   match(Set prev (GetAndSetN mem newv));
   format %{ "atomic_xchgw $prev, $newv, [$mem]" %}
   ins_encode %{
@@ -10021,7 +10021,7 @@ instruct get_and_setN(indirect mem, iRegNNoSp newv, iRegI prev) %{
   ins_pipe(pipe_serial);
 %}
 
-instruct get_and_setP(indirect mem, iRegPNoSp newv, iRegP prev) %{
+instruct get_and_setP(indirect mem, iRegP newv, iRegPNoSp prev) %{
   match(Set prev (GetAndSetP mem newv));
   format %{ "atomic_xchg  $prev, $newv, [$mem]" %}
   ins_encode %{
