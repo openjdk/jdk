@@ -39,7 +39,7 @@
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
- *                   compiler.jvmci.compilerToVM.DoNotInlineOrCompileTest
+ *                   compiler.jvmci.compilerToVM.HasNeverInlineDirectiveTest
  */
 
 package compiler.jvmci.compilerToVM;
@@ -55,25 +55,30 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class DoNotInlineOrCompileTest {
+public class HasNeverInlineDirectiveTest {
 
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
     public static void main(String[] args) {
         List<Executable> testCases = createTestCases();
-        testCases.forEach(DoNotInlineOrCompileTest::runSanityTest);
+        testCases.forEach(HasNeverInlineDirectiveTest::runSanityTest);
     }
 
     private static void runSanityTest(Executable aMethod) {
         HotSpotResolvedJavaMethod method = CTVMUtilities
                 .getResolvedMethod(aMethod);
         boolean hasNeverInlineDirective = CompilerToVMHelper.hasNeverInlineDirective(method);
-        Asserts.assertFalse(hasNeverInlineDirective, "Unexpected initial " +
+        boolean expected = WB.testSetDontInlineMethod(aMethod, true);
+        Asserts.assertEQ(hasNeverInlineDirective, expected, "Unexpected initial " +
                 "value of property 'hasNeverInlineDirective'");
-        CompilerToVMHelper.doNotInlineOrCompile(method);
+
         hasNeverInlineDirective = CompilerToVMHelper.hasNeverInlineDirective(method);
-        Asserts.assertTrue(hasNeverInlineDirective, aMethod
-                + " : hasNeverInlineDirective is false even after doNotInlineOrCompile'");
+        Asserts.assertTrue(hasNeverInlineDirective, aMethod + "Unexpected value of " +
+                "property 'hasNeverInlineDirective' after setting 'do not inline' to true");
+        WB.testSetDontInlineMethod(aMethod, false);
+        hasNeverInlineDirective = CompilerToVMHelper.hasNeverInlineDirective(method);
+        Asserts.assertFalse(hasNeverInlineDirective, "Unexpected value of " +
+                "property 'hasNeverInlineDirective' after setting 'do not inline' to false");
     }
 
     private static List<Executable> createTestCases() {
