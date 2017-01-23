@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * @library ..
  * @library ../../../../java/security/testlibrary
  * @modules java.base/sun.security.util
- *          jdk.crypto.token
+ *          jdk.crypto.cryptoki
  * @compile -XDignore.symbol.file TestECDH2.java
  * @run main/othervm TestECDH2
  * @run main/othervm TestECDH2 sm

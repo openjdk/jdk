@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ include CopyCommon.gmk
 ifeq ($(OPENJDK_TARGET_OS), solaris)
 
   SUNPKCS11_CFG_SRC := \
-      $(JDK_TOPDIR)/src/jdk.crypto.token/solaris/conf/security/sunpkcs11-solaris.cfg
+      $(JDK_TOPDIR)/src/jdk.crypto.cryptoki/solaris/conf/security/sunpkcs11-solaris.cfg
   SUNPKCS11_CFG_DST := $(CONF_DST_DIR)/security/sunpkcs11-solaris.cfg
 
   $(SUNPKCS11_CFG_DST): $(SUNPKCS11_CFG_SRC)
