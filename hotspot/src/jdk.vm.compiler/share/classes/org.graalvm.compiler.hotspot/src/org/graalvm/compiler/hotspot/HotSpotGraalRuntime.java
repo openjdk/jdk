@@ -22,6 +22,7 @@
  */
 package org.graalvm.compiler.hotspot;
 
+import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static org.graalvm.compiler.debug.GraalDebugConfig.areScopedGlobalMetricsEnabled;
 import static org.graalvm.compiler.debug.GraalDebugConfig.Options.DebugValueSummary;
 import static org.graalvm.compiler.debug.GraalDebugConfig.Options.Dump;
@@ -99,7 +100,7 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
     HotSpotGraalRuntime(HotSpotJVMCIRuntime jvmciRuntime, CompilerConfigurationFactory compilerConfigurationFactory) {
 
         HotSpotVMConfigStore store = jvmciRuntime.getConfigStore();
-        config = new GraalHotSpotVMConfig(store);
+        config = GeneratePIC.getValue() ? new AOTGraalHotSpotVMConfig(store) : new GraalHotSpotVMConfig(store);
         CompileTheWorldOptions.overrideWithNativeOptions(config);
 
         // Only set HotSpotPrintInlining if it still has its default value (false).
