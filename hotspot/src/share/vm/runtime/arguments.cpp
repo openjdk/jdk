@@ -1829,7 +1829,7 @@ bool Arguments::compilation_mode_selected() {
 void Arguments::select_compilation_mode_ergonomically() {
 #if defined(_WINDOWS) && !defined(_LP64)
   if (FLAG_IS_DEFAULT(NeverActAsServerClassMachine)) {
-    NeverActAsServerClassMachine = true;
+    FLAG_SET_ERGO(bool, NeverActAsServerClassMachine, true);
   }
 #endif
   if (NeverActAsServerClassMachine) {

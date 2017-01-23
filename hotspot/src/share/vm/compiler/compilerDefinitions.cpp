@@ -68,7 +68,6 @@ void set_client_compilation_mode() {
   CompLevel_initial_compile = CompLevel_simple;
   FLAG_SET_ERGO(bool, TieredCompilation, false);
   FLAG_SET_ERGO(bool, ProfileInterpreter, false);
-  FLAG_SET_ERGO(bool, NeverActAsServerClassMachine, true);
 #if INCLUDE_JVMCI
   FLAG_SET_ERGO(bool, EnableJVMCI, false);
   FLAG_SET_ERGO(bool, UseJVMCICompiler, false);
@@ -76,6 +75,9 @@ void set_client_compilation_mode() {
 #if INCLUDE_AOT
   FLAG_SET_ERGO(bool, UseAOT, false);
 #endif
+  if (FLAG_IS_DEFAULT(NeverActAsServerClassMachine)) {
+    FLAG_SET_ERGO(bool, NeverActAsServerClassMachine, true);
+  }
   if (FLAG_IS_DEFAULT(InitialCodeCacheSize)) {
     FLAG_SET_ERGO(uintx, InitialCodeCacheSize, 160*K);
   }
