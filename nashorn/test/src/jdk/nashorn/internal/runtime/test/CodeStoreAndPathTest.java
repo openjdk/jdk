@@ -47,7 +47,7 @@ import org.testng.annotations.Test;
 @SuppressWarnings("javadoc")
 public class CodeStoreAndPathTest {
 
-    final String code1 = "var code1; var x = 'Hello Script'; var x1 = 'Hello Script'; "
+    final static String code1 = "var code1; var x = 'Hello Script'; var x1 = 'Hello Script'; "
                 + "var x2 = 'Hello Script'; var x3 = 'Hello Script'; "
                 + "var x4 = 'Hello Script'; var x5 = 'Hello Script';"
                 + "var x6 = 'Hello Script'; var x7 = 'Hello Script'; "
@@ -69,7 +69,7 @@ public class CodeStoreAndPathTest {
                 + "x3='Bye Script'; x4='Bye Script'; x5='Bye Script'; x6='Bye Script';"
                 + "x7='Bye Script'; x8='Bye Script'; var x9 = 'Hello Script'; "
                 + "var x10 = 'Hello Script';}";
-    final String code2 = "var code2; var x = 'Hello Script'; var x1 = 'Hello Script'; "
+    final static String code2 = "var code2; var x = 'Hello Script'; var x1 = 'Hello Script'; "
                 + "var x2 = 'Hello Script'; var x3 = 'Hello Script'; "
                 + "var x4 = 'Hello Script'; var x5 = 'Hello Script';"
                 + "var x6 = 'Hello Script'; var x7 = 'Hello Script'; "
@@ -92,9 +92,306 @@ public class CodeStoreAndPathTest {
                 + "x7='Bye Script'; x8='Bye Script'; var x9 = 'Hello Script'; "
                 + "var x10 = 'Hello Script';}";
     // Script size < Default minimum size for storing a compiled script class
-    final String code3 = "var code3; var x = 'Hello Script'; var x1 = 'Hello Script'; ";
-    final String codeCache = "build/nashorn_code_cache";
-    final String oldUserDir = System.getProperty("user.dir");
+    final static String code3 = "var code3; var x = 'Hello Script'; var x1 = 'Hello Script'; ";
+    final static String nestedFunctions = "\n" +
+            "(function outer() { \n" +
+            "    var map = null; \n" +
+            "    (function inner() { \n" +
+            "        var object; \n" +
+            "        if (map === null) { \n" +
+            "            map = (function() { \n" +
+            "                var HashMap = Java.type('java.util.HashMap'); \n" +
+            "                map = new HashMap(); \n" +
+            "                map.name          = 'name'; \n" +
+            "                map.id            = 1234;\n" +
+            "                map.basePath      = 'basePath'; \n" +
+            "                map.extensionPath = 'extension';\n" +
+            "                map.address       = 'address'; \n" +
+            "                map.name          = 'name'; \n" +
+            "                map.id            = 1234;\n" +
+            "                map.basePath      = 'basePath'; \n" +
+            "                map.extensionPath = 'extension';\n" +
+            "                map.address       = 'address';\n" +
+            "                map.name          = 'name'; \n" +
+            "                map.id            = 1234;\n" +
+            "                map.basePath      = 'basePath'; \n" +
+            "                map.extensionPath = 'extension';\n" +
+            "                map.address       = 'address'; \n" +
+            "                return map; \n" +
+            "            }()); \n" +
+            "        } \n" +
+            "        object = {}; \n" +
+            "        return object; \n" +
+            "    })(); \n" +
+            "}()); ";
+    final static String longNestedFunctions = "\n" +
+            "(function outer() { \n" +
+            "    var map = null; \n" +
+            "    (function inner() { \n" +
+            "        var object; \n" +
+            "        var HashMap = Java.type('java.util.HashMap'); \n" +
+            "        map = new HashMap(); \n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address'; \n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address';\n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address'; \n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address'; \n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address';\n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address'; \n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address'; \n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address';\n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address'; \n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address'; \n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address';\n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address'; \n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address'; \n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address';\n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address'; \n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address'; \n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address';\n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address'; \n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address'; \n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address';\n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address'; \n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address'; \n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address';\n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address'; \n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address'; \n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address';\n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address'; \n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address'; \n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address';\n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address'; \n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address'; \n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address';\n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address'; \n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address'; \n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address';\n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address'; \n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address'; \n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address';\n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address'; \n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address'; \n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address';\n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address'; \n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address'; \n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address';\n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address'; \n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address'; \n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address';\n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address'; \n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address'; \n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address';\n" +
+            "        map.name          = 'name'; \n" +
+            "        map.id            = 1234;\n" +
+            "        map.basePath      = 'basePath'; \n" +
+            "        map.extensionPath = 'extension';\n" +
+            "        map.address       = 'address'; \n" +
+            "        object = {}; \n" +
+            "        return object; \n" +
+            "    })(); \n" +
+            "}()); ";
+    final static String codeCache = "build/nashorn_code_cache";
+    final static String oldUserDir = System.getProperty("user.dir");
 
     private static final String[] ENGINE_OPTIONS_OPT   = new String[]{"--persistent-code-cache", "--optimistic-types=true"};
     private static final String[] ENGINE_OPTIONS_NOOPT = new String[]{"--persistent-code-cache", "--optimistic-types=false"};
@@ -164,6 +461,28 @@ public class CodeStoreAndPathTest {
         // adding code1 and code2.
         final DirectoryStream<Path> stream = Files.newDirectoryStream(codeCachePath);
         checkCompiledScripts(stream, 4);
+    }
+
+    @Test
+    public void testNestedFunctionStore() throws ScriptException, IOException {
+        System.setProperty("nashorn.persistent.code.cache", codeCache);
+        final NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
+        factory.getScriptEngine(ENGINE_OPTIONS_OPT).eval(nestedFunctions);
+        factory.getScriptEngine(ENGINE_OPTIONS_OPT).eval(nestedFunctions);
+        factory.getScriptEngine(ENGINE_OPTIONS_OPT).eval(nestedFunctions);
+        factory.getScriptEngine(ENGINE_OPTIONS_OPT).eval(nestedFunctions);
+    }
+
+    @Test
+    public void testSplitFunctionStore() throws ScriptException, IOException {
+        System.setProperty("nashorn.persistent.code.cache", codeCache);
+        System.setProperty("nashorn.compiler.splitter.threshold", "500");
+        final NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
+        factory.getScriptEngine(ENGINE_OPTIONS_OPT).eval(longNestedFunctions);
+        factory.getScriptEngine(ENGINE_OPTIONS_OPT).eval(longNestedFunctions);
+        factory.getScriptEngine(ENGINE_OPTIONS_OPT).eval(longNestedFunctions);
+        factory.getScriptEngine(ENGINE_OPTIONS_OPT).eval(longNestedFunctions);
+        System.getProperties().remove("nashorn.compiler.splitter.threshold");
     }
 
     private static Path getCodeCachePath(final boolean optimistic) {

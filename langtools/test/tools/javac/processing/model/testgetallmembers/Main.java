@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,8 @@ public class Main {
                 Path path = fm.asPath(file);
                 int moduleIndex = path.getNameCount() - type.split("\\Q.\\E").length - 1;
                 String moduleName = path.getName(moduleIndex).toString();
+                if (moduleName.startsWith("jdk.incubator.")) //incubator modules not in module graph by default
+                    continue;
                 try {
                     ModuleElement me = elements.getModuleElement(moduleName);
                     me.getClass();

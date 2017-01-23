@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 8165947
+ * @bug 8165947 8170579
  * @summary  Verifies System default banner page option is honoured by jdk
  * @requires (os.family == "linux" | os.family == "solaris")
  * @run main/manual TestCheckSystemDefaultBannerOption
@@ -38,6 +38,7 @@ import static java.awt.print.Printable.NO_SUCH_PAGE;
 import static java.awt.print.Printable.PAGE_EXISTS;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
+import javax.print.PrintService;
 import javax.print.attribute.standard.JobSheets;
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -56,8 +57,13 @@ public class TestCheckSystemDefaultBannerOption implements Printable {
     public static void main (String[] args) throws Exception {
 
         job = PrinterJob.getPrinterJob();
-        if (job.getPrintService() == null) {
+        PrintService prtSrv = job.getPrintService();
+        if (prtSrv == null) {
             System.out.println("No printers. Test cannot continue");
+            return;
+        }
+        // do not run the test if JobSheet category is not supported
+        if (!prtSrv.isAttributeCategorySupported(JobSheets.class)) {
             return;
         }
         // check system default banner option and let user know what to expect

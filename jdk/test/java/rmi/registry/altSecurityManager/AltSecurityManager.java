@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,9 @@
  *          java.rmi/sun.rmi.server
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
- * @build TestLibrary JavaVM RMID TestSecurityManager
+ *          java.base/sun.nio.ch
+ * @build TestLibrary RMID RMIDSelectorProvider RegistryVM RMIRegistryRunner
+ *        TestSecurityManager
  * @run main/othervm AltSecurityManager
  */
 
@@ -44,7 +46,6 @@
  * if registry and rmid take too long to exit.
  */
 public class AltSecurityManager implements Runnable {
-    private final int regPort;
     // variable to hold registry and rmid children
     static JavaVM vm = null;
 
@@ -57,31 +58,34 @@ public class AltSecurityManager implements Runnable {
     private static final long TIME_OUT =
             (long)(15000 * TestLibrary.getTimeoutFactor());
 
-    public AltSecurityManager(int port) {
-        if (port <= 0) {
-            TestLibrary.bomb("Port must be greater than 0.");
-        }
-
-        this.regPort = port;
-    }
-
     public void run() {
         try {
             if (utilityToStart.equals(REGISTRY_IMPL)) {
-                vm = new JavaVM(utilityToStart,
-                        " -Djava.security.manager=TestSecurityManager",
-                        Integer.toString(regPort));
+                vm = RegistryVM.createRegistryVMWithRunner(
+                        "RMIRegistryRunner",
+                        "-Djava.security.manager=TestSecurityManager");
             } else if (utilityToStart.contains(ACTIVATION)) {
-                vm = new JavaVM(utilityToStart,
-                        " -Djava.security.manager=TestSecurityManager",
-                        "-port " + Integer.toString(regPort));
+                vm = RMID.createRMIDOnEphemeralPortWithOptions(
+                        "-Djava.security.manager=TestSecurityManager");
             } else {
                 TestLibrary.bomb("Utility to start must be " + REGISTRY_IMPL +
                         " or " + ACTIVATION);
             }
 
             System.err.println("starting " + utilityToStart);
-            vm.execute();
+            try {
+                vm.start();
+                throw new RuntimeException("Expected exception did not occur!");
+            } catch (Exception expected) {
+                int exit = vm.waitFor();
+                if (exit != TestSecurityManager.EXIT_VALUE) {
+                    throw new RuntimeException(utilityToStart
+                            + " exit with an unexpected value "
+                            + exit + ".");
+                }
+                System.err.format("Success: starting %s exited with status %d%n",
+                                  utilityToStart, TestSecurityManager.EXIT_VALUE);
+            }
 
         } catch (Exception e) {
             TestLibrary.bomb(e);
@@ -96,8 +100,7 @@ public class AltSecurityManager implements Runnable {
         utilityToStart = utility;
 
         try {
-            int port = TestLibrary.getUnusedRandomPort();
-            Thread thread = new Thread(new AltSecurityManager(port));
+            Thread thread = new Thread(new AltSecurityManager());
             System.err.println("expecting RuntimeException for " +
                                "checkListen in child process");
             long start = System.currentTimeMillis();
@@ -116,7 +119,7 @@ public class AltSecurityManager implements Runnable {
                                    " terminated on time");
             }
         } finally {
-            vm.destroy();
+            vm.cleanup();
             vm = null;
         }
     }

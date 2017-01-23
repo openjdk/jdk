@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,12 @@
 
 package sun.rmi.registry;
 
+import java.io.ObjectInputFilter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.rmi.server.LogStream;
+import java.security.PrivilegedAction;
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -39,7 +43,6 @@ import java.io.IOException;
 import java.net.*;
 import java.rmi.*;
 import java.rmi.server.ObjID;
-import java.rmi.server.RemoteServer;
 import java.rmi.server.ServerNotActiveException;
 import java.rmi.registry.Registry;
 import java.rmi.server.RMIClientSocketFactory;
@@ -54,12 +57,12 @@ import java.security.PermissionCollection;
 import java.security.Permissions;
 import java.security.ProtectionDomain;
 import java.text.MessageFormat;
-import sun.rmi.server.LoaderHandler;
+
+import sun.rmi.runtime.Log;
+import sun.rmi.server.UnicastRef;
 import sun.rmi.server.UnicastServerRef;
 import sun.rmi.server.UnicastServerRef2;
 import sun.rmi.transport.LiveRef;
-import sun.rmi.transport.ObjectTable;
-import sun.rmi.transport.Target;
 
 /**
  * A "registry" exists on every node that allows RMI connections to
@@ -91,6 +94,48 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
     private static ResourceBundle resources = null;
 
     /**
+     * Property name of the RMI Registry serial filter to augment
+     * the built-in list of allowed types.
+     * Setting the property in the {@code conf/security/java.security} file
+     * will enable the augmented filter.
+     */
+    private static final String REGISTRY_FILTER_PROPNAME = "sun.rmi.registry.registryFilter";
+
+    /** Registry max depth of remote invocations. **/
+    private static int REGISTRY_MAX_DEPTH = 5;
+
+    /** Registry maximum array size in remote invocations. **/
+    private static int REGISTRY_MAX_ARRAY_SIZE = 10000;
+
+    /**
+     * The registryFilter created from the value of the {@code "sun.rmi.registry.registryFilter"}
+     * property.
+     */
+    private static final ObjectInputFilter registryFilter =
+            AccessController.doPrivileged((PrivilegedAction<ObjectInputFilter>)RegistryImpl::initRegistryFilter);
+
+    /**
+     * Initialize the registryFilter from the security properties or system property; if any
+     * @return an ObjectInputFilter, or null
+     */
+    @SuppressWarnings("deprecation")
+    private static ObjectInputFilter initRegistryFilter() {
+        ObjectInputFilter filter = null;
+        String props = System.getProperty(REGISTRY_FILTER_PROPNAME);
+        if (props == null) {
+            props = Security.getProperty(REGISTRY_FILTER_PROPNAME);
+        }
+        if (props != null) {
+            filter = ObjectInputFilter.Config.createFilter(props);
+            Log regLog = Log.getLog("sun.rmi.registry", "registry", -1);
+            if (regLog.isLoggable(Log.BRIEF)) {
+                regLog.log(Log.BRIEF, "registryFilter = " + filter);
+            }
+        }
+        return filter;
+    }
+
+    /**
      * Construct a new RegistryImpl on the specified port with the
      * given custom socket factory pair.
      */
@@ -105,7 +150,7 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
                 AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
                     public Void run() throws RemoteException {
                         LiveRef lref = new LiveRef(id, port, csf, ssf);
-                        setup(new UnicastServerRef2(lref));
+                        setup(new UnicastServerRef2(lref, RegistryImpl::registryFilter));
                         return null;
                     }
                 }, null, new SocketPermission("localhost:"+port, "listen,accept"));
@@ -114,7 +159,7 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
             }
         } else {
             LiveRef lref = new LiveRef(id, port, csf, ssf);
-            setup(new UnicastServerRef2(lref));
+            setup(new UnicastServerRef2(lref, RegistryImpl::registryFilter));
         }
     }
 
@@ -130,7 +175,7 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
                 AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
                     public Void run() throws RemoteException {
                         LiveRef lref = new LiveRef(id, port);
-                        setup(new UnicastServerRef(lref));
+                        setup(new UnicastServerRef(lref, RegistryImpl::registryFilter));
                         return null;
                     }
                 }, null, new SocketPermission("localhost:"+port, "listen,accept"));
@@ -139,7 +184,7 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
             }
         } else {
             LiveRef lref = new LiveRef(id, port);
-            setup(new UnicastServerRef(lref));
+            setup(new UnicastServerRef(lref, RegistryImpl::registryFilter));
         }
     }
 
@@ -362,59 +407,135 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
     }
 
     /**
-     * Main program to start a registry. <br>
-     * The port number can be specified on the command line.
+     * ObjectInputFilter to filter Registry input objects.
+     * The list of acceptable classes is limited to classes normally
+     * stored in a registry.
+     *
+     * @param filterInfo access to the class, array length, etc.
+     * @return  {@link ObjectInputFilter.Status#ALLOWED} if allowed,
+     *          {@link ObjectInputFilter.Status#REJECTED} if rejected,
+     *          otherwise {@link ObjectInputFilter.Status#UNDECIDED}
      */
-    public static void main(String args[])
-    {
+    private static ObjectInputFilter.Status registryFilter(ObjectInputFilter.FilterInfo filterInfo) {
+        if (registryFilter != null) {
+            ObjectInputFilter.Status status = registryFilter.checkInput(filterInfo);
+            if (status != ObjectInputFilter.Status.UNDECIDED) {
+                // The Registry filter can override the built-in white-list
+                return status;
+            }
+        }
+
+        if (filterInfo.depth() > REGISTRY_MAX_DEPTH) {
+            return ObjectInputFilter.Status.REJECTED;
+        }
+        Class<?> clazz = filterInfo.serialClass();
+        if (clazz != null) {
+            if (clazz.isArray()) {
+                if (filterInfo.arrayLength() >= 0 && filterInfo.arrayLength() > REGISTRY_MAX_ARRAY_SIZE) {
+                    return ObjectInputFilter.Status.REJECTED;
+                }
+                do {
+                    // Arrays are allowed depending on the component type
+                    clazz = clazz.getComponentType();
+                } while (clazz.isArray());
+            }
+            if (clazz.isPrimitive()) {
+                // Arrays of primitives are allowed
+                return ObjectInputFilter.Status.ALLOWED;
+            }
+            if (String.class == clazz
+                    || java.lang.Number.class.isAssignableFrom(clazz)
+                    || Remote.class.isAssignableFrom(clazz)
+                    || java.lang.reflect.Proxy.class.isAssignableFrom(clazz)
+                    || UnicastRef.class.isAssignableFrom(clazz)
+                    || RMIClientSocketFactory.class.isAssignableFrom(clazz)
+                    || RMIServerSocketFactory.class.isAssignableFrom(clazz)
+                    || java.rmi.activation.ActivationID.class.isAssignableFrom(clazz)
+                    || java.rmi.server.UID.class.isAssignableFrom(clazz)) {
+                return ObjectInputFilter.Status.ALLOWED;
+            } else {
+                return ObjectInputFilter.Status.REJECTED;
+            }
+        }
+        return ObjectInputFilter.Status.UNDECIDED;
+    }
+
+    /**
+     * Return a new RegistryImpl on the requested port and export it to serve
+     * registry requests. A classloader is initialized from the system property
+     * "env.class.path" and a security manager is set unless one is already set.
+     * <p>
+     * The returned Registry is fully functional within the current process and
+     * is usable for internal and testing purposes.
+     *
+     * @param regPort port on which the rmiregistry accepts requests;
+     *                if 0, an implementation specific port is assigned
+     * @return a RegistryImpl instance
+     * @exception RemoteException If remote operation failed.
+     * @since 9
+     */
+    public static RegistryImpl createRegistry(int regPort) throws RemoteException {
         // Create and install the security manager if one is not installed
         // already.
         if (System.getSecurityManager() == null) {
             System.setSecurityManager(new SecurityManager());
         }
 
+        /*
+         * Fix bugid 4147561: When JDK tools are executed, the value of
+         * the CLASSPATH environment variable for the shell in which they
+         * were invoked is no longer incorporated into the application
+         * class path; CLASSPATH's only effect is to be the value of the
+         * system property "env.class.path".  To preserve the previous
+         * (JDK1.1 and JDK1.2beta3) behavior of this tool, however, its
+         * CLASSPATH should still be considered when resolving classes
+         * being unmarshalled.  To effect this old behavior, a class
+         * loader that loads from the file path specified in the
+         * "env.class.path" property is created and set to be the context
+         * class loader before the remote object is exported.
+         */
+        String envcp = System.getProperty("env.class.path");
+        if (envcp == null) {
+            envcp = ".";            // preserve old default behavior
+        }
+        URL[] urls = pathToURLs(envcp);
+        ClassLoader cl = new URLClassLoader(urls);
+
+        /*
+         * Fix bugid 4242317: Classes defined by this class loader should
+         * be annotated with the value of the "java.rmi.server.codebase"
+         * property, not the "file:" URLs for the CLASSPATH elements.
+         */
+        sun.rmi.server.LoaderHandler.registerCodebaseLoader(cl);
+
+        Thread.currentThread().setContextClassLoader(cl);
+
+        RegistryImpl registryImpl = null;
         try {
-            /*
-             * Fix bugid 4147561: When JDK tools are executed, the value of
-             * the CLASSPATH environment variable for the shell in which they
-             * were invoked is no longer incorporated into the application
-             * class path; CLASSPATH's only effect is to be the value of the
-             * system property "env.class.path".  To preserve the previous
-             * (JDK1.1 and JDK1.2beta3) behavior of this tool, however, its
-             * CLASSPATH should still be considered when resolving classes
-             * being unmarshalled.  To effect this old behavior, a class
-             * loader that loads from the file path specified in the
-             * "env.class.path" property is created and set to be the context
-             * class loader before the remote object is exported.
-             */
-            String envcp = System.getProperty("env.class.path");
-            if (envcp == null) {
-                envcp = ".";            // preserve old default behavior
-            }
-            URL[] urls = pathToURLs(envcp);
-            ClassLoader cl = new URLClassLoader(urls);
+            registryImpl = AccessController.doPrivileged(
+                new PrivilegedExceptionAction<RegistryImpl>() {
+                    public RegistryImpl run() throws RemoteException {
+                        return new RegistryImpl(regPort);
+                    }
+                }, getAccessControlContext(regPort));
+        } catch (PrivilegedActionException ex) {
+            throw (RemoteException) ex.getException();
+        }
 
-            /*
-             * Fix bugid 4242317: Classes defined by this class loader should
-             * be annotated with the value of the "java.rmi.server.codebase"
-             * property, not the "file:" URLs for the CLASSPATH elements.
-             */
-            sun.rmi.server.LoaderHandler.registerCodebaseLoader(cl);
+        return registryImpl;
+    }
 
-            Thread.currentThread().setContextClassLoader(cl);
-
+    /**
+     * Main program to start a registry. <br>
+     * The port number can be specified on the command line.
+     */
+    public static void main(String args[])
+    {
+        try {
             final int regPort = (args.length >= 1) ? Integer.parseInt(args[0])
                                                    : Registry.REGISTRY_PORT;
-            try {
-                registry = AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<RegistryImpl>() {
-                        public RegistryImpl run() throws RemoteException {
-                            return new RegistryImpl(regPort);
-                        }
-                    }, getAccessControlContext(regPort));
-            } catch (PrivilegedActionException ex) {
-                throw (RemoteException) ex.getException();
-            }
+
+            registry = createRegistry(regPort);
 
             // prevent registry from exiting
             while (true) {

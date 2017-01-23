@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -209,7 +210,7 @@ public class PublicMethodsTest {
     /**
      * compile expanded template into a ClassLoader that sees compiled classes
      */
-    static ClassLoader compile(String source) throws CompileException {
+    static TestClassLoader compile(String source) throws CompileException {
         JavaCompiler javac = ToolProvider.getSystemJavaCompiler();
         if (javac == null) {
             throw new AssertionError("No Java compiler tool found.");
@@ -367,7 +368,7 @@ public class PublicMethodsTest {
         }
     }
 
-    static class TestClassLoader extends ClassLoader {
+    static class TestClassLoader extends ClassLoader implements Closeable {
         private final TestFileManager fileManager;
 
         public TestClassLoader(ClassLoader parent, TestFileManager fileManager) {
@@ -382,6 +383,11 @@ public class PublicMethodsTest {
                 throw new ClassNotFoundException(name);
             }
             return defineClass(name, classBytes, 0, classBytes.length);
+        }
+
+        @Override
+        public void close() throws IOException {
+            fileManager.close();
         }
     }
 
@@ -424,18 +430,21 @@ public class PublicMethodsTest {
         return combinations(c)
             .flatMap(comb -> {
                 String src = expandTemplate(c, comb);
-                ClassLoader cl;
                 try {
-                    cl = compile(src);
-                } catch (CompileException e) {
-                    // ignore uncompilable combinations
-                    return Stream.empty();
+                    try (TestClassLoader cl = compile(src)) {
+                        // compilation was successful -> generate result
+                        return Stream.of(Map.entry(
+                            comb,
+                            generateResult(c, cl)
+                        ));
+                    } catch (CompileException e) {
+                        // ignore uncompilable combinations
+                        return Stream.empty();
+                    }
+                } catch (IOException ioe) {
+                    // from TestClassLoader.close()
+                    throw new UncheckedIOException(ioe);
                 }
-                // compilation was successful -> generate result
-                return Stream.of(Map.entry(
-                    comb,
-                    generateResult(c, cl)
-                ));
             });
     }
 
@@ -500,15 +509,20 @@ public class PublicMethodsTest {
                 Map<String, String> expected = exp.getValue();
 
                 String src = expandTemplate(c, comb);
-                ClassLoader cl;
+                Map<String, String> actual;
                 try {
-                    cl = compile(src);
-                } catch (CompileException ce) {
+                    try (TestClassLoader cl = compile(src)) {
+                        actual = generateResult(c, cl);
+                    } catch (CompileException ce) {
+                        return Stream.of(src + "\n" +
+                                         "got compilation error: " + ce);
+                    }
+                } catch (IOException ioe) {
+                    // from TestClassLoader.close()
                     return Stream.of(src + "\n" +
-                                     "got compilation error: " + ce);
+                                     "got IOException: " + ioe);
                 }
 
-                Map<String, String> actual = generateResult(c, cl);
                 if (actual.equals(expected)) {
                     return Stream.empty();
                 } else {

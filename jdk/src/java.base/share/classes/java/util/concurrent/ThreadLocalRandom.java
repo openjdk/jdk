@@ -985,34 +985,6 @@ public class ThreadLocalRandom extends Random {
         U.putObjectRelease(thread, INHERITEDACCESSCONTROLCONTEXT, acc);
     }
 
-    /**
-     * Returns a new group with the system ThreadGroup (the
-     * topmost, parent-less group) as parent.  Uses Unsafe to
-     * traverse Thread.group and ThreadGroup.parent fields.
-     */
-    static final ThreadGroup createThreadGroup(String name) {
-        if (name == null)
-            throw new NullPointerException();
-        try {
-            long tg = U.objectFieldOffset
-                (Thread.class.getDeclaredField("group"));
-            long gp = U.objectFieldOffset
-                (ThreadGroup.class.getDeclaredField("parent"));
-            ThreadGroup group = (ThreadGroup)
-                U.getObject(Thread.currentThread(), tg);
-            while (group != null) {
-                ThreadGroup parent = (ThreadGroup)U.getObject(group, gp);
-                if (parent == null)
-                    return new ThreadGroup(group, name);
-                group = parent;
-            }
-        } catch (ReflectiveOperationException e) {
-            throw new Error(e);
-        }
-        // fall through if null as cannot-happen safeguard
-        throw new Error("Cannot create ThreadGroup");
-    }
-
     // Serialization support
 
     private static final long serialVersionUID = -5851777807851030925L;
@@ -1087,17 +1059,17 @@ public class ThreadLocalRandom extends Random {
     static {
         try {
             SEED = U.objectFieldOffset
-                (Thread.class.getDeclaredField("threadLocalRandomSeed"));
+                    (Thread.class.getDeclaredField("threadLocalRandomSeed"));
             PROBE = U.objectFieldOffset
-                (Thread.class.getDeclaredField("threadLocalRandomProbe"));
+                    (Thread.class.getDeclaredField("threadLocalRandomProbe"));
             SECONDARY = U.objectFieldOffset
-                (Thread.class.getDeclaredField("threadLocalRandomSecondarySeed"));
+                    (Thread.class.getDeclaredField("threadLocalRandomSecondarySeed"));
             THREADLOCALS = U.objectFieldOffset
-                (Thread.class.getDeclaredField("threadLocals"));
+                    (Thread.class.getDeclaredField("threadLocals"));
             INHERITABLETHREADLOCALS = U.objectFieldOffset
-                (Thread.class.getDeclaredField("inheritableThreadLocals"));
+                    (Thread.class.getDeclaredField("inheritableThreadLocals"));
             INHERITEDACCESSCONTROLCONTEXT = U.objectFieldOffset
-                (Thread.class.getDeclaredField("inheritedAccessControlContext"));
+                    (Thread.class.getDeclaredField("inheritedAccessControlContext"));
         } catch (ReflectiveOperationException e) {
             throw new Error(e);
         }
@@ -1123,7 +1095,7 @@ public class ThreadLocalRandom extends Random {
     // at end of <clinit> to survive static initialization circularity
     static {
         if (java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Boolean>() {
+            new java.security.PrivilegedAction<>() {
                 public Boolean run() {
                     return Boolean.getBoolean("java.util.secureRandomSeed");
                 }})) {

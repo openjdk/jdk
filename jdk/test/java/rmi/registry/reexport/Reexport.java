@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  *          java.rmi/sun.rmi.server
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
- * @build TestLibrary REGISTRY RegistryRunner
+ * @build TestLibrary RegistryVM RegistryRunner
  * @run main/othervm Reexport
  */
 
@@ -114,7 +114,7 @@ public class Reexport {
 
     public static void makeRegistry() {
         try {
-            subreg = REGISTRY.createREGISTRY();
+            subreg = RegistryVM.createRegistryVM();
             subreg.start();
             port = subreg.getPort();
             System.out.println("Starting registry on port " + port);
@@ -125,12 +125,12 @@ public class Reexport {
         }
     }
 
-    private static REGISTRY subreg = null;
+    private static RegistryVM subreg = null;
     private static int port = -1;
 
     public static void killRegistry() {
         if (subreg != null) {
-            subreg.shutdown();
+            subreg.cleanup();
             subreg = null;
         }
     }

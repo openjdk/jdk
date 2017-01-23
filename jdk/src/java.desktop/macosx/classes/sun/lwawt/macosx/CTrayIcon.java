@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,10 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
             }
         }
 
-        return checkAndCreatePopupPeer().getModel();
+        // This method is executed on Appkit, so if ptr is not zero means that,
+        // it is still not deallocated(even if we call NSApp postRunnableEvent)
+        // and sent CFRelease to the native queue
+        return checkAndCreatePopupPeer().ptr;
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.logging.Level;
+import java.lang.System.Logger.Level;
 
 /**
  * This class is used for parsing URLs.
@@ -153,7 +153,6 @@ class MLetParser {
      * Scan an html file for {@literal <mlet>} tags.
      */
     public List<MLetContent> parse(URL url) throws IOException {
-        String mth = "parse";
         // Warning Messages
         String requiresTypeWarning = "<arg type=... value=...> tag requires type parameter.";
         String requiresValueWarning = "<arg type=... value=...> tag requires value parameter.";
@@ -204,33 +203,25 @@ class MLetParser {
                         Map<String,String> t = scanTag(in);
                         String att = t.get("type");
                         if (att == null) {
-                            MLET_LOGGER.logp(Level.FINER,
-                                    MLetParser.class.getName(),
-                                    mth, requiresTypeWarning);
+                            MLET_LOGGER.log(Level.TRACE, requiresTypeWarning);
                             throw new IOException(requiresTypeWarning);
                         } else {
                             if (atts != null) {
                                 types.add(att);
                             } else {
-                                MLET_LOGGER.logp(Level.FINER,
-                                        MLetParser.class.getName(),
-                                        mth, paramOutsideWarning);
+                                MLET_LOGGER.log(Level.TRACE, paramOutsideWarning);
                                 throw new IOException(paramOutsideWarning);
                             }
                         }
                         String val = t.get("value");
                         if (val == null) {
-                            MLET_LOGGER.logp(Level.FINER,
-                                    MLetParser.class.getName(),
-                                    mth, requiresValueWarning);
+                            MLET_LOGGER.log(Level.TRACE, requiresValueWarning);
                             throw new IOException(requiresValueWarning);
                         } else {
                             if (atts != null) {
                                 values.add(val);
                             } else {
-                                MLET_LOGGER.logp(Level.FINER,
-                                        MLetParser.class.getName(),
-                                        mth, paramOutsideWarning);
+                                MLET_LOGGER.log(Level.TRACE, paramOutsideWarning);
                                 throw new IOException(paramOutsideWarning);
                             }
                         }
@@ -238,15 +229,11 @@ class MLetParser {
                         if (nm.equalsIgnoreCase(tag)) {
                             atts = scanTag(in);
                             if (atts.get("code") == null && atts.get("object") == null) {
-                                MLET_LOGGER.logp(Level.FINER,
-                                        MLetParser.class.getName(),
-                                        mth, requiresCodeWarning);
+                                MLET_LOGGER.log(Level.TRACE, requiresCodeWarning);
                                 throw new IOException(requiresCodeWarning);
                             }
                             if (atts.get("archive") == null) {
-                                MLET_LOGGER.logp(Level.FINER,
-                                        MLetParser.class.getName(),
-                                        mth, requiresJarsWarning);
+                                MLET_LOGGER.log(Level.TRACE, requiresJarsWarning);
                                 throw new IOException(requiresJarsWarning);
                             }
                         }

@@ -137,21 +137,6 @@ public class StreamingExecutionControl implements ExecutionControl {
     }
 
     @Override
-    public void setClasspath(String path)
-            throws EngineTerminationException, InternalException {
-        try {
-            // Send the classpath addition command to the remote agent.
-            writeCommand(CMD_SET_CLASSPATH);
-            out.writeUTF(path);
-            out.flush();
-            // Retrieve and report results from the remote agent.
-            readAndReportClassSimpleResult();
-        } catch (IOException ex) {
-            throw new EngineTerminationException("Exception writing remote set classpath: " + ex);
-        }
-    }
-
-    @Override
     public void stop()
             throws EngineTerminationException, InternalException {
         try {

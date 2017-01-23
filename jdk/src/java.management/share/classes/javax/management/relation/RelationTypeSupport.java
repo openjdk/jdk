@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
+import java.lang.System.Logger.Level;
 
 /**
  * A RelationTypeSupport object implements the RelationType interface.
@@ -173,15 +173,13 @@ public class RelationTypeSupport implements RelationType {
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationTypeSupport.class.getName(),
-                "RelationTypeSupport", relationTypeName);
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0}", relationTypeName);
 
         // Can throw InvalidRelationTypeException, ClassNotFoundException
         // and NotCompliantMBeanException
         initMembers(relationTypeName, roleInfoArray);
 
-        RELATION_LOGGER.exiting(RelationTypeSupport.class.getName(),
-                "RelationTypeSupport");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
     }
 
@@ -199,13 +197,11 @@ public class RelationTypeSupport implements RelationType {
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationTypeSupport.class.getName(),
-                "RelationTypeSupport", relationTypeName);
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0}", relationTypeName);
 
         typeName = relationTypeName;
 
-        RELATION_LOGGER.exiting(RelationTypeSupport.class.getName(),
-                "RelationTypeSupport");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
     }
 
@@ -251,8 +247,7 @@ public class RelationTypeSupport implements RelationType {
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationTypeSupport.class.getName(),
-                "getRoleInfo", roleInfoName);
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0}", roleInfoName);
 
         // No null RoleInfo allowed, so use get()
         RoleInfo result = roleName2InfoMap.get(roleInfoName);
@@ -265,8 +260,7 @@ public class RelationTypeSupport implements RelationType {
             throw new RoleInfoNotFoundException(excMsgStrB.toString());
         }
 
-        RELATION_LOGGER.exiting(RelationTypeSupport.class.getName(),
-                "getRoleInfo");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return result;
     }
 
@@ -297,8 +291,7 @@ public class RelationTypeSupport implements RelationType {
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationTypeSupport.class.getName(),
-                "addRoleInfo", roleInfo);
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0}", roleInfo);
 
         if (isInRelationService) {
             // Trying to update a declared relation type
@@ -319,8 +312,7 @@ public class RelationTypeSupport implements RelationType {
 
         roleName2InfoMap.put(roleName, new RoleInfo(roleInfo));
 
-        RELATION_LOGGER.exiting(RelationTypeSupport.class.getName(),
-                "addRoleInfo");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
     }
 
@@ -351,8 +343,7 @@ public class RelationTypeSupport implements RelationType {
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(RelationTypeSupport.class.getName(),
-                "initMembers", relationTypeName);
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0}", relationTypeName);
 
         typeName = relationTypeName;
 
@@ -366,8 +357,7 @@ public class RelationTypeSupport implements RelationType {
                                  new RoleInfo(currRoleInfo));
         }
 
-        RELATION_LOGGER.exiting(RelationTypeSupport.class.getName(),
-                "initMembers");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
     }
 

@@ -23,13 +23,13 @@
 
 /*
  * @test
- * @bug 8142968 8166568 8166286 8170618
+ * @bug 8142968 8166568 8166286 8170618 8168149
  * @summary Basic test for jmod
  * @library /lib/testlibrary
  * @modules jdk.compiler
  *          jdk.jlink
  * @build jdk.testlibrary.FileUtils CompilerUtils
- * @run testng JmodTest
+ * @run testng/othervm -Djava.io.tmpdir=. JmodTest
  */
 
 import java.io.*;
@@ -40,6 +40,7 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.spi.ToolProvider;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.testlibrary.FileUtils;
 import org.testng.annotations.BeforeTest;
@@ -459,6 +460,76 @@ public class JmodTest {
     }
 
     @Test
+    public void testLastOneWins() throws IOException {
+        Path workDir = Paths.get("lastOneWins");
+        if (Files.exists(workDir))
+            FileUtils.deleteFileTreeWithRetry(workDir);
+        Files.createDirectory(workDir);
+        Path jmod = MODS_DIR.resolve("lastOneWins.jmod");
+        FileUtils.deleteFileIfExistsWithRetry(jmod);
+        Path cp = EXPLODED_DIR.resolve("foo").resolve("classes");
+        Path bp = EXPLODED_DIR.resolve("foo").resolve("bin");
+        Path lp = EXPLODED_DIR.resolve("foo").resolve("lib");
+        Path cf = EXPLODED_DIR.resolve("foo").resolve("conf");
+
+        Path shouldNotBeAdded = workDir.resolve("shouldNotBeAdded");
+        Files.createDirectory(shouldNotBeAdded);
+        Files.write(shouldNotBeAdded.resolve("aFile"), "hello".getBytes(UTF_8));
+
+        // Pairs of options. For options with required arguments the last one
+        // should win ( first should be effectively ignored, but may still be
+        // validated ).
+        jmod("create",
+             "--conf", shouldNotBeAdded.toString(),
+             "--conf", cf.toString(),
+             "--cmds", shouldNotBeAdded.toString(),
+             "--cmds", bp.toString(),
+             "--libs", shouldNotBeAdded.toString(),
+             "--libs", lp.toString(),
+             "--class-path", shouldNotBeAdded.toString(),
+             "--class-path", cp.toString(),
+             "--main-class", "does.NotExist",
+             "--main-class", "jdk.test.foo.Foo",
+             "--module-version", "00001",
+             "--module-version", "5.4.3",
+             "--do-not-resolve-by-default",
+             "--do-not-resolve-by-default",
+             "--warn-if-resolved=incubating",
+             "--warn-if-resolved=deprecated",
+             MODS_DIR.resolve("lastOneWins.jmod").toString())
+            .assertSuccess()
+            .resultChecker(r -> {
+                ModuleDescriptor md = getModuleDescriptor(jmod);
+                Optional<String> omc = md.mainClass();
+                assertTrue(omc.isPresent());
+                assertEquals(omc.get(), "jdk.test.foo.Foo");
+                Optional<Version> ov = md.version();
+                assertTrue(ov.isPresent());
+                assertEquals(ov.get().toString(), "5.4.3");
+
+                try (Stream<String> s1 = findFiles(lp).map(p -> LIBS_PREFIX + p);
+                     Stream<String> s2 = findFiles(cp).map(p -> CLASSES_PREFIX + p);
+                     Stream<String> s3 = findFiles(bp).map(p -> CMDS_PREFIX + p);
+                     Stream<String> s4 = findFiles(cf).map(p -> CONFIGS_PREFIX + p)) {
+                    Set<String> expectedFilenames = Stream.concat(Stream.concat(s1,s2),
+                                                                  Stream.concat(s3, s4))
+                                                          .collect(toSet());
+                    assertJmodContent(jmod, expectedFilenames);
+                }
+            });
+
+        jmod("extract",
+             "--dir", "blah",
+             "--dir", "lastOneWinsExtractDir",
+             jmod.toString())
+            .assertSuccess()
+            .resultChecker(r -> {
+                assertTrue(Files.exists(Paths.get("lastOneWinsExtractDir")));
+                assertTrue(Files.notExists(Paths.get("blah")));
+            });
+    }
+
+    @Test
     public void testPackagesAttribute() throws IOException {
         Path jmod = MODS_DIR.resolve("foo.jmod");
         FileUtils.deleteFileIfExistsWithRetry(jmod);
@@ -510,34 +581,13 @@ public class JmodTest {
     }
 
     @Test
-    public void testTmpFileAlreadyExists() throws IOException {
-        // Implementation detail: jmod tool creates <jmod-file>.tmp
-        // Ensure that there are no problems if existing
-
-        Path jmod = MODS_DIR.resolve("testTmpFileAlreadyExists.jmod");
-        Path tmp = MODS_DIR.resolve("testTmpFileAlreadyExists.jmod.tmp");
-        FileUtils.deleteFileIfExistsWithRetry(jmod);
-        FileUtils.deleteFileIfExistsWithRetry(tmp);
-        Files.createFile(tmp);
-        String cp = EXPLODED_DIR.resolve("foo").resolve("classes").toString();
-
-        jmod("create",
-             "--class-path", cp,
-             jmod.toString())
-            .assertSuccess()
-            .resultChecker(r ->
-                assertTrue(Files.notExists(tmp), "Unexpected tmp file:" + tmp)
-            );
-    }
-
-    @Test
     public void testTmpFileRemoved() throws IOException {
         // Implementation detail: jmod tool creates <jmod-file>.tmp
         // Ensure that it is removed in the event of a failure.
         // The failure in this case is a class in the unnamed package.
 
         Path jmod = MODS_DIR.resolve("testTmpFileRemoved.jmod");
-        Path tmp = MODS_DIR.resolve("testTmpFileRemoved.jmod.tmp");
+        Path tmp = MODS_DIR.resolve(".testTmpFileRemoved.jmod.tmp");
         FileUtils.deleteFileIfExistsWithRetry(jmod);
         FileUtils.deleteFileIfExistsWithRetry(tmp);
         String cp = EXPLODED_DIR.resolve("foo").resolve("classes") + File.pathSeparator +
@@ -547,11 +597,11 @@ public class JmodTest {
         jmod("create",
              "--class-path", cp,
              jmod.toString())
-             .assertFailure()
-             .resultChecker(r -> {
-                 assertContains(r.output, "unnamed package");
-                 assertTrue(Files.notExists(tmp), "Unexpected tmp file:" + tmp);
-             });
+            .assertFailure()
+            .resultChecker(r -> {
+                assertContains(r.output, "unnamed package");
+                assertTrue(Files.notExists(tmp), "Unexpected tmp file:" + tmp);
+            });
     }
 
     // ---

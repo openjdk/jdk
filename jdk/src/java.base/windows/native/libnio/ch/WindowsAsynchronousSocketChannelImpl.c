@@ -88,26 +88,21 @@ JNIEXPORT jint JNICALL
 Java_sun_nio_ch_WindowsAsynchronousSocketChannelImpl_connect0(JNIEnv* env, jclass this,
     jlong socket, jboolean preferIPv6, jobject iao, jint port, jlong ov)
 {
-    SOCKET s = (SOCKET) jlong_to_ptr(socket);
-    OVERLAPPED* lpOverlapped = (OVERLAPPED*) jlong_to_ptr(ov);
+    SOCKET s = (SOCKET)jlong_to_ptr(socket);
+    OVERLAPPED *lpOverlapped = (OVERLAPPED *)jlong_to_ptr(ov);
 
     SOCKETADDRESS sa;
-    int sa_len;
+    int sa_len = 0;
     BOOL res;
 
-    if (NET_InetAddressToSockaddr(env, iao, port, (struct sockaddr *)&sa, &sa_len, preferIPv6) != 0) {
+    if (NET_InetAddressToSockaddr(env, iao, port, &sa, &sa_len,
+                                  preferIPv6) != 0) {
         return IOS_THROWN;
     }
 
     ZeroMemory((PVOID)lpOverlapped, sizeof(OVERLAPPED));
 
-    res = (*ConnectEx_func)(s,
-                            (struct sockaddr *)&sa,
-                            sa_len,
-                            NULL,
-                            0,
-                            NULL,
-                            lpOverlapped);
+    res = (*ConnectEx_func)(s, &sa.sa, sa_len, NULL, 0, NULL, lpOverlapped);
     if (res == 0) {
         int error = GetLastError();
         if (error == ERROR_IO_PENDING) {

@@ -20,6 +20,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+/*
+ *
+ * @test
+ * @modules jdk.localedata
+ */
+
 package test.java.time.format;
 
 import static org.testng.Assert.assertEquals;

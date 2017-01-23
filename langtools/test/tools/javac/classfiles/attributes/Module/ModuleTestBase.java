@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@ import com.sun.tools.classfile.ClassFile;
 import com.sun.tools.classfile.ConstantPool;
 import com.sun.tools.classfile.ConstantPoolException;
 import com.sun.tools.classfile.Module_attribute;
-import com.sun.tools.javac.util.Pair;
 
 import java.io.IOException;
 import java.lang.annotation.Retention;
@@ -36,11 +35,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -74,20 +73,30 @@ public class ModuleTestBase {
         ClassFile classFile = ClassFile.read(modulePath.resolve("module-info.class"));
         Module_attribute moduleAttribute = (Module_attribute) classFile.getAttribute("Module");
         ConstantPool constantPool = classFile.constant_pool;
-
+        testModuleName(moduleDescriptor, moduleAttribute, constantPool);
+        testModuleFlags(moduleDescriptor, moduleAttribute);
         testRequires(moduleDescriptor, moduleAttribute, constantPool);
         testExports(moduleDescriptor, moduleAttribute, constantPool);
+        testOpens(moduleDescriptor, moduleAttribute, constantPool);
         testProvides(moduleDescriptor, moduleAttribute, constantPool);
         testUses(moduleDescriptor, moduleAttribute, constantPool);
+    }
+
+    private void testModuleName(ModuleDescriptor moduleDescriptor, Module_attribute module, ConstantPool constantPool) throws ConstantPoolException {
+        tr.checkEquals(constantPool.getModuleInfo(module.module_name).getName(), moduleDescriptor.name, "Unexpected module name");
+    }
+
+    private void testModuleFlags(ModuleDescriptor moduleDescriptor, Module_attribute module) {
+        tr.checkEquals(module.module_flags, moduleDescriptor.flags, "Unexpected module flags");
     }
 
     private void testRequires(ModuleDescriptor moduleDescriptor, Module_attribute module, ConstantPool constantPool) throws ConstantPoolException {
         tr.checkEquals(module.requires_count, moduleDescriptor.requires.size(), "Wrong amount of requires.");
 
-        List<Pair<String, Integer>> actualRequires = new ArrayList<>();
+        List<Requires> actualRequires = new ArrayList<>();
         for (Module_attribute.RequiresEntry require : module.requires) {
-            actualRequires.add(Pair.of(
-                    require.getRequires(constantPool).replace('/', '.'),
+            actualRequires.add(new Requires(
+                    require.getRequires(constantPool),
                     require.requires_flags));
         }
         tr.checkContains(actualRequires, moduleDescriptor.requires, "Lists of requires don't match");
@@ -104,9 +113,27 @@ public class ModuleTestBase {
                 tr.checkEquals(export.exports_to_count, expectedTo.size(), "Wrong amount of exports to");
                 List<String> actualTo = new ArrayList<>();
                 for (int toIdx : export.exports_to_index) {
-                    actualTo.add(constantPool.getModuleInfo(toIdx).getName().replace('/', '.'));
+                    actualTo.add(constantPool.getModuleInfo(toIdx).getName());
                 }
                 tr.checkContains(actualTo, expectedTo, "Lists of \"exports to\" don't match.");
+            }
+        }
+    }
+
+    private void testOpens(ModuleDescriptor moduleDescriptor, Module_attribute module, ConstantPool constantPool) throws ConstantPoolException {
+        tr.checkEquals(module.opens_count, moduleDescriptor.opens.size(), "Wrong amount of opens.");
+        for (Module_attribute.OpensEntry open : module.opens) {
+            String pkg = constantPool.getPackageInfo(open.opens_index).getName();
+            if (tr.checkTrue(moduleDescriptor.opens.containsKey(pkg), "Unexpected open " + pkg)) {
+                Open expectedOpen = moduleDescriptor.opens.get(pkg);
+                tr.checkEquals(expectedOpen.mask, open.opens_flags, "Wrong open flags");
+                List<String> expectedTo = expectedOpen.to;
+                tr.checkEquals(open.opens_to_count, expectedTo.size(), "Wrong amount of opens to");
+                List<String> actualTo = new ArrayList<>();
+                for (int toIdx : open.opens_to_index) {
+                    actualTo.add(constantPool.getModuleInfo(toIdx).getName());
+                }
+                tr.checkContains(actualTo, expectedTo, "Lists of \"opens to\" don't match.");
             }
         }
     }
@@ -115,7 +142,7 @@ public class ModuleTestBase {
         tr.checkEquals(module.uses_count, moduleDescriptor.uses.size(), "Wrong amount of uses.");
         List<String> actualUses = new ArrayList<>();
         for (int usesIdx : module.uses_index) {
-            String uses = constantPool.getClassInfo(usesIdx).getBaseName().replace('/', '.');
+            String uses = constantPool.getClassInfo(usesIdx).getBaseName();
             actualUses.add(uses);
         }
         tr.checkContains(actualUses, moduleDescriptor.uses, "Lists of uses don't match");
@@ -131,10 +158,10 @@ public class ModuleTestBase {
         tr.checkEquals(moduleProvidesCount, moduleDescriptorProvidesCount, "Wrong amount of provides.");
         Map<String, List<String>> actualProvides = new HashMap<>();
         for (Module_attribute.ProvidesEntry provide : module.provides) {
-            String provides = constantPool.getClassInfo(provide.provides_index).getBaseName().replace('/', '.');
+            String provides = constantPool.getClassInfo(provide.provides_index).getBaseName();
             List<String> impls = new ArrayList<>();
             for (int i = 0; i < provide.with_count; i++) {
-                String with = constantPool.getClassInfo(provide.with_index[i]).getBaseName().replace('/', '.');
+                String with = constantPool.getClassInfo(provide.with_index[i]).getBaseName();
                 impls.add(with);
             }
             actualProvides.put(provides, impls);
@@ -163,9 +190,27 @@ public class ModuleTestBase {
         int getMask();
     }
 
+    public enum ModuleFlag implements Mask {
+        OPEN("open", Module_attribute.ACC_OPEN);
+
+        private final String token;
+        private final int mask;
+
+        ModuleFlag(String token, int mask) {
+            this.token = token;
+            this.mask = mask;
+        }
+
+        @Override
+        public int getMask() {
+            return mask;
+        }
+    }
+
     public enum RequiresFlag implements Mask {
         TRANSITIVE("transitive", Module_attribute.ACC_TRANSITIVE),
-        STATIC("static", Module_attribute.ACC_STATIC_PHASE);
+        STATIC("static", Module_attribute.ACC_STATIC_PHASE),
+        MANDATED("", Module_attribute.ACC_MANDATED);
 
         private final String token;
         private final int mask;
@@ -181,13 +226,30 @@ public class ModuleTestBase {
         }
     }
 
-    public enum ExportFlag implements Mask {
+    public enum ExportsFlag implements Mask {
         SYNTHETIC("", Module_attribute.ACC_SYNTHETIC);
 
         private final String token;
         private final int mask;
 
-        ExportFlag(String token, int mask) {
+        ExportsFlag(String token, int mask) {
+            this.token = token;
+            this.mask = mask;
+        }
+
+        @Override
+        public int getMask() {
+            return mask;
+        }
+    }
+
+    public enum OpensFlag implements Mask {
+        SYNTHETIC("", Module_attribute.ACC_SYNTHETIC);
+
+        private final String token;
+        private final int mask;
+
+        OpensFlag(String token, int mask) {
             this.token = token;
             this.mask = mask;
         }
@@ -199,27 +261,64 @@ public class ModuleTestBase {
     }
 
     private class Export {
-        String pkg;
-        int mask;
-        List<String> to = new ArrayList<>();
+        private final String pkg;
+        private final int mask;
+        private final List<String> to = new ArrayList<>();
 
-        public Export(String pkg, int mask) {
+        Export(String pkg, int mask) {
             this.pkg = pkg;
             this.mask = mask;
+        }
+    }
+
+    private class Open {
+        private final String pkg;
+        private final int mask;
+        private final List<String> to = new ArrayList<>();
+
+        Open(String pkg, int mask) {
+            this.pkg = pkg;
+            this.mask = mask;
+        }
+    }
+
+    private class Requires {
+        private final String module;
+        private final int mask;
+
+        Requires(String module, int mask) {
+            this.module = module;
+            this.mask = mask;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Requires requires = (Requires) o;
+            return mask == requires.mask &&
+                    Objects.equals(module, requires.module);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(module, mask);
         }
     }
 
     protected class ModuleDescriptor {
 
         private final String name;
-        //pair is name of module and flag(public,mandated,synthetic)
-        private final List<Pair<String, Integer>> requires = new ArrayList<>();
+        private final int flags;
+
+        private final List<Requires> requires = new ArrayList<>();
 
         {
-            requires.add(new Pair<>("java.base", Module_attribute.ACC_MANDATED));
+            requires.add(new Requires("java.base", computeMask(RequiresFlag.MANDATED)));
         }
 
         private final Map<String, Export> exports = new HashMap<>();
+        private final Map<String, Open> opens = new HashMap<>();
 
         //List of service and implementation
         private final Map<String, List<String>> provides = new LinkedHashMap<>();
@@ -227,22 +326,26 @@ public class ModuleTestBase {
 
         private static final String LINE_END = ";\n";
 
-        StringBuilder content = new StringBuilder("module ");
+        StringBuilder content = new StringBuilder("");
 
-        public ModuleDescriptor(String moduleName) {
+        public ModuleDescriptor(String moduleName, ModuleFlag... flags) {
             this.name = moduleName;
-            content.append(name).append('{').append('\n');
+            this.flags = computeMask(flags);
+            for (ModuleFlag flag : flags) {
+                content.append(flag.token).append(" ");
+            }
+            content.append("module ").append(moduleName).append('{').append('\n');
         }
 
         public ModuleDescriptor requires(String module) {
-            this.requires.add(Pair.of(module, 0));
+            this.requires.add(new Requires(module, 0));
             content.append("    requires ").append(module).append(LINE_END);
 
             return this;
         }
 
         public ModuleDescriptor requires(String module, RequiresFlag... flags) {
-            this.requires.add(new Pair<>(module, computeMask(flags)));
+            this.requires.add(new Requires(module, computeMask(flags)));
 
             content.append("    requires ");
             for (RequiresFlag flag : flags) {
@@ -253,26 +356,52 @@ public class ModuleTestBase {
             return this;
         }
 
-        public ModuleDescriptor exports(String pkg, ExportFlag... flags) {
-            this.exports.putIfAbsent(pkg, new Export(pkg, computeMask(flags)));
+        public ModuleDescriptor exports(String pkg, ExportsFlag... flags) {
+            this.exports.put(toInternalForm(pkg), new Export(toInternalForm(pkg), computeMask(flags)));
             content.append("    exports ");
-            for (ExportFlag flag : flags) {
+            for (ExportsFlag flag : flags) {
                 content.append(flag.token).append(" ");
             }
             content.append(pkg).append(LINE_END);
             return this;
         }
 
-        public ModuleDescriptor exportsTo(String pkg, String to, ExportFlag... flags) {
+        public ModuleDescriptor exportsTo(String pkg, String to, ExportsFlag... flags) {
             List<String> tos = Pattern.compile(",")
                     .splitAsStream(to)
                     .map(String::trim)
                     .collect(Collectors.toList());
-            this.exports.computeIfAbsent(pkg, k -> new Export(pkg, computeMask(flags)))
+            this.exports.compute(toInternalForm(pkg), (k,v) -> new Export(k, computeMask(flags)))
                     .to.addAll(tos);
 
             content.append("    exports ");
-            for (ExportFlag flag : flags) {
+            for (ExportsFlag flag : flags) {
+                content.append(flag.token).append(" ");
+            }
+            content.append(pkg).append(" to ").append(to).append(LINE_END);
+            return this;
+        }
+
+        public ModuleDescriptor opens(String pkg, OpensFlag... flags) {
+            this.opens.put(toInternalForm(pkg), new Open(toInternalForm(pkg), computeMask(flags)));
+            content.append("    opens ");
+            for (OpensFlag flag : flags) {
+                content.append(flag.token).append(" ");
+            }
+            content.append(pkg).append(LINE_END);
+            return this;
+        }
+
+        public ModuleDescriptor opensTo(String pkg, String to, OpensFlag... flags) {
+            List<String> tos = Pattern.compile(",")
+                    .splitAsStream(to)
+                    .map(String::trim)
+                    .collect(Collectors.toList());
+            this.opens.compute(toInternalForm(pkg), (k,v) -> new Open(toInternalForm(k), computeMask(flags)))
+                    .to.addAll(tos);
+
+            content.append("    opens ");
+            for (OpensFlag flag : flags) {
                 content.append(flag.token).append(" ");
             }
             content.append(pkg).append(" to ").append(to).append(LINE_END);
@@ -280,7 +409,10 @@ public class ModuleTestBase {
         }
 
         public ModuleDescriptor provides(String provides, String... with) {
-            this.provides.put(provides, Arrays.asList(with));
+            List<String> impls = Arrays.stream(with)
+                    .map(this::toInternalForm)
+                    .collect(Collectors.toList());
+            this.provides.put(toInternalForm(provides), impls);
             content.append("    provides ")
                     .append(provides)
                     .append(" with ")
@@ -290,8 +422,8 @@ public class ModuleTestBase {
         }
 
         public ModuleDescriptor uses(String... uses) {
-            Collections.addAll(this.uses, uses);
             for (String use : uses) {
+                this.uses.add(toInternalForm(use));
                 content.append("    uses ").append(use).append(LINE_END);
             }
             return this;
@@ -305,7 +437,11 @@ public class ModuleTestBase {
             return this;
         }
 
-        private int computeMask(Mask[] masks) {
+        private String toInternalForm(String name) {
+            return name.replace('.', '/');
+        }
+
+        private int computeMask(Mask... masks) {
             return Arrays.stream(masks)
                     .map(Mask::getMask)
                     .reduce((a, b) -> a | b)

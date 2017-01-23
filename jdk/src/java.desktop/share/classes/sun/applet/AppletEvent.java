@@ -32,8 +32,13 @@ import java.util.EventObject;
  * AppletEvent class.
  *
  * @author  Sunita Mani
+ *
+ * @deprecated The Applet API is deprecated. See the
+ * <a href="../../java/applet/package-summary.html"> java.applet package
+ * documentation</a> for further information.
  */
 @SuppressWarnings("serial") // JDK-implementation class
+@Deprecated(since = "9")
 public class AppletEvent extends EventObject {
 
     private Object arg;

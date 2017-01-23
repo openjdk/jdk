@@ -298,111 +298,24 @@ keystore.type.compat=true
 
 #
 # List of comma-separated packages that start with or equal this string
-# will cause a security exception to be thrown when
-# passed to checkPackageAccess unless the
-# corresponding RuntimePermission ("accessClassInPackage."+package) has
-# been granted.
-package.access=sun.,\
-               com.sun.xml.internal.,\
-               com.sun.imageio.,\
-               com.sun.istack.internal.,\
-               com.sun.jmx.,\
-               com.sun.media.sound.,\
-               com.sun.naming.internal.,\
-               com.sun.proxy.,\
-               com.sun.corba.se.,\
-               com.sun.org.apache.bcel.internal.,\
-               com.sun.org.apache.regexp.internal.,\
-               com.sun.org.apache.xerces.internal.,\
-               com.sun.org.apache.xpath.internal.,\
-               com.sun.org.apache.xalan.internal.extensions.,\
-               com.sun.org.apache.xalan.internal.lib.,\
-               com.sun.org.apache.xalan.internal.res.,\
-               com.sun.org.apache.xalan.internal.templates.,\
-               com.sun.org.apache.xalan.internal.utils.,\
-               com.sun.org.apache.xalan.internal.xslt.,\
-               com.sun.org.apache.xalan.internal.xsltc.cmdline.,\
-               com.sun.org.apache.xalan.internal.xsltc.compiler.,\
-               com.sun.org.apache.xalan.internal.xsltc.trax.,\
-               com.sun.org.apache.xalan.internal.xsltc.util.,\
-               com.sun.org.apache.xml.internal.res.,\
-               com.sun.org.apache.xml.internal.security.,\
-               com.sun.org.apache.xml.internal.serializer.dom3.,\
-               com.sun.org.apache.xml.internal.serializer.utils.,\
-               com.sun.org.apache.xml.internal.utils.,\
-               com.sun.org.glassfish.,\
-               com.sun.tools.script.,\
-               com.oracle.xmlns.internal.,\
-               com.oracle.webservices.internal.,\
-               org.jcp.xml.dsig.internal.,\
-               jdk.internal.,\
-               jdk.nashorn.internal.,\
-               jdk.nashorn.tools.,\
-               jdk.tools.jimage.,\
-               com.sun.activation.registries.,\
-               com.sun.java.accessibility.util.internal.,\
-#ifdef windows
-               com.sun.java.accessibility.internal.,\
-#endif
-#ifdef macosx
-               apple.,\
-#endif
+# will cause a security exception to be thrown when passed to the
+# SecurityManager::checkPackageAccess method unless the corresponding
+# RuntimePermission("accessClassInPackage."+package) has been granted.
+#
+package.access=sun.misc.,\
+               sun.reflect.,\
 
 #
 # List of comma-separated packages that start with or equal this string
-# will cause a security exception to be thrown when
-# passed to checkPackageDefinition unless the
-# corresponding RuntimePermission ("defineClassInPackage."+package) has
-# been granted.
+# will cause a security exception to be thrown when passed to the
+# SecurityManager::checkPackageDefinition method unless the corresponding
+# RuntimePermission("defineClassInPackage."+package) has been granted.
 #
-# by default, none of the class loaders supplied with the JDK call
+# By default, none of the class loaders supplied with the JDK call
 # checkPackageDefinition.
 #
-package.definition=sun.,\
-                   com.sun.xml.internal.,\
-                   com.sun.imageio.,\
-                   com.sun.istack.internal.,\
-                   com.sun.jmx.,\
-                   com.sun.media.sound.,\
-                   com.sun.naming.internal.,\
-                   com.sun.proxy.,\
-                   com.sun.corba.se.,\
-                   com.sun.org.apache.bcel.internal.,\
-                   com.sun.org.apache.regexp.internal.,\
-                   com.sun.org.apache.xerces.internal.,\
-                   com.sun.org.apache.xpath.internal.,\
-                   com.sun.org.apache.xalan.internal.extensions.,\
-                   com.sun.org.apache.xalan.internal.lib.,\
-                   com.sun.org.apache.xalan.internal.res.,\
-                   com.sun.org.apache.xalan.internal.templates.,\
-                   com.sun.org.apache.xalan.internal.utils.,\
-                   com.sun.org.apache.xalan.internal.xslt.,\
-                   com.sun.org.apache.xalan.internal.xsltc.cmdline.,\
-                   com.sun.org.apache.xalan.internal.xsltc.compiler.,\
-                   com.sun.org.apache.xalan.internal.xsltc.trax.,\
-                   com.sun.org.apache.xalan.internal.xsltc.util.,\
-                   com.sun.org.apache.xml.internal.res.,\
-                   com.sun.org.apache.xml.internal.security.,\
-                   com.sun.org.apache.xml.internal.serializer.dom3.,\
-                   com.sun.org.apache.xml.internal.serializer.utils.,\
-                   com.sun.org.apache.xml.internal.utils.,\
-                   com.sun.org.glassfish.,\
-                   com.sun.tools.script.,\
-                   com.oracle.xmlns.internal.,\
-                   com.oracle.webservices.internal.,\
-                   org.jcp.xml.dsig.internal.,\
-                   jdk.internal.,\
-                   jdk.nashorn.internal.,\
-                   jdk.nashorn.tools.,\
-                   jdk.tools.jimage.,\
-                   com.sun.activation.registries.,\
-                   com.sun.java.accessibility.util.internal.,\
-#ifdef windows
-                   com.sun.java.accessibility.internal.,\
-#endif
-#ifdef macosx
-                   apple.,\
-#endif
+package.definition=sun.misc.,\
+                   sun.reflect.,\
 
 #
 # Determines whether this properties file can be appended to
@@ -658,6 +571,36 @@ krb5.kdc.bad.policy = tryLast
 jdk.certpath.disabledAlgorithms=MD2, MD5, SHA1 jdkCA & denyAfter 2017-01-01, \
     RSA keySize < 1024, DSA keySize < 1024, EC keySize < 224
 
+#
+# RMI Registry Serial Filter
+#
+# The filter pattern uses the same format as jdk.serialFilter.
+# This filter can override the builtin filter if additional types need to be
+# allowed or rejected from the RMI Registry.
+#
+# Note: This property is currently used by the JDK Reference implementation.
+# It is not guaranteed to be examined and used by other implementations.
+#
+#sun.rmi.registry.registryFilter=pattern;pattern
+#
+# RMI Distributed Garbage Collector (DGC) Serial Filter
+#
+# The filter pattern uses the same format as jdk.serialFilter.
+# This filter can override the builtin filter if additional types need to be
+# allowed or rejected from the RMI DGC.
+#
+# Note: This property is currently used by the JDK Reference implementation.
+# It is not guaranteed to be examined and used by other implementations.
+#
+# The builtin DGC filter can approximately be represented as the filter pattern:
+#
+#sun.rmi.transport.dgcFilter=\
+#    java.rmi.server.ObjID;\
+#    java.rmi.server.UID;\
+#    java.rmi.dgc.VMID;\
+#    java.rmi.dgc.Lease;\
+#    maxdepth=5;maxarray=10000
+
 # Algorithm restrictions for signed JAR files
 #
 # In some environments, certain algorithms or key lengths may be undesirable
@@ -720,7 +663,7 @@ jdk.jar.disabledAlgorithms=MD2, MD5, RSA keySize < 1024, \
 # Note: The algorithm restrictions do not apply to trust anchors or
 # self-signed certificates.
 #
-# Note: This property is currently used by Oracle's JSSE implementation.
+# Note: This property is currently used by the JDK Reference implementation.
 # It is not guaranteed to be examined and used by other implementations.
 #
 # Example:
@@ -740,7 +683,7 @@ jdk.tls.disabledAlgorithms=SSLv3, RC4, MD5withRSA, DH keySize < 1024, \
 # During SSL/TLS security parameters negotiation, legacy algorithms will
 # not be negotiated unless there are no other candidates.
 #
-# The syntax of the disabled algorithm string is described as this Java
+# The syntax of the legacy algorithms string is described as this Java
 # BNF-style:
 #   LegacyAlgorithms:
 #       " LegacyAlgorithm { , LegacyAlgorithm } "
@@ -776,7 +719,7 @@ jdk.tls.disabledAlgorithms=SSLv3, RC4, MD5withRSA, DH keySize < 1024, \
 # javax.net.ssl.SSLParameters.setAlgorithmConstraints()),
 # then the algorithm is completely disabled and will not be negotiated.
 #
-# Note: This property is currently used by Oracle's JSSE implementation.
+# Note: This property is currently used by the JDK Reference implementation.
 # It is not guaranteed to be examined and used by other implementations.
 # There is no guarantee the property will continue to exist or be of the
 # same syntax in future releases.
@@ -789,7 +732,8 @@ jdk.tls.legacyAlgorithms= \
         DHE_DSS_EXPORT, DHE_RSA_EXPORT, DH_anon_EXPORT, DH_DSS_EXPORT, \
         DH_RSA_EXPORT, RSA_EXPORT, \
         DH_anon, ECDH_anon, \
-        RC4_128, RC4_40, DES_CBC, DES40_CBC
+        RC4_128, RC4_40, DES_CBC, DES40_CBC, \
+        3DES_EDE_CBC
 
 # The pre-defined default finite field Diffie-Hellman ephemeral (DHE)
 # parameters for Transport Layer Security (SSL/TLS/DTLS) processing.
@@ -912,7 +856,7 @@ crypto.policy=crypto.policydir-tbd
 #       Constraint {"," Constraint }
 #   Constraint:
 #       AlgConstraint | MaxTransformsConstraint | MaxReferencesConstraint |
-#       ReferenceUriSchemeConstraint | OtherConstraint
+#       ReferenceUriSchemeConstraint | KeySizeConstraint | OtherConstraint
 #   AlgConstraint
 #       "disallowAlg" Uri
 #   MaxTransformsConstraint:
@@ -921,12 +865,16 @@ crypto.policy=crypto.policydir-tbd
 #       "maxReferences" Integer
 #   ReferenceUriSchemeConstraint:
 #       "disallowReferenceUriSchemes" String { String }
+#   KeySizeConstraint:
+#       "minKeySize" KeyAlg Integer
 #   OtherConstraint:
 #       "noDuplicateIds" | "noRetrievalMethodLoops"
 #
 # For AlgConstraint, Uri is the algorithm URI String that is not allowed.
 # See the XML Signature Recommendation for more information on algorithm
-# URI Identifiers. If the MaxTransformsConstraint or MaxReferencesConstraint is
+# URI Identifiers. For KeySizeConstraint, KeyAlg is the standard algorithm
+# name of the key type (ex: "RSA"). If the MaxTransformsConstraint,
+# MaxReferencesConstraint or KeySizeConstraint (for the same key type) is
 # specified more than once, only the last entry is enforced.
 #
 # Note: This property is currently used by the JDK Reference implementation. It
@@ -940,6 +888,8 @@ jdk.xml.dsig.secureValidationPolicy=\
     maxTransforms 5,\
     maxReferences 30,\
     disallowReferenceUriSchemes file http https,\
+    minKeySize RSA 1024,\
+    minKeySize DSA 1024,\
     noDuplicateIds,\
     noRetrievalMethodLoops
 

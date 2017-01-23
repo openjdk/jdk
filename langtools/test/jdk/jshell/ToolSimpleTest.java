@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128 8154513 8170015 8170368 8172102 8172103  8165405
+ * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128 8154513 8170015 8170368 8172102 8172103  8165405 8173073
  * @summary Simple jshell tool tests
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -492,6 +492,35 @@ public class ToolSimpleTest extends ReplToolTesting {
                         "|  No such snippet: " + arg),
                 a -> assertCommandCheckOutput(a, "/types -start",
                         s -> checkLineToList(s, startTypeList))
+        );
+    }
+
+    @Test
+    public void testBlankLinesInSnippetContinuation() {
+        test(Locale.ROOT, false, new String[]{"--no-startup"}, "",
+                a -> assertCommand(a, "class C {",
+                        ""),
+                a -> assertCommand(a, "",
+                        ""),
+                a -> assertCommand(a, "",
+                        ""),
+                a -> assertCommand(a, "  int x;",
+                        ""),
+                a -> assertCommand(a, "",
+                        ""),
+                a -> assertCommand(a, "",
+                        ""),
+                a -> assertCommand(a, "}",
+                        "|  created class C"),
+                a -> assertCommand(a, "/list",
+                        "\n" +
+                        "   1 : class C {\n" +
+                        "       \n" +
+                        "       \n" +
+                        "         int x;\n" +
+                        "       \n" +
+                        "       \n" +
+                        "       }")
         );
     }
 

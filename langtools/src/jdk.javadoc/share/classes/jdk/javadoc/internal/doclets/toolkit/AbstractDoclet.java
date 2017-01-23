@@ -40,6 +40,7 @@ import jdk.javadoc.internal.doclets.toolkit.builders.AbstractBuilder;
 import jdk.javadoc.internal.doclets.toolkit.builders.BuilderFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
+import jdk.javadoc.internal.doclets.toolkit.util.UncheckedDocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.InternalException;
 import jdk.javadoc.internal.doclets.toolkit.util.PackageListWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.ResourceIOException;
@@ -112,8 +113,12 @@ public abstract class AbstractDoclet implements Doclet {
         }
 
         try {
-            startGeneration(docEnv);
-            return true;
+            try {
+                startGeneration(docEnv);
+                return true;
+            } catch (UncheckedDocletException e) {
+                throw (DocletException) e.getCause();
+            }
 
         } catch (DocFileIOException e) {
             switch (e.mode) {

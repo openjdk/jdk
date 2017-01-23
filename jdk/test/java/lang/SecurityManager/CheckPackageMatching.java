@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,13 @@
  * @run main/othervm CheckPackageMatching
  */
 
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.StringTokenizer;
 
 /*
  * The purpose of this test is not to verify the content of the package
@@ -46,10 +48,23 @@ public class CheckPackageMatching {
      * The restricted packages listed in the package.access property of the
      * java.security file.
      */
-    private static final String[] packages =
-        RestrictedPackages.actual().toArray(new String[0]);
+    private static final String[] packages = actual().toArray(new String[0]);
 
-    private static final boolean OPEN_JDK = isOpenJDKOnly();
+    /**
+     * Returns the list of restricted packages in the package.access property.
+     */
+    private static List<String> actual() {
+        String prop = Security.getProperty("package.access");
+        List<String> packages = new ArrayList<>();
+        if (prop != null && !prop.equals("")) {
+            StringTokenizer tok = new StringTokenizer(prop, ",");
+            while (tok.hasMoreElements()) {
+                String s = tok.nextToken().trim();
+                packages.add(s);
+            }
+        }
+        return packages;
+    }
 
     /**
      * PackageMatcher implements a state machine that matches package
@@ -326,13 +341,8 @@ public class CheckPackageMatching {
         System.getSecurityManager().checkPackageAccess("com.sun.jmxa");
         System.getSecurityManager().checkPackageAccess("jmx");
         List<String> actual = Arrays.asList(packages);
-        for (String p : actual) {
-            if (!actual.contains(p)) {
-                System.err.println("Warning: '" + p + " not in package.access");
-            }
-        }
-        if (!actual.contains("sun.")) {
-            throw new Error("package.access does not contain 'sun.'");
+        if (!actual.contains("sun.misc.")) {
+            throw new Error("package.access does not contain 'sun.misc.'");
         }
     }
 
@@ -447,17 +457,15 @@ public class CheckPackageMatching {
 
         // These should not match.
         for (String pkg : new String[] {"gloups.machin", "su",
-                                        "org.jcp.xml.dsig.interna",
+                                        "org.jcp.xml.dsig.inter",
                                         "com.sun.jm", "com.sun.jmxa"}) {
             testMatch(matcher, pkg, false, true);
         }
 
         // These should match.
         for (String pkg : Arrays.asList(
-                new String[] {"sun.gloups.machin", "sun", "sun.com",
-                              "com.sun.jmx", "com.sun.jmx.a",
-                              "org.jcp.xml.dsig.internal",
-                              "org.jcp.xml.dsig.internal.foo"})) {
+                new String[] {"sun.misc.gloups.machin", "sun.misc",
+                              "sun.reflect"})) {
             testMatch(matcher, pkg, true, true);
         }
 
@@ -486,12 +494,6 @@ public class CheckPackageMatching {
         }
 
         for (String pkg : pkgs) {
-            if (!OPEN_JDK && pkg.equals("com.sun.media.sound.")) {
-                // don't test com.sun.media.sound since there is an entry
-                // for com.sun.media in non OpenJDK builds. Otherwise,
-                // the test for this package will fail unexpectedly.
-                continue;
-            }
             String candidate = pkg.substring(0, pkg.length() - 2);
             boolean expected = pkglist.contains(candidate + ".");
             testMatch(matcher, candidate, expected,
@@ -536,10 +538,5 @@ public class CheckPackageMatching {
                 }
             }
         }
-    }
-
-    private static boolean isOpenJDKOnly() {
-        String prop = System.getProperty("java.runtime.name");
-        return prop != null && prop.startsWith("OpenJDK");
     }
 }
