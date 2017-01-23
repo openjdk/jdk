@@ -25,14 +25,11 @@
 
 package com.sun.security.auth.module;
 
-import java.security.AccessController;
 import java.net.SocketPermission;
 import java.security.Principal;
-import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.Map;
-import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.Set;
@@ -47,6 +44,7 @@ import javax.security.auth.spi.*;
 
 import com.sun.security.auth.LdapPrincipal;
 import com.sun.security.auth.UserPrincipal;
+import static sun.security.util.ResourcesMgr.getAuthResourceString;
 
 
 /**
@@ -304,10 +302,6 @@ import com.sun.security.auth.UserPrincipal;
  * @since 1.6
  */
 public class LdapLoginModule implements LoginModule {
-
-    // Use the default classloader for this class to load the prompt strings.
-    private static final ResourceBundle rb =
-        ResourceBundle.getBundle("sun.security.util.AuthResources");
 
     // Keys to retrieve the stored username and password
     private static final String USERNAME_KEY = "javax.security.auth.login.name";
@@ -957,8 +951,8 @@ public class LdapLoginModule implements LoginModule {
                 "to acquire authentication information from the user");
 
         Callback[] callbacks = new Callback[2];
-        callbacks[0] = new NameCallback(rb.getString("username."));
-        callbacks[1] = new PasswordCallback(rb.getString("password."), false);
+        callbacks[0] = new NameCallback(getAuthResourceString("username."));
+        callbacks[1] = new PasswordCallback(getAuthResourceString("password."), false);
 
         try {
             callbackHandler.handle(callbacks);

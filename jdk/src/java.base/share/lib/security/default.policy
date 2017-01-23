@@ -205,3 +205,11 @@ grant codeBase "jrt:/jdk.accessibility" {
 grant codeBase "jrt:/jdk.desktop" {
     permission java.lang.RuntimePermission "accessClassInPackage.com.sun.awt";
 };
+
+// permissions needed by applications using java.desktop module
+grant {
+    permission java.lang.RuntimePermission "accessClassInPackage.com.sun.beans";
+    permission java.lang.RuntimePermission "accessClassInPackage.com.sun.beans.*";
+    permission java.lang.RuntimePermission "accessClassInPackage.com.sun.java.swing.plaf.*";
+    permission java.lang.RuntimePermission "accessClassInPackage.com.apple.*";
+};

@@ -43,7 +43,6 @@ import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.testlibrary.FileUtils;
-import jdk.testlibrary.JDKToolFinder;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
@@ -587,17 +586,10 @@ public class JmodTest {
         // Ensure that it is removed in the event of a failure.
         // The failure in this case is a class in the unnamed package.
 
-        String filename = "testTmpFileRemoved.jmod";
-        Path jmod = MODS_DIR.resolve(filename);
-
-        // clean up files
+        Path jmod = MODS_DIR.resolve("testTmpFileRemoved.jmod");
+        Path tmp = MODS_DIR.resolve(".testTmpFileRemoved.jmod.tmp");
         FileUtils.deleteFileIfExistsWithRetry(jmod);
-        findTmpFiles(filename).forEach(tmp -> {
-            try {
-                FileUtils.deleteFileIfExistsWithRetry(tmp);
-            } catch (IOException e) {}
-        });
-
+        FileUtils.deleteFileIfExistsWithRetry(tmp);
         String cp = EXPLODED_DIR.resolve("foo").resolve("classes") + File.pathSeparator +
                     EXPLODED_DIR.resolve("foo").resolve("classes")
                                 .resolve("jdk").resolve("test").resolve("foo").toString();
@@ -605,31 +597,11 @@ public class JmodTest {
         jmod("create",
              "--class-path", cp,
              jmod.toString())
-             .assertFailure()
-             .resultChecker(r -> {
-                 assertContains(r.output, "unnamed package");
-                 List<Path> tmpfiles = findTmpFiles(filename);
-                 assertTrue(tmpfiles.isEmpty(), "Unexpected tmp file:" + tmpfiles);
-             });
-    }
-
-    /*
-     * Returns the list of writeable tmp files with the given prefix.
-     *
-     * Ignore the non-writeable tmp files because this test is possibly
-     * running by another user.
-     */
-    private List<Path> findTmpFiles(String prefix) {
-        Path tmpdir = Paths.get(System.getProperty("java.io.tmpdir"));
-        try (Stream<Path> stream = Files.list(tmpdir)) {
-            return stream.filter(p -> {
-                        String fn = p.getFileName().toString();
-                        return Files.isWritable(p)
-                                && fn.startsWith(prefix) && fn.endsWith(".tmp");
-                    }).collect(Collectors.toList());
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+            .assertFailure()
+            .resultChecker(r -> {
+                assertContains(r.output, "unnamed package");
+                assertTrue(Files.notExists(tmp), "Unexpected tmp file:" + tmp);
+            });
     }
 
     // ---

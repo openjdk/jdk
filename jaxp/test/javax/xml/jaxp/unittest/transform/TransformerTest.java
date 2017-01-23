@@ -37,6 +37,7 @@ import java.io.StringWriter;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
@@ -74,10 +75,29 @@ import com.sun.org.apache.xml.internal.serialize.XMLSerializer;
  * @run testng/othervm -DrunSecMngr=true transform.TransformerTest
  * @run testng/othervm transform.TransformerTest
  * @summary Transformer Tests
- * @bug 6272879 6305029 6505031 8150704 8162598 8169112 8169772
+ * @bug 6272879 6305029 6505031 8150704 8162598 8169112 8169631 8169772
  */
 @Listeners({jaxp.library.FilePolicy.class})
 public class TransformerTest {
+
+    // some global constants
+    private static final String LINE_SEPARATOR =
+        getSystemProperty("line.separator");
+
+    private static final String NAMESPACES =
+        "http://xml.org/sax/features/namespaces";
+
+    private static final String NAMESPACE_PREFIXES =
+        "http://xml.org/sax/features/namespace-prefixes";
+
+    private static abstract class TestTemplate {
+        protected void printSnippet(String title, String snippet) {
+            StringBuilder div = new StringBuilder();
+            for (int i = 0; i < title.length(); i++)
+                div.append("=");
+            System.out.println(title + "\n" + div + "\n" + snippet + "\n");
+        }
+    }
 
     /**
      * Reads the contents of the given file into a string.
@@ -101,44 +121,7 @@ public class TransformerTest {
         }
     }
 
-    /**
-     * Utility method for testBug8162598().
-     * Provides a convenient way to check/assert the expected namespaces
-     * of a Node and its siblings.
-     *
-     * @param test
-     * The node to check
-     * @param nstest
-     * Expected namespace of the node
-     * @param nsb
-     * Expected namespace of the first sibling
-     * @param nsc
-     * Expected namespace of the first sibling of the first sibling
-     */
-    private void checkNodeNS8162598(Node test, String nstest, String nsb, String nsc) {
-        String testNodeName = test.getNodeName();
-        if (nstest == null) {
-            Assert.assertNull(test.getNamespaceURI(), "unexpected namespace for " + testNodeName);
-        } else {
-            Assert.assertEquals(test.getNamespaceURI(), nstest, "unexpected namespace for " + testNodeName);
-        }
-        Node b = test.getChildNodes().item(0);
-        if (nsb == null) {
-            Assert.assertNull(b.getNamespaceURI(), "unexpected namespace for " + testNodeName + "->b");
-        } else {
-            Assert.assertEquals(b.getNamespaceURI(), nsb, "unexpected namespace for " + testNodeName + "->b");
-        }
-        Node c = b.getChildNodes().item(0);
-        if (nsc == null) {
-            Assert.assertNull(c.getNamespaceURI(), "unexpected namespace for " + testNodeName + "->b->c");
-        } else {
-            Assert.assertEquals(c.getNamespaceURI(), nsc, "unexpected namespace for " + testNodeName + "->b->c");
-        }
-    }
-
     private class XMLReaderFor6305029 implements XMLReader {
-        private static final String NAMESPACES = "http://xml.org/sax/features/namespaces";
-        private static final String NAMESPACE_PREFIXES = "http://xml.org/sax/features/namespace-prefixes";
         private boolean namespaces = true;
         private boolean namespacePrefixes = false;
         private EntityResolver resolver;
@@ -235,8 +218,6 @@ public class TransformerTest {
      */
     @Test
     public final void testBug6272879() throws IOException, TransformerException {
-        final String LINE_SEPARATOR = getSystemProperty("line.separator");
-
         final String xsl =
                 "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>" + LINE_SEPARATOR +
                 "<xsl:stylesheet version=\"1.0\" xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\">" + LINE_SEPARATOR +
@@ -349,9 +330,125 @@ public class TransformerTest {
         Assert.assertTrue(s.contains("map1key1value") && s.contains("map2key1value"));
     }
 
+    private static class Test8169631 extends TestTemplate {
+        private final static String xsl =
+            "<?xml version=\"1.0\"?>" + LINE_SEPARATOR +
+            "<xsl:stylesheet xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\" version=\"1.0\">" + LINE_SEPARATOR +
+            "  <xsl:template match=\"/\">" + LINE_SEPARATOR +
+            "    <xsl:variable name=\"Counter\" select=\"count(//row)\"/>" + LINE_SEPARATOR +
+            "    <xsl:variable name=\"AttribCounter\" select=\"count(//@attrib)\"/>" + LINE_SEPARATOR +
+            "    <Counter><xsl:value-of select=\"$Counter\"/></Counter>" + LINE_SEPARATOR +
+            "    <AttribCounter><xsl:value-of select=\"$AttribCounter\"/></AttribCounter>" + LINE_SEPARATOR +
+            "  </xsl:template>" + LINE_SEPARATOR +
+            "</xsl:stylesheet>" + LINE_SEPARATOR;
+
+        private final static String sourceXml =
+            "<?xml version=\"1.0\"?>" + LINE_SEPARATOR +
+            "<envelope xmlns=\"http://www.sap.com/myns\" xmlns:sap=\"http://www.sap.com/myns\">" + LINE_SEPARATOR +
+            "  <sap:row sap:attrib=\"a\">1</sap:row>" + LINE_SEPARATOR +
+            "  <row attrib=\"b\">2</row>" + LINE_SEPARATOR +
+            "  <row sap:attrib=\"c\">3</row>" + LINE_SEPARATOR +
+            "</envelope>" + LINE_SEPARATOR;
+
+        /**
+         * Utility method to print out transformation result and check values.
+         *
+         * @param type
+         * Text describing type of transformation
+         * @param result
+         * Resulting output of transformation
+         * @param elementCount
+         * Counter of elements to check
+         * @param attribCount
+         * Counter of attributes to check
+         */
+        private void verifyResult(String type, String result, int elementCount,
+                                  int attribCount)
+        {
+            printSnippet("Result of transformation from " + type + ":",
+                         result);
+            Assert.assertEquals(
+                result.contains("<Counter>" + elementCount + "</Counter>"),
+                true, "Result of transformation from " + type +
+                " should have count of " + elementCount + " elements.");
+            Assert.assertEquals(
+                result.contains("<AttribCounter>" + attribCount +
+                "</AttribCounter>"), true, "Result of transformation from " +
+                type + " should have count of "+ attribCount + " attributes.");
+        }
+
+        public void run() throws IOException, TransformerException,
+            SAXException, ParserConfigurationException
+        {
+            printSnippet("Source:", sourceXml);
+
+            printSnippet("Stylesheet:", xsl);
+
+            // create default transformer (namespace aware)
+            TransformerFactory tf1 = TransformerFactory.newInstance();
+            ByteArrayInputStream bais = new ByteArrayInputStream(xsl.getBytes());
+            Transformer t1 = tf1.newTransformer(new StreamSource(bais));
+
+            // test transformation from stream source with namespace support
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            bais = new ByteArrayInputStream(sourceXml.getBytes());
+            t1.transform(new StreamSource(bais), new StreamResult(baos));
+            verifyResult("StreamSource with namespace support", baos.toString(), 0, 1);
+
+            // test transformation from DOM source with namespace support
+            bais.reset();
+            baos.reset();
+            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+            dbf.setNamespaceAware(true);
+            Document doc = dbf.newDocumentBuilder().parse(new InputSource(bais));
+            t1.transform(new DOMSource(doc), new StreamResult(baos));
+            verifyResult("DOMSource with namespace support", baos.toString(), 0, 1);
+
+            // test transformation from DOM source without namespace support
+            bais.reset();
+            baos.reset();
+            dbf.setNamespaceAware(false);
+            doc = dbf.newDocumentBuilder().parse(new InputSource(bais));
+            t1.transform(new DOMSource(doc), new StreamResult(baos));
+            verifyResult("DOMSource without namespace support", baos.toString(), 3, 3);
+
+            // test transformation from SAX source with namespace support
+            bais.reset();
+            baos.reset();
+            SAXParserFactory spf = SAXParserFactory.newInstance();
+            spf.setNamespaceAware(true);
+            XMLReader xmlr = spf.newSAXParser().getXMLReader();
+            SAXSource saxS = new SAXSource(xmlr, new InputSource(bais));
+            t1.transform(saxS, new StreamResult(baos));
+            verifyResult("SAXSource with namespace support", baos.toString(), 0, 1);
+
+            // test transformation from SAX source without namespace support
+            bais.reset();
+            baos.reset();
+            spf.setNamespaceAware(false);
+            xmlr = spf.newSAXParser().getXMLReader();
+            saxS = new SAXSource(xmlr, new InputSource(bais));
+            t1.transform(saxS, new StreamResult(baos));
+            verifyResult("SAXSource without namespace support", baos.toString(), 3, 3);
+        }
+    }
+
+    /*
+     * @bug 8169631
+     * @summary Test combinations of namespace awareness settings on
+     *          XSL transformations
+     */
+    @Test
+    public final void testBug8169631() throws IOException, SAXException,
+        TransformerException, ParserConfigurationException
+    {
+        new Test8169631().run();
+    }
+
     /*
      * @bug 8150704
-     * @summary Test that XSL transformation with lots of temporary result trees will not run out of DTM IDs.
+     * @summary Test that XSL transformation with lots of temporary result
+     *          trees will not run out of DTM IDs.
      */
     @Test
     public final void testBug8150704() throws TransformerException, IOException {
@@ -375,16 +472,8 @@ public class TransformerTest {
         System.out.println("Passed.");
     }
 
-    /*
-     * @bug 8162598
-     * @summary Test XSLTC handling of namespaces, especially empty namespace definitions to reset the
-     *          default namespace
-     */
-    @Test
-    public final void testBug8162598() throws IOException, TransformerException {
-        final String LINE_SEPARATOR = getSystemProperty("line.separator");
-
-        final String xsl =
+    private static class Test8162598 extends TestTemplate {
+        private static final String xsl =
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + LINE_SEPARATOR +
             "<xsl:stylesheet xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\" version=\"1.0\">" + LINE_SEPARATOR +
             "    <xsl:template match=\"/\">" + LINE_SEPARATOR +
@@ -402,39 +491,85 @@ public class TransformerTest {
             "    </xsl:template>" + LINE_SEPARATOR +
             "</xsl:stylesheet>";
 
+        private static final String sourceXml =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?><aaa></aaa>" + LINE_SEPARATOR;
+        /**
+         * Utility method for testBug8162598().
+         * Provides a convenient way to check/assert the expected namespaces
+         * of a Node and its siblings.
+         *
+         * @param test
+         * The node to check
+         * @param nstest
+         * Expected namespace of the node
+         * @param nsb
+         * Expected namespace of the first sibling
+         * @param nsc
+         * Expected namespace of the first sibling of the first sibling
+         */
 
-        final String sourceXml =
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?><aaa></aaa>" + LINE_SEPARATOR;
+        private void checkNodeNS(Node test, String nstest, String nsb, String nsc) {
+            String testNodeName = test.getNodeName();
+            if (nstest == null) {
+                Assert.assertNull(test.getNamespaceURI(), "unexpected namespace for " + testNodeName);
+            } else {
+                Assert.assertEquals(test.getNamespaceURI(), nstest, "unexpected namespace for " + testNodeName);
+            }
+            Node b = test.getChildNodes().item(0);
+            if (nsb == null) {
+                Assert.assertNull(b.getNamespaceURI(), "unexpected namespace for " + testNodeName + "->b");
+            } else {
+                Assert.assertEquals(b.getNamespaceURI(), nsb, "unexpected namespace for " + testNodeName + "->b");
+            }
+            Node c = b.getChildNodes().item(0);
+            if (nsc == null) {
+                Assert.assertNull(c.getNamespaceURI(), "unexpected namespace for " + testNodeName + "->b->c");
+            } else {
+                Assert.assertEquals(c.getNamespaceURI(), nsc, "unexpected namespace for " + testNodeName + "->b->c");
+            }
+        }
 
-        System.out.println("Stylesheet:");
-        System.out.println("=============================");
-        System.out.println(xsl);
-        System.out.println();
+        public void run()  throws IOException, TransformerException {
+            printSnippet("Source:", sourceXml);
 
-        System.out.println("Source before transformation:");
-        System.out.println("=============================");
-        System.out.println(sourceXml);
-        System.out.println();
+            printSnippet("Stylesheet:", xsl);
 
-        // transform to DOM result
-        TransformerFactory tf = TransformerFactory.newInstance();
-        Transformer t = tf.newTransformer(new StreamSource(new ByteArrayInputStream(xsl.getBytes())));
-        DOMResult result = new DOMResult();
-        t.transform(new StreamSource(new ByteArrayInputStream(sourceXml.getBytes())), result);
-        Document document = (Document)result.getNode();
+            // transform to DOM result
+            TransformerFactory tf = TransformerFactory.newInstance();
+            ByteArrayInputStream bais = new ByteArrayInputStream(xsl.getBytes());
+            Transformer t = tf.newTransformer(new StreamSource(bais));
+            DOMResult result = new DOMResult();
+            bais = new ByteArrayInputStream(sourceXml.getBytes());
+            t.transform(new StreamSource(bais), result);
+            Document document = (Document)result.getNode();
 
-        System.out.println("Result after transformation:");
-        System.out.println("============================");
-        OutputFormat format = new OutputFormat();
-        format.setIndenting(true);
-        new XMLSerializer(System.out, format).serialize(document);
-        System.out.println();
-        checkNodeNS8162598(document.getElementsByTagName("test1").item(0), "ns2", "ns2", null);
-        checkNodeNS8162598(document.getElementsByTagName("test2").item(0), "ns1", "ns2", null);
-        checkNodeNS8162598(document.getElementsByTagName("test3").item(0), null, null, null);
-        checkNodeNS8162598(document.getElementsByTagName("test4").item(0), null, null, null);
-        checkNodeNS8162598(document.getElementsByTagName("test5").item(0), "ns1", "ns1", null);
-        Assert.assertNull(document.getElementsByTagName("test6").item(0).getNamespaceURI(), "unexpected namespace for test6");
+            System.out.println("Result after transformation:");
+            System.out.println("============================");
+            OutputFormat format = new OutputFormat();
+            format.setIndenting(true);
+            new XMLSerializer(System.out, format).serialize(document);
+            System.out.println();
+
+            checkNodeNS(document.getElementsByTagName("test1").item(0), "ns2", "ns2", null);
+            checkNodeNS(document.getElementsByTagName("test2").item(0), "ns1", "ns2", null);
+            checkNodeNS(document.getElementsByTagName("test3").item(0), null, null, null);
+            checkNodeNS(document.getElementsByTagName("test4").item(0), null, null, null);
+            checkNodeNS(document.getElementsByTagName("test5").item(0), "ns1", "ns1", null);
+            Assert.assertNull(document.getElementsByTagName("test6").item(0).getNamespaceURI(),
+                "unexpected namespace for test6");
+        }
+    }
+
+    /*
+     * @bug 8162598
+     * @summary Test XSLTC handling of namespaces, especially empty namespace
+     *          definitions to reset the default namespace
+     */
+    @Test
+    public final void testBug8162598() throws IOException,
+        TransformerException
+    {
+        new Test8162598().run();
     }
 
     /**

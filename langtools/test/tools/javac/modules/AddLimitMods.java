@@ -217,8 +217,8 @@ public class AddLimitMods extends ModuleTestBase {
 
     private static final List<Entry<String[], String>> variants = Arrays.asList(
             new SimpleEntry<String[], String>(new String[] {},
-                                              "Test.java:2:18: compiler.err.doesnt.exist: javax.annotation\n"
-                                            + "Test.java:5:19: compiler.err.doesnt.exist: javax.xml.bind\n"
+                                              "Test.java:2:7: compiler.err.package.not.visible: javax.annotation, (compiler.misc.not.def.access.does.not.read.from.unnamed: javax.annotation, java.annotations.common)\n"
+                                            + "Test.java:5:14: compiler.err.package.not.visible: javax.xml.bind, (compiler.misc.not.def.access.does.not.read.from.unnamed: javax.xml.bind, java.xml.bind)\n"
                                             + "2 errors\n"),
             new SimpleEntry<String[], String>(new String[] {"--add-modules", "java.annotations.common,java.xml.bind"},
                                               null),

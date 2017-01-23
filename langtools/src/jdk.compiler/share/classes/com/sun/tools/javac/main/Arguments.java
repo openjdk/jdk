@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -818,11 +818,15 @@ public class Arguments {
             return List.nil();
 
         String checkPackages = options.get(Option.XDOCLINT_PACKAGE);
-
         if (checkPackages != null) {
             for (String s : checkPackages.split("\\s+")) {
                 doclintOpts.add(DocLint.XCHECK_PACKAGE + s);
             }
+        }
+
+        String format = options.get(Option.DOCLINT_FORMAT);
+        if (format != null) {
+            doclintOpts.add(DocLint.XHTML_VERSION_PREFIX + format);
         }
 
         // standard doclet normally generates H1, H2,

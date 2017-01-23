@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -777,13 +777,13 @@ public class Options
      * Adds a new catalog file.
      */
     public void addCatalog(File catalogFile) throws IOException {
-        String newUrl = catalogFile.getPath();
+        URI newUrl = catalogFile.toURI();
         if (!catalogUrls.contains(newUrl)) {
             catalogUrls.add(newUrl);
         }
         try {
             entityResolver = CatalogManager.catalogResolver(catalogFeatures,
-                                catalogUrls.toArray(new String[0]));
+                                catalogUrls.stream().toArray(URI[]::new));
         } catch (Exception ex) {
             entityResolver = null;
         }
@@ -791,7 +791,7 @@ public class Options
 
     // Since javax.xml.catalog is unmodifiable we need to track catalog
     // URLs added and create new catalog each time addCatalog is called
-    private final ArrayList<String> catalogUrls = new ArrayList<String>();
+    private final ArrayList<URI> catalogUrls = new ArrayList<>();
 
     // Cache CatalogFeatures instance for future usages.
     // Resolve feature is set to "continue" value for backward compatibility.

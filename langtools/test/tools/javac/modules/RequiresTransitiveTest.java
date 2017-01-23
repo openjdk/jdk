@@ -85,7 +85,7 @@ public class RequiresTransitiveTest extends ModuleTestBase {
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
 
-        if (!log.contains("Test.java:1:27: compiler.err.doesnt.exist: com.sun.source.tree"))
+        if (!log.contains("Test.java:1:22: compiler.err.package.not.visible: com.sun.source.tree, (compiler.misc.not.def.access.does.not.read: m, com.sun.source.tree, jdk.compiler)"))
             throw new Exception("expected output not found");
     }
 
@@ -121,15 +121,9 @@ public class RequiresTransitiveTest extends ModuleTestBase {
                 .getOutput(Task.OutputKind.DIRECT);
 
         String[] expect = {
-            "C1.java:5:10: compiler.err.not.def.access.package.cant.access: p5.C5, p5",
-            "C1.java:5:24: compiler.err.not.def.access.package.cant.access: p6.C6, p6",
-            "C1.java:5:38: compiler.err.not.def.access.package.cant.access: p7.C7, p7",
-            "C1.java:8:1: compiler.err.cant.resolve.location: kindname.class, C5, , , "
-                + "(compiler.misc.location: kindname.class, p1.C1, null)",
-            "C1.java:8:8: compiler.err.cant.resolve.location: kindname.class, C6, , , "
-                + "(compiler.misc.location: kindname.class, p1.C1, null)",
-            "C1.java:8:15: compiler.err.cant.resolve.location: kindname.class, C7, , , "
-                + "(compiler.misc.location: kindname.class, p1.C1, null)"
+            "C1.java:5:8: compiler.err.package.not.visible: p5, (compiler.misc.not.def.access.does.not.read: m1x, p5, m5x)",
+            "C1.java:5:22: compiler.err.package.not.visible: p6, (compiler.misc.not.def.access.does.not.read: m1x, p6, m6x)",
+            "C1.java:5:36: compiler.err.package.not.visible: p7, (compiler.misc.not.def.access.does.not.read: m1x, p7, m7x)"
         };
 
         for (String e: expect) {

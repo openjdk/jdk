@@ -117,7 +117,7 @@ public class OpenModulesTest extends ModuleTestBase {
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
 
-        List<String> expected2 = Arrays.asList("Test.java:1:53: compiler.err.doesnt.exist: api2",
+        List<String> expected2 = Arrays.asList("Test.java:1:49: compiler.err.package.not.visible: api2, (compiler.misc.not.def.access.not.exported: api2, m1x)",
                                                "1 error");
         if (!Objects.equals(log2, expected2))
             throw new Exception("expected output not found: " + log2);
@@ -180,7 +180,7 @@ public class OpenModulesTest extends ModuleTestBase {
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
 
-        List<String> expected2 = Arrays.asList("Test.java:1:53: compiler.err.doesnt.exist: api2",
+        List<String> expected2 = Arrays.asList("Test.java:1:49: compiler.err.package.not.visible: api2, (compiler.misc.not.def.access.not.exported: api2, m1x)",
                                                "1 error");
         if (!Objects.equals(log2, expected2))
             throw new Exception("expected output not found: " + log2);
