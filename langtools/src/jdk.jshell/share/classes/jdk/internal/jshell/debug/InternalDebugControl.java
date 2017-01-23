@@ -68,6 +68,11 @@ public class InternalDebugControl {
      */
     public static final int DBG_EVNT = 0b0010000;
 
+    /**
+     * Event debugging.
+     */
+    public static final int DBG_WRAP = 0b0100000;
+
     private static Map<JShell, Integer> debugMap = null;
 
     /**

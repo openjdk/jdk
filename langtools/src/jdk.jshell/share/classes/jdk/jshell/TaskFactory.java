@@ -321,7 +321,7 @@ class TaskFactory {
         final JavacTaskImpl task;
         private DiagList diags = null;
         private final SourceHandler<?> sourceHandler;
-        private final Context context = new Context();
+        final Context context = new Context();
         private Types types;
         private JavacMessages messages;
         private Trees trees;

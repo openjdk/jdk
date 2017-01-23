@@ -34,8 +34,12 @@ import java.lang.reflect.Array;
 /**
  * This subclass of ObjectInputStream delegates loading of classes to
  * an existing ClassLoader.
+ *
+ * @deprecated The Applet API is deprecated. See the
+ * <a href="../../java/applet/package-summary.html"> java.applet package
+ * documentation</a> for further information.
  */
-
+@Deprecated(since = "9")
 class AppletObjectInputStream extends ObjectInputStream
 {
     private AppletClassLoader loader;

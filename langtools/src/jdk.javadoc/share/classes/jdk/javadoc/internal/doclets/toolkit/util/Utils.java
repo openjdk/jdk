@@ -27,6 +27,7 @@ package jdk.javadoc.internal.doclets.toolkit.util;
 
 import java.lang.annotation.Documented;
 import java.lang.ref.SoftReference;
+import java.net.URI;
 import java.text.CollationKey;
 import java.text.Collator;
 import java.util.*;
@@ -108,6 +109,7 @@ public class Utils {
     public final DocTrees docTrees;
     public final Elements elementUtils;
     public final Types typeUtils;
+    public final JavaScriptScanner javaScriptScanner;
 
     public Utils(Configuration c) {
         configuration = c;
@@ -115,6 +117,7 @@ public class Utils {
         elementUtils = c.docEnv.getElementUtils();
         typeUtils = c.docEnv.getTypeUtils();
         docTrees = c.docEnv.getDocTrees();
+        javaScriptScanner = c.isAllowScriptInComments() ? null : new JavaScriptScanner();
     }
 
     // our own little symbol table
@@ -3025,6 +3028,16 @@ public class Utils {
         TreePath path = isValidDuo(duo) ? duo.treePath : null;
         if (!dcTreeCache.containsKey(element)) {
             if (docCommentTree != null && path != null) {
+                if (!configuration.isAllowScriptInComments()) {
+                    try {
+                        javaScriptScanner.scan(docCommentTree, path, p -> {
+                            throw new JavaScriptScanner.Fault();
+                        });
+                    } catch (JavaScriptScanner.Fault jsf) {
+                        String text = configuration.getText("doclet.JavaScript_in_comment");
+                        throw new UncheckedDocletException(new SimpleDocletException(text, jsf));
+                    }
+                }
                 configuration.workArounds.runDocLint(path);
             }
             dcTreeCache.put(element, duo);
@@ -3042,6 +3055,21 @@ public class Utils {
             }
         }
         return null;
+    }
+
+    public void checkJavaScriptInOption(String name, String value) {
+        if (!configuration.isAllowScriptInComments()) {
+            DocCommentTree dct = configuration.cmtUtils.parse(
+                    URI.create("option://" + name.replace("-", "")), "<body>" + value + "</body>");
+            try {
+                javaScriptScanner.scan(dct, null, p -> {
+                    throw new JavaScriptScanner.Fault();
+                });
+            } catch (JavaScriptScanner.Fault jsf) {
+                String text = configuration.getText("doclet.JavaScript_in_option", name);
+                throw new UncheckedDocletException(new SimpleDocletException(text, jsf));
+            }
+        }
     }
 
     boolean isValidDuo(DocCommentDuo duo) {

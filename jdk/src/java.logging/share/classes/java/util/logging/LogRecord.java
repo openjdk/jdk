@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -619,13 +619,21 @@ public class LogRecord implements java.io.Serializable {
             throw new IOException("LogRecord: bad version: " + major + "." + minor);
         }
         int len = in.readInt();
-        if (len == -1) {
+        if (len < -1) {
+            throw new NegativeArraySizeException();
+        } else if (len == -1) {
             parameters = null;
-        } else {
+        } else if (len < 255) {
             parameters = new Object[len];
             for (int i = 0; i < parameters.length; i++) {
                 parameters[i] = in.readObject();
             }
+        } else {
+            List<Object> params = new ArrayList<>(Math.min(len, 1024));
+            for (int i = 0; i < len; i++) {
+                params.add(in.readObject());
+            }
+            parameters = params.toArray(new Object[params.size()]);
         }
         // If necessary, try to regenerate the resource bundle.
         if (resourceBundleName != null) {

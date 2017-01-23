@@ -337,20 +337,4 @@ public class VariablesTest extends KullaTesting {
         assertEquals(unr.get(0), "class undefined");
         assertVariables(variable("undefined", "d"));
     }
-
-    public void variableTypeName() {
-        assertEquals(varKey(assertEval("\"x\"")).typeName(), "String");
-
-        assertEquals(varKey(assertEval("java.util.regex.Pattern.compile(\"x\")")).typeName(), "java.util.regex.Pattern");
-        assertEval("import java.util.regex.*;", added(VALID));
-        assertEquals(varKey(assertEval("java.util.regex.Pattern.compile(\"x\")")).typeName(), "Pattern");
-
-        assertEquals(varKey(assertEval("new java.util.ArrayList()")).typeName(), "java.util.ArrayList");
-        assertEval("import java.util.ArrayList;", added(VALID));
-        assertEquals(varKey(assertEval("new java.util.ArrayList()")).typeName(), "ArrayList");
-
-        assertEquals(varKey(assertEval("java.util.Locale.Category.FORMAT")).typeName(), "java.util.Locale.Category");
-        assertEval("import static java.util.Locale.Category;", added(VALID));
-        assertEquals(varKey(assertEval("java.util.Locale.Category.FORMAT")).typeName(), "Category");
-    }
 }

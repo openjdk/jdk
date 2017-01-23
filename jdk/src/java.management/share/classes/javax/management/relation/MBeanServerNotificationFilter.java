@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import javax.management.NotificationFilterSupport;
 import javax.management.ObjectName;
 
 import java.util.List;
-import java.util.logging.Level;
+import java.lang.System.Logger.Level;
 import java.util.Vector;
 
 /**
@@ -160,14 +160,12 @@ public class MBeanServerNotificationFilter extends NotificationFilterSupport {
     public MBeanServerNotificationFilter() {
 
         super();
-        RELATION_LOGGER.entering(MBeanServerNotificationFilter.class.getName(),
-                "MBeanServerNotificationFilter");
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY");
 
         enableType(MBeanServerNotification.REGISTRATION_NOTIFICATION);
         enableType(MBeanServerNotification.UNREGISTRATION_NOTIFICATION);
 
-        RELATION_LOGGER.exiting(MBeanServerNotificationFilter.class.getName(),
-                "MBeanServerNotificationFilter");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
     }
 
@@ -181,14 +179,12 @@ public class MBeanServerNotificationFilter extends NotificationFilterSupport {
      */
     public synchronized void disableAllObjectNames() {
 
-        RELATION_LOGGER.entering(MBeanServerNotificationFilter.class.getName(),
-                "disableAllObjectNames");
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY");
 
         selectedNames = new Vector<ObjectName>();
         deselectedNames = null;
 
-        RELATION_LOGGER.exiting(MBeanServerNotificationFilter.class.getName(),
-                "disableAllObjectNames");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
     }
 
@@ -207,8 +203,7 @@ public class MBeanServerNotificationFilter extends NotificationFilterSupport {
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(MBeanServerNotificationFilter.class.getName(),
-                "disableObjectName", objectName);
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0}" + objectName);
 
         // Removes from selected ObjectNames, if present
         if (selectedNames != null) {
@@ -226,8 +221,7 @@ public class MBeanServerNotificationFilter extends NotificationFilterSupport {
             }
         }
 
-        RELATION_LOGGER.exiting(MBeanServerNotificationFilter.class.getName(),
-                "disableObjectName");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
     }
 
@@ -236,14 +230,12 @@ public class MBeanServerNotificationFilter extends NotificationFilterSupport {
      */
     public synchronized void enableAllObjectNames() {
 
-        RELATION_LOGGER.entering(MBeanServerNotificationFilter.class.getName(),
-                "enableAllObjectNames");
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY");
 
         selectedNames = null;
         deselectedNames = new Vector<ObjectName>();
 
-        RELATION_LOGGER.exiting(MBeanServerNotificationFilter.class.getName(),
-                "enableAllObjectNames");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
     }
 
@@ -262,8 +254,7 @@ public class MBeanServerNotificationFilter extends NotificationFilterSupport {
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(MBeanServerNotificationFilter.class.getName(),
-                "enableObjectName", objectName);
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0}", objectName);
 
         // Removes from deselected ObjectNames, if present
         if (deselectedNames != null) {
@@ -281,8 +272,7 @@ public class MBeanServerNotificationFilter extends NotificationFilterSupport {
             }
         }
 
-        RELATION_LOGGER.exiting(MBeanServerNotificationFilter.class.getName(),
-                "enableObjectName");
+        RELATION_LOGGER.log(Level.TRACE, "RETURN");
         return;
     }
 
@@ -349,16 +339,13 @@ public class MBeanServerNotificationFilter extends NotificationFilterSupport {
             throw new IllegalArgumentException(excMsg);
         }
 
-        RELATION_LOGGER.entering(MBeanServerNotificationFilter.class.getName(),
-                "isNotificationEnabled", notif);
+        RELATION_LOGGER.log(Level.TRACE, "ENTRY {0}", notif);
 
         // Checks the type first
         String ntfType = notif.getType();
         Vector<String> enabledTypes = getEnabledTypes();
         if (!(enabledTypes.contains(ntfType))) {
-            RELATION_LOGGER.logp(Level.FINER,
-                    MBeanServerNotificationFilter.class.getName(),
-                    "isNotificationEnabled",
+            RELATION_LOGGER.log(Level.TRACE,
                     "Type not selected, exiting");
             return false;
         }
@@ -375,9 +362,7 @@ public class MBeanServerNotificationFilter extends NotificationFilterSupport {
             // checks for explicit selection
             if (selectedNames.size() == 0) {
                 // All are explicitly not selected
-                RELATION_LOGGER.logp(Level.FINER,
-                        MBeanServerNotificationFilter.class.getName(),
-                        "isNotificationEnabled",
+                RELATION_LOGGER.log(Level.TRACE,
                         "No ObjectNames selected, exiting");
                 return false;
             }
@@ -385,9 +370,7 @@ public class MBeanServerNotificationFilter extends NotificationFilterSupport {
             isSelectedFlg = selectedNames.contains(objName);
             if (!isSelectedFlg) {
                 // Not in the explicit selected list
-                RELATION_LOGGER.logp(Level.FINER,
-                        MBeanServerNotificationFilter.class.getName(),
-                        "isNotificationEnabled",
+                RELATION_LOGGER.log(Level.TRACE,
                         "ObjectName not in selected list, exiting");
                 return false;
             }
@@ -399,26 +382,20 @@ public class MBeanServerNotificationFilter extends NotificationFilterSupport {
             if (deselectedNames == null) {
                 // All are implicitly deselected and it is not explicitly
                 // selected
-                RELATION_LOGGER.logp(Level.FINER,
-                        MBeanServerNotificationFilter.class.getName(),
-                        "isNotificationEnabled",
+                RELATION_LOGGER.log(Level.TRACE,
                         "ObjectName not selected, and all " +
                         "names deselected, exiting");
                 return false;
 
             } else if (deselectedNames.contains(objName)) {
                 // Explicitly deselected
-                RELATION_LOGGER.logp(Level.FINER,
-                        MBeanServerNotificationFilter.class.getName(),
-                        "isNotificationEnabled",
+                RELATION_LOGGER.log(Level.TRACE,
                         "ObjectName explicitly not selected, exiting");
                 return false;
             }
         }
 
-        RELATION_LOGGER.logp(Level.FINER,
-                MBeanServerNotificationFilter.class.getName(),
-                "isNotificationEnabled",
+        RELATION_LOGGER.log(Level.TRACE,
                 "ObjectName selected, exiting");
         return true;
     }

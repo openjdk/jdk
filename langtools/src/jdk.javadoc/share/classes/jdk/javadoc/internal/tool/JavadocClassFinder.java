@@ -88,8 +88,7 @@ public class JavadocClassFinder extends ClassFinder {
     @Override
     protected void extraFileActions(PackageSymbol pack, JavaFileObject fo) {
         if (fo.isNameCompatible("package", JavaFileObject.Kind.HTML)) {
-            toolEnv.pkgToJavaFOMap.put(pack, fo);
-            trees.putJavaFileObject(pack, fo);
+            pack.sourcefile = fo;
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@
  */
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.file.ClosedFileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -80,19 +82,22 @@ public class T8147801 {
     void test(boolean withOption) {
         System.err.println("Testing " + (withOption ? "with" : "without") + " option");
         try {
+            String dump = "";
             RootDoc root = getRootDoc(withOption);
             for (ClassDoc cd: root.specifiedClasses()) {
-                dump("", cd);
+                dump += dump(cd);
             }
-            if (!withOption) {
-                error("expected option did not occur");
+            if (dump.contains("lib.Lib2.i")) {
+                if (!withOption) {
+                    error("control case failed: Lib2 class file was read, unexpectedly, without using option");
+                }
+            } else {
+                if (withOption) {
+                    error("test case failed: could not read Lib2 class file, using option");
+                }
             }
         } catch (ClosedFileSystemException e) {
-            if (withOption) {
-                error("Unexpected exception: " + e);
-            } else {
-                System.err.println("Exception received as expected: " + e);
-            }
+            error("Unexpected exception: " + e);
         }
         System.err.println();
     }
@@ -118,12 +123,21 @@ public class T8147801 {
         return cachedRoot;
     }
 
-    void dump(String prefix, ClassDoc cd) {
-        System.err.println(prefix + "class: " + cd);
+    String dump(ClassDoc cd) {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        dump(pw, "", cd);
+        String out = sw.toString();
+        System.err.println(out);
+        return out;
+    }
+
+    void dump(PrintWriter out, String prefix, ClassDoc cd) {
+        out.println(prefix + "class: " + cd);
         for (FieldDoc fd: cd.fields()) {
-            System.err.println(fd);
+            out.println(prefix + "  " + fd);
             if (fd.type().asClassDoc() != null) {
-                dump(prefix + "  ", fd.type().asClassDoc());
+                dump(out, prefix + "    ", fd.type().asClassDoc());
             }
         }
     }

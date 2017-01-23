@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,13 +58,10 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.text.MessageFormat;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Deque;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -76,7 +73,6 @@ import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.jar.JarEntry;
@@ -101,6 +97,7 @@ import jdk.internal.joptsimple.OptionSpec;
 import jdk.internal.joptsimple.ValueConverter;
 import jdk.internal.loader.ResourceHelper;
 import jdk.internal.module.ModuleHashes;
+import jdk.internal.module.ModuleHashesBuilder;
 import jdk.internal.module.ModuleInfo;
 import jdk.internal.module.ModuleInfoExtender;
 import jdk.internal.module.ModulePath;
@@ -286,7 +283,27 @@ public class JmodTask {
     }
 
     private boolean hashModules() {
-        return new Hasher(options.moduleFinder).run();
+        if (options.dryrun) {
+            out.println("Dry run:");
+        }
+
+        Hasher hasher = new Hasher(options.moduleFinder);
+        hasher.computeHashes().forEach((mn, hashes) -> {
+            if (options.dryrun) {
+                out.format("%s%n", mn);
+                hashes.names().stream()
+                    .sorted()
+                    .forEach(name -> out.format("  hashes %s %s %s%n",
+                        name, hashes.algorithm(), toHex(hashes.hashFor(name))));
+            } else {
+                try {
+                    hasher.updateModuleInfo(mn, hashes);
+                } catch (IOException ex) {
+                    throw new UncheckedIOException(ex);
+                }
+            }
+        });
+        return true;
     }
 
     private boolean describe() throws IOException {
@@ -377,23 +394,28 @@ public class JmodTask {
         // create jmod with temporary name to avoid it being examined
         // when scanning the module path
         Path target = options.jmodFile;
-        Path tempTarget = target.resolveSibling(target.getFileName() + ".tmp");
+        Path tempTarget = jmodTempFilePath(target);
         try {
             try (JmodOutputStream jos = JmodOutputStream.newOutputStream(tempTarget)) {
                 jmod.write(jos);
             }
             Files.move(tempTarget, target);
         } catch (Exception e) {
-            if (Files.exists(tempTarget)) {
-                try {
-                    Files.delete(tempTarget);
-                } catch (IOException ioe) {
-                    e.addSuppressed(ioe);
-                }
+            try {
+                Files.deleteIfExists(tempTarget);
+            } catch (IOException ioe) {
+                e.addSuppressed(ioe);
             }
             throw e;
         }
         return true;
+    }
+
+    /*
+     * Create a JMOD .tmp file for the given target JMOD file
+     */
+    private static Path jmodTempFilePath(Path target) throws IOException {
+        return target.resolveSibling("." + target.getFileName() + ".tmp");
     }
 
     private class JmodFileWriter {
@@ -411,7 +433,6 @@ public class JmodTask {
         final String osArch = options.osArch;
         final String osVersion = options.osVersion;
         final List<PathMatcher> excludes = options.excludes;
-        final Hasher hasher = hasher();
         final ModuleResolution moduleResolution = options.moduleResolution;
 
         JmodFileWriter() { }
@@ -514,8 +535,17 @@ public class JmodTask {
                 if (moduleVersion != null)
                     extender.version(moduleVersion);
 
-                if (hasher != null) {
-                    ModuleHashes moduleHashes = hasher.computeHashes(descriptor.name());
+                // --hash-modules
+                if (options.modulesToHash != null) {
+                    // To compute hashes, it creates a Configuration to resolve
+                    // a module graph.  The post-resolution check requires
+                    // the packages in ModuleDescriptor be available for validation.
+                    ModuleDescriptor md;
+                    try (InputStream is = miSupplier.get()) {
+                        md = ModuleDescriptor.read(is, () -> packages);
+                    }
+
+                    ModuleHashes moduleHashes = computeHashes(md);
                     if (moduleHashes != null) {
                         extender.hashes(moduleHashes);
                     } else {
@@ -557,50 +587,34 @@ public class JmodTask {
          * The jmod file is being created and does not exist in the
          * given modulepath.
          */
-        private Hasher hasher() {
-            if (options.modulesToHash == null)
-                return null;
-
-            try {
-                Supplier<InputStream> miSupplier = newModuleInfoSupplier();
-                if (miSupplier == null) {
-                    throw new IOException(MODULE_INFO + " not found");
+        private ModuleHashes computeHashes(ModuleDescriptor descriptor) {
+            String mn = descriptor.name();
+            URI uri = options.jmodFile.toUri();
+            ModuleReference mref = new ModuleReference(descriptor, uri) {
+                @Override
+                public ModuleReader open() {
+                    throw new UnsupportedOperationException("opening " + mn);
                 }
+            };
 
-                ModuleDescriptor descriptor;
-                try (InputStream in = miSupplier.get()) {
-                    descriptor = ModuleDescriptor.read(in);
-                }
-
-                URI uri = options.jmodFile.toUri();
-                ModuleReference mref = new ModuleReference(descriptor, uri) {
+            // compose a module finder with the module path and also
+            // a module finder that can find the jmod file being created
+            ModuleFinder finder = ModuleFinder.compose(options.moduleFinder,
+                new ModuleFinder() {
                     @Override
-                    public ModuleReader open() {
-                        throw new UnsupportedOperationException();
+                    public Optional<ModuleReference> find(String name) {
+                        if (descriptor.name().equals(name))
+                            return Optional.of(mref);
+                        else return Optional.empty();
                     }
-                };
 
-                // compose a module finder with the module path and also
-                // a module finder that can find the jmod file being created
-                ModuleFinder finder = ModuleFinder.compose(options.moduleFinder,
-                    new ModuleFinder() {
-                        @Override
-                        public Optional<ModuleReference> find(String name) {
-                            if (descriptor.name().equals(name))
-                                return Optional.of(mref);
-                            else return Optional.empty();
-                        }
+                    @Override
+                    public Set<ModuleReference> findAll() {
+                        return Collections.singleton(mref);
+                    }
+                });
 
-                        @Override
-                        public Set<ModuleReference> findAll() {
-                            return Collections.singleton(mref);
-                        }
-                    });
-
-                return new Hasher(finder);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
+            return new Hasher(mn, finder).computeHashes().get(mn);
         }
 
         /**
@@ -789,192 +803,93 @@ public class JmodTask {
      * Compute and record hashes
      */
     private class Hasher {
-        final ModuleFinder moduleFinder;
-        final Map<String, Path> moduleNameToPath;
-        final Set<String> modules;
         final Configuration configuration;
-        final boolean dryrun = options.dryrun;
+        final ModuleHashesBuilder hashesBuilder;
+        final Set<String> modules;
+        final String moduleName;  // a specific module to record hashes, if set
+
+        /**
+         * This constructor is for jmod hash command.
+         *
+         * This Hasher will determine which modules to record hashes, i.e.
+         * the module in a subgraph of modules to be hashed and that
+         * has no outgoing edges.  It will record in each of these modules,
+         * say `M`, with the the hashes of modules that depend upon M
+         * directly or indirectly matching the specified --hash-modules pattern.
+         */
         Hasher(ModuleFinder finder) {
-            this.moduleFinder = finder;
+            this(null, finder);
+        }
+
+        /**
+         * Constructs a Hasher to compute hashes.
+         *
+         * If a module name `M` is specified, it will compute the hashes of
+         * modules that depend upon M directly or indirectly matching the
+         * specified --hash-modules pattern and record in the ModuleHashes
+         * attribute in M's module-info.class.
+         *
+         * @param name    name of the module to record hashes
+         * @param finder  module finder for the specified --module-path
+         */
+        Hasher(String name, ModuleFinder finder) {
             // Determine the modules that matches the pattern {@code modulesToHash}
-            this.modules = moduleFinder.findAll().stream()
+            Set<String> roots = finder.findAll().stream()
                 .map(mref -> mref.descriptor().name())
                 .filter(mn -> options.modulesToHash.matcher(mn).find())
                 .collect(Collectors.toSet());
 
-            // a map from a module name to Path of the packaged module
-            this.moduleNameToPath = moduleFinder.findAll().stream()
-                .map(mref -> mref.descriptor().name())
-                .collect(Collectors.toMap(Function.identity(), mn -> moduleToPath(mn)));
-
+            // use system module path unless it creates a JMOD file for
+            // a module that is present in the system image e.g. upgradeable
+            // module
+            ModuleFinder system;
+            if (name != null && ModuleFinder.ofSystem().find(name).isPresent()) {
+                system = ModuleFinder.of();
+            } else {
+                system = ModuleFinder.ofSystem();
+            }
             // get a resolved module graph
             Configuration config = null;
             try {
-                config = Configuration.empty()
-                    .resolveRequires(ModuleFinder.ofSystem(), moduleFinder, modules);
+                config = Configuration.empty().resolveRequires(system, finder, roots);
             } catch (ResolutionException e) {
-                warning("warn.module.resolution.fail", e.getMessage());
+                throw new CommandException("err.module.resolution.fail", e.getMessage());
             }
+
+            this.moduleName = name;
             this.configuration = config;
+
+            // filter modules resolved from the system module finder
+            this.modules = config.modules().stream()
+                .map(ResolvedModule::name)
+                .filter(mn -> roots.contains(mn) && !system.find(mn).isPresent())
+                .collect(Collectors.toSet());
+
+            this.hashesBuilder = new ModuleHashesBuilder(config, modules);
         }
 
         /**
-         * This method is for jmod hash command.
+         * Returns a map of a module M to record hashes of the modules
+         * that depend upon M directly or indirectly.
          *
-         * Identify the base modules in the module graph, i.e. no outgoing edge
-         * to any of the modules to be hashed.
+         * For jmod hash command, the returned map contains one entry
+         * for each module M that has no outgoing edges to any of the
+         * modules matching the specified --hash-modules pattern.
          *
-         * For each base module M, compute the hashes of all modules that depend
-         * upon M directly or indirectly.  Then update M's module-info.class
-         * to record the hashes.
+         * Each entry represents a leaf node in a connected subgraph containing
+         * M and other candidate modules from the module graph where M's outgoing
+         * edges to any module other than the ones matching the specified
+         * --hash-modules pattern are excluded.
          */
-        boolean run() {
-            if (configuration == null)
-                return false;
-
-            // transposed graph containing the the packaged modules and
-            // its transitive dependences matching --hash-modules
-            Map<String, Set<String>> graph = new HashMap<>();
-            for (String root : modules) {
-                Deque<String> deque = new ArrayDeque<>();
-                deque.add(root);
-                Set<String> visited = new HashSet<>();
-                while (!deque.isEmpty()) {
-                    String mn = deque.pop();
-                    if (!visited.contains(mn)) {
-                        visited.add(mn);
-
-                        if (modules.contains(mn))
-                            graph.computeIfAbsent(mn, _k -> new HashSet<>());
-
-                        ResolvedModule resolvedModule = configuration.findModule(mn).get();
-                        for (ResolvedModule dm : resolvedModule.reads()) {
-                            String name = dm.name();
-                            if (!visited.contains(name)) {
-                                deque.push(name);
-                            }
-
-                            // reverse edge
-                            if (modules.contains(name) && modules.contains(mn)) {
-                                graph.computeIfAbsent(name, _k -> new HashSet<>()).add(mn);
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (dryrun)
-                out.println("Dry run:");
-
-            // each node in a transposed graph is a matching packaged module
-            // in which the hash of the modules that depend upon it is recorded
-            graph.entrySet().stream()
-                .filter(e -> !e.getValue().isEmpty())
-                .forEach(e -> {
-                    String mn = e.getKey();
-                    Map<String, Path> modulesForHash = e.getValue().stream()
-                            .collect(Collectors.toMap(Function.identity(),
-                                                      moduleNameToPath::get));
-                    ModuleHashes hashes = ModuleHashes.generate(modulesForHash, "SHA-256");
-                    if (dryrun) {
-                        out.format("%s%n", mn);
-                        hashes.names().stream()
-                              .sorted()
-                              .forEach(name -> out.format("  hashes %s %s %s%n",
-                                  name, hashes.algorithm(), hashes.hashFor(name)));
-                    } else {
-                        try {
-                            updateModuleInfo(mn, hashes);
-                        } catch (IOException ex) {
-                            throw new UncheckedIOException(ex);
-                        }
-                    }
-                });
-            return true;
-        }
-
-        /**
-         * Compute hashes of the specified module.
-         *
-         * It records the hashing modules that depend upon the specified
-         * module directly or indirectly.
-         */
-        ModuleHashes computeHashes(String name) {
-            if (configuration == null)
+        Map<String, ModuleHashes> computeHashes() {
+            if (hashesBuilder == null)
                 return null;
 
-            // the transposed graph includes all modules in the resolved graph
-            Map<String, Set<String>> graph = transpose();
-
-            // find the modules that transitively depend upon the specified name
-            Deque<String> deque = new ArrayDeque<>();
-            deque.add(name);
-            Set<String> mods = visitNodes(graph, deque);
-
-            // filter modules matching the pattern specified --hash-modules
-            // as well as itself as the jmod file is being generated
-            Map<String, Path> modulesForHash = mods.stream()
-                .filter(mn -> !mn.equals(name) && modules.contains(mn))
-                .collect(Collectors.toMap(Function.identity(), moduleNameToPath::get));
-
-            if (modulesForHash.isEmpty())
-                return null;
-
-           return ModuleHashes.generate(modulesForHash, "SHA-256");
-        }
-
-        /**
-         * Returns all nodes traversed from the given roots.
-         */
-        private Set<String> visitNodes(Map<String, Set<String>> graph,
-                                       Deque<String> roots) {
-            Set<String> visited = new HashSet<>();
-            while (!roots.isEmpty()) {
-                String mn = roots.pop();
-                if (!visited.contains(mn)) {
-                    visited.add(mn);
-                    // the given roots may not be part of the graph
-                    if (graph.containsKey(mn)) {
-                        for (String dm : graph.get(mn)) {
-                            if (!visited.contains(dm)) {
-                                roots.push(dm);
-                            }
-                        }
-                    }
-                }
+            if (moduleName != null) {
+                return hashesBuilder.computeHashes(Set.of(moduleName));
+            } else {
+                return hashesBuilder.computeHashes(modules);
             }
-            return visited;
-        }
-
-        /**
-         * Returns a transposed graph from the resolved module graph.
-         */
-        private Map<String, Set<String>> transpose() {
-            Map<String, Set<String>> transposedGraph = new HashMap<>();
-            Deque<String> deque = new ArrayDeque<>(modules);
-
-            Set<String> visited = new HashSet<>();
-            while (!deque.isEmpty()) {
-                String mn = deque.pop();
-                if (!visited.contains(mn)) {
-                    visited.add(mn);
-
-                    transposedGraph.computeIfAbsent(mn, _k -> new HashSet<>());
-
-                    ResolvedModule resolvedModule = configuration.findModule(mn).get();
-                    for (ResolvedModule dm : resolvedModule.reads()) {
-                        String name = dm.name();
-                        if (!visited.contains(name)) {
-                            deque.push(name);
-                        }
-
-                        // reverse edge
-                        transposedGraph.computeIfAbsent(name, _k -> new HashSet<>())
-                                .add(mn);
-                    }
-                }
-            }
-            return transposedGraph;
         }
 
         /**
@@ -993,11 +908,11 @@ public class JmodTask {
             extender.write(out);
         }
 
-        private void updateModuleInfo(String name, ModuleHashes moduleHashes)
+        void updateModuleInfo(String name, ModuleHashes moduleHashes)
             throws IOException
         {
-            Path target = moduleNameToPath.get(name);
-            Path tempTarget = target.resolveSibling(target.getFileName() + ".tmp");
+            Path target = moduleToPath(name);
+            Path tempTarget = jmodTempFilePath(target);
             try {
                 if (target.getFileName().toString().endsWith(".jmod")) {
                     updateJmodFile(target, tempTarget, moduleHashes);
@@ -1005,12 +920,10 @@ public class JmodTask {
                     updateModularJar(target, tempTarget, moduleHashes);
                 }
             } catch (IOException|RuntimeException e) {
-                if (Files.exists(tempTarget)) {
-                    try {
-                        Files.delete(tempTarget);
-                    } catch (IOException ioe) {
-                        e.addSuppressed(ioe);
-                    }
+                try {
+                    Files.deleteIfExists(tempTarget);
+                } catch (IOException ioe) {
+                    e.addSuppressed(ioe);
                 }
                 throw e;
             }
@@ -1075,10 +988,10 @@ public class JmodTask {
         }
 
         private Path moduleToPath(String name) {
-            ModuleReference mref = moduleFinder.find(name).orElseThrow(
+            ResolvedModule rm = configuration.findModule(name).orElseThrow(
                 () -> new InternalError("Selected module " + name + " not on module path"));
 
-            URI uri = mref.location().get();
+            URI uri = rm.reference().location().get();
             Path path = Paths.get(uri);
             String fn = path.getFileName().toString();
             if (!fn.endsWith(".jar") && !fn.endsWith(".jmod")) {
@@ -1088,34 +1001,58 @@ public class JmodTask {
         }
     }
 
-    static class ClassPathConverter implements ValueConverter<Path> {
-        static final ValueConverter<Path> INSTANCE = new ClassPathConverter();
+    /**
+     * An abstract converter that given a string representing a list of paths,
+     * separated by the File.pathSeparator, returns a List of java.nio.Path's.
+     * Specific subclasses should do whatever validation is required on the
+     * individual path elements, if any.
+     */
+    static abstract class AbstractPathConverter implements ValueConverter<List<Path>> {
+        @Override
+        public List<Path> convert(String value) {
+            List<Path> paths = new ArrayList<>();
+            String[] pathElements = value.split(File.pathSeparator);
+            for (String pathElement : pathElements) {
+                paths.add(toPath(pathElement));
+            }
+            return paths;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public Class<List<Path>> valueType() {
+            return (Class<List<Path>>)(Object)List.class;
+        }
+
+        @Override public String valuePattern() { return "path"; }
+
+        abstract Path toPath(String path);
+    }
+
+    static class ClassPathConverter extends AbstractPathConverter {
+        static final ValueConverter<List<Path>> INSTANCE = new ClassPathConverter();
 
         @Override
-        public Path convert(String value) {
+        public Path toPath(String value) {
             try {
                 Path path = CWD.resolve(value);
                 if (Files.notExists(path))
                     throw new CommandException("err.path.not.found", path);
-                if (! (Files.isDirectory(path) ||
-                       (Files.isRegularFile(path) && path.toString().endsWith(".jar"))))
+                if (!(Files.isDirectory(path) ||
+                        (Files.isRegularFile(path) && path.toString().endsWith(".jar"))))
                     throw new CommandException("err.invalid.class.path.entry", path);
                 return path;
             } catch (InvalidPathException x) {
                 throw new CommandException("err.path.not.valid", value);
             }
         }
-
-        @Override  public Class<Path> valueType() { return Path.class; }
-
-        @Override  public String valuePattern() { return "path"; }
     }
 
-    static class DirPathConverter implements ValueConverter<Path> {
-        static final ValueConverter<Path> INSTANCE = new DirPathConverter();
+    static class DirPathConverter extends AbstractPathConverter {
+        static final ValueConverter<List<Path>> INSTANCE = new DirPathConverter();
 
         @Override
-        public Path convert(String value) {
+        public Path toPath(String value) {
             try {
                 Path path = CWD.resolve(value);
                 if (Files.notExists(path))
@@ -1127,10 +1064,6 @@ public class JmodTask {
                 throw new CommandException("err.path.not.valid", value);
             }
         }
-
-        @Override  public Class<Path> valueType() { return Path.class; }
-
-        @Override  public String valuePattern() { return "path"; }
     }
 
     static class ExtractDirPathConverter implements ValueConverter<Path> {
@@ -1142,12 +1075,6 @@ public class JmodTask {
                 if (Files.exists(path)) {
                     if (!Files.isDirectory(path))
                         throw new CommandException("err.cannot.create.dir", path);
-                } else {
-                    try {
-                        Files.createDirectories(path);
-                    } catch (IOException ioe) {
-                        throw new CommandException("err.cannot.create.dir", path);
-                    }
                 }
                 return path;
             } catch (InvalidPathException x) {
@@ -1316,22 +1243,19 @@ public class JmodTask {
         options = new Options();
         parser.formatHelpWith(new JmodHelpFormatter(options));
 
-        OptionSpec<Path> classPath
+        OptionSpec<List<Path>> classPath
                 = parser.accepts("class-path", getMessage("main.opt.class-path"))
                         .withRequiredArg()
-                        .withValuesSeparatedBy(File.pathSeparatorChar)
                         .withValuesConvertedBy(ClassPathConverter.INSTANCE);
 
-        OptionSpec<Path> cmds
+        OptionSpec<List<Path>> cmds
                 = parser.accepts("cmds", getMessage("main.opt.cmds"))
                         .withRequiredArg()
-                        .withValuesSeparatedBy(File.pathSeparatorChar)
                         .withValuesConvertedBy(DirPathConverter.INSTANCE);
 
-        OptionSpec<Path> config
+        OptionSpec<List<Path>> config
                 = parser.accepts("config", getMessage("main.opt.config"))
                         .withRequiredArg()
-                        .withValuesSeparatedBy(File.pathSeparatorChar)
                         .withValuesConvertedBy(DirPathConverter.INSTANCE);
 
         OptionSpec<Path> dir
@@ -1359,22 +1283,19 @@ public class JmodTask {
         OptionSpec<Void> helpExtra
                 = parser.accepts("help-extra", getMessage("main.opt.help-extra"));
 
-        OptionSpec<Path> headerFiles
+        OptionSpec<List<Path>> headerFiles
                 = parser.accepts("header-files", getMessage("main.opt.header-files"))
                         .withRequiredArg()
-                        .withValuesSeparatedBy(File.pathSeparatorChar)
                         .withValuesConvertedBy(DirPathConverter.INSTANCE);
 
-        OptionSpec<Path> libs
+        OptionSpec<List<Path>> libs
                 = parser.accepts("libs", getMessage("main.opt.libs"))
                         .withRequiredArg()
-                        .withValuesSeparatedBy(File.pathSeparatorChar)
                         .withValuesConvertedBy(DirPathConverter.INSTANCE);
 
-        OptionSpec<Path> legalNotices
+        OptionSpec<List<Path>> legalNotices
                 = parser.accepts("legal-notices", getMessage("main.opt.legal-notices"))
                         .withRequiredArg()
-                        .withValuesSeparatedBy(File.pathSeparatorChar)
                         .withValuesConvertedBy(DirPathConverter.INSTANCE);
 
 
@@ -1383,17 +1304,15 @@ public class JmodTask {
                         .withRequiredArg()
                         .describedAs(getMessage("main.opt.main-class.arg"));
 
-        OptionSpec<Path> manPages
+        OptionSpec<List<Path>> manPages
                 = parser.accepts("man-pages", getMessage("main.opt.man-pages"))
                         .withRequiredArg()
-                        .withValuesSeparatedBy(File.pathSeparatorChar)
                         .withValuesConvertedBy(DirPathConverter.INSTANCE);
 
-        OptionSpec<Path> modulePath
+        OptionSpec<List<Path>> modulePath
                 = parser.acceptsAll(Set.of("p", "module-path"),
                                     getMessage("main.opt.module-path"))
                         .withRequiredArg()
-                        .withValuesSeparatedBy(File.pathSeparatorChar)
                         .withValuesConvertedBy(DirPathConverter.INSTANCE);
 
         OptionSpec<Version> moduleVersion
@@ -1452,48 +1371,48 @@ public class JmodTask {
             }
 
             if (opts.has(classPath))
-                options.classpath = opts.valuesOf(classPath);
+                options.classpath = getLastElement(opts.valuesOf(classPath));
             if (opts.has(cmds))
-                options.cmds = opts.valuesOf(cmds);
+                options.cmds = getLastElement(opts.valuesOf(cmds));
             if (opts.has(config))
-                options.configs = opts.valuesOf(config);
+                options.configs = getLastElement(opts.valuesOf(config));
             if (opts.has(dir))
-                options.extractDir = opts.valueOf(dir);
+                options.extractDir = getLastElement(opts.valuesOf(dir));
             if (opts.has(dryrun))
                 options.dryrun = true;
             if (opts.has(excludes))
-                options.excludes = opts.valuesOf(excludes);
+                options.excludes = opts.valuesOf(excludes);  // excludes is repeatable
             if (opts.has(libs))
-                options.libs = opts.valuesOf(libs);
+                options.libs = getLastElement(opts.valuesOf(libs));
             if (opts.has(headerFiles))
-                options.headerFiles = opts.valuesOf(headerFiles);
+                options.headerFiles = getLastElement(opts.valuesOf(headerFiles));
             if (opts.has(manPages))
-                options.manPages = opts.valuesOf(manPages);
+                options.manPages = getLastElement(opts.valuesOf(manPages));
             if (opts.has(legalNotices))
-                options.legalNotices = opts.valuesOf(legalNotices);
+                options.legalNotices = getLastElement(opts.valuesOf(legalNotices));
             if (opts.has(modulePath)) {
-                Path[] dirs = opts.valuesOf(modulePath).toArray(new Path[0]);
+                Path[] dirs = getLastElement(opts.valuesOf(modulePath)).toArray(new Path[0]);
                 options.moduleFinder = new ModulePath(Runtime.version(), true, dirs);
             }
             if (opts.has(moduleVersion))
-                options.moduleVersion = opts.valueOf(moduleVersion);
+                options.moduleVersion = getLastElement(opts.valuesOf(moduleVersion));
             if (opts.has(mainClass))
-                options.mainClass = opts.valueOf(mainClass);
+                options.mainClass = getLastElement(opts.valuesOf(mainClass));
             if (opts.has(osName))
-                options.osName = opts.valueOf(osName);
+                options.osName = getLastElement(opts.valuesOf(osName));
             if (opts.has(osArch))
-                options.osArch = opts.valueOf(osArch);
+                options.osArch = getLastElement(opts.valuesOf(osArch));
             if (opts.has(osVersion))
-                options.osVersion = opts.valueOf(osVersion);
+                options.osVersion = getLastElement(opts.valuesOf(osVersion));
             if (opts.has(warnIfResolved))
-                options.moduleResolution = opts.valueOf(warnIfResolved);
+                options.moduleResolution = getLastElement(opts.valuesOf(warnIfResolved));
             if (opts.has(doNotResolveByDefault)) {
                 if (options.moduleResolution == null)
                     options.moduleResolution = ModuleResolution.empty();
                 options.moduleResolution = options.moduleResolution.withDoNotResolveByDefault();
             }
             if (opts.has(hashModules)) {
-                options.modulesToHash = opts.valueOf(hashModules);
+                options.modulesToHash = getLastElement(opts.valuesOf(hashModules));
                 // if storing hashes then the module path is required
                 if (options.moduleFinder == null)
                     throw new CommandException("err.modulepath.must.be.specified")
@@ -1531,6 +1450,13 @@ public class JmodTask {
                 throw new CommandException("err.classpath.must.be.specified").showUsage(true);
             if (options.mainClass != null && !isValidJavaIdentifier(options.mainClass))
                 throw new CommandException("err.invalid.main-class", options.mainClass);
+            if (options.mode.equals(Mode.EXTRACT) && options.extractDir != null) {
+                try {
+                    Files.createDirectories(options.extractDir);
+                } catch (IOException ioe) {
+                    throw new CommandException("err.cannot.create.dir", options.extractDir);
+                }
+            }
         } catch (OptionException e) {
              throw new CommandException(e.getMessage());
         }
@@ -1556,6 +1482,12 @@ public class JmodTask {
             return false;
 
         return true;
+    }
+
+    static <E> E getLastElement(List<E> list) {
+        if (list.size() == 0)
+            throw new InternalError("Unexpected 0 list size");
+        return list.get(list.size() - 1);
     }
 
     private void reportError(String message) {

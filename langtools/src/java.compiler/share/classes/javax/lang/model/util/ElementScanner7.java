@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,26 +34,26 @@ import static javax.lang.model.SourceVersion.*;
 /**
  * A scanning visitor of program elements with default behavior
  * appropriate for the {@link SourceVersion#RELEASE_7 RELEASE_7}
- * source version.  The <tt>visit<i>XYZ</i></tt> methods in this
+ * source version.  The <code>visit<i>Xyz</i></code> methods in this
  * class scan their component elements by calling {@code scan} on
  * their {@linkplain Element#getEnclosedElements enclosed elements},
  * {@linkplain ExecutableElement#getParameters parameters}, etc., as
  * indicated in the individual method specifications.  A subclass can
  * control the order elements are visited by overriding the
- * <tt>visit<i>XYZ</i></tt> methods.  Note that clients of a scanner
+ * <code>visit<i>Xyz</i></code> methods.  Note that clients of a scanner
  * may get the desired behavior be invoking {@code v.scan(e, p)} rather
  * than {@code v.visit(e, p)} on the root objects of interest.
  *
- * <p>When a subclass overrides a <tt>visit<i>XYZ</i></tt> method, the
+ * <p>When a subclass overrides a <code>visit<i>Xyz</i></code> method, the
  * new method can cause the enclosed elements to be scanned in the
- * default way by calling <tt>super.visit<i>XYZ</i></tt>.  In this
+ * default way by calling <code>super.visit<i>Xyz</i></code>.  In this
  * fashion, the concrete visitor can control the ordering of traversal
  * over the component elements with respect to the additional
  * processing; for example, consistently calling
- * <tt>super.visit<i>XYZ</i></tt> at the start of the overridden
+ * <code>super.visit<i>Xyz</i></code> at the start of the overridden
  * methods will yield a preorder traversal, etc.  If the component
  * elements should be traversed in some other order, instead of
- * calling <tt>super.visit<i>XYZ</i></tt>, an overriding visit method
+ * calling <code>super.visit<i>Xyz</i></code>, an overriding visit method
  * should call {@code scan} with the elements in the desired order.
  *
  * <p> Methods in this class may be overridden subject to their
@@ -89,13 +89,13 @@ import static javax.lang.model.SourceVersion.*;
  * @see ElementScanner9
  * @since 1.7
  */
-@SuppressWarnings("deprecation") // Superclass deprecated
 @SupportedSourceVersion(RELEASE_7)
 public class ElementScanner7<R, P> extends ElementScanner6<R, P> {
     /**
      * Constructor for concrete subclasses; uses {@code null} for the
      * default value.
      */
+    @SuppressWarnings("deprecation") // Superclass constructor deprecated
     protected ElementScanner7(){
         super(null);
     }
@@ -106,6 +106,7 @@ public class ElementScanner7<R, P> extends ElementScanner6<R, P> {
      *
      * @param defaultValue the default value
      */
+    @SuppressWarnings("deprecation") // Superclass constructor deprecated
     protected ElementScanner7(R defaultValue){
         super(defaultValue);
     }

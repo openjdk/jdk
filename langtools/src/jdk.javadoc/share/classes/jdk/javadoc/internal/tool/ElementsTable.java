@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,14 +39,12 @@ import java.util.Set;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.ModuleElement.ExportsDirective;
 import javax.lang.model.element.ModuleElement.RequiresDirective;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.SimpleElementVisitor9;
 import javax.tools.JavaFileManager;
@@ -54,15 +52,12 @@ import javax.tools.JavaFileManager.Location;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 
-import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Kinds.Kind;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
-import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
-import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.comp.Modules;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
@@ -75,8 +70,10 @@ import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.DocletEnvironment.ModuleMode;
 
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
+import static javax.tools.JavaFileObject.Kind.*;
 import static jdk.javadoc.internal.tool.Main.Result.*;
 import static jdk.javadoc.internal.tool.JavadocTool.isValidClassName;
+
 
 /**
  * This class manages elements specified on the command line, and
@@ -864,7 +861,7 @@ public class ElementsTable {
     }
 
     private boolean isTypeElementSelected(TypeElement te) {
-        return (xclasses || toolEnv.isFromSource(te)) && isSelected(te);
+        return (xclasses || toolEnv.getFileKind(te) == SOURCE) && isSelected(te);
     }
 
     SimpleElementVisitor9<Boolean, Void> visibleElementVisitor = null;
