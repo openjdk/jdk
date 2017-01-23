@@ -25,18 +25,22 @@
 
 package sun.security.util;
 
+import java.util.Map;
+import java.util.ResourceBundle;
+import java.util.concurrent.ConcurrentHashMap;
+import jdk.internal.misc.VM;
+
 /**
  */
 public class ResourcesMgr {
-
     // intended for java.security, javax.security and sun.security resources
-    private static java.util.ResourceBundle bundle;
+    private final static String RESOURCES = "sun.security.util.Resources";
+    private final static String AUTH_RESOURCES = "sun.security.util.AuthResources";
 
-    // intended for com.sun.security resources
-    private static java.util.ResourceBundle altBundle;
+    private final static Map<String, ResourceBundle> bundles = new ConcurrentHashMap<>();
 
     public static String getString(String s) {
-
+        ResourceBundle bundle = bundles.get(RESOURCES);
         if (bundle == null) {
 
             // only load if/when needed
@@ -52,19 +56,15 @@ public class ResourcesMgr {
         return bundle.getString(s);
     }
 
-    public static String getString(String s, final String altBundleName) {
-
-        if (altBundle == null) {
-
-            // only load if/when needed
-            altBundle = java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<java.util.ResourceBundle>() {
-                public java.util.ResourceBundle run() {
-                    return (java.util.ResourceBundle.getBundle(altBundleName));
-                }
-            });
+    public static String getAuthResourceString(String s) {
+        if (VM.initLevel() == 3) {
+            // cannot trigger loading of any resource bundle as
+            // it depends on the system class loader fully initialized.
+            throw new InternalError("system class loader is being initialized");
         }
 
-        return altBundle.getString(s);
+        return bundles.computeIfAbsent(AUTH_RESOURCES, ResourceBundle::getBundle)
+                      .getString(s);
     }
+
 }

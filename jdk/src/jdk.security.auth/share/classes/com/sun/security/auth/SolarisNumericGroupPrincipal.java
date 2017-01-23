@@ -26,6 +26,7 @@
 package com.sun.security.auth;
 
 import java.security.Principal;
+import static sun.security.util.ResourcesMgr.getAuthResourceString;
 
 /**
  * This class implements the {@code Principal} interface
@@ -53,9 +54,6 @@ public class SolarisNumericGroupPrincipal implements
 
     private static final long serialVersionUID = 2345199581042573224L;
 
-    private static final java.util.ResourceBundle rb =
-        java.util.ResourceBundle.getBundle("sun.security.util.AuthResources");
-
     /**
      * @serial
      */
@@ -82,7 +80,7 @@ public class SolarisNumericGroupPrincipal implements
      */
     public SolarisNumericGroupPrincipal(String name, boolean primaryGroup) {
         if (name == null)
-            throw new NullPointerException(rb.getString("provided.null.name"));
+            throw new NullPointerException(getAuthResourceString("provided.null.name"));
 
         this.name = name;
         this.primaryGroup = primaryGroup;
@@ -146,11 +144,11 @@ public class SolarisNumericGroupPrincipal implements
      *          {@code SolarisNumericGroupPrincipal}.
      */
     public String toString() {
-        return((primaryGroup ?
-            rb.getString
+        return primaryGroup ?
+            getAuthResourceString
             ("SolarisNumericGroupPrincipal.Primary.Group.") + name :
-            rb.getString
-            ("SolarisNumericGroupPrincipal.Supplementary.Group.") + name));
+            getAuthResourceString
+            ("SolarisNumericGroupPrincipal.Supplementary.Group.") + name;
     }
 
     /**
