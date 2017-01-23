@@ -35,10 +35,10 @@
  */
 #define SAFE_TO_ALLOC_2(c, sz)                                             \
     (((c) > 0) && ((sz) > 0) &&                                            \
-     ((0xffffffffu / ((juint)(c))) > ((juint)(sz))))
+     ((0x7fffffff / (c)) > (sz)))
 
 #define SAFE_TO_ALLOC_3(w, h, sz)                                          \
     (((w) > 0) && ((h) > 0) && ((sz) > 0) &&                               \
-     (((0xffffffffu / ((juint)(w))) / ((juint)(h))) > ((juint)(sz))))
+     (((0x7fffffff / (w)) / (h)) > (sz)))
 
 #endif // __SAFE_ALLOC_H__

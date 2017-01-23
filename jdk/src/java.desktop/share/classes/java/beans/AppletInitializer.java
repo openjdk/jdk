@@ -30,21 +30,20 @@ import java.applet.Applet;
 import java.beans.beancontext.BeanContext;
 
 /**
- * <p>
  * This interface is designed to work in collusion with java.beans.Beans.instantiate.
  * The interface is intended to provide mechanism to allow the proper
  * initialization of JavaBeans that are also Applets, during their
  * instantiation by java.beans.Beans.instantiate().
- * </p>
  *
  * @see java.beans.Beans#instantiate
  *
  * @since 1.2
  *
+ * @deprecated The Applet API is deprecated. See the
+ * <a href="../applet/package-summary.html"> java.applet package
+ * documentation</a> for further information.
  */
-
-
-@SuppressWarnings("deprecation")
+@Deprecated(since = "9")
 public interface AppletInitializer {
 
     /**
@@ -74,7 +73,6 @@ public interface AppletInitializer {
      * @param bCtxt          The BeanContext intended for this Applet, or
      *                       null.
      */
-
     void initialize(Applet newAppletBean, BeanContext bCtxt);
 
     /**
@@ -86,6 +84,5 @@ public interface AppletInitializer {
      *
      * @param newApplet  The newly instantiated JavaBean
      */
-
     void activate(Applet newApplet);
 }

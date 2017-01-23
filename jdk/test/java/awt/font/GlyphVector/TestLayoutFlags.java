@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 
 /* @test
-   @bug 4328745 5090704
+   @bug 4328745 5090704 8166111
    @summary exercise getLayoutFlags, getGlyphCharIndex, getGlyphCharIndices
  */
 
@@ -82,7 +82,7 @@ public class TestLayoutFlags {
         test("latin", latinGV, GlyphVector.FLAG_HAS_POSITION_ADJUSTMENTS);
         test("hebrew", hebrewGV, GlyphVector.FLAG_RUN_RTL |
              GlyphVector.FLAG_HAS_POSITION_ADJUSTMENTS);
-        test("arabic", arabicGV, GlyphVector.FLAG_RUN_RTL |
+        test("arabic", arabicGV, GlyphVector.FLAG_COMPLEX_GLYPHS |
              GlyphVector.FLAG_HAS_POSITION_ADJUSTMENTS);
         test("hindi", hindiGV, GlyphVector.FLAG_COMPLEX_GLYPHS |
              GlyphVector.FLAG_HAS_POSITION_ADJUSTMENTS);

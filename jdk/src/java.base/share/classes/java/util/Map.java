@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1602,8 +1602,7 @@ public interface Map<K, V> {
     @SafeVarargs
     @SuppressWarnings("varargs")
     static <K, V> Map<K, V> ofEntries(Entry<? extends K, ? extends V>... entries) {
-        Objects.requireNonNull(entries);
-        if (entries.length == 0) {
+        if (entries.length == 0) { // implicit null check of entries
             return ImmutableCollections.Map0.instance();
         } else if (entries.length == 1) {
             return new ImmutableCollections.Map1<>(entries[0].getKey(),

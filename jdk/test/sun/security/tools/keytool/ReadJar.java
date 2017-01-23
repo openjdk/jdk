@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,15 @@
  * @test
  * @bug 6890872 8168882
  * @summary keytool -printcert to recognize signed jar files
- * @library /lib/security
+ * @library /test/lib
  * @library /lib/testlibrary
  */
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import jdk.test.lib.SecurityTools;
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.testlibrary.JarUtils;
-import jdk.testlibrary.OutputAnalyzer;
 
 public class ReadJar {
 
@@ -56,16 +57,15 @@ public class ReadJar {
         System.out.println(out.getOutput());
         out.shouldHaveExitValue(0);
 
-        out = SecurityTools.jarsigner("test_rsa.jar", "rsa_alias",
-                "-keystore keystore -storepass password ");
+        out = SecurityTools.jarsigner("-keystore keystore -storepass password "
+                + "test_rsa.jar rsa_alias");
         System.out.println(out.getOutput());
         out.shouldHaveExitValue(0);
 
         printCert("test_rsa.jar");
 
-        out = SecurityTools.jarsigner("test_md5.jar", "rsa_alias",
-                "-keystore keystore -storepass password "
-                        + "-sigalg MD5withRSA -digestalg MD5");
+        out = SecurityTools.jarsigner("-keystore keystore -storepass password "
+                + "-sigalg MD5withRSA -digestalg MD5 test_md5.jar rsa_alias");
         System.out.println(out.getOutput());
         out.shouldHaveExitValue(0);
 

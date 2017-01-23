@@ -792,6 +792,7 @@ public class LambdaToMethod extends TreeTranslator {
             switch (tree.getTag()) {
                 case APPLY: ((JCMethodInvocation)tree).varargsElement = varargsElement; break;
                 case NEWCLASS: ((JCNewClass)tree).varargsElement = varargsElement; break;
+                case TYPECAST: setVarargsIfNeeded(((JCTypeCast) tree).expr, varargsElement); break;
                 default: throw new AssertionError();
             }
         }

@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -141,8 +141,6 @@ java/lang/management/MemoryMXBean/PendingAllGC.sh               8158837 generic-
 
 # jdk_io
 
-java/io/pathNames/GeneralWin32.java                             8156595 windows-all
-
 ############################################################################
 
 # jdk_management
@@ -199,9 +197,9 @@ java/rmi/transport/checkLeaseInfoLeak/CheckLeaseLeak.java       7191877 generic-
 
 java/rmi/activation/Activatable/extLoadedImpl/ext.sh            8062724 generic-all
 
-sun/rmi/rmic/newrmic/equivalence/run.sh                         8145980 generic-all
+java/rmi/activation/ActivationGroup/downloadActivationGroup/DownloadActivationGroup.java 8169569 windows-all
 
-java/rmi/registry/readTest/readTest.sh                          7146543 generic-all
+sun/rmi/rmic/newrmic/equivalence/run.sh                         8145980 generic-all
 
 ############################################################################
 
@@ -259,6 +257,8 @@ tools/jimage/JImageVerifyTest.java                              8169713 generic-
 
 
 tools/jlink/multireleasejar/JLinkMultiReleaseJarTest.java       8169971 windows-x64
+
+tools/jlink/CustomPluginTest.java                               8172864 generic-all
 
 ############################################################################
 

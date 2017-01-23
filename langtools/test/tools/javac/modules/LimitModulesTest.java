@@ -180,7 +180,7 @@ public class LimitModulesTest extends ModuleTestBase {
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
 
-        if (!log.contains("C.java:1:41: compiler.err.doesnt.exist: com.sun.tools.javac"))
+        if (!log.contains("C.java:1:35: compiler.err.package.not.visible: com.sun.tools.javac, (compiler.misc.not.def.access.does.not.read.from.unnamed: com.sun.tools.javac, jdk.compiler)"))
             throw new Exception("expected output not found");
     }
 }

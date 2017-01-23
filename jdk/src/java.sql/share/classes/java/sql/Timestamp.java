@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,7 +259,7 @@ public class Timestamp extends java.util.Date {
     /**
      * Formats a timestamp in JDBC timestamp escape format.
      *         {@code yyyy-mm-dd hh:mm:ss.fffffffff},
-     * where {@code ffffffffff} indicates nanoseconds.
+     * where {@code fffffffff} indicates nanoseconds.
      *
      * @return a {@code String} object in
      *           {@code yyyy-mm-dd hh:mm:ss.fffffffff} format

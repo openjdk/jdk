@@ -20,11 +20,13 @@ compiler.err.limit.pool.in.class                        # UNUSED?
 compiler.err.limit.stack                                # Code
 compiler.err.limit.string                               # Gen
 compiler.err.limit.string.overflow                      # JavaCompiler
+compiler.err.module.non.zero.opens                      # bad class file
 compiler.err.name.reserved.for.internal.use             # UNUSED
 compiler.err.no.annotation.member
 compiler.err.no.encl.instance.of.type.in.scope          # cannot occur; always followed by assert false;
 compiler.err.no.match.entry                             # UNUSED?
 compiler.err.not.annotation.type                        # cannot occur given preceding checkType
+compiler.err.not.def.access.package.cant.access
 compiler.err.proc.bad.config.file                       # JavacProcessingEnvironment
 compiler.err.proc.cant.access                           # completion failure
 compiler.err.proc.cant.access.1                         # completion failure, no stack trace
@@ -69,10 +71,11 @@ compiler.misc.kindname.type.variable.bound
 compiler.misc.kindname.value
 compiler.misc.incompatible.eq.lower.bounds              # cannot happen?
 compiler.misc.module.name.mismatch
+compiler.misc.module.non.zero.opens                     # bad class file
 compiler.misc.no.unique.minimal.instance.exists
 compiler.misc.no.unique.maximal.instance.exists         # cannot happen?
-compiler.err.module.non.zero.opens                      # bad class file
-compiler.misc.module.non.zero.opens                     # bad class file
+compiler.misc.not.def.access.package.cant.access
+compiler.misc.package.not.visible
 compiler.misc.resume.abort                              # prompt for a response
 compiler.misc.source.unavailable                        # DiagnosticSource
 compiler.misc.token.bad-symbol
@@ -117,6 +120,7 @@ compiler.misc.bad.class.file                            # class file is malforme
 compiler.misc.bad.const.pool.entry                      # constant pool entry has wrong type
 compiler.warn.access.to.member.from.serializable.lambda # in order to generate it we need to modify a restricted package
 compiler.warn.invalid.path                              # this warning is generated only in Windows systems
+compiler.note.multiple.elements                         # needs user code
 
 # The following module-related messages will have to stay on the not-yet list for various reasons:
 compiler.warn.locn.unknown.file.on.module.path                # Never issued ATM (short circuited with an if (false))

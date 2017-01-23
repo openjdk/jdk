@@ -74,9 +74,8 @@ public class UnixNumericGroupPrincipal implements
     public UnixNumericGroupPrincipal(String name, boolean primaryGroup) {
         if (name == null) {
             java.text.MessageFormat form = new java.text.MessageFormat
-                (sun.security.util.ResourcesMgr.getString
-                        ("invalid.null.input.value",
-                        "sun.security.util.AuthResources"));
+                (sun.security.util.ResourcesMgr.getAuthResourceString
+                        ("invalid.null.input.value"));
             Object[] source = {"name"};
             throw new NullPointerException(form.format(source));
         }
@@ -146,16 +145,14 @@ public class UnixNumericGroupPrincipal implements
 
         if (primaryGroup) {
             java.text.MessageFormat form = new java.text.MessageFormat
-                (sun.security.util.ResourcesMgr.getString
-                        ("UnixNumericGroupPrincipal.Primary.Group.name",
-                        "sun.security.util.AuthResources"));
+                (sun.security.util.ResourcesMgr.getAuthResourceString
+                        ("UnixNumericGroupPrincipal.Primary.Group.name"));
             Object[] source = {name};
             return form.format(source);
         } else {
             java.text.MessageFormat form = new java.text.MessageFormat
-                (sun.security.util.ResourcesMgr.getString
-                    ("UnixNumericGroupPrincipal.Supplementary.Group.name",
-                    "sun.security.util.AuthResources"));
+                (sun.security.util.ResourcesMgr.getAuthResourceString
+                    ("UnixNumericGroupPrincipal.Supplementary.Group.name"));
             Object[] source = {name};
             return form.format(source);
         }

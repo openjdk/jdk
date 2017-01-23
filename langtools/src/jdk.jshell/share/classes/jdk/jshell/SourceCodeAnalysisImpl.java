@@ -105,7 +105,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
@@ -128,6 +127,7 @@ import javax.lang.model.util.Types;
 import javax.tools.JavaFileManager.Location;
 import javax.tools.StandardLocation;
 
+import jdk.jshell.ExpressionToTypeInfo.ExpressionInfo;
 import static jdk.jshell.Util.REPL_DOESNOTMATTER_CLASS_NAME;
 import static jdk.jshell.SourceCodeAnalysis.Completeness.DEFINITELY_INCOMPLETE;
 import static jdk.jshell.TreeDissector.printType;
@@ -1430,47 +1430,17 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
     @Override
     public String analyzeType(String code, int cursor) {
-        code = code.substring(0, cursor);
-        CompletionInfo completionInfo = analyzeCompletion(code);
-        if (!completionInfo.completeness().isComplete())
-            return null;
-        if (completionInfo.completeness() == Completeness.COMPLETE_WITH_SEMI) {
-            code += ";";
-        }
-
-        OuterWrap codeWrap;
         switch (guessKind(code)) {
             case IMPORT: case METHOD: case CLASS: case ENUM:
             case INTERFACE: case ANNOTATION_TYPE: case VARIABLE:
                 return null;
             default:
-                codeWrap = proc.outerMap.wrapInTrialClass(Wrap.methodWrap(code));
                 break;
         }
-        AnalyzeTask at = proc.taskFactory.new AnalyzeTask(codeWrap);
-        SourcePositions sp = at.trees().getSourcePositions();
-        CompilationUnitTree topLevel = at.firstCuTree();
-        int pos = codeWrap.snippetIndexToWrapIndex(code.length());
-        TreePath tp = pathFor(topLevel, sp, pos);
-        while (ExpressionTree.class.isAssignableFrom(tp.getParentPath().getLeaf().getKind().asInterface()) &&
-               tp.getParentPath().getLeaf().getKind() != Kind.ERRONEOUS &&
-               tp.getParentPath().getParentPath() != null)
-            tp = tp.getParentPath();
-        TypeMirror type = at.trees().getTypeMirror(tp);
-
-        if (type == null)
-            return null;
-
-        switch (type.getKind()) {
-            case ERROR: case NONE: case OTHER:
-            case PACKAGE: case VOID:
-                return null; //not usable
-            case NULL:
-                type = at.getElements().getTypeElement("java.lang.Object").asType();
-                break;
-        }
-
-        return TreeDissector.printType(at, proc, type);
+        ExpressionInfo ei = ExpressionToTypeInfo.expressionInfo(code, proc);
+        return (ei == null || !ei.isNonVoid)
+                ? null
+                : ei.typeName;
     }
 
     @Override

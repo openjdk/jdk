@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -436,8 +436,10 @@ public class Check {
     }
 
     void clearLocalClassNameIndexes(ClassSymbol c) {
-        localClassNameIndexes.remove(new Pair<>(
-                c.owner.enclClass().flatname, c.name));
+        if (c.owner != null && c.owner.kind != NIL) {
+            localClassNameIndexes.remove(new Pair<>(
+                    c.owner.enclClass().flatname, c.name));
+        }
     }
 
     public void newRound() {

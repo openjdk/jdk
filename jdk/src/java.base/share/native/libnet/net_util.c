@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,10 +64,10 @@ DEF_JNI_OnLoad(JavaVM *vm, void *reserved)
     preferIPv4Stack = (*env)->CallStaticBooleanMethod(env, iCls, mid, s);
 
     /*
-       Since we have initialized and loaded the Socket library we will
-       check now to whether we have IPv6 on this platform and if the
-       supporting socket APIs are available
-    */
+     * Since we have initialized and loaded the socket library we will
+     * check now whether we have IPv6 on this platform and if the
+     * supporting socket APIs are available
+     */
     IPv6_available = IPv6_supported() & (!preferIPv4Stack);
 
     /* check if SO_REUSEPORT is supported on this platform */
@@ -120,16 +120,16 @@ jboolean setInet6Address_scopeifname(JNIEnv *env, jobject iaObj, jobject scopeif
     return JNI_TRUE;
 }
 
-int getInet6Address_scopeid_set(JNIEnv *env, jobject iaObj) {
+jboolean getInet6Address_scopeid_set(JNIEnv *env, jobject iaObj) {
     jobject holder = (*env)->GetObjectField(env, iaObj, ia6_holder6ID);
-    CHECK_NULL_RETURN(holder, -1);
+    CHECK_NULL_RETURN(holder, JNI_FALSE);
     return (*env)->GetBooleanField(env, holder, ia6_scopeidsetID);
 }
 
-int getInet6Address_scopeid(JNIEnv *env, jobject iaObj) {
+unsigned int getInet6Address_scopeid(JNIEnv *env, jobject iaObj) {
     jobject holder = (*env)->GetObjectField(env, iaObj, ia6_holder6ID);
-    CHECK_NULL_RETURN(holder, -1);
-    return (*env)->GetIntField(env, holder, ia6_scopeidID);
+    CHECK_NULL_RETURN(holder, 0);
+    return (unsigned int)(*env)->GetIntField(env, holder, ia6_scopeidID);
 }
 
 jboolean setInet6Address_scopeid(JNIEnv *env, jobject iaObj, int scopeid) {
@@ -201,11 +201,10 @@ jobject getInetAddress_hostName(JNIEnv *env, jobject iaObj) {
 }
 
 JNIEXPORT jobject JNICALL
-NET_SockaddrToInetAddress(JNIEnv *env, struct sockaddr *him, int *port) {
+NET_SockaddrToInetAddress(JNIEnv *env, SOCKETADDRESS *sa, int *port) {
     jobject iaObj;
-    if (him->sa_family == AF_INET6) {
-        struct sockaddr_in6 *him6 = (struct sockaddr_in6 *)him;
-        jbyte *caddr = (jbyte *)&(him6->sin6_addr);
+    if (sa->sa.sa_family == AF_INET6) {
+        jbyte *caddr = (jbyte *)&sa->sa6.sin6_addr;
         if (NET_IsIPv4Mapped(caddr)) {
             int address;
             iaObj = (*env)->NewObject(env, ia4_class, ia4_ctrID);
@@ -214,42 +213,35 @@ NET_SockaddrToInetAddress(JNIEnv *env, struct sockaddr *him, int *port) {
             setInetAddress_addr(env, iaObj, address);
             setInetAddress_family(env, iaObj, java_net_InetAddress_IPv4);
         } else {
-            jint scope;
             jboolean ret;
             iaObj = (*env)->NewObject(env, ia6_class, ia6_ctrID);
             CHECK_NULL_RETURN(iaObj, NULL);
-            ret = setInet6Address_ipaddress(env, iaObj, (char *)&(him6->sin6_addr));
+            ret = setInet6Address_ipaddress(env, iaObj, (char *)&sa->sa6.sin6_addr);
             if (ret == JNI_FALSE)
                 return NULL;
             setInetAddress_family(env, iaObj, java_net_InetAddress_IPv6);
-            scope = getScopeID(him);
-            setInet6Address_scopeid(env, iaObj, scope);
+            setInet6Address_scopeid(env, iaObj, sa->sa6.sin6_scope_id);
         }
-        *port = ntohs(him6->sin6_port);
+        *port = ntohs(sa->sa6.sin6_port);
     } else {
-        struct sockaddr_in *him4 = (struct sockaddr_in *)him;
         iaObj = (*env)->NewObject(env, ia4_class, ia4_ctrID);
         CHECK_NULL_RETURN(iaObj, NULL);
         setInetAddress_family(env, iaObj, java_net_InetAddress_IPv4);
-        setInetAddress_addr(env, iaObj, ntohl(him4->sin_addr.s_addr));
-        *port = ntohs(him4->sin_port);
+        setInetAddress_addr(env, iaObj, ntohl(sa->sa4.sin_addr.s_addr));
+        *port = ntohs(sa->sa4.sin_port);
     }
     return iaObj;
 }
 
-JNIEXPORT jint JNICALL
-NET_SockaddrEqualsInetAddress(JNIEnv *env, struct sockaddr *him, jobject iaObj)
+JNIEXPORT jboolean JNICALL
+NET_SockaddrEqualsInetAddress(JNIEnv *env, SOCKETADDRESS *sa, jobject iaObj)
 {
-    jint family = AF_INET;
-
-    family = getInetAddress_family(env, iaObj) == java_net_InetAddress_IPv4 ?
-        AF_INET : AF_INET6;
-    if (him->sa_family == AF_INET6) {
-        struct sockaddr_in6 *him6 = (struct sockaddr_in6 *)him;
-        jbyte *caddrNew = (jbyte *)&(him6->sin6_addr);
+    jint family = getInetAddress_family(env, iaObj) ==
+        java_net_InetAddress_IPv4 ? AF_INET : AF_INET6;
+    if (sa->sa.sa_family == AF_INET6) {
+        jbyte *caddrNew = (jbyte *)&sa->sa6.sin6_addr;
         if (NET_IsIPv4Mapped(caddrNew)) {
-            int addrNew;
-            int addrCur;
+            int addrNew, addrCur;
             if (family == AF_INET6) {
                 return JNI_FALSE;
             }
@@ -262,32 +254,39 @@ NET_SockaddrEqualsInetAddress(JNIEnv *env, struct sockaddr *him, jobject iaObj)
             }
         } else {
             jbyte caddrCur[16];
-            int scope;
-
             if (family == AF_INET) {
                 return JNI_FALSE;
             }
-            scope = getInet6Address_scopeid(env, iaObj);
             getInet6Address_ipaddress(env, iaObj, (char *)caddrCur);
-            if (NET_IsEqual(caddrNew, caddrCur) && cmpScopeID(scope, him)) {
+            if (NET_IsEqual(caddrNew, caddrCur) &&
+                sa->sa6.sin6_scope_id == getInet6Address_scopeid(env, iaObj))
+            {
                 return JNI_TRUE;
             } else {
                 return JNI_FALSE;
             }
         }
     } else {
-        struct sockaddr_in *him4 = (struct sockaddr_in *)him;
         int addrNew, addrCur;
         if (family != AF_INET) {
             return JNI_FALSE;
         }
-        addrNew = ntohl(him4->sin_addr.s_addr);
+        addrNew = ntohl(sa->sa4.sin_addr.s_addr);
         addrCur = getInetAddress_addr(env, iaObj);
         if (addrNew == addrCur) {
             return JNI_TRUE;
         } else {
             return JNI_FALSE;
         }
+    }
+}
+
+JNIEXPORT jint JNICALL
+NET_GetPortFromSockaddr(SOCKETADDRESS *sa) {
+    if (sa->sa.sa_family == AF_INET6) {
+        return ntohs(sa->sa6.sin6_port);
+    } else {
+        return ntohs(sa->sa4.sin_port);
     }
 }
 

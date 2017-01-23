@@ -66,10 +66,6 @@ class RemoteCodes {
      */
     static final String CMD_ADD_CLASSPATH  = "CMD_ADD_CLASSPATH";
     /**
-     * Set the class-path.
-     */
-    static final String CMD_SET_CLASSPATH  = "CMD_SET_CLASSPATH";
-    /**
      * Stop an invoke.
      */
     static final String CMD_STOP           = "CMD_STOP";
