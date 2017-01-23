@@ -309,11 +309,11 @@ public class BinaryContainer implements SymbolTable {
                                    graphBuilderConfig.omitAssertions()
         };
 
-        int[] intFlags         = { graalHotSpotVMConfig.narrowOopShift,
-                                   graalHotSpotVMConfig.narrowKlassShift,
+        int[] intFlags         = { graalHotSpotVMConfig.getOopEncoding().shift,
+                                   graalHotSpotVMConfig.getKlassEncoding().shift,
                                    graalHotSpotVMConfig.contendedPaddingWidth,
                                    graalHotSpotVMConfig.fieldsAllocationStyle,
-                                   graalHotSpotVMConfig.objectAlignment,
+                                   1 << graalHotSpotVMConfig.getOopEncoding().alignment,
                                    graalHotSpotVMConfig.codeSegmentSize,
         };
         // @formatter:on
