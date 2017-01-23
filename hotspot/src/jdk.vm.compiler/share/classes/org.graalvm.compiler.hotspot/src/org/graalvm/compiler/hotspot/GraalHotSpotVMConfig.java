@@ -779,7 +779,7 @@ public class GraalHotSpotVMConfig extends HotSpotVMConfigAccess {
 
     // Checkstyle: resume
 
-    private boolean check() {
+    protected boolean check() {
         for (Field f : getClass().getDeclaredFields()) {
             int modifiers = f.getModifiers();
             if (Modifier.isPublic(modifiers) && !Modifier.isStatic(modifiers)) {
