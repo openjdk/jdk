@@ -35,8 +35,7 @@ import javax.lang.model.util.*;
  * type is a kind of class and an annotation type is a kind of
  * interface.
  *
- * <p> <a name="ELEM_VS_TYPE"></a>
- * While a {@code TypeElement} represents a class or interface
+ * <p> While a {@code TypeElement} represents a class or interface
  * <i>element</i>, a {@link DeclaredType} represents a class
  * or interface <i>type</i>, the latter being a use
  * (or <i>invocation</i>) of the former.
