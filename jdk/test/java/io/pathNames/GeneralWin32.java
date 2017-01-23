@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,8 @@ public class GeneralWin32 extends General {
     private static void checkCaseLookup() throws IOException {
         /* Use long names here to avoid 8.3 format, which Samba servers often
            force to lowercase */
-        File d = new File("XyZzY0123", "FOO_bar_BAZ");
+        File r = new File (workSubDir, "XyZzY0123");
+        File d = new File(r, "FOO_bar_BAZ");
         File f = new File(d, "GLORPified");
         if (!f.exists()) {
             if (!d.exists()) {
@@ -74,9 +75,9 @@ public class GeneralWin32 extends General {
            case of filenames, rather than just using the input case */
         File y = new File(userDir, f.getPath());
         String ans = y.getPath();
-        check(ans, "XyZzY0123\\FOO_bar_BAZ\\GLORPified");
-        check(ans, "xyzzy0123\\foo_bar_baz\\glorpified");
-        check(ans, "XYZZY0123\\FOO_BAR_BAZ\\GLORPIFIED");
+        check(ans, workSubDir + File.separator + "XyZzY0123\\FOO_bar_BAZ\\GLORPified");
+        check(ans, workSubDir + File.separator + "xyzzy0123\\foo_bar_baz\\glorpified");
+        check(ans, workSubDir + File.separator + "XYZZY0123\\FOO_BAR_BAZ\\GLORPIFIED");
     }
 
     private static void checkWild(File f) throws Exception {
@@ -125,20 +126,19 @@ public class GeneralWin32 extends General {
         throw new RuntimeException("Can't find an active drive");
     }
 
-    private static void checkDrive(int depth, char drive, boolean exists)
+    private static void checkDrive(int depth, String drive, boolean exists)
         throws Exception
     {
-        String d = drive + ":";
-        File df = new File(d);
-        String ans = exists ? df.getAbsolutePath() : d;
+        File df = new File(drive);
+        String ans = exists ? df.getAbsolutePath() : drive;
         if (!ans.endsWith("\\"))
             ans = ans + "\\";
-        checkNames(depth, false, ans, d);
+        checkNames(depth, false, ans, drive);
     }
 
     private static void checkDrivePaths(int depth) throws Exception {
-        checkDrive(depth, findActiveDrive(), true);
-        checkDrive(depth, findInactiveDrive(), false);
+        checkDrive(depth, findActiveDrive() + ":" + workSubDir + File.separator, true);
+        checkDrive(depth, findInactiveDrive() + ":", false);
     }
 
 

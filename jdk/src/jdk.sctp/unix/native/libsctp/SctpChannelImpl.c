@@ -418,7 +418,6 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpChannelImpl_receive0
   (JNIEnv *env, jclass klass, jint fd, jobject resultContainerObj,
    jlong address, jint length, jboolean peek) {
     SOCKETADDRESS sa;
-    int sa_len = sizeof(SOCKETADDRESS);
     ssize_t rv = 0;
     jlong *addr = jlong_to_ptr(address);
     struct iovec iov[1];
@@ -429,7 +428,7 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpChannelImpl_receive0
     /* Set up the msghdr structure for receiving */
     memset(msg, 0, sizeof (*msg));
     msg->msg_name = &sa;
-    msg->msg_namelen = sa_len;
+    msg->msg_namelen = sizeof(sa);
     iov->iov_base = addr;
     iov->iov_len = length;
     msg->msg_iov = iov;
@@ -538,7 +537,7 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpChannelImpl_send0
    jobject targetAddress, jint targetPort, jint assocId, jint streamNumber,
    jboolean unordered, jint ppid) {
     SOCKETADDRESS sa;
-    int sa_len = sizeof(SOCKETADDRESS);
+    int sa_len = 0;
     ssize_t rv = 0;
     jlong *addr = jlong_to_ptr(address);
     struct iovec iov[1];
@@ -555,13 +554,12 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpChannelImpl_send0
      *    Association already existing, assocId != -1, targetAddress = preferred addr
      */
     if (targetAddress != NULL /*&& assocId <= 0*/) {
-        if (NET_InetAddressToSockaddr(env, targetAddress, targetPort, &sa.sa,
+        if (NET_InetAddressToSockaddr(env, targetAddress, targetPort, &sa,
                                       &sa_len, JNI_TRUE) != 0) {
             return IOS_THROWN;
         }
     } else {
-        memset(&sa, '\x0', sa_len);
-        sa_len = 0;
+        memset(&sa, '\x0', sizeof(sa));
     }
 
     /* Set up the msghdr structure for sending */

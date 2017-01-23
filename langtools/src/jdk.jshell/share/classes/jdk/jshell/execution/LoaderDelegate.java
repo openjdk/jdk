@@ -60,16 +60,6 @@ public interface LoaderDelegate {
             throws EngineTerminationException, InternalException;
 
     /**
-     * Sets the execution class path to the specified path.
-     *
-     * @param path the path to add
-     * @throws EngineTerminationException the execution engine has terminated
-     * @throws InternalException an internal problem occurred
-     */
-    void setClasspath(String path)
-            throws EngineTerminationException, InternalException;
-
-    /**
      * Finds the class with the specified binary name.
      *
      * @param name the binary name of the class

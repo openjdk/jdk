@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,14 @@
  */
 package catalog;
 
-import static jaxp.library.JAXPTestUtilities.clearSystemProperty;
-import static jaxp.library.JAXPTestUtilities.setSystemProperty;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.net.URI;
 import java.nio.file.Paths;
-
 import javax.xml.XMLConstants;
 import javax.xml.catalog.Catalog;
 import javax.xml.catalog.CatalogException;
@@ -55,7 +52,8 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
-
+import static jaxp.library.JAXPTestUtilities.clearSystemProperty;
+import static jaxp.library.JAXPTestUtilities.setSystemProperty;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
@@ -95,10 +93,10 @@ public class CatalogTest extends CatalogSupportBase {
      * CatalogException is thrown.
      */
     @Test(dataProvider = "getFeatures", expectedExceptions = CatalogException.class)
-    public void testCircularRef(CatalogFeatures cf, String xml) {
+    public void testCircularRef(CatalogFeatures cf, String xml) throws Exception {
         CatalogResolver catalogResolver = CatalogManager.catalogResolver(
                 cf,
-                getClass().getResource(xml).getFile());
+                getClass().getResource(xml).toURI());
         catalogResolver.resolve("anyuri", "");
     }
 
@@ -108,14 +106,14 @@ public class CatalogTest extends CatalogSupportBase {
      */
     @DataProvider(name = "getFeatures")
     public Object[][] getFeatures() {
-
+        String self = "catalogReferCircle-itself.xml";
+        String left = "catalogReferCircle-left.xml";
         return new Object[][]{
-            {CatalogFeatures.builder().with(CatalogFeatures.Feature.DEFER, "false").build(),
-                "catalogReferCircle-itself.xml"},
-            {CatalogFeatures.defaults(), "catalogReferCircle-itself.xml"},
-            {CatalogFeatures.builder().with(CatalogFeatures.Feature.DEFER, "false").build(),
-                "catalogReferCircle-left.xml"},
-            {CatalogFeatures.defaults(), "catalogReferCircle-left.xml"},};
+            {CatalogFeatures.builder().with(CatalogFeatures.Feature.DEFER, "false").build(), self},
+            {CatalogFeatures.defaults(), self},
+            {CatalogFeatures.builder().with(CatalogFeatures.Feature.DEFER, "false").build(), left},
+            {CatalogFeatures.defaults(), left}
+        };
     }
 
     /*
@@ -134,7 +132,7 @@ public class CatalogTest extends CatalogSupportBase {
      * Expected: the parser returns the expected string.
     */
     @Test(dataProvider = "supportXMLResolver")
-    public void supportEntityResolver(String catalogFile, String xml, String expected) throws Exception {
+    public void supportEntityResolver(URI catalogFile, String xml, String expected) throws Exception {
         String xmlSource = getClass().getResource(xml).getFile();
 
         CatalogResolver cr = CatalogManager.catalogResolver(CatalogFeatures.defaults(), catalogFile);
@@ -150,7 +148,7 @@ public class CatalogTest extends CatalogSupportBase {
      * Expected: the parser returns the expected string.
     */
     @Test(dataProvider = "supportXMLResolver")
-    public void supportXMLResolver(String catalogFile, String xml, String expected) throws Exception {
+    public void supportXMLResolver(URI catalogFile, String xml, String expected) throws Exception {
         String xmlSource = getClass().getResource(xml).getFile();
 
         CatalogResolver cr = CatalogManager.catalogResolver(CatalogFeatures.defaults(), catalogFile);
@@ -159,7 +157,7 @@ public class CatalogTest extends CatalogSupportBase {
         xifactory.setProperty(XMLInputFactory.IS_COALESCING, true);
         xifactory.setProperty(XMLInputFactory.RESOLVER, cr);
         File file = new File(xmlSource);
-        String systemId = file.toURI().toString();
+        String systemId = file.toURI().toASCIIString();
         InputStream entityxml = new FileInputStream(file);
         XMLStreamReader streamReader = xifactory.createXMLStreamReader(systemId, entityxml);
         String result = null;
@@ -183,7 +181,7 @@ public class CatalogTest extends CatalogSupportBase {
      * Fail: throws Exception if references are not resolved (by the CatalogResolver)
     */
     @Test(dataProvider = "supportLSResourceResolver")
-    public void supportLSResourceResolver(String catalogFile, Source schemaSource) throws SAXException {
+    public void supportLSResourceResolver(URI catalogFile, Source schemaSource) throws SAXException {
 
         CatalogResolver cr = CatalogManager.catalogResolver(CatalogFeatures.defaults(), catalogFile);
 
@@ -199,7 +197,7 @@ public class CatalogTest extends CatalogSupportBase {
      * Fail: throws Exception if references are not resolved (by the CatalogResolver)
     */
     @Test(dataProvider = "supportLSResourceResolver1")
-    public void supportLSResourceResolver1(String catalogFile, Source source) throws Exception {
+    public void supportLSResourceResolver1(URI catalogFile, Source source) throws Exception {
 
         CatalogResolver cr = CatalogManager.catalogResolver(CatalogFeatures.defaults(), catalogFile);
 
@@ -215,7 +213,7 @@ public class CatalogTest extends CatalogSupportBase {
      * Fail: throws Exception if references are not resolved (by the CatalogResolver)
     */
     @Test(dataProvider = "supportURIResolver")
-    public void supportURIResolver(String catalogFile, Source xsl, Source xml, String expected) throws Exception {
+    public void supportURIResolver(URI catalogFile, Source xsl, Source xml, String expected) throws Exception {
 
         CatalogResolver cr = CatalogManager.catalogResolver(CatalogFeatures.defaults(), catalogFile);
 
@@ -235,9 +233,9 @@ public class CatalogTest extends CatalogSupportBase {
         catalog filepath, xml source file, expected result
      */
     @DataProvider(name = "supportXMLResolver")
-    public Object[][] supportXMLResolver() {
-        String catalogFile = getClass().getResource("catalog.xml").getFile();
-        String catalogFileUri = getClass().getResource("catalog_uri.xml").getFile();
+    public Object[][] supportXMLResolver() throws Exception {
+        URI catalogFile = getClass().getResource("catalog.xml").toURI();
+        URI catalogFileUri = getClass().getResource("catalog_uri.xml").toURI();
 
         return new Object[][]{
             {catalogFile, "system.xml", "Test system entry"},
@@ -263,9 +261,9 @@ public class CatalogTest extends CatalogSupportBase {
         catalog filepath, schema source file
      */
     @DataProvider(name = "supportLSResourceResolver")
-    public Object[][] supportLSResourceResolver() {
-        String catalogFile = getClass().getResource("CatalogSupport.xml").getFile();
-        String catalogFileUri = getClass().getResource("CatalogSupport_uri.xml").getFile();
+    public Object[][] supportLSResourceResolver() throws Exception {
+        URI catalogFile = getClass().getResource("CatalogSupport.xml").toURI();
+        URI catalogFileUri = getClass().getResource("CatalogSupport_uri.xml").toURI();
 
         /*
          * XMLSchema.xsd has a reference to XMLSchema.dtd which in turn refers to
@@ -287,9 +285,9 @@ public class CatalogTest extends CatalogSupportBase {
         catalog filepath, source file
      */
     @DataProvider(name = "supportLSResourceResolver1")
-    public Object[][] supportLSResourceResolver1() {
-        String catalogFile = getClass().getResource("CatalogSupport.xml").getFile();
-        String catalogFileUri = getClass().getResource("CatalogSupport_uri.xml").getFile();
+    public Object[][] supportLSResourceResolver1() throws Exception {
+        URI catalogFile = getClass().getResource("CatalogSupport.xml").toURI();
+        URI catalogFileUri = getClass().getResource("CatalogSupport_uri.xml").toURI();
 
         /*
          * val_test.xml has a reference to system.dtd and val_test.xsd
@@ -310,9 +308,9 @@ public class CatalogTest extends CatalogSupportBase {
         catalog filepath, xsl source, xml source file
      */
     @DataProvider(name = "supportURIResolver")
-    public Object[][] supportURIResolver() {
-        String catalogFile = getClass().getResource("CatalogSupport.xml").getFile();
-        String catalogFileUri = getClass().getResource("CatalogSupport_uri.xml").getFile();
+    public Object[][] supportURIResolver() throws Exception {
+        URI catalogFile = getClass().getResource("CatalogSupport.xml").toURI();
+        URI catalogFileUri = getClass().getResource("CatalogSupport_uri.xml").toURI();
         SAXSource xslSource = new SAXSource(new InputSource(new File(xsl_doc).toURI().toASCIIString()));
 
         /*
@@ -353,8 +351,9 @@ public class CatalogTest extends CatalogSupportBase {
      * other cases in that test.
      */
     @Test(dataProvider = "resolveUri")
-    public void testMatch1(String cFile, String href, String expectedFile, String expectedUri, String msg) {
-        String catalogFile = getClass().getResource(cFile).getFile();
+    public void testMatch1(String cFile, String href, String expectedFile,
+            String expectedUri, String msg) throws Exception {
+        URI catalogFile = getClass().getResource(cFile).toURI();
         CatalogResolver cur = CatalogManager.catalogResolver(CatalogFeatures.defaults(), catalogFile);
         Source source = cur.resolve(href, null);
         Assert.assertNotNull(source, "Source returned is null");
@@ -368,15 +367,16 @@ public class CatalogTest extends CatalogSupportBase {
      */
     @Test(dataProvider = "hierarchyOfCatFilesData")
     public void hierarchyOfCatFiles2(String systemId, String expectedUri) {
-        String file1 = getClass().getResource("first_cat.xml").getFile();
-        String file2 = getClass().getResource("second_cat.xml").getFile();
+        String file1 = getClass().getResource("first_cat.xml").toExternalForm();
+        String file2 = getClass().getResource("second_cat.xml").toExternalForm();
         String files = file1 + ";" + file2;
 
         try {
             setSystemProperty(KEY_FILES, files);
             CatalogResolver catalogResolver = CatalogManager.catalogResolver(CatalogFeatures.defaults());
             String sysId = catalogResolver.resolveEntity(null, systemId).getSystemId();
-            Assert.assertEquals(sysId, Paths.get(filepath + expectedUri).toUri().toString().replace("///", "/"), "System ID match not right");
+            Assert.assertEquals(sysId, Paths.get(filepath + expectedUri).toUri().toString().replace("///", "/"),
+                    "System ID match not right");
         } finally {
             clearSystemProperty(KEY_FILES);
         }
@@ -390,8 +390,9 @@ public class CatalogTest extends CatalogSupportBase {
      * expected.
      */
     @Test(dataProvider = "resolveEntity")
-    public void testMatch1(String cfile, String prefer, String sysId, String pubId, String expectedUri, String expectedFile, String msg) {
-        String catalogFile = getClass().getResource(cfile).getFile();
+    public void testMatch1(String cfile, String prefer, String sysId, String pubId,
+            String expectedUri, String expectedFile, String msg) throws Exception {
+        URI catalogFile = getClass().getResource(cfile).toURI();
         CatalogFeatures features = CatalogFeatures.builder().with(CatalogFeatures.Feature.PREFER, prefer).build();
         CatalogResolver catalogResolver = CatalogManager.catalogResolver(features, catalogFile);
         InputSource is = catalogResolver.resolveEntity(pubId, sysId);
@@ -406,9 +407,12 @@ public class CatalogTest extends CatalogSupportBase {
      * results as expected.
      */
     @Test(dataProvider = "matchWithPrefer")
-    public void matchWithPrefer(String prefer, String cfile, String publicId, String systemId, String expected) {
-        String catalogFile = getClass().getResource(cfile).getFile();
-        Catalog c = CatalogManager.catalog(CatalogFeatures.builder().with(CatalogFeatures.Feature.PREFER, prefer).build(), catalogFile);
+    public void matchWithPrefer(String prefer, String cfile, String publicId,
+            String systemId, String expected) throws Exception {
+        URI catalogFile = getClass().getResource(cfile).toURI();
+        Catalog c = CatalogManager.catalog(
+                CatalogFeatures.builder().with(CatalogFeatures.Feature.PREFER, prefer).build(),
+                catalogFile);
         String result;
         if (publicId != null && publicId.length() > 0) {
             result = c.matchPublic(publicId);
@@ -430,8 +434,9 @@ public class CatalogTest extends CatalogSupportBase {
      *                  system entry is found.
      */
     @Test(dataProvider = "resolveWithPrefer")
-    public void resolveWithPrefer(String prefer, String cfile, String publicId, String systemId, String expected) {
-        String catalogFile = getClass().getResource(cfile).getFile();
+    public void resolveWithPrefer(String prefer, String cfile, String publicId,
+            String systemId, String expected) throws Exception {
+        URI catalogFile = getClass().getResource(cfile).toURI();
         CatalogFeatures f = CatalogFeatures.builder().with(CatalogFeatures.Feature.PREFER, prefer).with(CatalogFeatures.Feature.RESOLVE, "ignore").build();
         CatalogResolver catalogResolver = CatalogManager.catalogResolver(f, catalogFile);
         String result = catalogResolver.resolveEntity(publicId, systemId).getSystemId();
@@ -445,8 +450,8 @@ public class CatalogTest extends CatalogSupportBase {
      * be loaded is determined by the defer attribute.
      */
     @Test(dataProvider = "invalidAltCatalogs", expectedExceptions = CatalogException.class)
-    public void testDeferAltCatalogs(String file) {
-        String catalogFile = getClass().getResource(file).getFile();
+    public void testDeferAltCatalogs(String file) throws Exception {
+        URI catalogFile = getClass().getResource(file).toURI();
         CatalogFeatures features = CatalogFeatures.builder().with(CatalogFeatures.Feature.DEFER, "true").build();
         /*
           Since the defer attribute is set to false in the specified catalog file,
@@ -462,8 +467,8 @@ public class CatalogTest extends CatalogSupportBase {
      * PREFER from Features API taking precedence over catalog file
      */
     @Test
-    public void testJDK8146237() {
-        String catalogFile = getClass().getResource("JDK8146237_catalog.xml").getFile();
+    public void testJDK8146237() throws Exception {
+        URI catalogFile = getClass().getResource("JDK8146237_catalog.xml").toURI();
 
         try {
             CatalogFeatures features = CatalogFeatures.builder().with(CatalogFeatures.Feature.PREFER, "system").build();
@@ -482,8 +487,8 @@ public class CatalogTest extends CatalogSupportBase {
        Verifies that the resulting systemId does not contain duplicate slashes
     */
     @Test
-    public void testRewriteSystem() {
-        String catalog = getClass().getResource("rewriteCatalog.xml").getFile();
+    public void testRewriteSystem() throws Exception {
+        URI catalog = getClass().getResource("rewriteCatalog.xml").toURI();
 
         try {
             CatalogResolver resolver = CatalogManager.catalogResolver(CatalogFeatures.defaults(), catalog);
@@ -500,8 +505,8 @@ public class CatalogTest extends CatalogSupportBase {
        Verifies that the resulting systemId does not contain duplicate slashes
     */
     @Test
-    public void testRewriteUri() {
-        String catalog = getClass().getResource("rewriteCatalog.xml").getFile();
+    public void testRewriteUri() throws Exception {
+        URI catalog = getClass().getResource("rewriteCatalog.xml").toURI();
 
         try {
 
@@ -519,18 +524,18 @@ public class CatalogTest extends CatalogSupportBase {
     */
     @Test(expectedExceptions = NullPointerException.class)
     public void testFeatureNull() {
-        CatalogResolver resolver = CatalogManager.catalogResolver(null, "");
+        CatalogResolver resolver = CatalogManager.catalogResolver(null, null);
 
     }
 
     /*
        @bug 8144966
-       Verifies that passing null as the path will result in a NPE.
+       Verifies that passing null as the URI will result in a NPE.
     */
     @Test(expectedExceptions = NullPointerException.class)
     public void testPathNull() {
-        String path = null;
-        CatalogResolver resolver = CatalogManager.catalogResolver(CatalogFeatures.defaults(), path);
+        URI uri = null;
+        CatalogResolver resolver = CatalogManager.catalogResolver(CatalogFeatures.defaults(), uri);
     }
 
     /*
@@ -540,10 +545,11 @@ public class CatalogTest extends CatalogSupportBase {
     that matches the expected value.
      */
     @Test(dataProvider = "catalog")
-    public void testCatalogResolver(String test, String expected, String catalogFile, String xml, SAXParser saxParser) {
-        String catalog = null;
+    public void testCatalogResolver(String test, String expected, String catalogFile,
+            String xml, SAXParser saxParser) throws Exception {
+        URI catalog = null;
         if (catalogFile != null) {
-            catalog = getClass().getResource(catalogFile).getFile();
+            catalog = getClass().getResource(catalogFile).toURI();
         }
         String url = getClass().getResource(xml).getFile();
         try {
@@ -565,8 +571,8 @@ public class CatalogTest extends CatalogSupportBase {
     catalog is provided, the resolver will throw an exception by default.
     */
     @Test
-    public void testInvalidCatalog() {
-        String catalog = getClass().getResource("catalog_invalid.xml").getFile();
+    public void testInvalidCatalog() throws Exception {
+        URI catalog = getClass().getResource("catalog_invalid.xml").toURI();
 
         String test = "testInvalidCatalog";
         try {
@@ -590,7 +596,7 @@ public class CatalogTest extends CatalogSupportBase {
     */
     @Test
     public void testIgnoreInvalidCatalog() {
-        String catalog = getClass().getResource("catalog_invalid.xml").getFile();
+        String catalog = getClass().getResource("catalog_invalid.xml").toExternalForm();
         CatalogFeatures f = CatalogFeatures.builder()
                 .with(Feature.FILES, catalog)
                 .with(Feature.PREFER, "public")
@@ -600,7 +606,7 @@ public class CatalogTest extends CatalogSupportBase {
 
         String test = "testInvalidCatalog";
         try {
-            CatalogResolver resolver = CatalogManager.catalogResolver(f, "");
+            CatalogResolver resolver = CatalogManager.catalogResolver(f);
             String actualSystemId = resolver.resolveEntity(null, "http://remote/xml/dtd/sys/alice/docAlice.dtd").getSystemId();
             System.out.println("testIgnoreInvalidCatalog: expected [null]");
             System.out.println("testIgnoreInvalidCatalog: expected [null]");

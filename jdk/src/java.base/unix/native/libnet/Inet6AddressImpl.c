@@ -211,7 +211,8 @@ lookupIfLocalhost(JNIEnv *env, const char *hostname, jboolean includeV6)
         {
             int port;
             int index = (family == AF_INET) ? i++ : j++;
-            jobject o = NET_SockaddrToInetAddress(env, iter->ifa_addr, &port);
+            jobject o = NET_SockaddrToInetAddress(env,
+                            (SOCKETADDRESS *)iter->ifa_addr, &port);
             if (!o) {
                 freeifaddrs(ifa);
                 if (!(*env)->ExceptionCheck(env))

@@ -43,6 +43,7 @@ import sun.awt.AppContext;
  * A frame to show the applet tag in.
  */
 @SuppressWarnings("serial") // JDK-implementation class
+@Deprecated(since = "9")
 final class TextFrame extends Frame {
 
     /**
@@ -91,6 +92,7 @@ final class TextFrame extends Frame {
 /**
  * Lets us construct one using unix-style one shot behaviors.
  */
+@Deprecated(since = "9")
 final class StdAppletViewerFactory implements AppletViewerFactory {
 
     @Override
@@ -116,8 +118,13 @@ final class StdAppletViewerFactory implements AppletViewerFactory {
  * <a href="../../../docs/tooldocs/appletviewertags.html">AppletViewer Tags</a>.
  * (The document named appletviewertags.html in the JDK's docs/tooldocs directory,
  *  once the JDK docs have been installed.)
+ *
+ * @deprecated The Applet API is deprecated. See the
+ * <a href="../../java/applet/package-summary.html"> java.applet package
+ * documentation</a> for further information.
  */
-@SuppressWarnings({"serial", "deprecation"}) // JDK-implementation class
+@SuppressWarnings({"serial"}) // JDK-implementation class
+@Deprecated(since = "9")
 public class AppletViewer extends Frame implements AppletContext, Printable {
 
     /**
@@ -146,7 +153,7 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
      */
     AppletViewerFactory factory;
 
-
+    @Deprecated(since = "9")
     private final class UserActionListener implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent evt) {
@@ -219,6 +226,7 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
             }
         };
 
+        @Deprecated(since = "9")
         class AppletEventListener implements AppletListener
         {
             final Frame frame;

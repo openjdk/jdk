@@ -249,7 +249,6 @@ module java.base {
         jdk.crypto.token;
     exports sun.security.jca to
         java.smartcardio,
-        java.xml.crypto,
         jdk.crypto.ec,
         jdk.crypto.token,
         jdk.naming.dns;
@@ -279,6 +278,7 @@ module java.base {
         java.security.jgss,
         java.security.sasl,
         java.smartcardio,
+        java.xml.crypto,
         jdk.crypto.ec,
         jdk.crypto.token,
         jdk.jartool,
@@ -290,6 +290,8 @@ module java.base {
         jdk.crypto.token,
         jdk.jartool,
         jdk.security.auth;
+    exports sun.security.validator to
+        jdk.jartool;
     exports sun.text.resources to
         jdk.localedata;
     exports sun.util.cldr to
@@ -308,7 +310,6 @@ module java.base {
     // JDK-internal service types
     uses jdk.internal.logger.DefaultLoggerFinder;
     uses sun.security.ssl.ClientKeyExchangeService;
-    uses sun.security.util.AuthResourcesProvider;
     uses sun.text.spi.JavaTimeDateTimePatternProvider;
     uses sun.util.spi.CalendarProvider;
     uses sun.util.locale.provider.LocaleDataMetaInfo;
@@ -320,6 +321,4 @@ module java.base {
 
     provides java.nio.file.spi.FileSystemProvider with
         jdk.internal.jrtfs.JrtFileSystemProvider;
-    provides sun.security.util.AuthResourcesProvider with
-        sun.security.util.AuthResourcesProviderImpl;
 }

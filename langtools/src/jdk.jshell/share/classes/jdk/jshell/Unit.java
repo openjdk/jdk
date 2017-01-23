@@ -46,6 +46,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_EVNT;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_GEN;
+import static jdk.internal.jshell.debug.InternalDebugControl.DBG_WRAP;
 import static jdk.jshell.Snippet.Status.OVERWRITTEN;
 import static jdk.jshell.Snippet.Status.RECOVERABLE_DEFINED;
 import static jdk.jshell.Snippet.Status.RECOVERABLE_NOT_DEFINED;
@@ -180,6 +181,8 @@ final class Unit {
                     .collect(toList());
             // Set the outer wrap for this snippet
             si.setOuterWrap(state.outerMap.wrapInClass(except, plus, snippets, wraps));
+            state.debug(DBG_WRAP, "++setWrap() %s\n%s\n",
+                    si, si.outerWrap().wrapped());
         }
     }
 

@@ -230,7 +230,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         chk = Check.instance(context);
         initProcessorLoader();
 
-        allowModules = source.allowModules() && options.isUnset("noModules");
+        allowModules = source.allowModules();
     }
 
     public void setProcessors(Iterable<? extends Processor> processors) {

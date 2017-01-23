@@ -826,16 +826,19 @@ static const LangTag ot_languages[] = {
 };
 
 typedef struct {
-  char language[8];
+  char language[11];
   hb_tag_t tag;
 } LangTagLong;
 static const LangTagLong ot_languages_zh[] = {
+  /* Store longest-first, if one is a prefix of another. */
   {"zh-cn",     HB_TAG('Z','H','S',' ')},       /* Chinese (China) */
   {"zh-hk",     HB_TAG('Z','H','H',' ')},       /* Chinese (Hong Kong) */
-  {"zh-mo",     HB_TAG('Z','H','T',' ')},       /* Chinese (Macao) */
+  {"zh-mo",     HB_TAG('Z','H','H',' ')},       /* Chinese (Macao) */
   {"zh-sg",     HB_TAG('Z','H','S',' ')},       /* Chinese (Singapore) */
   {"zh-tw",     HB_TAG('Z','H','T',' ')},       /* Chinese (Taiwan) */
   {"zh-hans",   HB_TAG('Z','H','S',' ')},       /* Chinese (Simplified) */
+  {"zh-hant-hk",HB_TAG('Z','H','H',' ')},       /* Chinese (Hong Kong) */
+  {"zh-hant-mo",HB_TAG('Z','H','H',' ')},       /* Chinese (Macao) */
   {"zh-hant",   HB_TAG('Z','H','T',' ')},       /* Chinese (Traditional) */
 };
 
@@ -889,11 +892,19 @@ hb_ot_tag_from_language (hb_language_t language)
   }
 
   /*
-   * The International Phonetic Alphabet is a variant tag in BCP-47,
-   * which can be applied to any language.
+   * "fonipa" is a variant tag in BCP-47, meaning the International Phonetic Alphabet.
+   * It can be applied to any language.
    */
   if (strstr (lang_str, "-fonipa")) {
     return HB_TAG('I','P','P','H');  /* Phonetic transcription—IPA conventions */
+  }
+
+  /*
+   * "fonnapa" is a variant tag in BCP-47, meaning the North American Phonetic Alphabet
+   * also known as Americanist Phonetic Notation.  It can be applied to any language.
+   */
+  if (strstr (lang_str, "-fonnapa")) {
+    return HB_TAG('A','P','P','H');  /* Phonetic transcription—Americanist conventions */
   }
 
   /* Find a language matching in the first component */
@@ -937,7 +948,7 @@ hb_ot_tag_from_language (hb_language_t language)
 /**
  * hb_ot_tag_to_language:
  *
- *
+ * 
  *
  * Return value: (transfer none):
  *
@@ -967,6 +978,8 @@ hb_ot_tag_to_language (hb_tag_t tag)
 
   /* struct LangTag has only room for 3-letter language tags. */
   switch (tag) {
+  case HB_TAG('A','P','P','H'):  /* Phonetic transcription—Americanist conventions */
+    return hb_language_from_string ("und-fonnapa", -1);
   case HB_TAG('I','P','P','H'):  /* Phonetic transcription—IPA conventions */
     return hb_language_from_string ("und-fonipa", -1);
   }

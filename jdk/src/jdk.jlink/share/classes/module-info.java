@@ -24,8 +24,6 @@
  */
 
 module jdk.jlink {
-    exports jdk.tools.jlink.plugin;
-
     requires jdk.internal.opt;
     requires jdk.jdeps;
 

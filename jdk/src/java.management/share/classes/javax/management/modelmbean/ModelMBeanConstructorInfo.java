@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
 import java.lang.reflect.Constructor;
 import java.security.AccessController;
-import java.util.logging.Level;
+import java.lang.System.Logger.Level;
 
 import javax.management.Descriptor;
 import javax.management.DescriptorAccess;
@@ -164,10 +164,9 @@ public class ModelMBeanConstructorInfo
                                          Constructor<?> constructorMethod)
     {
                 super(description, constructorMethod);
-                if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-                    MODELMBEAN_LOGGER.logp(Level.FINER,
-                            ModelMBeanConstructorInfo.class.getName(),
-                            "ModelMBeanConstructorInfo(String,Constructor)",
+                if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+                    MODELMBEAN_LOGGER.log(Level.TRACE,
+                            "ModelMBeanConstructorInfo(String,Constructor) " +
                             "Entry");
                 }
                 consDescriptor = validDescriptor(null);
@@ -209,11 +208,10 @@ public class ModelMBeanConstructorInfo
 
                 super(description, constructorMethod);
                 // put getter and setter methods in constructors list
-                if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-                    MODELMBEAN_LOGGER.logp(Level.FINER,
-                            ModelMBeanConstructorInfo.class.getName(),
+                if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+                    MODELMBEAN_LOGGER.log(Level.TRACE,
                             "ModelMBeanConstructorInfo(" +
-                            "String,Constructor,Descriptor)", "Entry");
+                            "String,Constructor,Descriptor) Entry");
                 }
                 consDescriptor = validDescriptor(descriptor);
         }
@@ -232,11 +230,10 @@ public class ModelMBeanConstructorInfo
 
                 super(name, description, signature);
                 // create default descriptor
-                if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-                    MODELMBEAN_LOGGER.logp(Level.FINER,
-                            ModelMBeanConstructorInfo.class.getName(),
+                if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+                    MODELMBEAN_LOGGER.log(Level.TRACE,
                             "ModelMBeanConstructorInfo(" +
-                            "String,String,MBeanParameterInfo[])", "Entry");
+                            "String,String,MBeanParameterInfo[]) Entry");
                 }
                 consDescriptor = validDescriptor(null);
         }
@@ -265,11 +262,10 @@ public class ModelMBeanConstructorInfo
                                          Descriptor descriptor)
         {
                 super(name, description, signature);
-                if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-                    MODELMBEAN_LOGGER.logp(Level.FINER,
-                            ModelMBeanConstructorInfo.class.getName(),
+                if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+                    MODELMBEAN_LOGGER.log(Level.TRACE,
                             "ModelMBeanConstructorInfo(" +
-                            "String,String,MBeanParameterInfo[],Descriptor)",
+                            "String,String,MBeanParameterInfo[],Descriptor) " +
                             "Entry");
                 }
                 consDescriptor = validDescriptor(descriptor);
@@ -284,11 +280,10 @@ public class ModelMBeanConstructorInfo
         ModelMBeanConstructorInfo(ModelMBeanConstructorInfo old)
         {
                 super(old.getName(), old.getDescription(), old.getSignature());
-                if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-                    MODELMBEAN_LOGGER.logp(Level.FINER,
-                            ModelMBeanConstructorInfo.class.getName(),
+                if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+                    MODELMBEAN_LOGGER.log(Level.TRACE,
                             "ModelMBeanConstructorInfo(" +
-                            "ModelMBeanConstructorInfo)", "Entry");
+                            "ModelMBeanConstructorInfo) Entry");
                 }
                 consDescriptor = validDescriptor(consDescriptor);
         }
@@ -300,10 +295,8 @@ public class ModelMBeanConstructorInfo
         @Override
         public Object clone ()
         {
-            if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-                MODELMBEAN_LOGGER.logp(Level.FINER,
-                        ModelMBeanConstructorInfo.class.getName(),
-                        "clone()", "Entry");
+            if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+                MODELMBEAN_LOGGER.log(Level.TRACE, "Entry");
             }
                 return(new ModelMBeanConstructorInfo(this)) ;
         }
@@ -321,10 +314,8 @@ public class ModelMBeanConstructorInfo
         @Override
         public Descriptor getDescriptor()
         {
-            if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-                MODELMBEAN_LOGGER.logp(Level.FINER,
-                        ModelMBeanConstructorInfo.class.getName(),
-                        "getDescriptor()", "Entry");
+            if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+                MODELMBEAN_LOGGER.log(Level.TRACE, "Entry");
             }
             if (consDescriptor == null){
                 consDescriptor = validDescriptor(null);
@@ -356,10 +347,8 @@ public class ModelMBeanConstructorInfo
         */
         public void setDescriptor(Descriptor inDescriptor)
         {
-            if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-                MODELMBEAN_LOGGER.logp(Level.FINER,
-                        ModelMBeanConstructorInfo.class.getName(),
-                        "setDescriptor()", "Entry");
+            if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+                MODELMBEAN_LOGGER.log(Level.TRACE, "Entry");
             }
             consDescriptor = validDescriptor(inDescriptor);
         }
@@ -370,10 +359,8 @@ public class ModelMBeanConstructorInfo
         @Override
         public String toString()
         {
-            if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-                MODELMBEAN_LOGGER.logp(Level.FINER,
-                        ModelMBeanConstructorInfo.class.getName(),
-                        "toString()", "Entry");
+            if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+                MODELMBEAN_LOGGER.log(Level.TRACE, "Entry");
             }
                 String retStr =
                     "ModelMBeanConstructorInfo: " + this.getName() +
@@ -408,7 +395,7 @@ public class ModelMBeanConstructorInfo
             boolean defaulted = (in == null);
             if (defaulted) {
                 clone = new DescriptorSupport();
-                MODELMBEAN_LOGGER.finer("Null Descriptor, creating new.");
+                MODELMBEAN_LOGGER.log(Level.TRACE, "Null Descriptor, creating new.");
             } else {
                 clone = (Descriptor) in.clone();
             }
@@ -416,19 +403,19 @@ public class ModelMBeanConstructorInfo
             //Setting defaults.
             if (defaulted && clone.getFieldValue("name")==null) {
                 clone.setField("name", this.getName());
-                MODELMBEAN_LOGGER.finer("Defaulting Descriptor name to " + this.getName());
+                MODELMBEAN_LOGGER.log(Level.TRACE, "Defaulting Descriptor name to " + this.getName());
             }
             if (defaulted && clone.getFieldValue("descriptorType")==null) {
                 clone.setField("descriptorType", "operation");
-                MODELMBEAN_LOGGER.finer("Defaulting descriptorType to \"operation\"");
+                MODELMBEAN_LOGGER.log(Level.TRACE, "Defaulting descriptorType to \"operation\"");
             }
             if (clone.getFieldValue("displayName") == null) {
                 clone.setField("displayName",this.getName());
-                MODELMBEAN_LOGGER.finer("Defaulting Descriptor displayName to " + this.getName());
+                MODELMBEAN_LOGGER.log(Level.TRACE, "Defaulting Descriptor displayName to " + this.getName());
             }
             if (clone.getFieldValue("role") == null) {
                 clone.setField("role","constructor");
-                MODELMBEAN_LOGGER.finer("Defaulting Descriptor role field to \"constructor\"");
+                MODELMBEAN_LOGGER.log(Level.TRACE, "Defaulting Descriptor role field to \"constructor\"");
             }
 
             //Checking validity

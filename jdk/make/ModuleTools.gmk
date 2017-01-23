@@ -39,7 +39,6 @@ TOOL_GENGRAPHS := $(BUILD_JAVA) -esa -ea -cp $(TOOLS_CLASSES_DIR) \
     build.tools.jigsaw.GenGraphs
 
 TOOL_MODULESUMMARY := $(BUILD_JAVA) -esa -ea -cp $(TOOLS_CLASSES_DIR) \
-    --add-exports jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED \
     build.tools.jigsaw.ModuleSummary
 
 TOOL_ADD_PACKAGES_ATTRIBUTE := $(BUILD_JAVA) $(JAVA_FLAGS_SMALL) \

@@ -28,11 +28,11 @@ package javax.lang.model.type;
 
 /**
  * Represents a wildcard type argument.
- * Examples include:    <pre><tt>
+ * Examples include:    <pre><code>
  *   ?
  *   ? extends Number
  *   ? super T
- * </tt></pre>
+ * </code></pre>
  *
  * <p> A wildcard may have its upper bound explicitly set by an
  * {@code extends} clause, its lower bound explicitly set by a
