@@ -99,7 +99,7 @@ public class ResolveTest extends ModuleTestBase {
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
 
-        if (!log.contains("C2.java:1:33: compiler.err.not.def.access.package.cant.access: p1.C1, p1"))
+        if (!log.contains("C2.java:1:31: compiler.err.package.not.visible: p1, (compiler.misc.not.def.access.does.not.read: m2x, p1, m1x)"))
             throw new Exception("expected output not found");
     }
 
@@ -123,7 +123,7 @@ public class ResolveTest extends ModuleTestBase {
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
 
-        if (!log.contains("C2.java:1:33: compiler.err.not.def.access.package.cant.access: p1.C1, p1"))
+        if (!log.contains("C2.java:1:31: compiler.err.package.not.visible: p1, (compiler.misc.not.def.access.not.exported: p1, m1x)"))
             throw new Exception("expected output not found");
     }
 
@@ -149,7 +149,7 @@ public class ResolveTest extends ModuleTestBase {
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
 
-        if (!log.contains("C2.java:1:33: compiler.err.not.def.access.package.cant.access: p1.C1, p1"))
+        if (!log.contains("C2.java:1:31: compiler.err.package.not.visible: p1, (compiler.misc.not.def.access.not.exported.to.module: p1, m1x, m2x)"))
             throw new Exception("expected output not found");
     }
 
@@ -173,7 +173,7 @@ public class ResolveTest extends ModuleTestBase {
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
 
-        if (!log.contains("C2.java:1:33: compiler.err.not.def.access.package.cant.access: p1.C1, p1"))
+        if (!log.contains("C2.java:1:31: compiler.err.package.not.visible: p1, (compiler.misc.not.def.access.does.not.read: m2x, p1, m1x)"))
             throw new Exception("expected output not found");
     }
 

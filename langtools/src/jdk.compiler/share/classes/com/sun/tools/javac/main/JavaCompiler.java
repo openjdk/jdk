@@ -681,7 +681,7 @@ public class JavaCompiler {
         if (sep == -1) {
             msym = modules.getDefaultModule();
             typeName = name;
-        } else if (source.allowModules() && !options.isSet("noModules")) {
+        } else if (source.allowModules()) {
             Name modName = names.fromString(name.substring(0, sep));
 
             msym = moduleFinder.findModule(modName);

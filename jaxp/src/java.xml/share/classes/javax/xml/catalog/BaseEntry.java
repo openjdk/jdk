@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package javax.xml.catalog;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Objects;
+import static javax.xml.catalog.CatalogMessages.ERR_INVALID_ARGUMENT;
 
 /**
  * Represents a general Catalog entry.
@@ -210,13 +211,12 @@ abstract class BaseEntry {
      * @param arg The name of the argument
      * @param uri The URI to be verified
      * @return The URI created from the specified uri
-     * @throws IllegalArgumentException if the specified uri is null,
-     * or an URL can not be created based on the specified base and uri
+     * @throws NullPointerException if the specified uri is null
+     * @throws IllegalArgumentException if a URL can not be created based on
+     * the specified base and uri
      */
     URL verifyURI(String arg, URL base, String uri) {
-        if (uri == null) {
-            CatalogMessages.reportIAE(new Object[]{uri, arg}, null);
-        }
+        CatalogMessages.reportNPEOnNull(arg, uri);
 
         URL url = null;
         uri = Normalizer.normalizeURI(uri);
@@ -228,32 +228,9 @@ abstract class BaseEntry {
                 url = new URL(uri);
             }
         } catch (MalformedURLException e) {
-            CatalogMessages.reportIAE(new Object[]{uri, arg}, e);
+            CatalogMessages.reportIAE(ERR_INVALID_ARGUMENT,
+                    new Object[]{uri, arg}, e);
         }
         return url;
-    }
-
-    /**
-     * Construct an absolute URI from a relative one, using the current base
-     * URI.
-     *
-     * @param sysid The (possibly relative) system identifier
-     * @return The system identifier made absolute with respect to the current
-     * {@link #base}.
-     */
-    protected String makeAbsolute(String sysid) {
-        URL local = null;
-
-        sysid = Util.fixSlashes(sysid);
-        /**
-         * try { local = new URL(base, sysid); } catch (MalformedURLException e)
-         * { catalogManager.debug.message(1, "Malformed URL on system
-         * identifier", sysid); }
-         */
-        if (local != null) {
-            return local.toString();
-        } else {
-            return sysid;
-        }
     }
 }

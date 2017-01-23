@@ -243,9 +243,9 @@ public interface Processor {
      * Returns the names of the annotation types supported by this
      * processor.  An element of the result may be the canonical
      * (fully qualified) name of a supported annotation type.
-     * Alternately it may be of the form &quot;<tt><i>name</i>.*</tt>&quot;
+     * Alternately it may be of the form &quot;<code><i>name</i>.*</code>&quot;
      * representing the set of all annotation types with canonical
-     * names beginning with &quot;<tt><i>name.</i></tt>&quot;.
+     * names beginning with &quot;<code><i>name.</i></code>&quot;.
      *
      * In either of those cases, the name of the annotation type can
      * be optionally preceded by a module name followed by a {@code
@@ -267,13 +267,13 @@ public interface Processor {
      * <dl>
      * <dt><i>SupportedAnnotationTypeString:</i>
      * <dd><i>ModulePrefix</i><sub><i>opt</i></sub> <i>TypeName</i> <i>DotStar</i><sub><i>opt</i></sub>
-     * <dd><tt>*</tt>
+     * <dd><code>*</code>
      *
      * <dt><i>ModulePrefix:</i>
-     * <dd><i>TypeName</i> <tt>/</tt>
+     * <dd><i>TypeName</i> <code>/</code>
      *
      * <dt><i>DotStar:</i>
-     * <dd><tt>.</tt> <tt>*</tt>
+     * <dd><code>.</code> <code>*</code>
      * </dl>
      * </blockquote>
      *

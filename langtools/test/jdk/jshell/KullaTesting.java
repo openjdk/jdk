@@ -99,7 +99,6 @@ public class KullaTesting {
 
     private Map<String, Snippet> idToSnippet = new LinkedHashMap<>();
     private Set<Snippet> allSnippets = new LinkedHashSet<>();
-    private List<String> classpath;
 
     static {
         JShell js = JShell.create();
@@ -159,7 +158,6 @@ public class KullaTesting {
     }
 
     public void addToClasspath(String path) {
-        classpath.add(path);
         getState().addToClasspath(path);
     }
 
@@ -200,7 +198,6 @@ public class KullaTesting {
         state = builder.build();
         allSnippets = new LinkedHashSet<>();
         idToSnippet = new LinkedHashMap<>();
-        classpath = new ArrayList<>();
     }
 
     @AfterMethod
@@ -210,7 +207,6 @@ public class KullaTesting {
         analysis = null;
         allSnippets = null;
         idToSnippet = null;
-        classpath = null;
     }
 
     public ClassLoader createAndRunFromModule(String moduleName, Path modPath) {

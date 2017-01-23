@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.logging.Level;
+import java.lang.System.Logger.Level;
 import java.util.Map;
 import java.util.Set;
 import javax.management.DynamicMBean;
@@ -264,7 +264,7 @@ public class Repository {
             context.unregistered();
         } catch (Exception x) {
             // shouldn't come here...
-            MBEANSERVER_LOGGER.log(Level.FINE,
+            MBEANSERVER_LOGGER.log(Level.DEBUG,
                     "Unexpected exception while unregistering "+name,
                     x);
         }
@@ -385,9 +385,8 @@ public class Repository {
             final RegistrationContext context)
         throws InstanceAlreadyExistsException {
 
-        if (MBEANSERVER_LOGGER.isLoggable(Level.FINER)) {
-            MBEANSERVER_LOGGER.logp(Level.FINER, Repository.class.getName(),
-                    "addMBean", "name = " + name);
+        if (MBEANSERVER_LOGGER.isLoggable(Level.TRACE)) {
+            MBEANSERVER_LOGGER.log(Level.TRACE, "name = " + name);
         }
 
         // Extract the domain name.
@@ -456,9 +455,8 @@ public class Repository {
      *          false otherwise.
      */
     public boolean contains(ObjectName name) {
-        if (MBEANSERVER_LOGGER.isLoggable(Level.FINER)) {
-            MBEANSERVER_LOGGER.logp(Level.FINER, Repository.class.getName(),
-                    "contains", " name = " + name);
+        if (MBEANSERVER_LOGGER.isLoggable(Level.TRACE)) {
+            MBEANSERVER_LOGGER.log(Level.TRACE, "name = " + name);
         }
         lock.readLock().lock();
         try {
@@ -478,9 +476,8 @@ public class Repository {
      *          null otherwise.
      */
     public DynamicMBean retrieve(ObjectName name) {
-        if (MBEANSERVER_LOGGER.isLoggable(Level.FINER)) {
-            MBEANSERVER_LOGGER.logp(Level.FINER, Repository.class.getName(),
-                    "retrieve", "name = " + name);
+        if (MBEANSERVER_LOGGER.isLoggable(Level.TRACE)) {
+            MBEANSERVER_LOGGER.log(Level.TRACE, "name = " + name);
         }
 
         // Calls internal retrieve method to get the named object
@@ -609,9 +606,8 @@ public class Repository {
         throws InstanceNotFoundException {
 
         // Debugging stuff
-        if (MBEANSERVER_LOGGER.isLoggable(Level.FINER)) {
-            MBEANSERVER_LOGGER.logp(Level.FINER, Repository.class.getName(),
-                    "remove", "name = " + name);
+        if (MBEANSERVER_LOGGER.isLoggable(Level.TRACE)) {
+            MBEANSERVER_LOGGER.log(Level.TRACE, "name = " + name);
         }
 
         // Extract domain name.

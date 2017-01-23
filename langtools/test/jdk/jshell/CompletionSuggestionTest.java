@@ -673,6 +673,7 @@ public class CompletionSuggestionTest extends KullaTesting {
         keepParameterNames.set(getAnalysis(), new String[0]);
     }
 
+    @Test(enabled = false) //TODO 8171829
     public void testBrokenClassFile2() throws IOException {
         Path broken = outDir.resolve("broken");
         compiler.compile(broken,

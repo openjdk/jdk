@@ -75,8 +75,8 @@ Java_sun_nio_ch_WindowsSelectorImpl_00024SubSelector_poll0(JNIEnv *env, jobject 
     } else if (timeout < 0) {
         tv = NULL;
     } else {
-        tv = &timevalue;
         jlong sec = timeout / 1000;
+        tv = &timevalue;
         //
         // struct timeval members are signed 32-bit integers so the
         // signed 64-bit jlong needs to be clamped

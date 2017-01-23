@@ -137,8 +137,7 @@ public class CheckPackageAccess {
         // java.desktop module loaded by boot loader and has an openQual pkg
         // that is exported
         new Test("java.desktop", "java.applet", null, "sun.applet",
-                 "sun.awt", "com.sun.java.swing.plaf.windows",
-                 "javax.swing.plaf.basic"),
+                 "sun.awt", null, "javax.swing.plaf.basic"),
         // java.security.jgss module loaded by platform loader
         new Test("java.security.jgss", "org.ietf.jgss", null,
                  "sun.security.krb5.internal.crypto", "sun.security.krb5",
