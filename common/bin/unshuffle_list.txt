@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -1330,9 +1330,9 @@ jdk/src/jdk.jdwp.agent/unix/native/libdt_socket : jdk/src/solaris/transport/sock
 jdk/src/jdk.jdwp.agent/unix/native/libjdwp : jdk/src/solaris/back
 jdk/src/jdk.jdwp.agent/windows/native/libdt_socket : jdk/src/windows/transport/socket
 jdk/src/jdk.jdwp.agent/windows/native/libjdwp : jdk/src/windows/back
-jdk/src/jdk.jvmstat/share/classes/sun/jvmstat/monitor : jdk/src/share/classes/sun/jvmstat/monitor
-jdk/src/jdk.jvmstat/share/classes/sun/jvmstat/perfdata : jdk/src/share/classes/sun/jvmstat/perfdata
-jdk/src/jdk.jvmstat/share/classes/sun/tools/jstatd : jdk/src/share/classes/sun/tools/jstatd
+jdk/src/jdk.internal.jvmstat/share/classes/sun/jvmstat/monitor : jdk/src/share/classes/sun/jvmstat/monitor
+jdk/src/jdk.internal.jvmstat/share/classes/sun/jvmstat/perfdata : jdk/src/share/classes/sun/jvmstat/perfdata
+jdk/src/jdk.internal.jvmstat/share/classes/sun/tools/jstatd : jdk/src/share/classes/sun/tools/jstatd
 jdk/src/jdk.localedata/share/classes/sun/text/resources/ar : jdk/src/share/classes/sun/text/resources/ar
 jdk/src/jdk.localedata/share/classes/sun/text/resources/be : jdk/src/share/classes/sun/text/resources/be
 jdk/src/jdk.localedata/share/classes/sun/text/resources/bg : jdk/src/share/classes/sun/text/resources/bg
