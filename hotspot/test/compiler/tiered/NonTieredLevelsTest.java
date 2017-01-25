@@ -52,8 +52,7 @@ public class NonTieredLevelsTest extends CompLevelsTest {
             IS_AVAILABLE_COMPLEVEL = x -> x == COMP_LEVEL_FULL_OPTIMIZATION;
         } else if (Platform.isClient() || Platform.isMinimal() || Platform.isEmulatedClient()) {
             AVAILABLE_COMP_LEVEL = COMP_LEVEL_SIMPLE;
-            IS_AVAILABLE_COMPLEVEL = x -> x >= COMP_LEVEL_SIMPLE
-                    && x <= COMP_LEVEL_FULL_PROFILE;
+            IS_AVAILABLE_COMPLEVEL = x -> x == COMP_LEVEL_SIMPLE;
         } else {
             throw new Error("TESTBUG: unknown VM: " + Platform.vmName);
         }
