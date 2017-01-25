@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,40 +23,49 @@
  * questions.
  */
 
-package jdk.incubator.http;
+package build.tools.taglet;
 
-import java.io.IOException;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
+import com.sun.source.doctree.DocTree;
+import jdk.javadoc.doclet.taglet.Taglet;
+import static jdk.javadoc.doclet.taglet.Taglet.Location.*;
 
 /**
- * An exception used to signal the opening handshake failed.
- * {@Incubating}
- *
- * @since 9
+ * An inline tag to conveniently insert a standard Incubating warning.  For
+ * use by members in Incubator Modules.
  */
-public final class WebSocketHandshakeException extends IOException {
+public class Incubating implements Taglet {
 
-    private static final long serialVersionUID = 1L;
-
-    private final transient HttpResponse<?> response;
-
-    public WebSocketHandshakeException(HttpResponse<?> response) {
-        this.response = response;
-    }
-
-    /**
-     * Returns the server's counterpart of the opening handshake.
-     *
-     * <p> The value may be unavailable ({@code null}) if this exception has
-     * been serialized and then read back in.
-     *
-     * @return server response
-     */
-    public HttpResponse<?> getResponse() {
-        return response;
+    /** Returns the set of locations in which a taglet may be used. */
+    @Override
+    public Set<Location> getAllowedLocations() {
+        return EnumSet.of(OVERVIEW, MODULE, PACKAGE, TYPE);
     }
 
     @Override
-    public WebSocketHandshakeException initCause(Throwable cause) {
-        return (WebSocketHandshakeException) super.initCause(cause);
+    public boolean isInlineTag() {
+        return true;
+    }
+
+    @Override
+    public String getName() {
+        return "Incubating";
+    }
+
+    private static final String MESSAGE =
+        "<BR><b><a href=\"http://openjdk.java.net/jeps/11\">Incubating Feature.</a>"
+                + " Will be removed in a future release.</b>";
+
+    @Override
+    public String toString(DocTree tag) {
+        return MESSAGE;
+    }
+
+    @Override
+    public String toString(List<? extends DocTree> tags) {
+        return MESSAGE;
     }
 }
+
