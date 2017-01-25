@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ import com.sun.tools.classfile.ModuleTarget_attribute;
 import com.sun.tools.classfile.RuntimeInvisibleAnnotations_attribute;
 import com.sun.tools.classfile.RuntimeInvisibleParameterAnnotations_attribute;
 import com.sun.tools.classfile.RuntimeInvisibleTypeAnnotations_attribute;
+import com.sun.tools.classfile.RuntimeParameterAnnotations_attribute;
 import com.sun.tools.classfile.RuntimeVisibleAnnotations_attribute;
 import com.sun.tools.classfile.RuntimeVisibleParameterAnnotations_attribute;
 import com.sun.tools.classfile.RuntimeVisibleTypeAnnotations_attribute;
@@ -764,9 +765,8 @@ public class AttributeWriter extends BasicWriter
         return null;
     }
 
-    @Override
-    public Void visitRuntimeVisibleParameterAnnotations(RuntimeVisibleParameterAnnotations_attribute attr, Void ignore) {
-        println("RuntimeVisibleParameterAnnotations:");
+    private void visitParameterAnnotations(String message, RuntimeParameterAnnotations_attribute attr) {
+        println(message);
         indent(+1);
         for (int param = 0; param < attr.parameter_annotations.length; param++) {
             println("parameter " + param + ": ");
@@ -779,24 +779,17 @@ public class AttributeWriter extends BasicWriter
             indent(-1);
         }
         indent(-1);
+    }
+
+    @Override
+    public Void visitRuntimeVisibleParameterAnnotations(RuntimeVisibleParameterAnnotations_attribute attr, Void ignore) {
+        visitParameterAnnotations("RuntimeVisibleParameterAnnotations:", (RuntimeParameterAnnotations_attribute) attr);
         return null;
     }
 
     @Override
     public Void visitRuntimeInvisibleParameterAnnotations(RuntimeInvisibleParameterAnnotations_attribute attr, Void ignore) {
-        println("RuntimeInvisibleParameterAnnotations:");
-        indent(+1);
-        for (int param = 0; param < attr.parameter_annotations.length; param++) {
-            println(param + ": ");
-            indent(+1);
-            for (int i = 0; i < attr.parameter_annotations[param].length; i++) {
-                print(i + ": ");
-                annotationWriter.write(attr.parameter_annotations[param][i]);
-                println();
-            }
-            indent(-1);
-        }
-        indent(-1);
+        visitParameterAnnotations("RuntimeInvisibleParameterAnnotations:", (RuntimeParameterAnnotations_attribute) attr);
         return null;
     }
 
