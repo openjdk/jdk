@@ -203,6 +203,8 @@ java/rmi/activation/ActivationGroup/downloadActivationGroup/DownloadActivationGr
 
 sun/rmi/rmic/newrmic/equivalence/run.sh                         8145980 generic-all
 
+java/rmi/registry/readTest/CodebaseTest.java                    8173324 windows-all
+
 ############################################################################
 
 # jdk_security
