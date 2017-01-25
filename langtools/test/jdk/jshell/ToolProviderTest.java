@@ -23,16 +23,18 @@
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.util.ServiceLoader;
 import java.util.function.Consumer;
 import javax.tools.Tool;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 /*
  * @test
- * @bug 8170044
+ * @bug 8170044 8171343
  * @summary Test ServiceLoader launching of jshell tool
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -47,12 +49,14 @@ public class ToolProviderTest extends StartOptionTest {
 
     private ByteArrayOutputStream cmdout;
     private ByteArrayOutputStream cmderr;
+    private InputStream cmdInStream;
 
     @BeforeMethod
     @Override
     public void setUp() {
         cmdout = new ByteArrayOutputStream();
         cmderr = new ByteArrayOutputStream();
+        cmdInStream = new ByteArrayInputStream("/exit\n".getBytes());
     }
 
     @Override
@@ -70,7 +74,7 @@ public class ToolProviderTest extends StartOptionTest {
         ServiceLoader<Tool> sl = ServiceLoader.load(Tool.class);
         for (Tool provider : sl) {
             if (provider.name().equals("jshell")) {
-                return provider.run(new ByteArrayInputStream(new byte[0]), cmdout, cmderr, args);
+                return provider.run(cmdInStream, cmdout, cmderr, args);
             }
         }
         throw new AssertionError("Repl tool not found by ServiceLoader: " + sl);
@@ -89,5 +93,17 @@ public class ToolProviderTest extends StartOptionTest {
         } else {
             check(cmderr, s -> s.startsWith("Launching JShell execution engine threw: Failed remote"), "cmderr");
         }
+    }
+
+    @Override
+    public void testShowVersion() throws Exception {
+        start(
+                s -> {
+                    assertTrue(s.startsWith("jshell "), "unexpected version: " + s);
+                    assertTrue(s.contains("Welcome"), "Expected start (but got no welcome): " + s);
+                    assertTrue(s.trim().contains("jshell>"), "Expected prompt, got: " + s);
+                },
+                null, null,
+                "--show-version");
     }
 }
