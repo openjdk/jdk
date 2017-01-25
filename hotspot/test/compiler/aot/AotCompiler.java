@@ -100,7 +100,7 @@ public class AotCompiler {
             args.add("--compile-commands");
             args.add(file.toString());
         }
-        args.add("--classname");
+        args.add("--class-name");
         args.add(item);
         return launchJaotc(args, extraopts);
     }

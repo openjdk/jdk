@@ -39,7 +39,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class ClasspathOptionUnknownClassTest {
     public static void main(String[] args) {
-        OutputAnalyzer oa = JaotcTestHelper.compileLibrary("--classname", "HelloWorldOne");
+        OutputAnalyzer oa = JaotcTestHelper.compileLibrary("--class-name", "HelloWorldOne");
         Asserts.assertNE(oa.getExitValue(), 0, "Unexpected compilation exit code");
         File compiledLibrary = new File(JaotcTestHelper.DEFAULT_LIB_PATH);
         Asserts.assertFalse(compiledLibrary.exists(), "Compiler library unexpectedly exists");

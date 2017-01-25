@@ -41,7 +41,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class CompileClassTest {
     public static void main(String[] args) {
-        OutputAnalyzer oa = JaotcTestHelper.compileLibrary("--classname", JaotcTestHelper
+        OutputAnalyzer oa = JaotcTestHelper.compileLibrary("--class-name", JaotcTestHelper
                 .getClassAotCompilationName(HelloWorldOne.class));
         oa.shouldHaveExitValue(0);
         File compiledLibrary = new File(JaotcTestHelper.DEFAULT_LIB_PATH);
