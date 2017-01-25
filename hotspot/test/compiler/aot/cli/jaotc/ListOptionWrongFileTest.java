@@ -54,7 +54,7 @@ public class ListOptionWrongFileTest {
 
     public static void main(String[] args) {
         // expecting wrong file to be read but no compilation directive recognized, so, all compiled
-        OutputAnalyzer oa = JaotcTestHelper.compileLibrary("--compile-commands", COMPILE_FILE, "--classname", COMPILE_ITEM);
+        OutputAnalyzer oa = JaotcTestHelper.compileLibrary("--compile-commands", COMPILE_FILE, "--class-name", COMPILE_ITEM);
         oa.shouldHaveExitValue(0);
         File compiledLibrary = new File(JaotcTestHelper.DEFAULT_LIB_PATH);
         Asserts.assertTrue(compiledLibrary.exists(), "Expected compiler library to exist");

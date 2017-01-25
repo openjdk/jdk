@@ -45,7 +45,7 @@ public class ListOptionNotExistingTest {
 
     public static void main(String[] args) {
         OutputAnalyzer oa = JaotcTestHelper.compileLibrary("--compile-commands", "./notExisting.list",
-                "--classname", COMPILE_ITEM);
+                "--class-name", COMPILE_ITEM);
         int exitCode = oa.getExitValue();
         Asserts.assertNE(exitCode, 0, "Unexpected compilation exit code");
         File compiledLibrary = new File(JaotcTestHelper.DEFAULT_LIB_PATH);
