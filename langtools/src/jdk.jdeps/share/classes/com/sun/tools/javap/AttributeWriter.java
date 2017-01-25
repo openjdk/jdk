@@ -165,6 +165,7 @@ public class AttributeWriter extends BasicWriter
         print("default_value: ");
         annotationWriter.write(attr.default_value);
         indent(-1);
+        println();
         return null;
     }
 
