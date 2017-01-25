@@ -769,17 +769,7 @@ SetJvmEnvironment(int argc, char **argv) {
                 continue;
             }
 
-            if (*arg != '-'
-                    || JLI_StrCmp(arg, "-version") == 0
-                    || JLI_StrCmp(arg, "--version") == 0
-                    || JLI_StrCmp(arg, "-fullversion") == 0
-                    || JLI_StrCmp(arg, "--full-version") == 0
-                    || JLI_StrCmp(arg, "-help") == 0
-                    || JLI_StrCmp(arg, "--help") == 0
-                    || JLI_StrCmp(arg, "-?") == 0
-                    || JLI_StrCmp(arg, "-jar") == 0
-                    || JLI_StrCmp(arg, "-X") == 0
-                    || JLI_StrCmp(arg, "--help-extra") == 0) {
+            if (*arg != '-' || isTerminalOpt(arg)) {
                 return;
             }
         }
