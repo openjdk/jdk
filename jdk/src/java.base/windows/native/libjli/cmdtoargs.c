@@ -31,6 +31,8 @@
  * in the jdk regression tests.
  */
 
+#include <assert.h>
+
 #ifndef IDE_STANDALONE
 #include "java.h"
 #include "jli_util.h"
@@ -200,15 +202,48 @@ void JLI_CmdToArgs(char* cmdline) {
     jboolean wildcard = JNI_FALSE;
     char* src = cmdline;
     JLI_List argsInFile;
+    size_t i, cnt;
+
+    JLI_List envArgs = JLI_List_new(1);
+    if (JLI_AddArgsFromEnvVar(envArgs, JAVA_OPTIONS)) {
+        // JLI_SetTraceLauncher is not called yet
+        // Show _JAVA_OPTIONS content along with JAVA_OPTIONS to aid diagnosis
+        if (getenv(JLDEBUG_ENV_ENTRY)) {
+            char *tmp = getenv("_JAVA_OPTIONS");
+            if (NULL != tmp) {
+                JLI_ReportMessage(ARG_INFO_ENVVAR, "_JAVA_OPTIONS", tmp);
+            }
+        }
+    }
+    cnt = envArgs->size + 1;
+    argv = JLI_MemAlloc(cnt * sizeof(StdArg));
 
     // allocate arg buffer with sufficient space to receive the largest arg
     char* arg = JLI_StringDup(cmdline);
 
-    do {
+    src = next_arg(src, arg, &wildcard);
+    // first argument is the app name, do not preprocess and make sure remains first
+    argv[0].arg = JLI_StringDup(arg);
+    argv[0].has_wildcard = wildcard;
+    nargs++;
+
+    for (i = 1; i < cnt; i++) {
+        argv[i].arg = envArgs->elements[i - 1];
+        // wildcard is not supported in argfile
+        argv[i].has_wildcard = JNI_FALSE;
+        nargs++;
+    }
+    JLI_MemFree(envArgs->elements);
+    JLI_MemFree(envArgs);
+
+    assert ((size_t) nargs == cnt);
+    *arg = '\0';
+
+    // iterate through rest of command line
+    while (src != NULL) {
         src = next_arg(src, arg, &wildcard);
         argsInFile = JLI_PreprocessArg(arg);
         if (argsInFile != NULL) {
-            size_t cnt, i;
             // resize to accommodate another Arg
             cnt = argsInFile->size;
             argv = (StdArg*) JLI_MemRealloc(argv, (nargs + cnt) * sizeof(StdArg));
@@ -230,7 +265,7 @@ void JLI_CmdToArgs(char* cmdline) {
             nargs++;
         }
         *arg = '\0';
-    } while (src != NULL);
+    }
 
     JLI_MemFree(arg);
 
