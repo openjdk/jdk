@@ -387,6 +387,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJLI, \
         -export:JLI_MemFree \
         -export:JLI_InitArgProcessing \
         -export:JLI_PreprocessArg \
+        -export:JLI_AddArgsFromEnvVar \
         -export:JLI_GetAppArgIndex, \
     LIBS_unix := $(LIBZ), \
     LIBS_linux := $(LIBDL) -lc -lpthread, \
