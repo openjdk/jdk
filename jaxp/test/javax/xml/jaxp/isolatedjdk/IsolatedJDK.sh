@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,6 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 
-if [ $# = 0 ]; then
-  echo "The suffix of ISOLATED_JDK is mandatory"
-  exit 1
-fi
-
 checkVariable() {
   variable='$'$1
 
@@ -42,20 +37,33 @@ checkVariables() {
   done
 }
 
-# Check essential variables
-checkVariables TESTJAVA TESTSRC TESTCLASSES TESTCLASSPATH
+# Script needs parameters
+if [ $# = 0 ]; then
+  echo "Syntax: IsolatedJDK.sh <Suffix> [remove]"
+  exit 1
+fi
 
-echo "TESTJAVA=${TESTJAVA}"
-echo "TESTSRC=${TESTSRC}"
-echo "TESTCLASSES=${TESTCLASSES}"
-echo "TESTCLASSPATH=${TESTCLASSPATH}"
+# Is it the call to remove ?
+if [ $# = 2 ]; then
+  if [ "$2" = "remove" ]; then
+    removeIsolatedJdk=1
+  fi
+fi
+
+# Check essential variables
+checkVariables TESTJAVA
+ISOLATED_JDK="./ISOLATED_JDK_$1"
+
+# Remove isolated copy
+if [ "$removeIsolatedJdk" = "1" ]; then
+  echo "Removing ${ISOLATED_JDK}..."
+  rm -rf ${ISOLATED_JDK}
+  echo "Removed."
+  exit 0
+fi
 
 # Make an isolated copy of the testing JDK
-ISOLATED_JDK="./ISOLATED_JDK_$1"
-echo "ISOLATED_JDK=${ISOLATED_JDK}"
-
-echo "Copy testing JDK started"
+echo "Copying test JDK: ${TESTJAVA} -> ${ISOLATED_JDK}..."
 cp -H -R ${TESTJAVA} ${ISOLATED_JDK} || exit 1
 chmod -R +w ${ISOLATED_JDK} || exit 1
-echo "Copy testing JDK ended"
-
+echo "Copy done."
