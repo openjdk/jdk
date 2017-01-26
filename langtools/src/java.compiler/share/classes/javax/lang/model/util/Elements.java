@@ -52,7 +52,7 @@ public interface Elements {
      * If running with modules, all modules in the modules graph are searched for matching packages.
      *
      * @param name  fully qualified package name, or an empty string for an unnamed package
-     * @return the named package, or {@code null} if it cannot be uniquely found
+     * @return the specified package, or {@code null} if it cannot be uniquely found
      */
     PackageElement getPackageElement(CharSequence name);
 
@@ -61,7 +61,7 @@ public interface Elements {
      *
      * @param name  fully qualified package name, or an empty string for an unnamed package
      * @param module module relative to which the lookup should happen
-     * @return the named package, or {@code null} if it cannot be found
+     * @return the specified package, or {@code null} if it cannot be found
      * @since 9
      */
     PackageElement getPackageElement(ModuleElement module, CharSequence name);

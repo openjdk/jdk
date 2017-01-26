@@ -426,7 +426,8 @@ public class JShellTool implements MessageHandler {
         private final OptionSpecBuilder argHelp = parser.acceptsAll(asList("h", "help"));
         private final OptionSpecBuilder argVersion = parser.accepts("version");
         private final OptionSpecBuilder argFullVersion = parser.accepts("full-version");
-        private final OptionSpecBuilder argX = parser.accepts("X");
+        private final OptionSpecBuilder argShowVersion = parser.accepts("show-version");
+        private final OptionSpecBuilder argHelpExtra = parser.acceptsAll(asList("X", "help-extra"));
 
         private String feedbackMode = null;
         private Startup initialStartup = null;
@@ -450,7 +451,7 @@ public class JShellTool implements MessageHandler {
                 printUsage();
                 return null;
             }
-            if (options.has(argX)) {
+            if (options.has(argHelpExtra)) {
                 printUsageX();
                 return null;
             }
@@ -461,6 +462,9 @@ public class JShellTool implements MessageHandler {
             if (options.has(argFullVersion)) {
                 cmdout.printf("jshell %s\n", fullVersion());
                 return null;
+            }
+            if (options.has(argShowVersion)) {
+                cmdout.printf("jshell %s\n", version());
             }
             if ((options.valuesOf(argFeedback).size() +
                     (options.has(argQ) ? 1 : 0) +
