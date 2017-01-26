@@ -224,7 +224,7 @@ public class JavaVM {
 
     public void destroy() {
         if (vm != null) {
-            vm.destroy();
+            vm.destroyForcibly();
         }
         vm = null;
     }
