@@ -23,13 +23,14 @@
 
 /*
  * @test
- * @bug 8154283 8167320 8171098 8172809 8173117
+ * @bug 8154283 8167320 8171098 8172809 8173068 8173117
  * @summary tests for multi-module mode compilation
  * @library /tools/lib
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.code
  *      jdk.compiler/com.sun.tools.javac.main
+ *      jdk.compiler/com.sun.tools.javac.processing
  *      jdk.compiler/com.sun.tools.javac.util
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask ModuleTestBase
  * @run main EdgeCases
@@ -53,8 +54,10 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.ModuleElement.RequiresDirective;
+import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.ElementFilter;
+import javax.lang.model.util.Elements;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
@@ -64,7 +67,10 @@ import com.sun.source.tree.CompilationUnitTree;
 //import com.sun.source.util.JavacTask; // conflicts with toolbox.JavacTask
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
+import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symtab;
+import com.sun.tools.javac.processing.JavacProcessingEnvironment;
+import com.sun.tools.javac.util.Context;
 
 import toolbox.JarTask;
 import toolbox.JavacTask;
@@ -654,4 +660,156 @@ public class EdgeCases extends ModuleTestBase {
         }
     }
 
+    @Test
+    public void testUnnamedPackage(Path base) throws Exception {
+        List<String> out;
+        List<String> expected;
+
+        //-source 8:
+        Path src8 = base.resolve("src8");
+        Files.createDirectories(src8);
+        tb.writeJavaFiles(src8,
+                          "package test; public class Test {}");
+        Path classes = base.resolve("classes");
+        tb.createDirectories(classes);
+
+        out = new JavacTask(tb)
+                .options("--source-path", src8.toString(),
+                         "-processor", UnnamedPackageProcessor.class.getName(),
+                         "-source", "8")
+                .outdir(classes)
+                .files(findJavaFiles(src8))
+                .run()
+                .writeAll()
+                .getOutputLines(OutputKind.STDOUT);
+
+        expected = Arrays.asList("noModule");
+
+        if (!expected.equals(out)) {
+            throw new AssertionError("Unexpected output: " + out);
+        }
+
+        //-source 9, unnamed:
+        Path srcUnnamed = base.resolve("srcUnnamed");
+        Files.createDirectories(srcUnnamed);
+        tb.writeJavaFiles(srcUnnamed,
+                          "public class Test {}");
+        Path classesUnnamed = base.resolve("classesUnnamed");
+        tb.createDirectories(classesUnnamed);
+
+        out = new JavacTask(tb)
+                .options("--source-path", srcUnnamed.toString(),
+                         "-processor", UnnamedPackageProcessor.class.getName())
+                .outdir(classesUnnamed)
+                .files(findJavaFiles(srcUnnamed))
+                .run()
+                .writeAll()
+                .getOutputLines(OutputKind.STDOUT);
+
+        expected = Arrays.asList("unnamedModule");
+
+        if (!expected.equals(out)) {
+            throw new AssertionError("Unexpected output: " + out);
+        }
+
+        //-source 9, named:
+        Path srcNamed = base.resolve("srcNamed");
+        Files.createDirectories(srcNamed);
+        tb.writeJavaFiles(srcNamed,
+                          "module m {}",
+                          "public class Test {}");
+        Path classesNamed = base.resolve("classesNamed");
+        tb.createDirectories(classesNamed);
+
+        out = new JavacTask(tb)
+                .options("--source-path", srcNamed.toString(),
+                         "-classpath", "",
+                         "-processorpath", System.getProperty("test.class.path"),
+                         "-processor", UnnamedPackageProcessor.class.getName())
+                .outdir(classesNamed)
+                .files(findJavaFiles(srcNamed))
+                .run()
+                .writeAll()
+                .getOutputLines(OutputKind.STDOUT);
+
+        expected = Arrays.asList("m");
+
+        if (!expected.equals(out)) {
+            throw new AssertionError("Unexpected output: " + out);
+        }
+
+        //-source 9, conflict:
+        Path srcNamed2 = base.resolve("srcNamed2");
+        Path srcNamed2m1 = srcNamed2.resolve("m1x");
+        Files.createDirectories(srcNamed2m1);
+        tb.writeJavaFiles(srcNamed2m1,
+                          "module m1x {}",
+                          "public class Test {}");
+        Path srcNamed2m2 = srcNamed2.resolve("m2x");
+        Files.createDirectories(srcNamed2m2);
+        tb.writeJavaFiles(srcNamed2m2,
+                          "module m2x {}",
+                          "public class Test {}");
+        Path classesNamed2 = base.resolve("classesNamed2");
+        tb.createDirectories(classesNamed2);
+
+        out = new JavacTask(tb)
+                .options("--module-source-path", srcNamed2.toString(),
+                         "-classpath", "",
+                         "-processorpath", System.getProperty("test.class.path"),
+                         "-processor", UnnamedPackageProcessor.class.getName(),
+                         "-XDshould-stop.ifError=FLOW")
+                .outdir(classesNamed2)
+                .files(findJavaFiles(srcNamed2))
+                .run(Expect.FAIL)
+                .writeAll()
+                .getOutputLines(OutputKind.STDOUT);
+
+        expected = Arrays.asList("null",
+                                 "m1x: true",
+                                 "m2x: true");
+
+        if (!expected.equals(out)) {
+            throw new AssertionError("Unexpected output: " + out);
+        }
+    }
+
+    @SupportedAnnotationTypes("*")
+    public static final class UnnamedPackageProcessor extends AbstractProcessor {
+
+        int round = 0;
+
+        @Override
+        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+            if (round++ != 0)
+                return false;
+
+            Elements elements = processingEnv.getElementUtils();
+            PackageElement pe = elements.getPackageElement("");
+
+            if (pe == null) {
+                System.out.println("null");
+            } else {
+                ModuleElement mod = (ModuleElement) pe.getEnclosingElement();
+                if (mod == null) {
+                    System.out.println("noModule");
+                } else if (mod.isUnnamed()) {
+                    System.out.println("unnamedModule");
+                } else {
+                    System.out.println(mod);
+                }
+            }
+
+            ModuleElement m1x = elements.getModuleElement("m1x");
+            ModuleElement m2x = elements.getModuleElement("m2x");
+
+            if (m1x != null && m2x != null) {
+                System.out.println("m1x: " + (elements.getPackageElement(m1x, "") != null));
+                System.out.println("m2x: " + (elements.getPackageElement(m2x, "") != null));
+            }
+
+            return false;
+        }
+
+    }
 }
