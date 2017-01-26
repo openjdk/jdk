@@ -203,6 +203,8 @@ java/rmi/activation/ActivationGroup/downloadActivationGroup/DownloadActivationGr
 
 sun/rmi/rmic/newrmic/equivalence/run.sh                         8145980 generic-all
 
+java/rmi/registry/readTest/CodebaseTest.java                    8173324 windows-all
+
 ############################################################################
 
 # jdk_security
@@ -261,6 +263,8 @@ tools/jimage/JImageVerifyTest.java                              8169713 generic-
 tools/jlink/multireleasejar/JLinkMultiReleaseJarTest.java       8169971 windows-x64
 
 tools/jlink/CustomPluginTest.java                               8172864 generic-all
+
+tools/jar/multiRelease/ApiValidatorTest.java                    8173396 generic-all
 
 ############################################################################
 

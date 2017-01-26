@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,16 +66,16 @@ import sun.security.util.SecurityConstants;
  * refer to a directory. Otherwise, the URL is assumed to refer to a JAR file
  * which will be opened as needed.
  * <p>
+ * This class loader supports the loading of classes and resources from the
+ * contents of a <a href="../util/jar/JarFile.html#multirelease">multi-release</a>
+ * JAR file that is referred to by a given URL.
+ * <p>
  * The AccessControlContext of the thread that created the instance of
  * URLClassLoader will be used when subsequently loading classes and
  * resources.
  * <p>
  * The classes that are loaded are by default granted permission only to
  * access the URLs specified when the URLClassLoader was created.
- * <p>
- * This class loader supports the loading of classes from the contents of a
- * <a href="../util/jar/JarFile.html#multirelease">multi-release</a> JAR file
- * that is referred to by a given URL.
  *
  * @author  David Connelly
  * @since   1.2
