@@ -44,6 +44,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
+import javax.tools.FileObject;
 import javax.tools.JavaFileManager.Location;
 import javax.tools.JavaFileObject;
 
@@ -59,7 +60,9 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
+import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
+import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.model.JavacElements;
@@ -192,9 +195,22 @@ public class WorkArounds {
         return ((VarSymbol)ve).getConstValue();
     }
 
-    //TODO: DocTrees: Trees.getPath(Element e) is slow a factor 4-5 times.
+    // TODO: DocTrees: Trees.getPath(Element e) is slow a factor 4-5 times.
     public Map<Element, TreePath> getElementToTreePath() {
         return toolEnv.elementToTreePath;
+    }
+
+    // TODO: we need ElementUtils.getPackage to cope with input strings
+    // to return the proper unnamedPackage for all supported releases.
+    PackageElement getUnnamedPackage() {
+        return (toolEnv.source.allowModules())
+                ? toolEnv.syms.unnamedModule.unnamedPackage
+                : toolEnv.syms.noModule.unnamedPackage;
+    }
+
+    // TODO: implement in either jx.l.m API (preferred) or DocletEnvironment.
+    FileObject getJavaFileObject(PackageElement packageElement) {
+        return ((PackageSymbol)packageElement).sourcefile;
     }
 
     // TODO: needs to ported to jx.l.m.
@@ -528,12 +544,6 @@ public class WorkArounds {
             }
             return findMethod(encl, methodName, paramTypes);
         }
-    }
-
-    // TODO: this is a fast way to get the JavaFileObject for
-    // a package.html file, however we need to eliminate this.
-    public JavaFileObject getJavaFileObject(PackageElement pe) {
-        return toolEnv.pkgToJavaFOMap.get(pe);
     }
 
     // TODO: we need to eliminate this, as it is hacky.

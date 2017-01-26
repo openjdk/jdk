@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@ include LibCommon.gmk
 
 ################################################################################
 
-LIBJ2PKCS11_SRC := $(JDK_TOPDIR)/src/jdk.crypto.token/share/native/libj2pkcs11 \
-    $(JDK_TOPDIR)/src/jdk.crypto.token/$(OPENJDK_TARGET_OS_TYPE)/native/libj2pkcs11
+LIBJ2PKCS11_SRC := $(JDK_TOPDIR)/src/jdk.crypto.cryptoki/share/native/libj2pkcs11 \
+    $(JDK_TOPDIR)/src/jdk.crypto.cryptoki/$(OPENJDK_TARGET_OS_TYPE)/native/libj2pkcs11
 
 $(eval $(call SetupNativeCompilation,BUILD_LIBJ2PKCS11, \
     LIBRARY := j2pkcs11, \
@@ -37,7 +37,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJ2PKCS11, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) $(addprefix -I, $(LIBJ2PKCS11_SRC)) \
         $(LIBJAVA_HEADER_FLAGS) \
-        -I$(SUPPORT_OUTPUTDIR)/headers/jdk.crypto.token, \
+        -I$(SUPPORT_OUTPUTDIR)/headers/jdk.crypto.cryptoki, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libj2pkcs11/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \

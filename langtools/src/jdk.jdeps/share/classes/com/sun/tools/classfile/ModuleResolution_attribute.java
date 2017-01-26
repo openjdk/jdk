@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public class ModuleResolution_attribute extends Attribute {
     public ModuleResolution_attribute(ConstantPool constant_pool,
                               int resolution_flags)
             throws ConstantPoolException {
-        this(constant_pool.getUTF8Index(Attribute.ModulePackages),
+        this(constant_pool.getUTF8Index(Attribute.ModuleResolution),
              resolution_flags);
     }
 

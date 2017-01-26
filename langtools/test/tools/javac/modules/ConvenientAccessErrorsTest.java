@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,12 @@
 
 /*
  * @test
- * @bug 8169197 8172668
+ * @bug 8169197 8172668 8173117
  * @summary Check convenient errors are produced for inaccessible classes.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.util
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask ModuleTestBase
  * @run main ConvenientAccessErrorsTest
  */
@@ -37,6 +38,10 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 
+import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.Convert;
+import com.sun.tools.javac.util.Name;
+import com.sun.tools.javac.util.Names;
 import toolbox.JarTask;
 import toolbox.JavacTask;
 import toolbox.Task;
@@ -58,6 +63,37 @@ public class ConvenientAccessErrorsTest extends ModuleTestBase {
         tb.writeJavaFiles(src_m2,
                           "module m2x { }",
                           "package test; public class Test { api.Api api; }");
+        Path classes = base.resolve("classes");
+        tb.createDirectories(classes);
+
+        List<String> log = new JavacTask(tb)
+                .options("-XDrawDiagnostics",
+                         "--module-source-path", src.toString())
+                .outdir(classes)
+                .files(findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        List<String> expected = Arrays.asList(
+                "Test.java:1:35: compiler.err.package.not.visible: api, (compiler.misc.not.def.access.does.not.read: m2x, api, m1x)",
+                "1 error");
+
+        if (!expected.equals(log))
+            throw new Exception("expected output not found; actual: " + log);
+    }
+
+    @Test
+    public void testNoDepNested(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path src_m1 = src.resolve("m1x");
+        tb.writeJavaFiles(src_m1,
+                          "module m1x { exports api; }",
+                          "package api; public class Api { public static class Nested {} }");
+        Path src_m2 = src.resolve("m2x");
+        tb.writeJavaFiles(src_m2,
+                          "module m2x { }",
+                          "package test; public class Test { api.Api.Nested nested; }");
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
@@ -390,8 +426,7 @@ public class ConvenientAccessErrorsTest extends ModuleTestBase {
 
         List<String> expected = Arrays.asList(
                 "Test.java:1:22: compiler.err.package.not.visible: api, (compiler.misc.not.def.access.not.exported: api, m1x)",
-                "Test.java:1:49: compiler.err.not.def.access.package.cant.access: api.Api, api, (compiler.misc.not.def.access.not.exported: api, m1x)",
-                "2 errors");
+                "1 error");
 
         if (!expected.equals(log))
             throw new Exception("expected output not found; actual: " + log);
@@ -593,4 +628,80 @@ public class ConvenientAccessErrorsTest extends ModuleTestBase {
             throw new Exception("expected output not found; actual: " + log);
     }
 
+    @Test
+    public void testInaccessibleInSourceModuleViaBinaryModule(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path src_m1 = src.resolve("m1x");
+        tb.writeJavaFiles(src_m1,
+                          "@Deprecated module m1x { }");
+        Path src_m2 = src.resolve("m2x");
+        tb.writeJavaFiles(src_m2,
+                          "module m2x { requires transitive m1x; }");
+        Path src_m3 = src.resolve("m3x");
+        tb.writeJavaFiles(src_m3,
+                          "module m3x { requires transitive m2x; exports api; }",
+                          "package api; class Api { }");
+        Path classes = base.resolve("classes");
+        tb.createDirectories(classes);
+
+        new JavacTask(tb)
+            .options("-XDrawDiagnostics",
+                     "--module-source-path", src.toString())
+            .outdir(classes)
+            .files(findJavaFiles(src))
+            .run()
+            .writeAll();
+
+        tb.cleanDirectory(classes.resolve("m2x")); //force completion from source if needed
+        Files.delete(classes.resolve("m2x"));
+
+        tb.cleanDirectory(src_m3); //binary only module
+        Files.delete(src_m3);
+
+        //m4x does not depend on m1x/m2x/m3x, so cannot access api.Api
+        //but the recovery search should not complete m2x, as that would cause a deprecation warning:
+        Path src_m4 = src.resolve("m4x");
+        tb.writeJavaFiles(src_m4,
+                          "module m4x { }",
+                          "package m4x; public class Test extends api.Api { }");
+
+        List<String> log = new JavacTask(tb)
+                .options("-XDrawDiagnostics",
+                         "--module-source-path", src.toString(),
+                         "--module-path", classes.toString(),
+                         "-Xlint:deprecation")
+                .outdir(classes)
+                .files(findJavaFiles(src_m4))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        List<String> expected = Arrays.asList(
+                "Test.java:1:40: compiler.err.package.not.visible: api, (compiler.misc.not.def.access.does.not.read: m4x, api, m3x)",
+                "1 error");
+
+        if (!expected.equals(log))
+            throw new Exception("expected output not found; actual: " + log);
+    }
+
+    @Test
+    public void testConvertNameCandidates(Path base) throws Exception {
+        Context ctx = new Context();
+        Names names = Names.instance(ctx);
+        Name name = names.fromString("com.sun.tools.javac.Attr.BreakAttr");
+
+        com.sun.tools.javac.util.List<String> actual =
+                Convert.classCandidates(name).map(n -> n.toString());
+        List<String> expected = Arrays.asList(
+                "com.sun$tools$javac$Attr$BreakAttr",
+                "com.sun.tools$javac$Attr$BreakAttr",
+                "com.sun.tools.javac$Attr$BreakAttr",
+                "com.sun.tools.javac.Attr$BreakAttr",
+                "com.sun.tools.javac.Attr.BreakAttr"
+        );
+
+        if (!expected.equals(actual)) {
+            throw new Exception("Expected names not generated: " + actual);
+        }
+    }
 }

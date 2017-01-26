@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary store a NSS PKCS11 PrivateKeyEntry to JKS KeyStore throws confusing NPE
  * @author Wang Weijun
  * @library ..
- * @modules jdk.crypto.token
+ * @modules jdk.crypto.cryptoki
  * @run main/othervm JksSetPrivateKey
  * @run main/othervm JksSetPrivateKey sm policy
  */

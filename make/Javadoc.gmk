@@ -683,22 +683,6 @@ $(eval $(call SetupJavadocGeneration, jdknet, \
 TARGETS += $(jdknet)
 
 ################################################################################
-
-# TODO: Need to decide when the plugin API is ready to publish as experimental API.
-# This target is temporarily added for internal use for now.
-$(eval $(call SetupJavadocGeneration, jlinkplugins, \
-    MODULES := jdk.jlink, \
-    PACKAGES := jdk.tools.jlink.plugin, \
-    API_ROOT := jdk, \
-    DEST_DIR := jlink, \
-    TITLE := JLink Plugin API - EXPERIMENTAL, \
-    FIRST_COPYRIGHT_YEAR := 2015, \
-    DISABLED_DOCLINT := html missing syntax, \
-))
-
-TARGETS += $(jlinkplugins)
-
-################################################################################
 # Copy JDWP html file
 
 JDWP_HTML := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/jdwp-protocol.html

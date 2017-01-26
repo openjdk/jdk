@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ public class MultiModuleModeTest extends ModuleTestBase {
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
 
-        if (!log.contains("C.java:1:1: compiler.err.unnamed.pkg.not.allowed.named.modules"))
+        if (!log.contains("C.java:1:1: compiler.err.not.in.module.on.module.source.path"))
             throw new Exception("expected output not found");
     }
 

@@ -19,10 +19,7 @@ OtherTagsTest.java:20: error: element not allowed in documentation comments: <me
 OtherTagsTest.java:21: error: element not allowed in documentation comments: <noframes>
      *  <noframes> </noframes>
         ^
-OtherTagsTest.java:22: error: element not allowed in documentation comments: <script>
-     *  <script> </script>
-        ^
 OtherTagsTest.java:23: error: element not allowed in documentation comments: <title>
      *  <title> </title>
         ^
-9 errors
+8 errors

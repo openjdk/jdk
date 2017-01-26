@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,6 +92,7 @@ import com.sun.tools.javac.util.Options;
 
 import static com.sun.tools.javac.code.Lint.LintCategory.PROCESSING;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
+import com.sun.tools.javac.comp.Annotate;
 import static com.sun.tools.javac.comp.CompileStates.CompileState;
 import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.*;
 
@@ -123,6 +124,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     private final JavaCompiler compiler;
     private final Modules modules;
     private final Types types;
+    private final Annotate annotate;
 
     /**
      * Holds relevant state history of which processors have been
@@ -219,6 +221,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         typeUtils = JavacTypes.instance(context);
         modules = Modules.instance(context);
         types = Types.instance(context);
+        annotate = Annotate.instance(context);
         processorOptions = initProcessorOptions();
         unmatchedProcessorOptions = initUnmatchedProcessorOptions();
         messages = JavacMessages.instance(context);
@@ -1256,6 +1259,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             compiler.newRound();
             modules.newRound();
             types.newRound();
+            annotate.newRound();
 
             boolean foundError = false;
 
