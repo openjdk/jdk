@@ -2820,7 +2820,7 @@ public class Check {
     private void validateAnnotation(JCAnnotation a, Symbol s) {
         validateAnnotationTree(a);
 
-        if (!annotationApplicable(a, s))
+        if (a.type.tsym.isAnnotationType() && !annotationApplicable(a, s))
             log.error(a.pos(), "annotation.type.not.applicable");
 
         if (a.annotationType.type.tsym == syms.functionalInterfaceType.tsym) {

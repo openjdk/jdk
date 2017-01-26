@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,37 +34,24 @@ import jdk.internal.misc.VM;
  */
 public class ResourcesMgr {
     // intended for java.security, javax.security and sun.security resources
-    private final static String RESOURCES = "sun.security.util.Resources";
-    private final static String AUTH_RESOURCES = "sun.security.util.AuthResources";
-
     private final static Map<String, ResourceBundle> bundles = new ConcurrentHashMap<>();
 
     public static String getString(String s) {
-        ResourceBundle bundle = bundles.get(RESOURCES);
-        if (bundle == null) {
-
-            // only load if/when needed
-            bundle = java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<java.util.ResourceBundle>() {
-                public java.util.ResourceBundle run() {
-                    return (java.util.ResourceBundle.getBundle
-                                ("sun.security.util.Resources"));
-                }
-            });
-        }
-
-        return bundle.getString(s);
+        return getBundle("sun.security.util.Resources").getString(s);
     }
 
     public static String getAuthResourceString(String s) {
-        if (VM.initLevel() == 3) {
-            // cannot trigger loading of any resource bundle as
-            // it depends on the system class loader fully initialized.
-            throw new InternalError("system class loader is being initialized");
-        }
+        return getBundle("sun.security.util.AuthResources").getString(s);
+    }
 
-        return bundles.computeIfAbsent(AUTH_RESOURCES, ResourceBundle::getBundle)
-                      .getString(s);
+    private static ResourceBundle getBundle(String bundleName) {
+        if (!VM.isBooted()) {
+            // don't expect this be called before the system is fully initialized.
+            // This triggers loading of any resource bundle that should be
+            // be done during initialization of system class loader.
+            throw new InternalError("Expected to use ResourceBundle only after booted");
+        }
+        return bundles.computeIfAbsent(bundleName, ResourceBundle::getBundle);
     }
 
 }

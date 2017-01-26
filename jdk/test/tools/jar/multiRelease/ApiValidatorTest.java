@@ -36,22 +36,42 @@
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.testlibrary.FileUtils;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ApiValidatorTest extends MRTestBase {
 
+    static final Pattern MODULE_PATTERN = Pattern.compile("module (\\w+)");
+    static final Pattern CLASS_PATTERN = Pattern.compile("package (\\w+).*public class (\\w+)");
+
+    private Path root;
+    private Path classes;
+
+    @BeforeMethod
+    void testInit(Method method) {
+        root = Paths.get(method.getName());
+        classes = root.resolve("classes");
+    }
+
+    @AfterMethod
+    void testCleanup() throws IOException {
+        FileUtils.deleteFileTreeWithRetry(root);
+    }
+
+
     @Test(dataProvider = "signatureChange")
     public void changeMethodSignature(String sigBase, String sigV10,
-                                      boolean isAcceptable,
-                                      Method method) throws Throwable {
-        Path root = Paths.get(method.getName());
-        Path classes = root.resolve("classes");
+                                      boolean isAcceptable) throws Throwable {
 
         String METHOD_SIG = "#SIG";
         String classTemplate =
@@ -76,8 +96,6 @@ public class ApiValidatorTest extends MRTestBase {
             result.shouldNotHaveExitValue(SUCCESS)
                     .shouldContain("contains a class with different api from earlier version");
         }
-
-        FileUtils.deleteFileTreeWithRetry(root);
     }
 
     @DataProvider
@@ -100,11 +118,7 @@ public class ApiValidatorTest extends MRTestBase {
     }
 
     @Test(dataProvider = "publicAPI")
-    public void introducingPublicMembers(String publicAPI,
-                                         Method method) throws Throwable {
-        Path root = Paths.get(method.getName());
-        Path classes = root.resolve("classes");
-
+    public void introducingPublicMembers(String publicAPI) throws Throwable {
         String API = "#API";
         String classTemplate =
                 "public class C { \n" +
@@ -122,8 +136,6 @@ public class ApiValidatorTest extends MRTestBase {
                 "--release", "10", "-C", classes.resolve("v10").toString(), ".")
                 .shouldNotHaveExitValue(SUCCESS)
                 .shouldContain("contains a class with different api from earlier version");
-
-        FileUtils.deleteFileTreeWithRetry(root);
     }
 
     @DataProvider
@@ -138,11 +150,7 @@ public class ApiValidatorTest extends MRTestBase {
     }
 
     @Test(dataProvider = "privateAPI")
-    public void introducingPrivateMembers(String privateAPI,
-                                          Method method) throws Throwable {
-        Path root = Paths.get(method.getName());
-        Path classes = root.resolve("classes");
-
+    public void introducingPrivateMembers(String privateAPI) throws Throwable {
         String API = "#API";
         String classTemplate =
                 "public class C { \n" +
@@ -167,8 +175,6 @@ public class ApiValidatorTest extends MRTestBase {
         jar("uf", jarfile,
                 "--release", "11", "-C", classes.resolve("v10").toString(), ".")
                 .shouldHaveExitValue(SUCCESS);
-
-        FileUtils.deleteFileTreeWithRetry(root);
     }
 
     @DataProvider
@@ -189,5 +195,230 @@ public class ApiValidatorTest extends MRTestBase {
                 .resolve("C.java");
         Files.write(classSourceFile, template.getBytes());
         javac(classes, classSourceFile);
+    }
+
+     /* Modular multi-release checks */
+
+    @Test
+    public void moduleNameHasChanged() throws Throwable {
+
+        compileModule(classes.resolve("base"), "module A { }");
+        compileModule(classes.resolve("v10"), "module B { }");
+
+        String jarfile = root.resolve("test.jar").toString();
+        jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
+                "--release", "10", "-C", classes.resolve("v10").toString(), ".")
+                .shouldNotHaveExitValue(SUCCESS)
+                .shouldContain("incorrect name");
+
+        // update module-info release
+        jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
+                "--release", "10", "-C", classes.resolve("base").toString(), ".")
+                .shouldHaveExitValue(SUCCESS);
+        jar("uf", jarfile,
+                "--release", "10", "-C", classes.resolve("v10").toString(), ".")
+                .shouldNotHaveExitValue(SUCCESS)
+                .shouldContain("incorrect name");
+    }
+
+    //    @Test @ignore 8173370
+    public void moduleBecomeOpen() throws Throwable {
+
+        compileModule(classes.resolve("base"), "module A { }");
+        compileModule(classes.resolve("v10"), "open module A { }");
+
+        String jarfile = root.resolve("test.jar").toString();
+        jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
+                "--release", "10", "-C", classes.resolve("v10").toString(), ".")
+                .shouldNotHaveExitValue(SUCCESS)
+                .shouldContain("FIX ME");
+
+        // update module-info release
+        jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
+                "--release", "10", "-C", classes.resolve("base").toString(), ".")
+                .shouldHaveExitValue(SUCCESS);
+        jar("uf", jarfile,
+                "--release", "10", "-C", classes.resolve("v10").toString(), ".")
+                .shouldNotHaveExitValue(SUCCESS)
+                .shouldContain("FIX ME");
+    }
+
+    @Test
+    public void moduleRequires() throws Throwable {
+
+        String BASE_VERSION_DIRECTIVE = "requires jdk.compiler;";
+        // add transitive flag
+        moduleDirectivesCase(BASE_VERSION_DIRECTIVE,
+                "requires transitive jdk.compiler;",
+                false,
+                "contains additional \"requires transitive\"");
+        // remove requires
+        moduleDirectivesCase(BASE_VERSION_DIRECTIVE,
+                "",
+                true,
+                "");
+        // add requires
+        moduleDirectivesCase(BASE_VERSION_DIRECTIVE,
+                "requires jdk.compiler; requires jdk.jartool;",
+                true,
+                "");
+        // add requires transitive
+        moduleDirectivesCase(BASE_VERSION_DIRECTIVE,
+                "requires jdk.compiler; requires transitive jdk.jartool;",
+                false,
+                "contains additional \"requires transitive\"");
+    }
+
+    @Test
+    public void moduleExports() throws Throwable {
+
+        String BASE_VERSION_DIRECTIVE = "exports pkg1; exports pkg2 to jdk.compiler;";
+        // add export
+        moduleDirectivesCase(BASE_VERSION_DIRECTIVE,
+                BASE_VERSION_DIRECTIVE + " exports pkg3;",
+                false,
+                "contains different \"exports\"");
+        // change exports to qualified exports
+        moduleDirectivesCase(BASE_VERSION_DIRECTIVE,
+                "exports pkg1 to jdk.compiler; exports pkg2;",
+                false,
+                "contains different \"exports\"");
+        // remove exports
+        moduleDirectivesCase(BASE_VERSION_DIRECTIVE,
+                "exports pkg1;",
+                false,
+                "contains different \"exports\"");
+        // add qualified exports
+        moduleDirectivesCase(BASE_VERSION_DIRECTIVE,
+                BASE_VERSION_DIRECTIVE + " exports pkg3 to jdk.compiler;",
+                false,
+                "contains different \"exports\"");
+    }
+
+    @Test
+    public void moduleOpens() throws Throwable {
+
+        String BASE_VERSION_DIRECTIVE = "opens pkg1; opens pkg2 to jdk.compiler;";
+        // add opens
+        moduleDirectivesCase(BASE_VERSION_DIRECTIVE,
+                BASE_VERSION_DIRECTIVE + " opens pkg3;",
+                false,
+                "contains different \"opens\"");
+        // change opens to qualified opens
+        moduleDirectivesCase(BASE_VERSION_DIRECTIVE,
+                "opens pkg1 to jdk.compiler; opens pkg2;",
+                false,
+                "contains different \"opens\"");
+        // remove opens
+        moduleDirectivesCase(BASE_VERSION_DIRECTIVE,
+                "opens pkg1;",
+                false,
+                "contains different \"opens\"");
+        // add qualified opens
+        moduleDirectivesCase(BASE_VERSION_DIRECTIVE,
+                BASE_VERSION_DIRECTIVE + " opens pkg3 to jdk.compiler;",
+                false,
+                "contains different \"opens\"");
+    }
+
+    @Test
+    public void moduleProvides() throws Throwable {
+
+        String BASE_VERSION_DIRECTIVE = "provides pkg1.A with pkg1.A;";
+        // add provides
+        moduleDirectivesCase(BASE_VERSION_DIRECTIVE,
+                BASE_VERSION_DIRECTIVE + " provides pkg2.B with pkg2.B;",
+                false,
+                "contains different \"provides\"");
+        // change service impl
+        moduleDirectivesCase(BASE_VERSION_DIRECTIVE,
+                "provides pkg1.A with pkg2.B;",
+                false,
+                "contains different \"provides\"");
+        // remove provides
+        moduleDirectivesCase(BASE_VERSION_DIRECTIVE,
+                "",
+                false,
+                "contains different \"provides\"");
+    }
+
+    @Test
+    public void moduleUses() throws Throwable {
+
+        String BASE_VERSION_DIRECTIVE = "uses pkg1.A;";
+        // add
+        moduleDirectivesCase(BASE_VERSION_DIRECTIVE,
+                BASE_VERSION_DIRECTIVE + " uses pkg2.B;",
+                true,
+                "");
+        // replace
+        moduleDirectivesCase(BASE_VERSION_DIRECTIVE,
+                "uses pkg2.B;",
+                true,
+                "");
+        // remove
+        moduleDirectivesCase(BASE_VERSION_DIRECTIVE,
+                "",
+                true,
+                "");
+    }
+
+    private void moduleDirectivesCase(String baseDirectives,
+                                      String versionedDirectives,
+                                      boolean expectSuccess,
+                                      String expectedMessage) throws Throwable {
+        String[] moduleClasses = {
+                "package pkg1; public class A { }",
+                "package pkg2; public class B extends pkg1.A { }",
+                "package pkg3; public class C extends pkg2.B { }"};
+        compileModule(classes.resolve("base"),
+                "module A { " + baseDirectives + " }",
+                moduleClasses);
+        compileModule(classes.resolve("v10"),
+                "module A { " + versionedDirectives + " }",
+                moduleClasses);
+
+        String jarfile = root.resolve("test.jar").toString();
+        OutputAnalyzer output = jar("cf", jarfile,
+                "-C", classes.resolve("base").toString(), ".",
+                "--release", "10", "-C", classes.resolve("v10").toString(), ".");
+        if (expectSuccess) {
+            output.shouldHaveExitValue(SUCCESS);
+        } else {
+            output.shouldNotHaveExitValue(SUCCESS)
+                    .shouldContain(expectedMessage);
+        }
+    }
+
+    private void compileModule(Path classes, String moduleSource,
+                               String... classSources) throws Throwable {
+        Matcher moduleMatcher = MODULE_PATTERN.matcher(moduleSource);
+        moduleMatcher.find();
+        String name = moduleMatcher.group(1);
+        Path moduleinfo = Files.createDirectories(
+                classes.getParent().resolve("src").resolve(name))
+                .resolve("module-info.java");
+        Files.write(moduleinfo, moduleSource.getBytes());
+
+        Path[] sourceFiles = new Path[classSources.length + 1];
+        sourceFiles[0] = moduleinfo;
+
+        for (int i = 0; i < classSources.length; i++) {
+            String classSource = classSources[i];
+            Matcher classMatcher = CLASS_PATTERN.matcher(classSource);
+            classMatcher.find();
+            String packageName = classMatcher.group(1);
+            String className = classMatcher.group(2);
+
+            Path packagePath = moduleinfo.getParent()
+                    .resolve(packageName.replace('.', '/'));
+            Path sourceFile = Files.createDirectories(packagePath)
+                    .resolve(className + ".java");
+            Files.write(sourceFile, classSource.getBytes());
+
+            sourceFiles[i + 1] = sourceFile;
+        }
+
+        javac(classes, sourceFiles);
     }
 }

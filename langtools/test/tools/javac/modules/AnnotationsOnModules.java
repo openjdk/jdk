@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8159602 8170549 8171255
+ * @bug 8159602 8170549 8171255 8171322
  * @summary Test annotations on module declaration.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -373,8 +373,8 @@ public class AnnotationsOnModules extends ModuleTestBase {
 
         tb.writeJavaFiles(m1,
                 "module A { exports p1; exports p2; }",
-                "package p1; import java.lang.annotation.*; @Target(ElementType.MODULE) public @interface A { }",
-                "package p2; import java.lang.annotation.*; @Target(ElementType.MODULE) public @interface A { }");
+                "package p1; import java.lang.annotation.*; @Target(ElementType.MODULE) public @interface AAA { }",
+                "package p2; import java.lang.annotation.*; @Target(ElementType.MODULE) public @interface AAA { }");
 
         Path modulePath = base.resolve("module-path");
 
@@ -390,7 +390,7 @@ public class AnnotationsOnModules extends ModuleTestBase {
         Path m2 = base.resolve("src2/B");
 
         tb.writeJavaFiles(m2,
-                "import p1.*; import p2.*; @A module B { requires A; }");
+                "import p1.*; import p2.*; @AAA module B { requires A; }");
         List<String> log = new JavacTask(tb)
                 .options("--module-source-path", m2.getParent().toString(),
                         "--module-path", modulePath.toString(),
@@ -402,9 +402,8 @@ public class AnnotationsOnModules extends ModuleTestBase {
                 .writeAll()
                 .getOutputLines(OutputKind.DIRECT);
 
-        List<String> expected = List.of("module-info.java:1:28: compiler.err.ref.ambiguous: A, kindname.class, p2.A, p2, kindname.class, p1.A, p1",
-                "module-info.java:1:27: compiler.err.annotation.type.not.applicable",
-                "2 errors");
+        List<String> expected = List.of("module-info.java:1:28: compiler.err.ref.ambiguous: AAA, kindname.class, p2.AAA, p2, kindname.class, p1.AAA, p1",
+                "1 error");
         if (!log.containsAll(expected)) {
             throw new AssertionError("Expected output not found. Expected: " + expected);
         }

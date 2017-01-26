@@ -91,7 +91,9 @@ public interface Elements {
      * If the named module cannot be found, null is returned. One situation where a module
      * cannot be found is if the environment does not include modules, such as
      * an annotation processing environment configured for
-     * a {@linkplain ProcessingEnvironment#getSourceVersion source version} without modules.      *
+     * a {@linkplain
+     * javax.annotation.processing.ProcessingEnvironment#getSourceVersion
+     * source version} without modules.
      *
      * @param name  the name
      * @return the named module element, or {@code null} if it cannot be found
@@ -331,7 +333,9 @@ public interface Elements {
      * If there is no module for the element, null is returned. One situation where there is
      * no module for an element is if the environment does not include modules, such as
      * an annotation processing environment configured for
-     * a {@linkplain ProcessingEnvironment#getSourceVersion source version} without modules.      *
+     * a {@linkplain
+     * javax.annotation.processing.ProcessingEnvironment#getSourceVersion
+     * source version} without modules.
      *
      * @param type the element being examined
      * @return the module of an element
