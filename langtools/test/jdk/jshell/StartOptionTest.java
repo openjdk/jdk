@@ -22,7 +22,7 @@
  */
 
 /*
- * @test 8151754 8080883 8160089 8170162 8166581 8172102
+ * @test 8151754 8080883 8160089 8170162 8166581 8172102 8171343
  * @summary Testing start-up options.
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -33,7 +33,9 @@
  * @run testng StartOptionTest
  */
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -46,6 +48,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import jdk.jshell.tool.JavaShellToolBuilder;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
@@ -57,12 +60,14 @@ public class StartOptionTest {
     private ByteArrayOutputStream console;
     private ByteArrayOutputStream userout;
     private ByteArrayOutputStream usererr;
+    private InputStream cmdInStream;
 
     private JavaShellToolBuilder builder() {
         return JavaShellToolBuilder
                     .builder()
                     .out(new PrintStream(cmdout), new PrintStream(console), new PrintStream(userout))
                     .err(new PrintStream(cmderr), new PrintStream(usererr))
+                    .in(cmdInStream, null)
                     .persistence(new HashMap<>())
                     .env(new HashMap<>())
                     .locale(Locale.ROOT);
@@ -119,6 +124,7 @@ public class StartOptionTest {
         console = new ByteArrayOutputStream();
         userout = new ByteArrayOutputStream();
         usererr = new ByteArrayOutputStream();
+        cmdInStream = new ByteArrayInputStream("/exit\n".getBytes());
     }
 
     protected String writeToFile(String stuff) throws Exception {
@@ -138,6 +144,19 @@ public class StartOptionTest {
             start(s -> {
                 assertTrue(s.split("\n").length >= 7, "Not enough usage lines: " + s);
                 assertTrue(s.startsWith("Usage:   jshell <options>"), "Unexpect usage start: " + s);
+                assertTrue(s.contains("--show-version"), "Expected help: " + s);
+                assertFalse(s.contains("Welcome"), "Unexpected start: " + s);
+            }, null, null, opt);
+        }
+    }
+
+    public void testHelpExtra() throws Exception {
+        for (String opt : new String[]{"-X", "--help-extra"}) {
+            start(s -> {
+                assertTrue(s.split("\n").length >= 5, "Not enough help-extra lines: " + s);
+                assertTrue(s.contains("--add-exports"), "Expected --add-exports: " + s);
+                assertTrue(s.contains("--execution"), "Expected --add-exports: " + s);
+                assertFalse(s.contains("Welcome"), "Unexpected start: " + s);
             }, null, null, opt);
         }
     }
@@ -201,7 +220,29 @@ public class StartOptionTest {
     }
 
     public void testVersion() throws Exception {
-        start(s -> assertTrue(s.startsWith("jshell"), "unexpected version: " + s), null, null, "--version");
+        start(
+                s -> {
+                    assertTrue(s.startsWith("jshell"), "unexpected version: " + s);
+                    assertFalse(s.contains("Welcome"), "Unexpected start: " + s);
+                },
+                null, null,
+                "--version");
+    }
+
+    public void testShowVersion() throws Exception {
+        runShell("--show-version");
+        check(cmdout,
+                s -> {
+                    assertTrue(s.startsWith("jshell"), "unexpected version: " + s);
+                    assertTrue(s.contains("Welcome"), "Expected start (but got no welcome): " + s);
+                },
+                "cmdout");
+        check(cmderr, null, "cmderr");
+        check(console,
+                s -> assertTrue(s.trim().startsWith("jshell>"), "Expected prompt, got: " + s),
+                "console");
+        check(userout, null, "userout");
+        check(usererr, null, "usererr");
     }
 
     @AfterMethod
@@ -211,5 +252,6 @@ public class StartOptionTest {
         console = null;
         userout = null;
         usererr = null;
+        cmdInStream = null;
     }
 }

@@ -140,8 +140,6 @@ public class JavacElements implements Elements {
 
     private PackageSymbol doGetPackageElement(ModuleElement module, CharSequence name) {
         ensureEntered("getPackageElement");
-        if (name.length() == 0)
-            return syms.unnamedModule.unnamedPackage;
         return doGetElement(module, "getPackageElement", name, PackageSymbol.class);
     }
 
@@ -165,7 +163,7 @@ public class JavacElements implements Elements {
     private <S extends Symbol> S doGetElement(ModuleElement module, String methodName,
                                               CharSequence name, Class<S> clazz) {
         String strName = name.toString();
-        if (!SourceVersion.isName(strName)) {
+        if (!SourceVersion.isName(strName) && (!strName.isEmpty() || clazz == ClassSymbol.class)) {
             return null;
         }
         if (module == null) {
