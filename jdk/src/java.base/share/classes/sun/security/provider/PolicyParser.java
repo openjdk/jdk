@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,14 @@
 package sun.security.provider;
 
 import java.io.*;
-import java.lang.RuntimePermission;
-import java.net.SocketPermission;
-import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.Principal;
-import java.text.MessageFormat;
 import java.util.*;
 import javax.security.auth.x500.X500Principal;
 
 import sun.security.util.Debug;
 import sun.security.util.PropertyExpander;
-import sun.security.util.ResourcesMgr;
+import sun.security.util.LocalizedMessage;
 
 /**
  * The policy for a Java runtime (specifying
@@ -209,13 +205,12 @@ public class PolicyParser {
                     if (!domainEntries.containsKey(domainName)) {
                         domainEntries.put(domainName, de);
                     } else {
-                        MessageFormat form =
-                            new MessageFormat(ResourcesMgr.getString(
-                                "duplicate.keystore.domain.name"));
+                        LocalizedMessage localizedMsg =
+                            new LocalizedMessage("duplicate.keystore.domain.name");
                         Object[] source = {domainName};
                         String msg = "duplicate keystore domain name: " +
                                      domainName;
-                        throw new ParsingException(msg, form, source);
+                        throw new ParsingException(msg, localizedMsg, source);
                     }
                 }
             } else {
@@ -225,7 +220,7 @@ public class PolicyParser {
         }
 
         if (keyStoreUrlString == null && storePassURL != null) {
-            throw new ParsingException(ResourcesMgr.getString
+            throw new ParsingException(LocalizedMessage.getMessage
                 ("keystorePasswordURL.can.not.be.specified.without.also.specifying.keystore"));
         }
     }
@@ -367,7 +362,7 @@ public class PolicyParser {
             keyStoreType = match("quoted string");
         } else {
             throw new ParsingException(st.lineno(),
-                        ResourcesMgr.getString("expected.keystore.type"));
+                LocalizedMessage.getMessage("expected.keystore.type"));
         }
 
         // parse keystore provider
@@ -380,7 +375,7 @@ public class PolicyParser {
             keyStoreProvider = match("quoted string");
         } else {
             throw new ParsingException(st.lineno(),
-                        ResourcesMgr.getString("expected.keystore.provider"));
+                LocalizedMessage.getMessage("expected.keystore.provider"));
         }
     }
 
@@ -430,7 +425,7 @@ public class PolicyParser {
                 if (e.codeBase != null)
                     throw new ParsingException(
                             st.lineno(),
-                            ResourcesMgr.getString
+                            LocalizedMessage.getMessage
                                 ("multiple.Codebase.expressions"));
                 e.codeBase = match("quoted string");
                 peekAndMatch(",");
@@ -438,8 +433,8 @@ public class PolicyParser {
                 if (e.signedBy != null)
                     throw new ParsingException(
                             st.lineno(),
-                            ResourcesMgr.getString(
-                                "multiple.SignedBy.expressions"));
+                            LocalizedMessage.getMessage
+                                ("multiple.SignedBy.expressions"));
                 e.signedBy = match("quoted string");
 
                 // verify syntax of the aliases
@@ -457,8 +452,8 @@ public class PolicyParser {
                 if (actr <= cctr)
                     throw new ParsingException(
                             st.lineno(),
-                            ResourcesMgr.getString(
-                                "SignedBy.has.empty.alias"));
+                            LocalizedMessage.getMessage
+                                ("SignedBy.has.empty.alias"));
 
                 peekAndMatch(",");
             } else if (peekAndMatch("Principal")) {
@@ -500,7 +495,7 @@ public class PolicyParser {
                         }
                         throw new ParsingException
                                 (st.lineno(),
-                                 ResourcesMgr.getString
+                                LocalizedMessage.getMessage
                                     ("can.not.specify.Principal.with.a.wildcard.class.without.a.wildcard.name"));
                     }
                 }
@@ -537,8 +532,8 @@ public class PolicyParser {
 
             } else {
                 throw new ParsingException(st.lineno(),
-                                  ResourcesMgr.getString(
-                                      "expected.codeBase.or.SignedBy.or.Principal"));
+                    LocalizedMessage.getMessage
+                        ("expected.codeBase.or.SignedBy.or.Principal"));
             }
         }
 
@@ -561,8 +556,8 @@ public class PolicyParser {
             } else {
                 throw new
                     ParsingException(st.lineno(),
-                                     ResourcesMgr.getString(
-                                        "expected.permission.entry"));
+                        LocalizedMessage.getMessage
+                            ("expected.permission.entry"));
             }
         }
         match("}");
@@ -738,15 +733,14 @@ public class PolicyParser {
         switch (lookahead) {
         case StreamTokenizer.TT_NUMBER:
             throw new ParsingException(st.lineno(), expect,
-                                       ResourcesMgr.getString("number.") +
-                                       String.valueOf(st.nval));
+                LocalizedMessage.getMessage("number.") +
+                    String.valueOf(st.nval));
         case StreamTokenizer.TT_EOF:
-            MessageFormat form = new MessageFormat(
-                    ResourcesMgr.getString
-                            ("expected.expect.read.end.of.file."));
+            LocalizedMessage localizedMsg = new LocalizedMessage
+                ("expected.expect.read.end.of.file.");
             Object[] source = {expect};
             String msg = "expected [" + expect + "], read [end of file]";
-            throw new ParsingException(msg, form, source);
+            throw new ParsingException(msg, localizedMsg, source);
         case StreamTokenizer.TT_WORD:
             if (expect.equalsIgnoreCase(st.sval)) {
                 lookahead = st.nextToken();
@@ -832,10 +826,10 @@ public class PolicyParser {
             switch (lookahead) {
             case StreamTokenizer.TT_NUMBER:
                 throw new ParsingException(st.lineno(), ";",
-                                          ResourcesMgr.getString("number.") +
-                                          String.valueOf(st.nval));
+                        LocalizedMessage.getMessage("number.") +
+                            String.valueOf(st.nval));
             case StreamTokenizer.TT_EOF:
-                throw new ParsingException(ResourcesMgr.getString
+                throw new ParsingException(LocalizedMessage.getMessage
                         ("expected.read.end.of.file."));
             default:
                 lookahead = st.nextToken();
@@ -993,8 +987,8 @@ public class PolicyParser {
          */
         public PrincipalEntry(String principalClass, String principalName) {
             if (principalClass == null || principalName == null)
-                throw new NullPointerException(ResourcesMgr.getString(
-                                  "null.principalClass.or.principalName"));
+                throw new NullPointerException(LocalizedMessage.getMessage
+                    ("null.principalClass.or.principalName"));
             this.principalClass = principalClass;
             this.principalName = principalName;
         }
@@ -1244,11 +1238,11 @@ public class PolicyParser {
             if (!entries.containsKey(keystoreName)) {
                 entries.put(keystoreName, entry);
             } else {
-                MessageFormat form = new MessageFormat(ResourcesMgr.getString(
-                    "duplicate.keystore.name"));
+                LocalizedMessage localizedMsg = new LocalizedMessage
+                    ("duplicate.keystore.name");
                 Object[] source = {keystoreName};
                 String msg = "duplicate keystore name: " + keystoreName;
-                throw new ParsingException(msg, form, source);
+                throw new ParsingException(msg, localizedMsg, source);
             }
         }
 
@@ -1320,7 +1314,7 @@ public class PolicyParser {
         private static final long serialVersionUID = -4330692689482574072L;
 
         private String i18nMessage;
-        private MessageFormat form;
+        private LocalizedMessage localizedMsg;
         private Object[] source;
 
         /**
@@ -1336,10 +1330,10 @@ public class PolicyParser {
             i18nMessage = msg;
         }
 
-        public ParsingException(String msg, MessageFormat form,
+        public ParsingException(String msg, LocalizedMessage localizedMsg,
                                 Object[] source) {
             super(msg);
-            this.form = form;
+            this.localizedMsg = localizedMsg;
             this.source = source;
         }
 
@@ -1347,7 +1341,7 @@ public class PolicyParser {
             super("line " + line + ": " + msg);
             // don't call form.format unless getLocalizedMessage is called
             // to avoid unnecessary permission checks
-            form = new MessageFormat(ResourcesMgr.getString("line.number.msg"));
+            localizedMsg = new LocalizedMessage("line.number.msg");
             source = new Object[] {line, msg};
         }
 
@@ -1356,14 +1350,14 @@ public class PolicyParser {
                 "], found [" + actual + "]");
             // don't call form.format unless getLocalizedMessage is called
             // to avoid unnecessary permission checks
-            form = new MessageFormat(ResourcesMgr.getString
-                ("line.number.expected.expect.found.actual."));
+            localizedMsg = new LocalizedMessage
+                ("line.number.expected.expect.found.actual.");
             source = new Object[] {line, expect, actual};
         }
 
         @Override
         public String getLocalizedMessage() {
-            return i18nMessage != null ? i18nMessage : form.format(source);
+            return i18nMessage != null ? i18nMessage : localizedMsg.format(source);
         }
     }
 

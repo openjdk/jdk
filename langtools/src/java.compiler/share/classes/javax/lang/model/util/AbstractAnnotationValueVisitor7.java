@@ -59,13 +59,13 @@ import javax.annotation.processing.SupportedSourceVersion;
  * @see AbstractAnnotationValueVisitor9
  * @since 1.7
  */
-@SuppressWarnings("deprecation") // Superclass deprecated
 @SupportedSourceVersion(RELEASE_7)
 public abstract class AbstractAnnotationValueVisitor7<R, P> extends AbstractAnnotationValueVisitor6<R, P> {
 
     /**
      * Constructor for concrete subclasses to call.
      */
+    @SuppressWarnings("deprecation") // Superclass constructor deprecated
     protected AbstractAnnotationValueVisitor7() {
         super();
     }

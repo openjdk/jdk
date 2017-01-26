@@ -68,8 +68,8 @@ import javax.lang.model.type.TypeMirror;
  * javax.lang.model.*} packages bundled in Java SE 8 were required to
  * also be runnable on Java SE 7.  Therefore, default methods
  * were <em>not</em> used when extending {@code javax.lang.model.*}
- * to cover Java SE 8 language features.  However, default methods may
- * be used in subsequent revisions of the {@code javax.lang.model.*}
+ * to cover Java SE 8 language features.  However, default methods
+ * are used in subsequent revisions of the {@code javax.lang.model.*}
  * packages that are only required to run on Java SE 8 and higher
  * platform versions.
  *
@@ -90,11 +90,16 @@ public interface AnnotationValueVisitor<R, P> {
     R visit(AnnotationValue av, P p);
 
     /**
-     * A convenience method equivalent to {@code v.visit(av, null)}.
+     * A convenience method equivalent to {@code visit(av, null)}.
+     *
+     * @implSpec The default implementation is {@code visit(av, null)}.
+     *
      * @param av the value to visit
      * @return  a visitor-specified result
      */
-    R visit(AnnotationValue av);
+    default R visit(AnnotationValue av) {
+        return visit(av, null);
+    }
 
     /**
      * Visits a {@code boolean} value in an annotation.

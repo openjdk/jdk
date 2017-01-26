@@ -118,6 +118,8 @@ public class Annotate {
         Source source = Source.instance(context);
         allowRepeatedAnnos = source.allowRepeatedAnnotations();
         sourceName = source.name;
+
+        blockCount = 1;
     }
 
     /** Semaphore to delay annotation processing */
@@ -143,6 +145,10 @@ public class Annotate {
 
     /** are we blocking annotation processing? */
     public boolean annotationsBlocked() {return blockCount > 0; }
+
+    public void enterDone() {
+        unblockAnnotations();
+    }
 
     public List<TypeCompound> fromAnnotations(List<JCAnnotation> annotations) {
         if (annotations.isEmpty()) {
@@ -1315,5 +1321,9 @@ public class Annotate {
                         return null;
                     }
                 };
+    }
+
+    public void newRound() {
+        blockCount = 1;
     }
 }

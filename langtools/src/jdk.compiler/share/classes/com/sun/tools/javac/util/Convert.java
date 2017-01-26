@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -334,5 +334,17 @@ public class Convert {
             names = names.prepend(name);
         }
         return names;
+    }
+
+    public static List<Name> classCandidates(Name name) {
+        List<Name> names = List.nil();
+        String nameStr = name.toString();
+        int index = -1;
+        while ((index = nameStr.indexOf('.', index + 1)) > 0) {
+            String pack = nameStr.substring(0, index + 1);
+            String clz = nameStr.substring(index + 1).replace('.', '$');
+            names = names.prepend(name.table.names.fromString(pack + clz));
+        }
+        return names.reverse();
     }
 }

@@ -60,6 +60,9 @@ public class APIDeps {
         Path testsrc = Paths.get(System.getProperty("test.src"));
         List<String> options = new ArrayList<>();
 
+        // jdk.jdeps is a service provider module so needs to be explicitly included
+        options.add("--add-modules=jdk.jdeps");
+
         // add --add-exports
         String testModules = System.getProperty("test.modules", "");
         List<String> addExports = new ArrayList<>();

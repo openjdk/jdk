@@ -378,7 +378,7 @@ jck-compiler-tests: check-jck FRC
 	@rm -f -r $(JCK_COMPILER_OUTPUT_DIR)/work $(JCK_COMPILER_OUTPUT_DIR)/report \
 	    $(JCK_COMPILER_OUTPUT_DIR)/diff.html $(JCK_COMPILER_OUTPUT_DIR)/status.txt
 	@mkdir -p $(JCK_COMPILER_OUTPUT_DIR)
-	$(JT_JAVA)/bin/java -Xmx512m \
+	$(JT_JAVA)/bin/java -Xmx1024m \
 	    -jar $(JCK_HOME)/JCK-compiler-9/lib/jtjck.jar \
 	    $(if $(JCK_VERBOSE),$(if $(filter $(JCK_VERBOSE),summary),-v,-v:$(JCK_VERBOSE))) \
             -r:$(JCK_COMPILER_OUTPUT_DIR)/report \
@@ -429,7 +429,7 @@ jck-runtime-tests: check-jck FRC
 	@rm -f -r $(JCK_RUNTIME_OUTPUT_DIR)/work $(JCK_RUNTIME_OUTPUT_DIR)/report \
 	    $(JCK_RUNTIME_OUTPUT_DIR)/diff.html $(JCK_RUNTIME_OUTPUT_DIR)/status.txt
 	@mkdir -p $(JCK_RUNTIME_OUTPUT_DIR)
-	$(JT_JAVA)/bin/java -Xmx512m \
+	$(JT_JAVA)/bin/java -Xmx1024m \
 	    -jar $(JCK_HOME)/JCK-runtime-9/lib/jtjck.jar \
 	    $(if $(JCK_VERBOSE),$(if $(filter $(JCK_VERBOSE),summary),-v,-v:$(JCK_VERBOSE))) \
             -r:$(JCK_RUNTIME_OUTPUT_DIR)/report \

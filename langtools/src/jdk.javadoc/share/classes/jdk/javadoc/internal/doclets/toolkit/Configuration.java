@@ -228,6 +228,11 @@ public abstract class Configuration {
     public boolean showversion = false;
 
     /**
+     * Allow JavaScript in doc comments.
+     */
+    private boolean allowScriptInComments = false;
+
+    /**
      * Sourcepath from where to read the source files. Default is classpath.
      *
      */
@@ -646,6 +651,13 @@ public abstract class Configuration {
                     dumpOnError = true;
                     return true;
                 }
+            },
+            new Option(resources, "--allow-script-in-comments") {
+                @Override
+                public boolean process(String opt, List<String> args) {
+                    allowScriptInComments = true;
+                    return true;
+                }
             }
         };
         Set<Doclet.Option> set = new TreeSet<>();
@@ -1054,7 +1066,7 @@ public abstract class Configuration {
         private final int argCount;
 
         protected Option(Resources resources, String name, int argCount) {
-            this(resources, "doclet.usage." + name.toLowerCase().replaceAll("^-*", ""), name, argCount);
+            this(resources, "doclet.usage." + name.toLowerCase().replaceAll("^-+", ""), name, argCount);
         }
 
         protected Option(Resources resources, String keyBase, String name, int argCount) {
@@ -1227,5 +1239,14 @@ public abstract class Configuration {
                 }.visit(e);
             }
         }
+    }
+
+    /**
+     * Returns whether or not to allow JavaScript in comments.
+     * Default is off; can be set true from a command line option.
+     * @return the allowScriptInComments
+     */
+    public boolean isAllowScriptInComments() {
+        return allowScriptInComments;
     }
 }
