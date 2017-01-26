@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,14 @@
 
 /*
  * @test
- * @bug 8154283 8167320
+ * @bug 8154283 8167320 8171098 8172809 8173117
  * @summary tests for multi-module mode compilation
  * @library /tools/lib
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.code
  *      jdk.compiler/com.sun.tools.javac.main
+ *      jdk.compiler/com.sun.tools.javac.util
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask ModuleTestBase
  * @run main EdgeCases
  */
@@ -44,7 +45,16 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.RoundEnvironment;
+import javax.annotation.processing.SupportedAnnotationTypes;
+import javax.annotation.processing.SupportedOptions;
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ModuleElement;
+import javax.lang.model.element.ModuleElement.RequiresDirective;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.util.ElementFilter;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
@@ -484,4 +494,164 @@ public class EdgeCases extends ModuleTestBase {
             throw new AssertionError("Unexpected output: " + log);
         }
     }
+
+    @Test
+    public void testInvisibleClassVisiblePackageClash(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path src_m1 = src.resolve("m1x");
+        tb.writeJavaFiles(src_m1,
+                          "module m1x { }",
+                          "package m1x;\n" +
+                          "import m1x.a.*; public class Test { A a; }\n",
+                          "package m1x.a;\n" +
+                          "public class A { }\n");
+        Path src_m2 = src.resolve("m2x");
+        tb.writeJavaFiles(src_m2,
+                          "module m2x { }",
+                          "package m1x;\n" +
+                          "public class a { public static class A { } }\n");
+        Path classes = base.resolve("classes");
+        tb.createDirectories(classes);
+
+        new JavacTask(tb)
+            .options("--module-source-path", src.toString(),
+                     "-XDrawDiagnostics")
+            .outdir(classes)
+            .files(findJavaFiles(src))
+            .run()
+            .writeAll();
+    }
+
+    @Test
+    public void testStripUnknownRequired(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path src_m1 = src.resolve("m1x");
+        tb.writeJavaFiles(src_m1,
+                          "module m1x { }");
+        Path src_m2 = src.resolve("m2x");
+        tb.writeJavaFiles(src_m2,
+                          "module m2x { }");
+        Path src_m3 = src.resolve("m3x");
+        tb.writeJavaFiles(src_m3,
+                          "module m3x { }");
+        Path src_m4 = src.resolve("m4x");
+        tb.writeJavaFiles(src_m4,
+                          "module m4x { }");
+        Path src_test = src.resolve("test");
+        tb.writeJavaFiles(src_test,
+                          "module test { requires m1x; requires m2x; requires java.base; requires m3x; requires m4x; }");
+        Path src_compile = src.resolve("compile");
+        tb.writeJavaFiles(src_compile,
+                          "module compile { exports p to test; }",
+                          "package p; public class Test { }");
+        Path classes = base.resolve("classes");
+        tb.createDirectories(classes);
+
+        List<String> log = new JavacTask(tb)
+                .options("-processor", ListRequires.class.getName(),
+                         "--module-source-path", src.toString(),
+                         "--limit-modules", "compile",
+                         "-XDaccessInternalAPI=true")
+                .outdir(classes)
+                .files(findJavaFiles(src_compile))
+                .run(Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.STDOUT);
+
+        List<String> expected = Arrays.asList(
+                "from directives:",
+                "java.base",
+                "from requires:",
+                "java.base"
+        );
+        if (!Objects.equals(log, expected))
+            throw new AssertionError("Unexpected output: " + log);
+    }
+
+    @SupportedAnnotationTypes("*")
+    @SupportedOptions("expectedEnclosedElements")
+    public static final class ListRequires extends AbstractProcessor {
+
+        private int round;
+
+        @Override
+        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+            if (round++ == 0) {
+                ModuleElement compileE = processingEnv.getElementUtils().getModuleElement("compile");
+                ModuleElement testE = ElementFilter.exportsIn(compileE.getDirectives()).get(0).getTargetModules().get(0);
+
+                System.out.println("from directives:");
+                for (RequiresDirective rd : ElementFilter.requiresIn(testE.getDirectives())) {
+                    System.out.println(rd.getDependency().getSimpleName());
+                }
+
+                System.out.println("from requires:");
+                for (RequiresDirective rd : ((ModuleSymbol) testE).requires) {
+                    System.out.println(rd.getDependency().getSimpleName());
+                }
+            }
+
+            return false;
+        }
+
+        @Override
+        public SourceVersion getSupportedSourceVersion() {
+            return SourceVersion.latest();
+        }
+
+    }
+
+    @Test
+    public void testOnDemandCompletionModuleInfoJava(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path src_m1 = src.resolve("m1x");
+        tb.writeJavaFiles(src_m1,
+                          "@Deprecated module m1x { }");
+        Path src_m2 = src.resolve("m2x");
+        tb.writeJavaFiles(src_m2,
+                          "module m2x { requires m1x; }");
+        Path src_m3 = src.resolve("m3x");
+        tb.writeJavaFiles(src_m3,
+                          "module m3x { requires m2x; requires m1x; }");
+        Path classes = base.resolve("classes");
+        tb.createDirectories(classes);
+
+        List<String> log;
+        List<String> expected;
+
+        log = new JavacTask(tb)
+                .options("--module-source-path", src.toString())
+                .outdir(classes)
+                .files(findJavaFiles(src_m1))
+                .run()
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        expected = Arrays.asList("");
+
+        if (!expected.equals(log)) {
+            throw new IllegalStateException(log.toString());
+        }
+
+        log = new JavacTask(tb)
+                .options("--module-source-path", src.toString(),
+                         "-XDrawDiagnostics",
+                         "-Xlint:deprecation")
+                .outdir(classes)
+                .files(findJavaFiles(src_m3))
+                .run()
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        expected = Arrays.asList(
+                "module-info.java:1:23: compiler.warn.has.been.deprecated.module: m1x",
+                "module-info.java:1:37: compiler.warn.has.been.deprecated.module: m1x",
+                "2 warnings"
+        );
+
+        if (!expected.equals(log)) {
+            throw new IllegalStateException(log.toString());
+        }
+    }
+
 }

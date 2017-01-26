@@ -78,10 +78,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see SimpleTypeVisitor8
  * @see SimpleTypeVisitor9
  * @since 1.6
- * @deprecated Release 6 is obsolete; update to a visitor for a newer
- * release level.
  */
-@Deprecated
 @SupportedSourceVersion(RELEASE_6)
 public class SimpleTypeVisitor6<R, P> extends AbstractTypeVisitor6<R, P> {
     /**
@@ -94,7 +91,10 @@ public class SimpleTypeVisitor6<R, P> extends AbstractTypeVisitor6<R, P> {
     /**
      * Constructor for concrete subclasses; uses {@code null} for the
      * default value.
+     * @deprecated Release 6 is obsolete; update to a visitor for a newer
+     * release level.
      */
+    @Deprecated
     protected SimpleTypeVisitor6(){
         DEFAULT_VALUE = null;
     }
@@ -104,7 +104,10 @@ public class SimpleTypeVisitor6<R, P> extends AbstractTypeVisitor6<R, P> {
      * default value.
      *
      * @param defaultValue the value to assign to {@link #DEFAULT_VALUE}
+     * @deprecated Release 6 is obsolete; update to a visitor for a newer
+     * release level.
      */
+    @Deprecated
     protected SimpleTypeVisitor6(R defaultValue){
         DEFAULT_VALUE = defaultValue;
     }

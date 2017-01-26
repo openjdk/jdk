@@ -59,8 +59,8 @@ import javax.lang.model.element.*;
  * javax.lang.model.*} packages bundled in Java SE 8 were required to
  * also be runnable on Java SE 7.  Therefore, default methods
  * were <em>not</em> used when extending {@code javax.lang.model.*}
- * to cover Java SE 8 language features.  However, default methods may
- * be used in subsequent revisions of the {@code javax.lang.model.*}
+ * to cover Java SE 8 language features.  However, default methods
+ * are used in subsequent revisions of the {@code javax.lang.model.*}
  * packages that are only required to run on Java SE 8 and higher
  * platform versions.
  *
@@ -85,11 +85,16 @@ public interface TypeVisitor<R, P> {
     R visit(TypeMirror t, P p);
 
     /**
-     * A convenience method equivalent to {@code v.visit(t, null)}.
+     * A convenience method equivalent to {@code visit(t, null)}.
+     *
+     * @implSpec The default implementation is {@code visit(t, null)}.
+     *
      * @param t the element to visit
      * @return  a visitor-specified result
      */
-    R visit(TypeMirror t);
+    default R visit(TypeMirror t) {
+        return visit(t, null);
+    }
 
     /**
      * Visits a primitive type.

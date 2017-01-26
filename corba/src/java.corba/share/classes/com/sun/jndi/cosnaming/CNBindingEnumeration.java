@@ -33,6 +33,8 @@ import java.util.Hashtable;
 
 import org.omg.CosNaming.*;
 
+import com.sun.jndi.toolkit.corba.CorbaUtils;
+
 /**
   * Implements the JNDI NamingEnumeration interface for COS
   * Naming. Gets hold of a list of bindings from the COS Naming Server
@@ -212,7 +214,10 @@ final class CNBindingEnumeration
         Name cname = CNNameParser.cosNameToName(bndg.binding_name);
 
         try {
-            obj = NamingManager.getObjectInstance(obj, cname, _ctx, _env);
+            // Check whether object factory codebase is trusted
+            if (CorbaUtils.isObjectFactoryTrusted(obj)) {
+                obj = NamingManager.getObjectInstance(obj, cname, _ctx, _env);
+            }
         } catch (NamingException e) {
             throw e;
         } catch (Exception e) {

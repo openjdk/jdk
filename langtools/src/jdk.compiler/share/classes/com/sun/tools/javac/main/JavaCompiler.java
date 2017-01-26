@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -363,7 +363,7 @@ public class JavaCompiler {
      **/
     protected boolean implicitSourceFilesRead;
 
-    protected boolean enterDone;
+    private boolean enterDone;
 
     protected CompileStates compileStates;
 
@@ -1042,7 +1042,7 @@ public class JavaCompiler {
     public List<JCCompilationUnit> initModules(List<JCCompilationUnit> roots) {
         modules.initModules(roots);
         if (roots.isEmpty()) {
-            enterDone = true;
+            enterDone();
         }
         return roots;
     }
@@ -1063,7 +1063,7 @@ public class JavaCompiler {
 
         enter.main(roots);
 
-        enterDone = true;
+        enterDone();
 
         if (!taskListener.isEmpty()) {
             for (JCCompilationUnit unit: roots) {
@@ -1723,6 +1723,11 @@ public class JavaCompiler {
         if (log.compressedOutput) {
             log.mandatoryNote(null, "compressed.diags");
         }
+    }
+
+    public void enterDone() {
+        enterDone = true;
+        annotate.enterDone();
     }
 
     public boolean isEnterDone() {
