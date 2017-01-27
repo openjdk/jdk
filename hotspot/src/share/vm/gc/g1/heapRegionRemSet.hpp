@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -289,8 +289,6 @@ public:
   // Returns the amount of memory, in bytes, currently
   // consumed by the strong code roots.
   size_t strong_code_roots_mem_size();
-
-  void print() PRODUCT_RETURN;
 
   // Called during a stop-world phase to perform any deferred cleanups.
   static void cleanup();
