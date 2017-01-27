@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -821,7 +821,11 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     break;
             }
         } else {
-            foundParams.add(paramElement);
+            boolean unique = foundParams.add(paramElement);
+
+            if (!unique) {
+                env.messages.warning(REFERENCE, tree, "dc.exists.param", nameTree);
+            }
         }
 
         warnIfEmpty(tree, tree.getDescription());
@@ -870,6 +874,10 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitReturn(ReturnTree tree, Void ignore) {
+        if (foundReturn) {
+            env.messages.warning(REFERENCE, tree, "dc.exists.return");
+        }
+
         Element e = env.trees.getElement(env.currPath);
         if (e.getKind() != ElementKind.METHOD
                 || ((ExecutableElement) e).getReturnType().getKind() == TypeKind.VOID)
