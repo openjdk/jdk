@@ -262,8 +262,6 @@ tools/jimage/JImageVerifyTest.java                              8169713 generic-
 
 tools/jlink/multireleasejar/JLinkMultiReleaseJarTest.java       8169971 windows-x64
 
-tools/jar/multiRelease/ApiValidatorTest.java                    8173396 generic-all
-
 ############################################################################
 
 # jdk_jdi
