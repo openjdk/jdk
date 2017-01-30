@@ -31,7 +31,7 @@
  * @build jdk.test.lib.JDKToolFinder jdk.test.lib.Utils jdk.test.lib.process.*
  * @build jdk.testlibrary.FileUtils
  * @build MRTestBase
- * @run testng ApiValidatorTest
+ * @run testng/timeout=1200 ApiValidatorTest
  */
 
 import jdk.test.lib.process.OutputAnalyzer;

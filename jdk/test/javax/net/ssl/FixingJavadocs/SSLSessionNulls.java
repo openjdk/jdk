@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Need to revisit the javadocs for JSSE, especially the
  *      promoted classes.
  * @library /javax/net/ssl/templates
+ * @modules jdk.crypto.ec
  * @run main/othervm SSLSessionNulls
  *
  *     SunJSSE does not support dynamic system properties, no way to re-use
