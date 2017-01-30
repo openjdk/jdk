@@ -55,6 +55,7 @@ private:
   DebugInformationRecorder* _debug_info;
   Dependencies*    _dependencies;
   const char*      _failure_reason;
+  bool             _inc_decompile_count_on_failure;
   int              _compilable;
   bool             _break_at_compile;
   int              _num_inlined_bytecodes;
