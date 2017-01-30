@@ -125,7 +125,7 @@ ExecJava() {
   CheckFail TestA
 
   rm -f TestB${OUTEXT}
-  $JAVA${variant} -classpath JarDir/"*"$NOOP TestB || exit 1
+  $JAVA${variant} -cp JarDir/"*"$NOOP TestB || exit 1
   CheckFail TestB
 
 
@@ -134,11 +134,11 @@ ExecJava() {
   cp TestD/*.class JarDir
 
   rm -f TestC${OUTEXT}
-  $JAVA${variant} -classpath JarDir${PATHSEP}JarDir/"*"$NOOP TestC || exit 1
+  $JAVA${variant} --class-path JarDir${PATHSEP}JarDir/"*"$NOOP TestC || exit 1
   CheckFail TestC
 
   rm -f TestD${OUTEXT}
-  $JAVA${variant} -classpath JarDir${PATHSEP}JarDir/"*"$NOOP TestD || exit 1
+  $JAVA${variant} --class-path=JarDir${PATHSEP}JarDir/"*"$NOOP TestD || exit 1
   CheckFail TestD
 }
 
