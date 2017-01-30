@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,15 @@ import javax.lang.model.*;
 import javax.lang.model.element.*;
 import static javax.lang.model.element.ElementKind.*;
 import static javax.lang.model.element.NestingKind.*;
+import static javax.lang.model.element.ModuleElement.DirectiveKind.*;
+import static javax.lang.model.element.ModuleElement.*;
 import javax.lang.model.type.*;
 import javax.lang.model.util.*;
 
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
@@ -296,6 +299,96 @@ public class PrintingProcessor extends AbstractProcessor {
             else
                 writer.println("// Unnamed package");
             return this;
+        }
+
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+        public PrintingElementVisitor visitModule(ModuleElement e, Boolean p) {
+            defaultAction(e, false);
+
+            if (!e.isUnnamed()) {
+                // TODO: openness of the module not currently exposed
+                // by the language model API, but should be printed
+                // here once available.
+                writer.println("module " + e.getQualifiedName() + " {");
+                indentation++;
+                for (ModuleElement.Directive directive : e.getDirectives()) {
+                    printDirective(directive);
+                }
+                indentation--;
+                writer.println("}");
+            } else
+                writer.println("// Unnamed module"); // Should we do more here?
+            return this;
+        }
+
+        private void printDirective(ModuleElement.Directive directive) {
+            indent();
+            switch (directive.getKind()) {
+            case EXPORTS: // "exports package-name [to module-name-list]"
+                {
+                    ExportsDirective exportsDirective = (ExportsDirective) directive;
+                    writer.print("exports ");
+                    writer.print(exportsDirective.getPackage().getQualifiedName());
+                    printModuleList(exportsDirective.getTargetModules());
+                }
+                break;
+
+            case OPENS: // opens package-name [to module-name-list]
+                {
+                    OpensDirective opensDirective = (OpensDirective) directive;
+                    writer.print("opens ");
+                    writer.print(opensDirective.getPackage().getQualifiedName());
+                    printModuleList(opensDirective.getTargetModules());
+                }
+                break;
+
+            case PROVIDES: // provides service-name with implementation-name
+                {
+                    ProvidesDirective providesDirective = (ProvidesDirective) directive;
+                    writer.print("provides ");
+                    writer.print(providesDirective.getService().getQualifiedName());
+                    writer.print(" with ");
+                    printNameableList(providesDirective.getImplementations());
+                }
+                break;
+
+            case REQUIRES: // requires (static|transitive)* module-name
+                {
+                    RequiresDirective requiresDirective = (RequiresDirective) directive;
+                    writer.print("requires ");
+                    if (requiresDirective.isStatic())
+                        writer.print("static ");
+                    if (requiresDirective.isTransitive())
+                        writer.print("transitive ");
+                    writer.print(requiresDirective.getDependency().getQualifiedName());
+                }
+                break;
+
+            case USES: // uses service-name
+                {
+                    UsesDirective usesDirective = (UsesDirective) directive;
+                    writer.print("uses ");
+                    writer.print(usesDirective.getService().getQualifiedName());
+                }
+                break;
+
+            default:
+                throw new UnsupportedOperationException("unknown directive " + directive);
+            }
+            writer.println(";");
+        }
+
+        private void printModuleList(List<? extends ModuleElement> modules) {
+            if (modules != null) {
+                writer.print(" to ");
+                printNameableList(modules);
+            }
+        }
+
+        private void printNameableList(List<? extends QualifiedNameable> nameables) {
+                writer.print(nameables.stream().
+                             map(QualifiedNameable::getQualifiedName).
+                             collect(Collectors.joining(", ")));
         }
 
         public void flush() {
