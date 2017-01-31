@@ -177,7 +177,7 @@ module java.base {
     exports jdk.internal.perf to
         java.desktop,
         java.management,
-        jdk.jvmstat;
+        jdk.internal.jvmstat;
     exports jdk.internal.ref to
         java.desktop,
         jdk.unsupported;
@@ -197,7 +197,7 @@ module java.base {
         jdk.jlink;
     exports jdk.internal.vm to
         java.management,
-        jdk.jvmstat;
+        jdk.internal.jvmstat;
     exports sun.net to
         jdk.incubator.httpclient;
     exports sun.net.ext to
