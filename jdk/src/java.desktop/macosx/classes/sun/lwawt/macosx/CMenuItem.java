@@ -63,7 +63,7 @@ public class CMenuItem extends CMenuComponent implements MenuItemPeer {
         CMenuComponent parent = (CMenuComponent)LWToolkit.targetToPeer(getTarget().getParent());
         return parent.executeGet(ptr->nativeCreate(ptr, isSeparator()));
     }
-
+    @SuppressWarnings("deprecation")
     public void setLabel(String label, char keyChar, int keyCode, int modifiers) {
         int keyMask = modifiers;
         if (keyCode == KeyEvent.VK_UNDEFINED) {
