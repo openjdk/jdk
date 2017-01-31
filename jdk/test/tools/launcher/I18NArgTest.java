@@ -96,6 +96,7 @@ public class I18NArgTest extends TestHelper {
         }
 
         // Test via JAVA_OPTIONS
+/*
         Map<String, String> env = new HashMap<>();
         String cmd = "-Dtest.src=" + TEST_SOURCES_DIR.getAbsolutePath() +
                 " -Dtest.classes=" + TEST_CLASSES_DIR.getAbsolutePath() +
@@ -108,6 +109,7 @@ public class I18NArgTest extends TestHelper {
             System.err.println(tr);
             throw new RuntimeException("test fails");
         }
+*/
     }
 
     static void testCharacters(String... args) {
