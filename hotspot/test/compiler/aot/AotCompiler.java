@@ -69,7 +69,7 @@ public class AotCompiler {
         extraopts.add("-classpath");
         extraopts.add(Utils.TEST_CLASS_PATH + File.pathSeparator + Utils.TEST_SRC);
         if (className != null && libName != null) {
-            OutputAnalyzer oa = launchCompiler(libName, className + ".class", extraopts, compileList);
+            OutputAnalyzer oa = launchCompiler(libName, className, extraopts, compileList);
             oa.shouldHaveExitValue(0);
         } else {
             printUsage();
@@ -93,12 +93,14 @@ public class AotCompiler {
             }
         }
         List<String> args = new ArrayList<>();
+        args.add("--compile-with-assertions");
         args.add("--output");
         args.add(libName);
         if (file != null) {
             args.add("--compile-commands");
             args.add(file.toString());
         }
+        args.add("--class-name");
         args.add(item);
         return launchJaotc(args, extraopts);
     }
