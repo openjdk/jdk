@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1819,6 +1819,25 @@ bool Arguments::gc_selected() {
 #endif // INCLUDE_ALL_GCS
 }
 
+#ifdef TIERED
+bool Arguments::compilation_mode_selected() {
+ return !FLAG_IS_DEFAULT(TieredCompilation) || !FLAG_IS_DEFAULT(TieredStopAtLevel) ||
+        !FLAG_IS_DEFAULT(UseAOT) JVMCI_ONLY(|| !FLAG_IS_DEFAULT(EnableJVMCI) || !FLAG_IS_DEFAULT(UseJVMCICompiler));
+
+}
+
+void Arguments::select_compilation_mode_ergonomically() {
+#if defined(_WINDOWS) && !defined(_LP64)
+  if (FLAG_IS_DEFAULT(NeverActAsServerClassMachine)) {
+    FLAG_SET_ERGO(bool, NeverActAsServerClassMachine, true);
+  }
+#endif
+  if (NeverActAsServerClassMachine) {
+    set_client_compilation_mode();
+  }
+}
+#endif //TIERED
+
 void Arguments::select_gc_ergonomically() {
 #if INCLUDE_ALL_GCS
   if (os::is_server_class_machine()) {
@@ -1854,7 +1873,40 @@ void Arguments::select_gc() {
   }
 }
 
+#if INCLUDE_JVMCI
+void Arguments::set_jvmci_specific_flags() {
+  if (UseJVMCICompiler) {
+    if (FLAG_IS_DEFAULT(TypeProfileWidth)) {
+      FLAG_SET_DEFAULT(TypeProfileWidth, 8);
+    }
+    if (FLAG_IS_DEFAULT(OnStackReplacePercentage)) {
+      FLAG_SET_DEFAULT(OnStackReplacePercentage, 933);
+    }
+    if (FLAG_IS_DEFAULT(ReservedCodeCacheSize)) {
+      FLAG_SET_DEFAULT(ReservedCodeCacheSize, 64*M);
+    }
+    if (FLAG_IS_DEFAULT(InitialCodeCacheSize)) {
+      FLAG_SET_DEFAULT(InitialCodeCacheSize, 16*M);
+    }
+    if (FLAG_IS_DEFAULT(MetaspaceSize)) {
+      FLAG_SET_DEFAULT(MetaspaceSize, 12*M);
+    }
+    if (FLAG_IS_DEFAULT(NewSizeThreadIncrease)) {
+      FLAG_SET_DEFAULT(NewSizeThreadIncrease, 4*K);
+    }
+    if (FLAG_IS_DEFAULT(TypeProfileLevel)) {
+      FLAG_SET_DEFAULT(TypeProfileLevel, 0);
+    }
+  }
+}
+#endif
+
 void Arguments::set_ergonomics_flags() {
+#ifdef TIERED
+  if (!compilation_mode_selected()) {
+    select_compilation_mode_ergonomically();
+  }
+#endif
   select_gc();
 
 #if defined(COMPILER2) || INCLUDE_JVMCI
@@ -1863,7 +1915,7 @@ void Arguments::set_ergonomics_flags() {
   // server performance.  When -server is specified, keep the default off
   // unless it is asked for.  Future work: either add bytecode rewriting
   // at link time, or rewrite bytecodes in non-shared methods.
-  if (!DumpSharedSpaces && !RequireSharedSpaces &&
+  if (is_server_compilation_mode_vm() && !DumpSharedSpaces && !RequireSharedSpaces &&
       (FLAG_IS_DEFAULT(UseSharedSpaces) || !UseSharedSpaces)) {
     no_shared_spaces("COMPILER2 default: -Xshare:auto | off, have to manually setup to on.");
   }
@@ -2462,14 +2514,6 @@ bool Arguments::check_vm_args_consistency() {
     if (!ScavengeRootsInCode) {
       warning("forcing ScavengeRootsInCode non-zero because JVMCI is enabled");
       ScavengeRootsInCode = 1;
-    }
-    if (FLAG_IS_DEFAULT(TypeProfileLevel)) {
-      TypeProfileLevel = 0;
-    }
-    if (UseJVMCICompiler) {
-      if (FLAG_IS_DEFAULT(TypeProfileWidth)) {
-        TypeProfileWidth = 8;
-      }
     }
   }
 #endif
@@ -3691,6 +3735,12 @@ jint Arguments::finalize_vm_init_args() {
     return JNI_ERR;
   }
 
+#if INCLUDE_JVMCI
+  if (UseJVMCICompiler) {
+    Compilation_mode = CompMode_server;
+  }
+#endif
+
   return JNI_OK;
 }
 
@@ -3819,6 +3869,9 @@ jint Arguments::parse_options_environment_variable(const char* name,
   if ((buffer = os::strdup(buffer)) == NULL) {
     return JNI_ENOMEM;
   }
+
+  jio_fprintf(defaultStream::error_stream(),
+              "Picked up %s: %s\n", name, buffer);
 
   int retcode = parse_options_buffer(name, buffer, strlen(buffer), vm_args);
 
@@ -4420,6 +4473,10 @@ jint Arguments::apply_ergo() {
   // Set flags based on ergonomics.
   set_ergonomics_flags();
 
+#if INCLUDE_JVMCI
+  set_jvmci_specific_flags();
+#endif
+
   set_shared_spaces_flags();
 
   // Check the GC selections again.
@@ -4432,7 +4489,9 @@ jint Arguments::apply_ergo() {
   } else {
     int max_compilation_policy_choice = 1;
 #ifdef COMPILER2
-    max_compilation_policy_choice = 2;
+    if (is_server_compilation_mode_vm()) {
+      max_compilation_policy_choice = 2;
+    }
 #endif
     // Check if the policy is valid.
     if (CompilationPolicyChoice >= max_compilation_policy_choice) {

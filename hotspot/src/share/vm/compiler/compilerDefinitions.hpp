@@ -54,26 +54,29 @@ enum CompLevel {
   CompLevel_simple            = 1,         // C1
   CompLevel_limited_profile   = 2,         // C1, invocation & backedge counters
   CompLevel_full_profile      = 3,         // C1, invocation & backedge counters + mdo
-  CompLevel_full_optimization = 4,         // C2, Shark or JVMCI
-
-#if defined(COMPILER2) || defined(SHARK)
-  CompLevel_highest_tier      = CompLevel_full_optimization,  // pure C2 and tiered or JVMCI and tiered
-#elif defined(COMPILER1)
-  CompLevel_highest_tier      = CompLevel_simple,             // pure C1 or JVMCI
-#else
-  CompLevel_highest_tier      = CompLevel_none,
-#endif
-
-#if defined(TIERED)
-  CompLevel_initial_compile   = CompLevel_full_profile        // tiered
-#elif defined(COMPILER1) || INCLUDE_JVMCI
-  CompLevel_initial_compile   = CompLevel_simple              // pure C1 or JVMCI
-#elif defined(COMPILER2) || defined(SHARK)
-  CompLevel_initial_compile   = CompLevel_full_optimization   // pure C2
-#else
-  CompLevel_initial_compile   = CompLevel_none
-#endif
+  CompLevel_full_optimization = 4          // C2, Shark or JVMCI
 };
+
+extern CompLevel CompLevel_highest_tier;
+extern CompLevel CompLevel_initial_compile;
+
+enum CompMode {
+  CompMode_none = 0,
+  CompMode_client = 1,
+  CompMode_server = 2
+};
+
+extern CompMode Compilation_mode;
+
+inline bool is_server_compilation_mode_vm() {
+  return Compilation_mode == CompMode_server;
+}
+
+inline bool is_client_compilation_mode_vm() {
+  return Compilation_mode == CompMode_client;
+}
+
+extern void set_client_compilation_mode();
 
 inline bool is_c1_compile(int comp_level) {
   return comp_level > CompLevel_none && comp_level < CompLevel_full_optimization;

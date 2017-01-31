@@ -717,9 +717,9 @@ MethodData* MethodData::allocate(ClassLoaderData* loader_data, const methodHandl
 }
 
 int MethodData::bytecode_cell_count(Bytecodes::Code code) {
-#if defined(COMPILER1) && !(defined(COMPILER2) || INCLUDE_JVMCI)
-  return no_profile_data;
-#else
+  if (is_client_compilation_mode_vm()) {
+    return no_profile_data;
+  }
   switch (code) {
   case Bytecodes::_checkcast:
   case Bytecodes::_instanceof:
@@ -778,7 +778,6 @@ int MethodData::bytecode_cell_count(Bytecodes::Code code) {
     return variable_cell_count;
   }
   return no_profile_data;
-#endif
 }
 
 // Compute the size of the profiling information corresponding to
@@ -840,7 +839,9 @@ bool MethodData::is_speculative_trap_bytecode(Bytecodes::Code code) {
   case Bytecodes::_ifnonnull:
   case Bytecodes::_invokestatic:
 #ifdef COMPILER2
-    return UseTypeSpeculation;
+    if (is_server_compilation_mode_vm()) {
+      return UseTypeSpeculation;
+    }
 #endif
   default:
     return false;
@@ -942,9 +943,9 @@ int MethodData::compute_allocation_size_in_words(const methodHandle& method) {
 // the segment in bytes.
 int MethodData::initialize_data(BytecodeStream* stream,
                                        int data_index) {
-#if defined(COMPILER1) && !(defined(COMPILER2) || INCLUDE_JVMCI)
-  return 0;
-#else
+  if (is_client_compilation_mode_vm()) {
+    return 0;
+  }
   int cell_count = -1;
   int tag = DataLayout::no_tag;
   DataLayout* data_layout = data_layout_at(data_index);
@@ -1061,7 +1062,6 @@ int MethodData::initialize_data(BytecodeStream* stream,
     assert(!bytecode_has_profile(c), "agree w/ !BHP");
     return 0;
   }
-#endif
 }
 
 // Get the data at an arbitrary (sort of) data index.

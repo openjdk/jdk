@@ -114,7 +114,7 @@ public class IntrinsicAvailableTest extends CompilerWhiteBoxTest {
 
     public void test() throws Exception {
         Executable intrinsicMethod = testCase.getExecutable();
-        if (Platform.isServer() && (TIERED_STOP_AT_LEVEL == COMP_LEVEL_FULL_OPTIMIZATION)) {
+        if (Platform.isServer() && !Platform.isEmulatedClient() && (TIERED_STOP_AT_LEVEL == COMP_LEVEL_FULL_OPTIMIZATION)) {
             if (TIERED_COMPILATION) {
                 checkIntrinsicForCompilationLevel(intrinsicMethod, COMP_LEVEL_SIMPLE);
             }
