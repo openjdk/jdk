@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,9 +195,26 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
         return parent;
     }
 
+    /**
+     * This method returns equivalent CLDR supported locale for zh-HK,
+     * no, no-NO locales so that COMPAT locales do not precede
+     * those locales during ResourceBundle search path.
+     */
+    private static Locale getEquivalentLoc(Locale locale) {
+        switch (locale.toString()) {
+            case "zh_HK":
+                return Locale.forLanguageTag("zh-Hant-HK");
+            case "no":
+            case "no_NO":
+                return Locale.forLanguageTag("nb");
+        }
+        return locale;
+    }
+
     @Override
     public boolean isSupportedProviderLocale(Locale locale, Set<String> langtags) {
-        return Locale.ROOT.equals(locale) ||
-            langtags.contains(locale.stripExtensions().toLanguageTag());
+        return Locale.ROOT.equals(locale)
+                || langtags.contains(locale.stripExtensions().toLanguageTag())
+                || langtags.contains(getEquivalentLoc(locale).toLanguageTag());
     }
 }

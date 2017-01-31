@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,7 @@ import sun.security.action.GetPropertyAction;
 
 import sun.swing.DefaultLayoutStyle;
 import sun.swing.ImageIconUIResource;
+import sun.swing.SwingAccessor;
 import sun.swing.icon.SortArrowIcon;
 import sun.swing.SwingUtilities2;
 import sun.swing.StringUIClientPropertyKey;
@@ -287,7 +288,9 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
      * used for getting localized defaults.
      */
     private void initResourceBundle(UIDefaults table) {
-        table.addResourceBundle( "com.sun.java.swing.plaf.windows.resources.windows" );
+        SwingAccessor.getUIDefaultsAccessor()
+                     .addInternalBundle(table,
+                             "com.sun.java.swing.plaf.windows.resources.windows");
     }
 
     // XXX - there are probably a lot of redundant values that could be removed.

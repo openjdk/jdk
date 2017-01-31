@@ -356,7 +356,7 @@ final class Validator {
                 this.md = md;
             } else {
                 if (!root.name().equals(md.name())) {
-                    error(getMsg("error.versioned.info.name.notequal"));
+                    error(getMsg("error.validator.info.name.notequal"));
                     isValid = false;
                 }
                 if (!root.requires().equals(md.requires())) {
@@ -365,10 +365,10 @@ final class Validator {
                         if (rootRequires.contains(r))
                             continue;
                         if (r.modifiers().contains(Requires.Modifier.TRANSITIVE)) {
-                            error(getMsg("error.versioned.info.requires.transitive"));
+                            error(getMsg("error.validator.info.requires.transitive"));
                             isValid = false;
                         } else if (!isPlatformModule(r.name())) {
-                            error(getMsg("error.versioned.info.requires.added"));
+                            error(getMsg("error.validator.info.requires.added"));
                             isValid = false;
                         }
                     }
@@ -377,21 +377,21 @@ final class Validator {
                         if (mdRequires.contains(r))
                             continue;
                         if (!isPlatformModule(r.name())) {
-                            error(getMsg("error.versioned.info.requires.dropped"));
+                            error(getMsg("error.validator.info.requires.dropped"));
                             isValid = false;
                         }
                     }
                 }
                 if (!root.exports().equals(md.exports())) {
-                    error(getMsg("error.versioned.info.exports.notequal"));
+                    error(getMsg("error.validator.info.exports.notequal"));
                     isValid = false;
                 }
                 if (!root.opens().equals(md.opens())) {
-                    error(getMsg("error.versioned.info.opens.notequal"));
+                    error(getMsg("error.validator.info.opens.notequal"));
                     isValid = false;
                 }
                 if (!root.provides().equals(md.provides())) {
-                    error(getMsg("error.versioned.info.provides.notequal"));
+                    error(getMsg("error.validator.info.provides.notequal"));
                     isValid = false;
                 }
                 if (!root.mainClass().equals(md.mainClass())) {

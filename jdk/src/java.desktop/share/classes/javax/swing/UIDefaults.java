@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@ import java.security.PrivilegedAction;
 
 import sun.reflect.misc.MethodUtil;
 import sun.reflect.misc.ReflectUtil;
+import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
 
 /**
@@ -90,6 +91,10 @@ public class UIDefaults extends Hashtable<Object,Object>
      * UIDefaults, eg synchronized(this).
      */
     private Map<Locale, Map<String, Object>> resourceCache;
+
+    static {
+        SwingAccessor.setUIDefaultsAccessor(UIDefaults::addInternalBundle);
+    }
 
     /**
      * Creates an empty defaults table.
@@ -881,28 +886,48 @@ public class UIDefaults extends Hashtable<Object,Object>
 
     /**
      * Adds a resource bundle to the list of resource bundles that are
-     * searched for localized values.  Resource bundles are searched in the
-     * reverse order they were added.  In other words, the most recently added
-     * bundle is searched first.
+     * searched for localized values. Resource bundles are searched in
+     * the reverse order they were added, using the
+     * {@linkplain ClassLoader#getSystemClassLoader application class loader}.
+     * In other words, the most recently added bundle is searched first.
      *
      * @param bundleName  the base name of the resource bundle to be added
      * @see java.util.ResourceBundle
      * @see #removeResourceBundle
+     * @see ResourceBundle#getBundle(String, Locale, ClassLoader)
      * @since 1.4
      */
-    public synchronized void addResourceBundle( String bundleName ) {
-        if( bundleName == null ) {
+    public synchronized void addResourceBundle(final String bundleName) {
+        if (bundleName == null) {
             return;
         }
-        if( resourceBundles == null ) {
+        if (isDesktopResourceBundle(bundleName)) {
+            // Only the java.desktop itself can register resource bundles from
+            // java.desktop module
+            return;
+        }
+        addInternalBundle(bundleName);
+    }
+
+    /**
+     * This methods should be used to register internal resource bundles from
+     * the java.desktop module.
+     *
+     * @param bundleName  the base name of the resource bundle to be added
+     * @since 9
+     */
+    private synchronized void addInternalBundle(final String bundleName) {
+        if (bundleName == null) {
+            return;
+        }
+        if (resourceBundles == null) {
             resourceBundles = new Vector<String>(5);
         }
         if (!resourceBundles.contains(bundleName)) {
-            resourceBundles.add( bundleName );
+            resourceBundles.add(bundleName);
             resourceCache.clear();
         }
     }
-
 
     /**
      * Removes a resource bundle from the list of resource bundles that are

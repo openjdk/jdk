@@ -45,6 +45,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -57,6 +58,7 @@ import jdk.internal.jline.TerminalSupport;
 import jdk.internal.jline.WindowsTerminal;
 import jdk.internal.jline.console.ConsoleReader;
 import jdk.internal.jline.console.KeyMap;
+import jdk.internal.jline.console.Operation;
 import jdk.internal.jline.console.UserInterruptException;
 import jdk.internal.jline.console.completer.Completer;
 import jdk.internal.jline.console.history.History;
@@ -90,7 +92,12 @@ class ConsoleIOContext extends IOContext {
             term = new JShellUnixTerminal(input);
         }
         term.init();
-        in = new ConsoleReader(cmdin, cmdout, term);
+        AtomicBoolean allowSmart = new AtomicBoolean();
+        in = new ConsoleReader(cmdin, cmdout, term) {
+            @Override public KeyMap getKeys() {
+                return new CheckCompletionKeyMap(super.getKeys(), allowSmart);
+            }
+        };
         in.setExpandEvents(false);
         in.setHandleUserInterrupt(true);
         List<String> persistenHistory = Stream.of(repl.prefs.keys())
@@ -106,9 +113,6 @@ class ConsoleIOContext extends IOContext {
         in.setBellEnabled(true);
         in.setCopyPasteDetection(true);
         in.addCompleter(new Completer() {
-            private String lastTest;
-            private int lastCursor;
-            private boolean allowSmart = false;
             @Override public int complete(String test, int cursor, List<CharSequence> result) {
                 int[] anchor = new int[] {-1};
                 List<Suggestion> suggestions;
@@ -119,16 +123,11 @@ class ConsoleIOContext extends IOContext {
                     suggestions = repl.analysis.completionSuggestions(prefix + test, cursor + prefixLength, anchor);
                     anchor[0] -= prefixLength;
                 }
-                if (!Objects.equals(lastTest, test) || lastCursor != cursor)
-                    allowSmart = true;
-
-                boolean smart = allowSmart &&
+                boolean smart = allowSmart.get() &&
                                 suggestions.stream()
                                            .anyMatch(Suggestion::matchesType);
 
-                lastTest = test;
-                lastCursor = cursor;
-                allowSmart = !allowSmart;
+                allowSmart.set(!allowSmart.get());
 
                 suggestions.stream()
                            .filter(s -> !smart || s.matchesType())
@@ -735,5 +734,58 @@ class ConsoleIOContext extends IOContext {
             return input.setInputStream(super.wrapInIfNeeded(in));
         }
 
+    }
+
+    private static final class CheckCompletionKeyMap extends KeyMap {
+
+        private final KeyMap del;
+        private final AtomicBoolean allowSmart;
+
+        public CheckCompletionKeyMap(KeyMap del, AtomicBoolean allowSmart) {
+            super(del.getName(), del.isViKeyMap());
+            this.del = del;
+            this.allowSmart = allowSmart;
+        }
+
+        @Override
+        public void bind(CharSequence keySeq, Object function) {
+            del.bind(keySeq, function);
+        }
+
+        @Override
+        public void bindIfNotBound(CharSequence keySeq, Object function) {
+            del.bindIfNotBound(keySeq, function);
+        }
+
+        @Override
+        public void from(KeyMap other) {
+            del.from(other);
+        }
+
+        @Override
+        public Object getAnotherKey() {
+            return del.getAnotherKey();
+        }
+
+        @Override
+        public Object getBound(CharSequence keySeq) {
+            Object res = del.getBound(keySeq);
+
+            if (res != Operation.COMPLETE) {
+                allowSmart.set(true);
+            }
+
+            return res;
+        }
+
+        @Override
+        public void setBlinkMatchingParen(boolean on) {
+            del.setBlinkMatchingParen(on);
+        }
+
+        @Override
+        public String toString() {
+            return "check: " + del.toString();
+        }
     }
 }

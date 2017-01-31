@@ -36,8 +36,7 @@ jdk/javadoc/doclet/testIOException/TestIOException.java                         
 #
 # jshell
 
-jdk/jshell/ToolFormatTest.java                                                  8170216    solaris-sparcv9
-jdk/jshell/ReplaceTest.java                                                     8170216    solaris-sparcv9
+jdk/jshell/UserJdiUserRemoteTest.java                                           8173204    linux-all
 jdk/jshell/UserInputTest.java                                                   8169536    generic-all   
 
 ###########################################################################
