@@ -26,7 +26,7 @@
 #
 # @test
 # @summary Test classpath wildcards for javac and java -classpath option.
-# @bug 6268383
+# @bug 6268383 8172309
 # @run shell/timeout=600 wcMineField.sh
 
 # To run this test manually, simply do ./wcMineField.sh
@@ -186,6 +186,8 @@ Failure "$javac" ${TESTTOOLVMOPTS} -classpath "GooJar/*" Main1.java
 Failure "$javac" ${TESTTOOLVMOPTS} -classpath "GooJar/*${PS}." Main1.java
 Success "$javac" ${TESTTOOLVMOPTS} -cp "GooJar/SubDir/*" Main1.java
 Success "$javac" ${TESTTOOLVMOPTS} -classpath "GooJar/SubDir/*" Main1.java
+Success "$javac" ${TESTTOOLVMOPTS} --class-path "GooJar/SubDir/*" Main1.java
+Success "$javac" ${TESTTOOLVMOPTS} --class-path="GooJar/SubDir/*" Main1.java
 #Same with launcher. Should not load jar in subdirectories unless specified
 Failure "$java" ${TESTVMOPTS}  -classpath "GooJar/*${PS}." Main1
 Success "$java" ${TESTVMOPTS}  -classpath "GooJar/SubDir/*${PS}." Main1
