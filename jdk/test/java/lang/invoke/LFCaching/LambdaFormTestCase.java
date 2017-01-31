@@ -141,16 +141,6 @@ public abstract class LambdaFormTestCase {
             doneIterations++;
             return true;
         }
-
-        void checkPassed() {
-            if (!passed) {
-                throw new Error(String.format("%d of %d test cases FAILED! %n"
-                        + "Rerun the test with the same \"-Dseed=\" option as in the log file!",
-                        failCounter, testCounter));
-            } else {
-                System.err.printf("All %d test cases PASSED!%n", testCounter);
-            }
-        }
     }
 
     /**
@@ -195,6 +185,12 @@ public abstract class LambdaFormTestCase {
             System.err.println("FAILED");
             throw new Error("Unexpected error!", ex);
         }
-        run.checkPassed();
+        if (!run.passed) {
+            throw new Error(String.format("%d of %d test cases FAILED! %n"
+                    + "Rerun the test with the same \"-Dseed=\" option as in the log file!",
+                    run.failCounter, run.testCounter));
+        } else {
+            System.err.printf("All %d test cases PASSED!%n", run.testCounter);
+        }
     }
 }
