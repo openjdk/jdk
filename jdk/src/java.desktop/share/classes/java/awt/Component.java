@@ -5036,6 +5036,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      *
      * Returns whether or not event was dispatched to an ancestor
      */
+    @SuppressWarnings("deprecation")
     boolean dispatchMouseWheelToAncestor(MouseWheelEvent e) {
         int newX, newY;
         newX = e.getX() + getX(); // Coordinates take into account at least
