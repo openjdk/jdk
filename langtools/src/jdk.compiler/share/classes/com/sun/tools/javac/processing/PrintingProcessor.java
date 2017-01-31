@@ -306,9 +306,9 @@ public class PrintingProcessor extends AbstractProcessor {
             defaultAction(e, false);
 
             if (!e.isUnnamed()) {
-                // TODO: openness of the module not currently exposed
-                // by the language model API, but should be printed
-                // here once available.
+                if (e.isOpen()) {
+                    writer.print("open ");
+                }
                 writer.println("module " + e.getQualifiedName() + " {");
                 indentation++;
                 for (ModuleElement.Directive directive : e.getDirectives()) {
