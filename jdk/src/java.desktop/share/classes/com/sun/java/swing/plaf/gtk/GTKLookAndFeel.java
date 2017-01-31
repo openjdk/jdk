@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import sun.awt.UNIXToolkit;
 import sun.awt.OSInfo;
 import sun.security.action.GetPropertyAction;
 import sun.swing.DefaultLayoutStyle;
+import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
 
 /**
@@ -288,7 +289,9 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
     }
 
     private void initResourceBundle(UIDefaults table) {
-        table.addResourceBundle("com.sun.java.swing.plaf.gtk.resources.gtk");
+        SwingAccessor.getUIDefaultsAccessor()
+                     .addInternalBundle(table,
+                             "com.sun.java.swing.plaf.gtk.resources.gtk");
     }
 
     protected void initComponentDefaults(UIDefaults table) {

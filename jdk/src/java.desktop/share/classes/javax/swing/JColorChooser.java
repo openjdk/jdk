@@ -487,7 +487,7 @@ public class JColorChooser extends JComponent implements Accessible {
             = "An array of different chooser types.")
     public void setChooserPanels( AbstractColorChooserPanel[] panels) {
         AbstractColorChooserPanel[] oldValue = chooserPanels;
-        chooserPanels = panels;
+        chooserPanels = Arrays.copyOf(panels, panels.length);
         firePropertyChange(CHOOSER_PANELS_PROPERTY, oldValue, panels);
     }
 
@@ -497,7 +497,7 @@ public class JColorChooser extends JComponent implements Accessible {
      * @return an array of <code>AbstractColorChooserPanel</code> objects
      */
     public AbstractColorChooserPanel[] getChooserPanels() {
-        return chooserPanels;
+        return Arrays.copyOf(chooserPanels, chooserPanels.length);
     }
 
     /**

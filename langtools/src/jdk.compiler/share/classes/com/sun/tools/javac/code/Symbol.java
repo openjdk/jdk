@@ -948,6 +948,11 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         }
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
+        public boolean isOpen() {
+            return flags.contains(ModuleFlags.OPEN);
+        }
+
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public boolean isUnnamed() {
             return name.isEmpty() && owner == null;
         }

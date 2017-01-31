@@ -1628,7 +1628,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     }
 
     @DefinedBy(Api.ANNOTATION_PROCESSING)
-    public Filer getFiler() {
+    public JavacFiler getFiler() {
         return filer;
     }
 

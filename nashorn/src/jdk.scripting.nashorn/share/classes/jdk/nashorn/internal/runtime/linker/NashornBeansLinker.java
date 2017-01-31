@@ -147,9 +147,8 @@ public class NashornBeansLinker implements GuardingDynamicLinker {
                         new NashornBeansLinkerServices(linkerServices));
 
                 // Bind to the method, drop the original "this" and use original "callee" as this:
-                final MethodHandle inv = linkerServices.filterInternalObjects(gi
-                        .getInvocation()  // (method, this, args...)
-                        .bindTo(method)); // (this, args...)
+                final MethodHandle inv = gi.getInvocation()  // (method, this, args...)
+                                           .bindTo(method);  // (this, args...)
                 final MethodHandle calleeToThis = MH.dropArguments(inv, 1, callType.parameterType(1)); // (callee->this, <drop>, args...)
                 return gi.replaceMethods(calleeToThis, gi.getGuard());
             }
