@@ -58,6 +58,7 @@ BOOT_MODULES += \
     java.xml \
     jdk.httpserver \
     jdk.management \
+    jdk.management.agent \
     jdk.net \
     jdk.sctp \
     jdk.unsupported \
