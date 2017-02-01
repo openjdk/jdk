@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,14 +67,14 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      * the implicit {@code values} and {@code valueOf} methods of an
      * enum type.
      *
-     * <p> Note that as a particular instance of the {@linkplain
+     * @apiNote As a particular instance of the {@linkplain
      * javax.lang.model.element general accuracy requirements} and the
      * ordering behavior required of this interface, the list of
      * enclosed elements will be returned in the natural order for the
      * originating source of information about the type.  For example,
      * if the information about the type is originating from a source
      * file, the elements will be returned in source code order.
-     * (However, in that case the the ordering of synthesized
+     * (However, in that case the the ordering of {@linkplain Elements.Origin#MANDATED mandated}
      * elements, such as a default constructor, is not specified.)
      *
      * @return the enclosed elements in proper order, or an empty list if none

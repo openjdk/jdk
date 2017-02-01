@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -348,7 +348,7 @@ public interface Elements {
      * declared directly.  For a class the result also includes its
      * constructors, but not local or anonymous classes.
      *
-     * <p>Note that elements of certain kinds can be isolated using
+     * @apiNote Elements of certain kinds can be isolated using
      * methods in {@link ElementFilter}.
      *
      * @param type  the type being examined
