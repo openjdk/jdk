@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -466,7 +466,7 @@ class java_lang_Throwable: AllStatic {
     trace_methods_offset = 0,
     trace_bcis_offset    = 1,
     trace_mirrors_offset = 2,
-    trace_cprefs_offset  = 3,
+    trace_names_offset   = 3,
     trace_next_offset    = 4,
     trace_size           = 5,
     trace_chunk_size     = 32
@@ -1331,7 +1331,7 @@ class java_lang_StackTraceElement: AllStatic {
   static oop create(const methodHandle& method, int bci, TRAPS);
 
   static void fill_in(Handle element, InstanceKlass* holder, const methodHandle& method,
-                      int version, int bci, int cpref, TRAPS);
+                      int version, int bci, Symbol* name, TRAPS);
 
   // Debugging
   friend class JavaClasses;
