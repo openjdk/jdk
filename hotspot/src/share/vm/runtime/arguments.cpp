@@ -3195,8 +3195,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         if (FLAG_SET_CMDLINE(bool, ManagementServer, true) != Flag::SUCCESS) {
           return JNI_EINVAL;
         }
-        // management agent in module java.management
-        if (!create_numbered_property("jdk.module.addmods", "java.management", addmods_count++)) {
+        // management agent in module jdk.management.agent
+        if (!create_numbered_property("jdk.module.addmods", "jdk.management.agent", addmods_count++)) {
           return JNI_ENOMEM;
         }
 #else
