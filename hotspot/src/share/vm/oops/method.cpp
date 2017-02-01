@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2200,7 +2200,6 @@ void Method::print_on(outputStream* st) const {
   ResourceMark rm;
   assert(is_method(), "must be method");
   st->print_cr("%s", internal_name());
-  // get the effect of PrintOopAddress, always, for methods:
   st->print_cr(" - this oop:          " INTPTR_FORMAT, p2i(this));
   st->print   (" - method holder:     "); method_holder()->print_value_on(st); st->cr();
   st->print   (" - constants:         " INTPTR_FORMAT " ", p2i(constants()));
