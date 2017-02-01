@@ -30,8 +30,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import sun.management.Agent;
-import sun.management.AgentConfigurationError;
+import jdk.internal.agent.Agent;
+import jdk.internal.agent.AgentConfigurationError;
 
 import jdk.testlibrary.JDKToolLauncher;
 import jdk.testlibrary.ProcessTools;

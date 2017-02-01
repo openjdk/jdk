@@ -43,7 +43,7 @@ import java.util.Enumeration;
 import javax.management.remote.*;
 import javax.management.*;
 
-import sun.management.AgentConfigurationError;
+import jdk.internal.agent.AgentConfigurationError;
 
 /**
  * <p>This class implements unit test for RMI Bootstrap.

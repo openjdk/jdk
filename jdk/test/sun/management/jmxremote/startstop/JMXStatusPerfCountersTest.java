@@ -42,7 +42,7 @@ import jdk.testlibrary.ProcessTools;
  *          in the related performance counters.
  * @key intermittent
  * @library /lib/testlibrary
- * @modules java.management/sun.management
+ * @modules jdk.management.agent/jdk.internal.agent
  * @build jdk.testlibrary.* PortAllocator TestApp ManagementAgentJcmd
  * @run testng/othervm -XX:+UsePerfData JMXStatusPerfCountersTest
  */
