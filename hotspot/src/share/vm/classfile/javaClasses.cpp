@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1578,7 +1578,7 @@ class BacktraceBuilder: public StackObj {
   typeArrayOop    _methods;
   typeArrayOop    _bcis;
   objArrayOop     _mirrors;
-  typeArrayOop    _cprefs; // needed to insulate method name against redefinition
+  typeArrayOop    _names; // needed to insulate method name against redefinition
   int             _index;
   NoSafepointVerifier _nsv;
 
@@ -1586,7 +1586,7 @@ class BacktraceBuilder: public StackObj {
     trace_methods_offset = java_lang_Throwable::trace_methods_offset,
     trace_bcis_offset    = java_lang_Throwable::trace_bcis_offset,
     trace_mirrors_offset = java_lang_Throwable::trace_mirrors_offset,
-    trace_cprefs_offset  = java_lang_Throwable::trace_cprefs_offset,
+    trace_names_offset   = java_lang_Throwable::trace_names_offset,
     trace_next_offset    = java_lang_Throwable::trace_next_offset,
     trace_size           = java_lang_Throwable::trace_size,
     trace_chunk_size     = java_lang_Throwable::trace_chunk_size
@@ -1608,16 +1608,16 @@ class BacktraceBuilder: public StackObj {
     assert(mirrors != NULL, "mirror array should be initialized in backtrace");
     return mirrors;
   }
-  static typeArrayOop get_cprefs(objArrayHandle chunk) {
-    typeArrayOop cprefs = typeArrayOop(chunk->obj_at(trace_cprefs_offset));
-    assert(cprefs != NULL, "cprefs array should be initialized in backtrace");
-    return cprefs;
+  static typeArrayOop get_names(objArrayHandle chunk) {
+    typeArrayOop names = typeArrayOop(chunk->obj_at(trace_names_offset));
+    assert(names != NULL, "names array should be initialized in backtrace");
+    return names;
   }
 
  public:
 
   // constructor for new backtrace
-  BacktraceBuilder(TRAPS): _methods(NULL), _bcis(NULL), _head(NULL), _mirrors(NULL), _cprefs(NULL) {
+  BacktraceBuilder(TRAPS): _methods(NULL), _bcis(NULL), _head(NULL), _mirrors(NULL), _names(NULL) {
     expand(CHECK);
     _backtrace = _head;
     _index = 0;
@@ -1627,9 +1627,10 @@ class BacktraceBuilder: public StackObj {
     _methods = get_methods(backtrace);
     _bcis = get_bcis(backtrace);
     _mirrors = get_mirrors(backtrace);
-    _cprefs = get_cprefs(backtrace);
+    _names = get_names(backtrace);
     assert(_methods->length() == _bcis->length() &&
-           _methods->length() == _mirrors->length(),
+           _methods->length() == _mirrors->length() &&
+           _mirrors->length() == _names->length(),
            "method and source information arrays should match");
 
     // head is the preallocated backtrace
@@ -1653,8 +1654,8 @@ class BacktraceBuilder: public StackObj {
     objArrayOop mirrors = oopFactory::new_objectArray(trace_chunk_size, CHECK);
     objArrayHandle new_mirrors(THREAD, mirrors);
 
-    typeArrayOop cprefs = oopFactory::new_shortArray(trace_chunk_size, CHECK);
-    typeArrayHandle new_cprefs(THREAD, cprefs);
+    typeArrayOop names = oopFactory::new_symbolArray(trace_chunk_size, CHECK);
+    typeArrayHandle new_names(THREAD, names);
 
     if (!old_head.is_null()) {
       old_head->obj_at_put(trace_next_offset, new_head());
@@ -1662,13 +1663,13 @@ class BacktraceBuilder: public StackObj {
     new_head->obj_at_put(trace_methods_offset, new_methods());
     new_head->obj_at_put(trace_bcis_offset, new_bcis());
     new_head->obj_at_put(trace_mirrors_offset, new_mirrors());
-    new_head->obj_at_put(trace_cprefs_offset, new_cprefs());
+    new_head->obj_at_put(trace_names_offset, new_names());
 
     _head    = new_head();
     _methods = new_methods();
     _bcis = new_bcis();
     _mirrors = new_mirrors();
-    _cprefs  = new_cprefs();
+    _names  = new_names();
     _index = 0;
   }
 
@@ -1690,7 +1691,11 @@ class BacktraceBuilder: public StackObj {
 
     _methods->short_at_put(_index, method->orig_method_idnum());
     _bcis->int_at_put(_index, Backtrace::merge_bci_and_version(bci, method->constants()->version()));
-    _cprefs->short_at_put(_index, method->name_index());
+
+    // Note:this doesn't leak symbols because the mirror in the backtrace keeps the
+    // klass owning the symbols alive so their refcounts aren't decremented.
+    Symbol* name = method->name();
+    _names->symbol_at_put(_index, name);
 
     // We need to save the mirrors in the backtrace to keep the class
     // from being unloaded while we still have this stack trace.
@@ -1705,10 +1710,10 @@ struct BacktraceElement : public StackObj {
   int _method_id;
   int _bci;
   int _version;
-  int _cpref;
+  Symbol* _name;
   Handle _mirror;
-  BacktraceElement(Handle mirror, int mid, int version, int bci, int cpref) :
-                   _mirror(mirror), _method_id(mid), _version(version), _bci(bci), _cpref(cpref) {}
+  BacktraceElement(Handle mirror, int mid, int version, int bci, Symbol* name) :
+                   _mirror(mirror), _method_id(mid), _version(version), _bci(bci), _name(name) {}
 };
 
 class BacktraceIterator : public StackObj {
@@ -1717,7 +1722,7 @@ class BacktraceIterator : public StackObj {
   objArrayHandle  _mirrors;
   typeArrayHandle _methods;
   typeArrayHandle _bcis;
-  typeArrayHandle _cprefs;
+  typeArrayHandle _names;
 
   void init(objArrayHandle result, Thread* thread) {
     // Get method id, bci, version and mirror from chunk
@@ -1726,7 +1731,7 @@ class BacktraceIterator : public StackObj {
       _methods = typeArrayHandle(thread, BacktraceBuilder::get_methods(_result));
       _bcis = typeArrayHandle(thread, BacktraceBuilder::get_bcis(_result));
       _mirrors = objArrayHandle(thread, BacktraceBuilder::get_mirrors(_result));
-      _cprefs = typeArrayHandle(thread, BacktraceBuilder::get_cprefs(_result));
+      _names = typeArrayHandle(thread, BacktraceBuilder::get_names(_result));
       _index = 0;
     }
   }
@@ -1741,7 +1746,7 @@ class BacktraceIterator : public StackObj {
                         _methods->short_at(_index),
                         Backtrace::version_at(_bcis->int_at(_index)),
                         Backtrace::bci_at(_bcis->int_at(_index)),
-                        _cprefs->short_at(_index));
+                        _names->symbol_at(_index));
     _index++;
 
     if (_index >= java_lang_Throwable::trace_chunk_size) {
@@ -1761,7 +1766,7 @@ class BacktraceIterator : public StackObj {
 
 // Print stack trace element to resource allocated buffer
 static void print_stack_element_to_stream(outputStream* st, Handle mirror, int method_id,
-                                          int version, int bci, int cpref) {
+                                          int version, int bci, Symbol* name) {
   ResourceMark rm;
 
   // Get strings and string lengths
@@ -1769,11 +1774,7 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
   const char* klass_name  = holder->external_name();
   int buf_len = (int)strlen(klass_name);
 
-  Method* method = holder->method_with_orig_idnum(method_id, version);
-
-  // The method can be NULL if the requested class version is gone
-  Symbol* sym = (method != NULL) ? method->name() : holder->constants()->symbol_at(cpref);
-  char* method_name = sym->as_C_string();
+  char* method_name = name->as_C_string();
   buf_len += (int)strlen(method_name);
 
   char* source_file_name = NULL;
@@ -1809,6 +1810,8 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
     }
   }
 
+  // The method can be NULL if the requested class version is gone
+  Method* method = holder->method_with_orig_idnum(method_id, version);
   if (!version_matches(method, version)) {
     strcat(buf, "Redefined)");
   } else {
@@ -1840,8 +1843,7 @@ void java_lang_Throwable::print_stack_element(outputStream *st, const methodHand
   Handle mirror = method->method_holder()->java_mirror();
   int method_id = method->orig_method_idnum();
   int version = method->constants()->version();
-  int cpref = method->name_index();
-  print_stack_element_to_stream(st, mirror, method_id, version, bci, cpref);
+  print_stack_element_to_stream(st, mirror, method_id, version, bci, method->name());
 }
 
 /**
@@ -1865,7 +1867,7 @@ void java_lang_Throwable::print_stack_trace(Handle throwable, outputStream* st) 
 
     while (iter.repeat()) {
       BacktraceElement bte = iter.next(THREAD);
-      print_stack_element_to_stream(st, bte._mirror, bte._method_id, bte._version, bte._bci, bte._cpref);
+      print_stack_element_to_stream(st, bte._mirror, bte._method_id, bte._version, bte._bci, bte._name);
     }
     {
       // Call getCause() which doesn't necessarily return the _cause field.
@@ -2144,7 +2146,7 @@ void java_lang_Throwable::get_stack_trace_elements(Handle throwable,
                                          method,
                                          bte._version,
                                          bte._bci,
-                                         bte._cpref, CHECK);
+                                         bte._name, CHECK);
   }
 }
 
@@ -2159,15 +2161,14 @@ oop java_lang_StackTraceElement::create(const methodHandle& method, int bci, TRA
 
   Handle element = ik->allocate_instance_handle(CHECK_0);
 
-  int cpref = method->name_index();
   int version = method->constants()->version();
-  fill_in(element, method->method_holder(), method, version, bci, cpref, CHECK_0);
+  fill_in(element, method->method_holder(), method, version, bci, method->name(), CHECK_0);
   return element();
 }
 
 void java_lang_StackTraceElement::fill_in(Handle element,
                                           InstanceKlass* holder, const methodHandle& method,
-                                          int version, int bci, int cpref, TRAPS) {
+                                          int version, int bci, Symbol* name, TRAPS) {
   assert(element->is_a(SystemDictionary::StackTraceElement_klass()), "sanity check");
 
   // Fill in class name
@@ -2184,11 +2185,8 @@ void java_lang_StackTraceElement::fill_in(Handle element,
       java_lang_StackTraceElement::set_classLoaderName(element(), loader_name);
   }
 
-  // The method can be NULL if the requested class version is gone
-  Symbol* sym = !method.is_null() ? method->name() : holder->constants()->symbol_at(cpref);
-
   // Fill in method name
-  oop methodname = StringTable::intern(sym, CHECK);
+  oop methodname = StringTable::intern(name, CHECK);
   java_lang_StackTraceElement::set_methodName(element(), methodname);
 
   // Fill in module name and version
@@ -2205,7 +2203,7 @@ void java_lang_StackTraceElement::fill_in(Handle element,
     java_lang_StackTraceElement::set_moduleVersion(element(), module_version);
   }
 
-  if (!version_matches(method(), version)) {
+  if (method() == NULL || !version_matches(method(), version)) {
     // The method was redefined, accurate line number information isn't available
     java_lang_StackTraceElement::set_fileName(element(), NULL);
     java_lang_StackTraceElement::set_lineNumber(element(), -1);
@@ -2252,8 +2250,8 @@ void java_lang_StackFrameInfo::to_stack_trace_element(Handle stackFrame, Handle 
 
   short version = stackFrame->short_field(_version_offset);
   short bci = stackFrame->short_field(_bci_offset);
-  int cpref = method->name_index();
-  java_lang_StackTraceElement::fill_in(stack_trace_element, holder, method, version, bci, cpref, CHECK);
+  Symbol* name = method->name();
+  java_lang_StackTraceElement::fill_in(stack_trace_element, holder, method, version, bci, name, CHECK);
 }
 
 void java_lang_StackFrameInfo::compute_offsets() {
