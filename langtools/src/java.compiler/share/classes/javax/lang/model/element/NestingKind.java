@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,25 +89,29 @@ public enum NestingKind {
 
     /**
      * A type that is a named member of another type.
+     * @jls 8.5 Member Type Declarations
      */
     MEMBER,
 
     /**
      * A named type declared within a construct other than a type.
+     * @jls 14.3 Local Class Declarations
      */
     LOCAL,
 
     /**
      * A type without a name.
+     * @jls 15.9.5 Anonymous Class Declarations
      */
     ANONYMOUS;
 
     /**
      * Does this constant correspond to a nested type element?
      * A <i>nested</i> type element is any that is not top-level.
-     * An <i>inner</i> type element is any nested type element that
+     * More specifically, an <i>inner</i> type element is any nested type element that
      * is not {@linkplain Modifier#STATIC static}.
      * @return whether or not the constant is nested
+     * @jls 14.3 Inner Classes and Enclosing Instances
      */
     public boolean isNested() {
         return this != TOP_LEVEL;
