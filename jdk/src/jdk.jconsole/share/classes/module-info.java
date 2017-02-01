@@ -31,6 +31,7 @@ module jdk.jconsole {
     requires jdk.attach;
     requires jdk.jvmstat;
     requires jdk.management;
+    requires jdk.management.agent;
     exports com.sun.tools.jconsole;
     uses com.sun.tools.jconsole.JConsolePlugin;
 }

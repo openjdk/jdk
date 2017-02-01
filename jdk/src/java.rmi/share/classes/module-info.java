@@ -39,12 +39,14 @@ module java.rmi {
     // accessible to the security manager at initialization time
     exports com.sun.rmi.rmid to java.base;
     exports sun.rmi.registry to
-        java.management;
+        jdk.management.agent;
     exports sun.rmi.server to
         java.management,
+        jdk.management.agent,
         jdk.jconsole;
     exports sun.rmi.transport to
         java.management,
+        jdk.management.agent,
         jdk.jconsole;
     uses java.rmi.server.RMIClassLoaderSpi;
 }
