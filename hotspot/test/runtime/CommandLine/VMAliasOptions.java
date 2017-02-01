@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,11 +40,6 @@ public class VMAliasOptions {
      */
     public static final String[][] ALIAS_OPTIONS = {
         {"DefaultMaxRAMFraction",   "MaxRAMFraction", "1032"},
-        {"CMSMarkStackSizeMax",     "MarkStackSizeMax", "1032"},
-        {"CMSMarkStackSize",        "MarkStackSize", "1032"},
-        {"G1MarkStackSize",         "MarkStackSize", "1032"},
-        {"ParallelMarkingThreads",  "ConcGCThreads", "2"},
-        {"ParallelCMSThreads",      "ConcGCThreads", "2"},
         {"CreateMinidumpOnCrash",   "CreateCoredumpOnCrash", "false" },
     };
 
