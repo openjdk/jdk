@@ -23,6 +23,7 @@
 
 import javax.tools.Diagnostic;
 
+import org.testng.annotations.Test;
 import jdk.jshell.VarSnippet;
 
 import static jdk.jshell.Snippet.Status.VALID;
@@ -30,6 +31,7 @@ import static jdk.jshell.Snippet.SubKind.*;
 
 public class ExecutionControlTestBase extends KullaTesting {
 
+    @Test
     public void classesDeclaration() {
         assertEval("interface A { }");
         assertEval("class B implements A { }");
@@ -45,6 +47,7 @@ public class ExecutionControlTestBase extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void interfaceTest() {
         String interfaceSource
                 = "interface A {\n"
@@ -72,6 +75,7 @@ public class ExecutionControlTestBase extends KullaTesting {
         assertEval("new B.Inner2();");
     }
 
+    @Test
     public void variables() {
         VarSnippet snx = varKey(assertEval("int x = 10;"));
         VarSnippet sny = varKey(assertEval("String y = \"hi\";"));
@@ -83,6 +87,7 @@ public class ExecutionControlTestBase extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void methodOverload() {
         assertEval("int m() { return 1; }");
         assertEval("int m(int x) { return 2; }");
@@ -107,6 +112,7 @@ public class ExecutionControlTestBase extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void testExprSanity() {
         assertEval("int x = 3;", "3");
         assertEval("int y = 4;", "4");
@@ -114,6 +120,7 @@ public class ExecutionControlTestBase extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void testImportOnDemand() {
         assertImportKeyMatch("import java.util.*;", "java.util.*", TYPE_IMPORT_ON_DEMAND_SUBKIND, added(VALID));
         assertEval("List<Integer> list = new ArrayList<>();");
