@@ -51,6 +51,7 @@ BOOT_MODULES += \
     java.instrument \
     java.logging \
     java.management \
+    java.management.rmi \
     java.naming \
     java.prefs \
     java.rmi \

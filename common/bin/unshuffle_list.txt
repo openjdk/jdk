@@ -1170,6 +1170,11 @@ jdk/src/java.management/unix/classes/sun/management : jdk/src/solaris/classes/su
 jdk/src/java.management/unix/native/libmanagement : jdk/src/solaris/native/sun/management
 jdk/src/java.management/windows/classes/sun/management : jdk/src/windows/classes/sun/management
 jdk/src/java.management/windows/native/libmanagement : jdk/src/windows/native/sun/management
+jdk/src/java.management.rmi/share/classes/com/sun/jmx/remote/internal/rmi/ProxyRef.java : jdk/src/share/classes/com/sun/jmx/remote/internal/ProxyRef.java
+jdk/src/java.management.rmi/share/classes/com/sun/jmx/remote/internal/rmi/RMIExporter.java : jdk/src/share/classes/com/sun/jmx/remote/internal/RMIExporter.java
+jdk/src/java.management.rmi/share/classes/com/sun/jmx/remote/internal/rmi/Unmarshal.java : jdk/src/share/classes/com/sun/jmx/remote/internal/Unmarshal.java
+jdk/src/java.management.rmi/share/classes/com/sun/jmx/remote/protocol/rmi : jdk/src/share/classes/com/sun/jmx/remote/protocol/rmi
+jdk/src/java.management.rmi/share/classes/javax/management/remote/rmi : jdk/src/share/classes/javax/management/remote/rmi
 jdk/src/java.naming/share/classes/com/sun/jndi/ldap/ext : jdk/src/share/classes/com/sun/jndi/ldap/ext
 jdk/src/java.naming/share/classes/com/sun/jndi/ldap : jdk/src/share/classes/com/sun/jndi/ldap
 jdk/src/java.naming/share/classes/com/sun/jndi/ldap/pool : jdk/src/share/classes/com/sun/jndi/ldap/pool
