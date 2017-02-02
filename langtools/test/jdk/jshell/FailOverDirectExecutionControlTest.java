@@ -61,7 +61,8 @@ public class FailOverDirectExecutionControlTest extends ExecutionControlTestBase
 
     ClassLoader ccl;
     ExecutionControlProvider provider;
-    Map<Level, List<String>> logged = new HashMap<>();
+    LogTestHandler hndlr;
+    Map<Level, List<String>> logged;
 
     private class LogTestHandler extends Handler {
 
@@ -95,7 +96,9 @@ public class FailOverDirectExecutionControlTest extends ExecutionControlTestBase
     public void setUp() {
         Logger logger = Logger.getLogger("jdk.jshell.execution");
         logger.setLevel(Level.ALL);
-        logger.addHandler(new LogTestHandler());
+        hndlr = new LogTestHandler();
+        logger.addHandler(hndlr);
+        logged = new HashMap<>();
         Compiler compiler = new Compiler();
         Path modDir = Paths.get("mod");
         compiler.compile(modDir,
@@ -133,6 +136,8 @@ public class FailOverDirectExecutionControlTest extends ExecutionControlTestBase
     @Override
     public void tearDown() {
         super.tearDown();
+        Logger logger = Logger.getLogger("jdk.jshell.execution");
+        logger.removeHandler(hndlr);
         Thread.currentThread().setContextClassLoader(ccl);
     }
 
