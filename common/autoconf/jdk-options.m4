@@ -479,5 +479,5 @@ AC_DEFUN_ONCE([JDKOPT_ENABLE_DISABLE_GENERATE_CLASSLIST],
     AC_MSG_ERROR([Invalid value for --enable-generate-classlist: $enable_generate_classlist])
   fi
 
-  AC_SUBST([ENABLE_GENERATE_CLASSLIST])
+  AC_SUBST(ENABLE_GENERATE_CLASSLIST)
 ])
