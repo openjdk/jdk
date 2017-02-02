@@ -139,7 +139,7 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      *
      * <li> If this is a {@linkplain
      * PackageElement#getEnclosingElement package}, its module is
-     * returned.
+     * returned if such a module exists. Otherwise, {@code null} is returned.
      *
      * <li> If this is a {@linkplain
      * TypeParameterElement#getEnclosingElement type parameter},

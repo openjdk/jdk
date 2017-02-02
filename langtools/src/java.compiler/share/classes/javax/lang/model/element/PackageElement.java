@@ -83,9 +83,16 @@ public interface PackageElement extends Element, QualifiedNameable {
     boolean isUnnamed();
 
     /**
-     * Returns the enclosing module.
+     * Returns the enclosing module if such a module exists; otherwise
+     * returns {@code null}.
      *
-     * @return the enclosing module
+     * One situation where a module does not exist for a package is if
+     * the environment does not include modules, such as an annotation
+     * processing environment configured for a {@linkplain
+     * javax.annotation.processing.ProcessingEnvironment#getSourceVersion
+     * source version} without modules.
+     *
+     * @return the enclosing module or {@code null} if no such module exists
      */
     @Override
     Element getEnclosingElement();

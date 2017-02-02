@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import javax.lang.model.element.ExecutableElement;
  * <ul>
  * <li>{@link TypeKind#VOID VOID} - corresponds to the keyword {@code void}.
  * <li>{@link TypeKind#PACKAGE PACKAGE} - the pseudo-type of a package element.
+ * <li>{@link TypeKind#MODULE MODULE} - the pseudo-type of a module element.
  * <li>{@link TypeKind#NONE NONE} - used in other cases
  *   where no actual type is appropriate; for example, the superclass
  *   of {@code java.lang.Object}.
