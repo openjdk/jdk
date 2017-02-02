@@ -26,7 +26,7 @@
  * @bug 8058865
  * @summary Checks MXBean proper registration both as its implementation class and interface
  * @author Olivier Lagneau
- * @modules java.management
+ * @modules java.management.rmi
  * @library /lib/testlibrary
  * @compile Basic.java
  * @run main/othervm/timeout=300 -DDEBUG_STANDARD MXBeanNotifTest -numOfNotifications 239 -timeForNotificationInSeconds 4

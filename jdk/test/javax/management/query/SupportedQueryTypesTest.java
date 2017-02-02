@@ -26,7 +26,7 @@
  * @bug 8058865
  * @summary Tests most of the existing query types.
  * @author Olivier Lagneau
- * @modules java.management
+ * @modules java.management.rmi
  * @compile TestQuery.java
  * @run main/othervm/timeout=300 -DDEBUG_STANDARD SupportedQueryTypesTest -mbeanClassName TestQuery
  */

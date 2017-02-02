@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,11 +43,12 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import jdk.testlibrary.SimpleSSLContext;
 
-/**
+/*
  * @test
  * @bug 8169415
  * @library /lib/testlibrary/
- * @modules java.base/sun.net.www
+ * @modules java.logging
+ *          java.base/sun.net.www
  *          jdk.httpserver/sun.net.httpserver
  * @build jdk.testlibrary.SimpleSSLContext HTTPTest HTTPTestServer HTTPTestClient
  * @summary A simple HTTP test that starts an echo server supporting Digest

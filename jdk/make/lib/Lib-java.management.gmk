@@ -30,8 +30,7 @@ $(eval $(call IncludeCustomExtension, jdk, lib/Lib-java.management.gmk))
 
 ################################################################################
 
-LIBMANAGEMENT_SRC += $(JDK_TOPDIR)/src/java.management/share/native/libmanagement \
-    $(JDK_TOPDIR)/src/java.management/$(OPENJDK_TARGET_OS_TYPE)/native/libmanagement
+LIBMANAGEMENT_SRC += $(JDK_TOPDIR)/src/java.management/share/native/libmanagement 
 LIBMANAGEMENT_CFLAGS := -I$(JDK_TOPDIR)/src/java.management/share/native/include \
     $(addprefix -I,$(LIBMANAGEMENT_SRC)) \
     -I$(SUPPORT_OUTPUTDIR)/headers/java.management \

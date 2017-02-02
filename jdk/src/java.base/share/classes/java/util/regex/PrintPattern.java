@@ -27,7 +27,6 @@ package java.util.regex;
 
 import java.util.HashMap;
 import java.util.regex.Pattern.CharPredicate;
-import java.util.regex.CharPredicates;
 import static java.util.regex.ASCII.*;
 
 /**
@@ -106,15 +105,15 @@ class PrintPattern {
     static HashMap<CharPredicate, String> pmap;
     static {
         pmap = new HashMap<>();
-        pmap.put(Pattern.ALL, "All");
-        pmap.put(Pattern.DOT, "Dot");
-        pmap.put(Pattern.UNIXDOT, "UnixDot");
-        pmap.put(Pattern.VertWS, "VertWS");
-        pmap.put(Pattern.HorizWS, "HorizWS");
+        pmap.put(Pattern.ALL(), "All");
+        pmap.put(Pattern.DOT(), "Dot");
+        pmap.put(Pattern.UNIXDOT(), "UnixDot");
+        pmap.put(Pattern.VertWS(), "VertWS");
+        pmap.put(Pattern.HorizWS(), "HorizWS");
 
-        pmap.put(CharPredicates.ASCII_DIGIT, "ASCII.DIGIT");
-        pmap.put(CharPredicates.ASCII_WORD,  "ASCII.WORD");
-        pmap.put(CharPredicates.ASCII_SPACE, "ASCII.SPACE");
+        pmap.put(CharPredicates.ASCII_DIGIT(), "ASCII.DIGIT");
+        pmap.put(CharPredicates.ASCII_WORD(),  "ASCII.WORD");
+        pmap.put(CharPredicates.ASCII_SPACE(), "ASCII.SPACE");
     }
 
     static void walk(Pattern.Node node, int depth) {

@@ -284,6 +284,13 @@ public class JLinkTest {
             helper.generateDefaultJModule(moduleName, "composite2");
             helper.generateDefaultImage(userOptions, moduleName).assertFailure("Error: orphan argument: bar");
         }
+
+        // basic check for --help - JDK-8173717
+        {
+            JImageGenerator.getJLinkTask()
+                    .option("--help")
+                    .call().assertSuccess();
+        }
     }
 
     private static void testCompress(Helper helper, String moduleName, String... userOptions) throws IOException {

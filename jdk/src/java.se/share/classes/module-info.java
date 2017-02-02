@@ -36,6 +36,7 @@ module java.se {
     requires transitive java.instrument;
     requires transitive java.logging;
     requires transitive java.management;
+    requires transitive java.management.rmi;
     requires transitive java.naming;
     requires transitive java.prefs;
     requires transitive java.rmi;
@@ -47,4 +48,3 @@ module java.se {
     requires transitive java.xml;
     requires transitive java.xml.crypto;
 }
-
