@@ -26,7 +26,7 @@
 module jdk.jconsole {
     requires transitive java.desktop;
     requires transitive java.management;
-    requires java.logging;
+    requires java.management.rmi;
     requires java.rmi;
     requires jdk.attach;
     requires jdk.jvmstat;
@@ -35,4 +35,3 @@ module jdk.jconsole {
     exports com.sun.tools.jconsole;
     uses com.sun.tools.jconsole.JConsolePlugin;
 }
-

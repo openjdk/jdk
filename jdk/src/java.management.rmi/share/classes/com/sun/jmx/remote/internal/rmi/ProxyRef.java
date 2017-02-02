@@ -23,7 +23,7 @@
  * questions.
  */
 
-package com.sun.jmx.remote.internal;
+package com.sun.jmx.remote.internal.rmi;
 
 import java.io.IOException;
 import java.io.ObjectInput;

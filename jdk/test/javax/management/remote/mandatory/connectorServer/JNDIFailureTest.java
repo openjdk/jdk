@@ -27,7 +27,7 @@
  * @summary Tests that JNDI bind failure doesn't leave an orphan RMI
  * Connector Server object
  * @author Eamonn McManus
- * @modules java.management
+ * @modules java.management.rmi
  * @run clean JNDIFailureTest
  * @run build JNDIFailureTest
  * @run main JNDIFailureTest

@@ -37,7 +37,7 @@ import java.util.Map;
 import java.util.Collections;
 import javax.security.auth.Subject;
 
-import com.sun.jmx.remote.internal.RMIExporter;
+import com.sun.jmx.remote.internal.rmi.RMIExporter;
 import com.sun.jmx.remote.util.EnvHelp;
 import java.io.ObjectStreamClass;
 import java.lang.reflect.Method;

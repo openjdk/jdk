@@ -73,7 +73,7 @@ import javax.rmi.ssl.SslRMIClientSocketFactory;
 import javax.rmi.ssl.SslRMIServerSocketFactory;
 import javax.security.auth.Subject;
 
-import com.sun.jmx.remote.internal.RMIExporter;
+import com.sun.jmx.remote.internal.rmi.RMIExporter;
 import com.sun.jmx.remote.security.JMXPluggableAuthenticator;
 
 import jdk.internal.agent.Agent;

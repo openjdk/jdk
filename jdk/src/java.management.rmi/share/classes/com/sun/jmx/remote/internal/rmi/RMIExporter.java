@@ -23,7 +23,7 @@
  * questions.
  */
 
-package com.sun.jmx.remote.internal;
+package com.sun.jmx.remote.internal.rmi;
 
 import java.rmi.NoSuchObjectException;
 import java.rmi.Remote;

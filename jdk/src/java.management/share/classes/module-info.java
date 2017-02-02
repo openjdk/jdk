@@ -30,8 +30,6 @@
  * JVM and other components in the Java runtime.
  */
 module java.management {
-    requires transitive java.rmi;
-    requires java.naming;
 
     exports java.lang.management;
     exports javax.management;
@@ -41,10 +39,14 @@ module java.management {
     exports javax.management.openmbean;
     exports javax.management.relation;
     exports javax.management.remote;
-    exports javax.management.remote.rmi;
     exports javax.management.timer;
-    exports com.sun.jmx.remote.internal to jdk.management.agent;
-    exports com.sun.jmx.remote.security to jdk.management.agent;
+    exports com.sun.jmx.remote.internal to
+            java.management.rmi,
+            jdk.management.agent;
+    exports com.sun.jmx.remote.security to
+            java.management.rmi,
+            jdk.management.agent;
+    exports com.sun.jmx.remote.util to java.management.rmi;
     exports sun.management to
         jdk.jconsole,
         jdk.management,

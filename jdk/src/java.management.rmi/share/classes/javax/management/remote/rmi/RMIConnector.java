@@ -25,11 +25,10 @@
 
 package javax.management.remote.rmi;
 
-import com.sun.jmx.mbeanserver.Util;
 import com.sun.jmx.remote.internal.ClientCommunicatorAdmin;
 import com.sun.jmx.remote.internal.ClientListenerInfo;
 import com.sun.jmx.remote.internal.ClientNotifForwarder;
-import com.sun.jmx.remote.internal.ProxyRef;
+import com.sun.jmx.remote.internal.rmi.ProxyRef;
 import com.sun.jmx.remote.util.ClassLogger;
 import com.sun.jmx.remote.util.EnvHelp;
 import java.io.ByteArrayInputStream;
@@ -106,6 +105,7 @@ import jdk.internal.module.Modules;
 import sun.reflect.misc.ReflectUtil;
 import sun.rmi.server.UnicastRef2;
 import sun.rmi.transport.LiveRef;
+import java.io.NotSerializableException;
 
 /**
  * <p>A connection to a remote RMI connector.  Usually, such
@@ -123,6 +123,24 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             new ClassLogger("javax.management.remote.rmi", "RMIConnector");
 
     private static final long serialVersionUID = 817323035842634473L;
+
+    static final class Util {
+        private Util() {}
+
+        /* This method can be used by code that is deliberately violating the
+         * allowed checked casts.  Rather than marking the whole method containing
+         * the code with @SuppressWarnings, you can use a call to this method for
+         * the exact place where you need to escape the constraints.  Typically
+         * you will "import static" this method and then write either
+         *    X x = cast(y);
+         * or, if that doesn't work (e.g. X is a type variable)
+         *    Util.<X>cast(y);
+         */
+        @SuppressWarnings("unchecked")
+        public static <T> T cast(Object x) {
+            return (T) x;
+        }
+    }
 
     private RMIConnector(RMIServer rmiServer, JMXServiceURL address,
             Map<String, ?> environment) {
@@ -1390,7 +1408,9 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                 throws ClassNotFoundException, IOException {
             // specially treating for an UnmarshalException
             if (ioe instanceof UnmarshalException) {
-                throw ioe; // the fix of 6937053 made ClientNotifForwarder.fetchNotifs
+                NotSerializableException nse = new NotSerializableException();
+                nse.initCause(ioe);
+                throw nse; // the fix of 6937053 made ClientNotifForwarder.fetchNotifs
                            // fetch one by one with UnmarshalException
             }
 
@@ -1935,12 +1955,12 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
        The byte code below encodes the following class, compiled using
        J2SE 1.4.2 with the -g:none option.
 
-        package com.sun.jmx.remote.internal;
+        package jdk.jmx.remote.internal.rmi;
 
         import java.lang.reflect.Method;
         import java.rmi.Remote;
         import java.rmi.server.RemoteRef;
-        import com.sun.jmx.remote.internal.ProxyRef;
+        import com.sun.jmx.remote.internal.rmi.ProxyRef;
 
         public class PRef extends ProxyRef {
             public PRef(RemoteRef ref) {
@@ -1962,22 +1982,22 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             RMIConnection.class.getName() + "Impl_Stub";
     private static final Class<?> rmiConnectionImplStubClass;
     private static final String pRefClassName =
-        "jdk.jmx.remote.internal.PRef";
+        "jdk.jmx.remote.internal.rmi.PRef";
     private static final Constructor<?> proxyRefConstructor;
     static {
         final String pRefByteCodeString =
-                "\312\376\272\276\0\0\0\60\0\27\12\0\5\0\15\11\0\4\0\16\13\0\17"+
+                "\312\376\272\276\0\0\0\65\0\27\12\0\5\0\15\11\0\4\0\16\13\0\17"+
                 "\0\20\7\0\21\7\0\22\1\0\6<init>\1\0\36(Ljava/rmi/server/Remote"+
                 "Ref;)V\1\0\4Code\1\0\6invoke\1\0S(Ljava/rmi/Remote;Ljava/lang/"+
                 "reflect/Method;[Ljava/lang/Object;J)Ljava/lang/Object;\1\0\12E"+
                 "xceptions\7\0\23\14\0\6\0\7\14\0\24\0\25\7\0\26\14\0\11\0\12\1"+
-                "\0\34jdk/jmx/remote/internal/PRef\1\0$com/sun/jmx/remote/inter"+
-                "nal/ProxyRef\1\0\23java/lang/Exception\1\0\3ref\1\0\33Ljava/rm"+
-                "i/server/RemoteRef;\1\0\31java/rmi/server/RemoteRef\0!\0\4\0\5"+
-                "\0\0\0\0\0\2\0\1\0\6\0\7\0\1\0\10\0\0\0\22\0\2\0\2\0\0\0\6*+\267"+
-                "\0\1\261\0\0\0\0\0\1\0\11\0\12\0\2\0\10\0\0\0\33\0\6\0\6\0\0\0"+
-                "\17*\264\0\2+,-\26\4\271\0\3\6\0\260\0\0\0\0\0\13\0\0\0\4\0\1\0"+
-                "\14\0\0";
+                "\0 jdk/jmx/remote/internal/rmi/PRef\1\0(com/sun/jmx/remote/int"+
+                "ernal/rmi/ProxyRef\1\0\23java/lang/Exception\1\0\3ref\1\0\33Lj"+
+                "ava/rmi/server/RemoteRef;\1\0\31java/rmi/server/RemoteRef\0!\0"+
+                "\4\0\5\0\0\0\0\0\2\0\1\0\6\0\7\0\1\0\10\0\0\0\22\0\2\0\2\0\0\0"+
+                "\6*+\267\0\1\261\0\0\0\0\0\1\0\11\0\12\0\2\0\10\0\0\0\33\0\6\0"+
+                "\6\0\0\0\17*\264\0\2+,-\26\4\271\0\3\6\0\260\0\0\0\0\0\13\0\0\0"+
+                "\4\0\1\0\14\0\0";
         final byte[] pRefByteCode =
                 NoCallStackClassLoader.stringToBytes(pRefByteCodeString);
         PrivilegedExceptionAction<Constructor<?>> action =

@@ -28,7 +28,7 @@
  * installed. Test the property "jmx.remote.x.check.notification.emission".
  * @author Luis-Miguel Alventosa
  * @key intermittent
- * @modules java.management
+ * @modules java.management.rmi
  * @run clean NotificationEmissionTest
  * @run build NotificationEmissionTest
  * @run main NotificationEmissionTest 1

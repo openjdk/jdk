@@ -57,7 +57,7 @@ public class TestManager {
         try {
             VirtualMachine.attach(pid).startLocalManagementAgent();
         } catch (Exception x) {
-            throw new IOException(x.getMessage());
+            throw new IOException(x.getMessage(), x);
         }
     }
 
