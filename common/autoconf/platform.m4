@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -276,12 +276,6 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS],
 [
   PLATFORM_SETUP_LEGACY_VARS_HELPER([TARGET])
   PLATFORM_SETUP_LEGACY_VARS_HELPER([BUILD])
-
-  # ZERO_ARCHDEF is used to enable architecture-specific code.
-  # This is used in legacy hotspot build.
-  ZERO_ARCHDEF="$HOTSPOT_TARGET_CPU_DEFINE"
-  AC_SUBST(ZERO_ARCHDEF)
-
 ])
 
 # $1 - Either TARGET or BUILD to setup the variables for.
@@ -360,19 +354,16 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS_HELPER],
     OPENJDK_$1_CPU_BUNDLE="$OPENJDK_$1_CPU"
   fi
   OPENJDK_$1_BUNDLE_PLATFORM="${OPENJDK_$1_OS_BUNDLE}-${OPENJDK_$1_CPU_BUNDLE}"
-  AC_SUBST(OPENJDK_$1_OS_BUNDLE)
-  AC_SUBST(OPENJDK_$1_CPU_BUNDLE)
   AC_SUBST(OPENJDK_$1_BUNDLE_PLATFORM)
 
   if test "x$OPENJDK_$1_CPU_BITS" = x64; then
-    A_LP64="LP64:="
     # -D_LP64=1 is only set on linux and mac. Setting on windows causes diff in
-    # unpack200.exe
+    # unpack200.exe. This variable is used in
+    # FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER.
     if test "x$OPENJDK_$1_OS" = xlinux || test "x$OPENJDK_$1_OS" = xmacosx; then
       OPENJDK_$1_ADD_LP64="-D_LP64=1"
     fi
   fi
-  AC_SUBST(LP64,$A_LP64)
 
   if test "x$COMPILE_TYPE" = "xcross"; then
     # FIXME: ... or should this include reduced builds..?

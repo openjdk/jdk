@@ -746,7 +746,8 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
     fi
 
     # set SDKROOT too, Xcode tools will pick it up
-    AC_SUBST(SDKROOT,$SYSROOT)
+    SDKROOT="$SYSROOT"
+    AC_SUBST(SDKROOT)
   fi
 
   # Prepend the extra path to the global path
@@ -831,9 +832,10 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
   CONFIGURESUPPORT_OUTPUTDIR="$OUTPUT_ROOT/configure-support"
   $MKDIR -p "$CONFIGURESUPPORT_OUTPUTDIR"
 
-  AC_SUBST(SPEC, $OUTPUT_ROOT/spec.gmk)
-  AC_SUBST(CONF_NAME, $CONF_NAME)
-  AC_SUBST(OUTPUT_ROOT, $OUTPUT_ROOT)
+  SPEC="$OUTPUT_ROOT/spec.gmk"
+  AC_SUBST(SPEC)
+  AC_SUBST(CONF_NAME)
+  AC_SUBST(OUTPUT_ROOT)
   AC_SUBST(CONFIGURESUPPORT_OUTPUTDIR)
 
   # The spec.gmk file contains all variables for the make system.
