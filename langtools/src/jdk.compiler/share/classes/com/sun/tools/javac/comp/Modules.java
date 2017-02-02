@@ -931,6 +931,9 @@ public class Modules extends JCTree.Visitor {
         public void visitProvides(JCProvides tree) {
             Type st = attr.attribType(tree.serviceName, env, syms.objectType);
             ClassSymbol service = (ClassSymbol) st.tsym;
+            if (allProvides.containsKey(service)) {
+                log.error(tree.serviceName.pos(), Errors.RepeatedProvidesForService(service));
+            }
             ListBuffer<ClassSymbol> impls = new ListBuffer<>();
             for (JCExpression implName : tree.implNames) {
                 Type it = attr.attribType(implName, env, syms.objectType);
@@ -959,8 +962,6 @@ public class Modules extends JCTree.Visitor {
                     }
                 }
                 if (it.hasTag(CLASS)) {
-                    // For now, we just check the pair (service-type, impl-type) is unique
-                    // TODO, check only one provides per service type as well
                     if (allProvides.computeIfAbsent(service, s -> new HashSet<>()).add(impl)) {
                         impls.append(impl);
                     } else {
