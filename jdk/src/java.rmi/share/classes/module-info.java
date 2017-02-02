@@ -41,13 +41,12 @@ module java.rmi {
     exports sun.rmi.registry to
         jdk.management.agent;
     exports sun.rmi.server to
-        java.management,
+        java.management.rmi,
         jdk.management.agent,
         jdk.jconsole;
     exports sun.rmi.transport to
-        java.management,
+        java.management.rmi,
         jdk.management.agent,
         jdk.jconsole;
     uses java.rmi.server.RMIClassLoaderSpi;
 }
-

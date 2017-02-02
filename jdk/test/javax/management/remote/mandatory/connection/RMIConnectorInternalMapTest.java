@@ -42,7 +42,7 @@ import javax.security.auth.Subject;
  * @bug 6566891
  * @summary Check no memory leak on RMIConnector's rmbscMap
  * @author Shanliang JIANG
- * @modules java.management/javax.management.remote.rmi:open
+ * @modules java.management.rmi/javax.management.remote.rmi:open
  * @run clean RMIConnectorInternalMapTest
  * @run build RMIConnectorInternalMapTest
  * @run main RMIConnectorInternalMapTest

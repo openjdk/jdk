@@ -48,7 +48,7 @@ import javax.management.remote.NotificationResult;
 import javax.security.auth.Subject;
 import sun.reflect.misc.ReflectUtil;
 
-import static com.sun.jmx.mbeanserver.Util.cast;
+import static javax.management.remote.rmi.RMIConnector.Util.cast;
 import com.sun.jmx.remote.internal.ServerCommunicatorAdmin;
 import com.sun.jmx.remote.internal.ServerNotifForwarder;
 import com.sun.jmx.remote.security.JMXSubjectDomainCombiner;
