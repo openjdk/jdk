@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,7 @@ public class LimitedImage {
         );
 
         //check proper diagnostics when zip/jar FS not present:
+        System.err.println("Test " + testJar + " on classpath");
         actualOutput = new JavacTask(tb, Mode.CMDLINE)
                 .classpath(testJar)
                 .options("-XDrawDiagnostics")
@@ -84,9 +85,10 @@ public class LimitedImage {
                 .getOutputLines(OutputKind.DIRECT);
 
         if (!expectedOutput.equals(actualOutput)) {
-            throw new AssertionError("Unexpected output: " + actualOutput);
+            throw new AssertionError("Unexpected output");
         }
 
+        System.err.println("Test " + testJar + " on sourcepath");
         actualOutput = new JavacTask(tb, Mode.CMDLINE)
                 .sourcepath(testJar)
                 .options("-XDrawDiagnostics")
@@ -97,9 +99,10 @@ public class LimitedImage {
                 .getOutputLines(OutputKind.DIRECT);
 
         if (!expectedOutput.equals(actualOutput)) {
-            throw new AssertionError("Unexpected output: " + actualOutput);
+            throw new AssertionError("Unexpected output");
         }
 
+        System.err.println("Test " + testJar + " on modulepath");
         actualOutput = new JavacTask(tb, Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                          "--module-path", testJar.toString())
@@ -110,7 +113,7 @@ public class LimitedImage {
                 .getOutputLines(OutputKind.DIRECT);
 
         if (!expectedOutput.equals(actualOutput)) {
-            throw new AssertionError("Unexpected output: " + actualOutput);
+            throw new AssertionError("Unexpected output");
         }
 
         expectedOutput = Arrays.asList(
@@ -118,6 +121,7 @@ public class LimitedImage {
                 "1 error"
         );
 
+        System.err.println("Test directory containing " + testJar + " on modulepath");
         actualOutput = new JavacTask(tb, Mode.CMDLINE)
                 .classpath()
                 .options("-XDrawDiagnostics",
@@ -129,7 +133,7 @@ public class LimitedImage {
                 .getOutputLines(OutputKind.DIRECT);
 
         if (!expectedOutput.equals(actualOutput)) {
-            throw new AssertionError("Unexpected output: " + actualOutput);
+            throw new AssertionError("Unexpected output");
         }
     }
 

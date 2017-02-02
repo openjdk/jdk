@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,8 @@ import java.util.List;
 /**
  * Represents a union type.
  *
- * As of the {@link javax.lang.model.SourceVersion#RELEASE_7
- * RELEASE_7} source version, union types can appear as the type
- * of a multi-catch exception parameter.
+ * Union types can appear as the type of a multi-catch exception
+ * parameter.
  *
  * @since 1.7
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8039410 8042601 8042829 8049393 8050031 8155061 8155995 8167967
+ * @bug 8039410 8042601 8042829 8049393 8050031 8155061 8155995 8167967 8169813
  * @summary test to determine if members are ordered correctly
  * @library ../lib/
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -494,22 +494,22 @@ public class TestOrdering extends JavadocTester {
         String[] composeTestVectors() {
             List<String> testList = new ArrayList<>();
 
-            testList.addAll(Arrays.asList(expectedPackageOrdering));
             for (String x : expectedEnumOrdering) {
                 testList.add(x.replace("REPLACE_ME", "&lt;Unnamed&gt;"));
-                for (int i = 0; i < MAX_PACKAGES; i++) {
-                    String wpkg = "add" + i;
-                    testList.add(wpkg + "/" + x.replace("REPLACE_ME",
-                            wpkg));
-                    String dpkg = wpkg;
-                    for (int j = 1; j < MAX_SUBPACKAGES_DEPTH; j++) {
-                        dpkg = dpkg + "/" + "add";
+            }
+            for (int i = 0; i < MAX_PACKAGES; i++) {
+                String wpkg = "add" + i;
+                for (String x : expectedEnumOrdering) {
+                    testList.add(wpkg + "/" + x.replace("REPLACE_ME", wpkg));
+                }
+                String dpkg = wpkg;
+                for (int j = 1; j < MAX_SUBPACKAGES_DEPTH; j++) {
+                    dpkg = dpkg + "/" + "add";
+                    for (String x : expectedEnumOrdering) {
                         testList.add(dpkg + "/" + x.replace("REPLACE_ME", pathToPackage(dpkg)));
                     }
                 }
             }
-
-            testList.addAll(Arrays.asList(expectedFieldOrdering));
 
             for (String x : expectedMethodOrdering) {
                 testList.add(x);
@@ -523,6 +523,8 @@ public class TestOrdering extends JavadocTester {
                     }
                 }
             }
+            testList.addAll(Arrays.asList(expectedPackageOrdering));
+            testList.addAll(Arrays.asList(expectedFieldOrdering));
 
             return testList.toArray(new String[testList.size()]);
         }
