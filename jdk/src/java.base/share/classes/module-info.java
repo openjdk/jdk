@@ -150,7 +150,7 @@ module java.base {
         java.desktop;
     exports jdk.internal.module to
         java.instrument,
-        java.management,
+        java.management.rmi,
         jdk.jartool,
         jdk.jlink;
     exports jdk.internal.misc to
@@ -177,6 +177,7 @@ module java.base {
     exports jdk.internal.perf to
         java.desktop,
         java.management,
+        jdk.management.agent,
         jdk.jvmstat;
     exports jdk.internal.ref to
         java.desktop,
@@ -197,6 +198,7 @@ module java.base {
         jdk.jlink;
     exports jdk.internal.vm to
         java.management,
+        jdk.management.agent,
         jdk.jvmstat;
     exports sun.net to
         jdk.incubator.httpclient;
@@ -233,6 +235,7 @@ module java.base {
         java.desktop,
         java.datatransfer,
         java.management,
+        java.management.rmi,
         java.rmi,
         java.sql.rowset,
         java.xml,

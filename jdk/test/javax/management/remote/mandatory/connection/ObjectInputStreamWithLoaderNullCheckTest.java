@@ -29,7 +29,7 @@
  *          thrown when constructor is invoked with null class loader as
  *          an argument.
  * @author Amit Sapre
- * @modules java.management/javax.management.remote.rmi:open
+ * @modules java.management.rmi/javax.management.remote.rmi:open
  * @run clean ObjectInputStreamWithLoaderNullCheckTest
  * @run build ObjectInputStreamWithLoaderNullCheckTest
  * @run main ObjectInputStreamWithLoaderNullCheckTest

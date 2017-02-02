@@ -1587,7 +1587,7 @@ static char* expandWildcardOnLongOpt(char* arg) {
     p = JLI_MemAlloc(optLen + valueLen + 1);
     memcpy(p, arg, optLen);
     memcpy(p + optLen, value, valueLen);
-    p[optLen + valueLen + 1] = '\0';
+    p[optLen + valueLen] = '\0';
     return p;
 }
 
