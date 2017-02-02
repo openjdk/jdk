@@ -59,12 +59,17 @@ public interface Elements {
     /**
      * Returns a package given its fully qualified name, as seen from the given module.
      *
+     * @implSpec The default implementation of this method returns
+     * {@code null}.
+     *
      * @param name  fully qualified package name, or an empty string for an unnamed package
      * @param module module relative to which the lookup should happen
      * @return the specified package, or {@code null} if it cannot be found
      * @since 9
      */
-    PackageElement getPackageElement(ModuleElement module, CharSequence name);
+    default PackageElement getPackageElement(ModuleElement module, CharSequence name) {
+        return null;
+    }
 
     /**
      * Returns a type element given its canonical name if the type element is unique in the environment.
@@ -79,12 +84,17 @@ public interface Elements {
     /**
      * Returns a type element given its canonical name, as seen from the given module.
      *
+     * @implSpec The default implementation of this method returns
+     * {@code null}.
+     *
      * @param name  the canonical name
      * @param module module relative to which the lookup should happen
      * @return the named type element, or {@code null} if it cannot be found
      * @since 9
      */
-    TypeElement getTypeElement(ModuleElement module, CharSequence name);
+    default TypeElement getTypeElement(ModuleElement module, CharSequence name) {
+        return null;
+    }
 
     /**
      * Returns a module element given its fully qualified name.
@@ -95,11 +105,16 @@ public interface Elements {
      * javax.annotation.processing.ProcessingEnvironment#getSourceVersion
      * source version} without modules.
      *
+     * @implSpec The default implementation of this method returns
+     * {@code null}.
+     *
      * @param name  the name
      * @return the named module element, or {@code null} if it cannot be found
      * @since 9
      */
-    ModuleElement getModuleElement(CharSequence name);
+    default ModuleElement getModuleElement(CharSequence name) {
+        return null;
+    }
 
     /**
      * Returns the values of an annotation's elements, including defaults.
@@ -337,11 +352,16 @@ public interface Elements {
      * javax.annotation.processing.ProcessingEnvironment#getSourceVersion
      * source version} without modules.
      *
+     * @implSpec The default implementation of this method returns
+     * {@code null}.
+     *
      * @param type the element being examined
      * @return the module of an element
      * @since 9
      */
-    ModuleElement getModuleOf(Element type);
+    default ModuleElement getModuleOf(Element type) {
+        return null;
+    }
 
     /**
      * Returns all members of a type element, whether inherited or
