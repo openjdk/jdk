@@ -35,9 +35,13 @@ var File = Java.type("java.io.File");
 var FilenameFilter = Java.type("java.io.FilenameFilter");
 var SourceHelper = Java.type("jdk.nashorn.test.models.SourceHelper")
 
+var skippedTests = {
+    "JDK-8169481.js": true  // deep AST can cause stack overflow
+};
+
 // Filter out non .js files
 var files = new File(__DIR__).listFiles(new FilenameFilter() {
-    accept: function(f, n) { return n.endsWith(".js") }
+    accept: function(f, n) { return n.endsWith(".js") && !(n in skippedTests) }
 });
 
 // load parser API
