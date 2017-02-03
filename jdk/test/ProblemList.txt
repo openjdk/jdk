@@ -260,6 +260,8 @@ tools/jlink/multireleasejar/JLinkMultiReleaseJarTest.java       8169971 windows-
 
 tools/jmod/JmodTest.java                                        8172870 windows-all
 
+tools/jar/multiRelease/RuntimeTest.java                         8173905 generic-all
+
 ############################################################################
 
 # jdk_jdi
