@@ -23,4 +23,4 @@
 #
 ###########################################################################
 
-src/jdk/nashorn/api/tree/test/ParseAPITest.java    8173863 linux-i586,windows-i586,solaris-sparcv9
+# No nashorn tests are on the problem list.
