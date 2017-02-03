@@ -77,9 +77,8 @@ define SetupBundleFileBody
 	$$(call MakeDir, $$(@D))
         ifneq ($$($1_SPECIAL_INCLUDES), )
 	  $$(foreach i, $$($1_SPECIAL_INCLUDES), \
-	    $$(foreach d, $$d, \
-	      ($(CD) $$d && $(FIND) $$i \
-	          >> $(SUPPORT_OUTPUTDIR)/bundles/_$1_files ) ; ))
+	    $$(foreach d, $$($1_BASE_DIRS), \
+	      ($(CD) $$d && $(FIND) $$i >> $$($1_$$d_LIST_FILE)) ; ))
         endif
         ifeq ($$($1_SUBDIR)-$$($1_TYPE)-$$($1_UNZIP_DEBUGINFO), .-zip-false)
           # If no subdir is specified, zip can be done directly from BASE_DIRS.
@@ -152,6 +151,9 @@ else
   JRE_IMAGE_HOMEDIR := $(JRE_IMAGE_DIR)
   JDK_BUNDLE_SUBDIR := jdk-$(VERSION_NUMBER)
   JRE_BUNDLE_SUBDIR := jre-$(VERSION_NUMBER)
+  JRE_COMPACT1_BUNDLE_SUBDIR := jre-$(VERSION_NUMBER)-compact1
+  JRE_COMPACT2_BUNDLE_SUBDIR := jre-$(VERSION_NUMBER)-compact2
+  JRE_COMPACT3_BUNDLE_SUBDIR := jre-$(VERSION_NUMBER)-compact3
   ifneq ($(DEBUG_LEVEL), release)
     JDK_BUNDLE_SUBDIR := $(JDK_BUNDLE_SUBDIR)/$(DEBUG_LEVEL)
     JRE_BUNDLE_SUBDIR := $(JRE_BUNDLE_SUBDIR)/$(DEBUG_LEVEL)
@@ -281,6 +283,35 @@ endif
 
 ################################################################################
 
+ifneq ($(filter profiles-bundles, $(MAKECMDGOALS)), )
+  ifeq ($(OPENJDK_TARGET_OS), macosx)
+    $(error Creating compact profiles bundles on macosx is unsupported)
+  endif
+
+  define GenerateCompactProfilesBundles
+    ALL_JRE_COMPACT$1_FILES := $$(call CacheFind, $$(JRE_COMPACT$1_IMAGE_DIR))
+
+    JRE_COMPACT$1_BUNDLE_FILES := $$(filter-out \
+        $$(SYMBOLS_EXCLUDE_PATTERN), \
+        $$(ALL_JRE_COMPACT$1_FILES))
+
+    $$(eval $$(call SetupBundleFile, BUILD_JRE_COMPACT$1_BUNDLE, \
+        BUNDLE_NAME := $$(JRE_COMPACT$1_BUNDLE_NAME), \
+        FILES := $$(JRE_COMPACT$1_BUNDLE_FILES), \
+        BASE_DIRS := $$(JRE_COMPACT$1_IMAGE_DIR), \
+        SUBDIR := $$(JRE_COMPACT$1_BUNDLE_SUBDIR), \
+    ))
+
+    PROFILES_TARGETS += $$(BUILD_JRE_COMPACT$1_BUNDLE)
+  endef
+
+  $(eval $(call GenerateCompactProfilesBundles,1))
+  $(eval $(call GenerateCompactProfilesBundles,2))
+  $(eval $(call GenerateCompactProfilesBundles,3))
+endif
+
+################################################################################
+
 ifneq ($(filter test-bundles, $(MAKECMDGOALS)), )
   TEST_BUNDLE_FILES := $(call CacheFind, $(TEST_IMAGE_DIR))
 
@@ -316,7 +347,8 @@ $(eval $(call IncludeCustomExtension, , Bundles.gmk))
 ################################################################################
 
 product-bundles: $(PRODUCT_TARGETS)
+profiles-bundles: $(PROFILES_TARGETS)
 test-bundles: $(TEST_TARGETS)
 docs-bundles: $(DOCS_TARGETS)
 
-.PHONY: all default product-bundles test-bundles docs-bundles
+.PHONY: all default product-bundles profiles-bundles test-bundles docs-bundles

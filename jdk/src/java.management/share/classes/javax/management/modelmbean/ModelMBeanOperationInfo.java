@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
 import java.lang.reflect.Method;
 import java.security.AccessController;
-import java.util.logging.Level;
+import java.lang.System.Logger.Level;
 
 import javax.management.Descriptor;
 import javax.management.DescriptorAccess;
@@ -185,10 +185,9 @@ public class ModelMBeanOperationInfo extends MBeanOperationInfo
         {
                 super(description, operationMethod);
                 // create default descriptor
-                if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-                    MODELMBEAN_LOGGER.logp(Level.FINER,
-                            ModelMBeanOperationInfo.class.getName(),
-                            "ModelMBeanOperationInfo(String,Method)",
+                if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+                    MODELMBEAN_LOGGER.log(Level.TRACE,
+                            "ModelMBeanOperationInfo(String,Method) " +
                             "Entry");
                 }
                 operationDescriptor = validDescriptor(null);
@@ -228,11 +227,10 @@ public class ModelMBeanOperationInfo extends MBeanOperationInfo
         {
 
                 super(description, operationMethod);
-                if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-                    MODELMBEAN_LOGGER.logp(Level.FINER,
-                            ModelMBeanOperationInfo.class.getName(),
-                            "ModelMBeanOperationInfo(String,Method,Descriptor)",
-                            "Entry");
+                if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+                    MODELMBEAN_LOGGER.log(Level.TRACE,
+                            "ModelMBeanOperationInfo(String,Method,Descriptor) "
+                            + "Entry");
                 }
                 operationDescriptor = validDescriptor(descriptor);
         }
@@ -258,11 +256,10 @@ public class ModelMBeanOperationInfo extends MBeanOperationInfo
 
                 super(name, description, signature, type, impact);
                 // create default descriptor
-                if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-                    MODELMBEAN_LOGGER.logp(Level.FINER,
-                            ModelMBeanOperationInfo.class.getName(),
+                if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+                    MODELMBEAN_LOGGER.log(Level.TRACE,
                             "ModelMBeanOperationInfo(" +
-                            "String,String,MBeanParameterInfo[],String,int)",
+                            "String,String,MBeanParameterInfo[],String,int) " +
                             "Entry");
                 }
                 operationDescriptor = validDescriptor(null);
@@ -302,11 +299,10 @@ public class ModelMBeanOperationInfo extends MBeanOperationInfo
                                        Descriptor descriptor)
         {
                 super(name, description, signature, type, impact);
-                if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-                    MODELMBEAN_LOGGER.logp(Level.FINER,
-                            ModelMBeanOperationInfo.class.getName(),
+                if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+                    MODELMBEAN_LOGGER.log(Level.TRACE,
                             "ModelMBeanOperationInfo(String,String," +
-                            "MBeanParameterInfo[],String,int,Descriptor)",
+                            "MBeanParameterInfo[],String,int,Descriptor) " +
                             "Entry");
                 }
                 operationDescriptor = validDescriptor(descriptor);
@@ -327,10 +323,9 @@ public class ModelMBeanOperationInfo extends MBeanOperationInfo
                           inInfo.getSignature(),
                           inInfo.getReturnType(),
                           inInfo.getImpact());
-                if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-                    MODELMBEAN_LOGGER.logp(Level.FINER,
-                            ModelMBeanOperationInfo.class.getName(),
-                            "ModelMBeanOperationInfo(ModelMBeanOperationInfo)",
+                if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+                    MODELMBEAN_LOGGER.log(Level.TRACE,
+                            "ModelMBeanOperationInfo(ModelMBeanOperationInfo)" +
                             "Entry");
                 }
                 Descriptor newDesc = inInfo.getDescriptor();
@@ -345,10 +340,8 @@ public class ModelMBeanOperationInfo extends MBeanOperationInfo
 
         public Object clone ()
         {
-            if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-                MODELMBEAN_LOGGER.logp(Level.FINER,
-                        ModelMBeanOperationInfo.class.getName(),
-                        "clone()", "Entry");
+            if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+                MODELMBEAN_LOGGER.log(Level.TRACE, "Entry");
             }
                 return(new ModelMBeanOperationInfo(this)) ;
         }
@@ -365,10 +358,8 @@ public class ModelMBeanOperationInfo extends MBeanOperationInfo
 
         public Descriptor getDescriptor()
         {
-            if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-                MODELMBEAN_LOGGER.logp(Level.FINER,
-                        ModelMBeanOperationInfo.class.getName(),
-                        "getDescriptor()", "Entry");
+            if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+                MODELMBEAN_LOGGER.log(Level.TRACE, "Entry");
             }
             if (operationDescriptor == null) {
                 operationDescriptor = validDescriptor(null);
@@ -396,10 +387,8 @@ public class ModelMBeanOperationInfo extends MBeanOperationInfo
          */
         public void setDescriptor(Descriptor inDescriptor)
         {
-            if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-                MODELMBEAN_LOGGER.logp(Level.FINER,
-                        ModelMBeanOperationInfo.class.getName(),
-                        "setDescriptor(Descriptor)", "Entry");
+            if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+                MODELMBEAN_LOGGER.log(Level.TRACE, "Entry");
             }
             operationDescriptor = validDescriptor(inDescriptor);
         }
@@ -410,10 +399,8 @@ public class ModelMBeanOperationInfo extends MBeanOperationInfo
         */
         public String toString()
         {
-            if (MODELMBEAN_LOGGER.isLoggable(Level.FINER)) {
-                MODELMBEAN_LOGGER.logp(Level.FINER,
-                        ModelMBeanOperationInfo.class.getName(),
-                        "toString()", "Entry");
+            if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
+                MODELMBEAN_LOGGER.log(Level.TRACE, "Entry");
             }
                 String retStr =
                     "ModelMBeanOperationInfo: " + this.getName() +
@@ -449,7 +436,7 @@ public class ModelMBeanOperationInfo extends MBeanOperationInfo
             boolean defaulted = (in == null);
             if (defaulted) {
                 clone = new DescriptorSupport();
-                MODELMBEAN_LOGGER.finer("Null Descriptor, creating new.");
+                MODELMBEAN_LOGGER.log(Level.TRACE, "Null Descriptor, creating new.");
             } else {
                 clone = (Descriptor) in.clone();
             }
@@ -457,19 +444,19 @@ public class ModelMBeanOperationInfo extends MBeanOperationInfo
             //Setting defaults.
             if (defaulted && clone.getFieldValue("name")==null) {
                 clone.setField("name", this.getName());
-                MODELMBEAN_LOGGER.finer("Defaulting Descriptor name to " + this.getName());
+                MODELMBEAN_LOGGER.log(Level.TRACE, "Defaulting Descriptor name to " + this.getName());
             }
             if (defaulted && clone.getFieldValue("descriptorType")==null) {
                 clone.setField("descriptorType", "operation");
-                MODELMBEAN_LOGGER.finer("Defaulting descriptorType to \"operation\"");
+                MODELMBEAN_LOGGER.log(Level.TRACE, "Defaulting descriptorType to \"operation\"");
             }
             if (clone.getFieldValue("displayName") == null) {
                 clone.setField("displayName",this.getName());
-                MODELMBEAN_LOGGER.finer("Defaulting Descriptor displayName to " + this.getName());
+                MODELMBEAN_LOGGER.log(Level.TRACE, "Defaulting Descriptor displayName to " + this.getName());
             }
             if (clone.getFieldValue("role") == null) {
                 clone.setField("role","operation");
-                MODELMBEAN_LOGGER.finer("Defaulting Descriptor role field to \"operation\"");
+                MODELMBEAN_LOGGER.log(Level.TRACE, "Defaulting Descriptor role field to \"operation\"");
             }
 
             //Checking validity

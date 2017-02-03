@@ -26,6 +26,7 @@
  * @bug 7200264
  * @summary 7192963 changes disabled shift vectors
  * @requires vm.cpu.features ~= ".*sse4\\.1.*" & vm.debug & vm.flavor == "server"
+ * @requires !vm.emulatedClient
  * @library /test/lib /
  * @run driver compiler.c2.cr7200264.TestSSE4IntVect
  */

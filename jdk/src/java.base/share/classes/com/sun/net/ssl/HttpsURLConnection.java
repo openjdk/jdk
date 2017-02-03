@@ -69,6 +69,10 @@ class HttpsURLConnection extends HttpURLConnection
     /**
      * Returns the server's X.509 certificate chain, or null if
      * the server did not authenticate.
+     * <P>
+     * Note: The returned value may not be a valid certificate chain
+     * and should not be relied on for trust decisions.
+     *
      * @return the server certificate chain
      */
     public abstract Certificate[] getServerCertificates()

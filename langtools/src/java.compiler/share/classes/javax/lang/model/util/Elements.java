@@ -52,7 +52,7 @@ public interface Elements {
      * If running with modules, all modules in the modules graph are searched for matching packages.
      *
      * @param name  fully qualified package name, or an empty string for an unnamed package
-     * @return the named package, or {@code null} if it cannot be uniquely found
+     * @return the specified package, or {@code null} if it cannot be uniquely found
      */
     PackageElement getPackageElement(CharSequence name);
 
@@ -61,7 +61,7 @@ public interface Elements {
      *
      * @param name  fully qualified package name, or an empty string for an unnamed package
      * @param module module relative to which the lookup should happen
-     * @return the named package, or {@code null} if it cannot be found
+     * @return the specified package, or {@code null} if it cannot be found
      * @since 9
      */
     PackageElement getPackageElement(ModuleElement module, CharSequence name);
@@ -91,7 +91,9 @@ public interface Elements {
      * If the named module cannot be found, null is returned. One situation where a module
      * cannot be found is if the environment does not include modules, such as
      * an annotation processing environment configured for
-     * a {@linkplain ProcessingEnvironment#getSourceVersion source version} without modules.      *
+     * a {@linkplain
+     * javax.annotation.processing.ProcessingEnvironment#getSourceVersion
+     * source version} without modules.
      *
      * @param name  the name
      * @return the named module element, or {@code null} if it cannot be found
@@ -331,7 +333,9 @@ public interface Elements {
      * If there is no module for the element, null is returned. One situation where there is
      * no module for an element is if the environment does not include modules, such as
      * an annotation processing environment configured for
-     * a {@linkplain ProcessingEnvironment#getSourceVersion source version} without modules.      *
+     * a {@linkplain
+     * javax.annotation.processing.ProcessingEnvironment#getSourceVersion
+     * source version} without modules.
      *
      * @param type the element being examined
      * @return the module of an element

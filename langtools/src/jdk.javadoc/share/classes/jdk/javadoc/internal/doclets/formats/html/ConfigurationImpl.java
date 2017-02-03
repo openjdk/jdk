@@ -296,8 +296,20 @@ public class ConfigurationImpl extends Configuration {
                 return false;
             }
         }
+
+        // In a more object-oriented world, this would be done by methods on the Option objects.
+        // Note that -windowtitle silently removes any and all HTML elements, and so does not need
+        // to be handled here.
+        utils.checkJavaScriptInOption("-header", header);
+        utils.checkJavaScriptInOption("-footer", footer);
+        utils.checkJavaScriptInOption("-top", top);
+        utils.checkJavaScriptInOption("-bottom", bottom);
+        utils.checkJavaScriptInOption("-doctitle", doctitle);
+        utils.checkJavaScriptInOption("-packagesheader", packagesheader);
+
         return true;
     }
+
 
     @Override
     public boolean finishOptionSettings() {

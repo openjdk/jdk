@@ -263,6 +263,7 @@ var getJibProfilesCommon = function (input, data) {
         labels: "open"
     };
 
+    common.configure_args_64bit = ["--with-target-bits=64"];
     common.configure_args_32bit = ["--with-target-bits=32"];
 
     /**
@@ -419,7 +420,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: "linux",
             target_cpu: "x64",
             dependencies: ["devkit"],
-            configure_args: ["--with-zlib=system"],
+            configure_args: concat(common.configure_args_64bit, "--with-zlib=system"),
             default_make_targets: ["docs-bundles"],
         },
 
@@ -436,27 +437,30 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: "macosx",
             target_cpu: "x64",
             dependencies: ["devkit"],
-            configure_args: concat(common.configure_args, "--with-zlib=system"),
+            configure_args: concat(common.configure_args_64bit, "--with-zlib=system"),
         },
 
         "solaris-x64": {
             target_os: "solaris",
             target_cpu: "x64",
             dependencies: ["devkit", "cups"],
-            configure_args: ["--with-zlib=system", "--enable-dtrace"],
+            configure_args: concat(common.configure_args_64bit,
+                "--with-zlib=system", "--enable-dtrace"),
         },
 
         "solaris-sparcv9": {
             target_os: "solaris",
             target_cpu: "sparcv9",
             dependencies: ["devkit", "cups"],
-            configure_args: ["--with-zlib=system", "--enable-dtrace"],
+            configure_args: concat(common.configure_args_64bit,
+                "--with-zlib=system", "--enable-dtrace"),
         },
 
         "windows-x64": {
             target_os: "windows",
             target_cpu: "x64",
             dependencies: ["devkit", "freetype"],
+            configure_args: concat(common.configure_args_64bit),
         },
 
         "windows-x86": {
@@ -497,7 +501,7 @@ var getJibProfilesProfiles = function (input, common, data) {
     // extra default target.
     var openOnlyProfilesExtra = {
         "linux-x86-open": {
-            default_make_targets: "profiles",
+            default_make_targets: "profiles-bundles",
             configure_args: "--with-jvm-variants=client,server"
         }
     };
@@ -518,11 +522,11 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: "linux",
             target_cpu: "x64",
             dependencies: ["devkit"],
-            configure_args: [
+            configure_args: concat(common.configure_args_64bit, [
                 "--with-zlib=system",
                 "--with-jvm-variants=zero",
                 "--enable-libffi-bundling"
-            ]
+            ])
         },
 
         "linux-x86-zero": {
@@ -583,6 +587,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             ],
             work_dir: input.get("src.full", "install_path") + "/test",
             environment: {
+                "JT_JAVA": common.boot_jdk_home,
                 "PRODUCT_HOME": input.get(testedProfile + ".jdk", "home_path"),
                 "TEST_IMAGE_DIR": input.get(testedProfile + ".test", "home_path"),
                 "TEST_OUTPUT_DIR": input.src_top_dir
@@ -604,6 +609,19 @@ var getJibProfilesProfiles = function (input, common, data) {
         }
     }
     profiles = concatObjects(profiles, testOnlyProfilesPrebuilt);
+
+    // On macosx add the devkit bin dir to the path in all the run-test profiles.
+    // This gives us a guaranteed working version of lldb for the jtreg failure handler.
+    if (input.build_os == "macosx") {
+        macosxRunTestExtra = {
+            dependencies: [ "devkit" ],
+            environment_path: input.get("devkit", "install_path")
+                + "/Xcode.app/Contents/Developer/usr/bin"
+        }
+        profiles["run-test"] = concatObjects(profiles["run-test"], macosxRunTestExtra);
+        profiles["run-test-jprt"] = concatObjects(profiles["run-test-jprt"], macosxRunTestExtra);
+        profiles["run-test-prebuilt"] = concatObjects(profiles["run-test-prebuilt"], macosxRunTestExtra);
+    }
 
     //
     // Define artifacts for profiles
@@ -706,10 +724,15 @@ var getJibProfilesProfiles = function (input, common, data) {
                     local: "bundles/\\(jdk.*bin.tar.gz\\)",
                     remote: "bundles/openjdk/GPL/profile/linux-x86/\\1",
                 },
-                jre: {
-                    local: "bundles/\\(jre.*[0-9]_linux-x86_bin.tar.gz\\)",
+                jdk_symbols: {
+                    local: "bundles/\\(jdk.*bin-symbols.tar.gz\\)",
                     remote: "bundles/openjdk/GPL/profile/linux-x86/\\1",
-                },/* The build does not create these
+                },
+                jre: {
+                    // This regexp needs to not match the compact* files below
+                    local: "bundles/\\(jre.*[+][0-9]\\{1,\\}_linux-x86_bin.tar.gz\\)",
+                    remote: "bundles/openjdk/GPL/profile/linux-x86/\\1",
+                },
                 jre_compact1: {
                     local: "bundles/\\(jre.*-compact1_linux-x86_bin.tar.gz\\)",
                     remote: "bundles/openjdk/GPL/profile/linux-x86/\\1",
@@ -721,7 +744,7 @@ var getJibProfilesProfiles = function (input, common, data) {
                 jre_compact3: {
                     local: "bundles/\\(jre.*-compact3_linux-x86_bin.tar.gz\\)",
                     remote: "bundles/openjdk/GPL/profile/linux-x86/\\1",
-                },*/
+                },
             }
         },
 
@@ -834,7 +857,7 @@ var getJibProfilesDependencies = function (input, common) {
             file: boot_jdk_platform + "/jdk-" + common.boot_jdk_revision
                 + "-" + boot_jdk_platform + ".tar.gz",
             configure_args: "--with-boot-jdk=" + common.boot_jdk_home,
-            environment_path: common.boot_jdk_home
+            environment_path: common.boot_jdk_home + "/bin"
         },
 
         devkit: {
@@ -860,7 +883,7 @@ var getJibProfilesDependencies = function (input, common) {
         jtreg: {
             server: "javare",
             revision: "4.2",
-            build_number: "b04",
+            build_number: "b05",
             checksum_file: "MD5_VALUES",
             file: "jtreg_bin-4.2.zip",
             environment_name: "JT_HOME",

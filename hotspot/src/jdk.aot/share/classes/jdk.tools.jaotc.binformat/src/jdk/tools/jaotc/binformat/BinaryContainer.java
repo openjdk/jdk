@@ -309,11 +309,11 @@ public class BinaryContainer implements SymbolTable {
                                    graphBuilderConfig.omitAssertions()
         };
 
-        int[] intFlags         = { graalHotSpotVMConfig.narrowOopShift,
-                                   graalHotSpotVMConfig.narrowKlassShift,
+        int[] intFlags         = { graalHotSpotVMConfig.getOopEncoding().shift,
+                                   graalHotSpotVMConfig.getKlassEncoding().shift,
                                    graalHotSpotVMConfig.contendedPaddingWidth,
                                    graalHotSpotVMConfig.fieldsAllocationStyle,
-                                   graalHotSpotVMConfig.objectAlignment,
+                                   1 << graalHotSpotVMConfig.getOopEncoding().alignment,
                                    graalHotSpotVMConfig.codeSegmentSize,
         };
         // @formatter:on
@@ -397,6 +397,10 @@ public class BinaryContainer implements SymbolTable {
         return "_aot_narrow_klass_base_address";
     }
 
+    public String getNarrowOopBaseAddressSymbolName() {
+        return "_aot_narrow_oop_base_address";
+    }
+
     public String getLogOfHeapRegionGrainBytesSymbolName() {
         return "_aot_log_of_heap_region_grain_bytes";
     }
@@ -447,6 +451,7 @@ public class BinaryContainer implements SymbolTable {
         createGotSymbol(getHeapTopAddressSymbolName());
         createGotSymbol(getHeapEndAddressSymbolName());
         createGotSymbol(getNarrowKlassBaseAddressSymbolName());
+        createGotSymbol(getNarrowOopBaseAddressSymbolName());
         createGotSymbol(getPollingPageSymbolName());
         createGotSymbol(getLogOfHeapRegionGrainBytesSymbolName());
         createGotSymbol(getInlineContiguousAllocationSupportedSymbolName());

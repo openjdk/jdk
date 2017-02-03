@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,16 +68,21 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
 
     private static final Debug debug = Debug.getInstance("ssl");
 
-    X509TrustManagerImpl(String validatorType, KeyStore ks)
-            throws KeyStoreException {
+    X509TrustManagerImpl(String validatorType,
+            Collection<X509Certificate> trustedCerts) {
+
         this.validatorType = validatorType;
         this.pkixParams = null;
-        if (ks == null) {
+
+        if (trustedCerts == null) {
             trustedCerts = Collections.<X509Certificate>emptySet();
-        } else {
-            trustedCerts = KeyStores.getTrustedCerts(ks);
         }
-        showTrustedCerts();
+
+        this.trustedCerts = trustedCerts;
+
+        if (debug != null && Debug.isOn("trustmanager")) {
+            showTrustedCerts();
+        }
     }
 
     X509TrustManagerImpl(String validatorType, PKIXBuilderParameters params) {
@@ -90,7 +95,10 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
         Validator v = getValidator(Validator.VAR_TLS_SERVER);
         trustedCerts = v.getTrustedCertificates();
         serverValidator = v;
-        showTrustedCerts();
+
+        if (debug != null && Debug.isOn("trustmanager")) {
+            showTrustedCerts();
+        }
     }
 
     @Override
@@ -305,22 +313,20 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
     }
 
     private void showTrustedCerts() {
-        if (debug != null && Debug.isOn("trustmanager")) {
-            for (X509Certificate cert : trustedCerts) {
-                System.out.println("adding as trusted cert:");
-                System.out.println("  Subject: "
-                                        + cert.getSubjectX500Principal());
-                System.out.println("  Issuer:  "
-                                        + cert.getIssuerX500Principal());
-                System.out.println("  Algorithm: "
-                                        + cert.getPublicKey().getAlgorithm()
-                                        + "; Serial number: 0x"
-                                        + cert.getSerialNumber().toString(16));
-                System.out.println("  Valid from "
-                                        + cert.getNotBefore() + " until "
-                                        + cert.getNotAfter());
-                System.out.println();
-            }
+        for (X509Certificate cert : trustedCerts) {
+            System.out.println("adding as trusted cert:");
+            System.out.println("  Subject: "
+                                    + cert.getSubjectX500Principal());
+            System.out.println("  Issuer:  "
+                                    + cert.getIssuerX500Principal());
+            System.out.println("  Algorithm: "
+                                    + cert.getPublicKey().getAlgorithm()
+                                    + "; Serial number: 0x"
+                                    + cert.getSerialNumber().toString(16));
+            System.out.println("  Valid from "
+                                    + cert.getNotBefore() + " until "
+                                    + cert.getNotAfter());
+            System.out.println();
         }
     }
 

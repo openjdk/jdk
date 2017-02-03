@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.logging.Level;
+import java.lang.System.Logger.Level;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -412,9 +412,8 @@ public class MLet extends java.net.URLClassLoader
              if (!Arrays.asList(getURLs()).contains(ur))
                  super.addURL(ur);
          } catch (MalformedURLException e) {
-             if (MLET_LOGGER.isLoggable(Level.FINEST)) {
-                 MLET_LOGGER.logp(Level.FINEST, MLet.class.getName(),
-                         "addUrl", "Malformed URL: " + url, e);
+             if (MLET_LOGGER.isLoggable(Level.DEBUG)) {
+                 MLET_LOGGER.log(Level.DEBUG, "Malformed URL: " + url, e);
              }
              throw new
                  ServiceNotFoundException("The specified URL is malformed");
@@ -481,23 +480,19 @@ public class MLet extends java.net.URLClassLoader
      public Set<Object> getMBeansFromURL(String url)
              throws ServiceNotFoundException  {
 
-         String mth = "getMBeansFromURL";
-
          if (server == null) {
              throw new IllegalStateException("This MLet MBean is not " +
                                              "registered with an MBeanServer.");
          }
          // Parse arguments
          if (url == null) {
-             MLET_LOGGER.logp(Level.FINER, MLet.class.getName(),
-                     mth, "URL is null");
+             MLET_LOGGER.log(Level.TRACE, "URL is null");
              throw new ServiceNotFoundException("The specified URL is null");
          } else {
              url = url.replace(File.separatorChar,'/');
          }
-         if (MLET_LOGGER.isLoggable(Level.FINER)) {
-             MLET_LOGGER.logp(Level.FINER, MLet.class.getName(),
-                     mth, "<URL = " + url + ">");
+         if (MLET_LOGGER.isLoggable(Level.TRACE)) {
+             MLET_LOGGER.log(Level.TRACE, "<URL = " + url + ">");
          }
 
          // Parse URL
@@ -508,7 +503,7 @@ public class MLet extends java.net.URLClassLoader
              final String msg =
                  "Problems while parsing URL [" + url +
                  "], got exception [" + e.toString() + "]";
-             MLET_LOGGER.logp(Level.FINER, MLet.class.getName(), mth, msg);
+             MLET_LOGGER.log(Level.TRACE, msg);
              throw EnvHelp.initCause(new ServiceNotFoundException(msg), e);
          }
 
@@ -516,7 +511,7 @@ public class MLet extends java.net.URLClassLoader
          if (mletList.size() == 0) {
              final String msg =
                  "File " + url + " not found or MLET tag not defined in file";
-             MLET_LOGGER.logp(Level.FINER, MLet.class.getName(), mth, msg);
+             MLET_LOGGER.log(Level.TRACE, msg);
              throw new ServiceNotFoundException(msg);
          }
 
@@ -538,7 +533,7 @@ public class MLet extends java.net.URLClassLoader
              URL documentBase = elmt.getDocumentBase();
 
              // Display debug information
-             if (MLET_LOGGER.isLoggable(Level.FINER)) {
+             if (MLET_LOGGER.isLoggable(Level.TRACE)) {
                  final StringBuilder strb = new StringBuilder()
                  .append("\n\tMLET TAG     = ").append(elmt.getAttributes())
                  .append("\n\tCODEBASE     = ").append(codebase)
@@ -548,16 +543,15 @@ public class MLet extends java.net.URLClassLoader
                  .append("\n\tNAME         = ").append(name)
                  .append("\n\tVERSION      = ").append(version)
                  .append("\n\tDOCUMENT URL = ").append(documentBase);
-                 MLET_LOGGER.logp(Level.FINER, MLet.class.getName(),
-                         mth, strb.toString());
+                 MLET_LOGGER.log(Level.TRACE, strb::toString);
              }
 
              // Load classes from JAR files
              StringTokenizer st = new StringTokenizer(jarFiles, ",", false);
              while (st.hasMoreTokens()) {
                  String tok = st.nextToken().trim();
-                 if (MLET_LOGGER.isLoggable(Level.FINER)) {
-                     MLET_LOGGER.logp(Level.FINER, MLet.class.getName(), mth,
+                 if (MLET_LOGGER.isLoggable(Level.TRACE)) {
+                     MLET_LOGGER.log(Level.TRACE,
                              "Load archive for codebase <" + codebase +
                              ">, file <" + tok + ">");
                  }
@@ -570,8 +564,8 @@ public class MLet extends java.net.URLClassLoader
                  try {
                      codebase = check(version, codebase, tok, elmt);
                  } catch (Exception ex) {
-                     MLET_LOGGER.logp(Level.FINEST, MLet.class.getName(),
-                             mth, "Got unexpected exception", ex);
+                     MLET_LOGGER.log(Level.DEBUG,
+                             "Got unexpected exception", ex);
                      mbeans.add(ex);
                      continue;
                  }
@@ -599,7 +593,7 @@ public class MLet extends java.net.URLClassLoader
                  final String msg =
                      "CODE and OBJECT parameters cannot be specified at the " +
                      "same time in tag MLET";
-                 MLET_LOGGER.logp(Level.FINER, MLet.class.getName(), mth, msg);
+                 MLET_LOGGER.log(Level.TRACE, msg);
                  mbeans.add(new Error(msg));
                  continue;
              }
@@ -607,7 +601,7 @@ public class MLet extends java.net.URLClassLoader
                  final String msg =
                      "Either CODE or OBJECT parameter must be specified in " +
                      "tag MLET";
-                 MLET_LOGGER.logp(Level.FINER, MLet.class.getName(), mth, msg);
+                 MLET_LOGGER.log(Level.TRACE, msg);
                  mbeans.add(new Error(msg));
                  continue;
              }
@@ -635,7 +629,7 @@ public class MLet extends java.net.URLClassLoader
                          Object[] parms = objectPars.toArray();
                          String[] signature = new String[signat.size()];
                          signat.toArray(signature);
-                         if (MLET_LOGGER.isLoggable(Level.FINEST)) {
+                         if (MLET_LOGGER.isLoggable(Level.TRACE)) {
                              final StringBuilder strb = new StringBuilder();
                              for (int i = 0; i < signature.length; i++) {
                                  strb.append("\n\tSignature     = ")
@@ -643,9 +637,7 @@ public class MLet extends java.net.URLClassLoader
                                  .append("\t\nParams        = ")
                                  .append(parms[i]);
                              }
-                             MLET_LOGGER.logp(Level.FINEST,
-                                     MLet.class.getName(),
-                                     mth, strb.toString());
+                             MLET_LOGGER.log(Level.TRACE, strb::toString);
                          }
                          if (name == null) {
                              objInst =
@@ -668,53 +660,46 @@ public class MLet extends java.net.URLClassLoader
                      objInst = new ObjectInstance(name, o.getClass().getName());
                  }
              } catch (ReflectionException  ex) {
-                 MLET_LOGGER.logp(Level.FINER, MLet.class.getName(), mth,
-                         "ReflectionException", ex);
+                 MLET_LOGGER.log(Level.TRACE, "ReflectionException", ex);
                  mbeans.add(ex);
                  continue;
              } catch (InstanceAlreadyExistsException  ex) {
-                 MLET_LOGGER.logp(Level.FINER, MLet.class.getName(), mth,
+                 MLET_LOGGER.log(Level.TRACE,
                          "InstanceAlreadyExistsException", ex);
                  mbeans.add(ex);
                  continue;
              } catch (MBeanRegistrationException ex) {
-                 MLET_LOGGER.logp(Level.FINER, MLet.class.getName(), mth,
-                         "MBeanRegistrationException", ex);
+                 MLET_LOGGER.log(Level.TRACE, "MBeanRegistrationException", ex);
                  mbeans.add(ex);
                  continue;
              } catch (MBeanException  ex) {
-                 MLET_LOGGER.logp(Level.FINER, MLet.class.getName(), mth,
-                         "MBeanException", ex);
+                 MLET_LOGGER.log(Level.TRACE, "MBeanException", ex);
                  mbeans.add(ex);
                  continue;
              } catch (NotCompliantMBeanException  ex) {
-                 MLET_LOGGER.logp(Level.FINER, MLet.class.getName(), mth,
+                 MLET_LOGGER.log(Level.TRACE,
                          "NotCompliantMBeanException", ex);
                  mbeans.add(ex);
                  continue;
              } catch (InstanceNotFoundException   ex) {
-                 MLET_LOGGER.logp(Level.FINER, MLet.class.getName(), mth,
+                 MLET_LOGGER.log(Level.TRACE,
                          "InstanceNotFoundException", ex);
                  mbeans.add(ex);
                  continue;
              } catch (IOException ex) {
-                 MLET_LOGGER.logp(Level.FINER, MLet.class.getName(), mth,
-                         "IOException", ex);
+                 MLET_LOGGER.log(Level.TRACE, "IOException", ex);
                  mbeans.add(ex);
                  continue;
              } catch (SecurityException ex) {
-                 MLET_LOGGER.logp(Level.FINER, MLet.class.getName(), mth,
-                         "SecurityException", ex);
+                 MLET_LOGGER.log(Level.TRACE, "SecurityException", ex);
                  mbeans.add(ex);
                  continue;
              } catch (Exception ex) {
-                 MLET_LOGGER.logp(Level.FINER, MLet.class.getName(), mth,
-                         "Exception", ex);
+                 MLET_LOGGER.log(Level.TRACE, "Exception", ex);
                  mbeans.add(ex);
                  continue;
              } catch (Error ex) {
-                 MLET_LOGGER.logp(Level.FINER, MLet.class.getName(), mth,
-                         "Error", ex);
+                 MLET_LOGGER.log(Level.TRACE, "Error", ex);
                  mbeans.add(ex);
                  continue;
              }
@@ -937,20 +922,18 @@ public class MLet extends java.net.URLClassLoader
      Class<?> findClass(String name, ClassLoaderRepository clr)
          throws ClassNotFoundException {
          Class<?> c = null;
-         MLET_LOGGER.logp(Level.FINER, MLet.class.getName(), "findClass", name);
+         MLET_LOGGER.log(Level.TRACE, name);
          // Try looking in the JAR:
          try {
              c = super.findClass(name);
-             if (MLET_LOGGER.isLoggable(Level.FINER)) {
-                 MLET_LOGGER.logp(Level.FINER, MLet.class.getName(),
-                         "findClass",
+             if (MLET_LOGGER.isLoggable(Level.TRACE)) {
+                 MLET_LOGGER.log(Level.TRACE,
                          "Class " + name + " loaded through MLet classloader");
              }
          } catch (ClassNotFoundException e) {
              // Drop through
-             if (MLET_LOGGER.isLoggable(Level.FINEST)) {
-                 MLET_LOGGER.logp(Level.FINEST, MLet.class.getName(),
-                         "findClass",
+             if (MLET_LOGGER.isLoggable(Level.TRACE)) {
+                 MLET_LOGGER.log(Level.TRACE,
                          "Class " + name + " not found locally");
              }
          }
@@ -959,32 +942,28 @@ public class MLet extends java.net.URLClassLoader
              // Try the classloader repository:
              //
              try {
-                 if (MLET_LOGGER.isLoggable(Level.FINEST)) {
-                     MLET_LOGGER.logp(Level.FINEST, MLet.class.getName(),
-                             "findClass",
+                 if (MLET_LOGGER.isLoggable(Level.TRACE)) {
+                     MLET_LOGGER.log(Level.TRACE,
                              "Class " + name + " : looking in CLR");
                  }
                  c = clr.loadClassBefore(this, name);
                  // The loadClassBefore method never returns null.
                  // If the class is not found we get an exception.
-                 if (MLET_LOGGER.isLoggable(Level.FINER)) {
-                     MLET_LOGGER.logp(Level.FINER, MLet.class.getName(),
-                             "findClass",
+                 if (MLET_LOGGER.isLoggable(Level.TRACE)) {
+                     MLET_LOGGER.log(Level.TRACE,
                              "Class " + name + " loaded through " +
                              "the default classloader repository");
                  }
              } catch (ClassNotFoundException e) {
                  // Drop through
-                 if (MLET_LOGGER.isLoggable(Level.FINEST)) {
-                     MLET_LOGGER.logp(Level.FINEST, MLet.class.getName(),
-                             "findClass",
+                 if (MLET_LOGGER.isLoggable(Level.TRACE)) {
+                     MLET_LOGGER.log(Level.TRACE,
                              "Class " + name + " not found in CLR");
                  }
              }
          }
          if (c == null) {
-             MLET_LOGGER.logp(Level.FINEST, MLet.class.getName(),
-                     "findClass", "Failed to load class " + name);
+             MLET_LOGGER.log(Level.TRACE, "Failed to load class " + name);
              throw new ClassNotFoundException(name);
          }
          return c;
@@ -1041,8 +1020,8 @@ public class MLet extends java.net.URLClassLoader
          //
          // See if the native library is accessible as a resource through the JAR file.
          //
-         if (MLET_LOGGER.isLoggable(Level.FINER)) {
-             MLET_LOGGER.logp(Level.FINER, MLet.class.getName(), mth,
+         if (MLET_LOGGER.isLoggable(Level.TRACE)) {
+             MLET_LOGGER.log(Level.TRACE,
                      "Search " + libname + " in all JAR files");
          }
 
@@ -1051,14 +1030,14 @@ public class MLet extends java.net.URLClassLoader
          // for "foo" on Solaris SPARC 5.7 we try to load "libfoo.so"
          // from the JAR file.
          //
-         if (MLET_LOGGER.isLoggable(Level.FINER)) {
-             MLET_LOGGER.logp(Level.FINER, MLet.class.getName(), mth,
+         if (MLET_LOGGER.isLoggable(Level.TRACE)) {
+             MLET_LOGGER.log(Level.TRACE,
                      "loadLibraryAsResource(" + nativelibname + ")");
          }
          abs_path = loadLibraryAsResource(nativelibname);
          if (abs_path != null) {
-             if (MLET_LOGGER.isLoggable(Level.FINER)) {
-                 MLET_LOGGER.logp(Level.FINER, MLet.class.getName(), mth,
+             if (MLET_LOGGER.isLoggable(Level.TRACE)) {
+                 MLET_LOGGER.log(Level.TRACE,
                          nativelibname + " loaded, absolute path = " + abs_path);
              }
              return abs_path;
@@ -1073,15 +1052,15 @@ public class MLet extends java.net.URLClassLoader
              removeSpace(System.getProperty("os.arch")) + File.separator +
              removeSpace(System.getProperty("os.version")) + File.separator +
              "lib" + File.separator + nativelibname;
-         if (MLET_LOGGER.isLoggable(Level.FINER)) {
-             MLET_LOGGER.logp(Level.FINER, MLet.class.getName(), mth,
+         if (MLET_LOGGER.isLoggable(Level.TRACE)) {
+             MLET_LOGGER.log(Level.TRACE,
                      "loadLibraryAsResource(" + nativelibname + ")");
          }
 
          abs_path = loadLibraryAsResource(nativelibname);
          if (abs_path != null) {
-             if (MLET_LOGGER.isLoggable(Level.FINER)) {
-                 MLET_LOGGER.logp(Level.FINER, MLet.class.getName(), mth,
+             if (MLET_LOGGER.isLoggable(Level.TRACE)) {
+                 MLET_LOGGER.log(Level.TRACE,
                          nativelibname + " loaded, absolute path = " + abs_path);
              }
              return abs_path;
@@ -1091,10 +1070,10 @@ public class MLet extends java.net.URLClassLoader
          // All paths exhausted, library not found in JAR file.
          //
 
-         if (MLET_LOGGER.isLoggable(Level.FINER)) {
-             MLET_LOGGER.logp(Level.FINER, MLet.class.getName(), mth,
+         if (MLET_LOGGER.isLoggable(Level.TRACE)) {
+             MLET_LOGGER.log(Level.TRACE,
                      libname + " not found in any JAR file");
-             MLET_LOGGER.logp(Level.FINER, MLet.class.getName(), mth,
+             MLET_LOGGER.log(Level.TRACE,
                      "Search " + libname + " along the path " +
                      "specified as the java.library.path property");
          }
@@ -1127,8 +1106,8 @@ public class MLet extends java.net.URLClassLoader
              if (tmpDirFile == null) return null;
              return tmpDirFile.getAbsolutePath();
          } catch (Exception x) {
-             MLET_LOGGER.logp(Level.FINEST, MLet.class.getName(),
-                     "getTmpDir", "Failed to determine system temporary dir");
+             MLET_LOGGER.log(Level.DEBUG,
+                     "Failed to determine system temporary dir");
              return null;
          } finally {
              // Cleanup ...
@@ -1136,12 +1115,12 @@ public class MLet extends java.net.URLClassLoader
                  try {
                      boolean deleted = tmpFile.delete();
                      if (!deleted) {
-                         MLET_LOGGER.logp(Level.FINEST, MLet.class.getName(),
-                                 "getTmpDir", "Failed to delete temp file");
+                         MLET_LOGGER.log(Level.DEBUG,
+                                 "Failed to delete temp file");
                      }
                  } catch (Exception x) {
-                     MLET_LOGGER.logp(Level.FINEST, MLet.class.getName(),
-                             "getTmpDir", "Failed to delete temporary file", x);
+                     MLET_LOGGER.log(Level.DEBUG,
+                             "Failed to delete temporary file", x);
                  }
              }
         }
@@ -1183,8 +1162,7 @@ public class MLet extends java.net.URLClassLoader
                  }
              }
          } catch (Exception e) {
-             MLET_LOGGER.logp(Level.FINEST, MLet.class.getName(),
-                     "loadLibraryAsResource",
+             MLET_LOGGER.log(Level.DEBUG,
                      "Failed to load library : " + libname, e);
              return null;
          }
@@ -1248,9 +1226,8 @@ public class MLet extends java.net.URLClassLoader
         if (filename != null) {
             filename = filename.replace(File.separatorChar,'/');
         }
-        if (MLET_LOGGER.isLoggable(Level.FINER)) {
-            MLET_LOGGER.logp(Level.FINER, MLet.class.getName(),
-                    "loadSerializedObject", codebase.toString() + filename);
+        if (MLET_LOGGER.isLoggable(Level.TRACE)) {
+            MLET_LOGGER.log(Level.TRACE, codebase.toString() + filename);
         }
         InputStream is = getResourceAsStream(filename);
         if (is != null) {
@@ -1260,24 +1237,21 @@ public class MLet extends java.net.URLClassLoader
                 ois.close();
                 return serObject;
             } catch (IOException e) {
-                if (MLET_LOGGER.isLoggable(Level.FINEST)) {
-                    MLET_LOGGER.logp(Level.FINEST, MLet.class.getName(),
-                            "loadSerializedObject",
+                if (MLET_LOGGER.isLoggable(Level.DEBUG)) {
+                    MLET_LOGGER.log(Level.DEBUG,
                             "Exception while deserializing " + filename, e);
                 }
                 throw e;
             } catch (ClassNotFoundException e) {
-                if (MLET_LOGGER.isLoggable(Level.FINEST)) {
-                    MLET_LOGGER.logp(Level.FINEST, MLet.class.getName(),
-                            "loadSerializedObject",
+                if (MLET_LOGGER.isLoggable(Level.DEBUG)) {
+                    MLET_LOGGER.log(Level.DEBUG,
                             "Exception while deserializing " + filename, e);
                 }
                 throw e;
             }
         } else {
-            if (MLET_LOGGER.isLoggable(Level.FINEST)) {
-                MLET_LOGGER.logp(Level.FINEST, MLet.class.getName(),
-                        "loadSerializedObject", "Error: File " + filename +
+            if (MLET_LOGGER.isLoggable(Level.DEBUG)) {
+                MLET_LOGGER.log(Level.DEBUG, "Error: File " + filename +
                         " containing serialized object not found");
             }
             throw new Error("File " + filename + " containing serialized object not found");
@@ -1300,8 +1274,7 @@ public class MLet extends java.net.URLClassLoader
                 return(cons.newInstance(oo));
 
             } catch (Exception  e) {
-                MLET_LOGGER.logp(Level.FINEST, MLet.class.getName(),
-                        "constructParameter", "Got unexpected exception", e);
+                MLET_LOGGER.log(Level.DEBUG, "Got unexpected exception", e);
             }
         }
         if (type.compareTo("java.lang.Boolean") == 0)

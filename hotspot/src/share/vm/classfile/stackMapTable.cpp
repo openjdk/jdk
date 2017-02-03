@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,26 +70,25 @@ int StackMapTable::get_index_from_offset(int32_t offset) const {
 
 bool StackMapTable::match_stackmap(
     StackMapFrame* frame, int32_t target,
-    bool match, bool update, bool handler, ErrorContext* ctx, TRAPS) const {
+    bool match, bool update, ErrorContext* ctx, TRAPS) const {
   int index = get_index_from_offset(target);
-  return match_stackmap(frame, target, index, match, update, handler, ctx, THREAD);
+  return match_stackmap(frame, target, index, match, update, ctx, THREAD);
 }
 
 // Match and/or update current_frame to the frame in stackmap table with
 // specified offset and frame index. Return true if the two frames match.
-// handler is true if the frame in stackmap_table is for an exception handler.
 //
-// The values of match and update are:                  _match__update__handler
+// The values of match and update are:                  _match__update
 //
-// checking a branch target:                             true   false   false
-// checking an exception handler:                        true   false   true
+// checking a branch target:                             true   false
+// checking an exception handler:                        true   false
 // linear bytecode verification following an
-// unconditional branch:                                 false  true    false
+// unconditional branch:                                 false  true
 // linear bytecode verification not following an
-// unconditional branch:                                 true   true    false
+// unconditional branch:                                 true   true
 bool StackMapTable::match_stackmap(
     StackMapFrame* frame, int32_t target, int32_t frame_index,
-    bool match, bool update, bool handler, ErrorContext* ctx, TRAPS) const {
+    bool match, bool update, ErrorContext* ctx, TRAPS) const {
   if (frame_index < 0 || frame_index >= _frame_count) {
     *ctx = ErrorContext::missing_stackmap(frame->offset());
     frame->verifier()->verify_error(
@@ -102,7 +101,7 @@ bool StackMapTable::match_stackmap(
   if (match) {
     // Has direct control flow from last instruction, need to match the two
     // frames.
-    result = frame->is_assignable_to(stackmap_frame, handler,
+    result = frame->is_assignable_to(stackmap_frame,
         ctx, CHECK_VERIFY_(frame->verifier(), result));
   }
   if (update) {
@@ -126,7 +125,7 @@ void StackMapTable::check_jump_target(
     StackMapFrame* frame, int32_t target, TRAPS) const {
   ErrorContext ctx;
   bool match = match_stackmap(
-    frame, target, true, false, false, &ctx, CHECK_VERIFY(frame->verifier()));
+    frame, target, true, false, &ctx, CHECK_VERIFY(frame->verifier()));
   if (!match || (target < 0 || target >= _code_length)) {
     frame->verifier()->verify_error(ctx,
         "Inconsistent stackmap frames at branch target %d", target);

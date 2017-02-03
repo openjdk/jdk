@@ -322,19 +322,20 @@ abstract class DSA extends SignatureSpi {
         } else {
             // first decode the signature.
             try {
-                DerInputStream in = new DerInputStream(signature, offset,
-                                                       length);
+                // Enforce strict DER checking for signatures
+                DerInputStream in =
+                    new DerInputStream(signature, offset, length, false);
                 DerValue[] values = in.getSequence(2);
 
+                // check number of components in the read sequence
+                // and trailing data
+                if ((values.length != 2) || (in.available() != 0)) {
+                    throw new IOException("Invalid encoding for signature");
+                }
                 r = values[0].getBigInteger();
                 s = values[1].getBigInteger();
-
-                // Check for trailing signature data
-                if (in.available() != 0) {
-                    throw new IOException("Incorrect signature length");
-                }
             } catch (IOException e) {
-                throw new SignatureException("invalid encoding for signature");
+                throw new SignatureException("Invalid encoding for signature", e);
             }
         }
 
@@ -427,13 +428,49 @@ abstract class DSA extends SignatureSpi {
         return t5.mod(q);
     }
 
-    // NOTE: This following impl is defined in FIPS 186-4 AppendixB.2.1.
     protected BigInteger generateK(BigInteger q) {
+        // Implementation defined in FIPS 186-4 AppendixB.2.1.
         SecureRandom random = getSigningRandom();
         byte[] kValue = new byte[(q.bitLength() + 7)/8 + 8];
 
         random.nextBytes(kValue);
-        return new BigInteger(1, kValue).mod(q.subtract(BigInteger.ONE)).add(BigInteger.ONE);
+        BigInteger k = new BigInteger(1, kValue).mod(
+                q.subtract(BigInteger.ONE)).add(BigInteger.ONE);
+
+        // Using an equivalent exponent of fixed length (same as q or 1 bit
+        // less than q) to keep the kG timing relatively constant.
+        //
+        // Note that this is an extra step on top of the approach defined in
+        // FIPS 186-4 AppendixB.2.1 so as to make a fixed length K.
+        k = k.add(q).divide(BigInteger.TWO);
+
+        // An alternative implementation based on FIPS 186-4 AppendixB2.2
+        // with fixed-length K.
+        //
+        // Please keep it here as we may need to switch to it in the future.
+        //
+        // SecureRandom random = getSigningRandom();
+        // byte[] kValue = new byte[(q.bitLength() + 7)/8];
+        // BigInteger d = q.subtract(BigInteger.TWO);
+        // BigInteger k;
+        // do {
+        //     random.nextBytes(kValue);
+        //     BigInteger c = new BigInteger(1, kValue);
+        //     if (c.compareTo(d) <= 0) {
+        //         k = c.add(BigInteger.ONE);
+        //         // Using an equivalent exponent of fixed length to keep
+        //         // the g^k timing relatively constant.
+        //         //
+        //         // Note that this is an extra step on top of the approach
+        //         // defined in FIPS 186-4 AppendixB.2.2 so as to make a
+        //         // fixed length K.
+        //         if (k.bitLength() >= q.bitLength()) {
+        //             break;
+        //         }
+        //     }
+        // } while (true);
+
+        return k;
     }
 
     // Use the application-specified SecureRandom Object if provided.

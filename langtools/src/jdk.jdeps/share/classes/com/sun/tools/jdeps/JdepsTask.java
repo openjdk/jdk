@@ -38,10 +38,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.function.Function;
+import java.util.function.ToIntFunction;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Implementation for the jdeps tool for static class dependency analysis.
@@ -314,7 +314,10 @@ class JdepsTask {
         },
         new Option(true, "-m", "--module") {
             void process(JdepsTask task, String opt, String arg) throws BadArgs {
-                task.options.rootModule = arg;
+                if (!task.options.rootModules.isEmpty()) {
+                    throw new BadArgs("err.option.already.specified", opt);
+                }
+                task.options.rootModules.add(arg);
                 task.options.addmods.add(arg);
             }
         },
@@ -350,6 +353,7 @@ class JdepsTask {
         new Option(true, "--require") {
             void process(JdepsTask task, String opt, String arg) {
                 task.options.requires.add(arg);
+                task.options.addmods.add(arg);
             }
         },
         new Option(true, "-f", "-filter") {
@@ -491,11 +495,6 @@ class JdepsTask {
             if (options.help || options.version || options.fullVersion) {
                 return EXIT_OK;
             }
-
-            if (!inputArgs.isEmpty() && options.rootModule != null) {
-                reportError("err.invalid.arg.for.option", "-m");
-            }
-
             if (options.numFilters() > 1) {
                 reportError("err.invalid.filters");
                 return EXIT_CMDERR;
@@ -543,8 +542,8 @@ class JdepsTask {
                                                      e.getKey(),
                                                      e.getValue().toString())));
 
-            // check if any module specified in --require is missing
-            Stream.concat(options.addmods.stream(), options.requires.stream())
+            // check if any module specified in --add-modules, --require, and -m is missing
+            options.addmods.stream()
                 .filter(mn -> !config.isValidToken(mn))
                 .forEach(mn -> config.findModule(mn).orElseThrow(() ->
                     new UncheckedBadArgs(new BadArgs("err.module.not.found", mn))));
@@ -620,6 +619,7 @@ class JdepsTask {
         protected Command(CommandOption option) {
             this.option = option;
         }
+
         /**
          * Returns true if the command-line options are all valid;
          * otherwise, returns false.
@@ -633,6 +633,10 @@ class JdepsTask {
 
         /**
          * Includes all modules on system module path and application module path
+         *
+         * When a named module is analyzed, it will analyze the dependences
+         * only.  The method should be overridden when this command should
+         * analyze all modules instead.
          */
         boolean allModules() {
             return false;
@@ -679,6 +683,10 @@ class JdepsTask {
                     reportError("err.invalid.options", "-v, -verbose", "-s, -summary");
                     return false;
                 }
+            }
+
+            if (!inputArgs.isEmpty() && !options.rootModules.isEmpty()) {
+                reportError("err.invalid.arg.for.option", "-m");
             }
             if (inputArgs.isEmpty() && !options.hasSourcePath()) {
                 showHelp();
@@ -808,23 +816,46 @@ class JdepsTask {
             log.println();
             if (!options.requires.isEmpty())
                 log.println(getMessage("inverse.transitive.dependencies.on",
-                    options.requires));
+                                       options.requires));
             else
                 log.println(getMessage("inverse.transitive.dependencies.matching",
-                    options.regex != null
-                        ? options.regex.toString()
-                        : "packages " + options.packageNames));
+                                       options.regex != null
+                                           ? options.regex.toString()
+                                           : "packages " + options.packageNames));
 
-            analyzer.inverseDependences().stream()
-                .sorted(Comparator.comparing(this::sortPath))
-                .forEach(path -> log.println(path.stream()
-                    .map(Archive::getName)
-                    .collect(joining(" <- "))));
+            analyzer.inverseDependences()
+                    .stream()
+                    .sorted(comparator())
+                    .map(this::toInversePath)
+                    .forEach(log::println);
             return ok;
         }
 
-        private String sortPath(Deque<Archive> path) {
-            return path.peekFirst().getName();
+        private String toInversePath(Deque<Archive> path) {
+            return path.stream()
+                       .map(Archive::getName)
+                       .collect(joining(" <- "));
+        }
+
+        /*
+         * Returns a comparator for sorting the inversed path, grouped by
+         * the first module name, then the shortest path and then sort by
+         * the module names of each path
+         */
+        private Comparator<Deque<Archive>> comparator() {
+            return Comparator.<Deque<Archive>, String>
+                comparing(deque -> deque.peekFirst().getName())
+                    .thenComparingInt(Deque::size)
+                    .thenComparing(this::toInversePath);
+        }
+
+        /*
+         * Returns true if --require is specified so that all modules are
+         * analyzed to find all modules that depend on the modules specified in the
+         * --require option directly and indirectly
+         */
+        public boolean allModules() {
+            return options.requires.size() > 0;
         }
     }
 
@@ -924,6 +955,9 @@ class JdepsTask {
             return new ModuleAnalyzer(config, log, modules).run();
         }
 
+        /*
+         * Returns true to analyze all modules
+         */
         public boolean allModules() {
             return true;
         }
@@ -957,6 +991,10 @@ class JdepsTask {
                             option);
                 return false;
             }
+
+            if (!inputArgs.isEmpty() && !options.rootModules.isEmpty()) {
+                reportError("err.invalid.arg.for.option", "-m");
+            }
             if (inputArgs.isEmpty() && !options.hasSourcePath()) {
                 showHelp();
                 return false;
@@ -970,11 +1008,6 @@ class JdepsTask {
                                              dependencyFilter(config),
                                              reduced,
                                              log).run();
-        }
-
-        @Override
-        boolean allModules() {
-            return true;
         }
     }
 
@@ -1155,7 +1188,7 @@ class JdepsTask {
         String systemModulePath = System.getProperty("java.home");
         String upgradeModulePath;
         String modulePath;
-        String rootModule;
+        Set<String> rootModules = new HashSet<>();
         Set<String> addmods = new HashSet<>();
         Runtime.Version multiRelease;
 

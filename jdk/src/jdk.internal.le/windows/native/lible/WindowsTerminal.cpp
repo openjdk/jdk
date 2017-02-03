@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ JNIEXPORT jobject JNICALL Java_jdk_internal_jline_WindowsTerminal_readKeyEvent
     INPUT_RECORD record;
     DWORD n;
     while (TRUE) {
-        if (ReadConsoleInput(hStdIn, &record, 1, &n) == 0) {
+        if (ReadConsoleInputW(hStdIn, &record, 1, &n) == 0) {
             return NULL;
         }
         if (record.EventType == KEY_EVENT) {
@@ -97,31 +97,31 @@ JNIEXPORT jobject JNICALL Java_jdk_internal_jline_WindowsTerminal_readKeyEvent
 
 JNIEXPORT jint JNICALL Java_jdk_internal_jline_WindowsTerminal_getConsoleOutputCodepage
   (JNIEnv *, jobject) {
-    return GetConsoleCP();
+    return GetConsoleOutputCP();
 }
 
 JNIEXPORT jint JNICALL Java_jdk_internal_jline_WindowsTerminal_getWindowsTerminalWidth
   (JNIEnv *, jobject) {
-    HANDLE hStdIn;
-    if ((hStdIn = GetStdHandle(STD_INPUT_HANDLE)) == INVALID_HANDLE_VALUE) {
+    HANDLE hStdOut;
+    if ((hStdOut = GetStdHandle(STD_OUTPUT_HANDLE)) == INVALID_HANDLE_VALUE) {
         return -1;
     }
     CONSOLE_SCREEN_BUFFER_INFO info;
-    if (! GetConsoleScreenBufferInfo(hStdIn, &info)) {
+    if (! GetConsoleScreenBufferInfo(hStdOut, &info)) {
         return -1;
     }
-    return info.dwSize.X;
+    return info.srWindow.Right - info.srWindow.Left;
 }
 
 JNIEXPORT jint JNICALL Java_jdk_internal_jline_WindowsTerminal_getWindowsTerminalHeight
   (JNIEnv *, jobject) {
-    HANDLE hStdIn;
-    if ((hStdIn = GetStdHandle(STD_INPUT_HANDLE)) == INVALID_HANDLE_VALUE) {
+    HANDLE hStdOut;
+    if ((hStdOut = GetStdHandle(STD_OUTPUT_HANDLE)) == INVALID_HANDLE_VALUE) {
         return -1;
     }
     CONSOLE_SCREEN_BUFFER_INFO info;
-    if (! GetConsoleScreenBufferInfo(hStdIn, &info)) {
+    if (! GetConsoleScreenBufferInfo(hStdOut, &info)) {
         return -1;
     }
-    return info.dwSize.Y;
+    return info.srWindow.Bottom - info.srWindow.Top + 1;
 }

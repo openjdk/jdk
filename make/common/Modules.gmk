@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ PLATFORM_MODULES += \
     jdk.accessibility \
     jdk.charsets \
     jdk.crypto.ec \
-    jdk.crypto.token \
+    jdk.crypto.cryptoki \
     jdk.desktop \
     jdk.dynalink \
     jdk.jsobject \
@@ -182,15 +182,12 @@ SRC_SUBDIRS += share/classes
 
 # Find all module-info.java files for the current build target platform and
 # configuration.
-# TODO: The $(firstword call is part of a workaround for using different
-# imported module-info.java in Jake due to a change in format. Remove once
-# new format is standard in JDK 9 and javafx delivers just that.
 # Param 1 - Module to find for, set to * for finding all
 FindAllModuleInfos = \
     $(wildcard \
         $(foreach sub, $(SRC_SUBDIRS), \
           $(patsubst %,%/$(strip $1)/$(sub)/module-info.java, $(TOP_SRC_DIRS))) \
-        $(patsubst %,%/$(strip $1)/module-info.java, $(firstword $(IMPORT_MODULES_SRC))))
+        $(patsubst %,%/$(strip $1)/module-info.java, $(IMPORT_MODULES_SRC)))
 
 # Find module-info.java files in the specific source dir
 # Param 1 - Src dir to find module-info.java files in

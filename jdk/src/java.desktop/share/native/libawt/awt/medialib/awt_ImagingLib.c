@@ -2419,7 +2419,7 @@ allocateRasterArray(JNIEnv *env, RasterS_t *rasterP,
     case sun_awt_image_IntegerComponentRaster_TYPE_INT_8BIT_SAMPLES:
         if (!((rasterP->chanOffsets[0] == 0 || SAFE_TO_ALLOC_2(rasterP->chanOffsets[0], 4)) &&
               SAFE_TO_ALLOC_2(width, 4) &&
-              SAFE_TO_ALLOC_3(height, rasterP->scanlineStride, 4)))
+              SAFE_TO_ALLOC_3(rasterP->scanlineStride, height, 4)))
         {
             return -1;
         }
@@ -2428,7 +2428,7 @@ allocateRasterArray(JNIEnv *env, RasterS_t *rasterP,
 
         if (offset < 0 || offset >= dataSize ||
             width > rasterP->scanlineStride ||
-            height * rasterP->scanlineStride * 4 > dataSize - offset)
+            ((width + (height - 1) * rasterP->scanlineStride) * 4) > dataSize - offset)
         {
             // raster data buffer is too short
             return -1;
@@ -2446,7 +2446,7 @@ allocateRasterArray(JNIEnv *env, RasterS_t *rasterP,
         return 0;
     case sun_awt_image_IntegerComponentRaster_TYPE_BYTE_SAMPLES:
         if (!(SAFE_TO_ALLOC_2(width, rasterP->numBands) &&
-              SAFE_TO_ALLOC_2(height, rasterP->scanlineStride)))
+              SAFE_TO_ALLOC_2(rasterP->scanlineStride, height)))
         {
             return -1;
         }
@@ -2455,7 +2455,8 @@ allocateRasterArray(JNIEnv *env, RasterS_t *rasterP,
 
         if (offset < 0 || offset >= dataSize ||
             width * rasterP->numBands > rasterP->scanlineStride ||
-            height * rasterP->scanlineStride > dataSize - offset)
+            ((width * rasterP->numBands) +
+             (height - 1) * rasterP->scanlineStride) > dataSize - offset)
         {
             // raster data buffer is too short
             return -1;
@@ -2474,7 +2475,7 @@ allocateRasterArray(JNIEnv *env, RasterS_t *rasterP,
     case sun_awt_image_IntegerComponentRaster_TYPE_USHORT_SAMPLES:
         if (!((rasterP->chanOffsets[0] == 0 || SAFE_TO_ALLOC_2(rasterP->chanOffsets[0], 2)) &&
               SAFE_TO_ALLOC_3(width, rasterP->numBands, 2) &&
-              SAFE_TO_ALLOC_3(height, rasterP->scanlineStride, 2)))
+              SAFE_TO_ALLOC_3(rasterP->scanlineStride, height, 2)))
         {
               return -1;
         }
@@ -2483,7 +2484,8 @@ allocateRasterArray(JNIEnv *env, RasterS_t *rasterP,
 
         if (offset < 0 || offset >= dataSize ||
             width * rasterP->numBands > rasterP->scanlineStride ||
-            height * rasterP->scanlineStride * 2 > dataSize - offset)
+            (((width * rasterP->numBands) +
+             (height - 1) * rasterP->scanlineStride)) * 2 > dataSize - offset)
         {
             // raster data buffer is too short
              return -1;

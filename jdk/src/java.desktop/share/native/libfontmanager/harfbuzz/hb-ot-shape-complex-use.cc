@@ -559,6 +559,47 @@ reorder (const hb_ot_shape_plan_t *plan,
 }
 
 static bool
+decompose_use (const hb_ot_shape_normalize_context_t *c,
+                hb_codepoint_t  ab,
+                hb_codepoint_t *a,
+                hb_codepoint_t *b)
+{
+  switch (ab)
+  {
+    /* Chakma:
+     * Special case where the Unicode decomp gives matras in the wrong order
+     * for cluster validation.
+     */
+    case 0x1112Eu : *a = 0x11127u; *b= 0x11131u; return true;
+    case 0x1112Fu : *a = 0x11127u; *b= 0x11132u; return true;
+
+    /*
+     * Decompose split matras that don't have Unicode decompositions.
+     */
+
+    /* Limbu */
+    case 0x1925u  : *a = 0x1920u; *b= 0x1923u; return true;
+    case 0x1926u  : *a = 0x1920u; *b= 0x1924u; return true;
+
+    /* Balinese */
+    case 0x1B3Cu  : *a = 0x1B42u; *b= 0x1B3Cu; return true;
+
+#if 0
+    /* Lepcha */
+    case 0x1C29u  : *a = no decomp, -> LEFT; return true;
+
+    /* Javanese */
+    case 0xA9C0u  : *a = no decomp, -> RIGHT; return true;
+
+    /* Sharada */
+    case 0x111BFu  : *a = no decomp, -> ABOVE; return true;
+#endif
+  }
+
+  return (bool) c->unicode->decompose (ab, a, b);
+}
+
+static bool
 compose_use (const hb_ot_shape_normalize_context_t *c,
              hb_codepoint_t  a,
              hb_codepoint_t  b,
@@ -582,9 +623,10 @@ const hb_ot_complex_shaper_t _hb_ot_complex_shaper_use =
   NULL, /* preprocess_text */
   NULL, /* postprocess_glyphs */
   HB_OT_SHAPE_NORMALIZATION_MODE_COMPOSED_DIACRITICS_NO_SHORT_CIRCUIT,
-  NULL, /* decompose */
+  decompose_use,
   compose_use,
   setup_masks_use,
+  NULL, /* disable_otl */
   HB_OT_SHAPE_ZERO_WIDTH_MARKS_BY_GDEF_EARLY,
   false, /* fallback_position */
 };

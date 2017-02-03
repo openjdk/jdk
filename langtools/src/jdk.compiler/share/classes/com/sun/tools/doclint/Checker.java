@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -423,7 +423,16 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                 break;
 
             case OTHER:
-                env.messages.error(HTML, tree, "dc.tag.not.allowed", treeName);
+                switch (t) {
+                    case SCRIPT:
+                        // <script> may or may not be allowed, depending on --allow-script-in-comments
+                        // but we allow it here, and rely on a separate scanner to detect all uses
+                        // of JavaScript, including <script> tags, and use in attributes, etc.
+                        break;
+
+                    default:
+                        env.messages.error(HTML, tree, "dc.tag.not.allowed", treeName);
+                }
                 return;
         }
 
@@ -552,15 +561,19 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                 if (!first)
                     env.messages.error(HTML, tree, "dc.attr.repeated", name);
             }
-            AttrKind k = currTag.getAttrKind(name);
-            switch (env.htmlVersion) {
-                case HTML4:
-                    validateHtml4Attrs(tree, name, k);
-                    break;
+            // for now, doclint allows all attribute names beginning with "on" as event handler names,
+            // without checking the validity or applicability of the name
+            if (!name.toString().startsWith("on")) {
+                AttrKind k = currTag.getAttrKind(name);
+                switch (env.htmlVersion) {
+                    case HTML4:
+                        validateHtml4Attrs(tree, name, k);
+                        break;
 
-                case HTML5:
-                    validateHtml5Attrs(tree, name, k);
-                    break;
+                    case HTML5:
+                        validateHtml5Attrs(tree, name, k);
+                        break;
+                }
             }
 
             if (attr != null) {
@@ -722,6 +735,9 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     }
 
     private void checkURI(AttributeTree tree, String uri) {
+        // allow URIs beginning with javascript:, which would otherwise be rejected by the URI API.
+        if (uri.startsWith("javascript:"))
+            return;
         try {
             URI u = new URI(uri);
         } catch (URISyntaxException e) {
@@ -805,7 +821,11 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     break;
             }
         } else {
-            foundParams.add(paramElement);
+            boolean unique = foundParams.add(paramElement);
+
+            if (!unique) {
+                env.messages.warning(REFERENCE, tree, "dc.exists.param", nameTree);
+            }
         }
 
         warnIfEmpty(tree, tree.getDescription());
@@ -854,6 +874,10 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitReturn(ReturnTree tree, Void ignore) {
+        if (foundReturn) {
+            env.messages.warning(REFERENCE, tree, "dc.exists.return");
+        }
+
         Element e = env.trees.getElement(env.currPath);
         if (e.getKind() != ElementKind.METHOD
                 || ((ExecutableElement) e).getReturnType().getKind() == TypeKind.VOID)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,13 @@
 
 import java.io.*;
 import java.net.*;
-import javax.net.ssl.*;
 import javax.net.ServerSocketFactory;
 import sun.net.www.*;
 import java.util.Base64;
 
 public class ProxyTunnelServer extends Thread {
+
+    private static final int TIMEOUT = 30000;
 
     private static ServerSocket ss = null;
     /*
@@ -64,8 +65,9 @@ public class ProxyTunnelServer extends Thread {
 
     public ProxyTunnelServer() throws IOException {
         if (ss == null) {
-          ss = (ServerSocket) ServerSocketFactory.getDefault().
-          createServerSocket(0);
+            ss = (ServerSocket) ServerSocketFactory.getDefault()
+                    .createServerSocket(0);
+            ss.setSoTimeout(TIMEOUT);
         }
     }
 
@@ -86,6 +88,9 @@ public class ProxyTunnelServer extends Thread {
         try {
             clientSocket = ss.accept();
             processRequests();
+        } catch (SocketTimeoutException e) {
+            System.out.println(
+                    "Proxy can not get response in time: " + e.getMessage());
         } catch (Exception e) {
             System.out.println("Proxy Failed: " + e);
             e.printStackTrace();
@@ -188,8 +193,8 @@ public class ProxyTunnelServer extends Thread {
         serverToClient.start();
         System.out.println("Proxy: Started tunneling.......");
 
-        clientToServer.join();
-        serverToClient.join();
+        clientToServer.join(TIMEOUT);
+        serverToClient.join(TIMEOUT);
         System.out.println("Proxy: Finished tunneling........");
 
         clientToServer.close();
@@ -219,13 +224,11 @@ public class ProxyTunnelServer extends Thread {
             int BUFFER_SIZE = 400;
             byte[] buf = new byte[BUFFER_SIZE];
             int bytesRead = 0;
-            int count = 0;  // keep track of the amount of data transfer
 
             try {
                 while ((bytesRead = input.read(buf)) >= 0) {
                     output.write(buf, 0, bytesRead);
                     output.flush();
-                    count += bytesRead;
                 }
             } catch (IOException e) {
                 /*
@@ -236,7 +239,7 @@ public class ProxyTunnelServer extends Thread {
               }
         }
 
-        public void close() {
+        private void close() {
             try {
                 if (!sockIn.isClosed())
                     sockIn.close();
@@ -275,7 +278,7 @@ public class ProxyTunnelServer extends Thread {
             serverPort = Integer.parseInt(connectInfo.substring(endi+1));
         } catch (Exception e) {
             throw new IOException("Proxy recieved a request: "
-                                        + connectStr);
+                                        + connectStr, e);
           }
         serverInetAddr = InetAddress.getByName(serverName);
     }

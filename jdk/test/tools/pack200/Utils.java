@@ -111,6 +111,7 @@ class Utils {
 
         compiler("-d",
                 XCLASSES.getName(),
+                "--add-modules=jdk.jdeps",
                 "--add-exports=jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED",
                 "@" + tmpFile.getAbsolutePath());
 

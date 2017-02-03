@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ compiler/types/correctness/OffTest.java 8066173 generic-all
 
 gc/g1/humongousObjects/objectGraphTest/TestObjectGraphAfterGC.java 8156755 generic-all
 gc/survivorAlignment/TestPromotionToSurvivor.java 8129886 generic-all
+gc/g1/logging/TestG1LoggingFailure.java 8169634 generic-all
 
 #############################################################################
 
@@ -76,6 +77,8 @@ serviceability/sa/sadebugd/SADebugDTest.java 8163805 generic-all
 #############################################################################
 
 # :hotspot_misc
+
+testlibrary_tests/ctw/JarDirTest.java 8172457 windows-all
 
 #############################################################################
 

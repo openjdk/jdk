@@ -168,13 +168,13 @@ Java_sun_nio_ch_Net_bind0(JNIEnv *env, jclass clazz, jobject fdo, jboolean prefe
 {
     SOCKETADDRESS sa;
     int rv;
-    int sa_len;
+    int sa_len = 0;
 
-    if (NET_InetAddressToSockaddr(env, iao, port, (struct sockaddr *)&sa, &sa_len, preferIPv6) != 0) {
-      return;
+    if (NET_InetAddressToSockaddr(env, iao, port, &sa, &sa_len, preferIPv6) != 0) {
+        return;
     }
 
-    rv = NET_WinBind(fdval(env, fdo), (struct sockaddr *)&sa, sa_len, isExclBind);
+    rv = NET_WinBind(fdval(env, fdo), &sa, sa_len, isExclBind);
     if (rv == SOCKET_ERROR)
         NET_ThrowNew(env, WSAGetLastError(), "bind");
 }
@@ -194,14 +194,14 @@ Java_sun_nio_ch_Net_connect0(JNIEnv *env, jclass clazz, jboolean preferIPv6, job
 {
     SOCKETADDRESS sa;
     int rv;
-    int sa_len;
+    int sa_len = 0;
     SOCKET s = (SOCKET)fdval(env, fdo);
 
-    if (NET_InetAddressToSockaddr(env, iao, port, (struct sockaddr *)&sa, &sa_len, preferIPv6) != 0) {
+    if (NET_InetAddressToSockaddr(env, iao, port, &sa, &sa_len, preferIPv6) != 0) {
         return IOS_THROWN;
     }
 
-    rv = connect(s, (struct sockaddr *)&sa, sa_len);
+    rv = connect(s, &sa.sa, sa_len);
     if (rv != 0) {
         int err = WSAGetLastError();
         if (err == WSAEINPROGRESS || err == WSAEWOULDBLOCK) {
@@ -226,7 +226,7 @@ Java_sun_nio_ch_Net_localPort(JNIEnv *env, jclass clazz, jobject fdo)
     SOCKETADDRESS sa;
     int sa_len = sizeof(sa);
 
-    if (getsockname(fdval(env, fdo), (struct sockaddr *)&sa, &sa_len) < 0) {
+    if (getsockname(fdval(env, fdo), &sa.sa, &sa_len) < 0) {
         int error = WSAGetLastError();
         if (error == WSAEINVAL) {
             return 0;
@@ -234,7 +234,7 @@ Java_sun_nio_ch_Net_localPort(JNIEnv *env, jclass clazz, jobject fdo)
         NET_ThrowNew(env, error, "getsockname");
         return IOS_THROWN;
     }
-    return NET_GetPortFromSockaddr((struct sockaddr *)&sa);
+    return NET_GetPortFromSockaddr(&sa);
 }
 
 JNIEXPORT jobject JNICALL
@@ -244,11 +244,11 @@ Java_sun_nio_ch_Net_localInetAddress(JNIEnv *env, jclass clazz, jobject fdo)
     int sa_len = sizeof(sa);
     int port;
 
-    if (getsockname(fdval(env, fdo), (struct sockaddr *)&sa, &sa_len) < 0) {
+    if (getsockname(fdval(env, fdo), &sa.sa, &sa_len) < 0) {
         NET_ThrowNew(env, WSAGetLastError(), "getsockname");
         return NULL;
     }
-    return NET_SockaddrToInetAddress(env, (struct sockaddr *)&sa, &port);
+    return NET_SockaddrToInetAddress(env, &sa, &port);
 }
 
 JNIEXPORT jint JNICALL
@@ -257,7 +257,7 @@ Java_sun_nio_ch_Net_remotePort(JNIEnv *env, jclass clazz, jobject fdo)
     SOCKETADDRESS sa;
     int sa_len = sizeof(sa);
 
-    if (getpeername(fdval(env, fdo), (struct sockaddr *)&sa, &sa_len) < 0) {
+    if (getpeername(fdval(env, fdo), &sa.sa, &sa_len) < 0) {
         int error = WSAGetLastError();
         if (error == WSAEINVAL) {
             return 0;
@@ -265,7 +265,7 @@ Java_sun_nio_ch_Net_remotePort(JNIEnv *env, jclass clazz, jobject fdo)
         NET_ThrowNew(env, error, "getsockname");
         return IOS_THROWN;
     }
-    return NET_GetPortFromSockaddr((struct sockaddr *)&sa);
+    return NET_GetPortFromSockaddr(&sa);
 }
 
 JNIEXPORT jobject JNICALL
@@ -275,11 +275,11 @@ Java_sun_nio_ch_Net_remoteInetAddress(JNIEnv *env, jclass clazz, jobject fdo)
     int sa_len = sizeof(sa);
     int port;
 
-    if (getpeername(fdval(env, fdo), (struct sockaddr *)&sa, &sa_len) < 0) {
+    if (getpeername(fdval(env, fdo), &sa.sa, &sa_len) < 0) {
         NET_ThrowNew(env, WSAGetLastError(), "getsockname");
         return NULL;
     }
-    return NET_SockaddrToInetAddress(env, (struct sockaddr *)&sa, &port);
+    return NET_SockaddrToInetAddress(env, &sa, &port);
 }
 
 JNIEXPORT jint JNICALL

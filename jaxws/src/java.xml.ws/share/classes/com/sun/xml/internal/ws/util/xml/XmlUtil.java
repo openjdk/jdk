@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.lang.reflect.Method;
+import java.net.URI;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -332,13 +333,13 @@ public class XmlUtil {
      * (com.sun.org.apache.xml.internal) for modular runtime.
      */
     private static EntityResolver createCatalogResolver(ArrayList<URL> urls) throws Exception {
-        // Prepare array of catalog paths
-        String[] paths = urls.stream()
-                             .map(u -> u.toExternalForm())
-                             .toArray(c -> new String[c]);
+        // Prepare array of catalog URIs
+        URI[] uris = urls.stream()
+                             .map(u -> URI.create(u.toExternalForm()))
+                             .toArray(URI[]::new);
 
         //Create CatalogResolver with new JDK9+ API
-        return (EntityResolver) CatalogManager.catalogResolver(catalogFeatures, paths);
+        return (EntityResolver) CatalogManager.catalogResolver(catalogFeatures, uris);
     }
 
     // Cache CatalogFeatures instance for future usages.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,10 +61,12 @@ class Example implements Comparable<Example> {
         declaredKeys = new TreeSet<String>();
         srcFiles = new ArrayList<File>();
         procFiles = new ArrayList<File>();
-        supportFiles = new ArrayList<File>();
         srcPathFiles = new ArrayList<File>();
         moduleSourcePathFiles = new ArrayList<File>();
+        modulePathFiles = new ArrayList<File>();
+        classPathFiles = new ArrayList<File>();
         additionalFiles = new ArrayList<File>();
+        nonEmptySrcFiles = new ArrayList<File>();
 
         findFiles(file, srcFiles);
         for (File f: srcFiles) {
@@ -89,17 +91,20 @@ class Example implements Comparable<Example> {
                 } else if (files == srcFiles && c.getName().equals("additional")) {
                     additionalFilesDir = c;
                     findFiles(c, additionalFiles);
-                } else if (files == srcFiles && c.getName().equals("support"))
-                    findFiles(c, supportFiles);
-                else
+                } else if (files == srcFiles && c.getName().equals("modulepath")) {
+                    findFiles(c, modulePathFiles);
+                } else if (files == srcFiles && c.getName().equals("classpath")) {
+                    findFiles(c, classPathFiles);
+                } else {
                     findFiles(c, files);
+                }
             }
         } else if (f.isFile()) {
-                if (f.getName().endsWith(".java")) {
-                    files.add(f);
-                } else if (f.getName().equals("modulesourcepath")) {
-                    moduleSourcePathDir = f;
-                }
+            if (f.getName().endsWith(".java")) {
+                files.add(f);
+            } else if (f.getName().equals("modulesourcepath")) {
+                moduleSourcePathDir = f;
+            }
         }
     }
 
@@ -128,8 +133,10 @@ class Example implements Comparable<Example> {
                     foundInfo(f);
                     runOpts = Arrays.asList(runMatch.group(1).trim().split(" +"));
                 }
-                if (javaPat.matcher(line).matches())
+                if (javaPat.matcher(line).matches()) {
+                    nonEmptySrcFiles.add(f);
                     break;
+                }
             }
         } catch (IOException e) {
             throw new Error(e);
@@ -194,23 +201,32 @@ class Example implements Comparable<Example> {
      */
     private void run(PrintWriter out, Set<String> keys, boolean raw, boolean verbose)
             throws IOException {
-        ClassLoader loader = getClass().getClassLoader();
-        if (supportFiles.size() > 0) {
-            File supportDir = new File(tempDir, "support");
-            supportDir.mkdirs();
-            clean(supportDir);
-            List<String> sOpts = Arrays.asList("-d", supportDir.getPath());
-            new Jsr199Compiler(verbose).run(null, null, false, sOpts, procFiles);
-            URLClassLoader ucl =
-                    new URLClassLoader(new URL[] { supportDir.toURI().toURL() }, loader);
-            loader = ucl;
+        List<String> opts = new ArrayList<String>();
+        if (!modulePathFiles.isEmpty()) {
+            File modulepathDir = new File(tempDir, "modulepath");
+            modulepathDir.mkdirs();
+            clean(modulepathDir);
+            List<String> sOpts = Arrays.asList("-d", modulepathDir.getPath(),
+                                               "--module-source-path", new File(file, "modulepath").getAbsolutePath());
+            new Jsr199Compiler(verbose).run(null, null, false, sOpts, modulePathFiles);
+            opts.add("--module-path");
+            opts.add(modulepathDir.getAbsolutePath());
+        }
+
+        if (!classPathFiles.isEmpty()) {
+            File classpathDir = new File(tempDir, "classpath");
+            classpathDir.mkdirs();
+            clean(classpathDir);
+            List<String> sOpts = Arrays.asList("-d", classpathDir.getPath());
+            new Jsr199Compiler(verbose).run(null, null, false, sOpts, classPathFiles);
+            opts.add("--class-path");
+            opts.add(classpathDir.getAbsolutePath());
         }
 
         File classesDir = new File(tempDir, "classes");
         classesDir.mkdirs();
         clean(classesDir);
 
-        List<String> opts = new ArrayList<String>();
         opts.add("-d");
         opts.add(classesDir.getPath());
         if (options != null)
@@ -223,6 +239,7 @@ class Example implements Comparable<Example> {
             // source for import statements or a magic comment
             for (File pf: procFiles) {
                 if (pf.getName().equals("CreateBadClassFile.java")) {
+                    pOpts.add("--add-modules=jdk.jdeps");
                     pOpts.add("--add-exports=jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED");
                 }
             }
@@ -250,7 +267,9 @@ class Example implements Comparable<Example> {
         if (moduleSourcePathDir != null) {
             opts.add("--module-source-path");
             opts.add(moduleSourcePathDir.getPath());
-            files = moduleSourcePathFiles;
+            files = new ArrayList<>();
+            files.addAll(moduleSourcePathFiles);
+            files.addAll(nonEmptySrcFiles); // srcFiles containing declarations
         }
 
         if (additionalFiles.size() > 0) {
@@ -327,8 +346,10 @@ class Example implements Comparable<Example> {
     File additionalFilesDir;
     List<File> srcPathFiles;
     List<File> moduleSourcePathFiles;
+    List<File> modulePathFiles;
+    List<File> classPathFiles;
     List<File> additionalFiles;
-    List<File> supportFiles;
+    List<File> nonEmptySrcFiles;
     File infoFile;
     private List<String> runOpts;
     private List<String> options;

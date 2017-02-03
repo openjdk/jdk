@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,11 +84,11 @@ public class JVMAddModulePackage {
             // Expected
         }
 
-        // Existing package, expect an IAE
+        // Existing package, expect an ISE
         try {
             ModuleHelper.AddModulePackage(module1, "yourpackage");
-            throw new RuntimeException("Failed to get the expected IAE");
-        } catch(IllegalArgumentException e) {
+            throw new RuntimeException("Failed to get the expected ISE");
+        } catch(IllegalStateException e) {
             // Expected
         }
 

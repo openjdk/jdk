@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -921,6 +921,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
 
         public PackageSymbol unnamedPackage;
         public Map<Name, PackageSymbol> visiblePackages;
+        public Set<ModuleSymbol> readModules;
         public List<Symbol> enclosedPackages = List.nil();
 
         public Completer usesProvidesCompleter = Completer.NULL_COMPLETER;
@@ -944,6 +945,11 @@ public abstract class Symbol extends AnnoConstruct implements Element {
             super(MDL, 0, name, null, owner);
             Assert.checkNonNull(name);
             this.type = new ModuleType(this);
+        }
+
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+        public boolean isOpen() {
+            return flags.contains(ModuleFlags.OPEN);
         }
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
@@ -1044,7 +1050,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         DO_NOT_RESOLVE_BY_DEFAULT(0x0001),
         WARN_DEPRECATED(0x0002),
         WARN_DEPRECATED_REMOVAL(0x0004),
-        WARN_INCUBATOR(0x0008);
+        WARN_INCUBATING(0x0008);
 
         public static int value(Set<ModuleResolutionFlags> s) {
             int v = 0;
@@ -1069,6 +1075,8 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         public Name fullname;
         public ClassSymbol package_info; // see bug 6443073
         public ModuleSymbol modle;
+        // the file containing the documentation comments for the package
+        public JavaFileObject sourcefile;
 
         public PackageSymbol(Name name, Type type, Symbol owner) {
             super(PCK, 0, name, type, owner);

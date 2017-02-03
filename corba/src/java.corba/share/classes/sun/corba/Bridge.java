@@ -29,6 +29,10 @@ import java.io.OptionalDataException;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field ;
 import java.lang.reflect.Constructor ;
+import java.lang.StackWalker;
+import java.lang.StackWalker.StackFrame;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 import java.security.AccessController;
 import java.security.Permission;
@@ -58,6 +62,7 @@ import sun.reflect.ReflectionFactory;
  * <li>RuntimePermission "reflectionFactoryAccess"</li>
  * <li>BridgePermission "getBridge"</li>
  * <li>ReflectPermission "suppressAccessChecks"</li>
+ * <li>StackFramePermission "retainClassReference"</li>
  * </ul>
  * <p>
  * All of these permissions are required to obtain and correctly initialize
@@ -89,9 +94,12 @@ public final class Bridge
     ) ;
 
     private final ReflectionFactory reflectionFactory ;
+    private final StackWalker stackWalker;
 
     private Bridge() {
         reflectionFactory = ReflectionFactory.getReflectionFactory();
+        stackWalker  = StackWalker.getInstance(
+                            StackWalker.Option.RETAIN_CLASS_REFERENCE);
     }
 
     /** Fetch the Bridge singleton.  This requires the following
@@ -100,6 +108,7 @@ public final class Bridge
      * <li>RuntimePermission "reflectionFactoryAccess"</li>
      * <li>BridgePermission "getBridge"</li>
      * <li>ReflectPermission "suppressAccessChecks"</li>
+     * <li>StackFramePermission "retainClassReference"</li>
      * </ul>
      * @return The singleton instance of the Bridge class
      * @throws SecurityException if the caller does not have the
@@ -118,11 +127,33 @@ public final class Bridge
         return bridge ;
     }
 
+    /** Returns true if the loader that loaded the frame's declaring class
+     * is a user loader (if it is not the platform class loader or one of
+     * its ancestor).
+     */
+    private boolean isUserLoader(StackFrame sf) {
+        ClassLoader cl = sf.getDeclaringClass().getClassLoader();
+        if (cl == null) return false;
+        ClassLoader p = ClassLoader.getPlatformClassLoader();
+        while (cl != p && p != null) p = p.getParent();
+        return cl != p;
+    }
+
+    private Optional<StackFrame> getLatestUserDefinedLoaderFrame(Stream<StackFrame> stream) {
+        return stream.filter(this::isUserLoader).findFirst();
+    }
+
+
     /** Obtain the latest user defined ClassLoader from the call stack.
      * This is required by the RMI-IIOP specification.
      */
     public final ClassLoader getLatestUserDefinedLoader() {
-        return jdk.internal.misc.VM.latestUserDefinedLoader();
+        // requires getClassLoader permission => needs doPrivileged.
+        PrivilegedAction<ClassLoader> pa = () ->
+            stackWalker.walk(this::getLatestUserDefinedLoaderFrame)
+                .map(sf -> sf.getDeclaringClass().getClassLoader())
+                .orElseGet(() -> ClassLoader.getPlatformClassLoader());
+        return AccessController.doPrivileged(pa);
     }
 
     /**

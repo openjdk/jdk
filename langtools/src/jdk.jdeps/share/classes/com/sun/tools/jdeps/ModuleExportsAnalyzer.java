@@ -34,6 +34,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.sun.tools.jdeps.Analyzer.NOT_FOUND;
 
@@ -109,9 +110,7 @@ public class ModuleExportsAnalyzer extends DepsAnalyzer {
     private void printDependences() {
         // find use of JDK internals
         Map<Module, Set<String>> jdkinternals = new HashMap<>();
-        deps.keySet().stream()
-            .filter(source -> !source.getModule().isNamed())
-            .map(deps::get)
+        dependenceStream()
             .flatMap(map -> map.entrySet().stream())
             .filter(e -> e.getValue().size() > 0)
             .forEach(e -> jdkinternals.computeIfAbsent(e.getKey().getModule(),
@@ -124,11 +123,10 @@ public class ModuleExportsAnalyzer extends DepsAnalyzer {
         Module root = new RootModule("root");
         builder.addModule(root);
         // find named module dependences
-        deps.keySet().stream()
-            .filter(source -> !source.getModule().isNamed())
-            .map(deps::get)
+        dependenceStream()
             .flatMap(map -> map.keySet().stream())
-            .filter(m -> m.getModule().isNamed())
+            .filter(m -> m.getModule().isNamed()
+                            && !configuration.rootModules().contains(m))
             .map(Archive::getModule)
             .forEach(m -> builder.addEdge(root, m));
 
@@ -167,6 +165,16 @@ public class ModuleExportsAnalyzer extends DepsAnalyzer {
             });
     }
 
+    /*
+     * Returns a stream of dependence map from an Archive to the set of JDK
+     * internal APIs being used.
+     */
+    private Stream<Map<Archive, Set<String>>> dependenceStream() {
+        return deps.keySet().stream()
+                   .filter(source -> !source.getModule().isNamed()
+                            || configuration.rootModules().contains(source))
+                   .map(deps::get);
+    }
 
     private class RootModule extends Module {
         final ModuleDescriptor descriptor;

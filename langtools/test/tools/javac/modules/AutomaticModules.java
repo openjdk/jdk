@@ -283,7 +283,7 @@ public class AutomaticModules extends ModuleTestBase {
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
 
-        List<String> expected = Arrays.asList("Impl.java:1:62: compiler.err.not.def.access.package.cant.access: m2x.M2, m2x",
+        List<String> expected = Arrays.asList("Impl.java:1:59: compiler.err.package.not.visible: m2x, (compiler.misc.not.def.access.does.not.read: m1x, m2x, m2x)",
                                               "1 error");
 
         if (!expected.equals(log)) {
@@ -300,8 +300,8 @@ public class AutomaticModules extends ModuleTestBase {
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
 
-        expected = Arrays.asList("Impl.java:1:51: compiler.err.doesnt.exist: apiB",
-                                 "Impl.java:1:62: compiler.err.not.def.access.package.cant.access: m2x.M2, m2x",
+        expected = Arrays.asList("Impl.java:1:47: compiler.err.package.not.visible: apiB, (compiler.misc.not.def.access.does.not.read: m1x, apiB, automaticB)",
+                                 "Impl.java:1:59: compiler.err.package.not.visible: m2x, (compiler.misc.not.def.access.does.not.read: m1x, m2x, m2x)",
                                  "2 errors");
 
         if (!expected.equals(log)) {

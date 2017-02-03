@@ -18,39 +18,39 @@ Information about the forest extension can be found at
 
     http://mercurial.selenic.com/wiki/ForestExtension
 
-and downlaoded using
+and downloaded using
 
     hg clone https://bitbucket.org/gxti/hgforest
 
 You can clone Nashorn Mercurial forest using this command:
 
-    hg fclone http://hg.openjdk.java.net/nashorn/jdk8 nashorn~jdk8
+    hg fclone http://hg.openjdk.java.net/nashorn/jdk9 nashorn~jdk9
     
 To update your copy of the forest (fwith the latest code:
 
-    (cd nashorn~jdk8 ; hg fpull)
+    (cd nashorn~jdk9 ; hg fpull)
     
 Or just the nashorn subdirectory with
 
-    (cd nashorn~jdk8/nashorn ; hg pull -u)
+    (cd nashorn~jdk9/nashorn ; hg pull -u)
     
 To learn about Mercurial in detail, please visit http://hgbook.red-bean.com.
 
 - How to build?
 
-To build Nashorn, you need to install JDK 8. You may use the Nashorn
-forest build (recommended) or down load from java.net.  You will need to
+To build Nashorn, you need to install JDK 9. You may use the Nashorn
+forest build (recommended) or download from java.net.  You will need to
 set JAVA_HOME environmental variable to point to your JDK installation
 directory.
 
-    cd nashorn~jdk8/nashorn/make
+    cd nashorn~jdk9/nashorn/make
     ant clean; ant
 
 - How to run?
 
 Use the jjs script (see RELESE_README):
 
-    cd nashorn~jdk8/nashorn
+    cd nashorn~jdk9/nashorn
     sh bin/jjs <your .js file>
 
 Nashorn supports javax.script API. It is possible to drop nashorn.jar in
@@ -64,7 +64,7 @@ Look for samples under the directory test/src/jdk/nashorn/api/scripting/.
 Comprehensive development documentation is found in the Nashorn JavaDoc. You can
 build it using:
 
-    cd nashorn~jdk8/nashorn/make
+    cd nashorn~jdk9/nashorn/make
     ant javadoc
     
 after which you can view the generated documentation at dist/javadoc/index.html.
@@ -90,7 +90,7 @@ Alternatively, you can check it out elsewhere and make
 test/script/external/test262 a symbolic link to that directory. After
 you've done this, you can run the ECMA-262 tests using:
 
-    cd nashorn~jdk8/nashorn/make
+    cd nashorn~jdk9/nashorn/make
     ant test262
 
 Ant target to get/update external test suites:
@@ -101,7 +101,7 @@ Ant target to get/update external test suites:
 These tests take time, so we have a parallelized runner for them that
 takes advantage of all processor cores on the computer:
 
-    cd nashorn~jdk8/nashorn/make
+    cd nashorn~jdk9/nashorn/make
     ant test262parallel
     
 - How to write your own test?

@@ -183,13 +183,13 @@ public class ArgsFileTest extends TestHelper {
         lines.add("uarg1 @uarg2 @@uarg3 -uarg4 uarg5");
         File argFile2 = createArgFile("argFile2", lines);
         File argKill = createArgFile("argKill",
-            Collections.singletonList("-Xdisable-@files"));
+            Collections.singletonList("--disable-@files"));
 
-        TestResult tr = doExec(env, javaCmd, "@argFile1", "-Xdisable-@files", "@argFile2");
+        TestResult tr = doExec(env, javaCmd, "@argFile1", "--disable-@files", "@argFile2");
         List<String> options = new ArrayList<>();
         options.add("-Xmx32m");
         options.add("-Xint");
-        options.add("-Xdisable-@files");
+        options.add("--disable-@files");
         options.add("@argFile2");
         verifyOptions(options, tr);
         // Main class is @argFile2
@@ -202,9 +202,9 @@ public class ArgsFileTest extends TestHelper {
         verifyUserArgs(Collections.emptyList(), tr, 5);
 
         // multiple is fine, once on is on.
-        tr = doExec(env, javaCmd, "@argKill", "@argFile1", "-Xdisable-@files", "@argFile2");
-        options = Arrays.asList("-Xdisable-@files", "@argFile1",
-                "-Xdisable-@files", "@argFile2");
+        tr = doExec(env, javaCmd, "@argKill", "@argFile1", "--disable-@files", "@argFile2");
+        options = Arrays.asList("--disable-@files", "@argFile1",
+                "--disable-@files", "@argFile2");
         verifyOptions(options, tr);
         verifyUserArgs(Collections.emptyList(), tr, 3);
 

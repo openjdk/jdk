@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,31 @@
  * questions.
  */
 
-/*
- * This test is run through PostThruProxyWithAuth.sh
- */
-
 import java.io.*;
 import java.net.*;
 import java.security.KeyStore;
 import javax.net.*;
 import javax.net.ssl.*;
-import java.security.cert.*;
+
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 /*
- * This test case is written to test the https POST through a proxy
- * with proxy authentication.
- *
- * PostThruProxyWithAuth.java -- includes a simple server that serves
- * http POST method requests in secure channel, and a client
- * that makes https POST request through a proxy.
+ * @test
+ * @bug 4423074
+ * @modules java.base/sun.net.www
+ * @summary This test case is written to test the https POST through a proxy
+ *          with proxy authentication. It includes a simple server that serves
+ *          http POST method requests in secure channel, and a client that
+ *          makes https POST request through a proxy.
+ * @library /test/lib
+ * @compile OriginServer.java ProxyTunnelServer.java
+ * @run main/othervm -Djdk.http.auth.tunneling.disabledSchemes= PostThruProxyWithAuth
  */
-
 public class PostThruProxyWithAuth {
+
+    private static final String TEST_SRC = System.getProperty("test.src", ".");
+    private static final int TIMEOUT = 30000;
 
     /*
      * Where do we find the keystores?
@@ -78,14 +82,10 @@ public class PostThruProxyWithAuth {
     /*
      * Main method to create the server and client
      */
-    public static void main(String args[]) throws Exception
-    {
-        String keyFilename =
-            args[1] + "/" + pathToStores +
-                "/" + keyStoreFile;
-        String trustFilename =
-            args[1] + "/" + pathToStores +
-                "/" + trustStoreFile;
+    public static void main(String args[]) throws Exception {
+        String keyFilename = TEST_SRC + "/" + pathToStores + "/" + keyStoreFile;
+        String trustFilename = TEST_SRC + "/" + pathToStores + "/"
+                + trustStoreFile;
 
         System.setProperty("javax.net.ssl.keyStore", keyFilename);
         System.setProperty("javax.net.ssl.keyStorePassword", passwd);
@@ -97,10 +97,9 @@ public class PostThruProxyWithAuth {
          * setup the server
          */
         try {
-            ServerSocketFactory ssf =
-                PostThruProxyWithAuth.getServerSocketFactory(useSSL);
+            ServerSocketFactory ssf = getServerSocketFactory(useSSL);
             ServerSocket ss = ssf.createServerSocket(serverPort);
-            ss.setSoTimeout(30000);  // 30 seconds
+            ss.setSoTimeout(TIMEOUT);  // 30 seconds
             serverPort = ss.getLocalPort();
             new TestServer(ss);
         } catch (Exception e) {
@@ -110,7 +109,7 @@ public class PostThruProxyWithAuth {
         }
         // trigger the client
         try {
-            doClientSide(args[0]);
+            doClientSide();
         } catch (Exception e) {
             System.out.println("Client side failed: " +
                                 e.getMessage());
@@ -121,24 +120,18 @@ public class PostThruProxyWithAuth {
     private static ServerSocketFactory getServerSocketFactory
                    (boolean useSSL) throws Exception {
         if (useSSL) {
-            SSLServerSocketFactory ssf = null;
             // set up key manager to do server authentication
-            SSLContext ctx;
-            KeyManagerFactory kmf;
-            KeyStore ks;
+            SSLContext ctx = SSLContext.getInstance("TLS");
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+            KeyStore ks = KeyStore.getInstance("JKS");
             char[] passphrase = passwd.toCharArray();
-
-            ctx = SSLContext.getInstance("TLS");
-            kmf = KeyManagerFactory.getInstance("SunX509");
-            ks = KeyStore.getInstance("JKS");
 
             ks.load(new FileInputStream(System.getProperty(
                         "javax.net.ssl.keyStore")), passphrase);
             kmf.init(ks, passphrase);
             ctx.init(kmf.getKeyManagers(), null, null);
 
-            ssf = ctx.getServerSocketFactory();
-            return ssf;
+            return ctx.getServerSocketFactory();
         } else {
             return ServerSocketFactory.getDefault();
         }
@@ -149,7 +142,7 @@ public class PostThruProxyWithAuth {
      */
     static String postMsg = "Testing HTTP post on a https server";
 
-    static void doClientSide(String hostname) throws Exception {
+    static void doClientSide() throws Exception {
         /*
          * setup up a proxy
          */
@@ -161,10 +154,12 @@ public class PostThruProxyWithAuth {
          */
         HttpsURLConnection.setDefaultHostnameVerifier(
                                       new NameVerifier());
-        URL url = new URL("https://" + hostname + ":" + serverPort);
+        URL url = new URL("https://" + getHostname() + ":" + serverPort);
 
         Proxy p = new Proxy(Proxy.Type.HTTP, pAddr);
         HttpsURLConnection https = (HttpsURLConnection)url.openConnection(p);
+        https.setConnectTimeout(TIMEOUT);
+        https.setReadTimeout(TIMEOUT);
         https.setDoOutput(true);
         https.setRequestMethod("POST");
         PrintStream ps = null;
@@ -188,6 +183,9 @@ public class PostThruProxyWithAuth {
             if (ps != null)
                 ps.close();
             throw e;
+        } catch (SocketTimeoutException e) {
+            System.out.println("Client can not get response in time: "
+                    + e.getMessage());
         }
     }
 
@@ -219,6 +217,15 @@ public class PostThruProxyWithAuth {
         public PasswordAuthentication getPasswordAuthentication() {
             return new PasswordAuthentication("Test",
                                          "test123".toCharArray());
+        }
+    }
+
+    private static String getHostname() {
+        try {
+            OutputAnalyzer oa = ProcessTools.executeCommand("hostname");
+            return oa.getOutput().trim();
+        } catch (Throwable e) {
+            throw new RuntimeException("Get hostname failed.", e);
         }
     }
 }
