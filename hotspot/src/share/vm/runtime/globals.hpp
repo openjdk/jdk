@@ -657,14 +657,13 @@ public:
           range(0, 99)                                                      \
                                                                             \
   product(bool, UseAES, false,                                              \
-          "Control whether AES instructions can be used on x86/x64")        \
+          "Control whether AES instructions are used when available")       \
                                                                             \
   product(bool, UseFMA, false,                                              \
-          "Control whether FMA instructions can be used")                   \
+          "Control whether FMA instructions are used when available")       \
                                                                             \
   product(bool, UseSHA, false,                                              \
-          "Control whether SHA instructions can be used "                   \
-          "on SPARC, on ARM and on x86")                                    \
+          "Control whether SHA instructions are used when available")       \
                                                                             \
   diagnostic(bool, UseGHASHIntrinsics, false,                               \
           "Use intrinsics for GHASH versions of crypto")                    \
