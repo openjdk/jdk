@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -567,7 +567,7 @@ public final class TIFFField implements Cloneable {
                 ("Type is TIFF_RATIONAL or TIFF_SRATIONAL and count < 1");
         } else if (type == TIFFTag.TIFF_IFD_POINTER && count != 1) {
             throw new IllegalArgumentException
-                ("Type is TIFF_IFD_POINTER count != 1");
+                ("Type is TIFF_IFD_POINTER and count != 1");
         } else if(data == null) {
             throw new NullPointerException("data == null!");
         }
@@ -698,6 +698,11 @@ public final class TIFFField implements Cloneable {
      * data type for the supplied {@code TIFFTag}.
      * @throws IllegalArgumentException if {@code count < 0}.
      * @see #TIFFField(TIFFTag,int,int,Object)
+     * @throws IllegalArgumentException if {@code count < 1}
+     * and {@code type} is {@code TIFF_RATIONAL} or
+     * {@code TIFF_SRATIONAL}.
+     * @throws IllegalArgumentException if {@code count != 1}
+     * and {@code type} is {@code TIFF_IFD_POINTER}.
      */
     public TIFFField(TIFFTag tag, int type, int count) {
         this(tag, type, count, createArrayForType(type, count));
@@ -885,11 +890,26 @@ public final class TIFFField implements Cloneable {
      * @throws IllegalArgumentException if {@code dataType} is not
      * one of the {@code TIFFTag.TIFF_*} data type constants.
      * @throws IllegalArgumentException if {@code count < 0}.
+     * @throws IllegalArgumentException if {@code count < 1}
+     * and {@code type} is {@code TIFF_RATIONAL} or
+     * {@code TIFF_SRATIONAL}.
+     * @throws IllegalArgumentException if {@code count != 1}
+     * and {@code type} is {@code TIFF_IFD_POINTER}.
      */
     public static Object createArrayForType(int dataType, int count) {
+
         if(count < 0) {
             throw new IllegalArgumentException("count < 0!");
+        } else if ((dataType == TIFFTag.TIFF_RATIONAL
+                   || dataType == TIFFTag.TIFF_SRATIONAL)
+                  && count < 1) {
+            throw new IllegalArgumentException
+                ("Type is TIFF_RATIONAL or TIFF_SRATIONAL and count < 1");
+        } else if (dataType == TIFFTag.TIFF_IFD_POINTER && count != 1) {
+            throw new IllegalArgumentException
+                ("Type is TIFF_IFD_POINTER and count != 1");
         }
+
         switch (dataType) {
         case TIFFTag.TIFF_BYTE:
         case TIFFTag.TIFF_SBYTE:
