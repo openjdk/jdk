@@ -5170,7 +5170,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1486033520
+DATE_WHEN_GENERATED=1486131554
 
 ###############################################################################
 #
@@ -64466,11 +64466,11 @@ fi
 $as_echo_n "checking if elliptic curve crypto implementation is present... " >&6; }
 
   if test -d "${SRC_ROOT}/jdk/src/jdk.crypto.ec/share/native/libsunec/impl"; then
-    ENABLE_INTREE_EC=yes
+    ENABLE_INTREE_EC=true
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
   else
-    ENABLE_INTREE_EC=no
+    ENABLE_INTREE_EC=false
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
   fi
@@ -65837,25 +65837,25 @@ else
 fi
 
 
-  USE_PRECOMPILED_HEADER=1
+  USE_PRECOMPILED_HEADER=true
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking If precompiled header is enabled" >&5
 $as_echo_n "checking If precompiled header is enabled... " >&6; }
   if test "x$ENABLE_PRECOMPH" = xno; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, forced" >&5
 $as_echo "no, forced" >&6; }
-    USE_PRECOMPILED_HEADER=0
+    USE_PRECOMPILED_HEADER=false
   elif test "x$ICECC" != "x"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, does not work effectively with icecc" >&5
 $as_echo "no, does not work effectively with icecc" >&6; }
-    USE_PRECOMPILED_HEADER=0
+    USE_PRECOMPILED_HEADER=false
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, does not work with Solaris Studio" >&5
 $as_echo "no, does not work with Solaris Studio" >&6; }
-    USE_PRECOMPILED_HEADER=0
+    USE_PRECOMPILED_HEADER=false
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, does not work with xlc" >&5
 $as_echo "no, does not work with xlc" >&6; }
-    USE_PRECOMPILED_HEADER=0
+    USE_PRECOMPILED_HEADER=false
   else
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
@@ -65869,7 +65869,7 @@ $as_echo_n "checking that precompiled headers work... " >&6; }
       echo "int alfa();" > conftest.h
       $CXX -x c++-header conftest.h -o conftest.hpp.gch 2>&5 >&5
       if test ! -f conftest.hpp.gch; then
-        USE_PRECOMPILED_HEADER=0
+        USE_PRECOMPILED_HEADER=false
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
       else
@@ -66156,7 +66156,7 @@ $as_echo "$as_me: WARNING: --with-ccache-dir has no meaning when ccache is not e
         as_fn_error $? "On macosx, ccache 3.2 or later is required, found $CCACHE_VERSION" "$LINENO" 5
       fi
     fi
-    if test "x$USE_PRECOMPILED_HEADER" = "x1"; then
+    if test "x$USE_PRECOMPILED_HEADER" = "xtrue"; then
       HAS_BAD_CCACHE=`$ECHO $CCACHE_VERSION | \
           $GREP -e '^1.*' -e '^2.*' -e '^3\.0.*' -e '^3\.1\.[0123]$'`
       if test "x$HAS_BAD_CCACHE" != "x"; then
