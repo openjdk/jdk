@@ -734,12 +734,12 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     @SuppressWarnings("unchecked")
     private void heapify() {
         final Object[] es = queue;
-        final int half = (size >>> 1) - 1;
+        int i = (size >>> 1) - 1;
         if (comparator == null)
-            for (int i = half; i >= 0; i--)
+            for (; i >= 0; i--)
                 siftDownComparable(i, (E) es[i]);
         else
-            for (int i = half; i >= 0; i--)
+            for (; i >= 0; i--)
                 siftDownUsingComparator(i, (E) es[i]);
     }
 

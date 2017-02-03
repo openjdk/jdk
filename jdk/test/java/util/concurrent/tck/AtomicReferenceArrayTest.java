@@ -51,7 +51,7 @@ public class AtomicReferenceArrayTest extends JSR166TestCase {
      * constructor creates array of given size with all elements null
      */
     public void testConstructor() {
-        AtomicReferenceArray<Integer> aa = new AtomicReferenceArray<Integer>(SIZE);
+        AtomicReferenceArray<Integer> aa = new AtomicReferenceArray<>(SIZE);
         for (int i = 0; i < SIZE; i++) {
             assertNull(aa.get(i));
         }
@@ -73,7 +73,7 @@ public class AtomicReferenceArrayTest extends JSR166TestCase {
      */
     public void testConstructor2() {
         Integer[] a = { two, one, three, four, seven };
-        AtomicReferenceArray<Integer> aa = new AtomicReferenceArray<Integer>(a);
+        AtomicReferenceArray<Integer> aa = new AtomicReferenceArray<>(a);
         assertEquals(a.length, aa.length());
         for (int i = 0; i < a.length; i++)
             assertEquals(a[i], aa.get(i));
@@ -98,7 +98,7 @@ public class AtomicReferenceArrayTest extends JSR166TestCase {
      * get and set for out of bound indices throw IndexOutOfBoundsException
      */
     public void testIndexing() {
-        AtomicReferenceArray<Integer> aa = new AtomicReferenceArray<Integer>(SIZE);
+        AtomicReferenceArray<Integer> aa = new AtomicReferenceArray<>(SIZE);
         for (int index : new int[] { -1, SIZE }) {
             try {
                 aa.get(index);
@@ -240,7 +240,7 @@ public class AtomicReferenceArrayTest extends JSR166TestCase {
      */
     public void testToString() {
         Integer[] a = { two, one, three, four, seven };
-        AtomicReferenceArray<Integer> aa = new AtomicReferenceArray<Integer>(a);
+        AtomicReferenceArray<Integer> aa = new AtomicReferenceArray<>(a);
         assertEquals(Arrays.toString(a), aa.toString());
     }
 

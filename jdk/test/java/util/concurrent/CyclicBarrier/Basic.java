@@ -332,7 +332,7 @@ public class Basic {
         //----------------------------------------------------------------
         try {
             final CountDownLatch doneSignal = new CountDownLatch(1);
-            final List<Waiter> waiters = new ArrayList<Waiter>(N);
+            final List<Waiter> waiters = new ArrayList<>(N);
 
             // work around finality of closed-over variables
             final Runnable[] realAction = new Runnable[1];
@@ -379,7 +379,7 @@ public class Basic {
         try {
             final CountDownLatch doneSignal = new CountDownLatch(1);
             final CyclicBarrier barrier = new CyclicBarrier(N+1);
-            final List<Waiter> waiters = new ArrayList<Waiter>(N);
+            final List<Waiter> waiters = new ArrayList<>(N);
             for (int i = 0; i < N; i++) {
                 Waiter waiter = new Waiter(i < N/2, doneSignal, barrier);
                 waiter.start();
