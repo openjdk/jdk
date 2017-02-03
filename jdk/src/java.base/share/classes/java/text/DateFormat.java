@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,6 +140,25 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * It is recommended to create separate format instances for each thread.
  * If multiple threads access a format concurrently, it must be synchronized
  * externally.
+ *
+ * @implSpec
+ * <ul><li>The {@link #format(Date, StringBuffer, FieldPosition)} and
+ * {@link #parse(String, ParsePosition)} methods may throw
+ * {@code NullPointerException}, if any of their parameter is {@code null}.
+ * The subclass may provide its own implementation and specification about
+ * {@code NullPointerException}.</li>
+ * <li>The {@link #setCalendar(Calendar)}, {@link
+ * #setNumberFormat(NumberFormat)} and {@link #setTimeZone(TimeZone)} methods
+ * do not throw {@code NullPointerException} when their parameter is
+ * {@code null}, but any subsequent operations on the same instance may throw
+ * {@code NullPointerException}.</li>
+ * <li>The {@link #getCalendar()}, {@link #getNumberFormat()} and
+ * {@link getTimeZone()} methods may return {@code null}, if the respective
+ * values of this instance is set to {@code null} through the corresponding
+ * setter methods. For Example: {@link #getTimeZone()} may return {@code null},
+ * if the {@code TimeZone} value of this instance is set as
+ * {@link #setTimeZone(java.util.TimeZone) setTimeZone(null)}.</li>
+ * </ul>
  *
  * @see          Format
  * @see          NumberFormat
@@ -296,6 +315,8 @@ public abstract class DateFormat extends Format {
      * the begin index and end index of fieldPosition will be set to
      * 5 and 8, respectively, for the first occurrence of the timezone
      * pattern character 'z'.
+     * @exception IllegalArgumentException if the {@code Format} cannot format
+     *            the given {@code obj}.
      * @see java.text.Format
      */
     public final StringBuffer format(Object obj, StringBuffer toAppendTo,

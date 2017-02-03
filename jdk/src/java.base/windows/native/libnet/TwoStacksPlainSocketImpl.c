@@ -175,8 +175,8 @@ Java_java_net_TwoStacksPlainSocketImpl_socketCreate(JNIEnv *env, jobject this,
  */
 JNIEXPORT void JNICALL
 Java_java_net_TwoStacksPlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
-                                            jobject iaObj, jint port,
-                                            jint timeout)
+                                                     jobject iaObj, jint port,
+                                                     jint timeout)
 {
     jint localport = (*env)->GetIntField(env, this, psi_localportID);
 
@@ -193,11 +193,11 @@ Java_java_net_TwoStacksPlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
     jobject fdObj = (*env)->GetObjectField(env, this, psi_fdID);
     jobject fd1Obj = (*env)->GetObjectField(env, this, psi_fd1ID);
 
-    SOCKETADDRESS him;
+    SOCKETADDRESS sa;
 
     /* The result of the connection */
     int connect_res;
-    memset((char *)&him, 0, sizeof(him));
+    memset((char *)&sa, 0, sizeof(sa));
 
     if (!IS_NULL(fdObj)) {
         fd = (*env)->GetIntField(env, fdObj, IO_fd_fdID);
@@ -212,11 +212,12 @@ Java_java_net_TwoStacksPlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
         return;
     }
 
-    if (NET_InetAddressToSockaddr(env, iaObj, port, &him.sa, &len, JNI_FALSE) != 0) {
-      return;
+    if (NET_InetAddressToSockaddr(env, iaObj, port, &sa, &len,
+                                  JNI_FALSE) != 0) {
+        return;
     }
 
-    family = him.sa.sa_family;
+    family = sa.sa.sa_family;
     if (family == AF_INET6) {
         if (!ipv6_supported) {
             JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
@@ -248,7 +249,7 @@ Java_java_net_TwoStacksPlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
     (*env)->SetObjectField(env, this, psi_fd1ID, NULL);
 
     if (timeout <= 0) {
-        connect_res = connect(fd, &him.sa, sizeof(SOCKETADDRESS));
+        connect_res = connect(fd, &sa.sa, sizeof(SOCKETADDRESS));
         if (connect_res == SOCKET_ERROR) {
             connect_res = WSAGetLastError();
         }
@@ -261,7 +262,7 @@ Java_java_net_TwoStacksPlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
         ioctlsocket(fd, FIONBIO, &optval);
 
         /* initiate the connect */
-        connect_res = connect(fd, &him.sa, sizeof(SOCKETADDRESS));
+        connect_res = connect(fd, &sa.sa, sizeof(SOCKETADDRESS));
         if (connect_res == SOCKET_ERROR) {
             if (WSAGetLastError() != WSAEWOULDBLOCK) {
                 connect_res = WSAGetLastError();
@@ -362,7 +363,7 @@ Java_java_net_TwoStacksPlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
          */
         u_short port;
         int len = sizeof(SOCKETADDRESS);
-        if (getsockname(fd, &him.sa, &len) == -1) {
+        if (getsockname(fd, &sa.sa, &len) == -1) {
             if (WSAGetLastError() == WSAENOTSOCK) {
                 JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
                                 "Socket closed");
@@ -371,7 +372,7 @@ Java_java_net_TwoStacksPlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
             }
             return;
         }
-        port = ntohs((u_short)GET_PORT(&him));
+        port = ntohs((u_short)GET_PORT(&sa));
         (*env)->SetIntField(env, this, psi_localportID, (int) port);
     }
 }
@@ -396,7 +397,7 @@ Java_java_net_TwoStacksPlainSocketImpl_socketBind(JNIEnv *env, jobject this,
     int family;
     int rv;
 
-    SOCKETADDRESS him;
+    SOCKETADDRESS sa;
 
     fdObj = (*env)->GetObjectField(env, this, psi_fdID);
     fd1Obj = (*env)->GetObjectField(env, this, psi_fd1ID);
@@ -424,13 +425,13 @@ Java_java_net_TwoStacksPlainSocketImpl_socketBind(JNIEnv *env, jobject this,
         return;
     }
 
-    if (NET_InetAddressToSockaddr(env, iaObj, localport, &him.sa, &len,
+    if (NET_InetAddressToSockaddr(env, iaObj, localport, &sa, &len,
                                   JNI_FALSE) != 0) {
         return;
     }
     if (ipv6_supported) {
         struct ipv6bind v6bind;
-        v6bind.addr = &him;
+        v6bind.addr = &sa.sa;
         v6bind.ipv4_fd = fd;
         v6bind.ipv6_fd = fd1;
         rv = NET_BindV6(&v6bind, exclBind);
@@ -462,7 +463,7 @@ Java_java_net_TwoStacksPlainSocketImpl_socketBind(JNIEnv *env, jobject this,
             (*env)->SetObjectField(env, this, psi_fd1ID, NULL);
         }
     } else {
-        rv = NET_WinBind(fd, &him.sa, len, exclBind);
+        rv = NET_WinBind(fd, &sa, len, exclBind);
     }
 
     if (rv == -1) {
@@ -481,11 +482,11 @@ Java_java_net_TwoStacksPlainSocketImpl_socketBind(JNIEnv *env, jobject this,
         int len = sizeof(SOCKETADDRESS);
         u_short port;
 
-        if (getsockname(him.sa.sa_family == AF_INET ? fd: fd1, &him.sa, &len) == -1) {
+        if (getsockname(sa.sa.sa_family == AF_INET ? fd : fd1, &sa.sa, &len) == -1) {
             NET_ThrowCurrent(env, "getsockname in plain socketBind");
             return;
         }
-        port = ntohs((u_short) GET_PORT (&him));
+        port = ntohs((u_short) GET_PORT (&sa));
 
         (*env)->SetIntField(env, this, psi_localportID, (int)port);
     } else {
@@ -529,7 +530,7 @@ Java_java_net_TwoStacksPlainSocketImpl_socketListen
         JNU_ThrowNullPointerException(env, "socket address");
         return;
     }
-    if (NET_InetAddressToSockaddr(env, address, 0, &addr.sa, &addrlen,
+    if (NET_InetAddressToSockaddr(env, address, 0, &addr, &addrlen,
                                   JNI_FALSE) != 0) {
         return;
     }
@@ -585,7 +586,7 @@ Java_java_net_TwoStacksPlainSocketImpl_socketAccept(JNIEnv *env, jobject this,
     /* the fd int field on fdObj */
     jint fd=-1, fd1=-1;
 
-    SOCKETADDRESS him;
+    SOCKETADDRESS sa;
     jint len;
 
     if (IS_NULL(fdObj) && IS_NULL(fd1Obj)) {
@@ -676,7 +677,7 @@ Java_java_net_TwoStacksPlainSocketImpl_socketAccept(JNIEnv *env, jobject this,
             }
         }
     }
-    fd = accept(fd, &him.sa, &len);
+    fd = accept(fd, &sa.sa, &len);
     if (fd < 0) {
         /* REMIND: SOCKET CLOSED PROBLEM */
         if (fd == -2) {
@@ -691,7 +692,7 @@ Java_java_net_TwoStacksPlainSocketImpl_socketAccept(JNIEnv *env, jobject this,
     SetHandleInformation((HANDLE)(UINT_PTR)fd, HANDLE_FLAG_INHERIT, 0);
     (*env)->SetIntField(env, socketFdObj, IO_fd_fdID, fd);
 
-    if (him.sa.sa_family == AF_INET) {
+    if (sa.sa.sa_family == AF_INET) {
         if (inet4Cls == NULL) {
             jclass c = (*env)->FindClass(env, "java/net/Inet4Address");
             if (c != NULL) {
@@ -717,7 +718,7 @@ Java_java_net_TwoStacksPlainSocketImpl_socketAccept(JNIEnv *env, jobject this,
             return;
         }
 
-        setInetAddress_addr(env, socketAddressObj, ntohl(him.sa4.sin_addr.s_addr));
+        setInetAddress_addr(env, socketAddressObj, ntohl(sa.sa4.sin_addr.s_addr));
         setInetAddress_family(env, socketAddressObj, java_net_InetAddress_IPv4);
         (*env)->SetObjectField(env, socket, psi_addressID, socketAddressObj);
     } else {
@@ -743,14 +744,14 @@ Java_java_net_TwoStacksPlainSocketImpl_socketAccept(JNIEnv *env, jobject this,
             NET_SocketClose(fd);
             return;
         }
-        setInet6Address_ipaddress(env, socketAddressObj, (char *)&him.sa6.sin6_addr);
+        setInet6Address_ipaddress(env, socketAddressObj, (char *)&sa.sa6.sin6_addr);
         setInetAddress_family(env, socketAddressObj, java_net_InetAddress_IPv6);
-        setInet6Address_scopeid(env, socketAddressObj, him.sa6.sin6_scope_id);
+        setInet6Address_scopeid(env, socketAddressObj, sa.sa6.sin6_scope_id);
 
     }
     /* fields common to AF_INET and AF_INET6 */
 
-    port = ntohs ((u_short) GET_PORT (&him));
+    port = ntohs ((u_short)GET_PORT(&sa));
     (*env)->SetIntField(env, socket, psi_portID, (int)port);
     port = (*env)->GetIntField(env, this, psi_localportID);
     (*env)->SetIntField(env, socket, psi_localportID, port);
@@ -1025,14 +1026,14 @@ Java_java_net_TwoStacksPlainSocketImpl_socketGetOption
      * SO_BINDADDR isn't a socket option
      */
     if (opt == java_net_SocketOptions_SO_BINDADDR) {
-        SOCKETADDRESS him;
+        SOCKETADDRESS sa;
         int len = sizeof(SOCKETADDRESS);
         int port;
         jobject iaObj;
         jclass iaCntrClass;
         jfieldID iaFieldID;
 
-        memset((char *)&him, 0, len);
+        memset((char *)&sa, 0, len);
 
         if (fd == -1) {
             /* must be an IPV6 only socket. Case where both sockets are != -1
@@ -1041,12 +1042,12 @@ Java_java_net_TwoStacksPlainSocketImpl_socketGetOption
             fd = getFD1 (env, this);
         }
 
-        if (getsockname(fd, &him.sa, &len) < 0) {
+        if (getsockname(fd, &sa.sa, &len) < 0) {
             JNU_ThrowByNameWithMessageAndLastError
                 (env, JNU_JAVANETPKG "SocketException", "Error getting socket name");
             return -1;
         }
-        iaObj = NET_SockaddrToInetAddress(env, &him.sa, &port);
+        iaObj = NET_SockaddrToInetAddress(env, &sa, &port);
         CHECK_NULL_RETURN(iaObj, -1);
 
         iaCntrClass = (*env)->GetObjectClass(env, iaContainerObj);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,9 +224,11 @@ class APITest {
             "jquery/images/ui-icons_222222_256x240.png",
             "jquery/images/ui-bg_glass_75_e6e6e6_1x400.png",
             "jquery/images/ui-bg_flat_75_ffffff_40x100.png",
+            "member-search-index.js",
             "member-search-index.zip",
             "overview-tree.html",
             "package-list",
+            "package-search-index.js",
             "package-search-index.zip",
             "pkg/C.html",
             "pkg/package-frame.html",
@@ -237,12 +239,13 @@ class APITest {
             "script.js",
             "search.js",
             "stylesheet.css",
+            "type-search-index.js",
             "type-search-index.zip"
     ));
 
     protected static Set<String> noIndexFiles = standardExpectFiles.stream()
             .filter(s -> !s.startsWith("jquery") && !s.startsWith("resources") && !s.endsWith("zip")
-                    && !s.equals("index-all.html") && !s.equals("search.js"))
+                    && !s.equals("index-all.html") && !s.equals("search.js") && !s.endsWith("-search-index.js"))
             .collect(Collectors.toSet());
 }
 

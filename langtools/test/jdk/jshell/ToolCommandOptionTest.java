@@ -23,7 +23,7 @@
 
  /*
  * @test
- * @bug 8157395 8157393 8157517 8158738 8167128 8163840 8167637 8170368 8172102
+ * @bug 8157395 8157393 8157517 8158738 8167128 8163840 8167637 8170368 8172102 8172179
  * @summary Tests of jshell comand options, and undoing operations
  * @modules jdk.jshell/jdk.internal.jshell.tool
  *          jdk.compiler/com.sun.tools.javac.api
@@ -273,14 +273,13 @@ public class ToolCommandOptionTest extends ReplToolTesting {
                 (a) -> assertCommand(a, "/set start DEFAULT PRINTING",
                         ""),
                 (a) -> assertCommandOutputContains(a, "/set start",
-                        "void println", "import java.util.*"),
+                        "/set start DEFAULT PRINTING", "void println", "import java.util.*"),
                 (a) -> assertCommand(a, "/set start " + startup.toString(),
                         ""),
-                (a) -> assertCommand(a, "/set start",
-                        "|  startup.jsh:\n" +
-                        "|  int iAmHere = 1234;\n" +
-                        "|  \n" +
-                        "|  /set start startup.jsh"),
+                (a) -> assertCommandOutputContains(a, "/set start",
+                        "|  /set start " + startup + "\n" +
+                        "|  ---- " + startup + " @ ", " ----\n" +
+                        "|  int iAmHere = 1234;\n"),
                 (a) -> assertCommand(a, "/se sta -no",
                         ""),
                 (a) -> assertCommand(a, "/set start",
@@ -322,11 +321,18 @@ public class ToolCommandOptionTest extends ReplToolTesting {
                         "|  /set start -retain -none"),
                 (a) -> assertCommand(a, "/set start -retain " + startup.toString(),
                         ""),
-                (a) -> assertCommand(a, "/set start",
-                        "|  startup.jsh:\n" +
-                        "|  int iAmHere = 1234;\n" +
-                        "|  \n" +
-                        "|  /set start -retain startup.jsh")
+                (a) -> assertCommand(a, "/set start DEFAULT PRINTING",
+                        ""),
+                (a) -> assertCommandOutputStartsWith(a, "/set start",
+                        "|  /set start -retain " + startup.toString() + "\n" +
+                        "|  /set start DEFAULT PRINTING\n" +
+                        "|  ---- " + startup.toString() + " @ "),
+                (a) -> assertCommandOutputContains(a, "/set start",
+                        "|  ---- DEFAULT ----\n",
+                        "|  ---- PRINTING ----\n",
+                        "|  int iAmHere = 1234;\n",
+                        "|  void println(String s)",
+                        "|  import java.io.*;")
         );
     }
 

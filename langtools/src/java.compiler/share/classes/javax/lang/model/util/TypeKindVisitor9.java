@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,10 @@ import static javax.lang.model.SourceVersion.*;
  * A visitor of types based on their {@linkplain TypeKind kind} with
  * default behavior appropriate for the {@link SourceVersion#RELEASE_9
  * RELEASE_9} source version.  For {@linkplain
- * TypeMirror types} <tt><i>XYZ</i></tt> that may have more than one
- * kind, the <tt>visit<i>XYZ</i></tt> methods in this class delegate
- * to the <tt>visit<i>XYZKind</i></tt> method corresponding to the
- * first argument's kind.  The <tt>visit<i>XYZKind</i></tt> methods
+ * TypeMirror types} <code><i>Xyz</i></code> that may have more than one
+ * kind, the <code>visit<i>Xyz</i></code> methods in this class delegate
+ * to the <code>visit<i>Xyz</i>As<i>Kind</i></code> method corresponding to the
+ * first argument's kind.  The <code>visit<i>Xyz</i>As<i>Kind</i></code> methods
  * call {@link #defaultAction defaultAction}, passing their arguments
  * to {@code defaultAction}'s corresponding parameters.
  *

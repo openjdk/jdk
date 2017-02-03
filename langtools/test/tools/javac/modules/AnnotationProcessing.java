@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8133884 8162711 8133896
+ * @bug 8133884 8162711 8133896 8172158 8172262
  * @summary Verify that annotation processing works.
  * @library /tools/lib
  * @modules
@@ -50,6 +50,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -979,6 +980,38 @@ public class AnnotationProcessing extends ModuleTestBase {
         }
     }
 
+    @Test
+    public void testDisambiguateAnnotationsNoModules(Path base) throws Exception {
+        Path classes = base.resolve("classes");
+
+        Files.createDirectories(classes);
+
+        Path src = base.resolve("src");
+
+        tb.writeJavaFiles(src,
+                          "package api; public @interface A {}",
+                          "package api; public @interface B {}",
+                          "package impl; import api.*; @A @B public class T {}");
+
+        List<String> log = new JavacTask(tb)
+            .options("-processor", SelectAnnotationATestAP.class.getName() + "," + SelectAnnotationBTestAP.class.getName(),
+                     "-source", "8", "-target", "8")
+            .outdir(classes)
+            .files(findJavaFiles(src))
+            .run()
+            .writeAll()
+            .getOutputLines(OutputKind.STDERR);
+
+        List<String> expected = Arrays.asList("SelectAnnotationATestAP",
+                                              "SelectAnnotationBTestAP",
+                                              "SelectAnnotationATestAP",
+                                              "SelectAnnotationBTestAP");
+
+        if (!expected.equals(log)) {
+            throw new AssertionError("Output does not match; output: " + log);
+        }
+    }
+
     @SupportedAnnotationTypes("m2x/api.A")
     public static final class SelectAnnotationATestAP extends AbstractProcessor {
 
@@ -1035,24 +1068,43 @@ public class AnnotationProcessing extends ModuleTestBase {
                           "package impl1; public class Impl { }",
                           "package impl.conflict.module; class Impl { }",
                           "package impl.conflict.clazz; public class pkg { public static class I { } }",
-                          "package impl.conflict.src; public class Impl { }");
+                          "package impl.conflict.src; public class Impl { }",
+                          "package nested.pack.pack; public class Impl { }",
+                          "package unique.nested; public class Impl { }");
 
         tb.writeJavaFiles(m2,
                           "module m2x { }",
                           "package impl2; public class Impl { }",
                           "package impl.conflict.module; class Impl { }",
-                          "package impl.conflict; public class clazz { public static class pkg { } }");
+                          "package impl.conflict; public class clazz { public static class pkg { } }",
+                          "package nested.pack; public class Impl { }");
 
         //from source:
-        new JavacTask(tb)
+        String log = new JavacTask(tb)
             .options("--module-source-path", moduleSrc.toString(),
                      "--source-path", src.toString(),
                      "-processorpath", System.getProperty("test.class.path"),
-                     "-processor", UnboundLookup.class.getName())
+                     "-processor", UnboundLookup.class.getName(),
+                     "-XDrawDiagnostics")
             .outdir(classes)
             .files(findJavaFiles(moduleSrc))
             .run()
-            .writeAll();
+            .writeAll()
+            .getOutput(OutputKind.DIRECT);
+
+        String moduleImplConflictString =
+                "- compiler.note.multiple.elements: getTypeElement, impl.conflict.module.Impl, m2x, m1x";
+        String srcConflictString =
+                "- compiler.note.multiple.elements: getTypeElement, impl.conflict.src.Impl, m1x, unnamed module";
+
+        if (!log.contains(moduleImplConflictString) ||
+            !log.contains(srcConflictString)) {
+            throw new AssertionError("Expected output not found: " + log);
+        }
+
+        if (log.split(Pattern.quote(moduleImplConflictString)).length > 2) {
+            throw new AssertionError("Too many warnings in: " + log);
+        }
 
         new JavacTask(tb)
             .options("--source-path", src.toString())
@@ -1098,11 +1150,17 @@ public class AnnotationProcessing extends ModuleTestBase {
             assertTypeElementExists("impl.conflict.clazz", "m2x");
             assertPackageElementExists("impl.conflict.clazz", "m1x");
             assertPackageElementExists("impl2", "m2x");
+            assertPackageElementExists("nested.pack.pack", "m1x");
+            assertPackageElementExists("nested.pack", "m2x");
+            assertTypeElementExists("unique.nested.Impl", "m1x");
             assertTypeElementNotFound("impl.conflict.module.Impl");
+            assertTypeElementNotFound("impl.conflict.module.Impl"); //check that the warning/note is produced only once
             assertPackageElementNotFound("impl.conflict.module");
             assertTypeElementNotFound("impl.conflict.src.Impl");
             assertPackageElementNotFound("impl.conflict.src");
             assertTypeElementNotFound("impl.conflict.clazz.pkg");
+            assertPackageElementNotFound("unique"); //do not return packages without members in module mode
+            assertTypeElementNotFound("nested"); //cannot distinguish between m1x and m2x
 
             return false;
         }

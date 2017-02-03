@@ -147,12 +147,6 @@ class ExecutionControlForwarder {
                     ec.addToClasspath(cp);
                     return writeSuccess();
                 }
-                case CMD_SET_CLASSPATH: {
-                    // Set the claspath
-                    String cp = in.readUTF();
-                    ec.setClasspath(cp);
-                    return writeSuccess();
-                }
                 case CMD_STOP: {
                     // Stop the current execution
                     try {

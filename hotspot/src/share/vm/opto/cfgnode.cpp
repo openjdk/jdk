@@ -1889,6 +1889,12 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     bool saw_self = false;
     for( uint i=1; i<req(); ++i ) {// For all paths in
       Node *ii = in(i);
+      // TOP inputs should not be counted as safe inputs because if the
+      // Phi references itself through all other inputs then splitting the
+      // Phi through memory merges would create dead loop at later stage.
+      if (ii == top) {
+        return NULL; // Delay optimization until graph is cleaned.
+      }
       if (ii->is_MergeMem()) {
         MergeMemNode* n = ii->as_MergeMem();
         merge_width = MAX2(merge_width, n->req());
@@ -2097,6 +2103,7 @@ const RegMask &PhiNode::out_RegMask() const {
   uint ideal_reg = _type->ideal_reg();
   assert( ideal_reg != Node::NotAMachineReg, "invalid type at Phi" );
   if( ideal_reg == 0 ) return RegMask::Empty;
+  assert(ideal_reg != Op_RegFlags, "flags register is not spillable");
   return *(Compile::current()->matcher()->idealreg2spillmask[ideal_reg]);
 }
 

@@ -29,6 +29,7 @@ import java.io.IOException;
 
 /**
  * An exception used to signal the opening handshake failed.
+ * {@Incubating}
  *
  * @since 9
  */

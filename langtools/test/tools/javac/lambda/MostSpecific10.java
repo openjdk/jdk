@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,13 @@
  * @test
  * @bug 8034223
  * @summary Structural most-specific logic for lambdas, method refs, parens, and conditionals
- * @compile MostSpecific10.java
  */
-class MostSpecific10 {
+
+public class MostSpecific10 {
+
+    public static void main(String[] args) {
+        new MostSpecific10().test(true);
+    }
 
     interface GetInt {
         int get();
@@ -38,7 +42,9 @@ class MostSpecific10 {
     }
 
     void m(GetInt getter) {}
-    void m(GetInteger getter) {}
+    void m(GetInteger getter) {
+        throw new AssertionError("Less-specific method invocation: " + getter.getClass());
+    }
 
     void test(boolean cond) {
         m(() -> 23);

@@ -1128,7 +1128,7 @@ class MethodType implements java.io.Serializable {
     public String toMethodDescriptorString() {
         String desc = methodDescriptor;
         if (desc == null) {
-            desc = BytecodeDescriptor.unparse(this);
+            desc = BytecodeDescriptor.unparseMethod(this.rtype, this.ptypes);
             methodDescriptor = desc;
         }
         return desc;
@@ -1256,7 +1256,7 @@ s.writeObject(this.parameterArray());
         private final ReferenceQueue<T> stale;
 
         public ConcurrentWeakInternSet() {
-            this.map = new ConcurrentHashMap<>();
+            this.map = new ConcurrentHashMap<>(512);
             this.stale = new ReferenceQueue<>();
         }
 

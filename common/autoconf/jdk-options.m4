@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -320,9 +320,8 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_CODE_COVERAGE],
       AC_MSG_RESULT([yes])
       GCOV_CFLAGS="-fprofile-arcs -ftest-coverage -fno-inline"
       GCOV_LDFLAGS="-fprofile-arcs"
-      LEGACY_EXTRA_CFLAGS="$LEGACY_EXTRA_CFLAGS $GCOV_CFLAGS"
-      LEGACY_EXTRA_CXXFLAGS="$LEGACY_EXTRA_CXXFLAGS $GCOV_CFLAGS"
-      LEGACY_EXTRA_LDFLAGS="$LEGACY_EXTRA_LDFLAGS $GCOV_LDFLAGS"
+      JVM_CFLAGS="$JVM_CFLAGS $GCOV_CFLAGS"
+      JVM_LDFLAGS="$JVM_LDFLAGS $GCOV_LDFLAGS"
       CFLAGS_JDKLIB="$CFLAGS_JDKLIB $GCOV_CFLAGS"
       CFLAGS_JDKEXE="$CFLAGS_JDKEXE $GCOV_CFLAGS"
       CXXFLAGS_JDKLIB="$CXXFLAGS_JDKLIB $GCOV_CFLAGS"
@@ -360,8 +359,6 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_STATIC_BUILD],
       AC_MSG_ERROR([--enable-static-build is only supported for macosx builds])
     fi
     STATIC_BUILD_CFLAGS="-DSTATIC_BUILD=1"
-    LEGACY_EXTRA_CFLAGS="$LEGACY_EXTRA_CFLAGS $STATIC_BUILD_CFLAGS"
-    LEGACY_EXTRA_CXXFLAGS="$LEGACY_EXTRA_CXXFLAGS $STATIC_BUILD_CFLAGS"
     CFLAGS_JDKLIB_EXTRA="$CFLAGS_JDKLIB_EXTRA $STATIC_BUILD_CFLAGS"
     CXXFLAGS_JDKLIB_EXTRA="$CXXFLAGS_JDKLIB_EXTRA $STATIC_BUILD_CFLAGS"
     STATIC_BUILD=true
@@ -385,18 +382,18 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JLINK_OPTIONS],
   AC_ARG_ENABLE([keep-packaged-modules], [AS_HELP_STRING([--disable-keep-packaged-modules],
     [Do not keep packaged modules in jdk image @<:@enable@:>@])])
 
+  AC_MSG_CHECKING([if packaged modules are kept])
   if test "x$enable_keep_packaged_modules" = "xyes"; then
-    AC_MSG_CHECKING([if packaged modules are kept])
     AC_MSG_RESULT([yes])
     JLINK_KEEP_PACKAGED_MODULES=true
   elif test "x$enable_keep_packaged_modules" = "xno"; then
-    AC_MSG_CHECKING([if packaged modules are kept])
     AC_MSG_RESULT([no])
     JLINK_KEEP_PACKAGED_MODULES=false
   elif test "x$enable_keep_packaged_modules" = "x"; then
     AC_MSG_RESULT([yes (default)])
     JLINK_KEEP_PACKAGED_MODULES=true
   else
+    AC_MSG_RESULT([error])
     AC_MSG_ERROR([--enable-keep-packaged-modules accepts no argument])
   fi
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package javax.management;
 
+import java.lang.System.Logger.Level;
 import com.sun.jmx.defaults.JmxProperties;
 import com.sun.jmx.defaults.ServiceName;
 import com.sun.jmx.mbeanserver.Util;
@@ -84,7 +85,8 @@ public class MBeanServerDelegate implements MBeanServerDelegateMBean,
             try {
                 localHost = java.net.InetAddress.getLocalHost().getHostName();
             } catch (java.net.UnknownHostException e) {
-                JmxProperties.MISC_LOGGER.finest("Can't get local host name, " +
+                JmxProperties.MISC_LOGGER.log(Level.TRACE,
+                        "Can't get local host name, " +
                         "using \"localhost\" instead. Cause is: "+e);
                 localHost = "localhost";
             }

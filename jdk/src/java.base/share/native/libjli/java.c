@@ -769,17 +769,7 @@ SetJvmEnvironment(int argc, char **argv) {
                 continue;
             }
 
-            if (*arg != '-'
-                    || JLI_StrCmp(arg, "-version") == 0
-                    || JLI_StrCmp(arg, "--version") == 0
-                    || JLI_StrCmp(arg, "-fullversion") == 0
-                    || JLI_StrCmp(arg, "--full-version") == 0
-                    || JLI_StrCmp(arg, "-help") == 0
-                    || JLI_StrCmp(arg, "--help") == 0
-                    || JLI_StrCmp(arg, "-?") == 0
-                    || JLI_StrCmp(arg, "-jar") == 0
-                    || JLI_StrCmp(arg, "-X") == 0
-                    || JLI_StrCmp(arg, "--help-extra") == 0) {
+            if (*arg != '-' || isTerminalOpt(arg)) {
                 return;
             }
         }
@@ -1248,6 +1238,7 @@ ParseArguments(int *pargc, char ***pargv,
         char *value = NULL;
         int kind = GetOpt(&argc, &argv, &option, &value);
         jboolean has_arg = value != NULL && JLI_StrLen(value) > 0;
+        jboolean has_arg_any_len = value != NULL;
 
 /*
  * Option to set main entry point
@@ -1269,7 +1260,7 @@ ParseArguments(int *pargc, char ***pargv,
                    JLI_StrCCmp(arg, "--class-path=") == 0 ||
                    JLI_StrCmp(arg, "-classpath") == 0 ||
                    JLI_StrCmp(arg, "-cp") == 0) {
-            REPORT_ERROR (has_arg, ARG_ERROR1, arg);
+            REPORT_ERROR (has_arg_any_len, ARG_ERROR1, arg);
             SetClassPath(value);
             mode = LM_CLASS;
         } else if (JLI_StrCmp(arg, "--list-modules") == 0 ||
@@ -1575,6 +1566,31 @@ GetApplicationClass(JNIEnv *env)
     return (*env)->CallStaticObjectMethod(env, cls, mid);
 }
 
+static char* expandWildcardOnLongOpt(char* arg) {
+    char *p, *value;
+    size_t optLen, valueLen;
+    p = JLI_StrChr(arg, '=');
+
+    if (p == NULL || p[1] == '\0') {
+        JLI_ReportErrorMessage(ARG_ERROR1, arg);
+        exit(1);
+    }
+    p++;
+    value = (char *) JLI_WildcardExpandClasspath(p);
+    if (p == value) {
+        // no wildcard
+        return arg;
+    }
+
+    optLen = p - arg;
+    valueLen = JLI_StrLen(value);
+    p = JLI_MemAlloc(optLen + valueLen + 1);
+    memcpy(p, arg, optLen);
+    memcpy(p + optLen, value, valueLen);
+    p[optLen + valueLen + 1] = '\0';
+    return p;
+}
+
 /*
  * For tools, convert command line args thus:
  *   javac -cp foo:foo/"*" -J-ms32m ...
@@ -1625,14 +1641,17 @@ TranslateApplicationArgs(int jargc, const char **jargv, int *pargc, char ***parg
         if (arg[0] == '-') {
             if (arg[1] == 'J')
                 continue;
-            if (IsWildCardEnabled() && arg[1] == 'c'
-                && (JLI_StrCmp(arg, "-cp") == 0 ||
-                    JLI_StrCmp(arg, "-classpath") == 0)
-                && i < argc - 1) {
-                *nargv++ = arg;
-                *nargv++ = (char *) JLI_WildcardExpandClasspath(argv[i+1]);
-                i++;
-                continue;
+            if (IsWildCardEnabled()) {
+                if (IsClassPathOption(arg) && i < argc - 1) {
+                    *nargv++ = arg;
+                    *nargv++ = (char *) JLI_WildcardExpandClasspath(argv[i+1]);
+                    i++;
+                    continue;
+                }
+                if (JLI_StrCCmp(arg, "--class-path=") == 0) {
+                    *nargv++ = expandWildcardOnLongOpt(arg);
+                    continue;
+                }
             }
         }
         *nargv++ = arg;

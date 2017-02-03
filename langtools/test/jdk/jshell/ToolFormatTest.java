@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8148316 8148317 8151755 8152246 8153551 8154812 8157261 8163840 8166637 8161969
+ * @bug 8148316 8148317 8151755 8152246 8153551 8154812 8157261 8163840 8166637 8161969 8173007
  * @summary Tests for output customization
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -38,8 +38,6 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.testng.annotations.Test;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -140,6 +138,66 @@ public class ToolFormatTest extends ReplToolTesting {
         );
     }
 
+    public void testSetFormatSelectorSample() {
+        test(
+                (a) -> assertCommandOutputStartsWith(a, "/set mode ate -quiet",
+                            "|  Created new feedback mode: ate"),
+                (a) -> assertCommand(a, "/set feedback ate", ""),
+
+                (a) -> assertCommand(a, "/set format ate display '---replaced,modified,added-primary---'", ""),
+                (a) -> assertCommand(a, "/set format ate display '+++replaced,modified,added-primary+++' replaced,modified,added-primary", ""),
+                (a) -> assertCommand(a, "\"replaced,modified,added-primary\"", "+++replaced,modified,added-primary+++"),
+
+                (a) -> assertCommand(a, "/set format ate display '---added-primary,update---'", ""),
+                (a) -> assertCommand(a, "/set format ate display '+++added-primary,update+++' added-primary,update", ""),
+                (a) -> assertCommand(a, "\"added-primary,update\"", "+++added-primary,update+++"),
+
+
+                (a) -> assertCommand(a, "/set format ate display '---method-replaced-primary---'", ""),
+                (a) -> assertCommand(a, "/set format ate display '+++method-replaced-primary+++' method-replaced-primary", ""),
+                (a) -> assertCommand(a, "\"method-replaced-primary\"", "---method-replaced-primary---"),
+
+                (a) -> assertCommand(a, "/set format ate display '---method-replaced-update---'", ""),
+                (a) -> assertCommand(a, "/set format ate display '+++method-replaced-update+++' method-replaced-update", ""),
+                (a) -> assertCommand(a, "\"method-replaced-update\"", "---method-replaced-update---"),
+
+                (a) -> assertCommand(a, "/set format ate display '---method-added-update---'", ""),
+                (a) -> assertCommand(a, "/set format ate display '+++method-added-update+++' method-added-update", ""),
+                (a) -> assertCommand(a, "\"method-added-update\"", "---method-added-update---"),
+
+                (a) -> assertCommand(a, "/set format ate display '---method-added---'", ""),
+                (a) -> assertCommand(a, "/set format ate display '+++method-added+++' method-added", ""),
+                (a) -> assertCommand(a, "\"method-added\"", "---method-added---"),
+
+                (a) -> assertCommand(a, "/set format ate display '---class-modified,added-primary,update---'", ""),
+                (a) -> assertCommand(a, "/set format ate display '+++class-modified,added-primary,update+++' class-modified,added-primary,update", ""),
+                (a) -> assertCommand(a, "\"class-modified,added-primary,update\"", "---class-modified,added-primary,update---"),
+
+                (a) -> assertCommand(a, "/set format ate display '---class-modified,added-primary---'", ""),
+                (a) -> assertCommand(a, "/set format ate display '+++class-modified,added-primary+++' class-modified,added-primary", ""),
+                (a) -> assertCommand(a, "\"class-modified,added-primary\"", "---class-modified,added-primary---"),
+
+                (a) -> assertCommand(a, "/set format ate display '---class-modified,added-update---'", ""),
+                (a) -> assertCommand(a, "/set format ate display '+++class-modified,added-update+++' class-modified,added-update", ""),
+                (a) -> assertCommand(a, "\"class-modified,added-update\"", "---class-modified,added-update---"),
+
+                (a) -> assertCommand(a, "/set format ate display '---replaced,added---'", ""),
+                (a) -> assertCommand(a, "/set format ate display '+++replaced,added+++' replaced,added", ""),
+                (a) -> assertCommand(a, "\"replaced,added\"", "+++replaced,added+++"),
+
+                (a) -> assertCommand(a, "/set format ate display '---replaced-primary,update---'", ""),
+                (a) -> assertCommand(a, "/set format ate display '+++replaced-primary,update+++' replaced-primary,update", ""),
+                (a) -> assertCommand(a, "\"replaced-primary,update\"", "---replaced-primary,update---"),
+
+                (a) -> assertCommandOutputStartsWith(a, "/set feedback normal", "|  Feedback mode: normal")
+        );
+    }
+
+    // This test is exhaustive and takes to long for routine testing -- disabled.
+    // A sampling of these has been added (above: testSetFormatSelectorSample).
+    // See 8173007
+    // Save for possible future deep testing or debugging
+    @Test(enabled = false)
     public void testSetFormatSelector() {
         List<ReplTest> tests = new ArrayList<>();
         tests.add((a) -> assertCommandOutputStartsWith(a, "/set mode ate -quiet",
@@ -202,6 +260,11 @@ public class ToolFormatTest extends ReplToolTesting {
                     tests.add((a) -> assertCommand(a, "/set format ate display '" + no  + "'", ""));
                     tests.add((a) -> assertCommand(a, "/set format ate display '" + yes + "' " + select, ""));
                     tests.add((a) -> assertCommand(a, "\"" + select + "\"", expect));
+             /**** for sample generation ****
+             System.err.println("                (a) -> assertCommand(a, \"/set format ate display '" + no  + "'\", \"\"),");
+             System.err.println("                (a) -> assertCommand(a, \"/set format ate display '" + yes + "' " + select + "\", \"\"),");
+             System.err.println("                (a) -> assertCommand(a, \"\\\"" + select + "\\\"\", \"" + expect + "\"),\n");
+             ****/
                 }
             }
         }

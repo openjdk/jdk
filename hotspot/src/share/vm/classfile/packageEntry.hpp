@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,8 @@
 // A PackageEntry basically represents a Java package.  It contains:
 //   - Symbol* containing the package's name.
 //   - ModuleEntry* for this package's containing module.
-//   - a flag indicating if package is exported unqualifiedly
-//   - a flag indicating if this package is exported to all unnamed modules.
+//   - a field indicating if the package is exported unqualifiedly or to all
+//     unnamed modules.
 //   - a growable array containing other module entries that this
 //     package is exported to.
 //
@@ -44,9 +44,9 @@
 //   - qualified exports:   the package has been explicitly qualified to at least
 //                            one particular module or has been qualifiedly exported
 //                            to all unnamed modules.
-//                            Note: _is_exported_allUnnamed is a form of a qualified
-//                            export. It is equivalent to the package being
-//                            explicitly exported to all current and future unnamed modules.
+//                            Note: being exported to all unnamed is a form of a qualified
+//                            export. It is equivalent to the package being explicitly
+//                            exported to all current and future unnamed modules.
 //   - unqualified exports: the package is exported to all modules.
 //
 // A package can transition from:
@@ -56,21 +56,53 @@
 // A package cannot transition from:
 //   - being unqualifiedly exported, to exported qualifiedly to a specific module.
 //       This transition attempt is silently ignored in set_exported.
+//   - being qualifiedly exported to not exported.
+//       Because transitions are only allowed from less exposure to greater exposure,
+//       the transition from qualifiedly exported to not exported would be considered
+//       a backward direction.  Therefore the implementation considers a package as
+//       qualifiedly exported even if its export-list exists but is empty.
 //
 // The Mutex Module_lock is shared between ModuleEntry and PackageEntry, to lock either
 // data structure.
+
+// PKG_EXP_UNQUALIFIED and PKG_EXP_ALLUNNAMED indicate whether the package is
+// exported unqualifiedly or exported to all unnamed modules.  They are used to
+// set the value of _export_flags.  Field _export_flags and the _qualified_exports
+// list are used to determine a package's export state.
+// Valid states are:
+//
+//   1. Package is not exported
+//      _export_flags is zero and _qualified_exports is null
+//   2. Package is unqualifiedly exported
+//      _export_flags is set to PKG_EXP_UNQUALIFIED
+//      _qualified_exports may or may not be null depending on whether the package
+//        transitioned from qualifiedly exported to unqualifiedly exported.
+//   3. Package is qualifiedly exported
+//      _export_flags may be set to PKG_EXP_ALLUNNAMED if the package is also
+//        exported to all unnamed modules
+//      _qualified_exports will be non-null
+//   4. Package is exported to all unnamed modules
+//      _export_flags is set to PKG_EXP_ALLUNNAMED
+//      _qualified_exports may or may not be null depending on whether the package
+//        is also qualifiedly exported to one or more named modules.
+#define PKG_EXP_UNQUALIFIED  0x0001
+#define PKG_EXP_ALLUNNAMED   0x0002
+#define PKG_EXP_UNQUALIFIED_OR_ALL_UNAMED (PKG_EXP_UNQUALIFIED | PKG_EXP_ALLUNNAMED)
+
 class PackageEntry : public HashtableEntry<Symbol*, mtModule> {
 private:
   ModuleEntry* _module;
+  // Indicates if package is exported unqualifiedly or to all unnamed. Access to
+  // this field is protected by the Module_lock.
+  int _export_flags;
   // Used to indicate for packages with classes loaded by the boot loader that
   // a class in that package has been loaded.  And, for packages with classes
   // loaded by the boot loader from -Xbootclasspath/a in an unnamed module, it
   // indicates from which class path entry.
   s2 _classpath_index;
-  bool _is_exported_unqualified;
-  bool _is_exported_allUnnamed;
   bool _must_walk_exports;
-  GrowableArray<ModuleEntry*>* _exported_pending_delete; // transitioned from qualified to unqualified, delete at safepoint
+  // Contains list of modules this package is qualifiedly exported to.  Access
+  // to this list is protected by the Module_lock.
   GrowableArray<ModuleEntry*>* _qualified_exports;
   TRACE_DEFINE_TRACE_ID_FIELD;
 
@@ -80,17 +112,14 @@ private:
 public:
   void init() {
     _module = NULL;
+    _export_flags = 0;
     _classpath_index = -1;
-    _is_exported_unqualified = false;
-    _is_exported_allUnnamed = false;
     _must_walk_exports = false;
-    _exported_pending_delete = NULL;
     _qualified_exports = NULL;
   }
 
   // package name
   Symbol*            name() const               { return literal(); }
-  void               set_name(Symbol* n)        { set_literal(n); }
 
   // the module containing the package definition
   ModuleEntry*       module() const             { return _module; }
@@ -98,37 +127,39 @@ public:
 
   // package's export state
   bool is_exported() const { // qualifiedly or unqualifiedly exported
-      return (is_unqual_exported() || has_qual_exports_list() || is_exported_allUnnamed());
+    assert_locked_or_safepoint(Module_lock);
+    return ((_export_flags & PKG_EXP_UNQUALIFIED_OR_ALL_UNAMED) != 0) || has_qual_exports_list();
   }
   // Returns true if the package has any explicit qualified exports or is exported to all unnamed
   bool is_qual_exported() const {
+    assert_locked_or_safepoint(Module_lock);
     return (has_qual_exports_list() || is_exported_allUnnamed());
   }
-  // Returns true if there are any explicit qualified exports
+  // Returns true if there are any explicit qualified exports.  Note that even
+  // if the _qualified_exports list is now empty (because the modules that were
+  // on the list got gc-ed and deleted from the list) this method may still
+  // return true.
   bool has_qual_exports_list() const {
-    assert(!(_qualified_exports != NULL && _is_exported_unqualified),
-           "_qualified_exports set at same time as _is_exported_unqualified");
-    return (_qualified_exports != NULL);
+    assert_locked_or_safepoint(Module_lock);
+    return (!is_unqual_exported() && _qualified_exports != NULL);
   }
   bool is_exported_allUnnamed() const {
-    assert(!(_is_exported_allUnnamed && _is_exported_unqualified),
-           "_is_exported_allUnnamed set at same time as _is_exported_unqualified");
-    return _is_exported_allUnnamed;
+    assert_locked_or_safepoint(Module_lock);
+    return (_export_flags == PKG_EXP_ALLUNNAMED);
   }
   bool is_unqual_exported() const {
-    assert(!(_qualified_exports != NULL && _is_exported_unqualified),
-           "_qualified_exports set at same time as _is_exported_unqualified");
-    assert(!(_is_exported_allUnnamed && _is_exported_unqualified),
-           "_is_exported_allUnnamed set at same time as _is_exported_unqualified");
-    return _is_exported_unqualified;
+    assert_locked_or_safepoint(Module_lock);
+    return (_export_flags == PKG_EXP_UNQUALIFIED);
   }
+
+  // Explicitly set _export_flags to PKG_EXP_UNQUALIFIED and clear
+  // PKG_EXP_ALLUNNAMED, if it was set.
   void set_unqual_exported() {
     assert(Module_lock->owned_by_self(), "should have the Module_lock");
-    _is_exported_unqualified = true;
-    _is_exported_allUnnamed = false;
-    _qualified_exports = NULL;
+    _export_flags = PKG_EXP_UNQUALIFIED;
   }
-  bool exported_pending_delete() const     { return (_exported_pending_delete != NULL); }
+
+  bool exported_pending_delete() const;
 
   void set_exported(ModuleEntry* m);
 

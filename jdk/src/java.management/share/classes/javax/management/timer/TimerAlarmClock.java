@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package javax.management.timer;
 
 import java.util.Date;
-import java.util.logging.Level;
+import java.lang.System.Logger.Level;
 import static com.sun.jmx.defaults.JmxProperties.TIMER_LOGGER;
 
 /**
@@ -73,7 +73,7 @@ class TimerAlarmClock extends java.util.TimerTask {
             TimerAlarmClockNotification notif = new TimerAlarmClockNotification(this);
             listener.notifyAlarmClock(notif);
         } catch (Exception e) {
-            TIMER_LOGGER.logp(Level.FINEST, Timer.class.getName(), "run",
+            TIMER_LOGGER.log(Level.TRACE,
                     "Got unexpected exception when sending a notification", e);
         }
     }

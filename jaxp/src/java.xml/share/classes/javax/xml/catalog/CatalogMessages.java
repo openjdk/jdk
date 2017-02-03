@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,11 @@
  */
 package javax.xml.catalog;
 
-import jdk.xml.internal.SecuritySupport;
+import java.net.URI;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import jdk.xml.internal.SecuritySupport;
 
 /**
  * Catalog Error messages
@@ -38,6 +39,8 @@ final class CatalogMessages {
 
     public static final String ERR_INVALID_CATALOG = "InvalidCatalog";
     public static final String ERR_INVALID_ENTRY_TYPE = "InvalidEntryType";
+    public static final String ERR_URI_NOTABSOLUTE = "UriNotAbsolute";
+    public static final String ERR_URI_NOTVALIDURL = "UriNotValidUrl";
     public static final String ERR_INVALID_ARGUMENT = "InvalidArgument";
     public static final String ERR_NULL_ARGUMENT = "NullArgument";
     public static final String ERR_CIRCULAR_REFERENCE = "CircularReference";
@@ -120,7 +123,7 @@ final class CatalogMessages {
      * @param name the name of the argument
      * @param value the value of the argument
      */
-    static void reportNPEOnNull(String name, String value) {
+    static void reportNPEOnNull(String name, Object value) {
         if (value == null) {
             throw new NullPointerException(
                     formatMessage(ERR_NULL_ARGUMENT, new Object[]{name}));
@@ -132,9 +135,9 @@ final class CatalogMessages {
      * @param arguments the arguments for formating the error message
      * @param cause the cause if any
      */
-    static void reportIAE(Object[] arguments, Throwable cause) {
+    static void reportIAE(String key, Object[] arguments, Throwable cause) {
         throw new IllegalArgumentException(
-                formatMessage(ERR_INVALID_ARGUMENT, arguments), cause);
+                formatMessage(key, arguments), cause);
     }
 
     /**
@@ -174,7 +177,7 @@ final class CatalogMessages {
 
     /**
      * Returns sanitized URI.
-     * @param uri an URI to be sanitized
+     * @param uri a URI to be sanitized
      */
     static String sanitize(String uri) {
         if (uri == null) {

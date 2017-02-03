@@ -148,7 +148,9 @@ public class HtmlWriter {
 
     public final Content descfrmInterfaceLabel;
 
-    private final Writer writer;
+    private final DocFile file;
+
+    private Writer writer;
 
     protected Content script;
 
@@ -164,7 +166,7 @@ public class HtmlWriter {
      */
     public HtmlWriter(Configuration configuration, DocPath path)
             throws IOException, UnsupportedEncodingException {
-        writer = DocFile.createFileForOutput(configuration, path).openWriter();
+        file = DocFile.createFileForOutput(configuration, path);
         this.configuration = configuration;
         this.memberDetailsListPrinted = false;
         packageTableHeader = new String[] {
@@ -214,6 +216,7 @@ public class HtmlWriter {
     }
 
     public void write(Content c) throws IOException {
+        writer = file.openWriter();
         c.write(writer, true);
     }
 

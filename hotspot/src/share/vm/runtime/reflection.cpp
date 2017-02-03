@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -534,22 +534,26 @@ Reflection::VerifyClassAccessResults Reflection::verify_class_access(
     PackageEntry* package_to = new_class->package();
     assert(package_to != NULL, "can not obtain new_class' package");
 
-    // Once readability is established, if module_to exports T unqualifiedly,
-    // (to all modules), than whether module_from is in the unnamed module
-    // or not does not matter, access is allowed.
-    if (package_to->is_unqual_exported()) {
-      return ACCESS_OK;
-    }
+    {
+      MutexLocker m1(Module_lock);
 
-    // Access is allowed if both 1 & 2 hold:
-    //   1. Readability, module_from can read module_to (established above).
-    //   2. Either module_to exports T to module_from qualifiedly.
-    //      or
-    //      module_to exports T to all unnamed modules and module_from is unnamed.
-    //      or
-    //      module_to exports T unqualifiedly to all modules (checked above).
-    if (!package_to->is_qexported_to(module_from)) {
-      return TYPE_NOT_EXPORTED;
+      // Once readability is established, if module_to exports T unqualifiedly,
+      // (to all modules), than whether module_from is in the unnamed module
+      // or not does not matter, access is allowed.
+      if (package_to->is_unqual_exported()) {
+        return ACCESS_OK;
+      }
+
+      // Access is allowed if both 1 & 2 hold:
+      //   1. Readability, module_from can read module_to (established above).
+      //   2. Either module_to exports T to module_from qualifiedly.
+      //      or
+      //      module_to exports T to all unnamed modules and module_from is unnamed.
+      //      or
+      //      module_to exports T unqualifiedly to all modules (checked above).
+      if (!package_to->is_qexported_to(module_from)) {
+        return TYPE_NOT_EXPORTED;
+      }
     }
     return ACCESS_OK;
   }

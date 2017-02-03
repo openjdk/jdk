@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 
 #define FD_SETSIZE 1024
 
+#include <limits.h>
 #include <stdlib.h>
 #include <winsock2.h>
 
@@ -74,9 +75,19 @@ Java_sun_nio_ch_WindowsSelectorImpl_00024SubSelector_poll0(JNIEnv *env, jobject 
     } else if (timeout < 0) {
         tv = NULL;
     } else {
+        jlong sec = timeout / 1000;
         tv = &timevalue;
-        tv->tv_sec =  (long)(timeout / 1000);
-        tv->tv_usec = (long)((timeout % 1000) * 1000);
+        //
+        // struct timeval members are signed 32-bit integers so the
+        // signed 64-bit jlong needs to be clamped
+        //
+        if (sec > INT_MAX) {
+            tv->tv_sec  = INT_MAX;
+            tv->tv_usec = 0;
+        } else {
+            tv->tv_sec  = (long)sec;
+            tv->tv_usec = (long)((timeout % 1000) * 1000);
+        }
     }
 
     /* Set FD_SET structures required for select */

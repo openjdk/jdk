@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,15 +53,6 @@ import static javax.lang.model.SourceVersion.*;
  * visit method in question.  When the new visitor is introduced, all
  * or portions of this visitor may be deprecated.
  *
- * <p>Note that adding a default implementation of a new visit method
- * in a visitor class will occur instead of adding a <em>default
- * method</em> directly in the visitor interface since a Java SE 8
- * language feature cannot be used to this version of the API since
- * this version is required to be runnable on Java SE 7
- * implementations.  Future versions of the API that are only required
- * to run on Java SE 8 and later may take advantage of default methods
- * in this situation.
- *
  * @param <R> the return type of this visitor's methods.  Use {@link
  *            Void} for visitors that do not need to return results.
  * @param <P> the type of the additional parameter to this visitor's
@@ -76,15 +67,15 @@ import static javax.lang.model.SourceVersion.*;
  * @see AbstractElementVisitor8
  * @see AbstractElementVisitor9
  * @since 1.6
- * @deprecated Release 6 is obsolete; update to a visitor for a newer
- * release level.
  */
-@Deprecated
 @SupportedSourceVersion(RELEASE_6)
 public abstract class AbstractElementVisitor6<R, P> implements ElementVisitor<R, P> {
     /**
      * Constructor for concrete subclasses to call.
+     * @deprecated Release 6 is obsolete; update to a visitor for a newer
+     * release level.
      */
+    @Deprecated
     protected AbstractElementVisitor6(){}
 
     /**
@@ -148,6 +139,7 @@ public abstract class AbstractElementVisitor6<R, P> implements ElementVisitor<R,
      */
     @Override
     public R visitModule(ModuleElement e, P p) {
-        return visitUnknown(e, p);
+        // Use implementation from interface default method
+        return ElementVisitor.super.visitModule(e, p);
     }
 }

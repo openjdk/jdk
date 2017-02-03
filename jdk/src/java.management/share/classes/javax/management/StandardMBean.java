@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
-import java.util.logging.Level;
+import java.lang.System.Logger.Level;
 import javax.management.openmbean.OpenMBeanAttributeInfo;
 import javax.management.openmbean.OpenMBeanAttributeInfoSupport;
 import javax.management.openmbean.OpenMBeanConstructorInfo;
@@ -432,16 +432,14 @@ public class StandardMBean implements DynamicMBean, MBeanRegistration {
             final MBeanInfo cached = getCachedMBeanInfo();
             if (cached != null) return cached;
         } catch (RuntimeException x) {
-            if (MISC_LOGGER.isLoggable(Level.FINEST)) {
-                MISC_LOGGER.logp(Level.FINEST,
-                        MBeanServerFactory.class.getName(), "getMBeanInfo",
+            if (MISC_LOGGER.isLoggable(Level.DEBUG)) {
+                MISC_LOGGER.log(Level.DEBUG,
                         "Failed to get cached MBeanInfo", x);
             }
         }
 
-        if (MISC_LOGGER.isLoggable(Level.FINER)) {
-            MISC_LOGGER.logp(Level.FINER,
-                    MBeanServerFactory.class.getName(), "getMBeanInfo",
+        if (MISC_LOGGER.isLoggable(Level.TRACE)) {
+            MISC_LOGGER.log(Level.TRACE,
                     "Building MBeanInfo for " +
                     getImplementationClass().getName());
         }
@@ -465,9 +463,8 @@ public class StandardMBean implements DynamicMBean, MBeanRegistration {
         try {
             cacheMBeanInfo(nmbi);
         } catch (RuntimeException x) {
-            if (MISC_LOGGER.isLoggable(Level.FINEST)) {
-                MISC_LOGGER.logp(Level.FINEST,
-                        MBeanServerFactory.class.getName(), "getMBeanInfo",
+            if (MISC_LOGGER.isLoggable(Level.DEBUG)) {
+                MISC_LOGGER.log(Level.DEBUG,
                         "Failed to cache MBeanInfo", x);
             }
         }

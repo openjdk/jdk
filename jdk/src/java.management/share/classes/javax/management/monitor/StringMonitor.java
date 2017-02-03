@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package javax.management.monitor;
 
 import static com.sun.jmx.defaults.JmxProperties.MONITOR_LOGGER;
-import java.util.logging.Level;
+import java.lang.System.Logger.Level;
 import javax.management.ObjectName;
 import javax.management.MBeanNotificationInfo;
 import static javax.management.monitor.MonitorNotification.*;
@@ -151,8 +151,7 @@ public class StringMonitor extends Monitor implements StringMonitorMBean {
      */
     public synchronized void start() {
         if (isActive()) {
-            MONITOR_LOGGER.logp(Level.FINER, StringMonitor.class.getName(),
-                    "start", "the monitor is already active");
+            MONITOR_LOGGER.log(Level.TRACE, "the monitor is already active");
             return;
         }
         // Reset values.

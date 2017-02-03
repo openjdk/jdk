@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * @library ..
  * @modules java.base/sun.security.internal.interfaces
  *          java.base/sun.security.internal.spec
- *          jdk.crypto.token
+ *          jdk.crypto.cryptoki
  * @run main/othervm TestMasterSecret
  * @run main/othervm TestMasterSecret sm TestMasterSecret.policy
  */

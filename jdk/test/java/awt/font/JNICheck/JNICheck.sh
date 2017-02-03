@@ -23,7 +23,7 @@
 #
 #
 #   @test
-#   @bug        6430247 8130507 8020448
+#   @bug        6430247 8130507 8020448 8172813
 #   @summary    Tests that there are no JNI warnings.
 #   @compile JNICheck.java
 #   @run shell/timeout=300 JNICheck.sh
@@ -49,7 +49,7 @@ else
 fi
 
 $JAVA_HOME/bin/java ${TESTVMOPTS} \
-    -cp "${CP}" -Xcheck:jni JNICheck > "${CP}"/log.txt
+    -cp "${CP}" -Xcheck:jni JNICheck | grep -v SIG | grep -v Signal | grep -v CallStatic > "${CP}"/log.txt
 
 # any messages logged may indicate a failure.
 if [ -s "${CP}"/log.txt ]; then

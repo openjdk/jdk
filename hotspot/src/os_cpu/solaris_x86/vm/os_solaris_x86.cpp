@@ -89,7 +89,10 @@
 // Minimum usable stack sizes required to get to user code. Space for
 // HotSpot guard pages is added later.
 #ifdef _LP64
-size_t os::Posix::_compiler_thread_min_stack_allowed = 202 * K;
+// The adlc generated method 'State::MachNodeGenerator(int)' used by the C2 compiler
+// threads requires a large stack with the Solaris Studio C++ compiler version 5.13
+// and product VM builds (debug builds require significantly less stack space).
+size_t os::Posix::_compiler_thread_min_stack_allowed = 325 * K;
 size_t os::Posix::_java_thread_min_stack_allowed = 48 * K;
 size_t os::Posix::_vm_internal_thread_min_stack_allowed = 224 * K;
 #else

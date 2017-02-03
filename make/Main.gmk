@@ -247,7 +247,7 @@ HOTSPOT_VARIANT_LIBS_TARGETS := $(addsuffix -libs, $(HOTSPOT_VARIANT_TARGETS))
 define DeclareHotspotGensrcRecipe
   hotspot-$1-gensrc:
 	$$(call LogInfo, Building JVM variant '$1' with features '$(JVM_FEATURES_$1)')
-	+($(CD) $(HOTSPOT_TOPDIR)/make && $(MAKE) -f gensrc/GenerateSources.gmk \
+	+($(CD) $(HOTSPOT_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f gensrc/GenerateSources.gmk \
 	    JVM_VARIANT=$1)
 endef
 
@@ -255,14 +255,14 @@ $(foreach v, $(JVM_VARIANTS), $(eval $(call DeclareHotspotGensrcRecipe,$v)))
 
 define DeclareHotspotLibsRecipe
   hotspot-$1-libs:
-	+($(CD) $(HOTSPOT_TOPDIR)/make && $(MAKE) -f lib/CompileLibraries.gmk \
+	+($(CD) $(HOTSPOT_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f lib/CompileLibraries.gmk \
 	    JVM_VARIANT=$1)
 endef
 
 $(foreach v, $(JVM_VARIANTS), $(eval $(call DeclareHotspotLibsRecipe,$v)))
 
 hotspot-jsig:
-	+($(CD) $(HOTSPOT_TOPDIR)/make && $(MAKE) -f lib/CompileLibjsig.gmk)
+	+($(CD) $(HOTSPOT_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f lib/CompileLibjsig.gmk)
 
 hotspot-ide-project:
 	+($(CD) $(HOTSPOT_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f ide/CreateVSProject.gmk)
@@ -285,7 +285,7 @@ ALL_TARGETS += demos-jdk samples-jdk
 # Jigsaw specific data and analysis targets.
 
 generate-summary:
-	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) -f GenerateModuleSummary.gmk)
+	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f GenerateModuleSummary.gmk)
 
 ALL_TARGETS += generate-summary
 
@@ -318,7 +318,7 @@ BOOTCYCLE_TARGET := product-images
 bootcycle-images:
         ifneq ($(COMPILE_TYPE), cross)
 	  $(call LogWarn, Boot cycle build step 2: Building a new JDK image using previously built image)
-	  +$(MAKE) -f $(SRC_ROOT)/make/Init.gmk PARALLEL_TARGETS=$(BOOTCYCLE_TARGET) \
+	  +$(MAKE) $(MAKE_ARGS) -f $(SRC_ROOT)/make/Init.gmk PARALLEL_TARGETS=$(BOOTCYCLE_TARGET) \
 	      JOBS= SPEC=$(dir $(SPEC))bootcycle-spec.gmk main
         else
 	  $(call LogWarn, Boot cycle build disabled when cross compiling)
@@ -342,7 +342,7 @@ jre-image:
 symbols-image:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Images.gmk symbols)
 
-profiles:
+profiles-image:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Images.gmk profiles)
 
 mac-bundles-jdk:
@@ -356,7 +356,7 @@ exploded-image-optimize:
 
 ALL_TARGETS += store-source-revision create-source-revision-tracker bootcycle-images zip-security \
     zip-source jrtfs-jar jdk-image jre-image \
-    symbols-image profiles mac-bundles-jdk \
+    symbols-image profiles-image mac-bundles-jdk \
     release-file exploded-image-optimize
 
 ################################################################################
@@ -510,13 +510,16 @@ ALL_TARGETS += test test-hotspot-jtreg test-hotspot-jtreg-native \
 product-bundles:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Bundles.gmk product-bundles)
 
+profiles-bundles:
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Bundles.gmk profiles-bundles)
+
 test-bundles:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Bundles.gmk test-bundles)
 
 docs-bundles:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Bundles.gmk docs-bundles)
 
-ALL_TARGETS += product-bundles test-bundles docs-bundles
+ALL_TARGETS += product-bundles profiles-bundles test-bundles docs-bundles
 
 ################################################################################
 # Install targets
@@ -630,13 +633,12 @@ else
   # in javadoc.
   java.desktop-gensrc-jdk: java.base-gensrc
 
-  # The annotation processing for jdk.vm.ci needs java.base classes from the
-  # current JDK.
-  jdk.vm.ci-gensrc-hotspot: java.base-java
-
-  # The annotation processing for jdk.vm.compiler needs classes from the current JDK.
-  jdk.vm.compiler-gensrc-hotspot: java.base-java java.management-java \
-      jdk.management-java jdk.vm.ci-java jdk.unsupported-java
+  # The annotation processing for jdk.vm.ci and jdk.vm.compiler needs classes
+  # from the current JDK.
+  jdk.vm.ci-gensrc-hotspot: $(addsuffix -java, \
+      $(call FindTransitiveDepsForModule, jdk.vm.ci))
+  jdk.vm.compiler-gensrc-hotspot: $(addsuffix -java, \
+      $(call FindTransitiveDepsForModule, jdk.vm.compiler))
 
   # For jdk.vm.compiler, the gensrc step is generating a module-info.java.extra
   # file to be processed by the gensrc-moduleinfo target.
@@ -735,7 +737,7 @@ else
   jre-image: jmods release-file
   symbols-image: $(LIBS_TARGETS) $(LAUNCHER_TARGETS)
 
-  profiles: jmods release-file
+  profiles-image: jmods release-file
 
   mac-bundles-jdk: jdk-image jre-image
 
@@ -793,6 +795,8 @@ else
   install: product-images
 
   product-bundles: product-images
+
+  profiles-bundles: profiles-images
 
   test-bundles: test-image
 
@@ -879,6 +883,9 @@ product-images: jdk-image jre-image symbols-image exploded-image
 # an image until this can be cleaned up properly.
 product-images: zip-security
 
+# Declare these for backwards compatiblity and convenience.
+profiles profiles-images: profiles-image
+
 # The module summary cannot be run when:
 # * Cross compiling and building a partial BUILDJDK for the build host
 # * An external buildjdk has been supplied since it may not match the
@@ -910,7 +917,9 @@ ALL_TARGETS += buildtools hotspot hotspot-libs hotspot-gensrc gensrc gendata \
     copy java rmic libs launchers jmods \
     jdk.jdwp.agent-gensrc $(ALL_MODULES) demos samples \
     exploded-image-base exploded-image \
-    create-buildjdk mac-bundles product-images docs-image test-image all-images \
+    create-buildjdk mac-bundles product-images \
+    profiles profiles-images \
+    docs-image test-image all-images \
     all-bundles
 
 ################################################################################

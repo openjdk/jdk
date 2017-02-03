@@ -895,8 +895,32 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
           ciMethod* target = s.get_method(ignored_will_link, &declared_signature);
           ciKlass*  holder = s.get_declared_method_holder();
           assert(declared_signature != NULL, "cannot be null");
-          // Push appendix argument, if one.
-          if (s.has_appendix()) {
+          // If the current bytecode has an attached appendix argument,
+          // push an unknown object to represent that argument. (Analysis
+          // of dynamic call sites, especially invokehandle calls, needs
+          // the appendix argument on the stack, in addition to "regular" arguments
+          // pushed onto the stack by bytecode instructions preceding the call.)
+          //
+          // The escape analyzer does _not_ use the ciBytecodeStream::has_appendix(s)
+          // method to determine whether the current bytecode has an appendix argument.
+          // The has_appendix() method obtains the appendix from the
+          // ConstantPoolCacheEntry::_f1 field, which can happen concurrently with
+          // resolution of dynamic call sites. Callees in the
+          // ciBytecodeStream::get_method() call above also access the _f1 field;
+          // interleaving the get_method() and has_appendix() calls in the current
+          // method with call site resolution can lead to an inconsistent view of
+          // the current method's argument count. In particular, some interleaving(s)
+          // can cause the method's argument count to not include the appendix, which
+          // then leads to stack over-/underflow in the escape analyzer.
+          //
+          // Instead of pushing the argument if has_appendix() is true, the escape analyzer
+          // pushes an appendix for all call sites targeted by invokedynamic and invokehandle
+          // instructions, except if the call site is the _invokeBasic intrinsic
+          // (that intrinsic is always targeted by an invokehandle instruction but does
+          // not have an appendix argument).
+          if (target->is_loaded() &&
+              Bytecodes::has_optional_appendix(s.cur_bc_raw()) &&
+              target->intrinsic_id() != vmIntrinsics::_invokeBasic) {
             state.apush(unknown_obj);
           }
           // Pass in raw bytecode because we need to see invokehandle instructions.

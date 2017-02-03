@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -233,11 +233,14 @@ class WinNTFileSystem extends FileSystem {
         int childStart = 0;
         int parentEnd = pn;
 
+        boolean isDirectoryRelative =
+            pn == 2 && isLetter(parent.charAt(0)) && parent.charAt(1) == ':';
+
         if ((cn > 1) && (c.charAt(0) == slash)) {
             if (c.charAt(1) == slash) {
                 /* Drop prefix when child is a UNC pathname */
                 childStart = 2;
-            } else {
+            } else if (!isDirectoryRelative) {
                 /* Drop prefix when child is drive-relative */
                 childStart = 1;
 
@@ -254,7 +257,7 @@ class WinNTFileSystem extends FileSystem {
 
         int strlen = parentEnd + cn - childStart;
         char[] theChars = null;
-        if (child.charAt(childStart) == slash) {
+        if (child.charAt(childStart) == slash || isDirectoryRelative) {
             theChars = new char[strlen];
             parent.getChars(0, parentEnd, theChars, 0);
             child.getChars(childStart, cn, theChars, parentEnd);

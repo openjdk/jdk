@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -36,17 +36,13 @@ jdk/javadoc/doclet/testIOException/TestIOException.java                         
 #
 # jshell
 
-jdk/jshell/EditorPadTest.java                                                   8161276    windows-all    Test set-up cannot press buttons
-jdk/jshell/ToolBasicTest.java                                                   8139873    generic-all    JShell tests failing
-jdk/jshell/ExternalEditorTest.java                                              8170108    generic-all
-jdk/jshell/ToolFormatTest.java                                                  8170216    solaris-sparcv9
-jdk/jshell/ReplaceTest.java                                                     8170216    solaris-sparcv9
+jdk/jshell/UserJdiUserRemoteTest.java                                           8173204    linux-all
+jdk/jshell/UserInputTest.java                                                   8169536    generic-all   
 
 ###########################################################################
 #
 # javac
 
-tools/javac/Paths/AbsolutePathTest.java                                         8055768    generic-all    ToolBox does not close opened files
 tools/javac/annotations/typeAnnotations/failures/CantAnnotatePackages.java      8057679    generic-all    clarify error messages trying to annotate scoping
 tools/javac/annotations/typeAnnotations/failures/CantAnnotateScoping.java       8057679    generic-all    clarify error messages trying to annotate scoping
 tools/javac/annotations/typeAnnotations/failures/CantAnnotateStaticClass2.java  8057679    generic-all    clarify error messages trying to annotate scoping

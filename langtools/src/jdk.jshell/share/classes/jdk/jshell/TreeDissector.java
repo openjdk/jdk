@@ -28,14 +28,11 @@ package jdk.jshell;
 
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
-import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodTree;
-import com.sun.source.tree.ReturnTree;
 import com.sun.source.tree.StatementTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.SourcePositions;
-import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.MethodType;
@@ -47,7 +44,6 @@ import jdk.jshell.TaskFactory.AnalyzeTask;
 import jdk.jshell.Wrap.Range;
 
 import java.util.List;
-import java.util.Locale;
 
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -60,16 +56,6 @@ import jdk.jshell.Util.Pair;
  */
 
 class TreeDissector {
-
-    private static final String OBJECT_TYPE = "Object";
-
-    static class ExpressionInfo {
-
-        boolean isNonVoid;
-        String typeName;
-        ExpressionTree tree;
-        String signature;
-    }
 
     private final TaskFactory.BaseTask bt;
     private final ClassTree targetClass;
@@ -219,41 +205,6 @@ class TreeDissector {
         return null;
     }
 
-
-    ExpressionInfo typeOfReturnStatement(AnalyzeTask at, JShell state) {
-        ExpressionInfo ei = new ExpressionInfo();
-        Tree unitTree = firstStatement();
-        if (unitTree instanceof ReturnTree) {
-            ei.tree = ((ReturnTree) unitTree).getExpression();
-            if (ei.tree != null) {
-                TreePath viPath = trees().getPath(targetCompilationUnit, ei.tree);
-                if (viPath != null) {
-                    TypeMirror tm = trees().getTypeMirror(viPath);
-                    if (tm != null) {
-                        ei.typeName = printType(at, state, tm);
-                        switch (tm.getKind()) {
-                            case VOID:
-                            case NONE:
-                            case ERROR:
-                            case OTHER:
-                                break;
-                            case NULL:
-                                ei.isNonVoid = true;
-                                ei.typeName = OBJECT_TYPE;
-                                break;
-                            default: {
-                                ei.isNonVoid = true;
-                                break;
-
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return ei;
-    }
-
     String typeOfMethod(MethodSnippet msn) {
         Tree unitTree = method(msn);
         if (unitTree instanceof JCMethodDecl) {
@@ -274,8 +225,13 @@ class TreeDissector {
 
     public static String printType(AnalyzeTask at, JShell state, TypeMirror type) {
         Type typeImpl = (Type) type;
-        TypePrinter tp = new TypePrinter(at.messages(), state.maps::fullClassNameAndPackageToClass, typeImpl);
-        return tp.visit(typeImpl, Locale.getDefault());
+        try {
+            TypePrinter tp = new TypePrinter(at.messages(),
+                    state.maps::fullClassNameAndPackageToClass);
+            return tp.toString(typeImpl);
+        } catch (Exception ex) {
+            return null;
+        }
     }
 
     /**

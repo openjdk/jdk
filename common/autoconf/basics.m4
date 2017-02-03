@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -1011,6 +1011,8 @@ AC_DEFUN([BASIC_CHECK_TAR],
   # Test which kind of tar was found
   if test "x$($TAR --version | $GREP "GNU tar")" != "x"; then
     TAR_TYPE="gnu"
+  elif test "x$($TAR --version | $GREP "bsdtar")" != "x"; then
+    TAR_TYPE="bsd"
   elif test "x$($TAR -v | $GREP "bsdtar")" != "x"; then
     TAR_TYPE="bsd"
   elif test "x$OPENJDK_BUILD_OS" = "xsolaris"; then
@@ -1038,12 +1040,36 @@ AC_DEFUN([BASIC_CHECK_TAR],
   AC_SUBST(TAR_SUPPORTS_TRANSFORM)
 ])
 
+AC_DEFUN([BASIC_CHECK_GREP],
+[
+  # Test that grep supports -Fx with a list of pattern which includes null pattern.
+  # This is a problem for the grep resident on AIX.
+  AC_MSG_CHECKING([that grep ($GREP) -Fx handles empty lines in the pattern list correctly])
+  # Multiple subsequent spaces..
+  STACK_SPACES='aaa   bbb   ccc'
+  # ..converted to subsequent newlines, causes STACK_LIST to be a list with some empty
+  # patterns in it.
+  STACK_LIST=${STACK_SPACES// /$'\n'}
+  NEEDLE_SPACES='ccc bbb aaa'
+  NEEDLE_LIST=${NEEDLE_SPACES// /$'\n'}
+  RESULT="$($GREP -Fvx "$STACK_LIST" <<< "$NEEDLE_LIST")"
+  if test "x$RESULT" == "x"; then
+    AC_MSG_RESULT([yes])
+  else
+    if test "x$OPENJDK_TARGET_OS" = "xaix"; then
+      ADDINFO="Please make sure you use GNU grep, usually found at /opt/freeware/bin."
+    fi
+    AC_MSG_ERROR([grep does not handle -Fx correctly. ${ADDINFO}])
+  fi
+])
+
 AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
 [
   BASIC_CHECK_GNU_MAKE
 
   BASIC_CHECK_FIND_DELETE
   BASIC_CHECK_TAR
+  BASIC_CHECK_GREP
 
   # These tools might not be installed by default,
   # need hint on how to install them.

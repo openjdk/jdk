@@ -1,0 +1,3 @@
+Buggy.java:24:35: compiler.err.intf.expected.here
+Buggy.java:24:13: compiler.err.cyclic.inheritance: Buggy
+2 errors

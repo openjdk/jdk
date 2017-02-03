@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ import org.xml.sax.InputSource;
  * {@link javax.xml.stream.XMLResolver} and {@link org.w3c.dom.ls.LSResourceResolver}
  * however, make no such distinction.
  * In consistent with the existing Java API, this CatalogResolver recognizes a
- * system identifier as an URI and will search both {@code system} and {@code uri}
+ * system identifier as a URI and will search both {@code system} and {@code uri}
  * entries in a catalog in order to find a matching entry.
  * <p>
  * The search is started in the current catalog. If a match is found,
@@ -137,9 +137,9 @@ public interface CatalogResolver extends EntityResolver, XMLResolver,
      * with the specified {@code href} attribute. The {@code href} attribute will
      * be used literally, with no attempt to be made absolute to the {@code base}.
      * <p>
-     * If the value is an URN, the {@code href} attribute is recognized as a
+     * If the value is a URN, the {@code href} attribute is recognized as a
      * {@code publicId}, and used to search {@code public} entries.
-     * If the value is an URI, it is taken as a {@code systemId}, and used to
+     * If the value is a URI, it is taken as a {@code systemId}, and used to
      * search both {@code system} and {@code uri} entries.
      *
      *
@@ -219,7 +219,7 @@ public interface CatalogResolver extends EntityResolver, XMLResolver,
      * @param publicId  the public identifier of the external entity being
      *   referenced, or {@code null} if no public identifier was
      *   supplied or if the resource is not an entity.
-     * @param systemId  the system identifier, an URI reference of the
+     * @param systemId  the system identifier, a URI reference of the
      *   external resource being referenced
      * @param baseUri  the absolute base URI, not used by the CatalogResolver
      *
