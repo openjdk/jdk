@@ -23,7 +23,7 @@
  */
 
 // Precompiled headers are turned off for Sun Studion,
-// or if the user passes USE_PRECOMPILED_HEADER=0 to the makefiles.
+// or if the user passes --disable-precompiled-headers to configure.
 
 #ifndef DONT_USE_PRECOMPILED_HEADER
 # include "asm/assembler.hpp"
