@@ -197,7 +197,6 @@ module java.base {
         jdk.jdeps,
         jdk.jlink;
     exports jdk.internal.vm to
-        java.management,
         jdk.management.agent,
         jdk.jvmstat;
     exports sun.net to
