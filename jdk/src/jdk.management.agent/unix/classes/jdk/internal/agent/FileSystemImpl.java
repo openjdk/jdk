@@ -51,7 +51,7 @@ public class FileSystemImpl extends FileSystem {
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {
                 public Void run() {
-                    System.loadLibrary("management_rmi");
+                    System.loadLibrary("management_agent");
                     return null;
                 }
             });
