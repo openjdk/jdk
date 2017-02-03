@@ -67,12 +67,12 @@ import java.util.function.Predicate;
  * asynchronous nature of these deques, determining the current number
  * of elements requires a traversal of the elements, and so may report
  * inaccurate results if this collection is modified during traversal.
- * Additionally, the bulk operations {@code addAll},
- * {@code removeAll}, {@code retainAll}, {@code containsAll},
- * and {@code toArray} are <em>not</em> guaranteed
- * to be performed atomically. For example, an iterator operating
- * concurrently with an {@code addAll} operation might view only some
- * of the added elements.
+ *
+ * <p>Bulk operations that add, remove, or examine multiple elements,
+ * such as {@link #addAll}, {@link #removeIf} or {@link #forEach},
+ * are <em>not</em> guaranteed to be performed atomically.
+ * For example, a {@code forEach} traversal concurrent with an {@code
+ * addAll} operation might observe only some of the added elements.
  *
  * <p>This class and its iterator implement all of the <em>optional</em>
  * methods of the {@link Deque} and {@link Iterator} interfaces.
@@ -683,8 +683,9 @@ public class ConcurrentLinkedDeque<E>
      */
     final Node<E> succ(Node<E> p) {
         // TODO: should we skip deleted nodes here?
-        Node<E> q = p.next;
-        return (p == q) ? first() : q;
+        if (p == (p = p.next))
+            p = first();
+        return p;
     }
 
     /**
@@ -1416,65 +1417,55 @@ public class ConcurrentLinkedDeque<E>
         boolean exhausted;  // true when no more nodes
 
         public Spliterator<E> trySplit() {
-            Node<E> p;
-            int b = batch;
-            int n = (b <= 0) ? 1 : (b >= MAX_BATCH) ? MAX_BATCH : b + 1;
-            if (!exhausted &&
-                ((p = current) != null || (p = first()) != null)) {
-                if (p.item == null && p == (p = p.next))
-                    current = p = first();
-                if (p != null && p.next != null) {
-                    Object[] a = new Object[n];
-                    int i = 0;
-                    do {
-                        if ((a[i] = p.item) != null)
-                            ++i;
-                        if (p == (p = p.next))
-                            p = first();
-                    } while (p != null && i < n);
-                    if ((current = p) == null)
-                        exhausted = true;
-                    if (i > 0) {
-                        batch = i;
-                        return Spliterators.spliterator
-                            (a, 0, i, (Spliterator.ORDERED |
-                                       Spliterator.NONNULL |
-                                       Spliterator.CONCURRENT));
-                    }
+            Node<E> p, q;
+            if ((p = current()) == null || (q = p.next) == null)
+                return null;
+            int i = 0, n = batch = Math.min(batch + 1, MAX_BATCH);
+            Object[] a = null;
+            do {
+                final E e;
+                if ((e = p.item) != null) {
+                    if (a == null)
+                        a = new Object[n];
+                    a[i++] = e;
                 }
-            }
-            return null;
+                if (p == (p = q))
+                    p = first();
+            } while (p != null && (q = p.next) != null && i < n);
+            setCurrent(p);
+            return (i == 0) ? null :
+                Spliterators.spliterator(a, 0, i, (Spliterator.ORDERED |
+                                                   Spliterator.NONNULL |
+                                                   Spliterator.CONCURRENT));
         }
 
         public void forEachRemaining(Consumer<? super E> action) {
+            Objects.requireNonNull(action);
             Node<E> p;
-            if (action == null) throw new NullPointerException();
-            if (!exhausted &&
-                ((p = current) != null || (p = first()) != null)) {
+            if ((p = current()) != null) {
+                current = null;
                 exhausted = true;
                 do {
-                    E e = p.item;
+                    final E e;
+                    if ((e = p.item) != null)
+                        action.accept(e);
                     if (p == (p = p.next))
                         p = first();
-                    if (e != null)
-                        action.accept(e);
                 } while (p != null);
             }
         }
 
         public boolean tryAdvance(Consumer<? super E> action) {
+            Objects.requireNonNull(action);
             Node<E> p;
-            if (action == null) throw new NullPointerException();
-            if (!exhausted &&
-                ((p = current) != null || (p = first()) != null)) {
+            if ((p = current()) != null) {
                 E e;
                 do {
                     e = p.item;
                     if (p == (p = p.next))
                         p = first();
                 } while (e == null && p != null);
-                if ((current = p) == null)
-                    exhausted = true;
+                setCurrent(p);
                 if (e != null) {
                     action.accept(e);
                     return true;
@@ -1483,11 +1474,24 @@ public class ConcurrentLinkedDeque<E>
             return false;
         }
 
+        private void setCurrent(Node<E> p) {
+            if ((current = p) == null)
+                exhausted = true;
+        }
+
+        private Node<E> current() {
+            Node<E> p;
+            if ((p = current) == null && !exhausted)
+                setCurrent(p = first());
+            return p;
+        }
+
         public long estimateSize() { return Long.MAX_VALUE; }
 
         public int characteristics() {
-            return Spliterator.ORDERED | Spliterator.NONNULL |
-                Spliterator.CONCURRENT;
+            return (Spliterator.ORDERED |
+                    Spliterator.NONNULL |
+                    Spliterator.CONCURRENT);
         }
     }
 
