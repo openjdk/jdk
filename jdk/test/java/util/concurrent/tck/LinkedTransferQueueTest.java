@@ -209,7 +209,7 @@ public class LinkedTransferQueueTest extends JSR166TestCase {
      * all elements successfully put are contained
      */
     public void testPut() {
-        LinkedTransferQueue<Integer> q = new LinkedTransferQueue<Integer>();
+        LinkedTransferQueue<Integer> q = new LinkedTransferQueue<>();
         for (int i = 0; i < SIZE; ++i) {
             assertEquals(i, q.size());
             q.put(i);
@@ -442,7 +442,7 @@ public class LinkedTransferQueueTest extends JSR166TestCase {
      */
     public void testContainsAll() {
         LinkedTransferQueue<Integer> q = populatedQueue(SIZE);
-        LinkedTransferQueue<Integer> p = new LinkedTransferQueue<Integer>();
+        LinkedTransferQueue<Integer> p = new LinkedTransferQueue<>();
         for (int i = 0; i < SIZE; ++i) {
             assertTrue(q.containsAll(p));
             assertFalse(p.containsAll(q));
@@ -571,8 +571,7 @@ public class LinkedTransferQueueTest extends JSR166TestCase {
      * iterator ordering is FIFO
      */
     public void testIteratorOrdering() {
-        final LinkedTransferQueue<Integer> q
-            = new LinkedTransferQueue<Integer>();
+        final LinkedTransferQueue<Integer> q = new LinkedTransferQueue<>();
         assertEquals(Integer.MAX_VALUE, q.remainingCapacity());
         q.add(one);
         q.add(two);
@@ -794,8 +793,7 @@ public class LinkedTransferQueueTest extends JSR166TestCase {
      * is returned by this associated poll.
      */
     public void testTransfer2() throws InterruptedException {
-        final LinkedTransferQueue<Integer> q
-            = new LinkedTransferQueue<Integer>();
+        final LinkedTransferQueue<Integer> q = new LinkedTransferQueue<>();
         final CountDownLatch threadStarted = new CountDownLatch(1);
 
         Thread t = newStartedThread(new CheckedRunnable() {
@@ -817,8 +815,7 @@ public class LinkedTransferQueueTest extends JSR166TestCase {
      * transfer waits until a poll occurs, and then transfers in fifo order
      */
     public void testTransfer3() throws InterruptedException {
-        final LinkedTransferQueue<Integer> q
-            = new LinkedTransferQueue<Integer>();
+        final LinkedTransferQueue<Integer> q = new LinkedTransferQueue<>();
 
         Thread first = newStartedThread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
@@ -874,8 +871,7 @@ public class LinkedTransferQueueTest extends JSR166TestCase {
      * is returned by this associated take.
      */
     public void testTransfer5() throws InterruptedException {
-        final LinkedTransferQueue<Integer> q
-            = new LinkedTransferQueue<Integer>();
+        final LinkedTransferQueue<Integer> q = new LinkedTransferQueue<>();
 
         Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
@@ -1056,7 +1052,7 @@ public class LinkedTransferQueueTest extends JSR166TestCase {
     }
 
     private LinkedTransferQueue<Integer> populatedQueue(int n) {
-        LinkedTransferQueue<Integer> q = new LinkedTransferQueue<Integer>();
+        LinkedTransferQueue<Integer> q = new LinkedTransferQueue<>();
         checkEmpty(q);
         for (int i = 0; i < n; i++) {
             assertEquals(i, q.size());

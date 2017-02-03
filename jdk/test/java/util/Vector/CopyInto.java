@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.*;
 public class CopyInto {
     private static void realMain(String[] args) throws Throwable {
         try {
-            Vector<String> v = new Vector<String>();
+            Vector<String> v = new Vector<>();
             v.add("foo");
             v.copyInto(new Integer[3]);
             fail("Expected ArrayStoreException");

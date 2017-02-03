@@ -71,7 +71,7 @@ public class LinkedListTest extends JSR166TestCase {
      * Integers 0 ... n - 1.
      */
     private LinkedList<Integer> populatedQueue(int n) {
-        LinkedList<Integer> q = new LinkedList<Integer>();
+        LinkedList<Integer> q = new LinkedList<>();
         assertTrue(q.isEmpty());
         for (int i = 0; i < n; ++i)
             assertTrue(q.offer(new Integer(i)));

@@ -42,7 +42,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.SplittableRandom;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
@@ -55,6 +54,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import jdk.testlibrary.Utils;
 
@@ -89,7 +89,6 @@ public class CancelledProducerConsumerLoops {
     final CountDownLatch consumersInterrupted;
     final LoopHelpers.BarrierTimer timer = new LoopHelpers.BarrierTimer();
     final CyclicBarrier barrier;
-    final SplittableRandom rnd = new SplittableRandom();
     volatile boolean done = false;
 
     CancelledProducerConsumerLoops(int npairs, BlockingQueue<Integer> queue) {
@@ -109,7 +108,7 @@ public class CancelledProducerConsumerLoops {
             cons[i] = pool.submit(new Consumer());
         }
         barrier.await();
-        Thread.sleep(rnd.nextInt(5));
+        Thread.sleep(ThreadLocalRandom.current().nextInt(5));
 
         for (int i = 1; i < npairs; i++) {
             if (!prods[i].cancel(true) ||
