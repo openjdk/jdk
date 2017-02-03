@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7025809 8028543 6415644 8028544
+ * @bug 7025809 8028543 6415644 8028544 8029942
  * @summary Test latest, latestSupported, underscore as keyword, etc.
  * @author  Joseph D. Darcy
  * @modules java.compiler
@@ -45,7 +45,7 @@ public class TestSourceVersion {
 
     private static void testLatestSupported() {
         if (SourceVersion.latest() != RELEASE_10 ||
-            SourceVersion.latestSupported() != RELEASE_9)
+            SourceVersion.latestSupported() != RELEASE_10)
             throw new RuntimeException("Unexpected release value(s) found:\n" +
                                        "latest:\t" + SourceVersion.latest() + "\n" +
                                        "latestSupported:\t" + SourceVersion.latestSupported());
