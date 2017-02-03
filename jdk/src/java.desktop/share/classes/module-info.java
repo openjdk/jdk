@@ -88,9 +88,6 @@ module java.desktop {
     exports sun.awt to
         jdk.accessibility;
 
-    exports com.sun.awt to
-        jdk.desktop;
-
     opens javax.swing.plaf.basic to
         jdk.jconsole;
     opens com.sun.java.swing.plaf.windows to
