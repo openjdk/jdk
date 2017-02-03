@@ -1067,7 +1067,7 @@ var getVersion = function (major, minor, security, patch) {
         + "." + (minor != null ? minor : version_numbers.get("DEFAULT_VERSION_MINOR"))
         + "." + (security != null ? security :  version_numbers.get("DEFAULT_VERSION_SECURITY"))
         + "." + (patch != null ? patch : version_numbers.get("DEFAULT_VERSION_PATCH"));
-    while (version.match(".*\.0$")) {
+    while (version.match(".*\\.0$")) {
         version = version.substring(0, version.length - 2);
     }
     return version;
