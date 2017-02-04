@@ -73,11 +73,11 @@ BOOT_MODULES += \
 
 UPGRADEABLE_MODULES += \
     java.activation \
-    java.annotations.common \
     java.corba \
     java.transaction \
     java.xml.bind \
     java.xml.ws \
+    java.xml.ws.annotation \
     #
 
 # Modules explicitly declared as not being upgradeable even though they require

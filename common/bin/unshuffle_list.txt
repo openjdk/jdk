@@ -60,7 +60,7 @@ jaxp/src/java.xml/share/classes/org/xml/sax : jaxp/src/org/xml/sax
 jaxws/src/java.activation/share/classes/com/sun/activation/registries : jaxws/src/share/jaf_classes/com/sun/activation/registries
 jaxws/src/java.activation/share/classes/javax/activation : jaxws/src/share/jaf_classes/javax/activation
 jaxws/src/java.activation/share/classes/META-INF : jaxws/src/share/jaf_classes/META-INF
-jaxws/src/java.annotations.common/share/classes/javax/annotation : jaxws/src/share/jaxws_classes/javax/annotation
+jaxws/src/java.xml.ws.annotation/share/classes/javax/annotation : jaxws/src/share/jaxws_classes/javax/annotation
 jaxws/src/java.xml.bind/share/classes/com/sun/istack/internal : jaxws/src/share/jaxws_classes/com/sun/istack/internal
 jaxws/src/java.xml.bind/share/classes/com/sun/istack/internal/localization : jaxws/src/share/jaxws_classes/com/sun/istack/internal/localization
 jaxws/src/java.xml.bind/share/classes/com/sun/istack/internal/logging/Logger.java : jaxws/src/share/jaxws_classes/com/sun/istack/internal/logging/Logger.java
