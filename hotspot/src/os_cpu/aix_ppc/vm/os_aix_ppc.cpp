@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -256,13 +256,6 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
       os::Aix::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
       return true;
     }
-  }
-
-  // Handle SIGDANGER right away. AIX would raise SIGDANGER whenever available swap
-  // space falls below 30%. This is only a chance for the process to gracefully abort.
-  // We can't hope to proceed after SIGDANGER since SIGKILL tailgates.
-  if (sig == SIGDANGER) {
-    goto report_and_die;
   }
 
   if (info == NULL || uc == NULL || thread == NULL && vmthread == NULL) {

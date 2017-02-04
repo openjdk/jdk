@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  *          java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
- *          jdk.jvmstat/sun.jvmstat.monitor
+ *          jdk.internal.jvmstat/sun.jvmstat.monitor
  *
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
@@ -206,7 +206,7 @@ public class TestUnstableIfTrap {
         boolean isMethodCompiledAtMaxTier
                 = WB.getMethodCompilationLevel(m) == MAX_TIER;
 
-        return Platform.isServer() && isMethodCompiled
+        return Platform.isServer() && !Platform.isEmulatedClient() && isMethodCompiled
                 && (!isTiered || isMethodCompiledAtMaxTier);
     }
 

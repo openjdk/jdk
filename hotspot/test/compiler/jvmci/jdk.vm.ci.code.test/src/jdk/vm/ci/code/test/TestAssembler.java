@@ -256,6 +256,10 @@ public abstract class TestAssembler {
         return StackSlot.get(new TestValueKind(kind), -curStackSlot, true);
     }
 
+    public int getOffset(StackSlot slot) {
+        return slot.getOffset(frameSize);
+    }
+
     protected void growFrame(int sizeInBytes) {
         curStackSlot += sizeInBytes;
         if (curStackSlot > frameSize) {

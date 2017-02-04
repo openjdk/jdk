@@ -103,6 +103,12 @@ public class VirtualObjectDebugInfoTest extends DebugInfoTest {
         return new TestClass();
     }
 
+    public static TestClass buildObjectStack() {
+        return new TestClass();
+    }
+
+    boolean storeToStack;
+
     private VirtualObject[] compileBuildObject(TestAssembler asm, JavaValue[] values) {
         TestClass template = new TestClass();
         ArrayList<VirtualObject> vobjs = new ArrayList<>();
@@ -135,7 +141,11 @@ public class VirtualObjectDebugInfoTest extends DebugInfoTest {
             } else if (template.arrayField[i] instanceof String) {
                 String value = (String) template.arrayField[i];
                 Register reg = asm.emitLoadPointer((HotSpotConstant) constantReflection.forString(value));
-                arrayContent[i] = reg.asValue(asm.getValueKind(JavaKind.Object));
+                if (storeToStack) {
+                    arrayContent[i] = asm.emitPointerToStack(reg);
+                } else {
+                    arrayContent[i] = reg.asValue(asm.getValueKind(JavaKind.Object));
+                }
             } else {
                 Assert.fail("unexpected value");
             }
@@ -174,6 +184,13 @@ public class VirtualObjectDebugInfoTest extends DebugInfoTest {
 
     @Test
     public void testBuildObject() {
+        storeToStack = false;
         test(this::compileBuildObject, getMethod("buildObject"), 7, JavaKind.Object);
+    }
+
+    @Test
+    public void testBuildObjectStack() {
+        storeToStack = true;
+        test(this::compileBuildObject, getMethod("buildObjectStack"), 7, JavaKind.Object);
     }
 }
