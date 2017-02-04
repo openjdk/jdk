@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,8 +114,8 @@ public class WinGammaPlatformVC10 extends WinGammaPlatform {
             tag(cfg, "CodeAnalysisRuleAssemblies");
         }
         for (BuildConfig cfg : allConfigs) {
-            tagData(cfg, "NMakeBuildCommandLine", cfg.get("MakeBinary") + " -f ../../Makefile import-hotspot LOG=info");
-            tagData(cfg, "NMakeReBuildCommandLine", cfg.get("MakeBinary") + " -f ../../Makefile clean-hotspot import-hotspot LOG=info");
+            tagData(cfg, "NMakeBuildCommandLine", cfg.get("MakeBinary") + " -f ../../Makefile hotspot LOG=info");
+            tagData(cfg, "NMakeReBuildCommandLine", cfg.get("MakeBinary") + " -f ../../Makefile clean-hotspot hotspot LOG=info");
             tagData(cfg, "NMakeCleanCommandLine", cfg.get("MakeBinary") + " -f ../../Makefile clean-hotspot LOG=info");
             tagData(cfg, "NMakeOutput", cfg.get("MakeOutput") + Util.sep + "jvm.dll");
             tagData(cfg, "NMakePreprocessorDefinitions", Util.join(";", cfg.getDefines()));

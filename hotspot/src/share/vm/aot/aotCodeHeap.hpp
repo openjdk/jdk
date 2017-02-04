@@ -88,7 +88,7 @@ typedef struct {
 } AOTHeader;
 
 typedef struct {
-  enum { CONFIG_SIZE = 11 + 7 * 4 };
+  enum { CONFIG_SIZE = 12 + 7 * 4 };
   int _config_size;
   int _narrowOopShift;
   int _narrowKlassShift;
@@ -108,6 +108,7 @@ typedef struct {
   bool _tieredAOT;
   bool _enableContended;
   bool _restrictContended;
+  bool _omitAssertions;
 } AOTConfiguration;
 
 class AOTLib : public CHeapObj<mtCode> {

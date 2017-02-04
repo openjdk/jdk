@@ -2453,7 +2453,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   /* ConstMethod anon-enum */                                             \
   /********************************/                                      \
                                                                           \
-  declare_constant(Method::_jfr_towrite)                                  \
   declare_constant(Method::_caller_sensitive)                             \
   declare_constant(Method::_force_inline)                                 \
   declare_constant(Method::_dont_inline)                                  \
