@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,13 +60,12 @@ import sun.net.www.http.HttpClient;
  * needs to implement all public methods in it's super class and all
  * the way to Object.
  *
- * @deprecated This class is subject to removal in a future version of JDK.
  */
 
 // For both copies of the file, uncomment one line and comment the other
 // public class HttpsURLConnectionImpl
 //      extends javax.net.ssl.HttpsURLConnection {
-@Deprecated(since="9", forRemoval=true)
+@Deprecated(since="9")
 @SuppressWarnings("deprecation") // HttpsURLConnection is deprecated
 public class HttpsURLConnectionOldImpl
         extends com.sun.net.ssl.HttpsURLConnection {

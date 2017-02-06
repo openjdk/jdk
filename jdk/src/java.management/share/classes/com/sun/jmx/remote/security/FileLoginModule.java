@@ -47,7 +47,6 @@ import javax.management.remote.JMXPrincipal;
 
 import com.sun.jmx.remote.util.ClassLogger;
 import com.sun.jmx.remote.util.EnvHelp;
-import sun.management.jmxremote.ConnectorBootstrap;
 
 /**
  * This {@link LoginModule} performs file-based authentication.
@@ -110,12 +109,14 @@ import sun.management.jmxremote.ConnectorBootstrap;
  */
 public class FileLoginModule implements LoginModule {
 
+    private static final String PASSWORD_FILE_NAME = "jmxremote.password";
+
     // Location of the default password file
     private static final String DEFAULT_PASSWORD_FILE_NAME =
         AccessController.doPrivileged(new GetPropertyAction("java.home")) +
         File.separatorChar + "conf" +
         File.separatorChar + "management" + File.separatorChar +
-        ConnectorBootstrap.DefaultValues.PASSWORD_FILE_NAME;
+        PASSWORD_FILE_NAME;
 
     // Key to retrieve the stored username
     private static final String USERNAME_KEY =
@@ -200,8 +201,7 @@ public class FileLoginModule implements LoginModule {
                 passwordFileDisplayName = passwordFile;
             } catch (SecurityException e) {
                 hasJavaHomePermission = false;
-                passwordFileDisplayName =
-                        ConnectorBootstrap.DefaultValues.PASSWORD_FILE_NAME;
+                passwordFileDisplayName = PASSWORD_FILE_NAME;
             }
         }
     }

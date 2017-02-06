@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,12 @@
 module jdk.jconsole {
     requires transitive java.desktop;
     requires transitive java.management;
-    requires java.logging;
+    requires java.management.rmi;
     requires java.rmi;
     requires jdk.attach;
-    requires jdk.jvmstat;
+    requires jdk.internal.jvmstat;
     requires jdk.management;
+    requires jdk.management.agent;
     exports com.sun.tools.jconsole;
     uses com.sun.tools.jconsole.JConsolePlugin;
 }
-

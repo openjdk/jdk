@@ -26,7 +26,7 @@
  * @bug 8058865
  * @summary Checks various secure ways of connecting from remote jmx client
  * @author Olivier Lagneau
- * @modules java.management
+ * @modules java.management.rmi
  * @library /lib/testlibrary
  * @compile MBS_Light.java ServerDelegate.java TestSampleLoginModule.java
  * @run main/othervm/timeout=300 -DDEBUG_STANDARD -Dusername=SQE_username -Dpassword=SQE_password SecurityTest -server -mapType x.password.file -client -mapType credentials

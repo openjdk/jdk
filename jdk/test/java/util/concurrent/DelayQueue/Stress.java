@@ -38,7 +38,7 @@ public class Stress {
 
     public static void main(String[] args) throws Throwable {
 
-        final DelayQueue<Delayed> q = new DelayQueue<Delayed>();
+        final DelayQueue<Delayed> q = new DelayQueue<>();
         final long t0 = System.nanoTime();
         for (long i = 0; i < 1000; i++) {
             final long expiry = t0 + i*10L*1000L*1000L;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,9 +41,8 @@ import java.security.cert.X509Certificate;
  *
  * @deprecated As of JDK 1.4, this implementation-specific class was
  *      replaced by {@link javax.net.ssl.X509KeyManager}.
- *      This class is subject to removal in a future version of JDK.
  */
-@Deprecated(since="1.4", forRemoval=true)
+@Deprecated(since="1.4")
 public interface X509KeyManager extends KeyManager {
     /**
      * Get the matching aliases for authenticating the client side of a secure

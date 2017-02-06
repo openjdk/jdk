@@ -42,7 +42,7 @@ public class Iterate {
 
     private static void realMain(String[] args) throws Throwable {
         Godot[] godots = new Godot[] { new Godot(), new Godot(), new Godot() };
-        DelayQueue<Godot> q = new DelayQueue<Godot>(Arrays.asList(godots));
+        DelayQueue<Godot> q = new DelayQueue<>(Arrays.asList(godots));
         Iterator<Godot> it = q.iterator();
         q.clear();
         check(it.hasNext());

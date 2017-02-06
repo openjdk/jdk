@@ -36,11 +36,10 @@ public class ToArray {
         // new ArrayList(IdentityHashMap.entrySet())
         // used to return bogus entries.
         //----------------------------------------------------------------
-        Map<String,String> mm = new IdentityHashMap<String,String>();
+        Map<String,String> mm = new IdentityHashMap<>();
         mm.put("foo", "bar");
         mm.put("baz", "quux");
-        List<Map.Entry<String,String>> lm
-            = new ArrayList<Map.Entry<String,String>>(mm.entrySet());
+        List<Map.Entry<String,String>> lm = new ArrayList<>(mm.entrySet());
         String s = lm.toString();
         if (! (s.equals("[foo=bar, baz=quux]") ||
                s.equals("[baz=quux, foo=bar]")))
@@ -65,8 +64,7 @@ public class ToArray {
         // IdentityHashMap.entrySet().toArray(T[] a) used to simply
         // return toArray() !
         //----------------------------------------------------------------
-        IdentityHashMap<Integer,Integer> map
-            = new IdentityHashMap<Integer,Integer>();
+        IdentityHashMap<Integer,Integer> map = new IdentityHashMap<>();
         Set<Map.Entry<Integer,Integer>> es = map.entrySet();
         if (es.toArray().length != 0)
             throw new Error("non-empty");

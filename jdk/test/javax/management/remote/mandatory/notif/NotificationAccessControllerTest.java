@@ -26,7 +26,8 @@
  * @bug 5106721
  * @summary Check the NotificationAccessController methods are properly called.
  * @author Luis-Miguel Alventosa
- * @modules java.management/com.sun.jmx.remote.security
+ * @modules java.management.rmi
+ *          java.management/com.sun.jmx.remote.security
  * @run clean NotificationAccessControllerTest
  * @run build NotificationAccessControllerTest
  * @run main NotificationAccessControllerTest
