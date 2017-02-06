@@ -754,6 +754,31 @@ public class Collection8Test extends JSR166TestCase {
     }
 
     /**
+     * Concurrent Spliterators, once exhausted, stay exhausted.
+     */
+    public void testStickySpliteratorExhaustion() throws Throwable {
+        if (!impl.isConcurrent()) return;
+        if (!testImplementationDetails) return;
+        final ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        final Consumer alwaysThrows = e -> { throw new AssertionError(); };
+        final Collection c = impl.emptyCollection();
+        final Spliterator s = c.spliterator();
+        if (rnd.nextBoolean()) {
+            assertFalse(s.tryAdvance(alwaysThrows));
+        } else {
+            s.forEachRemaining(alwaysThrows);
+        }
+        final Object one = impl.makeElement(1);
+        // Spliterator should not notice added element
+        c.add(one);
+        if (rnd.nextBoolean()) {
+            assertFalse(s.tryAdvance(alwaysThrows));
+        } else {
+            s.forEachRemaining(alwaysThrows);
+        }
+    }
+
+    /**
      * Motley crew of threads concurrently randomly hammer the collection.
      */
     public void testDetectRaces() throws Throwable {

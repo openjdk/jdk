@@ -1,0 +1,15 @@
+T6388543.java:24:8: compiler.note.proc.messager: note:value @A({1}) + {1}
+T6388543.java:24:8: compiler.note.proc.messager: note:value @A({1}) + 1
+T6388543.java:27:16: compiler.note.proc.messager: note:value @A({2}) + {2}
+T6388543.java:27:16: compiler.note.proc.messager: note:value @A({2}) + 2
+T6388543.java:30:16: compiler.note.proc.messager: note:value @A({3}) + {3}
+T6388543.java:30:17: compiler.note.proc.messager: note:value @A({3}) + 3
+T6388543.java:33:16: compiler.note.proc.messager: note:value @A({4, 5}) + {4, 5}
+T6388543.java:33:17: compiler.note.proc.messager: note:value @A({4, 5}) + 4
+T6388543.java:33:20: compiler.note.proc.messager: note:value @A({4, 5}) + 5
+T6388543.java:36:12: compiler.note.proc.messager: note:value @B(x=@C(x=E.ONE, y=E.TWO), y=@C(x=E.ONE, y=E.TWO)) + @C(x=E.ONE, y=E.TWO)
+T6388543.java:36:20: compiler.note.proc.messager: note:value @B(x=@C(x=E.ONE, y=E.TWO), y=@C(x=E.ONE, y=E.TWO)) + E.ONE
+T6388543.java:36:31: compiler.note.proc.messager: note:value @B(x=@C(x=E.ONE, y=E.TWO), y=@C(x=E.ONE, y=E.TWO)) + E.TWO
+T6388543.java:36:42: compiler.note.proc.messager: note:value @B(x=@C(x=E.ONE, y=E.TWO), y=@C(x=E.ONE, y=E.TWO)) + @C(x=E.ONE, y=E.TWO)
+T6388543.java:36:50: compiler.note.proc.messager: note:value @B(x=@C(x=E.ONE, y=E.TWO), y=@C(x=E.ONE, y=E.TWO)) + E.ONE
+T6388543.java:36:61: compiler.note.proc.messager: note:value @B(x=@C(x=E.ONE, y=E.TWO), y=@C(x=E.ONE, y=E.TWO)) + E.TWO

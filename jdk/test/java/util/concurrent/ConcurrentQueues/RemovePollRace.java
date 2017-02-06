@@ -59,10 +59,10 @@ public class RemovePollRace {
     // Suitable for benchmarking.  Overridden by args[0] for testing.
     int count = 1024 * 1024;
 
-    final Map<String,String> results = new ConcurrentHashMap<String,String>();
+    final Map<String,String> results = new ConcurrentHashMap<>();
 
     Collection<Queue<Boolean>> concurrentQueues() {
-        List<Queue<Boolean>> queues = new ArrayList<Queue<Boolean>>();
+        List<Queue<Boolean>> queues = new ArrayList<>();
         queues.add(new ConcurrentLinkedDeque<Boolean>());
         queues.add(new ConcurrentLinkedQueue<Boolean>());
         queues.add(new ArrayBlockingQueue<Boolean>(count, false));
@@ -81,7 +81,7 @@ public class RemovePollRace {
     }
 
     void prettyPrintResults() {
-        List<String> classNames = new ArrayList<String>(results.keySet());
+        List<String> classNames = new ArrayList<>(results.keySet());
         Collections.sort(classNames);
         int maxClassNameLength = 0;
         int maxNanosLength = 0;
@@ -173,9 +173,9 @@ public class RemovePollRace {
                 addersDone.countDown();
             }};
 
-        final List<Thread> adders   = new ArrayList<Thread>();
-        final List<Thread> removers = new ArrayList<Thread>();
-        final List<Thread> pollers  = new ArrayList<Thread>();
+        final List<Thread> adders   = new ArrayList<>();
+        final List<Thread> removers = new ArrayList<>();
+        final List<Thread> pollers  = new ArrayList<>();
         for (int i = 0; i < adderCount; i++)
             adders.add(checkedThread(adder));
         for (int i = 0; i < removerCount; i++)
@@ -183,7 +183,7 @@ public class RemovePollRace {
         for (int i = 0; i < pollerCount; i++)
             pollers.add(checkedThread(poller));
 
-        final List<Thread> allThreads = new ArrayList<Thread>();
+        final List<Thread> allThreads = new ArrayList<>();
         allThreads.addAll(removers);
         allThreads.addAll(pollers);
         allThreads.addAll(adders);

@@ -55,8 +55,7 @@ public class BlockingTaskExecutor {
         final NotificationReceiver notifiee1 = new NotificationReceiver();
         final NotificationReceiver notifiee2 = new NotificationReceiver();
 
-        final Collection<Callable<Object>> tasks =
-            new ArrayList<Callable<Object>>();
+        final Collection<Callable<Object>> tasks = new ArrayList<>();
         tasks.add(new BlockingTask(notifiee1));
         tasks.add(new BlockingTask(notifiee2));
         tasks.add(new NonBlockingTask());

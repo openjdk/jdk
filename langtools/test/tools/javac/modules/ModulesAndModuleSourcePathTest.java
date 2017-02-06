@@ -22,7 +22,8 @@
  */
 
 /**
- * @test 8165102
+ * @test
+ * @bug 8165102
  * @summary incorrect message from javac
  * @library /tools/lib
  * @modules

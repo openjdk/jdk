@@ -258,7 +258,7 @@ public class ReentrantReadWriteLockTest extends JSR166TestCase {
     public void testGetWriteHoldCount()      { testGetWriteHoldCount(false); }
     public void testGetWriteHoldCount_fair() { testGetWriteHoldCount(true); }
     public void testGetWriteHoldCount(boolean fair) {
-        ReentrantReadWriteLock lock = new ReentrantReadWriteLock(fair);
+        final ReentrantReadWriteLock lock = new ReentrantReadWriteLock(fair);
         for (int i = 1; i <= SIZE; i++) {
             lock.writeLock().lock();
             assertEquals(i,lock.getWriteHoldCount());
@@ -275,7 +275,7 @@ public class ReentrantReadWriteLockTest extends JSR166TestCase {
     public void testGetHoldCount()      { testGetHoldCount(false); }
     public void testGetHoldCount_fair() { testGetHoldCount(true); }
     public void testGetHoldCount(boolean fair) {
-        ReentrantReadWriteLock lock = new ReentrantReadWriteLock(fair);
+        final ReentrantReadWriteLock lock = new ReentrantReadWriteLock(fair);
         for (int i = 1; i <= SIZE; i++) {
             lock.writeLock().lock();
             assertEquals(i,lock.writeLock().getHoldCount());
@@ -292,7 +292,7 @@ public class ReentrantReadWriteLockTest extends JSR166TestCase {
     public void testGetReadHoldCount()      { testGetReadHoldCount(false); }
     public void testGetReadHoldCount_fair() { testGetReadHoldCount(true); }
     public void testGetReadHoldCount(boolean fair) {
-        ReentrantReadWriteLock lock = new ReentrantReadWriteLock(fair);
+        final ReentrantReadWriteLock lock = new ReentrantReadWriteLock(fair);
         for (int i = 1; i <= SIZE; i++) {
             lock.readLock().lock();
             assertEquals(i,lock.getReadHoldCount());
@@ -309,7 +309,7 @@ public class ReentrantReadWriteLockTest extends JSR166TestCase {
     public void testWriteUnlock_IMSE()      { testWriteUnlock_IMSE(false); }
     public void testWriteUnlock_IMSE_fair() { testWriteUnlock_IMSE(true); }
     public void testWriteUnlock_IMSE(boolean fair) {
-        ReentrantReadWriteLock lock = new ReentrantReadWriteLock(fair);
+        final ReentrantReadWriteLock lock = new ReentrantReadWriteLock(fair);
         try {
             lock.writeLock().unlock();
             shouldThrow();
@@ -322,7 +322,7 @@ public class ReentrantReadWriteLockTest extends JSR166TestCase {
     public void testReadUnlock_IMSE()      { testReadUnlock_IMSE(false); }
     public void testReadUnlock_IMSE_fair() { testReadUnlock_IMSE(true); }
     public void testReadUnlock_IMSE(boolean fair) {
-        ReentrantReadWriteLock lock = new ReentrantReadWriteLock(fair);
+        final ReentrantReadWriteLock lock = new ReentrantReadWriteLock(fair);
         try {
             lock.readLock().unlock();
             shouldThrow();
@@ -815,11 +815,11 @@ public class ReentrantReadWriteLockTest extends JSR166TestCase {
     public void testWriteTryLock_Timeout(boolean fair) {
         final PublicReentrantReadWriteLock lock =
             new PublicReentrantReadWriteLock(fair);
+        final long timeoutMillis = timeoutMillis();
         lock.writeLock().lock();
         Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
                 long startTime = System.nanoTime();
-                long timeoutMillis = 10;
                 assertFalse(lock.writeLock().tryLock(timeoutMillis, MILLISECONDS));
                 assertTrue(millisElapsedSince(startTime) >= timeoutMillis);
             }});
@@ -839,7 +839,7 @@ public class ReentrantReadWriteLockTest extends JSR166TestCase {
         Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
                 long startTime = System.nanoTime();
-                long timeoutMillis = 10;
+                long timeoutMillis = timeoutMillis();
                 assertFalse(lock.readLock().tryLock(timeoutMillis, MILLISECONDS));
                 assertTrue(millisElapsedSince(startTime) >= timeoutMillis);
             }});
@@ -951,19 +951,18 @@ public class ReentrantReadWriteLockTest extends JSR166TestCase {
     public void testAwaitNanos_Timeout()      { testAwaitNanos_Timeout(false); }
     public void testAwaitNanos_Timeout_fair() { testAwaitNanos_Timeout(true); }
     public void testAwaitNanos_Timeout(boolean fair) {
+        final ReentrantReadWriteLock lock = new ReentrantReadWriteLock(fair);
+        final Condition c = lock.writeLock().newCondition();
+        final long timeoutMillis = timeoutMillis();
+        lock.writeLock().lock();
+        final long startTime = System.nanoTime();
+        final long timeoutNanos = MILLISECONDS.toNanos(timeoutMillis);
         try {
-            final ReentrantReadWriteLock lock =
-                new ReentrantReadWriteLock(fair);
-            final Condition c = lock.writeLock().newCondition();
-            lock.writeLock().lock();
-            long startTime = System.nanoTime();
-            long timeoutMillis = 10;
-            long timeoutNanos = MILLISECONDS.toNanos(timeoutMillis);
             long nanosRemaining = c.awaitNanos(timeoutNanos);
             assertTrue(nanosRemaining <= 0);
-            assertTrue(millisElapsedSince(startTime) >= timeoutMillis);
-            lock.writeLock().unlock();
         } catch (InterruptedException fail) { threadUnexpectedException(fail); }
+        assertTrue(millisElapsedSince(startTime) >= timeoutMillis);
+        lock.writeLock().unlock();
     }
 
     /**
@@ -972,17 +971,16 @@ public class ReentrantReadWriteLockTest extends JSR166TestCase {
     public void testAwait_Timeout()      { testAwait_Timeout(false); }
     public void testAwait_Timeout_fair() { testAwait_Timeout(true); }
     public void testAwait_Timeout(boolean fair) {
+        final ReentrantReadWriteLock lock = new ReentrantReadWriteLock(fair);
+        final Condition c = lock.writeLock().newCondition();
+        final long timeoutMillis = timeoutMillis();
+        lock.writeLock().lock();
+        final long startTime = System.nanoTime();
         try {
-            final ReentrantReadWriteLock lock =
-                new ReentrantReadWriteLock(fair);
-            final Condition c = lock.writeLock().newCondition();
-            lock.writeLock().lock();
-            long startTime = System.nanoTime();
-            long timeoutMillis = 10;
             assertFalse(c.await(timeoutMillis, MILLISECONDS));
-            assertTrue(millisElapsedSince(startTime) >= timeoutMillis);
-            lock.writeLock().unlock();
         } catch (InterruptedException fail) { threadUnexpectedException(fail); }
+        assertTrue(millisElapsedSince(startTime) >= timeoutMillis);
+        lock.writeLock().unlock();
     }
 
     /**
@@ -991,18 +989,17 @@ public class ReentrantReadWriteLockTest extends JSR166TestCase {
     public void testAwaitUntil_Timeout()      { testAwaitUntil_Timeout(false); }
     public void testAwaitUntil_Timeout_fair() { testAwaitUntil_Timeout(true); }
     public void testAwaitUntil_Timeout(boolean fair) {
+        final ReentrantReadWriteLock lock = new ReentrantReadWriteLock(fair);
+        final Condition c = lock.writeLock().newCondition();
+        lock.writeLock().lock();
+        // We shouldn't assume that nanoTime and currentTimeMillis
+        // use the same time source, so don't use nanoTime here.
+        final java.util.Date delayedDate = delayedDate(timeoutMillis());
         try {
-            final ReentrantReadWriteLock lock =
-                new ReentrantReadWriteLock(fair);
-            final Condition c = lock.writeLock().newCondition();
-            lock.writeLock().lock();
-            // We shouldn't assume that nanoTime and currentTimeMillis
-            // use the same time source, so don't use nanoTime here.
-            java.util.Date delayedDate = delayedDate(timeoutMillis());
             assertFalse(c.awaitUntil(delayedDate));
-            assertTrue(new java.util.Date().getTime() >= delayedDate.getTime());
-            lock.writeLock().unlock();
         } catch (InterruptedException fail) { threadUnexpectedException(fail); }
+        assertTrue(new java.util.Date().getTime() >= delayedDate.getTime());
+        lock.writeLock().unlock();
     }
 
     /**
@@ -1258,7 +1255,7 @@ public class ReentrantReadWriteLockTest extends JSR166TestCase {
     public void testSerialization()      { testSerialization(false); }
     public void testSerialization_fair() { testSerialization(true); }
     public void testSerialization(boolean fair) {
-        ReentrantReadWriteLock lock = new ReentrantReadWriteLock(fair);
+        final ReentrantReadWriteLock lock = new ReentrantReadWriteLock(fair);
         lock.writeLock().lock();
         lock.readLock().lock();
 
@@ -1660,14 +1657,20 @@ public class ReentrantReadWriteLockTest extends JSR166TestCase {
     public void testToString()      { testToString(false); }
     public void testToString_fair() { testToString(true); }
     public void testToString(boolean fair) {
-        ReentrantReadWriteLock lock = new ReentrantReadWriteLock(fair);
+        final ReentrantReadWriteLock lock = new ReentrantReadWriteLock(fair);
         assertTrue(lock.toString().contains("Write locks = 0"));
         assertTrue(lock.toString().contains("Read locks = 0"));
         lock.writeLock().lock();
         assertTrue(lock.toString().contains("Write locks = 1"));
         assertTrue(lock.toString().contains("Read locks = 0"));
+        lock.writeLock().lock();
+        assertTrue(lock.toString().contains("Write locks = 2"));
+        assertTrue(lock.toString().contains("Read locks = 0"));
+        lock.writeLock().unlock();
         lock.writeLock().unlock();
         lock.readLock().lock();
+        assertTrue(lock.toString().contains("Write locks = 0"));
+        assertTrue(lock.toString().contains("Read locks = 1"));
         lock.readLock().lock();
         assertTrue(lock.toString().contains("Write locks = 0"));
         assertTrue(lock.toString().contains("Read locks = 2"));
@@ -1679,11 +1682,16 @@ public class ReentrantReadWriteLockTest extends JSR166TestCase {
     public void testReadLockToString()      { testReadLockToString(false); }
     public void testReadLockToString_fair() { testReadLockToString(true); }
     public void testReadLockToString(boolean fair) {
-        ReentrantReadWriteLock lock = new ReentrantReadWriteLock(fair);
+        final ReentrantReadWriteLock lock = new ReentrantReadWriteLock(fair);
         assertTrue(lock.readLock().toString().contains("Read locks = 0"));
         lock.readLock().lock();
+        assertTrue(lock.readLock().toString().contains("Read locks = 1"));
         lock.readLock().lock();
         assertTrue(lock.readLock().toString().contains("Read locks = 2"));
+        lock.readLock().unlock();
+        assertTrue(lock.readLock().toString().contains("Read locks = 1"));
+        lock.readLock().unlock();
+        assertTrue(lock.readLock().toString().contains("Read locks = 0"));
     }
 
     /**
@@ -1692,10 +1700,10 @@ public class ReentrantReadWriteLockTest extends JSR166TestCase {
     public void testWriteLockToString()      { testWriteLockToString(false); }
     public void testWriteLockToString_fair() { testWriteLockToString(true); }
     public void testWriteLockToString(boolean fair) {
-        ReentrantReadWriteLock lock = new ReentrantReadWriteLock(fair);
+        final ReentrantReadWriteLock lock = new ReentrantReadWriteLock(fair);
         assertTrue(lock.writeLock().toString().contains("Unlocked"));
         lock.writeLock().lock();
-        assertTrue(lock.writeLock().toString().contains("Locked"));
+        assertTrue(lock.writeLock().toString().contains("Locked by"));
         lock.writeLock().unlock();
         assertTrue(lock.writeLock().toString().contains("Unlocked"));
     }

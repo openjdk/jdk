@@ -3876,4 +3876,14 @@ public class Check {
         }
     }
 
+    void checkPackageExistsForOpens(final DiagnosticPosition pos, PackageSymbol packge) {
+        if (packge.members().isEmpty() &&
+            ((packge.flags() & Flags.HAS_RESOURCE) == 0)) {
+            deferredLintHandler.report(() -> {
+                if (lint.isEnabled(LintCategory.OPENS))
+                    log.warning(pos, Warnings.PackageEmptyOrNotFound(packge));
+            });
+        }
+    }
+
 }

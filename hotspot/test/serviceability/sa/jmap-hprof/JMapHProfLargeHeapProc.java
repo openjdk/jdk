@@ -21,12 +21,9 @@
  * questions.
  */
 
-import java.lang.management.ManagementFactory;
-import java.lang.management.RuntimeMXBean;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import jdk.test.lib.process.ProcessTools;
 
 import sun.management.VMManagement;
 
@@ -38,7 +35,7 @@ public class JMapHProfLargeHeapProc {
         buildLargeHeap(args);
 
         // Print our pid on stdout
-        System.out.println("PID[" + getProcessId() + "]");
+        System.out.println("PID[" + ProcessTools.getProcessId() + "]");
 
         // Wait for input before termination
         System.in.read();
@@ -48,24 +45,6 @@ public class JMapHProfLargeHeapProc {
         for (long i = 0; i < Integer.parseInt(args[0]); i++) {
             heapGarbage.add(new byte[1024]);
         }
-    }
-
-    public static int getProcessId() throws Exception {
-
-        // Get the current process id using a reflection hack
-        RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
-        Field jvm = runtime.getClass().getDeclaredField("jvm");
-
-        jvm.setAccessible(true);
-        VMManagement mgmt = (sun.management.VMManagement) jvm.get(runtime);
-
-        Method pid_method = mgmt.getClass().getDeclaredMethod("getProcessId");
-
-        pid_method.setAccessible(true);
-
-        int pid = (Integer) pid_method.invoke(mgmt);
-
-        return pid;
     }
 
 }

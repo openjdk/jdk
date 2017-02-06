@@ -532,8 +532,14 @@ void LIR_Assembler::poll_for_safepoint(relocInfo::relocType rtype, CodeEmitInfo*
 
 void LIR_Assembler::return_op(LIR_Opr result) {
   assert(result->is_illegal() || !result->is_single_cpu() || result->as_register() == r0, "word returns are in r0,");
+
   // Pop the stack before the safepoint code
   __ remove_frame(initial_frame_size_in_bytes());
+
+  if (StackReservedPages > 0 && compilation()->has_reserved_stack_access()) {
+    __ reserved_stack_check();
+  }
+
   address polling_page(os::get_polling_page());
   __ read_polling_page(rscratch1, polling_page, relocInfo::poll_return_type);
   __ ret(lr);

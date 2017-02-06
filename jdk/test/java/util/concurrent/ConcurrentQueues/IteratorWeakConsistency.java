@@ -195,7 +195,7 @@ public class IteratorWeakConsistency {
                 ((BlockingQueue)q).remainingCapacity() :
                 Integer.MAX_VALUE;
             final int capacity = Math.min(20, remainingCapacity);
-            List<Iterator> its = new ArrayList<Iterator>();
+            List<Iterator> its = new ArrayList<>();
             // Move to "middle"
             for (int i = 0; i < capacity/2; i++) {
                 check(q.add(i));
@@ -229,7 +229,7 @@ public class IteratorWeakConsistency {
                         it.remove();
                 }
                 break;
-            default: throw new Error();
+            default: throw new AssertionError();
             }
 
             for (int i = 0; i < capacity; i++) {

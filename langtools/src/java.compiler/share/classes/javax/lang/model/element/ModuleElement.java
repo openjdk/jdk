@@ -37,17 +37,18 @@ import java.util.List;
 public interface ModuleElement extends Element, QualifiedNameable {
 
     /**
-     * Returns the fully qualified name of this module.
+     * Returns the fully qualified name of this module.  For an
+     * {@linkplain #isUnnamed() unnamed module}, an empty name is returned.
      *
-     * @return the qualified name of this module, or an
+     * @return the fully qualified name of this module, or an
      * empty name if this is an unnamed module
      */
     @Override
     Name getQualifiedName();
 
     /**
-     * Returns the simple name of this module.  For an unnamed
-     * module, an empty name is returned.
+     * Returns the simple name of this module.  For an {@linkplain
+     * #isUnnamed() unnamed module}, an empty name is returned.
      *
      * @return the simple name of this module or an empty name if
      * this is an unnamed module

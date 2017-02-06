@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,18 @@
 
 /*
  * @test
- * @bug 6449798 6399404
+ * @bug 6449798 6399404 8173776
  * @summary Test basic workings of PackageElement
  * @author  Joseph D. Darcy
  * @library /tools/javac/lib
  * @modules java.compiler
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor TestPackageElement
- * @compile -processor TestPackageElement -proc:only TestPackageElement.java
+ * @compile -processor TestPackageElement -proc:only             TestPackageElement.java
+ * @compile -processor TestPackageElement -proc:only --release 8 TestPackageElement.java
  */
 
+import java.util.Objects;
 import java.util.Set;
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
@@ -67,7 +69,22 @@ public class TestPackageElement extends JavacTestingAbstractProcessor {
             PackageElement javaLang = eltUtils.getPackageElement("java.lang");
             if (javaLang.isUnnamed())
                 throw new RuntimeException("Package java.lang is unnamed!");
+
+            testEnclosingElement(javaLang);
         }
         return true;
+    }
+
+    void testEnclosingElement(PackageElement javaLang) {
+        SourceVersion version = processingEnv.getSourceVersion();
+        Element enclosing = javaLang.getEnclosingElement();
+        Element expectedEnclosing =
+            (version.compareTo(RELEASE_9) < 0) ?  // No modules
+            null :
+            eltUtils.getModuleElement("java.base");
+
+        if (!Objects.equals(enclosing, expectedEnclosing))
+            throw new RuntimeException("Unexpected enclosing element under source version " +
+                                       version);
     }
 }

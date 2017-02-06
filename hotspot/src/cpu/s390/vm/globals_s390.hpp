@@ -56,7 +56,7 @@ define_pd_global(intx,  InlineSmallCode,             2000);
 // Java_java_net_SocketOutputStream_socketWrite0() uses a 64k buffer on the
 // stack. To pass stack overflow tests we need 20 shadow pages.
 #define DEFAULT_STACK_SHADOW_PAGES   (20 DEBUG_ONLY(+2))
-#define DEFAULT_STACK_RESERVED_PAGES (0)
+#define DEFAULT_STACK_RESERVED_PAGES (1)
 
 #define MIN_STACK_YELLOW_PAGES     DEFAULT_STACK_YELLOW_PAGES
 #define MIN_STACK_RED_PAGES        DEFAULT_STACK_RED_PAGES

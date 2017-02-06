@@ -51,6 +51,7 @@ BOOT_MODULES += \
     java.instrument \
     java.logging \
     java.management \
+    java.management.rmi \
     java.naming \
     java.prefs \
     java.rmi \
@@ -58,6 +59,7 @@ BOOT_MODULES += \
     java.xml \
     jdk.httpserver \
     jdk.management \
+    jdk.management.agent \
     jdk.net \
     jdk.sctp \
     jdk.unsupported \
@@ -71,11 +73,11 @@ BOOT_MODULES += \
 
 UPGRADEABLE_MODULES += \
     java.activation \
-    java.annotations.common \
     java.corba \
     java.transaction \
     java.xml.bind \
     java.xml.ws \
+    java.xml.ws.annotation \
     #
 
 # Modules explicitly declared as not being upgradeable even though they require

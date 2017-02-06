@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import jdk.test.lib.process.ProcessTools;
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management/sun.management
- *          jdk.jvmstat/sun.jvmstat.monitor
+ *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @build JMapHProfLargeHeapProc
  * @run main JMapHProfLargeHeapTest
  */
@@ -90,6 +90,9 @@ public class JMapHProfLargeHeapTest {
         try (Scanner largeHeapScanner = new Scanner(
                 largeHeapProc.getInputStream());) {
             String pidstring = null;
+            if (!largeHeapScanner.hasNext()) {
+                throw new RuntimeException ("Test failed: could not open largeHeapScanner.");
+            }
             while ((pidstring = largeHeapScanner.findInLine("PID\\[[0-9].*\\]")) == null) {
                 Thread.sleep(500);
             }
