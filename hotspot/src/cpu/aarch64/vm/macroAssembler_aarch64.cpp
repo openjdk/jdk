@@ -402,6 +402,30 @@ void MacroAssembler::far_jump(Address entry, CodeBuffer *cbuf, Register tmp) {
   }
 }
 
+void MacroAssembler::reserved_stack_check() {
+    // testing if reserved zone needs to be enabled
+    Label no_reserved_zone_enabling;
+
+    ldr(rscratch1, Address(rthread, JavaThread::reserved_stack_activation_offset()));
+    cmp(sp, rscratch1);
+    br(Assembler::LO, no_reserved_zone_enabling);
+
+    enter();   // LR and FP are live.
+    lea(rscratch1, CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone));
+    mov(c_rarg0, rthread);
+    blr(rscratch1);
+    leave();
+
+    // We have already removed our own frame.
+    // throw_delayed_StackOverflowError will think that it's been
+    // called by our caller.
+    lea(rscratch1, RuntimeAddress(StubRoutines::throw_delayed_StackOverflowError_entry()));
+    br(rscratch1);
+    should_not_reach_here();
+
+    bind(no_reserved_zone_enabling);
+}
+
 int MacroAssembler::biased_locking_enter(Register lock_reg,
                                          Register obj_reg,
                                          Register swap_reg,

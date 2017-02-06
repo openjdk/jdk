@@ -197,7 +197,6 @@ public class JShellTool implements MessageHandler {
 
     private boolean debug = false;
     public boolean testPrompt = false;
-    private String defaultStartup = null;
     private Startup startup = null;
     private String executionControlSpec = null;
     private EditorSetting editor = BUILT_IN_EDITOR;
@@ -205,9 +204,9 @@ public class JShellTool implements MessageHandler {
     private static final String[] EDITOR_ENV_VARS = new String[] {
         "JSHELLEDITOR", "VISUAL", "EDITOR"};
 
-    // Commands and snippets which should be replayed
-    private List<String> replayableHistory;
-    private List<String> replayableHistoryPrevious;
+    // Commands and snippets which can be replayed
+    private ReplayableHistory replayableHistory;
+    private ReplayableHistory replayableHistoryPrevious;
 
     static final String STARTUP_KEY  = "STARTUP";
     static final String EDITOR_KEY   = "EDITOR";
@@ -507,6 +506,76 @@ public class JShellTool implements MessageHandler {
     }
 
     /**
+     * Encapsulate a history of snippets and commands which can be replayed.
+     */
+    private static class ReplayableHistory {
+
+        // the history
+        private List<String> hist;
+
+        // the length of the history as of last save
+        private int lastSaved;
+
+        private ReplayableHistory(List<String> hist) {
+            this.hist = hist;
+            this.lastSaved = 0;
+        }
+
+        // factory for empty histories
+        static ReplayableHistory emptyHistory() {
+            return new ReplayableHistory(new ArrayList<>());
+        }
+
+        // factory for history stored in persistent storage
+        static ReplayableHistory fromPrevious(PersistentStorage prefs) {
+            // Read replay history from last jshell session
+            String prevReplay = prefs.get(REPLAY_RESTORE_KEY);
+            if (prevReplay == null) {
+                return null;
+            } else {
+                return new ReplayableHistory(Arrays.asList(prevReplay.split(RECORD_SEPARATOR)));
+            }
+
+        }
+
+        // store the history in persistent storage
+        void storeHistory(PersistentStorage prefs) {
+            if (hist.size() > lastSaved) {
+                // Prevent history overflow by calculating what will fit, starting
+                // with most recent
+                int sepLen = RECORD_SEPARATOR.length();
+                int length = 0;
+                int first = hist.size();
+                while (length < Preferences.MAX_VALUE_LENGTH && --first >= 0) {
+                    length += hist.get(first).length() + sepLen;
+                }
+                if (first >= 0) {
+                    hist = hist.subList(first + 1, hist.size());
+                }
+                String shist = String.join(RECORD_SEPARATOR, hist);
+                prefs.put(REPLAY_RESTORE_KEY, shist);
+                markSaved();
+            }
+            prefs.flush();
+        }
+
+        // add a snippet or command to the history
+        void add(String s) {
+            hist.add(s);
+        }
+
+        // return history to reloaded
+        Iterable<String> iterable() {
+            return hist;
+        }
+
+        // mark that persistent storage and current history are in sync
+        void markSaved() {
+            lastSaved = hist.size();
+        }
+    }
+
+    /**
      * Is the input/output currently interactive
      *
      * @return true if console
@@ -756,10 +825,7 @@ public class JShellTool implements MessageHandler {
         // initialize JShell instance
         resetState();
         // Read replay history from last jshell session into previous history
-        String prevReplay = prefs.get(REPLAY_RESTORE_KEY);
-        if (prevReplay != null) {
-            replayableHistoryPrevious = Arrays.asList(prevReplay.split(RECORD_SEPARATOR));
-        }
+        replayableHistoryPrevious = ReplayableHistory.fromPrevious(prefs);
         // load snippet/command files given on command-line
         for (String loadFile : commandLineArgs.nonOptions()) {
             runFile(loadFile, "jshell");
@@ -775,6 +841,13 @@ public class JShellTool implements MessageHandler {
             if (feedback.shouldDisplayCommandFluff()) {
                 hardmsg("jshell.msg.welcome", version());
             }
+            // Be sure history is always saved so that user code isn't lost
+            Runtime.getRuntime().addShutdownHook(new Thread() {
+                @Override
+                public void run() {
+                    replayableHistory.storeHistory(prefs);
+                }
+            });
             // execute from user input
             try (IOContext in = new ConsoleIOContext(this, cmdin, console)) {
                 start(in);
@@ -868,7 +941,7 @@ public class JShellTool implements MessageHandler {
 
         // Reset the replayable history, saving the old for restore
         replayableHistoryPrevious = replayableHistory;
-        replayableHistory = new ArrayList<>();
+        replayableHistory = ReplayableHistory.emptyHistory();
         JShell.Builder builder =
                JShell.builder()
                 .in(userin)
@@ -1933,20 +2006,7 @@ public class JShellTool implements MessageHandler {
     private boolean cmdExit() {
         regenerateOnDeath = false;
         live = false;
-        if (!replayableHistory.isEmpty()) {
-            // Prevent history overflow by calculating what will fit, starting
-            // with most recent
-            int sepLen = RECORD_SEPARATOR.length();
-            int length = 0;
-            int first = replayableHistory.size();
-            while(length < Preferences.MAX_VALUE_LENGTH && --first >= 0) {
-                length += replayableHistory.get(first).length() + sepLen;
-            }
-            String hist =  String.join(RECORD_SEPARATOR,
-                    replayableHistory.subList(first + 1, replayableHistory.size()));
-            prefs.put(REPLAY_RESTORE_KEY, hist);
-        }
-        prefs.flush();
+        replayableHistory.storeHistory(prefs);
         fluffmsg("jshell.msg.goodbye");
         return true;
     }
@@ -2420,7 +2480,7 @@ public class JShellTool implements MessageHandler {
         if (!parseCommandLineLikeFlags(rawargs, ap)) {
             return false;
         }
-        Iterable<String> history;
+        ReplayableHistory history;
         if (ap.restore()) {
             if (replayableHistoryPrevious == null) {
                 errormsg("jshell.err.reload.no.previous");
@@ -2432,7 +2492,13 @@ public class JShellTool implements MessageHandler {
             history = replayableHistory;
             fluffmsg("jshell.err.reload.restarting.state");
         }
-        return doReload(history, !ap.quiet());
+        boolean success = doReload(history, !ap.quiet());
+        if (success && ap.restore()) {
+            // if we are restoring from previous, then if nothing was added
+            // before time of exit, there is nothing to save
+            replayableHistory.markSaved();
+        }
+        return success;
     }
 
     private boolean cmdEnv(String rawargs) {
@@ -2460,9 +2526,9 @@ public class JShellTool implements MessageHandler {
         return doReload(replayableHistory, false);
     }
 
-    private boolean doReload(Iterable<String> history, boolean echo) {
+    private boolean doReload(ReplayableHistory history, boolean echo) {
         resetState();
-        run(new ReloadIOContext(history,
+        run(new ReloadIOContext(history.iterable(),
                 echo ? cmdout : null));
         return true;
     }

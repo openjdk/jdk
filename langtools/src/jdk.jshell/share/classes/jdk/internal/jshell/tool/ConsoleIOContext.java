@@ -390,27 +390,23 @@ class ConsoleIOContext extends IOContext {
     @Override
     public boolean terminalEditorRunning() {
         Terminal terminal = in.getTerminal();
-        if (terminal instanceof JShellUnixTerminal)
-            return ((JShellUnixTerminal) terminal).isRaw();
+        if (terminal instanceof SuspendableTerminal)
+            return ((SuspendableTerminal) terminal).isRaw();
         return false;
     }
 
     @Override
     public void suspend() {
-        try {
-            in.getTerminal().restore();
-        } catch (Exception ex) {
-            throw new IllegalStateException(ex);
-        }
+        Terminal terminal = in.getTerminal();
+        if (terminal instanceof SuspendableTerminal)
+            ((SuspendableTerminal) terminal).suspend();
     }
 
     @Override
     public void resume() {
-        try {
-            in.getTerminal().init();
-        } catch (Exception ex) {
-            throw new IllegalStateException(ex);
-        }
+        Terminal terminal = in.getTerminal();
+        if (terminal instanceof SuspendableTerminal)
+            ((SuspendableTerminal) terminal).resume();
     }
 
     @Override
@@ -666,7 +662,7 @@ class ConsoleIOContext extends IOContext {
         }
     };
 
-    private static final class JShellUnixTerminal extends NoInterruptUnixTerminal {
+    private static final class JShellUnixTerminal extends NoInterruptUnixTerminal implements SuspendableTerminal {
 
         private final StopDetectingInputStream input;
 
@@ -695,9 +691,28 @@ class ConsoleIOContext extends IOContext {
         public void enableInterruptCharacter() {
         }
 
+        @Override
+        public void suspend() {
+            try {
+                getSettings().restore();
+                super.disableInterruptCharacter();
+            } catch (Exception ex) {
+                throw new IllegalStateException(ex);
+            }
+        }
+
+        @Override
+        public void resume() {
+            try {
+                init();
+            } catch (Exception ex) {
+                throw new IllegalStateException(ex);
+            }
+        }
+
     }
 
-    private static final class JShellWindowsTerminal extends WindowsTerminal {
+    private static final class JShellWindowsTerminal extends WindowsTerminal implements SuspendableTerminal {
 
         private final StopDetectingInputStream input;
 
@@ -714,6 +729,31 @@ class ConsoleIOContext extends IOContext {
         @Override
         public InputStream wrapInIfNeeded(InputStream in) throws IOException {
             return input.setInputStream(super.wrapInIfNeeded(in));
+        }
+
+        @Override
+        public void suspend() {
+            try {
+                restore();
+                setConsoleMode(getConsoleMode() & ~ConsoleMode.ENABLE_PROCESSED_INPUT.code);
+            } catch (Exception ex) {
+                throw new IllegalStateException(ex);
+            }
+        }
+
+        @Override
+        public void resume() {
+            try {
+                restore();
+                init();
+            } catch (Exception ex) {
+                throw new IllegalStateException(ex);
+            }
+        }
+
+        @Override
+        public boolean isRaw() {
+            return (getConsoleMode() & ConsoleMode.ENABLE_LINE_INPUT.code) == 0;
         }
 
     }
@@ -734,6 +774,12 @@ class ConsoleIOContext extends IOContext {
             return input.setInputStream(super.wrapInIfNeeded(in));
         }
 
+    }
+
+    private interface SuspendableTerminal {
+        public void suspend();
+        public void resume();
+        public boolean isRaw();
     }
 
     private static final class CheckCompletionKeyMap extends KeyMap {

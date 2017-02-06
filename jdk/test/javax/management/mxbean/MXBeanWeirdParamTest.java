@@ -27,7 +27,7 @@
  * @summary Checks that a serialized instance is not transmitted from an MXBean.
  * All the communication should be done via Open Types
  * @author Olivier Lagneau
- * @modules java.management
+ * @modules java.management.rmi
  * @library /lib/testlibrary
  * @compile Basic.java
  * @run main/othervm/timeout=300 -DDEBUG_STANDARD MXBeanWeirdParamTest

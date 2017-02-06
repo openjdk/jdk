@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,11 +70,10 @@ module jdk.jshell {
     uses jdk.jshell.spi.ExecutionControlProvider;
     uses jdk.internal.editor.spi.BuildInEditorProvider;
 
-    provides javax.tools.Tool with jdk.internal.jshell.tool.JShellToolProvider;
+    provides javax.tools.Tool
+        with jdk.internal.jshell.tool.JShellToolProvider;
     provides jdk.jshell.spi.ExecutionControlProvider
-        with jdk.jshell.execution.JdiExecutionControlProvider;
-    provides jdk.jshell.spi.ExecutionControlProvider
-        with jdk.jshell.execution.LocalExecutionControlProvider;
-    provides jdk.jshell.spi.ExecutionControlProvider
-        with jdk.jshell.execution.FailOverExecutionControlProvider;
+        with jdk.jshell.execution.JdiExecutionControlProvider,
+             jdk.jshell.execution.LocalExecutionControlProvider,
+             jdk.jshell.execution.FailOverExecutionControlProvider;
 }

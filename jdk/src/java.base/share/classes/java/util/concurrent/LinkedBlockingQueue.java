@@ -46,6 +46,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
  * An optionally-bounded {@linkplain BlockingQueue blocking queue} based on
@@ -66,9 +67,8 @@ import java.util.function.Consumer;
  * dynamically created upon each insertion unless this would bring the
  * queue above capacity.
  *
- * <p>This class and its iterator implement all of the
- * <em>optional</em> methods of the {@link Collection} and {@link
- * Iterator} interfaces.
+ * <p>This class and its iterator implement all of the <em>optional</em>
+ * methods of the {@link Collection} and {@link Iterator} interfaces.
  *
  * <p>This class is a member of the
  * <a href="{@docRoot}/../technotes/guides/collections/index.html">
@@ -507,17 +507,17 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
     }
 
     /**
-     * Unlinks interior Node p with predecessor trail.
+     * Unlinks interior Node p with predecessor pred.
      */
-    void unlink(Node<E> p, Node<E> trail) {
+    void unlink(Node<E> p, Node<E> pred) {
         // assert putLock.isHeldByCurrentThread();
         // assert takeLock.isHeldByCurrentThread();
         // p.next is not changed, to allow iterators that are
         // traversing p to maintain their weak-consistency guarantee.
         p.item = null;
-        trail.next = p.next;
+        pred.next = p.next;
         if (last == p)
-            last = trail;
+            last = pred;
         if (count.getAndDecrement() == capacity)
             notFull.signal();
     }
@@ -537,11 +537,11 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
         if (o == null) return false;
         fullyLock();
         try {
-            for (Node<E> trail = head, p = trail.next;
+            for (Node<E> pred = head, p = pred.next;
                  p != null;
-                 trail = p, p = p.next) {
+                 pred = p, p = p.next) {
                 if (o.equals(p.item)) {
-                    unlink(p, trail);
+                    unlink(p, pred);
                     return true;
                 }
             }
@@ -740,7 +740,9 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
      * - (possibly multiple) interior removed nodes (p.item == null)
      */
     Node<E> succ(Node<E> p) {
-        return (p == (p = p.next)) ? head.next : p;
+        if (p == (p = p.next))
+            p = head.next;
+        return p;
     }
 
     /**
@@ -756,16 +758,18 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
         return new Itr();
     }
 
+    /**
+     * Weakly-consistent iterator.
+     *
+     * Lazily updated ancestor field provides expected O(1) remove(),
+     * but still O(n) in the worst case, whenever the saved ancestor
+     * is concurrently deleted.
+     */
     private class Itr implements Iterator<E> {
-        /*
-         * Basic weakly-consistent iterator.  At all times hold the next
-         * item to hand out so that if hasNext() reports true, we will
-         * still have it to return even if lost race with a take etc.
-         */
-
-        private Node<E> next;
-        private E nextItem;
+        private Node<E> next;           // Node holding nextItem
+        private E nextItem;             // next item to hand out
         private Node<E> lastRet;
+        private Node<E> ancestor;       // Helps unlink lastRet on remove()
 
         Itr() {
             fullyLock();
@@ -807,7 +811,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
             if ((p = next) == null) return;
             lastRet = p;
             next = null;
-            final int batchSize = 32;
+            final int batchSize = 64;
             Object[] es = null;
             int n, len = 1;
             do {
@@ -840,19 +844,17 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
         }
 
         public void remove() {
-            if (lastRet == null)
+            Node<E> p = lastRet;
+            if (p == null)
                 throw new IllegalStateException();
+            lastRet = null;
             fullyLock();
             try {
-                Node<E> node = lastRet;
-                lastRet = null;
-                for (Node<E> trail = head, p = trail.next;
-                     p != null;
-                     trail = p, p = p.next) {
-                    if (p == node) {
-                        unlink(p, trail);
-                        break;
-                    }
+                if (p.item != null) {
+                    if (ancestor == null)
+                        ancestor = head;
+                    ancestor = findPred(p, ancestor);
+                    unlink(p, ancestor);
                 }
             } finally {
                 fullyUnlock();
@@ -877,11 +879,10 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
 
         public Spliterator<E> trySplit() {
             Node<E> h;
-            int b = batch;
-            int n = (b <= 0) ? 1 : (b >= MAX_BATCH) ? MAX_BATCH : b + 1;
             if (!exhausted &&
                 ((h = current) != null || (h = head.next) != null)
                 && h.next != null) {
+                int n = batch = Math.min(batch + 1, MAX_BATCH);
                 Object[] a = new Object[n];
                 int i = 0;
                 Node<E> p = current;
@@ -900,13 +901,11 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
                 }
                 else if ((est -= i) < 0L)
                     est = 0L;
-                if (i > 0) {
-                    batch = i;
+                if (i > 0)
                     return Spliterators.spliterator
                         (a, 0, i, (Spliterator.ORDERED |
                                    Spliterator.NONNULL |
                                    Spliterator.CONCURRENT));
-                }
             }
             return null;
         }
@@ -923,7 +922,8 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
                             e = p.item;
                             p = succ(p);
                         } while (e == null && p != null);
-                    exhausted = ((current = p) == null);
+                    if ((current = p) == null)
+                        exhausted = true;
                 } finally {
                     fullyUnlock();
                 }
@@ -987,7 +987,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
     void forEachFrom(Consumer<? super E> action, Node<E> p) {
         // Extract batches of elements while holding the lock; then
         // run the action on the elements while not
-        final int batchSize = 32;       // max number of elements per batch
+        final int batchSize = 64;       // max number of elements per batch
         Object[] es = null;             // container for batch of elements
         int n, len = 0;
         do {
@@ -1011,6 +1011,97 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
                 action.accept(e);
             }
         } while (n > 0 && p != null);
+    }
+
+    /**
+     * @throws NullPointerException {@inheritDoc}
+     */
+    public boolean removeIf(Predicate<? super E> filter) {
+        Objects.requireNonNull(filter);
+        return bulkRemove(filter);
+    }
+
+    /**
+     * @throws NullPointerException {@inheritDoc}
+     */
+    public boolean removeAll(Collection<?> c) {
+        Objects.requireNonNull(c);
+        return bulkRemove(e -> c.contains(e));
+    }
+
+    /**
+     * @throws NullPointerException {@inheritDoc}
+     */
+    public boolean retainAll(Collection<?> c) {
+        Objects.requireNonNull(c);
+        return bulkRemove(e -> !c.contains(e));
+    }
+
+    /**
+     * Returns the predecessor of live node p, given a node that was
+     * once a live ancestor of p (or head); allows unlinking of p.
+     */
+    Node<E> findPred(Node<E> p, Node<E> ancestor) {
+        // assert p.item != null;
+        if (ancestor.item == null)
+            ancestor = head;
+        // Fails with NPE if precondition not satisfied
+        for (Node<E> q; (q = ancestor.next) != p; )
+            ancestor = q;
+        return ancestor;
+    }
+
+    /** Implementation of bulk remove methods. */
+    @SuppressWarnings("unchecked")
+    private boolean bulkRemove(Predicate<? super E> filter) {
+        boolean removed = false;
+        Node<E> p = null, ancestor = head;
+        Node<E>[] nodes = null;
+        int n, len = 0;
+        do {
+            // 1. Extract batch of up to 64 elements while holding the lock.
+            long deathRow = 0;          // "bitset" of size 64
+            fullyLock();
+            try {
+                if (nodes == null) {
+                    if (p == null) p = head.next;
+                    for (Node<E> q = p; q != null; q = succ(q))
+                        if (q.item != null && ++len == 64)
+                            break;
+                    nodes = (Node<E>[]) new Node<?>[len];
+                }
+                for (n = 0; p != null && n < len; p = succ(p))
+                    nodes[n++] = p;
+            } finally {
+                fullyUnlock();
+            }
+
+            // 2. Run the filter on the elements while lock is free.
+            for (int i = 0; i < n; i++) {
+                final E e;
+                if ((e = nodes[i].item) != null && filter.test(e))
+                    deathRow |= 1L << i;
+            }
+
+            // 3. Remove any filtered elements while holding the lock.
+            if (deathRow != 0) {
+                fullyLock();
+                try {
+                    for (int i = 0; i < n; i++) {
+                        final Node<E> q;
+                        if ((deathRow & (1L << i)) != 0L
+                            && (q = nodes[i]).item != null) {
+                            ancestor = findPred(q, ancestor);
+                            unlink(q, ancestor);
+                            removed = true;
+                        }
+                    }
+                } finally {
+                    fullyUnlock();
+                }
+            }
+        } while (n > 0 && p != null);
+        return removed;
     }
 
     /**

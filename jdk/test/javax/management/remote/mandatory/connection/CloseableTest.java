@@ -28,7 +28,7 @@
  *          the method "void close() throws IOException;" extend
  *          or implement the java.io.Closeable interface.
  * @author Luis-Miguel Alventosa
- * @modules java.management
+ * @modules java.management.rmi
  * @run clean CloseableTest
  * @run build CloseableTest
  * @run main CloseableTest

@@ -44,6 +44,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.function.Supplier;
 import jdk.testlibrary.RandomFactory;
 
 public class ConfigChanges {
@@ -121,6 +122,22 @@ public class ConfigChanges {
                 }
             }
             return;
+        }
+    }
+
+    /**
+     * Waits for condition to become true, first spin-polling, then sleep-polling.
+     */
+    static void spinAwait(Supplier<Boolean> waitingForGodot) {
+        for (int spins = 0; !waitingForGodot.get(); ) {
+            if ((spins = (spins + 1) & 3) > 0) {
+                Thread.yield();
+            } else {
+                try { Thread.sleep(4); }
+                catch (InterruptedException unexpected) {
+                    throw new AssertionError(unexpected);
+                }
+            }
         }
     }
 
@@ -210,10 +227,7 @@ public class ConfigChanges {
         pumpedUp2.await();
         pumpedUp.await();
 
-        while (tg.activeCount() != 2*n &&
-               tg.activeCount() != 2*n)
-            Thread.yield();
-        equal(2*n, tg.activeCount());
+        spinAwait(() -> tg.activeCount() == 2*n);
         equal(2*n, tpe.getMaximumPoolSize());
         equal(4*n, tpe.getLargestPoolSize());
 
@@ -232,10 +246,7 @@ public class ConfigChanges {
         long t0 = System.nanoTime();
         tpe.setKeepAliveTime(7L, MILLISECONDS);
         equal(7L, tpe.getKeepAliveTime(MILLISECONDS));
-        while (tg.activeCount() > n &&
-               tg.activeCount() > n)
-            Thread.sleep(4);
-        equal(n, tg.activeCount());
+        spinAwait(() -> tg.activeCount() == n);
         check(System.nanoTime() - t0 >= tpe.getKeepAliveTime(NANOSECONDS));
 
         //report("idle", tpe);
@@ -243,10 +254,7 @@ public class ConfigChanges {
         t0 = System.nanoTime();
         tpe.allowCoreThreadTimeOut(true);
         check(tpe.allowsCoreThreadTimeOut());
-        while (tg.activeCount() > 0 &&
-               tg.activeCount() > 0)
-            Thread.sleep(4);
-        equal(tg.activeCount(), 0);
+        spinAwait(() -> tg.activeCount() == 0);
 
         // The following assertion is almost always true, but may
         // exceptionally not be during a transition from core count

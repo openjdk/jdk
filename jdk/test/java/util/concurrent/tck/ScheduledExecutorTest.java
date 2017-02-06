@@ -915,7 +915,7 @@ public class ScheduledExecutorTest extends JSR166TestCase {
         CountDownLatch latch = new CountDownLatch(1);
         final ExecutorService e = new ScheduledThreadPoolExecutor(2);
         try (PoolCleaner cleaner = cleaner(e)) {
-            List<Callable<String>> l = new ArrayList<Callable<String>>();
+            List<Callable<String>> l = new ArrayList<>();
             l.add(latchAwaitingStringTask(latch));
             l.add(null);
             try {
@@ -932,7 +932,7 @@ public class ScheduledExecutorTest extends JSR166TestCase {
     public void testInvokeAny4() throws Exception {
         final ExecutorService e = new ScheduledThreadPoolExecutor(2);
         try (PoolCleaner cleaner = cleaner(e)) {
-            List<Callable<String>> l = new ArrayList<Callable<String>>();
+            List<Callable<String>> l = new ArrayList<>();
             l.add(new NPETask());
             try {
                 e.invokeAny(l);
@@ -949,7 +949,7 @@ public class ScheduledExecutorTest extends JSR166TestCase {
     public void testInvokeAny5() throws Exception {
         final ExecutorService e = new ScheduledThreadPoolExecutor(2);
         try (PoolCleaner cleaner = cleaner(e)) {
-            List<Callable<String>> l = new ArrayList<Callable<String>>();
+            List<Callable<String>> l = new ArrayList<>();
             l.add(new StringTask());
             l.add(new StringTask());
             String result = e.invokeAny(l);
@@ -987,7 +987,7 @@ public class ScheduledExecutorTest extends JSR166TestCase {
     public void testInvokeAll3() throws Exception {
         final ExecutorService e = new ScheduledThreadPoolExecutor(2);
         try (PoolCleaner cleaner = cleaner(e)) {
-            List<Callable<String>> l = new ArrayList<Callable<String>>();
+            List<Callable<String>> l = new ArrayList<>();
             l.add(new StringTask());
             l.add(null);
             try {
@@ -1003,7 +1003,7 @@ public class ScheduledExecutorTest extends JSR166TestCase {
     public void testInvokeAll4() throws Exception {
         final ExecutorService e = new ScheduledThreadPoolExecutor(2);
         try (PoolCleaner cleaner = cleaner(e)) {
-            List<Callable<String>> l = new ArrayList<Callable<String>>();
+            List<Callable<String>> l = new ArrayList<>();
             l.add(new NPETask());
             List<Future<String>> futures = e.invokeAll(l);
             assertEquals(1, futures.size());
@@ -1022,7 +1022,7 @@ public class ScheduledExecutorTest extends JSR166TestCase {
     public void testInvokeAll5() throws Exception {
         final ExecutorService e = new ScheduledThreadPoolExecutor(2);
         try (PoolCleaner cleaner = cleaner(e)) {
-            List<Callable<String>> l = new ArrayList<Callable<String>>();
+            List<Callable<String>> l = new ArrayList<>();
             l.add(new StringTask());
             l.add(new StringTask());
             List<Future<String>> futures = e.invokeAll(l);
@@ -1051,7 +1051,7 @@ public class ScheduledExecutorTest extends JSR166TestCase {
     public void testTimedInvokeAnyNullTimeUnit() throws Exception {
         final ExecutorService e = new ScheduledThreadPoolExecutor(2);
         try (PoolCleaner cleaner = cleaner(e)) {
-            List<Callable<String>> l = new ArrayList<Callable<String>>();
+            List<Callable<String>> l = new ArrayList<>();
             l.add(new StringTask());
             try {
                 e.invokeAny(l, MEDIUM_DELAY_MS, null);
@@ -1080,7 +1080,7 @@ public class ScheduledExecutorTest extends JSR166TestCase {
         CountDownLatch latch = new CountDownLatch(1);
         final ExecutorService e = new ScheduledThreadPoolExecutor(2);
         try (PoolCleaner cleaner = cleaner(e)) {
-            List<Callable<String>> l = new ArrayList<Callable<String>>();
+            List<Callable<String>> l = new ArrayList<>();
             l.add(latchAwaitingStringTask(latch));
             l.add(null);
             try {
@@ -1098,7 +1098,7 @@ public class ScheduledExecutorTest extends JSR166TestCase {
         final ExecutorService e = new ScheduledThreadPoolExecutor(2);
         try (PoolCleaner cleaner = cleaner(e)) {
             long startTime = System.nanoTime();
-            List<Callable<String>> l = new ArrayList<Callable<String>>();
+            List<Callable<String>> l = new ArrayList<>();
             l.add(new NPETask());
             try {
                 e.invokeAny(l, LONG_DELAY_MS, MILLISECONDS);
@@ -1117,7 +1117,7 @@ public class ScheduledExecutorTest extends JSR166TestCase {
         final ExecutorService e = new ScheduledThreadPoolExecutor(2);
         try (PoolCleaner cleaner = cleaner(e)) {
             long startTime = System.nanoTime();
-            List<Callable<String>> l = new ArrayList<Callable<String>>();
+            List<Callable<String>> l = new ArrayList<>();
             l.add(new StringTask());
             l.add(new StringTask());
             String result = e.invokeAny(l, LONG_DELAY_MS, MILLISECONDS);
@@ -1145,7 +1145,7 @@ public class ScheduledExecutorTest extends JSR166TestCase {
     public void testTimedInvokeAllNullTimeUnit() throws Exception {
         final ExecutorService e = new ScheduledThreadPoolExecutor(2);
         try (PoolCleaner cleaner = cleaner(e)) {
-            List<Callable<String>> l = new ArrayList<Callable<String>>();
+            List<Callable<String>> l = new ArrayList<>();
             l.add(new StringTask());
             try {
                 e.invokeAll(l, MEDIUM_DELAY_MS, null);
@@ -1172,7 +1172,7 @@ public class ScheduledExecutorTest extends JSR166TestCase {
     public void testTimedInvokeAll3() throws Exception {
         final ExecutorService e = new ScheduledThreadPoolExecutor(2);
         try (PoolCleaner cleaner = cleaner(e)) {
-            List<Callable<String>> l = new ArrayList<Callable<String>>();
+            List<Callable<String>> l = new ArrayList<>();
             l.add(new StringTask());
             l.add(null);
             try {
@@ -1188,7 +1188,7 @@ public class ScheduledExecutorTest extends JSR166TestCase {
     public void testTimedInvokeAll4() throws Exception {
         final ExecutorService e = new ScheduledThreadPoolExecutor(2);
         try (PoolCleaner cleaner = cleaner(e)) {
-            List<Callable<String>> l = new ArrayList<Callable<String>>();
+            List<Callable<String>> l = new ArrayList<>();
             l.add(new NPETask());
             List<Future<String>> futures =
                 e.invokeAll(l, LONG_DELAY_MS, MILLISECONDS);
@@ -1208,7 +1208,7 @@ public class ScheduledExecutorTest extends JSR166TestCase {
     public void testTimedInvokeAll5() throws Exception {
         final ExecutorService e = new ScheduledThreadPoolExecutor(2);
         try (PoolCleaner cleaner = cleaner(e)) {
-            List<Callable<String>> l = new ArrayList<Callable<String>>();
+            List<Callable<String>> l = new ArrayList<>();
             l.add(new StringTask());
             l.add(new StringTask());
             List<Future<String>> futures =

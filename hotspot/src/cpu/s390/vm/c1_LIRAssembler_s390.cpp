@@ -1105,16 +1105,16 @@ void LIR_Assembler::reg2mem(LIR_Opr from, LIR_Opr dest_opr, BasicType type,
       }
     case T_FLOAT :
       if (short_disp) {
-                    __ z_ste(from->as_float_reg(),  disp_value, disp_reg, dest);
+        __ z_ste(from->as_float_reg(),  disp_value, disp_reg, dest);
       } else {
-                    __ z_stey(from->as_float_reg(), disp_value, disp_reg, dest);
+        __ z_stey(from->as_float_reg(), disp_value, disp_reg, dest);
       }
       break;
     case T_DOUBLE:
       if (short_disp) {
-                    __ z_std(from->as_double_reg(),  disp_value, disp_reg, dest);
+        __ z_std(from->as_double_reg(),  disp_value, disp_reg, dest);
       } else {
-                    __ z_stdy(from->as_double_reg(), disp_value, disp_reg, dest);
+        __ z_stdy(from->as_double_reg(), disp_value, disp_reg, dest);
       }
       break;
     default: ShouldNotReachHere();
@@ -1146,6 +1146,10 @@ void LIR_Assembler::return_op(LIR_Opr result) {
   } else {
     __ add2reg(Z_SP, initial_frame_size_in_bytes());
     __ restore_return_pc();
+  }
+
+  if (StackReservedPages > 0 && compilation()->has_reserved_stack_access()) {
+    __ reserved_stack_check(Z_R14);
   }
 
   // We need to mark the code position where the load from the safepoint

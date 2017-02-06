@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,7 @@ public class ReportNonExistentPackageTest extends ModuleTestBase {
     }
 
     @Test
-    public void testExportPrivateEmptyPackage(Path base) throws Exception {
+    public void testOpensEmptyPackage(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { opens p; }");
@@ -116,15 +116,34 @@ public class ReportNonExistentPackageTest extends ModuleTestBase {
                 .options("-XDrawDiagnostics")
                 .outdir(classes)
                 .files(findJavaFiles(src))
-                .run(Task.Expect.FAIL)
+                .run(Task.Expect.SUCCESS)
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
-        if (!log.contains("module-info.java:1:18: compiler.err.package.empty.or.not.found: p"))
+        if (!log.contains("module-info.java:1:18: compiler.warn.package.empty.or.not.found: p"))
             throw new Exception("expected output not found, actual output: " + log);
     }
 
     @Test
-    public void testExportPrivateOnlyWithResources(Path base) throws Exception {
+    public void testOpensEmptyPackageSuppressed(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src,
+                "@SuppressWarnings(\"opens\") module m { opens p; }");
+        Path classes = base.resolve("classes");
+        Files.createDirectories(classes);
+
+        String log = new JavacTask(tb)
+                .options("-XDrawDiagnostics")
+                .outdir(classes)
+                .files(findJavaFiles(src))
+                .run(Task.Expect.SUCCESS)
+                .writeAll()
+                .getOutput(Task.OutputKind.DIRECT);
+        if (!log.equals(""))
+            throw new Exception("expected output not found, actual output: " + log);
+    }
+
+    @Test
+    public void testOpenOnlyWithResources(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module m { opens p; }");

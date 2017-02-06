@@ -643,6 +643,7 @@ const RegMask &MachSafePointNode::in_RegMask( uint idx ) const {
   }
 
   // Values outside the domain represent debug info
+  assert(in(idx)->ideal_reg() != Op_RegFlags, "flags register is not spillable");
   return *Compile::current()->matcher()->idealreg2spillmask[in(idx)->ideal_reg()];
 }
 

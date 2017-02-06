@@ -238,7 +238,7 @@ public class CountedCompleterTest extends JSR166TestCase {
         final AtomicInteger onCompletionN = new AtomicInteger(0);
         final AtomicInteger onExceptionalCompletionN = new AtomicInteger(0);
         final AtomicInteger setRawResultN = new AtomicInteger(0);
-        final AtomicReference<Object> rawResult = new AtomicReference<Object>(null);
+        final AtomicReference<Object> rawResult = new AtomicReference<>(null);
         int computeN() { return computeN.get(); }
         int onCompletionN() { return onCompletionN.get(); }
         int onExceptionalCompletionN() { return onExceptionalCompletionN.get(); }

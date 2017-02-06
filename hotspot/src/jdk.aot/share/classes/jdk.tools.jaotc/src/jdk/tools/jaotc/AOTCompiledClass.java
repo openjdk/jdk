@@ -293,12 +293,18 @@ public class AOTCompiledClass {
             // Record methods holder
             methodInfo.addDependentKlassData(binaryContainer, resolvedJavaType);
             // Record inlinee classes
-            for (ResolvedJavaMethod m : methodInfo.getCompilationResult().getMethods()) {
-                methodInfo.addDependentKlassData(binaryContainer, (HotSpotResolvedObjectType) m.getDeclaringClass());
+            ResolvedJavaMethod[] inlinees = methodInfo.getCompilationResult().getMethods();
+            if (inlinees != null) {
+                for (ResolvedJavaMethod m : inlinees) {
+                    methodInfo.addDependentKlassData(binaryContainer, (HotSpotResolvedObjectType) m.getDeclaringClass());
+                }
             }
             // Record classes of fields that were accessed
-            for (ResolvedJavaField f : methodInfo.getCompilationResult().getFields()) {
-                methodInfo.addDependentKlassData(binaryContainer, (HotSpotResolvedObjectType) f.getDeclaringClass());
+            ResolvedJavaField[] fields = methodInfo.getCompilationResult().getFields();
+            if (fields != null) {
+                for (ResolvedJavaField f : fields) {
+                    methodInfo.addDependentKlassData(binaryContainer, (HotSpotResolvedObjectType) f.getDeclaringClass());
+                }
             }
         }
     }

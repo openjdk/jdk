@@ -73,7 +73,7 @@ public class ConcurrentQueueLoops {
     int items = 1024 * 1024;
 
     Collection<Queue<Integer>> concurrentQueues() {
-        List<Queue<Integer>> queues = new ArrayList<Queue<Integer>>();
+        List<Queue<Integer>> queues = new ArrayList<>();
         queues.add(new ConcurrentLinkedDeque<Integer>());
         queues.add(new ConcurrentLinkedQueue<Integer>());
         queues.add(new ArrayBlockingQueue<Integer>(items, false));
@@ -166,7 +166,7 @@ public class ConcurrentQueueLoops {
         LoopHelpers.BarrierTimer timer = new LoopHelpers.BarrierTimer();
         CyclicBarrier barrier = new CyclicBarrier(n + 1, timer);
         totalItems = new AtomicInteger(n * items);
-        ArrayList<Future<Integer>> results = new ArrayList<Future<Integer>>(n);
+        ArrayList<Future<Integer>> results = new ArrayList<>(n);
         for (int i = 0; i < n; ++i)
             results.add(pool.submit(new Stage(q, barrier, items)));
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,9 +40,8 @@ package javax.security.cert;
  * @since 1.4
  * @author Hemma Prafullchandra
  * @deprecated Use the classes in {@code java.security.cert} instead.
- *      This class is subject to removal in a future version of Java SE.
  */
-@Deprecated(since="9", forRemoval=true)
+@Deprecated(since="9")
 public class CertificateParsingException extends CertificateException {
 
     private static final long serialVersionUID = -8449352422951136229L;

@@ -184,8 +184,7 @@ public class RacingCollections {
     }
 
     private static List<Map<Integer, Boolean>> newConcurrentMaps() {
-        List<Map<Integer, Boolean>> list =
-            new ArrayList<Map<Integer, Boolean>>();
+        List<Map<Integer, Boolean>> list = new ArrayList<>();
         list.add(new ConcurrentHashMap<Integer, Boolean>());
         list.add(new ConcurrentSkipListMap<Integer, Boolean>());
         return list;
@@ -196,7 +195,7 @@ public class RacingCollections {
         list.add(new Hashtable<Integer, Boolean>());
         list.add(new HashMap<Integer, Boolean>());
         list.add(new TreeMap<Integer, Boolean>());
-        Comparator<Integer> cmp = new Comparator<Integer>() {
+        Comparator<Integer> cmp = new Comparator<>() {
             public int compare(Integer x, Integer y) {
                 return x - y;
             }};
@@ -205,7 +204,7 @@ public class RacingCollections {
     }
 
     private static List<Set<Integer>> newConcurrentSets() {
-        List<Set<Integer>> list = new ArrayList<Set<Integer>>();
+        List<Set<Integer>> list = new ArrayList<>();
         list.add(new ConcurrentSkipListSet<Integer>());
         list.add(new CopyOnWriteArraySet<Integer>());
         return list;
@@ -220,7 +219,7 @@ public class RacingCollections {
     }
 
     private static List<List<Integer>> newConcurrentLists() {
-        List<List<Integer>> list = new ArrayList<List<Integer>>();
+        List<List<Integer>> list = new ArrayList<>();
         list.add(new CopyOnWriteArrayList<Integer>());
         return list;
     }
@@ -233,8 +232,7 @@ public class RacingCollections {
     }
 
     private static List<Queue<Integer>> newConcurrentQueues() {
-        List<Queue<Integer>> list =
-            new ArrayList<Queue<Integer>>(newConcurrentDeques());
+        List<Queue<Integer>> list = new ArrayList<>(newConcurrentDeques());
         list.add(new ArrayBlockingQueue<Integer>(10));
         list.add(new LinkedBlockingQueue<Integer>(10));
         list.add(new LinkedTransferQueue<Integer>());
@@ -243,14 +241,13 @@ public class RacingCollections {
     }
 
     private static List<Queue<Integer>> newQueues() {
-        List<Queue<Integer>> list =
-            new ArrayList<Queue<Integer>>(newDeques());
+        List<Queue<Integer>> list = new ArrayList<>(newDeques());
         list.add(new LinkedBlockingQueue<Integer>(10));
         return list;
     }
 
     private static List<Deque<Integer>> newConcurrentDeques() {
-        List<Deque<Integer>> list = new ArrayList<Deque<Integer>>();
+        List<Deque<Integer>> list = new ArrayList<>();
         list.add(new LinkedBlockingDeque<Integer>(10));
         list.add(new ConcurrentLinkedDeque<Integer>());
         return list;

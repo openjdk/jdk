@@ -314,9 +314,9 @@ public class WindowsTerminal
 
     private static native void initIDs();
 
-    private native int getConsoleMode();
+    protected native int getConsoleMode();
 
-    private native void setConsoleMode(int mode);
+    protected native void setConsoleMode(int mode);
 
     private byte[] readConsoleInput() {
         KEY_EVENT_RECORD keyEvent = readKeyEvent();

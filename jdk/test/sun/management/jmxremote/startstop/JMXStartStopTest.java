@@ -46,14 +46,15 @@ import javax.net.ssl.SSLHandshakeException;
 
 import jdk.testlibrary.ProcessTools;
 import jdk.testlibrary.Utils;
-import sun.management.Agent;
-import sun.management.AgentConfigurationError;
+import jdk.internal.agent.Agent;
+import jdk.internal.agent.AgentConfigurationError;
+import jdk.internal.agent.ConnectorAddressLink;
 
 /**
  * @test
  * @bug 7110104
  * @library /lib/testlibrary
- * @modules java.management/sun.management
+ * @modules jdk.management.agent/jdk.internal.agent
  * @build jdk.testlibrary.* JMXStartStopTest PortAllocator TestApp ManagementAgentJcmd
  * @run main/othervm/timeout=600 -XX:+UsePerfData JMXStartStopTest
  * @summary Makes sure that enabling/disabling the management agent through JCMD
@@ -103,7 +104,7 @@ public class JMXStartStopTest {
         String jmxUrlStr = null;
 
         try {
-            jmxUrlStr = sun.management.ConnectorAddressLink.importFrom((int)pid);
+            jmxUrlStr = ConnectorAddressLink.importFrom((int)pid);
             dbg_print("Local Service URL: " +jmxUrlStr);
             if ( jmxUrlStr == null ) {
                 throw new Exception("No Service URL. Local agent not started?");

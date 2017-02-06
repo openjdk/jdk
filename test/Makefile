@@ -60,7 +60,12 @@ all: jdk_all langtools_all jaxp_all
 -include $(TOPDIR)/closed/test/Makefile
 
 ifeq ($(TEST_JOBS), 0)
-  JDK_TEST_JOBS=$(JOBS)
+  ifeq ($(shell $(EXPR) $(JOBS) \> 50), 1)
+    # JTReg cannot handle more than 50 in concurrency
+    JDK_TEST_JOBS=50
+  else
+    JDK_TEST_JOBS=$(JOBS)
+  endif
 else
   JDK_TEST_JOBS=$(TEST_JOBS)
 endif

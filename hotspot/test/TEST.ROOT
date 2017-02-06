@@ -46,6 +46,8 @@ requires.properties= \
     vm.gc.Parallel \
     vm.gc.ConcMarkSweep \
     vm.jvmci \
+    vm.emulatedClient \
+    vm.cpu.features \
     vm.debug
 
 # Tests using jtreg 4.2 b04 features

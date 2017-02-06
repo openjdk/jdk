@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,20 +48,23 @@ public class RedefinePreviousVersions {
     public static String newRunning =
         "class RedefinePreviousVersions$Running {" +
         "    public static volatile boolean stop = true;" +
+        "    public static volatile boolean running = true;" +
         "    static void localSleep() { }" +
         "    public static void infinite() { }" +
         "}";
 
     static class Running {
         public static volatile boolean stop = false;
+        public static volatile boolean running = false;
         static void localSleep() {
           try{
-            Thread.currentThread().sleep(10);//sleep for 10 ms
+            Thread.sleep(10); // sleep for 10 ms
           } catch(InterruptedException ie) {
           }
         }
 
         public static void infinite() {
+            running = true;
             while (!stop) { localSleep(); }
         }
     }
@@ -69,8 +72,6 @@ public class RedefinePreviousVersions {
     public static void main(String[] args) throws Exception {
 
         if (args.length > 0) {
-
-            String jarFile = System.getProperty("test.src") + "/testcase.jar";
 
             // java -javaagent:redefineagent.jar -Xlog:stuff RedefinePreviousVersions
             ProcessBuilder pb = ProcessTools.createJavaProcessBuilder( "-javaagent:redefineagent.jar",
@@ -99,6 +100,10 @@ public class RedefinePreviousVersions {
                 Running.infinite();
             }
         }.start();
+
+        while (!Running.running) {
+            Thread.sleep(10); // sleep for 10 ms
+        }
 
         // Since a method of newRunning is running, this class should be added to the previous_version_list
         // of Running, and _has_previous_versions should return true at class unloading.

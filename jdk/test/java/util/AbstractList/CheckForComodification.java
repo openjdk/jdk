@@ -35,7 +35,7 @@ import java.util.*;
 public class CheckForComodification {
     private static final int LENGTH = 10;
     public static void main(String[] args) throws Exception {
-        List<Integer> list = new ArrayList<Integer>();
+        List<Integer> list = new ArrayList<>();
         for (int i = 0; i < LENGTH; i++)
             list.add(i);
         try {
