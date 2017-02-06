@@ -61,7 +61,7 @@ public class DistinctSeeds {
         }
         final int threadCount = 2;
         List<RandomCollector> collectors = new ArrayList<>();
-        List<Thread> threads = new ArrayList<Thread>();
+        List<Thread> threads = new ArrayList<>();
         for (int i = 0; i < threadCount; i++) {
             RandomCollector r = new RandomCollector();
             collectors.add(r);
@@ -72,7 +72,7 @@ public class DistinctSeeds {
         for (Thread thread : threads)
             thread.join();
         int collisions = 0;
-        HashSet<Long> s = new HashSet<Long>();
+        HashSet<Long> s = new HashSet<>();
         for (RandomCollector r : collectors) {
             for (long x : r.randoms) {
                 if (s.contains(x))

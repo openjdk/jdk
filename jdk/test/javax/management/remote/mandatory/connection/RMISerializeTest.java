@@ -26,7 +26,7 @@
  * @summary Tests to serialize RMIConnector
  * @bug 5032052
  * @author Shanliang JIANG
- * @modules java.management
+ * @modules java.management.rmi
  * @run clean RMISerializeTest
  * @run build RMISerializeTest
  * @run main RMISerializeTest

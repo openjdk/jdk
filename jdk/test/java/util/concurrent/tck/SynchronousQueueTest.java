@@ -428,8 +428,7 @@ public class SynchronousQueueTest extends JSR166TestCase {
     public void testToArray2()      { testToArray2(false); }
     public void testToArray2_fair() { testToArray2(true); }
     public void testToArray2(boolean fair) {
-        final SynchronousQueue<Integer> q
-            = new SynchronousQueue<Integer>(fair);
+        final SynchronousQueue<Integer> q = new SynchronousQueue<>(fair);
         Integer[] a;
 
         a = new Integer[0];

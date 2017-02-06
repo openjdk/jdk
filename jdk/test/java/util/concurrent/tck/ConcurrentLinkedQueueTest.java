@@ -66,7 +66,7 @@ public class ConcurrentLinkedQueueTest extends JSR166TestCase {
      * Integers 0 ... n - 1.
      */
     private ConcurrentLinkedQueue<Integer> populatedQueue(int n) {
-        ConcurrentLinkedQueue<Integer> q = new ConcurrentLinkedQueue<Integer>();
+        ConcurrentLinkedQueue<Integer> q = new ConcurrentLinkedQueue<>();
         assertTrue(q.isEmpty());
         for (int i = 0; i < n; ++i)
             assertTrue(q.offer(new Integer(i)));

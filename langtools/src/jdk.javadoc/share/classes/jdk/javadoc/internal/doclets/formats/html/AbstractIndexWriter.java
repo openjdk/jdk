@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -437,23 +437,23 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
     protected void createSearchIndexFiles() throws DocFileIOException {
         if (configuration.showModules) {
             createSearchIndexFile(DocPaths.MODULE_SEARCH_INDEX_JSON, DocPaths.MODULE_SEARCH_INDEX_ZIP,
-                    configuration.moduleSearchIndex);
+                    DocPaths.MODULE_SEARCH_INDEX_JS, configuration.moduleSearchIndex, "moduleSearchIndex");
         }
         createSearchIndexFile(DocPaths.PACKAGE_SEARCH_INDEX_JSON, DocPaths.PACKAGE_SEARCH_INDEX_ZIP,
-                configuration.packageSearchIndex);
+                DocPaths.PACKAGE_SEARCH_INDEX_JS, configuration.packageSearchIndex, "packageSearchIndex");
         createSearchIndexFile(DocPaths.TYPE_SEARCH_INDEX_JSON, DocPaths.TYPE_SEARCH_INDEX_ZIP,
-                configuration.typeSearchIndex);
+                DocPaths.TYPE_SEARCH_INDEX_JS, configuration.typeSearchIndex, "typeSearchIndex");
         createSearchIndexFile(DocPaths.MEMBER_SEARCH_INDEX_JSON, DocPaths.MEMBER_SEARCH_INDEX_ZIP,
-                configuration.memberSearchIndex);
+                DocPaths.MEMBER_SEARCH_INDEX_JS, configuration.memberSearchIndex, "memberSearchIndex");
         createSearchIndexFile(DocPaths.TAG_SEARCH_INDEX_JSON, DocPaths.TAG_SEARCH_INDEX_ZIP,
-                configuration.tagSearchIndex);
+                DocPaths.TAG_SEARCH_INDEX_JS, configuration.tagSearchIndex, "tagSearchIndex");
     }
 
     /**
      * @throws DocFileIOException if there is a problem creating the search index file
      */
     protected void createSearchIndexFile(DocPath searchIndexFile, DocPath searchIndexZip,
-            List<SearchIndexItem> searchIndex) throws DocFileIOException {
+            DocPath searchIndexJS, List<SearchIndexItem> searchIndex, String varName) throws DocFileIOException {
         if (!searchIndex.isEmpty()) {
             StringBuilder searchVar = new StringBuilder("[");
             boolean first = true;
@@ -466,6 +466,14 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
                 }
             }
             searchVar.append("]");
+            DocFile jsFile = DocFile.createFileForOutput(configuration, searchIndexJS);
+            try (Writer wr = jsFile.openWriter()) {
+                wr.write(varName);
+                wr.write(" = ");
+                wr.write(searchVar.toString());
+            } catch (IOException ie) {
+                throw new DocFileIOException(jsFile, DocFileIOException.Mode.WRITE, ie);
+            }
 
             DocFile zipFile = DocFile.createFileForOutput(configuration, searchIndexZip);
             try (OutputStream fos = zipFile.openOutputStream();

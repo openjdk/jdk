@@ -28,6 +28,7 @@
 SUNWprivate_1.1 {
 	global:
 		# These are needed by the c runtime in SS12u4
+		environ;
 		_environ;
 		__environ_lock;
 		___Argv;

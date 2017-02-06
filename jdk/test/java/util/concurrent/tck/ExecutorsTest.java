@@ -308,7 +308,7 @@ public class ExecutorsTest extends JSR166TestCase {
                 delay(LONG_DELAY_MS);
             }};
 
-        List<Thread> threads = new ArrayList<Thread>();
+        List<Thread> threads = new ArrayList<>();
         for (final ExecutorService executor : executors) {
             threads.add(newStartedThread(new CheckedRunnable() {
                 public void realRun() {

@@ -425,11 +425,11 @@ public class LockSupport {
     static {
         try {
             PARKBLOCKER = U.objectFieldOffset
-                    (Thread.class.getDeclaredField("parkBlocker"));
+                (Thread.class.getDeclaredField("parkBlocker"));
             SECONDARY = U.objectFieldOffset
-                    (Thread.class.getDeclaredField("threadLocalRandomSecondarySeed"));
+                (Thread.class.getDeclaredField("threadLocalRandomSecondarySeed"));
             TID = U.objectFieldOffset
-                    (Thread.class.getDeclaredField("tid"));
+                (Thread.class.getDeclaredField("tid"));
 
         } catch (ReflectiveOperationException e) {
             throw new Error(e);

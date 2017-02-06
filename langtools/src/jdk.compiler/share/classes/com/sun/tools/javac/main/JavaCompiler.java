@@ -921,7 +921,7 @@ public class JavaCompiler {
         start_msec = now();
 
         try {
-            initProcessAnnotations(processors);
+            initProcessAnnotations(processors, sourceFileObjects, classnames);
 
             for (String className : classnames) {
                 int sep = className.indexOf('/');
@@ -1123,7 +1123,9 @@ public class JavaCompiler {
      * @param processors user provided annotation processors to bypass
      * discovery, {@code null} means that no processors were provided
      */
-    public void initProcessAnnotations(Iterable<? extends Processor> processors) {
+    public void initProcessAnnotations(Iterable<? extends Processor> processors,
+                                       Collection<? extends JavaFileObject> initialFiles,
+                                       Collection<String> initialClassNames) {
         // Process annotations if processing is not disabled and there
         // is at least one Processor available.
         if (options.isSet(PROC, "none")) {
@@ -1141,6 +1143,7 @@ public class JavaCompiler {
                 if (!taskListener.isEmpty())
                     taskListener.started(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING));
                 deferredDiagnosticHandler = new Log.DeferredDiagnosticHandler(log);
+                procEnvImpl.getFiler().setInitialState(initialFiles, initialClassNames);
             } else { // free resources
                 procEnvImpl.close();
             }

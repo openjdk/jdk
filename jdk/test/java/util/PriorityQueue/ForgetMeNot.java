@@ -61,7 +61,7 @@ public class ForgetMeNot {
     }
 
     private static void realMain(String[] args) throws Throwable {
-        final PriorityQueue<Integer> q = new PriorityQueue<Integer>();
+        final PriorityQueue<Integer> q = new PriorityQueue<>();
         Iterator<Integer> it;
 
         //----------------------------------------------------------------

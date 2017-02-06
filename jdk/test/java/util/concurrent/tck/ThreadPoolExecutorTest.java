@@ -563,7 +563,7 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
      */
     public void testGetQueue() throws InterruptedException {
         final CountDownLatch done = new CountDownLatch(1);
-        final BlockingQueue<Runnable> q = new ArrayBlockingQueue<Runnable>(10);
+        final BlockingQueue<Runnable> q = new ArrayBlockingQueue<>(10);
         final ThreadPoolExecutor p =
             new ThreadPoolExecutor(1, 1,
                                    LONG_DELAY_MS, MILLISECONDS,
@@ -595,7 +595,7 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
      */
     public void testRemove() throws InterruptedException {
         final CountDownLatch done = new CountDownLatch(1);
-        BlockingQueue<Runnable> q = new ArrayBlockingQueue<Runnable>(10);
+        BlockingQueue<Runnable> q = new ArrayBlockingQueue<>(10);
         final ThreadPoolExecutor p =
             new ThreadPoolExecutor(1, 1,
                                    LONG_DELAY_MS, MILLISECONDS,
@@ -630,7 +630,7 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
     public void testPurge() throws InterruptedException {
         final CountDownLatch threadStarted = new CountDownLatch(1);
         final CountDownLatch done = new CountDownLatch(1);
-        final BlockingQueue<Runnable> q = new ArrayBlockingQueue<Runnable>(10);
+        final BlockingQueue<Runnable> q = new ArrayBlockingQueue<>(10);
         final ThreadPoolExecutor p =
             new ThreadPoolExecutor(1, 1,
                                    LONG_DELAY_MS, MILLISECONDS,
@@ -1534,7 +1534,7 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    LONG_DELAY_MS, MILLISECONDS,
                                    new ArrayBlockingQueue<Runnable>(10));
         try (PoolCleaner cleaner = cleaner(e)) {
-            List<Callable<String>> l = new ArrayList<Callable<String>>();
+            List<Callable<String>> l = new ArrayList<>();
             l.add(latchAwaitingStringTask(latch));
             l.add(null);
             try {
@@ -1554,7 +1554,7 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    LONG_DELAY_MS, MILLISECONDS,
                                    new ArrayBlockingQueue<Runnable>(10));
         try (PoolCleaner cleaner = cleaner(e)) {
-            List<Callable<String>> l = new ArrayList<Callable<String>>();
+            List<Callable<String>> l = new ArrayList<>();
             l.add(new NPETask());
             try {
                 e.invokeAny(l);
@@ -1574,7 +1574,7 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    LONG_DELAY_MS, MILLISECONDS,
                                    new ArrayBlockingQueue<Runnable>(10));
         try (PoolCleaner cleaner = cleaner(e)) {
-            List<Callable<String>> l = new ArrayList<Callable<String>>();
+            List<Callable<String>> l = new ArrayList<>();
             l.add(new StringTask());
             l.add(new StringTask());
             String result = e.invokeAny(l);
@@ -1621,7 +1621,7 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    LONG_DELAY_MS, MILLISECONDS,
                                    new ArrayBlockingQueue<Runnable>(10));
         try (PoolCleaner cleaner = cleaner(e)) {
-            List<Callable<String>> l = new ArrayList<Callable<String>>();
+            List<Callable<String>> l = new ArrayList<>();
             l.add(new StringTask());
             l.add(null);
             try {
@@ -1640,7 +1640,7 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    LONG_DELAY_MS, MILLISECONDS,
                                    new ArrayBlockingQueue<Runnable>(10));
         try (PoolCleaner cleaner = cleaner(e)) {
-            List<Callable<String>> l = new ArrayList<Callable<String>>();
+            List<Callable<String>> l = new ArrayList<>();
             l.add(new NPETask());
             List<Future<String>> futures = e.invokeAll(l);
             assertEquals(1, futures.size());
@@ -1662,7 +1662,7 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    LONG_DELAY_MS, MILLISECONDS,
                                    new ArrayBlockingQueue<Runnable>(10));
         try (PoolCleaner cleaner = cleaner(e)) {
-            List<Callable<String>> l = new ArrayList<Callable<String>>();
+            List<Callable<String>> l = new ArrayList<>();
             l.add(new StringTask());
             l.add(new StringTask());
             List<Future<String>> futures = e.invokeAll(l);
@@ -1697,7 +1697,7 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    LONG_DELAY_MS, MILLISECONDS,
                                    new ArrayBlockingQueue<Runnable>(10));
         try (PoolCleaner cleaner = cleaner(e)) {
-            List<Callable<String>> l = new ArrayList<Callable<String>>();
+            List<Callable<String>> l = new ArrayList<>();
             l.add(new StringTask());
             try {
                 e.invokeAny(l, MEDIUM_DELAY_MS, null);
@@ -1733,7 +1733,7 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    LONG_DELAY_MS, MILLISECONDS,
                                    new ArrayBlockingQueue<Runnable>(10));
         try (PoolCleaner cleaner = cleaner(e)) {
-            List<Callable<String>> l = new ArrayList<Callable<String>>();
+            List<Callable<String>> l = new ArrayList<>();
             l.add(latchAwaitingStringTask(latch));
             l.add(null);
             try {
@@ -1754,7 +1754,7 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    new ArrayBlockingQueue<Runnable>(10));
         try (PoolCleaner cleaner = cleaner(e)) {
             long startTime = System.nanoTime();
-            List<Callable<String>> l = new ArrayList<Callable<String>>();
+            List<Callable<String>> l = new ArrayList<>();
             l.add(new NPETask());
             try {
                 e.invokeAny(l, LONG_DELAY_MS, MILLISECONDS);
@@ -1776,7 +1776,7 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    new ArrayBlockingQueue<Runnable>(10));
         try (PoolCleaner cleaner = cleaner(e)) {
             long startTime = System.nanoTime();
-            List<Callable<String>> l = new ArrayList<Callable<String>>();
+            List<Callable<String>> l = new ArrayList<>();
             l.add(new StringTask());
             l.add(new StringTask());
             String result = e.invokeAny(l, LONG_DELAY_MS, MILLISECONDS);
@@ -1810,7 +1810,7 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    LONG_DELAY_MS, MILLISECONDS,
                                    new ArrayBlockingQueue<Runnable>(10));
         try (PoolCleaner cleaner = cleaner(e)) {
-            List<Callable<String>> l = new ArrayList<Callable<String>>();
+            List<Callable<String>> l = new ArrayList<>();
             l.add(new StringTask());
             try {
                 e.invokeAll(l, MEDIUM_DELAY_MS, null);
@@ -1843,7 +1843,7 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    LONG_DELAY_MS, MILLISECONDS,
                                    new ArrayBlockingQueue<Runnable>(10));
         try (PoolCleaner cleaner = cleaner(e)) {
-            List<Callable<String>> l = new ArrayList<Callable<String>>();
+            List<Callable<String>> l = new ArrayList<>();
             l.add(new StringTask());
             l.add(null);
             try {
@@ -1862,7 +1862,7 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    LONG_DELAY_MS, MILLISECONDS,
                                    new ArrayBlockingQueue<Runnable>(10));
         try (PoolCleaner cleaner = cleaner(e)) {
-            List<Callable<String>> l = new ArrayList<Callable<String>>();
+            List<Callable<String>> l = new ArrayList<>();
             l.add(new NPETask());
             List<Future<String>> futures =
                 e.invokeAll(l, LONG_DELAY_MS, MILLISECONDS);
@@ -1885,7 +1885,7 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    LONG_DELAY_MS, MILLISECONDS,
                                    new ArrayBlockingQueue<Runnable>(10));
         try (PoolCleaner cleaner = cleaner(e)) {
-            List<Callable<String>> l = new ArrayList<Callable<String>>();
+            List<Callable<String>> l = new ArrayList<>();
             l.add(new StringTask());
             l.add(new StringTask());
             List<Future<String>> futures =

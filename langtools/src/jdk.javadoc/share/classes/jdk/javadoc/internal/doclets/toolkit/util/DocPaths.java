@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,11 +121,17 @@ public class DocPaths {
     /** The name of the member search index zip file. */
     public static final DocPath MEMBER_SEARCH_INDEX_ZIP = DocPath.create("member-search-index.zip");
 
+    /** The name of the member search index js file. */
+    public static final DocPath MEMBER_SEARCH_INDEX_JS = DocPath.create("member-search-index.js");
+
     /** The name of the module search index file. */
     public static final DocPath MODULE_SEARCH_INDEX_JSON = DocPath.create("module-search-index.json");
 
-    /** The name of the module search index zipfile. */
+    /** The name of the module search index zip file. */
     public static final DocPath MODULE_SEARCH_INDEX_ZIP = DocPath.create("module-search-index.zip");
+
+    /** The name of the module search index js file. */
+    public static final DocPath MODULE_SEARCH_INDEX_JS = DocPath.create("module-search-index.js");
 
     /** The name of the file for the overview frame. */
     public static final DocPath OVERVIEW_FRAME = DocPath.create("overview-frame.html");
@@ -149,8 +155,11 @@ public class DocPaths {
     /** The name of the package search index file. */
     public static final DocPath PACKAGE_SEARCH_INDEX_JSON = DocPath.create("package-search-index.json");
 
-    /** The name of the package search index zipfile. */
+    /** The name of the package search index zip file. */
     public static final DocPath PACKAGE_SEARCH_INDEX_ZIP = DocPath.create("package-search-index.zip");
+
+    /** The name of the package search index js file. */
+    public static final DocPath PACKAGE_SEARCH_INDEX_JS = DocPath.create("package-search-index.js");
 
     /** The name of the file for the package summary. */
     public static final DocPath PACKAGE_SUMMARY = DocPath.create("package-summary.html");
@@ -202,11 +211,17 @@ public class DocPaths {
     /** The name of the tag search index zip file. */
     public static final DocPath TAG_SEARCH_INDEX_ZIP = DocPath.create("tag-search-index.zip");
 
+    /** The name of the tag search index js file. */
+    public static final DocPath TAG_SEARCH_INDEX_JS = DocPath.create("tag-search-index.js");
+
     /** The name of the type search index file. */
     public static final DocPath TYPE_SEARCH_INDEX_JSON = DocPath.create("type-search-index.json");
 
     /** The name of the type search index zip file. */
     public static final DocPath TYPE_SEARCH_INDEX_ZIP = DocPath.create("type-search-index.zip");
+
+    /** The name of the type search index js file. */
+    public static final DocPath TYPE_SEARCH_INDEX_JS = DocPath.create("type-search-index.js");
 
     /** The name of the image file for undo button on the search box. */
     public static final DocPath X_IMG = DocPath.create("x.png");
