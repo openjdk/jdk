@@ -949,23 +949,12 @@ public class JConsole extends JFrame
         }
     }
 
-    private static final boolean localAttachmentSupported;
-    static {
-        boolean supported;
-        try {
-            Class.forName("com.sun.tools.attach.VirtualMachine");
-            Class.forName("sun.management.ConnectorAddressLink");
-            supported = true;
-        } catch (NoClassDefFoundError x) {
-            supported = false;
-        } catch (ClassNotFoundException x) {
-            supported = false;
-        }
-        localAttachmentSupported = supported;
-    }
-
+    /**
+     * local attach is supported in this implementation as jdk.jconsole
+     * requires jdk.attach and jdk.management.agent
+     */
     public static boolean isLocalAttachAvailable() {
-        return localAttachmentSupported;
+        return true;
     }
 
 
