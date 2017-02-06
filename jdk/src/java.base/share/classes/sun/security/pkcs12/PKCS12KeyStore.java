@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -982,7 +982,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             new CertEntry((X509Certificate) cert, null, alias, AnyUsage,
                 attributes);
         certificateCount++;
-        entries.put(alias, certEntry);
+        entries.put(alias.toLowerCase(Locale.ENGLISH), certEntry);
 
         if (debug != null) {
             debug.println("Setting a trusted certificate at alias '" + alias +
