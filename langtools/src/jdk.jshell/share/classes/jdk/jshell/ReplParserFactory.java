@@ -56,4 +56,9 @@ class ReplParserFactory extends ParserFactory {
         com.sun.tools.javac.parser.Lexer lexer = scannerFactory.newScanner(input, keepDocComments);
         return new ReplParser(this, lexer, keepDocComments, keepLineMap, keepEndPos);
     }
+
+    @Override
+    public JavacParser newParser(CharSequence input, boolean keepDocComments, boolean keepEndPos, boolean keepLineMap, boolean parseModuleInfo) {
+        return newParser(input, keepDocComments, keepEndPos, keepLineMap);
+    }
 }

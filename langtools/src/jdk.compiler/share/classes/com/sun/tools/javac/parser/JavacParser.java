@@ -70,6 +70,10 @@ public class JavacParser implements Parser {
      */
     private static final int infixPrecedenceLevels = 10;
 
+    /** Is the parser instantiated to parse a module-info file ?
+     */
+    private final boolean parseModuleInfo;
+
     /** The scanner used for lexical analysis.
      */
     protected Lexer S;
@@ -138,10 +142,21 @@ public class JavacParser implements Parser {
     /** Construct a parser from a given scanner, tree factory and log.
      */
     protected JavacParser(ParserFactory fac,
+                          Lexer S,
+                          boolean keepDocComments,
+                          boolean keepLineMap,
+                          boolean keepEndPositions) {
+        this(fac, S, keepDocComments, keepLineMap, keepEndPositions, false);
+
+    }
+    /** Construct a parser from a given scanner, tree factory and log.
+     */
+    protected JavacParser(ParserFactory fac,
                      Lexer S,
                      boolean keepDocComments,
                      boolean keepLineMap,
-                     boolean keepEndPositions) {
+                     boolean keepEndPositions,
+                     boolean parseModuleInfo) {
         this.S = S;
         nextToken(); // prime the pump
         this.F = fac.F;
@@ -165,6 +180,7 @@ public class JavacParser implements Parser {
         this.allowUnderscoreIdentifier = source.allowUnderscoreIdentifier();
         this.allowPrivateInterfaceMethods = source.allowPrivateInterfaceMethods();
         this.keepDocComments = keepDocComments;
+        this.parseModuleInfo = parseModuleInfo;
         docComments = newDocCommentTable(keepDocComments, fac);
         this.keepLineMap = keepLineMap;
         this.errorTree = F.Erroneous();
@@ -3347,8 +3363,13 @@ public class JavacParser implements Parser {
             } else {
                 errs = List.of(mods);
             }
-            return toP(F.Exec(syntaxError(pos, errs, "expected3",
-                                          CLASS, INTERFACE, ENUM)));
+            final JCErroneous erroneousTree;
+            if (parseModuleInfo) {
+                erroneousTree = syntaxError(pos, errs, "expected.module.or.open");
+            } else {
+                erroneousTree = syntaxError(pos, errs, "expected3", CLASS, INTERFACE, ENUM);
+            }
+            return toP(F.Exec(erroneousTree));
         }
     }
 
