@@ -696,9 +696,6 @@ public class Modules extends JCTree.Visitor {
             PackageSymbol packge = syms.enterPackage(sym, name);
             attr.setPackageSymbols(tree.qualid, packge);
 
-            if (tree.hasTag(Tag.OPENS) && sym.flags.contains(ModuleFlags.OPEN)) {
-                log.error(tree.pos(), Errors.NoOpensUnlessStrong);
-            }
             List<ExportsDirective> exportsForPackage = allExports.computeIfAbsent(packge, p -> List.nil());
             for (ExportsDirective d : exportsForPackage) {
                 reportExportsConflict(tree, packge);
@@ -899,10 +896,7 @@ public class Modules extends JCTree.Visitor {
 
         @Override
         public void visitOpens(JCOpens tree) {
-            if (tree.directive.packge.members().isEmpty() &&
-                ((tree.directive.packge.flags() & Flags.HAS_RESOURCE) == 0)) {
-                log.error(tree.qualid.pos(), Errors.PackageEmptyOrNotFound(tree.directive.packge));
-            }
+            chk.checkPackageExistsForOpens(tree.qualid, tree.directive.packge);
             msym.directives = msym.directives.prepend(tree.directive);
         }
 
