@@ -26,6 +26,9 @@
 package javax.imageio.spi;
 
 import java.io.File;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -755,13 +758,14 @@ class SubRegistry {
 
     Class<?> category;
 
-    // Provider Objects organized by partial oridering
-    PartiallyOrderedSet<Object> poset = new PartiallyOrderedSet<>();
+    // Provider Objects organized by partial ordering
+    final PartiallyOrderedSet<Object> poset = new PartiallyOrderedSet<>();
 
     // Class -> Provider Object of that class
     // No way to express heterogeneous map, we want
     // Map<Class<T>, T>, where T is ?
-    Map<Class<?>, Object> map = new HashMap<>();
+    final Map<Class<?>, Object> map = new HashMap<>();
+    final Map<Class<?>, AccessControlContext> accMap = new HashMap<>();
 
     public SubRegistry(ServiceRegistry registry, Class<?> category) {
         this.registry = registry;
@@ -776,6 +780,7 @@ class SubRegistry {
             deregisterServiceProvider(oprovider);
         }
         map.put(provider.getClass(), provider);
+        accMap.put(provider.getClass(), AccessController.getContext());
         poset.add(provider);
         if (provider instanceof RegisterableService) {
             RegisterableService rs = (RegisterableService)provider;
@@ -800,6 +805,7 @@ class SubRegistry {
 
         if (provider == oprovider) {
             map.remove(provider.getClass());
+            accMap.remove(provider.getClass());
             poset.remove(provider);
             if (provider instanceof RegisterableService) {
                 RegisterableService rs = (RegisterableService)provider;
@@ -849,10 +855,17 @@ class SubRegistry {
 
             if (provider instanceof RegisterableService) {
                 RegisterableService rs = (RegisterableService)provider;
-                rs.onDeregistration(registry, category);
+                AccessControlContext acc = accMap.get(provider.getClass());
+                if (acc != null || System.getSecurityManager() == null) {
+                    AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                    rs.onDeregistration(registry, category);
+                        return null;
+                    }, acc);
+                }
             }
         }
         poset.clear();
+        accMap.clear();
     }
 
     @SuppressWarnings("deprecation")
