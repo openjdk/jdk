@@ -254,6 +254,14 @@ public interface Processor {
      * a.B} which reside in different modules. To only support {@code
      * a.B} in the {@code Foo} module, instead use {@code "Foo/a.B"}.
      *
+     * If a module name is included, only an annotation in that module
+     * is matched. In particular, if a module name is given in an
+     * environment where modules are not supported, such as an
+     * annotation processing environment configured for a {@linkplain
+     * javax.annotation.processing.ProcessingEnvironment#getSourceVersion
+     * source version} without modules, then the annotation types with
+     * a module name do <em>not</em> match.
+     *
      * Finally, {@code "*"} by itself represents the set of all
      * annotation types, including the empty set.  Note that a
      * processor should not claim {@code "*"} unless it is actually
@@ -279,6 +287,14 @@ public interface Processor {
      *
      * where <i>TypeName</i> is as defined in
      * <cite>The Java&trade; Language Specification</cite>.
+     *
+     * @apiNote When running in an environment which supports modules,
+     * processors are encouraged to include the module prefix when
+     * describing their supported annotation types. The method {@link
+     * AbstractProcessor.getSupportedAnnotationTypes
+     * AbstractProcessor.getSupportedAnnotationTypes} provides support
+     * for stripping off the module prefix when running in an
+     * environment without modules.
      *
      * @return the names of the annotation types supported by this processor
      * @see javax.annotation.processing.SupportedAnnotationTypes
