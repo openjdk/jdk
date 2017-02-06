@@ -67,21 +67,6 @@ public class HotSpotVMConfigAccess {
     }
 
     /**
-     * Gets the size of a C++ type.
-     *
-     * @param name name of the type
-     * @return the size in bytes of the requested field
-     * @throws JVMCIError if the field is not present and {@code notPresent} is null
-     */
-    public int getTypeSize(String name) {
-        Long entry = store.vmTypeSizes.get(name);
-        if (entry == null) {
-            throw new JVMCIError("expected VM type not found: " + name);
-        }
-        return (int) (long) entry;
-    }
-
-    /**
      * Gets the value of a C++ constant.
      *
      * @param name name of the constant (e.g., {@code "frame::arg_reg_save_area_bytes"})
@@ -291,13 +276,24 @@ public class HotSpotVMConfigAccess {
      */
     public <T> T getFlag(String name, Class<T> type, T notPresent) {
         VMFlag entry = store.vmFlags.get(name);
+        Object value;
+        String cppType;
         if (entry == null) {
-            if (notPresent != null) {
-                return notPresent;
+            // Fall back to VM call
+            value = store.compilerToVm.getFlagValue(name);
+            if (value == store.compilerToVm) {
+                if (notPresent != null) {
+                    return notPresent;
+                }
+                throw new JVMCIError("expected VM flag not found: " + name);
+            } else {
+                cppType = null;
             }
-            throw new JVMCIError("expected VM flag not found: " + name);
+        } else {
+            value = entry.value;
+            cppType = entry.type;
         }
-        return type.cast(convertValue(name, type, entry.value, entry.type));
+        return type.cast(convertValue(name, type, value, cppType));
     }
 
     private static <T> Object convertValue(String name, Class<T> toType, Object value, String cppType) throws JVMCIError {
@@ -318,6 +314,10 @@ public class HotSpotVMConfigAccess {
                 return value;
             } else if (value instanceof Long) {
                 return (int) (long) value;
+            }
+        } else if (toType == String.class) {
+            if (value == null || value instanceof String) {
+                return value;
             }
         } else if (toType == Long.class) {
             return value;

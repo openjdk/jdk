@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,12 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     private Executable toJavaCache;
 
     /**
+     * Only 30% of {@link HotSpotResolvedJavaMethodImpl}s have their name accessed so compute it
+     * lazily and cache it.
+     */
+    private String nameCache;
+
+    /**
      * Gets the holder of a HotSpot metaspace method native object.
      *
      * @param metaspaceMethod a metaspace Method object
@@ -106,8 +112,6 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     }
 
     HotSpotResolvedJavaMethodImpl(HotSpotResolvedObjectTypeImpl holder, long metaspaceMethod) {
-        // It would be too much work to get the method name here so we fill it in later.
-        super(null);
         this.metaspaceMethod = metaspaceMethod;
         this.holder = holder;
 
@@ -126,9 +130,6 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
             this.constantPool = compilerToVM().getConstantPool(this);
         }
 
-        final int nameIndex = UNSAFE.getChar(constMethod + config.constMethodNameIndexOffset);
-        this.name = constantPool.lookupUtf8(nameIndex);
-
         final int signatureIndex = UNSAFE.getChar(constMethod + config.constMethodSignatureIndexOffset);
         this.signature = (HotSpotSignature) constantPool.lookupSignature(signatureIndex);
     }
@@ -144,6 +145,15 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     private long getConstMethod() {
         assert metaspaceMethod != 0;
         return UNSAFE.getAddress(metaspaceMethod + config().methodConstMethodOffset);
+    }
+
+    @Override
+    public String getName() {
+        if (nameCache == null) {
+            final int nameIndex = UNSAFE.getChar(getConstMethod() + config().constMethodNameIndexOffset);
+            nameCache = constantPool.lookupUtf8(nameIndex);
+        }
+        return nameCache;
     }
 
     @Override
@@ -326,12 +336,24 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
 
     @Override
     public boolean isClassInitializer() {
-        return "<clinit>".equals(name) && isStatic();
+        if (isStatic()) {
+            final int nameIndex = UNSAFE.getChar(getConstMethod() + config().constMethodNameIndexOffset);
+            long nameSymbol = constantPool.getEntryAt(nameIndex);
+            long clinitSymbol = config().symbolClinit;
+            return nameSymbol == clinitSymbol;
+        }
+        return false;
     }
 
     @Override
     public boolean isConstructor() {
-        return "<init>".equals(name) && !isStatic();
+        if (!isStatic()) {
+            final int nameIndex = UNSAFE.getChar(getConstMethod() + config().constMethodNameIndexOffset);
+            long nameSymbol = constantPool.getEntryAt(nameIndex);
+            long initSymbol = config().symbolInit;
+            return nameSymbol == initSymbol;
+        }
+        return false;
     }
 
     @Override
@@ -472,7 +494,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     @Override
     public Annotation[][] getParameterAnnotations() {
         Executable javaMethod = toJava();
-        return javaMethod == null ? null : javaMethod.getParameterAnnotations();
+        return javaMethod == null ? new Annotation[signature.getParameterCount(false)][0] : javaMethod.getParameterAnnotations();
     }
 
     @Override
@@ -513,9 +535,6 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     }
 
     public boolean isDefault() {
-        if (isConstructor()) {
-            return false;
-        }
         // Copied from java.lang.Method.isDefault()
         int mask = Modifier.ABSTRACT | Modifier.PUBLIC | Modifier.STATIC;
         return ((getModifiers() & mask) == Modifier.PUBLIC) && getDeclaringClass().isInterface();
@@ -562,7 +581,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
             } else {
                 // Do not use Method.getDeclaredMethod() as it can return a bridge method
                 // when this.isBridge() is false and vice versa.
-                result = searchMethods(holder.mirror().getDeclaredMethods(), name, returnType, parameterTypes);
+                result = searchMethods(holder.mirror().getDeclaredMethods(), getName(), returnType, parameterTypes);
             }
             toJavaCache = result;
             return result;
