@@ -153,12 +153,12 @@ private:
   // Helper methods
   bool       check_klass_accessibility(ciKlass* accessing_klass,
                                       Klass* resolved_klass);
-  Method*    lookup_method(InstanceKlass*  accessor,
-                           InstanceKlass*  holder,
-                           Symbol*         name,
-                           Symbol*         sig,
-                           Bytecodes::Code bc,
-                           constantTag     tag);
+  Method*    lookup_method(ciInstanceKlass* accessor,
+                           ciKlass*         holder,
+                           Symbol*          name,
+                           Symbol*          sig,
+                           Bytecodes::Code  bc,
+                           constantTag      tag);
 
   // Get a ciObject from the object factory.  Ensures uniqueness
   // of ciObjects.
@@ -227,11 +227,12 @@ private:
   // Get a ciMethod representing either an unfound method or
   // a method with an unloaded holder.  Ensures uniqueness of
   // the result.
-  ciMethod* get_unloaded_method(ciInstanceKlass* holder,
+  ciMethod* get_unloaded_method(ciKlass*         holder,
                                 ciSymbol*        name,
                                 ciSymbol*        signature,
                                 ciInstanceKlass* accessor) {
-    return _factory->get_unloaded_method(holder, name, signature, accessor);
+    ciInstanceKlass* declared_holder = get_instance_klass_for_declared_method_holder(holder);
+    return _factory->get_unloaded_method(declared_holder, name, signature, accessor);
   }
 
   // Get a ciKlass representing an unloaded klass.
