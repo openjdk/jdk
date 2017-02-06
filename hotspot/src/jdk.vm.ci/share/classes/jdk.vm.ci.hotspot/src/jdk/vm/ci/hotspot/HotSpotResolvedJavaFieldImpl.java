@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,19 +38,20 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
 
     private final HotSpotResolvedObjectTypeImpl holder;
-    private final String name;
     private JavaType type;
     private final int offset;
+    private final short index;
 
     /**
      * This value contains all flags as stored in the VM including internal ones.
      */
     private final int modifiers;
 
-    HotSpotResolvedJavaFieldImpl(HotSpotResolvedObjectTypeImpl holder, String name, JavaType type, long offset, int modifiers) {
+    HotSpotResolvedJavaFieldImpl(HotSpotResolvedObjectTypeImpl holder, JavaType type, long offset, int modifiers, int index) {
         this.holder = holder;
-        this.name = name;
         this.type = type;
+        this.index = (short) index;
+        assert this.index == index;
         assert offset != -1;
         assert offset == (int) offset : "offset larger than int";
         this.offset = (int) offset;
@@ -67,7 +68,6 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
             if (that.offset != this.offset || that.isStatic() != this.isStatic()) {
                 return false;
             } else if (this.holder.equals(that.holder)) {
-                assert this.name.equals(that.name) && this.type.equals(that.type);
                 return true;
             }
         }
@@ -76,7 +76,7 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
 
     @Override
     public int hashCode() {
-        return name.hashCode();
+        return offset ^ modifiers;
     }
 
     @Override
@@ -109,7 +109,7 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
 
     @Override
     public String getName() {
-        return name;
+        return holder.createFieldInfo(index).getName();
     }
 
     @Override
@@ -178,18 +178,12 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
         return null;
     }
 
-    private Field toJavaCache;
-
     private Field toJava() {
-        if (toJavaCache != null) {
-            return toJavaCache;
-        }
-
         if (isInternal()) {
             return null;
         }
         try {
-            return toJavaCache = holder.mirror().getDeclaredField(name);
+            return holder.mirror().getDeclaredField(getName());
         } catch (NoSuchFieldException | NoClassDefFoundError e) {
             return null;
         }

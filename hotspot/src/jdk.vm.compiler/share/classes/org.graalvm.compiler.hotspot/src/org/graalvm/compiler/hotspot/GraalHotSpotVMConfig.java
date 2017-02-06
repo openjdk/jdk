@@ -244,7 +244,7 @@ public class GraalHotSpotVMConfig extends HotSpotVMConfigAccess {
         return (int) (Math.log(objectAlignment) / Math.log(2));
     }
 
-    public final int narrowKlassSize = getTypeSize("narrowKlass");
+    public final int narrowKlassSize = getFieldValue("CompilerToVM::Data::sizeof_narrowKlass", Integer.class, "int");
     public final long narrowKlassBase = getFieldValue("CompilerToVM::Data::Universe_narrow_klass_base", Long.class, "address");
     public final int narrowKlassShift = getFieldValue("CompilerToVM::Data::Universe_narrow_klass_shift", Integer.class, "int");
     public final int logKlassAlignment = getConstant("LogKlassAlignmentInBytes", Integer.class);
@@ -290,7 +290,7 @@ public class GraalHotSpotVMConfig extends HotSpotVMConfigAccess {
         return (layoutHelperArrayTagTypeValue & ~layoutHelperArrayTagObjectValue) << layoutHelperArrayTagShift;
     }
 
-    public final int vtableEntrySize = getTypeSize("vtableEntry");
+    public final int vtableEntrySize = getFieldValue("CompilerToVM::Data::sizeof_vtableEntry", Integer.class, "int");
     public final int vtableEntryMethodOffset = getFieldOffset("vtableEntry::_method", Integer.class, "Method*");
 
     public final int instanceKlassInitStateOffset = getFieldOffset("InstanceKlass::_init_state", Integer.class, "u1");
@@ -302,7 +302,7 @@ public class GraalHotSpotVMConfig extends HotSpotVMConfigAccess {
     public final int instanceKlassStateLinked = getConstant("InstanceKlass::linked", Integer.class);
     public final int instanceKlassStateFullyInitialized = getConstant("InstanceKlass::fully_initialized", Integer.class);
 
-    public final int arrayOopDescSize = getTypeSize("arrayOopDesc");
+    public final int arrayOopDescSize = getFieldValue("CompilerToVM::Data::sizeof_arrayOopDesc", Integer.class, "int");
 
     /**
      * The offset of the array length word in an array object's header.
@@ -496,7 +496,7 @@ public class GraalHotSpotVMConfig extends HotSpotVMConfigAccess {
     public final int compilationLevelFullOptimization = getConstant("CompLevel_full_optimization",
                     Integer.class);
 
-    public final int constantPoolSize = getTypeSize("ConstantPool");
+    public final int constantPoolSize = getFieldValue("CompilerToVM::Data::sizeof_ConstantPool", Integer.class, "int");
     public final int constantPoolLengthOffset = getFieldOffset("ConstantPool::_length",
                     Integer.class, "int");
 
@@ -553,7 +553,7 @@ public class GraalHotSpotVMConfig extends HotSpotVMConfigAccess {
     public final int klassOffset = getFieldValue("java_lang_Class::_klass_offset", Integer.class, "int");
     public final int arrayKlassOffset = getFieldValue("java_lang_Class::_array_klass_offset", Integer.class, "int");
 
-    public final int basicLockSize = getTypeSize("BasicLock");
+    public final int basicLockSize = getFieldValue("CompilerToVM::Data::sizeof_BasicLock", Integer.class, "int");
     public final int basicLockDisplacedHeaderOffset = getFieldOffset("BasicLock::_displaced_header", Integer.class, "markOop");
 
     public final int threadAllocatedBytesOffset = getFieldOffset("Thread::_allocated_bytes", Integer.class, "jlong");
