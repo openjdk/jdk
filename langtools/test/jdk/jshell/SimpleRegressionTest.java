@@ -22,7 +22,7 @@
  */
 
 /*
- * @test 8130450 8158906 8154374 8166400 8171892
+ * @test 8130450 8158906 8154374 8166400 8171892 8173848
  * @summary simple regression test
  * @build KullaTesting TestingInputStream
  * @run testng SimpleRegressionTest
@@ -74,6 +74,15 @@ public class SimpleRegressionTest extends KullaTesting {
         assertEquals(events.get(1).value(), "6");
         assertEquals(events.get(2).value(), "600");
         assertEval("c;", "600");
+    }
+
+    public void testLessThanParsing() {
+        assertEval("int x = 3;", "3");
+        assertEval("int y = 4;", "4");
+        assertEval("int z = 5;", "5");
+        assertEval("x < y", "true");
+        assertEval("x < y;", "true");
+        assertEval("x < y && y < z", "true");
     }
 
     public void testNotStmtCannotResolve() {
