@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,12 +40,11 @@ import java.io.*;
  * @author Benjamin Renaud
  *
  * @deprecated This class is no longer used. Its functionality has been
- * replaced by {@link java.security.KeyStore}, the
- * {@link java.security.cert} package, and
- * {@link java.security.Principal}.
- * This class is subject to removal in a future version of Java SE.
+ * replaced by {@code java.security.KeyStore}, the
+ * {@code java.security.cert} package, and
+ * {@code java.security.Principal}.
  */
-@Deprecated(since="1.2", forRemoval=true)
+@Deprecated(since="1.2")
 public abstract class Signer extends Identity {
 
     private static final long serialVersionUID = -1763464102261361480L;
