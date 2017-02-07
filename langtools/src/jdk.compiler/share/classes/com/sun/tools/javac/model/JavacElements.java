@@ -288,7 +288,9 @@ public class JavacElements implements Elements {
                                    List<JCAnnotation> trees) {
         for (Attribute.Compound anno : annos) {
             for (JCAnnotation tree : trees) {
-                JCTree match = matchAnnoToTree(findme, anno, tree);
+                if (tree.type.tsym != anno.type.tsym)
+                    continue;
+                JCTree match = matchAttributeToTree(findme, anno, tree);
                 if (match != null)
                     return match;
             }
@@ -297,15 +299,15 @@ public class JavacElements implements Elements {
     }
 
     /**
-     * Returns the tree for an annotation given an Attribute to
-     * search (recursively) and its corresponding tree.
+     * Returns the tree for an attribute given an enclosing attribute to
+     * search (recursively) and the enclosing attribute's corresponding tree.
      * Returns null if the tree cannot be found.
      */
-    private JCTree matchAnnoToTree(final Attribute.Compound findme,
-                                   final Attribute attr,
-                                   final JCTree tree) {
+    private JCTree matchAttributeToTree(final Attribute findme,
+                                        final Attribute attr,
+                                        final JCTree tree) {
         if (attr == findme)
-            return (tree.type.tsym == findme.type.tsym) ? tree : null;
+            return tree;
 
         class Vis implements Attribute.Visitor {
             JCTree result = null;
@@ -317,7 +319,7 @@ public class JavacElements implements Elements {
                 for (Pair<MethodSymbol, Attribute> pair : anno.values) {
                     JCExpression expr = scanForAssign(pair.fst, tree);
                     if (expr != null) {
-                        JCTree match = matchAnnoToTree(findme, pair.snd, expr);
+                        JCTree match = matchAttributeToTree(findme, pair.snd, expr);
                         if (match != null) {
                             result = match;
                             return;
@@ -326,16 +328,19 @@ public class JavacElements implements Elements {
                 }
             }
             public void visitArray(Attribute.Array array) {
-                if (tree.hasTag(NEWARRAY) &&
-                        types.elemtype(array.type).tsym == findme.type.tsym) {
-                    List<JCExpression> elems = ((JCNewArray) tree).elems;
+                if (tree.hasTag(NEWARRAY)) {
+                    List<JCExpression> elems = ((JCNewArray)tree).elems;
                     for (Attribute value : array.values) {
-                        if (value == findme) {
-                            result = elems.head;
+                        JCTree match = matchAttributeToTree(findme, value, elems.head);
+                        if (match != null) {
+                            result = match;
                             return;
                         }
                         elems = elems.tail;
                     }
+                } else if (array.values.length == 1) {
+                    // the tree may not be a NEWARRAY for single-element array initializers
+                    result = matchAttributeToTree(findme, array.values[0], tree);
                 }
             }
             public void visitEnum(Attribute.Enum e) {
@@ -710,10 +715,15 @@ public class JavacElements implements Elements {
         if (annoTree == null)
             return elemTreeTop;
 
-        // 6388543: if v != null, we should search within annoTree to find
-        // the tree matching v. For now, we ignore v and return the tree of
-        // the annotation.
-        return new Pair<>(annoTree, elemTreeTop.snd);
+        if (v == null)
+            return new Pair<>(annoTree, elemTreeTop.snd);
+
+        JCTree valueTree = matchAttributeToTree(
+                cast(Attribute.class, v), cast(Attribute.class, a), annoTree);
+        if (valueTree == null)
+            return new Pair<>(annoTree, elemTreeTop.snd);
+
+        return new Pair<>(valueTree, elemTreeTop.snd);
     }
 
     /**
