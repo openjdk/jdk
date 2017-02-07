@@ -63,9 +63,10 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      * Returns the fields, methods, constructors, and member types
      * that are directly declared in this class or interface.
      *
-     * This includes any (implicit) default constructor and
-     * the implicit {@code values} and {@code valueOf} methods of an
-     * enum type.
+     * This includes any {@linkplain Elements.Origin#MANDATED
+     * mandated} elements such as the (implicit) default constructor
+     * and the implicit {@code values} and {@code valueOf} methods of
+     * an enum type.
      *
      * @apiNote As a particular instance of the {@linkplain
      * javax.lang.model.element general accuracy requirements} and the
@@ -74,10 +75,13 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      * originating source of information about the type.  For example,
      * if the information about the type is originating from a source
      * file, the elements will be returned in source code order.
-     * (However, in that case the the ordering of {@linkplain Elements.Origin#MANDATED mandated}
-     * elements, such as a default constructor, is not specified.)
+     * (However, in that case the the ordering of elements, such as a
+     * default constructor, is not specified.)
      *
      * @return the enclosed elements in proper order, or an empty list if none
+     *
+     * @jls 8.8.9 Default Constructor
+     * @jls 8.9.3 Enum Members
      */
     @Override
     List<? extends Element> getEnclosedElements();
