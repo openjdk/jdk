@@ -102,6 +102,8 @@ grant codeBase "jrt:/java.xml.crypto" {
 };
 
 grant codeBase "jrt:/java.xml.ws" {
+    permission java.net.NetPermission
+                   "getProxySelector";
     permission java.lang.RuntimePermission
                    "accessClassInPackage.com.sun.org.apache.xml.internal.resolver";
     permission java.lang.RuntimePermission
