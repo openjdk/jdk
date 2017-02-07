@@ -282,6 +282,7 @@ public interface Elements {
          * multiple annotations of a repeatable annotation type.
          *
          * @jls 8.8.9 Default Constructor
+         * @jls 8.9.3 Enum Members
          * @jls 9.6.3 Repeatable Annotation Types
          * @jls 9.7.5 Multiple Annotations of the Same Type
          */

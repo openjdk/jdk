@@ -176,6 +176,9 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      * A {@linkplain ModuleElement#getEnclosedElements module}
      * encloses packages within it.
      *
+     * Enclosed elements may include implicitly declared {@linkplain
+     * Elements.Origin#MANDATED mandated} elements.
+     *
      * Other kinds of elements are not currently considered to enclose
      * any elements; however, that may change as this API or the
      * programming language evolves.
