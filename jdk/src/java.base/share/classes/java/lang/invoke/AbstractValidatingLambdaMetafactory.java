@@ -56,11 +56,11 @@ import static sun.invoke.util.Wrapper.isWrapperType;
     final String samMethodName;               // Name of the SAM method "foo"
     final MethodType samMethodType;           // Type of the SAM method "(Object)Object"
     final MethodHandle implMethod;            // Raw method handle for the implementation method
+    final MethodType implMethodType;          // Type of the implMethod MethodHandle "(CC,int)String"
     final MethodHandleInfo implInfo;          // Info about the implementation method handle "MethodHandleInfo[5 CC.impl(int)String]"
     final int implKind;                       // Invocation kind for implementation "5"=invokevirtual
     final boolean implIsInstanceMethod;       // Is the implementation an instance method "true"
-    final Class<?> implDefiningClass;         // Type defining the implementation "class CC"
-    final MethodType implMethodType;          // Type of the implementation method "(int)String"
+    final Class<?> implClass;                 // Class for referencing the implementation method "class CC"
     final MethodType instantiatedMethodType;  // Instantiated erased functional interface method type "(Integer)Object"
     final boolean isSerializable;             // Should the returned instance be serializable
     final Class<?>[] markerInterfaces;        // Additional marker interfaces to be implemented
@@ -128,14 +128,15 @@ import static sun.invoke.util.Wrapper.isWrapperType;
         this.samMethodType  = samMethodType;
 
         this.implMethod = implMethod;
+        this.implMethodType = implMethod.type();
         this.implInfo = caller.revealDirect(implMethod);
         this.implKind = implInfo.getReferenceKind();
         this.implIsInstanceMethod =
                 implKind == MethodHandleInfo.REF_invokeVirtual ||
                 implKind == MethodHandleInfo.REF_invokeSpecial ||
                 implKind == MethodHandleInfo.REF_invokeInterface;
-        this.implDefiningClass = implInfo.getDeclaringClass();
-        this.implMethodType = implInfo.getMethodType();
+        // JDK-8172817: statics should also use referenced class here, but API doesn't support it for now
+        this.implClass = implIsInstanceMethod ? implMethodType.parameterType(0) : implInfo.getDeclaringClass();
         this.instantiatedMethodType = instantiatedMethodType;
         this.isSerializable = isSerializable;
         this.markerInterfaces = markerInterfaces;
@@ -196,11 +197,10 @@ import static sun.invoke.util.Wrapper.isWrapperType;
 
         // Check arity: optional-receiver + captured + SAM == impl
         final int implArity = implMethodType.parameterCount();
-        final int receiverArity = implIsInstanceMethod ? 1 : 0;
         final int capturedArity = invokedType.parameterCount();
         final int samArity = samMethodType.parameterCount();
         final int instantiatedArity = instantiatedMethodType.parameterCount();
-        if (implArity + receiverArity != capturedArity + samArity) {
+        if (implArity != capturedArity + samArity) {
             throw new LambdaConversionException(
                     String.format("Incorrect number of parameters for %s method %s; %d captured parameters, %d functional interface method parameters, %d implementation parameters",
                                   implIsInstanceMethod ? "instance" : "static", implInfo,
@@ -221,8 +221,8 @@ import static sun.invoke.util.Wrapper.isWrapperType;
         }
 
         // If instance: first captured arg (receiver) must be subtype of class where impl method is defined
-        final int capturedStart;
-        final int samStart;
+        final int capturedStart; // index of first non-receiver capture parameter in implMethodType
+        final int samStart; // index of first non-receiver sam parameter in implMethodType
         if (implIsInstanceMethod) {
             final Class<?> receiverClass;
 
@@ -235,45 +235,36 @@ import static sun.invoke.util.Wrapper.isWrapperType;
             } else {
                 // receiver is a captured variable
                 capturedStart = 1;
-                samStart = 0;
+                samStart = capturedArity;
                 receiverClass = invokedType.parameterType(0);
             }
 
             // check receiver type
-            if (!implDefiningClass.isAssignableFrom(receiverClass)) {
+            if (!implClass.isAssignableFrom(receiverClass)) {
                 throw new LambdaConversionException(
                         String.format("Invalid receiver type %s; not a subtype of implementation type %s",
-                                      receiverClass, implDefiningClass));
-            }
-
-           Class<?> implReceiverClass = implMethod.type().parameterType(0);
-           if (implReceiverClass != implDefiningClass && !implReceiverClass.isAssignableFrom(receiverClass)) {
-               throw new LambdaConversionException(
-                       String.format("Invalid receiver type %s; not a subtype of implementation receiver type %s",
-                                     receiverClass, implReceiverClass));
+                                      receiverClass, implClass));
             }
         } else {
             // no receiver
             capturedStart = 0;
-            samStart = 0;
+            samStart = capturedArity;
         }
 
         // Check for exact match on non-receiver captured arguments
-        final int implFromCaptured = capturedArity - capturedStart;
-        for (int i=0; i<implFromCaptured; i++) {
+        for (int i=capturedStart; i<capturedArity; i++) {
             Class<?> implParamType = implMethodType.parameterType(i);
-            Class<?> capturedParamType = invokedType.parameterType(i + capturedStart);
+            Class<?> capturedParamType = invokedType.parameterType(i);
             if (!capturedParamType.equals(implParamType)) {
                 throw new LambdaConversionException(
                         String.format("Type mismatch in captured lambda parameter %d: expecting %s, found %s",
                                       i, capturedParamType, implParamType));
             }
         }
-        // Check for adaptation match on SAM arguments
-        final int samOffset = samStart - implFromCaptured;
-        for (int i=implFromCaptured; i<implArity; i++) {
+        // Check for adaptation match on non-receiver SAM arguments
+        for (int i=samStart; i<implArity; i++) {
             Class<?> implParamType = implMethodType.parameterType(i);
-            Class<?> instantiatedParamType = instantiatedMethodType.parameterType(i + samOffset);
+            Class<?> instantiatedParamType = instantiatedMethodType.parameterType(i - capturedArity);
             if (!isAdaptableTo(instantiatedParamType, implParamType, true)) {
                 throw new LambdaConversionException(
                         String.format("Type mismatch for lambda argument %d: %s is not convertible to %s",
@@ -283,10 +274,7 @@ import static sun.invoke.util.Wrapper.isWrapperType;
 
         // Adaptation match: return type
         Class<?> expectedType = instantiatedMethodType.returnType();
-        Class<?> actualReturnType =
-                (implKind == MethodHandleInfo.REF_newInvokeSpecial)
-                  ? implDefiningClass
-                  : implMethodType.returnType();
+        Class<?> actualReturnType = implMethodType.returnType();
         if (!isAdaptableToAsReturn(actualReturnType, expectedType)) {
             throw new LambdaConversionException(
                     String.format("Type mismatch for lambda return: %s is not convertible to %s",
