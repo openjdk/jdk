@@ -812,6 +812,12 @@ public class JShellTool implements MessageHandler {
         }
     }
 
+    /**
+     * The entry point into the JShell tool.
+     *
+     * @param args the command-line arguments
+     * @throws Exception catastrophic fatal exception
+     */
     public void start(String[] args) throws Exception {
         OptionParserCommandLine commandLineArgs = new OptionParserCommandLine();
         options = commandLineArgs.parse(args);
@@ -842,30 +848,33 @@ public class JShellTool implements MessageHandler {
                 hardmsg("jshell.msg.welcome", version());
             }
             // Be sure history is always saved so that user code isn't lost
-            Runtime.getRuntime().addShutdownHook(new Thread() {
+            Thread shutdownHook = new Thread() {
                 @Override
                 public void run() {
                     replayableHistory.storeHistory(prefs);
                 }
-            });
+            };
+            Runtime.getRuntime().addShutdownHook(shutdownHook);
             // execute from user input
             try (IOContext in = new ConsoleIOContext(this, cmdin, console)) {
-                start(in);
-            }
-        }
-    }
-
-    private void start(IOContext in) {
-        try {
-            while (regenerateOnDeath) {
-                if (!live) {
-                    resetState();
+                while (regenerateOnDeath) {
+                    if (!live) {
+                        resetState();
+                    }
+                    run(in);
                 }
-                run(in);
+            } finally {
+                replayableHistory.storeHistory(prefs);
+                closeState();
+                try {
+                    Runtime.getRuntime().removeShutdownHook(shutdownHook);
+                } catch (Exception ex) {
+                    // ignore, this probably caused by VM aready being shutdown
+                    // and this is the last act anyhow
+                }
             }
-        } finally {
-            closeState();
         }
+        closeState();
     }
 
     private EditorSetting configEditor() {
@@ -1019,6 +1028,8 @@ public class JShellTool implements MessageHandler {
         live = false;
         JShell oldState = state;
         if (oldState != null) {
+            state = null;
+            analysis = null;
             oldState.unsubscribe(shutdownSubscription); // No notification
             oldState.close();
         }
@@ -2006,7 +2017,6 @@ public class JShellTool implements MessageHandler {
     private boolean cmdExit() {
         regenerateOnDeath = false;
         live = false;
-        replayableHistory.storeHistory(prefs);
         fluffmsg("jshell.msg.goodbye");
         return true;
     }
