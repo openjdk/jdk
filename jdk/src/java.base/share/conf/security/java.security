@@ -494,7 +494,8 @@ krb5.kdc.bad.policy = tryLast
 #       (see below)
 #
 #   Constraint:
-#       KeySizeConstraint | CAConstraint | DenyAfterConstraint
+#       KeySizeConstraint | CAConstraint | DenyAfterConstraint |
+#       UsageConstraint
 #
 #   KeySizeConstraint:
 #       keySize Operator KeyLength
@@ -510,6 +511,9 @@ krb5.kdc.bad.policy = tryLast
 #
 #   DenyAfterConstraint:
 #       denyAfter YYYY-MM-DD
+#
+#   UsageConstraint:
+#       usage [TLSServer] [TLSClient] [SignedJAR]
 #
 # The "AlgorithmName" is the standard algorithm name of the disabled
 # algorithm. See "Java Cryptography Architecture Standard Algorithm Name
@@ -560,6 +564,19 @@ krb5.kdc.bad.policy = tryLast
 #       Example:  To deny usage of RSA 2048 bit certificates after Feb 3 2020,
 #       use the following:  "RSA keySize == 2048 & denyAfter 2020-02-03"
 #
+#   UsageConstraint:
+#     usage [TLSServer] [TLSClient] [SignedJAR]
+#       This constraint prohibits the specified algorithm for
+#       a specified usage.  This should be used when disabling an algorithm
+#       for all usages is not practical. 'TLSServer' restricts the algorithm
+#       in TLS server certificate chains when server authentication is
+#       performed. 'TLSClient' restricts the algorithm in TLS client
+#       certificate chains when client authentication is performed.
+#       'SignedJAR' constrains use of certificates in signed jar files.
+#       The usage type follows the keyword and more than one usage type can
+#       be specified with a whitespace delimiter.
+#       Example:  "SHA1 usage TLSServer TLSClient"
+#
 # When an algorithm must satisfy more than one constraint, it must be
 # delimited by an ampersand '&'.  For example, to restrict certificates in a
 # chain that terminate at a distribution provided trust anchor and contain
@@ -599,16 +616,19 @@ jdk.certpath.disabledAlgorithms=MD2, MD5, SHA1 jdkCA & denyAfter 2017-01-01, \
 #       " DisabledAlgorithm { , DisabledAlgorithm } "
 #
 #   DisabledAlgorithm:
-#       AlgorithmName [Constraint]
+#       AlgorithmName [Constraint] { '&' Constraint }
 #
 #   AlgorithmName:
 #       (see below)
 #
 #   Constraint:
-#       KeySizeConstraint
+#       KeySizeConstraint | DenyAfterConstraint
 #
 #   KeySizeConstraint:
 #       keySize Operator KeyLength
+#
+#   DenyAfterConstraint:
+#       denyAfter YYYY-MM-DD
 #
 #   Operator:
 #       <= | < | == | != | >= | >
@@ -619,6 +639,8 @@ jdk.certpath.disabledAlgorithms=MD2, MD5, SHA1 jdkCA & denyAfter 2017-01-01, \
 # Note: This property is currently used by the JDK Reference
 # implementation. It is not guaranteed to be examined and used by other
 # implementations.
+#
+# See "jdk.certpath.disabledAlgorithms" for syntax descriptions.
 #
 jdk.jar.disabledAlgorithms=MD2, MD5, RSA keySize < 1024, \
       DSA keySize < 1024
