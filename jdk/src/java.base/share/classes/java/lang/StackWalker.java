@@ -29,6 +29,7 @@ import jdk.internal.reflect.CallerSensitive;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
@@ -207,13 +208,23 @@ public final class StackWalker {
         /**
          * Shows all reflection frames.
          *
-         * <p>By default, reflection frames are hidden.  This includes the
-         * {@link java.lang.reflect.Method#invoke} method
-         * and the reflection implementation classes. A {@code StackWalker} with
-         * this {@code SHOW_REFLECT_FRAMES} option will show all reflection frames.
-         * The {@link #SHOW_HIDDEN_FRAMES} option can also be used to show all
+         * <p>By default, reflection frames are hidden.  A {@code StackWalker}
+         * configured with this {@code SHOW_REFLECT_FRAMES} option
+         * will show all reflection frames that
+         * include {@link java.lang.reflect.Method#invoke} and
+         * {@link java.lang.reflect.Constructor#newInstance(Object...)}
+         * and their reflection implementation classes.
+         *
+         * <p>The {@link #SHOW_HIDDEN_FRAMES} option can also be used to show all
          * reflection frames and it will also show other hidden frames that
          * are implementation-specific.
+         *
+         * @apiNote
+         * This option includes the stack frames representing the invocation of
+         * {@code Method} and {@code Constructor}.  Any utility methods that
+         * are equivalent to calling {@code Method.invoke} or
+         * {@code Constructor.newInstance} such as {@code Class.newInstance}
+         * are not filtered or controlled by any stack walking option.
          */
         SHOW_REFLECT_FRAMES,
         /**
@@ -468,8 +479,9 @@ public final class StackWalker {
      * Gets the {@code Class} object of the caller invoking the method
      * that calls this {@code getCallerClass} method.
      *
-     * <p> Reflection frames, {@link java.lang.invoke.MethodHandle}, and
-     * hidden frames are filtered regardless of the
+     * <p> This method filters {@linkplain Option#SHOW_REFLECT_FRAMES reflection
+     * frames}, {@link java.lang.invoke.MethodHandle}, and
+     * {@linkplain Option#SHOW_HIDDEN_FRAMES hidden frames} regardless of the
      * {@link Option#SHOW_REFLECT_FRAMES SHOW_REFLECT_FRAMES}
      * and {@link Option#SHOW_HIDDEN_FRAMES SHOW_HIDDEN_FRAMES} options
      * this {@code StackWalker} has been configured with.
