@@ -116,6 +116,13 @@ security.provider.tbd=SunPKCS11
 # Example:
 #   jdk.security.provider.preferred=AES/GCM/NoPadding:SunJCE, \
 #         MessageDigest.SHA-256:SUN, Group.HmacSHA2:SunJCE
+#
+#ifdef solaris-sparc
+# Optional Solaris-SPARC configuration for non-FIPS 140 configurations.
+#   jdk.security.provider.preferred=AES:SunJCE, SHA1:SUN, Group.SHA2:SUN, \
+#   HmacSHA1:SunJCE, Group.HmacSHA2:SunJCE
+#
+#endif
 #jdk.security.provider.preferred=
 
 
@@ -240,6 +247,7 @@ securerandom.strongAlgorithms=NativePRNGBlocking:SUN,DRBG:SUN
 #
 # The default value is an empty string, which is equivalent to
 #   securerandom.drbg.config=Hash_DRBG,SHA-256,128,none
+#
 securerandom.drbg.config=
 
 #
@@ -262,23 +270,27 @@ policy.provider=sun.security.provider.PolicyFile
 
 # The default is to have a single system-wide policy file,
 # and a policy file in the user's home directory.
+#
 policy.url.1=file:${java.home}/conf/security/java.policy
 policy.url.2=file:${user.home}/.java.policy
 
 # whether or not we expand properties in the policy file
 # if this is set to false, properties (${...}) will not be expanded in policy
 # files.
+#
 policy.expandProperties=true
 
 # whether or not we allow an extra policy to be passed on the command line
 # with -Djava.security.policy=somefile. Comment out this line to disable
 # this feature.
+#
 policy.allowSystemProperty=true
 
 # whether or not we look into the IdentityScope for trusted Identities
 # when encountering a 1.1 signed JAR file. If the identity is found
 # and is trusted, we grant it AllPermission. Note: the default policy
 # provider (sun.security.provider.PolicyFile) does not support this property.
+#
 policy.ignoreIdentityScope=false
 
 #
@@ -359,7 +371,6 @@ ssl.TrustManagerFactory.algorithm=PKIX
 # that fail may take a noticeably long time to return (approx. 5 seconds).
 # For this reason the default caching policy is to maintain these
 # results for 10 seconds.
-#
 #
 networkaddress.cache.negative.ttl=10
 
@@ -460,8 +471,10 @@ networkaddress.cache.negative.ttl=10
 # Example,
 #   krb5.kdc.bad.policy = tryLast
 #   krb5.kdc.bad.policy = tryLess:2,2000
+#
 krb5.kdc.bad.policy = tryLast
 
+#
 # Algorithm restrictions for certification path (CertPath) processing
 #
 # In some environments, certain algorithms or key lengths may be undesirable
@@ -572,35 +585,6 @@ jdk.certpath.disabledAlgorithms=MD2, MD5, SHA1 jdkCA & denyAfter 2017-01-01, \
     RSA keySize < 1024, DSA keySize < 1024, EC keySize < 224
 
 #
-# RMI Registry Serial Filter
-#
-# The filter pattern uses the same format as jdk.serialFilter.
-# This filter can override the builtin filter if additional types need to be
-# allowed or rejected from the RMI Registry.
-#
-# Note: This property is currently used by the JDK Reference implementation.
-# It is not guaranteed to be examined and used by other implementations.
-#
-#sun.rmi.registry.registryFilter=pattern;pattern
-#
-# RMI Distributed Garbage Collector (DGC) Serial Filter
-#
-# The filter pattern uses the same format as jdk.serialFilter.
-# This filter can override the builtin filter if additional types need to be
-# allowed or rejected from the RMI DGC.
-#
-# Note: This property is currently used by the JDK Reference implementation.
-# It is not guaranteed to be examined and used by other implementations.
-#
-# The builtin DGC filter can approximately be represented as the filter pattern:
-#
-#sun.rmi.transport.dgcFilter=\
-#    java.rmi.server.ObjID;\
-#    java.rmi.server.UID;\
-#    java.rmi.dgc.VMID;\
-#    java.rmi.dgc.Lease;\
-#    maxdepth=5;maxarray=10000
-
 # Algorithm restrictions for signed JAR files
 #
 # In some environments, certain algorithms or key lengths may be undesirable
@@ -639,6 +623,7 @@ jdk.certpath.disabledAlgorithms=MD2, MD5, SHA1 jdkCA & denyAfter 2017-01-01, \
 jdk.jar.disabledAlgorithms=MD2, MD5, RSA keySize < 1024, \
       DSA keySize < 1024
 
+#
 # Algorithm restrictions for Secure Socket Layer/Transport Layer Security
 # (SSL/TLS/DTLS) processing
 #
@@ -939,3 +924,32 @@ jdk.xml.dsig.secureValidationPolicy=\
 #
 #jdk.serialFilter=pattern;pattern
 
+#
+# RMI Registry Serial Filter
+#
+# The filter pattern uses the same format as jdk.serialFilter.
+# This filter can override the builtin filter if additional types need to be
+# allowed or rejected from the RMI Registry.
+#
+# Note: This property is currently used by the JDK Reference implementation.
+# It is not guaranteed to be examined and used by other implementations.
+#
+#sun.rmi.registry.registryFilter=pattern;pattern
+#
+# RMI Distributed Garbage Collector (DGC) Serial Filter
+#
+# The filter pattern uses the same format as jdk.serialFilter.
+# This filter can override the builtin filter if additional types need to be
+# allowed or rejected from the RMI DGC.
+#
+# Note: This property is currently used by the JDK Reference implementation.
+# It is not guaranteed to be examined and used by other implementations.
+#
+# The builtin DGC filter can approximately be represented as the filter pattern:
+#
+#sun.rmi.transport.dgcFilter=\
+#    java.rmi.server.ObjID;\
+#    java.rmi.server.UID;\
+#    java.rmi.dgc.VMID;\
+#    java.rmi.dgc.Lease;\
+#    maxdepth=5;maxarray=10000
