@@ -543,17 +543,7 @@ public class JShell implements AutoCloseable {
      */
     @Override
     public void close() {
-        if (!closed) {
-            closeDown();
-            try {
-                executionControl().close();
-            } catch (Throwable ex) {
-                // don't care about exceptions on close
-            }
-            if (sourceCodeAnalysis != null) {
-                sourceCodeAnalysis.close();
-            }
-        }
+        closeDown();
     }
 
     /**
@@ -826,6 +816,15 @@ public class JShell implements AutoCloseable {
             } catch (Throwable thr) {
                 // Don't care about dying exceptions
             }
+            try {
+                executionControl().close();
+            } catch (Throwable ex) {
+                // don't care about exceptions on close
+            }
+            if (sourceCodeAnalysis != null) {
+                sourceCodeAnalysis.close();
+            }
+            InternalDebugControl.release(this);
         }
     }
 
