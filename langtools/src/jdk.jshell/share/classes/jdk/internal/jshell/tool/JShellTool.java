@@ -36,12 +36,9 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.Reader;
 import java.io.StringReader;
-import java.net.URL;
 import java.nio.charset.Charset;
-import java.nio.file.AccessDeniedException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
@@ -2624,9 +2621,16 @@ public class JShellTool implements MessageHandler {
         if (stream == null) {
             return false;
         }
-        stream.forEachOrdered(mk
-                -> hard("  %s %s", mk.name(), mk.signature())
-        );
+        stream.forEachOrdered(meth -> {
+            String sig = meth.signature();
+            int i = sig.lastIndexOf(")") + 1;
+            if (i <= 0) {
+                hard("  %s", meth.name());
+            } else {
+                hard("  %s %s%s", sig.substring(i), meth.name(), sig.substring(0, i));
+            }
+            printSnippetStatus(meth, true);
+        });
         return true;
     }
 
@@ -2658,6 +2662,7 @@ public class JShellTool implements MessageHandler {
                     break;
             }
             hard("  %s %s", kind, ck.name());
+            printSnippetStatus(ck, true);
         });
         return true;
     }
@@ -2847,7 +2852,8 @@ public class JShellTool implements MessageHandler {
                         return true;
                     }
                 } else {
-                    new DisplayEvent(ste, false, ste.value(), diagnostics).displayDeclarationAndValue();
+                    new DisplayEvent(ste, FormatWhen.PRIMARY, ste.value(), diagnostics)
+                            .displayDeclarationAndValue();
                 }
             } else {
                 if (diagnostics.isEmpty()) {
@@ -2861,7 +2867,8 @@ public class JShellTool implements MessageHandler {
                 List<Diag> other = errorsOnly(diagnostics);
 
                 // display update information
-                new DisplayEvent(ste, true, ste.value(), other).displayDeclarationAndValue();
+                new DisplayEvent(ste, FormatWhen.UPDATE, ste.value(), other)
+                        .displayDeclarationAndValue();
             }
         }
         return false;
@@ -2899,10 +2906,7 @@ public class JShellTool implements MessageHandler {
     }
     //where
     void printUnresolvedException(UnresolvedReferenceException ex) {
-        DeclarationSnippet corralled =  ex.getSnippet();
-        List<Diag> otherErrors = errorsOnly(state.diagnostics(corralled).collect(toList()));
-        new DisplayEvent(corralled, state.status(corralled), FormatAction.USED, true, null, otherErrors)
-                .displayDeclarationAndValue();
+        printSnippetStatus(ex.getSnippet(), false);
     }
     //where
     void printEvalException(EvalException ex) {
@@ -2944,29 +2948,50 @@ public class JShellTool implements MessageHandler {
         return act;
     }
 
+    void printSnippetStatus(DeclarationSnippet sn, boolean resolve) {
+        List<Diag> otherErrors = errorsOnly(state.diagnostics(sn).collect(toList()));
+        new DisplayEvent(sn, state.status(sn), resolve, otherErrors)
+                .displayDeclarationAndValue();
+    }
+
     class DisplayEvent {
         private final Snippet sn;
         private final FormatAction action;
-        private final boolean update;
+        private final FormatWhen update;
         private final String value;
         private final List<String> errorLines;
         private final FormatResolve resolution;
         private final String unresolved;
         private final FormatUnresolved unrcnt;
         private final FormatErrors errcnt;
+        private final boolean resolve;
 
-        DisplayEvent(SnippetEvent ste, boolean update, String value, List<Diag> errors) {
-            this(ste.snippet(), ste.status(), toAction(ste.status(), ste.previousStatus(), ste.isSignatureChange()), update, value, errors);
+        DisplayEvent(SnippetEvent ste, FormatWhen update, String value, List<Diag> errors) {
+            this(ste.snippet(), ste.status(), false,
+                    toAction(ste.status(), ste.previousStatus(), ste.isSignatureChange()),
+                    update, value, errors);
         }
 
-        DisplayEvent(Snippet sn, Status status, FormatAction action, boolean update, String value, List<Diag> errors) {
+        DisplayEvent(Snippet sn, Status status, boolean resolve, List<Diag> errors) {
+            this(sn, status, resolve, FormatAction.USED, FormatWhen.UPDATE, null, errors);
+        }
+
+        private DisplayEvent(Snippet sn, Status status, boolean resolve,
+                FormatAction action, FormatWhen update, String value, List<Diag> errors) {
             this.sn = sn;
+            this.resolve =resolve;
             this.action = action;
             this.update = update;
             this.value = value;
             this.errorLines = new ArrayList<>();
             for (Diag d : errors) {
                 displayDiagnostics(sn.source(), d, errorLines);
+            }
+            if (resolve) {
+                // resolve needs error lines indented
+                for (int i = 0; i < errorLines.size(); ++i) {
+                    errorLines.set(i, "    " + errorLines.get(i));
+                }
             }
             long unresolvedCount;
             if (sn instanceof DeclarationSnippet && (status == Status.RECOVERABLE_DEFINED || status == Status.RECOVERABLE_NOT_DEFINED)) {
@@ -3022,10 +3047,17 @@ public class JShellTool implements MessageHandler {
         }
 
         private void custom(FormatCase fcase, String name, String type) {
-            String display = feedback.format(fcase, action, (update ? FormatWhen.UPDATE : FormatWhen.PRIMARY),
-                    resolution, unrcnt, errcnt,
-                    name, type, value, unresolved, errorLines);
-            if (interactive()) {
+            if (resolve) {
+                String resolutionErrors = feedback.format("resolve", fcase, action, update,
+                        resolution, unrcnt, errcnt,
+                        name, type, value, unresolved, errorLines);
+                if (!resolutionErrors.trim().isEmpty()) {
+                    hard("    %s", resolutionErrors);
+                }
+            } else if (interactive()) {
+                String display = feedback.format(fcase, action, update,
+                        resolution, unrcnt, errcnt,
+                        name, type, value, unresolved, errorLines);
                 cmdout.print(display);
             }
         }
