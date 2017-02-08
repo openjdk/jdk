@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,19 +39,23 @@ import java.util.Set;
 
 /**
  * This class is a wrapper for PKIXBuilderParameters so that a Timestamp object
- * can be passed alone when PKIXCertPath is checking signed jar files.
+ * and a string for the variant type, can be passed when doing certpath
+ * checking.
  */
 
-public class PKIXTimestampParameters extends PKIXBuilderParameters {
+public class PKIXExtendedParameters extends PKIXBuilderParameters {
 
     private final PKIXBuilderParameters p;
     private Timestamp jarTimestamp;
+    private final String variant;
 
-    public PKIXTimestampParameters(PKIXBuilderParameters params,
-            Timestamp timestamp) throws InvalidAlgorithmParameterException {
+    public PKIXExtendedParameters(PKIXBuilderParameters params,
+            Timestamp timestamp, String variant)
+            throws InvalidAlgorithmParameterException {
         super(params.getTrustAnchors(), null);
         p = params;
         jarTimestamp = timestamp;
+        this.variant = variant;
     }
 
     public Timestamp getTimestamp() {
@@ -59,6 +63,10 @@ public class PKIXTimestampParameters extends PKIXBuilderParameters {
     }
     public void setTimestamp(Timestamp t) {
         jarTimestamp = t;
+    }
+
+    public String getVariant() {
+        return variant;
     }
 
     @Override
