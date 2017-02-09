@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,6 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 4091755
- * @summary java.lang.Object can't be redefined without crashing javac
- * @author gafter
- *
- * @compile/module=java.base/fail/ref=Object2.out -XDrawDiagnostics java/lang/Object2.java
- */
+package p1;
+
+public class C {}

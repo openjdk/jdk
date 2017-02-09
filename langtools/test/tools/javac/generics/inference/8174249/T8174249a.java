@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,9 +25,30 @@
 
 /*
  * @test
- * @bug 4091755
- * @summary java.lang.Object can't be redefined without crashing javac
- * @author gafter
- *
- * @compile/module=java.base/fail/ref=Object2.out -XDrawDiagnostics java/lang/Object2.java
+ * @bug 8174249
+ * @summary Regression in generic method unchecked calls
+ * @compile T8174249a.java
  */
+
+import java.util.ArrayList;
+import java.util.Collection;
+
+class T8174249a {
+    static <T> T foo(Class<T> c, Collection<? super T> baz) {
+return null;
+    }
+
+    static void bar(String c) { }
+
+    void test() {
+        // this works
+        bar(foo(String.class, new ArrayList<String>()));
+
+        // this works with a warning
+        String s = foo(String.class, new ArrayList());
+        bar(s);
+
+        // this causes an error on JDK9 but should work
+        bar(foo(String.class, new ArrayList()));
+    }
+}
