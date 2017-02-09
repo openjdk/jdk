@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,8 @@ import java.net.Proxy;
  * only. The HTTPS implementation can now be found in
  * sun.net.www.protocol.https.
  *
- * @deprecated This class is subject to removal in a future version of JDK.
  */
-@Deprecated(since="9", forRemoval=true)
+@Deprecated(since="9")
 public class Handler extends sun.net.www.protocol.https.Handler {
 
     public Handler() {

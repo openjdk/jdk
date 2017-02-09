@@ -38,7 +38,7 @@ import jdk.testlibrary.Utils;
  *          without connection or username/password details.
  *          TestManager will attempt a connection to the address obtained from
  *          both agent properties and jvmstat buffer.
- * @modules java.management/sun.management
+ * @modules jdk.management.agent/jdk.internal.agent
  * @build jdk.testlibrary.* TestManager TestApplication
  * @run main/othervm/timeout=300 LocalManagementTest
  */
@@ -131,7 +131,7 @@ public class LocalManagementTest {
             ProcessBuilder client = ProcessTools.createJavaProcessBuilder(
                 "-cp",
                 TEST_CLASSPATH,
-                "--add-exports", "java.management/sun.management=ALL-UNNAMED",
+                "--add-exports", "jdk.management.agent/jdk.internal.agent=ALL-UNNAMED",
                 "TestManager",
                 String.valueOf(serverPrc.getPid()),
                 port.get(),

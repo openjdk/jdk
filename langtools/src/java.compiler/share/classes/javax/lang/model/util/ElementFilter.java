@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,15 +54,6 @@ import javax.lang.model.element.ModuleElement.UsesDirective;
  * <p>If iterables and sets containing {@code null} are passed as
  * arguments to methods in this class, a {@code NullPointerException}
  * will be thrown.
- *
- * <p>Note that a <i>static import</i> statement can make the text of
- * calls to the methods in this class more concise; for example:
- *
- * <blockquote><pre>
- *     import static javax.lang.model.util.ElementFilter.*;
- *     ...
- *         {@code List<VariableElement>} fs = fieldsIn(someClass.getEnclosedElements());
- * </pre></blockquote>
  *
  * @author Joseph D. Darcy
  * @author Scott Seligman

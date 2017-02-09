@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,6 +118,7 @@ public class Lint
             if (source.compareTo(Source.JDK1_9) >= 0) {
                 values.add(LintCategory.DEP_ANN);
             }
+            values.add(LintCategory.OPENS);
             values.add(LintCategory.MODULE);
             values.add(LintCategory.REMOVAL);
         }
@@ -209,6 +210,11 @@ public class Lint
          * Warn about module system related issues.
          */
         MODULE("module"),
+
+        /**
+         * Warn about issues regarding module opens.
+         */
+        OPENS("opens"),
 
         /**
          * Warn about issues relating to use of command line options

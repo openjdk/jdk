@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -119,28 +119,31 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBPNG],
   DEFAULT_LIBPNG=bundled
   # if user didn't specify, use DEFAULT_LIBPNG
   if test "x${with_libpng}" = "x"; then
-      with_libpng=${DEFAULT_LIBPNG}
+    with_libpng=${DEFAULT_LIBPNG}
   fi
 
   if test "x${with_libpng}" = "xbundled"; then
-      USE_EXTERNAL_LIBPNG=false
-      AC_MSG_RESULT([bundled])
+    USE_EXTERNAL_LIBPNG=false
+    PNG_CFLAGS=""
+    PNG_LIBS=""
+    AC_MSG_RESULT([bundled])
   elif test "x${with_libpng}" = "xsystem"; then
-      PKG_CHECK_MODULES(PNG, libpng,
-                   [ LIBPNG_FOUND=yes ],
-                   [ LIBPNG_FOUND=no ])
-      if test "x${LIBPNG_FOUND}" = "xyes"; then
-          USE_EXTERNAL_LIBPNG=true
-          AC_MSG_RESULT([system])
-      else
-          AC_MSG_RESULT([system not found])
-          AC_MSG_ERROR([--with-libpng=system specified, but no libpng found!])
-      fi
+    PKG_CHECK_MODULES(PNG, libpng, [LIBPNG_FOUND=yes], [LIBPNG_FOUND=no])
+    if test "x${LIBPNG_FOUND}" = "xyes"; then
+      # PKG_CHECK_MODULES will set PNG_CFLAGS and PNG_LIBS
+      USE_EXTERNAL_LIBPNG=true
+      AC_MSG_RESULT([system])
+    else
+      AC_MSG_RESULT([system not found])
+      AC_MSG_ERROR([--with-libpng=system specified, but no libpng found!])
+    fi
   else
-      AC_MSG_ERROR([Invalid value of --with-libpng: ${with_libpng}, use 'system' or 'bundled'])
+    AC_MSG_ERROR([Invalid value of --with-libpng: ${with_libpng}, use 'system' or 'bundled'])
   fi
 
   AC_SUBST(USE_EXTERNAL_LIBPNG)
+  AC_SUBST(PNG_CFLAGS)
+  AC_SUBST(PNG_LIBS)
 ])
 
 ################################################################################
@@ -204,16 +207,19 @@ AC_DEFUN_ONCE([LIB_SETUP_LCMS],
   DEFAULT_LCMS=bundled
   # If user didn't specify, use DEFAULT_LCMS
   if test "x${with_lcms}" = "x"; then
-      with_lcms=${DEFAULT_LCMS}
+    with_lcms=${DEFAULT_LCMS}
   fi
 
   if test "x${with_lcms}" = "xbundled"; then
     USE_EXTERNAL_LCMS=false
+    LCMS_CFLAGS=""
+    LCMS_LIBS=""
     AC_MSG_RESULT([bundled])
   elif test "x${with_lcms}" = "xsystem"; then
     AC_MSG_RESULT([system])
     PKG_CHECK_MODULES([LCMS], [lcms2], [LCMS_FOUND=yes], [LCMS_FOUND=no])
     if test "x${LCMS_FOUND}" = "xyes"; then
+      # PKG_CHECK_MODULES will set LCMS_CFLAGS and LCMS_LIBS
       USE_EXTERNAL_LCMS=true
     else
       AC_MSG_ERROR([--with-lcms=system specified, but no lcms found!])
@@ -223,4 +229,6 @@ AC_DEFUN_ONCE([LIB_SETUP_LCMS],
   fi
 
   AC_SUBST(USE_EXTERNAL_LCMS)
+  AC_SUBST(LCMS_CFLAGS)
+  AC_SUBST(LCMS_LIBS)
 ])

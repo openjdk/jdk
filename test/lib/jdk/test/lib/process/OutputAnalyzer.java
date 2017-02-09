@@ -183,6 +183,23 @@ public final class OutputAnalyzer {
   }
 
   /**
+   * Verify that the stdout and stderr contents of output buffer does not contain the string
+   *
+   * @throws RuntimeException If the string was found
+   */
+  public OutputAnalyzer shouldBeEmpty() {
+    if (!stdout.isEmpty()) {
+        reportDiagnosticSummary();
+        throw new RuntimeException("stdout was not empty");
+    }
+    if (!stderr.isEmpty()) {
+        reportDiagnosticSummary();
+        throw new RuntimeException("stderr was not empty");
+    }
+    return this;
+  }
+
+  /**
    * Verify that the stdout contents of output buffer does not contain the string
    *
    * @param expectedString String that the buffer should not contain
@@ -361,6 +378,21 @@ public final class OutputAnalyzer {
           reportDiagnosticSummary();
           throw new RuntimeException("Expected to get exit value of ["
                   + expectedExitValue + "]\n");
+      }
+      return this;
+  }
+
+  /**
+   * Verify the exit value of the process
+   *
+   * @param notExpectedExitValue Unexpected exit value from process
+   * @throws RuntimeException If the exit value from the process did match the expected value
+   */
+  public OutputAnalyzer shouldNotHaveExitValue(int notExpectedExitValue) {
+      if (getExitValue() == notExpectedExitValue) {
+          reportDiagnosticSummary();
+          throw new RuntimeException("Unexpected to get exit value of ["
+                  + notExpectedExitValue + "]\n");
       }
       return this;
   }

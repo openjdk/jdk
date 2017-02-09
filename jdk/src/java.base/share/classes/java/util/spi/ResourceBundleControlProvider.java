@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,19 +35,19 @@ import java.util.ResourceBundle;
  * no {@link java.util.ResourceBundle.Control} instance can be modified with {@code
  * ResourceBundleControlProvider} implementations.
  *
+ * <p>Provider implementations are loaded from the application's class path
+ * using {@link java.util.ServiceLoader} at the first invocation of the
+ * {@code ResourceBundle.getBundle} factory method that takes no
+ * {@link java.util.ResourceBundle.Control} instance.
+ *
+ * <p>All {@code ResourceBundleControlProvider}s are ignored in named modules.
+ *
  * @author Masayoshi Okutsu
  * @since 1.8
  * @see ResourceBundle#getBundle(String, java.util.Locale, ClassLoader, ResourceBundle.Control)
  *      ResourceBundle.getBundle
- * @see java.util.ServiceLoader#loadInstalled(Class)
- * @deprecated There is no longer any mechanism to install a custom
- * {@code ResourceBundleControlProvider} implementation defined
- * by the platform class loader or its ancestor. The recommended
- * way to use a custom {@code Control} implementation to load resource bundle
- * is to use {@link java.util.ResourceBundle#getBundle(String, Control)}
- * or other factory methods that take custom {@link java.util.ResourceBundle.Control}.
+ * @see java.util.ServiceLoader#load(Class)
  */
-@Deprecated(since="9", forRemoval=true)
 public interface ResourceBundleControlProvider {
     /**
      * Returns a {@code ResourceBundle.Control} instance that is used

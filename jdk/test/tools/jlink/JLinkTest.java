@@ -48,6 +48,7 @@ import tests.JImageGenerator;
  * @modules java.base/jdk.internal.jimage
  *          jdk.jdeps/com.sun.tools.classfile
  *          jdk.jlink/jdk.tools.jlink.internal
+ *          jdk.jlink/jdk.tools.jlink.plugin
  *          jdk.jlink/jdk.tools.jimage
  *          jdk.compiler
  * @build tests.*
@@ -282,6 +283,13 @@ public class JLinkTest {
             String moduleName = "orphanarg2";
             helper.generateDefaultJModule(moduleName, "composite2");
             helper.generateDefaultImage(userOptions, moduleName).assertFailure("Error: orphan argument: bar");
+        }
+
+        // basic check for --help - JDK-8173717
+        {
+            JImageGenerator.getJLinkTask()
+                    .option("--help")
+                    .call().assertSuccess();
         }
     }
 

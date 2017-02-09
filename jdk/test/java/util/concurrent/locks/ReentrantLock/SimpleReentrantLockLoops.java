@@ -40,17 +40,16 @@
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-import java.util.SplittableRandom;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.ThreadLocalRandom;
 import jdk.testlibrary.Utils;
 
 public final class SimpleReentrantLockLoops {
     static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);
     static final ExecutorService pool = Executors.newCachedThreadPool();
-    static final SplittableRandom rnd = new SplittableRandom();
     static boolean print = false;
     static int iters = 100_000;
 
@@ -76,7 +75,7 @@ public final class SimpleReentrantLockLoops {
     }
 
     static final class ReentrantLockLoop implements Runnable {
-        private int v = rnd.nextInt();
+        private int v = ThreadLocalRandom.current().nextInt();
         private volatile int result = 17;
         private final ReentrantLock lock = new ReentrantLock();
         private final LoopHelpers.BarrierTimer timer = new LoopHelpers.BarrierTimer();
@@ -132,7 +131,7 @@ public final class SimpleReentrantLockLoops {
                 barrier.await();
                 result += sum;
             }
-            catch (Exception ie) {
+            catch (Exception ex) {
                 return;
             }
         }

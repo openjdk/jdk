@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.javadoc.internal.doclets.toolkit.util;
 
 import java.lang.annotation.Documented;
 import java.lang.ref.SoftReference;
+import java.net.URI;
 import java.text.CollationKey;
 import java.text.Collator;
 import java.util.*;
@@ -108,6 +109,7 @@ public class Utils {
     public final DocTrees docTrees;
     public final Elements elementUtils;
     public final Types typeUtils;
+    public final JavaScriptScanner javaScriptScanner;
 
     public Utils(Configuration c) {
         configuration = c;
@@ -115,6 +117,7 @@ public class Utils {
         elementUtils = c.docEnv.getElementUtils();
         typeUtils = c.docEnv.getTypeUtils();
         docTrees = c.docEnv.getDocTrees();
+        javaScriptScanner = c.isAllowScriptInComments() ? null : new JavaScriptScanner();
     }
 
     // our own little symbol table
@@ -1770,14 +1773,14 @@ public class Utils {
     /**
      * Returns a Comparator for index file presentations, and are sorted as follows.
      *  If comparing modules then simply compare the simple names,
-     *  comparing packages then simply compare the qualified names, otherwise
-     *  1. if equal, then compare the ElementKind ex: Module, Package, Interface etc.
-     *  2. sort on simple names of entities
-     *  3a. if equal and if the type is of ExecutableElement(Constructor, Methods),
+     *  comparing packages then simply compare the qualified names, if comparing a package with a
+     *  module/type/member then compare the FullyQualifiedName of the package
+     *  with the SimpleName of the entity, otherwise
+     *  1. compare the ElementKind ex: Module, Package, Interface etc.
+     *  2a. if equal and if the type is of ExecutableElement(Constructor, Methods),
      *      a case insensitive comparison of parameter the type signatures
-     *  3b. if equal, case sensitive comparison of the type signatures
-     *  4. finally, if equal, compare the FQNs of the entities
-     * Iff comparing packages then simply sort on qualified names.
+     *  2b. if equal, case sensitive comparison of the type signatures
+     *  3. finally, if equal, compare the FQNs of the entities
      * @return a comparator for index file use
      */
     public Comparator<Element> makeIndexUseComparator() {
@@ -1785,8 +1788,10 @@ public class Utils {
             /**
              * Compare two given elements, if comparing two modules, return the
              * comparison of SimpleName, if comparing two packages, return the
-             * comparison of FullyQualifiedName, first sort on kinds, then on the
-             * names, then on the parameters only if the type is an ExecutableElement,
+             * comparison of FullyQualifiedName, if comparing a package with a
+             * module/type/member then compare the FullyQualifiedName of the package
+             * with the SimpleName of the entity, then sort on the kinds, then on
+             * the parameters only if the type is an ExecutableElement,
              * the parameters are compared and finally the qualified names.
              *
              * @param e1 - an element.
@@ -1803,11 +1808,17 @@ public class Utils {
                 if (isPackage(e1) && isPackage(e2)) {
                     return compareFullyQualifiedNames(e1, e2);
                 }
-                result = compareElementTypeKinds(e1, e2);
+                if (isPackage(e1) || isPackage(e2)) {
+                    result = (isPackage(e1))
+                            ? compareStrings(getFullyQualifiedName(e1), getSimpleName(e2))
+                            : compareStrings(getSimpleName(e1), getFullyQualifiedName(e2));
+                } else {
+                    result = compareNames(e1, e2);
+                }
                 if (result != 0) {
                     return result;
                 }
-                result = compareNames(e1, e2);
+                result = compareElementTypeKinds(e1, e2);
                 if (result != 0) {
                     return result;
                 }
@@ -3025,6 +3036,16 @@ public class Utils {
         TreePath path = isValidDuo(duo) ? duo.treePath : null;
         if (!dcTreeCache.containsKey(element)) {
             if (docCommentTree != null && path != null) {
+                if (!configuration.isAllowScriptInComments()) {
+                    try {
+                        javaScriptScanner.scan(docCommentTree, path, p -> {
+                            throw new JavaScriptScanner.Fault();
+                        });
+                    } catch (JavaScriptScanner.Fault jsf) {
+                        String text = configuration.getText("doclet.JavaScript_in_comment");
+                        throw new UncheckedDocletException(new SimpleDocletException(text, jsf));
+                    }
+                }
                 configuration.workArounds.runDocLint(path);
             }
             dcTreeCache.put(element, duo);
@@ -3042,6 +3063,21 @@ public class Utils {
             }
         }
         return null;
+    }
+
+    public void checkJavaScriptInOption(String name, String value) {
+        if (!configuration.isAllowScriptInComments()) {
+            DocCommentTree dct = configuration.cmtUtils.parse(
+                    URI.create("option://" + name.replace("-", "")), "<body>" + value + "</body>");
+            try {
+                javaScriptScanner.scan(dct, null, p -> {
+                    throw new JavaScriptScanner.Fault();
+                });
+            } catch (JavaScriptScanner.Fault jsf) {
+                String text = configuration.getText("doclet.JavaScript_in_option", name);
+                throw new UncheckedDocletException(new SimpleDocletException(text, jsf));
+            }
+        }
     }
 
     boolean isValidDuo(DocCommentDuo duo) {

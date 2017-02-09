@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,17 +37,18 @@ import java.util.List;
 public interface ModuleElement extends Element, QualifiedNameable {
 
     /**
-     * Returns the fully qualified name of this module.
+     * Returns the fully qualified name of this module.  For an
+     * {@linkplain #isUnnamed() unnamed module}, an empty name is returned.
      *
-     * @return the qualified name of this module, or an
+     * @return the fully qualified name of this module, or an
      * empty name if this is an unnamed module
      */
     @Override
     Name getQualifiedName();
 
     /**
-     * Returns the simple name of this module.  For an unnamed
-     * module, an empty name is returned.
+     * Returns the simple name of this module.  For an {@linkplain
+     * #isUnnamed() unnamed module}, an empty name is returned.
      *
      * @return the simple name of this module or an empty name if
      * this is an unnamed module
@@ -61,6 +62,15 @@ public interface ModuleElement extends Element, QualifiedNameable {
      */
     @Override
     List<? extends Element> getEnclosedElements();
+
+    /**
+     * Returns {@code true} if this is an open module and {@code
+     * false} otherwise.
+     *
+     * @return {@code true} if this is an open module and {@code
+     * false} otherwise
+     */ // TODO: add @jls to unnamed module section
+    boolean isOpen();
 
     /**
      * Returns {@code true} if this is an unnamed module and {@code

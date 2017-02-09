@@ -704,7 +704,6 @@ FIXPATH_DETACH_FLAG
 FIXPATH
 BUILD_GTEST
 ENABLE_AOT
-INCLUDE_DTRACE
 GCOV_ENABLED
 ZIP_EXTERNAL_DEBUG_SYMBOLS
 COPY_DEBUG_SYMBOLS
@@ -712,10 +711,8 @@ COMPILE_WITH_DEBUG_SYMBOLS
 CFLAGS_WARNINGS_ARE_ERRORS
 BUILD_CC_DISABLE_WARNING_PREFIX
 DISABLE_WARNING_PREFIX
-HOTSPOT_SET_WARNINGS_AS_ERRORS
 WARNINGS_AS_ERRORS
 COMPILER_SUPPORTS_TARGET_BITS_FLAG
-ZERO_ARCHFLAG
 LDFLAGS_TESTEXE
 LDFLAGS_TESTLIB
 CXXFLAGS_TESTEXE
@@ -884,7 +881,6 @@ BUILD_JDK
 CREATE_BUILDJDK
 JLINK
 JMOD
-BOOT_JDK_BITS
 JAVAC_FLAGS
 BOOT_JDK_MODULAR
 BOOT_JDK_SOURCETARGET
@@ -974,15 +970,12 @@ CANONICAL_TOPDIR
 ORIGINAL_TOPDIR
 TOPDIR
 PATH_SEP
-ZERO_ARCHDEF
 HOTSPOT_BUILD_CPU_DEFINE
 HOTSPOT_BUILD_CPU_ARCH
 HOTSPOT_BUILD_CPU
 HOTSPOT_BUILD_OS_TYPE
 HOTSPOT_BUILD_OS
 OPENJDK_BUILD_BUNDLE_PLATFORM
-OPENJDK_BUILD_CPU_BUNDLE
-OPENJDK_BUILD_OS_BUNDLE
 OPENJDK_BUILD_OS_EXPORT_DIR
 OPENJDK_BUILD_CPU_OSARCH
 OPENJDK_BUILD_CPU_ISADIR
@@ -994,10 +987,7 @@ HOTSPOT_TARGET_CPU
 HOTSPOT_TARGET_OS_TYPE
 HOTSPOT_TARGET_OS
 DEFINE_CROSS_COMPILE_ARCH
-LP64
 OPENJDK_TARGET_BUNDLE_PLATFORM
-OPENJDK_TARGET_CPU_BUNDLE
-OPENJDK_TARGET_OS_BUNDLE
 OPENJDK_TARGET_OS_EXPORT_DIR
 OPENJDK_TARGET_CPU_OSARCH
 OPENJDK_TARGET_CPU_ISADIR
@@ -3818,7 +3808,7 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 # ... then the rest
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -3998,7 +3988,7 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -4273,7 +4263,7 @@ pkgadd_help() {
 
 
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -4561,7 +4551,7 @@ VALID_JVM_VARIANTS="server client minimal core zero zeroshark custom"
 
 
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -4841,7 +4831,7 @@ VALID_JVM_VARIANTS="server client minimal core zero zeroshark custom"
 
 
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -5180,7 +5170,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1484571183
+DATE_WHEN_GENERATED=1486175373
 
 ###############################################################################
 #
@@ -15936,18 +15926,14 @@ $as_echo "$COMPILE_TYPE" >&6; }
   OPENJDK_TARGET_BUNDLE_PLATFORM="${OPENJDK_TARGET_OS_BUNDLE}-${OPENJDK_TARGET_CPU_BUNDLE}"
 
 
-
-
   if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-    A_LP64="LP64:="
     # -D_LP64=1 is only set on linux and mac. Setting on windows causes diff in
-    # unpack200.exe
+    # unpack200.exe. This variable is used in
+    # FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER.
     if test "x$OPENJDK_TARGET_OS" = xlinux || test "x$OPENJDK_TARGET_OS" = xmacosx; then
       OPENJDK_TARGET_ADD_LP64="-D_LP64=1"
     fi
   fi
-  LP64=$A_LP64
-
 
   if test "x$COMPILE_TYPE" = "xcross"; then
     # FIXME: ... or should this include reduced builds..?
@@ -16092,18 +16078,14 @@ $as_echo "$COMPILE_TYPE" >&6; }
   OPENJDK_BUILD_BUNDLE_PLATFORM="${OPENJDK_BUILD_OS_BUNDLE}-${OPENJDK_BUILD_CPU_BUNDLE}"
 
 
-
-
   if test "x$OPENJDK_BUILD_CPU_BITS" = x64; then
-    A_LP64="LP64:="
     # -D_LP64=1 is only set on linux and mac. Setting on windows causes diff in
-    # unpack200.exe
+    # unpack200.exe. This variable is used in
+    # FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER.
     if test "x$OPENJDK_BUILD_OS" = xlinux || test "x$OPENJDK_BUILD_OS" = xmacosx; then
       OPENJDK_BUILD_ADD_LP64="-D_LP64=1"
     fi
   fi
-  LP64=$A_LP64
-
 
   if test "x$COMPILE_TYPE" = "xcross"; then
     # FIXME: ... or should this include reduced builds..?
@@ -16170,12 +16152,6 @@ $as_echo "$COMPILE_TYPE" >&6; }
     HOTSPOT_BUILD_CPU_DEFINE=$(echo $OPENJDK_BUILD_CPU | tr a-z A-Z)
   fi
 
-
-
-
-  # ZERO_ARCHDEF is used to enable architecture-specific code.
-  # This is used in legacy hotspot build.
-  ZERO_ARCHDEF="$HOTSPOT_TARGET_CPU_DEFINE"
 
 
 
@@ -17280,7 +17256,7 @@ $as_echo "$as_me: WARNING: Both SYSROOT and --with-sdk-name are set, only SYSROO
     fi
 
     # set SDKROOT too, Xcode tools will pick it up
-    SDKROOT=$SYSROOT
+    SDKROOT="$SYSROOT"
 
   fi
 
@@ -17528,11 +17504,9 @@ $as_echo "$as_me: The path of OUTPUT_ROOT, which resolves as \"$path\", is inval
   CONFIGURESUPPORT_OUTPUTDIR="$OUTPUT_ROOT/configure-support"
   $MKDIR -p "$CONFIGURESUPPORT_OUTPUTDIR"
 
-  SPEC=$OUTPUT_ROOT/spec.gmk
+  SPEC="$OUTPUT_ROOT/spec.gmk"
 
-  CONF_NAME=$CONF_NAME
 
-  OUTPUT_ROOT=$OUTPUT_ROOT
 
 
 
@@ -30730,7 +30704,6 @@ $as_echo "$BOOT_JDK_BITS" >&6; }
 
 
 
-
 # Check whether --with-build-jdk was given.
 if test "${with_build_jdk+set}" = set; then :
   withval=$with_build_jdk;
@@ -31282,12 +31255,6 @@ $as_echo "$as_me: The path of IMPORT_MODULES_TOPDIR, which resolves as \"$path\"
   fi
   if test -d "$IMPORT_MODULES_TOPDIR/modules_src"; then
     IMPORT_MODULES_SRC="$IMPORT_MODULES_TOPDIR/modules_src"
-  fi
-  # Workaround for using different imported module-info.java in Jake due to a
-  # change in format. Remove once new format is standard in JDK 9 and javafx
-  # delivers just that.
-  if test -d "$IMPORT_MODULES_TOPDIR/modules_src_jake"; then
-    IMPORT_MODULES_SRC="$IMPORT_MODULES_TOPDIR/modules_src_jake $IMPORT_MODULES_SRC"
   fi
   if test -d "$IMPORT_MODULES_TOPDIR/make"; then
     IMPORT_MODULES_MAKE="$IMPORT_MODULES_TOPDIR/make"
@@ -51486,282 +51453,6 @@ OPENJDK_BUILD_LDFLAGS_JDKLIB="${OPENJDK_BUILD_LDFLAGS_JDKLIB} ${OPENJDK_BUILD_JA
 
 
 
-  # Some Zero and Shark settings.
-  # ZERO_ARCHFLAG tells the compiler which mode to build for
-  case "${OPENJDK_TARGET_CPU}" in
-    s390)
-      ZERO_ARCHFLAG="${COMPILER_TARGET_BITS_FLAG}31"
-      ;;
-    *)
-      ZERO_ARCHFLAG="${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
-  esac
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    # Execute function body
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    # Execute function body
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if the C compiler supports \"$ZERO_ARCHFLAG\"" >&5
-$as_echo_n "checking if the C compiler supports \"$ZERO_ARCHFLAG\"... " >&6; }
-  supports=yes
-
-  saved_cflags="$CFLAGS"
-  CFLAGS="$CFLAGS $ZERO_ARCHFLAG"
-  ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-int i;
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-else
-  supports=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-  ac_ext=cpp
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
-  CFLAGS="$saved_cflags"
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
-$as_echo "$supports" >&6; }
-  if test "x$supports" = "xyes" ; then
-    :
-    C_COMP_SUPPORTS="yes"
-  else
-    :
-    C_COMP_SUPPORTS="no"
-  fi
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    # Execute function body
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if the C++ compiler supports \"$ZERO_ARCHFLAG\"" >&5
-$as_echo_n "checking if the C++ compiler supports \"$ZERO_ARCHFLAG\"... " >&6; }
-  supports=yes
-
-  saved_cxxflags="$CXXFLAGS"
-  CXXFLAGS="$CXXFLAG $ZERO_ARCHFLAG"
-  ac_ext=cpp
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-int i;
-_ACEOF
-if ac_fn_cxx_try_compile "$LINENO"; then :
-
-else
-  supports=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-  ac_ext=cpp
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
-  CXXFLAGS="$saved_cxxflags"
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
-$as_echo "$supports" >&6; }
-  if test "x$supports" = "xyes" ; then
-    :
-    CXX_COMP_SUPPORTS="yes"
-  else
-    :
-    CXX_COMP_SUPPORTS="no"
-  fi
-
-
-
-
-
-
-
-
-
-
-
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if both compilers support \"$ZERO_ARCHFLAG\"" >&5
-$as_echo_n "checking if both compilers support \"$ZERO_ARCHFLAG\"... " >&6; }
-  supports=no
-  if test "x$C_COMP_SUPPORTS" = "xyes" -a "x$CXX_COMP_SUPPORTS" = "xyes"; then supports=yes; fi
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
-$as_echo "$supports" >&6; }
-  if test "x$supports" = "xyes" ; then
-    :
-
-  else
-    :
-    ZERO_ARCHFLAG=""
-  fi
-
-
-
-
-
-
-
-
   # Check that the compiler supports -mX (or -qX on AIX) flags
   # Set COMPILER_SUPPORTS_TARGET_BITS_FLAG to 'true' if it does
 
@@ -52059,14 +51750,6 @@ $as_echo "yes (default)" >&6; }
   else
     as_fn_error $? "--enable-warnings-as-errors accepts no argument" "$LINENO" 5
   fi
-
-  if test "x$WARNINGS_AS_ERRORS" = "xfalse"; then
-    # Set legacy hotspot variable
-    HOTSPOT_SET_WARNINGS_AS_ERRORS="WARNINGS_ARE_ERRORS="
-  else
-    HOTSPOT_SET_WARNINGS_AS_ERRORS=""
-  fi
-
 
 
 
@@ -52920,7 +52603,6 @@ $as_echo "yes, dependencies present" >&6; }
   else
     as_fn_error $? "Invalid value for --enable-dtrace: $enable_dtrace" "$LINENO" 5
   fi
-
 
 
   # Check whether --enable-aot was given.
@@ -63700,12 +63382,14 @@ $as_echo_n "checking for which libpng to use... " >&6; }
   DEFAULT_LIBPNG=bundled
   # if user didn't specify, use DEFAULT_LIBPNG
   if test "x${with_libpng}" = "x"; then
-      with_libpng=${DEFAULT_LIBPNG}
+    with_libpng=${DEFAULT_LIBPNG}
   fi
 
   if test "x${with_libpng}" = "xbundled"; then
-      USE_EXTERNAL_LIBPNG=false
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: bundled" >&5
+    USE_EXTERNAL_LIBPNG=false
+    PNG_CFLAGS=""
+    PNG_LIBS=""
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: bundled" >&5
 $as_echo "bundled" >&6; }
   elif test "x${with_libpng}" = "xsystem"; then
 
@@ -63765,28 +63449,31 @@ fi
 
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-                 LIBPNG_FOUND=no
+                LIBPNG_FOUND=no
 elif test $pkg_failed = untried; then
-	 LIBPNG_FOUND=no
+	LIBPNG_FOUND=no
 else
 	PNG_CFLAGS=$pkg_cv_PNG_CFLAGS
 	PNG_LIBS=$pkg_cv_PNG_LIBS
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-	 LIBPNG_FOUND=yes
+	LIBPNG_FOUND=yes
 fi
-      if test "x${LIBPNG_FOUND}" = "xyes"; then
-          USE_EXTERNAL_LIBPNG=true
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: system" >&5
+    if test "x${LIBPNG_FOUND}" = "xyes"; then
+      # PKG_CHECK_MODULES will set PNG_CFLAGS and PNG_LIBS
+      USE_EXTERNAL_LIBPNG=true
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: system" >&5
 $as_echo "system" >&6; }
-      else
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: system not found" >&5
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: system not found" >&5
 $as_echo "system not found" >&6; }
-          as_fn_error $? "--with-libpng=system specified, but no libpng found!" "$LINENO" 5
-      fi
+      as_fn_error $? "--with-libpng=system specified, but no libpng found!" "$LINENO" 5
+    fi
   else
-      as_fn_error $? "Invalid value of --with-libpng: ${with_libpng}, use 'system' or 'bundled'" "$LINENO" 5
+    as_fn_error $? "Invalid value of --with-libpng: ${with_libpng}, use 'system' or 'bundled'" "$LINENO" 5
   fi
+
+
 
 
 
@@ -63894,11 +63581,13 @@ $as_echo_n "checking for which lcms to use... " >&6; }
   DEFAULT_LCMS=bundled
   # If user didn't specify, use DEFAULT_LCMS
   if test "x${with_lcms}" = "x"; then
-      with_lcms=${DEFAULT_LCMS}
+    with_lcms=${DEFAULT_LCMS}
   fi
 
   if test "x${with_lcms}" = "xbundled"; then
     USE_EXTERNAL_LCMS=false
+    LCMS_CFLAGS=""
+    LCMS_LIBS=""
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: bundled" >&5
 $as_echo "bundled" >&6; }
   elif test "x${with_lcms}" = "xsystem"; then
@@ -63972,6 +63661,7 @@ $as_echo "yes" >&6; }
 	LCMS_FOUND=yes
 fi
     if test "x${LCMS_FOUND}" = "xyes"; then
+      # PKG_CHECK_MODULES will set LCMS_CFLAGS and LCMS_LIBS
       USE_EXTERNAL_LCMS=true
     else
       as_fn_error $? "--with-lcms=system specified, but no lcms found!" "$LINENO" 5
@@ -63979,6 +63669,8 @@ fi
   else
     as_fn_error $? "Invalid value for --with-lcms: ${with_lcms}, use 'system' or 'bundled'" "$LINENO" 5
   fi
+
+
 
 
 
@@ -64774,11 +64466,11 @@ fi
 $as_echo_n "checking if elliptic curve crypto implementation is present... " >&6; }
 
   if test -d "${SRC_ROOT}/jdk/src/jdk.crypto.ec/share/native/libsunec/impl"; then
-    ENABLE_INTREE_EC=yes
+    ENABLE_INTREE_EC=true
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
   else
-    ENABLE_INTREE_EC=no
+    ENABLE_INTREE_EC=false
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
   fi
@@ -66145,25 +65837,25 @@ else
 fi
 
 
-  USE_PRECOMPILED_HEADER=1
+  USE_PRECOMPILED_HEADER=true
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking If precompiled header is enabled" >&5
 $as_echo_n "checking If precompiled header is enabled... " >&6; }
   if test "x$ENABLE_PRECOMPH" = xno; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, forced" >&5
 $as_echo "no, forced" >&6; }
-    USE_PRECOMPILED_HEADER=0
+    USE_PRECOMPILED_HEADER=false
   elif test "x$ICECC" != "x"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, does not work effectively with icecc" >&5
 $as_echo "no, does not work effectively with icecc" >&6; }
-    USE_PRECOMPILED_HEADER=0
+    USE_PRECOMPILED_HEADER=false
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, does not work with Solaris Studio" >&5
 $as_echo "no, does not work with Solaris Studio" >&6; }
-    USE_PRECOMPILED_HEADER=0
+    USE_PRECOMPILED_HEADER=false
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, does not work with xlc" >&5
 $as_echo "no, does not work with xlc" >&6; }
-    USE_PRECOMPILED_HEADER=0
+    USE_PRECOMPILED_HEADER=false
   else
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
@@ -66177,7 +65869,7 @@ $as_echo_n "checking that precompiled headers work... " >&6; }
       echo "int alfa();" > conftest.h
       $CXX -x c++-header conftest.h -o conftest.hpp.gch 2>&5 >&5
       if test ! -f conftest.hpp.gch; then
-        USE_PRECOMPILED_HEADER=0
+        USE_PRECOMPILED_HEADER=false
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
       else
@@ -66464,7 +66156,7 @@ $as_echo "$as_me: WARNING: --with-ccache-dir has no meaning when ccache is not e
         as_fn_error $? "On macosx, ccache 3.2 or later is required, found $CCACHE_VERSION" "$LINENO" 5
       fi
     fi
-    if test "x$USE_PRECOMPILED_HEADER" = "x1"; then
+    if test "x$USE_PRECOMPILED_HEADER" = "xtrue"; then
       HAS_BAD_CCACHE=`$ECHO $CCACHE_VERSION | \
           $GREP -e '^1.*' -e '^2.*' -e '^3\.0.*' -e '^3\.1\.[0123]$'`
       if test "x$HAS_BAD_CCACHE" != "x"; then

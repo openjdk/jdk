@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package javax.management.monitor;
 
 import static com.sun.jmx.defaults.JmxProperties.MONITOR_LOGGER;
-import java.util.logging.Level;
+import java.lang.System.Logger.Level;
 import javax.management.MBeanNotificationInfo;
 import javax.management.ObjectName;
 import static javax.management.monitor.Monitor.NumericalType.*;
@@ -224,8 +224,7 @@ public class GaugeMonitor extends Monitor implements GaugeMonitorMBean {
      */
     public synchronized void start() {
         if (isActive()) {
-            MONITOR_LOGGER.logp(Level.FINER, GaugeMonitor.class.getName(),
-                    "start", "the monitor is already active");
+            MONITOR_LOGGER.log(Level.TRACE, "the monitor is already active");
             return;
         }
         // Reset values.
@@ -664,8 +663,7 @@ public class GaugeMonitor extends Monitor implements GaugeMonitorMBean {
             break;
         default:
             // Should never occur...
-            MONITOR_LOGGER.logp(Level.FINEST, GaugeMonitor.class.getName(),
-                    "setDerivedGaugeWithDifference",
+            MONITOR_LOGGER.log(Level.TRACE,
                     "the threshold type is invalid");
             return;
         }
@@ -698,8 +696,7 @@ public class GaugeMonitor extends Monitor implements GaugeMonitorMBean {
             return (greater.doubleValue() >= less.doubleValue());
         default:
             // Should never occur...
-            MONITOR_LOGGER.logp(Level.FINEST, GaugeMonitor.class.getName(),
-                    "isFirstGreaterThanLast",
+            MONITOR_LOGGER.log(Level.TRACE,
                     "the threshold type is invalid");
             return false;
         }
@@ -733,8 +730,7 @@ public class GaugeMonitor extends Monitor implements GaugeMonitorMBean {
         }
         else {
             // Should never occur...
-            MONITOR_LOGGER.logp(Level.FINEST, GaugeMonitor.class.getName(),
-                    "isFirstStrictlyGreaterThanLast",
+            MONITOR_LOGGER.log(Level.TRACE,
                     "the threshold type is invalid");
             return false;
         }

@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8133884 8162711 8133896 8172158 8172262
+ * @bug 8133884 8162711 8133896 8172158 8172262 8173636
  * @summary Verify that annotation processing works.
  * @library /tools/lib
  * @modules
@@ -173,7 +173,7 @@ public class AnnotationProcessing extends ModuleTestBase {
                     String[] module2Packages = moduleDef.split("=>");
 
                     module2ExpectedEnclosedElements.put(module2Packages[0],
-                                                        Arrays.asList(module2Packages[1].split(":")));
+                                                        List.of(module2Packages[1].split(":")));
                 }
             }
 
@@ -359,7 +359,7 @@ public class AnnotationProcessing extends ModuleTestBase {
             .writeAll()
             .getOutput(Task.OutputKind.DIRECT);
 
-        List<String> expected = Arrays.asList("Note: field: m1x");
+        List<String> expected = List.of("Note: field: m1x");
 
         for (Mode mode : new Mode[] {Mode.API, Mode.CMDLINE}) {
             List<String> log = new JavacTask(tb, mode)
@@ -424,7 +424,7 @@ public class AnnotationProcessing extends ModuleTestBase {
                 .writeAll()
                 .getOutputLines(Task.OutputKind.STDERR);
 
-        assertEquals(Arrays.asList("module: m1x"), log);
+        assertEquals(List.of("module: m1x"), log);
     }
 
     @SupportedAnnotationTypes("*")
@@ -472,8 +472,8 @@ public class AnnotationProcessing extends ModuleTestBase {
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
 
-        List<String> expectedLog = Arrays.asList("Note: AP Invoked",
-                                                 "Note: AP Invoked");
+        List<String> expectedLog = List.of("Note: AP Invoked",
+                                           "Note: AP Invoked");
 
         assertEquals(expectedLog, log);
 
@@ -600,7 +600,7 @@ public class AnnotationProcessing extends ModuleTestBase {
 
                 JavaCompiler comp = ToolProvider.getSystemJavaCompiler();
                 try (StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null)) {
-                    List<String> options = Arrays.asList("-d", scratchClasses.toString());
+                    List<String> options = List.of("-d", scratchClasses.toString());
                     Iterable<? extends JavaFileObject> files = fm.getJavaFileObjects(scratchSrc);
                     CompilationTask task = comp.getTask(null, fm, null, options, null, files);
 
@@ -939,7 +939,7 @@ public class AnnotationProcessing extends ModuleTestBase {
             .writeAll()
             .getOutputLines(OutputKind.STDERR);
 
-        expected = Arrays.asList("");
+        expected = List.of("");
 
         if (!expected.equals(log)) {
             throw new AssertionError("Output does not match; output: " + log);
@@ -954,15 +954,17 @@ public class AnnotationProcessing extends ModuleTestBase {
             .writeAll()
             .getOutputLines(OutputKind.STDERR);
 
-        expected = Arrays.asList("SelectAnnotationBTestAP",
-                                 "SelectAnnotationBTestAP");
+        expected = List.of("SelectAnnotationBTestAP",
+                           "SelectAnnotationBTestAP");
 
         if (!expected.equals(log)) {
             throw new AssertionError("Output does not match; output: " + log);
         }
 
         log = new JavacTask(tb)
-            .options("-processor", SelectAnnotationATestAP.class.getName() + "," + SelectAnnotationBTestAP.class.getName(),
+            .options("-processor", SelectAnnotationATestAP.class.getName() + "," +
+                                   SelectAnnotationBTestAP.class.getName() + "," +
+                                   SelectAnnotationAStrictTestAP.class.getName(),
                      "--module-source-path", src.toString(),
                      "-m", "m4x")
             .outdir(classes)
@@ -970,10 +972,43 @@ public class AnnotationProcessing extends ModuleTestBase {
             .writeAll()
             .getOutputLines(OutputKind.STDERR);
 
-        expected = Arrays.asList("SelectAnnotationATestAP",
-                                 "SelectAnnotationBTestAP",
-                                 "SelectAnnotationATestAP",
-                                 "SelectAnnotationBTestAP");
+        expected = List.of("SelectAnnotationATestAP",
+                           "SelectAnnotationBTestAP",
+                           "SelectAnnotationAStrictTestAP",
+                           "SelectAnnotationATestAP",
+                           "SelectAnnotationBTestAP",
+                           "SelectAnnotationAStrictTestAP");
+
+        if (!expected.equals(log)) {
+            throw new AssertionError("Output does not match; output: " + log);
+        }
+    }
+
+    @Test
+    public void testDisambiguateAnnotationsUnnamedModule(Path base) throws Exception {
+        Path classes = base.resolve("classes");
+
+        Files.createDirectories(classes);
+
+        Path src = base.resolve("src");
+
+        tb.writeJavaFiles(src,
+                          "package api; public @interface A {}",
+                          "package api; public @interface B {}",
+                          "package impl; import api.*; @A @B public class T {}");
+
+        List<String> log = new JavacTask(tb)
+            .options("-processor", SelectAnnotationATestAP.class.getName() + "," +
+                                   SelectAnnotationBTestAP.class.getName() + "," +
+                                   SelectAnnotationAStrictTestAP.class.getName())
+            .outdir(classes)
+            .files(findJavaFiles(src))
+            .run()
+            .writeAll()
+            .getOutputLines(OutputKind.STDERR);
+
+        List<String> expected = List.of("SelectAnnotationBTestAP",
+                                        "SelectAnnotationBTestAP");
 
         if (!expected.equals(log)) {
             throw new AssertionError("Output does not match; output: " + log);
@@ -994,7 +1029,9 @@ public class AnnotationProcessing extends ModuleTestBase {
                           "package impl; import api.*; @A @B public class T {}");
 
         List<String> log = new JavacTask(tb)
-            .options("-processor", SelectAnnotationATestAP.class.getName() + "," + SelectAnnotationBTestAP.class.getName(),
+            .options("-processor", SelectAnnotationATestAP.class.getName() + "," +
+                                   SelectAnnotationBTestAP.class.getName() + "," +
+                                   SelectAnnotationAStrictTestAP.class.getName(),
                      "-source", "8", "-target", "8")
             .outdir(classes)
             .files(findJavaFiles(src))
@@ -1002,10 +1039,10 @@ public class AnnotationProcessing extends ModuleTestBase {
             .writeAll()
             .getOutputLines(OutputKind.STDERR);
 
-        List<String> expected = Arrays.asList("SelectAnnotationATestAP",
-                                              "SelectAnnotationBTestAP",
-                                              "SelectAnnotationATestAP",
-                                              "SelectAnnotationBTestAP");
+        List<String> expected = List.of("SelectAnnotationATestAP",
+                                        "SelectAnnotationBTestAP",
+                                        "SelectAnnotationATestAP",
+                                        "SelectAnnotationBTestAP");
 
         if (!expected.equals(log)) {
             throw new AssertionError("Output does not match; output: " + log);
@@ -1032,6 +1069,22 @@ public class AnnotationProcessing extends ModuleTestBase {
             System.err.println("SelectAnnotationBTestAP");
 
             return false;
+        }
+
+    }
+
+    public static final class SelectAnnotationAStrictTestAP extends AbstractProcessor {
+
+        @Override
+        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+            System.err.println("SelectAnnotationAStrictTestAP");
+
+            return false;
+        }
+
+        @Override
+        public Set<String> getSupportedAnnotationTypes() {
+            return Set.of("m2x/api.A");
         }
 
     }

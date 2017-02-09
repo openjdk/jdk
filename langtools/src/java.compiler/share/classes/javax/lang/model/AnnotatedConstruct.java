@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ import javax.lang.model.type.*;
  *
  * If there are multiple annotations of type <i>AT</i> present on
  * <i>C</i>, then if <i>AT</i> is repeatable annotation type, an
- * annotation of type <i>ATC</i> is implicitly declared on <i>C</i>.
+ * annotation of type <i>ATC</i> is {@linkplain javax.lang.model.util.Elements#getOrigin(AnnotatedConstruct, AnnotationMirror) implicitly declared} on <i>C</i>.
  *
  * <li> A representation of <i>A</i> appears in the executable output
  * for <i>C</i>, such as the {@code RuntimeVisibleAnnotations} or

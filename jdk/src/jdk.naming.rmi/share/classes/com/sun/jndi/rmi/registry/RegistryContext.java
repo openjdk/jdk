@@ -32,6 +32,8 @@ import java.rmi.*;
 import java.rmi.server.*;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 import javax.naming.*;
 import javax.naming.spi.NamingManager;
@@ -52,6 +54,18 @@ public class RegistryContext implements Context, Referenceable {
     private int port;
     private static final NameParser nameParser = new AtomicNameParser();
     private static final String SOCKET_FACTORY = "com.sun.jndi.rmi.factory.socket";
+    /**
+     * Determines whether classes may be loaded from an arbitrary URL code base.
+     */
+    static final boolean trustURLCodebase;
+    static {
+        // System property to control whether classes may be loaded from an
+        // arbitrary URL codebase
+        PrivilegedAction<String> act = () -> System.getProperty(
+            "com.sun.jndi.rmi.object.trustURLCodebase", "false");
+        String trust = AccessController.doPrivileged(act);
+        trustURLCodebase = "true".equalsIgnoreCase(trust);
+    }
 
     Reference reference = null; // ref used to create this context, if any
 
@@ -460,6 +474,27 @@ public class RegistryContext implements Context, Referenceable {
             Object obj = (r instanceof RemoteReference)
                         ? ((RemoteReference)r).getReference()
                         : (Object)r;
+
+            /*
+             * Classes may only be loaded from an arbitrary URL codebase when
+             * the system property com.sun.jndi.rmi.object.trustURLCodebase
+             * has been set to "true".
+             */
+
+            // Use reference if possible
+            Reference ref = null;
+            if (obj instanceof Reference) {
+                ref = (Reference) obj;
+            } else if (obj instanceof Referenceable) {
+                ref = ((Referenceable)(obj)).getReference();
+            }
+
+            if (ref != null && ref.getFactoryClassLocation() != null &&
+                !trustURLCodebase) {
+                throw new ConfigurationException(
+                    "The object factory is untrusted. Set the system property" +
+                    " 'com.sun.jndi.rmi.object.trustURLCodebase' to 'true'.");
+            }
             return NamingManager.getObjectInstance(obj, name, this,
                                                    environment);
         } catch (NamingException e) {

@@ -29,13 +29,11 @@ import java.util.*;
 import java.io.IOException;
 import java.io.File;
 
-// Sun specific
 import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.VirtualMachineDescriptor;
 import com.sun.tools.attach.AttachNotSupportedException;
 
-// Sun private
-import sun.management.ConnectorAddressLink;
+import jdk.internal.agent.ConnectorAddressLink;
 import sun.jvmstat.monitor.HostIdentifier;
 import sun.jvmstat.monitor.MonitoredHost;
 import sun.jvmstat.monitor.MonitoredVm;

@@ -25,7 +25,7 @@
  * @test CorrectnessTest
  * @bug 8038418
  * @summary Tests correctness of type usage with type profiling and speculations
- * @requires vm.flavor == "server"
+ * @requires vm.flavor == "server" & !vm.emulatedClient
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -88,8 +88,8 @@ public class CorrectnessTest {
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
 
     public static void main(String[] args) {
-        if (!Platform.isServer()) {
-            throw new Error("TESTBUG: Not server VM");
+        if (!Platform.isServer() || Platform.isEmulatedClient()) {
+            throw new Error("TESTBUG: Not server mode");
         }
         Asserts.assertGTE(args.length, 1);
         ProfilingType profilingType = ProfilingType.valueOf(args[0]);

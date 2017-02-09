@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,46 +25,33 @@
 
 package sun.security.util;
 
+import java.util.Map;
+import java.util.ResourceBundle;
+import java.util.concurrent.ConcurrentHashMap;
+import jdk.internal.misc.VM;
+
 /**
  */
 public class ResourcesMgr {
-
     // intended for java.security, javax.security and sun.security resources
-    private static java.util.ResourceBundle bundle;
-
-    // intended for com.sun.security resources
-    private static java.util.ResourceBundle altBundle;
+    private final static Map<String, ResourceBundle> bundles = new ConcurrentHashMap<>();
 
     public static String getString(String s) {
-
-        if (bundle == null) {
-
-            // only load if/when needed
-            bundle = java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<java.util.ResourceBundle>() {
-                public java.util.ResourceBundle run() {
-                    return (java.util.ResourceBundle.getBundle
-                                ("sun.security.util.Resources"));
-                }
-            });
-        }
-
-        return bundle.getString(s);
+        return getBundle("sun.security.util.Resources").getString(s);
     }
 
-    public static String getString(String s, final String altBundleName) {
-
-        if (altBundle == null) {
-
-            // only load if/when needed
-            altBundle = java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<java.util.ResourceBundle>() {
-                public java.util.ResourceBundle run() {
-                    return (java.util.ResourceBundle.getBundle(altBundleName));
-                }
-            });
-        }
-
-        return altBundle.getString(s);
+    public static String getAuthResourceString(String s) {
+        return getBundle("sun.security.util.AuthResources").getString(s);
     }
+
+    private static ResourceBundle getBundle(String bundleName) {
+        if (!VM.isBooted()) {
+            // don't expect this be called before the system is fully initialized.
+            // This triggers loading of any resource bundle that should be
+            // be done during initialization of system class loader.
+            throw new InternalError("Expected to use ResourceBundle only after booted");
+        }
+        return bundles.computeIfAbsent(bundleName, ResourceBundle::getBundle);
+    }
+
 }

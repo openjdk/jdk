@@ -26,7 +26,7 @@
  * @bug 8058865
  * @summary Checks various authentication behavior from remote jmx client
  * @author Olivier Lagneau
- * @modules java.management
+ * @modules java.management.rmi
  * @library /lib/testlibrary
  * @compile Simple.java
  * @run main/othervm/timeout=300 -DDEBUG_STANDARD -Dusername=username1 -Dpassword=password1 AuthorizationTest -server -mapType x.access.file;x.password.file -populate -client -mapType credentials

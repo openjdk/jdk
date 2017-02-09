@@ -32,7 +32,7 @@ import java.util.*;
 @SuppressWarnings({"serial","unchecked"})
 public class Bug6533203 {
     void test(String[] args) throws Throwable {
-        final List<Integer> superstitious = new ArrayList<Integer>() {
+        final List<Integer> superstitious = new ArrayList<>() {
             public void add(int index, Integer i) {
                 if (i == 13) throw new Error("unlucky");
                 else super.add(index, i); }};

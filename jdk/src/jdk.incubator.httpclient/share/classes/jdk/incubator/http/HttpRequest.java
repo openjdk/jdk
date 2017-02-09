@@ -39,10 +39,13 @@ import java.util.concurrent.Flow;
 import java.util.function.Supplier;
 
 /**
- * Represents one HTTP request which can be sent to a server. {@code
- * HttpRequest}s are built from {@code HttpRequest} {@link HttpRequest.Builder
- * builder}s. {@code HttpRequest} builders are obtained
- * by calling {@link HttpRequest#newBuilder(java.net.URI) HttpRequest.newBuilder}.
+ * Represents one HTTP request which can be sent to a server.
+ * {@Incubating }
+ *
+ * <p> {@code HttpRequest}s are built from {@code HttpRequest}
+ * {@link HttpRequest.Builder builder}s. {@code HttpRequest} builders are
+ * obtained by calling {@link HttpRequest#newBuilder(java.net.URI)
+ * HttpRequest.newBuilder}.
  * A request's {@link java.net.URI}, headers and body can be set. Request bodies
  * are provided through a {@link BodyProcessor} object supplied to the
  * {@link Builder#DELETE(jdk.incubator.http.HttpRequest.BodyProcessor) DELETE},
@@ -250,9 +253,11 @@ public abstract class HttpRequest {
     protected HttpRequest() {}
 
     /**
-     * A builder of {@link HttpRequest}s. {@code HttpRequest.Builder}s are
-     * created by calling {@link HttpRequest#newBuilder(URI)} or {@link
-     * HttpRequest#newBuilder()}.
+     * A builder of {@link HttpRequest}s.
+     * {@Incubating}
+     *
+     * <p> {@code HttpRequest.Builder}s are created by calling {@link
+     * HttpRequest#newBuilder(URI)} or {@link HttpRequest#newBuilder()}.
      *
      * <p> Each of the setter methods in this class modifies the state of the
      * builder and returns <i>this</i> (ie. the same instance). The methods are
@@ -521,8 +526,10 @@ public abstract class HttpRequest {
     /**
      * A processor which converts high level Java objects into flows of
      * {@link java.nio.ByteBuffer}s suitable for sending as request bodies.
-     * {@code BodyProcessor}s implement {@link Flow.Publisher} which means they act as a
-     * publisher of byte buffers.
+     * {@Incubating}
+     * <p>
+     * {@code BodyProcessor}s implement {@link Flow.Publisher} which means they
+     * act as a publisher of byte buffers.
      * <p>
      * The HTTP client implementation subscribes to the processor in
      * order to receive the flow of outgoing data buffers. The normal semantics

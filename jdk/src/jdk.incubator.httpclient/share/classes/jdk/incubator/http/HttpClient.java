@@ -40,6 +40,7 @@ import javax.net.ssl.SSLParameters;
 /**
  * A container for configuration information common to multiple {@link
  * HttpRequest}s. All requests are sent through a {@code HttpClient}.
+ * {@Incubating}
  *
  * <p> {@code HttpClient}s are immutable and created from a builder returned
  * from {@link HttpClient#newBuilder()}. Request builders are created by calling
@@ -76,7 +77,8 @@ public abstract class HttpClient {
 
     /**
      * A builder of immutable {@link HttpClient}s. {@code HttpClient.Builder}s
-     * are created by calling {@link HttpClient#newBuilder() }
+     * are created by calling {@link HttpClient#newBuilder()}.
+     * {@Incubating}
      *
      * <p> Each of the setter methods in this class modifies the state of the
      * builder and returns <i>this</i> (ie. the same instance). The methods are
@@ -283,6 +285,7 @@ public abstract class HttpClient {
 
     /**
      * The HTTP protocol version.
+     * {@Incubating}
      *
      * @since 9
      */
@@ -300,10 +303,12 @@ public abstract class HttpClient {
     }
 
     /**
-     * Defines automatic redirection policy. This is checked whenever a {@code 3XX}
-     * response code is received. If redirection does not happen automatically
-     * then the response is returned to the user, where it can be handled
-     * manually.
+     * Defines automatic redirection policy.
+     * {@Incubating}
+     *
+     * <p> This is checked whenever a {@code 3XX} response code is received. If
+     * redirection does not happen automatically then the response is returned
+     * to the user, where it can be handled manually.
      *
      * <p> {@code Redirect} policy is set via the {@link
      * HttpClient.Builder#followRedirects(HttpClient.Redirect)} method.

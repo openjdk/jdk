@@ -254,7 +254,7 @@ public class RemoveMicroBenchmark {
 //             "iterations=%d size=%d, warmup=%1g, filter=\"%s\"%n",
 //             iterations, size, warmupSeconds, filter);
 
-        final ArrayList<Integer> al = new ArrayList<Integer>(size);
+        final ArrayList<Integer> al = new ArrayList<>(size);
 
         // Populate collections with random data
         final ThreadLocalRandom rnd = ThreadLocalRandom.current();
@@ -333,7 +333,7 @@ public class RemoveMicroBenchmark {
         Supplier<Collection<Integer>> supplier,
         ArrayList<Integer> al) {
         return List.of(
-            new Job(description + " .removeIf") {
+            new Job(description + " removeIf") {
                 public void work() throws Throwable {
                     Collection<Integer> x = supplier.get();
                     int[] sum = new int[1];
@@ -342,7 +342,21 @@ public class RemoveMicroBenchmark {
                         x.addAll(al);
                         x.removeIf(n -> { sum[0] += n; return true; });
                         check.sum(sum[0]);}}},
-            new Job(description + " .removeAll") {
+            new Job(description + " removeIf rnd-two-pass") {
+                public void work() throws Throwable {
+                    ThreadLocalRandom rnd = ThreadLocalRandom.current();
+                    Collection<Integer> x = supplier.get();
+                    int[] sum = new int[1];
+                    for (int i = 0; i < iterations; i++) {
+                        sum[0] = 0;
+                        x.addAll(al);
+                        x.removeIf(n -> {
+                            boolean b = rnd.nextBoolean();
+                            if (b) sum[0] += n;
+                            return b; });
+                        x.removeIf(n -> { sum[0] += n; return true; });
+                        check.sum(sum[0]);}}},
+            new Job(description + " removeAll") {
                 public void work() throws Throwable {
                     Collection<Integer> x = supplier.get();
                     int[] sum = new int[1];
@@ -352,7 +366,7 @@ public class RemoveMicroBenchmark {
                         x.addAll(al);
                         x.removeAll(universe);
                         check.sum(sum[0]);}}},
-            new Job(description + " .retainAll") {
+            new Job(description + " retainAll") {
                 public void work() throws Throwable {
                     Collection<Integer> x = supplier.get();
                     int[] sum = new int[1];
@@ -371,6 +385,28 @@ public class RemoveMicroBenchmark {
                         x.addAll(al);
                         Iterator<Integer> it = x.iterator();
                         while (it.hasNext()) {
+                            sum[0] += it.next();
+                            it.remove();
+                        }
+                        check.sum(sum[0]);}}},
+            new Job(description + " Iterator.remove-rnd-two-pass") {
+                public void work() throws Throwable {
+                    ThreadLocalRandom rnd = ThreadLocalRandom.current();
+                    Collection<Integer> x = supplier.get();
+                    int[] sum = new int[1];
+                    for (int i = 0; i < iterations; i++) {
+                        sum[0] = 0;
+                        x.addAll(al);
+                        for (Iterator<Integer> it = x.iterator();
+                             it.hasNext(); ) {
+                            Integer e = it.next();
+                            if (rnd.nextBoolean()) {
+                                sum[0] += e;
+                                it.remove();
+                            }
+                        }
+                        for (Iterator<Integer> it = x.iterator();
+                             it.hasNext(); ) {
                             sum[0] += it.next();
                             it.remove();
                         }

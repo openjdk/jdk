@@ -46,7 +46,7 @@ import java.io.IOException;
 import com.sun.tools.attach.VirtualMachine;
 
 // Sun implementation specific
-import sun.management.ConnectorAddressLink;
+import jdk.internal.agent.ConnectorAddressLink;
 
 public class TestManager {
 
@@ -57,7 +57,7 @@ public class TestManager {
         try {
             VirtualMachine.attach(pid).startLocalManagementAgent();
         } catch (Exception x) {
-            throw new IOException(x.getMessage());
+            throw new IOException(x.getMessage(), x);
         }
     }
 

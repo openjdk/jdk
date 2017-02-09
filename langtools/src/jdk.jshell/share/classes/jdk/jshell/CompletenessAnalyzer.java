@@ -85,7 +85,7 @@ class CompletenessAnalyzer {
         try {
             Parser parser = new Parser(
                     () -> new Matched(scannerFactory.newScanner(s, false)),
-                    () -> proc.taskFactory.new ParseTask(s));
+                    () -> proc.taskFactory.parse(s));
             Completeness stat = parser.parseUnit();
             int endPos = stat == Completeness.UNKNOWN
                     ? s.length()

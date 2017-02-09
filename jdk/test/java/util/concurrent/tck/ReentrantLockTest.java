@@ -236,7 +236,7 @@ public class ReentrantLockTest extends JSR166TestCase {
     public void testUnlock_IMSE()      { testUnlock_IMSE(false); }
     public void testUnlock_IMSE_fair() { testUnlock_IMSE(true); }
     public void testUnlock_IMSE(boolean fair) {
-        ReentrantLock lock = new ReentrantLock(fair);
+        final ReentrantLock lock = new ReentrantLock(fair);
         try {
             lock.unlock();
             shouldThrow();
@@ -426,11 +426,11 @@ public class ReentrantLockTest extends JSR166TestCase {
     public void testTryLock_Timeout_fair() { testTryLock_Timeout(true); }
     public void testTryLock_Timeout(boolean fair) {
         final PublicReentrantLock lock = new PublicReentrantLock(fair);
+        final long timeoutMillis = timeoutMillis();
         lock.lock();
         Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
                 long startTime = System.nanoTime();
-                long timeoutMillis = 10;
                 assertFalse(lock.tryLock(timeoutMillis, MILLISECONDS));
                 assertTrue(millisElapsedSince(startTime) >= timeoutMillis);
             }});
@@ -445,7 +445,7 @@ public class ReentrantLockTest extends JSR166TestCase {
     public void testGetHoldCount()      { testGetHoldCount(false); }
     public void testGetHoldCount_fair() { testGetHoldCount(true); }
     public void testGetHoldCount(boolean fair) {
-        ReentrantLock lock = new ReentrantLock(fair);
+        final ReentrantLock lock = new ReentrantLock(fair);
         for (int i = 1; i <= SIZE; i++) {
             lock.lock();
             assertEquals(i, lock.getHoldCount());
@@ -462,8 +462,8 @@ public class ReentrantLockTest extends JSR166TestCase {
     public void testIsLocked()      { testIsLocked(false); }
     public void testIsLocked_fair() { testIsLocked(true); }
     public void testIsLocked(boolean fair) {
+        final ReentrantLock lock = new ReentrantLock(fair);
         try {
-            final ReentrantLock lock = new ReentrantLock(fair);
             assertFalse(lock.isLocked());
             lock.lock();
             assertTrue(lock.isLocked());
@@ -550,18 +550,18 @@ public class ReentrantLockTest extends JSR166TestCase {
     public void testAwaitNanos_Timeout()      { testAwaitNanos_Timeout(false); }
     public void testAwaitNanos_Timeout_fair() { testAwaitNanos_Timeout(true); }
     public void testAwaitNanos_Timeout(boolean fair) {
+        final ReentrantLock lock = new ReentrantLock(fair);
+        final Condition c = lock.newCondition();
+        final long timeoutMillis = timeoutMillis();
+        final long timeoutNanos = MILLISECONDS.toNanos(timeoutMillis);
+        lock.lock();
+        final long startTime = System.nanoTime();
         try {
-            final ReentrantLock lock = new ReentrantLock(fair);
-            final Condition c = lock.newCondition();
-            lock.lock();
-            long startTime = System.nanoTime();
-            long timeoutMillis = 10;
-            long timeoutNanos = MILLISECONDS.toNanos(timeoutMillis);
             long nanosRemaining = c.awaitNanos(timeoutNanos);
             assertTrue(nanosRemaining <= 0);
-            assertTrue(millisElapsedSince(startTime) >= timeoutMillis);
-            lock.unlock();
         } catch (InterruptedException fail) { threadUnexpectedException(fail); }
+        assertTrue(millisElapsedSince(startTime) >= timeoutMillis);
+        lock.unlock();
     }
 
     /**
@@ -570,16 +570,16 @@ public class ReentrantLockTest extends JSR166TestCase {
     public void testAwait_Timeout()      { testAwait_Timeout(false); }
     public void testAwait_Timeout_fair() { testAwait_Timeout(true); }
     public void testAwait_Timeout(boolean fair) {
+        final ReentrantLock lock = new ReentrantLock(fair);
+        final Condition c = lock.newCondition();
+        final long timeoutMillis = timeoutMillis();
+        lock.lock();
+        final long startTime = System.nanoTime();
         try {
-            final ReentrantLock lock = new ReentrantLock(fair);
-            final Condition c = lock.newCondition();
-            lock.lock();
-            long startTime = System.nanoTime();
-            long timeoutMillis = 10;
             assertFalse(c.await(timeoutMillis, MILLISECONDS));
-            assertTrue(millisElapsedSince(startTime) >= timeoutMillis);
-            lock.unlock();
         } catch (InterruptedException fail) { threadUnexpectedException(fail); }
+        assertTrue(millisElapsedSince(startTime) >= timeoutMillis);
+        lock.unlock();
     }
 
     /**
@@ -588,17 +588,17 @@ public class ReentrantLockTest extends JSR166TestCase {
     public void testAwaitUntil_Timeout()      { testAwaitUntil_Timeout(false); }
     public void testAwaitUntil_Timeout_fair() { testAwaitUntil_Timeout(true); }
     public void testAwaitUntil_Timeout(boolean fair) {
+        final ReentrantLock lock = new ReentrantLock(fair);
+        final Condition c = lock.newCondition();
+        lock.lock();
+        // We shouldn't assume that nanoTime and currentTimeMillis
+        // use the same time source, so don't use nanoTime here.
+        final java.util.Date delayedDate = delayedDate(timeoutMillis());
         try {
-            final ReentrantLock lock = new ReentrantLock(fair);
-            final Condition c = lock.newCondition();
-            lock.lock();
-            // We shouldn't assume that nanoTime and currentTimeMillis
-            // use the same time source, so don't use nanoTime here.
-            java.util.Date delayedDate = delayedDate(timeoutMillis());
             assertFalse(c.awaitUntil(delayedDate));
-            assertTrue(new java.util.Date().getTime() >= delayedDate.getTime());
-            lock.unlock();
         } catch (InterruptedException fail) { threadUnexpectedException(fail); }
+        assertTrue(new java.util.Date().getTime() >= delayedDate.getTime());
+        lock.unlock();
     }
 
     /**
@@ -1127,7 +1127,7 @@ public class ReentrantLockTest extends JSR166TestCase {
     public void testSerialization()      { testSerialization(false); }
     public void testSerialization_fair() { testSerialization(true); }
     public void testSerialization(boolean fair) {
-        ReentrantLock lock = new ReentrantLock(fair);
+        final ReentrantLock lock = new ReentrantLock(fair);
         lock.lock();
 
         ReentrantLock clone = serialClone(lock);
@@ -1153,10 +1153,10 @@ public class ReentrantLockTest extends JSR166TestCase {
     public void testToString()      { testToString(false); }
     public void testToString_fair() { testToString(true); }
     public void testToString(boolean fair) {
-        ReentrantLock lock = new ReentrantLock(fair);
+        final ReentrantLock lock = new ReentrantLock(fair);
         assertTrue(lock.toString().contains("Unlocked"));
         lock.lock();
-        assertTrue(lock.toString().contains("Locked"));
+        assertTrue(lock.toString().contains("Locked by"));
         lock.unlock();
         assertTrue(lock.toString().contains("Unlocked"));
     }

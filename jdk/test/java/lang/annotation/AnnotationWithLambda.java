@@ -43,7 +43,7 @@ import static org.testng.Assert.*;
 public class AnnotationWithLambda {
 
     @Test
-    void testAnnotationWithLambda() {
+    public void testAnnotationWithLambda() {
         Method[] methods = AnnotationWithLambda.MethodsWithAnnotations.class.getDeclaredMethods();
         for (Method method : methods) {
             assertTrue((method.isAnnotationPresent(LambdaWithParameter.class)) &&

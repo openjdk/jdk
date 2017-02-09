@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ package jdk.javadoc.internal.tool;
 import java.util.*;
 
 import javax.lang.model.element.Element;
-import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 import javax.tools.JavaFileManager;
@@ -116,8 +115,6 @@ public class ToolEnvironment {
 
     WeakHashMap<JCTree, TreePath> treePaths = new WeakHashMap<>();
 
-    public final HashMap<PackageElement, JavaFileObject> pkgToJavaFOMap = new HashMap<>();
-
     /** Allow documenting from class files? */
     boolean docClasses = false;
 
@@ -193,21 +190,11 @@ public class ToolEnvironment {
         elementToTreePath.put(e, tree);
     }
 
-    /**
-     * Returns true if the type element originates from source.
-     * Primarily used to disambiguate a type element associated with a source
-     * file versus a class file.
-     * @param te the type element
-     * @return true if the symbol is from source
-     */
-    public boolean isFromSource(TypeElement te) {
-        return getFileKind(te) == Kind.SOURCE;
-    }
-
     public Kind getFileKind(TypeElement te) {
         JavaFileObject jfo = ((ClassSymbol)te).outermostClass().classfile;
         return jfo == null ? Kind.SOURCE : jfo.getKind();
     }
+
     /**
      * Print a notice, iff <em>quiet</em> is not specified.
      *

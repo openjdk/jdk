@@ -414,6 +414,133 @@ public class TIFFIFD extends TIFFDirectory {
     }
 
     //
+    // Retrieve the value of a baseline field as a long.
+    //
+    private long getFieldAsLong(int tagNumber) {
+        TIFFField f = getTIFFField(tagNumber);
+        return f == null ? -1 : f.getAsLong(0);
+    }
+
+    //
+    // Retrieve the value of a baseline field as an int.
+    //
+    private int getFieldAsInt(int tagNumber) {
+        TIFFField f = getTIFFField(tagNumber);
+        return f == null ? -1 : f.getAsInt(0);
+    }
+
+    //
+    // Calculate the number of bytes in each strip or tile. This method
+    // is to be used if and only if no fields exist which provide this
+    // information. The parameter must be empty and if the method succeeds
+    // will contain a single element.
+    //
+    private boolean calculateByteCounts(int expectedSize,
+        List<TIFFField> byteCounts) {
+        if (!byteCounts.isEmpty()) {
+            throw new IllegalArgumentException("byteCounts is not empty");
+        }
+
+        // must be interleaved
+        if (getFieldAsInt(BaselineTIFFTagSet.TAG_PLANAR_CONFIGURATION) ==
+            BaselineTIFFTagSet.PLANAR_CONFIGURATION_PLANAR) {
+            return false;
+        }
+
+        // must be uncompressed
+        if (getFieldAsInt(BaselineTIFFTagSet.TAG_COMPRESSION) !=
+            BaselineTIFFTagSet.COMPRESSION_NONE) {
+            return false;
+        }
+
+        // must have image dimensions
+        long w = getFieldAsLong(BaselineTIFFTagSet.TAG_IMAGE_WIDTH);
+        if (w < 0) {
+            return false;
+        }
+        long h = getFieldAsLong(BaselineTIFFTagSet.TAG_IMAGE_LENGTH);
+        if (h < 0) {
+            return false;
+        }
+
+        long tw = getFieldAsLong(BaselineTIFFTagSet.TAG_TILE_WIDTH);
+        if (tw < 0) {
+            tw = w;
+        }
+        long th = getFieldAsLong(BaselineTIFFTagSet.TAG_TILE_LENGTH);
+        if (th < 0) {
+            th = getFieldAsLong(BaselineTIFFTagSet.TAG_ROWS_PER_STRIP);
+            if (th < 0) {
+                th = h;
+            }
+        }
+
+        int[] bitsPerSample = null;
+        TIFFField f = getTIFFField(BaselineTIFFTagSet.TAG_BITS_PER_SAMPLE);
+        if (f != null) {
+            bitsPerSample = f.getAsInts();
+        } else {
+            int samplesPerPixel =
+                getFieldAsInt(BaselineTIFFTagSet.TAG_SAMPLES_PER_PIXEL);
+            if (samplesPerPixel < 0) {
+                samplesPerPixel = 1;
+            }
+            bitsPerSample = new int[samplesPerPixel];
+            Arrays.fill(bitsPerSample, 8);
+        }
+
+        int bitsPerPixel = 0;
+        for (int bps : bitsPerSample) {
+            bitsPerPixel += bps;
+        }
+
+        int bytesPerRow = (int)(tw*bitsPerPixel + 7)/8;
+        int bytesPerPacket = (int)th*bytesPerRow;
+
+        long nx = (w + tw - 1)/tw;
+        long ny = (h + th - 1)/th;
+
+        if (nx*ny != expectedSize) {
+            return false;
+        }
+
+        boolean isTiled =
+            getTIFFField(BaselineTIFFTagSet.TAG_TILE_BYTE_COUNTS) != null;
+
+        int tagNumber;
+        if (isTiled) {
+            tagNumber = BaselineTIFFTagSet.TAG_TILE_BYTE_COUNTS;
+        } else {
+            tagNumber = BaselineTIFFTagSet.TAG_STRIP_BYTE_COUNTS;
+        }
+
+        TIFFTag t = BaselineTIFFTagSet.getInstance().getTag(tagNumber);
+        f = getTIFFField(tagNumber);
+        if (f != null) {
+            removeTIFFField(tagNumber);
+        }
+
+        int numPackets = (int)(nx*ny);
+        long[] packetByteCounts = new long[numPackets];
+        Arrays.fill(packetByteCounts, bytesPerPacket);
+
+        // if the strip or tile width does not exceed the image width and the
+        // image height is not a multiple of the strip or tile height, then
+        // truncate the estimate of the byte count of the last strip to avoid
+        // reading past the end of the data
+        if (tw <= w && h % th != 0) {
+            int numRowsInLastStrip = (int)(h - (ny - 1)*th);
+            packetByteCounts[numPackets - 1] = numRowsInLastStrip*bytesPerRow;
+        }
+
+        f = new TIFFField(t, TIFFTag.TIFF_LONG, numPackets, packetByteCounts);
+        addTIFFField(f);
+        byteCounts.add(f);
+
+        return true;
+    }
+
+    //
     // Verify that data pointed to outside of the IFD itself are within the
     // stream. To be called after all fields have been read and populated.
     //
@@ -502,8 +629,19 @@ public class TIFFIFD extends TIFFDirectory {
 
         // Ensure there is at least a data pointer for JPEG interchange format or
         // both data offsets and byte counts for other compression types.
-        if (jpegOffset == null && (offsets.size() == 0 || byteCounts.size() == 0)) {
-            throw new IIOException("Insufficient data offsets or byte counts");
+        if (jpegOffset == null
+            && (offsets.size() == 0 || byteCounts.size() == 0)) {
+            boolean throwException = true;
+            if (offsets.size() != 0 && byteCounts.size() == 0) {
+                // Attempt to calculate missing byte counts
+                int expectedSize = offsets.get(0).getCount();
+                throwException =
+                    !calculateByteCounts(expectedSize, byteCounts);
+            }
+            if (throwException) {
+                throw new IIOException
+                    ("Insufficient data offsets or byte counts");
+            }
         }
 
         // JPEGQTables - one 64-byte table for each offset.

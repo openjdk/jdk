@@ -28,6 +28,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.stream.IntStream;
 import jdk.jshell.spi.ExecutionControl;
 import jdk.jshell.spi.SPIResolutionException;
 
@@ -40,6 +41,23 @@ import jdk.jshell.spi.SPIResolutionException;
  * @author Jan Lahoda
  */
 public class DirectExecutionControl implements ExecutionControl {
+
+    private static final String[] charRep;
+
+    static {
+        charRep = new String[256];
+        for (int i = 0; i < charRep.length; ++i) {
+            charRep[i] = Character.isISOControl(i)
+                    ? String.format("\\%03o", i)
+                    : "" + (char) i;
+        }
+        charRep['\b'] = "\\b";
+        charRep['\t'] = "\\t";
+        charRep['\n'] = "\\n";
+        charRep['\f'] = "\\f";
+        charRep['\r'] = "\\r";
+        charRep['\\'] = "\\\\";
+    }
 
     private final LoaderDelegate loaderDelegate;
 
@@ -192,9 +210,26 @@ public class DirectExecutionControl implements ExecutionControl {
         if (value == null) {
             return "null";
         } else if (value instanceof String) {
-            return "\"" + (String) value + "\"";
+            return "\"" + ((String) value).codePoints()
+                    .flatMap(cp ->
+                        (cp == '"')
+                            ? "\\\"".codePoints()
+                            : (cp < 256)
+                                ? charRep[cp].codePoints()
+                                : IntStream.of(cp))
+                    .collect(
+                            StringBuilder::new,
+                            StringBuilder::appendCodePoint,
+                            StringBuilder::append)
+                    .toString() + "\"";
         } else if (value instanceof Character) {
-            return "'" + value + "'";
+            char cp = (char) (Character) value;
+            return "'" + (
+                (cp == '\'')
+                    ? "\\\'"
+                    : (cp < 256)
+                            ? charRep[cp]
+                            : String.valueOf(cp)) + "'";
         } else if (value.getClass().isArray()) {
             int dims = 0;
             Class<?> t = value.getClass();
