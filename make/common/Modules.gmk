@@ -115,6 +115,7 @@ PLATFORM_MODULES += \
     jdk.scripting.nashorn \
     jdk.security.auth \
     jdk.security.jgss \
+    jdk.vm.compiler \
     jdk.xml.dom \
     jdk.zipfs \
     #
