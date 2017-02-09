@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -45,10 +45,8 @@ define_pd_global(bool, TieredCompilation,            false);
 // We compile very aggressively with the builtin simulator because
 // doing so greatly reduces run times and tests more code.
 define_pd_global(intx, CompileThreshold,             150 );
-define_pd_global(intx, BackEdgeThreshold,            500);
 #else
 define_pd_global(intx, CompileThreshold,             1500 );
-define_pd_global(intx, BackEdgeThreshold,            100000);
 #endif
 
 define_pd_global(intx, OnStackReplacePercentage,     933  );
@@ -75,7 +73,5 @@ define_pd_global(bool, LIRFillDelaySlots,            false);
 define_pd_global(bool, OptimizeSinglePrecision,      true );
 define_pd_global(bool, CSEArrayLength,               false);
 define_pd_global(bool, TwoOperandLIRForm,            false );
-
-define_pd_global(intx, SafepointPollOffset,          0  );
 
 #endif // CPU_AARCH64_VM_C1_GLOBALS_AARCH64_HPP
