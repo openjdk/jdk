@@ -751,7 +751,7 @@ class CompileReplay : public StackObj {
 
     assert(k->is_initialized(), "must be");
 
-    const char* field_name = parse_escaped_string();;
+    const char* field_name = parse_escaped_string();
     const char* field_signature = parse_string();
     fieldDescriptor fd;
     Symbol* name = SymbolTable::lookup(field_name, (int)strlen(field_name), CHECK);
@@ -840,9 +840,8 @@ class CompileReplay : public StackObj {
         Handle value = java_lang_String::create_from_str(string_value, CHECK);
         java_mirror->obj_field_put(fd.offset(), value());
       } else if (field_signature[0] == 'L') {
-        Symbol* klass_name = SymbolTable::lookup(field_signature, (int)strlen(field_signature), CHECK);
-        KlassHandle kelem = resolve_klass(field_signature, CHECK);
-        oop value = InstanceKlass::cast(kelem())->allocate_instance(CHECK);
+        KlassHandle k = resolve_klass(string_value, CHECK);
+        oop value = InstanceKlass::cast(k())->allocate_instance(CHECK);
         java_mirror->obj_field_put(fd.offset(), value);
       } else {
         report_error("unhandled staticfield");
