@@ -5170,7 +5170,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1486175373
+DATE_WHEN_GENERATED=1486465953
 
 ###############################################################################
 #
@@ -24091,6 +24091,20 @@ $as_echo "$tool_specified" >&6; }
 
   fi
 
+
+  # Check bash version
+  # Extra [ ] to stop m4 mangling
+   BASH_VER=`$BASH --version | $SED -n  -e 's/^.*bash.*ersion *\([0-9.]*\).*$/\1/ p'`
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking bash version" >&5
+$as_echo_n "checking bash version... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BASH_VER" >&5
+$as_echo "$BASH_VER" >&6; }
+
+  BASH_MAJOR=`$ECHO $BASH_VER | $CUT -d . -f 1`
+  BASH_MINOR=`$ECHO $BASH_VER | $CUT -d . -f 2`
+  if test $BASH_MAJOR -lt 3 || (test $BASH_MAJOR -eq 3 && test $BASH_MINOR -lt 2); then
+    as_fn_error $? "bash version 3.2 or better is required" "$LINENO" 5
+  fi
 
   # Test if bash supports pipefail.
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if bash supports pipefail" >&5
