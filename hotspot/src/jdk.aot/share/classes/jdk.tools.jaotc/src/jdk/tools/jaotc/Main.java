@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,9 +134,6 @@ public class Main implements LogPrinter {
         @Override
         void process(Main task, String opt, String arg) {
             String name = arg;
-            if (name.endsWith(".so")) {
-                name = name.substring(0, name.length() - ".so".length());
-            }
             task.options.outputName = name;
         }
     }, new Option("  --compile-commands <file>  Name of file with compile commands", true, "--compile-commands") {
@@ -216,7 +213,7 @@ public class Main implements LogPrinter {
         public List<String> files = new LinkedList<>();
         public String module = null;
         public String modulepath = "modules";
-        public String outputName = "unnamed";
+        public String outputName = "unnamed.so";
         public String methodList;
         public String classpath = ".";
 
@@ -317,6 +314,21 @@ public class Main implements LogPrinter {
         }
     }
 
+    /**
+     * Search for Visual Studio link.exe
+     * Search Order is:  VS2013, VS2015, VS2012
+     */
+    private String getWindowsLinkPath() {
+        String vs2013 = "C:\\Program Files (x86)\\Microsoft Visual Studio 12.0\\VC\\bin\\amd64\\link.exe";
+        String vs2015 = "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\bin\\amd64\\link.exe";
+        String vs2012 = "C:\\Program Files (x86)\\Microsoft Visual Studio 11.0\\VC\\bin\\amd64\\link.exe";
+
+        if (new File(vs2015).exists()) return vs2015;
+        if (new File(vs2013).exists()) return vs2013;
+        if (new File(vs2012).exists()) return vs2012;
+        return null;
+    }
+
     @SuppressWarnings("try")
     private void run() throws Exception {
         openLog();
@@ -399,8 +411,57 @@ public class Main implements LogPrinter {
                 System.gc();
             }
 
-            String objectFileName = options.outputName + ".o";
-            String libraryFileName = options.outputName + ".so";
+            String name = options.outputName;
+            String objectFileName = name;
+
+            // [TODO] The jtregs tests expect .so extension so don't
+            // override with platform specific file extension until the
+            // tests are fixed.
+            String libraryFileName = name;
+
+            String ldCmd;
+            String osName = System.getProperty("os.name");
+
+            if (name.endsWith(".so")) {
+                objectFileName = name.substring(0, name.length() - ".so".length());
+            }
+            else if (name.endsWith(".dylib")) {
+                objectFileName = name.substring(0, name.length() - ".dylib".length());
+            }
+            else if (name.endsWith(".dll")) {
+                objectFileName = name.substring(0, name.length() - ".dll".length());
+            }
+
+            switch (osName) {
+                case "Linux":
+                    // libraryFileName = options.outputName + ".so";
+                    objectFileName = objectFileName + ".o";
+                    ldCmd = "ld -shared -z noexecstack -o " + libraryFileName + " " + objectFileName;
+                    break;
+                case "SunOS":
+                    // libraryFileName = options.outputName + ".so";
+                    objectFileName = objectFileName + ".o";
+                    ldCmd = "ld -shared -o " + libraryFileName + " " + objectFileName;
+                    break;
+                case "Mac OS X":
+                    // libraryFileName = options.outputName + ".dylib";
+                    objectFileName = objectFileName + ".o";
+                    ldCmd = "ld -dylib -o " + libraryFileName + " " + objectFileName;
+                    break;
+                default:
+                    if (osName.startsWith("Windows")) {
+                        // libraryFileName = options.outputName + ".dll";
+                        objectFileName = objectFileName + ".obj";
+                        String linkpath = getWindowsLinkPath();
+                        if (linkpath == null) {
+                            throw new InternalError("Can't locate Microsoft Visual Studio amd64 link.exe");
+                        }
+                        ldCmd = linkpath + " /DLL /OPT:NOREF /NOLOGO /NOENTRY" + " /OUT:" + libraryFileName + " " + objectFileName;
+                        break;
+                    }
+                    else
+                        throw new InternalError("Unsupported platform: " + osName);
+            }
 
             try (Timer t = new Timer(this, "Creating binary: " + objectFileName)) {
                 binaryContainer.createBinary(objectFileName, JVM_VERSION);
@@ -414,7 +475,7 @@ public class Main implements LogPrinter {
             }
 
             try (Timer t = new Timer(this, "Creating shared library: " + libraryFileName)) {
-                Process p = Runtime.getRuntime().exec("ld -shared -z noexecstack -o " + libraryFileName + " " + objectFileName);
+                Process p = Runtime.getRuntime().exec(ldCmd);
                 final int exitCode = p.waitFor();
                 if (exitCode != 0) {
                     InputStream stderr = p.getErrorStream();
@@ -432,7 +493,7 @@ public class Main implements LogPrinter {
                 }
                 // Make non-executable for all.
                 File libFile = new File(libraryFileName);
-                if (libFile.exists()) {
+                if (libFile.exists() && !osName.startsWith("Windows")) {
                     if (!libFile.setExecutable(false, false)) {
                         throw new InternalError("Failed to change attribute for " + libraryFileName + " file");
                     }

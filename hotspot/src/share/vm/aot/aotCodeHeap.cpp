@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ int  AOTLib::_narrow_oop_shift = 0;
 int  AOTLib::_narrow_klass_shift = 0;
 
 address AOTLib::load_symbol(const char *name) {
-  address symbol = (address) dlsym(_dl_handle, name);
+  address symbol = (address) os::dll_lookup(_dl_handle, name);
   if (symbol == NULL) {
     tty->print_cr("Shared file %s error: missing %s", _name, name);
     vm_exit(1);
@@ -224,16 +224,15 @@ AOTCodeHeap::AOTCodeHeap(AOTLib* lib) :
   _method_count = _lib->header()->_method_count;
 
   // Collect metaspace info: names -> address in .got section
-  _metaspace_names = (const char*) _lib->load_symbol("JVM.metaspace.names");
-  _method_metadata =     (address) _lib->load_symbol("JVM.method.metadata");
+  _metaspace_names = (const char*) _lib->load_symbol("JVM.meta.names");
+  _method_metadata =     (address) _lib->load_symbol("JVM.meth.metadata");
   _methods_offsets =     (address) _lib->load_symbol("JVM.methods.offsets");
-  _klasses_offsets =     (address) _lib->load_symbol("JVM.klasses.offsets");
-  _dependencies    =     (address) _lib->load_symbol("JVM.klasses.dependencies");
+  _klasses_offsets =     (address) _lib->load_symbol("JVM.kls.offsets");
+  _dependencies    =     (address) _lib->load_symbol("JVM.kls.dependencies");
   _code_space      =     (address) _lib->load_symbol("JVM.text");
 
   // First cell is number of elements.
-  jlong* got_sect;
-  _metaspace_got      = (Metadata**) _lib->load_symbol("JVM.metaspace.got");
+  _metaspace_got      = (Metadata**) _lib->load_symbol("JVM.meta.got");
   _metaspace_got_size = _lib->header()->_metaspace_got_size;
 
   _metadata_got      = (Metadata**) _lib->load_symbol("JVM.metadata.got");
@@ -249,7 +248,7 @@ AOTCodeHeap::AOTCodeHeap(AOTLib* lib) :
   _code_segments = (address) _lib->load_symbol("JVM.code.segments");
 
   // method state
-  _method_state = (jlong*) _lib->load_symbol("JVM.method.state");
+  _method_state = (jlong*) _lib->load_symbol("JVM.meth.state");
 
   // Create a table for mapping classes
   _classes = NEW_C_HEAP_ARRAY(AOTClass, _class_count, mtCode);
@@ -338,7 +337,7 @@ void AOTCodeHeap::link_primitive_array_klasses() {
     BasicType t = (BasicType)i;
     if (is_java_primitive(t)) {
       const Klass* arr_klass = Universe::typeArrayKlassObj(t);
-      AOTKlassData* klass_data = (AOTKlassData*) dlsym(_lib->dl_handle(), arr_klass->signature_name());
+      AOTKlassData* klass_data = (AOTKlassData*) os::dll_lookup(_lib->dl_handle(), arr_klass->signature_name());
       if (klass_data != NULL) {
         // Set both GOT cells, resolved and initialized klass pointers.
         // _got_index points to second cell - resolved klass pointer.
@@ -391,13 +390,9 @@ void AOTCodeHeap::register_stubs() {
 
 #define SET_AOT_GLOBAL_SYMBOL_VALUE(AOTSYMNAME, AOTSYMTYPE, VMSYMVAL) \
   {                                                                   \
-    char* error;                                                      \
-    /* Clear any existing error */                                    \
-    dlerror();                                                        \
-    AOTSYMTYPE * adr = (AOTSYMTYPE *) dlsym(_lib->dl_handle(), AOTSYMNAME);  \
-    /* Check for any dlsym lookup error */                            \
-    error = dlerror();                                                \
-    guarantee(error == NULL, "%s", error);                            \
+    AOTSYMTYPE * adr = (AOTSYMTYPE *) os::dll_lookup(_lib->dl_handle(), AOTSYMNAME);  \
+    /* Check for a lookup error */                                    \
+    guarantee(adr != NULL, "AOT Symbol not found %s", AOTSYMNAME);    \
     *adr = (AOTSYMTYPE) VMSYMVAL;                                     \
   }
 
@@ -612,7 +607,7 @@ Method* AOTCodeHeap::find_method(KlassHandle klass, Thread* thread, const char* 
 
 AOTKlassData* AOTCodeHeap::find_klass(InstanceKlass* ik) {
   ResourceMark rm;
-  AOTKlassData* klass_data = (AOTKlassData*) dlsym(_lib->dl_handle(), ik->signature_name());
+  AOTKlassData* klass_data = (AOTKlassData*) os::dll_lookup(_lib->dl_handle(), ik->signature_name());
   return klass_data;
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "aot/aotLoader.inline.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "oops/method.hpp"
+#include "runtime/os.hpp"
 
 GrowableArray<AOTCodeHeap*>* AOTLoader::_heaps = new(ResourceObj::C_HEAP, mtCode) GrowableArray<AOTCodeHeap*> (2, true);
 GrowableArray<AOTLib*>* AOTLoader::_libraries = new(ResourceObj::C_HEAP, mtCode) GrowableArray<AOTLib*> (2, true);
@@ -146,13 +147,13 @@ void AOTLoader::initialize() {
 
     for (int i = 0; i < (int) (sizeof(modules) / sizeof(const char*)); i++) {
       char library[JVM_MAXPATHLEN];
-      jio_snprintf(library, sizeof(library), "%s%slib%slib%s%s%s.so", home, file_separator, file_separator, modules[i], UseCompressedOops ? "-coop" : "", UseG1GC ? "" : "-nong1");
+      jio_snprintf(library, sizeof(library), "%s%slib%slib%s%s%s%s", home, file_separator, file_separator, modules[i], UseCompressedOops ? "-coop" : "", UseG1GC ? "" : "-nong1", os::dll_file_extension());
       load_library(library, false);
     }
 
     // Scan the AOTLibrary option.
     if (AOTLibrary != NULL) {
-      const int len = strlen(AOTLibrary);
+      const int len = (int)strlen(AOTLibrary);
       char* cp  = NEW_C_HEAP_ARRAY(char, len+1, mtCode);
       if (cp != NULL) { // No memory?
         memcpy(cp, AOTLibrary, len);
@@ -234,10 +235,11 @@ void AOTLoader::set_narrow_klass_shift() {
 }
 
 void AOTLoader::load_library(const char* name, bool exit_on_error) {
-  void* handle = dlopen(name, RTLD_LAZY);
+  char ebuf[1024];
+  void* handle = os::dll_load(name, ebuf, sizeof ebuf);
   if (handle == NULL) {
     if (exit_on_error) {
-      tty->print_cr("error opening file: %s", dlerror());
+      tty->print_cr("error opening file: %s", ebuf);
       vm_exit(1);
     }
     return;
@@ -246,7 +248,7 @@ void AOTLoader::load_library(const char* name, bool exit_on_error) {
   AOTLib* lib = new AOTLib(handle, name, dso_id);
   if (!lib->is_valid()) {
     delete lib;
-    dlclose(handle);
+    os::dll_unload(handle);
     return;
   }
   add_library(lib);

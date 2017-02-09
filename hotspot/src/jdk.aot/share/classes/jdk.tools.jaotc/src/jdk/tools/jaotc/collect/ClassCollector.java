@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,8 +206,10 @@ public class ClassCollector {
     }
 
     private URI makeJarFileURI(String fileName) {
+        String name = Paths.get(fileName).toAbsolutePath().toString();
+        name = name.replace('\\', '/');
         try {
-            return new URI("jar:file:" + Paths.get(fileName).toAbsolutePath() + "!/");
+            return new URI("jar:file:///" + name + "!/");
         } catch (URISyntaxException e) {
             throw new InternalError(e);
         }
@@ -252,7 +254,9 @@ public class ClassCollector {
     }
 
     private URL[] buildUrls(String fileName) throws MalformedURLException {
-        return new URL[]{ new URL("jar:file:" + Paths.get(fileName).toAbsolutePath() + "!/") };
+        String name = Paths.get(fileName).toAbsolutePath().toString();
+        name = name.replace('\\', '/');
+        return new URL[]{ new URL("jar:file:///" + name + "!/") };
     }
 
     private URL[] buildUrls(File file) throws MalformedURLException {
@@ -274,6 +278,7 @@ public class ClassCollector {
         }
         String className = fileName.substring(start, fileName.length() - ".class".length());
         className = className.replace('/', '.');
+        className = className.replace('\\', '.');
         try {
             return loader.loadClass(className);
         } catch (Throwable e) {
