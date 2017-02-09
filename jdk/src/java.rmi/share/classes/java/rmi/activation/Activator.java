@@ -48,7 +48,7 @@ import java.rmi.activation.UnknownObjectException;
  * The <code>Activator</code> works closely with
  * <code>ActivationSystem</code>, which provides a means for registering
  * groups and objects within those groups, and <code>ActivationMonitor</code>,
- * which recives information about active and inactive objects and inactive
+ * which receives information about active and inactive objects and inactive
  * groups. <p>
  *
  * The activator is responsible for monitoring and detecting when
