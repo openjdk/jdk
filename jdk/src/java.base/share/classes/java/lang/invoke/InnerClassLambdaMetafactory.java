@@ -96,6 +96,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
     private final String implMethodClassName;        // Name of type containing implementation "CC"
     private final String implMethodName;             // Name of implementation method "impl"
     private final String implMethodDesc;             // Type descriptor for implementation methods "(I)Ljava/lang/String;"
+    private final Class<?> implMethodReturnClass;    // class for implementation method return type "Ljava/lang/String;"
     private final MethodType constructorType;        // Generated class constructor type "(CC)void"
     private final ClassWriter cw;                    // ASM class writer
     private final String[] argNames;                 // Generated names for the constructor arguments
@@ -152,9 +153,12 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         super(caller, invokedType, samMethodName, samMethodType,
               implMethod, instantiatedMethodType,
               isSerializable, markerInterfaces, additionalBridges);
-        implMethodClassName = implClass.getName().replace('.', '/');
+        implMethodClassName = implDefiningClass.getName().replace('.', '/');
         implMethodName = implInfo.getName();
-        implMethodDesc = implInfo.getMethodType().toMethodDescriptorString();
+        implMethodDesc = implMethodType.toMethodDescriptorString();
+        implMethodReturnClass = (implKind == MethodHandleInfo.REF_newInvokeSpecial)
+                ? implDefiningClass
+                : implMethodType.returnType();
         constructorType = invokedType.changeReturnType(Void.TYPE);
         lambdaClassName = targetClass.getName().replace('.', '/') + "$$Lambda$" + counter.incrementAndGet();
         cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
@@ -463,14 +467,13 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             // Invoke the method we want to forward to
             visitMethodInsn(invocationOpcode(), implMethodClassName,
                             implMethodName, implMethodDesc,
-                            implClass.isInterface());
+                            implDefiningClass.isInterface());
 
             // Convert the return value (if any) and return it
             // Note: if adapting from non-void to void, the 'return'
             // instruction will pop the unneeded result
-            Class<?> implReturnClass = implMethodType.returnType();
             Class<?> samReturnClass = methodType.returnType();
-            convertType(implReturnClass, samReturnClass, samReturnClass);
+            convertType(implMethodReturnClass, samReturnClass, samReturnClass);
             visitInsn(getReturnOpcode(samReturnClass));
             // Maxs computed by ClassWriter.COMPUTE_MAXS,these arguments ignored
             visitMaxs(-1, -1);
@@ -479,13 +482,23 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
         private void convertArgumentTypes(MethodType samType) {
             int lvIndex = 0;
+            boolean samIncludesReceiver = implIsInstanceMethod &&
+                                                   invokedType.parameterCount() == 0;
+            int samReceiverLength = samIncludesReceiver ? 1 : 0;
+            if (samIncludesReceiver) {
+                // push receiver
+                Class<?> rcvrType = samType.parameterType(0);
+                visitVarInsn(getLoadOpcode(rcvrType), lvIndex + 1);
+                lvIndex += getParameterSize(rcvrType);
+                convertType(rcvrType, implDefiningClass, instantiatedMethodType.parameterType(0));
+            }
             int samParametersLength = samType.parameterCount();
-            int captureArity = invokedType.parameterCount();
-            for (int i = 0; i < samParametersLength; i++) {
+            int argOffset = implMethodType.parameterCount() - samParametersLength;
+            for (int i = samReceiverLength; i < samParametersLength; i++) {
                 Class<?> argType = samType.parameterType(i);
                 visitVarInsn(getLoadOpcode(argType), lvIndex + 1);
                 lvIndex += getParameterSize(argType);
-                convertType(argType, implMethodType.parameterType(captureArity + i), instantiatedMethodType.parameterType(i));
+                convertType(argType, implMethodType.parameterType(argOffset + i), instantiatedMethodType.parameterType(i));
             }
         }
 
