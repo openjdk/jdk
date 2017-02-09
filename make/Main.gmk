@@ -654,8 +654,7 @@ else
   # When creating a BUILDJDK, we don't need to add hashes to java.base, thus
   # we don't need to depend on all other jmods
   ifneq ($(CREATING_BUILDJDK), true)
-    java.base-jmod: jrtfs-jar $(filter-out java.base-jmod \
-        $(addsuffix -jmod, $(call FindAllUpgradeableModules)), $(JMOD_TARGETS))
+    java.base-jmod: jrtfs-jar $(filter-out java.base-jmod, $(JMOD_TARGETS))
   endif
 
   # Building java.base-jmod requires all of hotspot to be built.
