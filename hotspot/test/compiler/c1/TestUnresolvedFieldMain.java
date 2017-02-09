@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,35 +21,28 @@
  * questions.
  */
 
-package jdk.tools.jaotc;
+/*
+ * @test
+ * @bug 8173373
+ * @compile TestUnresolvedField.jasm
+ * @run main/othervm -XX:TieredStopAtLevel=1 -Xcomp
+ *                   -XX:CompileCommand=compileonly,compiler.c1.TestUnresolvedField::test*
+ *                   compiler.c1.TestUnresolvedFieldMain
+ */
 
-import org.graalvm.compiler.code.CompilationResult;
-import org.graalvm.compiler.core.target.Backend;
-import org.graalvm.compiler.hotspot.HotSpotCompiledCodeBuilder;
-import org.graalvm.compiler.hotspot.stubs.Stub;
+package compiler.c1;
 
-import jdk.vm.ci.hotspot.HotSpotCompiledCode;
-
-public class AOTStub implements JavaMethodInfo {
-
-    private final Stub stub;
-    private final Backend backend;
-
-    public AOTStub(Stub stub, Backend backend) {
-        this.stub = stub;
-        this.backend = backend;
+public class TestUnresolvedFieldMain {
+    public static void main(String[] args) {
+        try {
+          TestUnresolvedField.testGetField();
+        } catch (java.lang.NoClassDefFoundError error) {
+          // Expected
+        }
+        try {
+          TestUnresolvedField.testPutField();
+        } catch (java.lang.NoClassDefFoundError error) {
+          // Expected
+        }
     }
-
-    public String getSymbolName() {
-        return stub.toString();
-    }
-
-    public String getNameAndSignature() {
-        return stub.toString();
-    }
-
-    public HotSpotCompiledCode compiledCode(CompilationResult result) {
-        return HotSpotCompiledCodeBuilder.createCompiledCode(null, null, result);
-    }
-
 }
