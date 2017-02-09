@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,23 @@
 
 package sun.nio.ch;
 
-import java.nio.channels.spi.SelectorProvider;
+import java.nio.channels.spi.AsynchronousChannelProvider;
 
 /**
- * Creates this platform's default SelectorProvider
+ * Creates this platform's default AsynchronousChannelProvider
  */
 
-public class DefaultSelectorProvider {
+public class DefaultAsynchronousChannelProvider {
 
     /**
      * Prevent instantiation.
      */
-    private DefaultSelectorProvider() { }
+    private DefaultAsynchronousChannelProvider() { }
 
     /**
-     * Returns the default SelectorProvider.
+     * Returns the default AsynchronousChannelProvider.
      */
-    public static SelectorProvider create() {
-        return new EPollSelectorProvider();
+    public static AsynchronousChannelProvider create() {
+        return new BsdAsynchronousChannelProvider();
     }
 }

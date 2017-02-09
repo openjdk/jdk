@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -144,10 +144,6 @@ BUILD_JSPAWNHELPER_LDFLAGS :=
 
 ifneq ($(findstring $(OPENJDK_TARGET_OS), macosx solaris aix), )
   BUILD_JSPAWNHELPER := 1
-endif
-
-ifeq ($(OPENJDK_TARGET_OS), macosx)
-  BUILD_JSPAWNHELPER_DST_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base
 endif
 
 ifeq ($(OPENJDK_TARGET_CPU_BITS), 64)
