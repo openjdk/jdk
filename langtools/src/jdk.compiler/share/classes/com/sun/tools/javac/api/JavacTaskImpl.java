@@ -190,7 +190,7 @@ public class JavacTaskImpl extends BasicJavacTask {
             compiler.genEndPos = true;
             notYetEntered = new HashMap<>();
             if (forParse) {
-                compiler.initProcessAnnotations(processors);
+                compiler.initProcessAnnotations(processors, args.getFileObjects(), args.getClassNames());
                 for (JavaFileObject file: args.getFileObjects())
                     notYetEntered.put(file, null);
                 genList = new ListBuffer<>();

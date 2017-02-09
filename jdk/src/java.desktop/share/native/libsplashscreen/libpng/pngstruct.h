@@ -29,8 +29,8 @@
  * However, the following notice accompanied the original version of this
  * file and, per its terms, should not be removed:
  *
- * Last changed in libpng 1.6.18 [July 23, 2015]
- * Copyright (c) 1998-2002,2004,2006-2015 Glenn Randers-Pehrson
+ * Last changed in libpng 1.6.28 [January 5, 2017]
+ * Copyright (c) 1998-2002,2004,2006-2017 Glenn Randers-Pehrson
  * (Version 0.96 Copyright (c) 1996, 1997 Andreas Dilger)
  * (Version 0.88 Copyright (c) 1995, 1996 Guy Eric Schalnat, Group 42, Inc.)
  *
@@ -277,7 +277,7 @@ struct png_struct_def
    png_byte filter;           /* file filter type (always 0) */
    png_byte interlaced;       /* PNG_INTERLACE_NONE, PNG_INTERLACE_ADAM7 */
    png_byte pass;             /* current interlace pass (0 - 6) */
-   png_byte do_filter;        /* row filter flags (see PNG_FILTER_ below ) */
+   png_byte do_filter;        /* row filter flags (see PNG_FILTER_ in png.h ) */
    png_byte color_type;       /* color type of file */
    png_byte bit_depth;        /* bit depth of file */
    png_byte usr_bit_depth;    /* bit depth of users row: write only */
@@ -291,7 +291,7 @@ struct png_struct_def
                               /* pixel depth used for the row buffers */
    png_byte transformed_pixel_depth;
                               /* pixel depth after read/write transforms */
-#if PNG_ZLIB_VERNUM >= 0x1240
+#if ZLIB_VERNUM >= 0x1240
    png_byte zstream_start;    /* at start of an input zlib stream */
 #endif /* Zlib >= 1.2.4 */
 #if defined(PNG_READ_FILLER_SUPPORTED) || defined(PNG_WRITE_FILLER_SUPPORTED)
@@ -381,7 +381,7 @@ struct png_struct_def
 
 /* Options */
 #ifdef PNG_SET_OPTION_SUPPORTED
-   png_byte options;           /* On/off state (up to 4 options) */
+   png_uint_32 options;           /* On/off state (up to 16 options) */
 #endif
 
 #if PNG_LIBPNG_VER < 10700

@@ -2820,7 +2820,7 @@ public class Check {
     private void validateAnnotation(JCAnnotation a, Symbol s) {
         validateAnnotationTree(a);
 
-        if (!annotationApplicable(a, s))
+        if (a.type.tsym.isAnnotationType() && !annotationApplicable(a, s))
             log.error(a.pos(), "annotation.type.not.applicable");
 
         if (a.annotationType.type.tsym == syms.functionalInterfaceType.tsym) {
@@ -3872,6 +3872,16 @@ public class Check {
             deferredLintHandler.report(() -> {
                 if (lint.isEnabled(LintCategory.MODULE))
                     log.warning(LintCategory.MODULE, pos, Warnings.ModuleNotFound(msym));
+            });
+        }
+    }
+
+    void checkPackageExistsForOpens(final DiagnosticPosition pos, PackageSymbol packge) {
+        if (packge.members().isEmpty() &&
+            ((packge.flags() & Flags.HAS_RESOURCE) == 0)) {
+            deferredLintHandler.report(() -> {
+                if (lint.isEnabled(LintCategory.OPENS))
+                    log.warning(pos, Warnings.PackageEmptyOrNotFound(packge));
             });
         }
     }

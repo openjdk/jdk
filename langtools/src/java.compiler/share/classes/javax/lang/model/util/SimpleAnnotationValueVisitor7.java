@@ -66,13 +66,13 @@ import static javax.lang.model.SourceVersion.*;
  * @see SimpleAnnotationValueVisitor9
  * @since 1.7
  */
-@SuppressWarnings("deprecation") // Superclass deprecated
 @SupportedSourceVersion(RELEASE_7)
 public class SimpleAnnotationValueVisitor7<R, P> extends SimpleAnnotationValueVisitor6<R, P> {
     /**
      * Constructor for concrete subclasses; uses {@code null} for the
      * default value.
      */
+    @SuppressWarnings("deprecation") // Superclass constructor deprecated
     protected SimpleAnnotationValueVisitor7() {
         super(null);
     }
@@ -83,6 +83,7 @@ public class SimpleAnnotationValueVisitor7<R, P> extends SimpleAnnotationValueVi
      *
      * @param defaultValue the value to assign to {@link #DEFAULT_VALUE}
      */
+    @SuppressWarnings("deprecation") // Superclass constructor deprecated
     protected SimpleAnnotationValueVisitor7(R defaultValue) {
         super(defaultValue);
     }

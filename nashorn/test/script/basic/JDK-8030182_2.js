@@ -31,7 +31,7 @@
 var str = "";
 
 // large code to force splitting
-for (i = 0; i < 1000; ++i)
+for (i = 0; i < 2000; ++i)
     str +="o = new Object()\n";
 
 str +="g()";

@@ -149,11 +149,10 @@ import java.util.Properties;
 public class CompoundName implements Name {
 
     /**
-      * Implementation of this compound name.
-      * This field is initialized by the constructors and cannot be null.
-      * It should be treated as a read-only variable by subclasses.
-      */
-    protected transient NameImpl impl;
+     * Implementation of this compound name. This field is initialized by the
+     * constructors and cannot be null.
+     */
+    private transient NameImpl impl;
     /**
       * Syntax properties for this compound name.
       * This field is initialized by the constructors and cannot be null.

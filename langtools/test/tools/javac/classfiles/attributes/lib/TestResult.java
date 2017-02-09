@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,8 @@ public class TestResult extends TestBase {
         Set<?> copy = new HashSet<>(expected);
         copy.removeAll(found);
         if (!found.containsAll(expected)) {
-            return checkTrue(false, message + " FAIL : not found elements : " + copy);
+            return checkTrue(false, message + " FAIL : not found elements : " + copy + "\n" +
+                    "Actual: " + found);
         } else {
             return checkTrue(true, message + " PASS : all elements found");
         }

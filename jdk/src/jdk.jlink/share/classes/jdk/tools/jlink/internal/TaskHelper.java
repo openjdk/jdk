@@ -194,8 +194,6 @@ public final class TaskHelper {
 
     private final class PluginsHelper {
 
-        private static final String PLUGINS_PATH = "--plugin-module-path";
-
         private Layer pluginsLayer = Layer.boot();
         private final List<Plugin> plugins;
         private String lastSorter;
@@ -229,12 +227,6 @@ public final class TaskHelper {
                     addOrderedPluginOptions(plugin, optionsSeen);
                 }
             }
-            mainOptions.add(new PluginOption(false,
-                    (task, opt, arg) -> {
-                        // This option is handled prior
-                        // to have the options parsed.
-                    },
-                    false, "--plugin-module-path"));
             mainOptions.add(new PluginOption(true, (task, opt, arg) -> {
                     for (Plugin plugin : plugins) {
                         if (plugin.getName().equals(arg)) {
@@ -503,22 +495,7 @@ public final class TaskHelper {
         }
 
         private String getPluginsPath(String[] args) throws BadArgs {
-            String pp = null;
-            for (int i = 0; i < args.length; i++) {
-                if (args[i].equals(PluginsHelper.PLUGINS_PATH)) {
-                    if (i == args.length - 1) {
-                        throw new BadArgs("err.no.plugins.path").showUsage(true);
-                    } else {
-                        i += 1;
-                        pp = args[i];
-                        if (!pp.isEmpty() && pp.charAt(0) == '-') {
-                            throw new BadArgs("err.no.plugins.path").showUsage(true);
-                        }
-                        break;
-                    }
-                }
-            }
-            return pp;
+            return null;
         }
 
         // used by jimage. Return unhandled arguments like "create", "describe".
@@ -542,31 +519,7 @@ public final class TaskHelper {
             // Must extract it prior to do any option analysis.
             // Required to interpret custom plugin options.
             // Unit tests can call Task multiple time in same JVM.
-            pluginOptions = new PluginsHelper(getPluginsPath(args));
-
-            // First extract plugins path if any
-            String pp = null;
-            List<String> filteredArgs = new ArrayList<>();
-            for (int i = 0; i < args.length; i++) {
-                if (args[i].equals(PluginsHelper.PLUGINS_PATH)) {
-                    if (i == args.length - 1) {
-                        throw new BadArgs("err.no.plugins.path").showUsage(true);
-                    } else {
-                        warning("warn.thirdparty.plugins.enabled");
-                        log.println(bundleHelper.getMessage("warn.thirdparty.plugins"));
-                        i += 1;
-                        String arg = args[i];
-                        if (!arg.isEmpty() && arg.charAt(0) == '-') {
-                            throw new BadArgs("err.no.plugins.path").showUsage(true);
-                        }
-                        pp = args[i];
-                    }
-                } else {
-                    filteredArgs.add(args[i]);
-                }
-            }
-            String[] arr = new String[filteredArgs.size()];
-            args = filteredArgs.toArray(arr);
+            pluginOptions = new PluginsHelper(null);
 
             List<String> rest = collectUnhandled? new ArrayList<>() : null;
             // process options

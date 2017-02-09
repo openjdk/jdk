@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,7 @@ import javax.lang.model.util.Elements;
 import javax.tools.FileObject;
 import jdk.jshell.MemoryFileManager.SourceMemoryJavaFileObject;
 import java.lang.Runtime.Version;
+import com.sun.source.tree.Tree.Kind;
 
 /**
  * The primary interface to the compiler API.  Parsing, analysis, and
@@ -98,6 +99,23 @@ class TaskFactory {
 
     MemoryFileManager fileManager() {
         return fileManager;
+    }
+
+    // Parse a snippet and return our parse task handler
+    ParseTask parse(final String source) {
+        ParseTask pt = state.taskFactory.new ParseTask(source, false);
+        if (!pt.units().isEmpty()
+                && pt.units().get(0).getKind() == Kind.EXPRESSION_STATEMENT
+                && pt.getDiagnostics().hasOtherThanNotStatementErrors()) {
+            // It failed, it may be an expression being incorrectly
+            // parsed as having a leading type variable, example:   a < b
+            // Try forcing interpretation as an expression
+            ParseTask ept = state.taskFactory.new ParseTask(source, true);
+            if (!ept.getDiagnostics().hasOtherThanNotStatementErrors()) {
+                return ept;
+            }
+        }
+        return pt;
     }
 
     private interface SourceHandler<T> {
@@ -179,11 +197,11 @@ class TaskFactory {
         private final Iterable<? extends CompilationUnitTree> cuts;
         private final List<? extends Tree> units;
 
-        ParseTask(final String source) {
+        ParseTask(final String source, final boolean forceExpression) {
             super(Stream.of(source),
                     new StringSourceHandler(),
                     "-XDallowStringFolding=false", "-proc:none");
-            ReplParserFactory.instance(getContext());
+            ReplParserFactory.preRegister(getContext(), forceExpression);
             cuts = parse();
             units = Util.stream(cuts)
                     .flatMap(cut -> {

@@ -22,7 +22,7 @@
  */
 
 /*
- * @test 8130450 8158906 8154374 8166400 8171892
+ * @test 8130450 8158906 8154374 8166400 8171892 8173807 8173848
  * @summary simple regression test
  * @build KullaTesting TestingInputStream
  * @run testng SimpleRegressionTest
@@ -74,6 +74,15 @@ public class SimpleRegressionTest extends KullaTesting {
         assertEquals(events.get(1).value(), "6");
         assertEquals(events.get(2).value(), "600");
         assertEval("c;", "600");
+    }
+
+    public void testLessThanParsing() {
+        assertEval("int x = 3;", "3");
+        assertEval("int y = 4;", "4");
+        assertEval("int z = 5;", "5");
+        assertEval("x < y", "true");
+        assertEval("x < y;", "true");
+        assertEval("x < y && y < z", "true");
     }
 
     public void testNotStmtCannotResolve() {
@@ -181,5 +190,37 @@ public class SimpleRegressionTest extends KullaTesting {
                 "C[3][] { C[2] { null, null }, C[2] { null, null }, C[2] { null, null } }");
         assertEval("new boolean[2][1][3]",
                 "boolean[2][][] { boolean[1][] { boolean[3] { false, false, false } }, boolean[1][] { boolean[3] { false, false, false } } }");
+    }
+
+    public void testStringRepresentation() {
+        assertEval("\"A!\\rB!\"",
+                   "\"A!\\rB!\"");
+        assertEval("\"a\\bB\\tc\\nd\\fe\\rf\\\"g'\\\\h\"",
+                   "\"a\\bB\\tc\\nd\\fe\\rf\\\"g'\\\\h\"");
+        assertEval("\"\\141\\10B\\11c\\nd\\fe\\15f\\42g\\'\\134h\"",
+                   "\"a\\bB\\tc\\nd\\fe\\rf\\\"g'\\\\h\"");
+        assertEval("\"1234567890!@#$%^&*()-_=+qwertQWERT,./<>?;:[]{}\"",
+                   "\"1234567890!@#$%^&*()-_=+qwertQWERT,./<>?;:[]{}\"");
+        assertEval("\"AA\\1\\7\\35\\25\"",
+                   "\"AA\\001\\007\\035\\025\"");
+        assertEval("\"\"",
+                   "\"\"");
+        assertEval("(String)null",
+                   "null");
+    }
+
+    public void testCharRepresentation() {
+        for (String s : new String[]{"'A'", "'Z'", "'0'", "'9'",
+            "'a'", "'z'", "'*'", "'%'",
+            "'\\b'", "'\\t'", "'\\n'", "'\\f'", "'\\r'",
+            "'\"'", "'\\\''", "'\\\\'", "'\\007'", "'\\034'",}) {
+            assertEval(s, s);
+        }
+        assertEval("'\\3'",
+                "'\\003'");
+        assertEval("'\\u001D'",
+                "'\\035'");
+        assertEval("\"a\\bb\\tc\\nd\\fe\\rf\\\"g'\\\\h\".charAt(1)",
+                "'\\b'");
     }
 }

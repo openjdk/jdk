@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug  8132096
+ * @bug  8132096 8157611
  * @summary test the APIs  in the DocTree interface
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -48,12 +48,15 @@ import java.util.List;
 import java.util.Locale;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.PackageElement;
+import javax.lang.model.util.Elements;
 import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.DocCommentTree;
+import com.sun.source.util.DocTreePath;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.api.JavacTool;
@@ -89,6 +92,9 @@ public class DocCommentTreeApiTester {
 
             // tests files relative path in an unnamed package
             test.runRelativePathTest("OverviewTest.java", "overview0.html");
+
+            // tests doctreepath using package element and package.html
+            test.runDocTreePath("pkg/Anchor.java", "package.html");
 
             // test for correct parsing using valid and some invalid html tags
             for (int i = 0; i < 7; i++) {
@@ -152,6 +158,7 @@ public class DocCommentTreeApiTester {
             }
         }
     }
+
     /**
      * Tests DocTrees.getDocCommentTree(Element e, String relpath) using relative path.
      *
@@ -216,6 +223,49 @@ public class DocCommentTreeApiTester {
             String found = sw.toString();
             String expected = getExpected(otherFiles.iterator().next().toPath());
             astcheck(otherFiles.toString(), expected, found);
+        }
+    }
+
+    /**
+     * Tests DocTrees.getDocTreePath(PackageElement p, FileObject fo).
+     *
+     * @param javaFileName the java anchor file
+     * @param pkgFileName the package file name
+     * @throws Exception e if something goes awry
+     */
+    public void runDocTreePath(String javaFileName, String pkgFileName) throws Exception  {
+        List<File> javaFiles = new ArrayList<>();
+        javaFiles.add(new File(testSrc, javaFileName));
+
+        List<File> dirs = new ArrayList<>();
+        dirs.add(new File(testSrc));
+
+        try (StandardJavaFileManager fm = javac.getStandardFileManager(null, null, null)) {
+            fm.setLocation(javax.tools.StandardLocation.SOURCE_PATH, dirs);
+            Iterable<? extends JavaFileObject> fos = fm.getJavaFileObjectsFromFiles(javaFiles);
+
+            final JavacTask t = javac.getTask(null, fm, null, null, null, fos);
+            final DocTrees trees = DocTrees.instance(t);
+            final Elements elementUtils = t.getElements();
+
+            Iterable<? extends Element> elements = t.analyze();
+
+            Element klass = elements.iterator().next();
+            PackageElement pkg = elementUtils.getPackageOf(klass);
+
+            FileObject htmlFo = fm.getFileForInput(javax.tools.StandardLocation.SOURCE_PATH,
+                    t.getElements().getPackageOf(klass).getQualifiedName().toString(),
+                    "package.html");
+            System.out.println();
+            DocTreePath treePath = trees.getDocTreePath(htmlFo, pkg);
+            DocCommentTree dcTree = treePath.getDocComment();
+
+            StringWriter sw = new StringWriter();
+            printer.print(dcTree, sw);
+            String found = sw.toString();
+
+            String expected = getExpected(htmlFo.openReader(true));
+            astcheck(pkgFileName, expected, found);
         }
     }
 

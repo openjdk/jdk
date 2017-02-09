@@ -2947,6 +2947,14 @@ public class Attr extends JCTree.Visitor {
                 return;
             }
 
+            if (!env.info.isSpeculative && that.getMode() == JCMemberReference.ReferenceMode.NEW) {
+                Type enclosingType = exprType.getEnclosingType();
+                if (enclosingType != null && enclosingType.hasTag(CLASS)) {
+                    // Check for the existence of an apropriate outer instance
+                    rs.resolveImplicitThis(that.pos(), env, exprType);
+                }
+            }
+
             if (resultInfo.checkContext.deferredAttrContext().mode == AttrMode.CHECK) {
 
                 if (that.getMode() == ReferenceMode.INVOKE &&

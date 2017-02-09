@@ -209,8 +209,8 @@ public class IteratorMicroBenchmark {
 //             iterations, size, warmupSeconds, filter);
 
         final ConcurrentSkipListMap<Integer,Integer> m
-            = new ConcurrentSkipListMap<Integer,Integer>();
-        final ArrayList<Integer> al = new ArrayList<Integer>(size);
+            = new ConcurrentSkipListMap<>();
+        final ArrayList<Integer> al = new ArrayList<>(size);
 
         // Populate collections with random data
         final ThreadLocalRandom rnd = ThreadLocalRandom.current();
@@ -218,16 +218,16 @@ public class IteratorMicroBenchmark {
             m.put(rnd.nextInt(size), rnd.nextInt(size));
             al.add(rnd.nextInt(size));
         }
-        final Vector<Integer> v = new Vector<Integer>(al);
-        final ArrayDeque<Integer> ad = new ArrayDeque<Integer>(al);
+        final Vector<Integer> v = new Vector<>(al);
+        final ArrayDeque<Integer> ad = new ArrayDeque<>(al);
         // shuffle ArrayDeque elements so they wrap
         for (int i = 0, n = rnd.nextInt(size); i < n; i++)
             ad.addLast(ad.removeFirst());
 
         // Also test "short" collections
         final int shortSize = 5;
-        final Vector<Integer> sv = new Vector<Integer>(v.subList(0, shortSize));
-        final ArrayList<Integer> sal = new ArrayList<Integer>(sv);
+        final Vector<Integer> sv = new Vector<>(v.subList(0, shortSize));
+        final ArrayList<Integer> sal = new ArrayList<>(sv);
 
         // Checks for correctness *and* prevents loop optimizations
         class Check {
@@ -613,8 +613,7 @@ public class IteratorMicroBenchmark {
                 public void work() throws Throwable {
                     for (int i = 0; i < iterations; i++) {
                         int sum = 0;
-                        List<Iterator<Integer>> its
-                            = new ArrayList<Iterator<Integer>>(2);
+                        List<Iterator<Integer>> its = new ArrayList<>(2);
                         its.add(v.iterator());
                         its.add(al.iterator());
                         for (int k = 0; its.get(k).hasNext(); k = (k == 0) ? 1 : 0)

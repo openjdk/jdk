@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,6 @@ import static com.sun.tools.javac.parser.Tokens.TokenKind.IMPORT;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.INTERFACE;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.LPAREN;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.MONKEYS_AT;
-import static com.sun.tools.javac.parser.Tokens.TokenKind.PACKAGE;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.SEMI;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.VOID;
 import com.sun.tools.javac.tree.JCTree;
@@ -48,10 +47,8 @@ import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCExpressionStatement;
 import com.sun.tools.javac.tree.JCTree.JCModifiers;
-import com.sun.tools.javac.tree.JCTree.JCPackageDecl;
 import com.sun.tools.javac.tree.JCTree.JCStatement;
 import com.sun.tools.javac.tree.JCTree.JCTypeParameter;
-import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.JCTree.Tag;
 import static com.sun.tools.javac.tree.JCTree.Tag.IDENT;
 import com.sun.tools.javac.util.List;
@@ -68,12 +65,17 @@ import com.sun.tools.javac.util.Position;
  */
 class ReplParser extends JavacParser {
 
+    // force starting in expression mode
+    private final boolean forceExpression;
+
     public ReplParser(ParserFactory fac,
             com.sun.tools.javac.parser.Lexer S,
             boolean keepDocComments,
             boolean keepLineMap,
-            boolean keepEndPositions) {
+            boolean keepEndPositions,
+            boolean forceExpression) {
         super(fac, S, keepDocComments, keepLineMap, keepEndPositions);
+        this.forceExpression = forceExpression;
     }
 
     /**
@@ -205,7 +207,10 @@ class ReplParser extends JavacParser {
                         nextToken();
                     } else {
                         // return type of method, declared type of variable, or an expression
-                        t = term(EXPR | TYPE);
+                        // unless expression is being forced
+                        t = term(forceExpression
+                                ? EXPR
+                                : EXPR | TYPE);
                     }
                     if (token.kind == COLON && t.hasTag(IDENT)) {
                         // labelled statement

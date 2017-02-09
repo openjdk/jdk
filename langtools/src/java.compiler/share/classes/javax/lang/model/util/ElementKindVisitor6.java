@@ -81,17 +81,17 @@ import javax.lang.model.SourceVersion;
  * @see ElementKindVisitor8
  * @see ElementKindVisitor9
  * @since 1.6
- * @deprecated Release 6 is obsolete; update to a visitor for a newer
- * release level.
  */
-@Deprecated
 @SupportedSourceVersion(RELEASE_6)
 public class ElementKindVisitor6<R, P>
                   extends SimpleElementVisitor6<R, P> {
     /**
      * Constructor for concrete subclasses; uses {@code null} for the
      * default value.
+     * @deprecated Release 6 is obsolete; update to a visitor for a newer
+     * release level.
      */
+    @Deprecated
     protected ElementKindVisitor6() {
         super(null);
     }
@@ -101,7 +101,10 @@ public class ElementKindVisitor6<R, P>
      * default value.
      *
      * @param defaultValue the value to assign to {@link #DEFAULT_VALUE}
+     * @deprecated Release 6 is obsolete; update to a visitor for a newer
+     * release level.
      */
+    @Deprecated
     protected ElementKindVisitor6(R defaultValue) {
         super(defaultValue);
     }

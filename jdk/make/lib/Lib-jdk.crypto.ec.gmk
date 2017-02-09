@@ -27,7 +27,7 @@ include LibCommon.gmk
 
 ################################################################################
 
-ifeq ($(ENABLE_INTREE_EC), yes)
+ifeq ($(ENABLE_INTREE_EC), true)
 
   LIBSUNEC_SRC := $(JDK_TOPDIR)/src/jdk.crypto.ec/share/native/libsunec
   BUILD_LIBSUNEC_FLAGS := $(addprefix -I, $(SUNEC_SRC))

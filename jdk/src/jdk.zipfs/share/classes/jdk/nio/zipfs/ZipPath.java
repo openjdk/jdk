@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,8 +59,7 @@ final class ZipPath implements Path {
         } else {
             if (zfs.zc.isUTF8()) {
                 this.path = normalize(path);
-            } else {
-                // see normalize(String);
+            } else {    // see normalize(String);
                 this.path = normalize(zfs.getString(path));
             }
         }
@@ -68,12 +67,7 @@ final class ZipPath implements Path {
 
     ZipPath(ZipFileSystem zfs, String path) {
         this.zfs = zfs;
-        if (zfs.zc.isUTF8()) {
-            this.path = normalize(zfs.getBytes(path));
-        } else {
-            // see normalize(String);
-            this.path = normalize(path);
-        }
+        this.path = normalize(path);
     }
 
     @Override
@@ -84,33 +78,31 @@ final class ZipPath implements Path {
             return null;
     }
 
-    @Override
+   @Override
     public Path getFileName() {
-        initOffsets();
-        int count = offsets.length;
-        if (count == 0)
-            return null;  // no elements so no name
-        if (count == 1 && path[0] != '/')
+        int off = path.length;
+        if (off == 0 || off == 1 && path[0] == '/')
+            return null;
+        while (--off >= 0 && path[off] != '/') {}
+        if (off < 0)
             return this;
-        int lastOffset = offsets[count-1];
-        int len = path.length - lastOffset;
-        byte[] result = new byte[len];
-        System.arraycopy(path, lastOffset, result, 0, len);
-        return new ZipPath(zfs, result);
+        off++;
+        byte[] result = new byte[path.length - off];
+        System.arraycopy(path, off, result, 0, result.length);
+        return new ZipPath(getFileSystem(), result, true);
     }
 
     @Override
     public ZipPath getParent() {
-        initOffsets();
-        int count = offsets.length;
-        if (count == 0)    // no elements so no parent
+        int off = path.length;
+        if (off == 0 || off == 1 && path[0] == '/')
             return null;
-        int len = offsets[count-1] - 1;
-        if (len <= 0)      // parent is root only (may be null)
+        while (--off >= 0 && path[off] != '/') {}
+        if (off <= 0)
             return getRoot();
-        byte[] result = new byte[len];
-        System.arraycopy(path, 0, result, 0, len);
-        return new ZipPath(zfs, result);
+        byte[] result = new byte[off];
+        System.arraycopy(path, 0, result, 0, off);
+        return new ZipPath(getFileSystem(), result, true);
     }
 
     @Override
@@ -277,30 +269,36 @@ final class ZipPath implements Path {
 
     @Override
     public boolean isAbsolute() {
-        return (this.path.length > 0 && path[0] == '/');
+        return path.length > 0 && path[0] == '/';
     }
 
     @Override
     public ZipPath resolve(Path other) {
-        final ZipPath o = checkPath(other);
-        int tlen = this.path.length;
-        if (tlen == 0 || o.isAbsolute())
-            return o;
-        int olen = o.path.length;
-        if (olen == 0)
+        ZipPath o = checkPath(other);
+        if (o.path.length == 0)
             return this;
+        if (o.isAbsolute() || this.path.length == 0)
+            return o;
+        return resolve(o.path);
+    }
+
+    // opath is normalized, just concat
+    private ZipPath resolve(byte[] opath) {
         byte[] resolved = null;
-        if (this.path[tlen - 1] == '/') {
+        byte[] tpath = this.path;
+        int tlen = tpath.length;
+        int olen = opath.length;
+        if (path[tlen - 1] == '/') {
             resolved = new byte[tlen + olen];
-            System.arraycopy(path, 0, resolved, 0, tlen);
-            System.arraycopy(o.path, 0, resolved, tlen, olen);
+            System.arraycopy(tpath, 0, resolved, 0, tlen);
+            System.arraycopy(opath, 0, resolved, tlen, olen);
         } else {
             resolved = new byte[tlen + 1 + olen];
-            System.arraycopy(path, 0, resolved, 0, tlen);
+            System.arraycopy(tpath, 0, resolved, 0, tlen);
             resolved[tlen] = '/';
-            System.arraycopy(o.path, 0, resolved, tlen + 1, olen);
+            System.arraycopy(opath, 0, resolved, tlen + 1, olen);
         }
-        return new ZipPath(zfs, resolved);
+        return new ZipPath(zfs, resolved, true);
     }
 
     @Override
@@ -351,7 +349,12 @@ final class ZipPath implements Path {
 
     @Override
     public ZipPath resolve(String other) {
-        return resolve(zfs.getPath(other));
+        byte[] opath = normalize(other);
+        if (opath.length == 0)
+            return this;
+        if (opath[0] == '/' || this.path.length == 0)
+            return new ZipPath(zfs, opath, true);
+        return resolve(opath);
     }
 
     @Override
@@ -455,8 +458,9 @@ final class ZipPath implements Path {
                 return normalize(path, i - 1);
             prevC = c;
         }
-        if (len > 1 && prevC == '/')
+        if (len > 1 && prevC == '/') {
             return Arrays.copyOf(path, len - 1);
+        }
         return path;
     }
 
@@ -490,6 +494,8 @@ final class ZipPath implements Path {
     // to avoid incorrectly normalizing byte '0x5c' (as '\')
     // to '/'.
     private byte[] normalize(String path) {
+        if (zfs.zc.isUTF8())
+            return normalize(zfs.getBytes(path));
         int len = path.length();
         if (len == 0)
             return new byte[0];
@@ -533,7 +539,8 @@ final class ZipPath implements Path {
     // Remove DotSlash(./) and resolve DotDot (..) components
     private byte[] getResolved() {
         for (int i = 0; i < path.length; i++) {
-            if (path[i] == (byte)'.') {
+            if (path[i] == (byte)'.' &&
+                (i + 1 == path.length || path[i + 1] == '/')) {
                 return resolve0();
             }
         }
@@ -976,5 +983,4 @@ final class ZipPath implements Path {
         }
         return sb.toString();
     }
-
 }

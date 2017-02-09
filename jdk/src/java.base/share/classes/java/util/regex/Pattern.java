@@ -1495,7 +1495,7 @@ public final class Pattern
                     altns.add(seq);
                     produceEquivalentAlternation(nfd, altns);
                     dst.append("(?:");
-                    altns.forEach( s -> dst.append(s + "|"));
+                    altns.forEach( s -> dst.append(s).append('|'));
                     dst.delete(dst.length() - 1, dst.length());
                     dst.append(")");
                     continue;
@@ -2142,12 +2142,12 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             case '.':
                 next();
                 if (has(DOTALL)) {
-                    node = new CharProperty(ALL);
+                    node = new CharProperty(ALL());
                 } else {
                     if (has(UNIX_LINES)) {
-                        node = new CharProperty(UNIXDOT);
+                        node = new CharProperty(UNIXDOT());
                     } else {
-                        node = new CharProperty(DOT);
+                        node = new CharProperty(DOT());
                     }
                 }
                 break;
@@ -2376,7 +2376,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         case 'D':
             if (create) {
                 predicate = has(UNICODE_CHARACTER_CLASS) ?
-                            CharPredicates.DIGIT : CharPredicates.ASCII_DIGIT;
+                            CharPredicates.DIGIT() : CharPredicates.ASCII_DIGIT();
                 predicate = predicate.negate();
                 if (!inclass)
                     root = newCharProperty(predicate);
@@ -2391,7 +2391,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             return -1;
         case 'H':
             if (create) {
-                predicate = HorizWS.negate();
+                predicate = HorizWS().negate();
                 if (!inclass)
                     root = newCharProperty(predicate);
             }
@@ -2415,7 +2415,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         case 'S':
             if (create) {
                 predicate = has(UNICODE_CHARACTER_CLASS) ?
-                            CharPredicates.WHITE_SPACE : CharPredicates.ASCII_SPACE;
+                            CharPredicates.WHITE_SPACE() : CharPredicates.ASCII_SPACE();
                 predicate = predicate.negate();
                 if (!inclass)
                     root = newCharProperty(predicate);
@@ -2426,7 +2426,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             break;
         case 'V':
             if (create) {
-                predicate = VertWS.negate();
+                predicate = VertWS().negate();
                 if (!inclass)
                     root = newCharProperty(predicate);
             }
@@ -2434,7 +2434,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         case 'W':
             if (create) {
                 predicate = has(UNICODE_CHARACTER_CLASS) ?
-                            CharPredicates.WORD : CharPredicates.ASCII_WORD;
+                            CharPredicates.WORD() : CharPredicates.ASCII_WORD();
                 predicate = predicate.negate();
                 if (!inclass)
                     root = newCharProperty(predicate);
@@ -2480,7 +2480,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         case 'd':
             if (create) {
                 predicate = has(UNICODE_CHARACTER_CLASS) ?
-                            CharPredicates.DIGIT : CharPredicates.ASCII_DIGIT;
+                            CharPredicates.DIGIT() : CharPredicates.ASCII_DIGIT();
                 if (!inclass)
                     root = newCharProperty(predicate);
             }
@@ -2493,7 +2493,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             break;
         case 'h':
             if (create) {
-                predicate = HorizWS;
+                predicate = HorizWS();
                 if (!inclass)
                     root = newCharProperty(predicate);
             }
@@ -2531,7 +2531,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         case 's':
             if (create) {
                 predicate = has(UNICODE_CHARACTER_CLASS) ?
-                            CharPredicates.WHITE_SPACE : CharPredicates.ASCII_SPACE;
+                            CharPredicates.WHITE_SPACE() : CharPredicates.ASCII_SPACE();
                 if (!inclass)
                     root = newCharProperty(predicate);
             }
@@ -2552,7 +2552,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             if (isrange)
                 return '\013';
             if (create) {
-                predicate = VertWS;
+                predicate = VertWS();
                 if (!inclass)
                     root = newCharProperty(predicate);
             }
@@ -2560,7 +2560,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         case 'w':
             if (create) {
                 predicate = has(UNICODE_CHARACTER_CLASS) ?
-                            CharPredicates.WORD : CharPredicates.ASCII_WORD;
+                            CharPredicates.WORD() : CharPredicates.ASCII_WORD();
                 if (!inclass)
                     root = newCharProperty(predicate);
             }
@@ -2704,7 +2704,6 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
            (6)AngstromSign u+212b
               toLowerCase(u+212b) ==> u+00e5
         */
-        int d;
         if (ch < 256 &&
             !(has(CASE_INSENSITIVE) && has(UNICODE_CASE) &&
               (ch == 0xff || ch == 0xb5 ||
@@ -5384,7 +5383,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         }
 
         boolean isWord(int ch) {
-            return useUWORD ? CharPredicates.WORD.is(ch)
+            return useUWORD ? CharPredicates.WORD().is(ch)
                             : (ch == '_' || Character.isLetterOrDigit(ch));
         }
 
@@ -5680,33 +5679,45 @@ NEXT:       while (i <= last) {
     /**
      * matches a Perl vertical whitespace
      */
-    static BmpCharPredicate VertWS = cp ->
-        (cp >= 0x0A && cp <= 0x0D) || cp == 0x85 || cp == 0x2028 || cp == 0x2029;
+    static BmpCharPredicate VertWS() {
+        return cp -> (cp >= 0x0A && cp <= 0x0D) ||
+            cp == 0x85 || cp == 0x2028 || cp == 0x2029;
+    }
 
     /**
      * matches a Perl horizontal whitespace
      */
-    static BmpCharPredicate HorizWS = cp ->
-        cp == 0x09 || cp == 0x20 || cp == 0xa0 || cp == 0x1680 ||
-        cp == 0x180e || cp >= 0x2000 && cp <= 0x200a ||  cp == 0x202f ||
-        cp == 0x205f || cp == 0x3000;
+    static BmpCharPredicate HorizWS() {
+        return cp ->
+            cp == 0x09 || cp == 0x20 || cp == 0xa0 || cp == 0x1680 ||
+            cp == 0x180e || cp >= 0x2000 && cp <= 0x200a ||  cp == 0x202f ||
+            cp == 0x205f || cp == 0x3000;
+    }
 
     /**
      *  for the Unicode category ALL and the dot metacharacter when
      *  in dotall mode.
      */
-    static CharPredicate ALL = ch -> true;
+    static CharPredicate ALL() {
+        return ch -> true;
+    }
 
     /**
      * for the dot metacharacter when dotall is not enabled.
      */
-    static CharPredicate DOT = ch -> (ch != '\n' && ch != '\r'
-                                          && (ch|1) != '\u2029'
-                                          && ch != '\u0085');
+    static CharPredicate DOT() {
+        return ch ->
+            (ch != '\n' && ch != '\r'
+            && (ch|1) != '\u2029'
+            && ch != '\u0085');
+    }
+
     /**
      *  the dot metacharacter when dotall is not enabled but UNIX_LINES is enabled.
      */
-    static CharPredicate UNIXDOT = ch ->  ch != '\n';
+    static CharPredicate UNIXDOT() {
+        return ch ->  ch != '\n';
+    }
 
     /**
      * Indicate that matches a Supplementary Unicode character

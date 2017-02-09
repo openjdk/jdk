@@ -28,7 +28,8 @@
  *          principals within the RMI connector server's creator codebase with
  *          subject delegation.
  * @author Luis-Miguel Alventosa
- * @modules java.management/com.sun.jmx.remote.security
+ * @modules java.management.rmi
+ *          java.management/com.sun.jmx.remote.security
  * @run clean SubjectDelegation3Test SimpleStandard SimpleStandardMBean
  * @run build SubjectDelegation3Test SimpleStandard SimpleStandardMBean
  * @run main SubjectDelegation3Test policy31 ok

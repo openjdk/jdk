@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ public class CheckSecurityProvider {
         if (os.equals("SunOS")) {
             layer.findModule("jdk.crypto.ucrypto")
                 .ifPresent(m -> expected.add("com.oracle.security.ucrypto.UcryptoProvider"));
-            layer.findModule("jdk.crypto.token")
+            layer.findModule("jdk.crypto.cryptoki")
                 .ifPresent(m -> expected.add("sun.security.pkcs11.SunPKCS11"));
         }
         expected.add("sun.security.provider.Sun");
@@ -91,7 +91,7 @@ public class CheckSecurityProvider {
             expected.add("apple.security.AppleProvider");
         }
         if (!os.equals("SunOS")) {
-            layer.findModule("jdk.crypto.token")
+            layer.findModule("jdk.crypto.cryptoki")
                 .ifPresent(m -> expected.add("sun.security.pkcs11.SunPKCS11"));
         }
 

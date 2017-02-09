@@ -26,6 +26,7 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
+include $(JDK_TOPDIR)/make/Tools.gmk
 
 ################################################################################
 
@@ -180,6 +181,8 @@ DEFAULT_JAVADOC_TAGS := \
     -tag see \
     -tag 'jvms:a:See <cite>The Java&trade; Virtual Machine Specification</cite>:' \
     -tag 'jls:a:See <cite>The Java&trade; Language Specification</cite>:' \
+    -taglet build.tools.taglet.Incubating \
+    -tagletpath $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     #
 
 DEFAULT_JAVADOC_OPTIONS := -XDignore.symbol.file=true -use -keywords -notimestamp \
@@ -311,7 +314,7 @@ define SetupJavadocGenerationBody
   $1_INDEX_FILE := $$(JAVADOC_OUTPUTDIR)/$$($1_OUTPUT_DIRNAME)/index.html
 
   # Rule for actually running javadoc
-  $$($1_INDEX_FILE): $$($1_VARDEPS_FILE) $$($1_PACKAGE_DEPS) $$($1_DEPS)
+  $$($1_INDEX_FILE): $(BUILD_TOOLS_JDK) $$($1_VARDEPS_FILE) $$($1_PACKAGE_DEPS) $$($1_DEPS)
 	$$(call LogWarn, Generating Javadoc from $$(words $$($1_PACKAGES)) package(s) for $$($1_OUTPUT_DIRNAME))
 	$$(call MakeDir, $$(@D))
         ifneq ($$($1_PACKAGES_FILE), )
@@ -683,22 +686,6 @@ $(eval $(call SetupJavadocGeneration, jdknet, \
 TARGETS += $(jdknet)
 
 ################################################################################
-
-# TODO: Need to decide when the plugin API is ready to publish as experimental API.
-# This target is temporarily added for internal use for now.
-$(eval $(call SetupJavadocGeneration, jlinkplugins, \
-    MODULES := jdk.jlink, \
-    PACKAGES := jdk.tools.jlink.plugin, \
-    API_ROOT := jdk, \
-    DEST_DIR := jlink, \
-    TITLE := JLink Plugin API - EXPERIMENTAL, \
-    FIRST_COPYRIGHT_YEAR := 2015, \
-    DISABLED_DOCLINT := html missing syntax, \
-))
-
-TARGETS += $(jlinkplugins)
-
-################################################################################
 # Copy JDWP html file
 
 JDWP_HTML := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/jdwp-protocol.html
@@ -756,7 +743,7 @@ $(eval $(call IncludeCustomExtension, , Javadoc.gmk))
 
 ################################################################################
 
-docs-javadoc: $(TARGETS)
+docs-javadoc: $(BUILD_TOOLS_JDK) $(TARGETS)
 
 docs-copy: $(COPY_TARGETS)
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,6 +219,9 @@ public interface SSLSession {
      * Note: This method can be used only when using certificate-based
      * cipher suites; using it with non-certificate-based cipher suites,
      * such as Kerberos, will throw an SSLPeerUnverifiedException.
+     * <P>
+     * Note: The returned value may not be a valid certificate chain
+     * and should not be relied on for trust decisions.
      *
      * @return an ordered array of peer certificates,
      *          with the peer's own certificate first followed by any
@@ -259,6 +262,9 @@ public interface SSLSession {
      * Note: This method can be used only when using certificate-based
      * cipher suites; using it with non-certificate-based cipher suites,
      * such as Kerberos, will throw an SSLPeerUnverifiedException.
+     * <P>
+     * Note: The returned value may not be a valid certificate chain
+     * and should not be relied on for trust decisions.
      *
      * <p><em>Note: this method exists for compatibility with previous
      * releases. New applications should use
@@ -273,11 +279,10 @@ public interface SSLSession {
      *          has not been verified
      * @see #getPeerPrincipal()
      * @deprecated The {@link #getPeerCertificates()} method that returns an
-     *          array of {@code java.security.cert.Certificate} should
-     *          be used instead.  This method is subject to removal in
-     *          a future version of Java SE.
+     *               array of {@code java.security.cert.Certificate} should
+     *               be used instead.
      */
-    @Deprecated(since="9", forRemoval=true)
+    @Deprecated(since="9")
     public javax.security.cert.X509Certificate [] getPeerCertificateChain()
             throws SSLPeerUnverifiedException;
 

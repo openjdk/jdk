@@ -53,7 +53,7 @@ public class CopyOnWriteArraySetTest extends JSR166TestCase {
     }
 
     static CopyOnWriteArraySet<Integer> populatedSet(int n) {
-        CopyOnWriteArraySet<Integer> a = new CopyOnWriteArraySet<Integer>();
+        CopyOnWriteArraySet<Integer> a = new CopyOnWriteArraySet<>();
         assertTrue(a.isEmpty());
         for (int i = 0; i < n; i++)
             a.add(i);
@@ -63,7 +63,7 @@ public class CopyOnWriteArraySetTest extends JSR166TestCase {
     }
 
     static CopyOnWriteArraySet populatedSet(Integer[] elements) {
-        CopyOnWriteArraySet<Integer> a = new CopyOnWriteArraySet<Integer>();
+        CopyOnWriteArraySet<Integer> a = new CopyOnWriteArraySet<>();
         assertTrue(a.isEmpty());
         for (int i = 0; i < elements.length; i++)
             a.add(elements[i]);
