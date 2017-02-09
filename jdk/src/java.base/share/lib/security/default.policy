@@ -215,3 +215,7 @@ grant {
     permission java.lang.RuntimePermission "accessClassInPackage.com.sun.java.swing.plaf.*";
     permission java.lang.RuntimePermission "accessClassInPackage.com.apple.*";
 };
+
+grant codeBase "jrt:/jdk.vm.compiler" {
+    permission java.security.AllPermission;
+};
