@@ -135,34 +135,17 @@ endif
 
 ################################################################################
 
-BUILD_JSPAWNHELPER :=
-BUILD_JSPAWNHELPER_SRC := $(JDK_TOPDIR)/src/java.base/unix/native/jspawnhelper
-JSPAWNHELPER_CFLAGS := -I$(JDK_TOPDIR)/src/java.base/unix/native/libjava
-BUILD_JSPAWNHELPER_DST_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base
-LINK_JSPAWNHELPER_OBJECTS := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjava/childproc.o
-BUILD_JSPAWNHELPER_LDFLAGS :=
-
 ifneq ($(findstring $(OPENJDK_TARGET_OS), macosx solaris aix), )
-  BUILD_JSPAWNHELPER := 1
-endif
-
-ifeq ($(OPENJDK_TARGET_CPU_BITS), 64)
-  BUILD_JSPAWNHELPER_LDFLAGS += $(COMPILER_TARGET_BITS_FLAG)64
-endif
-
-ifeq ($(BUILD_JSPAWNHELPER), 1)
-  $(eval $(call SetupNativeCompilation,BUILD_JSPAWNHELPER, \
-      SRC := $(BUILD_JSPAWNHELPER_SRC), \
-      INCLUDE_FILES := jspawnhelper.c, \
+  $(eval $(call SetupNativeCompilation, BUILD_JSPAWNHELPER, \
+      SRC := $(JDK_TOPDIR)/src/$(MODULE)/unix/native/jspawnhelper, \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKEXE) $(JSPAWNHELPER_CFLAGS), \
-      LDFLAGS := $(LDFLAGS_JDKEXE) $(BUILD_JSPAWNHELPER_LDFLAGS), \
-      LIBS := $(LINK_JSPAWNHELPER_OBJECTS), \
+      CFLAGS := $(CFLAGS_JDKEXE) -I$(JDK_TOPDIR)/src/$(MODULE)/unix/native/libjava, \
+      EXTRA_OBJECT_FILES := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjava/childproc.o, \
+      LDFLAGS := $(LDFLAGS_JDKEXE), \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/jspawnhelper, \
-      OUTPUT_DIR := $(BUILD_JSPAWNHELPER_DST_DIR), \
-      PROGRAM := jspawnhelper))
-
-  $(BUILD_JSPAWNHELPER): $(LINK_JSPAWNHELPER_OBJECTS)
+      OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE), \
+      PROGRAM := jspawnhelper, \
+  ))
 
   TARGETS += $(BUILD_JSPAWNHELPER)
 endif
