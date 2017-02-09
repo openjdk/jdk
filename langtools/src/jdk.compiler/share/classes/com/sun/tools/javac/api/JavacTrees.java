@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -418,6 +418,7 @@ public class JavacTrees extends DocTrees {
 
     private Symbol attributeDocReference(TreePath path, DCReference ref) {
         Env<AttrContext> env = getAttrContext(path);
+        if (env == null) return null;
 
         Log.DeferredDiagnosticHandler deferredDiagnosticHandler =
                 new Log.DeferredDiagnosticHandler(log);
@@ -881,6 +882,7 @@ public class JavacTrees extends DocTrees {
                 case INTERFACE:
 //                    System.err.println("CLASS: " + ((JCClassDecl)tree).sym.getSimpleName());
                     env = enter.getClassEnv(((JCClassDecl)tree).sym);
+                    if (env == null) return null;
                     break;
                 case METHOD:
 //                    System.err.println("METHOD: " + ((JCMethodDecl)tree).sym.getSimpleName());

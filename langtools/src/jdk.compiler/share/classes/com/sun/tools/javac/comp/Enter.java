@@ -156,6 +156,7 @@ public class Enter extends JCTree.Visitor {
 
     public Env<AttrContext> getClassEnv(TypeSymbol sym) {
         Env<AttrContext> localEnv = getEnv(sym);
+        if (localEnv == null) return null;
         Env<AttrContext> lintEnv = localEnv;
         while (lintEnv.info.lint == null)
             lintEnv = lintEnv.next;
