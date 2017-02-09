@@ -33,6 +33,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -97,7 +98,8 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
 
             // Set-up the JDI connection
             JdiInitiator jdii = new JdiInitiator(port,
-                    env.extraRemoteVMOptions(), remoteAgent, isLaunch, host, timeout);
+                    env.extraRemoteVMOptions(), remoteAgent, isLaunch, host,
+                    timeout, Collections.emptyMap());
             VirtualMachine vm = jdii.vm();
             Process process = jdii.process();
 

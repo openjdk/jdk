@@ -165,7 +165,9 @@ class MemoryFileManager implements JavaFileManager {
     }
 
     public MemoryFileManager(StandardJavaFileManager standardManager, JShell proc) {
-        this.stdFileManager = standardManager;
+        this.stdFileManager = proc.fileManagerMapping != null
+                ? proc.fileManagerMapping.apply(standardManager)
+                : standardManager;
         this.proc = proc;
     }
 
@@ -185,6 +187,7 @@ class MemoryFileManager implements JavaFileManager {
     }
 
     // Make compatible with Jigsaw
+    @Override
     public String inferModuleName(Location location) {
         try {
             if (inferModuleNameMethod == null) {
@@ -203,6 +206,7 @@ class MemoryFileManager implements JavaFileManager {
     }
 
     // Make compatible with Jigsaw
+    @Override
     public Iterable<Set<Location>> listLocationsForModules(Location location) throws IOException {
         try {
             if (listLocationsForModulesMethod == null) {
