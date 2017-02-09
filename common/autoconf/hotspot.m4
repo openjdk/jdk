@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -213,8 +213,8 @@ AC_DEFUN_ONCE([HOTSPOT_ENABLE_DISABLE_AOT],
   fi
 
   if test "x$ENABLE_AOT" = "xtrue"; then
-    # Only enable AOT on linux-X64.
-    if test "x$OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU" = "xlinux-x86_64"; then
+    # Only enable AOT on X64 platforms.
+    if test "x$OPENJDK_TARGET_CPU" = "xx86_64"; then
       if test -e "$HOTSPOT_TOPDIR/src/jdk.aot"; then
         if test -e "$HOTSPOT_TOPDIR/src/jdk.vm.compiler"; then
           ENABLE_AOT="true"
