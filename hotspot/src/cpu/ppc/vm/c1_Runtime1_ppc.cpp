@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -741,7 +741,10 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         Register tmp  = R14;
         Register tmp2 = R15;
 
-        Label refill, restart;
+        Label refill, restart, marking_not_active;
+        int satb_q_active_byte_offset =
+          in_bytes(JavaThread::satb_mark_queue_offset() +
+                   SATBMarkQueue::byte_offset_of_active());
         int satb_q_index_byte_offset =
           in_bytes(JavaThread::satb_mark_queue_offset() +
                    SATBMarkQueue::byte_offset_of_index());
@@ -752,6 +755,16 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         // Spill
         __ std(tmp, -16, R1_SP);
         __ std(tmp2, -24, R1_SP);
+
+        // Is marking still active?
+        if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
+          __ lwz(tmp, satb_q_active_byte_offset, R16_thread);
+        } else {
+          assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
+          __ lbz(tmp, satb_q_active_byte_offset, R16_thread);
+        }
+        __ cmpdi(CCR0, tmp, 0);
+        __ beq(CCR0, marking_not_active);
 
         __ bind(restart);
         // Load the index into the SATB buffer. SATBMarkQueue::_index is a
@@ -769,6 +782,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ std(tmp, satb_q_index_byte_offset, R16_thread);
         __ stdx(pre_val, tmp2, tmp); // [_buf + index] := <address_of_card>
 
+        __ bind(marking_not_active);
         // Restore temp registers and return-from-leaf.
         __ ld(tmp2, -24, R1_SP);
         __ ld(tmp, -16, R1_SP);

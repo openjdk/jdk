@@ -429,6 +429,7 @@
   declare_constant(CodeInstaller::HEAP_TOP_ADDRESS)                       \
   declare_constant(CodeInstaller::HEAP_END_ADDRESS)                       \
   declare_constant(CodeInstaller::NARROW_KLASS_BASE_ADDRESS)              \
+  declare_constant(CodeInstaller::NARROW_OOP_BASE_ADDRESS)                \
   declare_constant(CodeInstaller::CRC_TABLE_ADDRESS)                      \
   declare_constant(CodeInstaller::LOG_OF_HEAP_REGION_GRAIN_BYTES)         \
   declare_constant(CodeInstaller::INLINE_CONTIGUOUS_ALLOCATION_SUPPORTED) \
@@ -534,7 +535,6 @@
                                                                           \
   declare_constant(markOopDesc::no_hash)                                  \
                                                                           \
-  declare_constant(Method::_jfr_towrite)                                  \
   declare_constant(Method::_caller_sensitive)                             \
   declare_constant(Method::_force_inline)                                 \
   declare_constant(Method::_dont_inline)                                  \

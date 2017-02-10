@@ -502,7 +502,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     private final class ArchiveContainer implements Container {
         private final Path archivePath;
         private final FileSystem fileSystem;
-        private final Map<RelativePath, Path> pathCache = new HashMap<>();
+        private final Map<RelativePath, Path> packages;
 
         public ArchiveContainer(Path archivePath) throws IOException, ProviderNotFoundException, SecurityException {
             this.archivePath = archivePath;
@@ -513,6 +513,21 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
                 this.fileSystem = jarFSProvider.newFileSystem(archivePath, env);
             } else {
                 this.fileSystem = FileSystems.newFileSystem(archivePath, null);
+            }
+            packages = new HashMap<>();
+            for (Path root : fileSystem.getRootDirectories()) {
+                Files.walkFileTree(root, EnumSet.noneOf(FileVisitOption.class), Integer.MAX_VALUE,
+                        new SimpleFileVisitor<Path>() {
+                            @Override
+                            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+                                if (isValid(dir.getFileName())) {
+                                    packages.put(new RelativeDirectory(root.relativize(dir).toString()), dir);
+                                    return FileVisitResult.CONTINUE;
+                                } else {
+                                    return FileVisitResult.SKIP_SUBTREE;
+                                }
+                            }
+                        });
             }
         }
 
@@ -526,7 +541,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
                          Set<JavaFileObject.Kind> fileKinds,
                          boolean recurse,
                          ListBuffer<JavaFileObject> resultList) throws IOException {
-            Path resolvedSubdirectory = resolvePath(subdirectory);
+            Path resolvedSubdirectory = packages.get(subdirectory);
 
             if (resolvedSubdirectory == null)
                 return ;
@@ -544,18 +559,6 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
                             }
                         }
 
-                        boolean isValid(Path fileName) {
-                            if (fileName == null) {
-                                return true;
-                            } else {
-                                String name = fileName.toString();
-                                if (name.endsWith("/")) {
-                                    name = name.substring(0, name.length() - 1);
-                                }
-                                return SourceVersion.isIdentifier(name);
-                            }
-                        }
-
                         @Override
                         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                             if (attrs.isRegularFile() && fileKinds.contains(getKind(file.getFileName().toString()))) {
@@ -569,27 +572,29 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
         }
 
-        @Override
-        public JavaFileObject getFileObject(Path userPath, RelativeFile name) throws IOException {
-            Path p = resolvePath(name);
-            if (p != null)
-                return PathFileObject.forJarPath(JavacFileManager.this, p, userPath);
-
-            return null;
+        private boolean isValid(Path fileName) {
+            if (fileName == null) {
+                return true;
+            } else {
+                String name = fileName.toString();
+                if (name.endsWith("/")) {
+                    name = name.substring(0, name.length() - 1);
+                }
+                return SourceVersion.isIdentifier(name);
+            }
         }
 
-        private synchronized Path resolvePath(RelativePath path) {
-            if (!pathCache.containsKey(path)) {
-                Path relativePath = path.resolveAgainst(fileSystem);
-
-                if (!Files.exists(relativePath)) {
-                    relativePath = null;
+        @Override
+        public JavaFileObject getFileObject(Path userPath, RelativeFile name) throws IOException {
+            RelativeDirectory root = name.dirname();
+            Path packagepath = packages.get(root);
+            if (packagepath != null) {
+                Path relpath = packagepath.resolve(name.basename());
+                if (Files.exists(relpath)) {
+                    return PathFileObject.forJarPath(JavacFileManager.this, relpath, userPath);
                 }
-
-                pathCache.put(path, relativePath);
-                return relativePath;
             }
-            return pathCache.get(path);
+            return null;
         }
 
         @Override

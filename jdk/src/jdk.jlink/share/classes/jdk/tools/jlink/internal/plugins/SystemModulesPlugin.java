@@ -771,8 +771,11 @@ public final class SystemModulesPlugin implements Plugin {
                 if (md.isOpen()) {
                     setModuleBit("open", true);
                 }
-                if (md.isSynthetic()) {
+                if (md.modifiers().contains(ModuleDescriptor.Modifier.SYNTHETIC)) {
                     setModuleBit("synthetic", true);
+                }
+                if (md.modifiers().contains(ModuleDescriptor.Modifier.MANDATED)) {
+                    setModuleBit("mandated", true);
                 }
             }
 

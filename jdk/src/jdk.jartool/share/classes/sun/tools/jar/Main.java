@@ -699,7 +699,7 @@ public class Main {
         }
         String pn = toPackageName(name);
         // add if this is a class or resource in a package
-        if (Checks.isJavaIdentifier(pn)) {
+        if (Checks.isPackageName(pn)) {
             packages.add(pn);
         }
     }
@@ -1995,7 +1995,7 @@ public class Main {
             }
             // get a resolved module graph
             Configuration config =
-                Configuration.empty().resolveRequires(system, finder, roots);
+                Configuration.empty().resolve(system, finder, roots);
 
             // filter modules resolved from the system module finder
             this.modules = config.modules().stream()

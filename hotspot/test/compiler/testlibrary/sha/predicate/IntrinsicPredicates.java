@@ -55,7 +55,7 @@ public class IntrinsicPredicates {
                 "TieredStopAtLevel");
         boolean maxLevelIsReachable = (tieredMaxLevel
                 == IntrinsicPredicates.TIERED_MAX_LEVEL);
-        return Platform.isServer() && (!isTiered || maxLevelIsReachable);
+        return Platform.isServer() && !Platform.isEmulatedClient() && (!isTiered || maxLevelIsReachable);
     };
 
     public static final BooleanSupplier SHA1_INSTRUCTION_AVAILABLE
