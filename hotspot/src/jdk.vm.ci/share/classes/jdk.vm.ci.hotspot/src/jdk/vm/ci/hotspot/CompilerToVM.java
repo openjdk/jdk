@@ -278,8 +278,10 @@ final class CompilerToVM {
      * {@code info} are:
      *
      * <pre>
-     *     [(int) flags,   // only valid if field is resolved
-     *      (int) offset]  // only valid if field is resolved
+     *     [ flags,  // fieldDescriptor::access_flags()
+     *       offset, // fieldDescriptor::offset()
+     *       index   // fieldDescriptor::index()
+     *     ]
      * </pre>
      *
      * The behavior of this method is undefined if {@code cpi} does not denote a
@@ -288,7 +290,7 @@ final class CompilerToVM {
      * @param info an array in which the details of the field are returned
      * @return the type defining the field if resolution is successful, 0 otherwise
      */
-    native HotSpotResolvedObjectTypeImpl resolveFieldInPool(HotSpotConstantPool constantPool, int cpi, HotSpotResolvedJavaMethodImpl method, byte opcode, long[] info);
+    native HotSpotResolvedObjectTypeImpl resolveFieldInPool(HotSpotConstantPool constantPool, int cpi, HotSpotResolvedJavaMethodImpl method, byte opcode, int[] info);
 
     /**
      * Converts {@code cpci} from an index into the cache for {@code constantPool} to an index
@@ -631,4 +633,15 @@ final class CompilerToVM {
      * {@code lambdaForm} (which must be a {@code java.lang.invoke.LambdaForm} instance).
      */
     native void compileToBytecode(Object lambdaForm);
+
+    /**
+     * Gets the value of the VM flag named {@code name}.
+     *
+     * @param name name of a VM option
+     * @return {@code this} if the named VM option doesn't exist, a {@link String} or {@code null}
+     *         if its type is {@code ccstr} or {@code ccstrlist}, a {@link Double} if its type is
+     *         {@code double}, a {@link Boolean} if its type is {@code bool} otherwise a
+     *         {@link Long}
+     */
+    native Object getFlagValue(String name);
 }

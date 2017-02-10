@@ -48,6 +48,10 @@ public class CompilerToVMHelper {
         return CTVM.getExceptionTableStart((HotSpotResolvedJavaMethodImpl)method);
     }
 
+    public static Object getFlagValue(String name) {
+        return CTVM.getFlagValue(name);
+    }
+
     public static boolean isCompilable(HotSpotResolvedJavaMethod method) {
         return CTVM.isCompilable((HotSpotResolvedJavaMethodImpl)method);
     }
@@ -128,7 +132,7 @@ public class CompilerToVMHelper {
     }
 
     public static HotSpotResolvedObjectType resolveFieldInPool(
-            ConstantPool constantPool, int cpi, ResolvedJavaMethod method, byte opcode, long[] info) {
+            ConstantPool constantPool, int cpi, ResolvedJavaMethod method, byte opcode, int[] info) {
         return CTVM.resolveFieldInPool((HotSpotConstantPool) constantPool, cpi, (HotSpotResolvedJavaMethodImpl) method, opcode, info);
     }
 

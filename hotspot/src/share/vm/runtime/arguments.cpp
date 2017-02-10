@@ -1894,6 +1894,11 @@ void Arguments::set_jvmci_specific_flags() {
     if (FLAG_IS_DEFAULT(NewSizeThreadIncrease)) {
       FLAG_SET_DEFAULT(NewSizeThreadIncrease, 4*K);
     }
+    if (TieredStopAtLevel != CompLevel_full_optimization) {
+      // Currently JVMCI compiler can only work at the full optimization level
+      warning("forcing TieredStopAtLevel to full optimization because JVMCI is enabled");
+      TieredStopAtLevel = CompLevel_full_optimization;
+    }
     if (FLAG_IS_DEFAULT(TypeProfileLevel)) {
       FLAG_SET_DEFAULT(TypeProfileLevel, 0);
     }
@@ -2506,8 +2511,8 @@ bool Arguments::check_vm_args_consistency() {
     }
 #endif
   }
-#if INCLUDE_JVMCI
 
+#if INCLUDE_JVMCI
   status = status && check_jvmci_args_consistency();
 
   if (EnableJVMCI) {

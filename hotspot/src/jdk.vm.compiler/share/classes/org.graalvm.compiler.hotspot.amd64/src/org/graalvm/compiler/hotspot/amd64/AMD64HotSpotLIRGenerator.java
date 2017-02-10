@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -497,9 +497,8 @@ public class AMD64HotSpotLIRGenerator extends AMD64LIRGenerator implements HotSp
     }
 
     @Override
-    public Value emitLoadConfigValue(int markId) {
-        // Globals are always full-pointer width.
-        Variable result = newVariable(LIRKind.value(target().arch.getWordKind()));
+    public Value emitLoadConfigValue(int markId, LIRKind kind) {
+        Variable result = newVariable(kind);
         append(new AMD64HotSpotLoadConfigValueOp(markId, result));
         return result;
     }

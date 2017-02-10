@@ -47,15 +47,6 @@ public final class HotSpotVMConfigStore {
     }
 
     /**
-     * Gets the C++ type sizes exposed by this object.
-     *
-     * @return an unmodifiable map from C++ type names to their sizes in bytes
-     */
-    public Map<String, Long> getTypeSizes() {
-        return Collections.unmodifiableMap(vmTypeSizes);
-    }
-
-    /**
      * Gets the C++ constants exposed by this object.
      *
      * @return an unmodifiable map from the names of C++ constants to their values
@@ -90,11 +81,11 @@ public final class HotSpotVMConfigStore {
     }
 
     final HashMap<String, VMField> vmFields;
-    final HashMap<String, Long> vmTypeSizes;
     final HashMap<String, Long> vmConstants;
     final HashMap<String, Long> vmAddresses;
     final HashMap<String, VMFlag> vmFlags;
     final List<VMIntrinsicMethod> vmIntrinsics;
+    final CompilerToVM compilerToVm;
 
     /**
      * Reads the database of VM info. The return value encodes the info in a nested object array
@@ -103,7 +94,6 @@ public final class HotSpotVMConfigStore {
      * <pre>
      *     info = [
      *         VMField[] vmFields,
-     *         [String name, Long size, ...] vmTypeSizes,
      *         [String name, Long value, ...] vmConstants,
      *         [String name, Long value, ...] vmAddresses,
      *         VMFlag[] vmFlags
@@ -113,36 +103,29 @@ public final class HotSpotVMConfigStore {
      */
     @SuppressWarnings("try")
     HotSpotVMConfigStore(CompilerToVM compilerToVm) {
+        this.compilerToVm = compilerToVm;
         Object[] data;
         try (InitTimer t = timer("CompilerToVm readConfiguration")) {
             data = compilerToVm.readConfiguration();
         }
-        assert data.length == 6 : data.length;
+        assert data.length == 5 : data.length;
 
         // @formatter:off
         VMField[] vmFieldsInfo    = (VMField[]) data[0];
-        Object[] vmTypesSizesInfo = (Object[])  data[1];
-        Object[] vmConstantsInfo  = (Object[])  data[2];
-        Object[] vmAddressesInfo  = (Object[])  data[3];
-        VMFlag[] vmFlagsInfo      = (VMFlag[])  data[4];
+        Object[] vmConstantsInfo  = (Object[])  data[1];
+        Object[] vmAddressesInfo  = (Object[])  data[2];
+        VMFlag[] vmFlagsInfo      = (VMFlag[])  data[3];
 
         vmFields     = new HashMap<>(vmFieldsInfo.length);
-        vmTypeSizes  = new HashMap<>(vmTypesSizesInfo.length);
         vmConstants  = new HashMap<>(vmConstantsInfo.length);
         vmAddresses  = new HashMap<>(vmAddressesInfo.length);
         vmFlags      = new HashMap<>(vmFlagsInfo.length);
-        vmIntrinsics = Arrays.asList((VMIntrinsicMethod[]) data[5]);
+        vmIntrinsics = Arrays.asList((VMIntrinsicMethod[]) data[4]);
         // @formatter:on
 
         try (InitTimer t = timer("HotSpotVMConfigStore<init> fill maps")) {
             for (VMField vmField : vmFieldsInfo) {
                 vmFields.put(vmField.name, vmField);
-            }
-
-            for (int i = 0; i < vmTypesSizesInfo.length / 2; i++) {
-                String name = (String) vmTypesSizesInfo[i * 2];
-                Long size = (Long) vmTypesSizesInfo[i * 2 + 1];
-                vmTypeSizes.put(name, size);
             }
 
             for (int i = 0; i < vmConstantsInfo.length / 2; i++) {
