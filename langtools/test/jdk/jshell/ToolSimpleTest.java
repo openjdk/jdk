@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128 8154513 8170015 8170368 8172102 8172103  8165405 8173073 8173848 8174041 8173916 8174028
+ * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128 8154513 8170015 8170368 8172102 8172103  8165405 8173073 8173848 8174041 8173916 8174028 8174262
  * @summary Simple jshell tool tests
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -504,12 +504,12 @@ public class ToolSimpleTest extends ReplToolTesting {
                 a -> assertCommand(a, "class C extends NONE { int x; }",
                         "|  created class C, however, it cannot be referenced until class NONE is declared"),
                 a -> assertCommand(a, "class D { void m() { System.out.println(nada); } }",
-                        "|  created class D, however, it cannot be instanciated or its methods invoked until variable nada is declared"),
+                        "|  created class D, however, it cannot be instantiated or its methods invoked until variable nada is declared"),
                 a -> assertCommand(a, "/types",
                         "|    class C\n" +
                         "|       which cannot be referenced until class NONE is declared\n" +
                         "|    class D\n" +
-                        "|       which cannot be instanciated or its methods invoked until variable nada is declared\n")
+                        "|       which cannot be instantiated or its methods invoked until variable nada is declared\n")
         );
     }
 
