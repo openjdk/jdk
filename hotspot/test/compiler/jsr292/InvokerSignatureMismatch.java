@@ -31,21 +31,19 @@ public class InvokerSignatureMismatch {
     }
 
     public static void main(String[] args) throws Throwable {
-        mainLink();
-        mainInvoke();
-    }
-
-    static void mainLink() throws Throwable {
         for (int i = 0; i < 50_000; i++) { // OSR
-            Object name = MethodHandleHelper.internalMemberName(INT_MH);
-            MethodHandleHelper.linkToStatic(INT_MH, (float) i, name);
+            mainLink(i);
+            mainInvoke(i);
         }
     }
 
-    static void mainInvoke() throws Throwable {
-        for (int i = 0; i < 50_000; i++) { // OSR
-            MethodHandleHelper.invokeBasicV(INT_MH, (float) i);
-        }
+    static void mainLink(int i) throws Throwable {
+        Object name = MethodHandleHelper.internalMemberName(INT_MH);
+        MethodHandleHelper.linkToStatic(INT_MH, (float) i, name);
+    }
+
+    static void mainInvoke(int i) throws Throwable {
+        MethodHandleHelper.invokeBasicV(INT_MH, (float) i);
     }
 
     static int cnt = 0;
