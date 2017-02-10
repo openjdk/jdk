@@ -25,6 +25,8 @@
 
 /**
  * Defines the Java Architecture for XML Binding (JAXB) API.
+ *
+ * @since 9
  */
 module java.xml.bind {
     requires transitive java.activation;

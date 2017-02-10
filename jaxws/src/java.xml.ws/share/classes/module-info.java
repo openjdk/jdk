@@ -26,6 +26,8 @@
 /**
  * Defines the Java API for XML-Based Web Services (JAX-WS), and
  * the Web Services Metadata API.
+ *
+ * @since 9
  */
 module java.xml.ws {
     requires transitive java.activation;
