@@ -968,7 +968,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
             Collection<Path> paths = locations.getLocation(location);
             ModuleFinder finder = ModuleFinder.of(paths.toArray(new Path[paths.size()]));
             Layer bootLayer = Layer.boot();
-            Configuration cf = bootLayer.configuration().resolveRequiresAndUses(ModuleFinder.of(), finder, Collections.emptySet());
+            Configuration cf = bootLayer.configuration().resolveAndBind(ModuleFinder.of(), finder, Collections.emptySet());
             Layer layer = bootLayer.defineModulesWithOneLoader(cf, ClassLoader.getSystemClassLoader());
             return ServiceLoaderHelper.load(layer, service);
         } else {
