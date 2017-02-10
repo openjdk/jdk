@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4374,10 +4374,12 @@ static void check_super_class_access(const InstanceKlass* this_klass, TRAPS) {
     }
 
     Reflection::VerifyClassAccessResults vca_result =
-      Reflection::verify_class_access(this_klass, super, false);
+      Reflection::verify_class_access(this_klass, InstanceKlass::cast(super), false);
     if (vca_result != Reflection::ACCESS_OK) {
       ResourceMark rm(THREAD);
-      char* msg =  Reflection::verify_class_access_msg(this_klass, super, vca_result);
+      char* msg = Reflection::verify_class_access_msg(this_klass,
+                                                      InstanceKlass::cast(super),
+                                                      vca_result);
       if (msg == NULL) {
         Exceptions::fthrow(
           THREAD_AND_LOCATION,
@@ -4406,10 +4408,12 @@ static void check_super_interface_access(const InstanceKlass* this_klass, TRAPS)
     Klass* const k = local_interfaces->at(i);
     assert (k != NULL && k->is_interface(), "invalid interface");
     Reflection::VerifyClassAccessResults vca_result =
-      Reflection::verify_class_access(this_klass, k, false);
+      Reflection::verify_class_access(this_klass, InstanceKlass::cast(k), false);
     if (vca_result != Reflection::ACCESS_OK) {
       ResourceMark rm(THREAD);
-      char* msg =  Reflection::verify_class_access_msg(this_klass, k, vca_result);
+      char* msg = Reflection::verify_class_access_msg(this_klass,
+                                                      InstanceKlass::cast(k),
+                                                      vca_result);
       if (msg == NULL) {
         Exceptions::fthrow(
           THREAD_AND_LOCATION,
