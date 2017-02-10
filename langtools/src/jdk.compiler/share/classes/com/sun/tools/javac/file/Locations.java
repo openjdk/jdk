@@ -43,6 +43,7 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.ProviderNotFoundException;
+import java.nio.file.spi.FileSystemProvider;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -1119,8 +1120,12 @@ public class Locations {
                 }
 
                 if (p.getFileName().toString().endsWith(".jar") && fsInfo.exists(p)) {
-                    URI uri = URI.create("jar:" + p.toUri());
-                    try (FileSystem fs = FileSystems.newFileSystem(uri, fsEnv, null)) {
+                    FileSystemProvider jarFSProvider = fsInfo.getJarFSProvider();
+                    if (jarFSProvider == null) {
+                        log.error(Errors.NoZipfsForArchive(p));
+                        return null;
+                    }
+                    try (FileSystem fs = jarFSProvider.newFileSystem(p, fsEnv)) {
                         Path moduleInfoClass = fs.getPath("module-info.class");
                         if (Files.exists(moduleInfoClass)) {
                             String moduleName = readModuleName(moduleInfoClass);
@@ -1131,9 +1136,6 @@ public class Locations {
                         return null;
                     } catch (IOException e) {
                         log.error(Errors.LocnCantReadFile(p));
-                        return null;
-                    } catch (ProviderNotFoundException e) {
-                        log.error(Errors.NoZipfsForArchive(p));
                         return null;
                     }
 
@@ -1177,8 +1179,12 @@ public class Locations {
                         // workaround for now
                         FileSystem fs = fileSystems.get(p);
                         if (fs == null) {
-                            URI uri = URI.create("jar:" + p.toUri());
-                            fs = FileSystems.newFileSystem(uri, Collections.emptyMap(), null);
+                            FileSystemProvider jarFSProvider = fsInfo.getJarFSProvider();
+                            if (jarFSProvider == null) {
+                                log.error(Errors.LocnCantReadFile(p));
+                                return null;
+                            }
+                            fs = jarFSProvider.newFileSystem(p, Collections.emptyMap());
                             try {
                                 Path moduleInfoClass = fs.getPath("classes/module-info.class");
                                 String moduleName = readModuleName(moduleInfoClass);
@@ -1194,7 +1200,7 @@ public class Locations {
                         }
                     } catch (ModuleNameReader.BadClassFile e) {
                         log.error(Errors.LocnBadModuleInfo(p));
-                    } catch (IOException | ProviderNotFoundException e) {
+                    } catch (IOException e) {
                         log.error(Errors.LocnCantReadFile(p));
                         return null;
                     }

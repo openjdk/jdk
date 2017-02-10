@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,19 +43,31 @@ import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Set;
 import java.util.stream.Stream;
 
 import jdk.tools.jaotc.binformat.BinaryContainer;
 import jdk.tools.jaotc.binformat.ByteContainer;
-import jdk.tools.jaotc.collect.ClassCollector;
+import jdk.tools.jaotc.collect.*;
+import jdk.tools.jaotc.collect.classname.ClassNameSourceProvider;
+import jdk.tools.jaotc.collect.directory.DirectorySourceProvider;
+import jdk.tools.jaotc.collect.jar.JarSourceProvider;
+import jdk.tools.jaotc.collect.module.ModuleSourceProvider;
 import jdk.tools.jaotc.utils.Timer;
 
 import org.graalvm.compiler.api.runtime.GraalJVMCICompiler;
+import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.HotSpotGraalRuntimeProvider;
 import org.graalvm.compiler.hotspot.HotSpotHostBackend;
+import org.graalvm.compiler.java.GraphBuilderPhase;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
+import org.graalvm.compiler.phases.BasePhase;
+import org.graalvm.compiler.phases.PhaseSuite;
+import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.runtime.RuntimeProvider;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
@@ -120,17 +132,7 @@ public class Main implements LogPrinter {
         abstract void process(Main task, String opt, String arg) throws BadArgs;
     }
 
-    static Option[] recognizedOptions = {new Option("  --module <name>            Module to compile", true, "--module") {
-        @Override
-        void process(Main task, String opt, String arg) {
-            task.options.module = arg;
-        }
-    }, new Option("  --module-path <path>       Specify where to find module to compile", true, "--module-path") {
-        @Override
-        void process(Main task, String opt, String arg) {
-            task.options.modulepath = arg;
-        }
-    }, new Option("  --output <file>            Output file name", true, "--output") {
+    static Option[] recognizedOptions = { new Option("  --output <file>            Output file name", true, "--output") {
         @Override
         void process(Main task, String opt, String arg) {
             String name = arg;
@@ -139,22 +141,48 @@ public class Main implements LogPrinter {
             }
             task.options.outputName = name;
         }
+    }, new Option("  --class-name <class names> List of classes to compile", true, "--class-name", "--classname") {
+        @Override
+        void process(Main task, String opt, String arg) {
+            task.options.files.addAll(ClassSearch.makeList(ClassNameSourceProvider.TYPE, arg));
+        }
+    }, new Option("  --jar <jarfiles>           List of jar files to compile", true, "--jar") {
+        @Override
+        void process(Main task, String opt, String arg) {
+            task.options.files.addAll(ClassSearch.makeList(JarSourceProvider.TYPE, arg));
+        }
+    }, new Option("  --module <modules>         List of modules to compile", true, "--module") {
+        @Override
+        void process(Main task, String opt, String arg) {
+            task.options.files.addAll(ClassSearch.makeList(ModuleSourceProvider.TYPE, arg));
+        }
+    }, new Option("  --directory <dirs>         List of directories where to search for files to compile", true, "--directory") {
+        @Override
+        void process(Main task, String opt, String arg) {
+            task.options.files.addAll(ClassSearch.makeList(DirectorySourceProvider.TYPE, arg));
+        }
+    }, new Option("  --search-path <dirs>       List of directories where to search for specified files", true, "--search-path") {
+        @Override
+        void process(Main task, String opt, String arg) {
+            String[] elements = arg.split(":");
+            task.options.searchPath.add(elements);
+        }
     }, new Option("  --compile-commands <file>  Name of file with compile commands", true, "--compile-commands") {
         @Override
         void process(Main task, String opt, String arg) {
             task.options.methodList = arg;
         }
-    }, new Option("  --compile-for-tiered       Generated profiling code for tiered compilation", false, "--compile-for-tiered") {
+    }, new Option("  --compile-for-tiered       Generate profiling code for tiered compilation", false, "--compile-for-tiered") {
         @Override
         void process(Main task, String opt, String arg) {
             TieredAOT.setValue(true);
         }
-    }, new Option("  --classpath <path>         Specify where to find user class files", true, "--classpath", "--class-path") {
+    }, new Option("  --compile-with-assertions  Compile with java assertions", false, "--compile-with-assertions") {
         @Override
         void process(Main task, String opt, String arg) {
-            task.options.classpath = arg;
+            task.options.compileWithAssertions = true;
         }
-    }, new Option("  --threads <number>         Number of compilation threads to be used", true, "--threads") {
+    }, new Option("  --compile-threads <number> Number of compilation threads to be used", true, "--compile-threads", "--threads") {
         @Override
         void process(Main task, String opt, String arg) {
             int threads = Integer.parseInt(arg);
@@ -213,27 +241,27 @@ public class Main implements LogPrinter {
     }};
 
     public static class Options {
-        public List<String> files = new LinkedList<>();
-        public String module = null;
-        public String modulepath = "modules";
+        public List<SearchFor> files = new LinkedList<>();
         public String outputName = "unnamed";
         public String methodList;
-        public String classpath = ".";
+        public List<ClassSource> sources = new ArrayList<>();
+        public SearchPath searchPath = new SearchPath();
 
         /**
          * We don't see scaling beyond 16 threads.
          */
         private static final int COMPILER_THREADS = 16;
 
-        int threads = Integer.min(COMPILER_THREADS, Runtime.getRuntime().availableProcessors());
+        public int threads = Integer.min(COMPILER_THREADS, Runtime.getRuntime().availableProcessors());
 
         public boolean ignoreClassLoadingErrors;
         public boolean exitOnError;
-        boolean info;
-        boolean verbose;
-        boolean debug;
-        boolean help;
-        boolean version;
+        public boolean info;
+        public boolean verbose;
+        public boolean debug;
+        public boolean help;
+        public boolean version;
+        public boolean compileWithAssertions;
     }
 
     /* package */final Options options = new Options();
@@ -275,7 +303,9 @@ public class Main implements LogPrinter {
 
             printlnInfo("Compiling " + options.outputName + "...");
             final long start = System.currentTimeMillis();
-            run();
+            if (!run()) {
+              return EXIT_ABNORMAL;
+            }
             final long end = System.currentTimeMillis();
             printlnInfo("Total time: " + (end - start) + " ms");
 
@@ -318,17 +348,34 @@ public class Main implements LogPrinter {
     }
 
     @SuppressWarnings("try")
-    private void run() throws Exception {
+    private boolean run() throws Exception {
         openLog();
 
         try {
             CompilationSpec compilationRestrictions = collectSpecifiedMethods();
 
-            Set<Class<?>> classesToCompile;
+            Set<Class<?>> classesToCompile = new HashSet<>();
 
             try (Timer t = new Timer(this, "")) {
-                ClassCollector collector = new ClassCollector(this.options, this);
-                classesToCompile = collector.collectClassesToCompile();
+                FileSupport fileSupport = new FileSupport();
+                ClassSearch lookup = new ClassSearch();
+                lookup.addProvider(new ModuleSourceProvider());
+                lookup.addProvider(new ClassNameSourceProvider(fileSupport));
+                lookup.addProvider(new JarSourceProvider());
+                lookup.addProvider(new DirectorySourceProvider(fileSupport));
+
+                List<LoadedClass> found = null;
+                try {
+                    found = lookup.search(options.files, options.searchPath);
+                } catch (InternalError e) {
+                    reportError(e);
+                    return false;
+                }
+
+                for (LoadedClass loadedClass : found) {
+                    classesToCompile.add(loadedClass.getLoadedClass());
+                }
+
                 printInfo(classesToCompile.size() + " classes found");
             }
 
@@ -356,6 +403,11 @@ public class Main implements LogPrinter {
             AOTCompiler compiler = new AOTCompiler(this, aotBackend, options.threads);
             classes = compiler.compileClasses(classes);
 
+            GraalHotSpotVMConfig graalHotSpotVMConfig = runtime.getVMConfig();
+            PhaseSuite<HighTierContext> graphBuilderSuite = aotBackend.getGraphBuilderSuite();
+            ListIterator<BasePhase<? super HighTierContext>> iterator = graphBuilderSuite.findPhase(GraphBuilderPhase.class);
+            GraphBuilderConfiguration graphBuilderConfig = ((GraphBuilderPhase) iterator.previous()).getGraphBuilderConfig();
+
             // Free memory!
             try (Timer t = options.verbose ? new Timer(this, "Freeing memory") : null) {
                 printMemoryUsage();
@@ -364,7 +416,7 @@ public class Main implements LogPrinter {
                 System.gc();
             }
 
-            BinaryContainer binaryContainer = new BinaryContainer(runtime.getVMConfig(), JVM_VERSION);
+            BinaryContainer binaryContainer = new BinaryContainer(graalHotSpotVMConfig, graphBuilderConfig, JVM_VERSION);
             DataBuilder dataBuilder = new DataBuilder(this, backend, classes, binaryContainer);
             dataBuilder.prepareData();
 
@@ -446,6 +498,7 @@ public class Main implements LogPrinter {
         } finally {
             closeLog();
         }
+        return true;
     }
 
     private void addMethods(AOTCompiledClass aotClass, ResolvedJavaMethod[] methods, CompilationSpec compilationRestrictions, GraalFilters filters) {
@@ -509,7 +562,7 @@ public class Main implements LogPrinter {
                     break;
                 }
             } else {
-                options.files.add(arg);
+                options.files.add(new SearchFor(arg));
             }
         }
     }
@@ -570,6 +623,12 @@ public class Main implements LogPrinter {
         log.flush();
     }
 
+    private void reportError(Throwable e) {
+        log.println("Error: " + e.getMessage());
+        e.printStackTrace(log);
+        log.flush();
+    }
+
     private void reportError(String key, Object... args) {
         printError(MessageFormat.format(key, args));
     }
@@ -580,17 +639,17 @@ public class Main implements LogPrinter {
     }
 
     private void showUsage() {
-        log.println("Usage: " + PROGNAME + " <options> list...");
+        log.println("Usage: " + PROGNAME + " <options> list");
         log.println("use --help for a list of possible options");
     }
 
     private void showHelp() {
-        log.println("Usage: " + PROGNAME + " <options> <--module name> | <list...>");
+        log.println("Usage: " + PROGNAME + " <options> list");
         log.println();
-        log.println("  list       A list of class files, jar files or directories which");
-        log.println("             contains class files.");
+        log.println("  list       A : separated list of class names, modules, jar files");
+        log.println("             or directories which contain class files.");
         log.println();
-        log.println("where possible options include:");
+        log.println("where options include:");
         for (Option o : recognizedOptions) {
             String name = o.aliases[0].substring(1); // there must always be at least one name
             name = name.charAt(0) == '-' ? name.substring(1) : name;

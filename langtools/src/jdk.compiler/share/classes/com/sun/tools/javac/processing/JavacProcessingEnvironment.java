@@ -1671,14 +1671,14 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             if (s.equals("*")) {
                 return MatchingUtils.validImportStringToPattern(s);
             }
-            module = ".*/";
+            module = allowModules ? ".*/" : "";
             pkg = s;
         } else {
             module = Pattern.quote(s.substring(0, slash + 1));
             pkg = s.substring(slash + 1);
         }
         if (MatchingUtils.isValidImportString(pkg)) {
-            return Pattern.compile((allowModules ? module : "") + MatchingUtils.validImportStringToPatternString(pkg));
+            return Pattern.compile(module + MatchingUtils.validImportStringToPatternString(pkg));
         } else {
             log.warning("proc.malformed.supported.string", s, p.getClass().getName());
             return noMatches; // won't match any valid identifier

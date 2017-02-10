@@ -83,7 +83,7 @@ public abstract class AbstractProcessor implements Processor {
         if  (so == null)
             return Collections.emptySet();
         else
-            return arrayToSet(so.value());
+            return arrayToSet(so.value(), false);
     }
 
     /**
@@ -92,21 +92,31 @@ public abstract class AbstractProcessor implements Processor {
      * same set of strings as the annotation.  If the class is not so
      * annotated, an empty set is returned.
      *
+     * If the {@link ProcessingEvironment#getSourceVersion source
+     * version} does not support modules, in other words if it is less
+     * than or equal to {@link SourceVersion#RELEASE_8 RELEASE_8},
+     * then any leading {@link Processor#getSupportedAnnotationTypes
+     * module prefixes} are stripped from the names.
+     *
      * @return the names of the annotation types supported by this
      * processor, or an empty set if none
      */
     public Set<String> getSupportedAnnotationTypes() {
             SupportedAnnotationTypes sat = this.getClass().getAnnotation(SupportedAnnotationTypes.class);
+            boolean initialized = isInitialized();
             if  (sat == null) {
-                if (isInitialized())
+                if (initialized)
                     processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING,
                                                              "No SupportedAnnotationTypes annotation " +
                                                              "found on " + this.getClass().getName() +
                                                              ", returning an empty set.");
                 return Collections.emptySet();
+            } else {
+                boolean stripModulePrefixes =
+                        initialized &&
+                        processingEnv.getSourceVersion().compareTo(SourceVersion.RELEASE_8) <= 0;
+                return arrayToSet(sat.value(), stripModulePrefixes);
             }
-            else
-                return arrayToSet(sat.value());
         }
 
     /**
@@ -185,11 +195,18 @@ public abstract class AbstractProcessor implements Processor {
         return initialized;
     }
 
-    private static Set<String> arrayToSet(String[] array) {
+    private static Set<String> arrayToSet(String[] array,
+                                          boolean stripModulePrefixes) {
         assert array != null;
         Set<String> set = new HashSet<>(array.length);
-        for (String s : array)
+        for (String s : array) {
+            if (stripModulePrefixes) {
+                int index = s.indexOf('/');
+                if (index != -1)
+                    s = s.substring(index + 1);
+            }
             set.add(s);
+        }
         return Collections.unmodifiableSet(set);
     }
 }

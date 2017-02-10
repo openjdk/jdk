@@ -165,6 +165,7 @@ public class Modules extends JCTree.Visitor {
     private final boolean lintOptions;
 
     private Set<ModuleSymbol> rootModules = null;
+    private final Set<ModuleSymbol> warnedMissing = new HashSet<>();
 
     public static Modules instance(Context context) {
         Modules instance = context.get(Modules.class);
@@ -525,7 +526,6 @@ public class Modules extends JCTree.Visitor {
             ModuleSymbol msym = moduleFinder.findModule((ModuleSymbol) sym);
 
             if (msym.kind == ERR) {
-                log.error(Errors.ModuleNotFound(msym));
                 //make sure the module is initialized:
                 msym.directives = List.nil();
                 msym.exports = List.nil();
@@ -674,6 +674,7 @@ public class Modules extends JCTree.Visitor {
             ModuleSymbol msym = lookupModule(tree.moduleName);
             if (msym.kind != MDL) {
                 log.error(tree.moduleName.pos(), Errors.ModuleNotFound(msym));
+                warnedMissing.add(msym);
             } else if (allRequires.contains(msym)) {
                 log.error(tree.moduleName.pos(), Errors.DuplicateRequires(msym));
             } else {
@@ -695,9 +696,6 @@ public class Modules extends JCTree.Visitor {
             PackageSymbol packge = syms.enterPackage(sym, name);
             attr.setPackageSymbols(tree.qualid, packge);
 
-            if (tree.hasTag(Tag.OPENS) && sym.flags.contains(ModuleFlags.OPEN)) {
-                log.error(tree.pos(), Errors.NoOpensUnlessStrong);
-            }
             List<ExportsDirective> exportsForPackage = allExports.computeIfAbsent(packge, p -> List.nil());
             for (ExportsDirective d : exportsForPackage) {
                 reportExportsConflict(tree, packge);
@@ -898,10 +896,7 @@ public class Modules extends JCTree.Visitor {
 
         @Override
         public void visitOpens(JCOpens tree) {
-            if (tree.directive.packge.members().isEmpty() &&
-                ((tree.directive.packge.flags() & Flags.HAS_RESOURCE) == 0)) {
-                log.error(tree.qualid.pos(), Errors.PackageEmptyOrNotFound(tree.directive.packge));
-            }
+            chk.checkPackageExistsForOpens(tree.qualid, tree.directive.packge);
             msym.directives = msym.directives.prepend(tree.directive);
         }
 
@@ -931,6 +926,9 @@ public class Modules extends JCTree.Visitor {
         public void visitProvides(JCProvides tree) {
             Type st = attr.attribType(tree.serviceName, env, syms.objectType);
             ClassSymbol service = (ClassSymbol) st.tsym;
+            if (allProvides.containsKey(service)) {
+                log.error(tree.serviceName.pos(), Errors.RepeatedProvidesForService(service));
+            }
             ListBuffer<ClassSymbol> impls = new ListBuffer<>();
             for (JCExpression implName : tree.implNames) {
                 Type it = attr.attribType(implName, env, syms.objectType);
@@ -959,8 +957,6 @@ public class Modules extends JCTree.Visitor {
                     }
                 }
                 if (it.hasTag(CLASS)) {
-                    // For now, we just check the pair (service-type, impl-type) is unique
-                    // TODO, check only one provides per service type as well
                     if (allProvides.computeIfAbsent(service, s -> new HashSet<>()).add(impl)) {
                         impls.append(impl);
                     } else {
@@ -1183,26 +1179,44 @@ public class Modules extends JCTree.Visitor {
         return allModules == null || allModules.contains(msym);
     }
 
-    private Set<ModuleSymbol> computeTransitiveClosure(Iterable<? extends ModuleSymbol> base, Set<ModuleSymbol> observable) {
-        List<ModuleSymbol> todo = List.nil();
+    private Set<ModuleSymbol> computeTransitiveClosure(Set<? extends ModuleSymbol> base, Set<ModuleSymbol> observable) {
+        List<ModuleSymbol> primaryTodo = List.nil();
+        List<ModuleSymbol> secondaryTodo = List.nil();
 
         for (ModuleSymbol ms : base) {
-            todo = todo.prepend(ms);
+            primaryTodo = primaryTodo.prepend(ms);
         }
 
         Set<ModuleSymbol> result = new LinkedHashSet<>();
         result.add(syms.java_base);
 
-        while (todo.nonEmpty()) {
-            ModuleSymbol current = todo.head;
-            todo = todo.tail;
+        while (primaryTodo.nonEmpty() || secondaryTodo.nonEmpty()) {
+            ModuleSymbol current;
+            boolean isPrimaryTodo;
+            if (primaryTodo.nonEmpty()) {
+                current = primaryTodo.head;
+                primaryTodo = primaryTodo.tail;
+                isPrimaryTodo = true;
+            } else {
+                current = secondaryTodo.head;
+                secondaryTodo = secondaryTodo.tail;
+                isPrimaryTodo = false;
+            }
             if (observable != null && !observable.contains(current))
                 continue;
             if (!result.add(current) || current == syms.unnamedModule || ((current.flags_field & Flags.AUTOMATIC_MODULE) != 0))
                 continue;
             current.complete();
+            if (current.kind == ERR && isPrimaryTodo && warnedMissing.add(current)) {
+                log.error(Errors.ModuleNotFound(current));
+            }
             for (RequiresDirective rd : current.requires) {
-                todo = todo.prepend(rd.module);
+                if (rd.module == syms.java_base) continue;
+                if ((rd.isTransitive() && isPrimaryTodo) || base.contains(current)) {
+                    primaryTodo = primaryTodo.prepend(rd.module);
+                } else {
+                    secondaryTodo = secondaryTodo.prepend(rd.module);
+                }
             }
         }
 
@@ -1582,5 +1596,6 @@ public class Modules extends JCTree.Visitor {
     public void newRound() {
         rootModules = null;
         allModules = null;
+        warnedMissing.clear();
     }
 }

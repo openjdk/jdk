@@ -67,13 +67,13 @@ public class DoNotInlineOrCompileTest {
     private static void runSanityTest(Executable aMethod) {
         HotSpotResolvedJavaMethod method = CTVMUtilities
                 .getResolvedMethod(aMethod);
-        boolean canInline = CompilerToVMHelper.canInlineMethod(method);
-        Asserts.assertTrue(canInline, "Unexpected initial " +
-                "value of property 'can inline'");
+        boolean hasNeverInlineDirective = CompilerToVMHelper.hasNeverInlineDirective(method);
+        Asserts.assertFalse(hasNeverInlineDirective, "Unexpected initial " +
+                "value of property 'hasNeverInlineDirective'");
         CompilerToVMHelper.doNotInlineOrCompile(method);
-        canInline = CompilerToVMHelper.canInlineMethod(method);
-        Asserts.assertFalse(canInline, aMethod
-                + " : can be inlined even after doNotInlineOrCompile'");
+        hasNeverInlineDirective = CompilerToVMHelper.hasNeverInlineDirective(method);
+        Asserts.assertTrue(hasNeverInlineDirective, aMethod
+                + " : hasNeverInlineDirective is false even after doNotInlineOrCompile'");
     }
 
     private static List<Executable> createTestCases() {

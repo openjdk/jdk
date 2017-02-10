@@ -79,14 +79,52 @@ public class ModuleReaderTest {
         "java/lang/Object.class"
     };
 
+    // resource names that should not be found in the base module
+    private static final String[] BAD_BASE_RESOURCES = {
+        "NotFound",
+        "java",
+        "/java",
+        "//java",
+        "java/",
+        "java/lang",
+        "/java/lang",
+        "//java/lang",
+        "java/lang/",
+        "java//lang",
+        "/java/lang/Object.class",
+        "//java/lang/Object.class",
+        "java/lang/Object.class/",
+        "java//lang//Object.class",
+        "./java/lang/Object.class",
+        "java/./lang/Object.class",
+        "java/lang/./Object.class",
+        "../java/lang/Object.class",
+        "java/../lang/Object.class",
+        "java/lang/../Object.class",
+    };
+
     // resources in test module (can't use module-info.class as a test
     // resource as it will be modified by the jmod tool)
     private static final String[] TEST_RESOURCES = {
         "p/Main.class"
     };
 
-    // a resource that is not in the base or test module
-    private static final String NOT_A_RESOURCE = "NotAResource";
+    // resource names that should not be found in the test module
+    private static final String[] BAD_TEST_RESOURCES = {
+        "NotFound",
+        "p",
+        "/p",
+        "//p",
+        "p/",
+        "/p/Main.class",
+        "//p/Main.class",
+        "p/Main.class/",
+        "p//Main.class",
+        "./p/Main.class",
+        "p/./Main.class",
+        "../p/Main.class",
+        "p/../p/Main.class"
+    };
 
 
     @BeforeTest
@@ -126,10 +164,11 @@ public class ModuleReaderTest {
             }
 
             // test "not found"
-            assertFalse(reader.find(NOT_A_RESOURCE).isPresent());
-            assertFalse(reader.open(NOT_A_RESOURCE).isPresent());
-            assertFalse(reader.read(NOT_A_RESOURCE).isPresent());
-
+            for (String name : BAD_BASE_RESOURCES) {
+                assertFalse(reader.find(name).isPresent());
+                assertFalse(reader.open(name).isPresent());
+                assertFalse(reader.read(name).isPresent());
+            }
 
             // test nulls
             try {
@@ -216,7 +255,7 @@ public class ModuleReaderTest {
      */
     void test(Path mp) throws IOException {
 
-        ModuleFinder finder = new ModulePath(Runtime.version(), true, mp);
+        ModuleFinder finder = ModulePath.of(Runtime.version(), true, mp);
         ModuleReference mref = finder.find(TEST_MODULE).get();
         ModuleReader reader = mref.open();
 
@@ -236,9 +275,11 @@ public class ModuleReaderTest {
             }
 
             // test "not found"
-            assertFalse(reader.find(NOT_A_RESOURCE).isPresent());
-            assertFalse(reader.open(NOT_A_RESOURCE).isPresent());
-            assertFalse(reader.read(NOT_A_RESOURCE).isPresent());
+            for (String name : BAD_TEST_RESOURCES) {
+                assertFalse(reader.find(name).isPresent());
+                assertFalse(reader.open(name).isPresent());
+                assertFalse(reader.read(name).isPresent());
+            }
 
             // test nulls
             try {

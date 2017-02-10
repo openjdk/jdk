@@ -25,6 +25,8 @@
 
 /**
  * Defines the Java Smart Card I/O API.
+ *
+ * @since 9
  */
 module java.smartcardio {
     exports javax.smartcardio;

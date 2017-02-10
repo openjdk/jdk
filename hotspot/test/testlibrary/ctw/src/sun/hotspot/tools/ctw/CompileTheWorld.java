@@ -59,6 +59,8 @@ public class CompileTheWorld {
             OUT = os;
         }
 
+        boolean passed = false;
+
         try {
             try {
                 if (ManagementFactory.getCompilationMXBean() == null) {
@@ -84,10 +86,10 @@ public class CompileTheWorld {
                     PathHandler.getClassCount(),
                     Compiler.getMethodCount(),
                     System.currentTimeMillis() - start);
+            passed = true;
         } finally {
-            if (os != null) {
-                os.close();
-            }
+            // <clinit> might have started new threads
+            System.exit(passed ? 0 : 1);
         }
     }
 
