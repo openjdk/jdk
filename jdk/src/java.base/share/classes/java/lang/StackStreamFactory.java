@@ -686,7 +686,7 @@ final class StackStreamFactory {
                 frames[n++] = caller;
             }
             if (frames[1] == null) {
-                throw new IllegalStateException("no caller frame");
+                throw new IllegalCallerException("no caller frame");
             }
             return n;
         }

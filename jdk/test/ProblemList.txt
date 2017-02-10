@@ -295,6 +295,8 @@ java/util/BitSet/BitSetStreamTest.java                          8079538 generic-
 
 sun/tools/jcmd/TestJcmdSanity.java                              8031482 windows-all
 
+sun/tools/jstat/jstatClassloadOutput1.sh                        8173942 generic-all
+
 sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java    8057732 generic-all
 
 demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java       8151899 generic-all

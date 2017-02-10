@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,7 +20,10 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-module m1 {
-    requires m2;
-    exports p1;
-}
+
+/**
+ * @test
+ * @build test/* m1/* m2/* m3/* m4/*
+ * @run testng/othervm test/test.Main
+ * @summary Basic test case for Module::addXXX methods
+ */
