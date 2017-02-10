@@ -985,6 +985,11 @@ public class Locations {
         }
 
         private void checkValidModulePathEntry(Path p) {
+            if (!Files.exists(p)) {
+                // warning may be generated later
+                return;
+            }
+
             if (Files.isDirectory(p)) {
                 // either an exploded module or a directory of modules
                 return;
