@@ -102,6 +102,8 @@ grant codeBase "jrt:/java.xml.crypto" {
 };
 
 grant codeBase "jrt:/java.xml.ws" {
+    permission java.net.NetPermission
+                   "getProxySelector";
     permission java.lang.RuntimePermission
                    "accessClassInPackage.com.sun.org.apache.xml.internal.resolver";
     permission java.lang.RuntimePermission
@@ -212,4 +214,8 @@ grant {
     permission java.lang.RuntimePermission "accessClassInPackage.com.sun.beans.*";
     permission java.lang.RuntimePermission "accessClassInPackage.com.sun.java.swing.plaf.*";
     permission java.lang.RuntimePermission "accessClassInPackage.com.apple.*";
+};
+
+grant codeBase "jrt:/jdk.vm.compiler" {
+    permission java.security.AllPermission;
 };

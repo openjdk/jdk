@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,8 @@
 
 // Returns true if this package specifies m as a qualified export, including through an unnamed export
 bool PackageEntry::is_qexported_to(ModuleEntry* m) const {
+  assert(Module_lock->owned_by_self(), "should have the Module_lock");
   assert(m != NULL, "No module to lookup in this package's qualified exports list");
-  MutexLocker m1(Module_lock);
   if (is_exported_allUnnamed() && !m->is_named()) {
     return true;
   } else if (!has_qual_exports_list()) {
@@ -98,15 +98,8 @@ void PackageEntry::set_exported(ModuleEntry* m) {
   }
 
   if (m == NULL) {
-    // NULL indicates the package is being unqualifiedly exported
-    if (has_qual_exports_list()) {
-      // Legit to transition a package from being qualifiedly exported
-      // to unqualified.  Clean up the qualified lists at the next
-      // safepoint.
-      _exported_pending_delete = _qualified_exports;
-    }
-
-    // Mark package as unqualifiedly exported
+    // NULL indicates the package is being unqualifiedly exported.  Clean up
+    // the qualified list at the next safepoint.
     set_unqual_exported();
 
   } else {
@@ -115,14 +108,19 @@ void PackageEntry::set_exported(ModuleEntry* m) {
   }
 }
 
+// Set the package as exported to all unnamed modules unless the package is
+// already unqualifiedly exported.
 void PackageEntry::set_is_exported_allUnnamed() {
   MutexLocker m1(Module_lock);
   if (!is_unqual_exported()) {
-   _is_exported_allUnnamed = true;
+   _export_flags = PKG_EXP_ALLUNNAMED;
   }
 }
 
-// Remove dead module entries within the package's exported list.
+// Remove dead module entries within the package's exported list.  Note that
+// if all of the modules on the _qualified_exports get purged the list does not
+// get deleted.  This prevents the package from illegally transitioning from
+// exported to non-exported.
 void PackageEntry::purge_qualified_exports() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
   if (_must_walk_exports &&
@@ -160,18 +158,9 @@ void PackageEntry::purge_qualified_exports() {
 
 void PackageEntry::delete_qualified_exports() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
-  if (_exported_pending_delete != NULL) {
-    // If a transition occurred from qualified to unqualified, the _qualified_exports
-    // field should have been NULL'ed out.
-    assert(_qualified_exports == NULL, "Package's exported pending delete, exported list should not be active");
-    delete _exported_pending_delete;
-  }
-
   if (_qualified_exports != NULL) {
     delete _qualified_exports;
   }
-
-  _exported_pending_delete = NULL;
   _qualified_exports = NULL;
 }
 
@@ -314,6 +303,11 @@ void PackageEntry::package_exports_do(ModuleClosure* const f) {
   }
 }
 
+bool PackageEntry::exported_pending_delete() const {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
+  return (is_unqual_exported() && _qualified_exports != NULL);
+}
+
 // Remove dead entries from all packages' exported list
 void PackageEntryTable::purge_all_package_exports() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
@@ -344,13 +338,17 @@ void PackageEntryTable::print(outputStream* st) {
   }
 }
 
+// This function may be called from debuggers so access private fields directly
+// to prevent triggering locking-related asserts that could result from calling
+// getter methods.
 void PackageEntry::print(outputStream* st) {
   ResourceMark rm;
   st->print_cr("package entry " PTR_FORMAT " name %s module %s classpath_index "
                INT32_FORMAT " is_exported_unqualified %d is_exported_allUnnamed %d " "next " PTR_FORMAT,
                p2i(this), name()->as_C_string(),
                (module()->is_named() ? module()->name()->as_C_string() : UNNAMED_MODULE),
-               _classpath_index, _is_exported_unqualified, _is_exported_allUnnamed, p2i(next()));
+               _classpath_index, _export_flags == PKG_EXP_UNQUALIFIED,
+               _export_flags == PKG_EXP_ALLUNNAMED, p2i(next()));
 }
 
 void PackageEntryTable::verify() {

@@ -48,8 +48,12 @@ public class CompilerToVMHelper {
         return CTVM.getExceptionTableStart((HotSpotResolvedJavaMethodImpl)method);
     }
 
-    public static boolean canInlineMethod(HotSpotResolvedJavaMethod method) {
-        return CTVM.canInlineMethod((HotSpotResolvedJavaMethodImpl)method);
+    public static boolean isCompilable(HotSpotResolvedJavaMethod method) {
+        return CTVM.isCompilable((HotSpotResolvedJavaMethodImpl)method);
+    }
+
+    public static boolean hasNeverInlineDirective(HotSpotResolvedJavaMethod method) {
+        return CTVM.hasNeverInlineDirective((HotSpotResolvedJavaMethodImpl)method);
     }
 
     public static boolean shouldInlineMethod(HotSpotResolvedJavaMethod method) {

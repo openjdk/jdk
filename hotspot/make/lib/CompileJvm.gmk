@@ -63,7 +63,7 @@ JVM_CFLAGS_INCLUDES += \
 # INCLUDE_SUFFIX_* is only meant for including the proper
 # platform files. Don't use it to guard code. Use the value of
 # HOTSPOT_TARGET_CPU_DEFINE etc. instead.
-# Remaining TARGET_ARCH_* is needed to select the cpu specific 
+# Remaining TARGET_ARCH_* is needed to select the cpu specific
 # sources for 64-bit ARM ports (arm versus aarch64).
 JVM_CFLAGS_TARGET_DEFINES += \
     -DTARGET_ARCH_$(HOTSPOT_TARGET_CPU_ARCH) \
@@ -132,7 +132,7 @@ CFLAGS_VM_VERSION := \
     #
 
 # -DDONT_USE_PRECOMPILED_HEADER will exclude all includes in precompiled.hpp.
-ifeq ($(USE_PRECOMPILED_HEADER), 0)
+ifeq ($(USE_PRECOMPILED_HEADER), false)
   JVM_CFLAGS += -DDONT_USE_PRECOMPILED_HEADER
 endif
 
@@ -145,7 +145,7 @@ ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU), linux-arm)
   JVM_EXCLUDE_PATTERNS += arm_64
 
 else ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU), linux-aarch64)
-  # For 64-bit arm builds, we use the 64 bit hotspot/src/cpu/arm 
+  # For 64-bit arm builds, we use the 64 bit hotspot/src/cpu/arm
   # hotspot sources if HOTSPOT_TARGET_CPU_ARCH is set to arm.
   # Exclude the aarch64 and 32 bit arm files for this build.
   ifeq ($(HOTSPOT_TARGET_CPU_ARCH), arm)

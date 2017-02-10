@@ -192,4 +192,3 @@ JVM_AddModulePackage
 JVM_AddReadsModule
 JVM_DefineModule
 JVM_SetBootLoaderUnnamedModule
-JVM_GetModuleByPackageName
