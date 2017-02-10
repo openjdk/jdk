@@ -47,6 +47,8 @@ import com.sun.jdi.connect.IllegalConnectorArgumentsException;
 /**
  * Sets up a JDI connection, providing the resulting JDI {@link VirtualMachine}
  * and the {@link Process} the remote agent is running in.
+ *
+ * @since 9
  */
 public class JdiInitiator {
 

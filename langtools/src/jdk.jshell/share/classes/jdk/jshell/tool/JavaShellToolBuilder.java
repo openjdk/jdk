@@ -40,6 +40,8 @@ import jdk.internal.jshell.tool.JShellToolBuilder;
  * configuration methods have sensible defaults which will be used if they are
  * not called.. After zero or more calls to configuration methods, the tool is
  * launched with a call to {@link #run(java.lang.String...) }.
+ *
+ * @since 9
  */
 public interface JavaShellToolBuilder {
 
