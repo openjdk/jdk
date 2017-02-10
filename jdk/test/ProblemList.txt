@@ -253,9 +253,9 @@ tools/pack200/CommandLineTests.java                             8059906 generic-
 
 tools/launcher/FXLauncherTest.java                              8068049 linux-all,macosx-all
 
-tools/jimage/JImageExtractTest.java                             8169713 generic-all
-tools/jimage/JImageListTest.java                                8169713 generic-all
-tools/jimage/JImageVerifyTest.java                              8169713 generic-all
+tools/jimage/JImageExtractTest.java                             8170120 generic-all
+tools/jimage/JImageListTest.java                                8170120 generic-all
+tools/jimage/JImageVerifyTest.java                              8170120 generic-all
 
 
 tools/jlink/multireleasejar/JLinkMultiReleaseJarTest.java       8169971 windows-x64
@@ -266,7 +266,7 @@ tools/jlink/multireleasejar/JLinkMultiReleaseJarTest.java       8169971 windows-
 
 com/sun/jdi/RedefineImplementor.sh                              8004127 generic-all
 
-com/sun/jdi/JdbMethodExitTest.sh                                6902121 generic-all
+com/sun/jdi/JdbMethodExitTest.sh                                8171483 generic-all
 
 com/sun/jdi/RepStep.java                                        8043571 generic-all
 
@@ -307,6 +307,6 @@ com/sun/jndi/ldap/DeadSSLLdapTimeoutTest.java                   8169942 linux-i5
 
 javax/rmi/PortableRemoteObject/8146975/RmiIiopReturnValueTest.java 8169737 linux-all
 
-javax/xml/ws/clientjar/TestWsImport.java			8170370 generic-all
+javax/xml/ws/clientjar/TestWsImport.java			8173317 generic-all
 
 ############################################################################
