@@ -78,7 +78,7 @@ public class JmodFile implements AutoCloseable {
         HEADER_FILES("include"),
         LEGAL_NOTICES("legal"),
         MAN_PAGES("man"),
-        NATIVE_LIBS("native"),
+        NATIVE_LIBS("lib"),
         NATIVE_CMDS("bin");
 
         private final String jmodDir;

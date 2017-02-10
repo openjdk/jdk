@@ -250,7 +250,7 @@ public class JLinkNegativeTest {
         String moduleName = "hacked4";
         Path jmod = helper.generateDefaultJModule(moduleName).assertSuccess();
         JImageGenerator.addFiles(jmod,
-                new InMemoryFile("/native", new byte[0]),
+                new InMemoryFile("/lib", new byte[0]),
                 new InMemoryFile("/conf", new byte[0]),
                 new InMemoryFile("/bin", new byte[0]));
         try {
