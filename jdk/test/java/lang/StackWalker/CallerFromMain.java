@@ -51,7 +51,7 @@ public class CallerFromMain {
         try {
             Class<?> c = sw.getCallerClass();
             throw new RuntimeException("UOE not thrown. Caller: " + c);
-        } catch (IllegalStateException e) {}
+        } catch (IllegalCallerException e) {}
 
         // StackWalker::getCallerClass
         // Runnable::run

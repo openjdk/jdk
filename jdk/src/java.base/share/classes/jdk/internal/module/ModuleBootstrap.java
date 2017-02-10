@@ -26,7 +26,9 @@
 package jdk.internal.module;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
+import java.io.UncheckedIOException;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
@@ -35,6 +37,7 @@ import java.lang.module.ResolvedModule;
 import java.lang.reflect.Layer;
 import java.lang.reflect.Module;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -46,6 +49,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.BuiltinClassLoader;
@@ -114,7 +118,12 @@ public final class ModuleBootstrap {
         long t0 = System.nanoTime();
 
         // system modules (may be patched)
-        ModuleFinder systemModules = ModuleFinder.ofSystem();
+        ModuleFinder systemModules;
+        if (SystemModules.MODULE_NAMES.length > 0) {
+            systemModules = SystemModuleFinder.getInstance();
+        } else {
+            systemModules = ModuleFinder.ofSystem();
+        }
 
         PerfCounters.systemModulesTime.addElapsedTimeFrom(t0);
 
@@ -275,10 +284,10 @@ public final class ModuleBootstrap {
 
         // run the resolver to create the configuration
         Configuration cf = SharedSecrets.getJavaLangModuleAccess()
-                .resolveRequiresAndUses(finder,
-                                        roots,
-                                        needPostResolutionChecks,
-                                        traceOutput);
+                .resolveAndBind(finder,
+                                roots,
+                                needPostResolutionChecks,
+                                traceOutput);
 
         // time to create configuration
         PerfCounters.resolveTime.addElapsedTimeFrom(t3);
@@ -318,20 +327,20 @@ public final class ModuleBootstrap {
         // if needed check that there are no split packages in the set of
         // resolved modules for the boot layer
         if (SystemModules.hasSplitPackages() || needPostResolutionChecks) {
-                Map<String, String> packageToModule = new HashMap<>();
-                for (ResolvedModule resolvedModule : cf.modules()) {
-                    ModuleDescriptor descriptor =
-                        resolvedModule.reference().descriptor();
-                    String name = descriptor.name();
-                    for (String p : descriptor.packages()) {
-                        String other = packageToModule.putIfAbsent(p, name);
-                        if (other != null) {
-                            fail("Package " + p + " in both module "
-                                 + name + " and module " + other);
-                        }
+            Map<String, String> packageToModule = new HashMap<>();
+            for (ResolvedModule resolvedModule : cf.modules()) {
+                ModuleDescriptor descriptor =
+                    resolvedModule.reference().descriptor();
+                String name = descriptor.name();
+                for (String p : descriptor.packages()) {
+                    String other = packageToModule.putIfAbsent(p, name);
+                    if (other != null) {
+                        fail("Package " + p + " in both module "
+                             + name + " and module " + other);
                     }
                 }
             }
+        }
 
         long t4 = System.nanoTime();
 
@@ -380,10 +389,9 @@ public final class ModuleBootstrap {
                                             Set<String> otherMods)
     {
         // resolve all root modules
-        Configuration cf = Configuration.empty()
-                .resolveRequires(finder,
-                                 ModuleFinder.of(),
-                                 roots);
+        Configuration cf = Configuration.empty().resolve(finder,
+                                                         ModuleFinder.of(),
+                                                         roots);
 
         // module name -> reference
         Map<String, ModuleReference> map = new HashMap<>();
@@ -416,7 +424,7 @@ public final class ModuleBootstrap {
 
     /**
      * Creates a finder from the module path that is the value of the given
-     * system property.
+     * system property and optionally patched by --patch-module
      */
     private static ModuleFinder createModulePathFinder(String prop) {
         String s = System.getProperty(prop);
@@ -429,7 +437,7 @@ public final class ModuleBootstrap {
             for (String dir: dirs) {
                 paths[i++] = Paths.get(dir);
             }
-            return ModuleFinder.of(paths);
+            return ModulePath.of(patcher, paths);
         }
     }
 
@@ -528,7 +536,47 @@ public final class ModuleBootstrap {
         if (!extraOpens.isEmpty()) {
             addExtraExportsOrOpens(bootLayer, extraOpens, true);
         }
+
+        // DEBUG_ADD_OPENS is for debugging purposes only
+        String home = System.getProperty("java.home");
+        Path file = Paths.get(home, "conf", "DEBUG_ADD_OPENS");
+        if (Files.exists(file)) {
+            warn(file + " detected; may break encapsulation");
+            try (Stream<String> lines = Files.lines(file)) {
+                lines.map(line -> line.trim())
+                    .filter(line -> (!line.isEmpty() && !line.startsWith("#")))
+                    .forEach(line -> {
+                        String[] s = line.split("/");
+                        if (s.length != 2) {
+                            fail("Unable to parse as <module>/<package>: " + line);
+                        } else {
+                            String mn = s[0];
+                            String pkg = s[1];
+                            openPackage(bootLayer, mn, pkg);
+                        }
+                    });
+            } catch (IOException ioe) {
+                throw new UncheckedIOException(ioe);
+            }
+        }
     }
+
+    private static void openPackage(Layer bootLayer, String mn, String pkg) {
+        if (mn.equals("ALL-RESOLVED") && pkg.equals("ALL-PACKAGES")) {
+            bootLayer.modules().stream().forEach(m ->
+                m.getDescriptor().packages().forEach(pn -> openPackage(m, pn)));
+        } else {
+            bootLayer.findModule(mn)
+                     .filter(m -> m.getDescriptor().packages().contains(pkg))
+                     .ifPresent(m -> openPackage(m, pkg));
+        }
+    }
+
+    private static void openPackage(Module m, String pn) {
+        Modules.addOpensToAllUnnamed(m, pn);
+        warn("Opened for deep reflection: " + m.getName()  + "/" + pn);
+    }
+
 
     private static void addExtraExportsOrOpens(Layer bootLayer,
                                                Map<String, List<String>> map,

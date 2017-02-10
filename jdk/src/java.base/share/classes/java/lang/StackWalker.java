@@ -465,8 +465,8 @@ public final class StackWalker {
     }
 
     /**
-     * Gets the {@code Class} object of the caller invoking the method
-     * that calls this {@code getCallerClass} method.
+     * Gets the {@code Class} object of the caller who invoked the method
+     * that invoked {@code getCallerClass}.
      *
      * <p> Reflection frames, {@link java.lang.invoke.MethodHandle}, and
      * hidden frames are filtered regardless of the
@@ -474,19 +474,21 @@ public final class StackWalker {
      * and {@link Option#SHOW_HIDDEN_FRAMES SHOW_HIDDEN_FRAMES} options
      * this {@code StackWalker} has been configured with.
      *
+     * <p> This method should be called when a caller frame is present.  If
+     * it is called from the bottom most frame on the stack,
+     * {@code IllegalCallerException} will be thrown.
+     *
      * <p> This method throws {@code UnsupportedOperationException}
      * if this {@code StackWalker} is not configured with the
      * {@link Option#RETAIN_CLASS_REFERENCE RETAIN_CLASS_REFERENCE} option.
-     * This method should be called when a caller frame is present.  If
-     * it is called from the last frame on the stack,
-     * {@code IllegalStateException} will be thrown.
      *
      * @apiNote
      * For example, {@code Util::getResourceBundle} loads a resource bundle
-     * on behalf of the caller.  It calls this {@code getCallerClass} method
-     * to find the method calling {@code Util::getResourceBundle} and uses the caller's
-     * class loader to load the resource bundle. The caller class in this example
-     * is the {@code MyTool} class.
+     * on behalf of the caller.  It invokes {@code getCallerClass} to identify
+     * the class whose method called {@code Util::getResourceBundle}.
+     * Then, it obtains the class loader of that class, and uses
+     * the class loader to load the resource bundle. The caller class
+     * in this example is {@code MyTool}.
      *
      * <pre>{@code
      * class Util {
@@ -517,17 +519,17 @@ public final class StackWalker {
      * }</pre>
      *
      * When the {@code getCallerClass} method is called from a method that
-     * is the last frame on the stack,
+     * is the bottom most frame on the stack,
      * for example, {@code static public void main} method launched by the
      * {@code java} launcher, or a method invoked from a JNI attached thread,
-     * {@code IllegalStateException} is thrown.
+     * {@code IllegalCallerException} is thrown.
      *
      * @return {@code Class} object of the caller's caller invoking this method.
      *
      * @throws UnsupportedOperationException if this {@code StackWalker}
      *         is not configured with {@link Option#RETAIN_CLASS_REFERENCE
      *         Option.RETAIN_CLASS_REFERENCE}.
-     * @throws IllegalStateException if there is no caller frame, i.e.
+     * @throws IllegalCallerException if there is no caller frame, i.e.
      *         when this {@code getCallerClass} method is called from a method
      *         which is the last frame on the stack.
      */
