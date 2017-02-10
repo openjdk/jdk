@@ -59,22 +59,11 @@ abstract class HotSpotMethod implements JavaMethod, Formattable {
         return res;
     }
 
-    protected String name;
-
     /**
      * Controls whether {@link #toString()} includes the qualified or simple name of the class in
      * which the method is declared.
      */
     public static final boolean FULLY_QUALIFIED_METHOD_NAME = false;
-
-    protected HotSpotMethod(String name) {
-        this.name = name;
-    }
-
-    @Override
-    public final String getName() {
-        return name;
-    }
 
     @Override
     public final String toString() {
