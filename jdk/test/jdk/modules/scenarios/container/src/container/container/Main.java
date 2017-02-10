@@ -71,9 +71,9 @@ public class Main {
         ModuleFinder finder = ModuleFinder.of(paths);
 
         Configuration cf = Layer.boot().configuration()
-            .resolveRequiresAndUses(finder,
-                                    ModuleFinder.of(),
-                                    Set.of(appModuleName));
+            .resolveAndBind(finder,
+                            ModuleFinder.of(),
+                            Set.of(appModuleName));
 
         System.out.println("Resolved");
         cf.modules().stream()

@@ -331,7 +331,7 @@ public class Basic {
         ModuleInfoExtender mie = ModuleInfoExtender.newExtender(
             new ByteArrayInputStream(mdBytes));
 
-        mie.mainClass("foo.main");
+        mie.mainClass("p.Main");
         mie.version(Version.parse("1.0"));
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -345,7 +345,7 @@ public class Basic {
 
         // different main-class
         mie = ModuleInfoExtender.newExtender(new ByteArrayInputStream(mdBytes));
-        mie.mainClass("foo.main2");
+        mie.mainClass("p.Main2");
         mie.version(Version.parse("1.0"));
         baos.reset();
         mie.write(baos);
@@ -360,7 +360,7 @@ public class Basic {
 
         // different version
         mie = ModuleInfoExtender.newExtender(new ByteArrayInputStream(mdBytes));
-        mie.mainClass("foo.main");
+        mie.mainClass("p.Main");
         mie.version(Version.parse("2.0"));
         baos.reset();
         mie.write(baos);
@@ -395,7 +395,7 @@ public class Basic {
         Files.copy(Paths.get("test7-v9", "module-info.class"),
                    Paths.get("test7-v10", "module-info.class"));
 
-        int rc = jar("--create --file mmr.jar --main-class=foo.main -C test7 . --release 9 -C test7-v9 . --release 10 -C test7-v10 .");
+        int rc = jar("--create --file mmr.jar --main-class=p.Main -C test7 . --release 9 -C test7-v9 . --release 10 -C test7-v10 .");
 
 System.out.println("-----------------------");
 System.out.println( new String(errbytes.toByteArray()));
@@ -409,7 +409,7 @@ System.out.println( new String(errbytes.toByteArray()));
 System.out.println("-----------------------");
 System.out.println( new String(outbytes.toByteArray()));
 
-        Optional<String> exp = Optional.of("foo.main");
+        Optional<String> exp = Optional.of("p.Main");
         try (ZipFile zf = new ZipFile("mmr.jar")) {
             Assert.assertTrue(zf.getEntry("module-info.class") == null);
 
