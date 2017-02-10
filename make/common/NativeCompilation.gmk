@@ -685,7 +685,7 @@ define SetupNativeCompilationBody
       $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).comp.vardeps)
 
   ifneq ($$($1_PRECOMPILED_HEADER), )
-    ifeq ($(USE_PRECOMPILED_HEADER), 1)
+    ifeq ($(USE_PRECOMPILED_HEADER), true)
       ifeq ($(TOOLCHAIN_TYPE), microsoft)
         $1_PCH_FILE := $$($1_OBJECT_DIR)/$1.pch
         $1_GENERATED_PCH_SRC := $$($1_OBJECT_DIR)/$1_pch.cpp

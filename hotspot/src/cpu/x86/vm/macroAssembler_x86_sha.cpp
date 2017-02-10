@@ -817,13 +817,15 @@ enum {
   movl(d, Address(CTX, 4*3));
   movl(e, Address(CTX, 4*4));
   movl(f, Address(CTX, 4*5));
-  movl(g, Address(CTX, 4*6));
+  // load g - r10 after it is used as scratch
   movl(h, Address(CTX, 4*7));
 
   pshuffle_byte_flip_mask_addr = pshuffle_byte_flip_mask;
   vmovdqu(BYTE_FLIP_MASK, ExternalAddress(pshuffle_byte_flip_mask_addr +0)); //[PSHUFFLE_BYTE_FLIP_MASK wrt rip]
   vmovdqu(SHUF_00BA, ExternalAddress(pshuffle_byte_flip_mask_addr + 32));     //[_SHUF_00BA wrt rip]
   vmovdqu(SHUF_DC00, ExternalAddress(pshuffle_byte_flip_mask_addr + 64));     //[_SHUF_DC00 wrt rip]
+
+  movl(g, Address(CTX, 4*6));
 
   movq(Address(rsp, _CTX), CTX);           // store
 
@@ -977,7 +979,7 @@ bind(only_one_block);
   movl(d, Address(CTX, 4*3));   // 0xa54ff53a
   movl(e, Address(CTX, 4*4));   // 0x510e527f
   movl(f, Address(CTX, 4*5));   // 0x9b05688c
-  movl(g, Address(CTX, 4*6));   // 0x1f83d9ab
+  // load g - r10 after use as scratch
   movl(h, Address(CTX, 4*7));   // 0x5be0cd19
 
 
@@ -985,6 +987,8 @@ bind(only_one_block);
   vmovdqu(BYTE_FLIP_MASK, ExternalAddress(pshuffle_byte_flip_mask_addr + 0)); //[PSHUFFLE_BYTE_FLIP_MASK wrt rip]
   vmovdqu(SHUF_00BA, ExternalAddress(pshuffle_byte_flip_mask_addr + 32));     //[_SHUF_00BA wrt rip]
   vmovdqu(SHUF_DC00, ExternalAddress(pshuffle_byte_flip_mask_addr + 64));     //[_SHUF_DC00 wrt rip]
+
+  movl(g, Address(CTX, 4*6));   // 0x1f83d9ab
 
   movq(Address(rsp, _CTX), CTX);
   jmpb(do_last_block);
@@ -1154,9 +1158,8 @@ void MacroAssembler::sha512_AVX2_one_round_and_schedule(
       // Move to appropriate lanes for calculating w[16] and w[17]
       vperm2f128(xmm4, xmm0, xmm0, 0); //xmm4 = W[-16] + W[-7] + s0{ BABA }
 
-      address MASK_YMM_LO = StubRoutines::x86::pshuffle_byte_flip_mask_addr_sha512();
       //Move to appropriate lanes for calculating w[18] and w[19]
-      vpand(xmm0, xmm0, ExternalAddress(MASK_YMM_LO + 32), AVX_256bit); //xmm0 = W[-16] + W[-7] + s0{ DC00 }
+      vpand(xmm0, xmm0, xmm10, AVX_256bit); //xmm0 = W[-16] + W[-7] + s0{ DC00 }
       //Calculate w[16] and w[17] in both 128 bit lanes
       //Calculate sigma1 for w[16] and w[17] on both 128 bit lanes
       vperm2f128(xmm2, xmm7, xmm7, 17); //xmm2 = W[-2] {BABA}
@@ -1250,6 +1253,7 @@ void MacroAssembler::sha512_AVX2(XMMRegister msg, XMMRegister state0, XMMRegiste
 
     const XMMRegister& XFER = xmm0; // YTMP0
     const XMMRegister& BYTE_FLIP_MASK = xmm9; // ymm9
+    const XMMRegister& YMM_MASK_LO = xmm10; // ymm10
 #ifdef _WIN64
     const Register& INP = rcx; //1st arg
     const Register& CTX = rdx; //2nd arg
@@ -1368,11 +1372,14 @@ void MacroAssembler::sha512_AVX2(XMMRegister msg, XMMRegister state0, XMMRegiste
     movq(d, Address(CTX, 8 * 3));
     movq(e, Address(CTX, 8 * 4));
     movq(f, Address(CTX, 8 * 5));
-    movq(g, Address(CTX, 8 * 6));
+    // load g - r10 after it is used as scratch
     movq(h, Address(CTX, 8 * 7));
 
     pshuffle_byte_flip_mask_addr = pshuffle_byte_flip_mask_sha512;
     vmovdqu(BYTE_FLIP_MASK, ExternalAddress(pshuffle_byte_flip_mask_addr + 0)); //PSHUFFLE_BYTE_FLIP_MASK wrt rip
+    vmovdqu(YMM_MASK_LO, ExternalAddress(pshuffle_byte_flip_mask_addr + 32));
+
+    movq(g, Address(CTX, 8 * 6));
 
     bind(loop0);
     lea(TBL, ExternalAddress(K512_W));

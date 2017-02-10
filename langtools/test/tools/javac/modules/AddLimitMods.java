@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,10 +217,10 @@ public class AddLimitMods extends ModuleTestBase {
 
     private static final List<Entry<String[], String>> variants = Arrays.asList(
             new SimpleEntry<String[], String>(new String[] {},
-                                              "Test.java:2:7: compiler.err.package.not.visible: javax.annotation, (compiler.misc.not.def.access.does.not.read.from.unnamed: javax.annotation, java.annotations.common)\n"
+                                              "Test.java:2:7: compiler.err.package.not.visible: javax.annotation, (compiler.misc.not.def.access.does.not.read.from.unnamed: javax.annotation, java.xml.ws.annotation)\n"
                                             + "Test.java:5:14: compiler.err.package.not.visible: javax.xml.bind, (compiler.misc.not.def.access.does.not.read.from.unnamed: javax.xml.bind, java.xml.bind)\n"
                                             + "2 errors\n"),
-            new SimpleEntry<String[], String>(new String[] {"--add-modules", "java.annotations.common,java.xml.bind"},
+            new SimpleEntry<String[], String>(new String[] {"--add-modules", "java.xml.ws.annotation,java.xml.bind"},
                                               null),
             new SimpleEntry<String[], String>(new String[] {"--limit-modules", "java.xml.ws,jdk.compiler"},
                                               null),

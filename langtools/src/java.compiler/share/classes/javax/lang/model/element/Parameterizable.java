@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import java.util.List;
  */
 public interface Parameterizable extends Element {
     /**
-     * Returns the formal type parameters of the type element in
+     * Returns the formal type parameters of an element in
      * declaration order.
      *
      * @return the formal type parameters, or an empty list

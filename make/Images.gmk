@@ -72,6 +72,7 @@ JRE_COMPACT3_MODULES := \
     java.compiler \
     java.instrument \
     java.management \
+    java.management.rmi \
     java.naming \
     java.prefs \
     java.security.jgss \

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -808,7 +808,7 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
     						 IF_FALSE: [$2CXXSTD_CXXFLAG=""])
     $2CXXFLAGS_JDK="${$2CXXFLAGS_JDK} ${$2CXXSTD_CXXFLAG}"
     $2JVM_CFLAGS="${$2JVM_CFLAGS} ${$2CXXSTD_CXXFLAG}"
-    AC_SUBST([$2CXXSTD_CXXFLAG])
+    AC_SUBST($2CXXSTD_CXXFLAG)
   fi
   if test "x$OPENJDK_TARGET_OS" = xsolaris; then
     $2CFLAGS_JDK="${$2CFLAGS_JDK} -D__solaris__"
@@ -1440,18 +1440,6 @@ BASIC_DEFUN_NAMED([FLAGS_LINKER_CHECK_ARGUMENTS],
 
 AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_MISC],
 [
-  # Some Zero and Shark settings.
-  # ZERO_ARCHFLAG tells the compiler which mode to build for
-  case "${OPENJDK_TARGET_CPU}" in
-    s390)
-      ZERO_ARCHFLAG="${COMPILER_TARGET_BITS_FLAG}31"
-      ;;
-    *)
-      ZERO_ARCHFLAG="${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
-  esac
-  FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$ZERO_ARCHFLAG], IF_FALSE: [ZERO_ARCHFLAG=""])
-  AC_SUBST(ZERO_ARCHFLAG)
-
   # Check that the compiler supports -mX (or -qX on AIX) flags
   # Set COMPILER_SUPPORTS_TARGET_BITS_FLAG to 'true' if it does
   FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}],
@@ -1476,15 +1464,7 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_MISC],
     AC_MSG_ERROR([--enable-warnings-as-errors accepts no argument])
   fi
 
-  if test "x$WARNINGS_AS_ERRORS" = "xfalse"; then
-    # Set legacy hotspot variable
-    HOTSPOT_SET_WARNINGS_AS_ERRORS="WARNINGS_ARE_ERRORS="
-  else
-    HOTSPOT_SET_WARNINGS_AS_ERRORS=""
-  fi
-
   AC_SUBST(WARNINGS_AS_ERRORS)
-  AC_SUBST(HOTSPOT_SET_WARNINGS_AS_ERRORS)
 
   case "${TOOLCHAIN_TYPE}" in
     microsoft)
