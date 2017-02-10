@@ -809,81 +809,6 @@ CallGenerator* CallGenerator::for_method_handle_call(JVMState* jvms, ciMethod* c
   }
 }
 
-static BasicType erase_to_word_type(BasicType bt) {
-  if (is_subword_type(bt)) return T_INT;
-  if (bt == T_ARRAY)       return T_OBJECT;
-  return bt;
-}
-
-static bool basic_types_match(ciType* t1, ciType* t2) {
-  if (t1 == t2)  return true;
-  return erase_to_word_type(t1->basic_type()) == erase_to_word_type(t2->basic_type());
-}
-
-bool CallGenerator::ensure_mh_intrinsic_matches_target_method(ciMethod* linker, ciMethod* target) {
-  assert(linker->is_method_handle_intrinsic(), "sanity");
-  assert(!target->is_method_handle_intrinsic(), "sanity");
-
-  // Linkers have appendix argument which is not passed to callee.
-  int has_appendix = MethodHandles::has_member_arg(linker->intrinsic_id()) ? 1 : 0;
-  if (linker->arg_size() != (target->arg_size() + has_appendix)) {
-    return false; // argument slot count mismatch
-  }
-
-  ciSignature* linker_sig = linker->signature();
-  ciSignature* target_sig = target->signature();
-
-  if (linker_sig->count() + (linker->is_static() ? 0 : 1) !=
-      target_sig->count() + (target->is_static() ? 0 : 1) + has_appendix) {
-    return false; // argument count mismatch
-  }
-
-  int sbase = 0, rbase = 0;
-  switch (linker->intrinsic_id()) {
-    case vmIntrinsics::_linkToVirtual:
-    case vmIntrinsics::_linkToInterface:
-    case vmIntrinsics::_linkToSpecial: {
-      if (target->is_static()) {
-        return false;
-      }
-      if (linker_sig->type_at(0)->is_primitive_type()) {
-        return false;  // receiver should be an oop
-      }
-      sbase = 1; // skip receiver
-      break;
-    }
-    case vmIntrinsics::_linkToStatic: {
-      if (!target->is_static()) {
-        return false;
-      }
-      break;
-    }
-    case vmIntrinsics::_invokeBasic: {
-      if (target->is_static()) {
-        if (target_sig->type_at(0)->is_primitive_type()) {
-          return false; // receiver should be an oop
-        }
-        rbase = 1; // skip receiver
-      }
-      break;
-    }
-  }
-  assert(target_sig->count() - rbase == linker_sig->count() - sbase - has_appendix, "argument count mismatch");
-  int arg_count = target_sig->count() - rbase;
-  for (int i = 0; i < arg_count; i++) {
-    if (!basic_types_match(linker_sig->type_at(sbase + i), target_sig->type_at(rbase + i))) {
-      return false;
-    }
-  }
-  // Only check the return type if the symbolic info has non-void return type.
-  // I.e. the return value of the resolved method can be dropped.
-  if (!linker->return_type()->is_void() &&
-      !basic_types_match(linker->return_type(), target->return_type())) {
-    return false;
-  }
-  return true; // no mismatch found
-}
-
 CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod* caller, ciMethod* callee, bool& input_not_const) {
   GraphKit kit(jvms);
   PhaseGVN& gvn = kit.gvn();
@@ -901,7 +826,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
         ciMethod* target = oop_ptr->const_oop()->as_method_handle()->get_vmtarget();
         const int vtable_index = Method::invalid_vtable_index;
 
-        if (!ensure_mh_intrinsic_matches_target_method(callee, target)) {
+        if (!ciMethod::is_consistent_info(callee, target)) {
           print_inlining_failure(C, callee, jvms->depth() - 1, jvms->bci(),
                                  "signatures mismatch");
           return NULL;
@@ -932,7 +857,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
         const TypeOopPtr* oop_ptr = member_name->bottom_type()->is_oopptr();
         ciMethod* target = oop_ptr->const_oop()->as_member_name()->get_vmtarget();
 
-        if (!ensure_mh_intrinsic_matches_target_method(callee, target)) {
+        if (!ciMethod::is_consistent_info(callee, target)) {
           print_inlining_failure(C, callee, jvms->depth() - 1, jvms->bci(),
                                  "signatures mismatch");
           return NULL;

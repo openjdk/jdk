@@ -400,21 +400,10 @@ bool Parse::can_not_compile_call_site(ciMethod *dest_method, ciInstanceKlass* kl
 }
 
 #ifdef ASSERT
-static bool is_call_consistent_with_jvms(JVMState* jvms, CallGenerator* cg) {
+static bool check_call_consistency(JVMState* jvms, CallGenerator* cg) {
   ciMethod* symbolic_info = jvms->method()->get_method_at_bci(jvms->bci());
   ciMethod* resolved_method = cg->method();
-
-  if (CallGenerator::is_inlined_method_handle_intrinsic(jvms, resolved_method)) {
-    return CallGenerator::ensure_mh_intrinsic_matches_target_method(symbolic_info, resolved_method);
-  } else {
-    // Method name & descriptor should stay the same.
-    return (symbolic_info->get_Method()->name() == resolved_method->get_Method()->name()) &&
-           (symbolic_info->get_Method()->signature() == resolved_method->get_Method()->signature());
-  }
-}
-
-static bool check_call_consistency(JVMState* jvms, CallGenerator* cg) {
-  if (!is_call_consistent_with_jvms(jvms, cg)) {
+  if (!ciMethod::is_consistent_info(symbolic_info, resolved_method)) {
     tty->print_cr("JVMS:");
     jvms->dump();
     tty->print_cr("Bytecode info:");

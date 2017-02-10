@@ -176,8 +176,6 @@ class CallGenerator : public ResourceObj {
   }
 
   static bool is_inlined_method_handle_intrinsic(JVMState* jvms, ciMethod* m);
-
-  static bool ensure_mh_intrinsic_matches_target_method(ciMethod* linker, ciMethod* target);
 };
 
 
