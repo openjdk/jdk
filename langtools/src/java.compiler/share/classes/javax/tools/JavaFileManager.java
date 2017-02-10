@@ -165,6 +165,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
          *
          * @return true if this location is expected to contain modules
          * @since 9
+         * @spec JPMS
          */
         default boolean isModuleOrientedLocation() {
             return getName().matches("\\bMODULE\\b");
@@ -472,6 +473,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * @throws IllegalArgumentException if the location is neither an output location nor a
      * module-oriented location
      * @since 9
+     * @spec JPMS
      */ // TODO: describe failure modes
     default Location getLocationForModule(Location location, String moduleName) throws IOException {
         throw new UnsupportedOperationException();
@@ -499,6 +501,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * @throws IllegalArgumentException if the location is neither an output location nor a
      * module-oriented location
      * @since 9
+     * @spec JPMS
      */
     default Location getLocationForModule(Location location, JavaFileObject fo, String pkgName) throws IOException {
         throw new UnsupportedOperationException();
@@ -522,6 +525,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * @throws IOException if an I/O error occurred
      * @throws UnsupportedOperationException if this operation if not supported by this file manager
      * @since 9
+     * @spec JPMS
      */ // TODO: describe failure modes
     default <S> ServiceLoader<S> getServiceLoader(Location location, Class<S> service) throws  IOException {
         throw new UnsupportedOperationException();
@@ -540,6 +544,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * @throws UnsupportedOperationException if this operation if not supported by this file manager
      * @throws IllegalArgumentException if the location is not one known to this file manager
      * @since 9
+     * @spec JPMS
      */ // TODO: describe failure modes
     default String inferModuleName(Location location) throws IOException {
         throw new UnsupportedOperationException();
@@ -559,6 +564,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * @throws UnsupportedOperationException if this operation if not supported by this file manager
      * @throws IllegalArgumentException if the location is not a module-oriented location
      * @since 9
+     * @spec JPMS
      */ // TODO: describe failure modes
     default Iterable<Set<Location>> listLocationsForModules(Location location) throws IOException {
         throw new UnsupportedOperationException();
