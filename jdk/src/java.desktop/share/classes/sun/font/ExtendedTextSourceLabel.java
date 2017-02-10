@@ -626,7 +626,11 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
         glyphinfo = gv.getGlyphInfo();
     }
     catch (Exception e) {
-        System.out.println(source);
+        if (DEBUG) {
+            System.err.println(source);
+            e.printStackTrace();
+        }
+        glyphinfo = new float[gv.getNumGlyphs() * numvals];
     }
 
     int numGlyphs = gv.getNumGlyphs();
