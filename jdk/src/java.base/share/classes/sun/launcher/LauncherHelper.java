@@ -967,6 +967,10 @@ public final class LauncherHelper {
                     ostream.print("open ");
                 if (md.isAutomatic())
                     ostream.print("automatic ");
+                if (md.modifiers().contains(ModuleDescriptor.Modifier.SYNTHETIC))
+                    ostream.print("synthetic ");
+                if (md.modifiers().contains(ModuleDescriptor.Modifier.MANDATED))
+                    ostream.print("mandated ");
                 ostream.println("module " + midAndLocation(md, mref.location()));
 
                 // unqualified exports (sorted by package)

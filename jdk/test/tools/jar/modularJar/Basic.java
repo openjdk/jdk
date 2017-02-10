@@ -328,7 +328,7 @@ public class Basic {
             .resultChecker(r -> assertModuleData(r, FOO));
     }
 
-    @Test
+    @Test(enabled = false)
     public void partialUpdateFooMainClass() throws IOException {
         Path mp = Paths.get("partialUpdateFooMainClass");
         createTestDir(mp);

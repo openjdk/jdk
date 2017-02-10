@@ -46,7 +46,7 @@ public class VerifyModuleDelegation {
     private static final String JAVA_BASE = "java.base";
 
     private static final ModuleDescriptor BASE
-        = ModuleDescriptor.module(JAVA_BASE).build();
+        = ModuleDescriptor.newModule(JAVA_BASE).build();
 
     private static final Set<ModuleDescriptor> MREFS
             = Layer.boot().modules().stream().map(Module::getDescriptor)

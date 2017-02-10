@@ -268,13 +268,13 @@ public class ClassLoaderTest {
         // Generate modular jar files for TestClient and TestClassLoader with
         // their corresponding ModuleDescriptor.
         Files.copy(CL_JAR, MCL_JAR, StandardCopyOption.REPLACE_EXISTING);
-        updateModuleDescr(MCL_JAR, ModuleDescriptor.module("mcl")
+        updateModuleDescr(MCL_JAR, ModuleDescriptor.newModule("mcl")
                 .exports("cl").requires("java.base").build());
         Files.copy(C_JAR, MC_JAR, StandardCopyOption.REPLACE_EXISTING);
-        updateModuleDescr(MC_JAR, ModuleDescriptor.module("mc")
+        updateModuleDescr(MC_JAR, ModuleDescriptor.newModule("mc")
                 .exports("c").requires("java.base").requires("mcl").build());
         Files.copy(C_JAR, AMC_JAR, StandardCopyOption.REPLACE_EXISTING);
-        updateModuleDescr(AMC_JAR, ModuleDescriptor.module("mc")
+        updateModuleDescr(AMC_JAR, ModuleDescriptor.newModule("mc")
                 .exports("c").requires("java.base").requires("cl").build());
     }
 

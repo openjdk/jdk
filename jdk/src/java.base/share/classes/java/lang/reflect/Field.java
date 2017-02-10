@@ -158,6 +158,10 @@ class Field extends AccessibleObject implements Member {
         return res;
     }
 
+    /**
+     * @throws InaccessibleObjectException {@inheritDoc}
+     * @throws SecurityException {@inheritDoc}
+     */
     @Override
     @CallerSensitive
     public void setAccessible(boolean flag) {

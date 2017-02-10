@@ -45,7 +45,7 @@ import java.util.stream.Stream;
  * module. A module reader is also intended to be used by {@code ClassLoader}
  * implementations that load classes and resources from modules. </p>
  *
- * <p> A resource in a module is identified by a name that is a
+ * <p> A resource in a module is identified by an abstract name that is a
  * '{@code /}'-separated path string. For example, module {@code java.base} may
  * have a resource "{@code java/lang/Object.class}" that, by convention, is the
  * class file for {@code java.lang.Object}. </p>
@@ -61,8 +61,18 @@ import java.util.stream.Stream;
  * open}, {@link #read read}, and {@link #list list} methods may throw {@code
  * SecurityException} if access is denied by the security manager. </p>
  *
+ * @implSpec Implementations of {@code ModuleReader} should take great care
+ * when translating an abstract resource name to the location of a resource in
+ * a packaged module or on the file system. Implementations are advised to
+ * treat resource names with elements such as '{@code .},  '{@code ..}',
+ * elements containing file separators, or empty elements as "not found". More
+ * generally, if the resource name is not in the stream of elements that the
+ * {@code list} method returns then the resource should be treated as "not
+ * found" to avoid inconsistencies.
+ *
  * @see ModuleReference
  * @since 9
+ * @spec JPMS
  */
 
 public interface ModuleReader extends Closeable {
@@ -148,6 +158,9 @@ public interface ModuleReader extends Closeable {
      *         If an I/O error occurs or the module reader is closed
      * @throws SecurityException
      *         If denied by the security manager
+     * @throws OutOfMemoryError
+     *         If the resource is larger than {@code Integer.MAX_VALUE},
+     *         the maximum capacity of a byte buffer
      *
      * @see ClassLoader#defineClass(String, ByteBuffer, java.security.ProtectionDomain)
      */
