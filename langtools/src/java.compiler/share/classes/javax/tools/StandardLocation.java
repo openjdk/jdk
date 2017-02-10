@@ -64,6 +64,7 @@ public enum StandardLocation implements Location {
 
     /**
      * Location to search for modules containing annotation processors.
+     * @spec JPMS
      * @since 9
      */
     ANNOTATION_PROCESSOR_MODULE_PATH,
@@ -82,24 +83,28 @@ public enum StandardLocation implements Location {
 
     /**
      * Location to search for the source code of modules.
+     * @spec JPMS
      * @since 9
      */
     MODULE_SOURCE_PATH,
 
     /**
      * Location to search for upgradeable system modules.
+     * @spec JPMS
      * @since 9
      */
     UPGRADE_MODULE_PATH,
 
     /**
      * Location to search for system modules.
+     * @spec JPMS
      * @since 9
      */
     SYSTEM_MODULES,
 
     /**
      * Location to search for precompiled user modules.
+     * @spec JPMS
      * @since 9
      */
     MODULE_PATH;
@@ -115,6 +120,9 @@ public enum StandardLocation implements Location {
      *
      * @param name a name
      * @return a location
+     *
+     * @revised 9
+     * @spec JPMS
      */
     public static Location locationFor(final String name) {
         if (locations.isEmpty()) {

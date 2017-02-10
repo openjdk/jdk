@@ -150,7 +150,7 @@ public class ModuleAnalyzer {
         private ModuleDescriptor descriptor(Set<Module> requiresTransitive,
                                             Set<Module> requires) {
 
-            ModuleDescriptor.Builder builder = ModuleDescriptor.module(root.name());
+            ModuleDescriptor.Builder builder = ModuleDescriptor.newModule(root.name());
 
             if (!root.name().equals(JAVA_BASE))
                 builder.requires(Set.of(MANDATED), JAVA_BASE);
