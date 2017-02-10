@@ -79,7 +79,9 @@ import static jdk.jshell.Util.expunge;
  * <p>
  * This class is not thread safe, except as noted, all access should be through
  * a single thread.
+ *
  * @author Robert Field
+ * @since 9
  */
 public class JShell implements AutoCloseable {
 
