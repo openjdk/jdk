@@ -25,6 +25,8 @@
 
 /*
  * Provides non-SE desktop APIs.
+ *
+ * @since 9
  */
 
 module jdk.desktop {
