@@ -158,7 +158,7 @@ public class Main {
     static final String MANIFEST_DIR = "META-INF/";
     static final String VERSIONS_DIR = MANIFEST_DIR + "versions/";
     static final String VERSION = "1.0";
-
+    static final int VERSIONS_DIR_LENGTH = VERSIONS_DIR.length();
     private static ResourceBundle rsrc;
 
     /**
@@ -681,7 +681,7 @@ public class Main {
     void addPackageIfNamed(Set<String> packages, String name) {
         if (name.startsWith(VERSIONS_DIR)) {
             // trim the version dir prefix
-            int i0 = VERSIONS_DIR.length();
+            int i0 = VERSIONS_DIR_LENGTH;
             int i = name.indexOf('/', i0);
             if (i <= 0) {
                 warn(formatMsg("warn.release.unexpected.versioned.entry", name));
@@ -1727,12 +1727,16 @@ public class Main {
     private boolean printModuleDescriptor(ZipFile zipFile)
         throws IOException
     {
-        ZipEntry entry = zipFile.getEntry(MODULE_INFO);
-        if (entry ==  null)
+        ZipEntry[] zes = zipFile.stream()
+            .filter(e -> isModuleInfoEntry(e.getName()))
+            .sorted(Validator.ENTRY_COMPARATOR)
+            .toArray(ZipEntry[]::new);
+        if (zes.length == 0)
             return false;
-
-        try (InputStream is = zipFile.getInputStream(entry)) {
-            printModuleDescriptor(is);
+        for (ZipEntry ze : zes) {
+            try (InputStream is = zipFile.getInputStream(ze)) {
+                printModuleDescriptor(is, ze.getName());
+            }
         }
         return true;
     }
@@ -1742,16 +1746,23 @@ public class Main {
     {
         try (BufferedInputStream bis = new BufferedInputStream(fis);
              ZipInputStream zis = new ZipInputStream(bis)) {
-
             ZipEntry e;
             while ((e = zis.getNextEntry()) != null) {
-                if (e.getName().equals(MODULE_INFO)) {
-                    printModuleDescriptor(zis);
-                    return true;
+                String ename = e.getName();
+                if (isModuleInfoEntry(ename)){
+                    moduleInfos.put(ename, zis.readAllBytes());
                 }
             }
         }
-        return false;
+        if (moduleInfos.size() == 0)
+            return false;
+        String[] names = moduleInfos.keySet().stream()
+            .sorted(Validator.ENTRYNAME_COMPARATOR)
+            .toArray(String[]::new);
+        for (String name : names) {
+            printModuleDescriptor(new ByteArrayInputStream(moduleInfos.get(name)), name);
+        }
+        return true;
     }
 
     static <T> String toString(Collection<T> set) {
@@ -1760,7 +1771,7 @@ public class Main {
                   .collect(joining(" "));
     }
 
-    private void printModuleDescriptor(InputStream entryInputStream)
+    private void printModuleDescriptor(InputStream entryInputStream, String ename)
         throws IOException
     {
         ModuleInfo.Attributes attrs = ModuleInfo.read(entryInputStream, null);
@@ -1768,10 +1779,12 @@ public class Main {
         ModuleHashes hashes = attrs.recordedHashes();
 
         StringBuilder sb = new StringBuilder();
-        sb.append("\n");
+        sb.append("\nmodule ")
+          .append(md.toNameAndVersion())
+          .append(" (").append(ename).append(")");
+
         if (md.isOpen())
-            sb.append("open ");
-        sb.append(md.toNameAndVersion());
+            sb.append("\n  open ");
 
         md.requires().stream()
             .sorted(Comparator.comparing(Requires::name))
@@ -1879,7 +1892,7 @@ public class Main {
             if (end == 0)
                 return true;
             if (name.startsWith(VERSIONS_DIR)) {
-                int off = VERSIONS_DIR.length();
+                int off = VERSIONS_DIR_LENGTH;
                 if (off == end)      // meta-inf/versions/module-info.class
                     return false;
                 while (off < end - 1) {
