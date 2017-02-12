@@ -31,13 +31,19 @@ import jdk.vm.ci.meta.Signature;
  */
 final class HotSpotMethodUnresolved extends HotSpotMethod {
 
+    private final String name;
     private final Signature signature;
     protected JavaType holder;
 
     HotSpotMethodUnresolved(String name, Signature signature, JavaType holder) {
-        super(name);
+        this.name = name;
         this.holder = holder;
         this.signature = signature;
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 
     @Override
