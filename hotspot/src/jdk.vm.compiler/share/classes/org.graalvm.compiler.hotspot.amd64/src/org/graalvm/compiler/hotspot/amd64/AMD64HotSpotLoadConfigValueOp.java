@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,12 @@ package org.graalvm.compiler.hotspot.amd64;
 
 import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static jdk.vm.ci.code.ValueUtil.asRegister;
+
+import jdk.vm.ci.amd64.AMD64Kind;
+import jdk.vm.ci.code.Register;
 import jdk.vm.ci.meta.AllocatableValue;
 
+import org.graalvm.compiler.asm.amd64.AMD64Address;
 import org.graalvm.compiler.asm.amd64.AMD64MacroAssembler;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.lir.LIRInstructionClass;
@@ -48,7 +52,25 @@ public final class AMD64HotSpotLoadConfigValueOp extends AMD64LIRInstruction {
     @Override
     public void emitCode(CompilationResultBuilder crb, AMD64MacroAssembler masm) {
         if (GeneratePIC.getValue()) {
-            masm.movq(asRegister(result), masm.getPlaceholder(-1));
+            AMD64Kind kind = (AMD64Kind) result.getPlatformKind();
+            Register reg = asRegister(result);
+            AMD64Address placeholder = masm.getPlaceholder(-1);
+            switch (kind) {
+                case BYTE:
+                    masm.movsbl(reg, placeholder);
+                    break;
+                case WORD:
+                    masm.movswl(reg, placeholder);
+                    break;
+                case DWORD:
+                    masm.movl(reg, placeholder);
+                    break;
+                case QWORD:
+                    masm.movq(reg, placeholder);
+                    break;
+                default:
+                    throw GraalError.unimplemented();
+            }
         } else {
             throw GraalError.unimplemented();
         }
