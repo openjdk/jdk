@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,13 +246,16 @@ abstract class AsynchronousChannelGroupImpl
     abstract void shutdownHandlerTasks();
 
     private void shutdownExecutors() {
-        AccessController.doPrivileged(new PrivilegedAction<>() {
-            public Void run() {
-                pool.executor().shutdown();
-                timeoutExecutor.shutdown();
-                return null;
-            }
-        });
+        AccessController.doPrivileged(
+            new PrivilegedAction<>() {
+                public Void run() {
+                    pool.executor().shutdown();
+                    timeoutExecutor.shutdown();
+                    return null;
+                }
+            },
+            null,
+            new RuntimePermission("modifyThread"));
     }
 
     @Override
