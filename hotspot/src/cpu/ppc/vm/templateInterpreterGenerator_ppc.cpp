@@ -646,12 +646,6 @@ address TemplateInterpreterGenerator::generate_exception_handler_common(const ch
   return entry;
 }
 
-address TemplateInterpreterGenerator::generate_continuation_for(TosState state) {
-  address entry = __ pc();
-  __ unimplemented("generate_continuation_for");
-  return entry;
-}
-
 // This entry is returned to when a call returns to the interpreter.
 // When we arrive here, we expect that the callee stack frame is already popped.
 address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, int step, size_t index_size) {
