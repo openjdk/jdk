@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,11 +46,16 @@ import java.util.TreeSet;
 import java.util.function.IntSupplier;
 
 import jdk.internal.module.Checks;
+import jdk.internal.module.ClassFileAttributes;
+import jdk.internal.module.ClassFileConstants;
 import jdk.internal.module.ModuleHashes;
 import jdk.internal.module.ModuleInfo.Attributes;
 import jdk.internal.module.ModuleInfoExtender;
 import jdk.internal.module.ModuleResolution;
 import jdk.internal.module.SystemModules;
+import jdk.internal.org.objectweb.asm.Attribute;
+import jdk.internal.org.objectweb.asm.ClassReader;
+import jdk.internal.org.objectweb.asm.ClassVisitor;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
@@ -106,6 +111,11 @@ public final class SystemModulesPlugin implements Plugin {
     @Override
     public boolean hasArguments() {
         return true;
+    }
+
+    @Override
+    public String getArgumentsDescription() {
+        return PluginsResourceBundle.getArgument(NAME);
     }
 
     @Override
@@ -171,10 +181,11 @@ public final class SystemModulesPlugin implements Plugin {
     }
 
     static class ModuleInfo {
+        private final ByteArrayInputStream bain;
         private final Attributes attrs;
         private final Set<String> packages;
-        private final ByteArrayInputStream bain;
         private final boolean dropModuleTarget;
+        private final boolean addModulePackages;
         private ModuleDescriptor descriptor;  // may be different that the original one
 
         ModuleInfo(byte[] bytes, Set<String> packages, boolean dropModuleTarget)
@@ -182,15 +193,21 @@ public final class SystemModulesPlugin implements Plugin {
         {
             this.bain = new ByteArrayInputStream(bytes);
             this.packages = packages;
-
             this.attrs = jdk.internal.module.ModuleInfo.read(bain, null);
+            // If ModulePackages attribute is present, the packages from this
+            // module descriptor returns the packages in that attribute.
+            // If it's not present, ModuleDescriptor::packages only contains
+            // the exported and open packages from module-info.class
             this.descriptor = attrs.descriptor();
             if (descriptor.isAutomatic()) {
                 throw new InternalError("linking automatic module is not supported");
             }
 
+            // add ModulePackages attribute if this module contains some packages
+            // and ModulePackages is not present
+            this.addModulePackages = packages.size() > 0 && !hasModulePackages();
+            // drop target attribute only if any OS property is present
             if (dropModuleTarget) {
-                // drop target attribute only if any OS property is present
                 this.dropModuleTarget =
                     descriptor.osName().isPresent() ||
                     descriptor.osArch().isPresent() ||
@@ -276,51 +293,69 @@ public final class SystemModulesPlugin implements Plugin {
             }
         }
 
+        boolean hasModulePackages() throws IOException {
+            Set<String> attrTypes = new HashSet<>();
+            ClassVisitor cv = new ClassVisitor(Opcodes.ASM5) {
+                @Override
+                public void visitAttribute(Attribute attr) {
+                    attrTypes.add(attr.type);
+                }
+            };
+
+            // prototype of attributes that should be parsed
+            Attribute[] attrs = new Attribute[] {
+                new ClassFileAttributes.ModulePackagesAttribute()
+            };
+
+            try (InputStream in = getInputStream()) {
+                // parse module-info.class
+                ClassReader cr = new ClassReader(in);
+                cr.accept(cv, attrs, 0);
+                return attrTypes.contains(ClassFileConstants.MODULE_PACKAGES);
+            }
+        }
+
         /**
          * Returns true if module-info.class should be written
          * 1. add ModulePackages attribute if not present; or
          * 2. drop ModuleTarget attribute except java.base
          */
         boolean shouldRewrite() {
-            return shouldAddModulePackages() || shouldDropModuleTarget();
-        }
-
-        boolean shouldAddModulePackages() {
-            return (descriptor.packages().isEmpty() && packages.size() > 0);
-        }
-
-        boolean shouldDropModuleTarget() {
-            return dropModuleTarget &&
-                        (descriptor.osName().isPresent() ||
-                         descriptor.osArch().isPresent() ||
-                         descriptor.osVersion().isPresent());
+            return addModulePackages || dropModuleTarget;
         }
 
         /**
          * Returns the bytes for the module-info.class with ModulePackages
-         * if it contains at least one package
+         * attribute added and/or with ModuleTarget attribute dropped.
          */
         byte[] getBytes() throws IOException {
-            bain.reset();
-
-            // add ModulePackages attribute if not exist
-            if (shouldRewrite()) {
-                ModuleInfoRewriter rewriter = new ModuleInfoRewriter(bain);
-                if (shouldAddModulePackages()) {
-                    rewriter.addModulePackages(packages);
+            try (InputStream in = getInputStream()) {
+                if (shouldRewrite()) {
+                    ModuleInfoRewriter rewriter = new ModuleInfoRewriter(in);
+                    if (addModulePackages) {
+                        rewriter.addModulePackages(packages);
+                    }
+                    if (dropModuleTarget) {
+                        rewriter.dropModuleTarget();
+                    }
+                    // rewritten module descriptor
+                    byte[] bytes = rewriter.getBytes();
+                    try (ByteArrayInputStream bain = new ByteArrayInputStream(bytes)) {
+                        this.descriptor = ModuleDescriptor.read(bain);
+                    }
+                    return bytes;
+                } else {
+                    return in.readAllBytes();
                 }
-                if (shouldDropModuleTarget()) {
-                    rewriter.dropModuleTarget();
-                }
-                // rewritten module descriptor
-                byte[] bytes = rewriter.getBytes();
-                try (ByteArrayInputStream bain = new ByteArrayInputStream(bytes)) {
-                     this.descriptor = ModuleDescriptor.read(bain);
-                }
-                return bytes;
-            } else {
-                return bain.readAllBytes();
             }
+        }
+
+        /*
+         * Returns the input stream of the module-info.class
+         */
+        InputStream getInputStream() {
+            bain.reset();
+            return bain;
         }
 
         class ModuleInfoRewriter extends ByteArrayOutputStream {
