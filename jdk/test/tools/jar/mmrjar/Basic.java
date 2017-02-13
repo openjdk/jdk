@@ -268,7 +268,7 @@ public class Basic {
 
         actual = lines(outbytes);
         expected = Set.of(
-                "hi",
+                "module hi (module-info.class)",
                 "requires mandated java.base",
                 "contains p",
                 "contains p.internal"
@@ -304,7 +304,7 @@ public class Basic {
 
         actual = lines(outbytes);
         expected = Set.of(
-                "hi",
+                "module hi (module-info.class)",
                 "requires mandated java.base",
                 "contains p",
                 "contains p.internal",
@@ -396,18 +396,18 @@ public class Basic {
                    Paths.get("test7-v10", "module-info.class"));
 
         int rc = jar("--create --file mmr.jar --main-class=p.Main -C test7 . --release 9 -C test7-v9 . --release 10 -C test7-v10 .");
-
-System.out.println("-----------------------");
-System.out.println( new String(errbytes.toByteArray()));
-
-
         Assert.assertEquals(rc, 0);
 
-
-        jar("-tf mmr.jar");
-
-System.out.println("-----------------------");
-System.out.println( new String(outbytes.toByteArray()));
+        jar("-d --file=mmr.jar");
+        System.out.println("-----------------------");
+        System.out.println( new String(outbytes.toByteArray()));
+        Assert.assertEquals(lines(outbytes),
+                            Set.of(
+                           "module m1 (META-INF/versions/9/module-info.class)",
+                           "module m1 (META-INF/versions/10/module-info.class)",
+                           "requires mandated java.base",
+                           "exports p",
+                           "main-class p.Main"));
 
         Optional<String> exp = Optional.of("p.Main");
         try (ZipFile zf = new ZipFile("mmr.jar")) {

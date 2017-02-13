@@ -609,11 +609,13 @@ class AsyncSSLDelegate implements ExceptionallyCloseable, AsyncConnection {
         }
 
         // SSLParameters.getApplicationProtocols() can't return null
+        // JDK 8 EXCL START
         for (String approto : p.getApplicationProtocols()) {
             sb.append("\n    application protocol: {")
               .append(params.size()).append("}");
             params.add(approto);
         }
+        // JDK 8 EXCL END
 
         if (p.getProtocols() != null) {
             for (String protocol : p.getProtocols()) {
