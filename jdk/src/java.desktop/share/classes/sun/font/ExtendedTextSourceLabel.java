@@ -779,7 +779,7 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
         if (gx == gxlimit) {
            tgt = charInfo.length / numvals;
         } else {
-           tgt = indices[gx]-1;
+           tgt = indices[gx];
         }
         if (DEBUG) {
            System.err.println("gx=" + gx + " gxlimit=" + gxlimit +
