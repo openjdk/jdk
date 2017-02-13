@@ -177,7 +177,7 @@ public class InheritRuntimeEnvironmentTest extends ModuleTestBase {
         Files.createDirectories(patch);
 
         new JavacTask(tb)
-                .options("-Xmodule:java.base")
+                .options("--patch-module", "java.base=" + patchSrc.toString())
                 .outdir(patch)
                 .sourcepath(patchSrc)
                 .files(findJavaFiles(patchSrc))

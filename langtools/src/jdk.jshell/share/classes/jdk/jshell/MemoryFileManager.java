@@ -30,8 +30,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.URI;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -70,10 +68,6 @@ class MemoryFileManager implements JavaFileManager {
     private ClassFileCreationListener classListener = null;
 
     private final JShell proc;
-
-    // Upcoming Jigsaw
-    private Method inferModuleNameMethod = null;
-    private Method listLocationsForModulesMethod = null;
 
     Iterable<? extends Path> getLocationAsPaths(Location loc) {
         return this.stdFileManager.getLocationAsPaths(loc);
@@ -185,45 +179,6 @@ class MemoryFileManager implements JavaFileManager {
     public JavaFileObject createSourceFileObject(Object origin, String name, String code) {
         return new SourceMemoryJavaFileObject(origin, name, code);
     }
-
-    // Make compatible with Jigsaw
-    @Override
-    public String inferModuleName(Location location) {
-        try {
-            if (inferModuleNameMethod == null) {
-                inferModuleNameMethod = JavaFileManager.class.getDeclaredMethod("inferModuleName", Location.class);
-            }
-            @SuppressWarnings("unchecked")
-            String result = (String) inferModuleNameMethod.invoke(stdFileManager, location);
-            return result;
-        } catch (NoSuchMethodException | SecurityException ex) {
-            throw new InternalError("Cannot lookup JavaFileManager method", ex);
-        } catch (IllegalAccessException |
-                IllegalArgumentException |
-                InvocationTargetException ex) {
-            throw new InternalError("Cannot invoke JavaFileManager method", ex);
-        }
-    }
-
-    // Make compatible with Jigsaw
-    @Override
-    public Iterable<Set<Location>> listLocationsForModules(Location location) throws IOException {
-        try {
-            if (listLocationsForModulesMethod == null) {
-                listLocationsForModulesMethod = JavaFileManager.class.getDeclaredMethod("listLocationsForModules", Location.class);
-            }
-            @SuppressWarnings("unchecked")
-            Iterable<Set<Location>> result = (Iterable<Set<Location>>) listLocationsForModulesMethod.invoke(stdFileManager, location);
-            return result;
-        } catch (NoSuchMethodException | SecurityException ex) {
-            throw new InternalError("Cannot lookup JavaFileManager method", ex);
-        } catch (IllegalAccessException |
-                IllegalArgumentException |
-                InvocationTargetException ex) {
-            throw new InternalError("Cannot invoke JavaFileManager method", ex);
-        }
-    }
-
 
     /**
      * Returns a class loader for loading plug-ins from the given location. For
@@ -582,6 +537,26 @@ class MemoryFileManager implements JavaFileManager {
                 ", packageName: " + packageName +
                 ", relativeName: " + relativeName +
                 ", sibling: " + sibling);
+    }
+
+    @Override
+    public Location getLocationForModule(Location location, String moduleName) throws IOException {
+        return stdFileManager.getLocationForModule(location, moduleName);
+    }
+
+    @Override
+    public Location getLocationForModule(Location location, JavaFileObject fo, String pkgName) throws IOException {
+        return stdFileManager.getLocationForModule(location, fo, pkgName);
+    }
+
+    @Override
+    public String inferModuleName(Location location) throws IOException {
+        return stdFileManager.inferModuleName(location);
+    }
+
+    @Override
+    public Iterable<Set<Location>> listLocationsForModules(Location location) throws IOException {
+        return stdFileManager.listLocationsForModules(location);
     }
 
     /**

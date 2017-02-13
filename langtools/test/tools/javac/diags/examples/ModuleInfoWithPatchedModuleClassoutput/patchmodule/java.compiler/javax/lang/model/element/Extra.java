@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,6 @@
  * questions.
  */
 
-// key: compiler.err.module-info.with.xmodule.classpath
-// options: -Xmodule:java.compiler
-
 package javax.lang.model.element;
 
-public interface ModuleInfoWithXModuleClasspath {}
+public interface Extra {}
