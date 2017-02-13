@@ -1428,8 +1428,12 @@ bool ciMethod::is_consistent_info(ciMethod* declared_method, ciMethod* resolved_
 
   if (!invoke_through_mh_intrinsic) {
     // Method name & descriptor should stay the same.
+    // Signatures may reference unloaded types and thus they may be not strictly equal.
+    ciSymbol* declared_signature = declared_method->signature()->as_symbol();
+    ciSymbol* resolved_signature = resolved_method->signature()->as_symbol();
+
     return (declared_method->name()->equals(resolved_method->name())) &&
-           (declared_method->signature()->equals(resolved_method->signature()));
+           (declared_signature->equals(resolved_signature));
   }
 
   ciMethod* linker = declared_method;
