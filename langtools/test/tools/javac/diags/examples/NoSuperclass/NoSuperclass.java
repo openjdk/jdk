@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,4 @@
  * questions.
  */
 
-// key: compiler.err.xmodule.no.module.sourcepath
-// options: -Xmodule:java.compiler --module-source-path src
-
-class XModuleWithModulePath {}
+// key: compiler.err.no.superclass

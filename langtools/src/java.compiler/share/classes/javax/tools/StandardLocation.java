@@ -107,7 +107,14 @@ public enum StandardLocation implements Location {
      * @spec JPMS
      * @since 9
      */
-    MODULE_PATH;
+    MODULE_PATH,
+
+    /**
+     * Location to search for module patches.
+     * @since 9
+     * @spec JPMS
+     */
+    PATCH_MODULE_PATH;
 
     /**
      * Returns a location object with the given name.  The following
@@ -166,6 +173,7 @@ public enum StandardLocation implements Location {
             case UPGRADE_MODULE_PATH:
             case SYSTEM_MODULES:
             case MODULE_PATH:
+            case PATCH_MODULE_PATH:
                 return true;
             default:
                 return false;
