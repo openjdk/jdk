@@ -3017,7 +3017,7 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
       load_store = _gvn.transform(new DecodeNNode(load_store, load_store->get_ptr_type()));
     }
 #endif
-    if (can_move_pre_barrier()) {
+    if (can_move_pre_barrier() && kind == LS_get_set) {
       // Don't need to load pre_val. The old value is returned by load_store.
       // The pre_barrier can execute after the xchg as long as no safepoint
       // gets inserted between them.
