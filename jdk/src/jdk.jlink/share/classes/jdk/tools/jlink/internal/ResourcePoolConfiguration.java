@@ -97,7 +97,9 @@ final class ResourcePoolConfiguration {
             ModuleDescriptor desc = m.descriptor();
             if (!desc.packages().equals(m.packages())) {
                 throw new RuntimeException("Module " + m.name() +
-                   "'s descriptor returns inconsistent package set");
+                   "'s descriptor indicates the set of packages is : " +
+                   desc.packages() + ", but module contains packages: " +
+                   m.packages());
             }
         });
     }
