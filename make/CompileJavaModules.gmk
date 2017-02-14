@@ -85,7 +85,7 @@ endif
 
 ################################################################################
 
-java.compiler_ADD_JAVAC_FLAGS := -Xdoclint:all/protected,-reference '-Xdoclint/package:java.*,javax.*'
+java.compiler_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
 
 ################################################################################
 
