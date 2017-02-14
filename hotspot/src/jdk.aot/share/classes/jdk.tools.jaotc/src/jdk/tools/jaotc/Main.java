@@ -315,17 +315,58 @@ public class Main implements LogPrinter {
     }
 
     /**
+     * Visual Studio supported versions
+     * Search Order is:  VS2013, VS2015, VS2012
+     */
+    public enum VSVERSIONS {
+        VS2013("VS120COMNTOOLS", "C:\\Program Files (x86)\\Microsoft Visual Studio 12.0\\VC\\bin\\amd64\\link.exe"),
+        VS2015("VS140COMNTOOLS", "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\bin\\amd64\\link.exe"),
+        VS2012("VS110COMNTOOLS", "C:\\Program Files (x86)\\Microsoft Visual Studio 11.0\\VC\\bin\\amd64\\link.exe");
+
+        private final String envvariable;
+        private final String wkp;
+
+        VSVERSIONS(String envvariable, String wellknownpath) {
+            this.envvariable = envvariable;
+            this.wkp = wellknownpath;
+        }
+
+        String EnvVariable()   { return envvariable; }
+        String WellKnownPath() { return wkp; }
+    }
+
+    /**
      * Search for Visual Studio link.exe
      * Search Order is:  VS2013, VS2015, VS2012
      */
-    private String getWindowsLinkPath() {
-        String vs2013 = "C:\\Program Files (x86)\\Microsoft Visual Studio 12.0\\VC\\bin\\amd64\\link.exe";
-        String vs2015 = "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\bin\\amd64\\link.exe";
-        String vs2012 = "C:\\Program Files (x86)\\Microsoft Visual Studio 11.0\\VC\\bin\\amd64\\link.exe";
+    private static String getWindowsLinkPath() {
+        String link = "\\VC\\bin\\amd64\\link.exe";
 
-        if (new File(vs2015).exists()) return vs2015;
-        if (new File(vs2013).exists()) return vs2013;
-        if (new File(vs2012).exists()) return vs2012;
+        /**
+         * First try searching the paths pointed to by
+         * the VS environment variables.
+         */
+        for (VSVERSIONS vs : VSVERSIONS.values()) {
+            String vspath = System.getenv(vs.EnvVariable());
+            if (vspath != null) {
+                File commonTools = new File(vspath);
+                File vsRoot = commonTools.getParentFile().getParentFile();
+                File linkPath = new File(vsRoot, link);
+                if (linkPath.exists()) return linkPath.getPath();
+            }
+        }
+
+        /**
+         * If we didn't find via the VS environment variables,
+         * try the well known paths
+         */
+        for (VSVERSIONS vs : VSVERSIONS.values()) {
+            String wkp = vs.WellKnownPath();
+            if (new File(wkp).exists()) {
+                return wkp;
+            }
+        }
+
         return null;
     }
 

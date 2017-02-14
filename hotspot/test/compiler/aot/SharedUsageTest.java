@@ -25,7 +25,7 @@
  * @test
  * @library /test/lib /testlibrary /
  * @modules java.base/jdk.internal.misc
- * @requires vm.bits == "64" & (os.arch == "amd64" | os.arch == "x86_64") & !(os.family == "windows")
+ * @requires vm.bits == "64" & (os.arch == "amd64" | os.arch == "x86_64")
  * @build compiler.aot.SharedUsageTest
  *        compiler.aot.AotCompiler
  * @run main compiler.aot.AotCompiler -libname libSharedUsageTest.so

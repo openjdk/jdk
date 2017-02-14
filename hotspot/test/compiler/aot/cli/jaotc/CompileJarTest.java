@@ -25,7 +25,7 @@
  * @test
  * @library / /test/lib /testlibrary
  * @modules java.base/jdk.internal.misc
- * @requires vm.bits == "64" & (os.arch == "amd64" | os.arch == "x86_64") & !(os.family == "windows")
+ * @requires vm.bits == "64" & (os.arch == "amd64" | os.arch == "x86_64")
  * @build compiler.aot.cli.jaotc.CompileJarTest
  * @run driver ClassFileInstaller compiler.aot.cli.jaotc.data.HelloWorldOne
  *                                compiler.aot.cli.jaotc.data.HelloWorldTwo

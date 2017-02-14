@@ -25,7 +25,7 @@
  * @test
  * @library / /testlibrary/ /test/lib
  * @modules java.base/jdk.internal.misc
- * @requires vm.bits == "64" & (os.arch == "amd64" | os.arch == "x86_64") & !(os.family == "windows")
+ * @requires vm.bits == "64" & (os.arch == "amd64" | os.arch == "x86_64")
  * @compile data/HelloWorldOne.java
  * @run driver compiler.aot.cli.jaotc.ClasspathOptionUnknownClassTest
  * @summary check jaotc can't compile class not from classpath
