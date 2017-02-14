@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,36 +27,45 @@ package javax.xml.transform;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.CodeSigner;
+import java.security.CodeSource;
+import java.security.PermissionCollection;
+import java.security.Permissions;
+import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
+import java.util.Objects;
 
 /**
- * This class specifies an exceptional condition that occured
+ * This class specifies an exceptional condition that occurred
  * during the transformation process.
  *
  * @since 1.4
  */
 public class TransformerException extends Exception {
 
-    /** Field locator specifies where the error occured */
+    /** Field locator specifies where the error occurred */
     SourceLocator locator;
 
     /**
      * Method getLocator retrieves an instance of a SourceLocator
-     * object that specifies where an error occured.
+     * object that specifies where an error occurred.
      *
      * @return A SourceLocator object, or null if none was specified.
      */
     public SourceLocator getLocator() {
-        return locator;
+        return this.locator;
     }
 
     /**
      * Method setLocator sets an instance of a SourceLocator
-     * object that specifies where an error occured.
+     * object that specifies where an error occurred.
      *
      * @param location A SourceLocator object, or null to clear the location.
      */
     public void setLocator(SourceLocator location) {
-        locator = location;
+        this.locator = location;
     }
 
     /** Field containedException specifies a wrapped exception.  May be null. */
@@ -76,7 +85,9 @@ public class TransformerException extends Exception {
      * Returns the cause of this throwable or <code>null</code> if the
      * cause is nonexistent or unknown.  (The cause is the throwable that
      * caused this throwable to get thrown.)
+     * @return the cause, or null if unknown
      */
+    @Override
     public Throwable getCause() {
 
         return ((containedException == this)
@@ -108,6 +119,7 @@ public class TransformerException extends Exception {
      *         {@link #TransformerException(String,Throwable)}, or this method has already
      *         been called on this throwable.
      */
+    @Override
     public synchronized Throwable initCause(Throwable cause) {
 
         // TransformerException doesn't set its cause (probably
@@ -136,11 +148,7 @@ public class TransformerException extends Exception {
      * @param message The error or warning message.
      */
     public TransformerException(String message) {
-
-        super(message);
-
-        this.containedException = null;
-        this.locator            = null;
+        this(message, null, null);
     }
 
     /**
@@ -149,11 +157,7 @@ public class TransformerException extends Exception {
      * @param e The exception to be wrapped.
      */
     public TransformerException(Throwable e) {
-
-        super(e.toString());
-
-        this.containedException = e;
-        this.locator            = null;
+        this(null, null, e);
     }
 
     /**
@@ -167,13 +171,7 @@ public class TransformerException extends Exception {
      * @param e Any exception
      */
     public TransformerException(String message, Throwable e) {
-
-        super(((message == null) || (message.length() == 0))
-              ? e.toString()
-              : message);
-
-        this.containedException = e;
-        this.locator            = null;
+        this(message, null, e);
     }
 
     /**
@@ -187,11 +185,7 @@ public class TransformerException extends Exception {
      * @param locator The locator object for the error or warning.
      */
     public TransformerException(String message, SourceLocator locator) {
-
-        super(message);
-
-        this.containedException = null;
-        this.locator            = locator;
+        this(message, locator, null);
     }
 
     /**
@@ -204,8 +198,9 @@ public class TransformerException extends Exception {
      */
     public TransformerException(String message, SourceLocator locator,
                                 Throwable e) {
-
-        super(message);
+        super(((message == null) || (message.length() == 0))
+              ? ((e == null) ? "" : e.toString())
+              : message);
 
         this.containedException = e;
         this.locator            = locator;
@@ -219,34 +214,9 @@ public class TransformerException extends Exception {
      *         location information appended.
      */
     public String getMessageAndLocation() {
-
-        StringBuffer sbuffer = new StringBuffer();
-        String       message = super.getMessage();
-
-        if (null != message) {
-            sbuffer.append(message);
-        }
-
-        if (null != locator) {
-            String systemID = locator.getSystemId();
-            int    line     = locator.getLineNumber();
-            int    column   = locator.getColumnNumber();
-
-            if (null != systemID) {
-                sbuffer.append("; SystemID: ");
-                sbuffer.append(systemID);
-            }
-
-            if (0 != line) {
-                sbuffer.append("; Line#: ");
-                sbuffer.append(line);
-            }
-
-            if (0 != column) {
-                sbuffer.append("; Column#: ");
-                sbuffer.append(column);
-            }
-        }
+        StringBuilder sbuffer = new StringBuilder();
+        sbuffer.append(Objects.toString(super.getMessage(), ""));
+        sbuffer.append(Objects.toString(getLocationAsString(), ""));
 
         return sbuffer.toString();
     }
@@ -258,9 +228,29 @@ public class TransformerException extends Exception {
      * if there is no location information.
      */
     public String getLocationAsString() {
+        if (locator == null) {
+            return null;
+        }
 
-        if (null != locator) {
-            StringBuffer sbuffer  = new StringBuffer();
+        if (System.getSecurityManager() == null) {
+            return getLocationString();
+        } else {
+            return AccessController.doPrivileged((PrivilegedAction<String>) () ->
+                getLocationString(),
+                new AccessControlContext(new ProtectionDomain[] {getNonPrivDomain()}));
+        }
+    }
+
+    /**
+     * Constructs the location string.
+     * @return the location string
+     */
+    private String getLocationString() {
+        if (locator == null) {
+            return null;
+        }
+
+        StringBuilder sbuffer  = new StringBuilder();
             String       systemID = locator.getSystemId();
             int          line     = locator.getLineNumber();
             int          column   = locator.getColumnNumber();
@@ -281,9 +271,6 @@ public class TransformerException extends Exception {
             }
 
             return sbuffer.toString();
-        } else {
-            return null;
-        }
     }
 
     /**
@@ -291,6 +278,7 @@ public class TransformerException extends Exception {
      * originated.  This will trace all nested exception
      * objects, as well as this object.
      */
+    @Override
     public void printStackTrace() {
         printStackTrace(new java.io.PrintWriter(System.err, true));
     }
@@ -301,6 +289,7 @@ public class TransformerException extends Exception {
      * objects, as well as this object.
      * @param s The stream where the dump will be sent to.
      */
+    @Override
     public void printStackTrace(java.io.PrintStream s) {
         printStackTrace(new java.io.PrintWriter(s));
     }
@@ -311,6 +300,7 @@ public class TransformerException extends Exception {
      * objects, as well as this object.
      * @param s The writer where the dump will be sent to.
      */
+    @Override
     public void printStackTrace(java.io.PrintWriter s) {
 
         if (s == null) {
@@ -358,11 +348,8 @@ public class TransformerException extends Exception {
                     } else {
                         exception = null;
                     }
-                } catch (InvocationTargetException ite) {
-                    exception = null;
-                } catch (IllegalAccessException iae) {
-                    exception = null;
-                } catch (NoSuchMethodException nsme) {
+                } catch (InvocationTargetException | IllegalAccessException
+                        | NoSuchMethodException e) {
                     exception = null;
                 }
             }
@@ -371,4 +358,14 @@ public class TransformerException extends Exception {
             s.flush();
         }
     }
+
+    /**
+     * Creates a ProtectionDomain that has no permission.
+     * @return a ProtectionDomain
+     */
+    private ProtectionDomain getNonPrivDomain() {
+        CodeSource nullSource = new CodeSource(null, (CodeSigner[]) null);
+        PermissionCollection noPermission = new Permissions();
+        return new ProtectionDomain(nullSource, noPermission);
+}
 }
