@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -555,7 +555,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "run-test-jprt": {
             target_os: input.build_os,
             target_cpu: input.build_cpu,
-            dependencies: [ "jtreg", "gnumake", "boot_jdk" ],
+            dependencies: [ "jtreg", "gnumake", "boot_jdk", "devkit" ],
             labels: "test",
             environment: {
                 "JT_JAVA": common.boot_jdk_home
@@ -565,7 +565,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "run-test": {
             target_os: input.build_os,
             target_cpu: input.build_cpu,
-            dependencies: [ "jtreg", "gnumake", "boot_jdk" ],
+            dependencies: [ "jtreg", "gnumake", "boot_jdk", "devkit" ],
             labels: "test",
             environment: {
                 "JT_JAVA": common.boot_jdk_home
@@ -902,6 +902,14 @@ var getJibProfilesDependencies = function (input, common) {
             module: "freetype-" + input.target_platform
         }
     };
+
+    // Need to add a value for the Visual Studio tools variable to make
+    // jaot be able to pick up the Visual Studio linker in testing.
+    if (input.target_os == "windows") {
+        dependencies.devkit.environment = {
+            VS120COMNTOOLS: input.get("devkit", "install_path") + "/Common7/Tools"
+        };
+    }
 
     return dependencies;
 };
