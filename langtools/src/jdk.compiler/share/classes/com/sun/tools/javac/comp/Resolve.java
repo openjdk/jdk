@@ -307,6 +307,11 @@ public class Resolve {
         if (env.enclMethod != null && (env.enclMethod.mods.flags & ANONCONSTR) != 0)
             return true;
 
+        if (env.info.visitingServiceImplementation &&
+            env.toplevel.modle == c.packge().modle) {
+            return true;
+        }
+
         boolean isAccessible = false;
         switch ((short)(c.flags() & AccessFlags)) {
             case PRIVATE:
@@ -388,6 +393,11 @@ public class Resolve {
         */
         if (env.enclMethod != null && (env.enclMethod.mods.flags & ANONCONSTR) != 0)
             return true;
+
+        if (env.info.visitingServiceImplementation &&
+            env.toplevel.modle == sym.packge().modle) {
+            return true;
+        }
 
         switch ((short)(sym.flags() & AccessFlags)) {
         case PRIVATE:
