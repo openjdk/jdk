@@ -557,4 +557,187 @@ public class ModuleInfoTest extends ModuleTestBase {
                 throw new Exception("expected output not found for: " + moduleInfo + "; actual: " + log);
         }
     }
+
+    @Test
+    public void testMalformedModuleNames(Path base) throws Exception {
+        testMalformedName(base, "m1.package", "module-info.java:1:11: compiler.err.expected: token.identifier");
+        testMalformedName(base, "m1/package", "module-info.java:1:10: compiler.err.expected: '{'");
+        testMalformedName(base, "m1->long", "module-info.java:1:10: compiler.err.expected: '{'");
+        testMalformedName(base, "m1::long", "module-info.java:1:10: compiler.err.expected: '{'");
+        testMalformedName(base, "m1&long", "module-info.java:1:10: compiler.err.expected: '{'");
+        testMalformedName(base, "m1%long", "module-info.java:1:10: compiler.err.expected: '{'");
+        testMalformedName(base, "m1@long", "module-info.java:1:10: compiler.err.expected: '{'");
+        testMalformedName(base, "@m1", "module-info.java:1:7: compiler.err.expected: token.identifier");
+        testMalformedName(base, "!", "module-info.java:1:7: compiler.err.expected: token.identifier");
+        testMalformedName(base, "m1#long", "module-info.java:1:10: compiler.err.illegal.char: #");
+        testMalformedName(base, "m1\\long", "module-info.java:1:10: compiler.err.illegal.char: \\");
+        testMalformedName(base, "module.", "module-info.java:1:15: compiler.err.expected: token.identifier");
+        testMalformedName(base, ".module", "module-info.java:1:7: compiler.err.expected: token.identifier");
+        testMalformedName(base, "1module", "module-info.java:1:7: compiler.err.expected: token.identifier");
+        testMalformedName(base, "module module", "module-info.java:1:14: compiler.err.expected: '{'");
+    }
+
+    private void testMalformedName(Path base, String name, String expected) throws Exception {
+        Path src = base.resolve("src");
+        Path src_m1 = src.resolve("m1");
+        tb.writeJavaFiles(src_m1, "module " + name + " { }");
+
+        Path classes = base.resolve("classes");
+        Files.createDirectories(classes);
+
+        String log = new JavacTask(tb)
+                .options("-XDrawDiagnostics", "--module-source-path", src.toString())
+                .outdir(classes)
+                .files(findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutput(Task.OutputKind.DIRECT);
+
+        if (!log.contains(expected))
+            throw new Exception("expected output not found. Name: " + name + " Expected: " + expected);
+    }
+
+    @Test
+    public void testWrongOpensTransitiveFlag(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, "module M { opens transitive p1; }",
+                "package p1; public class A { }");
+        String log = new JavacTask(tb)
+                .options("-XDrawDiagnostics")
+                .files(findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutput(Task.OutputKind.DIRECT);
+
+        if (!log.contains("module-info.java:1:28: compiler.err.expected: ';'"))
+            throw new Exception("expected output not found");
+    }
+
+    @Test
+    public void testWrongOpensStaticFlag(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, "module M { opens static p1; }",
+                "package p1; public class A { }");
+        String log = new JavacTask(tb)
+                .options("-XDrawDiagnostics")
+                .files(findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutput(Task.OutputKind.DIRECT);
+
+        if (!log.contains("module-info.java:1:17: compiler.err.expected: token.identifier"))
+            throw new Exception("expected output not found");
+    }
+
+    @Test
+    public void testSeveralOpensDirectives(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, "module M { opens opens p1; }",
+                "package p1; public class A { }");
+        String log = new JavacTask(tb)
+                .options("-XDrawDiagnostics")
+                .files(findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutput(Task.OutputKind.DIRECT);
+
+        if (!log.contains("module-info.java:1:23: compiler.err.expected: ';'"))
+            throw new Exception("expected output not found");
+    }
+
+    @Test
+    public void testUnknownDirective(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, "module M { boolean p1; }",
+                "package p1; public class A { }");
+        String log = new JavacTask(tb)
+                .options("-XDrawDiagnostics")
+                .files(findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutput(Task.OutputKind.DIRECT);
+
+        if (!log.contains("module-info.java:1:11: compiler.err.expected: '}'"))
+            throw new Exception("expected output not found");
+    }
+
+    @Test
+    public void testUnknownModuleFlag(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, "private module M { }",
+                "package p1; public class A { }");
+        String log = new JavacTask(tb)
+                .options("-XDrawDiagnostics")
+                .files(findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutput(Task.OutputKind.DIRECT);
+
+        if (!log.contains("module-info.java:1:9: compiler.err.mod.not.allowed.here: private"))
+            throw new Exception("expected output not found");
+    }
+
+    @Test
+    public void testDirectiveOnModuleDeclaration(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, "opens module M { }",
+                "package p1; public class A { }");
+        String log = new JavacTask(tb)
+                .options("-XDrawDiagnostics")
+                .files(findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutput(Task.OutputKind.DIRECT);
+
+        if (!log.contains("module-info.java:1:1: compiler.err.expected.module.or.open"))
+            throw new Exception("expected output not found");
+    }
+
+    @Test
+    public void testTooOpenModule(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, "open open module M { }",
+                "package p1; public class A { }");
+        String log = new JavacTask(tb)
+                .options("-XDrawDiagnostics")
+                .files(findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutput(Task.OutputKind.DIRECT);
+
+        if (!log.contains("module-info.java:1:6: compiler.err.expected.module"))
+            throw new Exception("expected output not found");
+    }
+
+    @Test
+    public void testEnumAsModuleFlag(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, "enum module M { }",
+                "package p1; public class A { }");
+        String log = new JavacTask(tb)
+                .options("-XDrawDiagnostics")
+                .files(findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutput(Task.OutputKind.DIRECT);
+
+        if (!log.contains("module-info.java:1:12: compiler.err.expected: '{'"))
+            throw new Exception("expected output not found");
+    }
+
+    @Test
+    public void testClassInModule(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, "module M { class B { } }",
+                "package p1; public class A { }");
+        String log = new JavacTask(tb)
+                .options("-XDrawDiagnostics")
+                .files(findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutput(Task.OutputKind.DIRECT);
+
+        if (!log.contains("module-info.java:1:11: compiler.err.expected: '}'"))
+            throw new Exception("expected output not found");
+    }
 }
