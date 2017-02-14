@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -275,10 +275,12 @@ void LinkInfo::print() {
 
 void LinkResolver::check_klass_accessability(KlassHandle ref_klass, KlassHandle sel_klass, TRAPS) {
   Reflection::VerifyClassAccessResults vca_result =
-    Reflection::verify_class_access(ref_klass(), sel_klass(), true);
+    Reflection::verify_class_access(ref_klass(), InstanceKlass::cast(sel_klass()), true);
   if (vca_result != Reflection::ACCESS_OK) {
     ResourceMark rm(THREAD);
-    char* msg = Reflection::verify_class_access_msg(ref_klass(), sel_klass(), vca_result);
+    char* msg = Reflection::verify_class_access_msg(ref_klass(),
+                                                    InstanceKlass::cast(sel_klass()),
+                                                    vca_result);
     if (msg == NULL) {
       Exceptions::fthrow(
         THREAD_AND_LOCATION,

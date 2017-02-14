@@ -62,7 +62,7 @@ class MallocSiteHashtableEntry : public CHeapObj<mtNMT> {
  public:
   MallocSiteHashtableEntry() : _next(NULL) { }
 
-  MallocSiteHashtableEntry(NativeCallStack stack):
+  MallocSiteHashtableEntry(const NativeCallStack& stack):
     _malloc_site(stack), _next(NULL) { }
 
   inline const MallocSiteHashtableEntry* next() const {
