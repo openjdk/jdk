@@ -44,6 +44,21 @@ public class MethodHandleHelper {
     }
 
     @ForceInline
+    public static Object internalMemberName(MethodHandle mh) throws Throwable {
+        return mh.internalMemberName();
+    }
+
+    @ForceInline
+    public static void linkToStatic(MethodHandle mh, float arg, Object name) throws Throwable {
+        MethodHandle.linkToStatic(mh, arg, name);
+    }
+
+    @ForceInline
+    public static void invokeBasicV(MethodHandle mh, float arg) throws Throwable {
+        mh.invokeBasic(arg);
+    }
+
+    @ForceInline
     public static Object invokeBasicL(MethodHandle mh) throws Throwable {
         return mh.invokeBasic();
     }
