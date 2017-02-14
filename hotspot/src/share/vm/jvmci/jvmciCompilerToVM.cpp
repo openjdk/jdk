@@ -735,9 +735,7 @@ C2V_END
 
 C2V_VMENTRY(jboolean, isCompilable,(JNIEnv *, jobject, jobject jvmci_method))
   methodHandle method = CompilerToVM::asMethod(jvmci_method);
-  // Ignore the not_compilable flags in hosted mode since they are never set by
-  // the JVMCI compiler.
-  return UseJVMCICompiler || !method->is_not_compilable(CompLevel_full_optimization);
+  return !method->is_not_compilable(CompLevel_full_optimization);
 C2V_END
 
 C2V_VMENTRY(jboolean, hasNeverInlineDirective,(JNIEnv *, jobject, jobject jvmci_method))
