@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,20 +20,10 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package java.util.stream;
+package java.util;
 
-import org.testng.annotations.Test;
-
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Spliterator;
 import java.util.function.*;
+import java.util.stream.LambdaTestHelpers;
 
 import static org.testng.Assert.*;
 import static org.testng.Assert.assertEquals;
@@ -71,6 +61,28 @@ public class SpliteratorTestHelper {
 
     public static void testIntSpliterator(Supplier<Spliterator.OfInt> supplier,
                                           ContentAsserter<Integer> asserter) {
+        testSpliterator(supplier, intBoxingConsumer(), asserter);
+    }
+
+    public static void testLongSpliterator(Supplier<Spliterator.OfLong> supplier) {
+        testLongSpliterator(supplier, defaultContentAsserter());
+    }
+
+    public static void testLongSpliterator(Supplier<Spliterator.OfLong> supplier,
+                                           ContentAsserter<Long> asserter) {
+        testSpliterator(supplier, longBoxingConsumer(), asserter);
+    }
+
+    public static void testDoubleSpliterator(Supplier<Spliterator.OfDouble> supplier) {
+        testDoubleSpliterator(supplier, defaultContentAsserter());
+    }
+
+    public static void testDoubleSpliterator(Supplier<Spliterator.OfDouble> supplier,
+                                             ContentAsserter<Double> asserter) {
+        testSpliterator(supplier, doubleBoxingConsumer(), asserter);
+    }
+
+    public static UnaryOperator<Consumer<Integer>> intBoxingConsumer() {
         class BoxingAdapter implements Consumer<Integer>, IntConsumer {
             private final Consumer<Integer> b;
 
@@ -89,15 +101,10 @@ public class SpliteratorTestHelper {
             }
         }
 
-        testSpliterator(supplier, BoxingAdapter::new, asserter);
+        return b -> new BoxingAdapter(b);
     }
 
-    public static void testLongSpliterator(Supplier<Spliterator.OfLong> supplier) {
-        testLongSpliterator(supplier, defaultContentAsserter());
-    }
-
-    public static void testLongSpliterator(Supplier<Spliterator.OfLong> supplier,
-                                           ContentAsserter<Long> asserter) {
+    public static UnaryOperator<Consumer<Long>> longBoxingConsumer() {
         class BoxingAdapter implements Consumer<Long>, LongConsumer {
             private final Consumer<Long> b;
 
@@ -116,15 +123,10 @@ public class SpliteratorTestHelper {
             }
         }
 
-        testSpliterator(supplier, BoxingAdapter::new, asserter);
+        return b -> new BoxingAdapter(b);
     }
 
-    public static void testDoubleSpliterator(Supplier<Spliterator.OfDouble> supplier) {
-        testDoubleSpliterator(supplier, defaultContentAsserter());
-    }
-
-    public static void testDoubleSpliterator(Supplier<Spliterator.OfDouble> supplier,
-                                             ContentAsserter<Double> asserter) {
+    public static UnaryOperator<Consumer<Double>> doubleBoxingConsumer() {
         class BoxingAdapter implements Consumer<Double>, DoubleConsumer {
             private final Consumer<Double> b;
 
@@ -143,10 +145,10 @@ public class SpliteratorTestHelper {
             }
         }
 
-        testSpliterator(supplier, BoxingAdapter::new, asserter);
+        return b -> new BoxingAdapter(b);
     }
 
-    static <T, S extends Spliterator<T>> void testSpliterator(Supplier<S> supplier,
+    public static <T, S extends Spliterator<T>> void testSpliterator(Supplier<S> supplier,
                                                               UnaryOperator<Consumer<T>> boxingAdapter,
                                                               ContentAsserter<T> asserter) {
         ArrayList<T> fromForEach = new ArrayList<>();
@@ -167,7 +169,54 @@ public class SpliteratorTestHelper {
         testSplitUntilNull(exp, supplier, boxingAdapter, asserter);
     }
 
-    //
+    public static <T, S extends Spliterator<T>> void testForEach(
+            Collection<T> exp,
+            Supplier<S> supplier,
+            UnaryOperator<Consumer<T>> boxingAdapter) {
+        testForEach(exp, supplier, boxingAdapter, defaultContentAsserter());
+    }
+
+    public static <T, S extends Spliterator<T>> void testTryAdvance(
+            Collection<T> exp,
+            Supplier<S> supplier,
+            UnaryOperator<Consumer<T>> boxingAdapter) {
+        testTryAdvance(exp, supplier, boxingAdapter, defaultContentAsserter());
+    }
+
+    public static <T, S extends Spliterator<T>> void testMixedTryAdvanceForEach(
+            Collection<T> exp,
+            Supplier<S> supplier,
+            UnaryOperator<Consumer<T>> boxingAdapter) {
+        testMixedTryAdvanceForEach(exp, supplier, boxingAdapter, defaultContentAsserter());
+    }
+
+    public static <T, S extends Spliterator<T>> void testMixedTraverseAndSplit(
+            Collection<T> exp,
+            Supplier<S> supplier,
+            UnaryOperator<Consumer<T>> boxingAdapter) {
+        testMixedTraverseAndSplit(exp, supplier, boxingAdapter, defaultContentAsserter());
+    }
+
+    public static <T, S extends Spliterator<T>> void testSplitOnce(
+            Collection<T> exp,
+            Supplier<S> supplier,
+            UnaryOperator<Consumer<T>> boxingAdapter) {
+        testSplitOnce(exp, supplier, boxingAdapter, defaultContentAsserter());
+    }
+
+    public static <T, S extends Spliterator<T>> void testSplitSixDeep(
+            Collection<T> exp,
+            Supplier<S> supplier,
+            UnaryOperator<Consumer<T>> boxingAdapter) {
+        testSplitSixDeep(exp, supplier, boxingAdapter, defaultContentAsserter());
+    }
+
+    public static <T, S extends Spliterator<T>> void testSplitUntilNull(
+            Collection<T> exp,
+            Supplier<S> supplier,
+            UnaryOperator<Consumer<T>> boxingAdapter) {
+        testSplitUntilNull(exp, supplier, boxingAdapter, defaultContentAsserter());
+    }
 
     private static <T, S extends Spliterator<T>> void testNullPointerException(Supplier<S> s) {
         S sp = s.get();
@@ -218,6 +267,9 @@ public class SpliteratorTestHelper {
         // assert that size, tryAdvance, and forEach are consistent
         if (sizeIfKnown >= 0) {
             assertEquals(sizeIfKnown, exp.size());
+        }
+        if (exp.contains(null)) {
+            assertTrue(fromForEach.contains(null));
         }
         assertEquals(fromForEach.size(), exp.size());
 
@@ -329,7 +381,7 @@ public class SpliteratorTestHelper {
         asserter.assertContents(dest, exp, isOrdered);
     }
 
-    private static <T, S extends Spliterator<T>> void testSplitAfterFullTraversal(
+    public static <T, S extends Spliterator<T>> void testSplitAfterFullTraversal(
             Supplier<S> supplier,
             UnaryOperator<Consumer<T>> boxingAdapter) {
         // Full traversal using tryAdvance
@@ -601,7 +653,7 @@ public class SpliteratorTestHelper {
         }
     }
 
-    private static void executeAndCatch(Class<? extends Exception> expected, Runnable r) {
+    public static void executeAndCatch(Class<? extends Exception> expected, Runnable r) {
         Exception caught = null;
         try {
             r.run();
@@ -618,7 +670,7 @@ public class SpliteratorTestHelper {
                                  caught.getClass().getName(), expected.getName()));
     }
 
-    static<U> void mixedTraverseAndSplit(Consumer<U> b, Spliterator<U> splTop) {
+    public static<U> void mixedTraverseAndSplit(Consumer<U> b, Spliterator<U> splTop) {
         Spliterator<U> spl1, spl2, spl3;
         splTop.tryAdvance(b);
         spl2 = splTop.trySplit();
@@ -642,7 +694,7 @@ public class SpliteratorTestHelper {
         splTop.forEachRemaining(b);
     }
 
-    static void mixedTraverseAndSplit(IntConsumer b, Spliterator.OfInt splTop) {
+    public static void mixedTraverseAndSplit(IntConsumer b, Spliterator.OfInt splTop) {
         Spliterator.OfInt spl1, spl2, spl3;
         splTop.tryAdvance(b);
         spl2 = splTop.trySplit();
@@ -665,7 +717,8 @@ public class SpliteratorTestHelper {
         splTop.tryAdvance(b);
         splTop.forEachRemaining(b);
     }
-    static void mixedTraverseAndSplit(LongConsumer b, Spliterator.OfLong splTop) {
+
+    public static void mixedTraverseAndSplit(LongConsumer b, Spliterator.OfLong splTop) {
         Spliterator.OfLong spl1, spl2, spl3;
         splTop.tryAdvance(b);
         spl2 = splTop.trySplit();
@@ -689,7 +742,7 @@ public class SpliteratorTestHelper {
         splTop.forEachRemaining(b);
     }
 
-    static void mixedTraverseAndSplit(DoubleConsumer b, Spliterator.OfDouble splTop) {
+    public static void mixedTraverseAndSplit(DoubleConsumer b, Spliterator.OfDouble splTop) {
         Spliterator.OfDouble spl1, spl2, spl3;
         splTop.tryAdvance(b);
         spl2 = splTop.trySplit();
@@ -712,4 +765,5 @@ public class SpliteratorTestHelper {
         splTop.tryAdvance(b);
         splTop.forEachRemaining(b);
     }
+
 }
