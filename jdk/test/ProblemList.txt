@@ -214,6 +214,7 @@ sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-a
 sun/security/tools/jarsigner/warnings/BadKeyUsageTest.java      8026393 generic-all
 
 javax/net/ssl/DTLS/PacketLossRetransmission.java                8169086 macosx-x64
+javax/net/ssl/DTLS/RespondToRetransmit.java                     8169086 macosx-x64
 
 ############################################################################
 
