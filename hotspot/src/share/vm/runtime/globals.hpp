@@ -3374,7 +3374,7 @@ public:
           "Code cache expansion size (in bytes)")                           \
           range(0, max_uintx)                                               \
                                                                             \
-  develop_pd(uintx, CodeCacheMinBlockLength,                                \
+  diagnostic_pd(uintx, CodeCacheMinBlockLength,                             \
           "Minimum number of segments in a code cache block")               \
           range(1, 100)                                                     \
                                                                             \
