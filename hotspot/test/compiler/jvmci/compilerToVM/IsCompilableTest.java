@@ -42,7 +42,7 @@
  *                   compiler.jvmci.compilerToVM.IsCompilableTest
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler
  *                   compiler.jvmci.compilerToVM.IsCompilableTest
  */
 
@@ -69,20 +69,17 @@ public class IsCompilableTest {
     }
 
     private static void runSanityTest(Executable aMethod) {
-        boolean UseJVMCICompiler = (Boolean) WB.getVMFlag("UseJVMCICompiler");
         HotSpotResolvedJavaMethod method = CTVMUtilities
                 .getResolvedMethod(aMethod);
         boolean isCompilable = CompilerToVMHelper.isCompilable(method);
-        boolean expected = UseJVMCICompiler || WB.isMethodCompilable(aMethod);
+        boolean expected = WB.isMethodCompilable(aMethod);
         Asserts.assertEQ(isCompilable, expected, "Unexpected initial " +
                 "value of property 'compilable'");
 
-        if (!UseJVMCICompiler) {
-            WB.makeMethodNotCompilable(aMethod);
-            isCompilable = CompilerToVMHelper.isCompilable(method);
-            Asserts.assertFalse(isCompilable, aMethod + "Unexpected value of " +
-                "property 'isCompilable' after setting 'compilable' to false");
-        }
+        WB.makeMethodNotCompilable(aMethod);
+        isCompilable = CompilerToVMHelper.isCompilable(method);
+        Asserts.assertFalse(isCompilable, aMethod + "Unexpected value of " +
+            "property 'isCompilable' after setting 'compilable' to false");
     }
 
     private static List<Executable> createTestCases() {
