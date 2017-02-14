@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @requires vm.bits == "64" & (os.arch == "amd64" | os.arch == "x86_64") & !(os.family == "windows")
+ * @requires vm.bits == "64" & (os.arch == "amd64" | os.arch == "x86_64")
  * @modules jdk.aot/jdk.tools.jaotc.utils
  * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI jdk.tools.jaotc.test.NativeOrderOutputStreamTest
  */

@@ -24,7 +24,7 @@
 /*
  * @test
  * @library /test/lib /testlibrary /
- * @requires vm.bits == "64" & (os.arch == "amd64" | os.arch == "x86_64") & !(os.family == "windows")
+ * @requires vm.bits == "64" & (os.arch == "amd64" | os.arch == "x86_64")
  * @build compiler.aot.cli.DisabledAOTWithLibraryTest
  *        compiler.aot.AotCompiler
  * @run driver compiler.aot.AotCompiler -libname libDisabledAOTWithLibraryTest.so

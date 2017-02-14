@@ -25,7 +25,7 @@
  * @test
  * @library /test/lib /testlibrary /
  * @modules java.base/jdk.internal.misc
- * @requires vm.bits == "64" & (os.arch == "amd64" | os.arch == "x86_64") & !(os.family == "windows")
+ * @requires vm.bits == "64" & (os.arch == "amd64" | os.arch == "x86_64")
  * @run driver compiler.aot.cli.NonExistingAOTLibraryTest
  * @summary check if non-existing aot library is handled properly
  */

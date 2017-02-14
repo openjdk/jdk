@@ -24,7 +24,7 @@
 /*
  * @test
  * @library /test/lib /
- * @requires vm.bits == "64" & (os.arch == "amd64" | os.arch == "x86_64") & !(os.family == "windows")
+ * @requires vm.bits == "64" & (os.arch == "amd64" | os.arch == "x86_64")
  * @modules java.base/jdk.internal.misc
  * @build compiler.aot.verification.ClassAndLibraryNotMatchTest
  * @run driver compiler.aot.verification.ClassAndLibraryNotMatchTest
