@@ -38,22 +38,22 @@ public final class VMField {
     public final String type;
 
     /**
-     * If represented field is non-static, this is its offset within the containing structure.
+     * If the represented field is non-static, this is its offset within the containing structure.
      */
     public final long offset;
 
     /**
-     * If represented field is static, this is its address. Otherwise, this field is 0.
+     * If the represented field is static, this is its address. Otherwise, this is 0.
      */
     public final long address;
 
     /**
-     * Value of the field represented as a boxed long; only valid for non-oop static fields. This
-     * value is only captured once, during JVMCI initialization. If {@link #type} cannot be
-     * meaningfully (e.g., a struct) or safely (e.g., an oop) expressed as a boxed long, this is
-     * {@code null}.
+     * Value of the field represented as a boxed boolean if its C++ type is bool otherwise as a
+     * boxed long; only valid for non-oop static fields. This value is only captured once, during
+     * JVMCI initialization. If {@link #type} cannot be meaningfully (e.g., a struct) or safely
+     * (e.g., an oop) expressed as a boxed object, this is {@code null}.
      */
-    public final Long value;
+    public final Object value;
 
     /**
      * Determines if the represented field is static.
