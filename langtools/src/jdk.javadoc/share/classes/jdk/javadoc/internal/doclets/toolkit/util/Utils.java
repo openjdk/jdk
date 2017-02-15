@@ -893,7 +893,7 @@ public class Utils {
             }
             List<? extends Element> methods = te.getEnclosedElements();
             for (ExecutableElement ee : ElementFilter.methodsIn(methods)) {
-                if (elementUtils.overrides(method, ee, origin)) {
+                if (configuration.workArounds.overrides(method, ee, origin)) {
                     return ee;
                 }
             }
