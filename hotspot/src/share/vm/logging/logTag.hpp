@@ -48,6 +48,7 @@
   LOG_TAG(class) \
   LOG_TAG(classhisto) \
   LOG_TAG(cleanup) \
+  LOG_TAG(codecache) \
   LOG_TAG(compaction) \
   LOG_TAG(constraints) \
   LOG_TAG(constantpool) \
