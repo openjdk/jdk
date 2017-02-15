@@ -1765,6 +1765,7 @@ CompilerDirectives* DirectivesStack::_bottom = NULL;
 // Compile a method.
 //
 void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
+  task->print_ul();
   if (PrintCompilation) {
     ResourceMark rm;
     task->print_tty();
