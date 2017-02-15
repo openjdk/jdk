@@ -1886,11 +1886,6 @@ public class Utils {
             }
 
             @Override
-            public String visitPrimitive(PrimitiveType t, Void p) {
-                return t.toString();
-            }
-
-            @Override
             public String visitTypeVariable(javax.lang.model.type.TypeVariable t, Void p) {
                 // The knee jerk reaction is to do this but don't!, as we would like
                 // it to be compatible with the old world, now if we decide to do so
@@ -1900,9 +1895,10 @@ public class Utils {
             }
 
             @Override
-            protected String defaultAction(TypeMirror e, Void p) {
-                throw new UnsupportedOperationException("should not happen");
+            protected String defaultAction(TypeMirror t, Void p) {
+                return t.toString();
             }
+
         }.visit(t);
     }
 
