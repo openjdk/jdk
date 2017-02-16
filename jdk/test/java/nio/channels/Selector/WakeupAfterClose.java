@@ -27,8 +27,9 @@
  * @key intermittent
  */
 
-import java.nio.channels.Selector;
 import java.io.IOException;
+import java.nio.channels.ClosedSelectorException;
+import java.nio.channels.Selector;
 
 public class WakeupAfterClose {
 
@@ -41,6 +42,9 @@ public class WakeupAfterClose {
                     sel.select();
                 } catch (IOException x) {
                     x.printStackTrace();
+                } catch (ClosedSelectorException y) {
+                    System.err.println
+                        ("Caught expected ClosedSelectorException");
                 }
             }
         };
