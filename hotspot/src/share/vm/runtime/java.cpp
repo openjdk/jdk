@@ -719,6 +719,8 @@ void JDK_Version::to_string(char* buffer, size_t buflen) const {
     index += rc;
     if (_security > 0) {
       rc = jio_snprintf(&buffer[index], buflen - index, ".%d", _security);
+      if (rc == -1) return;
+      index += rc;
     }
     if (_patch > 0) {
       rc = jio_snprintf(&buffer[index], buflen - index, ".%d", _patch);
