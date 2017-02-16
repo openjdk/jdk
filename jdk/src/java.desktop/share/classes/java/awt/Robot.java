@@ -440,7 +440,7 @@ public class Robot {
      * </ul>
      * <p>
      * Example:
-     * <pre>
+     * <pre>{@code
      *      Image nativeResImage;
      *      MultiResolutionImage mrImage = robot.createMultiResolutionScreenCapture(frame.getBounds());
      *      List<Image> resolutionVariants = mrImage.getResolutionVariants();
@@ -448,7 +448,8 @@ public class Robot {
      *          nativeResImage = resolutionVariants.get(1);
      *      } else {
      *          nativeResImage = resolutionVariants.get(0);
-     *      } </pre>
+     *      }
+     * }</pre>
      * @param   screenRect     Rect to capture in screen coordinates
      * @return  The captured image
      * @throws  IllegalArgumentException if {@code screenRect} width and height are not greater than zero
