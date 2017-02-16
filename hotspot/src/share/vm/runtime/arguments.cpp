@@ -3705,7 +3705,7 @@ jint Arguments::finalize_vm_init_args() {
 
 #if INCLUDE_JVMCI
   if (EnableJVMCI &&
-      !create_numbered_property("jdk.module.addmods", "jdk.vm.ci", addmods_count++)) {
+      !create_numbered_property("jdk.module.addmods", "jdk.internal.vm.ci", addmods_count++)) {
     return JNI_ENOMEM;
   }
 #endif

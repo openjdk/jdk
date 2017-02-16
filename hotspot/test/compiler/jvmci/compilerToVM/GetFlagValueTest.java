@@ -27,11 +27,11 @@
  * @requires vm.jvmci
  * @library / /test/lib
  * @library ../common/patches
- * @modules jdk.vm.ci/jdk.vm.ci.hotspot:+open
+ * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot:+open
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
- * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
+ * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *                  -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                  compiler.jvmci.compilerToVM.GetFlagValueTest

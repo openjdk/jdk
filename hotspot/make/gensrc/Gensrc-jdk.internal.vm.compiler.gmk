@@ -28,7 +28,7 @@ default: all
 include $(SPEC)
 include MakeBase.gmk
 
-$(eval $(call IncludeCustomExtension, hotspot, gensrc/Gensrc-jdk.vm.compiler.gmk))
+$(eval $(call IncludeCustomExtension, hotspot, gensrc/Gensrc-jdk.internal.vm.compiler.gmk))
 
 GENSRC_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)
 SRC_DIR := $(HOTSPOT_TOPDIR)/src/$(MODULE)/share/classes
@@ -81,23 +81,23 @@ PROCESSOR_JARS := \
 PROCESSOR_PATH := $(call PathList, $(PROCESSOR_JARS))
 
 ADD_EXPORTS := \
-    --add-exports jdk.vm.ci/jdk.vm.ci.aarch64=ALL-UNNAMED \
-    --add-exports jdk.vm.ci/jdk.vm.ci.amd64=ALL-UNNAMED \
-    --add-exports jdk.vm.ci/jdk.vm.ci.code=ALL-UNNAMED \
-    --add-exports jdk.vm.ci/jdk.vm.ci.code.site=ALL-UNNAMED \
-    --add-exports jdk.vm.ci/jdk.vm.ci.code.stack=ALL-UNNAMED \
-    --add-exports jdk.vm.ci/jdk.vm.ci.common=ALL-UNNAMED \
-    --add-exports jdk.vm.ci/jdk.vm.ci.hotspot=ALL-UNNAMED \
-    --add-exports jdk.vm.ci/jdk.vm.ci.hotspot.aarch64=ALL-UNNAMED \
-    --add-exports jdk.vm.ci/jdk.vm.ci.hotspot.amd64=ALL-UNNAMED \
-    --add-exports jdk.vm.ci/jdk.vm.ci.hotspot.events=ALL-UNNAMED \
-    --add-exports jdk.vm.ci/jdk.vm.ci.hotspot.sparc=ALL-UNNAMED \
-    --add-exports jdk.vm.ci/jdk.vm.ci.hotspotvmconfig=ALL-UNNAMED \
-    --add-exports jdk.vm.ci/jdk.vm.ci.inittimer=ALL-UNNAMED \
-    --add-exports jdk.vm.ci/jdk.vm.ci.meta=ALL-UNNAMED \
-    --add-exports jdk.vm.ci/jdk.vm.ci.runtime=ALL-UNNAMED \
-    --add-exports jdk.vm.ci/jdk.vm.ci.services=ALL-UNNAMED \
-    --add-exports jdk.vm.ci/jdk.vm.ci.sparc=ALL-UNNAMED \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.aarch64=ALL-UNNAMED \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.amd64=ALL-UNNAMED \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.code=ALL-UNNAMED \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.code.site=ALL-UNNAMED \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.code.stack=ALL-UNNAMED \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.common=ALL-UNNAMED \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot=ALL-UNNAMED \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot.aarch64=ALL-UNNAMED \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot.amd64=ALL-UNNAMED \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot.events=ALL-UNNAMED \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot.sparc=ALL-UNNAMED \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspotvmconfig=ALL-UNNAMED \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.inittimer=ALL-UNNAMED \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.meta=ALL-UNNAMED \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.runtime=ALL-UNNAMED \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.services=ALL-UNNAMED \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.sparc=ALL-UNNAMED \
     #
 
 $(GENSRC_DIR)/_gensrc_proc_done: $(PROC_SRCS) $(PROCESSOR_JARS)
@@ -138,7 +138,7 @@ $(GENSRC_DIR)/module-info.java.extra: $(GENSRC_DIR)/_gensrc_proc_done
 	$(ECHO) "uses org.graalvm.compiler.options.OptionDescriptors;" >> $@; \
 	$(ECHO) "provides org.graalvm.compiler.options.OptionDescriptors with" >> $@; \
 	for i in $$($(FIND) $(GENSRC_DIR) -name '*_OptionDescriptors.java'); do \
-	    c=$$($(ECHO) $$i | $(SED) 's:.*/jdk\.vm\.compiler/\(.*\)\.java:\1:' | $(TR) '/' '.'); \
+	    c=$$($(ECHO) $$i | $(SED) 's:.*/jdk\.internal\.vm\.compiler/\(.*\)\.java:\1:' | $(TR) '/' '.'); \
 	    $(ECHO) "    $$c," >> $@; \
 	done; \
 	$(ECHO) "    ;" >> $@;
