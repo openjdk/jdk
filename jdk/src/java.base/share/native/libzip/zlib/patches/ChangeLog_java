@@ -3,23 +3,18 @@
 (2) zconf.h:
     - added _LP64 to make uLong a 32-bit int on 64-bit platform
     uLong -> 32-bit int
-    - commented out gz* related def
 
 --------------------------
 35,37d10
 < /* for _LP64 */
 < #include <sys/types.h>
-< 
-89d61
-< /*
-128d99
-< */
-423,426d393
-< 
+<
+421,424d393
+<
 < #ifdef _LP64
 < typedef unsigned int  uLong;  /* 32 bits or more */
 < #else
-428d394
+426d394
 < #endif
 --------------------------
 
@@ -51,17 +46,36 @@
 
 --------------------------
 
+(4) gzread.c
 
-(4) zutil.c
-    commented out gz*
 --------------------------
-33d8
-< 
-35d9
-< /*
-37d10
-< */
+343c319
+<             n = (unsigned)len;
+---
+>             n = len;
+424c400
+<     len = (unsigned)gz_read(state, buf, len);
+---
+>     len = gz_read(state, buf, len);
+496c472
+<     ret = (int)gz_read(state, buf, 1);
+---
+>     ret = gz_read(state, buf, 1);
 --------------------------
+
+(5) gzwrite.c
+
+--------------------------
+236c212
+<                 copy = (unsigned)len;
+---
+>                 copy = len;
+256c232
+<                 n = (unsigned)len;
+---
+>                 n = len;
+--------------------------
+
 
 
   

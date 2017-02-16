@@ -86,7 +86,6 @@
 #  define deflate_copyright     z_deflate_copyright
 #  define get_crc_table         z_get_crc_table
 #  ifndef Z_SOLO
-/*
 #    define gz_error              z_gz_error
 #    define gz_intmax             z_gz_intmax
 #    define gz_strwinerror        z_gz_strwinerror
@@ -125,7 +124,6 @@
 #    define gzungetc              z_gzungetc
 #    define gzvprintf             z_gzvprintf
 #    define gzwrite               z_gzwrite
-*/
 #  endif
 #  define inflate               z_inflate
 #  define inflateBack           z_inflateBack
