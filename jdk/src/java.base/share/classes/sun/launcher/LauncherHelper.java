@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -638,10 +638,12 @@ public final class LauncherHelper {
                         String ncn = Normalizer.normalize(cn, Normalizer.Form.NFC);
                         mainClass = Class.forName(ncn, false, scl);
                     } catch (NoClassDefFoundError | ClassNotFoundException cnfe1) {
-                        abort(cnfe1, "java.launcher.cls.error1", cn);
+                        abort(cnfe1, "java.launcher.cls.error1", cn,
+                                cnfe1.getClass().getCanonicalName(), cnfe1.getMessage());
                     }
                 } else {
-                    abort(cnfe, "java.launcher.cls.error1", cn);
+                    abort(cnfe, "java.launcher.cls.error1", cn,
+                            cnfe.getClass().getCanonicalName(), cnfe.getMessage());
                 }
             }
         } catch (LinkageError le) {
