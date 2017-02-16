@@ -5170,7 +5170,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1487032350
+DATE_WHEN_GENERATED=1487289045
 
 ###############################################################################
 #
@@ -52643,12 +52643,12 @@ $as_echo "no, forced" >&6; }
     # Only enable AOT on linux-X64.
     if test "x$OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU" = "xlinux-x86_64"; then
       if test -e "$HOTSPOT_TOPDIR/src/jdk.aot"; then
-        if test -e "$HOTSPOT_TOPDIR/src/jdk.vm.compiler"; then
+        if test -e "$HOTSPOT_TOPDIR/src/jdk.internal.vm.compiler"; then
           ENABLE_AOT="true"
         else
           ENABLE_AOT="false"
           if test "x$enable_aot" = "xyes"; then
-            as_fn_error $? "Cannot build AOT without hotspot/src/jdk.vm.compiler sources. Remove --enable-aot." "$LINENO" 5
+            as_fn_error $? "Cannot build AOT without hotspot/src/jdk.internal.vm.compiler sources. Remove --enable-aot." "$LINENO" 5
           fi
         fi
       else
@@ -64379,8 +64379,8 @@ $as_echo "$JVM_FEATURES" >&6; }
     JVM_FEATURES_jvmci=""
   fi
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if jdk.vm.compiler should be built" >&5
-$as_echo_n "checking if jdk.vm.compiler should be built... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if jdk.internal.vm.compiler should be built" >&5
+$as_echo_n "checking if jdk.internal.vm.compiler should be built... " >&6; }
   if   [[ " $JVM_FEATURES " =~ " graal " ]]  ; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, forced" >&5
 $as_echo "yes, forced" >&6; }
