@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,40 +21,22 @@
  * questions.
  */
 
-/* @test
- * @bug 6524172
- * @summary Invoking wakeup on closed Selector can throw NPE if close resets interrupt status
- * @key intermittent
- */
+package handlers.jar;
 
-import java.nio.channels.Selector;
 import java.io.IOException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLStreamHandler;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
-public class WakeupAfterClose {
+public class Handler extends URLStreamHandler {
+    public static Set<URL> URLS = Collections.synchronizedSet(new HashSet<>());
 
-    public static void main(String[] args) throws Exception {
-        final Selector sel = Selector.open();
-
-        Runnable r = new Runnable() {
-            public void run() {
-                try {
-                    sel.select();
-                } catch (IOException x) {
-                    x.printStackTrace();
-                }
-            }
-        };
-
-        // start thread to block in Selector
-        Thread t = new Thread(r);
-        t.start();
-
-        // give thread time to start
-        Thread.sleep(1000);
-
-        // interrupt, close, and wakeup is the magic sequence to provoke the NPE
-        t.interrupt();
-        sel.close();
-        sel.wakeup();
+    @Override
+    protected URLConnection openConnection(URL u) throws IOException {
+        URLS.add(u);
+        return null;
     }
 }
