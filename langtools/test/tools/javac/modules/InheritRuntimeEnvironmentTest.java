@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -238,7 +238,7 @@ public class InheritRuntimeEnvironmentTest extends ModuleTestBase {
                 Arrays.asList("--add-exports", "jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED");
         List<Path> files = Arrays.asList(findJavaFiles(src));
 
-        String envName = "_JAVAC_OPTIONS";
+        String envName = "JDK_JAVAC_OPTIONS";
         String envValue = String.join(" ", testOpts);
 
         out.println("  javac:");

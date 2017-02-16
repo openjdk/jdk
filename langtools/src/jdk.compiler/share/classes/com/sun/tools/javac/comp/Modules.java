@@ -996,8 +996,18 @@ public class Modules extends JCTree.Visitor {
             }
             ListBuffer<ClassSymbol> impls = new ListBuffer<>();
             for (JCExpression implName : tree.implNames) {
-                Type it = attr.attribType(implName, env, syms.objectType);
+                Type it;
+                boolean prevVisitingServiceImplementation = env.info.visitingServiceImplementation;
+                try {
+                    env.info.visitingServiceImplementation = true;
+                    it = attr.attribType(implName, env, syms.objectType);
+                } finally {
+                    env.info.visitingServiceImplementation = prevVisitingServiceImplementation;
+                }
                 ClassSymbol impl = (ClassSymbol) it.tsym;
+                if ((impl.flags_field & PUBLIC) == 0) {
+                    log.error(implName.pos(), Errors.NotDefPublic(impl, impl.location()));
+                }
                 //find provider factory:
                 MethodSymbol factory = factoryMethod(impl);
                 if (factory != null) {
