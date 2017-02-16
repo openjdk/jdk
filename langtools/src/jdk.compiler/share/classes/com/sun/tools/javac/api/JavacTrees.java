@@ -483,7 +483,7 @@ public class JavacTrees extends DocTrees {
                 paramTypes = lb.toList();
             }
 
-            ClassSymbol sym = (ClassSymbol) types.cvarUpperBound(tsym.type).tsym;
+            ClassSymbol sym = (ClassSymbol) types.skipTypeVars(tsym.type, false).tsym;
 
             Symbol msym = (memberName == sym.name)
                     ? findConstructor(sym, paramTypes)
