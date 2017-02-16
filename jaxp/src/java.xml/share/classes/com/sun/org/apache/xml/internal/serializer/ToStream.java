@@ -1385,7 +1385,7 @@ abstract public class ToStream extends SerializerBase {
             return;
 
         final boolean shouldNotFormat = !shouldFormatOutput();
-        if (m_elemContext.m_startTagOpen && shouldNotFormat)
+        if (m_elemContext.m_startTagOpen)
         {
             closeStartTag();
             m_elemContext.m_startTagOpen = false;
@@ -1411,8 +1411,12 @@ abstract public class ToStream extends SerializerBase {
 
         if (m_disableOutputEscapingStates.peekOrFalse() || (!m_escaping))
         {
-            charactersRaw(chars, start, length);
-            m_isprevtext = true;
+            if (shouldNotFormat) {
+                charactersRaw(chars, start, length);
+                m_isprevtext = true;
+            } else {
+                m_charactersBuffer.addRawText(chars, start, length);
+            }
             // time to fire off characters generation event
             if (m_tracer != null)
                 super.fireCharEvent(chars, start, length);
@@ -1420,7 +1424,7 @@ abstract public class ToStream extends SerializerBase {
             return;
         }
 
-        if (m_elemContext.m_startTagOpen && shouldNotFormat)
+        if (m_elemContext.m_startTagOpen)
         {
             closeStartTag();
             m_elemContext.m_startTagOpen = false;
@@ -1445,6 +1449,13 @@ abstract public class ToStream extends SerializerBase {
      */
     protected boolean shouldFormatOutput() {
         return m_doIndent && !m_ispreserveSpace;
+    }
+
+    /**
+     * @return True if the content in current element should be formatted.
+     */
+    public boolean getIndent() {
+        return shouldFormatOutput();
     }
 
     /**
@@ -1550,12 +1561,7 @@ abstract public class ToStream extends SerializerBase {
      */
     final protected void flushCharactersBuffer() throws SAXException {
         try {
-            if (shouldFormatOutput() && m_charactersBuffer.hasContent()) {
-                if (m_elemContext.m_startTagOpen) {
-                    closeStartTag();
-                    m_elemContext.m_startTagOpen = false;
-                }
-
+            if (shouldFormatOutput() && m_charactersBuffer.isAnyCharactersBuffered()) {
                 if (m_elemContext.m_isCdataSection) {
                     /*
                      * due to cdata-section-elements atribute, we need this as
@@ -1567,11 +1573,16 @@ abstract public class ToStream extends SerializerBase {
                 }
 
                 m_childNodeNum++;
+                boolean skipBeginningNewlines = false;
                 if (shouldIndentForText()) {
                     indent();
                     m_startNewLine = true;
+                    // newline has always been added here because if this is the
+                    // text before the first element, shouldIndent() won't
+                    // return true.
+                    skipBeginningNewlines = true;
                 }
-                m_charactersBuffer.flush();
+                m_charactersBuffer.flush(skipBeginningNewlines);
             }
         } catch (IOException e) {
             throw new SAXException(e);
@@ -2915,7 +2926,7 @@ abstract public class ToStream extends SerializerBase {
         String value,
         boolean xslAttribute)
     {
-        if (m_charactersBuffer.isNoCharactersBuffered()) {
+        if (!m_charactersBuffer.isAnyCharactersBuffered()) {
             return doAddAttributeAlways(uri, localName, rawName, type, value, xslAttribute);
         } else {
             /*
@@ -3396,15 +3407,16 @@ abstract public class ToStream extends SerializerBase {
          */
         private abstract class GenericCharacters {
             /**
-             * @return True if having any character other than whitespace or
-             *         line feed.
+             * @return True if all characters in this Text are newlines.
              */
-            abstract boolean hasContent();
-
-            abstract void flush() throws SAXException;
+            abstract boolean flush(boolean skipBeginningNewlines) throws SAXException;
 
             /**
-             * Converts this GenericCharacters to a new character array.
+             * Converts this GenericCharacters to a new character array. This
+             * method is used to handle cdata-section-elements attribute in
+             * xsl:output. Therefore it doesn't need to consider
+             * skipBeginningNewlines because the text will be involved with CDATA
+             * tag.
              */
             abstract char[] toChars();
         }
@@ -3422,27 +3434,21 @@ abstract public class ToStream extends SerializerBase {
                     text = Arrays.copyOfRange(chars, start, start + length);
                 }
 
-                boolean hasContent() {
-                    for (int i = 0; i < text.length; i++) {
-                        if (!isWhiteSpace(text[i])) {
+                boolean flush(boolean skipBeginningNewlines) throws SAXException {
+                    int start = 0;
+                    while (skipBeginningNewlines && text[start] == '\n') {
+                        start++;
+                        if (start == text.length) {
                             return true;
                         }
                     }
+                    outputCharacters(text, start, text.length - start);
                     return false;
-                }
-
-                void flush() throws SAXException {
-                    outputCharacters(text, 0, text.length);
                 }
 
                 char[] toChars() {
                     return text;
                 }
-
-                boolean isWhiteSpace(char ch) {
-                    return ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r';
-                }
-
             });
         }
 
@@ -3451,12 +3457,22 @@ abstract public class ToStream extends SerializerBase {
          */
         public void addEntityReference(String entityName) {
             bufferedCharacters.add(new GenericCharacters() {
-                boolean hasContent() {
-                    return true;
-                }
-
-                void flush() throws SAXException {
-                    outputEntityReference(entityName);
+                boolean flush(boolean skipBeginningNewlines) throws SAXException {
+                    if (m_elemContext.m_startTagOpen)
+                    {
+                        closeStartTag();
+                        m_elemContext.m_startTagOpen = false;
+                    }
+                    if (m_cdataTagOpen)
+                        closeCDATA();
+                    char[] cs = toChars();
+                    try {
+                        m_writer.write(cs, 0, cs.length);
+                        m_isprevtext = true;
+                    } catch (IOException e) {
+                        throw new SAXException(e);
+                    }
+                    return false;
                 }
 
                 char[] toChars() {
@@ -3466,31 +3482,56 @@ abstract public class ToStream extends SerializerBase {
         }
 
         /**
-         * @return True if no GenericCharacters are buffered.
+         * Append a raw text to the buffer. Used to handle raw characters event.
          */
-        public boolean isNoCharactersBuffered() {
-            return bufferedCharacters.isEmpty();
+        public void addRawText(final char chars[], final int start, final int length) {
+            bufferedCharacters.add(new GenericCharacters() {
+                char[] text;
+
+                {
+                    text = Arrays.copyOfRange(chars, start, start + length);
+                }
+
+                boolean flush(boolean skipBeginningNewlines) throws SAXException {
+                    try {
+                        int start = 0;
+                        while (skipBeginningNewlines && text[start] == '\n') {
+                            start++;
+                            if (start == text.length) {
+                                return true;
+                            }
+                        }
+                        m_writer.write(text, start, text.length - start);
+                        m_isprevtext = true;
+                    } catch (IOException e) {
+                        throw new SAXException(e);
+                    }
+                    return false;
+                }
+
+                char[] toChars() {
+                    return text;
+                }
+            });
         }
 
         /**
-         * @return True if any buffered GenericCharacters has content.
+         * @return True if any GenericCharacters are buffered.
          */
-        public boolean hasContent() {
-            for (GenericCharacters element : bufferedCharacters) {
-                if (element.hasContent())
-                    return true;
-            }
-            return false;
+        public boolean isAnyCharactersBuffered() {
+            return bufferedCharacters.size() > 0;
         }
 
         /**
          * Flush all buffered GenericCharacters.
          */
-        public void flush() throws SAXException {
+        public void flush(boolean skipBeginningNewlines) throws SAXException {
             Iterator<GenericCharacters> itr = bufferedCharacters.iterator();
+
+            boolean continueSkipBeginningNewlines = skipBeginningNewlines;
             while (itr.hasNext()) {
                 GenericCharacters element = itr.next();
-                element.flush();
+                continueSkipBeginningNewlines = element.flush(continueSkipBeginningNewlines);
                 itr.remove();
             }
         }
