@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -406,12 +406,10 @@ int CppInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   // oop_temp where the garbage collector can see it before
   // we release the handle it might be protected by.
   if (handler->result_type() == &ffi_type_pointer) {
-    if (result[0] == 0) {
+    if (result[0])
+      istate->set_oop_temp(*(oop *) result[0]);
+    else
       istate->set_oop_temp(NULL);
-    } else {
-      jobject handle = reinterpret_cast<jobject>(result[0]);
-      istate->set_oop_temp(JNIHandles::resolve(handle));
-    }
   }
 
   // Reset handle block

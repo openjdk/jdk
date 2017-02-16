@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1732,7 +1732,14 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   case T_FLOAT  : // fall through
   case T_DOUBLE : /* nothing to do */          break;
   case T_OBJECT : // fall through
-  case T_ARRAY  : break; // See JNIHandles::resolve below
+  case T_ARRAY  : {
+    Label L;
+    __ cbz(R0, L);
+    __ ldr(R0, Address(R0));
+    __ verify_oop(R0);
+    __ bind(L);
+    break;
+  }
   default:
     ShouldNotReachHere();
   }
@@ -1741,14 +1748,13 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   if (CheckJNICalls) {
     __ str(__ zero_register(Rtemp), Address(Rthread, JavaThread::pending_jni_exception_check_fn_offset()));
   }
-#endif // AARCH64
 
-  // Unbox oop result, e.g. JNIHandles::resolve value in R0.
+  // Unhandle the result
   if (ret_type == T_OBJECT || ret_type == T_ARRAY) {
-    __ resolve_jobject(R0,      // value
-                       Rtemp,   // tmp1
-                       R1_tmp); // tmp2
+    __ cmp(R0, 0);
+    __ ldr(R0, Address(R0), ne);
   }
+#endif // AARCH64
 
   // Any exception pending?
   __ ldr(Rtemp, Address(Rthread, Thread::pending_exception_offset()));

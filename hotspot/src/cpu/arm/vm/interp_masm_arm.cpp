@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -475,6 +475,185 @@ void InterpreterMacroAssembler::set_card(Register card_table_base, Address card_
 #endif // AARCH64
 }
 
+//////////////////////////////////////////////////////////////////////////////////
+#if INCLUDE_ALL_GCS
+
+// G1 pre-barrier.
+// Blows all volatile registers (R0-R3 on 32-bit ARM, R0-R18 on AArch64, Rtemp, LR).
+// If store_addr != noreg, then previous value is loaded from [store_addr];
+// in such case store_addr and new_val registers are preserved;
+// otherwise pre_val register is preserved.
+void InterpreterMacroAssembler::g1_write_barrier_pre(Register store_addr,
+                                                     Register new_val,
+                                                     Register pre_val,
+                                                     Register tmp1,
+                                                     Register tmp2) {
+  Label done;
+  Label runtime;
+
+  if (store_addr != noreg) {
+    assert_different_registers(store_addr, new_val, pre_val, tmp1, tmp2, noreg);
+  } else {
+    assert (new_val == noreg, "should be");
+    assert_different_registers(pre_val, tmp1, tmp2, noreg);
+  }
+
+  Address in_progress(Rthread, in_bytes(JavaThread::satb_mark_queue_offset() +
+                                        SATBMarkQueue::byte_offset_of_active()));
+  Address index(Rthread, in_bytes(JavaThread::satb_mark_queue_offset() +
+                                  SATBMarkQueue::byte_offset_of_index()));
+  Address buffer(Rthread, in_bytes(JavaThread::satb_mark_queue_offset() +
+                                   SATBMarkQueue::byte_offset_of_buf()));
+
+  // Is marking active?
+  assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "adjust this code");
+  ldrb(tmp1, in_progress);
+  cbz(tmp1, done);
+
+  // Do we need to load the previous value?
+  if (store_addr != noreg) {
+    load_heap_oop(pre_val, Address(store_addr, 0));
+  }
+
+  // Is the previous value null?
+  cbz(pre_val, done);
+
+  // Can we store original value in the thread's buffer?
+  // Is index == 0?
+  // (The index field is typed as size_t.)
+
+  ldr(tmp1, index);           // tmp1 := *index_adr
+  ldr(tmp2, buffer);
+
+  subs(tmp1, tmp1, wordSize); // tmp1 := tmp1 - wordSize
+  b(runtime, lt);             // If negative, goto runtime
+
+  str(tmp1, index);           // *index_adr := tmp1
+
+  // Record the previous value
+  str(pre_val, Address(tmp2, tmp1));
+  b(done);
+
+  bind(runtime);
+
+  // save the live input values
+#ifdef AARCH64
+  if (store_addr != noreg) {
+    raw_push(store_addr, new_val);
+  } else {
+    raw_push(pre_val, ZR);
+  }
+#else
+  if (store_addr != noreg) {
+    // avoid raw_push to support any ordering of store_addr and new_val
+    push(RegisterSet(store_addr) | RegisterSet(new_val));
+  } else {
+    push(pre_val);
+  }
+#endif // AARCH64
+
+  if (pre_val != R0) {
+    mov(R0, pre_val);
+  }
+  mov(R1, Rthread);
+
+  call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), R0, R1);
+
+#ifdef AARCH64
+  if (store_addr != noreg) {
+    raw_pop(store_addr, new_val);
+  } else {
+    raw_pop(pre_val, ZR);
+  }
+#else
+  if (store_addr != noreg) {
+    pop(RegisterSet(store_addr) | RegisterSet(new_val));
+  } else {
+    pop(pre_val);
+  }
+#endif // AARCH64
+
+  bind(done);
+}
+
+// G1 post-barrier.
+// Blows all volatile registers (R0-R3 on 32-bit ARM, R0-R18 on AArch64, Rtemp, LR).
+void InterpreterMacroAssembler::g1_write_barrier_post(Register store_addr,
+                                                      Register new_val,
+                                                      Register tmp1,
+                                                      Register tmp2,
+                                                      Register tmp3) {
+
+  Address queue_index(Rthread, in_bytes(JavaThread::dirty_card_queue_offset() +
+                                        DirtyCardQueue::byte_offset_of_index()));
+  Address buffer(Rthread, in_bytes(JavaThread::dirty_card_queue_offset() +
+                                   DirtyCardQueue::byte_offset_of_buf()));
+
+  BarrierSet* bs = Universe::heap()->barrier_set();
+  CardTableModRefBS* ct = (CardTableModRefBS*)bs;
+  Label done;
+  Label runtime;
+
+  // Does store cross heap regions?
+
+  eor(tmp1, store_addr, new_val);
+#ifdef AARCH64
+  logical_shift_right(tmp1, tmp1, HeapRegion::LogOfHRGrainBytes);
+  cbz(tmp1, done);
+#else
+  movs(tmp1, AsmOperand(tmp1, lsr, HeapRegion::LogOfHRGrainBytes));
+  b(done, eq);
+#endif
+
+  // crosses regions, storing NULL?
+
+  cbz(new_val, done);
+
+  // storing region crossing non-NULL, is card already dirty?
+  const Register card_addr = tmp1;
+  assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
+
+  mov_address(tmp2, (address)ct->byte_map_base, symbolic_Relocation::card_table_reference);
+  add(card_addr, tmp2, AsmOperand(store_addr, lsr, CardTableModRefBS::card_shift));
+
+  ldrb(tmp2, Address(card_addr));
+  cmp(tmp2, (int)G1SATBCardTableModRefBS::g1_young_card_val());
+  b(done, eq);
+
+  membar(MacroAssembler::Membar_mask_bits(MacroAssembler::StoreLoad), tmp2);
+
+  assert(CardTableModRefBS::dirty_card_val() == 0, "adjust this code");
+  ldrb(tmp2, Address(card_addr));
+  cbz(tmp2, done);
+
+  // storing a region crossing, non-NULL oop, card is clean.
+  // dirty card and log.
+
+  strb(zero_register(tmp2), Address(card_addr));
+
+  ldr(tmp2, queue_index);
+  ldr(tmp3, buffer);
+
+  subs(tmp2, tmp2, wordSize);
+  b(runtime, lt); // go to runtime if now negative
+
+  str(tmp2, queue_index);
+
+  str(card_addr, Address(tmp3, tmp2));
+  b(done);
+
+  bind(runtime);
+
+  if (card_addr != R0) {
+    mov(R0, card_addr);
+  }
+  mov(R1, Rthread);
+  call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_post), R0, R1);
+
+  bind(done);
+}
+
+#endif // INCLUDE_ALL_GCS
 //////////////////////////////////////////////////////////////////////////////////
 
 

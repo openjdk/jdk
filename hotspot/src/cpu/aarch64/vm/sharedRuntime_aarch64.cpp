@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -2052,31 +2052,13 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   __ reset_last_Java_frame(false);
 
-  // Unbox oop result, e.g. JNIHandles::resolve result.
+  // Unpack oop result
   if (ret_type == T_OBJECT || ret_type == T_ARRAY) {
-    Label done, not_weak;
-    __ cbz(r0, done);           // Use NULL as-is.
-    STATIC_ASSERT(JNIHandles::weak_tag_mask == 1u);
-    __ tbz(r0, 0, not_weak);    // Test for jweak tag.
-    // Resolve jweak.
-    __ ldr(r0, Address(r0, -JNIHandles::weak_tag_value));
-    __ verify_oop(r0);
-#if INCLUDE_ALL_GCS
-    if (UseG1GC) {
-      __ g1_write_barrier_pre(noreg /* obj */,
-                              r0 /* pre_val */,
-                              rthread /* thread */,
-                              rscratch1 /* tmp */,
-                              true /* tosca_live */,
-                              true /* expand_call */);
-    }
-#endif // INCLUDE_ALL_GCS
-    __ b(done);
-    __ bind(not_weak);
-    // Resolve (untagged) jobject.
-    __ ldr(r0, Address(r0, 0));
-    __ verify_oop(r0);
-    __ bind(done);
+      Label L;
+      __ cbz(r0, L);
+      __ ldr(r0, Address(r0, 0));
+      __ bind(L);
+      __ verify_oop(r0);
   }
 
   if (CheckJNICalls) {
