@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 8173743
+ * @requires vm.compMode != "Xcomp"
  * @summary Failures during class definition can lead to memory leaks in metaspace
  * @library /test/lib
  * @run main/othervm test.DefineClass defineClass
