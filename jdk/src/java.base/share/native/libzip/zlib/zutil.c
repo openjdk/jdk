@@ -32,9 +32,7 @@
 #include "zutil.h"
 
 #ifndef Z_SOLO
-/*
 #  include "gzguts.h"
-*/
 #endif
 
 z_const char * const z_errmsg[10] = {
