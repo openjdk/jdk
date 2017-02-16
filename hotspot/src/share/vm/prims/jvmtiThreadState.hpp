@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -418,7 +418,7 @@ class RedefineVerifyMark : public StackObj {
                      JvmtiThreadState *state) : _state(state), _scratch_class(*scratch_class)
   {
     _state->set_class_versions_map(the_class, scratch_class);
-    _scratch_mirror = Handle(_scratch_class->java_mirror());
+    _scratch_mirror = Handle(Thread::current(), _scratch_class->java_mirror());
     (*scratch_class)->set_java_mirror((*the_class)->java_mirror());
   }
 

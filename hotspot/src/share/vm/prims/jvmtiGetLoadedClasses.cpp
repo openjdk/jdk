@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,15 +36,16 @@ class LoadedClassesClosure : public KlassClosure {
 private:
   Stack<jclass, mtInternal> _classStack;
   JvmtiEnv* _env;
+  Thread*   _cur_thread;
 
 public:
-  LoadedClassesClosure(JvmtiEnv* env) {
-    _env = env;
+  LoadedClassesClosure(Thread* thread, JvmtiEnv* env) : _cur_thread(thread), _env(env) {
+    assert(_cur_thread == Thread::current(), "must be current thread");
   }
 
   void do_klass(Klass* k) {
     // Collect all jclasses
-    _classStack.push((jclass) _env->jni_reference(k->java_mirror()));
+    _classStack.push((jclass) _env->jni_reference(Handle(_cur_thread, k->java_mirror())));
   }
 
   int extract(jclass* result_list) {
@@ -225,8 +226,9 @@ class JvmtiGetLoadedClassesClosure : public StackObj {
     if (that->available()) {
       oop class_loader = loader_data->class_loader();
       if (class_loader == JNIHandles::resolve(that->get_initiatingLoader())) {
+        Thread *thread = Thread::current();
         for (Klass* l = k; l != NULL; l = l->array_klass_or_null()) {
-          oop mirror = l->java_mirror();
+          Handle mirror(thread, l->java_mirror());
           that->set_element(that->get_index(), mirror);
           that->set_index(that->get_index() + 1);
         }
@@ -250,8 +252,9 @@ class JvmtiGetLoadedClassesClosure : public StackObj {
     JvmtiGetLoadedClassesClosure* that = JvmtiGetLoadedClassesClosure::get_this();
     assert(that != NULL, "no JvmtiGetLoadedClassesClosure");
     assert(that->available(), "no list");
+    Thread *thread = Thread::current();
     for (Klass* l = k; l != NULL; l = l->array_klass_or_null()) {
-      oop mirror = l->java_mirror();
+      Handle mirror(thread, l->java_mirror());
       that->set_element(that->get_index(), mirror);
       that->set_index(that->get_index() + 1);
     }
@@ -262,7 +265,7 @@ class JvmtiGetLoadedClassesClosure : public StackObj {
 jvmtiError
 JvmtiGetLoadedClasses::getLoadedClasses(JvmtiEnv *env, jint* classCountPtr, jclass** classesPtr) {
 
-  LoadedClassesClosure closure(env);
+  LoadedClassesClosure closure(Thread::current(), env);
   {
     // To get a consistent list of classes we need MultiArray_lock to ensure
     // array classes aren't created.

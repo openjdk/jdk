@@ -595,9 +595,9 @@ Method* AOTCodeHeap::find_method(KlassHandle klass, Thread* thread, const char* 
     memcpy(&meta_name[klass_len + 1 + method_name_len], signature_name, signature_name_len);
     meta_name[klass_len + 1 + method_name_len + signature_name_len] = '\0';
     Handle exception = Exceptions::new_exception(thread, vmSymbols::java_lang_NoSuchMethodError(), meta_name);
-    java_lang_Throwable::print(exception, tty);
+    java_lang_Throwable::print(exception(), tty);
     tty->cr();
-    java_lang_Throwable::print_stack_trace(exception(), tty);
+    java_lang_Throwable::print_stack_trace(exception, tty);
     tty->cr();
     fatal("Failed to find method '%s'", meta_name);
   }

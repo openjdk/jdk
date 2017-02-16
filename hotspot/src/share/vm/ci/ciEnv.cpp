@@ -276,7 +276,7 @@ ciInstance* ciEnv::get_or_create_exception(jobject& handle, Symbol* name) {
     if (!HAS_PENDING_EXCEPTION && k != NULL) {
       oop obj = InstanceKlass::cast(k)->allocate_instance(THREAD);
       if (!HAS_PENDING_EXCEPTION)
-        objh = JNIHandles::make_global(obj);
+        objh = JNIHandles::make_global(Handle(THREAD, obj));
     }
     if (HAS_PENDING_EXCEPTION) {
       CLEAR_PENDING_EXCEPTION;

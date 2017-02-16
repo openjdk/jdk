@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -519,7 +519,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   // Only recreate it if not present.  A previous attempt to restore may have
   // gotten an OOM later but keep the mirror if it was created.
   if (java_mirror() == NULL) {
-    Handle loader = loader_data->class_loader();
+    Handle loader(THREAD, loader_data->class_loader());
     ModuleEntry* module_entry = NULL;
     Klass* k = this;
     if (k->is_objArray_klass()) {
