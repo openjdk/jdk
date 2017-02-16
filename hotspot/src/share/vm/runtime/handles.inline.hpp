@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,16 +31,6 @@
 // these inline functions are in a separate file to break an include cycle
 // between Thread and Handle
 
-inline Handle::Handle(oop obj) {
-  if (obj == NULL) {
-    _handle = NULL;
-  } else {
-    _handle = Thread::current()->handle_area()->allocate_handle(obj);
-  }
-}
-
-
-#ifndef ASSERT
 inline Handle::Handle(Thread* thread, oop obj) {
   assert(thread == Thread::current(), "sanity check");
   if (obj == NULL) {
@@ -49,7 +39,6 @@ inline Handle::Handle(Thread* thread, oop obj) {
     _handle = thread->handle_area()->allocate_handle(obj);
   }
 }
-#endif // ASSERT
 
 // Constructors for metadata handles
 #define DEF_METADATA_HANDLE_FN(name, type) \

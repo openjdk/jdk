@@ -834,7 +834,7 @@ void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
         const Klass* const k =
           SystemDictionary::resolve_super_or_fail(_class_name,
                                                   unresolved_klass,
-                                                  _loader_data->class_loader(),
+                                                  Handle(THREAD, _loader_data->class_loader()),
                                                   _protection_domain,
                                                   false,
                                                   CHECK);
@@ -2851,7 +2851,6 @@ void ClassFileParser::parse_methods(const ClassFileStream* const cfs,
                                                    NULL,
                                                    CHECK);
 
-    HandleMark hm(THREAD);
     for (int index = 0; index < length; index++) {
       Method* method = parse_method(cfs,
                                     is_interface,
@@ -5357,7 +5356,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
   // Allocate mirror and initialize static fields
   // The create_mirror() call will also call compute_modifiers()
   java_lang_Class::create_mirror(ik,
-                                 _loader_data->class_loader(),
+                                 Handle(THREAD, _loader_data->class_loader()),
                                  module_handle,
                                  _protection_domain,
                                  CHECK);
@@ -5915,10 +5914,11 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
         "Interfaces must have java.lang.Object as superclass in class file %s",
         CHECK);
     }
+    Handle loader(THREAD, _loader_data->class_loader());
     _super_klass = (const InstanceKlass*)
                        SystemDictionary::resolve_super_or_fail(_class_name,
                                                                super_class_name,
-                                                               _loader_data->class_loader(),
+                                                               loader,
                                                                _protection_domain,
                                                                true,
                                                                CHECK);
@@ -5960,6 +5960,7 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
 
   _all_mirandas = new GrowableArray<Method*>(20);
 
+  Handle loader(THREAD, _loader_data->class_loader());
   klassVtable::compute_vtable_size_and_num_mirandas(&_vtable_size,
                                                     &_num_miranda_methods,
                                                     _all_mirandas,
@@ -5967,7 +5968,7 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
                                                     _methods,
                                                     _access_flags,
                                                     _major_version,
-                                                    _loader_data->class_loader(),
+                                                    loader,
                                                     _class_name,
                                                     _local_interfaces,
                                                     CHECK);

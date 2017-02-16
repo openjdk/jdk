@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ void ModuleEntry::set_version(Symbol* version) {
 
 // Returns the shared ProtectionDomain
 Handle ModuleEntry::shared_protection_domain() {
-  return Handle(JNIHandles::resolve(_pd));
+  return Handle(Thread::current(), JNIHandles::resolve(_pd));
 }
 
 // Set the shared ProtectionDomain atomically
@@ -269,12 +269,12 @@ void ModuleEntryTable::create_unnamed_module(ClassLoaderData* loader_data) {
     // For the boot loader, the java.lang.reflect.Module for the unnamed module
     // is not known until a call to JVM_SetBootLoaderUnnamedModule is made. At
     // this point initially create the ModuleEntry for the unnamed module.
-    _unnamed_module = new_entry(0, Handle(NULL), NULL, NULL, NULL, loader_data);
+    _unnamed_module = new_entry(0, Handle(), NULL, NULL, NULL, loader_data);
   } else {
     // For all other class loaders the java.lang.reflect.Module for their
     // corresponding unnamed module can be found in the java.lang.ClassLoader object.
     oop module = java_lang_ClassLoader::unnamedModule(loader_data->class_loader());
-    _unnamed_module = new_entry(0, Handle(module), NULL, NULL, NULL, loader_data);
+    _unnamed_module = new_entry(0, Handle(Thread::current(), module), NULL, NULL, NULL, loader_data);
 
     // Store pointer to the ModuleEntry in the unnamed module's java.lang.reflect.Module
     // object.
