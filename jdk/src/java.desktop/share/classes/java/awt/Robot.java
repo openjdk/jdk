@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,9 @@ package java.awt;
 
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BaseMultiResolutionImage;
+import java.awt.image.MultiResolutionImage;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.awt.image.DirectColorModel;
@@ -391,6 +394,11 @@ public class Robot {
      * @return  Color of the pixel
      */
     public synchronized Color getPixelColor(int x, int y) {
+        AffineTransform tx = GraphicsEnvironment.
+                getLocalGraphicsEnvironment().getDefaultScreenDevice().
+                getDefaultConfiguration().getDefaultTransform();
+        x = (int) (x * tx.getScaleX());
+        y = (int) (y * tx.getScaleY());
         Color color = new Color(peer.getRGBPixel(x, y));
         return color;
     }
@@ -406,13 +414,69 @@ public class Robot {
      * @see     AWTPermission
      */
     public synchronized BufferedImage createScreenCapture(Rectangle screenRect) {
+        return createCompatibleImage(screenRect, false)[0];
+    }
+
+    /**
+     * Creates an image containing pixels read from the screen.
+     * This image does not include the mouse cursor.
+     * This method can be used in case there is a scaling transform
+     * from user space to screen (device) space.
+     * Typically this means that the display is a high resolution screen,
+     * although strictly it means any case in which there is such a transform.
+     * Returns a {@link java.awt.image.MultiResolutionImage}.
+     * <p>
+     * For a non-scaled display, the {@code MultiResolutionImage}
+     * will have one image variant:
+     * <ul>
+     * <li> Base Image with user specified size.
+     * </ul>
+     * <p>
+     * For a high resolution display where there is a scaling transform,
+     * the {@code MultiResolutionImage} will have two image variants:
+     * <ul>
+     * <li> Base Image with user specified size. This is scaled from the screen.
+     * <li> Native device resolution image with device size pixels.
+     * </ul>
+     * <p>
+     * Example:
+     * <pre>
+     *      Image nativeResImage;
+     *      MultiResolutionImage mrImage = robot.createMultiResolutionScreenCapture(frame.getBounds());
+     *      List<Image> resolutionVariants = mrImage.getResolutionVariants();
+     *      if (resolutionVariants.size() > 1) {
+     *          nativeResImage = resolutionVariants.get(1);
+     *      } else {
+     *          nativeResImage = resolutionVariants.get(0);
+     *      } </pre>
+     * @param   screenRect     Rect to capture in screen coordinates
+     * @return  The captured image
+     * @throws  IllegalArgumentException if {@code screenRect} width and height are not greater than zero
+     * @throws  SecurityException if {@code readDisplayPixels} permission is not granted
+     * @see     SecurityManager#checkPermission
+     * @see     AWTPermission
+     *
+     * @since 9
+     */
+    public synchronized MultiResolutionImage
+            createMultiResolutionScreenCapture(Rectangle screenRect) {
+
+        return new BaseMultiResolutionImage(
+                createCompatibleImage(screenRect, true));
+    }
+
+    private synchronized BufferedImage[]
+            createCompatibleImage(Rectangle screenRect, boolean isHiDPI) {
+
         checkScreenCaptureAllowed();
 
         checkValidRect(screenRect);
 
-        BufferedImage image;
+        BufferedImage lowResolutionImage;
+        BufferedImage highResolutionImage;
         DataBufferInt buffer;
         WritableRaster raster;
+        BufferedImage[] imageArray;
 
         if (screenCapCM == null) {
             /*
@@ -422,31 +486,92 @@ public class Robot {
              */
 
             screenCapCM = new DirectColorModel(24,
-                                               /* red mask */    0x00FF0000,
-                                               /* green mask */  0x0000FF00,
-                                               /* blue mask */   0x000000FF);
+                    /* red mask */ 0x00FF0000,
+                    /* green mask */ 0x0000FF00,
+                    /* blue mask */ 0x000000FF);
         }
 
-        // need to sync the toolkit prior to grabbing the pixels since in some
-        // cases rendering to the screen may be delayed
-        Toolkit.getDefaultToolkit().sync();
-
-        int pixels[];
         int[] bandmasks = new int[3];
-
-        pixels = peer.getRGBPixels(screenRect);
-        buffer = new DataBufferInt(pixels, pixels.length);
-
         bandmasks[0] = screenCapCM.getRedMask();
         bandmasks[1] = screenCapCM.getGreenMask();
         bandmasks[2] = screenCapCM.getBlueMask();
 
-        raster = Raster.createPackedRaster(buffer, screenRect.width, screenRect.height, screenRect.width, bandmasks, null);
-        SunWritableRaster.makeTrackable(buffer);
+        // need to sync the toolkit prior to grabbing the pixels since in some
+        // cases rendering to the screen may be delayed
+        Toolkit.getDefaultToolkit().sync();
+        AffineTransform tx = GraphicsEnvironment.
+                getLocalGraphicsEnvironment().getDefaultScreenDevice().
+                getDefaultConfiguration().getDefaultTransform();
+        double uiScaleX = tx.getScaleX();
+        double uiScaleY = tx.getScaleY();
+        int pixels[];
 
-        image = new BufferedImage(screenCapCM, raster, false, null);
+        if (uiScaleX == 1 && uiScaleY == 1) {
 
-        return image;
+            pixels = peer.getRGBPixels(screenRect);
+            buffer = new DataBufferInt(pixels, pixels.length);
+
+            bandmasks[0] = screenCapCM.getRedMask();
+            bandmasks[1] = screenCapCM.getGreenMask();
+            bandmasks[2] = screenCapCM.getBlueMask();
+
+            raster = Raster.createPackedRaster(buffer, screenRect.width,
+                    screenRect.height, screenRect.width, bandmasks, null);
+            SunWritableRaster.makeTrackable(buffer);
+
+            highResolutionImage = new BufferedImage(screenCapCM, raster,
+                    false, null);
+            imageArray = new BufferedImage[1];
+            imageArray[0] = highResolutionImage;
+
+        } else {
+
+            int sX = (int) Math.floor(screenRect.x * uiScaleX);
+            int sY = (int) Math.floor(screenRect.y * uiScaleY);
+            int sWidth = (int) Math.ceil(screenRect.width * uiScaleX);
+            int sHeight = (int) Math.ceil(screenRect.height * uiScaleY);
+            int temppixels[];
+            Rectangle scaledRect = new Rectangle(sX, sY, sWidth, sHeight);
+            temppixels = peer.getRGBPixels(scaledRect);
+
+            // HighResolutionImage
+            pixels = temppixels;
+            buffer = new DataBufferInt(pixels, pixels.length);
+            raster = Raster.createPackedRaster(buffer, scaledRect.width,
+                    scaledRect.height, scaledRect.width, bandmasks, null);
+            SunWritableRaster.makeTrackable(buffer);
+
+            highResolutionImage = new BufferedImage(screenCapCM, raster,
+                    false, null);
+
+
+            // LowResolutionImage
+            lowResolutionImage = new BufferedImage(screenRect.width,
+                    screenRect.height, highResolutionImage.getType());
+            Graphics2D g = lowResolutionImage.createGraphics();
+            g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+                    RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g.setRenderingHint(RenderingHints.KEY_RENDERING,
+                    RenderingHints.VALUE_RENDER_QUALITY);
+            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                    RenderingHints.VALUE_ANTIALIAS_ON);
+            g.drawImage(highResolutionImage, 0, 0,
+                    screenRect.width, screenRect.height,
+                    0, 0, scaledRect.width, scaledRect.height, null);
+            g.dispose();
+
+            if(!isHiDPI) {
+                imageArray = new BufferedImage[1];
+                imageArray[0] = lowResolutionImage;
+            } else {
+                imageArray = new BufferedImage[2];
+                imageArray[0] = lowResolutionImage;
+                imageArray[1] = highResolutionImage;
+            }
+
+        }
+
+        return imageArray;
     }
 
     private static void checkValidRect(Rectangle rect) {
