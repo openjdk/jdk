@@ -349,9 +349,56 @@ public class JShellTool implements MessageHandler {
             }
         }
 
+        // check that the supplied string represent valid class/module paths
+        // converting any ~/ to user home
+        private Collection<String> validPaths(Collection<String> vals, String context, boolean isModulePath) {
+            Stream<String> result = vals.stream()
+                    .map(s -> Arrays.stream(s.split(File.pathSeparator))
+                        .map(sp -> toPathResolvingUserHome(sp))
+                        .filter(p -> checkValidPathEntry(p, context, isModulePath))
+                        .map(p -> p.toString())
+                        .collect(Collectors.joining(File.pathSeparator)));
+            if (failed) {
+                return Collections.emptyList();
+            } else {
+                return result.collect(toList());
+            }
+        }
+
+        // Adapted from compiler method Locations.checkValidModulePathEntry
+        private boolean checkValidPathEntry(Path p, String context, boolean isModulePath) {
+            if (!Files.exists(p)) {
+                msg("jshell.err.file.not.found", context, p);
+                failed = true;
+                return false;
+            }
+            if (Files.isDirectory(p)) {
+                // if module-path, either an exploded module or a directory of modules
+                return true;
+            }
+
+            String name = p.getFileName().toString();
+            int lastDot = name.lastIndexOf(".");
+            if (lastDot > 0) {
+                switch (name.substring(lastDot)) {
+                    case ".jar":
+                        return true;
+                    case ".jmod":
+                        if (isModulePath) {
+                            return true;
+                        }
+                }
+            }
+            msg("jshell.err.arg", context, p);
+            failed = true;
+            return false;
+        }
+
         Options parse(OptionSet options) {
-            addOptions(OptionKind.CLASS_PATH, options.valuesOf(argClassPath));
-            addOptions(OptionKind.MODULE_PATH, options.valuesOf(argModulePath));
+            addOptions(OptionKind.CLASS_PATH,
+                    validPaths(options.valuesOf(argClassPath), "--class-path", false));
+            addOptions(OptionKind.MODULE_PATH,
+                    validPaths(options.valuesOf(argModulePath), "--module-path", true));
             addOptions(OptionKind.ADD_MODULES, options.valuesOf(argAddModules));
             addOptions(OptionKind.ADD_EXPORTS, options.valuesOf(argAddExports).stream()
                     .map(mp -> mp.contains("=") ? mp : mp + "=ALL-UNNAMED")

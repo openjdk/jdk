@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -338,7 +338,7 @@ public enum ToolOption {
         }
     },
 
-    X("-X", STANDARD) {
+    HELP_EXTRA("--help-extra -X", STANDARD) {
         @Override
         public void process(Helper helper) throws OptionException {
            throw new OptionException(OK, helper::Xusage);

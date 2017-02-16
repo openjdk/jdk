@@ -130,7 +130,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * It is not possible to directly list the classes in a module-oriented
      * location. Instead, you can get a package-oriented location for any specific module
      * using methods like {@link JavaFileManager#getLocationForModule} or
-     * {@link JavaFileManager#listLocationsForModule}.
+     * {@link JavaFileManager#listLocationsForModules}.
      */
     interface Location {
         /**
