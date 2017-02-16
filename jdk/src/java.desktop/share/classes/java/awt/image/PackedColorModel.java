@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.awt.image;
 
 import java.awt.Transparency;
 import java.awt.color.ColorSpace;
+import java.util.Arrays;
 
 /**
  * The {@code PackedColorModel} class is an abstract
@@ -88,6 +89,7 @@ public abstract class PackedColorModel extends ColorModel {
     int[] maskArray;
     int[] maskOffsets;
     float[] scaleFactors;
+    private volatile int hashCode;
 
     /**
      * Constructs a {@code PackedColorModel} from a color mask array,
@@ -393,23 +395,61 @@ public abstract class PackedColorModel extends ColorModel {
      * is an instance of {@code PackedColorModel} and equals this
      * {@code PackedColorModel}; {@code false} otherwise.
      */
+    @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof PackedColorModel)) {
             return false;
         }
 
-        if (!super.equals(obj)) {
+        PackedColorModel cm = (PackedColorModel) obj;
+
+        if (supportsAlpha != cm.hasAlpha() ||
+            isAlphaPremultiplied != cm.isAlphaPremultiplied() ||
+            pixel_bits != cm.getPixelSize() ||
+            transparency != cm.getTransparency() ||
+            numComponents != cm.getNumComponents() ||
+            (!(colorSpace.equals(cm.colorSpace))) ||
+            transferType != cm.transferType)
+        {
             return false;
         }
 
-        PackedColorModel cm = (PackedColorModel) obj;
         int numC = cm.getNumComponents();
         for(int i=0; i < numC; i++) {
             if (maskArray[i] != cm.getMask(i)) {
                 return false;
             }
         }
+
+        if (!(Arrays.equals(nBits, cm.getComponentSize()))) {
+            return false;
+        }
+
         return true;
+    }
+
+    /**
+     * Returns the hash code for this PackedColorModel.
+     *
+     * @return    a hash code for this PackedColorModel.
+     */
+    @Override
+    public int hashCode() {
+        int result = hashCode;
+        if (result == 0) {
+            result = 7;
+            result = 89 * result + this.pixel_bits;
+            result = 89 * result + Arrays.hashCode(this.nBits);
+            result = 89 * result + this.transparency;
+            result = 89 * result + (this.supportsAlpha ? 1 : 0);
+            result = 89 * result + (this.isAlphaPremultiplied ? 1 : 0);
+            result = 89 * result + this.numComponents;
+            result = 89 * result + this.colorSpace.hashCode();
+            result = 89 * result + this.transferType;
+            result = 89 * result + Arrays.hashCode(this.maskArray);
+            hashCode = result;
+        }
+        return result;
     }
 
     private static final int[] createBitsArray(int[]colorMaskArray,
