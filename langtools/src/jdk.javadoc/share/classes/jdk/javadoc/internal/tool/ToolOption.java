@@ -412,9 +412,7 @@ public enum ToolOption {
 
     static ToolOption get(String name) {
         String oname = name;
-        if (name.contains(":")) {
-            oname = name.substring(0, name.indexOf(':') + 1);
-        } else if (name.contains("=")) {
+        if (name.startsWith("--") && name.contains("=")) {
             oname = name.substring(0, name.indexOf('='));
         }
         for (ToolOption o : values()) {
