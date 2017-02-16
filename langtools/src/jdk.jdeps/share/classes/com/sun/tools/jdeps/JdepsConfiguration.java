@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,16 +207,6 @@ public class JdepsConfiguration implements AutoCloseable {
     }
 
     /**
-     * Returns the modules that the given module can read
-     */
-    public Stream<Module> reads(Module module) {
-        return configuration.findModule(module.name()).get()
-            .reads().stream()
-            .map(ResolvedModule::name)
-            .map(nameToModule::get);
-    }
-
-    /**
      * Returns the list of packages that split between resolved module and
      * unnamed module
      */
@@ -267,16 +257,15 @@ public class JdepsConfiguration implements AutoCloseable {
         return nameToModule;
     }
 
-    public Stream<Module> resolve(Set<String> roots) {
-        if (roots.isEmpty()) {
-            return nameToModule.values().stream();
-        } else {
-            return Configuration.empty()
-                    .resolve(finder, ModuleFinder.of(), roots)
-                    .modules().stream()
-                    .map(ResolvedModule::name)
-                    .map(nameToModule::get);
-        }
+    /**
+     * Returns Configuration with the given roots
+     */
+    public Configuration resolve(Set<String> roots) {
+        if (roots.isEmpty())
+            throw new IllegalArgumentException("empty roots");
+
+        return Configuration.empty()
+                    .resolve(finder, ModuleFinder.of(), roots);
     }
 
     public List<Archive> classPathArchives() {
