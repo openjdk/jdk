@@ -23,11 +23,11 @@
  * questions.
  */
 
-module jdk.vm.compiler {
+module jdk.internal.vm.compiler {
     requires java.instrument;
     requires java.management;
     requires jdk.management;
-    requires jdk.vm.ci;
+    requires jdk.internal.vm.ci;
 
     // sun.misc.Unsafe is used
     requires jdk.unsupported;
