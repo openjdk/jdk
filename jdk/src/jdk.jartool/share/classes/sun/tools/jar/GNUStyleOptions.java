@@ -118,7 +118,7 @@ class GNUStyleOptions {
                 void process(Main jartool, String opt, String arg) {
                     jartool.nflag = true;
                 }
-                boolean isHidden() { return true; }
+                boolean isExtra() { return true; }
             },
             new Option(true, OptionType.CREATE_UPDATE, "--main-class", "-e") {
                 void process(Main jartool, String opt, String arg) {

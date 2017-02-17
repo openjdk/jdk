@@ -46,7 +46,7 @@ import static java.lang.System.out;
 
 /*
  * @test
- * @bug 8167328 8171830 8165640
+ * @bug 8167328 8171830 8165640 8174248
  * @library /lib/testlibrary
  * @modules jdk.compiler
  *          jdk.jartool
@@ -323,7 +323,7 @@ public class Basic {
             .resultChecker(r -> assertModuleData(r, FOO));
     }
 
-    @Test(enabled = false)
+    @Test
     public void partialUpdateFooMainClass() throws IOException {
         Path mp = Paths.get("partialUpdateFooMainClass");
         createTestDir(mp);
@@ -333,7 +333,7 @@ public class Basic {
         // A "bad" main class in first create ( and no version )
         jar("--create",
             "--file=" + modularJar.toString(),
-            "--main-class=" + "IAmNotTheEntryPoint",
+            "--main-class=" + "jdk.test.foo.IAmNotTheEntryPoint",
             "--no-manifest",
             "-C", modClasses.toString(), ".")  // includes module-info.class
            .assertSuccess();
