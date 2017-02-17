@@ -1945,9 +1945,6 @@ public final class System {
         // set security manager
         String cn = System.getProperty("java.security.manager");
         if (cn != null) {
-            // ensure image reader for java.base is initialized before security manager
-            Object.class.getResource("module-info.class");
-
             if (cn.isEmpty() || "default".equals(cn)) {
                 System.setSecurityManager(new SecurityManager());
             } else {
