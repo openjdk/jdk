@@ -727,7 +727,7 @@ else
     generate-link-opt-data: buildtools-jdk
 
     # The generated classlist needs to go into java.base-jmod.
-    java.base-jmod jdk-image jre-image: generate-link-opt-data
+    java.base-jmod jdk.jlink-jmod jdk-image jre-image: generate-link-opt-data
   endif
 
   release-file: create-source-revision-tracker
