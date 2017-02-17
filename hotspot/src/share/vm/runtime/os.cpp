@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -347,10 +347,9 @@ void os::init_before_ergo() {
   VM_Version::init_before_ergo();
 }
 
-void os::signal_init() {
+void os::signal_init(TRAPS) {
   if (!ReduceSignalUsage) {
     // Setup JavaThread for processing signals
-    EXCEPTION_MARK;
     Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_Thread(), true, CHECK);
     instanceKlassHandle klass (THREAD, k);
     instanceHandle thread_oop = klass->allocate_instance_handle(CHECK);

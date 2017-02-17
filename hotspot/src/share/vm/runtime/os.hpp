@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -731,7 +731,7 @@ class os: AllStatic {
   static struct hostent* get_host_by_name(char* name);
 
   // Support for signals (see JVM_RaiseSignal, JVM_RegisterSignal)
-  static void  signal_init();
+  static void  signal_init(TRAPS);
   static void  signal_init_pd();
   static void  signal_notify(int signal_number);
   static void* signal(int signal_number, void* handler);
