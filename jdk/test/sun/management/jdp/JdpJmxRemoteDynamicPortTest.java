@@ -29,7 +29,7 @@
  *  @library /lib/testlibrary
  *  @modules jdk.management.agent/sun.management.jdp
  *  @build jdk.testlibrary.* ClientConnection JdpTestUtil JdpTestCase JdpJmxRemoteDynamicPortTestCase DynamicLauncher
- *  @run main JdpJmxRemoteDynamicPortTest
+ *  @run main/othervm JdpJmxRemoteDynamicPortTest
  */
 
 import java.lang.management.ManagementFactory;
