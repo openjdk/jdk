@@ -633,16 +633,16 @@ else
   # in javadoc.
   java.desktop-gensrc-jdk: java.base-gensrc
 
-  # The annotation processing for jdk.vm.ci and jdk.vm.compiler needs classes
-  # from the current JDK.
-  jdk.vm.ci-gensrc-hotspot: $(addsuffix -java, \
-      $(call FindTransitiveDepsForModule, jdk.vm.ci))
-  jdk.vm.compiler-gensrc-hotspot: $(addsuffix -java, \
-      $(call FindTransitiveDepsForModule, jdk.vm.compiler))
+  # The annotation processing for jdk.internal.vm.ci and jdk.internal.vm.compiler
+  # needs classes from the current JDK.
+  jdk.internal.vm.ci-gensrc-hotspot: $(addsuffix -java, \
+      $(call FindTransitiveDepsForModule, jdk.internal.vm.ci))
+  jdk.internal.vm.compiler-gensrc-hotspot: $(addsuffix -java, \
+      $(call FindTransitiveDepsForModule, jdk.internal.vm.compiler))
 
-  # For jdk.vm.compiler, the gensrc step is generating a module-info.java.extra
+  # For jdk.internal.vm.compiler, the gensrc step is generating a module-info.java.extra
   # file to be processed by the gensrc-moduleinfo target.
-  jdk.vm.compiler-gensrc-moduleinfo: jdk.vm.compiler-gensrc-hotspot
+  jdk.internal.vm.compiler-gensrc-moduleinfo: jdk.internal.vm.compiler-gensrc-hotspot
 
   # Explicitly add dependencies for special targets
   java.base-java: unpack-sec
