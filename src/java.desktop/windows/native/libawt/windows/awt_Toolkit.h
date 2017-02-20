@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -373,6 +373,8 @@ public:
     BOOL PreProcessMouseMsg(class AwtComponent* p, MSG& msg);
     BOOL PreProcessKeyMsg(class AwtComponent* p, MSG& msg);
 
+    /* Checks that an free ID exists. */
+    jboolean isFreeIDAvailable();
     /* Create an ID which maps to an AwtObject pointer, such as a menu. */
     UINT CreateCmdID(AwtObject* object);
 
