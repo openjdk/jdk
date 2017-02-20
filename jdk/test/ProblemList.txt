@@ -310,4 +310,6 @@ javax/rmi/PortableRemoteObject/8146975/RmiIiopReturnValueTest.java 8169737 linux
 
 javax/xml/ws/clientjar/TestWsImport.java			8173317 generic-all
 
+org/omg/CORBA/OrbPropertiesTest.java			        8175177 generic-all
+
 ############################################################################
