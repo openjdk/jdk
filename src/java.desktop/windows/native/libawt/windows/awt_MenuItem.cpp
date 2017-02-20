@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,6 +217,10 @@ AwtMenuItem* AwtMenuItem::Create(jobject peer, jobject menuPeer)
         if (env->EnsureLocalCapacity(1) < 0) {
             return NULL;
         }
+        if (!AwtToolkit::GetInstance().isFreeIDAvailable()) {
+            return NULL;
+        }
+
         JNI_CHECK_NULL_RETURN_NULL(menuPeer, "peer");
 
         /* target is a java.awt.MenuItem  */
