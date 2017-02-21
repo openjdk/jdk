@@ -40,7 +40,6 @@ public class JdpJmxRemoteDynamicPortTest  extends DynamicLauncher {
     public static void main(String[] args) throws Exception {
         DynamicLauncher launcher = new JdpJmxRemoteDynamicPortTest();
         launcher.run();
-        launcher.getProcessOutpoutAnalyzer().stderrShouldNotContain("java.lang.Exception:");
     }
 
     protected String[] options() {
