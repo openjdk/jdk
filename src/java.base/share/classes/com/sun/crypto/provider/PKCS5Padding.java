@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.crypto.provider;
 
 import javax.crypto.ShortBufferException;
+import java.util.Arrays;
 
 /**
  * This class implements padding as specified in the PKCS#5 standard.
@@ -63,14 +64,13 @@ final class PKCS5Padding implements Padding {
         if (in == null)
             return;
 
-        if ((off + len) > in.length) {
+        int idx = Math.addExact(off, len);
+        if (idx > in.length) {
             throw new ShortBufferException("Buffer too small to hold padding");
         }
 
         byte paddingOctet = (byte) (len & 0xff);
-        for (int i = 0; i < len; i++) {
-            in[i + off] = paddingOctet;
-        }
+        Arrays.fill(in, off, idx, paddingOctet);
         return;
     }
 
@@ -92,25 +92,24 @@ final class PKCS5Padding implements Padding {
             (len == 0)) { // this can happen if input is really a padded buffer
             return 0;
         }
-
-        byte lastByte = in[off + len - 1];
+        int idx = Math.addExact(off, len);
+        byte lastByte = in[idx - 1];
         int padValue = (int)lastByte & 0x0ff;
         if ((padValue < 0x01)
             || (padValue > blockSize)) {
             return -1;
         }
 
-        int start = off + len - ((int)lastByte & 0x0ff);
+        int start = idx - padValue;
         if (start < off) {
             return -1;
         }
 
-        for (int i = 0; i < ((int)lastByte & 0x0ff); i++) {
-            if (in[start+i] != lastByte) {
+        for (int i = start; i < idx; i++) {
+            if (in[i] != lastByte) {
                 return -1;
             }
         }
-
         return start;
     }
 
