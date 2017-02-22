@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -260,7 +260,7 @@ final class PBES1Core {
 
         if (algo.equals("DES")) {
             // P || S (password concatenated with salt)
-            byte[] concat = new byte[passwdBytes.length + salt.length];
+            byte[] concat = new byte[Math.addExact(passwdBytes.length, salt.length)];
             System.arraycopy(passwdBytes, 0, concat, 0, passwdBytes.length);
             java.util.Arrays.fill(passwdBytes, (byte)0x00);
             System.arraycopy(salt, 0, concat, passwdBytes.length, salt.length);

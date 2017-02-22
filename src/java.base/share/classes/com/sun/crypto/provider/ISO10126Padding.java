@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,8 @@ final class ISO10126Padding implements Padding {
         if (in == null)
             return;
 
-        if ((off + len) > in.length) {
+        int idx = Math.addExact(off, len);
+        if (idx > in.length) {
             throw new ShortBufferException("Buffer too small to hold padding");
         }
 
@@ -71,7 +72,7 @@ final class ISO10126Padding implements Padding {
         byte[] padding = new byte[len - 1];
         SunJCE.getRandom().nextBytes(padding);
         System.arraycopy(padding, 0, in, off, len - 1);
-        in[off + len - 1] = paddingOctet;
+        in[idx - 1] = paddingOctet;
         return;
     }
 
@@ -94,14 +95,15 @@ final class ISO10126Padding implements Padding {
             return 0;
         }
 
-        byte lastByte = in[off + len - 1];
+        int idx = Math.addExact(off, len);
+        byte lastByte = in[idx - 1];
         int padValue = (int)lastByte & 0x0ff;
         if ((padValue < 0x01)
             || (padValue > blockSize)) {
             return -1;
         }
 
-        int start = off + len - padValue;
+        int start = idx - padValue;
         if (start < off) {
             return -1;
         }
