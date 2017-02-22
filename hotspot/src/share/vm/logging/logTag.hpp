@@ -48,7 +48,9 @@
   LOG_TAG(class) \
   LOG_TAG(classhisto) \
   LOG_TAG(cleanup) \
+  LOG_TAG(codecache) \
   LOG_TAG(compaction) \
+  LOG_TAG(compilation) \
   LOG_TAG(constraints) \
   LOG_TAG(constantpool) \
   LOG_TAG(coops) \
@@ -69,7 +71,9 @@
   LOG_TAG(ihop) \
   LOG_TAG(iklass) \
   LOG_TAG(init) \
+  LOG_TAG(inlining) \
   LOG_TAG(itables) \
+  LOG_TAG(jit) \
   LOG_TAG(jni) \
   LOG_TAG(jvmti) \
   LOG_TAG(liveness) \

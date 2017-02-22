@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -615,20 +615,22 @@ oop Universe::gen_out_of_memory_error(oop default_err) {
     // return default
     return default_err;
   } else {
+    Thread* THREAD = Thread::current();
+    Handle default_err_h(THREAD, default_err);
     // get the error object at the slot and set set it to NULL so that the
     // array isn't keeping it alive anymore.
-    oop exc = preallocated_out_of_memory_errors()->obj_at(next);
-    assert(exc != NULL, "slot has been used already");
+    Handle exc(THREAD, preallocated_out_of_memory_errors()->obj_at(next));
+    assert(exc() != NULL, "slot has been used already");
     preallocated_out_of_memory_errors()->obj_at_put(next, NULL);
 
     // use the message from the default error
-    oop msg = java_lang_Throwable::message(default_err);
+    oop msg = java_lang_Throwable::message(default_err_h());
     assert(msg != NULL, "no message");
-    java_lang_Throwable::set_message(exc, msg);
+    java_lang_Throwable::set_message(exc(), msg);
 
     // populate the stack trace and return it.
     java_lang_Throwable::fill_in_stack_trace_of_preallocated_backtrace(exc);
-    return exc;
+    return exc();
   }
 }
 

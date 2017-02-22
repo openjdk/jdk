@@ -1134,8 +1134,11 @@ void nmethod::log_state_change() const {
       xtty->end_elem();
     }
   }
+
+  const char *state_msg = _state == zombie ? "made zombie" : "made not entrant";
+  CompileTask::print_ul(this, state_msg);
   if (PrintCompilation && _state != unloaded) {
-    print_on(tty, _state == zombie ? "made zombie" : "made not entrant");
+    print_on(tty, state_msg);
   }
 }
 

@@ -164,7 +164,7 @@ class java_lang_String : AllStatic {
   static Handle internalize_classname(Handle java_string, TRAPS) { return char_converter(java_string, '.', '/', THREAD); }
 
   // Conversion
-  static Symbol* as_symbol(Handle java_string, TRAPS);
+  static Symbol* as_symbol(oop java_string, TRAPS);
   static Symbol* as_symbol_or_null(oop java_string);
 
   // Testers
@@ -494,7 +494,7 @@ class java_lang_Throwable: AllStatic {
   static int get_backtrace_offset() { return backtrace_offset;}
   static int get_detailMessage_offset() { return detailMessage_offset;}
   // Message
-  static oop message(Handle throwable);
+  static oop message(oop throwable);
   static void set_message(oop throwable, oop value);
   static Symbol* detail_message(oop throwable);
   static void print_stack_element(outputStream *st, const methodHandle& method, int bci);
@@ -512,7 +512,7 @@ class java_lang_Throwable: AllStatic {
   // Programmatic access to stack trace
   static void get_stack_trace_elements(Handle throwable, objArrayHandle stack_trace, TRAPS);
   // Printing
-  static void print(Handle throwable, outputStream* st);
+  static void print(oop throwable, outputStream* st);
   static void print_stack_trace(Handle throwable, outputStream* st);
   static void java_printStackTrace(Handle throwable, TRAPS);
   // Debugging

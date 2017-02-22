@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,7 @@ StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* r
         value.noop = *(narrowOop*) value_addr;
       }
       // Decode narrowoop and wrap a handle around the oop
-      Handle h(oopDesc::decode_heap_oop(value.noop));
+      Handle h(Thread::current(), oopDesc::decode_heap_oop(value.noop));
       return new StackValue(h);
     }
 #endif
@@ -118,7 +118,7 @@ StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* r
          val = (oop)NULL;
       }
 #endif
-      Handle h(val); // Wrap a handle around the oop
+      Handle h(Thread::current(), val); // Wrap a handle around the oop
       return new StackValue(h);
     }
     case Location::addr: {

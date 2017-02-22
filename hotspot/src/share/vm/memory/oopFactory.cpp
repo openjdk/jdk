@@ -85,3 +85,13 @@ objArrayOop oopFactory::new_objArray(Klass* klass, int length, TRAPS) {
     return InstanceKlass::cast(klass)->allocate_objArray(1, length, THREAD);
   }
 }
+
+objArrayHandle oopFactory::new_objArray_handle(Klass* klass, int length, TRAPS) {
+  objArrayOop obj = new_objArray(klass, length, CHECK_(objArrayHandle()));
+  return objArrayHandle(THREAD, obj);
+}
+
+typeArrayHandle oopFactory::new_byteArray_handle(int length, TRAPS) {
+  typeArrayOop obj = new_byteArray(length, CHECK_(typeArrayHandle()));
+  return typeArrayHandle(THREAD, obj);
+}

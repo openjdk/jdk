@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ Dictionary::Dictionary(int table_size, HashtableBucket<mtClass>* t,
   _pd_cache_table = new ProtectionDomainCacheTable(defaultProtectionDomainCacheSize);
 };
 
-ProtectionDomainCacheEntry* Dictionary::cache_get(oop protection_domain) {
+ProtectionDomainCacheEntry* Dictionary::cache_get(Handle protection_domain) {
   return _pd_cache_table->get(protection_domain);
 }
 
@@ -123,9 +123,9 @@ bool DictionaryEntry::contains_protection_domain(oop protection_domain) const {
 }
 
 
-void DictionaryEntry::add_protection_domain(Dictionary* dict, oop protection_domain) {
+void DictionaryEntry::add_protection_domain(Dictionary* dict, Handle protection_domain) {
   assert_locked_or_safepoint(SystemDictionary_lock);
-  if (!contains_protection_domain(protection_domain)) {
+  if (!contains_protection_domain(protection_domain())) {
     ProtectionDomainCacheEntry* entry = dict->cache_get(protection_domain);
     ProtectionDomainEntry* new_head =
                 new ProtectionDomainEntry(entry, _pd_set);
@@ -454,7 +454,7 @@ void Dictionary::add_protection_domain(int index, unsigned int hash,
   assert(protection_domain() != NULL,
          "real protection domain should be present");
 
-  entry->add_protection_domain(this, protection_domain());
+  entry->add_protection_domain(this, protection_domain);
 
   assert(entry->contains_protection_domain(protection_domain()),
          "now protection domain should be present");
@@ -505,11 +505,12 @@ void Dictionary::reorder_dictionary() {
 }
 
 
-unsigned int ProtectionDomainCacheTable::compute_hash(oop protection_domain) {
+unsigned int ProtectionDomainCacheTable::compute_hash(Handle protection_domain) {
+  // Identity hash can safepoint, so keep protection domain in a Handle.
   return (unsigned int)(protection_domain->identity_hash());
 }
 
-int ProtectionDomainCacheTable::index_for(oop protection_domain) {
+int ProtectionDomainCacheTable::index_for(Handle protection_domain) {
   return hash_to_index(compute_hash(protection_domain));
 }
 
@@ -619,7 +620,7 @@ void ProtectionDomainCacheTable::always_strong_oops_do(OopClosure* f) {
   }
 }
 
-ProtectionDomainCacheEntry* ProtectionDomainCacheTable::get(oop protection_domain) {
+ProtectionDomainCacheEntry* ProtectionDomainCacheTable::get(Handle protection_domain) {
   unsigned int hash = compute_hash(protection_domain);
   int index = hash_to_index(hash);
 
@@ -630,9 +631,9 @@ ProtectionDomainCacheEntry* ProtectionDomainCacheTable::get(oop protection_domai
   return entry;
 }
 
-ProtectionDomainCacheEntry* ProtectionDomainCacheTable::find_entry(int index, oop protection_domain) {
+ProtectionDomainCacheEntry* ProtectionDomainCacheTable::find_entry(int index, Handle protection_domain) {
   for (ProtectionDomainCacheEntry* e = bucket(index); e != NULL; e = e->next()) {
-    if (e->protection_domain() == protection_domain) {
+    if (e->protection_domain() == protection_domain()) {
       return e;
     }
   }
@@ -640,7 +641,7 @@ ProtectionDomainCacheEntry* ProtectionDomainCacheTable::find_entry(int index, oo
   return NULL;
 }
 
-ProtectionDomainCacheEntry* ProtectionDomainCacheTable::add_entry(int index, unsigned int hash, oop protection_domain) {
+ProtectionDomainCacheEntry* ProtectionDomainCacheTable::add_entry(int index, unsigned int hash, Handle protection_domain) {
   assert_locked_or_safepoint(SystemDictionary_lock);
   assert(index == index_for(protection_domain), "incorrect index?");
   assert(find_entry(index, protection_domain) == NULL, "no double entry");
@@ -651,7 +652,7 @@ ProtectionDomainCacheEntry* ProtectionDomainCacheTable::add_entry(int index, uns
 }
 
 void ProtectionDomainCacheTable::free(ProtectionDomainCacheEntry* to_delete) {
-  unsigned int hash = compute_hash(to_delete->protection_domain());
+  unsigned int hash = compute_hash(Handle(Thread::current(), to_delete->protection_domain()));
   int index = hash_to_index(hash);
 
   ProtectionDomainCacheEntry** p = bucket_addr(index);
@@ -731,7 +732,6 @@ void SymbolPropertyTable::methods_do(void f(Method*)) {
 
 void Dictionary::print(bool details) {
   ResourceMark rm;
-  HandleMark   hm;
 
   if (details) {
     tty->print_cr("Java system dictionary (table_size=%d, classes=%d)",
@@ -777,7 +777,6 @@ void Dictionary::print(bool details) {
 void Dictionary::printPerformanceInfoDetails() {
   if (log_is_enabled(Info, hashtables)) {
     ResourceMark rm;
-    HandleMark   hm;
 
     log_info(hashtables)(" ");
     log_info(hashtables)("Java system dictionary (table_size=%d, classes=%d)",
