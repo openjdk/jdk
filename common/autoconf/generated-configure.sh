@@ -5170,7 +5170,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1486679715
+DATE_WHEN_GENERATED=1487781359
 
 ###############################################################################
 #
@@ -49074,7 +49074,7 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
         SHARED_LIBRARY_FLAGS="-dynamiclib -compatibility_version 1.0.0 -current_version 1.0.0 $PICFLAG"
         JVM_CFLAGS="$JVM_CFLAGS $PICFLAG"
       fi
-      SET_EXECUTABLE_ORIGIN='-Wl,-rpath,@loader_path/.'
+      SET_EXECUTABLE_ORIGIN='-Wl,-rpath,@loader_path$1'
       SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
       SET_SHARED_LIBRARY_NAME='-Wl,-install_name,@rpath/$1'
       SET_SHARED_LIBRARY_MAPFILE='-Wl,-exported_symbols_list,$1'
@@ -49094,7 +49094,7 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
       # Linking is different on MacOSX
       PICFLAG=''
       SHARED_LIBRARY_FLAGS="-dynamiclib -compatibility_version 1.0.0 -current_version 1.0.0 $PICFLAG"
-      SET_EXECUTABLE_ORIGIN='-Wl,-rpath,@loader_path/.'
+      SET_EXECUTABLE_ORIGIN='-Wl,-rpath,@loader_path$1'
       SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
       SET_SHARED_LIBRARY_NAME='-Wl,-install_name,@rpath/$1'
       SET_SHARED_LIBRARY_MAPFILE='-Wl,-exported_symbols_list,$1'
