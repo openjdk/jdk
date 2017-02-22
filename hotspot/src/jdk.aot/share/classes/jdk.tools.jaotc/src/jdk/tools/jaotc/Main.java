@@ -203,6 +203,11 @@ public class Main implements LogPrinter {
         void process(Main task, String opt, String arg) {
             task.options.version = true;
         }
+    }, new Option("  --linker-path              Full path to linker executable", true, "--linker-path") {
+        @Override
+        void process(Main task, String opt, String arg) {
+            task.options.linkerpath = arg;
+        }
     }, new Option("  -J<flag>                   Pass <flag> directly to the runtime system", false, "-J") {
         @Override
         void process(Main task, String opt, String arg) {
@@ -216,6 +221,7 @@ public class Main implements LogPrinter {
         public String outputName = "unnamed.so";
         public String methodList;
         public String classpath = ".";
+        public String linkerpath = null;
 
         /**
          * We don't see scaling beyond 16 threads.
@@ -460,7 +466,8 @@ public class Main implements LogPrinter {
             // tests are fixed.
             String libraryFileName = name;
 
-            String ldCmd;
+            String linkerCmd;
+            String linkerPath;
             String osName = System.getProperty("os.name");
 
             if (name.endsWith(".so")) {
@@ -477,27 +484,31 @@ public class Main implements LogPrinter {
                 case "Linux":
                     // libraryFileName = options.outputName + ".so";
                     objectFileName = objectFileName + ".o";
-                    ldCmd = "ld -shared -z noexecstack -o " + libraryFileName + " " + objectFileName;
+                    linkerPath = (options.linkerpath != null) ?  options.linkerpath : "ld";
+                    linkerCmd = linkerPath + " -shared -z noexecstack -o " + libraryFileName + " " + objectFileName;
                     break;
                 case "SunOS":
                     // libraryFileName = options.outputName + ".so";
                     objectFileName = objectFileName + ".o";
-                    ldCmd = "ld -shared -o " + libraryFileName + " " + objectFileName;
+                    linkerPath = (options.linkerpath != null) ?  options.linkerpath : "ld";
+                    linkerCmd = linkerPath + " -shared -o " + libraryFileName + " " + objectFileName;
                     break;
                 case "Mac OS X":
                     // libraryFileName = options.outputName + ".dylib";
                     objectFileName = objectFileName + ".o";
-                    ldCmd = "ld -dylib -o " + libraryFileName + " " + objectFileName;
+                    linkerPath = (options.linkerpath != null) ?  options.linkerpath : "ld";
+                    linkerCmd = linkerPath + " -dylib -o " + libraryFileName + " " + objectFileName;
                     break;
                 default:
                     if (osName.startsWith("Windows")) {
                         // libraryFileName = options.outputName + ".dll";
                         objectFileName = objectFileName + ".obj";
-                        String linkpath = getWindowsLinkPath();
-                        if (linkpath == null) {
+                        linkerPath = (options.linkerpath != null) ?
+                            options.linkerpath : getWindowsLinkPath();
+                        if (linkerPath == null) {
                             throw new InternalError("Can't locate Microsoft Visual Studio amd64 link.exe");
                         }
-                        ldCmd = linkpath + " /DLL /OPT:NOREF /NOLOGO /NOENTRY" + " /OUT:" + libraryFileName + " " + objectFileName;
+                        linkerCmd = linkerPath + " /DLL /OPT:NOREF /NOLOGO /NOENTRY" + " /OUT:" + libraryFileName + " " + objectFileName;
                         break;
                     }
                     else
@@ -516,7 +527,7 @@ public class Main implements LogPrinter {
             }
 
             try (Timer t = new Timer(this, "Creating shared library: " + libraryFileName)) {
-                Process p = Runtime.getRuntime().exec(ldCmd);
+                Process p = Runtime.getRuntime().exec(linkerCmd);
                 final int exitCode = p.waitFor();
                 if (exitCode != 0) {
                     InputStream stderr = p.getErrorStream();
