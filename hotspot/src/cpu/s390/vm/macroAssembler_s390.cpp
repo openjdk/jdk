@@ -1616,6 +1616,8 @@ void MacroAssembler::branch_optimized(Assembler::branch_condition cond, Label& b
   if (branch_target.is_bound()) {
     address branch_addr = target(branch_target);
     branch_optimized(cond, branch_addr);
+  } else if (branch_target.is_near()) {
+    z_brc(cond, branch_target);  // Caller assures that the target will be in range for z_brc.
   } else {
     z_brcl(cond, branch_target); // Let's hope target is in range. Otherwise, we will abort at patch time.
   }
@@ -1674,7 +1676,8 @@ void MacroAssembler::compare_and_branch_optimized(Register r1,
                                                   bool     has_sign) {
   address      branch_origin = pc();
   bool         x2_imm8       = (has_sign && Immediate::is_simm8(x2)) || (!has_sign && Immediate::is_uimm8(x2));
-  bool         is_RelAddr16  = (branch_target.is_bound() &&
+  bool         is_RelAddr16  = branch_target.is_near() ||
+                               (branch_target.is_bound() &&
                                 RelAddr::is_in_range_of_RelAddr16(target(branch_target), branch_origin));
   unsigned int casenum       = (len64?2:0)+(has_sign?0:1);
 
@@ -1744,13 +1747,21 @@ void MacroAssembler::compare_and_branch_optimized(Register r1,
                                                   Label&   branch_target,
                                                   bool     len64,
                                                   bool     has_sign) {
-  unsigned int casenum = (len64?2:0)+(has_sign?0:1);
+  unsigned int casenum = (len64 ? 2 : 0) + (has_sign ? 0 : 1);
 
   if (branch_target.is_bound()) {
     address branch_addr = target(branch_target);
     compare_and_branch_optimized(r1, r2, cond, branch_addr, len64, has_sign);
   } else {
-    {
+    if (VM_Version::has_CompareBranch() && branch_target.is_near()) {
+      switch (casenum) {
+        case 0: z_crj(  r1, r2, cond, branch_target); break;
+        case 1: z_clrj( r1, r2, cond, branch_target); break;
+        case 2: z_cgrj( r1, r2, cond, branch_target); break;
+        case 3: z_clgrj(r1, r2, cond, branch_target); break;
+        default: ShouldNotReachHere(); break;
+      }
+    } else {
       switch (casenum) {
         case 0: z_cr( r1, r2); break;
         case 1: z_clr(r1, r2); break;

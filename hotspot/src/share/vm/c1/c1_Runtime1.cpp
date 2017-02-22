@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -961,13 +961,13 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
         assert(cache_index >= 0 && cache_index < pool->cache()->length(), "unexpected cache index");
         ConstantPoolCacheEntry* cpce = pool->cache()->entry_at(cache_index);
         cpce->set_method_handle(pool, info);
-        appendix = cpce->appendix_if_resolved(pool); // just in case somebody already resolved the entry
+        appendix = Handle(THREAD, cpce->appendix_if_resolved(pool)); // just in case somebody already resolved the entry
         break;
       }
       case Bytecodes::_invokedynamic: {
         ConstantPoolCacheEntry* cpce = pool->invokedynamic_cp_cache_entry_at(index);
         cpce->set_dynamic_call(pool, info);
-        appendix = cpce->appendix_if_resolved(pool); // just in case somebody already resolved the entry
+        appendix = Handle(THREAD, cpce->appendix_if_resolved(pool)); // just in case somebody already resolved the entry
         break;
       }
       default: fatal("unexpected bytecode for load_appendix_patching_id");

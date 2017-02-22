@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1953,7 +1953,8 @@ JVM_ENTRY(jint, jmm_DumpHeap0(JNIEnv *env, jstring outputfile, jboolean live))
     THROW_MSG_(vmSymbols::java_lang_NullPointerException(),
                "Output file name cannot be null.", -1);
   }
-  char* name = java_lang_String::as_platform_dependent_str(on, CHECK_(-1));
+  Handle onhandle(THREAD, on);
+  char* name = java_lang_String::as_platform_dependent_str(onhandle, CHECK_(-1));
   if (name == NULL) {
     THROW_MSG_(vmSymbols::java_lang_NullPointerException(),
                "Output file name cannot be null.", -1);

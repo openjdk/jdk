@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,7 +263,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
     assert(ClassLoaderDataGraph::_head == NULL, "cannot initialize twice");
 
     // We explicitly initialize the Dependencies object at a later phase in the initialization
-    _the_null_class_loader_data = new ClassLoaderData((oop)NULL, false, Dependencies());
+    _the_null_class_loader_data = new ClassLoaderData(Handle(), false, Dependencies());
     ClassLoaderDataGraph::_head = _the_null_class_loader_data;
     assert(_the_null_class_loader_data->is_the_null_class_loader_data(), "Must be");
     if (DumpSharedSpaces) {

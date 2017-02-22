@@ -514,11 +514,10 @@ char* java_lang_String::as_quoted_ascii(oop java_string) {
   return result;
 }
 
-Symbol* java_lang_String::as_symbol(Handle java_string, TRAPS) {
-  oop          obj    = java_string();
-  typeArrayOop value  = java_lang_String::value(obj);
-  int          length = java_lang_String::length(obj);
-  bool      is_latin1 = java_lang_String::is_latin1(obj);
+Symbol* java_lang_String::as_symbol(oop java_string, TRAPS) {
+  typeArrayOop value  = java_lang_String::value(java_string);
+  int          length = java_lang_String::length(java_string);
+  bool      is_latin1 = java_lang_String::is_latin1(java_string);
   if (!is_latin1) {
     jchar* base = (length == 0) ? NULL : value->char_at_addr(0);
     Symbol* sym = SymbolTable::lookup_unicode(base, length, THREAD);
@@ -753,7 +752,7 @@ void java_lang_Class::fixup_mirror(KlassHandle k, TRAPS) {
       }
     }
   }
-  create_mirror(k, Handle(NULL), Handle(NULL), Handle(NULL), CHECK);
+  create_mirror(k, Handle(), Handle(), Handle(), CHECK);
 }
 
 void java_lang_Class::initialize_mirror_fields(KlassHandle k,
@@ -828,7 +827,8 @@ void java_lang_Class::create_mirror(KlassHandle k, Handle class_loader,
   // the mirror.
   if (SystemDictionary::Class_klass_loaded()) {
     // Allocate mirror (java.lang.Class instance)
-    Handle mirror = InstanceMirrorKlass::cast(SystemDictionary::Class_klass())->allocate_instance(k, CHECK);
+    oop mirror_oop = InstanceMirrorKlass::cast(SystemDictionary::Class_klass())->allocate_instance(k, CHECK);
+    Handle mirror(THREAD, mirror_oop);
 
     // Setup indirection from mirror->klass
     if (!k.is_null()) {
@@ -842,7 +842,7 @@ void java_lang_Class::create_mirror(KlassHandle k, Handle class_loader,
 
     // It might also have a component mirror.  This mirror must already exist.
     if (k->is_array_klass()) {
-      Handle comp_mirror;
+      oop comp_mirror;
       if (k->is_typeArray_klass()) {
         BasicType type = TypeArrayKlass::cast(k())->element_type();
         comp_mirror = Universe::java_mirror(type);
@@ -852,12 +852,12 @@ void java_lang_Class::create_mirror(KlassHandle k, Handle class_loader,
         assert(element_klass != NULL, "Must have an element klass");
         comp_mirror = element_klass->java_mirror();
       }
-      assert(comp_mirror.not_null(), "must have a mirror");
+      assert(comp_mirror != NULL, "must have a mirror");
 
       // Two-way link between the array klass and its component mirror:
       // (array_klass) k -> mirror -> component_mirror -> array_klass -> k
-      set_component_mirror(mirror(), comp_mirror());
-      set_array_klass(comp_mirror(), k());
+      set_component_mirror(mirror(), comp_mirror);
+      set_array_klass(comp_mirror, k());
     } else {
       assert(k->is_instance_klass(), "Must be");
 
@@ -1518,7 +1518,7 @@ void java_lang_Throwable::set_depth(oop throwable, int value) {
   throwable->int_field_put(depth_offset, value);
 }
 
-oop java_lang_Throwable::message(Handle throwable) {
+oop java_lang_Throwable::message(oop throwable) {
   return throwable->obj_field(detailMessage_offset);
 }
 
@@ -1547,7 +1547,7 @@ void java_lang_Throwable::clear_stacktrace(oop throwable) {
 }
 
 
-void java_lang_Throwable::print(Handle throwable, outputStream* st) {
+void java_lang_Throwable::print(oop throwable, outputStream* st) {
   ResourceMark rm;
   Klass* k = throwable->klass();
   assert(k != NULL, "just checking");
@@ -1619,11 +1619,11 @@ class BacktraceBuilder: public StackObj {
   // constructor for new backtrace
   BacktraceBuilder(TRAPS): _methods(NULL), _bcis(NULL), _head(NULL), _mirrors(NULL), _names(NULL) {
     expand(CHECK);
-    _backtrace = _head;
+    _backtrace = Handle(THREAD, _head);
     _index = 0;
   }
 
-  BacktraceBuilder(objArrayHandle backtrace) {
+  BacktraceBuilder(Thread* thread, objArrayHandle backtrace) {
     _methods = get_methods(backtrace);
     _bcis = get_bcis(backtrace);
     _mirrors = get_mirrors(backtrace);
@@ -1634,7 +1634,8 @@ class BacktraceBuilder: public StackObj {
            "method and source information arrays should match");
 
     // head is the preallocated backtrace
-    _backtrace = _head = backtrace();
+    _head = backtrace();
+    _backtrace = Handle(thread, _head);
     _index = 0;
   }
 
@@ -1840,7 +1841,7 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
 }
 
 void java_lang_Throwable::print_stack_element(outputStream *st, const methodHandle& method, int bci) {
-  Handle mirror = method->method_holder()->java_mirror();
+  Handle mirror (Thread::current(),  method->method_holder()->java_mirror());
   int method_id = method->orig_method_idnum();
   int version = method->constants()->version();
   print_stack_element_to_stream(st, mirror, method_id, version, bci, method->name());
@@ -1852,7 +1853,7 @@ void java_lang_Throwable::print_stack_element(outputStream *st, const methodHand
  */
 void java_lang_Throwable::print_stack_trace(Handle throwable, outputStream* st) {
   // First, print the message.
-  print(throwable, st);
+  print(throwable(), st);
   st->cr();
 
   // Now print the stack trace.
@@ -1887,7 +1888,7 @@ void java_lang_Throwable::print_stack_trace(Handle throwable, outputStream* st) 
         throwable = Handle(THREAD, (oop) cause.get_jobject());
         if (throwable.not_null()) {
           st->print("Caused by: ");
-          print(throwable, st);
+          print(throwable(), st);
           st->cr();
         }
       }
@@ -2091,7 +2092,7 @@ void java_lang_Throwable::fill_in_stack_trace_of_preallocated_backtrace(Handle t
   ResourceMark rm(THREAD);
   vframeStream st(THREAD);
 
-  BacktraceBuilder bt(backtrace);
+  BacktraceBuilder bt(THREAD, backtrace);
 
   // Unlike fill_in_stack_trace we do not skip fillInStackTrace or throwable init
   // methods as preallocated errors aren't created by "java" code.
@@ -2230,7 +2231,7 @@ Method* java_lang_StackFrameInfo::get_method(Handle stackFrame, InstanceKlass* h
 
 void java_lang_StackFrameInfo::set_method_and_bci(Handle stackFrame, const methodHandle& method, int bci) {
   // set Method* or mid/cpref
-  oop mname = stackFrame->obj_field(_memberName_offset);
+  Handle mname(Thread::current(), stackFrame->obj_field(_memberName_offset));
   InstanceKlass* ik = method->method_holder();
   CallInfo info(method(), ik);
   MethodHandles::init_method_MemberName(mname, info);
@@ -3958,7 +3959,6 @@ bool JavaClasses::check_constant(const char *klass_name, int hardcoded_constant,
 
 void JavaClasses::check_offsets() {
   bool valid = true;
-  HandleMark hm;
 
 #define CHECK_OFFSET(klass_name, cpp_klass_name, field_name, field_sig) \
   valid &= check_offset(klass_name, cpp_klass_name :: field_name ## _offset, #field_name, field_sig)
