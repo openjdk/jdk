@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8175335
- * @summary Test Elements.getPackageOf
+ * @summary Test Types methods on module and package TypeMirrors
  * @author  Joseph D. Darcy
  * @library /tools/javac/lib
  * @modules jdk.compiler
