@@ -878,11 +878,16 @@ Java_sun_awt_windows_WFontMetrics_charsWidth(JNIEnv *env, jobject self,
 
     if (str == NULL) {
         JNU_ThrowNullPointerException(env, "str argument");
-        return NULL;
+        return 0;
     }
-    if ((len < 0) || (off < 0) || (len + off > (env->GetArrayLength(str)))) {
+    if ((len < 0) || (off < 0) || (len + off < 0) ||
+        (len + off > (env->GetArrayLength(str)))) {
         JNU_ThrowArrayIndexOutOfBoundsException(env, "off/len argument");
-        return NULL;
+        return 0;
+    }
+
+    if (off == env->GetArrayLength(str)) {
+        return 0;
     }
 
     jchar *strp = new jchar[len];
@@ -914,12 +919,18 @@ Java_sun_awt_windows_WFontMetrics_bytesWidth(JNIEnv *env, jobject self,
 
     if (str == NULL) {
         JNU_ThrowNullPointerException(env, "bytes argument");
-        return NULL;
+        return 0;
     }
-    if ((len < 0) || (off < 0) || (len + off > (env->GetArrayLength(str)))) {
+    if ((len < 0) || (off < 0) || (len + off < 0) ||
+        (len + off > (env->GetArrayLength(str)))) {
         JNU_ThrowArrayIndexOutOfBoundsException(env, "off or len argument");
-        return NULL;
+        return 0;
     }
+
+    if (off == env->GetArrayLength(str)) {
+        return 0;
+    }
+
     char *pStrBody = NULL;
     jint result = 0;
     try {
@@ -927,12 +938,12 @@ Java_sun_awt_windows_WFontMetrics_bytesWidth(JNIEnv *env, jobject self,
                                                          AwtFont::widthsID);
         if (array == NULL) {
             JNU_ThrowNullPointerException(env, "Can't access widths array.");
-            return NULL;
+            return 0;
         }
         pStrBody = (char *)env->GetPrimitiveArrayCritical(str, 0);
         if (pStrBody == NULL) {
             JNU_ThrowNullPointerException(env, "Can't access str bytes.");
-            return NULL;
+            return 0;
         }
         char *pStr = pStrBody + off;
 
@@ -942,7 +953,7 @@ Java_sun_awt_windows_WFontMetrics_bytesWidth(JNIEnv *env, jobject self,
             if (widths == NULL) {
                 env->ReleasePrimitiveArrayCritical(str, pStrBody, 0);
                 JNU_ThrowNullPointerException(env, "Can't access widths.");
-                return NULL;
+                return 0;
             }
             for (; len; len--) {
                 result += widths[*pStr++];
