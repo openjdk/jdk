@@ -2726,11 +2726,11 @@ void MacroAssembler::lookup_interface_method(Register           recv_klass,
   BLOCK_COMMENT("lookup_interface_method {");
 
   // Load start of itable entries into itable_entry_addr.
-  z_llgf(vtable_len, Address(recv_klass, InstanceKlass::vtable_length_offset()));
+  z_llgf(vtable_len, Address(recv_klass, Klass::vtable_length_offset()));
   z_sllg(vtable_len, vtable_len, exact_log2(vtableEntry::size_in_bytes()));
 
   // Loop over all itable entries until desired interfaceOop(Rinterface) found.
-  const int vtable_base_offset = in_bytes(InstanceKlass::vtable_start_offset());
+  const int vtable_base_offset = in_bytes(Klass::vtable_start_offset());
 
   add2reg_with_index(itable_entry_addr,
                      vtable_base_offset + itableOffsetEntry::interface_offset_in_bytes(),
