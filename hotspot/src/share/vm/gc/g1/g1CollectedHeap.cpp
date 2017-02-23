@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2363,11 +2363,6 @@ bool G1CollectedHeap::is_in_exact(const void* p) const {
   }
 }
 #endif
-
-bool G1CollectedHeap::obj_in_cs(oop obj) {
-  HeapRegion* r = _hrm.addr_to_region((HeapWord*) obj);
-  return r != NULL && r->in_collection_set();
-}
 
 // Iteration functions.
 
