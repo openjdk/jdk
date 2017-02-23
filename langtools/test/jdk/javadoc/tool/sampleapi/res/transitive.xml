@@ -22,9 +22,56 @@
  questions.
 -->
 <sampleapi>
-    <module name="UNNAMED">
-        <package name="sampleapi.simple.sub">
-            <class basename="SClass">
+    <module name="my.first.module" id="first">
+        <exports package="$exported"/>
+        <exports package="$exported.to">
+            <to module="$second"/>
+        </exports>
+        <opens package="$internal">
+            <to module="$second"/>
+        </opens>
+        <uses service="$service"/>
+        <package name="sampleapi.exported" id="exported">
+            <class basename="API" id="service">
+                <modifier>public</modifier>
+                <member>
+                    <method basename="get">
+                        <modifier>public</modifier>
+                        <type>Object</type>
+                    </method>
+                </member>
+            </class>
+        </package>
+        <package name="sampleapi.exported.to"  id="exported.to">
+            <class basename="API" id="baseclass">
+                <modifier>public</modifier>
+                <member>
+                    <method basename="put">
+                        <param>Object</param>
+                        <type>void</type>
+                    </method>
+                </member>
+            </class>
+        </package>
+        <package name="sampleapi.not.exported" id="internal">
+            <class basename="AnImplementationDetail"/>
+        </package>
+    </module>
+    <module name="my.second.module" id="second" kind="open">
+        <requires module="$first" transitive="true"/>
+        <requires module="java.xml" static="true"/>
+        <provides service="$service">
+            <implementation class="$second.impl"/>
+            <implementation class="$third.impl"/>
+        </provides>
+        <package name="sampleapi.exported.second">
+            <class basename="API" id="second.impl">
+                <extend id="baseclass"/>
+            </class>
+            <class basename="OtherAPI" id="third.impl">
+                <extend id="baseclass"/>
+            </class>
+            <class basename="TClass">
                 <modifier>public</modifier>
                 <modifier>none|abstract</modifier>
                 <implement>SInterface0</implement>
@@ -46,47 +93,6 @@
                     </method>
                 </member>
             </class>
-
-            <class basename="SException">
-                <modifier>public</modifier>
-                <extend ref="java.lang.Exception"/>
-                <member>
-                    <constructor>
-                        <modifier>public</modifier>
-                        <param>String</param>
-                    </constructor>
-                </member>
-            </class>
-
-            <interface basename="SInterface">
-                <modifier>public</modifier>
-                <member>
-                    <method basename="put">
-                        <modifier>public</modifier>
-                        <type>void</type>
-                        <param>int</param>
-                    </method>
-                </member>
-            </interface>
-
-            <enum basename="SEnum">
-                <modifier>public</modifier>
-                <member>
-                    <constant basename="ON" count="1"/>
-                    <constant basename="OFF" count="1"/>
-                </member>
-            </enum>
-
-            <annotation basename="SAnno">
-                <modifier>public</modifier>
-                <member>
-                    <method basename="value">
-                        <modifier>public</modifier>
-                        <type>boolean</type>
-                    </method>
-                </member>
-            </annotation>
         </package>
     </module>
 </sampleapi>
-
