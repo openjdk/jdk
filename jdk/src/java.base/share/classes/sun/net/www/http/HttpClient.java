@@ -963,7 +963,11 @@ public class HttpClient extends NetworkClient {
                 pi.setContentType(responses.findValue("content-type"));
             }
 
-            if (isKeepingAlive())   {
+            // If disableKeepAlive == true, the client will not be returned
+            // to the cache. But we still need to use a keepalive stream to
+            // allow the multi-message authentication exchange on the connection
+            boolean useKeepAliveStream = isKeepingAlive() || disableKeepAlive;
+            if (useKeepAliveStream)   {
                 // Wrap KeepAliveStream if keep alive is enabled.
                 logFinest("KeepAlive stream used: " + url);
                 serverInput = new KeepAliveStream(serverInput, pi, cl, this);
