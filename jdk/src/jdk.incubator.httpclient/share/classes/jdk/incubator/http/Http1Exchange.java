@@ -194,17 +194,11 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
     }
 
     CompletableFuture<Response> getResponseAsyncImpl(Executor executor) {
-        CompletableFuture<Response> cf = new MinimalFuture<>();
-        executor.execute(() -> {
-            try {
-                response = new Http1Response<>(connection, Http1Exchange.this);
-                response.readHeaders();
-                cf.complete(response.response());
-            } catch (Throwable e) {
-                cf.completeExceptionally(e);
-            }
-        });
-        return cf;
+        return MinimalFuture.supply( () -> {
+            response = new Http1Response<>(connection, Http1Exchange.this);
+            response.readHeaders();
+            return response.response();
+        }, executor);
     }
 
     @Override
