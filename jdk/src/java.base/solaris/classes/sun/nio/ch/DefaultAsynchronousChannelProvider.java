@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,28 +23,25 @@
  * questions.
  */
 
-/*
-* @test TestParNewCMS
-* @key gc
-* @bug 8065972
-* @summary Test that specifying -XX:+UseParNewGC on the command line logs a warning message
-* @library /test/lib
-* @modules java.base/jdk.internal.misc
-*          java.management
-*/
+package sun.nio.ch;
 
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
+import java.nio.channels.spi.AsynchronousChannelProvider;
 
+/**
+ * Creates this platform's default AsynchronousChannelProvider
+ */
 
-public class TestParNewCMS {
+public class DefaultAsynchronousChannelProvider {
 
-  public static void main(String args[]) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseParNewGC", "-XX:+UseConcMarkSweepGC", "-version");
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldContain("warning: Option UseParNewGC was deprecated in version");
-    output.shouldNotContain("error");
-    output.shouldHaveExitValue(0);
-  }
+    /**
+     * Prevent instantiation.
+     */
+    private DefaultAsynchronousChannelProvider() { }
 
+    /**
+     * Returns the default AsynchronousChannelProvider.
+     */
+    public static AsynchronousChannelProvider create() {
+        return new SolarisAsynchronousChannelProvider();
+    }
 }
