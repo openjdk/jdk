@@ -105,7 +105,7 @@ JLINK_ORDER_RESOURCES := **module-info.class
 JLINK_JLI_CLASSES :=
 ifeq ($(ENABLE_GENERATE_CLASSLIST), true)
   JLINK_ORDER_RESOURCES += @$(SUPPORT_OUTPUTDIR)/link_opt/classlist
-  JLINK_JLI_CLASSES := --generate-jli-classes=@$(SUPPORT_OUTPUTDIR)/link_opt/jli_trace.out
+  JLINK_JLI_CLASSES := --generate-jli-classes=@$(SUPPORT_OUTPUTDIR)/link_opt/default_jli_trace.txt
 endif
 JLINK_ORDER_RESOURCES += \
     /java.base/java/** \
