@@ -36,7 +36,7 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * A plain text socket tunnel through a proxy. Uses "CONNECT" but does not
- * encrypt. Used by WebSockets. Subclassed in SSLTunnelConnection for encryption.
+ * encrypt. Used by WebSocket. Subclassed in SSLTunnelConnection for encryption.
  */
 class PlainTunnelingConnection extends HttpConnection {
 
