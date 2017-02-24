@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -18,33 +18,23 @@
  *
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
- * questions.
  */
 
-/*
- * @test
- * @bug 6843127
- * @run main/othervm/timeout=300 BadKdc3
- * @summary krb5 should not try to access unavailable kdc too often
+/* @test
+ * @summary Verify no exception for unsupported code point.
+ * @bug 8172967
  */
+import java.awt.Font;
+import java.awt.font.FontRenderContext;
+import java.awt.font.TextLayout;
 
-import java.io.*;
-import java.security.Security;
-
-public class BadKdc3 {
-
-    public static void main(String[] args)
-            throws Exception {
-        Security.setProperty("krb5.kdc.bad.policy", "tryLast");
-        BadKdc.go(
-                "121212222222(32){2,4}", // 1 2
-                "(32){2,4}", // 1 2
-                // refresh
-                "121212222222(32){2,4}", // 1 2
-                // k3 off k2 on
-                "323232121212(22){2,4}", // 1 3
-                // k1 on
-                "(22){2,4}"  // 1 3
-        );
+public class MissingCodePointLayoutTest {
+    public static void main(String[] args) {
+        Font font = new Font("Tahoma", Font.PLAIN, 12);
+        String text = "\ude00";
+        FontRenderContext frc = new FontRenderContext(null, false, false);
+        TextLayout layout = new TextLayout(text, font, frc);
+        layout.getCaretShapes(0);
     }
 }
+

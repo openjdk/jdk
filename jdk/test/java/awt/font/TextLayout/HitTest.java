@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,29 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 6843127
- * @run main/othervm/timeout=300 BadKdc4
- * @summary krb5 should not try to access unavailable kdc too often
+/* @test
+ * @summary verify Hit index with supplementary characters.
+ * @bug 8173028
  */
 
-import java.io.*;
-import java.security.Security;
+import java.awt.Font;
+import java.awt.font.FontRenderContext;
+import java.awt.font.TextHitInfo;
+import java.awt.font.TextLayout;
 
-public class BadKdc4 {
+public class HitTest {
 
-    public static void main(String[] args)
-            throws Exception {
-        Security.setProperty("krb5.kdc.bad.policy", "");
-        BadKdc.go(
-            "121212222222(32){1,3}121212222222(32){1,3}",
-            "121212222222(32){1,3}121212222222(32){1,3}",
-            // refresh
-            "121212222222(32){1,3}121212222222(32){1,3}",
-            // k3 off k2 on
-            "121212(22){1,3}121212(22){1,3}",
-            // k1 on
-            "(12){2,4}"
-        );
-    }
+  public static void main(String args[]) {
+      String s = new String(new int[]{0x1d400, 0x61}, 0, 2);
+      Font font = new Font("Dialog", Font.PLAIN, 12);
+      FontRenderContext frc = new FontRenderContext(null, false, false);
+      TextLayout tl = new TextLayout(s, font, frc);
+      TextHitInfo currHit = TextHitInfo.beforeOffset(3);
+      TextHitInfo prevHit = tl.getNextLeftHit(currHit);
+      System.out.println("index=" + prevHit.getCharIndex()+
+                         " leading edge=" + prevHit.isLeadingEdge());
+      if (prevHit.getCharIndex() != 2) {
+          throw new RuntimeException("Expected 2 for hit index");
+      }
+   }
 }
