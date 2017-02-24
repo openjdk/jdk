@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1002,6 +1002,14 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         } else {
             return null;
         }
+    }
+
+    @Override @DefinedBy(Api.COMPILER)
+    public void setLocationForModule(Location location, String moduleName, Collection<? extends Path> paths)
+            throws IOException {
+        nullCheck(location);
+        checkModuleOrientedOrOutputLocation(location);
+        locations.setLocationForModule(location, nullCheck(moduleName), nullCheck(paths));
     }
 
     @Override @DefinedBy(Api.COMPILER)
