@@ -546,7 +546,11 @@ cmsBool  GrowNamedColorList(cmsNAMEDCOLORLIST* v)
         size = v ->Allocated * 2;
 
     // Keep a maximum color lists can grow, 100K entries seems reasonable
-    if (size > 1024*100) return FALSE;
+    if (size > 1024 * 100) {
+        _cmsFree(v->ContextID, (void*) v->List);
+        v->List = NULL;
+        return FALSE;
+    }
 
     NewPtr = (_cmsNAMEDCOLOR*) _cmsRealloc(v ->ContextID, v ->List, size * sizeof(_cmsNAMEDCOLOR));
     if (NewPtr == NULL)
@@ -568,8 +572,11 @@ cmsNAMEDCOLORLIST* CMSEXPORT cmsAllocNamedColorList(cmsContext ContextID, cmsUIn
     v ->nColors   = 0;
     v ->ContextID  = ContextID;
 
-    while (v -> Allocated < n){
-        if (!GrowNamedColorList(v)) return NULL;
+    while (v -> Allocated < n) {
+        if (!GrowNamedColorList(v)) {
+            _cmsFree(ContextID, (void*) v);
+            return NULL;
+        }
     }
 
     strncpy(v ->Prefix, Prefix, sizeof(v ->Prefix)-1);

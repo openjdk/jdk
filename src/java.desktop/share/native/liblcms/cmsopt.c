@@ -1483,6 +1483,7 @@ cmsBool OptimizeByJoiningCurves(cmsPipeline** Lut, cmsUInt32Number Intent, cmsUI
 
         // LUT optimizes to nothing. Set the identity LUT
         cmsStageFree(ObtainedCurves);
+        ObtainedCurves = NULL;
 
         if (!cmsPipelineInsertStage(Dest, cmsAT_BEGIN, cmsStageAllocIdentity(Dest ->ContextID, Src ->InputChannels)))
             goto Error;
