@@ -20,35 +20,39 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.tools.jaotc.collect;
 
-public class SearchFor {
-    private final String name;
-    private final String type;
+import jdk.test.lib.apps.LingeredApp;
 
-    public SearchFor(String name) {
-        this(name, "");
+interface Language {
+    static final long nbrOfWords = 99999;
+    public abstract long getNbrOfWords();
+}
+
+class ParselTongue implements Language {
+    public long getNbrOfWords() {
+        return nbrOfWords * 4;
     }
+}
 
-    public SearchFor(String name, String type) {
-        this.name = name;
-        this.type = type;
-    }
+public class LingeredAppWithInterface extends LingeredApp {
 
-    public boolean isUnknown() {
-        return "".equals(type);
-    }
+    public static void main(String args[]) {
+        ParselTongue lang = new ParselTongue();
+        Language muggleSpeak = new Language() {
+            public long getNbrOfWords() {
+                return nbrOfWords * 8;
+            }
+        };
 
-    public String getType() {
-        return this.type;
-    }
+        // Not tested at this point. The test needs to be enhanced
+        // later to test for the sizes of the Lambda MetaFactory
+        // generated anonymous classes too. (After JDK-8160228 gets
+        // fixed.)
+        Runnable r2 = () -> System.out.println("Hello world!");
+        r2.run();
 
-    public String getName() {
-        return this.name;
-    }
+        System.out.println(lang.getNbrOfWords() + muggleSpeak.getNbrOfWords());
 
-    @Override
-    public String toString() {
-        return type + ": " + name;
+        LingeredApp.main(args);
     }
 }
