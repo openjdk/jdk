@@ -755,9 +755,6 @@ USE_EXTERNAL_LIBPNG:=@USE_EXTERNAL_LIBPNG@
 PNG_LIBS:=@PNG_LIBS@
 PNG_CFLAGS:=@PNG_CFLAGS@
 
-ELF_CFLAGS:=@ELF_CFLAGS@
-ELF_LIBS:=@ELF_LIBS@
-
 ####################################################
 #
 # Misc
