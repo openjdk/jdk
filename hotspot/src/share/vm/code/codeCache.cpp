@@ -1310,6 +1310,8 @@ void CodeCache::verify() {
 }
 
 // A CodeHeap is full. Print out warning and report event.
+PRAGMA_DIAG_PUSH
+PRAGMA_FORMAT_NONLITERAL_IGNORED
 void CodeCache::report_codemem_full(int code_blob_type, bool print) {
   // Get nmethod heap for the given CodeBlobType and build CodeCacheFull event
   CodeHeap* heap = get_code_heap(code_blob_type);
@@ -1318,11 +1320,27 @@ void CodeCache::report_codemem_full(int code_blob_type, bool print) {
   if ((heap->full_count() == 0) || print) {
     // Not yet reported for this heap, report
     if (SegmentedCodeCache) {
-      warning("%s is full. Compiler has been disabled.", get_code_heap_name(code_blob_type));
-      warning("Try increasing the code heap size using -XX:%s=", get_code_heap_flag_name(code_blob_type));
+      ResourceMark rm;
+      stringStream msg1_stream, msg2_stream;
+      msg1_stream.print("%s is full. Compiler has been disabled.",
+                        get_code_heap_name(code_blob_type));
+      msg2_stream.print("Try increasing the code heap size using -XX:%s=",
+                 get_code_heap_flag_name(code_blob_type));
+      const char *msg1 = msg1_stream.as_string();
+      const char *msg2 = msg2_stream.as_string();
+
+      log_warning(codecache)(msg1);
+      log_warning(codecache)(msg2);
+      warning(msg1);
+      warning(msg2);
     } else {
-      warning("CodeCache is full. Compiler has been disabled.");
-      warning("Try increasing the code cache size using -XX:ReservedCodeCacheSize=");
+      const char *msg1 = "CodeCache is full. Compiler has been disabled.";
+      const char *msg2 = "Try increasing the code cache size using -XX:ReservedCodeCacheSize=";
+
+      log_warning(codecache)(msg1);
+      log_warning(codecache)(msg2);
+      warning(msg1);
+      warning(msg2);
     }
     ResourceMark rm;
     stringStream s;
@@ -1351,6 +1369,7 @@ void CodeCache::report_codemem_full(int code_blob_type, bool print) {
     event.commit();
   }
 }
+PRAGMA_DIAG_POP
 
 void CodeCache::print_memory_overhead() {
   size_t wasted_bytes = 0;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -650,7 +650,7 @@ Handle JVMCIRuntime::callStatic(const char* className, const char* methodName, c
   } else {
     JavaCalls::call_static(&result, klass, runtime, sig, args, CHECK_(Handle()));
   }
-  return Handle((oop)result.get_jobject());
+  return Handle(THREAD, (oop)result.get_jobject());
 }
 
 void JVMCIRuntime::initialize_HotSpotJVMCIRuntime(TRAPS) {
@@ -684,7 +684,7 @@ void JVMCIRuntime::initialize_HotSpotJVMCIRuntime(TRAPS) {
          "compilation level adjustment out of bounds");
   _comp_level_adjustment = (CompLevelAdjustment) adjustment;
   _HotSpotJVMCIRuntime_initialized = true;
-  _HotSpotJVMCIRuntime_instance = JNIHandles::make_global(result());
+  _HotSpotJVMCIRuntime_instance = JNIHandles::make_global(result);
 }
 
 void JVMCIRuntime::initialize_JVMCI(TRAPS) {
@@ -863,9 +863,9 @@ if (HAS_PENDING_EXCEPTION) { \
   JavaValue result(T_INT);
   JavaCallArguments args;
   args.push_oop(receiver);
-  args.push_oop(method->method_holder()->java_mirror());
-  args.push_oop(name());
-  args.push_oop(sig());
+  args.push_oop(Handle(THREAD, method->method_holder()->java_mirror()));
+  args.push_oop(name);
+  args.push_oop(sig);
   args.push_int(is_osr);
   args.push_int(level);
   JavaCalls::call_special(&result, receiver->klass(), vmSymbols::adjustCompilationLevel_name(),

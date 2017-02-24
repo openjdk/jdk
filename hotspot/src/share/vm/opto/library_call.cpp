@@ -387,8 +387,11 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
   // Try to inline the intrinsic.
   if ((CheckIntrinsics ? callee->intrinsic_candidate() : true) &&
       kit.try_to_inline(_last_predicate)) {
+    const char *inline_msg = is_virtual() ? "(intrinsic, virtual)"
+                                          : "(intrinsic)";
+    CompileTask::print_inlining_ul(callee, jvms->depth() - 1, bci, inline_msg);
     if (C->print_intrinsics() || C->print_inlining()) {
-      C->print_inlining(callee, jvms->depth() - 1, bci, is_virtual() ? "(intrinsic, virtual)" : "(intrinsic)");
+      C->print_inlining(callee, jvms->depth() - 1, bci, inline_msg);
     }
     C->gather_intrinsic_statistics(intrinsic_id(), is_virtual(), Compile::_intrinsic_worked);
     if (C->log()) {
@@ -404,22 +407,30 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
   }
 
   // The intrinsic bailed out
-  if (C->print_intrinsics() || C->print_inlining()) {
-    if (jvms->has_method()) {
-      // Not a root compile.
-      const char* msg;
-      if (callee->intrinsic_candidate()) {
-        msg = is_virtual() ? "failed to inline (intrinsic, virtual)" : "failed to inline (intrinsic)";
-      } else {
-        msg = is_virtual() ? "failed to inline (intrinsic, virtual), method not annotated"
-                           : "failed to inline (intrinsic), method not annotated";
-      }
-      C->print_inlining(callee, jvms->depth() - 1, bci, msg);
+  if (jvms->has_method()) {
+    // Not a root compile.
+    const char* msg;
+    if (callee->intrinsic_candidate()) {
+      msg = is_virtual() ? "failed to inline (intrinsic, virtual)" : "failed to inline (intrinsic)";
     } else {
-      // Root compile
-      tty->print("Did not generate intrinsic %s%s at bci:%d in",
-               vmIntrinsics::name_at(intrinsic_id()),
-               (is_virtual() ? " (virtual)" : ""), bci);
+      msg = is_virtual() ? "failed to inline (intrinsic, virtual), method not annotated"
+                         : "failed to inline (intrinsic), method not annotated";
+    }
+    CompileTask::print_inlining_ul(callee, jvms->depth() - 1, bci, msg);
+    if (C->print_intrinsics() || C->print_inlining()) {
+      C->print_inlining(callee, jvms->depth() - 1, bci, msg);
+    }
+  } else {
+    // Root compile
+    ResourceMark rm;
+    stringStream msg_stream;
+    msg_stream.print("Did not generate intrinsic %s%s at bci:%d in",
+                     vmIntrinsics::name_at(intrinsic_id()),
+                     is_virtual() ? " (virtual)" : "", bci);
+    const char *msg = msg_stream.as_string();
+    log_debug(jit, inlining)("%s", msg);
+    if (C->print_intrinsics() || C->print_inlining()) {
+      tty->print("%s", msg);
     }
   }
   C->gather_intrinsic_statistics(intrinsic_id(), is_virtual(), Compile::_intrinsic_failed);
@@ -445,8 +456,11 @@ Node* LibraryIntrinsic::generate_predicate(JVMState* jvms, int predicate) {
 
   Node* slow_ctl = kit.try_to_predicate(predicate);
   if (!kit.failing()) {
+    const char *inline_msg = is_virtual() ? "(intrinsic, virtual, predicate)"
+                                          : "(intrinsic, predicate)";
+    CompileTask::print_inlining_ul(callee, jvms->depth() - 1, bci, inline_msg);
     if (C->print_intrinsics() || C->print_inlining()) {
-      C->print_inlining(callee, jvms->depth() - 1, bci, is_virtual() ? "(intrinsic, virtual, predicate)" : "(intrinsic, predicate)");
+      C->print_inlining(callee, jvms->depth() - 1, bci, inline_msg);
     }
     C->gather_intrinsic_statistics(intrinsic_id(), is_virtual(), Compile::_intrinsic_worked);
     if (C->log()) {
@@ -459,16 +473,24 @@ Node* LibraryIntrinsic::generate_predicate(JVMState* jvms, int predicate) {
   }
 
   // The intrinsic bailed out
-  if (C->print_intrinsics() || C->print_inlining()) {
-    if (jvms->has_method()) {
-      // Not a root compile.
-      const char* msg = "failed to generate predicate for intrinsic";
+  if (jvms->has_method()) {
+    // Not a root compile.
+    const char* msg = "failed to generate predicate for intrinsic";
+    CompileTask::print_inlining_ul(kit.callee(), jvms->depth() - 1, bci, msg);
+    if (C->print_intrinsics() || C->print_inlining()) {
       C->print_inlining(kit.callee(), jvms->depth() - 1, bci, msg);
-    } else {
-      // Root compile
-      C->print_inlining_stream()->print("Did not generate predicate for intrinsic %s%s at bci:%d in",
-                                        vmIntrinsics::name_at(intrinsic_id()),
-                                        (is_virtual() ? " (virtual)" : ""), bci);
+    }
+  } else {
+    // Root compile
+    ResourceMark rm;
+    stringStream msg_stream;
+    msg_stream.print("Did not generate intrinsic %s%s at bci:%d in",
+                     vmIntrinsics::name_at(intrinsic_id()),
+                     is_virtual() ? " (virtual)" : "", bci);
+    const char *msg = msg_stream.as_string();
+    log_debug(jit, inlining)("%s", msg);
+    if (C->print_intrinsics() || C->print_inlining()) {
+      C->print_inlining_stream()->print("%s", msg);
     }
   }
   C->gather_intrinsic_statistics(intrinsic_id(), is_virtual(), Compile::_intrinsic_failed);

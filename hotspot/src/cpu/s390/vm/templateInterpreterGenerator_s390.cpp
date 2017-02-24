@@ -642,13 +642,6 @@ address TemplateInterpreterGenerator::generate_exception_handler_common(const ch
   return entry;
 }
 
-// Unused, should never pass by.
-address TemplateInterpreterGenerator::generate_continuation_for (TosState state) {
-  address entry = __ pc();
-  __ should_not_reach_here();
-  return entry;
-}
-
 address TemplateInterpreterGenerator::generate_return_entry_for (TosState state, int step, size_t index_size) {
   address entry = __ pc();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,8 +126,8 @@ public:
 };
 
 WB_ENTRY(jboolean, WB_IsClassAlive(JNIEnv* env, jobject target, jstring name))
-  Handle h_name = JNIHandles::resolve(name);
-  if (h_name.is_null()) return false;
+  oop h_name = JNIHandles::resolve(name);
+  if (h_name == NULL) return false;
   Symbol* sym = java_lang_String::as_symbol(h_name, CHECK_false);
   TempNewSymbol tsym(sym); // Make sure to decrement reference count on sym on return
 
@@ -1962,7 +1962,7 @@ JVM_ENTRY(void, JVM_RegisterWhiteBoxMethods(JNIEnv* env, jclass wbclass))
     if (WhiteBoxAPI) {
       // Make sure that wbclass is loaded by the null classloader
       instanceKlassHandle ikh = instanceKlassHandle(JNIHandles::resolve(wbclass)->klass());
-      Handle loader(ikh->class_loader());
+      Handle loader(THREAD, ikh->class_loader());
       if (loader.is_null()) {
         WhiteBox::register_methods(env, wbclass, thread, methods, sizeof(methods) / sizeof(methods[0]));
         WhiteBox::register_extended(env, wbclass, thread);

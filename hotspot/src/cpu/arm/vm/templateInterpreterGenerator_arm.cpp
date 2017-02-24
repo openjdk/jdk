@@ -270,12 +270,6 @@ address TemplateInterpreterGenerator::generate_exception_handler_common(const ch
   return entry;
 }
 
-address TemplateInterpreterGenerator::generate_continuation_for(TosState state) {
-  // Not used.
-  STOP("generate_continuation_for");
-  return NULL;
-}
-
 address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, int step, size_t index_size) {
   address entry = __ pc();
 

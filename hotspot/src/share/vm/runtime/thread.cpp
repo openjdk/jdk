@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1289,28 +1289,32 @@ void WatcherThread::run() {
     if (is_error_reported()) {
       // A fatal error has happened, the error handler(VMError::report_and_die)
       // should abort JVM after creating an error log file. However in some
-      // rare cases, the error handler itself might deadlock. Here we try to
-      // kill JVM if the fatal error handler fails to abort in 2 minutes.
-      //
+      // rare cases, the error handler itself might deadlock. Here periodically
+      // check for error reporting timeouts, and if it happens, just proceed to
+      // abort the VM.
+
       // This code is in WatcherThread because WatcherThread wakes up
       // periodically so the fatal error handler doesn't need to do anything;
       // also because the WatcherThread is less likely to crash than other
       // threads.
 
       for (;;) {
-        if (!ShowMessageBoxOnError
-            && (OnError == NULL || OnError[0] == '\0')
-            && Arguments::abort_hook() == NULL) {
-          os::sleep(this, (jlong)ErrorLogTimeout * 1000, false); // in seconds
+        // Note: we use naked sleep in this loop because we want to avoid using
+        // any kind of VM infrastructure which may be broken at this point.
+        if (VMError::check_timeout()) {
+          // We hit error reporting timeout. Error reporting was interrupted and
+          // will be wrapping things up now (closing files etc). Give it some more
+          // time, then quit the VM.
+          os::naked_short_sleep(200);
+          // Print a message to stderr.
           fdStream err(defaultStream::output_fd());
           err.print_raw_cr("# [ timer expired, abort... ]");
           // skip atexit/vm_exit/vm_abort hooks
           os::die();
         }
 
-        // Wake up 5 seconds later, the fatal handler may reset OnError or
-        // ShowMessageBoxOnError when it is ready to abort.
-        os::sleep(this, 5 * 1000, false);
+        // Wait a second, then recheck for timeout.
+        os::naked_short_sleep(999);
       }
     }
 
@@ -3717,7 +3721,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 #endif // INCLUDE_MANAGEMENT
 
   // Signal Dispatcher needs to be started before VMInit event is posted
-  os::signal_init();
+  os::signal_init(CHECK_JNI_ERR);
 
   // Start Attach Listener if +StartAttachListener or it can't be started lazily
   if (!DisableAttachMechanism) {

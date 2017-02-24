@@ -466,12 +466,6 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(TosState state, 
 }
 
 
-address TemplateInterpreterGenerator::generate_continuation_for(TosState state) {
-  address entry = __ pc();
-  __ dispatch_next(state);
-  return entry;
-}
-
 //
 // Helpers for commoning out cases in the various type of method entries.
 //

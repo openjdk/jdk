@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2012,7 +2012,7 @@ public:
     guarantee(G1CMObjArrayProcessor::is_array_slice(obj) || obj->is_oop(),
               "Non-oop " PTR_FORMAT ", phase: %s, info: %d",
               p2i(obj), _phase, _info);
-    guarantee(G1CMObjArrayProcessor::is_array_slice(obj) || !_g1h->obj_in_cs(obj),
+    guarantee(G1CMObjArrayProcessor::is_array_slice(obj) || !_g1h->is_in_cset(obj),
               "obj: " PTR_FORMAT " in CSet, phase: %s, info: %d",
               p2i(obj), _phase, _info);
   }

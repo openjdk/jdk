@@ -186,7 +186,7 @@ static void define_javabase_module(jobject module, jstring version,
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
               "Class loader must be the boot class loader");
   }
-  Handle h_loader = Handle(THREAD, loader);
+  Handle h_loader(THREAD, loader);
 
   // Ensure the boot loader's PackageEntryTable has been created
   PackageEntryTable* package_table = get_package_entry_table(h_loader, CHECK);
@@ -324,7 +324,7 @@ void Modules::define_module(jobject module, jstring version,
 
     // Only modules defined to either the boot or platform class loader, can define a "java/" package.
     if (!h_loader.is_null() &&
-        !SystemDictionary::is_platform_class_loader(h_loader) &&
+        !SystemDictionary::is_platform_class_loader(h_loader()) &&
         strncmp(package_name, JAVAPKG, JAVAPKG_LEN) == 0) {
       const char* class_loader_name = SystemDictionary::loader_name(h_loader());
       size_t pkg_len = strlen(package_name);
@@ -484,7 +484,7 @@ void Modules::set_bootloader_unnamed_module(jobject module, TRAPS) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
               "Class loader must be the boot class loader");
   }
-  Handle h_loader = Handle(THREAD, loader);
+  Handle h_loader(THREAD, loader);
 
   log_debug(modules)("set_bootloader_unnamed_module(): recording unnamed module for boot loader");
 

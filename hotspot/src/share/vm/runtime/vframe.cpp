@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,7 +155,8 @@ void javaVFrame::print_locked_object_class_name(outputStream* st, Handle obj, co
 }
 
 void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
-  ResourceMark rm;
+  Thread* THREAD = Thread::current();
+  ResourceMark rm(THREAD);
 
   // If this is the first frame and it is java.lang.Object.wait(...)
   // then print out the receiver. Locals are not always available,
@@ -201,8 +202,8 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
           // format below for lockbits matches this one.
           st->print("\t- eliminated <owner is scalar replaced> (a %s)", k->external_name());
         } else {
-          oop obj = monitor->owner();
-          if (obj != NULL) {
+          Handle obj(THREAD, monitor->owner());
+          if (obj() != NULL) {
             print_locked_object_class_name(st, obj, "eliminated");
           }
         }
@@ -252,7 +253,7 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
             mark = NULL;
           }
         }
-        print_locked_object_class_name(st, monitor->owner(), lock_state);
+        print_locked_object_class_name(st, Handle(THREAD, monitor->owner()), lock_state);
         if (ObjectMonitor::Knob_Verbose && mark != NULL) {
           st->print("\t- lockbits=");
           mark->print_on(st);
@@ -309,7 +310,7 @@ static StackValue* create_stack_value_from_oop_map(const InterpreterOopMap& oop_
   // categorize using oop_mask
   if (oop_mask.is_oop(index)) {
     // reference (oop) "r"
-    Handle h(addr != NULL ? (*(oop*)addr) : (oop)NULL);
+    Handle h(Thread::current(), addr != NULL ? (*(oop*)addr) : (oop)NULL);
     return new StackValue(h);
   }
   // value (integer) "v"

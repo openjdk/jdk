@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -522,10 +522,9 @@ bool ClassLoaderData::is_platform_class_loader_data() const {
 // (boot, application/system or platform) class loaders. Note, the
 // builtin loaders are not freed by a GC.
 bool ClassLoaderData::is_builtin_class_loader_data() const {
-  Handle classLoaderHandle = class_loader();
   return (is_the_null_class_loader_data() ||
-          SystemDictionary::is_system_class_loader(classLoaderHandle) ||
-          SystemDictionary::is_platform_class_loader(classLoaderHandle));
+          SystemDictionary::is_system_class_loader(class_loader()) ||
+          SystemDictionary::is_platform_class_loader(class_loader()));
 }
 
 Metaspace* ClassLoaderData::metaspace_non_null() {
@@ -627,7 +626,8 @@ void ClassLoaderData::free_deallocate_list() {
 // These anonymous class loaders are to contain classes used for JSR292
 ClassLoaderData* ClassLoaderData::anonymous_class_loader_data(oop loader, TRAPS) {
   // Add a new class loader data to the graph.
-  return ClassLoaderDataGraph::add(loader, true, THREAD);
+  Handle lh(THREAD, loader);
+  return ClassLoaderDataGraph::add(lh, true, THREAD);
 }
 
 const char* ClassLoaderData::loader_name() {
@@ -768,7 +768,7 @@ void ClassLoaderDataGraph::log_creation(Handle loader, ClassLoaderData* cld, TRA
                             vmSymbols::void_string_signature(),
                             CHECK);
     assert(result.get_type() == T_OBJECT, "just checking");
-    string = (oop)result.get_jobject();
+    string = Handle(THREAD, (oop)result.get_jobject());
   }
 
   ResourceMark rm;
