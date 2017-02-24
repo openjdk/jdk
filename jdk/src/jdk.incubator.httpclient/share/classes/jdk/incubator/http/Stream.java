@@ -148,7 +148,7 @@ class Stream<T> extends ExchangeImpl<T> {
 
     @Override
     CompletableFuture<T> readBodyAsync(HttpResponse.BodyHandler<T> handler,
-                                       boolean returnToCache,
+                                       boolean returnConnectionToPool,
                                        Executor executor)
     {
         Log.logTrace("Reading body on stream {0}", streamid);
@@ -166,11 +166,11 @@ class Stream<T> extends ExchangeImpl<T> {
     }
 
     @Override
-    T readBody(HttpResponse.BodyHandler<T> handler, boolean returnToCache)
+    T readBody(HttpResponse.BodyHandler<T> handler, boolean returnConnectionToPool)
         throws IOException
     {
         CompletableFuture<T> cf = readBodyAsync(handler,
-                                                returnToCache,
+                                                returnConnectionToPool,
                                                 null);
         try {
             return cf.join();
@@ -871,10 +871,10 @@ class Stream<T> extends ExchangeImpl<T> {
         @Override
         CompletableFuture<T> readBodyAsync(
                 HttpResponse.BodyHandler<T> handler,
-                boolean returnToCache,
+                boolean returnConnectionToPool,
                 Executor executor)
         {
-            return super.readBodyAsync(handler, returnToCache, executor)
+            return super.readBodyAsync(handler, returnConnectionToPool, executor)
                         .whenComplete((v, t) -> pushGroup.pushError(t));
         }
 

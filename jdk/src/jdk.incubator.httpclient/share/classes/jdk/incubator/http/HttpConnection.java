@@ -115,7 +115,7 @@ abstract class HttpConnection implements Closeable {
     }
 
     /* Returns either a plain HTTP connection or a plain tunnelling connection
-     * for proxied websockets */
+     * for proxied WebSocket */
     private static HttpConnection getPlainConnection(InetSocketAddress addr,
                                                      InetSocketAddress proxy,
                                                      HttpRequestImpl request,

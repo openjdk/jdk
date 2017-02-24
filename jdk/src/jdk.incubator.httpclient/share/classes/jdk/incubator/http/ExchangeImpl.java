@@ -117,11 +117,11 @@ abstract class ExchangeImpl<T> {
      */
     abstract Response getResponse() throws IOException;
 
-    abstract T readBody(HttpResponse.BodyHandler<T> handler, boolean returnToCache)
-            throws IOException;
+    abstract T readBody(HttpResponse.BodyHandler<T> handler,
+                        boolean returnConnectionToPool) throws IOException;
 
     abstract CompletableFuture<T> readBodyAsync(HttpResponse.BodyHandler<T> handler,
-                                                boolean returnToCache,
+                                                boolean returnConnectionToPool,
                                                 Executor executor);
 
     // Builtin processors need access to HttpClientImpl

@@ -88,14 +88,14 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
 
 
     @Override
-    T readBody(BodyHandler<T> handler, boolean returnToCache)
+    T readBody(BodyHandler<T> handler, boolean returnConnectionToPool)
         throws IOException
     {
         BodyProcessor<T> processor = handler.apply(response.responseCode(),
                                                    response.responseHeaders());
         setClientForResponse(processor);
         CompletableFuture<T> bodyCF = response.readBody(processor,
-                                                        returnToCache,
+                                                        returnConnectionToPool,
                                                         this::executeInline);
         try {
             return bodyCF.join();
@@ -114,14 +114,14 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
 
     @Override
     CompletableFuture<T> readBodyAsync(BodyHandler<T> handler,
-                                       boolean returnToCache,
+                                       boolean returnConnectionToPool,
                                        Executor executor)
     {
         BodyProcessor<T> processor = handler.apply(response.responseCode(),
                                                    response.responseHeaders());
         setClientForResponse(processor);
         CompletableFuture<T> bodyCF = response.readBody(processor,
-                                                        returnToCache,
+                                                        returnConnectionToPool,
                                                         executor);
         return bodyCF;
     }
