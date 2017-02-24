@@ -403,6 +403,8 @@ void NMethodSweeper::sweep_code_cache() {
   ResourceMark rm;
   Ticks sweep_start_counter = Ticks::now();
 
+  log_debug(codecache, sweep, start)("CodeCache flushing");
+
   int flushed_count                = 0;
   int zombified_count              = 0;
   int flushed_c2_count     = 0;
@@ -500,6 +502,10 @@ void NMethodSweeper::sweep_code_cache() {
   }
 #endif
 
+  Log(codecache, sweep) log;
+  if (log.is_debug()) {
+    CodeCache::print_summary(log.debug_stream(), false);
+  }
   log_sweep("finished");
 
   // Sweeper is the only case where memory is released, check here if it
@@ -513,6 +519,7 @@ void NMethodSweeper::sweep_code_cache() {
   // cache. As a result, 'freed_memory' > 0 to restart the compiler.
   if (!CompileBroker::should_compile_new_jobs() && (freed_memory > 0)) {
     CompileBroker::set_should_compile_new_jobs(CompileBroker::run_compilation);
+    log.debug("restart compiler");
     log_sweep("restart_compiler");
   }
 }

@@ -549,9 +549,9 @@ JVM_ENTRY(jobject, JVM_CallStackWalk(JNIEnv *env, jobject stackStream, jlong mod
     THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(), "not enough space in buffers", NULL);
   }
 
-  Handle result = StackWalk::walk(stackStream_h, mode, skip_frames, frame_count,
-                                  start_index, frames_array_h, CHECK_NULL);
-  return JNIHandles::make_local(env, result());
+  oop result = StackWalk::walk(stackStream_h, mode, skip_frames, frame_count,
+                               start_index, frames_array_h, CHECK_NULL);
+  return JNIHandles::make_local(env, result);
 JVM_END
 
 
@@ -684,7 +684,7 @@ JVM_ENTRY(jobject, JVM_Clone(JNIEnv* env, jobject handle))
       // This can safepoint and redefine method, so need both new_obj and method
       // in a handle, for two different reasons.  new_obj can move, method can be
       // deleted if nothing is using it on the stack.
-      m->method_holder()->add_member_name(new_obj());
+      m->method_holder()->add_member_name(new_obj);
     }
   }
 

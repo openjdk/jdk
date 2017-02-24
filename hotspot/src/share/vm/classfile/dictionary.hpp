@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,7 +128,7 @@ public:
   // Sharing support
   void reorder_dictionary();
 
-  ProtectionDomainCacheEntry* cache_get(oop protection_domain);
+  ProtectionDomainCacheEntry* cache_get(Handle protection_domain);
 
   void print(bool details = true);
 #ifdef ASSERT
@@ -194,23 +194,23 @@ private:
     return (ProtectionDomainCacheEntry**) Hashtable<oop, mtClass>::bucket_addr(i);
   }
 
-  ProtectionDomainCacheEntry* new_entry(unsigned int hash, oop protection_domain) {
-    ProtectionDomainCacheEntry* entry = (ProtectionDomainCacheEntry*) Hashtable<oop, mtClass>::new_entry(hash, protection_domain);
+  ProtectionDomainCacheEntry* new_entry(unsigned int hash, Handle protection_domain) {
+    ProtectionDomainCacheEntry* entry = (ProtectionDomainCacheEntry*) Hashtable<oop, mtClass>::new_entry(hash, protection_domain());
     entry->init();
     return entry;
   }
 
-  static unsigned int compute_hash(oop protection_domain);
+  static unsigned int compute_hash(Handle protection_domain);
 
-  int index_for(oop protection_domain);
-  ProtectionDomainCacheEntry* add_entry(int index, unsigned int hash, oop protection_domain);
-  ProtectionDomainCacheEntry* find_entry(int index, oop protection_domain);
+  int index_for(Handle protection_domain);
+  ProtectionDomainCacheEntry* add_entry(int index, unsigned int hash, Handle protection_domain);
+  ProtectionDomainCacheEntry* find_entry(int index, Handle protection_domain);
 
 public:
 
   ProtectionDomainCacheTable(int table_size);
 
-  ProtectionDomainCacheEntry* get(oop protection_domain);
+  ProtectionDomainCacheEntry* get(Handle protection_domain);
   void free(ProtectionDomainCacheEntry* entry);
 
   void unlink(BoolObjectClosure* cl);
@@ -275,7 +275,7 @@ class DictionaryEntry : public HashtableEntry<Klass*, mtClass> {
   // Tells whether a protection is in the approved set.
   bool contains_protection_domain(oop protection_domain) const;
   // Adds a protection domain to the approved set.
-  void add_protection_domain(Dictionary* dict, oop protection_domain);
+  void add_protection_domain(Dictionary* dict, Handle protection_domain);
 
   Klass* klass() const { return (Klass*)literal(); }
   Klass** klass_addr() { return (Klass**)literal_addr(); }

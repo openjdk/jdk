@@ -935,6 +935,9 @@ public:
   notproduct(bool, TestSafeFetchInErrorHandler, false,                      \
           "If true, tests SafeFetch inside error handler.")                 \
                                                                             \
+  notproduct(bool, TestUnresponsiveErrorHandler, false,                     \
+          "If true, simulates an unresponsive error handler.")              \
+                                                                            \
   develop(bool, Verbose, false,                                             \
           "Print additional debugging information from other modes")        \
                                                                             \

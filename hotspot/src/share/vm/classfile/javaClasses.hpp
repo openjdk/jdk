@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,7 +155,7 @@ class java_lang_String : AllStatic {
   static Handle internalize_classname(Handle java_string, TRAPS) { return char_converter(java_string, '.', '/', THREAD); }
 
   // Conversion
-  static Symbol* as_symbol(Handle java_string, TRAPS);
+  static Symbol* as_symbol(oop java_string, TRAPS);
   static Symbol* as_symbol_or_null(oop java_string);
 
   // Testers
@@ -457,7 +457,7 @@ class java_lang_Throwable: AllStatic {
     trace_methods_offset = 0,
     trace_bcis_offset    = 1,
     trace_mirrors_offset = 2,
-    trace_cprefs_offset  = 3,
+    trace_names_offset   = 3,
     trace_next_offset    = 4,
     trace_size           = 5,
     trace_chunk_size     = 32
@@ -485,7 +485,7 @@ class java_lang_Throwable: AllStatic {
   static int get_backtrace_offset() { return backtrace_offset;}
   static int get_detailMessage_offset() { return detailMessage_offset;}
   // Message
-  static oop message(Handle throwable);
+  static oop message(oop throwable);
   static void set_message(oop throwable, oop value);
   static Symbol* detail_message(oop throwable);
   static void print_stack_element(outputStream *st, const methodHandle& method, int bci);
@@ -503,7 +503,7 @@ class java_lang_Throwable: AllStatic {
   // Programmatic access to stack trace
   static void get_stack_trace_elements(Handle throwable, objArrayHandle stack_trace, TRAPS);
   // Printing
-  static void print(Handle throwable, outputStream* st);
+  static void print(oop throwable, outputStream* st);
   static void print_stack_trace(Handle throwable, outputStream* st);
   static void java_printStackTrace(Handle throwable, TRAPS);
   // Debugging
@@ -1322,7 +1322,7 @@ class java_lang_StackTraceElement: AllStatic {
   static oop create(const methodHandle& method, int bci, TRAPS);
 
   static void fill_in(Handle element, InstanceKlass* holder, const methodHandle& method,
-                      int version, int bci, int cpref, TRAPS);
+                      int version, int bci, Symbol* name, TRAPS);
 
   // Debugging
   friend class JavaClasses;

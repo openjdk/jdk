@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,9 +55,6 @@
 #include "utilities/events.hpp"
 
 class HeapRegion;
-
-bool G1MarkSweep::_archive_check_enabled = false;
-G1ArchiveRegionMap G1MarkSweep::_archive_region_map;
 
 void G1MarkSweep::invoke_at_safepoint(ReferenceProcessor* rp,
                                       bool clear_all_softrefs) {
@@ -312,26 +309,6 @@ void G1MarkSweep::mark_sweep_phase4() {
   G1SpaceCompactClosure blk;
   g1h->heap_region_iterate(&blk);
 
-}
-
-void G1MarkSweep::enable_archive_object_check() {
-  assert(!_archive_check_enabled, "archive range check already enabled");
-  _archive_check_enabled = true;
-  size_t length = Universe::heap()->max_capacity();
-  _archive_region_map.initialize((HeapWord*)Universe::heap()->base(),
-                                 (HeapWord*)Universe::heap()->base() + length,
-                                 HeapRegion::GrainBytes);
-}
-
-void G1MarkSweep::set_range_archive(MemRegion range, bool is_archive) {
-  assert(_archive_check_enabled, "archive range check not enabled");
-  _archive_region_map.set_by_address(range, is_archive);
-}
-
-bool G1MarkSweep::in_archive_range(oop object) {
-  // This is the out-of-line part of is_archive_object test, done separately
-  // to avoid additional performance impact when the check is not enabled.
-  return _archive_region_map.get_by_address((HeapWord*)object);
 }
 
 void G1MarkSweep::prepare_compaction_work(G1PrepareCompactClosure* blk) {

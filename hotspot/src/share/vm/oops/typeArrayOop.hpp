@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,19 +122,19 @@ class typeArrayOopDesc : public arrayOopDesc {
   jbyte byte_at_acquire(int which) const              { return OrderAccess::load_acquire(byte_at_addr(which)); }
   void release_byte_at_put(int which, jbyte contents) { OrderAccess::release_store(byte_at_addr(which), contents); }
 
-  // Java thinks metadata arrays are just arrays of either long or int, since
+  // Java thinks Symbol arrays are just arrays of either long or int, since
   // there doesn't seem to be T_ADDRESS, so this is a bit of unfortunate
   // casting
 #ifdef _LP64
-  Metadata* metadata_at(int which) const {
-    return (Metadata*)*long_at_addr(which); }
-  void metadata_at_put(int which, Metadata* contents) {
+  Symbol* symbol_at(int which) const {
+    return (Symbol*)*long_at_addr(which); }
+  void symbol_at_put(int which, Symbol* contents) {
     *long_at_addr(which) = (jlong)contents;
   }
 #else
-  Metadata* metadata_at(int which) const {
-    return (Metadata*)*int_at_addr(which); }
-  void metadata_at_put(int which, Metadata* contents) {
+  Symbol* symbol_at(int which) const {
+    return (Symbol*)*int_at_addr(which); }
+  void symbol_at_put(int which, Symbol* contents) {
     *int_at_addr(which) = (int)contents;
   }
 #endif // _LP64

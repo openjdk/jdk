@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,7 +114,7 @@ inline void G1ParPushHeapRSClosure::do_oop_nv(T* p) {
     } else if (state.is_ext()) {
       _par_scan_state->do_oop_ext(p);
     } else {
-      assert(!_g1->obj_in_cs(obj), "checking");
+      assert(!_g1->is_in_cset(obj), "checking");
     }
   }
 }
