@@ -28,8 +28,8 @@ package java.awt.desktop;
  * Event sent when the displays attached to the system enter and exit power save
  * sleep.
  *
- * @see ScreenSleepListener#screenAboutToSleep(AppEvent.ScreenSleepEvent)
- * @see ScreenSleepListener#screenAwoke(AppEvent.ScreenSleepEvent)
+ * @see ScreenSleepListener#screenAboutToSleep(ScreenSleepEvent)
+ * @see ScreenSleepListener#screenAwoke(ScreenSleepEvent)
  *
  * @since 9
  */
