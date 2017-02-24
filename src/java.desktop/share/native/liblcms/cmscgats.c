@@ -900,7 +900,7 @@ void InSymbol(cmsIT8* it8)
             k = 0;
             NextCh(it8);
 
-            while (k < MAXSTR && it8->ch != sng) {
+            while (k < (MAXSTR-1) && it8->ch != sng) {
 
                 if (it8->ch == '\n'|| it8->ch == '\r') k = MAXSTR+1;
                 else {
@@ -2053,14 +2053,18 @@ cmsBool HeaderSection(cmsIT8* it8)
 static
 void ReadType(cmsIT8* it8, char* SheetTypePtr)
 {
+    cmsInt32Number cnt = 0;
+
     // First line is a very special case.
 
     while (isseparator(it8->ch))
             NextCh(it8);
 
-    while (it8->ch != '\r' && it8 ->ch != '\n' && it8->ch != '\t' && it8 -> ch != -1) {
+    while (it8->ch != '\r' && it8 ->ch != '\n' && it8->ch != '\t' && it8 -> ch != 0) {
 
         *SheetTypePtr++= (char) it8 ->ch;
+        if (cnt++ < MAXSTR)
+            *SheetTypePtr++= (char) it8 ->ch;
         NextCh(it8);
     }
 
@@ -2253,7 +2257,7 @@ void CookPointers(cmsIT8* it8)
 // that should be something like some printable characters plus a \n
 // returns 0 if this is not like a CGATS, or an integer otherwise. This integer is the number of words in first line?
 static
-int IsMyBlock(cmsUInt8Number* Buffer, int n)
+int IsMyBlock(const cmsUInt8Number* Buffer, int n)
 {
     int words = 1, space = 0, quot = 0;
     int i;
@@ -2317,7 +2321,7 @@ cmsBool IsMyFile(const char* FileName)
 // ---------------------------------------------------------- Exported routines
 
 
-cmsHANDLE  CMSEXPORT cmsIT8LoadFromMem(cmsContext ContextID, void *Ptr, cmsUInt32Number len)
+cmsHANDLE  CMSEXPORT cmsIT8LoadFromMem(cmsContext ContextID, const void *Ptr, cmsUInt32Number len)
 {
     cmsHANDLE hIT8;
     cmsIT8*  it8;
@@ -2326,7 +2330,7 @@ cmsHANDLE  CMSEXPORT cmsIT8LoadFromMem(cmsContext ContextID, void *Ptr, cmsUInt3
     _cmsAssert(Ptr != NULL);
     _cmsAssert(len != 0);
 
-    type = IsMyBlock((cmsUInt8Number*)Ptr, len);
+    type = IsMyBlock((const cmsUInt8Number*)Ptr, len);
     if (type == 0) return NULL;
 
     hIT8 = cmsIT8Alloc(ContextID);
