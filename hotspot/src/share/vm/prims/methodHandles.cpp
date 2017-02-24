@@ -176,7 +176,7 @@ oop MethodHandles::init_MemberName(Handle mname, Handle target) {
   return NULL;
 }
 
-oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
+oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info, bool intern) {
   assert(info.resolved_appendix().is_null(), "only normal methods here");
   methodHandle m = info.resolved_method();
   assert(m.not_null(), "null method handle");
@@ -277,13 +277,7 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
   // If relevant, the vtable or itable value is stored as vmindex.
   // This is done eagerly, since it is readily available without
   // constructing any new objects.
-  // TO DO: maybe intern mname_oop
-  if (m->method_holder()->add_member_name(mname)) {
-    return mname();
-  } else {
-    // Redefinition caused this to fail.  Return NULL (and an exception?)
-    return NULL;
-  }
+  return m->method_holder()->add_member_name(mname, intern);
 }
 
 oop MethodHandles::init_field_MemberName(Handle mname, fieldDescriptor& fd, bool is_setter) {
@@ -973,7 +967,9 @@ int MethodHandles::find_MemberNames(KlassHandle k,
         if (!java_lang_invoke_MemberName::is_instance(result()))
           return -99;  // caller bug!
         CallInfo info(m);
-        oop saved = MethodHandles::init_method_MemberName(result, info);
+        // Since this is going through the methods to create MemberNames, don't search
+        // for matching methods already in the table
+        oop saved = MethodHandles::init_method_MemberName(result, info, /*intern*/false);
         if (saved != result())
           results->obj_at_put(rfill-1, saved);  // show saved instance to user
       } else if (++overflow >= overflow_limit) {
@@ -1054,9 +1050,34 @@ MemberNameTable::~MemberNameTable() {
   }
 }
 
-void MemberNameTable::add_member_name(jweak mem_name_wref) {
+oop MemberNameTable::add_member_name(jweak mem_name_wref) {
   assert_locked_or_safepoint(MemberNameTable_lock);
   this->push(mem_name_wref);
+  return JNIHandles::resolve(mem_name_wref);
+}
+
+oop MemberNameTable::find_or_add_member_name(jweak mem_name_wref) {
+  assert_locked_or_safepoint(MemberNameTable_lock);
+  oop new_mem_name = JNIHandles::resolve(mem_name_wref);
+
+  // Find matching member name in the list.
+  // This is linear because these are short lists.
+  int len = this->length();
+  int new_index = len;
+  for (int idx = 0; idx < len; idx++) {
+    oop mname = JNIHandles::resolve(this->at(idx));
+    if (mname == NULL) {
+      new_index = idx;
+      continue;
+    }
+    if (java_lang_invoke_MemberName::equals(new_mem_name, mname)) {
+      JNIHandles::destroy_weak_global(mem_name_wref);
+      return mname;
+    }
+  }
+  // Not found, push the new one, or reuse empty slot
+  this->at_put_grow(new_index, mem_name_wref);
+  return new_mem_name;
 }
 
 #if INCLUDE_JVMTI
