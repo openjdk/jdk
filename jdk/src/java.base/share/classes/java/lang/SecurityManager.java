@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,30 @@
 
 package java.lang;
 
-import java.security.*;
+import java.lang.RuntimePermission;
+import java.lang.module.ModuleDescriptor;
+import java.lang.module.ModuleDescriptor.Exports;
+import java.lang.module.ModuleDescriptor.Opens;
+import java.lang.reflect.Layer;
+import java.lang.reflect.Member;
+import java.lang.reflect.Module;
 import java.io.FileDescriptor;
 import java.io.File;
 import java.io.FilePermission;
-import java.util.PropertyPermission;
-import java.lang.RuntimePermission;
-import java.net.SocketPermission;
-import java.net.NetPermission;
-import java.util.Hashtable;
 import java.net.InetAddress;
-import java.lang.reflect.*;
-import java.net.URL;
+import java.net.SocketPermission;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.Permission;
+import java.security.PrivilegedAction;
+import java.security.Security;
+import java.security.SecurityPermission;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.PropertyPermission;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import jdk.internal.reflect.CallerSensitive;
 import sun.security.util.SecurityConstants;
@@ -1415,46 +1427,120 @@ class SecurityManager {
             }
         }
 
-        if (packages == null)
+        if (packages == null) {
             packages = new String[0];
+        }
         return packages;
     }
 
+    // The non-exported packages of the modules in the boot layer that are
+    // loaded by the platform class loader or its ancestors. A non-exported
+    // package is a package that either is not exported at all by its containing
+    // module or is exported in a qualified fashion by its containing module.
+    private static final Set<String> nonExportedPkgs;
+
+    static {
+        // Get the modules in the boot layer
+        Stream<Module> bootLayerModules = Layer.boot().modules().stream();
+
+        // Filter out the modules loaded by the boot or platform loader
+        PrivilegedAction<Set<Module>> pa = () ->
+            bootLayerModules.filter(SecurityManager::isBootOrPlatformModule)
+                            .collect(Collectors.toSet());
+        Set<Module> modules = AccessController.doPrivileged(pa);
+
+        // Filter out the non-exported packages
+        nonExportedPkgs = modules.stream()
+                                 .map(Module::getDescriptor)
+                                 .map(SecurityManager::nonExportedPkgs)
+                                 .flatMap(Set::stream)
+                                 .collect(Collectors.toSet());
+    }
+
     /**
-     * Throws a <code>SecurityException</code> if the
-     * calling thread is not allowed to access the package specified by
-     * the argument.
+     * Called by java.security.Security
+     */
+    static void invalidatePackageAccessCache() {
+        synchronized (packageAccessLock) {
+            packageAccessValid = false;
+        }
+        synchronized (packageDefinitionLock) {
+            packageDefinitionValid = false;
+        }
+    }
+
+    /**
+     * Returns true if the module's loader is the boot or platform loader.
+     */
+    private static boolean isBootOrPlatformModule(Module m) {
+        return m.getClassLoader() == null ||
+               m.getClassLoader() == ClassLoader.getPlatformClassLoader();
+    }
+
+    /**
+     * Returns the non-exported packages of the specified module.
+     */
+    private static Set<String> nonExportedPkgs(ModuleDescriptor md) {
+        // start with all packages in the module
+        Set<String> pkgs = new HashSet<>(md.packages());
+
+        // remove the non-qualified exported packages
+        md.exports().stream()
+                    .filter(p -> !p.isQualified())
+                    .map(Exports::source)
+                    .forEach(pkgs::remove);
+
+        // remove the non-qualified open packages
+        md.opens().stream()
+                  .filter(p -> !p.isQualified())
+                  .map(Opens::source)
+                  .forEach(pkgs::remove);
+
+        return pkgs;
+    }
+
+    /**
+     * Throws a {@code SecurityException} if the calling thread is not allowed
+     * to access the specified package.
      * <p>
-     * This method is used by the <code>loadClass</code> method of class
-     * loaders.
+     * This method is called by the {@code loadClass} method of class loaders.
      * <p>
-     * This method first gets a list of
-     * restricted packages by obtaining a comma-separated list from
-     * a call to
-     * <code>java.security.Security.getProperty("package.access")</code>,
-     * and checks to see if <code>pkg</code> starts with or equals
-     * any of the restricted packages. If it does, then
-     * <code>checkPermission</code> gets called with the
-     * <code>RuntimePermission("accessClassInPackage."+pkg)</code>
-     * permission.
+     * This method checks if the specified package starts with or equals
+     * any of the packages in the {@code package.access} Security Property.
+     * An implementation may also check the package against an additional
+     * list of restricted packages as noted below. If the package is restricted,
+     * {@link #checkPermission(Permission)} is called with a
+     * {@code RuntimePermission("accessClassInPackage."+pkg)} permission.
      * <p>
-     * If this method is overridden, then
-     * <code>super.checkPackageAccess</code> should be called
-     * as the first line in the overridden method.
+     * If this method is overridden, then {@code super.checkPackageAccess}
+     * should be called as the first line in the overridden method.
+     *
+     * @implNote
+     * This implementation also restricts all non-exported packages of modules
+     * loaded by {@linkplain ClassLoader#getPlatformClassLoader
+     * the platform class loader} or its ancestors. A "non-exported package"
+     * refers to a package that is not exported to all modules. Specifically,
+     * it refers to a package that either is not exported at all by its
+     * containing module or is exported in a qualified fashion by its
+     * containing module.
      *
      * @param      pkg   the package name.
-     * @exception  SecurityException  if the calling thread does not have
+     * @throws     SecurityException  if the calling thread does not have
      *             permission to access the specified package.
-     * @exception  NullPointerException if the package name argument is
-     *             <code>null</code>.
-     * @see        java.lang.ClassLoader#loadClass(java.lang.String, boolean)
-     *  loadClass
+     * @throws     NullPointerException if the package name argument is
+     *             {@code null}.
+     * @see        java.lang.ClassLoader#loadClass(String, boolean) loadClass
      * @see        java.security.Security#getProperty getProperty
-     * @see        #checkPermission(java.security.Permission) checkPermission
+     * @see        #checkPermission(Permission) checkPermission
      */
     public void checkPackageAccess(String pkg) {
-        if (pkg == null) {
-            throw new NullPointerException("package name can't be null");
+        Objects.requireNonNull(pkg, "package name can't be null");
+
+        // check if pkg is not exported to all modules
+        if (nonExportedPkgs.contains(pkg)) {
+            checkPermission(
+                new RuntimePermission("accessClassInPackage." + pkg));
+            return;
         }
 
         String[] restrictedPkgs;
@@ -1512,36 +1598,48 @@ class SecurityManager {
     }
 
     /**
-     * Throws a <code>SecurityException</code> if the
-     * calling thread is not allowed to define classes in the package
-     * specified by the argument.
+     * Throws a {@code SecurityException} if the calling thread is not
+     * allowed to define classes in the specified package.
      * <p>
-     * This method is used by the <code>loadClass</code> method of some
+     * This method is called by the {@code loadClass} method of some
      * class loaders.
      * <p>
-     * This method first gets a list of restricted packages by
-     * obtaining a comma-separated list from a call to
-     * <code>java.security.Security.getProperty("package.definition")</code>,
-     * and checks to see if <code>pkg</code> starts with or equals
-     * any of the restricted packages. If it does, then
-     * <code>checkPermission</code> gets called with the
-     * <code>RuntimePermission("defineClassInPackage."+pkg)</code>
-     * permission.
+     * This method checks if the specified package starts with or equals
+     * any of the packages in the {@code package.definition} Security
+     * Property. An implementation may also check the package against an
+     * additional list of restricted packages as noted below. If the package
+     * is restricted, {@link #checkPermission(Permission)} is called with a
+     * {@code RuntimePermission("defineClassInPackage."+pkg)} permission.
      * <p>
-     * If this method is overridden, then
-     * <code>super.checkPackageDefinition</code> should be called
-     * as the first line in the overridden method.
+     * If this method is overridden, then {@code super.checkPackageDefinition}
+     * should be called as the first line in the overridden method.
+     *
+     * @implNote
+     * This implementation also restricts all non-exported packages of modules
+     * loaded by {@linkplain ClassLoader#getPlatformClassLoader
+     * the platform class loader} or its ancestors. A "non-exported package"
+     * refers to a package that is not exported to all modules. Specifically,
+     * it refers to a package that either is not exported at all by its
+     * containing module or is exported in a qualified fashion by its
+     * containing module.
      *
      * @param      pkg   the package name.
-     * @exception  SecurityException  if the calling thread does not have
+     * @throws     SecurityException  if the calling thread does not have
      *             permission to define classes in the specified package.
-     * @see        java.lang.ClassLoader#loadClass(java.lang.String, boolean)
+     * @throws     NullPointerException if the package name argument is
+     *             {@code null}.
+     * @see        java.lang.ClassLoader#loadClass(String, boolean)
      * @see        java.security.Security#getProperty getProperty
-     * @see        #checkPermission(java.security.Permission) checkPermission
+     * @see        #checkPermission(Permission) checkPermission
      */
     public void checkPackageDefinition(String pkg) {
-        if (pkg == null) {
-            throw new NullPointerException("package name can't be null");
+        Objects.requireNonNull(pkg, "package name can't be null");
+
+        // check if pkg is not exported to all modules
+        if (nonExportedPkgs.contains(pkg)) {
+            checkPermission(
+                new RuntimePermission("defineClassInPackage." + pkg));
+            return;
         }
 
         String[] pkgs;

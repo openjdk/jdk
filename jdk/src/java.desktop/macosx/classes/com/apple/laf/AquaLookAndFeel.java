@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,7 +248,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
      */
     private void initResourceBundle(final UIDefaults table) {
         table.setDefaultLocale(Locale.getDefault());
-        table.addResourceBundle(PKG_PREFIX + "resources.aqua");
+        SwingAccessor.getUIDefaultsAccessor().addInternalBundle(table,
+                PKG_PREFIX + "resources.aqua");
         try {
             final ResourceBundle aquaProperties = ResourceBundle.getBundle(PKG_PREFIX + "resources.aqua");
             final Enumeration<String> propertyKeys = aquaProperties.getKeys();

@@ -53,7 +53,7 @@ endif
 
 ################################################################################
 
-ifneq ($(BUILD_CRYPTO), no)
+ifneq ($(BUILD_CRYPTO), false)
   BUILD_LIBKRB5_NAME :=
   ifeq ($(OPENJDK_TARGET_OS), windows)
     BUILD_LIBKRB5_NAME := w2k_lsa_auth

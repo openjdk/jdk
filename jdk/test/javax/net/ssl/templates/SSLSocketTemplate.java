@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,22 @@
 /*
  * @test
  * @bug 8161106 8170329
+ * @modules jdk.crypto.ec
  * @summary Improve SSLSocket test template
  * @run main/othervm SSLSocketTemplate
  */
-import java.io.*;
-import javax.net.ssl.*;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManagerFactory;
 import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
 import java.security.KeyStore;
@@ -41,7 +52,7 @@ import java.security.PrivateKey;
 import java.security.KeyFactory;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
-import java.security.spec.*;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
 
 import java.util.concurrent.CountDownLatch;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -37,6 +37,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
 import java.io.Serializable;
+import java.lang.RuntimePermission;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
@@ -45,7 +46,11 @@ import java.lang.module.ModuleReader;
 import java.lang.reflect.Layer;
 import java.lang.reflect.Module;
 import java.security.AccessController;
+import java.security.CodeSigner;
+import java.security.CodeSource;
+import java.security.PermissionCollection;
 import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -177,6 +182,7 @@ public final class TemplatesImpl implements Templates, Serializable {
             _loadedExternalExtensionFunctions = mapEF;
         }
 
+        @Override
         public Class<?> loadClass(String name) throws ClassNotFoundException {
             Class<?> ret = null;
             // The _loadedExternalExtensionFunctions will be empty when the
@@ -195,6 +201,10 @@ public final class TemplatesImpl implements Templates, Serializable {
          */
         Class defineClass(final byte[] b) {
             return defineClass(null, b, 0, b.length);
+        }
+
+        Class defineClass(final byte[] b, ProtectionDomain pd) {
+            return defineClass(null, b, 0, b.length, pd);
         }
     }
 
@@ -428,7 +438,7 @@ public final class TemplatesImpl implements Templates, Serializable {
         Layer bootLayer = Layer.boot();
 
         Configuration cf = bootLayer.configuration()
-                .resolveRequires(finder, ModuleFinder.of(), Set.of(mn));
+                .resolve(finder, ModuleFinder.of(), Set.of(mn));
 
         PrivilegedAction<Layer> pa = () -> bootLayer.defineModules(cf, name -> loader);
         Layer layer = AccessController.doPrivileged(pa);
@@ -473,25 +483,34 @@ public final class TemplatesImpl implements Templates, Serializable {
             String pn = _tfactory.getPackageName();
             assert pn != null && pn.length() > 0;
 
-            ModuleDescriptor descriptor = ModuleDescriptor.module(mn)
-                    .requires("java.xml")
-                    .exports(pn)
-                    .build();
+            ModuleDescriptor descriptor =
+                ModuleDescriptor.newModule(mn, Set.of(ModuleDescriptor.Modifier.SYNTHETIC))
+                                .requires("java.xml")
+                                .exports(pn)
+                                .build();
 
             Module m = createModule(descriptor, loader);
 
             // the module needs access to runtime classes
             Module thisModule = TemplatesImpl.class.getModule();
-
+            // the module also needs permission to access each package
+            // that is exported to it
+            PermissionCollection perms =
+                new RuntimePermission("*").newPermissionCollection();
             Arrays.asList(Constants.PKGS_USED_BY_TRANSLET_CLASSES).forEach(p -> {
                 thisModule.addExports(p, m);
+                perms.add(new RuntimePermission("accessClassInPackage." + p));
             });
 
-            // java.xml needs to instanitate the translet class
+            CodeSource codeSource = new CodeSource(null, (CodeSigner[])null);
+            ProtectionDomain pd = new ProtectionDomain(codeSource, perms,
+                                                       loader, null);
+
+            // java.xml needs to instantiate the translet class
             thisModule.addReads(m);
 
             for (int i = 0; i < classCount; i++) {
-                _class[i] = loader.defineClass(_bytecodes[i]);
+                _class[i] = loader.defineClass(_bytecodes[i], pd);
                 final Class superClass = _class[i].getSuperclass();
 
                 // Check if this is the main class

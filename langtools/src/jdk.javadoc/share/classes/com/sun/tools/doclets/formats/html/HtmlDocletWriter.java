@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1705,7 +1705,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         if (lessThanPos < 0) {
             return text;
         }
-
         StringBuilder result = new StringBuilder();
     main: while (lessThanPos != -1) {
             int currPos = lessThanPos + 1;
@@ -1723,14 +1722,33 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     break main;
                 ch = text.charAt(currPos);
             }
-            if (ch == '>' && blockTags.contains(StringUtils.toLowerCase(text.substring(tagPos, currPos)))) {
+            String tagFound = StringUtils.toLowerCase(text.substring(tagPos, currPos));
+            if (blockTags.contains(tagFound)) {
                 result.append(text, startPos, lessThanPos);
-                startPos = currPos + 1;
+                currPos = tagPos + tagFound.length();
+                boolean foundGT = false;
+                Character quoteKind = null;
+                while (!foundGT) {
+                    if (ch == '\"' || ch == '\'') {
+                        if (quoteKind == null) {
+                            quoteKind = ch;
+                        } else if (quoteKind == ch) {
+                            quoteKind = null;
+                        }
+                    }
+                    if (ch == '>' && quoteKind == null) {
+                        foundGT = true;
+                    }
+                    if (++currPos == len) {
+                        break;
+                    }
+                    ch = text.charAt(currPos);
+                }
+                startPos = currPos;
             }
             lessThanPos = text.indexOf('<', currPos);
         }
         result.append(text.substring(startPos));
-
         return result.toString();
     }
 

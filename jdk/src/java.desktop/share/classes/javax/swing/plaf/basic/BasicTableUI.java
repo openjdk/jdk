@@ -868,6 +868,7 @@ public class BasicTableUI extends TableUI
 
         public void keyReleased(KeyEvent e) { }
 
+        @SuppressWarnings("deprecation")
         public void keyTyped(KeyEvent e) {
             KeyStroke keyStroke = KeyStroke.getKeyStroke(e.getKeyChar(),
                     e.getModifiers());

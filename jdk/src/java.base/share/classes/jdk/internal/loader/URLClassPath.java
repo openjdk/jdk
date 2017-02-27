@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
 import java.net.URLStreamHandlerFactory;
+import java.security.AccessControlContext;
 import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.CodeSigner;
@@ -64,6 +65,8 @@ import java.util.jar.Attributes;
 import java.util.jar.Attributes.Name;
 import java.util.zip.ZipFile;
 
+import jdk.internal.misc.JavaNetURLAccess;
+import jdk.internal.misc.JavaNetURLClassLoaderAccess;
 import jdk.internal.misc.JavaUtilZipFileAccess;
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.util.jar.InvalidJarIndexError;
@@ -83,6 +86,7 @@ public class URLClassPath {
     private static final String JAVA_VERSION;
     private static final boolean DEBUG;
     private static final boolean DISABLE_JAR_CHECKING;
+    private static final boolean DISABLE_ACC_CHECKING;
 
     static {
         Properties props = GetPropertyAction.privilegedGetProperties();
@@ -90,6 +94,9 @@ public class URLClassPath {
         DEBUG = (props.getProperty("sun.misc.URLClassPath.debug") != null);
         String p = props.getProperty("sun.misc.URLClassPath.disableJarChecking");
         DISABLE_JAR_CHECKING = p != null ? p.equals("true") || p.equals("") : false;
+
+        p = props.getProperty("jdk.net.URLClassPath.disableRestrictedPermissions");
+        DISABLE_ACC_CHECKING = p != null ? p.equals("true") || p.equals("") : false;
     }
 
     /* The original search path of URLs. */
@@ -110,6 +117,11 @@ public class URLClassPath {
     /* Whether this URLClassLoader has been closed yet */
     private boolean closed = false;
 
+    /* The context to be used when loading classes and resources.  If non-null
+     * this is the context that was captured during the creation of the
+     * URLClassLoader. null implies no additional security restrictions. */
+    private final AccessControlContext acc;
+
     /**
      * Creates a new URLClassPath for the given URLs. The URLs will be
      * searched in the order specified for classes and resources. A URL
@@ -119,8 +131,12 @@ public class URLClassPath {
      * @param urls the directory and JAR file URLs to search for classes
      *        and resources
      * @param factory the URLStreamHandlerFactory to use when creating new URLs
+     * @param acc the context to be used when loading classes and resources, may
+     *            be null
      */
-    public URLClassPath(URL[] urls, URLStreamHandlerFactory factory) {
+    public URLClassPath(URL[] urls,
+                        URLStreamHandlerFactory factory,
+                        AccessControlContext acc) {
         for (int i = 0; i < urls.length; i++) {
             path.add(urls[i]);
         }
@@ -128,10 +144,22 @@ public class URLClassPath {
         if (factory != null) {
             jarHandler = factory.createURLStreamHandler("jar");
         }
+        if (DISABLE_ACC_CHECKING)
+            this.acc = null;
+        else
+            this.acc = acc;
     }
 
+    /**
+     * Constructs a URLClassPath with no additional security restrictions.
+     * Used by code that implements the class path.
+     */
     public URLClassPath(URL[] urls) {
-        this(urls, null);
+        this(urls, null, null);
+    }
+
+    public URLClassPath(URL[] urls, AccessControlContext acc) {
+        this(urls, null, acc);
     }
 
     public synchronized List<IOException> closeLoaders() {
@@ -320,7 +348,7 @@ public class URLClassPath {
      * path. The URLs are opened and expanded as needed. Returns null
      * if the specified index is out of range.
      */
-     private synchronized Loader getLoader(int index) {
+    private synchronized Loader getLoader(int index) {
         if (closed) {
             return null;
         }
@@ -356,6 +384,14 @@ public class URLClassPath {
             } catch (IOException e) {
                 // Silently ignore for now...
                 continue;
+            } catch (SecurityException se) {
+                // Always silently ignore. The context, if there is one, that
+                // this URLClassPath was given during construction will never
+                // have permission to access the URL.
+                if (DEBUG) {
+                    System.err.println("Failed to access " + url + ", " + se );
+                }
+                continue;
             }
             // Finally, add the Loader to the search path.
             loaders.add(loader);
@@ -370,29 +406,38 @@ public class URLClassPath {
     private Loader getLoader(final URL url) throws IOException {
         try {
             return java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedExceptionAction<>() {
-                public Loader run() throws IOException {
-                    String protocol = url.getProtocol();  // lower cased in URL
-                    String file = url.getFile();
-                    if ("jar".equals(protocol)
-                            && file != null && (file.indexOf("!/") == file.length() - 2)) {
-                        // extract the nested URL
-                        URL nestedUrl = new URL(file.substring(0, file.length() - 2));
-                        return new JarLoader(nestedUrl, jarHandler, lmap);
-                    } else if (file != null && file.endsWith("/")) {
-                        if ("file".equals(protocol)) {
-                            return new FileLoader(url);
-                        } else {
-                            return new Loader(url);
+                    new java.security.PrivilegedExceptionAction<>() {
+                        public Loader run() throws IOException {
+                            String protocol = url.getProtocol();  // lower cased in URL
+                            String file = url.getFile();
+                            if (file != null && file.endsWith("/")) {
+                                if ("file".equals(protocol)) {
+                                    return new FileLoader(url);
+                                } else if ("jar".equals(protocol) &&
+                                        isDefaultJarHandler(url) &&
+                                        file.endsWith("!/")) {
+                                    // extract the nested URL
+                                    URL nestedUrl = new URL(file.substring(0, file.length() - 2));
+                                    return new JarLoader(nestedUrl, jarHandler, lmap, acc);
+                                } else {
+                                    return new Loader(url);
+                                }
+                            } else {
+                                return new JarLoader(url, jarHandler, lmap, acc);
+                            }
                         }
-                    } else {
-                        return new JarLoader(url, jarHandler, lmap);
-                    }
-                }
-            });
+                    }, acc);
         } catch (java.security.PrivilegedActionException pae) {
             throw (IOException)pae.getException();
         }
+    }
+
+    private static final JavaNetURLAccess JNUA
+            = SharedSecrets.getJavaNetURLAccess();
+
+    private static boolean isDefaultJarHandler(URL u) {
+        URLStreamHandler h = JNUA.getHandler(u);
+        return h instanceof sun.net.www.protocol.jar.Handler;
     }
 
     /*
@@ -459,7 +504,7 @@ public class URLClassPath {
     }
 
     /**
-     * Inner class used to represent a loader of resources and classes
+     * Nested class used to represent a loader of resources and classes
      * from a base URL.
      */
     private static class Loader implements Closeable {
@@ -566,7 +611,8 @@ public class URLClassPath {
          * close this loader and release all resources
          * method overridden in sub-classes
          */
-        public void close () throws IOException {
+        @Override
+        public void close() throws IOException {
             if (jarfile != null) {
                 jarfile.close();
             }
@@ -581,14 +627,15 @@ public class URLClassPath {
     }
 
     /*
-     * Inner class used to represent a Loader of resources from a JAR URL.
+     * Nested class class used to represent a Loader of resources from a JAR URL.
      */
     static class JarLoader extends Loader {
         private JarFile jar;
-        private URL csu;
+        private final URL csu;
         private JarIndex index;
         private URLStreamHandler handler;
-        private HashMap<String, Loader> lmap;
+        private final HashMap<String, Loader> lmap;
+        private final AccessControlContext acc;
         private boolean closed = false;
         private static final JavaUtilZipFileAccess zipAccess =
                 SharedSecrets.getJavaUtilZipFileAccess();
@@ -598,13 +645,15 @@ public class URLClassPath {
          * a JAR file.
          */
         JarLoader(URL url, URLStreamHandler jarHandler,
-                  HashMap<String, Loader> loaderMap)
+                  HashMap<String, Loader> loaderMap,
+                  AccessControlContext acc)
             throws IOException
         {
             super(new URL("jar", "", -1, url + "!/", jarHandler));
             csu = url;
             handler = jarHandler;
             lmap = loaderMap;
+            this.acc = acc;
 
             ensureOpen();
         }
@@ -663,8 +712,7 @@ public class URLClassPath {
                                 }
                                 return null;
                             }
-                        }
-                    );
+                        }, acc);
                 } catch (java.security.PrivilegedActionException pae) {
                     throw (IOException)pae.getException();
                 }
@@ -762,7 +810,7 @@ public class URLClassPath {
 
 
         /*
-         * Returns true iff atleast one resource in the jar file has the same
+         * Returns true iff at least one resource in the jar file has the same
          * package name as that of the specified resource name.
          */
         boolean validIndex(final String name) {
@@ -790,6 +838,7 @@ public class URLClassPath {
         /*
          * Returns the URL for a resource with the specified name
          */
+        @Override
         URL findResource(final String name, boolean check) {
             Resource rsc = getResource(name, check);
             if (rsc != null) {
@@ -801,6 +850,7 @@ public class URLClassPath {
         /*
          * Returns the JAR Resource for the specified name.
          */
+        @Override
         Resource getResource(final String name, boolean check) {
             try {
                 ensureOpen();
@@ -827,7 +877,6 @@ public class URLClassPath {
          */
         Resource getResource(final String name, boolean check,
                              Set<String> visited) {
-
             Resource res;
             String[] jarFiles;
             int count = 0;
@@ -859,9 +908,9 @@ public class URLClassPath {
                                 new PrivilegedExceptionAction<>() {
                                     public JarLoader run() throws IOException {
                                         return new JarLoader(url, handler,
-                                            lmap);
+                                            lmap, acc);
                                     }
-                                });
+                                }, acc);
 
                             /* this newly opened jar file has its own index,
                              * merge it into the parent's index, taking into
@@ -882,7 +931,6 @@ public class URLClassPath {
                     } catch (MalformedURLException e) {
                         continue;
                     }
-
 
                     /* Note that the addition of the url to the list of visited
                      * jars incorporates a check for presence in the hashmap
@@ -939,6 +987,7 @@ public class URLClassPath {
         /*
          * Returns the JAR file local class path, or null if none.
          */
+        @Override
         URL[] getClassPath() throws IOException {
             if (index != null) {
                 return null;
@@ -966,7 +1015,7 @@ public class URLClassPath {
          * Parses value of the Class-Path manifest attribute and returns
          * an array of URLs relative to the specified base URL.
          */
-        private URL[] parseClassPath(URL base, String value)
+        private static URL[] parseClassPath(URL base, String value)
             throws MalformedURLException
         {
             StringTokenizer st = new StringTokenizer(value);
@@ -982,7 +1031,7 @@ public class URLClassPath {
     }
 
     /*
-     * Inner class used to represent a loader of classes and resources
+     * Nested class used to represent a loader of classes and resources
      * from a file URL that refers to a directory.
      */
     private static class FileLoader extends Loader {
@@ -1002,6 +1051,7 @@ public class URLClassPath {
         /*
          * Returns the URL for a resource with the specified name
          */
+        @Override
         URL findResource(final String name, boolean check) {
             Resource rsc = getResource(name, check);
             if (rsc != null) {
@@ -1010,6 +1060,7 @@ public class URLClassPath {
             return null;
         }
 
+        @Override
         Resource getResource(final String name, boolean check) {
             final URL url;
             try {

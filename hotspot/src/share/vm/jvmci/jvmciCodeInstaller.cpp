@@ -561,7 +561,7 @@ JVMCIEnv::CodeInstallResult CodeInstaller::gather_metadata(Handle target, Handle
   _constants = buffer.consts();
 
   initialize_fields(target(), JNIHandles::resolve(compiled_code_obj), CHECK_OK);
-  JVMCIEnv::CodeInstallResult result = initialize_buffer(buffer, CHECK_OK);
+  JVMCIEnv::CodeInstallResult result = initialize_buffer(buffer, false, CHECK_OK);
   if (result != JVMCIEnv::ok) {
     return result;
   }
@@ -594,7 +594,7 @@ JVMCIEnv::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler, Hand
   _constants = buffer.consts();
 
   initialize_fields(target(), JNIHandles::resolve(compiled_code_obj), CHECK_OK);
-  JVMCIEnv::CodeInstallResult result = initialize_buffer(buffer, CHECK_OK);
+  JVMCIEnv::CodeInstallResult result = initialize_buffer(buffer, true, CHECK_OK);
   if (result != JVMCIEnv::ok) {
     return result;
   }
@@ -733,7 +733,7 @@ int CodeInstaller::estimate_stubs_size(TRAPS) {
 }
 
 // perform data and call relocation on the CodeBuffer
-JVMCIEnv::CodeInstallResult CodeInstaller::initialize_buffer(CodeBuffer& buffer, TRAPS) {
+JVMCIEnv::CodeInstallResult CodeInstaller::initialize_buffer(CodeBuffer& buffer, bool check_size, TRAPS) {
   HandleMark hm;
   objArrayHandle sites(THREAD, this->sites());
   int locs_buffer_size = sites->length() * (relocInfo::length_limit + sizeof(relocInfo));
@@ -745,7 +745,7 @@ JVMCIEnv::CodeInstallResult CodeInstaller::initialize_buffer(CodeBuffer& buffer,
   int stubs_size = estimate_stubs_size(CHECK_OK);
   int total_size = round_to(_code_size, buffer.insts()->alignment()) + round_to(_constants_size, buffer.consts()->alignment()) + round_to(stubs_size, buffer.stubs()->alignment());
 
-  if (total_size > JVMCINMethodSizeLimit) {
+  if (check_size && total_size > JVMCINMethodSizeLimit) {
     return JVMCIEnv::code_too_large;
   }
 
@@ -1270,6 +1270,7 @@ void CodeInstaller::site_Mark(CodeBuffer& buffer, jint pc_offset, Handle site, T
       case HEAP_TOP_ADDRESS:
       case HEAP_END_ADDRESS:
       case NARROW_KLASS_BASE_ADDRESS:
+      case NARROW_OOP_BASE_ADDRESS:
       case CRC_TABLE_ADDRESS:
       case LOG_OF_HEAP_REGION_GRAIN_BYTES:
       case INLINE_CONTIGUOUS_ALLOCATION_SUPPORTED:

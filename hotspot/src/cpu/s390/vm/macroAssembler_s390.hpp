@@ -627,6 +627,11 @@ class MacroAssembler: public Assembler {
   // Stack overflow checking
   void bang_stack_with_offset(int offset);
 
+  // Check for reserved stack access in method being exited. If the reserved
+  // stack area was accessed, protect it again and throw StackOverflowError.
+  // Uses Z_R1.
+  void reserved_stack_check(Register return_pc);
+
   // Atomics
   // -- none?
 

@@ -469,14 +469,18 @@ void Flag::print_on(outputStream* st, bool withComments, bool printRanges) {
   }
 
   if (!printRanges) {
+    // Use some named constants to make code more readable.
+    const unsigned int nSpaces    = 10;
+    const unsigned int maxFlagLen = 40 + nSpaces;
+
     // The print below assumes that the flag name is 40 characters or less.
     // This works for most flags, but there are exceptions. Our longest flag
     // name right now is UseAdaptiveGenerationSizePolicyAtMajorCollection and
     // its minor collection buddy. These are 48 characters. We use a buffer of
-    // 10 spaces below to adjust the space between the flag value and the
+    // nSpaces spaces below to adjust the space between the flag value and the
     // column of flag type and origin that is printed in the end of the line.
-    char spaces[10 + 1] = "          ";
-    st->print("%9s %-40s = ", _type, _name);
+    char spaces[nSpaces + 1] = "          ";
+    st->print("%9s %-*s = ", _type, maxFlagLen-nSpaces, _name);
 
     if (is_bool()) {
       st->print("%-20s", get_bool() ? "true" : "false");
@@ -509,9 +513,12 @@ void Flag::print_on(outputStream* st, bool withComments, bool printRanges) {
       }
       else st->print("%-20s", "");
     }
-    assert(strlen(_name) < 50, "Flag name is longer than expected");
-    spaces[50 - MAX2((size_t)40, strlen(_name))] = '\0';
-    st->print("%s", spaces);
+    // Make sure we do not punch a '\0' at a negative char array index.
+    unsigned int nameLen = (unsigned int)strlen(_name);
+    if (nameLen <= maxFlagLen) {
+      spaces[maxFlagLen - MAX2(maxFlagLen-nSpaces, nameLen)] = '\0';
+      st->print("%s", spaces);
+    }
     print_kind_and_origin(st);
 
 #ifndef PRODUCT

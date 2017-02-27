@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1623,6 +1623,8 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
         NOT_LP64(__ get_thread(thread);)
 
+        Address queue_active(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
+                                              SATBMarkQueue::byte_offset_of_active()));
         Address queue_index(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
                                              SATBMarkQueue::byte_offset_of_index()));
         Address buffer(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
@@ -1630,6 +1632,15 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
         Label done;
         Label runtime;
+
+        // Is marking still active?
+        if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
+          __ cmpl(queue_active, 0);
+        } else {
+          assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
+          __ cmpb(queue_active, 0);
+        }
+        __ jcc(Assembler::equal, done);
 
         // Can we store original value in the thread's buffer?
 

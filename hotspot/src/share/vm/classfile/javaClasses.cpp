@@ -163,8 +163,8 @@ void java_lang_String::compute_offsets() {
 
   Klass* k = SystemDictionary::String_klass();
   compute_offset(value_offset,           k, vmSymbols::value_name(),  vmSymbols::byte_array_signature());
-  compute_optional_offset(hash_offset,   k, vmSymbols::hash_name(),   vmSymbols::int_signature());
-  compute_optional_offset(coder_offset,  k, vmSymbols::coder_name(),  vmSymbols::byte_signature());
+  compute_offset(hash_offset,            k, vmSymbols::hash_name(),   vmSymbols::int_signature());
+  compute_offset(coder_offset,           k, vmSymbols::coder_name(),  vmSymbols::byte_signature());
 
   initialized = true;
 }
@@ -2268,6 +2268,7 @@ void java_lang_LiveStackFrameInfo::compute_offsets() {
   compute_offset(_monitors_offset,   k, vmSymbols::monitors_name(),    vmSymbols::object_array_signature());
   compute_offset(_locals_offset,     k, vmSymbols::locals_name(),      vmSymbols::object_array_signature());
   compute_offset(_operands_offset,   k, vmSymbols::operands_name(),    vmSymbols::object_array_signature());
+  compute_offset(_mode_offset,       k, vmSymbols::mode_name(),        vmSymbols::int_signature());
 }
 
 void java_lang_reflect_AccessibleObject::compute_offsets() {
@@ -3657,6 +3658,7 @@ int java_lang_StackFrameInfo::_version_offset;
 int java_lang_LiveStackFrameInfo::_monitors_offset;
 int java_lang_LiveStackFrameInfo::_locals_offset;
 int java_lang_LiveStackFrameInfo::_operands_offset;
+int java_lang_LiveStackFrameInfo::_mode_offset;
 int java_lang_AssertionStatusDirectives::classes_offset;
 int java_lang_AssertionStatusDirectives::classEnabled_offset;
 int java_lang_AssertionStatusDirectives::packages_offset;
@@ -3725,6 +3727,10 @@ void java_lang_LiveStackFrameInfo::set_locals(oop element, oop value) {
 
 void java_lang_LiveStackFrameInfo::set_operands(oop element, oop value) {
   element->obj_field_put(_operands_offset, value);
+}
+
+void java_lang_LiveStackFrameInfo::set_mode(oop element, int value) {
+  element->int_field_put(_mode_offset, value);
 }
 
 // Support for java Assertions - java_lang_AssertionStatusDirectives.
@@ -3975,12 +3981,8 @@ void JavaClasses::check_offsets() {
   // java.lang.String
 
   CHECK_OFFSET("java/lang/String", java_lang_String, value, "[B");
-  if (java_lang_String::has_hash_field()) {
-    CHECK_OFFSET("java/lang/String", java_lang_String, hash, "I");
-  }
-  if (java_lang_String::has_coder_field()) {
-    CHECK_OFFSET("java/lang/String", java_lang_String, coder, "B");
-  }
+  CHECK_OFFSET("java/lang/String", java_lang_String, hash, "I");
+  CHECK_OFFSET("java/lang/String", java_lang_String, coder, "B");
 
   // java.lang.Class
 

@@ -49,6 +49,7 @@ import java.util.zip.ZipEntry;
 
 import static java.util.jar.JarFile.MANIFEST_NAME;
 import static sun.tools.jar.Main.VERSIONS_DIR;
+import static sun.tools.jar.Main.VERSIONS_DIR_LENGTH;
 import static sun.tools.jar.Main.MODULE_INFO;
 import static sun.tools.jar.Main.getMsg;
 import static sun.tools.jar.Main.formatMsg;
@@ -59,19 +60,19 @@ import static sun.tools.jar.Main.isModuleInfoEntry;
 final class Validator {
     private final static boolean DEBUG = Boolean.getBoolean("jar.debug");
     private final  Map<String,FingerPrint> fps = new HashMap<>();
-    private static final int vdlen = VERSIONS_DIR.length();
     private final Main main;
     private final JarFile jf;
     private int oldVersion = -1;
     private String currentTopLevelName;
     private boolean isValid = true;
-    private Set<String> concealedPkgs;
+    private Set<String> concealedPkgs = Collections.emptySet();
     private ModuleDescriptor md;
+    private String mdName;
 
     private Validator(Main main, JarFile jf) {
         this.main = main;
         this.jf = jf;
-        loadModuleDescriptor();
+        checkModuleDescriptor(MODULE_INFO);
     }
 
     static boolean validate(Main main, JarFile jf) throws IOException {
@@ -83,7 +84,7 @@ final class Validator {
             jf.stream()
               .filter(e -> !e.isDirectory() &&
                       !e.getName().equals(MANIFEST_NAME))
-              .sorted(entryComparator)
+              .sorted(ENTRY_COMPARATOR)
               .forEachOrdered(e -> validate(e));
             return isValid;
         } catch (InvalidJarException e) {
@@ -102,9 +103,8 @@ final class Validator {
     // sort base entries before versioned entries, and sort entry classes with
     // nested classes so that the top level class appears before the associated
     // nested class
-    private static Comparator<JarEntry> entryComparator = (je1, je2) ->  {
-        String s1 = je1.getName();
-        String s2 = je2.getName();
+    static Comparator<String> ENTRYNAME_COMPARATOR = (s1, s2) ->  {
+
         if (s1.equals(s2)) return 0;
         boolean b1 = s1.startsWith(VERSIONS_DIR);
         boolean b2 = s2.startsWith(VERSIONS_DIR);
@@ -140,6 +140,9 @@ final class Validator {
         return l1 - l2;
     };
 
+    static Comparator<ZipEntry> ENTRY_COMPARATOR =
+        Comparator.comparing(ZipEntry::getName, ENTRYNAME_COMPARATOR);
+
     /*
      *  Validator has state and assumes entries provided to accept are ordered
      *  from base entries first and then through the versioned entries in
@@ -158,24 +161,25 @@ final class Validator {
 
         // validate the versioned module-info
         if (isModuleInfoEntry(entryName)) {
-            if (entryName.length() != MODULE_INFO.length())
-                checkModuleDescriptor(je);
+            if (!entryName.equals(mdName))
+                checkModuleDescriptor(entryName);
             return;
         }
 
         // figure out the version and basename from the JarEntry
         int version;
         String basename;
+        String versionStr = null;;
         if (entryName.startsWith(VERSIONS_DIR)) {
-            int n = entryName.indexOf("/", vdlen);
+            int n = entryName.indexOf("/", VERSIONS_DIR_LENGTH);
             if (n == -1) {
                 error(formatMsg("error.validator.version.notnumber", entryName));
                 isValid = false;
                 return;
             }
-            String v = entryName.substring(vdlen, n);
+            versionStr = entryName.substring(VERSIONS_DIR_LENGTH, n);
             try {
-                version = Integer.parseInt(v);
+                version = Integer.parseInt(versionStr);
             } catch (NumberFormatException x) {
                 error(formatMsg("error.validator.version.notnumber", entryName));
                 isValid = false;
@@ -196,6 +200,11 @@ final class Validator {
         if (oldVersion != version) {
             oldVersion = version;
             currentTopLevelName = null;
+            if (md == null && versionStr != null) {
+                // don't have a base module-info.class yet, try to see if
+                // a versioned one exists
+                checkModuleDescriptor(VERSIONS_DIR + versionStr + "/" + MODULE_INFO);
+            }
         }
 
         // analyze the entry, keeping key attributes
@@ -308,105 +317,100 @@ final class Validator {
         return;
     }
 
-    private void loadModuleDescriptor() {
-        ZipEntry je = jf.getEntry(MODULE_INFO);
-        if (je != null) {
-            try (InputStream jis = jf.getInputStream(je)) {
-                md = ModuleDescriptor.read(jis);
-                concealedPkgs = new HashSet<>(md.packages());
-                md.exports().stream().map(Exports::source).forEach(concealedPkgs::remove);
-                md.opens().stream().map(Opens::source).forEach(concealedPkgs::remove);
-                return;
-            } catch (Exception x) {
-                error(x.getMessage() + " : " + je.getName());
-                this.isValid = false;
-            }
-        }
-        md = null;
-        concealedPkgs = Collections.emptySet();
-    }
-
-    private static boolean isPlatformModule(String name) {
-        return name.startsWith("java.") || name.startsWith("jdk.");
-    }
-
     /**
      * Checks whether or not the given versioned module descriptor's attributes
-     * are valid when compared against the root module descriptor.
+     * are valid when compared against the root/base module descriptor.
      *
-     * A versioned module descriptor must be identical to the root module
+     * A versioned module descriptor must be identical to the root/base module
      * descriptor, with two exceptions:
      *  - A versioned descriptor can have different non-public `requires`
      *    clauses of platform ( `java.*` and `jdk.*` ) modules, and
      *  - A versioned descriptor can have different `uses` clauses, even of
      *    service types defined outside of the platform modules.
      */
-    private void checkModuleDescriptor(JarEntry je) {
-        try (InputStream is = jf.getInputStream(je)) {
-            ModuleDescriptor root = this.md;
-            ModuleDescriptor md = null;
-            try {
-                md = ModuleDescriptor.read(is);
-            } catch (InvalidModuleDescriptorException x) {
-                error(x.getMessage());
-                isValid = false;
-                return;
-            }
-            if (root == null) {
-                this.md = md;
-            } else {
-                if (!root.name().equals(md.name())) {
-                    error(getMsg("error.versioned.info.name.notequal"));
+    private void checkModuleDescriptor(String miName) {
+        ZipEntry je = jf.getEntry(miName);
+        if (je != null) {
+            try (InputStream jis = jf.getInputStream(je)) {
+                ModuleDescriptor md = ModuleDescriptor.read(jis);
+                // Initialize the base md if it's not yet. A "base" md can be either the
+                // root module-info.class or the first versioned module-info.class
+                ModuleDescriptor base = this.md;
+
+                if (base == null) {
+                    concealedPkgs = new HashSet<>(md.packages());
+                    md.exports().stream().map(Exports::source).forEach(concealedPkgs::remove);
+                    md.opens().stream().map(Opens::source).forEach(concealedPkgs::remove);
+                    // must have the implementation class of the services it 'provides'.
+                    if (md.provides().stream().map(Provides::providers)
+                          .flatMap(List::stream)
+                          .filter(p -> jf.getEntry(toBinaryName(p)) == null)
+                          .peek(p -> error(formatMsg("error.missing.provider", p)))
+                          .count() != 0) {
+                        isValid = false;
+                        return;
+                    }
+                    this.md = md;
+                    this.mdName = miName;
+                    return;
+                }
+
+                if (!base.name().equals(md.name())) {
+                    error(getMsg("error.validator.info.name.notequal"));
                     isValid = false;
                 }
-                if (!root.requires().equals(md.requires())) {
-                    Set<Requires> rootRequires = root.requires();
+                if (!base.requires().equals(md.requires())) {
+                    Set<Requires> baseRequires = base.requires();
                     for (Requires r : md.requires()) {
-                        if (rootRequires.contains(r))
+                        if (baseRequires.contains(r))
                             continue;
                         if (r.modifiers().contains(Requires.Modifier.TRANSITIVE)) {
-                            error(getMsg("error.versioned.info.requires.transitive"));
+                            error(getMsg("error.validator.info.requires.transitive"));
                             isValid = false;
                         } else if (!isPlatformModule(r.name())) {
-                            error(getMsg("error.versioned.info.requires.added"));
+                            error(getMsg("error.validator.info.requires.added"));
                             isValid = false;
                         }
                     }
-                    for (Requires r : rootRequires) {
+                    for (Requires r : baseRequires) {
                         Set<Requires> mdRequires = md.requires();
                         if (mdRequires.contains(r))
                             continue;
                         if (!isPlatformModule(r.name())) {
-                            error(getMsg("error.versioned.info.requires.dropped"));
+                            error(getMsg("error.validator.info.requires.dropped"));
                             isValid = false;
                         }
                     }
                 }
-                if (!root.exports().equals(md.exports())) {
-                    error(getMsg("error.versioned.info.exports.notequal"));
+                if (!base.exports().equals(md.exports())) {
+                    error(getMsg("error.validator.info.exports.notequal"));
                     isValid = false;
                 }
-                if (!root.opens().equals(md.opens())) {
-                    error(getMsg("error.versioned.info.opens.notequal"));
+                if (!base.opens().equals(md.opens())) {
+                    error(getMsg("error.validator.info.opens.notequal"));
                     isValid = false;
                 }
-                if (!root.provides().equals(md.provides())) {
-                    error(getMsg("error.versioned.info.provides.notequal"));
+                if (!base.provides().equals(md.provides())) {
+                    error(getMsg("error.validator.info.provides.notequal"));
                     isValid = false;
                 }
-                if (!root.mainClass().equals(md.mainClass())) {
+                if (!base.mainClass().equals(md.mainClass())) {
                     error(formatMsg("error.validator.info.manclass.notequal", je.getName()));
                     isValid = false;
                 }
-                if (!root.version().equals(md.version())) {
+                if (!base.version().equals(md.version())) {
                     error(formatMsg("error.validator.info.version.notequal", je.getName()));
                     isValid = false;
                 }
+            } catch (Exception x) {
+                error(x.getMessage() + " : " + miName);
+                this.isValid = false;
             }
-        } catch (IOException x) {
-            error(x.getMessage());
-            isValid = false;
         }
+    }
+
+    private static boolean isPlatformModule(String name) {
+        return name.startsWith("java.") || name.startsWith("jdk.");
     }
 
     private boolean checkInternalName(String entryName, String basename, String internalName) {

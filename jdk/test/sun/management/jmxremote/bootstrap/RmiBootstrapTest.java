@@ -40,7 +40,7 @@ import java.util.Enumeration;
 import javax.management.remote.*;
 import javax.management.*;
 
-import sun.management.AgentConfigurationError;
+import jdk.internal.agent.AgentConfigurationError;
 
 import java.security.Security;
 

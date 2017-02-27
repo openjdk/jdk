@@ -74,10 +74,7 @@ import javax.annotation.processing.SupportedSourceVersion;
  * @see SimpleAnnotationValueVisitor8
  * @see SimpleAnnotationValueVisitor9
  * @since 1.6
- * @deprecated Release 6 is obsolete; update to a visitor for a newer
- * release level.
  */
-@Deprecated
 @SupportedSourceVersion(RELEASE_6)
 public class SimpleAnnotationValueVisitor6<R, P>
     extends AbstractAnnotationValueVisitor6<R, P> {
@@ -92,7 +89,10 @@ public class SimpleAnnotationValueVisitor6<R, P>
     /**
      * Constructor for concrete subclasses; uses {@code null} for the
      * default value.
+     * @deprecated Release 6 is obsolete; update to a visitor for a newer
+     * release level.
      */
+    @Deprecated
     protected SimpleAnnotationValueVisitor6() {
         super();
         DEFAULT_VALUE = null;
@@ -103,7 +103,10 @@ public class SimpleAnnotationValueVisitor6<R, P>
      * default value.
      *
      * @param defaultValue the value to assign to {@link #DEFAULT_VALUE}
+     * @deprecated Release 6 is obsolete; update to a visitor for a newer
+     * release level.
      */
+    @Deprecated
     protected SimpleAnnotationValueVisitor6(R defaultValue) {
         super();
         DEFAULT_VALUE = defaultValue;

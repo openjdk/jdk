@@ -69,7 +69,7 @@ public class RemoveContains {
     }
 
     public static void main(String[] args) {
-        final Comparator<String> firstChar = new Comparator<String>() {
+        final Comparator<String> firstChar = new Comparator<>() {
             public int compare(String x, String y) {
                 return x.charAt(0) - y.charAt(0); }};
 

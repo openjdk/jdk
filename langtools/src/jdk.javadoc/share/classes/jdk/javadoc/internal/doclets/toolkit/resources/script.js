@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,24 @@ function loadScripts(doc, tag) {
                     tagSearchIndex = JSON.parse(zip.file("tag-search-index.json").asText());
                 });
             });
+    if (!moduleSearchIndex) {
+        createElem(doc, tag, 'module-search-index.js');
+    }
+    if (!packageSearchIndex) {
+        createElem(doc, tag, 'package-search-index.js');
+    }
+    if (!typeSearchIndex) {
+        createElem(doc, tag, 'type-search-index.js');
+    }
+    if (!memberSearchIndex) {
+        createElem(doc, tag, 'member-search-index.js');
+    }
+    if (!tagSearchIndex) {
+        createElem(doc, tag, 'tag-search-index.js');
+    }
+    $(window).resize(function() {
+        $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
+    });
 }
 
 function createElem(doc, tag, path) {

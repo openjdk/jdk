@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,9 +248,11 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
         XMenuItemPeer.TextMetrics[] itemMetrics = new XMenuItemPeer.TextMetrics[itemCnt];
         for (int i = 0; i < itemCnt; i++) {
             itemMetrics[i] = itemVector[i].getTextMetrics();
-            Dimension dim = itemMetrics[i].getTextDimension();
-            if (dim != null) {
-                maxHeight = Math.max(maxHeight, dim.height);
+            if (itemMetrics[i] != null) {
+                Dimension dim = itemMetrics[i].getTextDimension();
+                if (dim != null) {
+                    maxHeight = Math.max(maxHeight, dim.height);
+                }
             }
         }
         //Calculate bounds
@@ -260,6 +262,9 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
         for (int i = 0; i < itemCnt; i++) {
             XMenuItemPeer item = itemVector[i];
             XMenuItemPeer.TextMetrics metrics = itemMetrics[i];
+            if (metrics == null) {
+                continue;
+            }
             Dimension dim = metrics.getTextDimension();
             if (dim != null) {
                 int itemWidth = BAR_ITEM_MARGIN_LEFT + dim.width + BAR_ITEM_MARGIN_RIGHT;
@@ -280,9 +285,6 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
                 Point textOrigin = new Point(nextOffset + BAR_ITEM_MARGIN_LEFT, BAR_SPACING_TOP + BAR_ITEM_MARGIN_TOP + y);
                 nextOffset += itemWidth + BAR_ITEM_SPACING;
                 item.map(bounds, textOrigin);
-            } else {
-                Rectangle bounds = new Rectangle(nextOffset, BAR_SPACING_TOP, 0, 0);
-                Point textOrigin = new Point(nextOffset + BAR_ITEM_MARGIN_LEFT, BAR_SPACING_TOP + BAR_ITEM_MARGIN_TOP);
             }
         }
         XMenuItemPeer mappedVector[] = new XMenuItemPeer[mappedCnt];
@@ -501,6 +503,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
      * This function is called from XWindow
      * @see XWindow.handleF10onEDT()
      */
+    @SuppressWarnings("deprecation")
     void handleF10KeyPress(KeyEvent event) {
         int keyState = event.getModifiers();
         if (((keyState & InputEvent.ALT_MASK) != 0) ||

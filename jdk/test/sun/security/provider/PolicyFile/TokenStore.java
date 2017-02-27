@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -250,10 +250,9 @@ public class TokenStore {
         Enumeration perms = p.getPermissions(pd).elements();
         while (perms.hasMoreElements()) {
             Permission perm = (Permission)perms.nextElement();
-            if (!(perm instanceof AllPermission)) {
-                throw new SecurityException("expected AllPermission");
-            } else {
+            if (perm instanceof AllPermission) {
                 foundIt = true;
+                break;
             }
         }
         if (!foundIt) {

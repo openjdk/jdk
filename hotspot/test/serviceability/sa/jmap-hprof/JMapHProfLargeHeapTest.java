@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,14 +46,13 @@ import jdk.test.lib.process.ProcessTools;
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management/sun.management
- *          jdk.jvmstat/sun.jvmstat.monitor
+ *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @build JMapHProfLargeHeapProc
  * @run main JMapHProfLargeHeapTest
  */
 
 public class JMapHProfLargeHeapTest {
     private static final String HEAP_DUMP_FILE_NAME = "heap.bin";
-    private static final String HPROF_HEADER_1_0_1 = "JAVA PROFILE 1.0.1";
     private static final String HPROF_HEADER_1_0_2 = "JAVA PROFILE 1.0.2";
     private static final long M = 1024L;
     private static final long G = 1024L * M;
@@ -65,9 +64,7 @@ public class JMapHProfLargeHeapTest {
         }
 
         // All heap dumps should create 1.0.2 file format
-        // Hotspot internal heapdumper always use HPROF_HEADER_1_0_2 format,
-        // but SA heapdumper still use HPROF_HEADER_1_0_1 for small heaps
-        testHProfFileFormat("-Xmx1g", 22 * M, HPROF_HEADER_1_0_1);
+        testHProfFileFormat("-Xmx1g", 22 * M, HPROF_HEADER_1_0_2);
 
         /**
          * This test was deliberately commented out since the test system lacks
@@ -90,6 +87,9 @@ public class JMapHProfLargeHeapTest {
         try (Scanner largeHeapScanner = new Scanner(
                 largeHeapProc.getInputStream());) {
             String pidstring = null;
+            if (!largeHeapScanner.hasNext()) {
+                throw new RuntimeException ("Test failed: could not open largeHeapScanner.");
+            }
             while ((pidstring = largeHeapScanner.findInLine("PID\\[[0-9].*\\]")) == null) {
                 Thread.sleep(500);
             }

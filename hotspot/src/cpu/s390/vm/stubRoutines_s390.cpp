@@ -33,8 +33,6 @@
 // Implementation of the platform-specific part of StubRoutines - for
 // a description of how to extend it, see the stubRoutines.hpp file.
 
-address StubRoutines::zarch::_handler_for_unsafe_access_entry = NULL;
-
 address StubRoutines::zarch::_partial_subtype_check = NULL;
 
 // Comapct string intrinsics: Translate table for string inflate intrinsic. Used by trot instruction.

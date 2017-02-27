@@ -155,7 +155,7 @@ class Eval {
         if (compileSource.length() == 0) {
             return Collections.emptyList();
         }
-        ParseTask pt = state.taskFactory.new ParseTask(compileSource);
+        ParseTask pt = state.taskFactory.parse(compileSource);
         List<? extends Tree> units = pt.units();
         if (units.isEmpty()) {
             return compileFailResult(pt, userSource, Kind.ERRONEOUS);

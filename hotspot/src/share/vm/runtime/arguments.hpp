@@ -455,6 +455,10 @@ class Arguments : AllStatic {
   static intx _Tier3InvokeNotifyFreqLog;
   static intx _Tier4InvocationThreshold;
 
+  // Compilation mode.
+  static bool compilation_mode_selected();
+  static void select_compilation_mode_ergonomically();
+
   // Tiered
   static void set_tiered_flags();
   // CMS/ParNew garbage collectors
@@ -635,6 +639,7 @@ class Arguments : AllStatic {
 #if INCLUDE_JVMCI
   // Check consistency of jvmci vm argument settings.
   static bool check_jvmci_args_consistency();
+  static void set_jvmci_specific_flags();
 #endif
   // Check for consistency in the selection of the garbage collector.
   static bool check_gc_consistency();        // Check user-selected gc

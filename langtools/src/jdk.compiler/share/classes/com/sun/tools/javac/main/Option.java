@@ -579,7 +579,7 @@ public enum Option {
         }
     },
 
-    XMODULE("-Xmodule:", "opt.arg.module", "opt.module", EXTENDED, BASIC) {
+    XMODULE("-Xmodule:", "opt.arg.module", "opt.module", HIDDEN, BASIC) {
         @Override
         public void process(OptionHelper helper, String option, String arg) throws InvalidValueException {
             String prev = helper.get(XMODULE);
@@ -701,7 +701,7 @@ public enum Option {
     MULTIRELEASE("--multi-release", "opt.arg.multi-release", "opt.multi-release", HIDDEN, FILEMANAGER),
 
     INHERIT_RUNTIME_ENVIRONMENT("--inherit-runtime-environment", "opt.inherit_runtime_environment",
-            EXTENDED, BASIC) {
+            HIDDEN, BASIC) {
         @Override
         public void process(OptionHelper helper, String option) throws InvalidValueException {
             try {

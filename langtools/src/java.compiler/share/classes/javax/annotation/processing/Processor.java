@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,7 +194,7 @@ import javax.lang.model.SourceVersion;
  * <p>The {@link Filer} interface discusses restrictions on how
  * processors can operate on files.
  *
- * <p>Note that implementors of this interface may find it convenient
+ * @apiNote Implementors of this interface may find it convenient
  * to extend {@link AbstractProcessor} rather than implementing this
  * interface directly.
  *
@@ -254,6 +254,14 @@ public interface Processor {
      * a.B} which reside in different modules. To only support {@code
      * a.B} in the {@code Foo} module, instead use {@code "Foo/a.B"}.
      *
+     * If a module name is included, only an annotation in that module
+     * is matched. In particular, if a module name is given in an
+     * environment where modules are not supported, such as an
+     * annotation processing environment configured for a {@linkplain
+     * javax.annotation.processing.ProcessingEnvironment#getSourceVersion
+     * source version} without modules, then the annotation types with
+     * a module name do <em>not</em> match.
+     *
      * Finally, {@code "*"} by itself represents the set of all
      * annotation types, including the empty set.  Note that a
      * processor should not claim {@code "*"} unless it is actually
@@ -279,6 +287,14 @@ public interface Processor {
      *
      * where <i>TypeName</i> is as defined in
      * <cite>The Java&trade; Language Specification</cite>.
+     *
+     * @apiNote When running in an environment which supports modules,
+     * processors are encouraged to include the module prefix when
+     * describing their supported annotation types. The method {@link
+     * AbstractProcessor#getSupportedAnnotationTypes
+     * AbstractProcessor.getSupportedAnnotationTypes} provides support
+     * for stripping off the module prefix when running in an
+     * environment without modules.
      *
      * @return the names of the annotation types supported by this processor
      * @see javax.annotation.processing.SupportedAnnotationTypes
@@ -315,7 +331,7 @@ public interface Processor {
      * is returned, the annotation types are unclaimed and subsequent
      * processors may be asked to process them.  A processor may
      * always return the same boolean value or may vary the result
-     * based on chosen criteria.
+     * based on its own chosen criteria.
      *
      * <p>The input set will be empty if the processor supports {@code
      * "*"} and the root elements have no annotations.  A {@code
@@ -343,8 +359,8 @@ public interface Processor {
     * <p>Since incomplete programs are being modeled, some of the
     * parameters may only have partial information or may be {@code
     * null}.  At least one of {@code element} and {@code userText}
-    * must be non-{@code null}.  If {@code element} is non-{@code
-    * null}, {@code annotation} and {@code member} may be {@code
+    * must be non-{@code null}.  If {@code element} is non-{@code null},
+    * {@code annotation} and {@code member} may be {@code
     * null}.  Processors may not throw a {@code NullPointerException}
     * if some parameters are {@code null}; if a processor has no
     * completions to offer based on the provided information, an

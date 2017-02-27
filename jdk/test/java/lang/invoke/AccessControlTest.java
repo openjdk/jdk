@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,6 +118,8 @@ public class AccessControlTest {
                 suffix = "/noaccess";
             else if (lookupModes == PUBLIC)
                 suffix = "/public";
+             else if (lookupModes == (PUBLIC|UNCONDITIONAL))
+                suffix = "/publicLookup";
             else if (lookupModes == (PUBLIC|MODULE))
                 suffix = "/module";
             else if (lookupModes == (PUBLIC|MODULE|PACKAGE))
@@ -140,23 +142,24 @@ public class AccessControlTest {
          * [A2] However, the resulting {@code Lookup} object is guaranteed
          * to have no more access capabilities than the original.
          * In particular, access capabilities can be lost as follows:<ul>
-         * <li>[A3] If the new lookup class differs from the old one,
-         * protected members will not be accessible by virtue of inheritance.
+         * <li> [A3] If the old lookup class is in a named module, and the new
+         * lookup class is in a different module {@code M}, then no members, not
+         * even public members in {@code M}'s exported packages, will be accessible.
+         * The exception to this is when this lookup is publicLookup, in which case
+         * public access is not lost.
+         * <li> [A4] If the old lookup class is in an unnamed module, and the new
+         * lookup class is a different module then module access is lost.
+         * <li> [A5] If the new lookup class differs from the old one then UNCONDITIONAL
+         * is lost. If the new lookup class is not within the same package member as the
+         * old one, protected members will not be accessible by virtue of inheritance.
          * (Protected members may continue to be accessible because of package sharing.)
-         * <li>[A4] If the new lookup class is in a different package
-         * than the old one, protected and default (package) members will not be accessible.
-         * <li>[A5] If the new lookup class is not within the same package member
+         * <li> [A6] If the new lookup class is in a different package than the old one,
+         * protected and default (package) members will not be accessible.
+         * <li> [A7] If the new lookup class is not within the same package member
          * as the old one, private members will not be accessible.
-         * <li>[A6] If the new lookup class is not accessible to the old lookup class,
-         * using the original access modes,
+         * <li> [A8] If the new lookup class is not accessible to the old lookup class,
          * then no members, not even public members, will be accessible.
-         * <li>[A7] If the new lookup class for this {@code Lookup} is in the unnamed module,
-         * and the new lookup class is in a named module {@code M}, then no members in
-         * {@code M}'s non-exported packages will be accessible.
-         * <li>[A8] If the lookup for this {@code Lookup} is in a named module, and the
-         * new lookup class is in a different module, then no members, not even
-         * public members in {@code M}'s exported packages, will be accessible.
-         * [A8] (In all other cases, public members will continue to be accessible.)
+         * <li> [A9] (In all other cases, public members will continue to be accessible.)
          * </ul>
          * Other than the above cases, the new lookup will have the same
          * access capabilities as the original. [A10]
@@ -171,36 +174,35 @@ public class AccessControlTest {
             boolean sameModule = (c1.getModule() == c2.getModule()) ||
                                  (!c1.getModule().isNamed() && !c2.getModule().isNamed());
             boolean samePackage = (c1.getClassLoader() == c2.getClassLoader() &&
-                                   packagePrefix(c1).equals(packagePrefix(c2)));
+                                   c1.getPackageName().equals(c2.getPackageName()));
             boolean sameTopLevel = (topLevelClass(c1) == topLevelClass(c2));
             boolean sameClass = (c1 == c2);
             assert(samePackage  || !sameTopLevel);
             assert(sameTopLevel || !sameClass);
-            boolean accessible = sameClass;  // [A6]
+            boolean accessible = sameClass;
             if ((m1 & PACKAGE) != 0)  accessible |= samePackage;
             if ((m1 & PUBLIC ) != 0)  accessible |= (c2.getModifiers() & PUBLIC) != 0;
             if (!sameModule) {
-                if (c1.getModule().isNamed()) {
-                    accessible = false;  // [A8]
+                if (c1.getModule().isNamed() && (m1 & UNCONDITIONAL) == 0) {
+                    accessible = false;  // [A3]
                 } else {
-                    // Different module; loose MODULE and lower access.
-                    changed |= (MODULE|PACKAGE|PRIVATE|PROTECTED);  // [A7]
+                    changed |= (MODULE|PACKAGE|PRIVATE|PROTECTED);    // [A3] [A4]
                 }
             }
             if (!accessible) {
                 // Different package and no access to c2; lose all access.
-                changed |= (PUBLIC|MODULE|PACKAGE|PRIVATE|PROTECTED);  // [A6]
+                changed |= (PUBLIC|MODULE|PACKAGE|PRIVATE|PROTECTED);  // [A8]
             }
             if (!samePackage) {
                 // Different package; loose PACKAGE and lower access.
-                changed |= (PACKAGE|PRIVATE|PROTECTED);  // [A4]
+                changed |= (PACKAGE|PRIVATE|PROTECTED);  // [A6]
             }
             if (!sameTopLevel) {
-                // Different top-level class.  Lose PRIVATE and lower access.
-                changed |= (PRIVATE|PROTECTED);  // [A5]
+                // Different top-level class.  Lose PRIVATE and PROTECTED access.
+                changed |= (PRIVATE|PROTECTED);  // [A5] [A7]
             }
             if (!sameClass) {
-                changed |= (PROTECTED);     // [A3]
+                changed |= (UNCONDITIONAL);     // [A5]
             } else {
                 assert(changed == 0);       // [A10] (no deprivation if same class)
             }
@@ -228,11 +230,10 @@ public class AccessControlTest {
             Class<?> c1 = lookupClass();
             Class<?> c2 = m.getDeclaringClass();
 
-            // if the lookup class is in a loose module with PUBLIC access then
-            // public members of public types in all unnamed modules can be accessed
-            if (isLooseModule(c1.getModule())
+            // publicLookup has access to all public types/members of types in unnamed modules
+            if ((lookupModes & UNCONDITIONAL) != 0
                 && (lookupModes & PUBLIC) != 0
-                && (!c2.getModule().isNamed())
+                && !c2.getModule().isNamed()
                 && Modifier.isPublic(c2.getModifiers())
                 && Modifier.isPublic(m.getModifiers()))
                 return true;
@@ -261,17 +262,12 @@ public class AccessControlTest {
             if (load && c2.getClassLoader() != null) {
                 if (c1.getClassLoader() == null) {
                     // not visible
-                return false;
-            }
-                if (c1 == publicLookup().lookupClass()) {
-                    // not visible as lookup class is defined by child of the boot loader
                     return false;
                 }
             }
 
-            // if the lookup class is in a loose module with PUBLIC access then
-            // public types in all unnamed modules can be accessed
-            if (isLooseModule(c1.getModule())
+            // publicLookup has access to all public types/members of types in unnamed modules
+            if ((lookupModes & UNCONDITIONAL) != 0
                 && (lookupModes & PUBLIC) != 0
                 && (!c2.getModule().isNamed())
                 && Modifier.isPublic(c2.getModifiers()))
@@ -295,11 +291,6 @@ public class AccessControlTest {
             }
             return r;
         }
-
-        private boolean isLooseModule(Module m) {
-            ClassLoader cl = new ClassLoader() { };
-            return m.canRead(cl.getUnnamedModule());
-        }
     }
 
     private static Class<?> topLevelClass(Class<?> cls) {
@@ -310,14 +301,6 @@ public class AccessControlTest {
         assert(c == cls || cls.getEnclosingClass() != null);
         return c;
     }
-
-    private static String packagePrefix(Class<?> c) {
-        while (c.isArray())  c = c.getComponentType();
-        String s = c.getName();
-        assert(s.indexOf('/') < 0);
-        return s.substring(0, s.lastIndexOf('.')+1);
-    }
-
 
     private final TreeSet<LookupCase> CASES = new TreeSet<>();
     private final TreeMap<LookupCase,TreeSet<LookupCase>> CASE_EDGES = new TreeMap<>();

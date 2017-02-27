@@ -156,6 +156,11 @@ public abstract class TIFFDecompressor {
     protected boolean planar;
 
     /**
+     * The planar band to decode; ignored for chunky (interleaved) images.
+     */
+    protected int planarBand = 0;
+
+    /**
      * The value of the {@code SamplesPerPixel} tag.
      */
     protected int samplesPerPixel;
@@ -446,24 +451,19 @@ public abstract class TIFFDecompressor {
      * Create a {@code ComponentColorModel} for use in creating
      * an {@code ImageTypeSpecifier}.
      */
-    // This code was copied from javax.imageio.ImageTypeSpecifier.
+    // This code was inspired by the method of the same name in
+    // javax.imageio.ImageTypeSpecifier
     static ColorModel createComponentCM(ColorSpace colorSpace,
                                         int numBands,
+                                        int[] bitsPerSample,
                                         int dataType,
                                         boolean hasAlpha,
                                         boolean isAlphaPremultiplied) {
         int transparency =
             hasAlpha ? Transparency.TRANSLUCENT : Transparency.OPAQUE;
 
-        int[] numBits = new int[numBands];
-        int bits = DataBuffer.getDataTypeSize(dataType);
-
-        for (int i = 0; i < numBands; i++) {
-            numBits[i] = bits;
-        }
-
         return new ComponentColorModel(colorSpace,
-                                       numBits,
+                                       bitsPerSample,
                                        hasAlpha,
                                        isAlphaPremultiplied,
                                        transparency,
@@ -581,14 +581,15 @@ public abstract class TIFFDecompressor {
      * Determines whether the {@code DataBuffer} is filled without
      * any interspersed padding bits.
      */
-    private static boolean isDataBufferBitContiguous(SampleModel sm)
+    private static boolean isDataBufferBitContiguous(SampleModel sm,
+        int[] bitsPerSample)
         throws IIOException {
         int dataTypeSize = getDataTypeSize(sm.getDataType());
 
         if(sm instanceof ComponentSampleModel) {
             int numBands = sm.getNumBands();
             for(int i = 0; i < numBands; i++) {
-                if(sm.getSampleSize(i) != dataTypeSize) {
+                if(bitsPerSample[i] != dataTypeSize) {
                     // Sample does not fill data element.
                     return false;
                 }
@@ -682,6 +683,7 @@ public abstract class TIFFDecompressor {
      * of the supplied {@code WritableRaster}.
      */
     private static void reformatDiscontiguousData(byte[] buf,
+                                                  int[] bitsPerSample,
                                                   int stride,
                                                   int w,
                                                   int h,
@@ -691,7 +693,6 @@ public abstract class TIFFDecompressor {
         // Get SampleModel info.
         SampleModel sm = raster.getSampleModel();
         int numBands = sm.getNumBands();
-        int[] sampleSize = sm.getSampleSize();
 
         // Initialize input stream.
         ByteArrayInputStream is = new ByteArrayInputStream(buf);
@@ -705,7 +706,7 @@ public abstract class TIFFDecompressor {
             int x = raster.getMinX();
             for(int i = 0; i < w; i++, x++) {
                 for(int b = 0; b < numBands; b++) {
-                    long bits = iis.readBits(sampleSize[b]);
+                    long bits = iis.readBits(bitsPerSample[b]);
                     raster.setSample(x, y, b, (int)bits);
                 }
             }
@@ -806,8 +807,15 @@ public abstract class TIFFDecompressor {
                     blueLut[i] = (byte)((colorMap[2*mapSize + i]*255)/65535);
                 }
 
-                int dataType = bitsPerSample[0] == 8 ?
-                    DataBuffer.TYPE_BYTE : DataBuffer.TYPE_USHORT;
+                int dataType;
+                if (bitsPerSample[0] <= 8) {
+                    dataType = DataBuffer.TYPE_BYTE;
+                } else if (sampleFormat[0] ==
+                    BaselineTIFFTagSet.SAMPLE_FORMAT_SIGNED_INTEGER) {
+                    dataType = DataBuffer.TYPE_SHORT;
+                } else {
+                    dataType = DataBuffer.TYPE_USHORT;
+                }
                 return ImageTypeSpecifier.createIndexed(redLut,
                                                         greenLut,
                                                         blueLut,
@@ -1082,6 +1090,7 @@ public abstract class TIFFDecompressor {
 
                         cm = createComponentCM(cs,
                                                samplesPerPixel,
+                                               bitsPerSample,
                                                dataType,
                                                hasAlpha,
                                                alphaPremultiplied);
@@ -1089,6 +1098,7 @@ public abstract class TIFFDecompressor {
                         ColorSpace cs = new BogusColorSpace(samplesPerPixel);
                         cm = createComponentCM(cs,
                                                samplesPerPixel,
+                                               bitsPerSample,
                                                dataType,
                                                false, // hasAlpha
                                                false); // alphaPremultiplied
@@ -1119,17 +1129,23 @@ public abstract class TIFFDecompressor {
                  BaselineTIFFTagSet.SAMPLE_FORMAT_SIGNED_INTEGER);
 
             // Grayscale
-            if(samplesPerPixel == 1) {
-                int dataType =
-                    getDataTypeFromNumBits(maxBitsPerSample, isSigned);
+            if(samplesPerPixel == 1 &&
+                (bitsPerSample[0] == 1 || bitsPerSample[0] == 2 ||
+                 bitsPerSample[0] == 4 || bitsPerSample[0] == 8 ||
+                 bitsPerSample[0] == 16)) {
+                int dataType = getDataTypeFromNumBits(maxBitsPerSample, isSigned);
 
-                return ImageTypeSpecifier.createGrayscale(maxBitsPerSample,
+                return ImageTypeSpecifier.createGrayscale(bitsPerSample[0],
                                                           dataType,
                                                           isSigned);
             }
 
             // Gray-alpha
-            if (samplesPerPixel == 2) {
+            if (samplesPerPixel == 2 &&
+                bitsPerSample[0] == bitsPerSample[1] &&
+                (bitsPerSample[0] == 1 || bitsPerSample[0] == 2 ||
+                 bitsPerSample[0] == 4 || bitsPerSample[0] == 8 ||
+                 bitsPerSample[0] == 16)) {
                 boolean alphaPremultiplied = false;
                 if (extraSamples != null &&
                     extraSamples[0] ==
@@ -1147,6 +1163,13 @@ public abstract class TIFFDecompressor {
             }
 
             if (samplesPerPixel == 3 || samplesPerPixel == 4) {
+                int dataType = getDataTypeFromNumBits(maxBitsPerSample, isSigned);
+                int dataTypeSize;
+                try {
+                    dataTypeSize = getDataTypeSize(dataType);
+                } catch (IIOException ignored) {
+                    dataTypeSize = maxBitsPerSample;
+                }
                 if(totalBits <= 32 && !isSigned) {
                     // Packed RGB or RGBA
                     int redMask = createMask(bitsPerSample, 0);
@@ -1169,21 +1192,24 @@ public abstract class TIFFDecompressor {
                                                            alphaMask,
                                                            transferType,
                                                            alphaPremultiplied);
-                } else if(samplesPerPixel == 3) {
+                } else if(samplesPerPixel == 3 &&
+                    dataTypeSize == bitsPerSample[0] &&
+                    bitsPerSample[0] == bitsPerSample[1] &&
+                    bitsPerSample[1] == bitsPerSample[2]) {
                     // Interleaved RGB
                     int[] bandOffsets = new int[] {0, 1, 2};
-                    int dataType =
-                        getDataTypeFromNumBits(maxBitsPerSample, isSigned);
                     return ImageTypeSpecifier.createInterleaved(rgb,
                                                                 bandOffsets,
                                                                 dataType,
                                                                 false,
                                                                 false);
-                } else if(samplesPerPixel == 4) {
+                } else if(samplesPerPixel == 4 &&
+                    dataTypeSize == bitsPerSample[0] &&
+                    bitsPerSample[0] == bitsPerSample[1] &&
+                    bitsPerSample[1] == bitsPerSample[2] &&
+                    bitsPerSample[2] == bitsPerSample[3]) {
                     // Interleaved RGBA
                     int[] bandOffsets = new int[] {0, 1, 2, 3};
-                    int dataType =
-                        getDataTypeFromNumBits(maxBitsPerSample, isSigned);
                     boolean alphaPremultiplied = false;
                     if (extraSamples != null &&
                         extraSamples[0] ==
@@ -1196,20 +1222,28 @@ public abstract class TIFFDecompressor {
                                                                 true,
                                                                 alphaPremultiplied);
                 }
-            } else {
-                // Arbitrary Interleaved.
-                int dataType =
-                    getDataTypeFromNumBits(maxBitsPerSample, isSigned);
-                SampleModel sm = createInterleavedSM(dataType,
-                                                     samplesPerPixel);
-                ColorSpace cs = new BogusColorSpace(samplesPerPixel);
-                ColorModel cm = createComponentCM(cs,
-                                                  samplesPerPixel,
-                                                  dataType,
-                                                  false, // hasAlpha
-                                                  false); // alphaPremultiplied
-                return new ImageTypeSpecifier(cm, sm);
             }
+
+            // Arbitrary Interleaved.
+            int dataType =
+                getDataTypeFromNumBits(maxBitsPerSample, isSigned);
+            SampleModel sm = createInterleavedSM(dataType,
+                                                 samplesPerPixel);
+            ColorSpace cs;
+            if (samplesPerPixel <= 2) {
+                cs = ColorSpace.getInstance(ColorSpace.CS_GRAY);
+            } else if (samplesPerPixel <= 4) {
+                cs = rgb;
+            } else {
+                cs = new BogusColorSpace(samplesPerPixel);
+            }
+            ColorModel cm = createComponentCM(cs,
+                                              samplesPerPixel,
+                                              bitsPerSample,
+                                              dataType,
+                                              false, // hasAlpha
+                                              false); // alphaPremultiplied
+            return new ImageTypeSpecifier(cm, sm);
         }
 
         return null;
@@ -1283,6 +1317,14 @@ public abstract class TIFFDecompressor {
     public void setPlanar(boolean planar) {
         this.planar = planar;
     }
+
+    /**
+     * Sets the index of the planar configuration band to be decoded. This value
+     * is ignored for chunky (interleaved) images.
+     *
+     * @param the index of the planar band to decode
+     */
+    public void setPlanarBand(int planarBand) { this.planarBand = planarBand; }
 
     /**
      * Sets the value of the {@code samplesPerPixel} field.
@@ -2488,7 +2530,7 @@ public abstract class TIFFDecompressor {
             // Branch based on whether data are bit-contiguous, i.e.,
             // data are packaed as tightly as possible leaving no unused
             // bits except at the end of a row.
-            if(isDataBufferBitContiguous(sm)) {
+            if(isDataBufferBitContiguous(sm, bitsPerSample)) {
                 // Use byte or float data directly.
                 if (byteData != null) {
                     decodeRaw(byteData, dstOffset,
@@ -2537,11 +2579,19 @@ public abstract class TIFFDecompressor {
             } else {
                 // Read discontiguous data into bytes and set the samples
                 // into the Raster.
-                int bpp = getBitsPerPixel(sm);
+                int bpp;
+                if (planar) {
+                    bpp = bitsPerSample[planarBand];
+                } else {
+                    bpp = 0;
+                    for (int bps : bitsPerSample) {
+                        bpp += bps;
+                    }
+                }
                 int bytesPerRow = (bpp*srcWidth + 7)/8;
                 byte[] buf = new byte[bytesPerRow*srcHeight];
                 decodeRaw(buf, 0, bpp, bytesPerRow);
-                reformatDiscontiguousData(buf, bytesPerRow,
+                reformatDiscontiguousData(buf, bitsPerSample, bytesPerRow,
                                           srcWidth, srcHeight,
                                           ras);
             }

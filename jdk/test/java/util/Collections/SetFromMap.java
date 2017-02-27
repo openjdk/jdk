@@ -49,7 +49,7 @@ public class SetFromMap {
 
     private static void realMain() throws Throwable {
         try {
-            Map<String,Boolean> m = new IdentityHashMap<String,Boolean>();
+            Map<String,Boolean> m = new IdentityHashMap<>();
             Set<String> s = Collections.newSetFromMap(m);
             String foo1 = new String("foo");
             String foo2 = new String("foo");

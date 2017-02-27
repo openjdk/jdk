@@ -76,7 +76,7 @@ public class BasicFlagsChange {
         extraOpts.add(option);
         extraOpts.add("-classpath");
         extraOpts.add(Utils.TEST_CLASS_PATH + File.pathSeparator + Utils.TEST_SRC);
-        AotCompiler.launchCompiler(libName, className + ".class", extraOpts, null);
+        AotCompiler.launchCompiler(libName, className, extraOpts, null);
     }
 
     private static void runAndCheck(String option, String libName,

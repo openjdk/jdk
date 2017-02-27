@@ -425,6 +425,7 @@ public final class Class<T> implements java.io.Serializable,
      *         </ul>
      *
      * @since 9
+     * @spec JPMS
      */
     @CallerSensitive
     public static Class<?> forName(Module module, String name) {
@@ -508,8 +509,9 @@ public final class Class<T> implements java.io.Serializable,
     public T newInstance()
         throws InstantiationException, IllegalAccessException
     {
-        if (System.getSecurityManager() != null) {
-            checkMemberAccess(Member.PUBLIC, Reflection.getCallerClass(), false);
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            checkMemberAccess(sm, Member.PUBLIC, Reflection.getCallerClass(), false);
         }
 
         // NOTE: the following code may not be strictly correct under
@@ -818,6 +820,7 @@ public final class Class<T> implements java.io.Serializable,
      * @return the module that this class or interface is a member of
      *
      * @since 9
+     * @spec JPMS
      */
     public Module getModule() {
         return module;
@@ -923,6 +926,8 @@ public final class Class<T> implements java.io.Serializable,
      * this method returns {@code null}.
      *
      * @return the package of this class.
+     * @revised 9
+     * @spec JPMS
      */
     public Package getPackage() {
         if (isPrimitive() || isArray()) {
@@ -950,20 +955,30 @@ public final class Class<T> implements java.io.Serializable,
      * declaring class} of the {@link #getEnclosingMethod enclosing method} or
      * {@link #getEnclosingConstructor enclosing constructor}.
      *
-     * <p> This method returns {@code null} if this class represents an array type,
-     * a primitive type or void.
+     * <p> If this class represents an array type then this method returns the
+     * package name of the element type. If this class represents a primitive
+     * type or void then the package name "{@code java.lang}" is returned.
      *
      * @return the fully qualified package name
      *
      * @since 9
+     * @spec JPMS
      * @jls 6.7  Fully Qualified Names
      */
     public String getPackageName() {
         String pn = this.packageName;
-        if (pn == null && !isArray() && !isPrimitive()) {
-            String cn = getName();
-            int dot = cn.lastIndexOf('.');
-            pn = (dot != -1) ? cn.substring(0, dot).intern() : "";
+        if (pn == null) {
+            Class<?> c = this;
+            while (c.isArray()) {
+                c = c.getComponentType();
+            }
+            if (c.isPrimitive()) {
+                pn = "java.lang";
+            } else {
+                String cn = c.getName();
+                int dot = cn.lastIndexOf('.');
+                pn = (dot != -1) ? cn.substring(0, dot).intern() : "";
+            }
             this.packageName = pn;
         }
         return pn;
@@ -1223,38 +1238,27 @@ public final class Class<T> implements java.io.Serializable,
 
             // Perform access check
             final Class<?> enclosingCandidate = enclosingInfo.getEnclosingClass();
-            enclosingCandidate.checkMemberAccess(Member.DECLARED,
-                                                 Reflection.getCallerClass(), true);
-            // Client is ok to access declared methods but j.l.Class might not be.
-            Method[] candidates = AccessController.doPrivileged(
-                    new PrivilegedAction<>() {
-                        @Override
-                        public Method[] run() {
-                            return enclosingCandidate.getDeclaredMethods();
-                        }
-                    });
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                enclosingCandidate.checkMemberAccess(sm, Member.DECLARED,
+                                                     Reflection.getCallerClass(), true);
+            }
+            Method[] candidates = enclosingCandidate.privateGetDeclaredMethods(false);
+
             /*
              * Loop over all declared methods; match method name,
              * number of and type of parameters, *and* return
              * type.  Matching return type is also necessary
              * because of covariant returns, etc.
              */
-            for(Method m: candidates) {
-                if (m.getName().equals(enclosingInfo.getName()) ) {
-                    Class<?>[] candidateParamClasses = m.getParameterTypes();
-                    if (candidateParamClasses.length == parameterClasses.length) {
-                        boolean matches = true;
-                        for(int i = 0; i < candidateParamClasses.length; i++) {
-                            if (!candidateParamClasses[i].equals(parameterClasses[i])) {
-                                matches = false;
-                                break;
-                            }
-                        }
-
-                        if (matches) { // finally, check return type
-                            if (m.getReturnType().equals(returnType) )
-                                return m;
-                        }
+            ReflectionFactory fact = getReflectionFactory();
+            for (Method m : candidates) {
+                if (m.getName().equals(enclosingInfo.getName()) &&
+                    arrayContentsEq(parameterClasses,
+                                    fact.getExecutableSharedParameterTypes(m))) {
+                    // finally, check return type
+                    if (m.getReturnType().equals(returnType)) {
+                        return fact.copyMethod(m);
                     }
                 }
             }
@@ -1390,33 +1394,23 @@ public final class Class<T> implements java.io.Serializable,
 
             // Perform access check
             final Class<?> enclosingCandidate = enclosingInfo.getEnclosingClass();
-            enclosingCandidate.checkMemberAccess(Member.DECLARED,
-                                                 Reflection.getCallerClass(), true);
-            // Client is ok to access declared methods but j.l.Class might not be.
-            Constructor<?>[] candidates = AccessController.doPrivileged(
-                    new PrivilegedAction<>() {
-                        @Override
-                        public Constructor<?>[] run() {
-                            return enclosingCandidate.getDeclaredConstructors();
-                        }
-                    });
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                enclosingCandidate.checkMemberAccess(sm, Member.DECLARED,
+                                                     Reflection.getCallerClass(), true);
+            }
+
+            Constructor<?>[] candidates = enclosingCandidate
+                    .privateGetDeclaredConstructors(false);
             /*
              * Loop over all declared constructors; match number
              * of and type of parameters.
              */
-            for(Constructor<?> c: candidates) {
-                Class<?>[] candidateParamClasses = c.getParameterTypes();
-                if (candidateParamClasses.length == parameterClasses.length) {
-                    boolean matches = true;
-                    for(int i = 0; i < candidateParamClasses.length; i++) {
-                        if (!candidateParamClasses[i].equals(parameterClasses[i])) {
-                            matches = false;
-                            break;
-                        }
-                    }
-
-                    if (matches)
-                        return c;
+            ReflectionFactory fact = getReflectionFactory();
+            for (Constructor<?> c : candidates) {
+                if (arrayContentsEq(parameterClasses,
+                                    fact.getExecutableSharedParameterTypes(c))) {
+                    return fact.copyConstructor(c);
                 }
             }
 
@@ -1446,9 +1440,13 @@ public final class Class<T> implements java.io.Serializable,
     public Class<?> getDeclaringClass() throws SecurityException {
         final Class<?> candidate = getDeclaringClass0();
 
-        if (candidate != null)
-            candidate.checkPackageAccess(
+        if (candidate != null) {
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                candidate.checkPackageAccess(sm,
                     ClassLoader.getClassLoader(Reflection.getCallerClass()), true);
+            }
+        }
         return candidate;
     }
 
@@ -1496,9 +1494,13 @@ public final class Class<T> implements java.io.Serializable,
                 enclosingCandidate = enclosingClass;
         }
 
-        if (enclosingCandidate != null)
-            enclosingCandidate.checkPackageAccess(
+        if (enclosingCandidate != null) {
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                enclosingCandidate.checkPackageAccess(sm,
                     ClassLoader.getClassLoader(Reflection.getCallerClass()), true);
+            }
+        }
         return enclosingCandidate;
     }
 
@@ -1688,7 +1690,10 @@ public final class Class<T> implements java.io.Serializable,
      */
     @CallerSensitive
     public Class<?>[] getClasses() {
-        checkMemberAccess(Member.PUBLIC, Reflection.getCallerClass(), false);
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            checkMemberAccess(sm, Member.PUBLIC, Reflection.getCallerClass(), false);
+        }
 
         // Privileged so this implementation can look at DECLARED classes,
         // something the caller might not have privilege to do.  The code here
@@ -1754,7 +1759,10 @@ public final class Class<T> implements java.io.Serializable,
      */
     @CallerSensitive
     public Field[] getFields() throws SecurityException {
-        checkMemberAccess(Member.PUBLIC, Reflection.getCallerClass(), true);
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            checkMemberAccess(sm, Member.PUBLIC, Reflection.getCallerClass(), true);
+        }
         return copyFields(privateGetPublicFields(null));
     }
 
@@ -1841,7 +1849,10 @@ public final class Class<T> implements java.io.Serializable,
      */
     @CallerSensitive
     public Method[] getMethods() throws SecurityException {
-        checkMemberAccess(Member.PUBLIC, Reflection.getCallerClass(), true);
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            checkMemberAccess(sm, Member.PUBLIC, Reflection.getCallerClass(), true);
+        }
         return copyMethods(privateGetPublicMethods());
     }
 
@@ -1877,7 +1888,10 @@ public final class Class<T> implements java.io.Serializable,
      */
     @CallerSensitive
     public Constructor<?>[] getConstructors() throws SecurityException {
-        checkMemberAccess(Member.PUBLIC, Reflection.getCallerClass(), true);
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            checkMemberAccess(sm, Member.PUBLIC, Reflection.getCallerClass(), true);
+        }
         return copyConstructors(privateGetDeclaredConstructors(true));
     }
 
@@ -1928,7 +1942,10 @@ public final class Class<T> implements java.io.Serializable,
     public Field getField(String name)
         throws NoSuchFieldException, SecurityException {
         Objects.requireNonNull(name);
-        checkMemberAccess(Member.PUBLIC, Reflection.getCallerClass(), true);
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            checkMemberAccess(sm, Member.PUBLIC, Reflection.getCallerClass(), true);
+        }
         Field field = getField0(name);
         if (field == null) {
             throw new NoSuchFieldException(name);
@@ -2034,10 +2051,13 @@ public final class Class<T> implements java.io.Serializable,
     public Method getMethod(String name, Class<?>... parameterTypes)
         throws NoSuchMethodException, SecurityException {
         Objects.requireNonNull(name);
-        checkMemberAccess(Member.PUBLIC, Reflection.getCallerClass(), true);
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            checkMemberAccess(sm, Member.PUBLIC, Reflection.getCallerClass(), true);
+        }
         Method method = getMethod0(name, parameterTypes);
         if (method == null) {
-            throw new NoSuchMethodException(getName() + "." + name + argumentTypesToString(parameterTypes));
+            throw new NoSuchMethodException(methodToString(name, parameterTypes));
         }
         return getReflectionFactory().copyMethod(method);
     }
@@ -2092,8 +2112,12 @@ public final class Class<T> implements java.io.Serializable,
      */
     @CallerSensitive
     public Constructor<T> getConstructor(Class<?>... parameterTypes)
-        throws NoSuchMethodException, SecurityException {
-        checkMemberAccess(Member.PUBLIC, Reflection.getCallerClass(), true);
+        throws NoSuchMethodException, SecurityException
+    {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            checkMemberAccess(sm, Member.PUBLIC, Reflection.getCallerClass(), true);
+        }
         return getReflectionFactory().copyConstructor(
             getConstructor0(parameterTypes, Member.PUBLIC));
     }
@@ -2136,7 +2160,10 @@ public final class Class<T> implements java.io.Serializable,
      */
     @CallerSensitive
     public Class<?>[] getDeclaredClasses() throws SecurityException {
-        checkMemberAccess(Member.DECLARED, Reflection.getCallerClass(), false);
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            checkMemberAccess(sm, Member.DECLARED, Reflection.getCallerClass(), false);
+        }
         return getDeclaredClasses0();
     }
 
@@ -2185,7 +2212,10 @@ public final class Class<T> implements java.io.Serializable,
      */
     @CallerSensitive
     public Field[] getDeclaredFields() throws SecurityException {
-        checkMemberAccess(Member.DECLARED, Reflection.getCallerClass(), true);
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            checkMemberAccess(sm, Member.DECLARED, Reflection.getCallerClass(), true);
+        }
         return copyFields(privateGetDeclaredFields(false));
     }
 
@@ -2244,7 +2274,10 @@ public final class Class<T> implements java.io.Serializable,
      */
     @CallerSensitive
     public Method[] getDeclaredMethods() throws SecurityException {
-        checkMemberAccess(Member.DECLARED, Reflection.getCallerClass(), true);
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            checkMemberAccess(sm, Member.DECLARED, Reflection.getCallerClass(), true);
+        }
         return copyMethods(privateGetDeclaredMethods(false));
     }
 
@@ -2289,7 +2322,10 @@ public final class Class<T> implements java.io.Serializable,
      */
     @CallerSensitive
     public Constructor<?>[] getDeclaredConstructors() throws SecurityException {
-        checkMemberAccess(Member.DECLARED, Reflection.getCallerClass(), true);
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            checkMemberAccess(sm, Member.DECLARED, Reflection.getCallerClass(), true);
+        }
         return copyConstructors(privateGetDeclaredConstructors(false));
     }
 
@@ -2338,7 +2374,10 @@ public final class Class<T> implements java.io.Serializable,
     public Field getDeclaredField(String name)
         throws NoSuchFieldException, SecurityException {
         Objects.requireNonNull(name);
-        checkMemberAccess(Member.DECLARED, Reflection.getCallerClass(), true);
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            checkMemberAccess(sm, Member.DECLARED, Reflection.getCallerClass(), true);
+        }
         Field field = searchFields(privateGetDeclaredFields(false), name);
         if (field == null) {
             throw new NoSuchFieldException(name);
@@ -2399,10 +2438,13 @@ public final class Class<T> implements java.io.Serializable,
     public Method getDeclaredMethod(String name, Class<?>... parameterTypes)
         throws NoSuchMethodException, SecurityException {
         Objects.requireNonNull(name);
-        checkMemberAccess(Member.DECLARED, Reflection.getCallerClass(), true);
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            checkMemberAccess(sm, Member.DECLARED, Reflection.getCallerClass(), true);
+        }
         Method method = searchMethods(privateGetDeclaredMethods(false), name, parameterTypes);
         if (method == null) {
-            throw new NoSuchMethodException(getName() + "." + name + argumentTypesToString(parameterTypes));
+            throw new NoSuchMethodException(methodToString(name, parameterTypes));
         }
         return getReflectionFactory().copyMethod(method);
     }
@@ -2448,8 +2490,13 @@ public final class Class<T> implements java.io.Serializable,
      */
     @CallerSensitive
     public Constructor<T> getDeclaredConstructor(Class<?>... parameterTypes)
-        throws NoSuchMethodException, SecurityException {
-        checkMemberAccess(Member.DECLARED, Reflection.getCallerClass(), true);
+        throws NoSuchMethodException, SecurityException
+    {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            checkMemberAccess(sm, Member.DECLARED, Reflection.getCallerClass(), true);
+        }
+
         return getReflectionFactory().copyConstructor(
             getConstructor0(parameterTypes, Member.DECLARED));
     }
@@ -2458,10 +2505,16 @@ public final class Class<T> implements java.io.Serializable,
      * Finds a resource with a given name.
      *
      * <p> If this class is in a named {@link Module Module} then this method
-     * will attempt to find the resource in the module by means of the absolute
-     * resource name, subject to the rules for encapsulation specified in the
-     * {@code Module} {@link Module#getResourceAsStream getResourceAsStream}
-     * method.
+     * will attempt to find the resource in the module. This is done by
+     * delegating to the module's class loader {@link
+     * ClassLoader#findResource(String,String) findResource(String,String)}
+     * method, invoking it with the module name and the absolute name of the
+     * resource. Resources in named modules are subject to the rules for
+     * encapsulation specified in the {@code Module} {@link
+     * Module#getResourceAsStream getResourceAsStream} method and so this
+     * method returns {@code null} when the resource is a
+     * non-"{@code .class}" resource in a package that is not open to the
+     * caller's module.
      *
      * <p> Otherwise, if this class is not in a named module then the rules for
      * searching resources associated with a given class are implemented by the
@@ -2470,9 +2523,8 @@ public final class Class<T> implements java.io.Serializable,
      * the bootstrap class loader, the method delegates to {@link
      * ClassLoader#getSystemResourceAsStream}.
      *
-     * <p> Before finding a resource in the caller's module or delegation to a
-     * class loader, an absolute resource name is constructed from the given
-     * resource name using this algorithm:
+     * <p> Before delegation, an absolute resource name is constructed from the
+     * given resource name using this algorithm:
      *
      * <ul>
      *
@@ -2499,7 +2551,11 @@ public final class Class<T> implements java.io.Serializable,
      *          least the caller module, or access to the resource is denied
      *          by the security manager.
      * @throws  NullPointerException If {@code name} is {@code null}
+     *
+     * @see Module#getResourceAsStream(String)
      * @since  1.1
+     * @revised 9
+     * @spec JPMS
      */
     @CallerSensitive
     public InputStream getResourceAsStream(String name) {
@@ -2552,10 +2608,16 @@ public final class Class<T> implements java.io.Serializable,
      * Finds a resource with a given name.
      *
      * <p> If this class is in a named {@link Module Module} then this method
-     * will attempt to find the resource in the module by means of the absolute
-     * resource name, subject to the rules for encapsulation specified in the
-     * {@code Module} {@link Module#getResourceAsStream getResourceAsStream}
-     * method.
+     * will attempt to find the resource in the module. This is done by
+     * delegating to the module's class loader {@link
+     * ClassLoader#findResource(String,String) findResource(String,String)}
+     * method, invoking it with the module name and the absolute name of the
+     * resource. Resources in named modules are subject to the rules for
+     * encapsulation specified in the {@code Module} {@link
+     * Module#getResourceAsStream getResourceAsStream} method and so this
+     * method returns {@code null} when the resource is a
+     * non-"{@code .class}" resource in a package that is not open to the
+     * caller's module.
      *
      * <p> Otherwise, if this class is not in a named module then the rules for
      * searching resources associated with a given class are implemented by the
@@ -2594,6 +2656,8 @@ public final class Class<T> implements java.io.Serializable,
      *         manager.
      * @throws NullPointerException If {@code name} is {@code null}
      * @since  1.1
+     * @revised 9
+     * @spec JPMS
      */
     @CallerSensitive
     public URL getResource(String name) {
@@ -2697,51 +2761,49 @@ public final class Class<T> implements java.io.Serializable,
      *
      * <p> Default policy: allow all clients access with normal Java access
      * control.
+     *
+     * <p> NOTE: should only be called if a SecurityManager is installed
      */
-    private void checkMemberAccess(int which, Class<?> caller, boolean checkProxyInterfaces) {
-        final SecurityManager s = System.getSecurityManager();
-        if (s != null) {
-            /* Default policy allows access to all {@link Member#PUBLIC} members,
-             * as well as access to classes that have the same class loader as the caller.
-             * In all other cases, it requires RuntimePermission("accessDeclaredMembers")
-             * permission.
-             */
-            final ClassLoader ccl = ClassLoader.getClassLoader(caller);
+    private void checkMemberAccess(SecurityManager sm, int which,
+                                   Class<?> caller, boolean checkProxyInterfaces) {
+        /* Default policy allows access to all {@link Member#PUBLIC} members,
+         * as well as access to classes that have the same class loader as the caller.
+         * In all other cases, it requires RuntimePermission("accessDeclaredMembers")
+         * permission.
+         */
+        final ClassLoader ccl = caller.getClassLoader0();
+        if (which != Member.PUBLIC) {
             final ClassLoader cl = getClassLoader0();
-            if (which != Member.PUBLIC) {
-                if (ccl != cl) {
-                    s.checkPermission(SecurityConstants.CHECK_MEMBER_ACCESS_PERMISSION);
-                }
+            if (ccl != cl) {
+                sm.checkPermission(SecurityConstants.CHECK_MEMBER_ACCESS_PERMISSION);
             }
-            this.checkPackageAccess(ccl, checkProxyInterfaces);
         }
+        this.checkPackageAccess(sm, ccl, checkProxyInterfaces);
     }
 
     /*
      * Checks if a client loaded in ClassLoader ccl is allowed to access this
      * class under the current package access policy. If access is denied,
      * throw a SecurityException.
+     *
+     * NOTE: this method should only be called if a SecurityManager is active
      */
-    private void checkPackageAccess(final ClassLoader ccl, boolean checkProxyInterfaces) {
-        final SecurityManager s = System.getSecurityManager();
-        if (s != null) {
-            final ClassLoader cl = getClassLoader0();
+    private void checkPackageAccess(SecurityManager sm, final ClassLoader ccl,
+                                    boolean checkProxyInterfaces) {
+        final ClassLoader cl = getClassLoader0();
 
-            if (ReflectUtil.needsPackageAccessCheck(ccl, cl)) {
-                String name = this.getName();
-                int i = name.lastIndexOf('.');
-                if (i != -1) {
-                    // skip the package access check on a proxy class in default proxy package
-                    String pkg = name.substring(0, i);
-                    if (!Proxy.isProxyClass(this) || ReflectUtil.isNonPublicProxyClass(this)) {
-                        s.checkPackageAccess(pkg);
-                    }
+        if (ReflectUtil.needsPackageAccessCheck(ccl, cl)) {
+            String pkg = this.getPackageName();
+            if (pkg != null && !pkg.isEmpty()) {
+                // skip the package access check on a proxy class in default proxy package
+                if (!Proxy.isProxyClass(this) || ReflectUtil.isNonPublicProxyClass(this)) {
+                    sm.checkPackageAccess(pkg);
                 }
             }
-            // check package access on the proxy interfaces
-            if (checkProxyInterfaces && Proxy.isProxyClass(this)) {
-                ReflectUtil.checkProxyPackageAccess(ccl, this.getInterfaces());
-            }
+        }
+        // check package access on the proxy interfaces
+        if (checkProxyInterfaces && Proxy.isProxyClass(this)) {
+            ReflectUtil.checkProxyPackageAccess(ccl, this.getInterfaces());
         }
     }
 
@@ -2755,11 +2817,9 @@ public final class Class<T> implements java.io.Serializable,
             while (c.isArray()) {
                 c = c.getComponentType();
             }
-            String baseName = c.getName();
-            int index = baseName.lastIndexOf('.');
-            if (index != -1) {
-                name = baseName.substring(0, index).replace('.', '/')
-                    +"/"+name;
+            String baseName = c.getPackageName();
+            if (baseName != null && !baseName.isEmpty()) {
+                name = baseName.replace('.', '/') + "/" + name;
             }
         } else {
             name = name.substring(1);
@@ -3233,7 +3293,7 @@ public final class Class<T> implements java.io.Serializable,
                 return constructor;
             }
         }
-        throw new NoSuchMethodException(getName() + ".<init>" + argumentTypesToString(parameterTypes));
+        throw new NoSuchMethodException(methodToString("<init>", parameterTypes));
     }
 
     //
@@ -3294,8 +3354,11 @@ public final class Class<T> implements java.io.Serializable,
     private native Constructor<T>[] getDeclaredConstructors0(boolean publicOnly);
     private native Class<?>[]   getDeclaredClasses0();
 
-    private static String        argumentTypesToString(Class<?>[] argTypes) {
-        StringJoiner sj = new StringJoiner(", ", "(", ")");
+    /**
+     * Helper method to get the method name from arguments.
+     */
+    private String methodToString(String name, Class<?>[] argTypes) {
+        StringJoiner sj = new StringJoiner(", ", getName() + "." + name + "(", ")");
         if (argTypes != null) {
             for (int i = 0; i < argTypes.length; i++) {
                 Class<?> c = argTypes[i];

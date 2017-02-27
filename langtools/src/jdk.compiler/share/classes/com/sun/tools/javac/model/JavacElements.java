@@ -25,6 +25,7 @@
 
 package com.sun.tools.javac.model;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -117,6 +118,14 @@ public class JavacElements implements Elements {
     }
 
     @Override @DefinedBy(Api.LANGUAGE_MODEL)
+    public Set<? extends ModuleElement> getAllModuleElements() {
+        if (allowModules)
+            return Collections.unmodifiableSet(modules.allModules());
+        else
+            return Collections.emptySet();
+    }
+
+    @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public ModuleSymbol getModuleElement(CharSequence name) {
         ensureEntered("getModuleElement");
         if (modules.getDefaultModule() == syms.noModule)
@@ -140,8 +149,6 @@ public class JavacElements implements Elements {
 
     private PackageSymbol doGetPackageElement(ModuleElement module, CharSequence name) {
         ensureEntered("getPackageElement");
-        if (name.length() == 0)
-            return syms.unnamedModule.unnamedPackage;
         return doGetElement(module, "getPackageElement", name, PackageSymbol.class);
     }
 
@@ -165,7 +172,7 @@ public class JavacElements implements Elements {
     private <S extends Symbol> S doGetElement(ModuleElement module, String methodName,
                                               CharSequence name, Class<S> clazz) {
         String strName = name.toString();
-        if (!SourceVersion.isName(strName)) {
+        if (!SourceVersion.isName(strName) && (!strName.isEmpty() || clazz == ClassSymbol.class)) {
             return null;
         }
         if (module == null) {
@@ -184,39 +191,34 @@ public class JavacElements implements Elements {
             return nameToSymbol(syms.noModule, nameStr, clazz);
         }
 
-        RecoveryLoadClass prevRecoveryLoadClass = resolve.setRecoveryLoadClass((env, name) -> null);
-        try {
-            Set<S> found = new LinkedHashSet<>();
+        Set<S> found = new LinkedHashSet<>();
 
-            for (ModuleSymbol msym : modules.allModules()) {
-                S sym = nameToSymbol(msym, nameStr, clazz);
+        for (ModuleSymbol msym : modules.allModules()) {
+            S sym = nameToSymbol(msym, nameStr, clazz);
 
-                if (sym != null) {
-                    if (!allowModules || clazz == ClassSymbol.class || !sym.members().isEmpty()) {
-                        //do not add packages without members:
-                        found.add(sym);
-                    }
+            if (sym != null) {
+                if (!allowModules || clazz == ClassSymbol.class || !sym.members().isEmpty()) {
+                    //do not add packages without members:
+                    found.add(sym);
                 }
             }
+        }
 
-            if (found.size() == 1) {
-                return found.iterator().next();
-            } else if (found.size() > 1) {
-                //more than one element found, produce a note:
-                if (alreadyWarnedDuplicates.add(methodName + ":" + nameStr)) {
-                    String moduleNames = found.stream()
-                                              .map(s -> s.packge().modle)
-                                              .map(m -> m.toString())
-                                              .collect(Collectors.joining(", "));
-                    log.note(Notes.MultipleElements(methodName, nameStr, moduleNames));
-                }
-                return null;
-            } else {
-                //not found, or more than one element found:
-                return null;
+        if (found.size() == 1) {
+            return found.iterator().next();
+        } else if (found.size() > 1) {
+            //more than one element found, produce a note:
+            if (alreadyWarnedDuplicates.add(methodName + ":" + nameStr)) {
+                String moduleNames = found.stream()
+                                          .map(s -> s.packge().modle)
+                                          .map(m -> m.toString())
+                                          .collect(Collectors.joining(", "));
+                log.note(Notes.MultipleElements(methodName, nameStr, moduleNames));
             }
-        } finally {
-            resolve.setRecoveryLoadClass(prevRecoveryLoadClass);
+            return null;
+        } else {
+            //not found, or more than one element found:
+            return null;
         }
     }
 
@@ -295,7 +297,9 @@ public class JavacElements implements Elements {
                                    List<JCAnnotation> trees) {
         for (Attribute.Compound anno : annos) {
             for (JCAnnotation tree : trees) {
-                JCTree match = matchAnnoToTree(findme, anno, tree);
+                if (tree.type.tsym != anno.type.tsym)
+                    continue;
+                JCTree match = matchAttributeToTree(findme, anno, tree);
                 if (match != null)
                     return match;
             }
@@ -304,15 +308,15 @@ public class JavacElements implements Elements {
     }
 
     /**
-     * Returns the tree for an annotation given an Attribute to
-     * search (recursively) and its corresponding tree.
+     * Returns the tree for an attribute given an enclosing attribute to
+     * search (recursively) and the enclosing attribute's corresponding tree.
      * Returns null if the tree cannot be found.
      */
-    private JCTree matchAnnoToTree(final Attribute.Compound findme,
-                                   final Attribute attr,
-                                   final JCTree tree) {
+    private JCTree matchAttributeToTree(final Attribute findme,
+                                        final Attribute attr,
+                                        final JCTree tree) {
         if (attr == findme)
-            return (tree.type.tsym == findme.type.tsym) ? tree : null;
+            return tree;
 
         class Vis implements Attribute.Visitor {
             JCTree result = null;
@@ -324,7 +328,7 @@ public class JavacElements implements Elements {
                 for (Pair<MethodSymbol, Attribute> pair : anno.values) {
                     JCExpression expr = scanForAssign(pair.fst, tree);
                     if (expr != null) {
-                        JCTree match = matchAnnoToTree(findme, pair.snd, expr);
+                        JCTree match = matchAttributeToTree(findme, pair.snd, expr);
                         if (match != null) {
                             result = match;
                             return;
@@ -333,16 +337,19 @@ public class JavacElements implements Elements {
                 }
             }
             public void visitArray(Attribute.Array array) {
-                if (tree.hasTag(NEWARRAY) &&
-                        types.elemtype(array.type).tsym == findme.type.tsym) {
-                    List<JCExpression> elems = ((JCNewArray) tree).elems;
+                if (tree.hasTag(NEWARRAY)) {
+                    List<JCExpression> elems = ((JCNewArray)tree).elems;
                     for (Attribute value : array.values) {
-                        if (value == findme) {
-                            result = elems.head;
+                        JCTree match = matchAttributeToTree(findme, value, elems.head);
+                        if (match != null) {
+                            result = match;
                             return;
                         }
                         elems = elems.tail;
                     }
+                } else if (array.values.length == 1) {
+                    // the tree may not be a NEWARRAY for single-element array initializers
+                    result = matchAttributeToTree(findme, array.values[0], tree);
                 }
             }
             public void visitEnum(Attribute.Enum e) {
@@ -717,10 +724,15 @@ public class JavacElements implements Elements {
         if (annoTree == null)
             return elemTreeTop;
 
-        // 6388543: if v != null, we should search within annoTree to find
-        // the tree matching v. For now, we ignore v and return the tree of
-        // the annotation.
-        return new Pair<>(annoTree, elemTreeTop.snd);
+        if (v == null)
+            return new Pair<>(annoTree, elemTreeTop.snd);
+
+        JCTree valueTree = matchAttributeToTree(
+                cast(Attribute.class, v), cast(Attribute.class, a), annoTree);
+        if (valueTree == null)
+            return new Pair<>(annoTree, elemTreeTop.snd);
+
+        return new Pair<>(valueTree, elemTreeTop.snd);
     }
 
     /**

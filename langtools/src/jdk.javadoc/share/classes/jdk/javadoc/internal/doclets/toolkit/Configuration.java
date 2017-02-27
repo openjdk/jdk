@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.SimpleElementVisitor9;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
@@ -226,6 +225,11 @@ public abstract class Configuration {
      * used.Default is don't show version information.
      */
     public boolean showversion = false;
+
+    /**
+     * Allow JavaScript in doc comments.
+     */
+    private boolean allowScriptInComments = false;
 
     /**
      * Sourcepath from where to read the source files. Default is classpath.
@@ -646,6 +650,13 @@ public abstract class Configuration {
                     dumpOnError = true;
                     return true;
                 }
+            },
+            new Option(resources, "--allow-script-in-comments") {
+                @Override
+                public boolean process(String opt, List<String> args) {
+                    allowScriptInComments = true;
+                    return true;
+                }
             }
         };
         Set<Doclet.Option> set = new TreeSet<>();
@@ -1054,7 +1065,7 @@ public abstract class Configuration {
         private final int argCount;
 
         protected Option(Resources resources, String name, int argCount) {
-            this(resources, "doclet.usage." + name.toLowerCase().replaceAll("^-*", ""), name, argCount);
+            this(resources, "doclet.usage." + name.toLowerCase().replaceAll("^-+", ""), name, argCount);
         }
 
         protected Option(Resources resources, String keyBase, String name, int argCount) {
@@ -1104,7 +1115,7 @@ public abstract class Configuration {
 
         @Override
         public String toString() {
-            return names.toString();
+            return Arrays.toString(names);
         }
 
         @Override
@@ -1227,5 +1238,14 @@ public abstract class Configuration {
                 }.visit(e);
             }
         }
+    }
+
+    /**
+     * Returns whether or not to allow JavaScript in comments.
+     * Default is off; can be set true from a command line option.
+     * @return the allowScriptInComments
+     */
+    public boolean isAllowScriptInComments() {
+        return allowScriptInComments;
     }
 }

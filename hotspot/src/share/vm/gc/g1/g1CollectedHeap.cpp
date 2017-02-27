@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -699,9 +699,9 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion* ranges, size_t count) {
   // when mmap'ing archived heap data in, so pre-touching is wasted.
   FlagSetting fs(AlwaysPreTouch, false);
 
-  // Enable archive object checking in G1MarkSweep. We have to let it know
+  // Enable archive object checking used by G1MarkSweep. We have to let it know
   // about each archive range, so that objects in those ranges aren't marked.
-  G1MarkSweep::enable_archive_object_check();
+  G1ArchiveAllocator::enable_archive_object_check();
 
   // For each specified MemRegion range, allocate the corresponding G1
   // regions and mark them as archive regions. We expect the ranges in
@@ -773,7 +773,7 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion* ranges, size_t count) {
     }
 
     // Notify mark-sweep of the archive range.
-    G1MarkSweep::set_range_archive(curr_range, true);
+    G1ArchiveAllocator::set_range_archive(curr_range, true);
   }
   return true;
 }
@@ -924,7 +924,7 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion* ranges, size_t count) {
     }
 
     // Notify mark-sweep that this is no longer an archive range.
-    G1MarkSweep::set_range_archive(ranges[i], false);
+    G1ArchiveAllocator::set_range_archive(ranges[i], false);
   }
 
   if (uncommitted_regions != 0) {
@@ -2363,11 +2363,6 @@ bool G1CollectedHeap::is_in_exact(const void* p) const {
   }
 }
 #endif
-
-bool G1CollectedHeap::obj_in_cs(oop obj) {
-  HeapRegion* r = _hrm.addr_to_region((HeapWord*) obj);
-  return r != NULL && r->in_collection_set();
-}
 
 // Iteration functions.
 

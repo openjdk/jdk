@@ -23,7 +23,10 @@
 
 package p1;
 
+import java.io.IOException;
 import java.lang.module.ModuleDescriptor;
+import java.lang.reflect.Layer;
+import java.lang.reflect.Module;
 import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -37,25 +40,48 @@ public class Main {
         // load another package
         p2.T.test();
 
-        // check the module descriptor of a system module
-        validate(Main.class.getModule().getDescriptor());
+        // validate the module descriptor
+        validate(Main.class.getModule());
+
+        // validate the Moduletarget attribute for java.base
+        ModuleDescriptor md = Layer.boot().findModule("java.base").get()
+                                   .getDescriptor();
+        if (!md.osName().isPresent() || !md.osArch().isPresent() ||
+                !md.osVersion().isPresent()) {
+            throw new RuntimeException("java.base: " + md.osName() + " " +
+                    md.osArch() + " " + md.osVersion());
+        }
+    }
+
+    static void validate(Module module) throws IOException {
+        ModuleDescriptor md = module.getDescriptor();
 
         // read m1/module-info.class
         FileSystem fs = FileSystems.newFileSystem(URI.create("jrt:/"),
                                                   Collections.emptyMap());
-        Path path = fs.getPath("/", "modules", "m1", "module-info.class");
-        validate(ModuleDescriptor.read(Files.newInputStream(path)));
-    }
+        Path path = fs.getPath("/", "modules", module.getName(), "module-info.class");
+        ModuleDescriptor md1 = ModuleDescriptor.read(Files.newInputStream(path));
 
-    static void validate(ModuleDescriptor md) {
+
+        // check the module descriptor of a system module and read from jimage
         checkPackages(md.packages(), "p1", "p2");
+        checkPackages(md1.packages(), "p1", "p2");
+
+        // check ModuleTarget attribute
+        checkModuleTargetAttribute(md);
+        checkModuleTargetAttribute(md1);
     }
 
     static void checkPackages(Set<String> pkgs, String... expected) {
-        for (String pn : expected) {
-            if (!pkgs.contains(pn)) {
-                throw new RuntimeException(pn + " missing in " + pkgs);
-            }
+        if (!pkgs.equals(Set.of(expected))) {
+            throw new RuntimeException(pkgs + " expected: " + Set.of(expected));
+        }
+    }
+
+    static void checkModuleTargetAttribute(ModuleDescriptor md) {
+        if (md.osName().isPresent() || md.osArch().isPresent() ||
+                md.osVersion().isPresent()) {
+            throw new RuntimeException(md.osName() + " " + md.osArch() + " " + md.osVersion());
         }
     }
 }

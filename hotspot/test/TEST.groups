@@ -371,6 +371,7 @@ hotspot_fast_runtime = \
  -runtime/ConstantPool/IntfMethod.java \
  -runtime/ErrorHandling/CreateCoredumpOnCrash.java \
  -runtime/ErrorHandling/ErrorHandler.java \
+ -runtime/ErrorHandling/TimeoutInErrorHandlingTest.java \
  -runtime/logging/MonitorMismatchTest.java \
  -runtime/memory/ReserveMemory.java \
  -runtime/memory/RunUnitTestsConcurrently.java \

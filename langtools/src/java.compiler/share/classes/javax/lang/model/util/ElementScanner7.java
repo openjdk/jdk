@@ -89,13 +89,13 @@ import static javax.lang.model.SourceVersion.*;
  * @see ElementScanner9
  * @since 1.7
  */
-@SuppressWarnings("deprecation") // Superclass deprecated
 @SupportedSourceVersion(RELEASE_7)
 public class ElementScanner7<R, P> extends ElementScanner6<R, P> {
     /**
      * Constructor for concrete subclasses; uses {@code null} for the
      * default value.
      */
+    @SuppressWarnings("deprecation") // Superclass constructor deprecated
     protected ElementScanner7(){
         super(null);
     }
@@ -106,6 +106,7 @@ public class ElementScanner7<R, P> extends ElementScanner6<R, P> {
      *
      * @param defaultValue the default value
      */
+    @SuppressWarnings("deprecation") // Superclass constructor deprecated
     protected ElementScanner7(R defaultValue){
         super(defaultValue);
     }

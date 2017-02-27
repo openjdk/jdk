@@ -162,21 +162,12 @@ public final class DefaultImageBuilder implements ImageBuilder {
             });
 
             if (this.targetOsName == null) {
-                throw new PluginException("TargetPlatform attribute is missing for java.base module");
+                throw new PluginException("ModuleTarget attribute is missing for java.base module");
             }
 
-            Path bin = root.resolve(BIN_DIRNAME);
+            checkResourcePool(files);
 
-            // check any duplicated resource files
-            Map<Path, Set<String>> duplicates = new HashMap<>();
-            files.entries()
-                .filter(f -> f.type() != ResourcePoolEntry.Type.CLASS_OR_RESOURCE)
-                .collect(groupingBy(this::entryToImagePath,
-                         mapping(ResourcePoolEntry::moduleName, toSet())))
-                .entrySet()
-                .stream()
-                .filter(e -> e.getValue().size() > 1)
-                .forEach(e -> duplicates.put(e.getKey(), e.getValue()));
+            Path bin = root.resolve(BIN_DIRNAME);
 
             // write non-classes resource files to the image
             files.entries()
@@ -185,13 +176,8 @@ public final class DefaultImageBuilder implements ImageBuilder {
                     try {
                         accept(f);
                     } catch (FileAlreadyExistsException e) {
-                        // error for duplicated entries
-                        Path path = entryToImagePath(f);
-                        UncheckedIOException x =
-                            new UncheckedIOException(path + " duplicated in " +
-                                    duplicates.get(path), e);
-                        x.addSuppressed(e);
-                        throw x;
+                        // Should not happen! Duplicates checking already done!
+                        throw new AssertionError("Duplicate entry!", e);
                     } catch (IOException ioExp) {
                         throw new UncheckedIOException(ioExp);
                     }
@@ -239,6 +225,27 @@ public final class DefaultImageBuilder implements ImageBuilder {
             }
         } catch (IOException ex) {
             throw new PluginException(ex);
+        }
+    }
+
+    private void checkResourcePool(ResourcePool pool) {
+        // For now, only duplicate resources check. Add more checks here (if any)
+        checkDuplicateResources(pool);
+    }
+
+    private void checkDuplicateResources(ResourcePool pool) {
+        // check any duplicated resources
+        Map<Path, Set<String>> duplicates = new HashMap<>();
+        pool.entries()
+             .filter(f -> f.type() != ResourcePoolEntry.Type.CLASS_OR_RESOURCE)
+             .collect(groupingBy(this::entryToImagePath,
+                      mapping(ResourcePoolEntry::moduleName, toSet())))
+             .entrySet()
+             .stream()
+             .filter(e -> e.getValue().size() > 1)
+             .forEach(e -> duplicates.put(e.getKey(), e.getValue()));
+        if (!duplicates.isEmpty()) {
+            throw new PluginException("Duplicate resources: " + duplicates);
         }
     }
 
@@ -355,7 +362,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
         String module = "/" + entry.moduleName() + "/";
         String filename = entry.path().substring(module.length());
 
-        // Remove radical native|config|...
+        // Remove radical lib|config|...
         return filename.substring(filename.indexOf('/') + 1);
     }
 

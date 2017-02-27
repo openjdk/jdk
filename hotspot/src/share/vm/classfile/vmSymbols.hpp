@@ -325,14 +325,8 @@
   template(java_lang_StackStreamFactory_AbstractStackWalker, "java/lang/StackStreamFactory$AbstractStackWalker") \
   template(doStackWalk_signature,                     "(JIIII)Ljava/lang/Object;")                \
   template(asPrimitive_name,                          "asPrimitive")                              \
-  template(asPrimitive_int_signature,                 "(I)Ljava/lang/LiveStackFrame$PrimitiveValue;") \
-  template(asPrimitive_long_signature,                "(J)Ljava/lang/LiveStackFrame$PrimitiveValue;") \
-  template(asPrimitive_short_signature,               "(S)Ljava/lang/LiveStackFrame$PrimitiveValue;") \
-  template(asPrimitive_byte_signature,                "(B)Ljava/lang/LiveStackFrame$PrimitiveValue;") \
-  template(asPrimitive_char_signature,                "(C)Ljava/lang/LiveStackFrame$PrimitiveValue;") \
-  template(asPrimitive_float_signature,               "(F)Ljava/lang/LiveStackFrame$PrimitiveValue;") \
-  template(asPrimitive_double_signature,              "(D)Ljava/lang/LiveStackFrame$PrimitiveValue;") \
-  template(asPrimitive_boolean_signature,             "(Z)Ljava/lang/LiveStackFrame$PrimitiveValue;") \
+  template(asPrimitive_int_signature,                 "(I)Ljava/lang/LiveStackFrame$PrimitiveSlot;") \
+  template(asPrimitive_long_signature,                "(J)Ljava/lang/LiveStackFrame$PrimitiveSlot;") \
                                                                                                   \
   /* common method and field names */                                                             \
   template(object_initializer_name,                   "<init>")                                   \
@@ -444,6 +438,7 @@
   template(monitors_name,                             "monitors")                                 \
   template(locals_name,                               "locals")                                   \
   template(operands_name,                             "operands")                                 \
+  template(mode_name,                                 "mode")                                     \
   template(oop_size_name,                             "oop_size")                                 \
   template(static_oop_field_count_name,               "static_oop_field_count")                   \
   template(protection_domain_name,                    "protection_domain")                        \
@@ -590,11 +585,11 @@
   template(java_lang_management_ThreadState,           "java/lang/management/ThreadState")                        \
   template(java_lang_management_MemoryUsage,           "java/lang/management/MemoryUsage")                        \
   template(java_lang_management_ThreadInfo,            "java/lang/management/ThreadInfo")                         \
+  template(jdk_internal_agent_Agent,                   "jdk/internal/agent/Agent")                                \
   template(sun_management_Sensor,                      "sun/management/Sensor")                                   \
-  template(sun_management_Agent,                       "sun/management/Agent")                                    \
+  template(sun_management_ManagementFactoryHelper,     "sun/management/ManagementFactoryHelper")                  \
   template(com_sun_management_internal_DiagnosticCommandImpl,  "com/sun/management/internal/DiagnosticCommandImpl")     \
   template(com_sun_management_internal_GarbageCollectorExtImpl,"com/sun/management/internal/GarbageCollectorExtImpl")   \
-  template(sun_management_ManagementFactoryHelper,     "sun/management/ManagementFactoryHelper")                  \
   template(getDiagnosticCommandMBean_name,             "getDiagnosticCommandMBean")                               \
   template(getDiagnosticCommandMBean_signature,        "()Lcom/sun/management/DiagnosticCommandMBean;")           \
   template(getGcInfoBuilder_name,                      "getGcInfoBuilder")                                        \

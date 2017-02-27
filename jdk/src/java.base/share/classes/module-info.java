@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 /**
  * Defines the foundational APIs of the Java SE Platform.
+ *
+ * @since 9
  */
 module java.base {
 
@@ -150,11 +152,10 @@ module java.base {
         java.desktop;
     exports jdk.internal.module to
         java.instrument,
-        java.management,
+        java.management.rmi,
         jdk.jartool,
         jdk.jlink;
     exports jdk.internal.misc to
-        java.corba,
         java.desktop,
         jdk.incubator.httpclient,
         java.logging,
@@ -178,12 +179,12 @@ module java.base {
     exports jdk.internal.perf to
         java.desktop,
         java.management,
-        jdk.jvmstat;
+        jdk.management.agent,
+        jdk.internal.jvmstat;
     exports jdk.internal.ref to
         java.desktop,
         jdk.unsupported;
     exports jdk.internal.reflect to
-        java.corba,
         java.logging,
         java.sql,
         java.sql.rowset,
@@ -198,8 +199,8 @@ module java.base {
         jdk.jdeps,
         jdk.jlink;
     exports jdk.internal.vm to
-        java.management,
-        jdk.jvmstat;
+        jdk.management.agent,
+        jdk.internal.jvmstat;
     exports sun.net to
         jdk.incubator.httpclient;
     exports sun.net.ext to
@@ -219,7 +220,7 @@ module java.base {
         java.security.jgss;
     exports sun.nio.ch to
         java.management,
-        jdk.crypto.token,
+        jdk.crypto.cryptoki,
         jdk.sctp,
         jdk.unsupported;
     exports sun.nio.cs to
@@ -232,26 +233,24 @@ module java.base {
     exports sun.reflect.generics.reflectiveObjects to
         java.desktop;
     exports sun.reflect.misc to
-        java.corba,
         java.desktop,
         java.datatransfer,
         java.management,
+        java.management.rmi,
         java.rmi,
         java.sql.rowset,
-        java.xml,
-        java.xml.ws;
+        java.xml;
     exports sun.security.action to
         java.desktop,
         java.security.jgss;
     exports sun.security.internal.interfaces to
-        jdk.crypto.token;
+        jdk.crypto.cryptoki;
     exports sun.security.internal.spec to
-        jdk.crypto.token;
+        jdk.crypto.cryptoki;
     exports sun.security.jca to
         java.smartcardio,
-        java.xml.crypto,
         jdk.crypto.ec,
-        jdk.crypto.token,
+        jdk.crypto.cryptoki,
         jdk.naming.dns;
     exports sun.security.pkcs to
         jdk.crypto.ec,
@@ -259,13 +258,13 @@ module java.base {
     exports sun.security.provider to
         java.rmi,
         java.security.jgss,
-        jdk.crypto.token,
+        jdk.crypto.cryptoki,
         jdk.policytool,
         jdk.security.auth;
     exports sun.security.provider.certpath to
         java.naming;
     exports sun.security.rsa to
-        jdk.crypto.token;
+        jdk.crypto.cryptoki;
     exports sun.security.ssl to
         java.security.jgss;
     exports sun.security.timestamp to
@@ -279,17 +278,20 @@ module java.base {
         java.security.jgss,
         java.security.sasl,
         java.smartcardio,
+        java.xml.crypto,
         jdk.crypto.ec,
-        jdk.crypto.token,
+        jdk.crypto.cryptoki,
         jdk.jartool,
         jdk.policytool,
         jdk.security.auth,
         jdk.security.jgss;
     exports sun.security.x509 to
         jdk.crypto.ec,
-        jdk.crypto.token,
+        jdk.crypto.cryptoki,
         jdk.jartool,
         jdk.security.auth;
+    exports sun.security.validator to
+        jdk.jartool;
     exports sun.text.resources to
         jdk.localedata;
     exports sun.util.cldr to
@@ -308,7 +310,6 @@ module java.base {
     // JDK-internal service types
     uses jdk.internal.logger.DefaultLoggerFinder;
     uses sun.security.ssl.ClientKeyExchangeService;
-    uses sun.security.util.AuthResourcesProvider;
     uses sun.text.spi.JavaTimeDateTimePatternProvider;
     uses sun.util.spi.CalendarProvider;
     uses sun.util.locale.provider.LocaleDataMetaInfo;
@@ -320,6 +321,4 @@ module java.base {
 
     provides java.nio.file.spi.FileSystemProvider with
         jdk.internal.jrtfs.JrtFileSystemProvider;
-    provides sun.security.util.AuthResourcesProvider with
-        sun.security.util.AuthResourcesProviderImpl;
 }

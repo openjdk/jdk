@@ -42,6 +42,7 @@ import java.util.AbstractQueue;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.locks.LockSupport;
@@ -75,9 +76,8 @@ import java.util.concurrent.locks.ReentrantLock;
  * is not guaranteed. However, a queue constructed with fairness set
  * to {@code true} grants threads access in FIFO order.
  *
- * <p>This class and its iterator implement all of the
- * <em>optional</em> methods of the {@link Collection} and {@link
- * Iterator} interfaces.
+ * <p>This class and its iterator implement all of the <em>optional</em>
+ * methods of the {@link Collection} and {@link Iterator} interfaces.
  *
  * <p>This class is a member of the
  * <a href="{@docRoot}/../technotes/guides/collections/index.html">
@@ -1112,15 +1112,12 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
      * @throws IllegalArgumentException      {@inheritDoc}
      */
     public int drainTo(Collection<? super E> c) {
-        if (c == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(c);
         if (c == this)
             throw new IllegalArgumentException();
         int n = 0;
-        for (E e; (e = poll()) != null;) {
+        for (E e; (e = poll()) != null; n++)
             c.add(e);
-            ++n;
-        }
         return n;
     }
 
@@ -1131,15 +1128,12 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
      * @throws IllegalArgumentException      {@inheritDoc}
      */
     public int drainTo(Collection<? super E> c, int maxElements) {
-        if (c == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(c);
         if (c == this)
             throw new IllegalArgumentException();
         int n = 0;
-        for (E e; n < maxElements && (e = poll()) != null;) {
+        for (E e; n < maxElements && (e = poll()) != null; n++)
             c.add(e);
-            ++n;
-        }
         return n;
     }
 

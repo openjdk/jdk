@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -310,12 +310,13 @@ public final class System {
      * @see SecurityManager#checkPermission
      * @see java.lang.RuntimePermission
      */
-    public static
-    void setSecurityManager(final SecurityManager s) {
-        try {
-            s.checkPackageAccess("java.lang");
-        } catch (Exception e) {
-            // no-op
+    public static void setSecurityManager(final SecurityManager s) {
+        if (s != null) {
+            try {
+                s.checkPackageAccess("java.lang");
+            } catch (Exception e) {
+                // no-op
+            }
         }
         setSecurityManager0(s);
     }
@@ -533,6 +534,8 @@ public final class System {
      * @param x object for which the hashCode is to be calculated
      * @return  the hashCode
      * @since   1.1
+     * @see Object#hashCode
+     * @see java.util.Objects#hashCode(Object)
      */
     @HotSpotIntrinsicCandidate
     public static native int identityHashCode(Object x);
@@ -1941,10 +1944,6 @@ public final class System {
      * the application classpath or modulepath.
      */
     private static void initPhase3() {
-        // Initialize publicLookup early, to avoid bootstrapping circularities
-        // with security manager using java.lang.invoke infrastructure.
-        java.lang.invoke.MethodHandles.publicLookup();
-
         // set security manager
         String cn = System.getProperty("java.security.manager");
         if (cn != null) {
@@ -2051,6 +2050,9 @@ public final class System {
             }
             public String fastUUID(long lsb, long msb) {
                 return Long.fastUUID(lsb, msb);
+            }
+            public void invalidatePackageAccessCache() {
+                SecurityManager.invalidatePackageAccessCache();
             }
         });
     }

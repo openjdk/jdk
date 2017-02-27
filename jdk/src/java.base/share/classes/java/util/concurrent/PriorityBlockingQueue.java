@@ -43,6 +43,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.SortedSet;
@@ -62,16 +63,15 @@ import java.util.function.Consumer;
  * non-comparable objects (doing so results in
  * {@code ClassCastException}).
  *
- * <p>This class and its iterator implement all of the
- * <em>optional</em> methods of the {@link Collection} and {@link
- * Iterator} interfaces.  The Iterator provided in method {@link
- * #iterator()} and the Spliterator provided in method {@link #spliterator()}
- * are <em>not</em> guaranteed to traverse the elements of
- * the PriorityBlockingQueue in any particular order. If you need
- * ordered traversal, consider using
- * {@code Arrays.sort(pq.toArray())}.  Also, method {@code drainTo}
- * can be used to <em>remove</em> some or all elements in priority
- * order and place them in another collection.
+ * <p>This class and its iterator implement all of the <em>optional</em>
+ * methods of the {@link Collection} and {@link Iterator} interfaces.
+ * The Iterator provided in method {@link #iterator()} and the
+ * Spliterator provided in method {@link #spliterator()} are <em>not</em>
+ * guaranteed to traverse the elements of the PriorityBlockingQueue in
+ * any particular order. If you need ordered traversal, consider using
+ * {@code Arrays.sort(pq.toArray())}.  Also, method {@code drainTo} can
+ * be used to <em>remove</em> some or all elements in priority order and
+ * place them in another collection.
  *
  * <p>Operations on this class make no guarantees about the ordering
  * of elements with equal priority. If you need to enforce an
@@ -437,15 +437,14 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
      */
     private void heapify() {
         Object[] array = queue;
-        int n = size;
-        int half = (n >>> 1) - 1;
+        int n = size, i = (n >>> 1) - 1;
         Comparator<? super E> cmp = comparator;
         if (cmp == null) {
-            for (int i = half; i >= 0; i--)
+            for (; i >= 0; i--)
                 siftDownComparable(i, (E) array[i], array, n);
         }
         else {
-            for (int i = half; i >= 0; i--)
+            for (; i >= 0; i--)
                 siftDownUsingComparator(i, (E) array[i], array, n, cmp);
         }
     }
@@ -730,8 +729,7 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
      * @throws IllegalArgumentException      {@inheritDoc}
      */
     public int drainTo(Collection<? super E> c, int maxElements) {
-        if (c == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(c);
         if (c == this)
             throw new IllegalArgumentException();
         if (maxElements <= 0)
@@ -935,9 +933,11 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
      * Immutable snapshot spliterator that binds to elements "late".
      */
     final class PBQSpliterator implements Spliterator<E> {
-        Object[] array;
+        Object[] array;        // null until late-bound-initialized
         int index;
         int fence;
+
+        PBQSpliterator() {}
 
         PBQSpliterator(Object[] array, int index, int fence) {
             this.array = array;
@@ -945,11 +945,10 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
             this.fence = fence;
         }
 
-        final int getFence() {
-            int hi;
-            if ((hi = fence) < 0)
-                hi = fence = (array = toArray()).length;
-            return hi;
+        private int getFence() {
+            if (array == null)
+                fence = (array = toArray()).length;
+            return fence;
         }
 
         public PBQSpliterator trySplit() {
@@ -958,25 +957,19 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
                 new PBQSpliterator(array, lo, index = mid);
         }
 
-        @SuppressWarnings("unchecked")
         public void forEachRemaining(Consumer<? super E> action) {
-            Object[] a; int i, hi; // hoist accesses and checks from loop
-            if (action == null)
-                throw new NullPointerException();
-            if ((a = array) == null)
-                fence = (a = toArray()).length;
-            if ((hi = fence) <= a.length &&
-                (i = index) >= 0 && i < (index = hi)) {
-                do { action.accept((E)a[i]); } while (++i < hi);
-            }
+            Objects.requireNonNull(action);
+            final int hi = getFence(), lo = index;
+            final Object[] a = array;
+            index = hi;                 // ensure exhaustion
+            for (int i = lo; i < hi; i++)
+                action.accept((E) a[i]);
         }
 
         public boolean tryAdvance(Consumer<? super E> action) {
-            if (action == null)
-                throw new NullPointerException();
+            Objects.requireNonNull(action);
             if (getFence() > index && index >= 0) {
-                @SuppressWarnings("unchecked") E e = (E) array[index++];
-                action.accept(e);
+                action.accept((E) array[index++]);
                 return true;
             }
             return false;
@@ -985,7 +978,9 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
         public long estimateSize() { return getFence() - index; }
 
         public int characteristics() {
-            return Spliterator.NONNULL | Spliterator.SIZED | Spliterator.SUBSIZED;
+            return (Spliterator.NONNULL |
+                    Spliterator.SIZED |
+                    Spliterator.SUBSIZED);
         }
     }
 
@@ -1007,7 +1002,7 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
      * @since 1.8
      */
     public Spliterator<E> spliterator() {
-        return new PBQSpliterator(null, 0, -1);
+        return new PBQSpliterator();
     }
 
     // VarHandle mechanics

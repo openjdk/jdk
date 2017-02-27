@@ -27,7 +27,7 @@
  * @summary Test that JMX classes use fully-qualified class names
  * in MBeanNotificationInfo
  * @author Eamonn McManus
- * @modules java.management
+ * @modules java.management.rmi
  * @run clean NotificationInfoTest
  * @run build NotificationInfoTest
  * @run main NotificationInfoTest

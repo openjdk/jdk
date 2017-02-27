@@ -26,6 +26,7 @@
  * @summary Test a pool containing jimage resources and classes.
  * @author Jean-Francois Denise
  * @modules jdk.jlink/jdk.tools.jlink.internal
+ *          jdk.jlink/jdk.tools.jlink.plugin
  * @run build ResourcePoolTest
  * @run main ResourcePoolTest
  */

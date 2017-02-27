@@ -27,7 +27,7 @@
  * @summary Test that fail-over works for fail-over ExecutionControl generators.
  * @modules jdk.jshell/jdk.jshell.execution
  *          jdk.jshell/jdk.jshell.spi
- * @build KullaTesting ExecutionControlTestBase
+ * @build KullaTesting ExecutionControlTestBase DyingRemoteAgent
  * @run testng FailOverExecutionControlDyingLaunchTest
  */
 

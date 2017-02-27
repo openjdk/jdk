@@ -3152,19 +3152,6 @@ Node* GraphKit::insert_mem_bar_volatile(int opcode, int alias_idx, Node* precede
   return membar;
 }
 
-void GraphKit::insert_store_load_for_barrier() {
-  Node* mem = reset_memory();
-  MemBarNode* mb = MemBarNode::make(C, Op_MemBarVolatile, Compile::AliasIdxBot);
-  mb->init_req(TypeFunc::Control, control());
-  mb->init_req(TypeFunc::Memory, mem);
-  Node* membar = _gvn.transform(mb);
-  set_control(_gvn.transform(new ProjNode(membar, TypeFunc::Control)));
-  Node* newmem = _gvn.transform(new ProjNode(membar, TypeFunc::Memory));
-  set_all_memory(mem);
-  set_memory(newmem, Compile::AliasIdxRaw);
-}
-
-
 //------------------------------shared_lock------------------------------------
 // Emit locking code.
 FastLockNode* GraphKit::shared_lock(Node* obj) {
@@ -3854,7 +3841,7 @@ void GraphKit::write_barrier_post(Node* oop_store,
   BasicType bt = T_BYTE;
 
   if (UseConcMarkSweepGC && UseCondCardMark) {
-    insert_store_load_for_barrier();
+    insert_mem_bar(Op_MemBarVolatile);   // StoreLoad barrier
     __ sync_kit(this);
   }
 
@@ -4294,7 +4281,8 @@ void GraphKit::g1_write_barrier_post(Node* oop_store,
 
         __ if_then(card_val, BoolTest::ne, young_card); {
           sync_kit(ideal);
-          insert_store_load_for_barrier();
+          // Use Op_MemBarVolatile to achieve the effect of a StoreLoad barrier.
+          insert_mem_bar(Op_MemBarVolatile, oop_store);
           __ sync_kit(this);
 
           Node* card_val_reload = __ load(__ ctrl(), card_adr, TypeInt::INT, T_BYTE, Compile::AliasIdxRaw);
@@ -4348,20 +4336,16 @@ Node* GraphKit::load_String_value(Node* ctrl, Node* str) {
 }
 
 Node* GraphKit::load_String_coder(Node* ctrl, Node* str) {
-  if (java_lang_String::has_coder_field()) {
-    if (!CompactStrings) {
-      return intcon(java_lang_String::CODER_UTF16);
-    }
-    int coder_offset = java_lang_String::coder_offset_in_bytes();
-    const TypeInstPtr* string_type = TypeInstPtr::make(TypePtr::NotNull, C->env()->String_klass(),
-                                                       false, NULL, 0);
-    const TypePtr* coder_field_type = string_type->add_offset(coder_offset);
-    int coder_field_idx = C->get_alias_index(coder_field_type);
-    return make_load(ctrl, basic_plus_adr(str, str, coder_offset),
-                     TypeInt::BYTE, T_BYTE, coder_field_idx, MemNode::unordered);
-  } else {
-    return intcon(0); // false
+  if (!CompactStrings) {
+    return intcon(java_lang_String::CODER_UTF16);
   }
+  int coder_offset = java_lang_String::coder_offset_in_bytes();
+  const TypeInstPtr* string_type = TypeInstPtr::make(TypePtr::NotNull, C->env()->String_klass(),
+                                                     false, NULL, 0);
+  const TypePtr* coder_field_type = string_type->add_offset(coder_offset);
+  int coder_field_idx = C->get_alias_index(coder_field_type);
+  return make_load(ctrl, basic_plus_adr(str, str, coder_offset),
+                   TypeInt::BYTE, T_BYTE, coder_field_idx, MemNode::unordered);
 }
 
 void GraphKit::store_String_value(Node* ctrl, Node* str, Node* value) {

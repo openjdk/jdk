@@ -5,6 +5,7 @@ compiler.err.bad.functional.intf.anno                   # seems to be masked by 
 compiler.err.cant.read.file                             # (apt.JavaCompiler?)
 compiler.err.cant.select.static.class.from.param.type
 compiler.err.dc.unterminated.string                     # cannot happen
+compiler.err.file.patched.and.msp                       # needs the same dir on --module-source-path and --patch-module
 compiler.err.illegal.char.for.encoding
 compiler.err.invalid.repeatable.annotation              # should not happen
 compiler.err.invalid.repeatable.annotation.invalid.value # "can't" happen
@@ -103,6 +104,7 @@ compiler.warn.annotation.method.not.found.reason        # ClassReader
 compiler.warn.big.major.version                         # ClassReader
 compiler.warn.future.attr                               # ClassReader
 compiler.warn.illegal.char.for.encoding
+compiler.warn.incubating.modules                        # requires adjusted classfile
 compiler.warn.invalid.archive.file
 compiler.warn.override.bridge
 compiler.warn.position.overflow                         # CRTable: caused by files with long lines >= 1024 chars

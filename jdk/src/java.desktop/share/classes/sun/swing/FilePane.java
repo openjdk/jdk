@@ -548,7 +548,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             actions = actionList.toArray(new Action[actionList.size()]);
         }
 
-        return actions;
+        return Arrays.copyOf(actions, actions.length);
     }
 
     protected void createActionMap() {
@@ -1831,6 +1831,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
     private class Handler implements MouseListener {
         private MouseListener doubleClickListener;
 
+        @SuppressWarnings("deprecation")
         public void mouseClicked(MouseEvent evt) {
             JComponent source = (JComponent)evt.getSource();
 

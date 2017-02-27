@@ -127,7 +127,22 @@ main(int argc, char **argv)
         // accommodate the NULL at the end
         JLI_List args = JLI_List_new(argc + 1);
         int i = 0;
-        for (i = 0; i < argc; i++) {
+
+        // Add first arg, which is the app name
+        JLI_List_add(args, JLI_StringDup(argv[0]));
+        // Append JDK_JAVA_OPTIONS
+        if (JLI_AddArgsFromEnvVar(args, JDK_JAVA_OPTIONS)) {
+            // JLI_SetTraceLauncher is not called yet
+            // Show _JAVA_OPTIONS content along with JDK_JAVA_OPTIONS to aid diagnosis
+            if (getenv(JLDEBUG_ENV_ENTRY)) {
+                char *tmp = getenv("_JAVA_OPTIONS");
+                if (NULL != tmp) {
+                    JLI_ReportMessage(ARG_INFO_ENVVAR, "_JAVA_OPTIONS", tmp);
+                }
+            }
+        }
+        // Iterate the rest of command line
+        for (i = 1; i < argc; i++) {
             JLI_List argsInFile = JLI_PreprocessArg(argv[i]);
             if (NULL == argsInFile) {
                 JLI_List_add(args, JLI_StringDup(argv[i]));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,7 +174,6 @@ public class JavacTrees extends DocTrees {
     private JavaFileManager fileManager;
     private ParserFactory parser;
     private Symtab syms;
-    private Map<JavaFileObject, PackageSymbol> javaFileObjectToPackageMap;
 
     // called reflectively from Trees.instance(CompilationTask task)
     public static JavacTrees instance(JavaCompiler.CompilationTask task) {
@@ -198,7 +197,6 @@ public class JavacTrees extends DocTrees {
     }
 
     protected JavacTrees(Context context) {
-        javaFileObjectToPackageMap = new HashMap<>();
         this.breakIterator = null;
         context.put(JavacTrees.class, this);
         init(context);
@@ -420,6 +418,7 @@ public class JavacTrees extends DocTrees {
 
     private Symbol attributeDocReference(TreePath path, DCReference ref) {
         Env<AttrContext> env = getAttrContext(path);
+        if (env == null) return null;
 
         Log.DeferredDiagnosticHandler deferredDiagnosticHandler =
                 new Log.DeferredDiagnosticHandler(log);
@@ -484,7 +483,7 @@ public class JavacTrees extends DocTrees {
                 paramTypes = lb.toList();
             }
 
-            ClassSymbol sym = (ClassSymbol) types.cvarUpperBound(tsym.type).tsym;
+            ClassSymbol sym = (ClassSymbol) types.skipTypeVars(tsym.type, false).tsym;
 
             Symbol msym = (memberName == sym.name)
                     ? findConstructor(sym, paramTypes)
@@ -883,6 +882,7 @@ public class JavacTrees extends DocTrees {
                 case INTERFACE:
 //                    System.err.println("CLASS: " + ((JCClassDecl)tree).sym.getSimpleName());
                     env = enter.getClassEnv(((JCClassDecl)tree).sym);
+                    if (env == null) return null;
                     break;
                 case METHOD:
 //                    System.err.println("METHOD: " + ((JCMethodDecl)tree).sym.getSimpleName());
@@ -1039,10 +1039,11 @@ public class JavacTrees extends DocTrees {
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
-    public DocTreePath getDocTreePath(FileObject fileObject) {
+    public DocTreePath getDocTreePath(FileObject fileObject, PackageElement packageElement) {
         JavaFileObject jfo = asJavaFileObject(fileObject);
         DocCommentTree docCommentTree = getDocCommentTree(jfo);
-        return new DocTreePath(makeTreePath(jfo, docCommentTree), docCommentTree);
+        TreePath treePath = makeTreePath((PackageSymbol)packageElement, jfo, docCommentTree);
+        return new DocTreePath(treePath, docCommentTree);
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
@@ -1160,17 +1161,8 @@ public class JavacTrees extends DocTrees {
         }
     }
 
-    /**
-     * Register a file object, such as for a package.html, that provides
-     * doc comments for a package.
-     * @param psym the PackageSymbol representing the package.
-     * @param jfo  the JavaFileObject for the given package.
-     */
-    public void putJavaFileObject(PackageSymbol psym, JavaFileObject jfo) {
-        javaFileObjectToPackageMap.putIfAbsent(jfo, psym);
-    }
-
-    private TreePath makeTreePath(final JavaFileObject jfo, DocCommentTree dcTree) {
+    private TreePath makeTreePath(final PackageSymbol psym, final JavaFileObject jfo,
+            DocCommentTree dcTree) {
         JCCompilationUnit jcCompilationUnit = new JCCompilationUnit(List.nil()) {
             public int getPos() {
                 return Position.FIRSTPOS;
@@ -1190,9 +1182,6 @@ public class JavacTrees extends DocTrees {
                 return null;
             }
         };
-
-        PackageSymbol psym = javaFileObjectToPackageMap.getOrDefault(jfo,
-                syms.unnamedModule.unnamedPackage);
 
         jcCompilationUnit.docComments = new DocCommentTable() {
             @Override

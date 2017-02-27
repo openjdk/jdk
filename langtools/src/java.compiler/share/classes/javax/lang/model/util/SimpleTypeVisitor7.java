@@ -72,13 +72,13 @@ import static javax.lang.model.SourceVersion.*;
  * @see SimpleTypeVisitor9
  * @since 1.7
  */
-@SuppressWarnings("deprecation") // Superclass deprecated
 @SupportedSourceVersion(RELEASE_7)
 public class SimpleTypeVisitor7<R, P> extends SimpleTypeVisitor6<R, P> {
     /**
      * Constructor for concrete subclasses; uses {@code null} for the
      * default value.
      */
+    @SuppressWarnings("deprecation") // Superclass constructor deprecated
     protected SimpleTypeVisitor7(){
         super(null);
     }
@@ -89,6 +89,7 @@ public class SimpleTypeVisitor7<R, P> extends SimpleTypeVisitor6<R, P> {
      *
      * @param defaultValue the value to assign to {@link #DEFAULT_VALUE}
      */
+    @SuppressWarnings("deprecation") // Superclass constructor deprecated
     protected SimpleTypeVisitor7(R defaultValue){
         super(defaultValue);
     }

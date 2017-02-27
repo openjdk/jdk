@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@
 - (id)initWithPeer:(jobject)peer {
 AWT_ASSERT_APPKIT_THREAD;
     // Create the new NSMenu
-    self = [super initWithPeer:peer asSeparator:[NSNumber numberWithBool:NO]];
+    self = [super initWithPeer:peer asSeparator:NO];
     if (self) {
         fMenu = [NSMenu javaMenuWithTitle:@""];
         [fMenu retain];
@@ -133,14 +133,13 @@ AWT_ASSERT_APPKIT_THREAD;
 
 CMenu * createCMenu (jobject cPeerObjGlobal) {
 
-    CMenu *aCMenu = nil;
+    __block CMenu *aCMenu = nil;
 
-    // We use an array here only to be able to get a return value
-    NSMutableArray *args = [[NSMutableArray alloc] initWithObjects:[NSValue valueWithBytes:&cPeerObjGlobal objCType:@encode(jobject)], nil];
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
 
-    [ThreadUtilities performOnMainThread:@selector(_create_OnAppKitThread:) on:[CMenu alloc] withObject:args waitUntilDone:YES];
-
-    aCMenu = (CMenu *)[args objectAtIndex: 0];
+        aCMenu = [[CMenu alloc] initWithPeer:cPeerObjGlobal];
+        // the aCMenu is released in CMenuComponent.dispose()
+    }];
 
     if (aCMenu == nil) {
         return 0L;
