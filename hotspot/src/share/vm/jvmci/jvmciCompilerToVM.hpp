@@ -206,4 +206,14 @@ class JavaArgumentUnboxer : public SignatureIterator {
   inline void do_void()                     { }
 };
 
+class JNIHandleMark : public StackObj {
+  public:
+    JNIHandleMark() { push_jni_handle_block(); }
+    ~JNIHandleMark() { pop_jni_handle_block(); }
+
+  private:
+    static void push_jni_handle_block();
+    static void pop_jni_handle_block();
+};
+
 #endif // SHARE_VM_JVMCI_JVMCI_COMPILER_TO_VM_HPP
