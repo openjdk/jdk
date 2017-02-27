@@ -554,9 +554,8 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
         float newScaleY = newDev.getDefaultScaleY();
 
         if (scaleX != newScaleX || scaleY != newScaleY) {
-            if (oldDev.getScreen() == newDev.getScreen()) {
-                windowDPIChange(scaleX, scaleY, newScaleX, newScaleY);
-            }
+            windowDPIChange(oldDev.getScreen(), scaleX, scaleY,
+                            newDev.getScreen(), newScaleX, newScaleY);
             scaleX = newScaleX;
             scaleY = newScaleY;
         }
@@ -802,8 +801,8 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
         }
     }
 
-    native void windowDPIChange(float prevScaleX, float prevScaleY,
-                                float newScaleX, float newScaleY);
+    native void windowDPIChange(int prevScreen, float prevScaleX, float prevScaleY,
+                                int newScreen, float newScaleX, float newScaleY);
 
     /*
      * The method maps the list of the active windows to the window's AppContext,
