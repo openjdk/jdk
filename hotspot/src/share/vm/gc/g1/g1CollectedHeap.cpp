@@ -5269,8 +5269,6 @@ bool G1CollectedHeap::is_in_closed_subset(const void* p) const {
 HeapRegion* G1CollectedHeap::new_mutator_alloc_region(size_t word_size,
                                                       bool force) {
   assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
-  assert(!force || g1_policy()->can_expand_young_list(),
-         "if force is true we should be able to expand the young list");
   bool should_allocate = g1_policy()->should_allocate_mutator_region();
   if (force || should_allocate) {
     HeapRegion* new_alloc_region = new_region(word_size,
