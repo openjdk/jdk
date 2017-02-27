@@ -52,7 +52,7 @@ public class Arrive {
         final int n = ThreadLocalRandom.current().nextInt(1, 10);
         final Phaser startingGate = new Phaser(n);
         final Phaser phaser = new Phaser(n);
-        final List<Thread> threads = new ArrayList<Thread>();
+        final List<Thread> threads = new ArrayList<>();
         final AtomicInteger count0 = new AtomicInteger(0);
         final AtomicInteger count1 = new AtomicInteger(0);
         final Runnable task = new Runnable() { public void run() {

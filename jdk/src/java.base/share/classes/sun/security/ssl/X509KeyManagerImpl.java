@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import java.security.cert.Certificate;
 import javax.net.ssl.*;
 
 import sun.security.provider.certpath.AlgorithmChecker;
+import sun.security.validator.Validator;
 
 /**
  * The new X509 key manager implementation. The main differences to the
@@ -661,6 +662,15 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
 
             return CheckResult.OK;
         }
+
+        public String getValidator() {
+            if (this == CLIENT) {
+                return Validator.VAR_TLS_CLIENT;
+            } else if (this == SERVER) {
+                return Validator.VAR_TLS_SERVER;
+            }
+            return Validator.VAR_GENERIC;
+        }
     }
 
     // enum for the result of the extension check
@@ -774,7 +784,8 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
 
             // check the algorithm constraints
             if (constraints != null &&
-                    !conformsToAlgorithmConstraints(constraints, chain)) {
+                    !conformsToAlgorithmConstraints(constraints, chain,
+                            checkType.getValidator())) {
 
                 if (useDebug) {
                     debug.println("Ignoring alias " + alias +
@@ -811,13 +822,19 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
     }
 
     private static boolean conformsToAlgorithmConstraints(
-            AlgorithmConstraints constraints, Certificate[] chain) {
+            AlgorithmConstraints constraints, Certificate[] chain,
+            String variant) {
 
-        AlgorithmChecker checker = new AlgorithmChecker(constraints);
+        AlgorithmChecker checker = new AlgorithmChecker(constraints, null, variant);
         try {
             checker.init(false);
         } catch (CertPathValidatorException cpve) {
             // unlikely to happen
+            if (useDebug) {
+                debug.println(
+                    "Cannot initialize algorithm constraints checker: " + cpve);
+            }
+
             return false;
         }
 
@@ -828,6 +845,11 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
                 // We don't care about the unresolved critical extensions.
                 checker.check(cert, Collections.<String>emptySet());
             } catch (CertPathValidatorException cpve) {
+                if (useDebug) {
+                    debug.println("Certificate (" + cert +
+                        ") does not conform to algorithm constraints: " + cpve);
+                }
+
                 return false;
             }
         }

@@ -37,6 +37,8 @@ import jdk.jshell.spi.ExecutionEnv;
 
 /**
  * Tries other providers in sequence until one works.
+ *
+ * @since 9
  */
 public class FailOverExecutionControlProvider  implements ExecutionControlProvider{
 
@@ -111,7 +113,8 @@ public class FailOverExecutionControlProvider  implements ExecutionControlProvid
                     PrintWriter log = new PrintWriter(writer);
                     log.println("FailOverExecutionControlProvider:");
                     ex.printStackTrace(log);
-                    logger().fine(log.toString());
+                    log.flush();
+                    logger().fine(writer.toString());
                     // only care about the first, and only if they all fail
                     if (thrown == null) {
                         thrown = ex;

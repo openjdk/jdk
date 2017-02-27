@@ -541,19 +541,13 @@ void ErrorContext::stackmap_details(outputStream* ss, const Method* method) cons
     stack_map_frame* sm_frame = sm_table->entries();
     streamIndentor si2(ss);
     int current_offset = -1;
-    // Subtract two from StackMapAttribute length because the length includes
-    // two bytes for number of table entries.
-    size_t sm_table_space = method->stackmap_data()->length() - 2;
+    address end_of_sm_table = (address)sm_table + method->stackmap_data()->length();
     for (u2 i = 0; i < sm_table->number_of_entries(); ++i) {
       ss->indent();
-      size_t sm_frame_size = sm_frame->size();
-      // If the size of the next stackmap exceeds the length of the entire
-      // stackmap table then print a truncated message and return.
-      if (sm_frame_size > sm_table_space) {
+      if (!sm_frame->verify((address)sm_frame, end_of_sm_table)) {
         sm_frame->print_truncated(ss, current_offset);
         return;
       }
-      sm_table_space -= sm_frame_size;
       sm_frame->print_on(ss, current_offset);
       ss->cr();
       current_offset += sm_frame->offset_delta();
@@ -1863,7 +1857,7 @@ u2 ClassVerifier::verify_stackmap_table(u2 stackmap_index, u2 bci,
       // If matched, current_frame will be updated by this method.
       bool matches = stackmap_table->match_stackmap(
         current_frame, this_offset, stackmap_index,
-        !no_control_flow, true, false, &ctx, CHECK_VERIFY_(this, 0));
+        !no_control_flow, true, &ctx, CHECK_VERIFY_(this, 0));
       if (!matches) {
         // report type error
         verify_error(ctx, "Instruction type does not match stack map");
@@ -1913,7 +1907,7 @@ void ClassVerifier::verify_exception_handler_targets(u2 bci, bool this_uninit,
       }
       ErrorContext ctx;
       bool matches = stackmap_table->match_stackmap(
-        new_frame, handler_pc, true, false, true, &ctx, CHECK_VERIFY(this));
+        new_frame, handler_pc, true, false, &ctx, CHECK_VERIFY(this));
       if (!matches) {
         verify_error(ctx, "Stack map does not match the one at "
             "exception handler %d", handler_pc);

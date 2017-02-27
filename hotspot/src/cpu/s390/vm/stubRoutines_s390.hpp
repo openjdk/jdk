@@ -68,8 +68,6 @@ class zarch {
   };
 
  private:
-  static address _handler_for_unsafe_access_entry;
-
   static int _atomic_memory_operation_lock;
 
   static address _partial_subtype_check;
@@ -90,8 +88,6 @@ class zarch {
   // Accessor and mutator for _atomic_memory_operation_lock.
   static int atomic_memory_operation_lock() { return _atomic_memory_operation_lock; }
   static void set_atomic_memory_operation_lock(int value) { _atomic_memory_operation_lock = value; }
-
-  static address handler_for_unsafe_access_entry()        { return _handler_for_unsafe_access_entry; }
 
   static address partial_subtype_check()                  { return _partial_subtype_check; }
 

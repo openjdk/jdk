@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import javax.lang.model.util.*;
 
 
 /**
- * Represents a program element such as a package, class, or method.
+ * Represents a program element such as a module, package, class, or method.
  * Each element represents a static, language-level construct
  * (and not, for example, a runtime construct of the virtual machine).
  *
@@ -123,6 +123,8 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      * @see TypeElement#getSimpleName
      * @see VariableElement#getSimpleName
      * @see ModuleElement#getSimpleName
+     * @revised 9
+     * @spec JPMS
      */
     Name getSimpleName();
 
@@ -139,7 +141,7 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      *
      * <li> If this is a {@linkplain
      * PackageElement#getEnclosingElement package}, its module is
-     * returned.
+     * returned if such a module exists. Otherwise, {@code null} is returned.
      *
      * <li> If this is a {@linkplain
      * TypeParameterElement#getEnclosingElement type parameter},
@@ -158,6 +160,8 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      *
      * @return the enclosing element, or {@code null} if there is none
      * @see Elements#getPackageOf
+     * @revised 9
+     * @spec JPMS
      */
     Element getEnclosingElement();
 
@@ -176,11 +180,14 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      * A {@linkplain ModuleElement#getEnclosedElements module}
      * encloses packages within it.
      *
+     * Enclosed elements may include implicitly declared {@linkplain
+     * Elements.Origin#MANDATED mandated} elements.
+     *
      * Other kinds of elements are not currently considered to enclose
      * any elements; however, that may change as this API or the
      * programming language evolves.
      *
-     * <p>Note that elements of certain kinds can be isolated using
+     * @apiNote Elements of certain kinds can be isolated using
      * methods in {@link ElementFilter}.
      *
      * @return the enclosed elements, or an empty list if none
@@ -190,6 +197,8 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      * @see Elements#getAllMembers
      * @jls 8.8.9 Default Constructor
      * @jls 8.9 Enums
+     * @revised 9
+     * @spec JPMS
      */
     List<? extends Element> getEnclosedElements();
 
@@ -197,7 +206,7 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      * Returns {@code true} if the argument represents the same
      * element as {@code this}, or {@code false} otherwise.
      *
-     * <p>Note that the identity of an element involves implicit state
+     * @apiNote The identity of an element involves implicit state
      * not directly accessible from the element's methods, including
      * state about the presence of unrelated types.  Element objects
      * created by different implementations of these interfaces should

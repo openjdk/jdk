@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,9 +54,8 @@ import java.security.cert.CertificateException;
  *
  * @since 1.6
  * @author Xuelei Fan
- * @deprecated This class is subject to removal in a future version of JDK.
  */
-@Deprecated(since="9", forRemoval=true)
+@Deprecated(since="9")
 public abstract class X509ExtendedTrustManager implements X509TrustManager {
     /**
      * Constructor used by subclasses only.

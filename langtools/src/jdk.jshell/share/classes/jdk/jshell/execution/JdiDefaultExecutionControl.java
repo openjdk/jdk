@@ -33,6 +33,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,6 +61,7 @@ import static jdk.jshell.execution.Util.remoteInputOutput;
  *
  * @author Robert Field
  * @author Jan Lahoda
+ * @since 9
  */
 public class JdiDefaultExecutionControl extends JdiExecutionControl {
 
@@ -97,12 +99,12 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
 
             // Set-up the JDI connection
             JdiInitiator jdii = new JdiInitiator(port,
-                    env.extraRemoteVMOptions(), remoteAgent, isLaunch, host, timeout);
+                    env.extraRemoteVMOptions(), remoteAgent, isLaunch, host,
+                    timeout, Collections.emptyMap());
             VirtualMachine vm = jdii.vm();
             Process process = jdii.process();
 
             List<Consumer<String>> deathListeners = new ArrayList<>();
-            deathListeners.add(s -> env.closeDown());
             Util.detectJdiExitEvent(vm, s -> {
                 for (Consumer<String> h : deathListeners) {
                     h.accept(s);
@@ -120,7 +122,8 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
             Map<String, InputStream> input = new HashMap<>();
             input.put("in", env.userIn());
             return remoteInputOutput(socket.getInputStream(), out, outputs, input,
-                    (objIn, objOut) -> new JdiDefaultExecutionControl(objOut, objIn, vm, process, remoteAgent, deathListeners));
+                    (objIn, objOut) -> new JdiDefaultExecutionControl(env,
+                                        objOut, objIn, vm, process, remoteAgent, deathListeners));
         }
     }
 
@@ -130,15 +133,20 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
      * @param cmdout the output for commands
      * @param cmdin the input for responses
      */
-    private JdiDefaultExecutionControl(ObjectOutput cmdout, ObjectInput cmdin,
+    private JdiDefaultExecutionControl(ExecutionEnv env,
+            ObjectOutput cmdout, ObjectInput cmdin,
             VirtualMachine vm, Process process, String remoteAgent,
             List<Consumer<String>> deathListeners) {
         super(cmdout, cmdin);
         this.vm = vm;
         this.process = process;
         this.remoteAgent = remoteAgent;
+        // We have now succeeded in establishing the connection.
+        // If there is an exit now it propagates all the way up
+        // and the VM should be disposed of.
+        deathListeners.add(s -> env.closeDown());
         deathListeners.add(s -> disposeVM());
-    }
+     }
 
     @Override
     public String invoke(String classname, String methodname)

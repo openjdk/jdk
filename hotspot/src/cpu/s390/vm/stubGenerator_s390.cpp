@@ -623,26 +623,6 @@ class StubGenerator: public StubCodeGenerator {
 #define __ (Verbose ? (_masm->block_comment(FILE_AND_LINE),_masm):_masm)->
 #endif
 
-  //----------------------------------------------------------------------
-  // The following routine generates a subroutine to throw an asynchronous
-  // UnknownError when an unsafe access gets a fault that could not be
-  // reasonably prevented by the programmer. (Example: SIGBUS/OBJERR.)
-  //
-  // Arguments:
-  //   trapping PC: ??
-  //
-  // Results:
-  //   Posts an asynchronous exception, skips the trapping instruction.
-  //
-  address generate_handler_for_unsafe_access() {
-    StubCodeMark mark(this, "StubRoutines", "handler_for_unsafe_access");
-    {
-      address start = __ pc();
-      __ unimplemented("StubRoutines::handler_for_unsafe_access", 86);
-      return start;
-    }
-  }
-
   // Support for uint StubRoutine::zarch::partial_subtype_check(Klass
   // sub, Klass super);
   //
@@ -2433,13 +2413,12 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_throw_StackOverflowError_entry          =
       generate_throw_exception("StackOverflowError throw_exception",
                                CAST_FROM_FN_PTR(address, SharedRuntime::throw_StackOverflowError), false);
+    StubRoutines::_throw_delayed_StackOverflowError_entry  =
+      generate_throw_exception("delayed StackOverflowError throw_exception",
+                               CAST_FROM_FN_PTR(address, SharedRuntime::throw_delayed_StackOverflowError), false);
 
     //----------------------------------------------------------------------
     // Entry points that are platform specific.
-    // Build this early so it's available for the interpreter.
-    StubRoutines::_throw_StackOverflowError_entry          =
-      generate_throw_exception("StackOverflowError throw_exception",
-                               CAST_FROM_FN_PTR(address, SharedRuntime::throw_StackOverflowError), false);
 
     if (UseCRC32Intrinsics) {
       // We have no CRC32 table on z/Architecture.
@@ -2461,8 +2440,6 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_throw_AbstractMethodError_entry         = generate_throw_exception("AbstractMethodError throw_exception",          CAST_FROM_FN_PTR(address, SharedRuntime::throw_AbstractMethodError),  false);
     StubRoutines::_throw_IncompatibleClassChangeError_entry= generate_throw_exception("IncompatibleClassChangeError throw_exception", CAST_FROM_FN_PTR(address, SharedRuntime::throw_IncompatibleClassChangeError),  false);
     StubRoutines::_throw_NullPointerException_at_call_entry= generate_throw_exception("NullPointerException at call throw_exception", CAST_FROM_FN_PTR(address, SharedRuntime::throw_NullPointerException_at_call), false);
-
-    StubRoutines::zarch::_handler_for_unsafe_access_entry  =  generate_handler_for_unsafe_access();
 
     // Support for verify_oop (must happen after universe_init).
     StubRoutines::_verify_oop_subroutine_entry             = generate_verify_oop_subroutine();

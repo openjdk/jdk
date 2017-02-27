@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ public interface PackageElement extends Element, QualifiedNameable {
     /**
      * Returns the fully qualified name of this package.
      * This is also known as the package's <i>canonical</i> name.
+     * For an {@linkplain #isUnnamed() unnamed package}, an empty name is returned.
      *
      * @return the fully qualified name of this package, or an
      * empty name if this is an unnamed package
@@ -50,8 +51,8 @@ public interface PackageElement extends Element, QualifiedNameable {
     Name getQualifiedName();
 
     /**
-     * Returns the simple name of this package.  For an unnamed
-     * package, an empty name is returned.
+     * Returns the simple name of this package.  For an {@linkplain
+     * #isUnnamed() unnamed package}, an empty name is returned.
      *
      * @return the simple name of this package or an empty name if
      * this is an unnamed package
@@ -82,9 +83,19 @@ public interface PackageElement extends Element, QualifiedNameable {
     boolean isUnnamed();
 
     /**
-     * Returns the enclosing module.
+     * Returns the enclosing module if such a module exists; otherwise
+     * returns {@code null}.
      *
-     * @return the enclosing module
+     * One situation where a module does not exist for a package is if
+     * the environment does not include modules, such as an annotation
+     * processing environment configured for a {@linkplain
+     * javax.annotation.processing.ProcessingEnvironment#getSourceVersion
+     * source version} without modules.
+     *
+     * @return the enclosing module or {@code null} if no such module exists
+     *
+     * @revised 9
+     * @spec JPMS
      */
     @Override
     Element getEnclosingElement();

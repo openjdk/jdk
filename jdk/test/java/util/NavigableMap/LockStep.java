@@ -753,7 +753,7 @@ public class LockStep {
 
         List<NavigableMap> maps = Arrays.asList(m1, m2);
         for (NavigableMap m : maps) testEmptyMap(m);
-        final Set<Integer> ints = new HashSet<Integer>();
+        final Set<Integer> ints = new HashSet<>();
         while (ints.size() < size)
             ints.add(rnd.nextInt(1024));
         final Integer[] elts = ints.toArray(new Integer[size]);
@@ -795,7 +795,7 @@ public class LockStep {
 
         List<NavigableSet> sets = Arrays.asList(s1, s2);
         for (NavigableSet s : sets) testEmptySet(s);
-        final Set<Integer> ints = new HashSet<Integer>();
+        final Set<Integer> ints = new HashSet<>();
         while (ints.size() < size)
             ints.add(rnd.nextInt(1024));
         final Integer[] elts = ints.toArray(new Integer[size]);

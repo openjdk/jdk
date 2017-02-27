@@ -316,7 +316,7 @@ public class Atomic8Test extends JSR166TestCase {
      * result of supplied function
      */
     public void testReferenceArrayGetAndUpdate() {
-        AtomicReferenceArray<Integer> a = new AtomicReferenceArray<Integer>(1);
+        AtomicReferenceArray<Integer> a = new AtomicReferenceArray<>(1);
         a.set(0, one);
         assertEquals((Integer) 1, a.getAndUpdate(0, Atomic8Test::addInteger17));
         assertEquals((Integer) 18, a.getAndUpdate(0, Atomic8Test::addInteger17));
@@ -328,7 +328,7 @@ public class Atomic8Test extends JSR166TestCase {
      * returns result.
      */
     public void testReferenceArrayUpdateAndGet() {
-        AtomicReferenceArray<Integer> a = new AtomicReferenceArray<Integer>(1);
+        AtomicReferenceArray<Integer> a = new AtomicReferenceArray<>(1);
         a.set(0, one);
         assertEquals((Integer) 18, a.updateAndGet(0, Atomic8Test::addInteger17));
         assertEquals((Integer) 35, a.updateAndGet(0, Atomic8Test::addInteger17));
@@ -339,7 +339,7 @@ public class Atomic8Test extends JSR166TestCase {
      * with supplied function.
      */
     public void testReferenceArrayGetAndAccumulate() {
-        AtomicReferenceArray<Integer> a = new AtomicReferenceArray<Integer>(1);
+        AtomicReferenceArray<Integer> a = new AtomicReferenceArray<>(1);
         a.set(0, one);
         assertEquals((Integer) 1, a.getAndAccumulate(0, 2, Atomic8Test::sumInteger));
         assertEquals((Integer) 3, a.getAndAccumulate(0, 3, Atomic8Test::sumInteger));
@@ -351,7 +351,7 @@ public class Atomic8Test extends JSR166TestCase {
      * returns result.
      */
     public void testReferenceArrayAccumulateAndGet() {
-        AtomicReferenceArray<Integer> a = new AtomicReferenceArray<Integer>(1);
+        AtomicReferenceArray<Integer> a = new AtomicReferenceArray<>(1);
         a.set(0, one);
         assertEquals((Integer) 7, a.accumulateAndGet(0, 6, Atomic8Test::sumInteger));
         assertEquals((Integer) 10, a.accumulateAndGet(0, 3, Atomic8Test::sumInteger));

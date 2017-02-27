@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import javax.lang.model.element.ElementVisitor;
 import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
+import javax.tools.JavaFileObject.Kind;
 import javax.tools.StandardLocation;
 
 import com.sun.source.util.TaskEvent;
@@ -363,7 +364,7 @@ public class JavaCompiler {
      **/
     protected boolean implicitSourceFilesRead;
 
-    protected boolean enterDone;
+    private boolean enterDone;
 
     protected CompileStates compileStates;
 
@@ -623,7 +624,8 @@ public class JavaCompiler {
                 keepComments = true;
                 genEndPos = true;
             }
-            Parser parser = parserFactory.newParser(content, keepComments(), genEndPos, lineDebugInfo);
+            Parser parser = parserFactory.newParser(content, keepComments(), genEndPos,
+                                lineDebugInfo, filename.isNameCompatible("module-info", Kind.SOURCE));
             tree = parser.parseCompilationUnit();
             if (verbose) {
                 log.printVerbose("parsing.done", Long.toString(elapsed(msec)));
@@ -886,7 +888,7 @@ public class JavaCompiler {
 
     public void compile(List<JavaFileObject> sourceFileObject)
         throws Throwable {
-        compile(sourceFileObject, List.nil(), null);
+        compile(sourceFileObject, List.nil(), null, List.nil());
     }
 
     /**
@@ -896,10 +898,13 @@ public class JavaCompiler {
      * @param classnames class names to process for annotations
      * @param processors user provided annotation processors to bypass
      * discovery, {@code null} means that no processors were provided
+     * @param addModules additional root modules to be used during
+     * module resolution.
      */
     public void compile(Collection<JavaFileObject> sourceFileObjects,
                         Collection<String> classnames,
-                        Iterable<? extends Processor> processors)
+                        Iterable<? extends Processor> processors,
+                        Collection<String> addModules)
     {
         if (!taskListener.isEmpty()) {
             taskListener.started(new TaskEvent(TaskEvent.Kind.COMPILATION));
@@ -921,13 +926,17 @@ public class JavaCompiler {
         start_msec = now();
 
         try {
-            initProcessAnnotations(processors);
+            initProcessAnnotations(processors, sourceFileObjects, classnames);
 
             for (String className : classnames) {
                 int sep = className.indexOf('/');
                 if (sep != -1) {
                     modules.addExtraAddModules(className.substring(0, sep));
                 }
+            }
+
+            for (String moduleName : addModules) {
+                modules.addExtraAddModules(moduleName);
             }
 
             // These method calls must be chained to avoid memory leaks
@@ -1042,7 +1051,7 @@ public class JavaCompiler {
     public List<JCCompilationUnit> initModules(List<JCCompilationUnit> roots) {
         modules.initModules(roots);
         if (roots.isEmpty()) {
-            enterDone = true;
+            enterDone();
         }
         return roots;
     }
@@ -1063,7 +1072,7 @@ public class JavaCompiler {
 
         enter.main(roots);
 
-        enterDone = true;
+        enterDone();
 
         if (!taskListener.isEmpty()) {
             for (JCCompilationUnit unit: roots) {
@@ -1123,7 +1132,9 @@ public class JavaCompiler {
      * @param processors user provided annotation processors to bypass
      * discovery, {@code null} means that no processors were provided
      */
-    public void initProcessAnnotations(Iterable<? extends Processor> processors) {
+    public void initProcessAnnotations(Iterable<? extends Processor> processors,
+                                       Collection<? extends JavaFileObject> initialFiles,
+                                       Collection<String> initialClassNames) {
         // Process annotations if processing is not disabled and there
         // is at least one Processor available.
         if (options.isSet(PROC, "none")) {
@@ -1141,6 +1152,7 @@ public class JavaCompiler {
                 if (!taskListener.isEmpty())
                     taskListener.started(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING));
                 deferredDiagnosticHandler = new Log.DeferredDiagnosticHandler(log);
+                procEnvImpl.getFiler().setInitialState(initialFiles, initialClassNames);
             } else { // free resources
                 procEnvImpl.close();
             }
@@ -1445,6 +1457,11 @@ public class JavaCompiler {
             return;
         }
 
+        if (!modules.multiModuleMode && env.toplevel.modle != modules.getDefaultModule()) {
+            //can only generate classfiles for a single module:
+            return;
+        }
+
         if (compileStates.isDone(env, CompileState.LOWER)) {
             results.addAll(desugaredEnvs.get(env));
             return;
@@ -1723,6 +1740,11 @@ public class JavaCompiler {
         if (log.compressedOutput) {
             log.mandatoryNote(null, "compressed.diags");
         }
+    }
+
+    public void enterDone() {
+        enterDone = true;
+        annotate.enterDone();
     }
 
     public boolean isEnterDone() {

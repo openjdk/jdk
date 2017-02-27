@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public class JVMDefineModule {
 /* Invalid test, won't compile.
         // Invalid classloader argument, expect an IAE
         try {
-            m = ModuleHelper.ModuleObject("mymodule1", new Object(), new String[] { "mypackage1" });
+            m = ModuleHelper.ModuleObject("mymodule_one", new Object(), new String[] { "mypackage1" });
             ModuleHelper.DefineModule(m,  "9.0", "mymodule/here", new String[] { "mypackage1" });
             throw new RuntimeException("Failed to get expected IAE for bad loader");
         } catch(IllegalArgumentException e) {
@@ -127,27 +127,27 @@ public class JVMDefineModule {
             }
         }
 
-        // Duplicate module name, expect an IAE
-        m = ModuleHelper.ModuleObject("module.name", cl, new String[] { "mypackage6" });
+        // Duplicate module name, expect an ISE
+        m = ModuleHelper.ModuleObject("Module_A", cl, new String[] { "mypackage6" });
         assertNotNull(m, "Module should not be null");
         ModuleHelper.DefineModule(m, "9.0", "module.name/here", new String[] { "mypackage6" });
         try {
             ModuleHelper.DefineModule(m, "9.0", "module.name/here", new String[] { "mypackage6a" });
-            throw new RuntimeException("Failed to get IAE for duplicate module");
-        } catch(IllegalArgumentException e) {
-            if (!e.getMessage().contains("Module module.name is already defined")) {
-              throw new RuntimeException("Failed to get expected IAE message for duplicate module: " + e.getMessage());
+            throw new RuntimeException("Failed to get ISE for duplicate module");
+        } catch(IllegalStateException e) {
+            if (!e.getMessage().contains("Module Module_A is already defined")) {
+              throw new RuntimeException("Failed to get expected ISE message for duplicate module: " + e.getMessage());
             }
         }
 
-        // Package is already defined for class loader, expect an IAE
+        // Package is already defined for class loader, expect an ISE
         m = ModuleHelper.ModuleObject("dupl.pkg.module", cl, new String[] { "mypackage6b" });
         try {
             ModuleHelper.DefineModule(m, "9.0", "module.name/here", new String[] { "mypackage6" });
-            throw new RuntimeException("Failed to get IAE for existing package");
-        } catch(IllegalArgumentException e) {
-            if (!e.getMessage().contains("Package mypackage6 for module dupl.pkg.module already exists for class loader")) {
-              throw new RuntimeException("Failed to get expected IAE message for duplicate package: " + e.getMessage());
+            throw new RuntimeException("Failed to get ISE for existing package");
+        } catch(IllegalStateException e) {
+            if (!e.getMessage().contains("Package mypackage6 for module dupl.pkg.module is already in another module, Module_A, defined to the class loader")) {
+              throw new RuntimeException("Failed to get expected ISE message for duplicate package: " + e.getMessage());
             }
         }
 

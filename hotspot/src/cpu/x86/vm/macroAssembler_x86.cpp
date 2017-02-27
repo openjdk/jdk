@@ -3499,12 +3499,12 @@ void MacroAssembler::movdqu(XMMRegister dst, XMMRegister src) {
   }
 }
 
-void MacroAssembler::movdqu(XMMRegister dst, AddressLiteral src) {
+void MacroAssembler::movdqu(XMMRegister dst, AddressLiteral src, Register scratchReg) {
   if (reachable(src)) {
     movdqu(dst, as_Address(src));
   } else {
-    lea(rscratch1, src);
-    movdqu(dst, Address(rscratch1, 0));
+    lea(scratchReg, src);
+    movdqu(dst, Address(scratchReg, 0));
   }
 }
 

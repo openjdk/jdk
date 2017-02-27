@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,69 +23,164 @@
 
 /*
  *  @test
- *  @bug 6741606 7146431 8000450 8019830 8022945 8027144 8041633 8078427
- *  @summary Make sure all restricted packages listed in the package.access
+ *  @bug 6741606 7146431 8000450 8019830 8022945 8027144 8041633 8078427 8055206
+ *  @summary Check that various restricted packages that are supposed to be
+ *           restricted by default or are listed in the package.access
  *           property in the java.security file are blocked
+ *  @modules java.xml.ws java.corba
  *  @run main/othervm CheckPackageAccess
  */
 
-import java.util.Collections;
-import java.util.ArrayList;
+import java.lang.module.ModuleFinder;
+import java.lang.module.ModuleReference;
+import java.lang.reflect.Layer;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
-/*
- * The main benefit of this test is to catch merge errors or other types
- * of issues where one or more of the packages are accidentally
- * removed. This is why the packages that are known to be restricted have to
- * be explicitly listed below.
- */
 public class CheckPackageAccess {
 
-    public static void main(String[] args) throws Exception {
-        // get expected list of restricted packages
-        List<String> pkgs = RestrictedPackages.expected();
+    private static final SecurityManager sm = new SecurityManager();
+    private static final ModuleFinder mf = ModuleFinder.ofSystem();
 
-        // get actual list of restricted packages
-        List<String> jspkgs = RestrictedPackages.actual();
+    /*
+     * The expected list of restricted packages of the package.access property.
+     *
+     * This array should be updated whenever new packages are added to the
+     * package.access property in the java.security file
+     * NOTE: it should be in the same order as the java.security file
+     */
+    private static final String[] EXPECTED = {
+        "sun.misc.",
+        "sun.reflect.",
+    };
 
-        if (!isOpenJDKOnly()) {
-            String lastPkg = pkgs.get(pkgs.size() - 1);
+    /**
+     * Tests access to various packages of a module.
+     */
+    private static class Test {
+        String moduleName;     // name of module
+        ModuleReference moduleRef;     // module reference
+        String exports;    // exported pkg
+        Optional<String> opens;      // opened pkg
+        String conceals;   // concealed pkg
+        Optional<String> qualExports; // qualified export pkg
+        Optional<String> qualOpens;   // qualified open pkg
+        // qual open and non-qualified export pkg
+        Optional<String> qualOpensAndExports;
+        Test(String module, String exports, String opens, String conceals,
+             String qualExports, String qualOpens, String qualOpensAndExports) {
+            this.moduleName = module;
+            this.moduleRef = mf.find(moduleName).get();
+            this.exports = exports;
+            this.opens = Optional.ofNullable(opens);
+            this.conceals = conceals;
+            this.qualExports = Optional.ofNullable(qualExports);
+            this.qualOpens = Optional.ofNullable(qualOpens);
+            this.qualOpensAndExports = Optional.ofNullable(qualOpensAndExports);
+        }
 
-            // Remove any closed packages from list before comparing
-            int index = jspkgs.indexOf(lastPkg);
-            if (index != -1 && index != jspkgs.size() - 1) {
-                jspkgs.subList(index + 1, jspkgs.size()).clear();
+        void test() {
+            final boolean isModulePresent =
+                        Layer.boot().findModule(moduleName).isPresent();
+            System.out.format("Testing module: %1$s. Module is%2$s present.\n",
+                        moduleName, isModulePresent ? "" : " NOT");
+
+            if (isModulePresent) {
+
+                // access to exported pkg should pass
+                testNonRestricted(exports);
+
+                // access to opened pkg should pass
+                opens.ifPresent(Test::testNonRestricted);
+
+                // access to concealed pkg should fail
+                testRestricted(conceals);
+
+                // access to qualified export pkg should fail
+                qualExports.ifPresent(Test::testRestricted);
+
+                // access to qualified open pkg should fail
+                qualOpens.ifPresent(Test::testRestricted);
+
+                // access to qualified opened pkg that is also exported should pass
+                qualOpensAndExports.ifPresent(Test::testNonRestricted);
+            } else {
+                System.out.println("Skipping tests for module.");
             }
         }
 
-        // Sort to ensure lists are comparable
-        Collections.sort(pkgs);
-        Collections.sort(jspkgs);
-
-        if (!pkgs.equals(jspkgs)) {
-            for (String p : pkgs)
-                if (!jspkgs.contains(p))
-                    System.out.println("In golden set, but not in j.s file: " + p);
-            for (String p : jspkgs)
-                if (!pkgs.contains(p))
-                    System.out.println("In j.s file, but not in golden set: " + p);
-
-
-            throw new RuntimeException("restricted packages are not " +
-                                       "consistent with java.security file");
+        private static void testRestricted(String pkg) {
+            try {
+                sm.checkPackageAccess(pkg);
+                throw new RuntimeException("Able to access restricted package: "
+                                           + pkg);
+            } catch (SecurityException se) {}
+            try {
+                sm.checkPackageDefinition(pkg);
+                throw new RuntimeException("Able to access restricted package: "
+                                           + pkg);
+            } catch (SecurityException se) {}
         }
-        System.setSecurityManager(new SecurityManager());
-        SecurityManager sm = System.getSecurityManager();
+
+        private static void testNonRestricted(String pkg) {
+            try {
+                sm.checkPackageAccess(pkg);
+            } catch (SecurityException se) {
+                throw new RuntimeException("Unable to access exported package: "
+                                           + pkg, se);
+            }
+            try {
+                sm.checkPackageDefinition(pkg);
+            } catch (SecurityException se) {
+                throw new RuntimeException("Unable to access exported package: "
+                                           + pkg, se);
+            }
+        }
+    }
+
+    private static final Test[] tests = new Test[] {
+        // java.base module loaded by boot loader
+        new Test("java.base", "java.security", null, "jdk.internal.jrtfs",
+                 "jdk.internal.loader", null, null),
+        // java.desktop module loaded by boot loader and has an openQual pkg
+        // that is exported
+        new Test("java.desktop", "java.applet", null, "sun.applet",
+                 "sun.awt", null, "javax.swing.plaf.basic"),
+        // java.security.jgss module loaded by platform loader
+        new Test("java.security.jgss", "org.ietf.jgss", null,
+                 "sun.security.krb5.internal.crypto", "sun.security.krb5",
+                 null, null),
+        // java.xml.ws module loaded by platform loader but needs to be added
+        // and has an openQual pkg that is exported
+        new Test("java.xml.ws", "javax.xml.soap", null,
+                 "com.sun.xml.internal.stream.buffer",
+                 "com.sun.xml.internal.ws.api", null,
+                 "javax.xml.ws.wsaddressing"),
+        // java.xml.ws module loaded by platform loader but needs to be added
+        // and has an openQual pkg
+        new Test("java.corba", "javax.rmi", null, "sun.corba",
+                 "com.sun.corba.se.impl.util", "com.sun.jndi.cosnaming", null),
+    };
+
+    public static void main(String[] args) throws Exception {
+
+        // check expected list of restricted packages in java.security file
+        checkPackages(Arrays.asList(EXPECTED));
+
+        // check access to each module's packages
+        for (Test test : tests) {
+            test.test();
+        }
+
+        System.out.println("Test passed");
+    }
+
+    private static void checkPackages(List<String> pkgs) {
         for (String pkg : pkgs) {
-            String subpkg = pkg + "foo";
             try {
                 sm.checkPackageAccess(pkg);
                 throw new RuntimeException("Able to access " + pkg +
-                                           " package");
-            } catch (SecurityException se) { }
-            try {
-                sm.checkPackageAccess(subpkg);
-                throw new RuntimeException("Able to access " + subpkg +
                                            " package");
             } catch (SecurityException se) { }
             try {
@@ -93,17 +188,17 @@ public class CheckPackageAccess {
                 throw new RuntimeException("Able to define class in " + pkg +
                                            " package");
             } catch (SecurityException se) { }
+            String subpkg = pkg + "foo";
             try {
-                sm.checkPackageDefinition(subpkg);
-                throw new RuntimeException("Able to define class in " + subpkg +
+                sm.checkPackageAccess(subpkg);
+                throw new RuntimeException("Able to access " + subpkg +
                                            " package");
             } catch (SecurityException se) { }
+            try {
+                sm.checkPackageDefinition(subpkg);
+                throw new RuntimeException("Able to define class in " +
+                                           subpkg + " package");
+            } catch (SecurityException se) { }
         }
-        System.out.println("Test passed");
-    }
-
-    private static boolean isOpenJDKOnly() {
-        String prop = System.getProperty("java.runtime.name");
-        return prop != null && prop.startsWith("OpenJDK");
     }
 }

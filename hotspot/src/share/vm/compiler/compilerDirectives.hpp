@@ -60,13 +60,12 @@
     cflags(BlockLayoutByFrequency,  bool, BlockLayoutByFrequency,  BlockLayoutByFrequency) \
     cflags(PrintOptoAssembly,       bool, PrintOptoAssembly, PrintOptoAssembly) \
     cflags(PrintIntrinsics,         bool, PrintIntrinsics, PrintIntrinsics) \
-    cflags(TraceOptoPipelining,     bool, false, TraceOptoPipelining) \
-    cflags(TraceOptoOutput,         bool, false, TraceOptoOutput) \
+NOT_PRODUCT(cflags(TraceOptoPipelining, bool, TraceOptoPipelining, TraceOptoPipelining)) \
+NOT_PRODUCT(cflags(TraceOptoOutput,     bool, TraceOptoOutput, TraceOptoOutput)) \
     cflags(TraceSpilling,           bool, TraceSpilling, TraceSpilling) \
     cflags(Vectorize,               bool, false, Vectorize) \
     cflags(VectorizeDebug,         uintx, 0, VectorizeDebug) \
     cflags(CloneMapDebug,           bool, false, CloneMapDebug) \
-    cflags(DoReserveCopyInSuperWordDebug, bool, false, DoReserveCopyInSuperWordDebug) \
     cflags(IGVPrintLevel,           intx, PrintIdealGraphLevel, IGVPrintLevel) \
     cflags(MaxNodeLimit,            intx, MaxNodeLimit, MaxNodeLimit)
 #else

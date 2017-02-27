@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,7 +248,7 @@ public class DerValue {
 
         tag = (byte)in.read();
         byte lenByte = (byte)in.read();
-        length = DerInputStream.getLength((lenByte & 0xff), in);
+        length = DerInputStream.getLength(lenByte, in);
         if (length == -1) {  // indefinite length encoding found
             DerInputBuffer inbuf = in.dup();
             int readLen = inbuf.available();
@@ -361,7 +361,7 @@ public class DerValue {
 
         tag = (byte)in.read();
         byte lenByte = (byte)in.read();
-        length = DerInputStream.getLength((lenByte & 0xff), in);
+        length = DerInputStream.getLength(lenByte, in);
         if (length == -1) { // indefinite length encoding found
             int readLen = in.available();
             int offset = 2;     // for tag and length bytes

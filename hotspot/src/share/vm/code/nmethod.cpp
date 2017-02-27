@@ -1149,6 +1149,14 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
   assert(state == zombie || state == not_entrant, "must be zombie or not_entrant");
   assert(!is_zombie(), "should not already be a zombie");
 
+  if (_state == state) {
+    // Avoid taking the lock if already in required state.
+    // This is safe from races because the state is an end-state,
+    // which the nmethod cannot back out of once entered.
+    // No need for fencing either.
+    return false;
+  }
+
   // Make sure neither the nmethod nor the method is flushed in case of a safepoint in code below.
   nmethodLocker nml(this);
   methodHandle the_method(method());

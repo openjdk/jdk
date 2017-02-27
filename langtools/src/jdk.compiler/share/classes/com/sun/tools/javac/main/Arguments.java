@@ -588,16 +588,15 @@ public class Arguments {
         checkOptionAllowed(t.compareTo(Target.JDK1_9) >= 0,
                 option -> error("err.option.not.allowed.with.target", option.getPrimaryName(), t.name),
                 Option.MODULE_SOURCE_PATH, Option.UPGRADE_MODULE_PATH,
-                Option.SYSTEM, Option.MODULE_PATH, Option.ADD_MODULES, Option.LIMIT_MODULES,
+                Option.SYSTEM, Option.MODULE_PATH, Option.ADD_MODULES,
+                Option.ADD_EXPORTS, Option.ADD_OPENS, Option.ADD_READS,
+                Option.LIMIT_MODULES,
                 Option.PATCH_MODULE);
 
         if (fm.hasLocation(StandardLocation.MODULE_SOURCE_PATH)) {
             if (!options.isSet(Option.PROC, "only")
                     && !fm.hasLocation(StandardLocation.CLASS_OUTPUT)) {
                 log.error(Errors.NoOutputDir);
-            }
-            if (options.isSet(Option.XMODULE)) {
-                log.error(Errors.XmoduleNoModuleSourcepath);
             }
         }
 

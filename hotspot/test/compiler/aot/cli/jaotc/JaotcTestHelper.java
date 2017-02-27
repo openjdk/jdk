@@ -44,6 +44,7 @@ public class JaotcTestHelper {
         for (String vmOpt : Utils.getTestJavaOpts()) {
             launcher.addVMArg(vmOpt);
         }
+        launcher.addToolArg("--compile-with-assertions");
         for (String arg : args) {
             launcher.addToolArg(arg);
         }
@@ -70,7 +71,11 @@ public class JaotcTestHelper {
         }
     }
 
+    public static String getClassAotCompilationFilename(Class<?> classToCompile) {
+        return classToCompile.getName().replaceAll("\\.","/") + ".class";
+    }
+
     public static String getClassAotCompilationName(Class<?> classToCompile) {
-        return classToCompile.getName().replaceAll("\\.", "/") + ".class";
+        return classToCompile.getName();
     }
 }

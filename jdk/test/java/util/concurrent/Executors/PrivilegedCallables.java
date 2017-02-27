@@ -45,7 +45,7 @@ import java.util.concurrent.Callable;
 public class PrivilegedCallables {
     Callable<Integer> real;
 
-    final Callable<Integer> realCaller = new Callable<Integer>() {
+    final Callable<Integer> realCaller = new Callable<>() {
         public Integer call() throws Exception {
             return real.call(); }};
 
@@ -132,7 +132,7 @@ public class PrivilegedCallables {
         for (int i = 0; i < 20; i++)
             if (rnd.nextBoolean()) {
                 final Throwable t = randomThrowable();
-                real = new Callable<Integer>() {
+                real = new Callable<>() {
                     public Integer call() throws Exception {
                         throwThrowable(t);
                         return null; }};
@@ -142,7 +142,7 @@ public class PrivilegedCallables {
                 } catch (Throwable tt) { check(t == tt); }
             } else {
                 final int n = rnd.nextInt();
-                real = new Callable<Integer>() {
+                real = new Callable<>() {
                     public Integer call() { return n; }};
                 equal(c.call(), n);
             }

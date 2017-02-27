@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,21 +33,23 @@ import java.util.List;
  *
  * @see javax.lang.model.util.Elements#getModuleOf
  * @since 9
+ * @spec JPMS
  */  // TODO: add @jls to module section
 public interface ModuleElement extends Element, QualifiedNameable {
 
     /**
-     * Returns the fully qualified name of this module.
+     * Returns the fully qualified name of this module.  For an
+     * {@linkplain #isUnnamed() unnamed module}, an empty name is returned.
      *
-     * @return the qualified name of this module, or an
+     * @return the fully qualified name of this module, or an
      * empty name if this is an unnamed module
      */
     @Override
     Name getQualifiedName();
 
     /**
-     * Returns the simple name of this module.  For an unnamed
-     * module, an empty name is returned.
+     * Returns the simple name of this module.  For an {@linkplain
+     * #isUnnamed() unnamed module}, an empty name is returned.
      *
      * @return the simple name of this module or an empty name if
      * this is an unnamed module
@@ -61,6 +63,15 @@ public interface ModuleElement extends Element, QualifiedNameable {
      */
     @Override
     List<? extends Element> getEnclosedElements();
+
+    /**
+     * Returns {@code true} if this is an open module and {@code
+     * false} otherwise.
+     *
+     * @return {@code true} if this is an open module and {@code
+     * false} otherwise
+     */ // TODO: add @jls to unnamed module section
+    boolean isOpen();
 
     /**
      * Returns {@code true} if this is an unnamed module and {@code
@@ -94,6 +105,7 @@ public interface ModuleElement extends Element, QualifiedNameable {
      * future versions of the Java&trade; programming language.
      *
      * @since 9
+     * @spec JPMS
      */
     enum DirectiveKind {
         /** A "requires (static|transitive)* module-name" directive. */
@@ -112,6 +124,7 @@ public interface ModuleElement extends Element, QualifiedNameable {
      * Represents a "module statement" within the declaration of this module.
      *
      * @since 9
+     * @spec JPMS
      *
      */ // TODO: add jls to Module Statement
     interface Directive {
@@ -126,6 +139,7 @@ public interface ModuleElement extends Element, QualifiedNameable {
     /**
      * A dependency of a module.
      * @since 9
+     * @spec JPMS
      */
     interface RequiresDirective extends Directive {
         /**
@@ -150,6 +164,7 @@ public interface ModuleElement extends Element, QualifiedNameable {
     /**
      * An exported package of a module.
      * @since 9
+     * @spec JPMS
      */
     interface ExportsDirective extends Directive {
 
@@ -171,6 +186,7 @@ public interface ModuleElement extends Element, QualifiedNameable {
     /**
      * An opened package of a module.
      * @since 9
+     * @spec JPMS
      */
     interface OpensDirective extends Directive {
 
@@ -192,6 +208,7 @@ public interface ModuleElement extends Element, QualifiedNameable {
     /**
      * An implementation of a service provided by a module.
      * @since 9
+     * @spec JPMS
      */
     interface ProvidesDirective extends Directive {
         /**
@@ -210,6 +227,7 @@ public interface ModuleElement extends Element, QualifiedNameable {
     /**
      * A reference to a service used by a module.
      * @since 9
+     * @spec JPMS
      */
     interface UsesDirective extends Directive {
         /**

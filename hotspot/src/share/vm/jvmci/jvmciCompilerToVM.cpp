@@ -597,12 +597,16 @@ C2V_VMENTRY(jboolean, methodIsIgnoredBySecurityStackWalk,(JNIEnv *, jobject, job
   return method->is_ignored_by_security_stack_walk();
 C2V_END
 
-C2V_VMENTRY(jboolean, canInlineMethod,(JNIEnv *, jobject, jobject jvmci_method))
+C2V_VMENTRY(jboolean, isCompilable,(JNIEnv *, jobject, jobject jvmci_method))
   methodHandle method = CompilerToVM::asMethod(jvmci_method);
-  // In hosted mode ignore the not_compilable flags since they are never set by
+  // Ignore the not_compilable flags in hosted mode since they are never set by
   // the JVMCI compiler.
-  bool is_compilable = UseJVMCICompiler ? !method->is_not_compilable(CompLevel_full_optimization) : true;
-  return is_compilable && !CompilerOracle::should_not_inline(method) && !method->dont_inline();
+  return UseJVMCICompiler || !method->is_not_compilable(CompLevel_full_optimization);
+C2V_END
+
+C2V_VMENTRY(jboolean, hasNeverInlineDirective,(JNIEnv *, jobject, jobject jvmci_method))
+  methodHandle method = CompilerToVM::asMethod(jvmci_method);
+  return CompilerOracle::should_not_inline(method) || method->dont_inline();
 C2V_END
 
 C2V_VMENTRY(jboolean, shouldInlineMethod,(JNIEnv *, jobject, jobject jvmci_method))
@@ -1599,7 +1603,8 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "getStackTraceElement",                         CC "(" HS_RESOLVED_METHOD "I)" STACK_TRACE_ELEMENT,                                   FN_PTR(getStackTraceElement)},
   {CC "methodIsIgnoredBySecurityStackWalk",           CC "(" HS_RESOLVED_METHOD ")Z",                                                       FN_PTR(methodIsIgnoredBySecurityStackWalk)},
   {CC "doNotInlineOrCompile",                         CC "(" HS_RESOLVED_METHOD ")V",                                                       FN_PTR(doNotInlineOrCompile)},
-  {CC "canInlineMethod",                              CC "(" HS_RESOLVED_METHOD ")Z",                                                       FN_PTR(canInlineMethod)},
+  {CC "isCompilable",                                 CC "(" HS_RESOLVED_METHOD ")Z",                                                       FN_PTR(isCompilable)},
+  {CC "hasNeverInlineDirective",                      CC "(" HS_RESOLVED_METHOD ")Z",                                                       FN_PTR(hasNeverInlineDirective)},
   {CC "shouldInlineMethod",                           CC "(" HS_RESOLVED_METHOD ")Z",                                                       FN_PTR(shouldInlineMethod)},
   {CC "lookupType",                                   CC "(" STRING CLASS "Z)" HS_RESOLVED_KLASS,                                           FN_PTR(lookupType)},
   {CC "lookupNameInPool",                             CC "(" HS_CONSTANT_POOL "I)" STRING,                                                  FN_PTR(lookupNameInPool)},

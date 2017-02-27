@@ -149,16 +149,17 @@ void CodeCache::check_heap_sizes(size_t non_nmethod_size, size_t profiled_size, 
   size_t total_size = non_nmethod_size + profiled_size + non_profiled_size;
   // Prepare error message
   const char* error = "Invalid code heap sizes";
-  err_msg message("NonNMethodCodeHeapSize (%zuK) + ProfiledCodeHeapSize (%zuK) + NonProfiledCodeHeapSize (%zuK) = %zuK",
+  err_msg message("NonNMethodCodeHeapSize (" SIZE_FORMAT "K) + ProfiledCodeHeapSize (" SIZE_FORMAT "K)"
+                  " + NonProfiledCodeHeapSize (" SIZE_FORMAT "K) = " SIZE_FORMAT "K",
           non_nmethod_size/K, profiled_size/K, non_profiled_size/K, total_size/K);
 
   if (total_size > cache_size) {
     // Some code heap sizes were explicitly set: total_size must be <= cache_size
-    message.append(" is greater than ReservedCodeCacheSize (%zuK).", cache_size/K);
+    message.append(" is greater than ReservedCodeCacheSize (" SIZE_FORMAT "K).", cache_size/K);
     vm_exit_during_initialization(error, message);
   } else if (all_set && total_size != cache_size) {
     // All code heap sizes were explicitly set: total_size must equal cache_size
-    message.append(" is not equal to ReservedCodeCacheSize (%zuK).", cache_size/K);
+    message.append(" is not equal to ReservedCodeCacheSize (" SIZE_FORMAT "K).", cache_size/K);
     vm_exit_during_initialization(error, message);
   }
 }
@@ -267,7 +268,7 @@ void CodeCache::initialize_heaps() {
   uint min_code_cache_size = CodeCacheMinimumUseSpace DEBUG_ONLY(* 3);
   if (non_nmethod_size < (min_code_cache_size + code_buffers_size)) {
     vm_exit_during_initialization(err_msg(
-        "Not enough space in non-nmethod code heap to run VM: %zuK < %zuK",
+        "Not enough space in non-nmethod code heap to run VM: " SIZE_FORMAT "K < " SIZE_FORMAT "K",
         non_nmethod_size/K, (min_code_cache_size + code_buffers_size)/K));
   }
 
@@ -1210,7 +1211,7 @@ void CodeCache::make_marked_nmethods_not_entrant() {
   CompiledMethodIterator iter;
   while(iter.next_alive()) {
     CompiledMethod* nm = iter.method();
-    if (nm->is_marked_for_deoptimization()) {
+    if (nm->is_marked_for_deoptimization() && !nm->is_not_entrant()) {
       nm->make_not_entrant();
     }
   }

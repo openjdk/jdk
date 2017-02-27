@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8162353 8164747
+ * @bug 8162353 8164747 8173707
  * @summary javadoc should provide a way to disable use of frames
  * @library /tools/lib ../lib
  * @modules
@@ -323,10 +323,14 @@ public class TestFramesNoFrames extends JavadocTester {
         }
 
         private void checkIndex() {
-            // the index.html page only contains frames in frames mode
+            // the index.html page only contains frames and Javascript to default to no-frames view,
+            // in frames mode
             checkOutput("index.html", frames,
                     "<iframe ",
-                    "</iframe>");
+                    "</iframe>",
+                    "<body onload=\"loadFrames()\">\n"
+                    + "<script type=\"text/javascript\">\n"
+                    + "if (targetPage == \"\" || targetPage == \"undefined\")");
 
             // the index.html contains the overview if one
             // has been given, and not in frames mode

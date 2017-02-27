@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.module.ModuleDescriptor;
-import java.lang.module.ModuleDescriptor.*;
+import java.lang.module.ModuleDescriptor.Exports;
+import java.lang.module.ModuleDescriptor.Opens;
+import java.lang.module.ModuleDescriptor.Provides;
+import java.lang.module.ModuleDescriptor.Requires;
+import java.lang.module.ModuleDescriptor.Version;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
@@ -41,20 +45,24 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.IntSupplier;
 
-import jdk.internal.misc.JavaLangModuleAccess;
-import jdk.internal.misc.SharedSecrets;
 import jdk.internal.module.Checks;
+import jdk.internal.module.ClassFileAttributes;
+import jdk.internal.module.ClassFileConstants;
 import jdk.internal.module.ModuleHashes;
 import jdk.internal.module.ModuleInfo.Attributes;
 import jdk.internal.module.ModuleInfoExtender;
 import jdk.internal.module.ModuleResolution;
 import jdk.internal.module.SystemModules;
+import jdk.internal.org.objectweb.asm.Attribute;
+import jdk.internal.org.objectweb.asm.ClassReader;
+import jdk.internal.org.objectweb.asm.ClassVisitor;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
 
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
+import jdk.tools.jlink.internal.ModuleSorter;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.Plugin;
@@ -63,7 +71,7 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry;
 
 /**
  * Jlink plugin to reconstitute module descriptors for system modules.
- * It will extend module-info.class with Packages attribute,
+ * It will extend module-info.class with ModulePackages attribute,
  * if not present. It also determines the number of packages of
  * the boot layer at link time.
  *
@@ -73,16 +81,15 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry;
  * @see SystemModules
  */
 public final class SystemModulesPlugin implements Plugin {
-    private static final JavaLangModuleAccess JLMA =
-        SharedSecrets.getJavaLangModuleAccess();
-
     private static final String NAME = "system-modules";
     private static final String DESCRIPTION =
         PluginsResourceBundle.getDescription(NAME);
 
     private boolean enabled;
+    private boolean retainModuleTarget;
     public SystemModulesPlugin() {
         this.enabled = true;
+        this.retainModuleTarget = false;
     }
 
     @Override
@@ -102,9 +109,24 @@ public final class SystemModulesPlugin implements Plugin {
     }
 
     @Override
+    public boolean hasArguments() {
+        return true;
+    }
+
+    @Override
+    public String getArgumentsDescription() {
+        return PluginsResourceBundle.getArgument(NAME);
+    }
+
+    @Override
     public void configure(Map<String, String> config) {
-        if (config.containsKey(NAME)) {
-            enabled = false;
+        String arg = config.get(NAME);
+        if (arg != null) {
+            if (arg.equals("retainModuleTarget")) {
+                retainModuleTarget = true;
+            } else {
+                throw new IllegalArgumentException(NAME + ": " + arg);
+            }
         }
     }
 
@@ -114,12 +136,15 @@ public final class SystemModulesPlugin implements Plugin {
             throw new PluginException(NAME + " was set");
         }
 
-        SystemModulesClassGenerator generator = new SystemModulesClassGenerator();
+        SystemModulesClassGenerator generator =
+            new SystemModulesClassGenerator(retainModuleTarget);
 
         // generate the byte code to create ModuleDescriptors
-        // skip parsing module-info.class and skip name check
-        in.moduleView().modules().forEach(module -> {
+        // such that the modules linked in the image would skip parsing
+        // of module-info.class and also skip name check
 
+        // Sort modules in the topological order so that java.base is always first.
+        new ModuleSorter(in.moduleView()).sorted().forEach(module -> {
             ResourcePoolEntry data = module.findEntry("module-info.class").orElseThrow(
                 // automatic module not supported yet
                 () ->  new PluginException("module-info.class not found for " +
@@ -128,19 +153,10 @@ public final class SystemModulesPlugin implements Plugin {
 
             assert module.name().equals(data.moduleName());
             try {
-                ModuleInfo moduleInfo = new ModuleInfo(data.contentBytes(), module.packages());
-                generator.addModule(moduleInfo);
+                // validate the module and add to system modules
+                data = generator.buildModuleInfo(data, module.packages());
 
-                // link-time validation
-                moduleInfo.validateNames();
-                // check if any exported or open package is not present
-                moduleInfo.validatePackages();
-
-                // Packages attribute needs update
-                if (moduleInfo.shouldAddPackagesAttribute()) {
-                    // replace with the overridden version
-                    data = data.copyWithContent(moduleInfo.getBytes());
-                }
+                // add resource pool entry
                 out.add(data);
             } catch (IOException e) {
                 throw new PluginException(e);
@@ -164,29 +180,62 @@ public final class SystemModulesPlugin implements Plugin {
         return out.build();
     }
 
-    class ModuleInfo {
-        final ModuleDescriptor descriptor;
-        final ModuleHashes recordedHashes;
-        final ModuleResolution moduleResolution;
-        final Set<String> packages;
-        final ByteArrayInputStream bain;
+    static class ModuleInfo {
+        private final ByteArrayInputStream bain;
+        private final Attributes attrs;
+        private final Set<String> packages;
+        private final boolean dropModuleTarget;
+        private final boolean addModulePackages;
+        private ModuleDescriptor descriptor;  // may be different that the original one
 
-        ModuleInfo(byte[] bytes, Set<String> packages) throws IOException {
+        ModuleInfo(byte[] bytes, Set<String> packages, boolean dropModuleTarget)
+            throws IOException
+        {
             this.bain = new ByteArrayInputStream(bytes);
             this.packages = packages;
-
-            Attributes attrs = jdk.internal.module.ModuleInfo.read(bain, null);
+            this.attrs = jdk.internal.module.ModuleInfo.read(bain, null);
+            // If ModulePackages attribute is present, the packages from this
+            // module descriptor returns the packages in that attribute.
+            // If it's not present, ModuleDescriptor::packages only contains
+            // the exported and open packages from module-info.class
             this.descriptor = attrs.descriptor();
-            this.recordedHashes = attrs.recordedHashes();
-            this.moduleResolution = attrs.moduleResolution();
-
             if (descriptor.isAutomatic()) {
                 throw new InternalError("linking automatic module is not supported");
+            }
+
+            // add ModulePackages attribute if this module contains some packages
+            // and ModulePackages is not present
+            this.addModulePackages = packages.size() > 0 && !hasModulePackages();
+            // drop target attribute only if any OS property is present
+            if (dropModuleTarget) {
+                this.dropModuleTarget =
+                    descriptor.osName().isPresent() ||
+                    descriptor.osArch().isPresent() ||
+                    descriptor.osVersion().isPresent();
+            } else {
+                this.dropModuleTarget = false;
             }
         }
 
         String moduleName() {
-            return descriptor.name();
+            return attrs.descriptor().name();
+        }
+
+        ModuleDescriptor descriptor() {
+            return descriptor;
+        }
+
+
+        Set<String> packages() {
+            return packages;
+        }
+
+        ModuleHashes recordedHashes() {
+            return attrs.recordedHashes();
+        }
+
+        ModuleResolution moduleResolution() {
+            return attrs.moduleResolution();
         }
 
         /**
@@ -217,6 +266,9 @@ public final class SystemModulesPlugin implements Plugin {
             for (String pn : descriptor.packages()) {
                 Checks.requirePackageName(pn);
             }
+            for (String pn : packages) {
+                Checks.requirePackageName(pn);
+            }
         }
 
 
@@ -241,40 +293,90 @@ public final class SystemModulesPlugin implements Plugin {
             }
         }
 
-        /**
-         * Returns true if the PackagesAttribute should be written
-         */
-        boolean shouldAddPackagesAttribute() {
-            return descriptor.packages().isEmpty() && packages.size() > 0;
+        boolean hasModulePackages() throws IOException {
+            Set<String> attrTypes = new HashSet<>();
+            ClassVisitor cv = new ClassVisitor(Opcodes.ASM5) {
+                @Override
+                public void visitAttribute(Attribute attr) {
+                    attrTypes.add(attr.type);
+                }
+            };
+
+            // prototype of attributes that should be parsed
+            Attribute[] attrs = new Attribute[] {
+                new ClassFileAttributes.ModulePackagesAttribute()
+            };
+
+            try (InputStream in = getInputStream()) {
+                // parse module-info.class
+                ClassReader cr = new ClassReader(in);
+                cr.accept(cv, attrs, 0);
+                return attrTypes.contains(ClassFileConstants.MODULE_PACKAGES);
+            }
         }
 
         /**
-         * Returns the bytes for the module-info.class with PackagesAttribute
-         * if it contains at least one package
+         * Returns true if module-info.class should be written
+         * 1. add ModulePackages attribute if not present; or
+         * 2. drop ModuleTarget attribute except java.base
+         */
+        boolean shouldRewrite() {
+            return addModulePackages || dropModuleTarget;
+        }
+
+        /**
+         * Returns the bytes for the module-info.class with ModulePackages
+         * attribute added and/or with ModuleTarget attribute dropped.
          */
         byte[] getBytes() throws IOException {
-            bain.reset();
-
-            // add Packages attribute if not exist
-            if (shouldAddPackagesAttribute()) {
-                return new ModuleInfoRewriter(bain, packages).getBytes();
-            } else {
-                return bain.readAllBytes();
+            try (InputStream in = getInputStream()) {
+                if (shouldRewrite()) {
+                    ModuleInfoRewriter rewriter = new ModuleInfoRewriter(in);
+                    if (addModulePackages) {
+                        rewriter.addModulePackages(packages);
+                    }
+                    if (dropModuleTarget) {
+                        rewriter.dropModuleTarget();
+                    }
+                    // rewritten module descriptor
+                    byte[] bytes = rewriter.getBytes();
+                    try (ByteArrayInputStream bain = new ByteArrayInputStream(bytes)) {
+                        this.descriptor = ModuleDescriptor.read(bain);
+                    }
+                    return bytes;
+                } else {
+                    return in.readAllBytes();
+                }
             }
+        }
+
+        /*
+         * Returns the input stream of the module-info.class
+         */
+        InputStream getInputStream() {
+            bain.reset();
+            return bain;
         }
 
         class ModuleInfoRewriter extends ByteArrayOutputStream {
             final ModuleInfoExtender extender;
-            ModuleInfoRewriter(InputStream in, Set<String> packages) throws IOException {
+            ModuleInfoRewriter(InputStream in) {
                 this.extender = ModuleInfoExtender.newExtender(in);
-                // Add Packages attribute
-                if (packages.size() > 0) {
-                    this.extender.packages(packages);
-                }
-                this.extender.write(this);
             }
 
-            byte[] getBytes() {
+            void addModulePackages(Set<String> packages) {
+                // Add ModulePackages attribute
+                if (packages.size() > 0) {
+                    extender.packages(packages);
+                }
+            }
+
+            void dropModuleTarget() {
+                extender.targetPlatform("", "", "");
+            }
+
+            byte[] getBytes() throws IOException {
+                extender.write(this);
                 return buf;
             }
         }
@@ -316,6 +418,7 @@ public final class SystemModulesPlugin implements Plugin {
         private int nextLocalVar         = 2;  // index to next local variable
 
         private final ClassWriter cw;
+        private boolean dropModuleTarget;
 
         // Method visitor for generating the SystemModules::modules() method
         private MethodVisitor mv;
@@ -329,9 +432,10 @@ public final class SystemModulesPlugin implements Plugin {
         private final DedupSetBuilder dedupSetBuilder
             = new DedupSetBuilder(this::getNextLocalVar);
 
-        public SystemModulesClassGenerator() {
+        public SystemModulesClassGenerator(boolean retainModuleTarget) {
             this.cw = new ClassWriter(ClassWriter.COMPUTE_MAXS +
                                       ClassWriter.COMPUTE_FRAMES);
+            this.dropModuleTarget = !retainModuleTarget;
         }
 
         private int getNextLocalVar() {
@@ -395,14 +499,52 @@ public final class SystemModulesPlugin implements Plugin {
         }
 
         /*
-         * Adds the given ModuleDescriptor to the system module list, and
-         * prepares mapping from various Sets to SetBuilders to emit an
-         * optimized number of sets during build.
+         * Adds the given ModuleDescriptor to the system module list.
+         * It performs link-time validation and prepares mapping from various
+         * Sets to SetBuilders to emit an optimized number of sets during build.
          */
-        public void addModule(ModuleInfo moduleInfo) {
-            ModuleDescriptor md = moduleInfo.descriptor;
-            moduleInfos.add(moduleInfo);
+        public ResourcePoolEntry buildModuleInfo(ResourcePoolEntry entry,
+                                                 Set<String> packages)
+            throws IOException
+        {
+            if (moduleInfos.isEmpty() && !entry.moduleName().equals("java.base")) {
+                throw new InternalError("java.base must be the first module to process");
+            }
 
+            ModuleInfo moduleInfo;
+            if (entry.moduleName().equals("java.base")) {
+                moduleInfo = new ModuleInfo(entry.contentBytes(), packages, false);
+                ModuleDescriptor md = moduleInfo.descriptor;
+                // drop Moduletarget attribute only if java.base has all OS properties
+                // otherwise, retain it
+                if (dropModuleTarget &&
+                        md.osName().isPresent() && md.osArch().isPresent() &&
+                        md.osVersion().isPresent()) {
+                    dropModuleTarget = true;
+                } else {
+                    dropModuleTarget = false;
+                }
+            } else {
+                moduleInfo = new ModuleInfo(entry.contentBytes(), packages, dropModuleTarget);
+            }
+
+            // link-time validation
+            moduleInfo.validateNames();
+            // check if any exported or open package is not present
+            moduleInfo.validatePackages();
+
+            // module-info.class may be overridden for optimization
+            // 1. update ModuleTarget attribute to drop osName, osArch, osVersion
+            // 2. add/update ModulePackages attribute
+            if (moduleInfo.shouldRewrite()) {
+                entry = entry.copyWithContent(moduleInfo.getBytes());
+            }
+            moduleInfos.add(moduleInfo);
+            dedups(moduleInfo.descriptor());
+            return entry;
+        }
+
+        private void dedups(ModuleDescriptor md) {
             // exports
             for (Exports e : md.exports()) {
                 dedupSetBuilder.stringSet(e.targets());
@@ -466,8 +608,8 @@ public final class SystemModulesPlugin implements Plugin {
 
             for (int index = 0; index < moduleInfos.size(); index++) {
                 ModuleInfo minfo = moduleInfos.get(index);
-                new ModuleDescriptorBuilder(minfo.descriptor,
-                                            minfo.packages,
+                new ModuleDescriptorBuilder(minfo.descriptor(),
+                                            minfo.packages(),
                                             index).build();
             }
             mv.visitVarInsn(ALOAD, MD_VAR);
@@ -494,8 +636,8 @@ public final class SystemModulesPlugin implements Plugin {
 
             for (int index = 0; index < moduleInfos.size(); index++) {
                 ModuleInfo minfo = moduleInfos.get(index);
-                if (minfo.recordedHashes != null) {
-                    new ModuleHashesBuilder(minfo.recordedHashes,
+                if (minfo.recordedHashes() != null) {
+                    new ModuleHashesBuilder(minfo.recordedHashes(),
                                             index,
                                             hmv).build();
                 }
@@ -525,12 +667,12 @@ public final class SystemModulesPlugin implements Plugin {
 
             for (int index=0; index < moduleInfos.size(); index++) {
                 ModuleInfo minfo = moduleInfos.get(index);
-                if (minfo.moduleResolution != null) {
+                if (minfo.moduleResolution() != null) {
                     mresmv.visitVarInsn(ALOAD, 0);
                     pushInt(mresmv, index);
                     mresmv.visitTypeInsn(NEW, MODULE_RESOLUTION_CLASSNAME);
                     mresmv.visitInsn(DUP);
-                    mresmv.visitLdcInsn(minfo.moduleResolution.value());
+                    mresmv.visitLdcInsn(minfo.moduleResolution().value());
                     mresmv.visitMethodInsn(INVOKESPECIAL,
                                            MODULE_RESOLUTION_CLASSNAME,
                                            "<init>",
@@ -644,6 +786,11 @@ public final class SystemModulesPlugin implements Plugin {
                 // main class
                 md.mainClass().ifPresent(this::mainClass);
 
+                // os name, arch, version
+                targetPlatform(md.osName().orElse(null),
+                               md.osArch().orElse(null),
+                               md.osVersion().orElse(null));
+
                 putModuleDescriptor();
             }
 
@@ -659,8 +806,11 @@ public final class SystemModulesPlugin implements Plugin {
                 if (md.isOpen()) {
                     setModuleBit("open", true);
                 }
-                if (md.isSynthetic()) {
+                if (md.modifiers().contains(ModuleDescriptor.Modifier.SYNTHETIC)) {
                     setModuleBit("synthetic", true);
+                }
+                if (md.modifiers().contains(ModuleDescriptor.Modifier.MANDATED)) {
+                    setModuleBit("mandated", true);
                 }
             }
 
@@ -935,6 +1085,33 @@ public final class SystemModulesPlugin implements Plugin {
                 mv.visitLdcInsn(v.toString());
                 mv.visitMethodInsn(INVOKEVIRTUAL, MODULE_DESCRIPTOR_BUILDER,
                     "version", STRING_SIG, false);
+                mv.visitInsn(POP);
+            }
+
+            /*
+             * Invoke Builder.osName(String name)
+             *        Builder.osArch(String arch)
+             *        Builder.osVersion(String version)
+             */
+            void targetPlatform(String osName, String osArch, String osVersion) {
+                if (osName != null) {
+                    invokeBuilderMethod("osName", osName);
+                }
+
+                if (osArch != null) {
+                    invokeBuilderMethod("osArch", osArch);
+                }
+
+                if (osVersion != null) {
+                    invokeBuilderMethod("osVersion", osVersion);
+                }
+            }
+
+            void invokeBuilderMethod(String methodName, String value) {
+                mv.visitVarInsn(ALOAD, BUILDER_VAR);
+                mv.visitLdcInsn(value);
+                mv.visitMethodInsn(INVOKEVIRTUAL, MODULE_DESCRIPTOR_BUILDER,
+                    methodName, STRING_SIG, false);
                 mv.visitInsn(POP);
             }
         }

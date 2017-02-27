@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -36,12 +36,10 @@ include TextFileProcessing.gmk
 JDK_CLASSES := $(call PathList, $(strip $(addprefix $(JDK_OUTPUTDIR)/modules/, \
       java.base java.logging java.scripting jdk.dynalink)))
 
-NASHORN_JAR := $(IMAGES_OUTPUTDIR)/nashorn.jar
-
 MODULESOURCEPATH := $(NASHORN_TOPDIR)/src/*/share/classes
 
 # Need to use source and target 8 for nasgen to work.
-$(eval $(call SetupJavaCompiler,GENERATE_NEWBYTECODE_DEBUG, \
+$(eval $(call SetupJavaCompiler, GENERATE_NEWBYTECODE_DEBUG, \
     JVM := $(JAVA_JAVAC), \
     JAVAC := $(NEW_JAVAC), \
     FLAGS := -g -source 9 -target 9 --upgrade-module-path "$(JDK_OUTPUTDIR)/modules/" \
@@ -53,11 +51,10 @@ $(eval $(call SetupJavaCompiler,GENERATE_NEWBYTECODE_DEBUG, \
 # Name the compilation setup the same as the module, as is done in the global
 # CompileJavaModules.gmk, to make dependency checking with other modules work
 # seamlessly.
-$(eval $(call SetupJavaCompilation,jdk.scripting.nashorn, \
+$(eval $(call SetupJavaCompilation, jdk.scripting.nashorn, \
     SETUP := GENERATE_NEWBYTECODE_DEBUG, \
     MODULE := jdk.scripting.nashorn, \
     SRC := $(NASHORN_TOPDIR)/src/jdk.scripting.nashorn/share/classes, \
-    EXCLUDE_FILES := META-INF/MANIFEST.MF, \
     COPY := .properties .js, \
     BIN := $(SUPPORT_OUTPUTDIR)/special_classes))
 
@@ -65,7 +62,7 @@ NASGEN_SRC := $(NASHORN_TOPDIR)/buildtools/nasgen/src
 ASM_SRC := $(JDK_TOPDIR)/src/java.base/share/classes/jdk/internal/org/objectweb/asm
 
 # Build nasgen
-$(eval $(call SetupJavaCompilation,BUILD_NASGEN, \
+$(eval $(call SetupJavaCompilation, BUILD_NASGEN, \
     SETUP := GENERATE_OLDBYTECODE, \
     SRC := $(NASGEN_SRC) $(ASM_SRC), \
     BIN := $(BUILDTOOLS_OUTPUTDIR)/nasgen_classes))
@@ -107,21 +104,7 @@ $(eval $(call SetupTextFileProcessing, BUILD_VERSION_FILE, \
 # Version processing needs to happen after nasgen run since nasgen run deletes it
 $(BUILD_VERSION_FILE): $(NASGEN_RUN_FILE)
 
-
-MANIFEST_ATTRIBUTES := Name: jdk/nashorn/\nImplementation-Title: Oracle Nashorn\nImplementation-Version: $(VERSION_SHORT)
-
-# Create nashorn.jar from the final classes dir
-$(eval $(call SetupJarArchive,BUILD_NASHORN_JAR, \
-    DEPENDENCIES := $(NASGEN_RUN_FILE) $(BUILD_VERSION_FILE), \
-    SRCS := $(NASHORN_CLASSES_DIR), \
-    SUFFIXES := .class .js .properties Factory, \
-    MANIFEST := $(NASHORN_TOPDIR)/src/jdk.scripting.nashorn/share/classes/META-INF/MANIFEST.MF, \
-    EXTRA_MANIFEST_ATTR := $(MANIFEST_ATTRIBUTES), \
-    SKIP_METAINF := true, \
-    JAR := $(NASHORN_JAR), \
-))
-
-compile: $(NASHORN_RUN_FILE) $(BUILD_VERSION_FILE)
-all: $(NASHORN_JAR)
+compile: $(NASGEN_RUN_FILE) $(BUILD_VERSION_FILE)
+all: compile
 
 .PHONY: compile all

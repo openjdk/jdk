@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,9 +44,8 @@ import javax.net.ssl.SSLPeerUnverifiedException;
  *
  * @deprecated As of JDK 1.4, this implementation-specific class was
  *      replaced by {@link javax.net.ssl.HttpsURLConnection}.
- *      This class is subject to removal in a future version of JDK.
  */
-@Deprecated(since="1.4", forRemoval=true)
+@Deprecated(since="1.4")
 public abstract
 class HttpsURLConnection extends HttpURLConnection
 {
@@ -69,6 +68,10 @@ class HttpsURLConnection extends HttpURLConnection
     /**
      * Returns the server's X.509 certificate chain, or null if
      * the server did not authenticate.
+     * <P>
+     * Note: The returned value may not be a valid certificate chain
+     * and should not be relied on for trust decisions.
+     *
      * @return the server certificate chain
      */
     public abstract Certificate[] getServerCertificates()

@@ -62,6 +62,7 @@ import tests.JImageGenerator;
  *          jdk.jlink/jdk.tools.jlink.builder
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.internal.plugins
+ *          jdk.jlink/jdk.tools.jlink.plugin
  *          jdk.jlink/jdk.tools.jmod
  *          jdk.jlink/jdk.tools.jimage
  *          jdk.compiler
@@ -144,7 +145,7 @@ public class IntegrationTest {
             throw new Exception("Plugin should be null");
         }
 
-        Plugin p2 = Jlink.newPlugin("compress", Collections.emptyMap(), null);
+        Plugin p2 = Jlink.newPlugin("compress", Map.of("compress", "1"), null);
         if (p2 == null) {
             throw new Exception("Plugin should not be null");
         }

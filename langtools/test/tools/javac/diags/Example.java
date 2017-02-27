@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,9 +63,11 @@ class Example implements Comparable<Example> {
         procFiles = new ArrayList<File>();
         srcPathFiles = new ArrayList<File>();
         moduleSourcePathFiles = new ArrayList<File>();
+        patchModulePathFiles = new ArrayList<File>();
         modulePathFiles = new ArrayList<File>();
         classPathFiles = new ArrayList<File>();
         additionalFiles = new ArrayList<File>();
+        nonEmptySrcFiles = new ArrayList<File>();
 
         findFiles(file, srcFiles);
         for (File f: srcFiles) {
@@ -87,6 +89,9 @@ class Example implements Comparable<Example> {
                 } else if (files == srcFiles && c.getName().equals("modulesourcepath")) {
                     moduleSourcePathDir = c;
                     findFiles(c, moduleSourcePathFiles);
+                } else if (files == srcFiles && c.getName().equals("patchmodule")) {
+                    patchModulePathDir = c;
+                    findFiles(c, patchModulePathFiles);
                 } else if (files == srcFiles && c.getName().equals("additional")) {
                     additionalFilesDir = c;
                     findFiles(c, additionalFiles);
@@ -99,11 +104,11 @@ class Example implements Comparable<Example> {
                 }
             }
         } else if (f.isFile()) {
-                if (f.getName().endsWith(".java")) {
-                    files.add(f);
-                } else if (f.getName().equals("modulesourcepath")) {
-                    moduleSourcePathDir = f;
-                }
+            if (f.getName().endsWith(".java")) {
+                files.add(f);
+            } else if (f.getName().equals("modulesourcepath")) {
+                moduleSourcePathDir = f;
+            }
         }
     }
 
@@ -132,8 +137,10 @@ class Example implements Comparable<Example> {
                     foundInfo(f);
                     runOpts = Arrays.asList(runMatch.group(1).trim().split(" +"));
                 }
-                if (javaPat.matcher(line).matches())
+                if (javaPat.matcher(line).matches()) {
+                    nonEmptySrcFiles.add(f);
                     break;
+                }
             }
         } catch (IOException e) {
             throw new Error(e);
@@ -236,6 +243,7 @@ class Example implements Comparable<Example> {
             // source for import statements or a magic comment
             for (File pf: procFiles) {
                 if (pf.getName().equals("CreateBadClassFile.java")) {
+                    pOpts.add("--add-modules=jdk.jdeps");
                     pOpts.add("--add-exports=jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED");
                 }
             }
@@ -263,7 +271,19 @@ class Example implements Comparable<Example> {
         if (moduleSourcePathDir != null) {
             opts.add("--module-source-path");
             opts.add(moduleSourcePathDir.getPath());
-            files = moduleSourcePathFiles;
+            files = new ArrayList<>();
+            files.addAll(moduleSourcePathFiles);
+            files.addAll(nonEmptySrcFiles); // srcFiles containing declarations
+        }
+
+        if (patchModulePathDir != null) {
+            for (File mod : patchModulePathDir.listFiles()) {
+                opts.add("--patch-module");
+                opts.add(mod.getName() + "=" + mod.getPath());
+            }
+            files = new ArrayList<>();
+            files.addAll(patchModulePathFiles);
+            files.addAll(nonEmptySrcFiles); // srcFiles containing declarations
         }
 
         if (additionalFiles.size() > 0) {
@@ -337,12 +357,15 @@ class Example implements Comparable<Example> {
     List<File> procFiles;
     File srcPathDir;
     File moduleSourcePathDir;
+    File patchModulePathDir;
     File additionalFilesDir;
     List<File> srcPathFiles;
     List<File> moduleSourcePathFiles;
+    List<File> patchModulePathFiles;
     List<File> modulePathFiles;
     List<File> classPathFiles;
     List<File> additionalFiles;
+    List<File> nonEmptySrcFiles;
     File infoFile;
     private List<String> runOpts;
     private List<String> options;

@@ -1105,16 +1105,21 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   // top_frame_size = TOP_IJAVA_FRAME_ABI + max_stack + size of interpreter state
   __ add2reg(top_frame_size,
              frame::z_top_ijava_frame_abi_size +
-               frame::z_ijava_state_size +
-               frame::interpreter_frame_monitor_size() * wordSize,
+             frame::z_ijava_state_size +
+             frame::interpreter_frame_monitor_size() * wordSize,
              max_stack);
 
-  // Check if there's room for the new frame...
-  Register frame_size = max_stack; // Reuse the regiser for max_stack.
-  __ z_lgr(frame_size, Z_SP);
-  __ z_sgr(frame_size, sp_after_resize);
-  __ z_agr(frame_size, top_frame_size);
-  generate_stack_overflow_check(frame_size, fp/*tmp1*/);
+  if (!native_call) {
+    // Stack overflow check.
+    // Native calls don't need the stack size check since they have no
+    // expression stack and the arguments are already on the stack and
+    // we only add a handful of words to the stack.
+    Register frame_size = max_stack; // Reuse the regiser for max_stack.
+    __ z_lgr(frame_size, Z_SP);
+    __ z_sgr(frame_size, sp_after_resize);
+    __ z_agr(frame_size, top_frame_size);
+    generate_stack_overflow_check(frame_size, fp/*tmp1*/);
+  }
 
   DEBUG_ONLY(__ z_cg(Z_R14, _z_abi16(return_pc), Z_SP));
   __ asm_assert_eq("killed Z_R14", 0);

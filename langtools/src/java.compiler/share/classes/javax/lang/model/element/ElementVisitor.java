@@ -59,8 +59,8 @@ import javax.lang.model.util.*;
  * javax.lang.model.*} packages bundled in Java SE 8 were required to
  * also be runnable on Java SE 7.  Therefore, default methods
  * were <em>not</em> used when extending {@code javax.lang.model.*}
- * to cover Java SE 8 language features.  However, default methods may
- * be used in subsequent revisions of the {@code javax.lang.model.*}
+ * to cover Java SE 8 language features.  However, default methods
+ * are used in subsequent revisions of the {@code javax.lang.model.*}
  * packages that are only required to run on Java SE 8 and higher
  * platform versions.
  *
@@ -85,11 +85,16 @@ public interface ElementVisitor<R, P> {
     R visit(Element e, P p);
 
     /**
-     * A convenience method equivalent to {@code v.visit(e, null)}.
+     * A convenience method equivalent to {@code visit(e, null)}.
+     *
+     * @implSpec The default implementation is {@code visit(e, null)}.
+     *
      * @param e  the element to visit
      * @return a visitor-specified result
      */
-    R visit(Element e);
+    default R visit(Element e) {
+        return visit(e, null);
+    }
 
     /**
      * Visits a package element.
@@ -146,10 +151,17 @@ public interface ElementVisitor<R, P> {
 
     /**
      * Visits a module element.
+     *
+     * @implSpec Visits a {@code ModuleElement} by calling {@code
+     * visitUnknown(e, p)}.
+     *
      * @param e  the element to visit
      * @param p  a visitor-specified parameter
      * @return a visitor-specified result
      * @since 9
+     * @spec JPMS
      */
-    R visitModule(ModuleElement e, P p);
+    default R visitModule(ModuleElement e, P p) {
+        return visitUnknown(e, p);
+    }
 }

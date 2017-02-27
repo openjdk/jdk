@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -49,13 +49,71 @@ compiler/tiered/LevelTransitionTest.java 8067651 generic-all
 compiler/types/correctness/CorrectnessTest.java 8066173 generic-all
 compiler/types/correctness/OffTest.java 8066173 generic-all
 
+# aot tests intermittently failing in jprt 8175791
+
+compiler/aot/RecompilationTest.java 8175791 windows-all
+compiler/aot/SharedUsageTest.java 8175791 windows-all
+compiler/aot/cli/MultipleAOTLibraryTest.java 8175791 windows-all
+compiler/aot/cli/DisabledAOTWithLibraryTest.java 8175791 windows-all
+compiler/aot/cli/SingleAOTLibraryTest.java 8175791 windows-all
+compiler/aot/cli/NonExistingAOTLibraryTest.java 8175791 windows-all
+compiler/aot/cli/SingleAOTOptionTest.java 8175791 windows-all
+compiler/aot/cli/jaotc/ClasspathOptionTest.java 8175791 windows-all
+compiler/aot/cli/jaotc/ListOptionTest.java 8175791 windows-all
+compiler/aot/cli/jaotc/CompileModuleTest.java 8175791 windows-all
+compiler/aot/cli/jaotc/CompileClassTest.java 8175791 windows-all
+compiler/aot/cli/jaotc/CompileJarTest.java 8175791 windows-all
+compiler/aot/cli/jaotc/ListOptionWrongFileTest.java 8175791 windows-all
+compiler/aot/cli/jaotc/CompileDirectoryTest.java 8175791 windows-all
+compiler/aot/cli/jaotc/ClasspathOptionUnknownClassTest.java 8175791 windows-all
+compiler/aot/cli/jaotc/ListOptionNotExistingTest.java 8175791 windows-all
+compiler/aot/cli/IncorrectAOTLibraryTest.java 8175791 windows-all
+compiler/aot/verification/vmflags/TrackedFlagTest.java 8175791 windows-all
+compiler/aot/verification/vmflags/NotTrackedFlagTest.java 8175791 windows-all
+compiler/aot/verification/ClassAndLibraryNotMatchTest.java 8175791 windows-all
+compiler/aot/calls/fromAot/AotInvokeInterface2InterpretedTest.java 8175791 windows-all
+compiler/aot/calls/fromAot/AotInvokeDynamic2CompiledTest.java 8175791 windows-all
+compiler/aot/calls/fromAot/AotInvokeVirtual2AotTest.java 8175791 windows-all
+compiler/aot/calls/fromAot/AotInvokeVirtual2NativeTest.java 8175791 windows-all
+compiler/aot/calls/fromAot/AotInvokeStatic2CompiledTest.java 8175791 windows-all
+compiler/aot/calls/fromAot/AotInvokeStatic2AotTest.java 8175791 windows-all
+compiler/aot/calls/fromAot/AotInvokeSpecial2NativeTest.java 8175791 windows-all
+compiler/aot/calls/fromAot/AotInvokeDynamic2InterpretedTest.java 8175791 windows-all
+compiler/aot/calls/fromAot/AotInvokeVirtual2CompiledTest.java 8175791 windows-all
+compiler/aot/calls/fromAot/AotInvokeSpecial2InterpretedTest.java 8175791 windows-all
+compiler/aot/calls/fromAot/AotInvokeSpecial2CompiledTest.java 8175791 windows-all
+compiler/aot/calls/fromAot/AotInvokeVirtual2InterpretedTest.java 8175791 windows-all
+compiler/aot/calls/fromAot/AotInvokeStatic2InterpretedTest.java 8175791 windows-all
+compiler/aot/calls/fromAot/AotInvokeInterface2CompiledTest.java 8175791 windows-all
+compiler/aot/calls/fromAot/AotInvokeStatic2NativeTest.java 8175791 windows-all
+compiler/aot/calls/fromAot/AotInvokeInterface2AotTest.java 8175791 windows-all
+compiler/aot/calls/fromAot/AotInvokeSpecial2AotTest.java 8175791 windows-all
+compiler/aot/calls/fromAot/AotInvokeDynamic2AotTest.java 8175791 windows-all
+compiler/aot/calls/fromAot/AotInvokeInterface2NativeTest.java 8175791 windows-all
+compiler/aot/calls/fromAot/AotInvokeDynamic2NativeTest.java 8175791 windows-all
+compiler/aot/calls/fromNative/NativeInvokeVirtual2AotTest.java 8175791 windows-all
+compiler/aot/calls/fromNative/NativeInvokeStatic2AotTest.java 8175791 windows-all
+compiler/aot/calls/fromNative/NativeInvokeSpecial2AotTest.java 8175791 windows-all
+compiler/aot/calls/fromInterpreted/InterpretedInvokeDynamic2AotTest.java 8175791 windows-all
+compiler/aot/calls/fromInterpreted/InterpretedInvokeSpecial2AotTest.java 8175791 windows-all
+compiler/aot/calls/fromInterpreted/InterpretedInvokeStatic2AotTest.java 8175791 windows-all
+compiler/aot/calls/fromInterpreted/InterpretedInvokeInterface2AotTest.java 8175791 windows-all
+compiler/aot/calls/fromInterpreted/InterpretedInvokeVirtual2AotTest.java 8175791 windows-all
+compiler/aot/calls/fromCompiled/CompiledInvokeStatic2AotTest.java 8175791 windows-all
+compiler/aot/calls/fromCompiled/CompiledInvokeInterface2AotTest.java 8175791 windows-all
+compiler/aot/calls/fromCompiled/CompiledInvokeSpecial2AotTest.java 8175791 windows-all
+compiler/aot/calls/fromCompiled/CompiledInvokeVirtual2AotTest.java 8175791 windows-all
+compiler/aot/calls/fromCompiled/CompiledInvokeDynamic2AotTest.java 8175791 windows-all
+compiler/aot/DeoptimizationTest.java 8175791 windows-all
+
+
 #############################################################################
 
 # :hotspot_gc
 
 gc/g1/humongousObjects/objectGraphTest/TestObjectGraphAfterGC.java 8156755 generic-all
 gc/survivorAlignment/TestPromotionToSurvivor.java 8129886 generic-all
-gc/stress/TestStressG1Humongous.java 8171045 generic-all
+gc/g1/logging/TestG1LoggingFailure.java 8169634 generic-all
 
 #############################################################################
 
@@ -73,10 +131,13 @@ runtime/SharedArchiveFile/DefaultUseWithClient.java 8154204 generic-all
 
 serviceability/jdwp/AllModulesCommandTest.java 8168478 generic-all
 serviceability/sa/sadebugd/SADebugDTest.java 8163805 generic-all
+serviceability/jvmti/ModuleAwareAgents/ClassFileLoadHook/MAAClassFileLoadHook.java 8173936 generic-all
 
 #############################################################################
 
 # :hotspot_misc
+
+testlibrary_tests/ctw/JarDirTest.java 8172457 windows-all
 
 #############################################################################
 

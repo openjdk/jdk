@@ -49,9 +49,12 @@ hb_jdk_get_glyph (hb_font_t *font HB_UNUSED,
     JNIEnv* env = jdkFontInfo->env;
     jobject font2D = jdkFontInfo->font2D;
     hb_codepoint_t u = (variation_selector==0) ? unicode : variation_selector;
- 
+
     *glyph = (hb_codepoint_t)
           env->CallIntMethod(font2D, sunFontIDs.f2dCharToGlyphMID, u);
+    if ((int)*glyph < 0) {
+        *glyph = 0;
+    }
     return (*glyph != 0);
 }
 
@@ -61,7 +64,7 @@ hb_jdk_get_glyph_h_advance (hb_font_t *font HB_UNUSED,
 			   hb_codepoint_t glyph,
 			   void *user_data HB_UNUSED)
 {
-    
+
     float fadv = 0.0f;
     if ((glyph & 0xfffe) == 0xfffe) {
         return 0; // JDK uses this glyph code.
@@ -72,7 +75,7 @@ hb_jdk_get_glyph_h_advance (hb_font_t *font HB_UNUSED,
     jobject fontStrike = jdkFontInfo->fontStrike;
     jobject pt = env->CallObjectMethod(fontStrike,
                                        sunFontIDs.getGlyphMetricsMID, glyph);
-  
+
     if (pt == NULL) {
         return 0;
     }
@@ -89,7 +92,7 @@ hb_jdk_get_glyph_v_advance (hb_font_t *font HB_UNUSED,
 			   hb_codepoint_t glyph,
 			   void *user_data HB_UNUSED)
 {
-  
+
     float fadv = 0.0f;
     if ((glyph & 0xfffe) == 0xfffe) {
         return 0; // JDK uses this glyph code.
@@ -100,7 +103,7 @@ hb_jdk_get_glyph_v_advance (hb_font_t *font HB_UNUSED,
     jobject fontStrike = jdkFontInfo->fontStrike;
     jobject pt = env->CallObjectMethod(fontStrike,
                                        sunFontIDs.getGlyphMetricsMID, glyph);
-  
+
     if (pt == NULL) {
         return 0;
     }
@@ -108,7 +111,7 @@ hb_jdk_get_glyph_v_advance (hb_font_t *font HB_UNUSED,
     env->DeleteLocalRef(pt);
 
     return HBFloatToFixed(fadv);
-  
+
 }
 
 static hb_bool_t
@@ -196,7 +199,7 @@ hb_jdk_get_glyph_contour_point (hb_font_t *font HB_UNUSED,
     jobject pt = env->CallObjectMethod(fontStrike,
                                        sunFontIDs.getGlyphPointMID,
                                        glyph, point_index);
-  
+
     if (pt == NULL) {
         *x = 0; *y = 0;
         return true;
@@ -238,8 +241,8 @@ _hb_jdk_get_font_funcs (void)
   hb_font_funcs_t *ff;
 
   if (!jdk_ffuncs) {
-      ff = hb_font_funcs_create(); 
-      
+      ff = hb_font_funcs_create();
+
       hb_font_funcs_set_glyph_func(ff, hb_jdk_get_glyph, NULL, NULL);
       hb_font_funcs_set_glyph_h_advance_func(ff,
                     hb_jdk_get_glyph_h_advance, NULL, NULL);
@@ -278,7 +281,7 @@ reference_table(hb_face_t *face HB_UNUSED, hb_tag_t tag, void *user_data) {
   jobject font2D = jdkFontInfo->font2D;
   jsize length;
   jbyte* buffer;
-  
+
   // HB_TAG_NONE is 0 and is used to get the whole font file.
   // It is not expected not be needed for JDK.
   if (tag == 0) {

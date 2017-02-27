@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,14 @@
  */
 
 import java.io.*;
-import java.net.*;
+import java.net.InetSocketAddress;
+import java.net.SocketTimeoutException;
+
 import javax.net.ssl.*;
 import java.util.*;
 import java.security.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Session reuse time-out tests cover the cases below:
@@ -44,9 +47,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * its lifetime exceeds x.
  * 2. Effect of changing the timeout limit.
  * The test suite does not cover the default timeout(24 hours) usage. This
- * case has been tested independetly.
+ * case has been tested independently.
  *
- * Invairant for passing this test is, at any given time,
+ * Invariant for passing this test is, at any given time,
  * lifetime of a session < current_session_timeout, such that
  * current_session_timeout > 0, for all sessions cached by the session
  * context.
@@ -80,7 +83,7 @@ public class SessionTimeOutTests {
     /*
      * Is the server ready to serve?
      */
-    AtomicInteger serverReady = new AtomicInteger(PORTS);
+    private final CountDownLatch serverCondition = new CountDownLatch(PORTS);
 
     /*
      * Turn on SSL debugging?
@@ -98,9 +101,6 @@ public class SessionTimeOutTests {
 
     /*
      * Define the server side of the test.
-     *
-     * If the server prematurely exits, serverReady will be set to zero
-     * to avoid infinite hangs.
      */
 
     /*
@@ -108,31 +108,44 @@ public class SessionTimeOutTests {
      */
     static int MAX_ACTIVE_CONNECTIONS = 3;
 
-    void doServerSide(int serverPort, int serverConns) throws Exception {
+    /*
+     * Divide the max connections among the available server ports.
+     * The use of more than one server port ensures creation of more
+     * than one session.
+     */
+    private static final int serverConns = MAX_ACTIVE_CONNECTIONS / PORTS;
+    private static final int remainingConns = MAX_ACTIVE_CONNECTIONS % PORTS;
 
-        SSLServerSocket sslServerSocket =
-            (SSLServerSocket) sslssf.createServerSocket(serverPort);
-        int slot = createdPorts.getAndIncrement();
+    private static final int TIMEOUT = 30000; // in millisecond
+
+    void doServerSide(int slot, int serverConns) throws Exception {
+
+        SSLServerSocket sslServerSocket
+                = (SSLServerSocket) sslssf.createServerSocket(0);
+        sslServerSocket.setSoTimeout(TIMEOUT);
         serverPorts[slot] = sslServerSocket.getLocalPort();
 
         /*
-         * Signal Client, we're ready for his connect.
+         * Signal Client, one server is ready for its connect.
          */
-        serverReady.getAndDecrement();
-        int read = 0;
-        int nConnections = 0;
-        SSLSession sessions [] = new SSLSession [serverConns];
+        serverCondition.countDown();
 
-        while (nConnections < serverConns) {
-            SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
+        for (int nConnections = 0; nConnections < serverConns; nConnections++) {
+            SSLSocket sslSocket = null;
+            try {
+                sslSocket = (SSLSocket) sslServerSocket.accept();
+            }  catch (SocketTimeoutException ste) {
+                System.out.println(
+                        "No incoming client connection. Ignore in server side.");
+                continue;
+            }
             InputStream sslIS = sslSocket.getInputStream();
             OutputStream sslOS = sslSocket.getOutputStream();
-            read = sslIS.read();
-            sessions[nConnections] = sslSocket.getSession();
+            sslIS.read();
+            sslSocket.getSession();
             sslOS.write(85);
             sslOS.flush();
             sslSocket.close();
-            nConnections++;
         }
     }
 
@@ -143,35 +156,49 @@ public class SessionTimeOutTests {
      * to avoid infinite hangs.
      */
     void doClientSide() throws Exception {
-
         /*
          * Wait for server to get started.
          */
-        while (serverReady.get() > 0) {
-            Thread.sleep(50);
+        if (!serverCondition.await(TIMEOUT, TimeUnit.MILLISECONDS)) {
+            System.out.println(
+                    "The server side is not ready yet. Ignore in client side.");
+            return;
         }
 
-        int nConnections = 0;
-        SSLSocket sslSockets[] = new SSLSocket [MAX_ACTIVE_CONNECTIONS];
-        Vector sessions = new Vector();
+        SSLSocket sslSockets[] = new SSLSocket[MAX_ACTIVE_CONNECTIONS];
+        Vector<SSLSession> sessions = new Vector<>();
         SSLSessionContext sessCtx = sslctx.getClientSessionContext();
 
         sessCtx.setSessionTimeout(10); // in secs
         int timeout = sessCtx.getSessionTimeout();
-        while (nConnections < MAX_ACTIVE_CONNECTIONS) {
+        for (int nConnections = 0; nConnections < MAX_ACTIVE_CONNECTIONS;
+                nConnections++) {
             // divide the connections among the available server ports
-            sslSockets[nConnections] = (SSLSocket) sslsf.
-                        createSocket("localhost",
-                        serverPorts [nConnections % (serverPorts.length)]);
+            try {
+                SSLSocket sslSocket = (SSLSocket) sslsf.createSocket();
+                sslSocket.connect(new InetSocketAddress("localhost",
+                        serverPorts[nConnections % serverPorts.length]),
+                        TIMEOUT);
+                sslSockets[nConnections] = sslSocket;
+            } catch (IOException ioe) {
+                // The server side may be impacted by naughty test cases or
+                // third party routines, and cannot accept connections.
+                //
+                // Just ignore the test if the connection cannot be
+                // established.
+                System.out.println(
+                        "Cannot make a connection in time. Ignore in client side.");
+                continue;
+            }
+
             InputStream sslIS = sslSockets[nConnections].getInputStream();
             OutputStream sslOS = sslSockets[nConnections].getOutputStream();
             sslOS.write(237);
             sslOS.flush();
-            int read = sslIS.read();
+            sslIS.read();
             SSLSession sess = sslSockets[nConnections].getSession();
             if (!sessions.contains(sess))
                 sessions.add(sess);
-            nConnections++;
         }
         System.out.println();
         System.out.println("Current timeout is set to: " + timeout);
@@ -217,7 +244,7 @@ public class SessionTimeOutTests {
         }
 
         // check the ids returned by the enumerator
-        Enumeration e = sessCtx.getIds();
+        Enumeration<byte[]> e = sessCtx.getIds();
         System.out.println("----------------------------------------"
                                 + "-----------------------");
         System.out.println("Testing SSLSessionContext.getId()......");
@@ -262,7 +289,7 @@ public class SessionTimeOutTests {
 
             System.out.println("            " + isTimedout);
         }
-        for (int i = 0; i < nConnections; i++) {
+        for (int i = 0; i < sslSockets.length; i++) {
             sslSockets[i].close();
         }
         System.out.println("----------------------------------------"
@@ -290,7 +317,6 @@ public class SessionTimeOutTests {
      */
 
     int serverPorts[] = new int[PORTS];
-    AtomicInteger createdPorts = new AtomicInteger(0);
     static SSLServerSocketFactory sslssf;
     static SSLSocketFactory sslsf;
     static SSLContext sslctx;
@@ -311,6 +337,9 @@ public class SessionTimeOutTests {
         System.setProperty("javax.net.ssl.trustStore", trustFilename);
         System.setProperty("javax.net.ssl.trustStorePassword", passwd);
 
+        if (debug)
+            System.setProperty("javax.net.debug", "all");
+
         sslctx = SSLContext.getInstance("TLS");
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
         KeyStore ks = KeyStore.getInstance("JKS");
@@ -319,8 +348,6 @@ public class SessionTimeOutTests {
         sslctx.init(kmf.getKeyManagers(), null, null);
         sslssf = (SSLServerSocketFactory) sslctx.getServerSocketFactory();
         sslsf = (SSLSocketFactory) sslctx.getSocketFactory();
-        if (debug)
-            System.setProperty("javax.net.debug", "all");
 
         /*
          * Start the tests.
@@ -342,33 +369,25 @@ public class SessionTimeOutTests {
          * create the SSLServerSocket and SSLSocket factories
          */
 
-        /*
-         * Divide the max connections among the available server ports.
-         * The use of more than one server port ensures creation of more
-         * than one session.
-         */
-        int serverConns = MAX_ACTIVE_CONNECTIONS / (serverPorts.length);
-        int remainingConns = MAX_ACTIVE_CONNECTIONS % (serverPorts.length);
-
         Exception startException = null;
         try {
             if (separateServerThread) {
                 for (int i = 0; i < serverPorts.length; i++) {
                     // distribute remaining connections among the
-                    // vailable ports
+                    // available ports
                     if (i < remainingConns)
-                        startServer(serverPorts[i], (serverConns + 1), true);
+                        startServer(i, (serverConns + 1), true);
                     else
-                        startServer(serverPorts[i], serverConns, true);
+                        startServer(i, serverConns, true);
                 }
                 startClient(false);
             } else {
                 startClient(true);
-                for (int i = 0; i < serverPorts.length; i++) {
+                for (int i = 0; i < PORTS; i++) {
                     if (i < remainingConns)
-                        startServer(serverPorts[i], (serverConns + 1), false);
+                        startServer(i, (serverConns + 1), false);
                     else
-                        startServer(serverPorts[i], serverConns, false);
+                        startServer(i, serverConns, false);
                 }
             }
         } catch (Exception e) {
@@ -434,13 +453,13 @@ public class SessionTimeOutTests {
         // Fall-through: no exception to throw!
     }
 
-    void startServer(final int port, final int nConns,
-                        boolean newThread) throws Exception {
+    void startServer(final int slot, final int nConns, boolean newThread)
+            throws Exception {
         if (newThread) {
             serverThread = new Thread() {
                 public void run() {
                     try {
-                        doServerSide(port, nConns);
+                        doServerSide(slot, nConns);
                     } catch (Exception e) {
                         /*
                          * Our server thread just died.
@@ -449,7 +468,6 @@ public class SessionTimeOutTests {
                          */
                         System.err.println("Server died...");
                         e.printStackTrace();
-                        serverReady.set(0);
                         serverException = e;
                     }
                 }
@@ -457,11 +475,9 @@ public class SessionTimeOutTests {
             serverThread.start();
         } else {
             try {
-                doServerSide(port, nConns);
+                doServerSide(slot, nConns);
             } catch (Exception e) {
                 serverException = e;
-            } finally {
-                serverReady.set(0);
             }
         }
     }

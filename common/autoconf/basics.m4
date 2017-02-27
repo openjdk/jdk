@@ -746,7 +746,8 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
     fi
 
     # set SDKROOT too, Xcode tools will pick it up
-    AC_SUBST(SDKROOT,$SYSROOT)
+    SDKROOT="$SYSROOT"
+    AC_SUBST(SDKROOT)
   fi
 
   # Prepend the extra path to the global path
@@ -831,9 +832,10 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
   CONFIGURESUPPORT_OUTPUTDIR="$OUTPUT_ROOT/configure-support"
   $MKDIR -p "$CONFIGURESUPPORT_OUTPUTDIR"
 
-  AC_SUBST(SPEC, $OUTPUT_ROOT/spec.gmk)
-  AC_SUBST(CONF_NAME, $CONF_NAME)
-  AC_SUBST(OUTPUT_ROOT, $OUTPUT_ROOT)
+  SPEC="$OUTPUT_ROOT/spec.gmk"
+  AC_SUBST(SPEC)
+  AC_SUBST(CONF_NAME)
+  AC_SUBST(OUTPUT_ROOT)
   AC_SUBST(CONFIGURESUPPORT_OUTPUTDIR)
 
   # The spec.gmk file contains all variables for the make system.
@@ -1200,6 +1202,18 @@ AC_DEFUN_ONCE([BASIC_TEST_USABILITY_ISSUES],
 # Check for support for specific options in bash
 AC_DEFUN_ONCE([BASIC_CHECK_BASH_OPTIONS],
 [
+  # Check bash version
+  # Extra [ ] to stop m4 mangling
+  [ BASH_VER=`$BASH --version | $SED -n  -e 's/^.*bash.*ersion *\([0-9.]*\).*$/\1/ p'` ]
+  AC_MSG_CHECKING([bash version])
+  AC_MSG_RESULT([$BASH_VER])
+
+  BASH_MAJOR=`$ECHO $BASH_VER | $CUT -d . -f 1`
+  BASH_MINOR=`$ECHO $BASH_VER | $CUT -d . -f 2`
+  if test $BASH_MAJOR -lt 3 || (test $BASH_MAJOR -eq 3 && test $BASH_MINOR -lt 2); then
+    AC_MSG_ERROR([bash version 3.2 or better is required])
+  fi
+
   # Test if bash supports pipefail.
   AC_MSG_CHECKING([if bash supports pipefail])
   if ${BASH} -c 'set -o pipefail'; then

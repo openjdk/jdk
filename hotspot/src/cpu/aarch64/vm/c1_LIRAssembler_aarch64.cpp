@@ -532,8 +532,14 @@ void LIR_Assembler::poll_for_safepoint(relocInfo::relocType rtype, CodeEmitInfo*
 
 void LIR_Assembler::return_op(LIR_Opr result) {
   assert(result->is_illegal() || !result->is_single_cpu() || result->as_register() == r0, "word returns are in r0,");
+
   // Pop the stack before the safepoint code
   __ remove_frame(initial_frame_size_in_bytes());
+
+  if (StackReservedPages > 0 && compilation()->has_reserved_stack_access()) {
+    __ reserved_stack_check();
+  }
+
   address polling_page(os::get_polling_page());
   __ read_polling_page(rscratch1, polling_page, relocInfo::poll_return_type);
   __ ret(lr);
@@ -1916,12 +1922,17 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
     }
 
     if (opr2->is_constant()) {
+      bool is_32bit = false; // width of register operand
       jlong imm;
+
       switch(opr2->type()) {
+      case T_INT:
+        imm = opr2->as_constant_ptr()->as_jint();
+        is_32bit = true;
+        break;
       case T_LONG:
         imm = opr2->as_constant_ptr()->as_jlong();
         break;
-      case T_INT:
       case T_ADDRESS:
         imm = opr2->as_constant_ptr()->as_jint();
         break;
@@ -1936,14 +1947,14 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
       }
 
       if (Assembler::operand_valid_for_add_sub_immediate(imm)) {
-        if (type2aelembytes(opr1->type()) <= 4)
+        if (is_32bit)
           __ cmpw(reg1, imm);
         else
           __ cmp(reg1, imm);
         return;
       } else {
         __ mov(rscratch1, imm);
-        if (type2aelembytes(opr1->type()) <= 4)
+        if (is_32bit)
           __ cmpw(reg1, rscratch1);
         else
           __ cmp(reg1, rscratch1);

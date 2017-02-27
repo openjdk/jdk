@@ -36,8 +36,6 @@ import java.io.FileInputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
-import sun.reflect.misc.ReflectUtil;
-
 /**
  * A class providing APIs for the CORBA Object Request Broker
  * features.  The {@code ORB} class also provides
@@ -108,13 +106,13 @@ import sun.reflect.misc.ReflectUtil;
  *
  *     <LI>check in properties parameter, if any
  *
- *     <LI>check in the System properties
+ *     <LI>check in the System properties, if any
  *
  *     <LI>check in the orb.properties file located in the user.home
- *         directory (if any)
+ *         directory, if any
  *
- *     <LI>check in the orb.properties file located in the java.home/lib
- *         directory (if any)
+ *     <LI>check in the orb.properties file located in the run-time image,
+ *         if any
  *
  *     <LI>fall back on a hardcoded default behavior (use the Java&nbsp;IDL
  *         implementation)
@@ -172,9 +170,15 @@ import sun.reflect.misc.ReflectUtil;
  * Thus, where appropriate, it is necessary that
  * the classes for this alternative ORBSingleton are available on the application's class path.
  * It should be noted that the singleton ORB is system wide.
- *
+ * <P>
  * When a per-application ORB is created via the 2-arg init methods,
  * then it will be located using the thread context class loader.
+ * <P>
+ * The IDL to Java Language OMG specification documents the ${java.home}/lib directory as the location,
+ * in the Java run-time image, to search for orb.properties.
+ * This location is not intended for user editable configuration files.
+ * Therefore, the implementation first checks the ${java.home}/conf directory for orb.properties,
+ * and thereafter the ${java.home}/lib directory.
  *
  * @since   JDK1.2
  */
@@ -187,6 +191,24 @@ abstract public class ORB {
     //
     private static final String ORBClassKey = "org.omg.CORBA.ORBClass";
     private static final String ORBSingletonClassKey = "org.omg.CORBA.ORBSingletonClass";
+
+    // check that access to the class is not restricted by the security manager.
+    private static void checkPackageAccess(String name) {
+        SecurityManager s = System.getSecurityManager();
+        if (s != null) {
+            String cname = name.replace('/', '.');
+            if (cname.startsWith("[")) {
+                int b = cname.lastIndexOf('[') + 2;
+                if (b > 1 && b < cname.length()) {
+                    cname = cname.substring(b);
+                }
+            }
+            int i = cname.lastIndexOf('.');
+            if (i != -1) {
+                s.checkPackageAccess(cname.substring(0, i));
+            }
+        }
+    }
 
     //
     // The global instance of the singleton ORB implementation which
@@ -255,14 +277,25 @@ abstract public class ORB {
                     }
 
                     String javaHome = System.getProperty("java.home");
-                    fileName = javaHome + File.separator
-                        + "lib" + File.separator + "orb.properties";
-                    props = getFileProperties( fileName ) ;
+
+                    fileName = javaHome + File.separator + "conf"
+                            + File.separator + "orb.properties";
+                    props = getFileProperties(fileName);
+
+                    if (props != null) {
+                        String value = props.getProperty(name);
+                        if (value != null)
+                            return value;
+                    }
+
+                    fileName = javaHome + File.separator + "lib"
+                            + File.separator + "orb.properties";
+                    props = getFileProperties(fileName);
 
                     if (props == null)
-                        return null ;
+                        return null;
                     else
-                        return props.getProperty( name ) ;
+                        return props.getProperty(name);
                 }
             }
         );
@@ -318,7 +351,7 @@ abstract public class ORB {
    private static ORB create_impl_with_systemclassloader(String className) {
 
         try {
-            ReflectUtil.checkPackageAccess(className);
+            checkPackageAccess(className);
             ClassLoader cl = ClassLoader.getSystemClassLoader();
             Class<org.omg.CORBA.ORB> orbBaseClass = org.omg.CORBA.ORB.class;
             Class<?> singletonOrbClass = Class.forName(className, true, cl).asSubclass(orbBaseClass);
@@ -337,7 +370,7 @@ abstract public class ORB {
             cl = ClassLoader.getSystemClassLoader();
 
         try {
-            ReflectUtil.checkPackageAccess(className);
+            checkPackageAccess(className);
             Class<org.omg.CORBA.ORB> orbBaseClass = org.omg.CORBA.ORB.class;
             Class<?> orbClass = Class.forName(className, true, cl).asSubclass(orbBaseClass);
             return (ORB)orbClass.newInstance();

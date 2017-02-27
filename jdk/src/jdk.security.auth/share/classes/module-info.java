@@ -26,6 +26,8 @@
 /**
  * Contains the implementation of the javax.security.auth.* interfaces and
  * various authentication modules.
+ *
+ * @since 9
  */
 module jdk.security.auth {
     requires transitive java.naming;
@@ -35,8 +37,6 @@ module jdk.security.auth {
     exports com.sun.security.auth.callback;
     exports com.sun.security.auth.login;
     exports com.sun.security.auth.module;
-
-    uses sun.security.util.AuthResourcesProvider;
 
     provides javax.security.auth.spi.LoginModule with
         com.sun.security.auth.module.Krb5LoginModule,

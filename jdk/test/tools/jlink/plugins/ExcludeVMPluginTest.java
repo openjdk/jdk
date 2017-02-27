@@ -27,6 +27,7 @@
  * @author Jean-Francois Denise
  * @modules jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.internal.plugins
+ *          jdk.jlink/jdk.tools.jlink.plugin
  * @run main ExcludeVMPluginTest
  */
 import java.io.ByteArrayInputStream;
@@ -154,10 +155,10 @@ public class ExcludeVMPluginTest {
             String[] winput = new String[input.length];
             String[] woutput = new String[expectedOutput.length];
             for (int i = 0; i < input.length; i++) {
-                winput[i] = "/java.base/native" + arch + input[i];
+                winput[i] = "/java.base/lib" + arch + input[i];
             }
             for (int i = 0; i < expectedOutput.length; i++) {
-                woutput[i] = "/java.base/native" + arch + expectedOutput[i];
+                woutput[i] = "/java.base/lib" + arch + expectedOutput[i];
             }
             doCheckVM(vm, winput, jvmcfg, woutput, expectdJvmCfg);
         }
@@ -168,7 +169,7 @@ public class ExcludeVMPluginTest {
         byte[] jvmcfgContent = jvmcfg.getBytes();
         ResourcePoolManager poolMgr = new ResourcePoolManager();
         poolMgr.add(
-            ResourcePoolEntry.create("/java.base/native/jvm.cfg",
+            ResourcePoolEntry.create("/java.base/lib/jvm.cfg",
                 ResourcePoolEntry.Type.NATIVE_LIB, jvmcfgContent));
 
         // java.base/module-info.class is used by exclude vm plugin
@@ -191,7 +192,7 @@ public class ExcludeVMPluginTest {
         p.configure(config);
         ResourcePool out = p.transform(poolMgr.resourcePool(), outMgr.resourcePoolBuilder());
 
-        String newContent = new String(out.findEntry("/java.base/native/jvm.cfg").get().contentBytes());
+        String newContent = new String(out.findEntry("/java.base/lib/jvm.cfg").get().contentBytes());
 
         if (!expectdJvmCfg.equals(newContent)) {
             throw new Exception("Got content " + newContent + " expected " + expectdJvmCfg);
@@ -208,7 +209,7 @@ public class ExcludeVMPluginTest {
         }
 
         out.entries().forEach(md -> {
-            if (md.path().equals("/java.base/native/jvm.cfg") ||
+            if (md.path().equals("/java.base/lib/jvm.cfg") ||
                 md.path().equals("/java.base/module-info.class")) {
                 return;
             }

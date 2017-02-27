@@ -267,10 +267,15 @@ public class AMD64HotSpotBackend extends HotSpotHostBackend {
 
             if (config.useCompressedClassPointers) {
                 Register register = r10;
-                AMD64HotSpotMove.decodeKlassPointer(asm, register, providers.getRegisters().getHeapBaseRegister(), src, config.getKlassEncoding());
-                if (config.narrowKlassBase != 0) {
-                    // The heap base register was destroyed above, so restore it
-                    asm.movq(providers.getRegisters().getHeapBaseRegister(), config.narrowOopBase);
+                AMD64HotSpotMove.decodeKlassPointer(crb, asm, register, providers.getRegisters().getHeapBaseRegister(), src, config);
+                if (GeneratePIC.getValue()) {
+                    asm.movq(providers.getRegisters().getHeapBaseRegister(), asm.getPlaceholder(-1));
+                    crb.recordMark(config.MARKID_NARROW_OOP_BASE_ADDRESS);
+                } else {
+                    if (config.narrowKlassBase != 0) {
+                        // The heap base register was destroyed above, so restore it
+                        asm.movq(providers.getRegisters().getHeapBaseRegister(), config.narrowOopBase);
+                    }
                 }
                 asm.cmpq(inlineCacheKlass, register);
             } else {

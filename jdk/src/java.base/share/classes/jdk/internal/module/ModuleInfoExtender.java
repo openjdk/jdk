@@ -53,21 +53,21 @@ public final class ModuleInfoExtender {
     // the input stream to read the original module-info.class
     private final InputStream in;
 
-    // the packages in the Packages attribute
+    // the packages in the ModulePackages attribute
     private Set<String> packages;
 
-    // the value of the Version attribute
+    // the value for the module version in the Module attribute
     private Version version;
 
-    // the value of the MainClass attribute
+    // the value of the ModuleMainClass attribute
     private String mainClass;
 
-    // the values for the TargetPlatform attribute
+    // the values for the ModuleTarget attribute
     private String osName;
     private String osArch;
     private String osVersion;
 
-    // the hashes for the Hashes attribute
+    // the hashes for the ModuleHashes attribute
     private ModuleHashes hashes;
 
     // the value of the ModuleResolution attribute
@@ -78,7 +78,11 @@ public final class ModuleInfoExtender {
     }
 
     /**
-     * Sets the set of packages for the Packages attribute
+     * Sets the packages for the ModulePackages attribute
+     *
+     * @apiNote This method does not check that the package names are legal
+     * package names or that the set of packages is a super set of the
+     * packages in the module.
      */
     public ModuleInfoExtender packages(Set<String> packages) {
         this.packages = Collections.unmodifiableSet(packages);
@@ -86,7 +90,7 @@ public final class ModuleInfoExtender {
     }
 
     /**
-     * Sets the value of the Version attribute.
+     * Sets the value for the module version in the Module attribute
      */
     public ModuleInfoExtender version(Version version) {
         this.version = version;
@@ -94,7 +98,10 @@ public final class ModuleInfoExtender {
     }
 
     /**
-     * Sets the value of the MainClass attribute.
+     * Sets the value of the ModuleMainClass attribute.
+     *
+     * @apiNote This method does not check that the main class is a legal
+     * class name in a named package.
      */
     public ModuleInfoExtender mainClass(String mainClass) {
         this.mainClass = mainClass;
@@ -102,7 +109,7 @@ public final class ModuleInfoExtender {
     }
 
     /**
-     * Sets the values for the TargetPlatform attribute.
+     * Sets the values for the ModuleTarget attribute.
      */
     public ModuleInfoExtender targetPlatform(String osName,
                                              String osArch,
@@ -114,7 +121,7 @@ public final class ModuleInfoExtender {
     }
 
     /**
-     * The Hashes attribute will be emitted to the module-info with
+     * The ModuleHashes attribute will be emitted to the module-info with
      * the hashes encapsulated in the given {@code ModuleHashes}
      * object.
      */
@@ -133,7 +140,7 @@ public final class ModuleInfoExtender {
 
     /**
      * A ClassVisitor that supports adding class file attributes. If an
-     * attribute already exists then the first occurence of the attribute
+     * attribute already exists then the first occurrence of the attribute
      * is replaced.
      */
     private static class AttributeAddingClassVisitor extends ClassVisitor {

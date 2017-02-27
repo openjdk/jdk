@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.CharBuffer;
+import java.nio.file.ClosedFileSystemException;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -2756,8 +2757,8 @@ public class ClassReader {
                     currentModule.provides = List.nil();
                 }
             }
-        } catch (IOException ex) {
-            throw badClassFile("unable.to.access.file", ex.getMessage());
+        } catch (IOException | ClosedFileSystemException ex) {
+            throw badClassFile("unable.to.access.file", ex.toString());
         } catch (ArrayIndexOutOfBoundsException ex) {
             throw badClassFile("bad.class.file", c.flatname);
         } finally {

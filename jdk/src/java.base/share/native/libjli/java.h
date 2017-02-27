@@ -71,6 +71,7 @@
 
 #define SPLASH_FILE_ENV_ENTRY "_JAVA_SPLASH_FILE"
 #define SPLASH_JAR_ENV_ENTRY "_JAVA_SPLASH_JAR"
+#define JDK_JAVA_OPTIONS "JDK_JAVA_OPTIONS"
 
 /*
  * Pointers to the needed JNI invocation API, initialized by LoadJavaVM.
@@ -168,6 +169,9 @@ jint ReadKnownVMs(const char *jvmcfg, jboolean speculative);
 char *CheckJvmType(int *argc, char ***argv, jboolean speculative);
 void AddOption(char *str, void *info);
 jboolean IsWhiteSpaceOption(const char* name);
+
+// Utility function defined in args.c
+int isTerminalOpt(char *arg);
 
 const char* GetProgramName();
 const char* GetFullVersion();

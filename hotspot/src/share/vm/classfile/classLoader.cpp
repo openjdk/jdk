@@ -364,7 +364,12 @@ u1* ClassPathZipEntry::open_versioned_entry(const char* name, jint* filesize, TR
     if (verstr != NULL) {
       version = atoi(verstr);
       if (version < base_version || version > cur_ver) {
-        is_multi_ver = false;
+        // If the specified version is lower than the base version, the base
+        // entry will be used; if the version is higher than the current
+        // jdk version, the highest versioned entry will be used.
+        if (version < base_version) {
+          is_multi_ver = false;
+        }
         // print out warning, do not use assertion here since it will continue to look
         // for proper version.
         warning("JDK%d is not supported in multiple version jars", version);

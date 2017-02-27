@@ -395,39 +395,45 @@ public class GuardedInvocation {
     }
 
     /**
-     * Applies argument filters to both the invocation and the guard (if there
-     * is one) with {@link MethodHandles#filterArguments(MethodHandle, int, MethodHandle...)}.
+     * Applies argument filters to both the invocation and the guard
+     * (if it exists and has at least {@code pos + 1} parameters) with
+     * {@link MethodHandles#filterArguments(MethodHandle, int, MethodHandle...)}.
      * @param pos the position of the first argument being filtered
      * @param filters the argument filters
      * @return a filtered invocation
      */
     public GuardedInvocation filterArguments(final int pos, final MethodHandle... filters) {
-        return replaceMethods(MethodHandles.filterArguments(invocation, pos, filters), guard == null ? null :
-            MethodHandles.filterArguments(guard, pos, filters));
+        return replaceMethods(MethodHandles.filterArguments(invocation, pos, filters),
+                guard == null || pos >= guard.type().parameterCount() ?
+                        guard : MethodHandles.filterArguments(guard, pos, filters));
     }
 
     /**
      * Makes an invocation that drops arguments in both the invocation and the
-     * guard (if there is one) with {@link MethodHandles#dropArguments(MethodHandle, int, List)}.
+     * guard (if it exists and has at least {@code pos} parameters) with
+     * {@link MethodHandles#dropArguments(MethodHandle, int, List)}.
      * @param pos the position of the first argument being dropped
      * @param valueTypes the types of the values being dropped
      * @return an invocation that drops arguments
      */
     public GuardedInvocation dropArguments(final int pos, final List<Class<?>> valueTypes) {
-        return replaceMethods(MethodHandles.dropArguments(invocation, pos, valueTypes), guard == null ? null :
-            MethodHandles.dropArguments(guard, pos, valueTypes));
+        return replaceMethods(MethodHandles.dropArguments(invocation, pos, valueTypes),
+                guard == null || pos > guard.type().parameterCount() ?
+                    guard : MethodHandles.dropArguments(guard, pos, valueTypes));
     }
 
     /**
      * Makes an invocation that drops arguments in both the invocation and the
-     * guard (if there is one) with {@link MethodHandles#dropArguments(MethodHandle, int, Class...)}.
+     * guard (if it exists and has at least {@code pos} parameters) with
+     * {@link MethodHandles#dropArguments(MethodHandle, int, Class...)}.
      * @param pos the position of the first argument being dropped
      * @param valueTypes the types of the values being dropped
      * @return an invocation that drops arguments
      */
     public GuardedInvocation dropArguments(final int pos, final Class<?>... valueTypes) {
-        return replaceMethods(MethodHandles.dropArguments(invocation, pos, valueTypes), guard == null ? null :
-            MethodHandles.dropArguments(guard, pos, valueTypes));
+        return replaceMethods(MethodHandles.dropArguments(invocation, pos, valueTypes),
+                guard == null || pos > guard.type().parameterCount() ?
+                        guard : MethodHandles.dropArguments(guard, pos, valueTypes));
     }
 
 

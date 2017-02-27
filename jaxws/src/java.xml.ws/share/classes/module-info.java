@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,19 @@
 /**
  * Defines the Java API for XML-Based Web Services (JAX-WS), and
  * the Web Services Metadata API.
+ *
+ * @since 9
  */
 module java.xml.ws {
     requires transitive java.activation;
     requires transitive java.xml;
     requires transitive java.xml.bind;
-    requires java.annotations.common;
+    requires java.xml.ws.annotation;
     requires java.desktop;
     requires java.logging;
     requires java.management;
     requires jdk.httpserver;
+    requires jdk.unsupported;
 
     uses javax.xml.ws.spi.Provider;
     uses javax.xml.soap.MessageFactory;

@@ -26,8 +26,8 @@
 # @summary Test RMI Bootstrap with SSL and no keystore.
 #
 # @bug 4932854
-# @modules java.management/sun.management
-#          java.management/sun.management.jmxremote
+# @modules jdk.management.agent/jdk.internal.agent
+#          jdk.management.agent/sun.management.jmxremote
 # @build TestLogger RmiSslNoKeyStoreTest
 # @run shell/timeout=300  RmiSslNoKeyStoreTest.sh
 
@@ -48,8 +48,8 @@ chmod -R 777 ${TESTCLASSES}/ssl
 DEBUGOPTIONS=""
 export DEBUGOPTIONS
 
-EXTRAOPTIONS="--add-exports java.management/sun.management=ALL-UNNAMED \
- --add-exports java.management/sun.management.jmxremote=ALL-UNNAMED"
+EXTRAOPTIONS="--add-exports jdk.management.agent/jdk.internal.agent=ALL-UNNAMED \
+ --add-exports jdk.management.agent/sun.management.jmxremote=ALL-UNNAMED"
 export EXTRAOPTIONS
 
 # Call the common generic test

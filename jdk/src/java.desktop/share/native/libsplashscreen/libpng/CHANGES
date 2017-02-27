@@ -1,28 +1,3 @@
-/*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
-
 #if 0
 CHANGES - changes for libpng
 
@@ -618,7 +593,7 @@ Version 1.0.5e [November 30, 1999]
     with trailing compressed parts easier in the future, and added new functions
     png_free_iCCP, png_free_pCAL, png_free_sPLT, png_free_text, png_get_iCCP,
     png_get_spalettes, png_set_iCCP, png_set_spalettes (Eric S. Raymond).
-  NOTE: Applications that write text chunks MUST define png_text->lang
+    NOTE: Applications that write text chunks MUST define png_text->lang
     before calling png_set_text(). It must be set to NULL if you want to
     write tEXt or zTXt chunks.  If you want your application to be able to
     run with older versions of libpng, use
@@ -5620,6 +5595,204 @@ Version 1.6.23rc02 [June 4, 2016]
 
 Version 1.6.23 [June 9, 2016]
   Fixed bad link to RFC2083 in png.5 (Nikola Forro).
+
+Version 1.6.24beta01 [June 11, 2016]
+  Avoid potential overflow of the PNG_IMAGE_SIZE macro.  This macro
+    is not used within libpng, but is used in some of the examples.
+
+Version 1.6.24beta02 [June 23, 2016]
+  Correct filter heuristic overflow handling. This was broken when the
+    write filter code was moved out-of-line; if there is a single filter and
+    the heuristic sum overflows the calculation of the filtered line is not
+    completed.  In versions prior to 1.6 the code was duplicated in-line
+    and the check not performed, so the filter operation completed; however,
+    in the multi-filter case where the sum is performed the 'none' filter would
+    be selected if all the sums overflowed, even if it wasn't in the filter
+    list.  The fix to the first problem is simply to provide PNG_SIZE_MAX as
+    the current lmins sum value; this means the sum can never exceed it and
+    overflows silently.  A reasonable compiler that does choose to inline
+    the code will simply eliminate the sum check.
+  The fix to the second problem is to use high precision arithmetic (this is
+    implemented in 1.7), however a simple safe fix here is to chose the lowest
+    numbered filter in the list from png_set_filter (this only works if the
+    first problem is also fixed) (John Bowler).
+  Use a more efficient absolute value calculation on SSE2 (Matthieu Darbois).
+  Fixed the case where PNG_IMAGE_BUFFER_SIZE can overflow in the application
+    as a result of the application using an increased 'row_stride'; previously
+    png_image_finish_read only checked for overflow on the base calculation of
+    components.  (I.e. it checked for overflow of a 32-bit number on the total
+    number of pixel components in the output format, not the possibly padded row
+    length and not the number of bytes, which for linear formats is twice the
+    number of components.)
+  MSVC does not like '-(unsigned)', so replaced it with 0U-(unsigned)
+  MSVC does not like (uInt) = -(unsigned) (i.e. as an initializer), unless
+    the conversion is explicitly invoked by a cast.
+  Put the SKIP definition in the correct place. It needs to come after the
+    png.h include (see all the other .c files in contrib/libtests) because it
+    depends on PNG_LIBPNG_VER.
+  Removed the three compile warning options from the individual project
+    files into the zlib.props globals.  It increases the warning level from 4
+    to All and adds a list of the warnings that need to be turned off.  This is
+    semi-documentary; the intent is to tell libpng users which warnings have
+    been examined and judged non-fixable at present.  The warning about
+    structure padding is fixable, but it would be a signficant change (moving
+    structure members around).
+
+Version 1.6.24beta03 [July 4, 2016]
+  Optimized absolute value calculation in filter selection, similar to
+    code in the PAETH decoder in pngrutil.c. Build with PNG_USE_ABS to
+    use this.
+  Added pngcp to the build together with a pngcp.dfa configuration test.
+  Added high resolution timing to pngcp.
+  Added "Common linking failures" section to INSTALL.
+  Relocated misplaced #endif in png.c sRGB profile checking.
+  Fixed two Coverity issues in pngcp.c.
+
+Version 1.6.24beta04 [July 8, 2016]
+  Avoid filter-selection heuristic sum calculations in cases where only one
+    filter is a candidate for selection. This trades off code size (added
+    private png_setup_*_row_only() functions) for speed.
+
+Version 1.6.24beta05 [July 13, 2016]
+  Fixed some indentation to comply with our coding style.
+  Added contrib/tools/reindent.
+
+Version 1.6.24beta06 [July 18, 2016]
+  Fixed more indentation to comply with our coding style.
+  Eliminated unnecessary tests of boolean png_isaligned() vs 0.
+
+Version 1.6.24rc01 [July 25, 2016]
+  No changes.
+
+Version 1.6.24rc02 [August 1, 2016]
+  Conditionally compile SSE2 headers in contrib/intel/intel_sse.patch
+  Conditionally compile png_decompress_chunk().
+
+Version 1.6.24rc03 [August 2, 2016]
+  Conditionally compile ARM_NEON headers in pngpriv.h
+  Updated contrib/intel/intel_sse.patch
+
+Version 1.6.24[August 4, 2016]
+  No changes.
+
+Version 1.6.25beta01 [August 12, 2016]
+  Reject oversized iCCP profile immediately.
+  Cleaned up PNG_DEBUG compile of pngtest.c.
+  Conditionally compile png_inflate().
+
+Version 1.6.25beta02 [August 18, 2016]
+  Don't install pngcp; it conflicts with pngcp in the pngtools package.
+  Minor editing of INSTALL, (whitespace, added copyright line)
+
+Version 1.6.25rc01 [August 24, 2016]
+  No changes.
+
+Version 1.6.25rc02 [August 29, 2016]
+  Added MIPS support (Mandar Sahastrabuddhe <Mandar.Sahastrabuddhe@imgtec.com>).
+  Only the UP filter is currently implemented.
+
+Version 1.6.25rc03 [August 29, 2016]
+  Rebased contrib/intel/intel_sse.patch after the MIPS implementation.
+
+Version 1.6.25rc04 [August 30, 2016]
+  Added MIPS support for SUB, AVG, and PAETH filters (Mandar Sahastrabuddhe).
+
+Version 1.6.25rc05 [August 30, 2016]
+  Rebased contrib/intel/intel_sse.patch after the MIPS implementation update..
+
+Version 1.6.25 [September 1, 2016]
+  No changes.
+
+Version 1.6.26beta01 [September 26, 2016]
+  Fixed handling zero length IDAT in pngfix (bug report by Agostino Sarubbo,
+    bugfix by John Bowler).
+  Do not issue a png_error() on read in png_set_pCAL() because png_handle_pCAL
+    has allocated memory that libpng needs to free.
+  Conditionally compile png_set_benign_errors() in pngread.c and pngtest.c
+  Issue a png_benign_error instead of a png_error on ADLER32 mismatch
+    while decoding compressed data chunks.
+  Changed PNG_ZLIB_VERNUM to ZLIB_VERNUM in pngpriv.h, pngstruct.h, and
+    pngrutil.c.
+  If CRC handling of critical chunks has been set to PNG_CRC_QUIET_USE,
+    ignore the ADLER32 checksum in the IDAT chunk as well as the chunk CRCs.
+  Issue png_benign_error() on ADLER32 checksum mismatch instead of png_error().
+  Add tests/badcrc.png and tests/badadler.png to tests/pngtest.
+  Merged pngtest.c with libpng-1.7.0beta84/pngtest.c
+
+Version 1.6.26beta02 [October 1, 2016]
+  Updated the documentation about CRC and ADLER32 handling.
+  Quieted 117 warnings from clang-3.8 in pngtrans.c, pngread.c,
+     pngwrite.c, pngunknown.c, and pngvalid.c.
+  Quieted 58 (out of 144) -Wconversion compiler warnings by changing
+    flag definitions in pngpriv.h from 0xnnnn to 0xnnnnU and trivial changes
+    in png.c, pngread.c, and pngwutil.c.
+
+Version 1.6.26beta03 [October 2, 2016]
+  Removed contrib/libtests/*.orig and *.rej that slipped into the tarballs.
+  Quieted the 86 remaining -Wconversion compiler warnings by
+    revising the png_isaligned() macro and trivial changes in png.c,
+    pngerror.c, pngget.c, pngmem.c, pngset.c, pngrtran.c, pngrutil.c,
+    pngwtran.c, pngwrite.c, and pngwutil.c.
+
+Version 1.6.26beta04 [October 3, 2016]
+  Quieted (bogus?) clang warnings about "absolute value has no effect"
+    when PNG_USE_ABS is defined.
+  Fixed offsets in contrib/intel/intel_sse.patch
+
+Version 1.6.26beta05 [October 6, 2016]
+  Changed integer constant 4294967294 to unsigned 4294967294U in pngconf.h
+    to avoid a signed/unsigned compare in the preprocessor.
+
+Version 1.6.26beta06 [October 7, 2016]
+  Use zlib-1.2.8.1 inflateValidate() instead of inflateReset2() to
+    optionally avoid ADLER32 evaluation.
+
+Version 1.6.26rc01 [October 12, 2016]
+  No changes.
+
+Version 1.6.26 [October 20, 2016]
+  Cosmetic change, "ptr != 0" to "ptr != NULL" in png.c and pngrutil.c
+  Despammed email addresses (replaced "@" with " at ").
+
+Version 1.6.27beta01 [November 2, 2016]
+  Restrict the new ADLER32-skipping to IDAT chunks.  It broke iCCP chunk
+    handling: an erroneous iCCP chunk would throw a png_error and reject the
+    entire PNG image instead of rejecting just the iCCP chunk with a warning,
+    if built with zlib-1.2.8.1.
+
+Version 1.6.27rc01 [December 27, 2016]
+  Control ADLER32 checking with new PNG_IGNORE_ADLER32 option.
+  Removed the use of a macro containing the pre-processor 'defined'
+    operator.  It is unclear whether this is valid; a macro that
+    "generates" 'defined' is not permitted, but the use of the word
+    "generates" within the C90 standard seems to imply more than simple
+    substitution of an expression itself containing a well-formed defined
+    operation.
+  Added ARM support to CMakeLists.txt (Andreas Franek).
+
+Version 1.6.27 [December 29, 2016]
+  Fixed a potential null pointer dereference in png_set_text_2() (bug report
+    and patch by Patrick Keshishian, CVE-2016-10087).
+
+Version 1.6.28rc01 [January 3, 2017]
+  Fixed arm/aarch64 detection in CMakeLists.txt (Gianfranco Costamagna).
+  Added option to Cmake build allowing a custom location of zlib to be
+    specified in a scenario where libpng is being built as a subproject
+    alongside zlib by another project (Sam Serrels).
+  Changed png_ptr->options from a png_byte to png_uint_32, to accomodate
+    up to 16 options.
+
+Version 1.6.28rc02 [January 4, 2017]
+  Added "include(GNUInstallDirs)" to CMakeLists.txt (Gianfranco Costamagna).
+  Moved SSE2 optimization code into the main libpng source directory.
+    Configure libpng with "configure --enable-intel-sse" or compile
+    libpng with "-DPNG_INTEL_SSE" in CPPFLAGS to enable it.
+
+Version 1.6.28rc03 [January 4, 2017]
+  Backed out the SSE optimization and last CMakeLists.txt to allow time for QA.
+
+Version 1.6.28 [January 5, 2017]
+  No changes.
 
 Send comments/corrections/commendations to png-mng-implement at lists.sf.net
 (subscription required; visit

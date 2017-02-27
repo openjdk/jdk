@@ -99,6 +99,10 @@ public class TrueTypeFont extends FileFont {
     public static final int ottoTag = 0x4f54544f; // 'otto' - OpenType font
 
     /* -- ID's used in the 'name' table */
+    public static final int MAC_PLATFORM_ID = 1;
+    public static final int MACROMAN_SPECIFIC_ID = 0;
+    public static final int MACROMAN_ENGLISH_LANG = 0;
+
     public static final int MS_PLATFORM_ID = 3;
     /* MS locale id for US English is the "default" */
     public static final short ENGLISH_LOCALE_ID = 0x0409; // 1033 decimal
@@ -1108,7 +1112,12 @@ public class TrueTypeFont extends FileFont {
         metrics[offset+3] = ulSize * pointSize;
     }
 
-    private String makeString(byte[] bytes, int len, short encoding) {
+    private String makeString(byte[] bytes, int len,
+                             short platformID, short encoding) {
+
+        if (platformID == MAC_PLATFORM_ID) {
+            encoding = -1; // hack so we can re-use the code below.
+        }
 
         /* Check for fonts using encodings 2->6 is just for
          * some old DBCS fonts, apparently mostly on Solaris.
@@ -1130,6 +1139,7 @@ public class TrueTypeFont extends FileFont {
 
         String charset;
         switch (encoding) {
+            case -1: charset = "US-ASCII";break;
             case 1:  charset = "UTF-16";  break; // most common case first.
             case 0:  charset = "UTF-16";  break; // symbol uses this
             case 2:  charset = "SJIS";    break;
@@ -1175,7 +1185,8 @@ public class TrueTypeFont extends FileFont {
 
             for (int i=0; i<numRecords; i++) {
                 short platformID = sbuffer.get();
-                if (platformID != MS_PLATFORM_ID) {
+                if (platformID != MS_PLATFORM_ID &&
+                    platformID != MAC_PLATFORM_ID) {
                     sbuffer.position(sbuffer.position()+5);
                     continue; // skip over this record.
                 }
@@ -1185,6 +1196,14 @@ public class TrueTypeFont extends FileFont {
                 int nameLen    = ((int) sbuffer.get()) & 0xffff;
                 int namePtr    = (((int) sbuffer.get()) & 0xffff) + stringPtr;
                 String tmpName = null;
+
+                // only want MacRoman encoding and English name on Mac.
+                if ((platformID == MAC_PLATFORM_ID) &&
+                    (encodingID != MACROMAN_SPECIFIC_ID ||
+                     langID != MACROMAN_ENGLISH_LANG)) {
+                    continue;
+                }
+
                 switch (nameID) {
 
                 case FAMILY_NAME_ID:
@@ -1196,7 +1215,7 @@ public class TrueTypeFont extends FileFont {
                     {
                         buffer.position(namePtr);
                         buffer.get(name, 0, nameLen);
-                        tmpName = makeString(name, nameLen, encodingID);
+                        tmpName = makeString(name, nameLen, platformID, encodingID);
                         if (familyName == null || langID == ENGLISH_LOCALE_ID){
                             familyName = tmpName;
                         }
@@ -1229,7 +1248,7 @@ public class TrueTypeFont extends FileFont {
                     {
                         buffer.position(namePtr);
                         buffer.get(name, 0, nameLen);
-                        tmpName = makeString(name, nameLen, encodingID);
+                        tmpName = makeString(name, nameLen, platformID, encodingID);
 
                         if (fullName == null || langID == ENGLISH_LOCALE_ID) {
                             fullName = tmpName;
@@ -1290,7 +1309,7 @@ public class TrueTypeFont extends FileFont {
                      || langID == findLocaleID)) {
                     buffer.position(namePtr);
                     buffer.get(name, 0, nameLen);
-                    foundName = makeString(name, nameLen, encodingID);
+                    foundName = makeString(name, nameLen, platformID, encodingID);
                     if (langID == findLocaleID) {
                         return foundName;
                     }
@@ -1627,7 +1646,7 @@ public class TrueTypeFont extends FileFont {
                 if (nameID == requestedID) {
                     buffer.position(namePtr);
                     buffer.get(name, 0, nameLen);
-                    names.add(makeString(name, nameLen, encodingID));
+                    names.add(makeString(name, nameLen, platformID, encodingID));
                 }
             }
         }

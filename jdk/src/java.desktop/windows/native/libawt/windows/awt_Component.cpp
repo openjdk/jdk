@@ -99,7 +99,6 @@ BOOL AwtComponent::sm_restoreFocusAndActivation = FALSE;
 HWND AwtComponent::sm_focusOwner = NULL;
 HWND AwtComponent::sm_focusedWindow = NULL;
 BOOL AwtComponent::sm_bMenuLoop = FALSE;
-AwtComponent* AwtComponent::sm_getComponentCache = NULL;
 BOOL AwtComponent::sm_inSynthesizeFocus = FALSE;
 
 /************************************************************************/
@@ -276,10 +275,6 @@ AwtComponent::~AwtComponent()
      * handle.
      */
     DestroyHWnd();
-
-    if (sm_getComponentCache == this) {
-        sm_getComponentCache = NULL;
-    }
 }
 
 void AwtComponent::Dispose()
@@ -352,9 +347,6 @@ AwtComponent* AwtComponent::GetComponent(HWND hWnd) {
     if (hWnd == AwtToolkit::GetInstance().GetHWnd()) {
         return NULL;
     }
-    if (sm_getComponentCache && sm_getComponentCache->GetHWnd() == hWnd) {
-        return sm_getComponentCache;
-    }
 
     // check that it's an AWT component from the same toolkit as the caller
     if (::IsWindow(hWnd) &&
@@ -362,7 +354,7 @@ AwtComponent* AwtComponent::GetComponent(HWND hWnd) {
     {
         DASSERT(WmAwtIsComponent != 0);
         if (::SendMessage(hWnd, WmAwtIsComponent, 0, 0L)) {
-            return sm_getComponentCache = GetComponentImpl(hWnd);
+            return GetComponentImpl(hWnd);
         }
     }
     return NULL;
@@ -958,8 +950,11 @@ AwtComponent::SetWindowPos(HWND wnd, HWND after,
     return 1;
 }
 
+void AwtComponent::Reshape(int x, int y, int w, int h) {
+    ReshapeNoScale(ScaleUpX(x), ScaleUpY(y), ScaleUpX(w), ScaleUpY(h));
+}
 
-void AwtComponent::Reshape(int x, int y, int w, int h)
+void AwtComponent::ReshapeNoScale(int x, int y, int w, int h)
 {
 #if defined(DEBUG)
     RECT        rc;
@@ -967,11 +962,6 @@ void AwtComponent::Reshape(int x, int y, int w, int h)
     ::MapWindowPoints(HWND_DESKTOP, ::GetParent(GetHWnd()), (LPPOINT)&rc, 2);
     DTRACE_PRINTLN4("AwtComponent::Reshape from %d, %d, %d, %d", rc.left, rc.top, rc.right-rc.left, rc.bottom-rc.top);
 #endif
-
-    x = ScaleUpX(x);
-    y = ScaleUpY(y);
-    w = ScaleUpX(w);
-    h = ScaleUpY(h);
 
     AwtWindow* container = GetContainer();
     AwtComponent* parent = GetParent();

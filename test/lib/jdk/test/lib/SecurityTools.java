@@ -23,102 +23,97 @@
 
 package jdk.test.lib;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 public class SecurityTools {
 
-    public static final String NO_ALIAS = null;
+    public static final String RESPONSE_FILE = "security_tools_response.txt";
+
+    private static ProcessBuilder getProcessBuilder(String tool, List<String> args) {
+        JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK(tool)
+                .addVMArg("-Duser.language=en")
+                .addVMArg("-Duser.country=US")
+                .addVMArg("-Djava.security.egd=file:/dev/./urandom");
+        for (String arg : args) {
+            if (arg.startsWith("-J")) {
+                launcher.addVMArg(arg.substring(2));
+            } else {
+                launcher.addToolArg(arg);
+            }
+        }
+        String[] cmds = launcher.getCommand();
+        String cmdLine = Arrays.stream(cmds).collect(Collectors.joining(" "));
+        System.out.println("Command line: [" + cmdLine + "]");
+        return new ProcessBuilder(cmds);
+    }
 
     // keytool
 
-    public static OutputAnalyzer keytool(List<String> options)
-            throws Throwable {
+    public static OutputAnalyzer keytool(List<String> args)
+            throws Exception {
 
-        JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("keytool")
-                .addVMArg("-Duser.language=en")
-                .addVMArg("-Duser.country=US");
-        for (String option : options) {
-            if (option.startsWith("-J")) {
-                launcher.addVMArg(option.substring(2));
-            } else {
-                launcher.addToolArg(option);
-            }
+        ProcessBuilder pb = getProcessBuilder("keytool", args);
+
+        Path p = Paths.get(RESPONSE_FILE);
+        if (!Files.exists(p)) {
+            Files.createFile(p);
         }
-        return ProcessTools.executeCommand(launcher.getCommand());
+        pb.redirectInput(ProcessBuilder.Redirect.from(new File(RESPONSE_FILE)));
+
+        try {
+            return ProcessTools.executeProcess(pb);
+        } finally {
+            Files.delete(p);
+        }
     }
 
-    public static OutputAnalyzer keytool(String options) throws Throwable {
-        return keytool(options.split("\\s+"));
+    // Only call this if there is no white space in every argument
+    public static OutputAnalyzer keytool(String args) throws Exception {
+        return keytool(args.split("\\s+"));
     }
 
-    public static OutputAnalyzer keytool(String... options) throws Throwable {
-        return keytool(List.of(options));
+    public static OutputAnalyzer keytool(String... args) throws Exception {
+        return keytool(List.of(args));
+    }
+
+    public static void setResponse(String... responses) throws IOException {
+        String text;
+        if (responses.length > 0) {
+            text = Stream.of(responses).collect(
+                    Collectors.joining("\n", "", "\n"));
+        } else {
+            text = "";
+        }
+        Files.write(Paths.get(RESPONSE_FILE), text.getBytes());
     }
 
     // jarsigner
 
-    public static OutputAnalyzer jarsigner(String jar, String alias,
-            List<String> options) throws Throwable {
-        JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jarsigner")
-                .addVMArg("-Duser.language=en")
-                .addVMArg("-Duser.country=US");
-        for (String option : options) {
-            if (option.startsWith("-J")) {
-                launcher.addVMArg(option.substring(2));
-            } else {
-                launcher.addToolArg(option);
-            }
-        }
-        launcher.addToolArg(jar);
-        if (alias != null) {
-            launcher.addToolArg(alias);
-        }
-        return ProcessTools.executeCommand(launcher.getCommand());
+    public static OutputAnalyzer jarsigner(List<String> args)
+            throws Exception {
+        return ProcessTools.executeProcess(
+                getProcessBuilder("jarsigner", args));
     }
 
-    public static OutputAnalyzer jarsigner(String jar, String alias,
-            String options) throws Throwable {
+    // Only call this if there is no white space in every argument
+    public static OutputAnalyzer jarsigner(String args) throws Exception {
 
-        return jarsigner(jar, alias, options.split("\\s+"));
+        return jarsigner(args.split("\\s+"));
     }
 
-    public static OutputAnalyzer jarsigner(String jar, String alias,
-            String... options) throws Throwable {
-
-        return jarsigner(jar, alias, List.of(options));
-    }
-
-    public static OutputAnalyzer sign(String jar, String alias, String... options)
-            throws Throwable {
-
-        return jarsigner(jar, alias,
-                mergeOptions("-J-Djava.security.egd=file:/dev/./urandom", options));
-    }
-
-    public static OutputAnalyzer verify(String jar, String... options)
-            throws Throwable {
-
-        return jarsigner(jar, NO_ALIAS, mergeOptions("-verify", options));
-    }
-
-    // helper methods
-
-    private static List<String> mergeOptions(
-            String firstOption, String... secondPart) {
-
-        return mergeOptions(List.of(firstOption), secondPart);
-    }
-
-    private static List<String> mergeOptions(
-            List<String> firstPart, String... secondPart) {
-
-        List<String> options = new ArrayList<>(firstPart);
-        Collections.addAll(options, secondPart);
-        return options;
+    public static OutputAnalyzer jarsigner(String... args) throws Exception {
+        return jarsigner(List.of(args));
     }
 }
 

@@ -227,7 +227,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     }
 
     private Tree.Kind guessKind(String code) {
-        ParseTask pt = proc.taskFactory.new ParseTask(code);
+        ParseTask pt = proc.taskFactory.parse(code);
         List<? extends Tree> units = pt.units();
         if (units.isEmpty()) {
             return Tree.Kind.BLOCK;

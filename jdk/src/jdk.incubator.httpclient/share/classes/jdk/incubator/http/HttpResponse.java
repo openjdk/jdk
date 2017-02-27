@@ -30,6 +30,8 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import jdk.incubator.http.ResponseProcessors.MultiFile;
 import jdk.incubator.http.ResponseProcessors.MultiProcessorImpl;
+import static jdk.incubator.http.internal.common.Utils.unchecked;
+import static jdk.incubator.http.internal.common.Utils.charsetFrom;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -47,12 +49,15 @@ import java.util.function.Function;
 import javax.net.ssl.SSLParameters;
 
 /**
- * Represents a response to a {@link HttpRequest}. A {@code HttpResponse} is
- * available when the response status code and headers have been received, and
- * typically after the response body has also been received. This depends on
- * the response body handler provided when sending the request. In all cases,
- * the response body handler is invoked before the body is read. This gives
- * applications an opportunity to decide how to handle the body.
+ * Represents a response to a {@link HttpRequest}.
+ * {@Incubating}
+ *
+ * <p>A {@code HttpResponse} is available when the response status code and
+ * headers have been received, and typically after the response body has also
+ * been received. This depends on the response body handler provided when
+ * sending the request. In all cases, the response body handler is invoked
+ * before the body is read. This gives applications an opportunity to decide
+ * how to handle the body.
  *
  * <p> Methods are provided in this class for accessing the response headers,
  * and response body.
@@ -157,12 +162,15 @@ public abstract class HttpResponse<T> {
     public abstract HttpClient.Version version();
 
     /**
-     * A handler for response bodies. This is a function that takes two
-     * parameters: the response status code, and the response headers,
-     * and which returns a {@link BodyProcessor}. The function is always called
-     * just before the response body is read. Its implementation may examine the
-     * status code or headers and must decide, whether to accept the response
-     * body or discard it, and if accepting it, exactly how to handle it.
+     * A handler for response bodies.
+     * {@Incubating}
+     * <p>
+     * This is a function that takes two parameters: the response status code,
+     * and the response headers, and which returns a {@link BodyProcessor}.
+     * The function is always called just before the response body is read. Its
+     * implementation may examine the status code or headers and must decide,
+     * whether to accept the response body or discard it, and if accepting it,
+     * exactly how to handle it.
      * <p>
      * Some pre-defined implementations which do not utilize the status code
      * or headers (meaning the body is always accepted) are defined:
@@ -263,19 +271,6 @@ public abstract class HttpResponse<T> {
             };
         }
 
-        /**
-         * Get the Charset from the Content-encoding header. Defaults to
-         * UTF_8
-         */
-        private static Charset charsetFrom(HttpHeaders headers) {
-            String encoding = headers.firstValue("Content-encoding")
-                    .orElse("UTF_8");
-            try {
-                return Charset.forName(encoding);
-            } catch (IllegalArgumentException e) {
-                return StandardCharsets.UTF_8;
-            }
-        }
 
         /**
          * Returns a {@code BodyHandler<Path>} that returns a
@@ -334,10 +329,6 @@ public abstract class HttpResponse<T> {
                 Path file = Paths.get(directory.toString(), disposition);
                 return BodyProcessor.asFile(file, openOptions);
             };
-        }
-
-        private static UncheckedIOException unchecked(IOException e) {
-            return new UncheckedIOException(e);
         }
 
         /**
@@ -409,10 +400,13 @@ public abstract class HttpResponse<T> {
     }
 
     /**
-     * A processor for response bodies. The object acts as a
-     * {@link Flow.Subscriber}&lt;{@link ByteBuffer}&gt; to the HTTP client implementation
-     * which publishes ByteBuffers containing the response body. The processor
-     * converts the incoming buffers of data to some user-defined object type {@code T}.
+     * A processor for response bodies.
+     * {@Incubating}
+     * <p>
+     * The object acts as a {@link Flow.Subscriber}&lt;{@link ByteBuffer}&gt; to
+     * the HTTP client implementation which publishes ByteBuffers containing the
+     * response body. The processor converts the incoming buffers of data to
+     * some user-defined object type {@code T}.
      * <p>
      * The {@link #getBody()} method returns a {@link CompletionStage}{@code <T>}
      * that provides the response body object. The {@code CompletionStage} must
@@ -539,12 +533,14 @@ public abstract class HttpResponse<T> {
     }
 
     /**
-     * A response processor for a HTTP/2 multi response. A multi response
-     * comprises a main response, and zero or more additional responses. Each
-     * additional response is sent by the server in response to requests that
-     * the server also generates. Additional responses are typically resources
-     * that the server expects the client will need which are related to the
-     * initial request.
+     * A response processor for a HTTP/2 multi response.
+     * {@Incubating}
+     * <p>
+     * A multi response comprises a main response, and zero or more additional
+     * responses. Each additional response is sent by the server in response to
+     * requests that the server also generates. Additional responses are
+     * typically resources that the server expects the client will need which
+     * are related to the initial request.
      * <p>
      * Note. Instead of implementing this interface, applications should consider
      * first using the mechanism (built on this interface) provided by
@@ -732,48 +728,5 @@ public abstract class HttpResponse<T> {
             return asMap(pushHandler, true);
         }
 
-        /**
-         * Returns a {@code MultiProcessor} which writes the response bodies to
-         * files under a given root directory and which returns an aggregate
-         * response map that is a {@code Map<HttpRequest, HttpResponse<Path>>}.
-         * The keyset of the {@code Map} represents the original request and any
-         * additional requests generated by the server. The values are the
-         * responses containing the paths of the destination files. Each file
-         * uses the URI path of the request relative to the destination parent
-         * directorycprovided.
-         *
-         * <p>
-         * All incoming additional requests (push promises) are accepted by this
-         * multi response processor. Errors are effectively ignored and any
-         * failed responses are simply omitted from the result {@code Map}.
-         * Other implementations of {@code MultiProcessor} may handle these
-         * situations.
-         *
-         * <p>
-         * <b>Example usage</b>
-         * <pre>
-         * {@code
-         *    HttpClient client = ..
-         *    HttpRequest request = HttpRequest
-         *               .create(new URI("https://www.foo.com/"))
-         *               .version(Version.HTTP2)
-         *               .GET();
-         *
-         *    Map<HttpRequest, HttpResponse<Path>>> map = client
-         *               .sendAsync(HttpResponse.MultiProcessor.multiFile("/usr/destination"))
-         *               .join();
-         *
-         * }
-         * </pre>
-         * TEMPORARILY REMOVING THIS FROM API. MIGHT NOT BE NEEDED.
-         *
-         * @param destination the destination parent directory of all response
-         * bodies
-         * @return a MultiProcessor
-         */
-        private static MultiProcessor<MultiMapResult<Path>,Path> multiFile(Path destination) {
-            MultiFile mf = new MultiFile(destination);
-            return new MultiProcessorImpl<Path>(mf::handlePush, true);
-        }
     }
 }

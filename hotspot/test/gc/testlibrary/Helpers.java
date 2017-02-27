@@ -31,6 +31,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
 
 public class Helpers {
 
@@ -320,4 +323,16 @@ public class Helpers {
         }
     }
 
+    /**
+     * @return a number formatter instance which prints numbers in a human
+     * readable form, like 9_223_372_036_854_775_807.
+     */
+    public static NumberFormat numberFormatter() {
+        DecimalFormat df = new DecimalFormat();
+        DecimalFormatSymbols dfs = df.getDecimalFormatSymbols();
+        dfs.setGroupingSeparator('_');
+        dfs.setDecimalSeparator('.');
+        df.setDecimalFormatSymbols(dfs);
+        return df;
+    }
 }

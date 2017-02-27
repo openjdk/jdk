@@ -3298,7 +3298,9 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
   // for osr compile, bailout if some requirements are not fulfilled
   if (osr_bci != -1) {
     BlockBegin* osr_block = blm.bci2block()->at(osr_bci);
-    assert(osr_block->is_set(BlockBegin::was_visited_flag),"osr entry must have been visited for osr compile");
+    if (!osr_block->is_set(BlockBegin::was_visited_flag)) {
+      BAILOUT("osr entry must have been visited for osr compile");
+    }
 
     // check if osr entry point has empty stack - we cannot handle non-empty stacks at osr entry points
     if (!osr_block->state()->stack_is_empty()) {

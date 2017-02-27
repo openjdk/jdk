@@ -159,7 +159,7 @@ public class RangeCheckMicroBenchmark {
         final int size       = intArg(args, "size", 1000);
         final Pattern filter = patternArg(args, "filter");
 
-        final ArrayList<Integer> list = new ArrayList<Integer>();
+        final ArrayList<Integer> list = new ArrayList<>();
         final Random rnd = new Random();
         for (int i = 0; i < size; i++)
             list.add(rnd.nextInt());

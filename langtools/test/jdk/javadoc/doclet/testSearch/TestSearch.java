@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8141492 8071982 8141636 8147890
+ * @bug 8141492 8071982 8141636 8147890 8166175 8168965
  * @summary Test the search feature of javadoc.
  * @author bpatel
  * @library ../lib
@@ -47,10 +47,14 @@ public class TestSearch extends JavadocTester {
         checkSearchJS();
         checkFiles(false,
                 "package-search-index.zip",
-                "tag-search-index.zip");
+                "tag-search-index.zip",
+                "package-search-index.js",
+                "tag-search-index.js");
         checkFiles(true,
                 "member-search-index.zip",
-                "type-search-index.zip");
+                "type-search-index.zip",
+                "member-search-index.js",
+                "type-search-index.js");
     }
 
     @Test
@@ -67,7 +71,11 @@ public class TestSearch extends JavadocTester {
                 "member-search-index.zip",
                 "package-search-index.zip",
                 "tag-search-index.zip",
-                "type-search-index.zip");
+                "type-search-index.zip",
+                "member-search-index.js",
+                "package-search-index.js",
+                "tag-search-index.js",
+                "type-search-index.js");
     }
 
     @Test
@@ -84,7 +92,11 @@ public class TestSearch extends JavadocTester {
                 "member-search-index.zip",
                 "package-search-index.zip",
                 "tag-search-index.zip",
-                "type-search-index.zip");
+                "type-search-index.zip",
+                "member-search-index.js",
+                "package-search-index.js",
+                "tag-search-index.js",
+                "type-search-index.js");
     }
 
     @Test
@@ -100,6 +112,10 @@ public class TestSearch extends JavadocTester {
                 "package-search-index.zip",
                 "tag-search-index.zip",
                 "type-search-index.zip",
+                "member-search-index.js",
+                "package-search-index.js",
+                "tag-search-index.js",
+                "type-search-index.js",
                 "index-all.html");
     }
 
@@ -117,7 +133,11 @@ public class TestSearch extends JavadocTester {
                 "member-search-index.zip",
                 "package-search-index.zip",
                 "tag-search-index.zip",
-                "type-search-index.zip");
+                "type-search-index.zip",
+                "member-search-index.js",
+                "package-search-index.js",
+                "tag-search-index.js",
+                "type-search-index.js");
     }
 
     @Test
@@ -133,6 +153,10 @@ public class TestSearch extends JavadocTester {
                 "package-search-index.zip",
                 "tag-search-index.zip",
                 "type-search-index.zip",
+                "member-search-index.js",
+                "package-search-index.js",
+                "tag-search-index.js",
+                "type-search-index.js",
                 "index-all.html");
     }
 
@@ -150,7 +174,11 @@ public class TestSearch extends JavadocTester {
                 "member-search-index.zip",
                 "package-search-index.zip",
                 "tag-search-index.zip",
-                "type-search-index.zip");
+                "type-search-index.zip",
+                "member-search-index.js",
+                "package-search-index.js",
+                "tag-search-index.js",
+                "type-search-index.js");
     }
 
     @Test
@@ -167,7 +195,11 @@ public class TestSearch extends JavadocTester {
                 "member-search-index.zip",
                 "package-search-index.zip",
                 "tag-search-index.zip",
-                "type-search-index.zip");
+                "type-search-index.zip",
+                "member-search-index.js",
+                "package-search-index.js",
+                "tag-search-index.js",
+                "type-search-index.js");
     }
 
     @Test
@@ -184,7 +216,11 @@ public class TestSearch extends JavadocTester {
                 "member-search-index.zip",
                 "package-search-index.zip",
                 "tag-search-index.zip",
-                "type-search-index.zip");
+                "type-search-index.zip",
+                "member-search-index.js",
+                "package-search-index.js",
+                "tag-search-index.js",
+                "type-search-index.js");
     }
 
     @Test
@@ -197,11 +233,15 @@ public class TestSearch extends JavadocTester {
         checkJqueryAndImageFiles(true);
         checkSearchJS();
         checkFiles(false,
-                "tag-search-index.zip");
+                "tag-search-index.zip",
+                "tag-search-index.js");
         checkFiles(true,
                 "member-search-index.zip",
                 "package-search-index.zip",
-                "type-search-index.zip");
+                "type-search-index.zip",
+                "member-search-index.js",
+                "package-search-index.js",
+                "type-search-index.js");
     }
 
     void checkDocLintErrors() {
@@ -446,6 +486,9 @@ public class TestSearch extends JavadocTester {
         checkOutput("search.js", true,
                 "camelCaseRegexp = ($.ui.autocomplete.escapeRegex(request.term)).split(/(?=[A-Z])/).join(\"([a-z0-9_$]*?)\");",
                 "var camelCaseMatcher = new RegExp(\"^\" + camelCaseRegexp);",
-                "camelCaseMatcher.test(item.l)");
+                "camelCaseMatcher.test(item.l)",
+                "var secondaryresult = new Array();",
+                "function nestedName(e) {",
+                "function sortAndConcatResults(a1, a2) {");
     }
 }

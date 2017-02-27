@@ -50,11 +50,13 @@ import java.net.URL;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 import javax.net.ssl.SSLContext;
 import sun.net.www.HeaderParser;
@@ -145,10 +147,63 @@ public class HTTPTestServer extends HTTPTest {
         }
     }
 
+    /**
+     * The HttpServerFactory ensures that the local port used by an HttpServer
+     * previously created by the current test/VM will not get reused by
+     * a subsequent test in the same VM. This is to avoid having the
+     * AuthCache reuse credentials from previous tests - which would
+     * invalidate the assumptions made by the current test on when
+     * the default authenticator should be called.
+     */
+    private static final class HttpServerFactory {
+        private static final int MAX = 10;
+        private static final CopyOnWriteArrayList<String> addresses =
+            new CopyOnWriteArrayList<>();
+        private static HttpServer newHttpServer(HttpProtocolType protocol)
+                throws IOException {
+            switch (protocol) {
+               case HTTP:  return HttpServer.create();
+               case HTTPS: return HttpsServer.create();
+               default: throw new InternalError("Unsupported protocol " + protocol);
+            }
+        }
+        static <T extends HttpServer> T create(HttpProtocolType protocol)
+                throws IOException {
+            final int max = addresses.size() + MAX;
+            final List<HttpServer> toClose = new ArrayList<>();
+            try {
+                for (int i = 1; i <= max; i++) {
+                    HttpServer server = newHttpServer(protocol);
+                    server.bind(new InetSocketAddress("127.0.0.1", 0), 0);
+                    InetSocketAddress address = server.getAddress();
+                    String key = address.toString();
+                    if (addresses.addIfAbsent(key)) {
+                       System.out.println("Server bound to: " + key
+                                          + " after " + i + " attempt(s)");
+                       return (T) server;
+                    }
+                    System.out.println("warning: address " + key
+                                       + " already used. Retrying bind.");
+                    // keep the port bound until we get a port that we haven't
+                    // used already
+                    toClose.add(server);
+                }
+            } finally {
+                // if we had to retry, then close the servers we're not
+                // going to use.
+                for (HttpServer s : toClose) {
+                  try { s.stop(1); } catch (Exception x) { /* ignore */ }
+                }
+            }
+            throw new IOException("Couldn't bind servers after " + max + " attempts: "
+                                  + "addresses used before: " + addresses);
+        }
+    }
+
     static HttpServer createHttpServer(HttpProtocolType protocol) throws IOException {
         switch (protocol) {
-            case HTTP:  return HttpServer.create();
-            case HTTPS: return configure(HttpsServer.create());
+            case HTTP:  return HttpServerFactory.create(protocol);
+            case HTTPS: return configure(HttpServerFactory.create(protocol));
             default: throw new InternalError("Unsupported protocol " + protocol);
         }
     }
@@ -193,7 +248,6 @@ public class HTTPTestServer extends HTTPTest {
         final HttpHandler hh = server.createHandler(schemeType, auth, authType);
         HttpContext ctxt = impl.createContext(path, hh);
         server.configureAuthentication(ctxt, schemeType, auth, authType);
-        impl.bind(new InetSocketAddress("127.0.0.1", 0), 0);
         impl.start();
         return server;
     }
@@ -215,8 +269,6 @@ public class HTTPTestServer extends HTTPTest {
         final HttpHandler hh = server.createHandler(schemeType, auth, authType);
         HttpContext ctxt = impl.createContext(path, hh);
         server.configureAuthentication(ctxt, schemeType, auth, authType);
-
-        impl.bind(new InetSocketAddress("127.0.0.1", 0), 0);
         impl.start();
 
         return server;
@@ -253,7 +305,6 @@ public class HTTPTestServer extends HTTPTest {
         final HttpHandler hh = redirectingServer.create300Handler(locationURL,
                                              HttpAuthType.SERVER, code300);
         impl.createContext("/", hh);
-        impl.bind(new InetSocketAddress("127.0.0.1", 0), 0);
         impl.start();
         return redirectingServer;
     }
