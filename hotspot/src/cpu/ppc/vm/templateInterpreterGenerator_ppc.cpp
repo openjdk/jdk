@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -689,6 +689,10 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
 #endif
   __ sldi(size, size, Interpreter::logStackElementSize);
   __ add(R15_esp, R15_esp, size);
+
+ __ check_and_handle_popframe(R11_scratch1);
+ __ check_and_handle_earlyret(R11_scratch1);
+
   __ dispatch_next(state, step);
   return entry;
 }

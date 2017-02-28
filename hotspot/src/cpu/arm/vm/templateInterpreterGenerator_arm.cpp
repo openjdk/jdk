@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -303,6 +303,9 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
 #ifndef AARCH64
   __ convert_retval_to_tos(state);
 #endif // !AARCH64
+
+ __ check_and_handle_popframe();
+ __ check_and_handle_earlyret();
 
   __ dispatch_next(state, step);
 

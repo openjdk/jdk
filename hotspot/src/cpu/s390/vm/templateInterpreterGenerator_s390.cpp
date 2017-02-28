@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -676,6 +676,10 @@ address TemplateInterpreterGenerator::generate_return_entry_for (TosState state,
   __ z_llgc(size, Address(cache, offset, flags_offset+(sizeof(size_t)-1)));
   __ z_sllg(size, size, Interpreter::logStackElementSize); // Each argument size in bytes.
   __ z_agr(Z_esp, size);                                   // Pop arguments.
+
+  __ check_and_handle_popframe(Z_thread);
+  __ check_and_handle_earlyret(Z_thread);
+
   __ dispatch_next(state, step);
 
   BLOCK_COMMENT("} return_entry");

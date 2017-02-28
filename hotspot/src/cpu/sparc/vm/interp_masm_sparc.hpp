@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,15 +70,15 @@ class InterpreterMacroAssembler: public MacroAssembler {
     bool            check_exception=true
   );
 
-  virtual void check_and_handle_popframe(Register java_thread);
-  virtual void check_and_handle_earlyret(Register java_thread);
-
   // base routine for all dispatches
   void dispatch_base(TosState state, address* table);
 
  public:
   InterpreterMacroAssembler(CodeBuffer* c)
     : MacroAssembler(c) {}
+
+ virtual void check_and_handle_popframe(Register scratch_reg);
+ virtual void check_and_handle_earlyret(Register scratch_reg);
 
   void jump_to_entry(address entry);
 
