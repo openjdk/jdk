@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,15 +53,15 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // Template interpreter specific version of call_VM_helper
   virtual void call_VM_helper(Register oop_result, address entry_point, int number_of_arguments, bool check_exceptions);
 
-  virtual void check_and_handle_popframe();
-  virtual void check_and_handle_earlyret();
-
   // base routine for all dispatches
   typedef enum { DispatchDefault, DispatchNormal } DispatchTableMode;
   void dispatch_base(TosState state, DispatchTableMode table_mode, bool verifyoop = true);
 
  public:
   InterpreterMacroAssembler(CodeBuffer* code);
+
+  virtual void check_and_handle_popframe();
+  virtual void check_and_handle_earlyret();
 
   // Interpreter-specific registers
 #if defined(AARCH64) && defined(ASSERT)

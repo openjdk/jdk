@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -604,14 +604,14 @@ class MacroAssembler : public Assembler {
     bool            check_exception=true    // flag which indicates if exception should be checked
   );
 
+ public:
+  MacroAssembler(CodeBuffer* code) : Assembler(code) {}
+
   // This routine should emit JVMTI PopFrame and ForceEarlyReturn handling code.
   // The implementation is only non-empty for the InterpreterMacroAssembler,
   // as only the interpreter handles and ForceEarlyReturn PopFrame requests.
   virtual void check_and_handle_popframe(Register scratch_reg);
   virtual void check_and_handle_earlyret(Register scratch_reg);
-
- public:
-  MacroAssembler(CodeBuffer* code) : Assembler(code) {}
 
   // Support for NULL-checks
   //

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -374,6 +374,10 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   __ and3(flags, ConstantPoolCacheEntry::parameter_size_mask, parameter_size);  // argument size in words
   __ sll(parameter_size, Interpreter::logStackElementSize, parameter_size);     // each argument size in bytes
   __ add(Lesp, parameter_size, Lesp);                                           // pop arguments
+
+  __ check_and_handle_popframe(Gtemp);
+  __ check_and_handle_earlyret(Gtemp);
+
   __ dispatch_next(state, step);
 
   return entry;
