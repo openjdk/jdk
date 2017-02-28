@@ -39,7 +39,7 @@ import jdk.test.lib.Asserts;
 /*
  * @test
  * @library /test/lib
- * @requires vm.flavor == "server" & !vm.emulatedClient
+ * @requires vm.flavor == "server" & !vm.emulatedClient & !(vm.opt.TieredStopAtLevel == 1)
  * @build jdk.test.lib.apps.*
  * @run main/othervm TestPrintMdo
  */
