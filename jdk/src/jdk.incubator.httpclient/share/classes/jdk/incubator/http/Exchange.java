@@ -133,11 +133,13 @@ final class Exchange<T> {
     }
 
     public T readBody(HttpResponse.BodyHandler<T> responseHandler) throws IOException {
-        return exchImpl.readBody(responseHandler, true);
+        // The connection will not be returned to the pool in the case of WebSocket
+        return exchImpl.readBody(responseHandler, !request.isWebSocket());
     }
 
     public CompletableFuture<T> readBodyAsync(HttpResponse.BodyHandler<T> handler) {
-        return exchImpl.readBodyAsync(handler, true, parentExecutor);
+        // The connection will not be returned to the pool in the case of WebSocket
+        return exchImpl.readBodyAsync(handler, !request.isWebSocket(), parentExecutor);
     }
 
     public void cancel() {
