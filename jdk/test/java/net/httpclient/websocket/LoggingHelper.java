@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,18 @@
  * questions.
  */
 
-module m3 {
-    requires m4;
-    exports p3;
+import java.io.File;
+
+public final class LoggingHelper {
+
+    /*
+     * I wish we had a support for java.util.logging in jtreg similar to what we
+     * have for security policy files:
+     *
+     *     @run main/othervm/jul=logging.properties ClassUnderTest
+     */
+    public static void setupLogging() {
+        String path = System.getProperty("test.src") + File.separator + "logging.properties";
+        System.setProperty("java.util.logging.config.file", path);
+    }
 }
