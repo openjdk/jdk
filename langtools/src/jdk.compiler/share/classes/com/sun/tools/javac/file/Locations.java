@@ -963,7 +963,7 @@ public class Locations {
         void add(ModuleLocationHandler h) {
             nameMap.put(h.moduleName, h);
             for (Path p : h.searchPath) {
-                pathMap.put(p.toAbsolutePath().normalize(), h);
+                pathMap.put(normalize(p), h);
             }
         }
 
@@ -977,7 +977,7 @@ public class Locations {
                 }
             }
             for (Path p : h.searchPath) {
-                pathMap.put(p.toAbsolutePath().normalize(), h);
+                pathMap.put(normalize(p), h);
             }
         }
 
