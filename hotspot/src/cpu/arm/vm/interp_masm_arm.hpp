@@ -349,7 +349,13 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void trace_state(const char* msg) PRODUCT_RETURN;
 
-  void get_method_counters(Register method, Register Rcounters, Label& skip);
+void get_method_counters(Register method,
+                         Register Rcounters,
+                         Label& skip,
+                         bool saveRegs = false,
+                         Register reg1 = noreg,
+                         Register reg2 = noreg,
+                         Register reg3 = noreg);
 };
 
 #endif // CPU_ARM_VM_INTERP_MASM_ARM_HPP
