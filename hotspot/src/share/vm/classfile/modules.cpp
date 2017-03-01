@@ -649,39 +649,6 @@ jobject Modules::get_module(jclass clazz, TRAPS) {
   return JNIHandles::make_local(THREAD, module);
 }
 
-
-jobject Modules::get_module_by_package_name(jobject loader, const char* package_name, TRAPS) {
-  ResourceMark rm(THREAD);
-  assert(ModuleEntryTable::javabase_defined(),
-         "Attempt to call get_module_from_pkg before " JAVA_BASE_NAME " is defined");
-
-  if (package_name == NULL) {
-    THROW_MSG_(vmSymbols::java_lang_NullPointerException(),
-               "package is null", JNI_FALSE);
-  }
-
-  Handle h_loader (THREAD, JNIHandles::resolve(loader));
-  // Check that loader is a subclass of java.lang.ClassLoader.
-  if (loader != NULL && !java_lang_ClassLoader::is_subclass(h_loader->klass())) {
-    THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
-               "Class loader is not a subclass of java.lang.ClassLoader", JNI_FALSE);
-  }
-
-  if (strlen(package_name) == 0) {
-    // Return the unnamed module
-    ModuleEntryTable* module_table = get_module_entry_table(h_loader, CHECK_NULL);
-    if (NULL == module_table) return NULL;
-    const ModuleEntry* const unnamed_module = module_table->unnamed_module();
-    return JNIHandles::make_local(THREAD, JNIHandles::resolve(unnamed_module->module()));
-
-  } else {
-    TempNewSymbol package_sym = SymbolTable::new_symbol(package_name, CHECK_NULL);
-    return get_module(package_sym, h_loader, CHECK_NULL);
-  }
-  return NULL;
-}
-
-
 jobject Modules::get_named_module(Handle h_loader, const char* package_name, TRAPS) {
   assert(ModuleEntryTable::javabase_defined(),
          "Attempt to call get_named_module before " JAVA_BASE_NAME " is defined");
