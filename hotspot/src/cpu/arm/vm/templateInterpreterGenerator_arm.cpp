@@ -1401,7 +1401,13 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 #ifdef AARCH64
   // setup RmaxStack
   __ ldrh(RmaxStack, Address(RconstMethod, ConstMethod::max_stack_offset()));
-  __ add(RmaxStack, RmaxStack, MAX2(1, Method::extra_stack_entries())); // reserve slots for exception handler and JSR292 appendix argument
+  // We have to add extra reserved slots to max_stack. There are 3 users of the extra slots,
+  // none of which are at the same time, so we just need to make sure there is enough room
+  // for the biggest user:
+  //   -reserved slot for exception handler
+  //   -reserved slots for JSR292. Method::extra_stack_entries() is the size.
+  //   -3 reserved slots so get_method_counters() can save some registers before call_VM().
+  __ add(RmaxStack, RmaxStack, MAX2(3, Method::extra_stack_entries()));
 #endif // AARCH64
 
   // see if we've got enough room on the stack for locals plus overhead.
