@@ -98,15 +98,14 @@ public class Robot {
 
     /**
      * Creates a Robot for the given screen device. Coordinates passed
-     * to Robot method calls like mouseMove and createScreenCapture will
-     * be interpreted as being in the same coordinate system as the
-     * specified screen. Note that depending on the platform configuration,
-     * multiple screens may either:
+     * to Robot method calls like mouseMove, getPixelColor and
+     * createScreenCapture will be interpreted as being in the same coordinate
+     * system as the specified screen. Note that depending on the platform
+     * configuration, multiple screens may either:
      * <ul>
      * <li>share the same coordinate system to form a combined virtual screen</li>
      * <li>use different coordinate systems to act as independent screens</li>
      * </ul>
-     * This constructor is meant for the latter case.
      * <p>
      * If screen devices are reconfigured such that the coordinate system is
      * affected, the behavior of existing Robot objects is undefined.
