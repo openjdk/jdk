@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.security.Principal;
 import java.security.cert.*;
 import java.util.*;
 import javax.security.auth.x500.X500Principal;
+import javax.net.ssl.SNIHostName;
 
 import sun.net.util.IPAddressUtil;
 import sun.security.ssl.ClientKeyExchangeService;
@@ -201,6 +202,15 @@ public class HostnameChecker {
     private void matchDNS(String expectedName, X509Certificate cert,
                           boolean chainsToPublicCA)
             throws CertificateException {
+        // Check that the expected name is a valid domain name.
+        try {
+            // Using the checking implemented in SNIHostName
+            SNIHostName sni = new SNIHostName(expectedName);
+        } catch (IllegalArgumentException iae) {
+            throw new CertificateException(
+                "Illegal given domain name: " + expectedName, iae);
+        }
+
         Collection<List<?>> subjAltNames = cert.getSubjectAlternativeNames();
         if (subjAltNames != null) {
             boolean foundDNS = false;
@@ -277,6 +287,19 @@ public class HostnameChecker {
         if (hasIllegalWildcard(name, template, chainsToPublicCA)) {
             return false;
         }
+
+        // check the validity of the domain name template.
+        try {
+            // Replacing wildcard character '*' with 'x' so as to check
+            // the domain name template validity.
+            //
+            // Using the checking implemented in SNIHostName
+            SNIHostName sni = new SNIHostName(template.replace('*', 'x'));
+        } catch (IllegalArgumentException iae) {
+            // It would be nice to add debug log if not matching.
+            return false;
+        }
+
         if (checkType == TYPE_TLS) {
             return matchAllWildcards(name, template);
         } else if (checkType == TYPE_LDAP) {
