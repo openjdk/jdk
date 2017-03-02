@@ -339,12 +339,13 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
         return graphicsConfig.getColorModel (transparency);
     }
 
+    @Override
     public ColorModel getColorModel() {
         if (graphicsConfig != null) {
             return graphicsConfig.getColorModel ();
         }
         else {
-            return XToolkit.getStaticColorModel();
+            return Toolkit.getDefaultToolkit().getColorModel();
         }
     }
 
