@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1240,25 +1240,28 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ str(__ zero_register(Rtemp), Address(Rthread, JavaThread::pending_jni_exception_check_fn_offset()));
   }
 
-  // Unbox oop result, e.g. JNIHandles::resolve result if it's an oop.
-  {
-    Label Lnot_oop;
+  // Unbox if the result is non-zero object
 #ifdef AARCH64
+  {
+    Label L, Lnull;
     __ mov_slow(Rtemp, AbstractInterpreter::result_handler(T_OBJECT));
     __ cmp(Rresult_handler, Rtemp);
-    __ b(Lnot_oop, ne);
-#else // !AARCH64
-    // For ARM32, Rresult_handler is -1 for oop result, 0 otherwise.
-    __ cbz(Rresult_handler, Lnot_oop);
-#endif // !AARCH64
-    Register value = AARCH64_ONLY(Rsaved_result) NOT_AARCH64(Rsaved_result_lo);
-    __ resolve_jobject(value,   // value
-                       Rtemp,   // tmp1
-                       R1_tmp); // tmp2
-    // Store resolved result in frame for GC visibility.
-    __ str(value, Address(FP, frame::interpreter_frame_oop_temp_offset * wordSize));
-    __ bind(Lnot_oop);
+    __ b(L, ne);
+    __ cbz(Rsaved_result, Lnull);
+    __ ldr(Rsaved_result, Address(Rsaved_result));
+    __ bind(Lnull);
+    // Store oop on the stack for GC
+    __ str(Rsaved_result, Address(FP, frame::interpreter_frame_oop_temp_offset * wordSize));
+    __ bind(L);
   }
+#else
+  __ tst(Rsaved_result_lo, Rresult_handler);
+  __ ldr(Rsaved_result_lo, Address(Rsaved_result_lo), ne);
+
+  // Store oop on the stack for GC
+  __ cmp(Rresult_handler, 0);
+  __ str(Rsaved_result_lo, Address(FP, frame::interpreter_frame_oop_temp_offset * wordSize), ne);
+#endif // AARCH64
 
 #ifdef AARCH64
   // Restore SP (drop native parameters area), to keep SP in sync with extended_sp in frame

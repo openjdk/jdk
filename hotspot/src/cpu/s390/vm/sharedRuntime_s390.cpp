@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2272,9 +2272,13 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
   __ reset_last_Java_frame();
 
-  // Unpack oop result, e.g. JNIHandles::resolve result.
+  // Unpack oop result
   if (ret_type == T_OBJECT || ret_type == T_ARRAY) {
-    __ resolve_jobject(Z_RET, /* tmp1 */ Z_R13, /* tmp2 */ Z_R7);
+    NearLabel L;
+    __ compare64_and_branch(Z_RET, (RegisterOrConstant)0L, Assembler::bcondEqual, L);
+    __ z_lg(Z_RET, 0, Z_RET);
+    __ bind(L);
+    __ verify_oop(Z_RET);
   }
 
   if (CheckJNICalls) {

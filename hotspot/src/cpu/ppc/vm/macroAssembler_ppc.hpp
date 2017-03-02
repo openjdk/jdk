@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -648,8 +648,6 @@ class MacroAssembler: public Assembler {
   // GC barrier support.
   void card_write_barrier_post(Register Rstore_addr, Register Rnew_val, Register Rtmp);
   void card_table_write(jbyte* byte_map_base, Register Rtmp, Register Robj);
-
-  void resolve_jobject(Register value, Register tmp1, Register tmp2, bool needs_frame);
 
 #if INCLUDE_ALL_GCS
   // General G1 pre-barrier generator.

@@ -726,8 +726,6 @@ class MacroAssembler: public Assembler {
   // Write to card table for modification at store_addr - register is destroyed afterwards.
   void card_write_barrier_post(Register store_addr, Register tmp);
 
-  void resolve_jobject(Register value, Register tmp1, Register tmp2);
-
 #if INCLUDE_ALL_GCS
   // General G1 pre-barrier generator.
   // Purpose: record the previous value if it is not null.
