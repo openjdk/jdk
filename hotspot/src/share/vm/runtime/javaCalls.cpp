@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -328,9 +328,9 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
 // Verify the arguments
 
   if (CheckJNICalls)  {
-    args->verify(method, result->get_type());
+    args->verify(method, result->get_type(), thread);
   }
-  else debug_only(args->verify(method, result->get_type()));
+  else debug_only(args->verify(method, result->get_type(), thread));
 #if INCLUDE_JVMCI
   }
 #else
@@ -442,43 +442,12 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
 //--------------------------------------------------------------------------------------
 // Implementation of JavaCallArguments
 
-inline bool is_value_state_indirect_oop(uint state) {
-  assert(state != JavaCallArguments::value_state_oop,
-         "Checking for handles after removal");
-  assert(state < JavaCallArguments::value_state_limit,
-         "Invalid value state %u", state);
-  return state != JavaCallArguments::value_state_primitive;
-}
-
-inline oop resolve_indirect_oop(intptr_t value, uint state) {
-  switch (state) {
-  case JavaCallArguments::value_state_handle:
-  {
-    oop* ptr = reinterpret_cast<oop*>(value);
-    return Handle::raw_resolve(ptr);
-  }
-
-  case JavaCallArguments::value_state_jobject:
-  {
-    jobject obj = reinterpret_cast<jobject>(value);
-    return JNIHandles::resolve(obj);
-  }
-
-  default:
-    ShouldNotReachHere();
-    return NULL;
-  }
-}
-
 intptr_t* JavaCallArguments::parameters() {
   // First convert all handles to oops
   for(int i = 0; i < _size; i++) {
-    uint state = _value_state[i];
-    assert(state != value_state_oop, "Multiple handle conversions");
-    if (is_value_state_indirect_oop(state)) {
-      oop obj = resolve_indirect_oop(_value[i], state);
-      _value[i] = cast_from_oop<intptr_t>(obj);
-      _value_state[i] = value_state_oop;
+    if (_is_oop[i]) {
+      // Handle conversion
+      _value[i] = cast_from_oop<intptr_t>(Handle::raw_resolve((oop *)_value[i]));
     }
   }
   // Return argument vector
@@ -488,42 +457,30 @@ intptr_t* JavaCallArguments::parameters() {
 
 class SignatureChekker : public SignatureIterator {
  private:
-   int _pos;
+   bool *_is_oop;
+   int   _pos;
    BasicType _return_type;
-   u_char* _value_state;
-   intptr_t* _value;
+   intptr_t*   _value;
+   Thread* _thread;
 
  public:
   bool _is_return;
 
-  SignatureChekker(Symbol* signature,
-                   BasicType return_type,
-                   bool is_static,
-                   u_char* value_state,
-                   intptr_t* value) :
-    SignatureIterator(signature),
-    _pos(0),
-    _return_type(return_type),
-    _value_state(value_state),
-    _value(value),
-    _is_return(false)
-  {
+  SignatureChekker(Symbol* signature, BasicType return_type, bool is_static, bool* is_oop, intptr_t* value, Thread* thread) : SignatureIterator(signature) {
+    _is_oop = is_oop;
+    _is_return = false;
+    _return_type = return_type;
+    _pos = 0;
+    _value = value;
+    _thread = thread;
+
     if (!is_static) {
       check_value(true); // Receiver must be an oop
     }
   }
 
   void check_value(bool type) {
-    uint state = _value_state[_pos++];
-    if (type) {
-      guarantee(is_value_state_indirect_oop(state),
-                "signature does not match pushed arguments: %u at %d",
-                state, _pos - 1);
-    } else {
-      guarantee(state == JavaCallArguments::value_state_primitive,
-                "signature does not match pushed arguments: %u at %d",
-                state, _pos - 1);
-    }
+    guarantee(_is_oop[_pos++] == type, "signature does not match pushed arguments");
   }
 
   void check_doing_return(bool state) { _is_return = state; }
@@ -558,20 +515,24 @@ class SignatureChekker : public SignatureIterator {
       return;
     }
 
-    intptr_t v = _value[_pos];
-    if (v != 0) {
-      // v is a "handle" referring to an oop, cast to integral type.
-      // There shouldn't be any handles in very low memory.
-      guarantee((size_t)v >= (size_t)os::vm_page_size(),
-                "Bad JNI oop argument %d: " PTR_FORMAT, _pos, v);
-      // Verify the pointee.
-      oop vv = resolve_indirect_oop(v, _value_state[_pos]);
-      guarantee(vv->is_oop_or_null(true),
-                "Bad JNI oop argument %d: " PTR_FORMAT " -> " PTR_FORMAT,
-                _pos, v, p2i(vv));
+    // verify handle and the oop pointed to by handle
+    int p = _pos;
+    bool bad = false;
+    // If argument is oop
+    if (_is_oop[p]) {
+      intptr_t v = _value[p];
+      if (v != 0 ) {
+        size_t t = (size_t)v;
+        bad = (t < (size_t)os::vm_page_size() ) || !Handle::raw_resolve((oop *)v)->is_oop_or_null(true);
+        if (CheckJNICalls && bad) {
+          ReportJNIFatalError((JavaThread*)_thread, "Bad JNI oop argument");
+        }
+      }
+      // for the regular debug case.
+      assert(!bad, "Bad JNI oop argument");
     }
 
-    check_value(true);          // Verify value state.
+    check_value(true);
   }
 
   void do_bool()                       { check_int(T_BOOLEAN);       }
@@ -588,7 +549,8 @@ class SignatureChekker : public SignatureIterator {
 };
 
 
-void JavaCallArguments::verify(const methodHandle& method, BasicType return_type) {
+void JavaCallArguments::verify(const methodHandle& method, BasicType return_type,
+  Thread *thread) {
   guarantee(method->size_of_parameters() == size_of_parameters(), "wrong no. of arguments pushed");
 
   // Treat T_OBJECT and T_ARRAY as the same
@@ -597,11 +559,7 @@ void JavaCallArguments::verify(const methodHandle& method, BasicType return_type
   // Check that oop information is correct
   Symbol* signature = method->signature();
 
-  SignatureChekker sc(signature,
-                      return_type,
-                      method->is_static(),
-                      _value_state,
-                      _value);
+  SignatureChekker sc(signature, return_type, method->is_static(),_is_oop, _value, thread);
   sc.iterate_parameters();
   sc.check_doing_return(true);
   sc.iterate_returntype();
