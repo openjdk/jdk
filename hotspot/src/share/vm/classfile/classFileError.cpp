@@ -68,6 +68,16 @@ void ClassFileParser::classfile_parse_error(const char* msg,
                      msg, index, name, _class_name->as_C_string());
 }
 
+void ClassFileParser::classfile_parse_error(const char* msg,
+                                            const char* name,
+                                            const char* signature,
+                                            TRAPS) const {
+  assert(_class_name != NULL, "invariant");
+  ResourceMark rm(THREAD);
+  Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::java_lang_ClassFormatError(),
+                     msg, name, signature, _class_name->as_C_string());
+}
+
 PRAGMA_DIAG_POP
 
 void StackMapStream::stackmap_format_error(const char* msg, TRAPS) {
