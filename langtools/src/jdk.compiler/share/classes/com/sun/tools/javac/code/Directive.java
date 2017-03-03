@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,7 @@ import java.util.EnumSet;
 import java.util.Set;
 
 import javax.lang.model.element.ModuleElement;
-import javax.lang.model.element.PackageElement;
-import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.ModuleElement.DirectiveVisitor;
 
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
@@ -138,6 +137,11 @@ public abstract class Directive implements ModuleElement.Directive {
             else
                 return "Exports[" + packge + ":" + modules + "]";
         }
+
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+        public <R, P> R accept(DirectiveVisitor<R, P> v, P p) {
+            return v.visitExports(this, p);
+        }
     }
 
     /** Flags for OpensDirective. */
@@ -204,6 +208,11 @@ public abstract class Directive implements ModuleElement.Directive {
             else
                 return "Opens[" + packge + ":" + modules + "]";
         }
+
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+        public <R, P> R accept(DirectiveVisitor<R, P> v, P p) {
+            return v.visitOpens(this, p);
+        }
     }
 
     /**
@@ -237,6 +246,11 @@ public abstract class Directive implements ModuleElement.Directive {
         @Override
         public String toString() {
             return "Provides[" + service + "," + impls + "]";
+        }
+
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+        public <R, P> R accept(DirectiveVisitor<R, P> v, P p) {
+            return v.visitProvides(this, p);
         }
 
         // TODO: delete?
@@ -297,6 +311,11 @@ public abstract class Directive implements ModuleElement.Directive {
         public String toString() {
             return "Requires[" + flags + "," + module + "]";
         }
+
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+        public <R, P> R accept(DirectiveVisitor<R, P> v, P p) {
+            return v.visitRequires(this, p);
+        }
     }
 
     /**
@@ -323,6 +342,11 @@ public abstract class Directive implements ModuleElement.Directive {
         @Override
         public String toString() {
             return "Uses[" + service + "]";
+        }
+
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+        public <R, P> R accept(DirectiveVisitor<R, P> v, P p) {
+            return v.visitUses(this, p);
         }
 
         // TODO: delete?
