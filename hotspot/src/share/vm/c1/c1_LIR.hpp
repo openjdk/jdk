@@ -613,7 +613,7 @@ class LIR_OprFact: public AllStatic {
   // Platform dependant.
   static LIR_Opr double_fpu(int reg1, int reg2 = -1 /*fnoreg*/);
 
-#ifdef __SOFTFP__
+#ifdef ARM32
   static LIR_Opr single_softfp(int reg) {
     return (LIR_Opr)(intptr_t)((reg  << LIR_OprDesc::reg1_shift) |
                                LIR_OprDesc::float_type           |
@@ -627,7 +627,7 @@ class LIR_OprFact: public AllStatic {
                                LIR_OprDesc::cpu_register         |
                                LIR_OprDesc::double_size);
   }
-#endif // __SOFTFP__
+#endif // ARM32
 
 #if defined(X86)
   static LIR_Opr single_xmm(int reg) {
