@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,24 +108,24 @@ public final class ImageLocationWriter extends ImageLocation {
         int hash = seed;
 
         if (getModuleOffset() != 0) {
-            hash = ImageStringsReader.hashCode("/", hash);
-            hash = ImageStringsReader.hashCode(getModule(), hash);
-            hash = ImageStringsReader.hashCode("/", hash);
+            hash = ImageStringsReader.unmaskedHashCode("/", hash);
+            hash = ImageStringsReader.unmaskedHashCode(getModule(), hash);
+            hash = ImageStringsReader.unmaskedHashCode("/", hash);
         }
 
         if (getParentOffset() != 0) {
-            hash = ImageStringsReader.hashCode(getParent(), hash);
-            hash = ImageStringsReader.hashCode("/", hash);
+            hash = ImageStringsReader.unmaskedHashCode(getParent(), hash);
+            hash = ImageStringsReader.unmaskedHashCode("/", hash);
         }
 
-        hash = ImageStringsReader.hashCode(getBase(), hash);
+        hash = ImageStringsReader.unmaskedHashCode(getBase(), hash);
 
         if (getExtensionOffset() != 0) {
-            hash = ImageStringsReader.hashCode(".", hash);
-            hash = ImageStringsReader.hashCode(getExtension(), hash);
+            hash = ImageStringsReader.unmaskedHashCode(".", hash);
+            hash = ImageStringsReader.unmaskedHashCode(getExtension(), hash);
         }
 
-        return hash;
+        return hash & ImageStringsReader.POSITIVE_MASK;
     }
 
     @Override
