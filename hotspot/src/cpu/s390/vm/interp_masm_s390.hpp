@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,6 +115,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void get_cache_entry_pointer_at_bcp(Register cache, Register tmp, int bcp_offset, size_t index_size = sizeof(u2));
   void get_cache_index_at_bcp(Register index, int bcp_offset, size_t index_size = sizeof(u2));
   void load_resolved_reference_at_index(Register result, Register index);
+  // load cpool->resolved_klass_at(index)
+  void load_resolved_klass_at_offset(Register cpool, Register offset, Register iklass);
 
   // Pop topmost element from stack. It just disappears. Useful if
   // consumed previously by access via stackTop().

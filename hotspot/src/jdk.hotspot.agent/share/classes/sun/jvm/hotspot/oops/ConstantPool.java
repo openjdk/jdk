@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,8 +84,6 @@ public class ConstantPool extends Metadata implements ClassConstants {
     cache       = type.getAddressField("_cache");
     poolHolder  = new MetadataField(type.getAddressField("_pool_holder"), 0);
     length      = new CIntField(type.getCIntegerField("_length"), 0);
-    resolvedReferences      = type.getAddressField("_resolved_references");
-    referenceMap = type.getAddressField("_reference_map");
     headerSize  = type.getSize();
     elementSize = 0;
     // fetch constants:
@@ -105,8 +103,6 @@ public class ConstantPool extends Metadata implements ClassConstants {
   private static AddressField cache;
   private static MetadataField poolHolder;
   private static CIntField length; // number of elements in oop
-  private static AddressField  resolvedReferences;
-  private static AddressField  referenceMap;
 
   private static long headerSize;
   private static long elementSize;
@@ -124,17 +120,11 @@ public class ConstantPool extends Metadata implements ClassConstants {
   public InstanceKlass     getPoolHolder() { return (InstanceKlass)poolHolder.getValue(this); }
   public int               getLength()     { return (int)length.getValue(getAddress()); }
   public Oop               getResolvedReferences() {
-    Address handle = resolvedReferences.getValue(getAddress());
-    if (handle != null) {
-      // Load through the handle
-      OopHandle refs = handle.getOopHandleAt(0);
-      return VM.getVM().getObjectHeap().newOop(refs);
-    }
-    return null;
+    return getCache().getResolvedReferences();
   }
 
   public U2Array referenceMap() {
-    return new U2Array(referenceMap.getValue(getAddress()));
+    return getCache().referenceMap();
   }
 
   public int objectToCPIndex(int index) {

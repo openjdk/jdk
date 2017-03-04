@@ -141,6 +141,9 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // Load object from cpool->resolved_references(*bcp+1)
   void load_resolved_reference_at_index(Register result, Register tmp);
 
+  // load cpool->resolved_klass_at(index); Rtemp is corrupted upon return
+  void load_resolved_klass_at_offset(Register Rcpool, Register Rindex, Register Rklass);
+
   void store_check_part1(Register card_table_base);                // Sets card_table_base register.
   void store_check_part2(Register obj, Register card_table_base, Register tmp);
 

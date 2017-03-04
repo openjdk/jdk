@@ -94,11 +94,14 @@ void Rewriter::make_constant_pool_cache(TRAPS) {
                                   _invokedynamic_references_map, CHECK);
 
   // initialize object cache in constant pool
+  _pool->set_cache(cache);
+  cache->set_constant_pool(_pool());
+
+  // _resolved_references is stored in pool->cache(), so need to be done after
+  // the above lines.
   _pool->initialize_resolved_references(loader_data, _resolved_references_map,
                                         _resolved_reference_limit,
                                         CHECK);
-  _pool->set_cache(cache);
-  cache->set_constant_pool(_pool());
 }
 
 

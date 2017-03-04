@@ -404,6 +404,13 @@ class ConstantPoolCache: public MetaspaceObj {
   int             _length;
   ConstantPool*   _constant_pool;          // the corresponding constant pool
 
+  // The following fields need to be modified at runtime, so they cannot be
+  // stored in the ConstantPool, which is read-only.
+  // Array of resolved objects from the constant pool and map from resolved
+  // object index to original constant pool index
+  jobject              _resolved_references;
+  Array<u2>*           _reference_map;
+
   // Sizing
   debug_only(friend class ClassVerifier;)
 
@@ -433,6 +440,15 @@ class ConstantPoolCache: public MetaspaceObj {
   bool is_constantPoolCache() const { return true; }
 
   int length() const                             { return _length; }
+
+  jobject resolved_references()           { return _resolved_references; }
+  void set_resolved_references(jobject s) { _resolved_references = s; }
+  Array<u2>* reference_map() const        { return _reference_map; }
+  void set_reference_map(Array<u2>* o)    { _reference_map = o; }
+
+  // Assembly code support
+  static int resolved_references_offset_in_bytes() { return offset_of(ConstantPoolCache, _resolved_references); }
+
  private:
   void set_length(int length)                    { _length = length; }
 

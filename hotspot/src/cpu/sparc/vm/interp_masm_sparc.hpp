@@ -196,6 +196,9 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // load cpool->resolved_references(index);
   void load_resolved_reference_at_index(Register result, Register index);
 
+  // load cpool->resolved_klass_at(index)
+  void load_resolved_klass_at_offset(Register Rcpool, Register Roffset, Register Rklass);
+
   // common code
 
   void field_offset_at(int n, Register tmp, Register dest, Register base);

@@ -123,6 +123,11 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // load cpool->resolved_references(index);
   void load_resolved_reference_at_index(Register result, Register index);
 
+  // load cpool->resolved_klass_at(index)
+  void load_resolved_klass_at_index(Register cpool,  // the constant pool (corrupted on return)
+                                    Register index,  // the constant pool index (corrupted on return)
+                                    Register klass); // contains the Klass on return
+
   NOT_LP64(void f2ieee();)        // truncate ftos to 32bits
   NOT_LP64(void d2ieee();)        // truncate dtos to 64bits
 

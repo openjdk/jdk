@@ -128,7 +128,7 @@ public class LimitSharedSizes {
 
         // test with sizes which just meet the minimum required sizes
         // the following tests also attempt to use the shared archive
-        new SharedSizeTestData(Region.RO, Platform.is64bit() ? "10M":"9M", Result.VALID_ARCHIVE),
+        new SharedSizeTestData(Region.RO, Platform.is64bit() ? "14M":"9M", Result.VALID_ARCHIVE),
         new SharedSizeTestData(Region.RW, Platform.is64bit() ? "12M":"7M", Result.VALID_ARCHIVE),
         new SharedSizeTestData(Region.MD, Platform.is64bit() ? "4M":"2M", Result.VALID_ARCHIVE),
         new SharedSizeTestData(Region.MC, "120k", Result.VALID_ARCHIVE),

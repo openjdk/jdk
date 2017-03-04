@@ -755,12 +755,31 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
   sll(index, LogBytesPerHeapOop, tmp);
   get_constant_pool(result);
   // load pointer for resolved_references[] objArray
-  ld_ptr(result, ConstantPool::resolved_references_offset_in_bytes(), result);
+  ld_ptr(result, ConstantPool::cache_offset_in_bytes(), result);
+  ld_ptr(result, ConstantPoolCache::resolved_references_offset_in_bytes(), result);
   // JNIHandles::resolve(result)
   ld_ptr(result, 0, result);
   // Add in the index
   add(result, tmp, result);
   load_heap_oop(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT), result);
+}
+
+
+// load cpool->resolved_klass_at(index)
+void InterpreterMacroAssembler::load_resolved_klass_at_offset(Register Rcpool,
+                                           Register Roffset, Register Rklass) {
+  // int value = *this_cp->int_at_addr(which);
+  // int resolved_klass_index = extract_low_short_from_int(value);
+  //
+  // Because SPARC is big-endian, the low_short is at (cpool->int_at_addr(which) + 2 bytes)
+  add(Roffset, Rcpool, Roffset);
+  lduh(Roffset, sizeof(ConstantPool) + 2, Roffset);  // Roffset = resolved_klass_index
+
+  Register Rresolved_klasses = Rklass;
+  ld_ptr(Rcpool, ConstantPool::resolved_klasses_offset_in_bytes(), Rresolved_klasses);
+  sll(Roffset, LogBytesPerWord, Roffset);
+  add(Roffset, Array<Klass*>::base_offset_in_bytes(), Roffset);
+  ld_ptr(Rresolved_klasses, Roffset, Rklass);
 }
 
 

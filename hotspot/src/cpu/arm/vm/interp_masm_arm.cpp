@@ -298,7 +298,8 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
 
   Register cache = result;
   // load pointer for resolved_references[] objArray
-  ldr(cache, Address(result, ConstantPool::resolved_references_offset_in_bytes()));
+  ldr(cache, Address(result, ConstantPool::cache_offset_in_bytes()));
+  ldr(cache, Address(result, ConstantPoolCache::resolved_references_offset_in_bytes()));
   // JNIHandles::resolve(result)
   ldr(cache, Address(cache, 0));
   // Add in the index
@@ -306,6 +307,15 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
   // word index to byte offset. Since this is a java object, it can be compressed
   add(cache, cache, AsmOperand(index, lsl, LogBytesPerHeapOop));
   load_heap_oop(result, Address(cache, arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
+}
+
+void InterpreterMacroAssembler::load_resolved_klass_at_offset(
+                                           Register Rcpool, Register Rindex, Register Rklass) {
+  add(Rtemp, Rcpool, AsmOperand(Rindex, lsl, LogBytesPerWord));
+  ldrh(Rtemp, Address(Rtemp, sizeof(ConstantPool))); // Rtemp = resolved_klass_index
+  ldr(Rklass, Address(Rcpool,  ConstantPool::resolved_klasses_offset_in_bytes())); // Rklass = cpool->_resolved_klasses
+  add(Rklass, Rklass, AsmOperand(Rtemp, lsl, LogBytesPerWord));
+  ldr(Rklass, Address(Rklass, Array<Klass*>::base_offset_in_bytes()));
 }
 
 // Generate a subtype check: branch to not_subtype if sub_klass is

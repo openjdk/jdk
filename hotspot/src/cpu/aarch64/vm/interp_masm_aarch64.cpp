@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -270,12 +270,22 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
 
   get_constant_pool(result);
   // load pointer for resolved_references[] objArray
-  ldr(result, Address(result, ConstantPool::resolved_references_offset_in_bytes()));
+  ldr(result, Address(result, ConstantPool::cache_offset_in_bytes()));
+  ldr(result, Address(result, ConstantPoolCache::resolved_references_offset_in_bytes()));
   // JNIHandles::resolve(obj);
   ldr(result, Address(result, 0));
   // Add in the index
   add(result, result, tmp);
   load_heap_oop(result, Address(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
+}
+
+void InterpreterMacroAssembler::load_resolved_klass_at_offset(
+                             Register cpool, Register index, Register klass, Register temp) {
+  add(temp, cpool, index, LSL, LogBytesPerWord);
+  ldrh(temp, Address(temp, sizeof(ConstantPool))); // temp = resolved_klass_index
+  ldr(klass, Address(cpool,  ConstantPool::resolved_klasses_offset_in_bytes())); // klass = cpool->_resolved_klasses
+  add(klass, klass, temp, LSL, LogBytesPerWord);
+  ldr(klass, Address(klass, Array<Klass*>::base_offset_in_bytes()));
 }
 
 // Generate a subtype check: branch to ok_is_subtype if sub_klass is a

@@ -292,12 +292,22 @@ void VM_RedefineClasses::append_entry(const constantPoolHandle& scratch_cp,
     // entries in the input constant pool. We revert the appended copy
     // back to UnresolvedClass so that either verifier will be happy
     // with the constant pool entry.
+    //
+    // this is an indirect CP entry so it needs special handling
     case JVM_CONSTANT_Class:
+    case JVM_CONSTANT_UnresolvedClass:
     {
-      // revert the copy to JVM_CONSTANT_UnresolvedClass
-      (*merge_cp_p)->unresolved_klass_at_put(*merge_cp_length_p,
-        scratch_cp->klass_name_at(scratch_i));
+      int name_i = scratch_cp->klass_name_index_at(scratch_i);
+      int new_name_i = find_or_append_indirect_entry(scratch_cp, name_i, merge_cp_p,
+                                                     merge_cp_length_p, THREAD);
 
+      if (new_name_i != name_i) {
+        log_trace(redefine, class, constantpool)
+          ("Class entry@%d name_index change: %d to %d",
+           *merge_cp_length_p, name_i, new_name_i);
+      }
+
+      (*merge_cp_p)->temp_unresolved_klass_at_put(*merge_cp_length_p, new_name_i);
       if (scratch_i != *merge_cp_length_p) {
         // The new entry in *merge_cp_p is at a different index than
         // the new entry in scratch_cp so we need to map the index values.
@@ -330,10 +340,6 @@ void VM_RedefineClasses::append_entry(const constantPoolHandle& scratch_cp,
     // This was an indirect CP entry, but it has been changed into
     // Symbol*s so this entry can be directly appended.
     case JVM_CONSTANT_String:      // fall through
-
-    // These were indirect CP entries, but they have been changed into
-    // Symbol*s so these entries can be directly appended.
-    case JVM_CONSTANT_UnresolvedClass:  // fall through
     {
       ConstantPool::copy_entry_to(scratch_cp, scratch_i, *merge_cp_p, *merge_cp_length_p,
         THREAD);
@@ -504,7 +510,7 @@ void VM_RedefineClasses::append_entry(const constantPoolHandle& scratch_cp,
       (*merge_cp_length_p)++;
     } break;
 
-    // At this stage, Class or UnresolvedClass could be here, but not
+    // At this stage, Class or UnresolvedClass could be in scratch_cp, but not
     // ClassIndex
     case JVM_CONSTANT_ClassIndex: // fall through
 
@@ -1270,8 +1276,8 @@ bool VM_RedefineClasses::merge_constant_pools(const constantPoolHandle& old_cp,
         // revert the copy to JVM_CONSTANT_UnresolvedClass
         // May be resolving while calling this so do the same for
         // JVM_CONSTANT_UnresolvedClass (klass_name_at() deals with transition)
-        (*merge_cp_p)->unresolved_klass_at_put(old_i,
-          old_cp->klass_name_at(old_i));
+        (*merge_cp_p)->temp_unresolved_klass_at_put(old_i,
+          old_cp->klass_name_index_at(old_i));
         break;
 
       case JVM_CONSTANT_Double:
@@ -3102,6 +3108,7 @@ void VM_RedefineClasses::set_new_constant_pool(
 
   // attach new constant pool to klass
   scratch_class->set_constants(scratch_cp());
+  scratch_cp->initialize_unresolved_klasses(loader_data, CHECK);
 
   int i;  // for portability
 
