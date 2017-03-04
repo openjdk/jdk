@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,6 +152,7 @@ void ConstantPool::initialize_resolved_references(ClassLoaderData* loader_data,
 
 // CDS support. Create a new resolved_references array.
 void ConstantPool::restore_unshareable_info(TRAPS) {
+  assert(is_constantPool(), "ensure C++ vtable is restored");
 
   // Only create the new resolved references array if it hasn't been attempted before
   if (resolved_references() != NULL) return;

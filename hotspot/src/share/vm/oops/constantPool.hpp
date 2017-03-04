@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -714,6 +714,11 @@ class ConstantPool : public Metadata {
 
   friend class ClassFileParser;
   friend class SystemDictionary;
+
+  // Used by CDS. These classes need to access the private ConstantPool() constructor.
+  template <class T> friend class CppVtableTesterA;
+  template <class T> friend class CppVtableTesterB;
+  template <class T> friend class CppVtableCloner;
 
   // Used by compiler to prevent classloading.
   static Method*          method_at_if_loaded      (const constantPoolHandle& this_cp, int which);
