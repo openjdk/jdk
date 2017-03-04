@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -454,7 +454,8 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result
   Register tmp = index;  // reuse
   sldi(tmp, index, LogBytesPerHeapOop);
   // Load pointer for resolved_references[] objArray.
-  ld(result, ConstantPool::resolved_references_offset_in_bytes(), result);
+  ld(result, ConstantPool::cache_offset_in_bytes(), result);
+  ld(result, ConstantPoolCache::resolved_references_offset_in_bytes(), result);
   // JNIHandles::resolve(result)
   ld(result, 0, result);
 #ifdef ASSERT
@@ -469,6 +470,25 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result
   // Add in the index.
   add(result, tmp, result);
   load_heap_oop(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT), result, is_null);
+}
+
+// load cpool->resolved_klass_at(index)
+void InterpreterMacroAssembler::load_resolved_klass_at_offset(Register Rcpool, Register Roffset, Register Rklass) {
+  // int value = *(Rcpool->int_at_addr(which));
+  // int resolved_klass_index = extract_low_short_from_int(value);
+  add(Roffset, Rcpool, Roffset);
+#if defined(VM_LITTLE_ENDIAN)
+  lhz(Roffset, sizeof(ConstantPool), Roffset);     // Roffset = resolved_klass_index
+#else
+  lhz(Roffset, sizeof(ConstantPool) + 2, Roffset); // Roffset = resolved_klass_index
+#endif
+
+  ld(Rklass, ConstantPool::resolved_klasses_offset_in_bytes(), Rcpool); // Rklass = Rcpool->_resolved_klasses
+
+  sldi(Roffset, Roffset, LogBytesPerWord);
+  addi(Roffset, Roffset, Array<Klass*>::base_offset_in_bytes());
+  isync(); // Order load of instance Klass wrt. tags.
+  ldx(Rklass, Rklass, Roffset);
 }
 
 // Generate a subtype check: branch to ok_is_subtype if sub_klass is

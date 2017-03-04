@@ -81,6 +81,10 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   mutable ClassLoaderData* _loader_data;
   const InstanceKlass* _host_klass;
   GrowableArray<Handle>* _cp_patches; // overrides for CP entries
+  int _num_patched_klasses;
+  int _max_num_patched_klasses;
+  int _orig_cp_size;
+  int _first_patched_klass_resolved_index;
 
   // Metadata created before the instance klass is created.  Must be deallocated
   // if not transferred to the InstanceKlass upon successful class loading
@@ -434,6 +438,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
     return patch;
   }
 
+  void patch_class(ConstantPool* cp, int class_index, Klass* k, Symbol* name);
   void patch_constant_pool(ConstantPool* cp,
                            int index,
                            Handle patch,

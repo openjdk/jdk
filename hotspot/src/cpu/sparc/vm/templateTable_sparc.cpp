@@ -3241,9 +3241,7 @@ void TemplateTable::_new() {
   __ br(Assembler::notEqual, false, Assembler::pn, slow_case);
   __ delayed()->sll(Roffset, LogBytesPerWord, Roffset);
   // get InstanceKlass
-  //__ sll(Roffset, LogBytesPerWord, Roffset);        // executed in delay slot
-  __ add(Roffset, sizeof(ConstantPool), Roffset);
-  __ ld_ptr(Rscratch, Roffset, RinstanceKlass);
+  __ load_resolved_klass_at_offset(Rscratch, Roffset, RinstanceKlass);
 
   // make sure klass is fully initialized:
   __ ldub(RinstanceKlass, in_bytes(InstanceKlass::init_state_offset()), G3_scratch);
@@ -3465,8 +3463,9 @@ void TemplateTable::checkcast() {
 
   // Extract target class from constant pool
   __ bind(quicked);
-  __ add(Roffset, sizeof(ConstantPool), Roffset);
-  __ ld_ptr(Lscratch, Roffset, RspecifiedKlass);
+  __ load_resolved_klass_at_offset(Lscratch, Roffset, RspecifiedKlass);
+
+
   __ bind(resolved);
   __ load_klass(Otos_i, RobjKlass); // get value klass
 
@@ -3522,9 +3521,9 @@ void TemplateTable::instanceof() {
 
   // Extract target class from constant pool
   __ bind(quicked);
-  __ add(Roffset, sizeof(ConstantPool), Roffset);
   __ get_constant_pool(Lscratch);
-  __ ld_ptr(Lscratch, Roffset, RspecifiedKlass);
+  __ load_resolved_klass_at_offset(Lscratch, Roffset, RspecifiedKlass);
+
   __ bind(resolved);
   __ load_klass(Otos_i, RobjKlass); // get value klass
 

@@ -46,27 +46,47 @@
 class SymbolHashMap;
 
 class CPSlot VALUE_OBJ_CLASS_SPEC {
+ friend class ConstantPool;
   intptr_t _ptr;
+  enum TagBits  {_pseudo_bit = 1};
  public:
-  enum TagBits  { _resolved_value = 0, _symbol_bit = 1, _pseudo_bit = 2, _symbol_mask = 3 };
 
   CPSlot(intptr_t ptr): _ptr(ptr) {}
-  CPSlot(Klass* ptr): _ptr((intptr_t)ptr) {}
-  CPSlot(Symbol* ptr): _ptr((intptr_t)ptr | _symbol_bit) {}
-  CPSlot(Symbol* ptr, int tag_bits): _ptr((intptr_t)ptr | tag_bits) {}
+  CPSlot(Symbol* ptr, int tag_bits = 0): _ptr((intptr_t)ptr | tag_bits) {}
 
   intptr_t value()   { return _ptr; }
-  bool is_resolved()      { return (_ptr & _symbol_bit ) == _resolved_value; }
-  bool is_unresolved()    { return (_ptr & _symbol_bit ) != _resolved_value; }
-  bool is_pseudo_string() { return (_ptr & _symbol_mask) == _symbol_bit + _pseudo_bit; }
+  bool is_pseudo_string() { return (_ptr & _pseudo_bit) != 0; }
 
   Symbol* get_symbol() {
-    assert(is_unresolved(), "bad call");
-    return (Symbol*)(_ptr & ~_symbol_mask);
+    return (Symbol*)(_ptr & ~_pseudo_bit);
   }
-  Klass* get_klass() {
-    assert(is_resolved(), "bad call");
-    return (Klass*)_ptr;
+};
+
+// This represents a JVM_CONSTANT_Class, JVM_CONSTANT_UnresolvedClass, or
+// JVM_CONSTANT_UnresolvedClassInError slot in the constant pool.
+class CPKlassSlot VALUE_OBJ_CLASS_SPEC {
+  // cp->symbol_at(_name_index) gives the name of the class.
+  int _name_index;
+
+  // cp->_resolved_klasses->at(_resolved_klass_index) gives the Klass* for the class.
+  int _resolved_klass_index;
+public:
+  enum {
+    // This is used during constant pool merging where the resolved klass index is
+    // not yet known, and will be computed at a later stage (during a call to
+    // initialize_unresolved_klasses()).
+    _temp_resolved_klass_index = 0xffff
+  };
+  CPKlassSlot(int n, int rk) {
+    _name_index = n;
+    _resolved_klass_index = rk;
+  }
+  int name_index() const {
+    return _name_index;
+  }
+  int resolved_klass_index() const {
+    assert(_resolved_klass_index != _temp_resolved_klass_index, "constant pool merging was incomplete");
+    return _resolved_klass_index;
   }
 };
 
@@ -83,14 +103,14 @@ class ConstantPool : public Metadata {
   InstanceKlass*       _pool_holder; // the corresponding class
   Array<u2>*           _operands;    // for variable-sized (InvokeDynamic) nodes, usually empty
 
-  // Array of resolved objects from the constant pool and map from resolved
-  // object index to original constant pool index
-  jobject              _resolved_references;
-  Array<u2>*           _reference_map;
+  // Consider using an array of compressed klass pointers to
+  // save space on 64-bit platforms.
+  Array<Klass*>*       _resolved_klasses;
 
   enum {
     _has_preresolution = 1,           // Flags
-    _on_stack          = 2
+    _on_stack          = 2,
+    _is_shared         = 4
   };
 
   int                  _flags;  // old fashioned bit twiddling
@@ -119,6 +139,7 @@ class ConstantPool : public Metadata {
 
   CPSlot slot_at(int which) const {
     assert(is_within_bounds(which), "index out of bounds");
+    assert(!tag_at(which).is_unresolved_klass() && !tag_at(which).is_unresolved_klass_in_error(), "Corrupted constant pool");
     // Uses volatile because the klass slot changes without a lock.
     volatile intptr_t adr = (intptr_t)OrderAccess::load_ptr_acquire(obj_at_addr_raw(which));
     assert(adr != 0 || which == 0, "cp entry for klass should not be zero");
@@ -166,7 +187,10 @@ class ConstantPool : public Metadata {
   Array<u2>* operands() const               { return _operands; }
 
   bool has_preresolution() const            { return (_flags & _has_preresolution) != 0; }
-  void set_has_preresolution()              { _flags |= _has_preresolution; }
+  void set_has_preresolution() {
+    assert(!is_shared(), "should never be called on shared ConstantPools");
+    _flags |= _has_preresolution;
+  }
 
   // Redefine classes support.  If a method refering to this constant pool
   // is on the executing stack, or as a handle in vm code, this constant pool
@@ -174,6 +198,9 @@ class ConstantPool : public Metadata {
   // class.
   bool on_stack() const                      { return (_flags &_on_stack) != 0; }
   void set_on_stack(const bool value);
+
+  // Faster than MetaspaceObj::is_shared() - used by set_on_stack()
+  bool is_shared() const                     { return (_flags & _is_shared) != 0; }
 
   // Klass holding pool
   InstanceKlass* pool_holder() const      { return _pool_holder; }
@@ -193,8 +220,13 @@ class ConstantPool : public Metadata {
   // resolved strings, methodHandles and callsite objects from the constant pool
   objArrayOop resolved_references()  const;
   // mapping resolved object array indexes to cp indexes and back.
-  int object_to_cp_index(int index)         { return _reference_map->at(index); }
+  int object_to_cp_index(int index)         { return reference_map()->at(index); }
   int cp_to_object_index(int index);
+
+  void set_resolved_klasses(Array<Klass*>* rk)  { _resolved_klasses = rk; }
+  Array<Klass*>* resolved_klasses() const       { return _resolved_klasses; }
+  void allocate_resolved_klasses(ClassLoaderData* loader_data, int num_klasses, TRAPS);
+  void initialize_unresolved_klasses(ClassLoaderData* loader_data, TRAPS);
 
   // Invokedynamic indexes.
   // They must look completely different from normal indexes.
@@ -223,19 +255,9 @@ class ConstantPool : public Metadata {
   static int tags_offset_in_bytes()         { return offset_of(ConstantPool, _tags); }
   static int cache_offset_in_bytes()        { return offset_of(ConstantPool, _cache); }
   static int pool_holder_offset_in_bytes()  { return offset_of(ConstantPool, _pool_holder); }
-  static int resolved_references_offset_in_bytes() { return offset_of(ConstantPool, _resolved_references); }
+  static int resolved_klasses_offset_in_bytes()    { return offset_of(ConstantPool, _resolved_klasses); }
 
   // Storing constants
-
-  void klass_at_put(int which, Klass* k) {
-    assert(k != NULL, "resolved class shouldn't be null");
-    assert(is_within_bounds(which), "index out of bounds");
-    OrderAccess::release_store_ptr((Klass* volatile *)obj_at_addr_raw(which), k);
-    // The interpreter assumes when the tag is stored, the klass is resolved
-    // and the Klass* is a klass rather than a Symbol*, so we need
-    // hardware store ordering here.
-    release_tag_at_put(which, JVM_CONSTANT_Class);
-  }
 
   // For temporary use while constructing constant pool
   void klass_index_at_put(int which, int name_index) {
@@ -243,10 +265,17 @@ class ConstantPool : public Metadata {
     *int_at_addr(which) = name_index;
   }
 
-  // Temporary until actual use
-  void unresolved_klass_at_put(int which, Symbol* s) {
+  // Anonymous class support:
+  void klass_at_put(int class_index, int name_index, int resolved_klass_index, Klass* k, Symbol* name);
+  void klass_at_put(int class_index, Klass* k);
+
+  void unresolved_klass_at_put(int which, int name_index, int resolved_klass_index) {
     release_tag_at_put(which, JVM_CONSTANT_UnresolvedClass);
-    slot_at_put(which, s);
+
+    assert((name_index & 0xffff0000) == 0, "must be");
+    assert((resolved_klass_index & 0xffff0000) == 0, "must be");
+    *int_at_addr(which) =
+      build_int_from_shorts((jushort)resolved_klass_index, (jushort)name_index);
   }
 
   void method_handle_index_at_put(int which, int ref_kind, int ref_index) {
@@ -266,7 +295,7 @@ class ConstantPool : public Metadata {
 
   void unresolved_string_at_put(int which, Symbol* s) {
     release_tag_at_put(which, JVM_CONSTANT_String);
-    slot_at_put(which, CPSlot(s, CPSlot::_symbol_bit));
+    slot_at_put(which, CPSlot(s));
   }
 
   void int_at_put(int which, jint i) {
@@ -348,17 +377,38 @@ class ConstantPool : public Metadata {
     return klass_at_impl(h_this, which, false, THREAD);
   }
 
+  CPKlassSlot klass_slot_at(int which) const {
+    assert(tag_at(which).is_unresolved_klass() || tag_at(which).is_klass(),
+           "Corrupted constant pool");
+    int value = *int_at_addr(which);
+    int name_index = extract_high_short_from_int(value);
+    int resolved_klass_index = extract_low_short_from_int(value);
+    return CPKlassSlot(name_index, resolved_klass_index);
+  }
+
   Symbol* klass_name_at(int which) const;  // Returns the name, w/o resolving.
+  int klass_name_index_at(int which) const {
+    return klass_slot_at(which).name_index();
+  }
 
   Klass* resolved_klass_at(int which) const {  // Used by Compiler
     guarantee(tag_at(which).is_klass(), "Corrupted constant pool");
     // Must do an acquire here in case another thread resolved the klass
     // behind our back, lest we later load stale values thru the oop.
-    return CPSlot((Klass*)OrderAccess::load_ptr_acquire(obj_at_addr_raw(which))).get_klass();
+    CPKlassSlot kslot = klass_slot_at(which);
+    assert(tag_at(kslot.name_index()).is_symbol(), "sanity");
+
+    Klass** adr = resolved_klasses()->adr_at(kslot.resolved_klass_index());
+    return (Klass*)OrderAccess::load_ptr_acquire(adr);
   }
 
   // RedefineClasses() API support:
   Symbol* klass_at_noresolve(int which) { return klass_name_at(which); }
+  void temp_unresolved_klass_at_put(int which, int name_index) {
+    // Used only during constant pool merging for class redefinition. The resolved klass index
+    // will be initialized later by a call to initialize_unresolved_klasses().
+    unresolved_klass_at_put(which, name_index, CPKlassSlot::_temp_resolved_klass_index);
+  }
 
   jint int_at(int which) {
     assert(tag_at(which).is_int(), "Corrupted constant pool");
@@ -428,7 +478,7 @@ class ConstantPool : public Metadata {
   void pseudo_string_at_put(int which, int obj_index, oop x) {
     assert(tag_at(which).is_string(), "Corrupted constant pool");
     Symbol* sym = unresolved_string_at(which);
-    slot_at_put(which, CPSlot(sym, (CPSlot::_symbol_bit | CPSlot::_pseudo_bit)));
+    slot_at_put(which, CPSlot(sym, CPSlot::_pseudo_bit));
     string_at_put(which, obj_index, x);    // this works just fine
   }
 
@@ -761,9 +811,9 @@ class ConstantPool : public Metadata {
 
  private:
 
-  void set_resolved_references(jobject s) { _resolved_references = s; }
-  Array<u2>* reference_map() const        { return _reference_map; }
-  void set_reference_map(Array<u2>* o)    { _reference_map = o; }
+  void set_resolved_references(jobject s) { _cache->set_resolved_references(s); }
+  Array<u2>* reference_map() const        {  return (_cache == NULL) ? NULL :  _cache->reference_map(); }
+  void set_reference_map(Array<u2>* o)    { _cache->set_reference_map(o); }
 
   // patch JSR 292 resolved references after the class is linked.
   void patch_resolved_references(GrowableArray<Handle>* cp_patches);

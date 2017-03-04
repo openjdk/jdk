@@ -4372,10 +4372,9 @@ void TemplateTable::_new() {
 #endif // AARCH64
 
   // get InstanceKlass
-  __ add(Rklass, Rcpool, AsmOperand(Rindex, lsl, LogBytesPerWord));
-  __ ldr(Rklass, Address(Rklass, sizeof(ConstantPool)));
   __ cmp(Rtemp, JVM_CONSTANT_Class);
   __ b(slow_case, ne);
+  __ load_resolved_klass_at_offset(Rcpool, Rindex, Rklass);
 
   // make sure klass is initialized & doesn't have finalizer
   // make sure klass is fully initialized
@@ -4647,8 +4646,7 @@ void TemplateTable::checkcast() {
 
   // Get superklass in Rsuper and subklass in Rsub
   __ bind(quicked);
-  __ add(Rtemp, Rcpool, AsmOperand(Rindex, lsl, LogBytesPerWord));
-  __ ldr(Rsuper, Address(Rtemp, sizeof(ConstantPool)));
+  __ load_resolved_klass_at_offset(Rcpool, Rindex, Rsuper);
 
   __ bind(resolved);
   __ load_klass(Rsub, Robj);
@@ -4721,8 +4719,7 @@ void TemplateTable::instanceof() {
 
   // Get superklass in Rsuper and subklass in Rsub
   __ bind(quicked);
-  __ add(Rtemp, Rcpool, AsmOperand(Rindex, lsl, LogBytesPerWord));
-  __ ldr(Rsuper, Address(Rtemp, sizeof(ConstantPool)));
+  __ load_resolved_klass_at_offset(Rcpool, Rindex, Rsuper);
 
   __ bind(resolved);
   __ load_klass(Rsub, Robj);
