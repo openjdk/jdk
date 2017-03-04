@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3781,7 +3781,10 @@ bool Metaspace::contains(const void* ptr) {
   if (UseSharedSpaces && MetaspaceShared::is_in_shared_space(ptr)) {
     return true;
   }
+  return contains_non_shared(ptr);
+}
 
+bool Metaspace::contains_non_shared(const void* ptr) {
   if (using_class_space() && get_space_list(ClassType)->contains(ptr)) {
      return true;
   }

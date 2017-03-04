@@ -1348,11 +1348,6 @@ instanceKlassHandle SystemDictionary::load_shared_class(instanceKlassHandle ik,
     int num_interfaces = interfaces->length();
     for (int index = 0; index < num_interfaces; index++) {
       Klass* k = interfaces->at(index);
-
-      // Note: can not use InstanceKlass::cast here because
-      // interfaces' InstanceKlass's C++ vtbls haven't been
-      // reinitialized yet (they will be once the interface classes
-      // are loaded)
       Symbol*  name  = k->name();
       Klass* i = resolve_super_or_fail(class_name, name, class_loader, protection_domain, false, CHECK_(nh));
       if (k != i) {

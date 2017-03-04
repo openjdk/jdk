@@ -168,7 +168,7 @@ void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word
 
 // "Normal" instantiation is preceeded by a MetaspaceObj allocation
 // which zeros out memory - calloc equivalent.
-// The constructor is also used from init_self_patching_vtbl_list,
+// The constructor is also used from CppVtableCloner,
 // which doesn't zero out the memory before calling the constructor.
 // Need to set the _java_mirror field explicitly to not hit an assert that the field
 // should be NULL before setting it.
@@ -501,6 +501,7 @@ void Klass::remove_unshareable_info() {
 }
 
 void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
+  assert(is_klass(), "ensure C++ vtable is restored");
   TRACE_RESTORE_ID(this);
 
   // If an exception happened during CDS restore, some of these fields may already be
