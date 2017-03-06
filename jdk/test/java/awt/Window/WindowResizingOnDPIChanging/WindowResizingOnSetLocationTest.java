@@ -21,7 +21,10 @@
  * questions.
  */
 
+import java.awt.BasicStroke;
+import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Graphics;
@@ -49,15 +52,15 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 
 /* @test
- * @bug 8175293
- * @summary HiDPI (Windows): Swing components have incorrect sizes after
- *          changing display resolution
+ * @bug 8175293 8176097
+ * @summary Window set location to a display with different DPI does not properly work
  * @run main/manual/othervm WindowResizingOnSetLocationTest
  */
 public class WindowResizingOnSetLocationTest {
@@ -66,6 +69,10 @@ public class WindowResizingOnSetLocationTest {
     private static volatile CountDownLatch countDownLatch;
     private static TestFrame frame;
     private static JFrame mainFrame;
+    private static Rectangle[] screenBounds;
+    private static double[][] scales;
+    private static int screen1 = -1;
+    private static int screen2 = -1;
 
     private static final String INSTRUCTIONS = "INSTRUCTIONS:\n"
             + "Verify that a window is properly resized after setting the location"
@@ -75,7 +82,10 @@ public class WindowResizingOnSetLocationTest {
             + " are configured to have different DPI\n"
             + "\n"
             + "1. Press Show Frame button\n"
-            + "The frame appear.\n"
+            + "  (note that the button is disabled in case there are no two monitors"
+            + " with different DPI)\n"
+            + "The frame should appear in the center of the display (either"
+            + " on the first or on the second).\n"
             + "2. Check that the string \"scales [ScaleX, ScaleY]\" is painted on the window"
             + " where ScaleX and ScaleY are the scales for current display.\n"
             + "The scales are calculated as DPI / 96 and are 1 for the DPI value 96"
@@ -86,7 +96,6 @@ public class WindowResizingOnSetLocationTest {
             + " to show the right display scales.\n"
             + "6. Check that the window is properly resized.\n"
             + "7. Check that the window is properly repainted and does not contain drawing artifacts\n"
-            + "Try different display positions (left, right, top, bottom).\n"
             + "If all tests are passed, press PASS, else press FAIL.\n";
 
     public static void main(String args[]) throws Exception {
@@ -101,6 +110,8 @@ public class WindowResizingOnSetLocationTest {
 
     private static void createUI() {
 
+        initScreenBounds();
+
         mainFrame = new JFrame("DPI change test");
         GridBagLayout layout = new GridBagLayout();
         JPanel mainControlPanel = new JPanel(layout);
@@ -108,20 +119,22 @@ public class WindowResizingOnSetLocationTest {
 
         GridBagConstraints gbc = new GridBagConstraints();
 
-        JPanel testPanel = new JPanel(new FlowLayout());
+        JPanel testPanel = new JPanel(new BorderLayout());
         JButton frameButton = new JButton("Show Frame");
         frameButton.addActionListener((e) -> {
-            int x = 20;
-            int y = 10;
-            int w = 400;
-            int h = 300;
+            GraphicsConfiguration gc = GraphicsEnvironment
+                    .getLocalGraphicsEnvironment()
+                    .getScreenDevices()[screen1]
+                    .getDefaultConfiguration();
 
-            frame = new TestFrame(w, h);
-            frame.setLocation(x, y);
+            Rectangle rect = getCenterRect(screenBounds[screen2]);
+            frame = new TestFrame(gc, rect);
             frame.setVisible(true);
 
         });
-        testPanel.add(frameButton);
+        frameButton.setEnabled(screen1 != -1 && screen2 != -1);
+        testPanel.add(getDisplaysComponent(), BorderLayout.CENTER);
+        testPanel.add(frameButton, BorderLayout.SOUTH);
 
         gbc.gridx = 0;
         gbc.gridy = 0;
@@ -193,14 +206,99 @@ public class WindowResizingOnSetLocationTest {
         }
     }
 
+    static void initScreenBounds() {
+
+        GraphicsDevice[] devices = GraphicsEnvironment
+                .getLocalGraphicsEnvironment()
+                .getScreenDevices();
+
+        screenBounds = new Rectangle[devices.length];
+        scales = new double[devices.length][2];
+        for (int i = 0; i < devices.length; i++) {
+            GraphicsConfiguration gc = devices[i].getDefaultConfiguration();
+            screenBounds[i] = gc.getBounds();
+            AffineTransform tx = gc.getDefaultTransform();
+            scales[i][0] = tx.getScaleX();
+            scales[i][1] = tx.getScaleY();
+        }
+
+        for (int i = 0; i < devices.length; i++) {
+            for (int j = i + 1; j < devices.length; j++) {
+                if (scales[i][0] != scales[j][0] || scales[i][1] != scales[j][1]) {
+                    screen1 = i;
+                    screen2 = j;
+                }
+            }
+        }
+    }
+
+    private static Rectangle getCenterRect(Rectangle rect) {
+        int w = rect.width / 2;
+        int h = rect.height / 2;
+        int x = rect.x + w / 2;
+        int y = rect.y + h / 2;
+
+        return new Rectangle(x, y, w, h);
+    }
+
+    static JComponent getDisplaysComponent() {
+
+        Rectangle rect = screenBounds[0];
+        for (int i = 0; i < screenBounds.length; i++) {
+            rect = rect.union(screenBounds[i]);
+        }
+
+        final BufferedImage img = new BufferedImage(rect.width, rect.height, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = img.createGraphics();
+        g.setColor(Color.WHITE);
+        g.fillRect(0, 0, rect.width, rect.height);
+        g.translate(-rect.x, -rect.y);
+
+        g.setStroke(new BasicStroke(8f));
+        for (int i = 0; i < screenBounds.length; i++) {
+            Rectangle r = screenBounds[i];
+            g.setColor(Color.BLACK);
+            g.drawRect(r.x, r.y, r.width, r.height);
+
+            g.setColor(Color.ORANGE);
+            Rectangle cr = getCenterRect(r);
+            g.fillRect(cr.x, cr.y, cr.width, cr.height);
+
+            double scaleX = scales[i][0];
+            double scaleY = scales[i][1];
+            float fontSize = rect.height / 7;
+            g.setFont(g.getFont().deriveFont(fontSize));
+            g.setColor(Color.BLUE);
+            g.drawString(String.format("Scale: [%2.1f, %2.1f]", scaleX, scaleY),
+                    r.x + r.width / 8, r.y + r.height / 2);
+
+        }
+
+        g.dispose();
+
+        JPanel panel = new JPanel() {
+
+            @Override
+            public void paint(Graphics g) {
+                super.paint(g);
+                g.drawImage(img, 0, 0, getWidth(), getHeight(), this);
+
+            }
+        };
+
+        panel.setPreferredSize(new Dimension(400, 200));
+
+        return panel;
+    }
+
     static class TestFrame extends JFrame {
 
         private final TestMultiResolutionImage mrImage;
 
-        public TestFrame(int width, int height) throws HeadlessException {
-            super("Test Frame");
-            setSize(width, height);
-            mrImage = new TestMultiResolutionImage(width, height);
+        public TestFrame(GraphicsConfiguration gc, Rectangle rect) throws HeadlessException {
+            super(gc);
+            setBounds(rect);
+            mrImage = new TestMultiResolutionImage(rect.width, rect.height);
 
             JPanel panel = new JPanel(new FlowLayout()) {
                 @Override
@@ -217,29 +315,17 @@ public class WindowResizingOnSetLocationTest {
             JButton button = new JButton("Move to another display");
             button.addActionListener((e) -> {
                 GraphicsConfiguration config = getGraphicsConfiguration();
-                GraphicsDevice device = config.getDevice();
 
                 GraphicsDevice[] devices = GraphicsEnvironment
                         .getLocalGraphicsEnvironment()
                         .getScreenDevices();
 
-                boolean found = false;
-                for (GraphicsDevice dev : devices) {
-                    if (!dev.equals(device)) {
-                        found = true;
-                        Rectangle bounds = dev.getDefaultConfiguration().getBounds();
 
-                        AffineTransform tx = config.getDefaultTransform();
-                        int x = (int) Math.round(bounds.x / tx.getScaleX()) + 15;
-                        int y = (int) Math.round(bounds.y / tx.getScaleY()) + 15;
-                        frame.setLocation(x, y);
-                        break;
-                    }
-                }
+                int index = devices[screen1].getDefaultConfiguration().equals(config)
+                        ? screen2 : screen1;
 
-                if (!found) {
-                    System.out.println("Another display not found!");
-                }
+                Rectangle r = getCenterRect(screenBounds[index]);
+                frame.setBounds(r);
             });
 
             panel.add(button);
