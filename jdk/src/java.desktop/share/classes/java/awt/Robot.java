@@ -41,6 +41,7 @@ import sun.awt.AWTPermissions;
 import sun.awt.ComponentFactory;
 import sun.awt.SunToolkit;
 import sun.awt.image.SunWritableRaster;
+import sun.swing.SwingUtilities2;
 
 /**
  * This class is used to generate native system input events
@@ -499,9 +500,15 @@ public class Robot {
         // need to sync the toolkit prior to grabbing the pixels since in some
         // cases rendering to the screen may be delayed
         Toolkit.getDefaultToolkit().sync();
-        AffineTransform tx = GraphicsEnvironment.
-                getLocalGraphicsEnvironment().getDefaultScreenDevice().
-                getDefaultConfiguration().getDefaultTransform();
+
+        GraphicsConfiguration gc = GraphicsEnvironment
+                .getLocalGraphicsEnvironment()
+                .getDefaultScreenDevice().
+                getDefaultConfiguration();
+        gc = SwingUtilities2.getGraphicsConfigurationAtPoint(
+                gc, screenRect.getCenterX(), screenRect.getCenterY());
+
+        AffineTransform tx = gc.getDefaultTransform();
         double uiScaleX = tx.getScaleX();
         double uiScaleY = tx.getScaleY();
         int pixels[];
