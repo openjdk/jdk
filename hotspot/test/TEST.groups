@@ -182,6 +182,11 @@ hotspot_fast_runtime = \
   sanity/ \
   testlibrary_tests/TestMutuallyExclusivePlatformPredicates.java
 
+hotspot_cds = \
+  runtime/SharedArchiveFile/ \
+  runtime/CompressedOops/
+
+
 hotspot_fast_serviceability = \
   serviceability/dcmd/compiler \
   serviceability/logging
