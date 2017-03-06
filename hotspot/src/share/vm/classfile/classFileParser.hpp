@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,6 +122,15 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   // for tracing and notifications
   Publicity _pub_level;
 
+  // Used to keep track of whether a constant pool item 19 or 20 is found.  These
+  // correspond to CONSTANT_Module and CONSTANT_Package tags and are not allowed
+  // in regular class files.  For class file version >= 53, a CFE cannot be thrown
+  // immediately when these are seen because a NCDFE must be thrown if the class's
+  // access_flags have ACC_MODULE set.  But, the access_flags haven't been looked
+  // at yet.  So, the bad constant pool item is cached here.  A value of zero
+  // means that no constant pool item 19 or 20 was found.
+  short _bad_constant_seen;
+
   // class attributes parsed before the instance klass is created:
   bool _synthetic_flag;
   int _sde_length;
@@ -161,6 +170,8 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   void fill_instance_klass(InstanceKlass* ik, bool cf_changed_in_CFLH, TRAPS);
   void set_klass(InstanceKlass* instance);
 
+  void set_class_bad_constant_seen(short bad_constant);
+  short class_bad_constant_seen() { return  _bad_constant_seen; }
   void set_class_synthetic_flag(bool x)        { _synthetic_flag = x; }
   void set_class_sourcefile_index(u2 x)        { _sourcefile_index = x; }
   void set_class_generic_signature_index(u2 x) { _generic_signature_index = x; }
