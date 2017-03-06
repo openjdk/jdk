@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,24 +24,51 @@
 /*
  * @test
  * @key headful
- * @bug 8133864
+ * @bug 8133864 8158209
  * @summary  Wrong display, when the document I18n properties is true.
- * @author Semyon Sadetsky
- * @run main I18nLayoutTest
  */
-
 import javax.swing.*;
 import javax.swing.text.*;
 import java.awt.*;
+import java.awt.event.KeyEvent;
 import java.util.ArrayList;
+import javax.swing.event.CaretEvent;
+import javax.swing.event.CaretListener;
 
-public class I18nLayoutTest extends JFrame {
+public class TableViewLayoutTest extends JFrame {
 
-    private static int height;
-    JEditorPane edit = new JEditorPane();
-    private static I18nLayoutTest frame;
+    private static double yCaret;
+    private static double xCaret;
 
-    public I18nLayoutTest() {
+    // Number of iteration to verify the stability of the test with different robot delays :
+    // Work well with robot.delay(50) in hitKey method.
+    // But if the robot delay is too low, the test is not stable.
+    // Put this to 100, and reduce robot delay sometimes answers may be different.
+    private static int tn = 2;
+
+    // The four caret positions to test.
+    private static double yCarFLTab;
+    private static double yCarLLTab;
+    private static double xCarBTab;
+    private static double xCarETab;
+
+    // The caret coordonate differences along axis after the insertion and the removing cycle.
+    // 0 if the table layout is right.
+    private static double dyCarFLTab;
+    private static double dyCarLLTab;
+    private static double dxCarBTab;
+    private static double dxCarETab;
+
+    private static JEditorPane edit = new JEditorPane();
+    private static TableViewLayoutTest frame;
+
+    private static String Prop = "\n";
+    private static boolean isTabWrong = Boolean.FALSE;
+
+    private static Boolean isI18n = false;
+
+    public TableViewLayoutTest() {
+
         super("Code example for a TableView bug");
         setUndecorated(true);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -51,12 +78,24 @@ public class I18nLayoutTest extends JFrame {
         this.pack();
         this.setLocationRelativeTo(null);
 
+        edit.addCaretListener(new CaretListener() {
+            public void caretUpdate(CaretEvent e) {
+                JTextComponent textComp = (JTextComponent) e.getSource();
+                try {
+                    Rectangle rect = textComp.getUI().modelToView(textComp, e.getDot());
+                    yCaret = rect.getY();
+                    xCaret = rect.getX();
+                } catch (BadLocationException ex) {
+                    throw new RuntimeException("Failed to get pixel position of caret", ex);
+                }
+            }
+        });
     }
 
     private void initCodeBug() {
         CodeBugDocument doc = (CodeBugDocument) edit.getDocument();
         try {
-            doc.insertString(0, "TextB TextE", null);
+            doc.insertString(0, "TextB  TextE", null);
         } catch (BadLocationException ex) {
         }
         doc.insertTable(6, 4, 3);
@@ -78,33 +117,113 @@ public class I18nLayoutTest extends JFrame {
     }
 
     public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeAndWait(new Runnable() {
-            @Override
-            public void run() {
-                frame = new I18nLayoutTest();
-                frame.setVisible(true);
+
+        for (int i = 0; i < tn; i++) {
+            Robot rob = new Robot();
+
+            SwingUtilities.invokeAndWait(new Runnable() {
+                @Override
+                public void run() {
+                    frame = new TableViewLayoutTest();
+                    frame.setVisible(true);
+                }
+            });
+
+            SwingUtilities.invokeAndWait(new Runnable() {
+                @Override
+                public void run() {
+                    //Enable or disable i18n.
+                    isI18n = !isI18n;
+                    edit.getDocument().putProperty("i18n", isI18n);
+
+                    //Made a change to update table layout.
+                    //Without any change the table i18n property change is not take in account.
+                    edit.select(11, 12);
+                    edit.replaceSelection("1");
+
+                    //Catch the four caret positions to test before insertions.
+                    edit.setCaretPosition(6);
+                    xCarBTab = xCaret;
+                    edit.setCaretPosition(91);
+                    xCarETab = xCaret;
+
+                    edit.setCaretPosition(74);
+                    yCarLLTab = yCaret;
+                    edit.setCaretPosition(11);
+                    yCarFLTab = yCaret;
+                }
+            });
+
+            hitKey(rob, KeyEvent.VK_T);
+            hitKey(rob, KeyEvent.VK_E);
+            hitKey(rob, KeyEvent.VK_S);
+            hitKey(rob, KeyEvent.VK_T);
+            hitKey(rob, KeyEvent.VK_BACK_SPACE);
+            hitKey(rob, KeyEvent.VK_BACK_SPACE);
+            hitKey(rob, KeyEvent.VK_BACK_SPACE);
+            hitKey(rob, KeyEvent.VK_BACK_SPACE);
+
+            rob.waitForIdle();
+
+            SwingUtilities.invokeAndWait(new Runnable() {
+                @Override
+                public void run() {
+                    //Calculate caret coordinate differences and catch caret positions after insertions.
+                    edit.setCaretPosition(6);
+                    dxCarBTab = Math.abs(xCarBTab - xCaret);
+                    edit.setCaretPosition(91);
+                    dxCarETab = Math.abs(xCarETab - xCaret);
+
+                    edit.setCaretPosition(74);
+                    dyCarLLTab = Math.abs(yCarLLTab - yCaret);
+                    edit.setCaretPosition(11);
+                    dyCarFLTab = Math.abs(yCarFLTab - yCaret);
+
+                    edit.setCaretPosition(74);
+                    yCarLLTab = yCaret;
+                    edit.setCaretPosition(11);
+                    yCarFLTab = yCaret;
+                }
+            });
+
+            Object dp = edit.getDocument().getProperty("i18n");
+            Boolean isI18n = dp instanceof Boolean ? (Boolean) dp : Boolean.FALSE;
+            String i18n = isI18n ? "\nWhen i18n enable, " : "\nWhen i18n disable, ";
+
+            if (Math.abs(yCarFLTab - yCarLLTab) < 10) {
+                isTabWrong = Boolean.TRUE;
+                Prop = Prop + i18n + "test can't be completed : TableView layout wrong, lines overlap, see JDK-8133864.";
+            } else {
+                if (dyCarFLTab != 0 || dyCarLLTab != 0) {
+                    isTabWrong = Boolean.TRUE;
+                    Prop = Prop + i18n + "TableView layout wrong : Table high change when inserts and removes caracters, bug never reported yet. First Line dy=" + dyCarFLTab + " Last Line dy=" + dyCarLLTab;
+                }
+                if (dxCarBTab != 0 || dxCarETab != 0) {
+                    isTabWrong = Boolean.TRUE;
+                    Prop = Prop + i18n + "TableView layout wrong : Table width change when inserts and removes caracters, see JDK-8158209 and JDK-7169915. Before Table dx=" + dxCarBTab + " After Table dx=" + dxCarETab;
+                }
             }
-        });
-        Robot robot = new Robot();
-        robot.delay(200);
-        robot.waitForIdle();
-        SwingUtilities.invokeAndWait(new Runnable() {
-            @Override
-            public void run() {
-                height = frame.getHeight();
-            }
-        });
-        SwingUtilities.invokeAndWait(new Runnable() {
-            @Override
-            public void run() {
-                frame.dispose();
-            }
-        });
-        if (height < 32) {
-            throw new RuntimeException(
-                    "TableView layout height is wrong " + height);
+            rob.waitForIdle();
+
+            SwingUtilities.invokeAndWait(new Runnable() {
+                @Override
+                public void run() {
+                    frame.dispose();
+                }
+            });
         }
+        if (isTabWrong) {
+            throw new RuntimeException(Prop);
+        }
+
         System.out.println("ok");
+    }
+
+    private static void hitKey(Robot robot, int k) throws Exception {
+        robot.delay(50);
+        robot.keyPress(k);
+        robot.keyRelease(k);
+        robot.delay(50);
     }
 }
 
@@ -191,7 +310,9 @@ class tableView extends TableView implements ViewFactory {
 
     @Override
     public float getPreferredSpan(int axis) {
-        if (axis == 0) return super.getPreferredSpan(0);
+        if (axis == 0) {
+            return super.getPreferredSpan(0);
+        }
         float preferredSpan = super.getPreferredSpan(axis);
         return preferredSpan;
     }
@@ -236,6 +357,7 @@ class tableView extends TableView implements ViewFactory {
     }
 
     public class trView extends TableRow {
+
         @Override
         public void setParent(View parent) {
             super.setParent(parent);
@@ -265,9 +387,7 @@ class tableView extends TableView implements ViewFactory {
             int lastX = alloc.x + alloc.width;
             g.drawLine(lastX, alloc.y, lastX, lastY);
         }
-    }
-
-    ;
+    };
 }
 
 //------------------------------------------------------------------------------
@@ -278,9 +398,8 @@ class CodeBugDocument extends DefaultStyledDocument {
     public static final String ELEMENT_TD = "table data cell";
 
     public CodeBugDocument() {
-        putProperty("i18n", Boolean.TRUE);
+        //putProperty("i18n", Boolean.TRUE);
     }
-
 
     protected void insertTable(int offset, int rowCount, int colCount) {
         try {
@@ -291,10 +410,9 @@ class CodeBugDocument extends DefaultStyledDocument {
 
             SimpleAttributeSet tableAttrs = new SimpleAttributeSet();
             tableAttrs.addAttribute(ElementNameAttribute, ELEMENT_TABLE);
-            ElementSpec tableStart =
-                    new ElementSpec(tableAttrs, ElementSpec.StartTagType);
+            ElementSpec tableStart
+                    = new ElementSpec(tableAttrs, ElementSpec.StartTagType);
             Specs.add(tableStart); //start table tag
-
 
             fillRowSpecs(Specs, rowCount, colCount);
 
@@ -310,14 +428,14 @@ class CodeBugDocument extends DefaultStyledDocument {
         SimpleAttributeSet rowAttrs = new SimpleAttributeSet();
         rowAttrs.addAttribute(ElementNameAttribute, ELEMENT_TR);
         for (int i = 0; i < rowCount; i++) {
-            ElementSpec rowStart =
-                    new ElementSpec(rowAttrs, ElementSpec.StartTagType);
+            ElementSpec rowStart
+                    = new ElementSpec(rowAttrs, ElementSpec.StartTagType);
             Specs.add(rowStart);
 
             fillCellSpecs(Specs, colCount);
 
-            ElementSpec rowEnd =
-                    new ElementSpec(rowAttrs, ElementSpec.EndTagType);
+            ElementSpec rowEnd
+                    = new ElementSpec(rowAttrs, ElementSpec.EndTagType);
             Specs.add(rowEnd);
         }
 
@@ -328,8 +446,8 @@ class CodeBugDocument extends DefaultStyledDocument {
             SimpleAttributeSet cellAttrs = new SimpleAttributeSet();
             cellAttrs.addAttribute(ElementNameAttribute, ELEMENT_TD);
 
-            ElementSpec cellStart =
-                    new ElementSpec(cellAttrs, ElementSpec.StartTagType);
+            ElementSpec cellStart
+                    = new ElementSpec(cellAttrs, ElementSpec.StartTagType);
             Specs.add(cellStart);
 
             ElementSpec parStart = new ElementSpec(new SimpleAttributeSet(),
@@ -341,8 +459,8 @@ class CodeBugDocument extends DefaultStyledDocument {
             ElementSpec parEnd = new ElementSpec(new SimpleAttributeSet(),
                     ElementSpec.EndTagType);
             Specs.add(parEnd);
-            ElementSpec cellEnd =
-                    new ElementSpec(cellAttrs, ElementSpec.EndTagType);
+            ElementSpec cellEnd
+                    = new ElementSpec(cellAttrs, ElementSpec.EndTagType);
             Specs.add(cellEnd);
         }
     }
