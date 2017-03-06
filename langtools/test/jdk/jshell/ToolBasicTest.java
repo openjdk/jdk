@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8143037 8142447 8144095 8140265 8144906 8146138 8147887 8147886 8148316 8148317 8143955 8157953 8080347 8154714 8166649 8167643 8170162 8172102 8165405 8174796 8174797
+ * @bug 8143037 8142447 8144095 8140265 8144906 8146138 8147887 8147886 8148316 8148317 8143955 8157953 8080347 8154714 8166649 8167643 8170162 8172102 8165405 8174796 8174797 8175304
  * @summary Tests for Basic tests for REPL tool
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -270,6 +270,32 @@ public class ToolBasicTest extends ReplToolTesting {
         );
         test(new String[] { "--class-path", classpath.toString() },
                 (a) -> evaluateExpression(a, "pkg.A", "new pkg.A();", "A")
+        );
+    }
+
+    public void testEnvInStartUp() {
+        Compiler compiler = new Compiler();
+        Path outDir = Paths.get("testClasspathDirectory");
+        compiler.compile(outDir, "package pkg; public class A { public String toString() { return \"A\"; } }");
+        Path classpath = compiler.getPath(outDir);
+        Path sup = compiler.getPath("startup.jsh");
+        compiler.writeToFile(sup,
+                "int xxx;\n" +
+                "/env -class-path " + classpath + "\n" +
+                "int aaa = 735;\n"
+        );
+        test(
+                (a) -> assertCommand(a, "/set start -retain " + sup, ""),
+                (a) -> assertCommand(a, "/reset",
+                        "|  Resetting state."),
+                (a) -> evaluateExpression(a, "pkg.A", "new pkg.A();", "A"),
+                (a) -> assertCommand(a, "aaa", "aaa ==> 735")
+        );
+        test(
+                (a) -> assertCommandOutputContains(a, "/env", "--class-path"),
+                (a) -> assertCommandOutputContains(a, "xxx", "cannot find symbol", "variable xxx"),
+                (a) -> evaluateExpression(a, "pkg.A", "new pkg.A();", "A"),
+                (a) -> assertCommand(a, "aaa", "aaa ==> 735")
         );
     }
 
