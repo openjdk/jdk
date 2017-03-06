@@ -60,6 +60,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -438,7 +439,7 @@ public class Locations {
         /**
          * @see JavaFileManager#getLocationForModule(Location, JavaFileObject, String)
          */
-        Location getLocationForModule(Path dir) throws IOException  {
+        Location getLocationForModule(Path file) throws IOException  {
             return null;
         }
 
@@ -588,8 +589,8 @@ public class Locations {
         }
 
         @Override
-        Location getLocationForModule(Path dir) {
-            return (moduleTable == null) ? null : moduleTable.get(dir);
+        Location getLocationForModule(Path file) {
+            return (moduleTable == null) ? null : moduleTable.get(file);
         }
 
         private boolean listed;
@@ -986,7 +987,16 @@ public class Locations {
         }
 
         ModuleLocationHandler get(Path path) {
-            return pathMap.get(path);
+            while (path != null) {
+                ModuleLocationHandler l = pathMap.get(path);
+
+                if (l != null)
+                    return l;
+
+                path = path.getParent();
+            }
+
+            return null;
         }
 
         void clear() {
@@ -1385,12 +1395,19 @@ public class Locations {
 
             moduleTable = new ModuleTable();
             map.forEach((modName, modPath) -> {
-                String locnName = location.getName() + "[" + modName + "]";
-                ModuleLocationHandler l = new ModuleLocationHandler(this, locnName, modName,
-                        modPath, false);
-                moduleTable.add(l);
+                boolean hasModuleInfo = modPath.stream().anyMatch(checkModuleInfo);
+                if (hasModuleInfo) {
+                    String locnName = location.getName() + "[" + modName + "]";
+                    ModuleLocationHandler l = new ModuleLocationHandler(this, locnName, modName,
+                            modPath, false);
+                    moduleTable.add(l);
+                }
             });
         }
+        //where:
+            private final Predicate<Path> checkModuleInfo =
+                    p -> Files.exists(p.resolve("module-info.java"));
+
 
         private boolean isSeparator(char ch) {
             // allow both separators on Windows
@@ -1537,8 +1554,8 @@ public class Locations {
         }
 
         @Override
-        Location getLocationForModule(Path dir) {
-            return (moduleTable == null) ? null : moduleTable.get(dir);
+        Location getLocationForModule(Path file) {
+            return (moduleTable == null) ? null : moduleTable.get(file);
         }
 
         @Override
@@ -1644,9 +1661,9 @@ public class Locations {
         }
 
         @Override
-        Location getLocationForModule(Path dir) throws IOException {
+        Location getLocationForModule(Path file) throws IOException {
             initSystemModules();
-            return moduleTable.get(dir);
+            return moduleTable.get(file);
         }
 
         @Override
@@ -1724,6 +1741,8 @@ public class Locations {
                 return false;
             }
 
+            moduleTable.clear();
+
             // Allow an extended syntax for --patch-module consisting of a series
             // of values separated by NULL characters. This is to facilitate
             // supporting deferred file manager options on the command line.
@@ -1775,8 +1794,8 @@ public class Locations {
         }
 
         @Override
-        Location getLocationForModule(Path dir) throws IOException {
-            return moduleTable.get(dir);
+        Location getLocationForModule(Path file) throws IOException {
+            return moduleTable.get(file);
         }
 
         @Override
@@ -1857,9 +1876,9 @@ public class Locations {
         return (h == null ? null : h.getLocationForModule(name));
     }
 
-    Location getLocationForModule(Location location, Path dir) throws IOException {
+    Location getLocationForModule(Location location, Path file) throws IOException {
         LocationHandler h = getHandler(location);
-        return (h == null ? null : h.getLocationForModule(dir));
+        return (h == null ? null : h.getLocationForModule(file));
     }
 
     void setLocationForModule(Location location, String moduleName,
