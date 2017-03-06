@@ -55,10 +55,6 @@ HeapRegionDCTOC::HeapRegionDCTOC(G1CollectedHeap* g1,
   DirtyCardToOopClosure(hr, cl, precision, NULL),
   _hr(hr), _rs_scan(cl), _g1(g1) { }
 
-FilterOutOfRegionClosure::FilterOutOfRegionClosure(HeapRegion* r,
-                                                   OopClosure* oc) :
-  _r_bottom(r->bottom()), _r_end(r->end()), _oc(oc) { }
-
 void HeapRegionDCTOC::walk_mem_region(MemRegion mr,
                                       HeapWord* bottom,
                                       HeapWord* top) {
@@ -357,7 +353,7 @@ void HeapRegion::note_self_forwarding_removal_end(size_t marked_bytes) {
 // special handling for concurrent processing encountering an
 // in-progress allocation.
 static bool do_oops_on_card_in_humongous(MemRegion mr,
-                                         FilterOutOfRegionClosure* cl,
+                                         G1UpdateRSOrPushRefOopClosure* cl,
                                          HeapRegion* hr,
                                          G1CollectedHeap* g1h) {
   assert(hr->is_humongous(), "precondition");
@@ -398,7 +394,7 @@ static bool do_oops_on_card_in_humongous(MemRegion mr,
 }
 
 bool HeapRegion::oops_on_card_seq_iterate_careful(MemRegion mr,
-                                                  FilterOutOfRegionClosure* cl) {
+                                                  G1UpdateRSOrPushRefOopClosure* cl) {
   assert(MemRegion(bottom(), end()).contains(mr), "Card region not in heap region");
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
@@ -767,6 +763,21 @@ public:
       }
     }
   }
+};
+
+// Closure that applies the given two closures in sequence.
+class G1Mux2Closure : public OopClosure {
+  OopClosure* _c1;
+  OopClosure* _c2;
+public:
+  G1Mux2Closure(OopClosure *c1, OopClosure *c2) { _c1 = c1; _c2 = c2; }
+  template <class T> inline void do_oop_work(T* p) {
+    // Apply first closure; then apply the second.
+    _c1->do_oop(p);
+    _c2->do_oop(p);
+  }
+  virtual inline void do_oop(oop* p) { do_oop_work(p); }
+  virtual inline void do_oop(narrowOop* p) { do_oop_work(p); }
 };
 
 // This really ought to be commoned up into OffsetTableContigSpace somehow.
