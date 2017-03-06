@@ -977,31 +977,13 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     }
 
     @Override @DefinedBy(Api.COMPILER)
-    public Location getLocationForModule(Location location, JavaFileObject fo, String pkgName) throws IOException {
+    public Location getLocationForModule(Location location, JavaFileObject fo) throws IOException {
         checkModuleOrientedOrOutputLocation(location);
         if (!(fo instanceof PathFileObject))
             return null;
-        int depth = 1; // allow 1 for filename
-        if (pkgName != null && !pkgName.isEmpty()) {
-            depth += 1;
-            for (int i = 0; i < pkgName.length(); i++) {
-                switch (pkgName.charAt(i)) {
-                    case '/': case '.':
-                        depth++;
-                }
-            }
-        }
         Path p = Locations.normalize(((PathFileObject) fo).path);
-        int fc = p.getNameCount();
-        if (depth < fc) {
-            Path root = p.getRoot();
-            Path subpath = p.subpath(0, fc - depth);
-            Path dir = (root == null) ? subpath : root.resolve(subpath);
-            // need to find dir in location
-            return locations.getLocationForModule(location, dir);
-        } else {
-            return null;
-        }
+            // need to find p in location
+        return locations.getLocationForModule(location, p);
     }
 
     @Override @DefinedBy(Api.COMPILER)
