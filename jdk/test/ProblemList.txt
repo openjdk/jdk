@@ -215,6 +215,8 @@ sun/security/tools/jarsigner/warnings/BadKeyUsageTest.java      8026393 generic-
 javax/net/ssl/DTLS/PacketLossRetransmission.java                8169086 macosx-x64
 javax/net/ssl/DTLS/RespondToRetransmit.java                     8169086 macosx-x64
 
+sun/security/mscapi/SignedObjectChain.java                      8176183 windows-all
+
 ############################################################################
 
 # jdk_sound
