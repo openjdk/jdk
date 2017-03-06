@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8131025 8141092 8153761 8145263 8131019 8175886
+ * @bug 8131025 8141092 8153761 8145263 8131019 8175886 8176184
  * @summary Test Completion and Documentation
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -296,7 +296,7 @@ public class CompletionSuggestionTest extends KullaTesting {
     }
 
     public void testImportStart() {
-        assertCompletion("import ja|", "java", "javax");
+        assertCompletion("import c|", "com");
         assertCompletion("import o|", "org");
     }
 
