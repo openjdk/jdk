@@ -125,6 +125,8 @@ java/beans/Introspector/8132566/OverrideUserDefPropertyInfoTest.java 8132565 gen
 
 java/lang/StringCoding/CheckEncodings.sh                        7008363 generic-all
 
+jdk/internal/misc/JavaLangAccess/NewUnsafeString.java           8176188 generic-all
+
 ############################################################################
 
 # jdk_instrument
