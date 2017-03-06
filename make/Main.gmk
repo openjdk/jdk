@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ include $(SRC_ROOT)/make/MainSupport.gmk
 # Load the vital tools for all the makefiles.
 include $(SRC_ROOT)/make/common/MakeBase.gmk
 include $(SRC_ROOT)/make/common/Modules.gmk
+include $(SRC_ROOT)/make/common/FindTests.gmk
 
 # Declare ALL_TARGETS as an immediate variable. This variable is a list of all
 # valid top level targets. It's used to declare them all as PHONY and to
@@ -423,6 +424,22 @@ endif
 ALL_TARGETS += $(INTERIM_JMOD_TARGETS) interim-image generate-link-opt-data
 
 ################################################################################
+# Generate test names for all JTReg test groups
+#
+
+define DeclareRunTestRecipe
+  run-test-$1:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk run-test TEST="$1")
+
+endef
+
+# ALL_NAMED_TESTS is defined in FindTests.gmk
+$(foreach t, $(ALL_NAMED_TESTS), $(eval $(call DeclareRunTestRecipe,$t)))
+ALL_TEST_TARGETS := $(addprefix run-test-, $(ALL_NAMED_TESTS))
+
+ALL_TARGETS += $(ALL_TEST_TARGETS)
+
+################################################################################
 # Build tests
 #
 
@@ -445,6 +462,9 @@ build-test-jdk-jtreg-native:
 test-image-jdk-jtreg-native:
 	+($(CD) $(JDK_TOPDIR)/make/test && $(MAKE) $(MAKE_ARGS) -f JtregNative.gmk \
 	    test-image-jdk-jtreg-native)
+
+run-test:
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk run-test TEST="$(TEST)")
 
 ifeq ($(BUILD_GTEST), true)
   test-image-hotspot-gtest:
@@ -474,7 +494,8 @@ endif
 ALL_TARGETS += prepare-test-image build-test-hotspot-jtreg-native \
     test-image-hotspot-jtreg-native build-test-jdk-jtreg-native \
     test-image-jdk-jtreg-native build-test-lib build-test-failure-handler \
-    test-failure-handler test-image-failure-handler test-image-hotspot-gtest
+    test-failure-handler test-image-failure-handler test-image-hotspot-gtest \
+    run-test
 
 ################################################################################
 # Run tests
@@ -757,6 +778,11 @@ else
 
   test: jdk-image test-image
 
+  run-test: jdk-image test-image
+
+  # Declare dependency for all generated test targets
+  $(foreach t, $(ALL_TEST_TARGETS), $(eval $t: jdk-image test-image))
+
   create-buildjdk-copy: jdk.jlink-java java.base-gendata \
       $(addsuffix -java, $(INTERIM_IMAGE_MODULES))
 
@@ -1030,6 +1056,9 @@ print-targets:
 
 print-modules:
 	  @$(ECHO) $(sort $(ALL_MODULES))
+
+print-tests:
+	  @$(ECHO) $(sort $(ALL_NAMED_TESTS))
 
 create-main-targets-include:
 	  $(call LogInfo, Generating main target list)
