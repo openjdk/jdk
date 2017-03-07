@@ -219,6 +219,8 @@ javax/net/ssl/DTLS/RespondToRetransmit.java                     8169086 macosx-x
 
 sun/security/mscapi/SignedObjectChain.java                      8176183 windows-all
 
+sun/security/krb5/auto/Basic.java                               8176296 generic-all
+
 ############################################################################
 
 # jdk_sound
