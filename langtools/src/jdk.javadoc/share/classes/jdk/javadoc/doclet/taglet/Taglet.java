@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,15 @@ import java.util.Set;
 import com.sun.source.doctree.DocTree;
 
 /**
- * The interface for a custom tag used by Doclets. A custom
- * tag must implement this interface, and must have a public
- * default constructor (i.e. a public constructor with no
+ * The interface for a custom taglet supported by doclets such as
+ * the {@link jdk.javadoc.doclets.StandardDoclet standard doclet}.
+ * Custom taglets are used to handle custom tags in documentation
+ * comments.
+ *
+ * <p>A custom taglet must implement this interface, and must have
+ * a public default constructor (i.e. a public constructor with no
  * parameters), by which, the doclet will instantiate and
- * register the custom tag.
+ * register the custom taglet.
  *
  * @since 9
  */
@@ -43,16 +47,14 @@ import com.sun.source.doctree.DocTree;
 public interface Taglet {
 
     /**
-     * Returns the set of locations in which a taglet may be used.
-     * @return the set of locations in which a taglet may be used
-     * allowed in or an empty set.
+     * Returns the set of locations in which a tag may be used.
+     * @return the set of locations in which a tag may be used
      */
     Set<Location> getAllowedLocations();
 
     /**
-     * Indicates the tag is an inline or a body tag.
-     * @return true if this <code>Taglet</code>
-     * is an inline tag, false otherwise.
+     * Indicates whether this taglet is for inline tags or not.
+     * @return true if this taglet is for an inline tag, and false otherwise
      */
     boolean isInlineTag();
 
@@ -63,26 +65,21 @@ public interface Taglet {
     String getName();
 
     /**
-     * Given the {@link DocTree DocTree} representation of this custom
-     * tag, return its string representation, which is output
-     * to the generated page.
-     * @param tag the <code>Tag</code> representation of this custom tag.
-     * @return the string representation of this <code>Tag</code>.
-     */
-    String toString(DocTree tag);
-
-    /**
-     * Given a List of {@link DocTree DocTrees} representing this custom
-     * tag, return its string representation, which is output
-     * to the generated page.  This method should
-     * return null if this taglet represents an inline or body tag.
-     * @param tags the list of <code>DocTree</code>s representing this custom tag.
-     * @return the string representation of this <code>Tag</code>.
+     * Returns the string representation of a series of instances of
+     * this tag to be included in the generated output.
+     * If this taglet is for an {@link #isInlineTag inline} tag} it will
+     * be called once per instance of the tag, each time with a singleton list.
+     * Otherwise, if this tag is a block tag, it will be called once per
+     * comment, with a list of all the instances of the tag in the comment.
+     * @param tags the list of {@code DocTree} containing one or more
+     *  instances of this tag
+     * @return the string representation of the tags to be included in
+     *  the generated output
      */
     String toString(List<? extends DocTree> tags);
 
     /**
-     * The kind of location.
+     * The kind of location in which a tag may be used.
      */
     public static enum Location {
         /** In an Overview document. */

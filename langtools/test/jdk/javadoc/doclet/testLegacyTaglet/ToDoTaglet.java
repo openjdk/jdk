@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,19 +84,6 @@ public class ToDoTaglet implements Taglet {
     }
 
     /**
-     * Given the <code>DocTree</code> representation of this custom
-     * tag, return its string representation.
-     * @param tag   the <code>DocTree</code> representing this custom tag.
-     */
-    public String toString(DocTree tag) {
-
-        return "<DT><B>" + HEADER + "</B><DD>"
-               + "<table summary=\"Summary\" cellpadding=2 cellspacing=0><tr><td bgcolor=\"yellow\">"
-               + getText(tag)
-               + "</td></tr></table></DD>\n";
-    }
-
-    /**
      * Given an array of <code>Tag</code>s representing this custom
      * tag, return its string representation.
      * @param tags  the array of <code>DocTree</code>s representing this custom tag.
@@ -104,7 +91,7 @@ public class ToDoTaglet implements Taglet {
     @Override
     public String toString(List<? extends DocTree> tags) {
         if (tags.isEmpty()) {
-            return null;
+            return "";
         }
         String result = "\n<DT><B>" + HEADER + "</B><DD>";
         result += "<table summary=\"Summary\" cellpadding=2 cellspacing=0><tr><td bgcolor=\"yellow\">";
