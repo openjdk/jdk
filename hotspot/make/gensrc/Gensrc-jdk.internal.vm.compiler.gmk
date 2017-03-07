@@ -81,6 +81,7 @@ PROCESSOR_JARS := \
 PROCESSOR_PATH := $(call PathList, $(PROCESSOR_JARS))
 
 ADD_EXPORTS := \
+    --add-modules jdk.internal.vm.ci \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.aarch64=ALL-UNNAMED \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.amd64=ALL-UNNAMED \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.code=ALL-UNNAMED \
