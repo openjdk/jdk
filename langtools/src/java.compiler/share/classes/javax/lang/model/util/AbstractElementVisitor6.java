@@ -111,7 +111,7 @@ public abstract class AbstractElementVisitor6<R, P> implements ElementVisitor<R,
      *
      * @implSpec The default implementation of this method in
      * {@code AbstractElementVisitor6} will always throw
-     * {@code UnknownElementException}.
+     * {@code new UnknownElementException(e, p)}.
      * This behavior is not required of a subclass.
      *
      * @param e {@inheritDoc}

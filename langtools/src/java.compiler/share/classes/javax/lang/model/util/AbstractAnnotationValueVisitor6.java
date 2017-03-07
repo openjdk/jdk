@@ -106,7 +106,7 @@ public abstract class AbstractAnnotationValueVisitor6<R, P>
      *
      * @implSpec The default implementation of this method in {@code
      * AbstractAnnotationValueVisitor6} will always throw {@code
-     * UnknownAnnotationValueException}.  This behavior is not
+     * new UnknownAnnotationValueException(av, p)}.  This behavior is not
      * required of a subclass.
      *
      * @param av {@inheritDoc}
