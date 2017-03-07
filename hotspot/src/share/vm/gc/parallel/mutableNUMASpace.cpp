@@ -30,11 +30,21 @@
 #include "runtime/atomic.hpp"
 #include "runtime/thread.inline.hpp"
 
-MutableNUMASpace::MutableNUMASpace(size_t alignment) : MutableSpace(alignment) {
+MutableNUMASpace::MutableNUMASpace(size_t alignment) : MutableSpace(alignment), _must_use_large_pages(false) {
   _lgrp_spaces = new (ResourceObj::C_HEAP, mtGC) GrowableArray<LGRPSpace*>(0, true);
   _page_size = os::vm_page_size();
   _adaptation_cycles = 0;
   _samples_count = 0;
+
+#ifdef LINUX
+  // Changing the page size can lead to freeing of memory. When using large pages
+  // and the memory has been both reserved and committed, Linux does not support
+  // freeing parts of it.
+    if (UseLargePages && !os::can_commit_large_page_memory()) {
+      _must_use_large_pages = true;
+    }
+#endif // LINUX
+
   update_layout(true);
 }
 
@@ -578,6 +588,10 @@ void MutableNUMASpace::initialize(MemRegion mr,
   // Try small pages if the chunk size is too small
   if (base_space_size_pages / lgrp_spaces()->length() == 0
       && page_size() > (size_t)os::vm_page_size()) {
+    // Changing the page size below can lead to freeing of memory. So we fail initialization.
+    if (_must_use_large_pages) {
+      vm_exit_during_initialization("Failed initializing NUMA with large pages. Too small heap size");
+    }
     set_page_size(os::vm_page_size());
     rounded_bottom = (HeapWord*)round_to((intptr_t) bottom(), page_size());
     rounded_end = (HeapWord*)round_down((intptr_t) end(), page_size());
