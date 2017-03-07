@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or
  * without modification, are permitted provided that the following
@@ -85,22 +85,12 @@ public class UnderlineTaglet implements Taglet {
     }
 
     /**
-     * Given the <code>Tag</code> representation of this custom
+     * Given the <code>DocTree</code> representation of this custom
      * tag, return its string representation.
-     * @param tag he <code>Tag</code> representation of this custom tag.
-     */
-    public String toString(DocTree tag) {
-        return "<u>" + getText(tag) + "</u>";
-    }
-
-    /**
-     * This method should not be called since arrays of inline tags do not
-     * exist.  Method {@link #tostring(Tag)} should be used to convert this
-     * inline tag to a string.
-     * @param tags the array of <code>Tag</code>s representing of this custom tag.
+     * @param tags the list of trees representing of this custom tag.
      */
     public String toString(List<? extends DocTree> tags) {
-        return null;
+        return "<u>" + getText(tags.get(0)) + "</u>";
     }
 
     static String getText(DocTree dt) {
