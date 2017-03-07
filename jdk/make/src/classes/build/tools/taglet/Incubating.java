@@ -59,11 +59,6 @@ public class Incubating implements Taglet {
                 + " Will be removed in a future release.</b>";
 
     @Override
-    public String toString(DocTree tag) {
-        return MESSAGE;
-    }
-
-    @Override
     public String toString(List<? extends DocTree> tags) {
         return MESSAGE;
     }
