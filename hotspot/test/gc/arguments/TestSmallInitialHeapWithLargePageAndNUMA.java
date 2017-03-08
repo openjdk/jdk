@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @requires os.family == "linux"
  * @requires vm.gc.Parallel
  * @summary Check large pages and NUMA are working together via the output message.
- * @library /testlibrary /test/lib /test/lib/share/classes
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.management/sun.management
  * @build TestSmallInitialHeapWithLargePageAndNUMA
@@ -35,8 +35,8 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UseHugeTLBFS -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestSmallInitialHeapWithLargePageAndNUMA
 */
 
-import jdk.test.lib.ProcessTools;
-import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 import sun.hotspot.WhiteBox;
 
 public class TestSmallInitialHeapWithLargePageAndNUMA {
