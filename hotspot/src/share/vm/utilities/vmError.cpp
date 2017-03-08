@@ -1323,6 +1323,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     }
 
     report(&log, true);
+    log_done = true;
     _current_step = 0;
     _current_step_info = "";
 
@@ -1343,7 +1344,6 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     }
 
     log.set_fd(-1);
-    log_done = true;
   }
 
   static bool skip_replay = ReplayCompiles; // Do not overwrite file during replay
