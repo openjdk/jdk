@@ -775,6 +775,7 @@ public class Basic {
     }
 
     static void testTimeout(final long timeout, final TimeUnit unit) throws Exception {
+        System.out.printf("---- timeout: %d ms%n", unit.toMillis(timeout));
         try (Server server = new Server()) {
             AsynchronousSocketChannel ch = AsynchronousSocketChannel.open();
             ch.connect(server.address()).get();
