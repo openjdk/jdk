@@ -1266,6 +1266,10 @@ void ClassFileParser::parse_field_attributes(const ClassFileStream* const cfs,
       }
     } else if (_major_version >= JAVA_1_5_VERSION) {
       if (attribute_name == vmSymbols::tag_signature()) {
+        if (generic_signature_index != 0) {
+          classfile_parse_error(
+            "Multiple Signature attributes for field in class file %s", CHECK);
+        }
         if (attribute_length != 2) {
           classfile_parse_error(
             "Wrong size %u for field's Signature attribute in class file %s",
@@ -2587,6 +2591,11 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
       }
     } else if (_major_version >= JAVA_1_5_VERSION) {
       if (method_attribute_name == vmSymbols::tag_signature()) {
+        if (generic_signature_index != 0) {
+          classfile_parse_error(
+            "Multiple Signature attributes for method in class file %s",
+            CHECK_NULL);
+        }
         if (method_attribute_length != 2) {
           classfile_parse_error(
             "Invalid Signature attribute length %u in class file %s",
@@ -3306,6 +3315,10 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
       }
     } else if (_major_version >= JAVA_1_5_VERSION) {
       if (tag == vmSymbols::tag_signature()) {
+        if (_generic_signature_index != 0) {
+          classfile_parse_error(
+            "Multiple Signature attributes in class file %s", CHECK);
+        }
         if (attribute_length != 2) {
           classfile_parse_error(
             "Wrong Signature attribute length %u in class file %s",
