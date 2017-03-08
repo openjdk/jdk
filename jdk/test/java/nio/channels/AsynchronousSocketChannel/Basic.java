@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,27 @@
 
 /* @test
  * @bug 4607272 6842687 6878369 6944810 7023403
- * @summary Unit test for AsynchronousSocketChannel
+ * @summary Unit test for AsynchronousSocketChannel(use -Dseed=X to set PRNG seed)
+ * @library /lib/testlibrary/
+ * @build jdk.testlibrary.*
  * @run main Basic -skipSlowConnectTest
  * @key randomness intermittent
  */
 
-import java.nio.ByteBuffer;
-import java.nio.channels.*;
-import static java.net.StandardSocketOptions.*;
-import java.net.*;
-import java.util.Random;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
 import java.io.Closeable;
 import java.io.IOException;
+import java.net.*;
+import static java.net.StandardSocketOptions.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.*;
+import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
+import jdk.testlibrary.RandomFactory;
 
 public class Basic {
-    static final Random rand = new Random();
+    private static final Random RAND = RandomFactory.getRandom();
 
     static boolean skipSlowConnectTest = false;
 
@@ -327,8 +330,10 @@ public class Basic {
                 new AtomicReference<Throwable>();
 
             // write bytes to fill socket buffer
+            final AtomicInteger numCompleted = new AtomicInteger();
             ch.write(genBuffer(), ch, new CompletionHandler<Integer,AsynchronousSocketChannel>() {
                 public void completed(Integer result, AsynchronousSocketChannel ch) {
+                    numCompleted.incrementAndGet();
                     ch.write(genBuffer(), ch, this);
                 }
                 public void failed(Throwable x, AsynchronousSocketChannel ch) {
@@ -336,10 +341,21 @@ public class Basic {
                 }
             });
 
-            // give time for socket buffer to fill up.
-            Thread.sleep(5*1000);
+            // give time for socket buffer to fill up -
+            // take pauses until the handler is no longer being invoked
+            // because all writes are being pended which guarantees that
+            // the internal channel state indicates it is writing
+            int prevNumCompleted = numCompleted.get();
+            do {
+                Thread.sleep(1000);
+                if (numCompleted.get() == prevNumCompleted) {
+                    break;
+                }
+                prevNumCompleted = numCompleted.get();
+            } while (true);
 
-            //  attempt a concurrent write - should fail with WritePendingException
+            // attempt a concurrent write -
+            // should fail with WritePendingException
             try {
                 ch.write(genBuffer());
                 throw new RuntimeException("WritePendingException expected");
@@ -497,12 +513,12 @@ public class Basic {
             // trickle the writing
             do {
                 int rem = src.remaining();
-                int size = (rem <= 100) ? rem : 50 + rand.nextInt(rem - 100);
+                int size = (rem <= 100) ? rem : 50 + RAND.nextInt(rem - 100);
                 ByteBuffer buf = ByteBuffer.allocate(size);
                 for (int i=0; i<size; i++)
                     buf.put(src.get());
                 buf.flip();
-                Thread.sleep(50 + rand.nextInt(1500));
+                Thread.sleep(50 + RAND.nextInt(1500));
                 while (buf.hasRemaining())
                     sc.write(buf);
             } while (src.hasRemaining());
@@ -715,7 +731,7 @@ public class Basic {
     }
 
     static void testShutdown() throws Exception {
-        System.out.println("-- shutdown--");
+        System.out.println("-- shutdown --");
 
         try (Server server = new Server();
              AsynchronousSocketChannel ch = AsynchronousSocketChannel.open())
@@ -847,10 +863,10 @@ public class Basic {
 
     // returns ByteBuffer with random bytes
     static ByteBuffer genBuffer() {
-        int size = 1024 + rand.nextInt(16000);
+        int size = 1024 + RAND.nextInt(16000);
         byte[] buf = new byte[size];
-        rand.nextBytes(buf);
-        boolean useDirect = rand.nextBoolean();
+        RAND.nextBytes(buf);
+        boolean useDirect = RAND.nextBoolean();
         if (useDirect) {
             ByteBuffer bb = ByteBuffer.allocateDirect(buf.length);
             bb.put(buf);
@@ -865,7 +881,7 @@ public class Basic {
     static ByteBuffer[] genBuffers(int max) {
         int len = 1;
         if (max > 1)
-            len += rand.nextInt(max);
+            len += RAND.nextInt(max);
         ByteBuffer[] bufs = new ByteBuffer[len];
         for (int i=0; i<len; i++)
             bufs[i] = genBuffer();
@@ -875,17 +891,17 @@ public class Basic {
     // return random SocketAddress
     static SocketAddress genSocketAddress() {
         StringBuilder sb = new StringBuilder("10.");
-        sb.append(rand.nextInt(256));
+        sb.append(RAND.nextInt(256));
         sb.append('.');
-        sb.append(rand.nextInt(256));
+        sb.append(RAND.nextInt(256));
         sb.append('.');
-        sb.append(rand.nextInt(256));
+        sb.append(RAND.nextInt(256));
         InetAddress rh;
         try {
             rh = InetAddress.getByName(sb.toString());
         } catch (UnknownHostException x) {
             throw new InternalError("Should not happen");
         }
-        return new InetSocketAddress(rh, rand.nextInt(65535)+1);
+        return new InetSocketAddress(rh, RAND.nextInt(65535)+1);
     }
 }
