@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2310,26 +2310,25 @@ class StubGenerator: public StubCodeGenerator {
   }
 
 
-
-  // Arguments:
-  //   Z_ARG1  - int   crc
-  //   Z_ARG2  - byte* buf
-  //   Z_ARG3  - int   length (of buffer)
-  //
-  // Result:
-  //   Z_RET   - int   crc result
-  //
-  // Compute CRC32 function.
-  address generate_CRC32_updateBytes(const char* name) {
-    __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", name);
-    unsigned int   start_off = __ offset();  // Remember stub start address (is rtn value).
+  /**
+   *  Arguments:
+   *
+   * Inputs:
+   *   Z_ARG1    - int   crc
+   *   Z_ARG2    - byte* buf
+   *   Z_ARG3    - int   length (of buffer)
+   *
+   * Result:
+   *   Z_RET     - int   crc result
+   **/
+  // Compute CRC function (generic, for all polynomials).
+  void generate_CRC_updateBytes(const char* name, Register table, bool invertCRC) {
 
     // arguments to kernel_crc32:
     Register       crc     = Z_ARG1;  // Current checksum, preset by caller or result from previous call, int.
     Register       data    = Z_ARG2;  // source byte array
     Register       dataLen = Z_ARG3;  // #bytes to process, int
-    Register       table   = Z_ARG4;  // crc table address
+//    Register       table   = Z_ARG4;  // crc table address. Preloaded and passed in by caller.
     const Register t0      = Z_R10;   // work reg for kernel* emitters
     const Register t1      = Z_R11;   // work reg for kernel* emitters
     const Register t2      = Z_R12;   // work reg for kernel* emitters
@@ -2341,16 +2340,50 @@ class StubGenerator: public StubCodeGenerator {
     // Crc used as int.
     __ z_llgfr(dataLen, dataLen);
 
-    StubRoutines::zarch::generate_load_crc_table_addr(_masm, table);
-
     __ resize_frame(-(6*8), Z_R0, true); // Resize frame to provide add'l space to spill 5 registers.
     __ z_stmg(Z_R10, Z_R13, 1*8, Z_SP);  // Spill regs 10..11 to make them available as work registers.
-    __ kernel_crc32_1word(crc, data, dataLen, table, t0, t1, t2, t3);
+    __ kernel_crc32_1word(crc, data, dataLen, table, t0, t1, t2, t3, invertCRC);
     __ z_lmg(Z_R10, Z_R13, 1*8, Z_SP);   // Spill regs 10..11 back from stack.
     __ resize_frame(+(6*8), Z_R0, true); // Resize frame to provide add'l space to spill 5 registers.
 
     __ z_llgfr(Z_RET, crc);  // Updated crc is function result. No copying required, just zero upper 32 bits.
     __ z_br(Z_R14);          // Result already in Z_RET == Z_ARG1.
+  }
+
+
+  // Compute CRC32 function.
+  address generate_CRC32_updateBytes(const char* name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+    unsigned int   start_off = __ offset();  // Remember stub start address (is rtn value).
+
+    assert(UseCRC32Intrinsics, "should not generate this stub (%s) with CRC32 intrinsics disabled", name);
+
+    BLOCK_COMMENT("CRC32_updateBytes {");
+    Register       table   = Z_ARG4;  // crc32 table address.
+    StubRoutines::zarch::generate_load_crc_table_addr(_masm, table);
+
+    generate_CRC_updateBytes(name, table, true);
+    BLOCK_COMMENT("} CRC32_updateBytes");
+
+    return __ addr_at(start_off);
+  }
+
+
+  // Compute CRC32C function.
+  address generate_CRC32C_updateBytes(const char* name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+    unsigned int   start_off = __ offset();  // Remember stub start address (is rtn value).
+
+    assert(UseCRC32CIntrinsics, "should not generate this stub (%s) with CRC32C intrinsics disabled", name);
+
+    BLOCK_COMMENT("CRC32C_updateBytes {");
+    Register       table   = Z_ARG4;  // crc32c table address.
+    StubRoutines::zarch::generate_load_crc32c_table_addr(_masm, table);
+
+    generate_CRC_updateBytes(name, table, false);
+    BLOCK_COMMENT("} CRC32C_updateBytes");
 
     return __ addr_at(start_off);
   }
@@ -2421,9 +2454,13 @@ class StubGenerator: public StubCodeGenerator {
     // Entry points that are platform specific.
 
     if (UseCRC32Intrinsics) {
-      // We have no CRC32 table on z/Architecture.
-      StubRoutines::_crc_table_adr    = (address)StubRoutines::zarch::_crc_table;
-      StubRoutines::_updateBytesCRC32 = generate_CRC32_updateBytes("CRC32_updateBytes");
+      StubRoutines::_crc_table_adr     = (address)StubRoutines::zarch::_crc_table;
+      StubRoutines::_updateBytesCRC32  = generate_CRC32_updateBytes("CRC32_updateBytes");
+    }
+
+    if (UseCRC32CIntrinsics) {
+      StubRoutines::_crc32c_table_addr = (address)StubRoutines::zarch::_crc32c_table;
+      StubRoutines::_updateBytesCRC32C = generate_CRC32C_updateBytes("CRC32C_updateBytes");
     }
 
     // Comapct string intrinsics: Translate table for string inflate intrinsic. Used by trot instruction.
