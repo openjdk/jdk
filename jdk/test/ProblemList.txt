@@ -186,8 +186,6 @@ java/nio/file/WatchService/Basic.java                           7158947 solaris-
 java/nio/file/WatchService/MayFlies.java                        7158947 solaris-all Solaris 11
 java/nio/file/WatchService/LotsOfEvents.java                    7158947 solaris-all Solaris 11
 
-sun/nio/cs/OLD/TestIBMDB.java                                   8167525 generic-all
-
 ############################################################################
 
 # jdk_rmi
