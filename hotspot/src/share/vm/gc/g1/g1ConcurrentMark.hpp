@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,8 +192,6 @@ private:
   // NULL if out of memory.
   OopChunk* allocate_new_chunk();
 
-  volatile bool _out_of_memory;
-
   // Atomically add the given chunk to the list.
   void add_chunk_to_list(OopChunk* volatile* list, OopChunk* elem);
   // Atomically remove and return a chunk from the given list. Returns NULL if the
@@ -239,9 +237,6 @@ private:
   bool is_empty() const { return _chunk_list == NULL; }
 
   size_t capacity() const  { return _chunk_capacity; }
-
-  bool is_out_of_memory() const { return _out_of_memory; }
-  void clear_out_of_memory() { _out_of_memory = false; }
 
   bool should_expand() const { return _should_expand; }
   void set_should_expand(bool value) { _should_expand = value; }
@@ -432,7 +427,7 @@ protected:
 
   // Resets all the marking data structures. Called when we have to restart
   // marking or when marking completes (via set_non_marking_state below).
-  void reset_marking_state(bool clear_overflow = true);
+  void reset_marking_state();
 
   // We do this after we're done with marking so that the marking data
   // structures are initialized to a sensible and predictable state.
@@ -543,7 +538,6 @@ public:
   }
   size_t mark_stack_size()                { return _global_mark_stack.size(); }
   size_t partial_mark_stack_size_target() { return _global_mark_stack.capacity()/3; }
-  bool mark_stack_overflow()              { return _global_mark_stack.is_out_of_memory(); }
   bool mark_stack_empty()                 { return _global_mark_stack.is_empty(); }
 
   G1CMRootRegions* root_regions() { return &_root_regions; }
