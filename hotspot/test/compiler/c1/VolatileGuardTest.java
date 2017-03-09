@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,30 +20,33 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.tools.jaotc.test.collect;
 
-import jdk.tools.jaotc.collect.SearchPath;
+/**
+ * @test
+ * @bug 8175887
+ * @summary C1 doesn't respect the JMM with volatile field loads
+ *
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:TieredStopAtLevel=1 VolatileGuardTest
+ */
+public class VolatileGuardTest {
+    volatile static private int a;
+    static private int b;
 
-import java.nio.file.FileSystem;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Set;
+    static void test() {
+        int tt = b; // makes the JVM CSE the value of b
 
-import static jdk.tools.jaotc.test.collect.Utils.set;
-
-public class FakeSearchPath extends SearchPath {
-    private Path path = null;
-    public Set<String> entries = set();
-
-    public FakeSearchPath(String name) {
-        if (name != null) {
-            path = Paths.get(name);
+        while (a == 0) {} // burn
+        if (b == 0) {
+            System.err.println("wrong value of b");
+            System.exit(1); // fail hard to report the error
         }
     }
 
-    @Override
-    public Path find(FileSystem fileSystem, Path entry, String... defaults) {
-        entries.add(entry.toString());
-        return path;
+    public static void main(String [] args) throws Exception {
+        for (int i = 0; i < 10; i++) {
+            new Thread(VolatileGuardTest::test).start();
+        }
+        b = 1;
+        a = 1;
     }
 }
