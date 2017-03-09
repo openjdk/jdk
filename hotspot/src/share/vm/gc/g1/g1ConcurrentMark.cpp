@@ -136,7 +136,6 @@ G1CMMarkStack::G1CMMarkStack() :
   _max_chunk_capacity(0),
   _base(NULL),
   _chunk_capacity(0),
-  _out_of_memory(false),
   _should_expand(false) {
   set_empty();
 }
@@ -278,11 +277,10 @@ bool G1CMMarkStack::par_push_chunk(oop* ptr_arr) {
   if (new_chunk == NULL) {
     // Did not get a chunk from the free list. Allocate from backing memory.
     new_chunk = allocate_new_chunk();
-  }
 
-  if (new_chunk == NULL) {
-    _out_of_memory = true;
-    return false;
+    if (new_chunk == NULL) {
+      return false;
+    }
   }
 
   Copy::conjoint_memory_atomic(ptr_arr, new_chunk->data, OopsPerChunk * sizeof(oop));
@@ -308,7 +306,6 @@ bool G1CMMarkStack::par_pop_chunk(oop* ptr_arr) {
 void G1CMMarkStack::set_empty() {
   _chunks_in_chunk_list = 0;
   _hwm = 0;
-  clear_out_of_memory();
   _chunk_list = NULL;
   _free_list = NULL;
 }
@@ -592,14 +589,10 @@ void G1ConcurrentMark::reset() {
 }
 
 
-void G1ConcurrentMark::reset_marking_state(bool clear_overflow) {
+void G1ConcurrentMark::reset_marking_state() {
   _global_mark_stack.set_should_expand(has_overflown());
-  _global_mark_stack.set_empty();        // Also clears the overflow stack's overflow flag
-  if (clear_overflow) {
-    clear_has_overflown();
-  } else {
-    assert(has_overflown(), "pre-condition");
-  }
+  _global_mark_stack.set_empty();
+  clear_has_overflown();
   _finger = _heap_start;
 
   for (uint i = 0; i < _max_worker_id; ++i) {
@@ -883,7 +876,7 @@ void G1ConcurrentMark::enter_first_sync_barrier(uint worker_id) {
       // not clear the overflow flag since we rely on it being true when
       // we exit this method to abort the pause and restart concurrent
       // marking.
-      reset_marking_state(true /* clear_overflow */);
+      reset_marking_state();
 
       log_info(gc, marking)("Concurrent Mark reset for overflow");
     }
@@ -1749,14 +1742,8 @@ void G1ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
     // oop closures will set the has_overflown flag if we overflow the
     // global marking stack.
 
-    assert(_global_mark_stack.is_out_of_memory() || _global_mark_stack.is_empty(),
-            "Mark stack should be empty (unless it is out of memory)");
-
-    if (_global_mark_stack.is_out_of_memory()) {
-      // This should have been done already when we tried to push an
-      // entry on to the global mark stack. But let's do it again.
-      set_has_overflown();
-    }
+    assert(has_overflown() || _global_mark_stack.is_empty(),
+            "Mark stack should be empty (unless it has overflown)");
 
     assert(rp->num_q() == active_workers, "why not");
 
@@ -2931,7 +2918,6 @@ void G1CMTask::do_marking_step(double time_target_ms,
       guarantee(_cm->mark_stack_empty(), "only way to reach here");
       guarantee(_task_queue->size() == 0, "only way to reach here");
       guarantee(!_cm->has_overflown(), "only way to reach here");
-      guarantee(!_cm->mark_stack_overflow(), "only way to reach here");
     } else {
       // Apparently there's more work to do. Let's abort this task. It
       // will restart it and we can hopefully find more things to do.
