@@ -29,8 +29,8 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import com.sun.source.doctree.DocTree;
-import jdk.javadoc.doclet.taglet.Taglet;
-import static jdk.javadoc.doclet.taglet.Taglet.Location.*;
+import jdk.javadoc.doclet.Taglet;
+import static jdk.javadoc.doclet.Taglet.Location.*;
 
 /**
  * An inline tag to conveniently insert a standard Incubating warning.  For
