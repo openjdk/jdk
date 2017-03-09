@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4638723 8015882 8176131
+ * @bug 4638723 8015882 8176131 8176331
  * @summary Test to ensure that the refactored version of the standard
  * doclet still works with Taglets that implement the 1.4.0 interface.
  * @author jamieh

@@ -32,9 +32,9 @@ import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.UnknownBlockTagTree;
 import com.sun.source.doctree.UnknownInlineTagTree;
 import com.sun.source.util.SimpleDocTreeVisitor;
-import jdk.javadoc.doclet.taglet.Taglet;
-import jdk.javadoc.doclet.taglet.Taglet.Location;
-import static jdk.javadoc.doclet.taglet.Taglet.Location.*;
+import jdk.javadoc.doclet.Taglet;
+import jdk.javadoc.doclet.Taglet.Location;
+import static jdk.javadoc.doclet.Taglet.Location.*;
 
 
 /**

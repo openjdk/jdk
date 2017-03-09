@@ -45,7 +45,7 @@ import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.UnknownBlockTagTree;
 import com.sun.source.doctree.UnknownInlineTagTree;
 import com.sun.source.util.SimpleDocTreeVisitor;
-import jdk.javadoc.doclet.taglet.Taglet;
+import jdk.javadoc.doclet.Taglet;
 
 /**
  * A sample Inline Taglet representing {@underline ...}. This tag can

@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.javadoc.doclet.taglet;
+package jdk.javadoc.doclet;
 
 import java.util.List;
 import java.util.Set;
@@ -32,7 +32,7 @@ import com.sun.source.doctree.DocTree;
 
 /**
  * The interface for a custom taglet supported by doclets such as
- * the {@link jdk.javadoc.doclets.StandardDoclet standard doclet}.
+ * the {@link jdk.javadoc.doclet.StandardDoclet standard doclet}.
  * Custom taglets are used to handle custom tags in documentation
  * comments.
  *

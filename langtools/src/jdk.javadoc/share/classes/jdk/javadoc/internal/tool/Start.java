@@ -93,7 +93,7 @@ public class Start extends ToolOption.Helper {
             com.sun.tools.doclets.standard.Standard.class;
 
     private static final Class<?> StdDoclet =
-            jdk.javadoc.doclets.StandardDoclet.class;
+            jdk.javadoc.doclet.StandardDoclet.class;
     /** Context for this invocation. */
     private final Context context;
 

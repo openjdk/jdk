@@ -34,10 +34,10 @@ import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
-import static jdk.javadoc.doclet.taglet.Taglet.Location.*;
+import static jdk.javadoc.doclet.Taglet.Location.*;
 
 /**
- * A taglet wrapper, allows the public taglet {@link jdk.javadoc.doclet.taglet.Taglet}
+ * A taglet wrapper, allows the public taglet {@link jdk.javadoc.doclet.Taglet}
  * wrapped into an internal Taglet representation.
  *
  *  <p><b>This is NOT part of any supported API.
@@ -49,9 +49,9 @@ import static jdk.javadoc.doclet.taglet.Taglet.Location.*;
  */
 public class UserTaglet implements Taglet {
 
-    final private jdk.javadoc.doclet.taglet.Taglet userTaglet;
+    final private jdk.javadoc.doclet.Taglet userTaglet;
 
-    public UserTaglet(jdk.javadoc.doclet.taglet.Taglet t) {
+    public UserTaglet(jdk.javadoc.doclet.Taglet t) {
         userTaglet = t;
     }
 
