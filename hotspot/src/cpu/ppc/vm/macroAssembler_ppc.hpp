@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -817,33 +817,47 @@ class MacroAssembler: public Assembler {
                        Register tmp6, Register tmp7, Register tmp8, Register tmp9, Register tmp10,
                        Register tmp11, Register tmp12, Register tmp13);
 
-  // CRC32 Intrinsics.
+  // Emitters for CRC32 calculation.
+  // A note on invertCRC:
+  //   Unfortunately, internal representation of crc differs between CRC32 and CRC32C.
+  //   CRC32 holds it's current crc value in the externally visible representation.
+  //   CRC32C holds it's current crc value in internal format, ready for updating.
+  //   Thus, the crc value must be bit-flipped before updating it in the CRC32 case.
+  //   In the CRC32C case, it must be bit-flipped when it is given to the outside world (getValue()).
+  //   The bool invertCRC parameter indicates whether bit-flipping is required before updates.
   void load_reverse_32(Register dst, Register src);
   int  crc32_table_columns(Register table, Register tc0, Register tc1, Register tc2, Register tc3);
   void fold_byte_crc32(Register crc, Register val, Register table, Register tmp);
   void fold_8bit_crc32(Register crc, Register table, Register tmp);
   void update_byte_crc32(Register crc, Register val, Register table);
   void update_byteLoop_crc32(Register crc, Register buf, Register len, Register table,
-                             Register data, bool loopAlignment, bool invertCRC);
+                             Register data, bool loopAlignment);
   void update_1word_crc32(Register crc, Register buf, Register table, int bufDisp, int bufInc,
                           Register t0,  Register t1,  Register t2,  Register t3,
                           Register tc0, Register tc1, Register tc2, Register tc3);
   void kernel_crc32_2word(Register crc, Register buf, Register len, Register table,
                           Register t0,  Register t1,  Register t2,  Register t3,
-                          Register tc0, Register tc1, Register tc2, Register tc3);
+                          Register tc0, Register tc1, Register tc2, Register tc3,
+                          bool invertCRC);
   void kernel_crc32_1word(Register crc, Register buf, Register len, Register table,
                           Register t0,  Register t1,  Register t2,  Register t3,
-                          Register tc0, Register tc1, Register tc2, Register tc3);
+                          Register tc0, Register tc1, Register tc2, Register tc3,
+                          bool invertCRC);
   void kernel_crc32_1byte(Register crc, Register buf, Register len, Register table,
-                          Register t0,  Register t1,  Register t2,  Register t3);
+                          Register t0,  Register t1,  Register t2,  Register t3,
+                          bool invertCRC);
   void kernel_crc32_1word_vpmsumd(Register crc, Register buf, Register len, Register table,
                           Register constants, Register barretConstants,
-                          Register t0,  Register t1, Register t2, Register t3, Register t4);
+                          Register t0,  Register t1, Register t2, Register t3, Register t4,
+                          bool invertCRC);
   void kernel_crc32_1word_aligned(Register crc, Register buf, Register len,
                           Register constants, Register barretConstants,
                           Register t0, Register t1, Register t2);
 
-  void kernel_crc32_singleByte(Register crc, Register buf, Register len, Register table, Register tmp);
+  void kernel_crc32_singleByte(Register crc, Register buf, Register len, Register table, Register tmp,
+                               bool invertCRC);
+  void kernel_crc32_singleByteReg(Register crc, Register val, Register table,
+                                  bool invertCRC);
 
   //
   // Debugging
