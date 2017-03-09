@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8035473 8154482 8154399 8159096 8176131
+ * @bug 8035473 8154482 8154399 8159096 8176131 8176331
  * @summary make sure the javadoc tool responds correctly to Xold,
  *          old doclets and taglets.
  * @library /tools/lib
@@ -87,7 +87,7 @@ public class EnsureNewOldDoclet extends TestRunner {
             CLASS_NAME + "\\$OldTaglet.*");
 
     final static String OLD_STDDOCLET = "com.sun.tools.doclets.standard.Standard";
-    final static String NEW_STDDOCLET = "jdk.javadoc.doclets.StandardDoclet";
+    final static String NEW_STDDOCLET = "jdk.javadoc.doclet.StandardDoclet";
 
 
     public EnsureNewOldDoclet() throws Exception {
@@ -340,7 +340,7 @@ public class EnsureNewOldDoclet extends TestRunner {
         }
     }
 
-    public static class NewTaglet implements jdk.javadoc.doclet.taglet.Taglet {
+    public static class NewTaglet implements jdk.javadoc.doclet.Taglet {
 
         @Override
         public Set<Location> getAllowedLocations() {
