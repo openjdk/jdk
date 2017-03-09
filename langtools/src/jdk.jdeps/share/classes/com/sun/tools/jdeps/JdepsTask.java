@@ -524,7 +524,7 @@ class JdepsTask {
             e.printStackTrace();
             return EXIT_CMDERR;
         } catch (MultiReleaseException e) {
-            reportError(e.getKey(), (Object)e.getMsg());
+            reportError(e.getKey(), e.getParams());
             return EXIT_CMDERR;  // could be EXIT_ABNORMAL sometimes
         } finally {
             log.flush();

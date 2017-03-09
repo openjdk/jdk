@@ -23,15 +23,48 @@
  * questions.
  */
 
+package jdk.javadoc.doclet;
+
+import java.util.Locale;
+import java.util.Set;
+
+import javax.lang.model.SourceVersion;
+
+import jdk.javadoc.internal.doclets.formats.html.HtmlDoclet;
+
 /**
- * The Taglet API provides a way to declare custom tags that can be
- * used by the standard doclet.
- *
- * <p style="font-style: italic">
- * <b>Note:</b> The declarations in this package supersede those
- * in the older package {@code com.sun.tools.doclets}.
- * </p>
- *
- * @since 9
+ * This doclet generates HTML-formatted documentation for the specified modules, packages and types.
  */
-package jdk.javadoc.doclet.taglet;
+public class StandardDoclet implements Doclet {
+
+    private final HtmlDoclet htmlDoclet;
+
+    public StandardDoclet() {
+        htmlDoclet = new HtmlDoclet();
+    }
+
+    @Override
+    public void init(Locale locale, Reporter reporter) {
+        htmlDoclet.init(locale, reporter);
+    }
+
+    @Override
+    public String getName() {
+        return "Standard";
+    }
+
+    @Override
+    public Set<Doclet.Option> getSupportedOptions() {
+        return htmlDoclet.getSupportedOptions();
+    }
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return htmlDoclet.getSupportedSourceVersion();
+    }
+
+    @Override
+    public boolean run(DocletEnvironment docEnv) {
+        return htmlDoclet.run(docEnv);
+    }
+}

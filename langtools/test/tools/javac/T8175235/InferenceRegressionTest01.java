@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,8 +21,23 @@
  * questions.
  */
 
-/**
- * This package contains standard, supported doclets.
+/*
+ * @test
+ * @bug 8175235
+ * @summary type inference regression after JDK-8046685
+ * @compile InferenceRegressionTest01.java
  */
-package jdk.javadoc.doclets;
 
+import java.util.function.Predicate;
+
+abstract class InferenceRegressionTest01 {
+
+    void f(String r) {
+        a(r, c(o(p(s -> s.isEmpty()))));
+    }
+
+    abstract <U> U o(U u);
+    abstract <E> Predicate<E> c(Predicate<E> xs);
+    abstract <S> void a(S a, Predicate<S> m);
+    abstract <V> Predicate<V> p(Predicate<V> p);
+}

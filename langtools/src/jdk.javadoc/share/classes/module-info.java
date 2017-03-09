@@ -40,8 +40,6 @@ module jdk.javadoc {
     exports com.sun.tools.javadoc;
 
     exports jdk.javadoc.doclet;
-    exports jdk.javadoc.doclet.taglet;
-    exports jdk.javadoc.doclets;
 
     provides java.util.spi.ToolProvider
         with jdk.javadoc.internal.tool.JavadocToolProvider;
