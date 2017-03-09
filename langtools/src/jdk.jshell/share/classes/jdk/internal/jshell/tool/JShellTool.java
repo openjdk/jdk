@@ -187,7 +187,7 @@ public class JShellTool implements MessageHandler {
     private Options options;
 
     SourceCodeAnalysis analysis;
-    JShell state = null;
+    private JShell state = null;
     Subscription shutdownSubscription = null;
 
     static final EditorSetting BUILT_IN_EDITOR = new EditorSetting(null, false);
@@ -1704,6 +1704,11 @@ public class JShellTool implements MessageHandler {
         return null;
     }
 
+    // Attempt to stop currently running evaluation
+    void stop() {
+        state.stop();
+    }
+
     // --- Command implementations ---
 
     private static final String[] SET_SUBCOMMANDS = new String[]{
@@ -2857,7 +2862,7 @@ public class JShellTool implements MessageHandler {
         }
     }
     //where
-    private boolean processCompleteSource(String source) throws IllegalStateException {
+    boolean processCompleteSource(String source) throws IllegalStateException {
         debug("Compiling: %s", source);
         boolean failed = false;
         boolean isActive = false;

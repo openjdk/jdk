@@ -3058,7 +3058,8 @@ public class Attr extends JCTree.Visitor {
 
         if (!returnType.hasTag(VOID) && !resType.hasTag(VOID)) {
             if (resType.isErroneous() ||
-                    new FunctionalReturnContext(checkContext).compatible(resType, returnType, types.noWarnings)) {
+                    new FunctionalReturnContext(checkContext).compatible(resType, returnType,
+                            checkContext.checkWarner(tree, resType, returnType))) {
                 incompatibleReturnType = null;
             }
         }

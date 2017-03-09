@@ -251,7 +251,7 @@ public interface ModuleElement extends Element, QualifiedNameable {
          * @param p  a visitor-specified parameter
          * @return a visitor-specified result
          * @throws UnknownDirectiveException a visitor implementation may optionally throw this exception
-         * @implSpec This implementation throws {@code UnknownDirectiveException}.
+         * @implSpec This implementation throws {@code new UnknownDirectiveException(d, p)}.
          */
         default R visitUnknown(Directive d, P p) {
             throw new UnknownDirectiveException(d, p);

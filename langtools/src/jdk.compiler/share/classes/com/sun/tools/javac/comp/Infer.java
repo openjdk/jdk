@@ -26,6 +26,7 @@
 package com.sun.tools.javac.comp;
 
 import com.sun.tools.javac.code.Type.UndetVar.UndetVarListener;
+import com.sun.tools.javac.code.Types.TypeMapping;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCTypeCast;
 import com.sun.tools.javac.tree.TreeInfo;
@@ -61,9 +62,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
-import java.util.stream.Collectors;
-
-import com.sun.tools.javac.main.Option;
 
 import static com.sun.tools.javac.code.TypeTag.*;
 
@@ -628,7 +626,7 @@ public class Infer {
             }
         }
 
-    TypeMapping<Void> fromTypeVarFun = new TypeMapping<Void>() {
+    TypeMapping<Void> fromTypeVarFun = new StructuralTypeMapping<Void>() {
         @Override
         public Type visitTypeVar(TypeVar tv, Void aVoid) {
             UndetVar uv = new UndetVar(tv, incorporationEngine(), types);
