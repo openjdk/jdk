@@ -22,8 +22,9 @@
  */
 
 /* @test
-   @bug 4262894 6233303
-   @summary Testing substitute character Escape sequence
+ * @bug 4262894 6233303
+ * @summary Testing substitute character Escape sequence
+ * @modules jdk.charsets
  */
 
 import java.nio.*;
