@@ -357,9 +357,7 @@ TARGETS += $(coredocs)
 $(eval $(call SetupJavadocGeneration, docletapi, \
     MODULES := jdk.javadoc, \
     PACKAGES := \
-        jdk.javadoc.doclet \
-        jdk.javadoc.doclet.taglet \
-        jdk.javadoc.doclets, \
+        jdk.javadoc.doclet, \
     API_ROOT := jdk, \
     DEST_DIR := javadoc/doclet, \
     TITLE := Doclet API, \
