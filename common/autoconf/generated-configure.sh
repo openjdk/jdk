@@ -786,6 +786,7 @@ ARFLAGS
 COMPILER_BINDCMD_FILE_FLAG
 COMPILER_COMMAND_FILE_FLAG
 COMPILER_TARGET_BITS_FLAG
+JIB_JAR
 JT_HOME
 JTREGEXE
 HOTSPOT_TOOLCHAIN_TYPE
@@ -1172,6 +1173,7 @@ with_extra_ldflags
 with_toolchain_version
 with_build_devkit
 with_jtreg
+with_jib
 with_abi_profile
 enable_warnings_as_errors
 with_native_debug_symbols
@@ -2108,6 +2110,7 @@ Optional Packages:
                           dependent]
   --with-build-devkit     Devkit to use for the build platform toolchain
   --with-jtreg            Regression Test Harness [probed]
+  --with-jib              Jib dependency management tool [not used]
   --with-abi-profile      specify ABI profile for ARM builds
                           (arm-vfp-sflt,arm-vfp-hflt,arm-sflt,
                           armv5-vfp-sflt,armv6-vfp-hflt,arm64,aarch64)
@@ -4894,7 +4897,7 @@ VALID_JVM_VARIANTS="server client minimal core zero zeroshark custom"
 
 
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -5025,6 +5028,9 @@ TOOLCHAIN_MINIMUM_VERSION_xlc=""
 # Setup the JTReg Regression Test Harness.
 
 
+# Setup the JIB dependency resolver
+
+
 #
 # Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -5126,7 +5132,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1487957473
+DATE_WHEN_GENERATED=1489070933
 
 ###############################################################################
 #
@@ -48219,6 +48225,41 @@ $as_echo "$tool_specified" >&6; }
     fi
   fi
 
+
+
+
+
+# Setup Jib dependency tool
+
+
+# Check whether --with-jib was given.
+if test "${with_jib+set}" = set; then :
+  withval=$with_jib;
+fi
+
+
+  if test "x$with_jib" = xno || test "x$with_jib" = x; then
+    # jib disabled
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for jib" >&5
+$as_echo_n "checking for jib... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+  elif test "x$with_jib" = xyes; then
+    as_fn_error $? "Must supply a value to --with-jib" "$LINENO" 5
+  else
+    JIB_HOME="${with_jib}"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for jib" >&5
+$as_echo_n "checking for jib... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${JIB_HOME}" >&5
+$as_echo "${JIB_HOME}" >&6; }
+    if test ! -d "${JIB_HOME}"; then
+      as_fn_error $? "--with-jib must be a directory" "$LINENO" 5
+    fi
+    JIB_JAR=$(ls ${JIB_HOME}/lib/jib-*.jar)
+    if test ! -f "${JIB_JAR}"; then
+      as_fn_error $? "Could not find jib jar file in ${JIB_HOME}" "$LINENO" 5
+    fi
+  fi
 
 
 
