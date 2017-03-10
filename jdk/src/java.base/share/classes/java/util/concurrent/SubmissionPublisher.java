@@ -1365,9 +1365,9 @@ public class SubmissionPublisher<T> implements Flow.Publisher<T>,
                     }
                 }
             }
-            else if (n < 0L)
+            else
                 onError(new IllegalArgumentException(
-                            "negative subscription request"));
+                            "non-positive subscription request"));
         }
 
         public final boolean isReleasable() { // for ManagedBlocker
