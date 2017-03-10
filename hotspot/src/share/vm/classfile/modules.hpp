@@ -45,7 +45,6 @@ public:
   // * Module's Class loader has already defined types for any of the module's packages
   // * Module_name is syntactically bad
   // * Packages contains an illegal package name
-  // * Packages contains a duplicate package name
   // * A package already exists in another module for this class loader
   // * Module is an unnamed module
   // * num_packages is negative

@@ -162,8 +162,7 @@ static void define_javabase_module(jobject module, jstring version,
   }
 
 
-  // Check that the list of packages has no duplicates and that the
-  // packages are syntactically ok.
+  // Check that the packages are syntactically ok.
   GrowableArray<Symbol*>* pkg_list = new GrowableArray<Symbol*>(num_packages);
   for (int x = 0; x < num_packages; x++) {
     const char *package_name = packages[x];
@@ -172,12 +171,7 @@ static void define_javabase_module(jobject module, jstring version,
                 err_msg("Invalid package name: %s for module: " JAVA_BASE_NAME, package_name));
     }
     Symbol* pkg_symbol = SymbolTable::new_symbol(package_name, CHECK);
-    // append_if_missing() returns FALSE if entry already exists.
-    if (!pkg_list->append_if_missing(pkg_symbol)) {
-      THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-                err_msg("Duplicate package name: %s for module " JAVA_BASE_NAME,
-                        package_name));
-    }
+    pkg_list->append(pkg_symbol);
   }
 
   // Validate java_base's loader is the boot loader.
@@ -340,12 +334,7 @@ void Modules::define_module(jobject module, jstring version,
     }
 
     Symbol* pkg_symbol = SymbolTable::new_symbol(package_name, CHECK);
-    // append_if_missing() returns FALSE if entry already exists.
-    if (!pkg_list->append_if_missing(pkg_symbol)) {
-      THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-                err_msg("Duplicate package name: %s for module %s",
-                        package_name, module_name));
-    }
+    pkg_list->append(pkg_symbol);
   }
 
   ModuleEntryTable* module_table = get_module_entry_table(h_loader, CHECK);

@@ -105,17 +105,6 @@ public class JVMDefineModule {
             }
         }
 
-        // Duplicates in package list, expect an IAE
-        m = ModuleHelper.ModuleObject("module.x", cl, new String[] { "mypackage4", "mypackage5" });
-        try {
-            ModuleHelper.DefineModule(m, "9.0", "mymodule/here", new String[] { "mypackage4", "mypackage5", "mypackage4" });
-            throw new RuntimeException("Failed to get IAE for duplicate packages");
-        } catch(IllegalArgumentException e) {
-            if (!e.getMessage().contains("Duplicate package name")) {
-              throw new RuntimeException("Failed to get expected IAE message for duplicate package: " + e.getMessage());
-            }
-        }
-
         // Empty entry in package list, expect an IAE
         m = ModuleHelper.ModuleObject("module.y", cl, new String[] { "mypackageX", "mypackageY" });
         try {
