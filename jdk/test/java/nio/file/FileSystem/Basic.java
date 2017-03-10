@@ -41,7 +41,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.ProviderNotFoundException;
 import java.util.HashMap;
-import java.util.concurrent.TimeUnit;
 import jdk.testlibrary.FileUtils;
 
 /**
@@ -54,41 +53,17 @@ public class Basic {
             throw new RuntimeException(msg);
     }
 
-    static void checkFileStores(String os, FileSystem fs) throws IOException {
-        boolean checkFileStores = true;
-        if (!os.equals("Windows")) {
-            // try to check whether 'df' hangs
-            System.out.println("\n--- Begin df output ---");
-            System.out.flush();
-            Process proc = new ProcessBuilder("df").inheritIO().start();
-            try {
-                proc.waitFor(90, TimeUnit.SECONDS);
-            } catch (InterruptedException ignored) {
-            }
-            System.out.println("--- End df output ---\n");
-            System.out.flush();
-            try {
-                int exitValue = proc.exitValue();
-                if (exitValue != 0) {
-                    System.err.printf("df process exited with %d != 0%n",
-                        exitValue);
-                    checkFileStores = false;
-                }
-            } catch (IllegalThreadStateException ignored) {
-                System.err.println("df command apparently hung");
-                checkFileStores = false;
-            }
-        }
-
+    static void checkFileStores(FileSystem fs) throws IOException {
         // sanity check method
-        if (checkFileStores) {
+        if (FileUtils.areFileSystemsAccessible()) {
             System.out.println("\n--- Begin FileStores ---");
             for (FileStore store: fs.getFileStores()) {
                 System.out.println(store);
             }
             System.out.println("--- EndFileStores ---\n");
         } else {
-            System.err.println("Skipping FileStore check due to df failure");
+            System.err.println
+                ("Skipping FileStore check due to file system access failure");
         }
     }
 
@@ -133,7 +108,7 @@ public class Basic {
             "should use 'file' scheme");
 
         // sanity check FileStores
-        checkFileStores(os, fs);
+        checkFileStores(fs);
 
         // sanity check supportedFileAttributeViews
         checkSupported(fs, "basic");

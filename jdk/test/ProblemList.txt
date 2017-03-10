@@ -186,8 +186,6 @@ java/nio/file/WatchService/Basic.java                           7158947 solaris-
 java/nio/file/WatchService/MayFlies.java                        7158947 solaris-all Solaris 11
 java/nio/file/WatchService/LotsOfEvents.java                    7158947 solaris-all Solaris 11
 
-sun/nio/cs/OLD/TestIBMDB.java                                   8167525 generic-all
-
 ############################################################################
 
 # jdk_rmi
@@ -217,8 +215,9 @@ sun/security/tools/jarsigner/warnings/BadKeyUsageTest.java      8026393 generic-
 javax/net/ssl/DTLS/PacketLossRetransmission.java                8169086 macosx-x64
 javax/net/ssl/DTLS/RespondToRetransmit.java                     8169086 macosx-x64
 
-sun/security/mscapi/SignedObjectChain.java                      8176183 windows-all
+sun/security/krb5/auto/Basic.java                               8176296 generic-all
 
+sun/security/ssl/X509KeyManager/PreferredKey.java               8176354 generic-all
 ############################################################################
 
 # jdk_sound
