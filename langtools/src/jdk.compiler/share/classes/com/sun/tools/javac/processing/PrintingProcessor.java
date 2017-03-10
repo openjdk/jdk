@@ -334,7 +334,7 @@ public class PrintingProcessor extends AbstractProcessor {
                 this.writer = writer;
             }
 
-            @Override
+            @Override @DefinedBy(Api.LANGUAGE_MODEL)
             public Void visitExports(ExportsDirective d, Void p) {
                 // "exports package-name [to module-name-list]"
                 writer.print("exports ");
@@ -343,7 +343,7 @@ public class PrintingProcessor extends AbstractProcessor {
                 return null;
             }
 
-            @Override
+            @Override @DefinedBy(Api.LANGUAGE_MODEL)
             public Void visitOpens(OpensDirective d, Void p) {
                 // opens package-name [to module-name-list]
                 writer.print("opens ");
@@ -352,7 +352,7 @@ public class PrintingProcessor extends AbstractProcessor {
                 return null;
             }
 
-            @Override
+            @Override @DefinedBy(Api.LANGUAGE_MODEL)
             public Void visitProvides(ProvidesDirective d, Void p) {
                 // provides service-name with implementation-name
                 writer.print("provides ");
@@ -362,7 +362,7 @@ public class PrintingProcessor extends AbstractProcessor {
                 return null;
             }
 
-            @Override
+            @Override @DefinedBy(Api.LANGUAGE_MODEL)
             public Void visitRequires(RequiresDirective d, Void p) {
                 // requires (static|transitive)* module-name
                 writer.print("requires ");
@@ -374,7 +374,7 @@ public class PrintingProcessor extends AbstractProcessor {
                 return null;
             }
 
-            @Override
+            @Override @DefinedBy(Api.LANGUAGE_MODEL)
             public Void visitUses(UsesDirective d, Void p) {
                 // uses service-name
                 writer.print("uses ");
