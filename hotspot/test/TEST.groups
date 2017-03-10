@@ -38,6 +38,7 @@ hotspot_serviceability = \
 
 hotspot_misc = \
   / \
+ -applications \
  -:hotspot_compiler \
  -:hotspot_gc \
  -:hotspot_runtime \
@@ -228,3 +229,4 @@ hotspot_runtime_minimalvm = \
   runtime/MinimalVM \
   runtime/ErrorHandling \
   runtime/logging
+
