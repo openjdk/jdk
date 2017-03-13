@@ -71,6 +71,9 @@ public class LargeFileAvailable {
         } finally {
             file.delete();
         }
+
+        System.out.println("Test succeeded.");
+        System.out.flush();
     }
 
     // Skip toSkip number of bytes and expect that the available() method

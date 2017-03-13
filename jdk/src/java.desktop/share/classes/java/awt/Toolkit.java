@@ -1067,6 +1067,7 @@ public abstract class Toolkit {
      * @see       java.awt.MenuShortcut
      * @since     1.1
      */
+    @SuppressWarnings("deprecation")
     public int getMenuShortcutKeyMask() throws HeadlessException {
         GraphicsEnvironment.checkHeadless();
 

@@ -252,7 +252,7 @@ class ResponseProcessors {
 
         @Override
         public void onError(HttpRequest request, Throwable t) {
-            results.put(request, CompletableFuture.failedFuture(t));
+            results.put(request, MinimalFuture.failedFuture(t));
         }
 
         @Override
