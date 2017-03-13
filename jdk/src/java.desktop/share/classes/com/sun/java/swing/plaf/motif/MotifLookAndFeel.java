@@ -523,7 +523,8 @@ public class MotifLookAndFeel extends BasicLookAndFeel
 
         Object optionPaneMessageAreaBorder = new BorderUIResource.EmptyBorderUIResource(10,10,12,10);
 
-
+        @SuppressWarnings("deprecation")
+        final int metaMask = KeyEvent.META_MASK;
         Object[] defaults = {
 
             "Desktop.background", table.get("desktop"),
@@ -635,8 +636,7 @@ public class MotifLookAndFeel extends BasicLookAndFeel
             "Menu.submenuPopupOffsetX", -2,
             "Menu.submenuPopupOffsetY", 3,
             "Menu.shortcutKeys", new int[]{
-                SwingUtilities2.getSystemMnemonicKeyMask(),
-                KeyEvent.META_MASK
+                SwingUtilities2.getSystemMnemonicKeyMask(), metaMask
             },
             "Menu.cancelMode", "hideMenuTree",
 

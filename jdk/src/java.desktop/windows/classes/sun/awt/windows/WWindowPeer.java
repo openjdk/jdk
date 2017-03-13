@@ -80,6 +80,8 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
      * WindowStateEvent is posted to the EventQueue.
      */
     private WindowListener windowListener;
+    private float scaleX;
+    private float scaleY;
 
     /**
      * Initialize JNI field IDs
@@ -190,7 +192,10 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
 
         // Express our interest in display changes
         GraphicsConfiguration gc = getGraphicsConfiguration();
-        ((Win32GraphicsDevice)gc.getDevice()).addDisplayChangedListener(this);
+        Win32GraphicsDevice gd = (Win32GraphicsDevice) gc.getDevice();
+        gd.addDisplayChangedListener(this);
+        scaleX = gd.getDefaultScaleX();
+        scaleY = gd.getDefaultScaleY();
 
         initActiveWindowsTracking((Window)target);
 
@@ -539,6 +544,22 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
 
         AWTAccessor.getComponentAccessor().
             setGraphicsConfiguration((Component)target, winGraphicsConfig);
+
+        checkDPIChange(oldDev, newDev);
+    }
+
+    private void checkDPIChange(Win32GraphicsDevice oldDev,
+                                Win32GraphicsDevice newDev) {
+        float newScaleX = newDev.getDefaultScaleX();
+        float newScaleY = newDev.getDefaultScaleY();
+
+        if (scaleX != newScaleX || scaleY != newScaleY) {
+            if (oldDev.getScreen() == newDev.getScreen()) {
+                windowDPIChange(scaleX, scaleY, newScaleX, newScaleY);
+            }
+            scaleX = newScaleX;
+            scaleY = newScaleY;
+        }
     }
 
     /**
@@ -780,6 +801,9 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
             }
         }
     }
+
+    native void windowDPIChange(float prevScaleX, float prevScaleY,
+                                float newScaleX, float newScaleY);
 
     /*
      * The method maps the list of the active windows to the window's AppContext,
