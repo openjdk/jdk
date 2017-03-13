@@ -74,12 +74,14 @@ public class JavadocEnter extends Enter {
 
     @Override
     public void main(List<JCCompilationUnit> trees) {
-        // count all Enter errors as warnings.
+        // cache the error count if we need to convert Enter errors as warnings.
         int nerrors = messager.nerrors;
         super.main(trees);
         compiler.enterDone();
-        messager.nwarnings += (messager.nerrors - nerrors);
-        messager.nerrors = nerrors;
+        if (toolEnv.ignoreSourceErrors) {
+            messager.nwarnings += (messager.nerrors - nerrors);
+            messager.nerrors = nerrors;
+        }
     }
 
     @Override

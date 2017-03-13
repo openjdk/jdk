@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 package p;
 
 import java.io.*;
-import jdk.javadoc.internal.tool.Main;
 
 public class OutputRedirect {
     private static final PrintStream originalOutput = System.err;
@@ -47,9 +46,9 @@ public class OutputRedirect {
         PrintWriter sink = new PrintWriter(new ByteArrayOutputStream());
 
         // execute javadoc
-        int result = Main.execute(new String[] {"p"}, sink);
+        int result = jdk.javadoc.internal.tool.Main.execute(new String[] {"p"}, sink);
 
-        // test whether javadoc did any output to System.out
+        // tests whether javadoc wrote to System.out
         if (redirectedOutput.toByteArray().length > 0) {
             originalOutput.println("Test failed; here's what javadoc wrote on its standard output:");
             originalOutput.println(redirectedOutput.toString());
