@@ -242,8 +242,7 @@ class DirectMethodHandle extends MethodHandle {
             result = NEW_OBJ;
         }
         names[LINKER_CALL] = new Name(linker, outArgs);
-        String lambdaName = kind.defaultLambdaName + "_" + shortenSignature(basicTypeSignature(mtype));
-        LambdaForm lform = new LambdaForm(lambdaName, ARG_LIMIT, names, result, kind);
+        LambdaForm lform = new LambdaForm(ARG_LIMIT, names, result, kind);
 
         // This is a tricky bit of code.  Don't send it through the LF interpreter.
         lform.compileToBytecode();
@@ -696,22 +695,33 @@ class DirectMethodHandle extends MethodHandle {
         if (needsCast && isGetter)
             names[POST_CAST] = new Name(NF_checkCast, names[DMH_THIS], names[LINKER_CALL]);
         for (Name n : names)  assert(n != null);
-        // add some detail to the lambdaForm debugname,
-        // significant only for debugging
-        StringBuilder nameBuilder = new StringBuilder(kind.methodName);
-        if (isStatic) {
-            nameBuilder.append("Static");
-        } else {
-            nameBuilder.append("Field");
-        }
-        if (needsCast)  nameBuilder.append("Cast");
-        if (needsInit)  nameBuilder.append("Init");
+
+        LambdaForm form;
         if (needsCast || needsInit) {
             // can't use the pre-generated form when casting and/or initializing
-            return new LambdaForm(nameBuilder.toString(), ARG_LIMIT, names, RESULT);
+            form = new LambdaForm(ARG_LIMIT, names, RESULT);
         } else {
-            return new LambdaForm(nameBuilder.toString(), ARG_LIMIT, names, RESULT, kind);
+            form = new LambdaForm(ARG_LIMIT, names, RESULT, kind);
         }
+
+        if (LambdaForm.debugNames()) {
+            // add some detail to the lambdaForm debugname,
+            // significant only for debugging
+            StringBuilder nameBuilder = new StringBuilder(kind.methodName);
+            if (isStatic) {
+                nameBuilder.append("Static");
+            } else {
+                nameBuilder.append("Field");
+            }
+            if (needsCast) {
+                nameBuilder.append("Cast");
+            }
+            if (needsInit) {
+                nameBuilder.append("Init");
+            }
+            LambdaForm.associateWithDebugName(form, nameBuilder.toString());
+        }
+        return form;
     }
 
     /**

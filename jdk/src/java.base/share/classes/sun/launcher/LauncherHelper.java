@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -591,8 +591,8 @@ public final class LauncherHelper {
                 c = Class.forName(m, cn);
             }
         } catch (LinkageError le) {
-            abort(null, "java.launcher.module.error3",
-                    mainClass, m.getName(), le.getLocalizedMessage());
+            abort(null, "java.launcher.module.error3", mainClass, m.getName(),
+                    le.getClass().getName() + ": " + le.getLocalizedMessage());
         }
         if (c == null) {
             abort(null, "java.launcher.module.error2", mainClass, mainModule);
@@ -638,14 +638,17 @@ public final class LauncherHelper {
                         String ncn = Normalizer.normalize(cn, Normalizer.Form.NFC);
                         mainClass = Class.forName(ncn, false, scl);
                     } catch (NoClassDefFoundError | ClassNotFoundException cnfe1) {
-                        abort(cnfe1, "java.launcher.cls.error1", cn);
+                        abort(cnfe1, "java.launcher.cls.error1", cn,
+                                cnfe1.getClass().getCanonicalName(), cnfe1.getMessage());
                     }
                 } else {
-                    abort(cnfe, "java.launcher.cls.error1", cn);
+                    abort(cnfe, "java.launcher.cls.error1", cn,
+                            cnfe.getClass().getCanonicalName(), cnfe.getMessage());
                 }
             }
         } catch (LinkageError le) {
-            abort(le, "java.launcher.cls.error6", cn, le.getLocalizedMessage());
+            abort(le, "java.launcher.cls.error6", cn,
+                    le.getClass().getName() + ": " + le.getLocalizedMessage());
         }
         return mainClass;
     }
@@ -966,6 +969,10 @@ public final class LauncherHelper {
                     ostream.print("open ");
                 if (md.isAutomatic())
                     ostream.print("automatic ");
+                if (md.modifiers().contains(ModuleDescriptor.Modifier.SYNTHETIC))
+                    ostream.print("synthetic ");
+                if (md.modifiers().contains(ModuleDescriptor.Modifier.MANDATED))
+                    ostream.print("mandated ");
                 ostream.println("module " + midAndLocation(md, mref.location()));
 
                 // unqualified exports (sorted by package)

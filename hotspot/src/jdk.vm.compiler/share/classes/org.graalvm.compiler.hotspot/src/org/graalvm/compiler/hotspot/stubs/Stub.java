@@ -90,16 +90,9 @@ public abstract class Stub {
     protected InstalledCode code;
 
     /**
-     * Compilation result from which {@link #code} was created.
-     */
-    protected CompilationResult compResult;
-
-    /**
      * The registers destroyed by this stub (from the caller's perspective).
      */
     private Set<Register> destroyedCallerRegisters;
-
-    private HotSpotCompiledCode compiledCode;
 
     public void initDestroyedCallerRegisters(Set<Register> registers) {
         assert registers != null;
@@ -184,35 +177,13 @@ public abstract class Stub {
     public synchronized InstalledCode getCode(final Backend backend) {
         if (code == null) {
             try (Scope d = Debug.sandbox("CompilingStub", DebugScope.getConfig(), providers.getCodeCache(), debugScopeContext())) {
-                final StructuredGraph graph = getGraph(getStubCompilationId());
-
-                // Stubs cannot be recompiled so they cannot be compiled with assumptions
-                assert graph.getAssumptions() == null;
-
-                if (!(graph.start() instanceof StubStartNode)) {
-                    StubStartNode newStart = graph.add(new StubStartNode(Stub.this));
-                    newStart.setStateAfter(graph.start().stateAfter());
-                    graph.replaceFixed(graph.start(), newStart);
-                }
-
                 CodeCacheProvider codeCache = providers.getCodeCache();
-
-                compResult = new CompilationResult(toString(), GeneratePIC.getValue());
-                try (Scope s0 = Debug.scope("StubCompilation", graph, providers.getCodeCache())) {
-                    Suites suites = createSuites();
-                    emitFrontEnd(providers, backend, graph, providers.getSuites().getDefaultGraphBuilderSuite(), OptimisticOptimizations.ALL, DefaultProfilingInfo.get(TriState.UNKNOWN), suites);
-                    LIRSuites lirSuites = createLIRSuites();
-                    emitBackEnd(graph, Stub.this, getInstalledCodeOwner(), backend, compResult, CompilationResultBuilderFactory.Default, getRegisterConfig(), lirSuites);
-                    assert checkStubInvariants();
-                } catch (Throwable e) {
-                    throw Debug.handle(e);
-                }
-
-                assert destroyedCallerRegisters != null;
+                CompilationResult compResult = buildCompilationResult(backend);
                 try (Scope s = Debug.scope("CodeInstall", compResult)) {
+                    assert destroyedCallerRegisters != null;
                     // Add a GeneratePIC check here later, we don't want to install
                     // code if we don't have a corresponding VM global symbol.
-                    compiledCode = HotSpotCompiledCodeBuilder.createCompiledCode(null, null, compResult);
+                    HotSpotCompiledCode compiledCode = HotSpotCompiledCodeBuilder.createCompiledCode(null, null, compResult);
                     code = codeCache.installCode(null, compiledCode, null, null, false);
                 } catch (Throwable e) {
                     throw Debug.handle(e);
@@ -226,6 +197,44 @@ public abstract class Stub {
         return code;
     }
 
+    @SuppressWarnings("try")
+    private CompilationResult buildCompilationResult(final Backend backend) {
+        CompilationResult compResult = new CompilationResult(toString(), GeneratePIC.getValue());
+        final StructuredGraph graph = getGraph(getStubCompilationId());
+
+        // Stubs cannot be recompiled so they cannot be compiled with assumptions
+        assert graph.getAssumptions() == null;
+
+        if (!(graph.start() instanceof StubStartNode)) {
+            StubStartNode newStart = graph.add(new StubStartNode(Stub.this));
+            newStart.setStateAfter(graph.start().stateAfter());
+            graph.replaceFixed(graph.start(), newStart);
+        }
+
+        try (Scope s0 = Debug.scope("StubCompilation", graph, providers.getCodeCache())) {
+            Suites suites = createSuites();
+            emitFrontEnd(providers, backend, graph, providers.getSuites().getDefaultGraphBuilderSuite(), OptimisticOptimizations.ALL, DefaultProfilingInfo.get(TriState.UNKNOWN), suites);
+            LIRSuites lirSuites = createLIRSuites();
+            emitBackEnd(graph, Stub.this, getInstalledCodeOwner(), backend, compResult, CompilationResultBuilderFactory.Default, getRegisterConfig(), lirSuites);
+            assert checkStubInvariants(compResult);
+        } catch (Throwable e) {
+            throw Debug.handle(e);
+        }
+        return compResult;
+    }
+
+    /**
+     * Gets a {@link CompilationResult} that can be used for code generation. Required for AOT.
+     */
+    @SuppressWarnings("try")
+    public CompilationResult getCompilationResult(final Backend backend) {
+        try (Scope d = Debug.sandbox("CompilingStub", DebugScope.getConfig(), providers.getCodeCache(), debugScopeContext())) {
+            return buildCompilationResult(backend);
+        } catch (Throwable e) {
+            throw Debug.handle(e);
+        }
+    }
+
     public CompilationIdentifier getStubCompilationId() {
         return new StubCompilationIdentifier(this);
     }
@@ -233,7 +242,7 @@ public abstract class Stub {
     /**
      * Checks the conditions a compilation must satisfy to be installed as a RuntimeStub.
      */
-    private boolean checkStubInvariants() {
+    private boolean checkStubInvariants(CompilationResult compResult) {
         assert compResult.getExceptionHandlers().isEmpty() : this;
 
         // Stubs cannot be recompiled so they cannot be compiled with
@@ -277,25 +286,5 @@ public abstract class Stub {
             moveProfiling.remove();
         }
         return lirSuites;
-    }
-
-    /**
-     * Gets the HotSpotCompiledCode that was created during installation.
-     */
-    public synchronized HotSpotCompiledCode getCompiledCode(final Backend backend) {
-        getCompilationResult(backend);
-        assert compiledCode != null;
-        return compiledCode;
-    }
-
-    /**
-     * Gets the compilation result for this stub, compiling it first if necessary, and installing it
-     * in code.
-     */
-    public synchronized CompilationResult getCompilationResult(final Backend backend) {
-        if (code == null) {
-            getCode(backend);
-        }
-        return compResult;
     }
 }
