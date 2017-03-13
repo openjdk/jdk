@@ -106,13 +106,13 @@ import java.security.PrivilegedAction;
  *
  *     <LI>check in properties parameter, if any
  *
- *     <LI>check in the System properties
+ *     <LI>check in the System properties, if any
  *
  *     <LI>check in the orb.properties file located in the user.home
- *         directory (if any)
+ *         directory, if any
  *
- *     <LI>check in the orb.properties file located in the java.home/lib
- *         directory (if any)
+ *     <LI>check in the orb.properties file located in the run-time image,
+ *         if any
  *
  *     <LI>fall back on a hardcoded default behavior (use the Java&nbsp;IDL
  *         implementation)
@@ -170,9 +170,15 @@ import java.security.PrivilegedAction;
  * Thus, where appropriate, it is necessary that
  * the classes for this alternative ORBSingleton are available on the application's class path.
  * It should be noted that the singleton ORB is system wide.
- *
+ * <P>
  * When a per-application ORB is created via the 2-arg init methods,
  * then it will be located using the thread context class loader.
+ * <P>
+ * The IDL to Java Language OMG specification documents the ${java.home}/lib directory as the location,
+ * in the Java run-time image, to search for orb.properties.
+ * This location is not intended for user editable configuration files.
+ * Therefore, the implementation first checks the ${java.home}/conf directory for orb.properties,
+ * and thereafter the ${java.home}/lib directory.
  *
  * @since   JDK1.2
  */
@@ -271,14 +277,25 @@ abstract public class ORB {
                     }
 
                     String javaHome = System.getProperty("java.home");
-                    fileName = javaHome + File.separator
-                        + "lib" + File.separator + "orb.properties";
-                    props = getFileProperties( fileName ) ;
+
+                    fileName = javaHome + File.separator + "conf"
+                            + File.separator + "orb.properties";
+                    props = getFileProperties(fileName);
+
+                    if (props != null) {
+                        String value = props.getProperty(name);
+                        if (value != null)
+                            return value;
+                    }
+
+                    fileName = javaHome + File.separator + "lib"
+                            + File.separator + "orb.properties";
+                    props = getFileProperties(fileName);
 
                     if (props == null)
-                        return null ;
+                        return null;
                     else
-                        return props.getProperty( name ) ;
+                        return props.getProperty(name);
                 }
             }
         );
