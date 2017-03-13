@@ -134,7 +134,6 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
         Content div = HtmlTree.DIV(HtmlStyle.contentContainer, table);
         if (configuration.allowTag(HtmlTag.MAIN)) {
             htmlTree.addContent(div);
-            body.addContent(htmlTree);
         } else {
             body.addContent(div);
         }
@@ -182,7 +181,6 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
             addOverviewComment(div);
             if (configuration.allowTag(HtmlTag.MAIN)) {
                 htmlTree.addContent(div);
-                body.addContent(htmlTree);
             } else {
                 body.addContent(div);
             }
@@ -203,12 +201,16 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
     }
 
     /**
-     * Not required for this page.
+     * For HTML 5, add the htmlTree to the body. For HTML 4, do nothing.
      *
      * @param body the documentation tree to which the overview will be added
      */
     @Override
-    protected void addOverview(Content body) {}
+    protected void addOverview(Content body) {
+        if (configuration.allowTag(HtmlTag.MAIN)) {
+            body.addContent(htmlTree);
+        }
+    }
 
     /**
      * Adds the top text (from the -top option), the upper
