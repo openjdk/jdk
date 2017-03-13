@@ -27,10 +27,9 @@
  * GUI tool for managing policy files.
  *
  * @since 9
- * @deprecated The policytool tool has been deprecated and
- * is planned to be removed in a future release.
+ * @deprecated
  */
-@Deprecated
+@Deprecated(since="9", forRemoval=true)
 module jdk.policytool {
     requires java.desktop;
     requires java.logging;
