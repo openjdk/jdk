@@ -532,6 +532,7 @@ public final class LWCToolkit extends LWToolkit {
      * @since     1.1
      */
     @Override
+    @SuppressWarnings("deprecation")
     public int getMenuShortcutKeyMask() {
         return Event.META_MASK;
     }
@@ -768,6 +769,7 @@ public final class LWCToolkit extends LWToolkit {
      * stroke.
      */
     @Override
+    @SuppressWarnings("deprecation")
     public int getFocusAcceleratorKeyMask() {
         return InputEvent.CTRL_MASK | InputEvent.ALT_MASK;
     }
@@ -777,6 +779,7 @@ public final class LWCToolkit extends LWToolkit {
      * printable character.
      */
     @Override
+    @SuppressWarnings("deprecation")
     public boolean isPrintableCharacterModifiersMask(int mods) {
         return ((mods & (InputEvent.META_MASK | InputEvent.CTRL_MASK)) == 0);
     }

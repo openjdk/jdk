@@ -25,6 +25,8 @@
 
 package jdk.incubator.http.internal.websocket;
 
+import jdk.incubator.http.internal.common.Log;
+
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
@@ -32,10 +34,8 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 
-import static java.lang.System.Logger.Level.WARNING;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static jdk.incubator.http.internal.common.Utils.EMPTY_BYTEBUFFER;
-import static jdk.incubator.http.internal.websocket.WebSocketImpl.logger;
 
 final class UTF8AccumulatingDecoder {
 
@@ -74,9 +74,8 @@ final class UTF8AccumulatingDecoder {
         // Since it's UTF-8, the assumption is leftovers.remaining() < 4
         // (i.e. small). Otherwise a shared buffer should be used
         if (!(leftovers.remaining() < 4)) {
-            logger.log(WARNING,
-                       "The size of decoding leftovers is greater than expected: {0}",
-                       leftovers.remaining());
+            Log.logError("The size of decoding leftovers is greater than expected: {0}",
+                         leftovers.remaining());
         }
         b.position(b.limit()); // As if we always read to the end
         // Decoder promises that in the case of endOfInput == true:

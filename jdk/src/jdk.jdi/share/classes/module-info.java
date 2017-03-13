@@ -25,6 +25,8 @@
 
 /**
  * Defines the Java Debugger Interface.
+ *
+ * @since 9
  */
 module jdk.jdi {
     requires jdk.attach;

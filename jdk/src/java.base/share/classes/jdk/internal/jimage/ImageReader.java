@@ -52,7 +52,9 @@ import java.util.function.Consumer;
  * to the jimage file provided by the shipped JDK by tools running on JDK 8.
  */
 public final class ImageReader implements AutoCloseable {
-    private SharedImageReader reader;
+    private final SharedImageReader reader;
+
+    private volatile boolean closed;
 
     private ImageReader(SharedImageReader reader) {
         this.reader = reader;
@@ -71,45 +73,49 @@ public final class ImageReader implements AutoCloseable {
 
     @Override
     public void close() throws IOException {
-        if (reader == null) {
+        if (closed) {
             throw new IOException("image file already closed");
         }
-
         reader.close(this);
-        reader = null;
+        closed = true;
+    }
+
+    private void ensureOpen() throws IOException {
+        if (closed) {
+            throw new IOException("image file closed");
+        }
+    }
+
+    private void requireOpen() {
+        if (closed) {
+            throw new IllegalStateException("image file closed");
+        }
     }
 
     // directory management interface
     public Directory getRootDirectory() throws IOException {
-        if (reader == null) {
-            throw new IOException("image file closed");
-        }
+        ensureOpen();
         return reader.getRootDirectory();
     }
 
+
     public Node findNode(String name) throws IOException {
-        if (reader == null) {
-            throw new IOException("image file closed");
-        }
+        ensureOpen();
         return reader.findNode(name);
     }
 
     public byte[] getResource(Node node) throws IOException {
-        if (reader == null) {
-            throw new IOException("image file closed");
-        }
+        ensureOpen();
         return reader.getResource(node);
     }
 
     public byte[] getResource(Resource rs) throws IOException {
-        if (reader == null) {
-            throw new IOException("image file closed");
-        }
+        ensureOpen();
         return reader.getResource(rs);
     }
 
     public ImageHeader getHeader() {
-        Objects.requireNonNull(reader, "image file closed");
+        requireOpen();
         return reader.getHeader();
     }
 
@@ -118,42 +124,42 @@ public final class ImageReader implements AutoCloseable {
     }
 
     public String getName() {
-        Objects.requireNonNull(reader, "image file closed");
-        return reader.getName() ;
+        requireOpen();
+        return reader.getName();
     }
 
     public ByteOrder getByteOrder() {
-        Objects.requireNonNull(reader, "image file closed");
+        requireOpen();
         return reader.getByteOrder();
     }
 
     public Path getImagePath() {
-        Objects.requireNonNull(reader, "image file closed");
+        requireOpen();
         return reader.getImagePath();
     }
 
     public ImageStringsReader getStrings() {
-        Objects.requireNonNull(reader, "image file closed");
+        requireOpen();
         return reader.getStrings();
     }
 
     public ImageLocation findLocation(String mn, String rn) {
-        Objects.requireNonNull(reader, "image file closed");
+        requireOpen();
         return reader.findLocation(mn, rn);
     }
 
     public ImageLocation findLocation(String name) {
-        Objects.requireNonNull(reader, "image file closed");
+        requireOpen();
         return reader.findLocation(name);
     }
 
     public String[] getEntryNames() {
-        Objects.requireNonNull(reader, "image file closed");
+        requireOpen();
         return reader.getEntryNames();
     }
 
     public String[] getModuleNames() {
-        Objects.requireNonNull(reader, "image file closed");
+        requireOpen();
         int off = "/modules/".length();
         return reader.findNode("/modules")
                      .getChildren()
@@ -164,32 +170,32 @@ public final class ImageReader implements AutoCloseable {
     }
 
     public long[] getAttributes(int offset) {
-        Objects.requireNonNull(reader, "image file closed");
+        requireOpen();
         return reader.getAttributes(offset);
     }
 
     public String getString(int offset) {
-        Objects.requireNonNull(reader, "image file closed");
+        requireOpen();
         return reader.getString(offset);
     }
 
     public byte[] getResource(String name) {
-        Objects.requireNonNull(reader, "image file closed");
+        requireOpen();
         return reader.getResource(name);
     }
 
     public byte[] getResource(ImageLocation loc) {
-        Objects.requireNonNull(reader, "image file closed");
+        requireOpen();
         return reader.getResource(loc);
     }
 
     public ByteBuffer getResourceBuffer(ImageLocation loc) {
-        Objects.requireNonNull(reader, "image file closed");
+        requireOpen();
         return reader.getResourceBuffer(loc);
     }
 
     public InputStream getResourceStream(ImageLocation loc) {
-        Objects.requireNonNull(reader, "image file closed");
+        requireOpen();
         return reader.getResourceStream(loc);
     }
 
