@@ -372,7 +372,10 @@ docs-copy:
 docs-zip:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-zip)
 
-ALL_TARGETS += docs-javadoc docs-copy docs-zip
+update-build-docs:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f UpdateBuildDocs.gmk)
+
+ALL_TARGETS += docs-javadoc docs-copy docs-zip update-build-docs
 
 ################################################################################
 # Cross compilation support
