@@ -199,8 +199,6 @@ java/rmi/activation/Activatable/extLoadedImpl/ext.sh            8062724 generic-
 
 java/rmi/activation/ActivationGroup/downloadActivationGroup/DownloadActivationGroup.java 8169569 windows-all
 
-sun/rmi/rmic/newrmic/equivalence/run.sh                         8145980 generic-all
-
 java/rmi/registry/readTest/CodebaseTest.java                    8173324 windows-all
 
 ############################################################################
@@ -214,6 +212,7 @@ sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-a
 sun/security/tools/jarsigner/warnings/BadKeyUsageTest.java      8026393 generic-all
 
 javax/net/ssl/DTLS/PacketLossRetransmission.java                8169086 macosx-x64
+javax/net/ssl/DTLS/RespondToRetransmit.java                     8169086 macosx-x64
 
 ############################################################################
 
@@ -251,15 +250,19 @@ sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java        8157338 generic-
 
 tools/pack200/CommandLineTests.java                             8059906 generic-all
 
-tools/launcher/ArgsEnvVar.java					8173712 generic-all
 tools/launcher/FXLauncherTest.java                              8068049 linux-all,macosx-all
 
-tools/jimage/JImageExtractTest.java                             8169713 generic-all
-tools/jimage/JImageListTest.java                                8169713 generic-all
-tools/jimage/JImageVerifyTest.java                              8169713 generic-all
+tools/jimage/JImageExtractTest.java                             8170120 generic-all
+tools/jimage/JImageListTest.java                                8170120 generic-all
+tools/jimage/JImageVerifyTest.java                              8170120 generic-all
 
 
 tools/jlink/multireleasejar/JLinkMultiReleaseJarTest.java       8169971 windows-x64
+
+tools/jar/multiRelease/RuntimeTest.java                         8173905 generic-all
+
+tools/schemagen/MultiReleaseJarTest.java                        8174692 generic-all
+tools/wsgen/MultiReleaseJarTest.java                            8174692 generic-all
 
 ############################################################################
 
@@ -267,7 +270,7 @@ tools/jlink/multireleasejar/JLinkMultiReleaseJarTest.java       8169971 windows-
 
 com/sun/jdi/RedefineImplementor.sh                              8004127 generic-all
 
-com/sun/jdi/JdbMethodExitTest.sh                                6902121 generic-all
+com/sun/jdi/JdbMethodExitTest.sh                                8171483 generic-all
 
 com/sun/jdi/RepStep.java                                        8043571 generic-all
 
@@ -296,6 +299,8 @@ java/util/BitSet/BitSetStreamTest.java                          8079538 generic-
 
 sun/tools/jcmd/TestJcmdSanity.java                              8031482 windows-all
 
+sun/tools/jstat/jstatClassloadOutput1.sh                        8173942 generic-all
+
 sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java    8057732 generic-all
 
 demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java       8151899 generic-all
@@ -308,6 +313,6 @@ com/sun/jndi/ldap/DeadSSLLdapTimeoutTest.java                   8169942 linux-i5
 
 javax/rmi/PortableRemoteObject/8146975/RmiIiopReturnValueTest.java 8169737 linux-all
 
-javax/xml/ws/clientjar/TestWsImport.java			8170370 generic-all
+javax/xml/ws/clientjar/TestWsImport.java			8173317 generic-all
 
 ############################################################################

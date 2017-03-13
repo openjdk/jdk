@@ -34,6 +34,8 @@ import jdk.jshell.Key.StatementKey;
  * <code>StatementSnippet</code> is immutable: an access to
  * any of its methods will always return the same result.
  * and thus is thread-safe.
+ *
+ * @since 9
  * @jls 14.5: Statement.
  */
 public class StatementSnippet extends Snippet {
