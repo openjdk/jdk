@@ -225,7 +225,6 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
   Node* dest = in(ArrayCopyNode::Dest);
   const Type* src_type = phase->type(src);
   const TypeAryPtr* ary_src = src_type->isa_aryptr();
-  assert(ary_src != NULL, "should be an array copy/clone");
 
   if (is_arraycopy() || is_copyofrange() || is_copyof()) {
     const Type* dest_type = phase->type(dest);
@@ -286,7 +285,8 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
 
     copy_type = dest_elem;
   } else {
-    assert (is_clonebasic(), "should be");
+    assert(ary_src != NULL, "should be a clone");
+    assert(is_clonebasic(), "should be");
 
     disjoint_bases = true;
     assert(src->is_AddP(), "should be base + off");
