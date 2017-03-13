@@ -30,6 +30,7 @@ package java.lang.reflect;
  *
  * @see AccessibleObject#setAccessible(boolean)
  * @since 9
+ * @spec JPMS
  */
 
 public class InaccessibleObjectException extends RuntimeException {

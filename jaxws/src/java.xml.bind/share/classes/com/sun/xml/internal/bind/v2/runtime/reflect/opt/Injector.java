@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,11 @@ import java.util.logging.Logger;
 
 import com.sun.xml.internal.bind.Util;
 import com.sun.xml.internal.bind.v2.runtime.reflect.Accessor;
+import java.lang.reflect.Field;
+import java.security.CodeSource;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
+import java.security.ProtectionDomain;
 
 /**
  * A {@link ClassLoader} used to "inject" optimized accessor classes
@@ -131,7 +136,7 @@ final class Injector {
     /**
      * Injected classes keyed by their names.
      */
-    private final Map<String, Class> classes = new HashMap<String, Class>();
+    private final Map<String, Class> classes = new HashMap<>();
     private final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
     private final Lock r = rwl.readLock();
     private final Lock w = rwl.writeLock();
@@ -141,26 +146,59 @@ final class Injector {
      * False otherwise, which happens if this classloader can't see {@link Accessor}.
      */
     private final boolean loadable;
-    private static final Method defineClass;
-    private static final Method resolveClass;
-    private static final Method findLoadedClass;
+    private static Method defineClass;
+    private static Method resolveClass;
+    private static Method findLoadedClass;
+    private static Object U;
 
     static {
-        Method[] m = AccessController.doPrivileged(
-                new PrivilegedAction<Method[]>() {
-                    @Override
-                    public Method[] run() {
-                        return new Method[]{
-                                getMethod(ClassLoader.class, "defineClass", String.class, byte[].class, Integer.TYPE, Integer.TYPE),
-                                getMethod(ClassLoader.class, "resolveClass", Class.class),
-                                getMethod(ClassLoader.class, "findLoadedClass", String.class)
-                        };
-                    }
+        try {
+            Method[] m = AccessController.doPrivileged(
+                    new PrivilegedAction<Method[]>() {
+                @Override
+                public Method[] run() {
+                    return new Method[]{
+                        getMethod(ClassLoader.class, "defineClass", String.class, byte[].class, Integer.TYPE, Integer.TYPE),
+                        getMethod(ClassLoader.class, "resolveClass", Class.class),
+                        getMethod(ClassLoader.class, "findLoadedClass", String.class)
+                    };
                 }
-        );
-        defineClass = m[0];
-        resolveClass = m[1];
-        findLoadedClass = m[2];
+            }
+            );
+            defineClass = m[0];
+            resolveClass = m[1];
+            findLoadedClass = m[2];
+        } catch (Throwable t) {
+            try {
+                U = AccessController.doPrivileged(new PrivilegedExceptionAction() {
+                    @Override
+                    public Object run() throws Exception {
+                        Class u = Class.forName("sun.misc.Unsafe");
+                        Field theUnsafe = u.getDeclaredField("theUnsafe");
+                        theUnsafe.setAccessible(true);
+                        return theUnsafe.get(null);
+                    }
+                });
+                defineClass = AccessController.doPrivileged(new PrivilegedExceptionAction<Method>() {
+                    @Override
+                    public Method run() throws Exception {
+                        try {
+                            return U.getClass().getMethod("defineClass",
+                                    new Class[]{String.class,
+                                        byte[].class,
+                                        Integer.TYPE,
+                                        Integer.TYPE,
+                                        ClassLoader.class,
+                                        ProtectionDomain.class});
+                        } catch (NoSuchMethodException | SecurityException ex) {
+                            throw ex;
+                        }
+                    }
+                });
+            } catch (SecurityException | PrivilegedActionException ex) {
+                Logger.getLogger(Injector.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
     }
 
     private static Method getMethod(final Class<?> c, final String methodname, final Class<?>... params) {
@@ -210,13 +248,11 @@ final class Injector {
             rlocked = false;
 
             //find loaded class from classloader
-            if (c == null) {
+            if (c == null && findLoadedClass != null) {
 
                 try {
                     c = (Class) findLoadedClass.invoke(parent, className.replace('/', '.'));
-                } catch (IllegalArgumentException e) {
-                    logger.log(Level.FINE, "Unable to find " + className, e);
-                } catch (IllegalAccessException e) {
+                } catch (IllegalArgumentException | IllegalAccessException e) {
                     logger.log(Level.FINE, "Unable to find " + className, e);
                 } catch (InvocationTargetException e) {
                     Throwable t = e.getTargetException();
@@ -253,9 +289,13 @@ final class Injector {
 
                     // we need to inject a class into the
                     try {
-                        c = (Class) defineClass.invoke(parent, className.replace('/', '.'), image, 0, image.length);
-                        resolveClass.invoke(parent, c);
-                    } catch (IllegalAccessException e) {
+                        if (resolveClass != null) {
+                            c = (Class) defineClass.invoke(parent, className.replace('/', '.'), image, 0, image.length);
+                            resolveClass.invoke(parent, c);
+                        } else {
+                            c = (Class) defineClass.invoke(U, className.replace('/', '.'), image, 0, image.length, parent, Injector.class.getProtectionDomain());
+                        }
+                    } catch (IllegalAccessException  e) {
                         logger.log(Level.FINE, "Unable to inject " + className, e);
                         return null;
                     } catch (InvocationTargetException e) {

@@ -131,6 +131,7 @@ public class XPopupMenuPeer extends XMenuWindow implements PopupMenuPeer {
     /*
      * From PopupMenuPeer
      */
+    @SuppressWarnings("deprecation")
     public void show(Event e) {
         target = (Component)e.target;
         // Get menus from the target.
