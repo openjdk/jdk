@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1104,6 +1104,48 @@ char* os::Posix::describe_pthread_attr(char* buf, size_t buflen, const pthread_a
     (detachstate == PTHREAD_CREATE_DETACHED ? "detached" : "joinable"));
   return buf;
 }
+
+char* os::Posix::realpath(const char* filename, char* outbuf, size_t outbuflen) {
+
+  if (filename == NULL || outbuf == NULL || outbuflen < 1) {
+    assert(false, "os::Posix::realpath: invalid arguments.");
+    errno = EINVAL;
+    return NULL;
+  }
+
+  char* result = NULL;
+
+  // This assumes platform realpath() is implemented according to POSIX.1-2008.
+  // POSIX.1-2008 allows to specify NULL for the output buffer, in which case
+  // output buffer is dynamically allocated and must be ::free()'d by the caller.
+  char* p = ::realpath(filename, NULL);
+  if (p != NULL) {
+    if (strlen(p) < outbuflen) {
+      strcpy(outbuf, p);
+      result = outbuf;
+    } else {
+      errno = ENAMETOOLONG;
+    }
+    ::free(p); // *not* os::free
+  } else {
+    // Fallback for platforms struggling with modern Posix standards (AIX 5.3, 6.1). If realpath
+    // returns EINVAL, this may indicate that realpath is not POSIX.1-2008 compatible and
+    // that it complains about the NULL we handed down as user buffer.
+    // In this case, use the user provided buffer but at least check whether realpath caused
+    // a memory overwrite.
+    if (errno == EINVAL) {
+      outbuf[outbuflen - 1] = '\0';
+      p = ::realpath(filename, outbuf);
+      if (p != NULL) {
+        guarantee(outbuf[outbuflen - 1] == '\0', "realpath buffer overwrite detected.");
+        result = p;
+      }
+    }
+  }
+  return result;
+
+}
+
 
 // Check minimum allowable stack sizes for thread creation and to initialize
 // the java system classes, including StackOverflowError - depends on page
