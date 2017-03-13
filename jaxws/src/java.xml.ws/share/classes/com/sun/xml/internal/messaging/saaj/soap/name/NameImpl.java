@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -218,6 +218,7 @@ public class NameImpl implements Name {
         return prefix + ":" + localName;
     }
 
+    @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof Name)) {
             return false;
@@ -236,6 +237,7 @@ public class NameImpl implements Name {
         return true;
     }
 
+    @Override
     public int hashCode() {
         return localName.hashCode();
     }
@@ -245,6 +247,7 @@ public class NameImpl implements Name {
      *
      * @return a string for the local name.
      */
+    @Override
     public String getLocalName() {
         return localName;
     }
@@ -256,6 +259,7 @@ public class NameImpl implements Name {
      *
      * @return the prefix as a string.
      */
+    @Override
     public String getPrefix() {
         return prefix;
     }
@@ -265,6 +269,7 @@ public class NameImpl implements Name {
      *
      * @return the uri as a string.
      */
+    @Override
     public String getURI() {
         return uri;
     }
@@ -272,6 +277,7 @@ public class NameImpl implements Name {
     /**
      * Returns a String version of the name suitable for use in an XML document.
      */
+    @Override
     public String getQualifiedName() {
         if (qualifiedName == null) {
             if (prefix != null && prefix.length() > 0) {
@@ -285,6 +291,9 @@ public class NameImpl implements Name {
 
     /**
      * Create a name object for a SOAP1.1 Envelope.
+     *
+     * @param prefix prefix
+     * @return Envelope Name
      */
     public static NameImpl createEnvelope1_1Name(String prefix) {
         return new Envelope1_1Name(prefix);
@@ -292,6 +301,9 @@ public class NameImpl implements Name {
 
     /**
      * Create a name object for a SOAP1.2 Envelope.
+     *
+     * @param prefix prefix
+     * @return Envelope Name
      */
     public static NameImpl createEnvelope1_2Name(String prefix) {
         return new Envelope1_2Name(prefix);
@@ -299,6 +311,9 @@ public class NameImpl implements Name {
 
     /**
      * Create a name object for a SOAP1.1 Header.
+     *
+     * @param prefix prefix
+     * @return Header Name
      */
     public static NameImpl createHeader1_1Name(String prefix) {
         return new Header1_1Name(prefix);
@@ -306,6 +321,9 @@ public class NameImpl implements Name {
 
     /**
      * Create a name object for a SOAP1.2 Header.
+     *
+     * @param prefix prefix
+     * @return Header Name
      */
     public static NameImpl createHeader1_2Name(String prefix) {
         return new Header1_2Name(prefix);
@@ -313,6 +331,9 @@ public class NameImpl implements Name {
 
     /**
      * Create a name object for a SOAP1.1 Body.
+     *
+     * @param prefix prefix
+     * @return Body Name
      */
     public static NameImpl createBody1_1Name(String prefix) {
         return new Body1_1Name(prefix);
@@ -320,6 +341,9 @@ public class NameImpl implements Name {
 
     /**
      * Create a name object for a SOAP1.2 Body.
+     *
+     * @param prefix prefix
+     * @return Body Name
      */
     public static NameImpl createBody1_2Name(String prefix) {
         return new Body1_2Name(prefix);
@@ -327,20 +351,29 @@ public class NameImpl implements Name {
 
     /**
      * Create a name object for a SOAP1.1 Fault.
+     *
+     * @param prefix prefix
+     * @return Fault Name
      */
     public static NameImpl createFault1_1Name(String prefix) {
         return new Fault1_1Name(prefix);
     }
 
     /**
-      * Create a name object for a SOAP1.2 NotUnderstood element.
-      */
+     * Create a name object for a SOAP1.2 NotUnderstood element.
+     *
+     * @param prefix prefix
+     * @return NotUnderstood Name
+     */
     public static NameImpl createNotUnderstood1_2Name(String prefix) {
         return new NotUnderstood1_2Name(prefix);
     }
 
     /**
      * Create a name object for a SOAP1.2 Upgrade element.
+     *
+     * @param prefix prefix
+     * @return Upgrade Name
      */
     public static NameImpl createUpgrade1_2Name(String prefix) {
         return new Upgrade1_2Name(prefix);
@@ -348,6 +381,9 @@ public class NameImpl implements Name {
 
     /**
      * Create a name object for a SOAP1.2 SupportedEnvelope Upgrade element.
+     *
+     * @param prefix prefix
+     * @return Supported Envelope Name
      */
     public static NameImpl createSupportedEnvelope1_2Name(String prefix) {
         return new SupportedEnvelope1_2Name(prefix);
@@ -358,6 +394,8 @@ public class NameImpl implements Name {
      * Fault, Reason or Detail.
      *
      * @param localName Local Name of element
+     * @param prefix prefix
+     * @return Fault Name
      */
     public static NameImpl createFault1_2Name(
         String localName,
@@ -369,6 +407,8 @@ public class NameImpl implements Name {
      * Create a name object for a SOAP1.2 Fault/Code or Subcode.
      *
      * @param localName Either "Code" or "Subcode"
+     * @param prefix prefix
+     * @return CodeSubcode Name
      */
     public static NameImpl createCodeSubcode1_2Name(
         String prefix,
@@ -378,6 +418,8 @@ public class NameImpl implements Name {
 
     /**
      * Create a name object for a SOAP1.1 Fault Detail.
+     *
+     * @return Detail Name
      */
     public static NameImpl createDetail1_1Name() {
         return new Detail1_1Name();

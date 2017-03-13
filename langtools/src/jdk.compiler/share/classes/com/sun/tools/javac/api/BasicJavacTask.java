@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,6 +152,11 @@ public class BasicJavacTask extends JavacTask {
         if (context == null)
             throw new IllegalStateException();
         return JavacTypes.instance(context);
+    }
+
+    @Override @DefinedBy(Api.COMPILER)
+    public void addModules(Iterable<String> moduleNames) {
+        throw new IllegalStateException();
     }
 
     @Override @DefinedBy(Api.COMPILER)
