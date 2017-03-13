@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,14 +55,36 @@ interface LiveStackFrame extends StackFrame {
      *
      * <p>A single local variable can hold a value of type boolean, byte, char,
      * short, int, float, reference or returnAddress.  A pair of local variables
-     * can hold a value of type long or double.  In other words,
-     * a value of type long or type double occupies two consecutive local
-     * variables.  For a value of primitive type, the element in the
-     * local variable array is an {@link PrimitiveValue} object;
-     * otherwise, the element is an {@code Object}.
+     * can hold a value of type long or double (JVMS section 2.6.1).  Primitive
+     * locals are represented in the returned array as {@code PrimitiveSlot}s,
+     * with longs and doubles occupying a pair of consecutive
+     * {@code PrimitiveSlot}s.
      *
-     * <p>The returned array may contain null entries if a local variable is not
-     * live.
+     * <p>The current VM implementation does not provide specific type
+     * information for primitive locals.  This method simply returns the raw
+     * contents of the VM's primitive locals on a best-effort basis, without
+     * indicating a specific type.
+     *
+     * <p>The returned array may contain null entries for local variables that
+     * are not live.
+     *
+     * @implNote
+     * <p> The specific subclass of {@code PrimitiveSlot} will reflect the
+     * underlying architecture, and will be either {@code PrimitiveSlot32} or
+     * {@code PrimitiveSlot64}.
+     *
+     * <p>How a long or double value is stored in the pair of
+     * {@code PrimitiveSlot}s can vary based on the underlying architecture and
+     * VM implementation.  On 32-bit architectures, long/double values are split
+     * between the two {@code PrimitiveSlot32}s.
+     * On 64-bit architectures, the entire value may be stored in one of the
+     * {@code PrimitiveSlot64}s, with the other {@code PrimitiveSlot64} being
+     * unused.
+     *
+     * <p>The contents of the unused, high-order portion of a
+     * {@code PrimitiveSlot64} (when storing a primitive other than a long or
+     * double) is unspecified.  In particular, the unused bits are not
+     * necessarily zeroed out.
      *
      * @return  the local variable array of this stack frame.
      */
@@ -78,7 +100,7 @@ interface LiveStackFrame extends StackFrame {
      * <p>Each entry on the operand stack can hold a value of any Java Virtual
      * Machine Type.
      * For a value of primitive type, the element in the returned array is
-     * an {@link PrimitiveValue} object; otherwise, the element is the {@code Object}
+     * a {@link PrimitiveSlot} object; otherwise, the element is the {@code Object}
      * on the operand stack.
      *
      * @return the operand stack of this stack frame.
@@ -87,107 +109,37 @@ interface LiveStackFrame extends StackFrame {
 
     /**
      * <em>UNSUPPORTED</em> This interface is intended to be package-private
-     * or move to an internal package.<p>
+     * or moved to an internal package.<p>
      *
-     * Represents a local variable or an entry on the operand whose value is
+     * Represents a local variable or an entry on the operand stack whose value is
      * of primitive type.
      */
-    public abstract class PrimitiveValue {
+    public abstract class PrimitiveSlot {
         /**
-         * Returns the base type of this primitive value, one of
-         * {@code B, D, C, F, I, J, S, Z}.
-         *
-         * @return Name of a base type
-         * @jvms table 4.3-A
+         * Returns the size, in bytes, of the slot.
          */
-        abstract char type();
+        public abstract int size();
 
         /**
-         * Returns the boolean value if this primitive value is of type boolean.
-         * @return the boolean value if this primitive value is of type boolean.
+         * Returns the int value if this primitive value is of size 4
+         * @return the int value if this primitive value is of size 4
          *
          * @throws UnsupportedOperationException if this primitive value is not
-         * of type boolean.
-         */
-        public boolean booleanValue() {
-            throw new UnsupportedOperationException("this primitive of type " + type());
-        }
-
-        /**
-         * Returns the int value if this primitive value is of type int.
-         * @return the int value if this primitive value is of type int.
-         *
-         * @throws UnsupportedOperationException if this primitive value is not
-         * of type int.
+         * of size 4.
          */
         public int intValue() {
-            throw new UnsupportedOperationException("this primitive of type " + type());
+            throw new UnsupportedOperationException("this " + size() + "-byte primitive");
         }
 
         /**
-         * Returns the long value if this primitive value is of type long.
-         * @return the long value if this primitive value is of type long.
+         * Returns the long value if this primitive value is of size 8
+         * @return the long value if this primitive value is of size 8
          *
          * @throws UnsupportedOperationException if this primitive value is not
-         * of type long.
+         * of size 8.
          */
         public long longValue() {
-            throw new UnsupportedOperationException("this primitive of type " + type());
-        }
-
-        /**
-         * Returns the char value if this primitive value is of type char.
-         * @return the char value if this primitive value is of type char.
-         *
-         * @throws UnsupportedOperationException if this primitive value is not
-         * of type char.
-         */
-        public char charValue() {
-            throw new UnsupportedOperationException("this primitive of type " + type());
-        }
-
-        /**
-         * Returns the byte value if this primitive value is of type byte.
-         * @return the byte value if this primitive value is of type byte.
-         *
-         * @throws UnsupportedOperationException if this primitive value is not
-         * of type byte.
-         */
-        public byte byteValue() {
-            throw new UnsupportedOperationException("this primitive of type " + type());
-        }
-
-        /**
-         * Returns the short value if this primitive value is of type short.
-         * @return the short value if this primitive value is of type short.
-         *
-         * @throws UnsupportedOperationException if this primitive value is not
-         * of type short.
-         */
-        public short shortValue() {
-            throw new UnsupportedOperationException("this primitive of type " + type());
-        }
-
-        /**
-         * Returns the float value if this primitive value is of type float.
-         * @return the float value if this primitive value is of type float.
-         *
-         * @throws UnsupportedOperationException if this primitive value is not
-         * of type float.
-         */
-        public float floatValue() {
-            throw new UnsupportedOperationException("this primitive of type " + type());
-        }
-
-        /**
-         * Returns the double value if this primitive value is of type double.
-         * @return the double value if this primitive value is of type double.
-         *
-         * @throws UnsupportedOperationException if this primitive value is not
-         * of type double.
-         */
-        public double doubleValue() {
-            throw new UnsupportedOperationException("this primitive of type " + type());
+            throw new UnsupportedOperationException("this " + size() + "-byte primitive");
         }
     }
 

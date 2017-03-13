@@ -25,6 +25,8 @@
 
 /**
  * Defines the Scripting API.
+ *
+ * @since 9
  */
 module java.scripting {
     exports javax.script;
