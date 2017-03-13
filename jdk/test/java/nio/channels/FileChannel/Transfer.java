@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,43 +24,53 @@
 /* @test
  * @bug 4434723 4482726 4559072 4638365 4795550 5081340 5103988 6253145
  *   6984545
- * @summary Test FileChannel.transferFrom and transferTo
+ * @summary Test FileChannel.transferFrom and transferTo (use -Dseed=X to set PRNG seed)
  * @library ..
+ * @library /lib/testlibrary/
+ * @build jdk.testlibrary.*
+ * @run testng Transfer
  * @key randomness
  */
 
-import java.io.*;
-import java.net.*;
-import java.nio.*;
-import java.nio.channels.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStreamReader;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.PrintStream;
+import java.io.RandomAccessFile;
+import java.io.Reader;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.channels.NonReadableChannelException;
+import java.nio.channels.Pipe;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.FileAlreadyExistsException;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
+import jdk.testlibrary.RandomFactory;
+
+import org.testng.annotations.Test;
 
 public class Transfer {
 
-    private static Random generator = new Random();
+    private static Random generator = RandomFactory.getRandom();
+    private static PrintStream err = System.err;
+    private static PrintStream out = System.out;
 
-    private static int[] testSizes = {
-        0, 10, 1023, 1024, 1025, 2047, 2048, 2049 };
-
-    public static void main(String[] args) throws Exception {
-        testFileChannel();
-        for (int i=0; i<testSizes.length; i++)
-            testReadableByteChannel(testSizes[i]);
-        xferTest02(); // for bug 4482726
-        xferTest03(); // for bug 4559072
-        xferTest04(); // for bug 4638365
-        xferTest05(); // for bug 4638365
-        xferTest06(); // for bug 5081340
-        xferTest07(); // for bug 5103988
-        xferTest08(); // for bug 6253145
-        xferTest09(); // for bug 6984545
-    }
-
-    private static void testFileChannel() throws Exception {
+    @Test
+    public void testFileChannel() throws Exception {
         File source = File.createTempFile("source", null);
         source.deleteOnExit();
         File sink = File.createTempFile("sink", null);
@@ -105,52 +115,58 @@ public class Transfer {
         sink.delete();
     }
 
-    private static void testReadableByteChannel(int size) throws Exception {
-        SelectorProvider sp = SelectorProvider.provider();
-        Pipe p = sp.openPipe();
-        Pipe.SinkChannel sink = p.sink();
-        Pipe.SourceChannel source = p.source();
-        sink.configureBlocking(false);
+    @Test
+    public void testReadableByteChannel() throws Exception {
+        int[] testSizes = { 0, 10, 1023, 1024, 1025, 2047, 2048, 2049 };
 
-        ByteBuffer outgoingdata = ByteBuffer.allocateDirect(size + 10);
-        byte[] someBytes = new byte[size + 10];
-        generator.nextBytes(someBytes);
-        outgoingdata.put(someBytes);
-        outgoingdata.flip();
+        for (int size : testSizes) {
+            SelectorProvider sp = SelectorProvider.provider();
+            Pipe p = sp.openPipe();
+            Pipe.SinkChannel sink = p.sink();
+            Pipe.SourceChannel source = p.source();
+            sink.configureBlocking(false);
 
-        int totalWritten = 0;
-        while (totalWritten < size + 10) {
-            int written = sink.write(outgoingdata);
-            if (written < 0)
-                throw new Exception("Write failed");
-            totalWritten += written;
+            ByteBuffer outgoingdata = ByteBuffer.allocateDirect(size + 10);
+            byte[] someBytes = new byte[size + 10];
+            generator.nextBytes(someBytes);
+            outgoingdata.put(someBytes);
+            outgoingdata.flip();
+
+            int totalWritten = 0;
+            while (totalWritten < size + 10) {
+                int written = sink.write(outgoingdata);
+                if (written < 0)
+                    throw new Exception("Write failed");
+                totalWritten += written;
+            }
+
+            File f = File.createTempFile("blah"+size, null);
+            f.deleteOnExit();
+            RandomAccessFile raf = new RandomAccessFile(f, "rw");
+            FileChannel fc = raf.getChannel();
+            long oldPosition = fc.position();
+
+            long bytesWritten = fc.transferFrom(source, 0, size);
+            fc.force(true);
+            if (bytesWritten != size)
+                throw new RuntimeException("Transfer failed");
+
+            if (fc.position() != oldPosition)
+                throw new RuntimeException("Position changed");
+
+            if (fc.size() != size)
+                throw new RuntimeException("Unexpected sink size "+ fc.size());
+
+            fc.close();
+            sink.close();
+            source.close();
+
+            f.delete();
         }
-
-        File f = File.createTempFile("blah"+size, null);
-        f.deleteOnExit();
-        RandomAccessFile raf = new RandomAccessFile(f, "rw");
-        FileChannel fc = raf.getChannel();
-        long oldPosition = fc.position();
-
-        long bytesWritten = fc.transferFrom(source, 0, size);
-        fc.force(true);
-        if (bytesWritten != size)
-            throw new RuntimeException("Transfer failed");
-
-        if (fc.position() != oldPosition)
-            throw new RuntimeException("Position changed");
-
-        if (fc.size() != size)
-            throw new RuntimeException("Unexpected sink size "+ fc.size());
-
-        fc.close();
-        sink.close();
-        source.close();
-
-        f.delete();
     }
 
-    public static void xferTest02() throws Exception {
+    @Test
+    public void xferTest02() throws Exception { // for bug 4482726
         byte[] srcData = new byte[5000];
         for (int i=0; i<5000; i++)
             srcData[i] = (byte)generator.nextInt();
@@ -187,7 +203,8 @@ public class Transfer {
         dest.delete();
     }
 
-    public static void xferTest03() throws Exception {
+    @Test
+    public void xferTest03() throws Exception { // for bug 4559072
         byte[] srcData = new byte[] {1,2,3,4} ;
 
         // get filechannel for the source file.
@@ -225,7 +242,8 @@ public class Transfer {
     }
 
     // Test transferTo with large file
-    public static void xferTest04() throws Exception {
+    @Test
+    public void xferTest04() throws Exception { // for bug 4638365
         // Windows and Linux can't handle the really large file sizes for a
         // truncate or a positional write required by the test for 4563125
         String osName = System.getProperty("os.name");
@@ -264,7 +282,8 @@ public class Transfer {
     }
 
     // Test transferFrom with large file
-    public static void xferTest05() throws Exception {
+    @Test
+    public void xferTest05() throws Exception { // for bug 4638365
         // Create a source file & large sink file for the test
         File source = File.createTempFile("blech", null);
         source.deleteOnExit();
@@ -294,7 +313,7 @@ public class Transfer {
                      testSize - 40);
         } catch (IOException e) {
             // Can't set up the test, abort it
-            System.err.println("xferTest05 was aborted.");
+            err.println("xferTest05 was aborted.");
             return;
         } finally {
             fc.close();
@@ -337,7 +356,8 @@ public class Transfer {
     }
 
     // Test transferFrom asking for more bytes than remain in source
-    public static void xferTest06() throws Exception {
+    @Test
+    public void xferTest06() throws Exception { // for bug 5081340
         String data = "Use the source, Luke!";
 
         File source = File.createTempFile("source", null);
@@ -370,7 +390,8 @@ public class Transfer {
     }
 
     // Test transferTo to non-blocking socket channel
-    public static void xferTest07() throws Exception {
+    @Test
+    public void xferTest07() throws Exception { // for bug 5103988
         File source = File.createTempFile("source", null);
         source.deleteOnExit();
 
@@ -405,7 +426,8 @@ public class Transfer {
 
 
     // Test transferTo with file positions larger than 2 and 4GB
-    public static void xferTest08() throws Exception {
+    @Test
+    public void xferTest08() throws Exception { // for bug 6253145
         // Creating a sparse 6GB file on Windows takes too long
         String osName = System.getProperty("os.name");
         if (osName.startsWith("Windows"))
@@ -421,10 +443,15 @@ public class Transfer {
         RandomAccessFile raf = new RandomAccessFile(file, "rw");
         FileChannel fc = raf.getChannel();
 
+        out.println("  Creating large file...");
+        long t0 = System.nanoTime();
         try {
             fc.write(ByteBuffer.wrap("0123456789012345".getBytes("UTF-8")), 6*G);
+            long t1 = System.nanoTime();
+            out.printf("  Created large file in %d ns (%d ms) %n",
+            t1 - t0, TimeUnit.NANOSECONDS.toMillis(t1 - t0));
         } catch (IOException x) {
-            System.err.println("Unable to create test file:" + x);
+            err.println("  Unable to create test file:" + x);
             fc.close();
             return;
         }
@@ -480,7 +507,10 @@ public class Transfer {
 
                 // write to file and transfer to echo server
                 fc.write(sendbuf, position);
+                t0 = System.nanoTime();
                 fc.transferTo(position, count, source);
+                out.printf("  transferTo(%d, %2d, source): %d ns%n",
+                    position, count, System.nanoTime() - t0);
 
                 // read from echo server
                 long nread = 0;
@@ -495,7 +525,7 @@ public class Transfer {
                 readbuf.flip();
                 sendbuf.flip();
                 if (!readbuf.equals(sendbuf))
-                    throw new RuntimeException("Echo'ed bytes do not match!");
+                    throw new RuntimeException("Echoed bytes do not match!");
                 readbuf.clear();
                 sendbuf.clear();
             }
@@ -509,7 +539,8 @@ public class Transfer {
 
     // Test that transferFrom with FileChannel source that is not readable
     // throws NonReadableChannelException
-    static void xferTest09() throws Exception {
+    @Test
+    public void xferTest09() throws Exception { // for bug 6984545
         File source = File.createTempFile("source", null);
         source.deleteOnExit();
 

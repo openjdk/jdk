@@ -420,7 +420,7 @@ class MethodHandleNatives {
                                                              MethodType mtype,
                                                              Object[] appendixResult) {
         // Get the signature method type
-        MethodType sigType = mtype.basicType();
+        final MethodType sigType = mtype.basicType();
 
         // Get the access kind from the method name
         VarHandle.AccessMode ak;
@@ -430,32 +430,37 @@ class MethodHandleNatives {
             throw MethodHandleStatics.newInternalError(e);
         }
 
-        // If not polymorphic in the return type, such as the compareAndSet
-        // methods that return boolean
-        if (ak.at.isMonomorphicInReturnType) {
-            if (ak.at.returnType != mtype.returnType()) {
-                // The caller contains a different return type than that
-                // defined by the method
-                throw newNoSuchMethodErrorOnVarHandle(name, mtype);
-            }
-            // Adjust the return type of the signature method type
-            sigType = sigType.changeReturnType(ak.at.returnType);
-        }
-
-        // Get the guard method type for linking
-        MethodType guardType = sigType
-                // VarHandle at start
-                .insertParameterTypes(0, VarHandle.class)
-                // Access descriptor at end
-                .appendParameterTypes(VarHandle.AccessDescriptor.class);
-
         // Create the appendix descriptor constant
         VarHandle.AccessDescriptor ad = new VarHandle.AccessDescriptor(mtype, ak.at.ordinal(), ak.ordinal());
         appendixResult[0] = ad;
 
         if (MethodHandleStatics.VAR_HANDLE_GUARDS) {
+            // If not polymorphic in the return type, such as the compareAndSet
+            // methods that return boolean
+            Class<?> guardReturnType = sigType.returnType();
+            if (ak.at.isMonomorphicInReturnType) {
+                if (ak.at.returnType != mtype.returnType()) {
+                    // The caller contains a different return type than that
+                    // defined by the method
+                    throw newNoSuchMethodErrorOnVarHandle(name, mtype);
+                }
+                // Adjust the return type of the signature method type
+                guardReturnType = ak.at.returnType;
+            }
+
+            // Get the guard method type for linking
+            final Class<?>[] guardParams = new Class<?>[sigType.parameterCount() + 2];
+            // VarHandle at start
+            guardParams[0] = VarHandle.class;
+            for (int i = 0; i < sigType.parameterCount(); i++) {
+                guardParams[i + 1] = sigType.parameterType(i);
+            }
+            // Access descriptor at end
+            guardParams[guardParams.length - 1] = VarHandle.AccessDescriptor.class;
+            MethodType guardType = MethodType.makeImpl(guardReturnType, guardParams, true);
+
             MemberName linker = new MemberName(
-                    VarHandleGuards.class, "guard_" + getVarHandleMethodSignature(sigType),
+                    VarHandleGuards.class, getVarHandleGuardMethodName(guardType),
                     guardType, REF_invokeStatic);
 
             linker = MemberName.getFactory().resolveOrNull(REF_invokeStatic, linker,
@@ -466,16 +471,18 @@ class MethodHandleNatives {
             // Fall back to lambda form linkage if guard method is not available
             // TODO Optionally log fallback ?
         }
-        return Invokers.varHandleInvokeLinkerMethod(name, mtype);
+        return Invokers.varHandleInvokeLinkerMethod(ak, mtype);
     }
-    static String getVarHandleMethodSignature(MethodType mt) {
-        StringBuilder sb = new StringBuilder(mt.parameterCount() + 2);
+    static String getVarHandleGuardMethodName(MethodType guardType) {
+        String prefix = "guard_";
+        StringBuilder sb = new StringBuilder(prefix.length() + guardType.parameterCount());
 
-        for (int i = 0; i < mt.parameterCount(); i++) {
-            Class<?> pt = mt.parameterType(i);
+        sb.append(prefix);
+        for (int i = 1; i < guardType.parameterCount() - 1; i++) {
+            Class<?> pt = guardType.parameterType(i);
             sb.append(getCharType(pt));
         }
-        sb.append('_').append(getCharType(mt.returnType()));
+        sb.append('_').append(getCharType(guardType.returnType()));
         return sb.toString();
     }
     static char getCharType(Class<?> pt) {

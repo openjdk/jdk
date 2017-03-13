@@ -1460,7 +1460,7 @@ public class SwingUtilities2 {
      *
      * @param ie InputEvent to check
      */
-
+    @SuppressWarnings("deprecation")
     private static boolean isAccessClipboardGesture(InputEvent ie) {
         boolean allowedGesture = false;
         if (ie instanceof KeyEvent) { //we can validate only keyboard gestures
@@ -2129,6 +2129,7 @@ public class SwingUtilities2 {
         return -1;
     }
 
+    @SuppressWarnings("deprecation")
     public static int getSystemMnemonicKeyMask() {
         Toolkit toolkit = Toolkit.getDefaultToolkit();
         if (toolkit instanceof SunToolkit) {
