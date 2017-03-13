@@ -1049,6 +1049,7 @@ public abstract class SunToolkit extends Toolkit
     /**
      * Returns key modifiers used by Swing to set up a focus accelerator key stroke.
      */
+    @SuppressWarnings("deprecation")
     public int getFocusAcceleratorKeyMask() {
         return InputEvent.ALT_MASK;
     }
@@ -1059,6 +1060,7 @@ public abstract class SunToolkit extends Toolkit
      * the way things work on Windows: here, pressing ctrl + alt allows user to enter
      * characters from the extended character set (like euro sign or math symbols)
      */
+    @SuppressWarnings("deprecation")
     public boolean isPrintableCharacterModifiersMask(int mods) {
         return ((mods & InputEvent.ALT_MASK) == (mods & InputEvent.CTRL_MASK));
     }

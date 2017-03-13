@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
 
 package com.sun.istack.internal.localization;
 
+import java.util.Locale;
+import java.util.ResourceBundle;
+
 /**
  * {@link Localizable} that wraps a non-localizable string.
  *
@@ -39,13 +42,20 @@ public final class NullLocalizable implements Localizable {
         this.msg = msg;
     }
 
+    @Override
     public String getKey() {
         return Localizable.NOT_LOCALIZABLE;
     }
+    @Override
     public Object[] getArguments() {
         return new Object[]{msg};
     }
+    @Override
     public String getResourceBundleName() {
         return "";
+    }
+    @Override
+    public ResourceBundle getResourceBundle(Locale locale) {
+        return null;
     }
 }
