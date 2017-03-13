@@ -175,6 +175,7 @@ public class MenuItemLayoutHelper {
         arrowSize.origWidth = arrowSize.width;
     }
 
+    @SuppressWarnings("deprecation")
     private String getAccText(String acceleratorDelimiter) {
         String accText = "";
         KeyStroke accelerator = mi.getAccelerator();

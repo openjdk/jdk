@@ -96,7 +96,7 @@ public class LayerModularXMLParserTest {
     public void testOneLayer() throws Exception {
         ModuleFinder finder1 = ModuleFinder.of(MOD_DIR1);
         Configuration cf1 = Layer.boot().configuration()
-                .resolveRequiresAndUses(finder1, ModuleFinder.of(), Set.of("test"));
+                .resolveAndBind(finder1, ModuleFinder.of(), Set.of("test"));
         ClassLoader scl = ClassLoader.getSystemClassLoader();
         Layer layer1 = Layer.boot().defineModulesWithManyLoaders(cf1, scl);
         ClassLoader cl1 = layer1.findLoader("test");
@@ -126,12 +126,12 @@ public class LayerModularXMLParserTest {
     public void testTwoLayer() throws Exception {
         ModuleFinder finder1 = ModuleFinder.of(MOD_DIR1);
         Configuration cf1 = Layer.boot().configuration()
-                .resolveRequiresAndUses(finder1, ModuleFinder.of(), Set.of("test"));
+                .resolveAndBind(finder1, ModuleFinder.of(), Set.of("test"));
         ClassLoader scl = ClassLoader.getSystemClassLoader();
         Layer layer1 = Layer.boot().defineModulesWithManyLoaders(cf1, scl);
 
         ModuleFinder finder2 = ModuleFinder.of(MOD_DIR2);
-        Configuration cf2 = cf1.resolveRequiresAndUses(finder2, ModuleFinder.of(), Set.of("test"));
+        Configuration cf2 = cf1.resolveAndBind(finder2, ModuleFinder.of(), Set.of("test"));
         Layer layer2 = layer1.defineModulesWithOneLoader(cf2, layer1.findLoader("test"));
         ClassLoader cl2 = layer2.findLoader("test");
 
@@ -160,12 +160,12 @@ public class LayerModularXMLParserTest {
     public void testTwoLayerWithDuplicate() throws Exception {
         ModuleFinder finder1 = ModuleFinder.of(MOD_DIR1, MOD_DIR2);
         Configuration cf1 = Layer.boot().configuration()
-                .resolveRequiresAndUses(finder1, ModuleFinder.of(), Set.of("test"));
+                .resolveAndBind(finder1, ModuleFinder.of(), Set.of("test"));
         ClassLoader scl = ClassLoader.getSystemClassLoader();
         Layer layer1 = Layer.boot().defineModulesWithManyLoaders(cf1, scl);
 
         ModuleFinder finder2 = ModuleFinder.of(MOD_DIR2);
-        Configuration cf2 = cf1.resolveRequiresAndUses(finder2, ModuleFinder.of(), Set.of("test"));
+        Configuration cf2 = cf1.resolveAndBind(finder2, ModuleFinder.of(), Set.of("test"));
         Layer layer2 = layer1.defineModulesWithOneLoader(cf2, layer1.findLoader("test"));
         ClassLoader cl2 = layer2.findLoader("test");
 

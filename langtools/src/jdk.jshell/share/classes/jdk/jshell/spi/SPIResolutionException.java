@@ -33,6 +33,8 @@ package jdk.jshell.spi;
  * <p>
  * This exception is seen by the execution engine, but not seen by
  * the end user nor through the JShell API.
+ *
+ * @since 9
  */
 @SuppressWarnings("serial")             // serialVersionUID intentionally omitted
 public class SPIResolutionException extends RuntimeException {

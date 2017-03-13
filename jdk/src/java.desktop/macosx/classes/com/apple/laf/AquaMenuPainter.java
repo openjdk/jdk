@@ -74,7 +74,10 @@ public class AquaMenuPainter {
         kUCapsLockGlyph = 0x21EA;
 
     static final int ALT_GRAPH_MASK = 1 << 5; // New to Java2
-    static final int sUnsupportedModifiersMask = ~(InputEvent.CTRL_MASK | InputEvent.ALT_MASK | InputEvent.SHIFT_MASK | InputEvent.META_MASK | ALT_GRAPH_MASK);
+    @SuppressWarnings("deprecation")
+    static final int sUnsupportedModifiersMask =
+            ~(InputEvent.CTRL_MASK | InputEvent.ALT_MASK | InputEvent.SHIFT_MASK
+                    | InputEvent.META_MASK | ALT_GRAPH_MASK);
 
     interface Client {
         public void paintBackground(Graphics g, JComponent c, int menuWidth, int menuHeight);
@@ -86,6 +89,7 @@ public class AquaMenuPainter {
     }
 
     // Return a string with the proper modifier glyphs
+    @SuppressWarnings("deprecation")
     private static String getKeyModifiersUnicode(final int modifiers, final boolean isLeftToRight) {
         final StringBuilder buf = new StringBuilder(2);
         // Order (from StandardMenuDef.c): control, option(alt), shift, cmd

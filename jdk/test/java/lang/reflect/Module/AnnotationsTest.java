@@ -144,7 +144,7 @@ public class AnnotationsTest {
         Layer bootLayer = Layer.boot();
 
         Configuration cf = bootLayer.configuration()
-                .resolveRequires(finder, ModuleFinder.of(), Set.of(name));
+                .resolve(finder, ModuleFinder.of(), Set.of(name));
 
         ClassLoader scl = ClassLoader.getSystemClassLoader();
         Layer layer = bootLayer.defineModulesWithOneLoader(cf, scl);
