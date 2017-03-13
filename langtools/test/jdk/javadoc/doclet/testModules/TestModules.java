@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @bug 8154119 8154262 8156077 8157987 8154261 8154817 8135291 8155995 8162363 8168766 8168688 8162674 8160196 8175799
+ * @bug 8154119 8154262 8156077 8157987 8154261 8154817 8135291 8155995 8162363
+ *      8168766 8168688 8162674 8160196 8175799 8174974
  * @summary Test modules support in javadoc.
  * @author bpatel
  * @library ../lib
@@ -187,11 +188,11 @@ public class TestModules extends JavadocTester {
     void testModuleFilesAndLinks() {
         javadoc("-d", "out-modulelinks",
                 "--module-source-path", testSrc,
-                "--module", "moduleA",
-                "testpkgmdlA");
+                "--module", "moduleA,moduleB",
+                "testpkgmdlA", "testpkgmdlB");
         checkExit(Exit.OK);
         checkModuleFilesAndLinks(true);
-        checkNegatedOverviewFrame();
+        checkOverviewFrame(true);
     }
 
     /**
@@ -631,12 +632,17 @@ public class TestModules extends JavadocTester {
     void checkModuleFilesAndLinks(boolean found) {
         checkFileAndOutput("testpkgmdlA/package-summary.html", found,
                 "<li><a href=\"../moduleA-summary.html\">Module</a></li>",
-                "<div class=\"subTitle\"><span class=\"moduleLabelInClass\">Module</span>&nbsp;"
+                "<div class=\"subTitle\"><span class=\"moduleLabelInPackage\">Module</span>&nbsp;"
                 + "<a href=\"../moduleA-summary.html\">moduleA</a></div>");
         checkFileAndOutput("testpkgmdlA/TestClassInModuleA.html", found,
                 "<li><a href=\"../moduleA-summary.html\">Module</a></li>",
-                "<div class=\"subTitle\"><span class=\"moduleLabelInClass\">Module</span>&nbsp;"
+                "<div class=\"subTitle\"><span class=\"moduleLabelInType\">Module</span>&nbsp;"
                 + "<a href=\"../moduleA-summary.html\">moduleA</a></div>");
+        checkFileAndOutput("testpkgmdlB/AnnotationType.html", found,
+                "<div class=\"subTitle\"><span class=\"moduleLabelInType\">Module</span>&nbsp;"
+                + "<a href=\"../moduleB-summary.html\">moduleB</a></div>",
+                "<div class=\"subTitle\"><span class=\"packageLabelInType\">"
+                + "Package</span>&nbsp;<a href=\"../testpkgmdlB/package-summary.html\">testpkgmdlB</a></div>");
         checkFiles(found,
                 "moduleA-frame.html",
                 "moduleA-summary.html",
@@ -663,7 +669,7 @@ public class TestModules extends JavadocTester {
                 + "search_word</a></span> - Search tag in moduleB</dt>\n"
                 + "<dd>&nbsp;</dd>\n"
                 + "</dl>");
-}
+    }
 
     void checkModuleModeCommon() {
         checkOutput("overview-summary.html", true,
@@ -857,19 +863,12 @@ public class TestModules extends JavadocTester {
                 + "</p>");
         checkOutput("moduleB-summary.html", false,
                 "@AnnotationTypeUndocumented");
-}
+    }
 
     void checkOverviewFrame(boolean found) {
         checkOutput("index.html", !found,
                 "<iframe src=\"overview-frame.html\" name=\"packageListFrame\" title=\"All Packages\"></iframe>");
         checkOutput("index.html", found,
-                "<iframe src=\"module-overview-frame.html\" name=\"packageListFrame\" title=\"All Modules\"></iframe>");
-}
-
-    void checkNegatedOverviewFrame() {
-        checkOutput("index.html", false,
-                "<iframe src=\"overview-frame.html\" name=\"packageListFrame\" title=\"All Packages\"></iframe>");
-        checkOutput("index.html", false,
                 "<iframe src=\"module-overview-frame.html\" name=\"packageListFrame\" title=\"All Modules\"></iframe>");
     }
 }
