@@ -3994,10 +3994,16 @@ public class Attr extends JCTree.Visitor {
                         rs.methodArguments(argtypes.map(checkDeferredMap)),
                         kindName(sym.location()),
                         sym.location());
-               owntype = new MethodType(owntype.getParameterTypes(),
-                       types.erasure(owntype.getReturnType()),
-                       types.erasure(owntype.getThrownTypes()),
-                       syms.methodClass);
+                if (resultInfo.pt != Infer.anyPoly ||
+                        !owntype.hasTag(METHOD) ||
+                        !owntype.isPartial()) {
+                    //if this is not a partially inferred method type, erase return type. Otherwise,
+                    //erasure is carried out in PartiallyInferredMethodType.check().
+                    owntype = new MethodType(owntype.getParameterTypes(),
+                            types.erasure(owntype.getReturnType()),
+                            types.erasure(owntype.getThrownTypes()),
+                            syms.methodClass);
+                }
             }
 
             PolyKind pkind = (sym.type.hasTag(FORALL) &&

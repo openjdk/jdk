@@ -49,12 +49,15 @@ import java.util.stream.Stream;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
+import javax.lang.model.util.Elements;
+import javax.tools.ForwardingJavaFileManager;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
@@ -542,8 +545,13 @@ public abstract class JavadocHelper implements AutoCloseable {
             if (type == null)
                 return null;
 
-            String binaryName = origin.getElements().getBinaryName(type).toString();
-            Pair<JavacTask, CompilationUnitTree> source = findSource(binaryName);
+            Elements elements = origin.getElements();
+            String binaryName = elements.getBinaryName(type).toString();
+            ModuleElement module = elements.getModuleOf(type);
+            String moduleName = module == null || module.isUnnamed()
+                    ? null
+                    : module.getQualifiedName().toString();
+            Pair<JavacTask, CompilationUnitTree> source = findSource(moduleName, binaryName);
 
             if (source == null)
                 return null;
@@ -636,7 +644,8 @@ public abstract class JavadocHelper implements AutoCloseable {
                 }.scan(cut, null);
             }
 
-        private Pair<JavacTask, CompilationUnitTree> findSource(String binaryName) throws IOException {
+        private Pair<JavacTask, CompilationUnitTree> findSource(String moduleName,
+                                                                String binaryName) throws IOException {
             JavaFileObject jfo = fm.getJavaFileForInput(StandardLocation.SOURCE_PATH,
                                                         binaryName,
                                                         JavaFileObject.Kind.SOURCE);
@@ -645,7 +654,10 @@ public abstract class JavadocHelper implements AutoCloseable {
                 return null;
 
             List<JavaFileObject> jfos = Arrays.asList(jfo);
-            JavacTaskImpl task = (JavacTaskImpl) compiler.getTask(null, baseFileManager, d -> {}, null, null, jfos);
+            JavaFileManager patchFM = moduleName != null
+                    ? new PatchModuleFileManager(baseFileManager, jfo, moduleName)
+                    : baseFileManager;
+            JavacTaskImpl task = (JavacTaskImpl) compiler.getTask(null, patchFM, d -> {}, null, null, jfos);
             Iterable<? extends CompilationUnitTree> cuts = task.parse();
 
             task.enter();
@@ -656,6 +668,61 @@ public abstract class JavadocHelper implements AutoCloseable {
         @Override
         public void close() throws IOException {
             fm.close();
+        }
+
+        private static final class PatchModuleFileManager
+                extends ForwardingJavaFileManager<JavaFileManager> {
+
+            private final JavaFileObject file;
+            private final String moduleName;
+
+            public PatchModuleFileManager(JavaFileManager fileManager,
+                                          JavaFileObject file,
+                                          String moduleName) {
+                super(fileManager);
+                this.file = file;
+                this.moduleName = moduleName;
+            }
+
+            @Override @DefinedBy(Api.COMPILER)
+            public Location getLocationForModule(Location location,
+                                                 JavaFileObject fo,
+                                                 String pkgName) throws IOException {
+                return fo == file
+                        ? PATCH_LOCATION
+                        : super.getLocationForModule(location, fo, pkgName);
+            }
+
+            @Override @DefinedBy(Api.COMPILER)
+            public String inferModuleName(Location location) throws IOException {
+                return location == PATCH_LOCATION
+                        ? moduleName
+                        : super.inferModuleName(location);
+            }
+
+            @Override @DefinedBy(Api.COMPILER)
+            public boolean hasLocation(Location location) {
+                return location == StandardLocation.PATCH_MODULE_PATH ||
+                       super.hasLocation(location);
+            }
+
+            private static final Location PATCH_LOCATION = new Location() {
+                @Override @DefinedBy(Api.COMPILER)
+                public String getName() {
+                    return "PATCH_LOCATION";
+                }
+
+                @Override @DefinedBy(Api.COMPILER)
+                public boolean isOutputLocation() {
+                    return false;
+                }
+
+                @Override @DefinedBy(Api.COMPILER)
+                public boolean isModuleOrientedLocation() {
+                    return false;
+                }
+
+            };
         }
     }
 

@@ -68,9 +68,9 @@ public class T6627362 {
         // compile and disassemble E.java, using modified Object.java,
         // check for reference to System.arraycopy
         File x = new File(testSrc, "x");
-        String[] jcArgs = { "-d", ".", "-Xmodule:java.base",
+        String[] jcArgs = { "-d", ".", "--patch-module", "java.base=" + x.getAbsolutePath(),
                             new File(x, "E.java").getPath(),
-                            new File(x, "Object.java").getPath()};
+                            new File(new File(new File(x, "java"), "lang"), "Object.java").getPath()};
         compile(jcArgs);
 
         String[] jpArgs = { "-classpath", ".", "-c", "E" };

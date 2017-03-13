@@ -67,8 +67,8 @@ public class IgnoreModulePropertiesTest {
     }
 
     public static void main(String[] args) throws Exception {
-        testOption("--add-modules", "java.sqlx", "jdk.module.addmods.0", "java.lang.module.ResolutionException");
-        testOption("--limit-modules", "java.sqlx", "jdk.module.limitmods", "java.lang.module.ResolutionException");
+        testOption("--add-modules", "java.sqlx", "jdk.module.addmods.0", "java.lang.module.FindException");
+        testOption("--limit-modules", "java.sqlx", "jdk.module.limitmods", "java.lang.module.FindException");
         testOption("--add-reads", "xyzz=yyzd", "jdk.module.addreads.0", "WARNING: Unknown module: xyzz");
         testOption("--add-exports", "java.base/xyzz=yyzd", "jdk.module.addexports.0",
                    "WARNING: package xyzz not in java.base");
