@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -343,10 +343,10 @@ public class TestTypeAnnotations extends JavadocTester {
                 + "                                    throws java.lang.Exception</pre>");
 
         checkOutput("typeannos/WithFinal.html", true,
-                "<pre>java.lang.String&nbsp;nonVoid(<a href=\"../typeannos/RcvrB."
-                + "html\" title=\"annotation in typeannos\">@RcvrB</a>("
-                + "\"m\")&nbsp;WithFinal"
-                + "&nbsp;this)</pre>");
+                "<pre>java.lang.String&nbsp;nonVoid(<a href=\"../typeannos/RcvrB.html\" "
+                + "title=\"annotation in typeannos\">@RcvrB</a>(\"m\") "
+                + "<a href=\"../typeannos/WithFinal.html\" title=\"class in typeannos\">"
+                + "WithFinal</a>&nbsp;afield)</pre>");
 
         checkOutput("typeannos/WithBody.html", true,
                 "<pre>void&nbsp;field(<a href=\"../typeannos/RcvrA.html\" title=\""
