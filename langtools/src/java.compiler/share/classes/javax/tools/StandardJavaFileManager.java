@@ -349,6 +349,8 @@ public interface StandardJavaFileManager extends JavaFileManager {
      *
      * @see setLocation
      * @see setLocationFromPaths
+     *
+     * @since 9
      */
     default void setLocationForModule(Location location, String moduleName,
             Collection<? extends Path> paths) throws IOException {
