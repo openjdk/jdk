@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,12 @@
  * import java.lang.reflect.*;
  * public class c3ReadEdge {
  *    public c3ReadEdge() {
- *       // Establish read edge from module m1, where c3ReadEdge is defined,
+ *       // Establish read edge from module m1x, where c3ReadEdge is defined,
  *       // to the unnamed module, where c4 will be defined.
- *       Module m1 = c3ReadEdge.class.getModule();
+ *       Module m1x = c3ReadEdge.class.getModule();
  *       ClassLoader loader = c3ReadEdge.class.getClassLoader();
  *       Module unnamed_module = loader.getUnnamedModule();
- *       m1.addReads(unnamed_module);
+ *       m1x.addReads(unnamed_module);
  *       // Attempt access - access should succeed
  *       c4 c4_obj = new c4();
  *       c4_obj.method4();

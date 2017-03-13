@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Spliterator;
+import java.util.SpliteratorTestHelper;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.Function;
@@ -46,7 +47,6 @@ import java.util.stream.LambdaTestHelpers;
 import java.util.stream.LongStream;
 import java.util.stream.LongStreamTestDataProvider;
 import java.util.stream.OpTestCase;
-import java.util.stream.SpliteratorTestHelper;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import java.util.stream.StreamTestDataProvider;

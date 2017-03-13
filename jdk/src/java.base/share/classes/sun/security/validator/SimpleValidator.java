@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,12 +155,14 @@ public final class SimpleValidator extends Validator {
 
         // create default algorithm constraints checker
         TrustAnchor anchor = new TrustAnchor(anchorCert, null);
-        AlgorithmChecker defaultAlgChecker = new AlgorithmChecker(anchor);
+        AlgorithmChecker defaultAlgChecker =
+                new AlgorithmChecker(anchor, variant);
 
         // create application level algorithm constraints checker
         AlgorithmChecker appAlgChecker = null;
         if (constraints != null) {
-            appAlgChecker = new AlgorithmChecker(anchor, constraints);
+            appAlgChecker = new AlgorithmChecker(anchor, constraints, null,
+                    variant);
         }
 
         // verify top down, starting at the certificate issued by

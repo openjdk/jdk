@@ -46,7 +46,7 @@ import static java.lang.System.out;
 
 /*
  * @test
- * @bug 8167328 8171830
+ * @bug 8167328 8171830 8165640 8174248
  * @library /lib/testlibrary
  * @modules jdk.compiler
  *          jdk.jartool
@@ -241,11 +241,6 @@ public class Basic {
 
         java(mp, FOO.moduleName + "/" + FOO.mainClass)
             .assertSuccess()
-.resultChecker(r -> {
-        System.out.println("===================================");
-        System.out.println(r.output);
-        System.out.println("===================================");
-})
             .resultChecker(r -> assertModuleData(r, FOO));
         try (InputStream fis = Files.newInputStream(modularJar);
              JarInputStream jis = new JarInputStream(fis)) {
@@ -338,7 +333,7 @@ public class Basic {
         // A "bad" main class in first create ( and no version )
         jar("--create",
             "--file=" + modularJar.toString(),
-            "--main-class=" + "IAmNotTheEntryPoint",
+            "--main-class=" + "jdk.test.foo.IAmNotTheEntryPoint",
             "--no-manifest",
             "-C", modClasses.toString(), ".")  // includes module-info.class
            .assertSuccess();
@@ -484,7 +479,7 @@ public class Basic {
             .resultChecker(r -> {
                 // Expect similar output: "bar, requires mandated foo, ...
                 // conceals jdk.test.foo, conceals jdk.test.foo.internal"
-                Pattern p = Pattern.compile("\\s+bar\\s+requires\\s++foo");
+                Pattern p = Pattern.compile("module bar \\(module-info.class\\)\\s+requires\\s++foo");
                 assertTrue(p.matcher(r.output).find(),
                            "Expecting to find \"bar, requires foo,...\"",
                            "in output, but did not: [" + r.output + "]");
@@ -737,6 +732,53 @@ public class Basic {
             "-C", modClasses.toString(), "jdk/test/baz/BazService.class",
             "-C", modClasses.toString(), "jdk/test/baz/internal/BazServiceImpl.class")
             .assertSuccess();
+    }
+
+    @Test
+    public void servicesCreateWithoutFailureNonRootMRMJAR() throws IOException {
+        // without a root module-info.class
+        Path mp = Paths.get("servicesCreateWithoutFailureNonRootMRMJAR");
+        createTestDir(mp);
+        Path modClasses = MODULE_CLASSES.resolve("baz");
+        Path mrjarDir = MRJAR_DIR.resolve("baz");
+        Path modularJar = mp.resolve("baz.jar");
+
+        jar("--create",
+            "--file=" + modularJar.toString(),
+            "--main-class=" + "jdk.test.baz.Baz",
+            "-m", mrjarDir.resolve("META-INF/MANIFEST.MF").toRealPath().toString(),
+            "-C", mrjarDir.toString(), "META-INF/versions/9/module-info.class",
+            "-C", modClasses.toString(), "jdk/test/baz/BazService.class",
+            "-C", modClasses.toString(), "jdk/test/baz/Baz.class",
+            "-C", modClasses.toString(), "jdk/test/baz/internal/BazServiceImpl.class")
+            .assertSuccess();
+
+
+        for (String option : new String[]  {"--print-module-descriptor", "-d" }) {
+
+            jar(option,
+                "--file=" + modularJar.toString())
+                .assertSuccess()
+                .resultChecker(r ->
+                    assertTrue(r.output.contains("main-class jdk.test.baz.Baz"),
+                              "Expected to find ", "main-class jdk.test.baz.Baz",
+                               " in [", r.output, "]"));
+
+            jarWithStdin(modularJar.toFile(),  option)
+                .assertSuccess()
+                .resultChecker(r ->
+                    assertTrue(r.output.contains("main-class jdk.test.baz.Baz"),
+                              "Expected to find ", "main-class jdk.test.baz.Baz",
+                               " in [", r.output, "]"));
+
+        }
+        // run module maain class
+        java(mp, "baz/jdk.test.baz.Baz")
+            .assertSuccess()
+            .resultChecker(r ->
+               assertTrue(r.output.contains("mainClass:jdk.test.baz.Baz"),
+                          "Expected to find ", "mainClass:jdk.test.baz.Baz",
+                          " in [", r.output, "]"));
     }
 
     @Test
