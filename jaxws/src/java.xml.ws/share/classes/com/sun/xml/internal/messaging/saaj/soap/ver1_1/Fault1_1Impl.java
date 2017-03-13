@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import com.sun.xml.internal.messaging.saaj.soap.impl.*;
 import com.sun.xml.internal.messaging.saaj.soap.name.NameImpl;
 import com.sun.xml.internal.messaging.saaj.util.LogDomainConstants;
 import com.sun.xml.internal.messaging.saaj.SOAPExceptionImpl;
+import org.w3c.dom.Element;
 
 
 public class Fault1_1Impl extends FaultImpl {
@@ -57,6 +58,10 @@ public class Fault1_1Impl extends FaultImpl {
 
     public Fault1_1Impl(SOAPDocumentImpl ownerDocument, String prefix) {
        super(ownerDocument, NameImpl.createFault1_1Name(prefix));
+    }
+
+    public Fault1_1Impl(Element domElement, SOAPDocumentImpl ownerDoc) {
+        super(ownerDoc, domElement);
     }
 
     protected NameImpl getDetailName() {

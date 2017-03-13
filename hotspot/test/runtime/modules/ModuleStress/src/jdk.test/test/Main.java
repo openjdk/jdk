@@ -48,7 +48,7 @@ public class Main {
 
         Configuration cf = layerBoot
                 .configuration()
-                .resolveRequires(ModuleFinder.of(), finder, Set.of(MODULE_NAME));
+                .resolve(ModuleFinder.of(), finder, Set.of(MODULE_NAME));
 
         Module testModule = Main.class.getModule();
         ClassLoader scl = ClassLoader.getSystemClassLoader();
