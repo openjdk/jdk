@@ -1465,8 +1465,9 @@ Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN *igvn) {
   // be skipped. For example, range check predicate has two checks
   // for lower and upper bounds.
   ProjNode* unc_proj = proj_out(1 - prev_dom->as_Proj()->_con)->as_Proj();
-  if (unc_proj->is_uncommon_trap_proj(Deoptimization::Reason_predicate) != NULL)
-   prev_dom = idom;
+  if ((unc_proj != NULL) && (unc_proj->is_uncommon_trap_proj(Deoptimization::Reason_predicate) != NULL)) {
+    prev_dom = idom;
+  }
 
   // Now walk the current IfNode's projections.
   // Loop ends when 'this' has no more uses.
