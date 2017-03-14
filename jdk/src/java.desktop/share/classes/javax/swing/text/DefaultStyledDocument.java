@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.util.Arrays;
 import javax.swing.event.*;
 import javax.swing.undo.AbstractUndoableEdit;
 import javax.swing.undo.CannotRedoException;
@@ -1263,7 +1264,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
                                   int offs, int len) {
             attr = a;
             this.type = type;
-            this.data = txt;
+            this.data = txt == null ? null : Arrays.copyOf(txt, txt.length);
             this.offs = offs;
             this.len = len;
             this.direction = OriginateDirection;
@@ -1323,7 +1324,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
          * @return the array
          */
         public char[] getArray() {
-            return data;
+            return data == null ? null : Arrays.copyOf(data, data.length);
         }
 
 

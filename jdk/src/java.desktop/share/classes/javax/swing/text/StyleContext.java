@@ -794,7 +794,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
          * @param attributes the attributes
          */
         public SmallAttributeSet(Object[] attributes) {
-            this.attributes = attributes;
+            this.attributes = Arrays.copyOf(attributes, attributes.length);
             updateResolveParent();
         }
 
