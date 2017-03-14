@@ -477,7 +477,7 @@ static bool can_relax_access_check_for(const Klass* accessor,
  Note: a loose module is a module that can read all current and future unnamed modules.
 */
 Reflection::VerifyClassAccessResults Reflection::verify_class_access(
-  const Klass* current_class, const Klass* new_class, bool classloader_only) {
+  const Klass* current_class, const InstanceKlass* new_class, bool classloader_only) {
 
   // Verify that current_class can access new_class.  If the classloader_only
   // flag is set, we automatically allow any accesses in which current_class
@@ -504,13 +504,6 @@ Reflection::VerifyClassAccessResults Reflection::verify_class_access(
     // Find the module entry for current_class, the accessor
     ModuleEntry* module_from = current_class->module();
     // Find the module entry for new_class, the accessee
-    if (new_class->is_objArray_klass()) {
-      new_class = ObjArrayKlass::cast(new_class)->bottom_klass();
-    }
-    if (new_class->is_typeArray_klass()) {
-      // A TypeArray's defining module is java.base, access to the TypeArray is allowed
-      return ACCESS_OK;
-    }
     ModuleEntry* module_to = new_class->module();
 
     // both in same (possibly unnamed) module
@@ -567,7 +560,7 @@ Reflection::VerifyClassAccessResults Reflection::verify_class_access(
 // Return an error message specific to the specified Klass*'s and result.
 // This function must be called from within a block containing a ResourceMark.
 char* Reflection::verify_class_access_msg(const Klass* current_class,
-                                          const Klass* new_class,
+                                          const InstanceKlass* new_class,
                                           VerifyClassAccessResults result) {
   assert(result != ACCESS_OK, "must be failure result");
   char * msg = NULL;

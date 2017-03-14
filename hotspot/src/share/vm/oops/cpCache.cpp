@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -282,7 +282,7 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
   // the lock, so that when the losing writer returns, he can use the linked
   // cache entry.
 
-  objArrayHandle resolved_references = cpool->resolved_references();
+  objArrayHandle resolved_references(Thread::current(), cpool->resolved_references());
   // Use the resolved_references() lock for this cpCache entry.
   // resolved_references are created for all classes with Invokedynamic, MethodHandle
   // or MethodType constant pool cache entries.

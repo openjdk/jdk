@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,17 +160,17 @@ bool SystemDictionary::is_parallelDefine(Handle class_loader) {
 // Returns true if the passed class loader is the builtin application class loader
 // or a custom system class loader. A customer system class loader can be
 // specified via -Djava.system.class.loader.
-bool SystemDictionary::is_system_class_loader(Handle class_loader) {
-  if (class_loader.is_null()) {
+bool SystemDictionary::is_system_class_loader(oop class_loader) {
+  if (class_loader == NULL) {
     return false;
   }
   return (class_loader->klass() == SystemDictionary::jdk_internal_loader_ClassLoaders_AppClassLoader_klass() ||
-          class_loader() == _java_system_loader);
+          class_loader == _java_system_loader);
 }
 
 // Returns true if the passed class loader is the platform class loader.
-bool SystemDictionary::is_platform_class_loader(Handle class_loader) {
-  if (class_loader.is_null()) {
+bool SystemDictionary::is_platform_class_loader(oop class_loader) {
+  if (class_loader == NULL) {
     return false;
   }
   return (class_loader->klass() == SystemDictionary::jdk_internal_loader_ClassLoaders_PlatformClassLoader_klass());
@@ -662,6 +662,8 @@ Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
 
   Ticks class_load_start_time = Ticks::now();
 
+  HandleMark hm(THREAD);
+
   // Fix for 4474172; see evaluation for more details
   class_loader = Handle(THREAD, java_lang_ClassLoader::non_reflection_class_loader(class_loader()));
   ClassLoaderData *loader_data = register_loader(class_loader, CHECK_NULL);
@@ -1103,6 +1105,8 @@ Klass* SystemDictionary::resolve_from_stream(Symbol* class_name,
                                              ClassFileStream* st,
                                              TRAPS) {
 
+  HandleMark hm(THREAD);
+
   // Classloaders that support parallelism, e.g. bootstrap classloader,
   // or all classloaders with UnsyncloadClass do not acquire lock here
   bool DoObjectLock = true;
@@ -1349,11 +1353,6 @@ instanceKlassHandle SystemDictionary::load_shared_class(instanceKlassHandle ik,
     int num_interfaces = interfaces->length();
     for (int index = 0; index < num_interfaces; index++) {
       Klass* k = interfaces->at(index);
-
-      // Note: can not use InstanceKlass::cast here because
-      // interfaces' InstanceKlass's C++ vtbls haven't been
-      // reinitialized yet (they will be once the interface classes
-      // are loaded)
       Symbol*  name  = k->name();
       Klass* i = resolve_super_or_fail(class_name, name, class_loader, protection_domain, false, CHECK_(nh));
       if (k != i) {
@@ -1386,6 +1385,7 @@ instanceKlassHandle SystemDictionary::load_shared_class(instanceKlassHandle ik,
 
     ClassLoaderData* loader_data = ClassLoaderData::class_loader_data(class_loader());
     {
+      HandleMark hm(THREAD);
       Handle lockObject = compute_loader_lock_object(class_loader, THREAD);
       check_loader_lock_contention(lockObject, THREAD);
       ObjectLocker ol(lockObject, THREAD, true);
@@ -1614,6 +1614,7 @@ instanceKlassHandle SystemDictionary::load_instance_class(Symbol* class_name, Ha
 
 void SystemDictionary::define_instance_class(instanceKlassHandle k, TRAPS) {
 
+  HandleMark hm(THREAD);
   ClassLoaderData* loader_data = k->class_loader_data();
   Handle class_loader_h(THREAD, loader_data->class_loader());
 
@@ -2621,8 +2622,9 @@ methodHandle SystemDictionary::find_method_handle_invoker(KlassHandle klass,
     SystemDictionary::find_method_handle_type(signature, accessing_klass, CHECK_(empty));
 
   int ref_kind = JVM_REF_invokeVirtual;
-  Handle name_str = StringTable::intern(name, CHECK_(empty));
-  objArrayHandle appendix_box = oopFactory::new_objArray(SystemDictionary::Object_klass(), 1, CHECK_(empty));
+  oop name_oop = StringTable::intern(name, CHECK_(empty));
+  Handle name_str (THREAD, name_oop);
+  objArrayHandle appendix_box = oopFactory::new_objArray_handle(SystemDictionary::Object_klass(), 1, CHECK_(empty));
   assert(appendix_box->obj_at(0) == NULL, "");
 
   // This should not happen.  JDK code should take care of that.
@@ -2632,12 +2634,12 @@ methodHandle SystemDictionary::find_method_handle_invoker(KlassHandle klass,
 
   // call java.lang.invoke.MethodHandleNatives::linkMethod(... String, MethodType) -> MemberName
   JavaCallArguments args;
-  args.push_oop(accessing_klass()->java_mirror());
+  args.push_oop(Handle(THREAD, accessing_klass()->java_mirror()));
   args.push_int(ref_kind);
-  args.push_oop(klass()->java_mirror());
-  args.push_oop(name_str());
-  args.push_oop(method_type());
-  args.push_oop(appendix_box());
+  args.push_oop(Handle(THREAD, klass()->java_mirror()));
+  args.push_oop(name_str);
+  args.push_oop(method_type);
+  args.push_oop(appendix_box);
   JavaValue result(T_OBJECT);
   JavaCalls::call_static(&result,
                          SystemDictionary::MethodHandleNatives_klass(),
@@ -2695,7 +2697,7 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
   }
   bool can_be_cached = true;
   int npts = ArgumentCount(signature).size();
-  objArrayHandle pts = oopFactory::new_objArray(SystemDictionary::Class_klass(), npts, CHECK_(empty));
+  objArrayHandle pts = oopFactory::new_objArray_handle(SystemDictionary::Class_klass(), npts, CHECK_(empty));
   int arg = 0;
   Handle rt; // the return type from the signature
   ResourceMark rm(THREAD);
@@ -2738,7 +2740,7 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
 
   // call java.lang.invoke.MethodHandleNatives::findMethodHandleType(Class rt, Class[] pts) -> MethodType
   JavaCallArguments args(Handle(THREAD, rt()));
-  args.push_oop(pts());
+  args.push_oop(pts);
   JavaValue result(T_OBJECT);
   JavaCalls::call_static(&result,
                          SystemDictionary::MethodHandleNatives_klass(),
@@ -2781,7 +2783,8 @@ Handle SystemDictionary::link_method_handle_constant(KlassHandle caller,
     ResourceMark rm(THREAD);
     SignatureStream ss(signature, false);
     if (!ss.is_done()) {
-      oop mirror = ss.as_java_mirror(caller->class_loader(), caller->protection_domain(),
+      oop mirror = ss.as_java_mirror(Handle(THREAD, caller->class_loader()),
+                                     Handle(THREAD, caller->protection_domain()),
                                      SignatureStream::NCDFError, CHECK_(empty));
       type = Handle(THREAD, mirror);
       ss.next();
@@ -2794,11 +2797,11 @@ Handle SystemDictionary::link_method_handle_constant(KlassHandle caller,
 
   // call java.lang.invoke.MethodHandleNatives::linkMethodHandleConstant(Class caller, int refKind, Class callee, String name, Object type) -> MethodHandle
   JavaCallArguments args;
-  args.push_oop(caller->java_mirror());  // the referring class
+  args.push_oop(Handle(THREAD, caller->java_mirror()));  // the referring class
   args.push_int(ref_kind);
-  args.push_oop(callee->java_mirror());  // the target class
-  args.push_oop(name());
-  args.push_oop(type());
+  args.push_oop(Handle(THREAD, callee->java_mirror()));  // the target class
+  args.push_oop(name);
+  args.push_oop(type);
   JavaValue result(T_OBJECT);
   JavaCalls::call_static(&result,
                          SystemDictionary::MethodHandleNatives_klass(),
@@ -2845,16 +2848,16 @@ methodHandle SystemDictionary::find_dynamic_call_site_invoker(KlassHandle caller
     THROW_MSG_(vmSymbols::java_lang_InternalError(), "bad invokedynamic", empty);
   }
 
-  objArrayHandle appendix_box = oopFactory::new_objArray(SystemDictionary::Object_klass(), 1, CHECK_(empty));
+  objArrayHandle appendix_box = oopFactory::new_objArray_handle(SystemDictionary::Object_klass(), 1, CHECK_(empty));
   assert(appendix_box->obj_at(0) == NULL, "");
 
   // call java.lang.invoke.MethodHandleNatives::linkCallSite(caller, bsm, name, mtype, info, &appendix)
   JavaCallArguments args;
-  args.push_oop(caller->java_mirror());
-  args.push_oop(bsm());
-  args.push_oop(method_name());
-  args.push_oop(method_type());
-  args.push_oop(info());
+  args.push_oop(Handle(THREAD, caller->java_mirror()));
+  args.push_oop(bsm);
+  args.push_oop(method_name);
+  args.push_oop(method_type);
+  args.push_oop(info);
   args.push_oop(appendix_box);
   JavaValue result(T_OBJECT);
   JavaCalls::call_static(&result,

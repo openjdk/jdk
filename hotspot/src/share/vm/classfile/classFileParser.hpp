@@ -301,6 +301,10 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
                              int index,
                              const char *name,
                              TRAPS) const;
+  void classfile_parse_error(const char* msg,
+                             const char* name,
+                             const char* signature,
+                             TRAPS) const;
 
   inline void guarantee_property(bool b, const char* msg, TRAPS) const {
     if (!b) { classfile_parse_error(msg, CHECK); }

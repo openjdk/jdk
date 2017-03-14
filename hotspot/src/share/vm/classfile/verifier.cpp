@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,7 +126,7 @@ void Verifier::log_end_verification(outputStream* st, const char* klassName, Sym
 }
 
 bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool should_verify_class, TRAPS) {
-  HandleMark hm;
+  HandleMark hm(THREAD);
   ResourceMark rm(THREAD);
 
   // Eagerly allocate the identity hash code for a klass. This is a fallout
@@ -1991,6 +1991,7 @@ void ClassVerifier::class_format_error(const char* msg, ...) {
 }
 
 Klass* ClassVerifier::load_class(Symbol* name, TRAPS) {
+  HandleMark hm(THREAD);
   // Get current loader and protection domain first.
   oop loader = current_class()->class_loader();
   oop protection_domain = current_class()->protection_domain();

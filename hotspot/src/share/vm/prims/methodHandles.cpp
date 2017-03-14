@@ -827,8 +827,8 @@ void MethodHandles::expand_MemberName(Handle mname, int suppress, TRAPS) {
       }
       if (!have_name) {
         //not java_lang_String::create_from_symbol; let's intern member names
-        Handle name = StringTable::intern(m->name(), CHECK);
-        java_lang_invoke_MemberName::set_name(mname(), name());
+        oop name = StringTable::intern(m->name(), CHECK);
+        java_lang_invoke_MemberName::set_name(mname(), name);
       }
       if (!have_type) {
         Handle type = java_lang_String::create_from_symbol(m->signature(), CHECK);
@@ -851,14 +851,14 @@ void MethodHandles::expand_MemberName(Handle mname, int suppress, TRAPS) {
       }
       if (!have_name) {
         //not java_lang_String::create_from_symbol; let's intern member names
-        Handle name = StringTable::intern(fd.name(), CHECK);
-        java_lang_invoke_MemberName::set_name(mname(), name());
+        oop name = StringTable::intern(fd.name(), CHECK);
+        java_lang_invoke_MemberName::set_name(mname(), name);
       }
       if (!have_type) {
         // If it is a primitive field type, don't mess with short strings like "I".
-        Handle type = field_signature_type_or_null(fd.signature());
+        Handle type (THREAD, field_signature_type_or_null(fd.signature()));
         if (type.is_null()) {
-          java_lang_String::create_from_symbol(fd.signature(), CHECK);
+          type = java_lang_String::create_from_symbol(fd.signature(), CHECK);
         }
         java_lang_invoke_MemberName::set_type(mname(), type());
       }
@@ -1015,7 +1015,7 @@ void MethodHandles::flush_dependent_nmethods(Handle call_site, Handle target) {
   assert_lock_strong(Compile_lock);
 
   int marked = 0;
-  CallSiteDepChange changes(call_site(), target());
+  CallSiteDepChange changes(call_site, target);
   {
     NoSafepointVerifier nsv;
     MutexLockerEx mu2(CodeCache_lock, Mutex::_no_safepoint_check_flag);
@@ -1231,7 +1231,7 @@ JVM_ENTRY(jobject, MHN_resolve_Mem(JNIEnv *env, jobject igcls, jobject mname_jh,
       Klass* caller = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(caller_jh));
       if (caller != SystemDictionary::Object_klass()
           && Reflection::verify_class_access(caller,
-                                             reference_klass,
+                                             InstanceKlass::cast(reference_klass),
                                              true) != Reflection::ACCESS_OK) {
         THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), reference_klass->external_name());
       }
@@ -1305,7 +1305,7 @@ JVM_ENTRY(jobject, MHN_getMemberVMInfo(JNIEnv *env, jobject igcls, jobject mname
   Handle mname(THREAD, JNIHandles::resolve_non_null(mname_jh));
   intptr_t vmindex  = java_lang_invoke_MemberName::vmindex(mname());
   Metadata* vmtarget = java_lang_invoke_MemberName::vmtarget(mname());
-  objArrayHandle result = oopFactory::new_objArray(SystemDictionary::Object_klass(), 2, CHECK_NULL);
+  objArrayHandle result = oopFactory::new_objArray_handle(SystemDictionary::Object_klass(), 2, CHECK_NULL);
   jvalue vmindex_value; vmindex_value.j = (long)vmindex;
   oop x = java_lang_boxing_object::create(T_LONG, &vmindex_value, CHECK_NULL);
   result->obj_at_put(0, x);

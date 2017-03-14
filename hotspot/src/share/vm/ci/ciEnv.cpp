@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -278,7 +278,7 @@ ciInstance* ciEnv::get_or_create_exception(jobject& handle, Symbol* name) {
     if (!HAS_PENDING_EXCEPTION && k != NULL) {
       oop obj = InstanceKlass::cast(k)->allocate_instance(THREAD);
       if (!HAS_PENDING_EXCEPTION)
-        objh = JNIHandles::make_global(obj);
+        objh = JNIHandles::make_global(Handle(THREAD, obj));
     }
     if (HAS_PENDING_EXCEPTION) {
       CLEAR_PENDING_EXCEPTION;
@@ -376,7 +376,7 @@ bool ciEnv::check_klass_accessibility(ciKlass* accessing_klass,
   }
   if (resolved_klass->is_instance_klass()) {
     return (Reflection::verify_class_access(accessing_klass->get_Klass(),
-                                            resolved_klass,
+                                            InstanceKlass::cast(resolved_klass),
                                             true) == Reflection::ACCESS_OK);
   }
   return true;

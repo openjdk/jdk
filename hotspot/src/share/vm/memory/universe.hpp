@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -479,9 +479,6 @@ class Universe: AllStatic {
   // Apply "f" to all klasses for basic types (classes not present in
   // SystemDictionary).
   static void basic_type_classes_do(void f(Klass*));
-
-  // For sharing -- fill in a list of known vtable pointers.
-  static void init_self_patching_vtbl_list(void** list, int count);
 
   // Debugging
   enum VERIFY_FLAGS {

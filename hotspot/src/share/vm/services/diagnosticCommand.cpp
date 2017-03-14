@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -420,10 +420,8 @@ void HeapInfoDCmd::execute(DCmdSource source, TRAPS) {
 void FinalizerInfoDCmd::execute(DCmdSource source, TRAPS) {
   ResourceMark rm;
 
-
-  Klass* k = SystemDictionary::resolve_or_null(
-    vmSymbols::finalizer_histogram_klass(), THREAD);
-  assert(k != NULL, "FinalizerHistogram class is not accessible");
+  Klass* k = SystemDictionary::resolve_or_fail(
+    vmSymbols::finalizer_histogram_klass(), true, CHECK);
 
   instanceKlassHandle klass(THREAD, k);
   JavaValue result(T_ARRAY);

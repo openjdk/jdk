@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,8 +126,8 @@ public:
 };
 
 WB_ENTRY(jboolean, WB_IsClassAlive(JNIEnv* env, jobject target, jstring name))
-  Handle h_name = JNIHandles::resolve(name);
-  if (h_name.is_null()) return false;
+  oop h_name = JNIHandles::resolve(name);
+  if (h_name == NULL) return false;
   Symbol* sym = java_lang_String::as_symbol(h_name, CHECK_false);
   TempNewSymbol tsym(sym); // Make sure to decrement reference count on sym on return
 
@@ -1466,15 +1466,6 @@ WB_ENTRY(void, WB_AddModulePackage(JNIEnv* env, jobject o, jclass module, jstrin
   Modules::add_module_package(module, package_name, CHECK);
 WB_END
 
-WB_ENTRY(jobject, WB_GetModuleByPackageName(JNIEnv* env, jobject o, jobject loader, jstring package))
-  ResourceMark rm(THREAD);
-  char* package_name = NULL;
-  if (package != NULL) {
-      package_name = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(package));
-  }
-  return Modules::get_module_by_package_name(loader, package_name, THREAD);
-WB_END
-
 WB_ENTRY(jlong, WB_IncMetaspaceCapacityUntilGC(JNIEnv* env, jobject wb, jlong inc))
   if (inc < 0) {
     THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
@@ -1912,8 +1903,6 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_AddReadsModule },
   {CC"AddModulePackage",   CC"(Ljava/lang/Object;Ljava/lang/String;)V",
                                                       (void*)&WB_AddModulePackage },
-  {CC"GetModuleByPackageName", CC"(Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;",
-                                                      (void*)&WB_GetModuleByPackageName },
   {CC"AddModuleExportsToAllUnnamed", CC"(Ljava/lang/Object;Ljava/lang/String;)V",
                                                       (void*)&WB_AddModuleExportsToAllUnnamed },
   {CC"AddModuleExportsToAll", CC"(Ljava/lang/Object;Ljava/lang/String;)V",
@@ -1962,7 +1951,7 @@ JVM_ENTRY(void, JVM_RegisterWhiteBoxMethods(JNIEnv* env, jclass wbclass))
     if (WhiteBoxAPI) {
       // Make sure that wbclass is loaded by the null classloader
       instanceKlassHandle ikh = instanceKlassHandle(JNIHandles::resolve(wbclass)->klass());
-      Handle loader(ikh->class_loader());
+      Handle loader(THREAD, ikh->class_loader());
       if (loader.is_null()) {
         WhiteBox::register_methods(env, wbclass, thread, methods, sizeof(methods) / sizeof(methods[0]));
         WhiteBox::register_extended(env, wbclass, thread);

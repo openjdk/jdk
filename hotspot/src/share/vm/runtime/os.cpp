@@ -348,10 +348,9 @@ void os::init_before_ergo() {
   VM_Version::init_before_ergo();
 }
 
-void os::signal_init() {
+void os::signal_init(TRAPS) {
   if (!ReduceSignalUsage) {
     // Setup JavaThread for processing signals
-    EXCEPTION_MARK;
     Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_Thread(), true, CHECK);
     instanceKlassHandle klass (THREAD, k);
     instanceHandle thread_oop = klass->allocate_instance_handle(CHECK);
@@ -650,6 +649,12 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
     return NULL;
   }
 
+  if (size == 0) {
+    // return a valid pointer if size is zero
+    // if NULL is returned the calling functions assume out of memory.
+    size = 1;
+  }
+
 #ifndef ASSERT
   NOT_PRODUCT(inc_stat_counter(&num_mallocs, 1));
   NOT_PRODUCT(inc_stat_counter(&alloc_bytes, size));
@@ -670,9 +675,6 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
   // NMT support
   void* membase = MemTracker::malloc_base(memblock);
   verify_memory(membase);
-  if (size == 0) {
-    return NULL;
-  }
   // always move the block
   void* ptr = os::malloc(size, memflags, stack);
   if (PrintMalloc && tty != NULL) {

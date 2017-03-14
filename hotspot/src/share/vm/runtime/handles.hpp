@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,7 @@ class Klass;
 // Handles are declared in a straight-forward manner, e.g.
 //
 //   oop obj = ...;
-//   Handle h1(obj);              // allocate new handle
-//   Handle h2(thread, obj);      // faster allocation when current thread is known
+//   Handle h2(thread, obj);      // allocate a new handle in thread
 //   Handle h3;                   // declare handle only, no allocation occurs
 //   ...
 //   h3 = h1;                     // make h3 refer to same indirection as h1
@@ -55,11 +54,7 @@ class Klass;
 //
 // Handles are specialized for different oop types to provide extra type
 // information and avoid unnecessary casting. For each oop type xxxOop
-// there is a corresponding handle called xxxHandle, e.g.
-//
-//   oop           Handle
-//   Method*       methodHandle
-//   instanceOop   instanceHandle
+// there is a corresponding handle called xxxHandle.
 
 //------------------------------------------------------------------------------------------------------------------------
 // Base class for all handles. Provides overloading of frequently
@@ -76,7 +71,6 @@ class Handle VALUE_OBJ_CLASS_SPEC {
  public:
   // Constructors
   Handle()                                       { _handle = NULL; }
-  Handle(oop obj);
   Handle(Thread* thread, oop obj);
 
   // General access
@@ -113,10 +107,6 @@ class Handle VALUE_OBJ_CLASS_SPEC {
    public:                                       \
     /* Constructors */                           \
     type##Handle ()                              : Handle()                 {} \
-    type##Handle (type##Oop obj) : Handle((oop)obj) {                         \
-      assert(is_null() || ((oop)obj)->is_a(),                                 \
-             "illegal type");                                                 \
-    }                                                                         \
     type##Handle (Thread* thread, type##Oop obj) : Handle(thread, (oop)obj) { \
       assert(is_null() || ((oop)obj)->is_a(), "illegal type");                \
     }                                                                         \
@@ -277,7 +267,7 @@ class HandleArea: public Arena {
 //   Handle h;
 //   {
 //     HandleMark hm;
-//     h = Handle(obj);
+//     h = Handle(THREAD, obj);
 //   }
 //   h()->print();       // WRONG, h destroyed by HandleMark destructor.
 //

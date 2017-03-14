@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,9 +99,6 @@ int compare_methods(Method** a, Method** b) {
 
 void collect_profiled_methods(Method* m) {
   Thread* thread = Thread::current();
-  // This HandleMark prevents a huge amount of handles from being added
-  // to the metadata_handles() array on the thread.
-  HandleMark hm(thread);
   methodHandle mh(thread, m);
   if ((m->method_data() != NULL) &&
       (PrintMethodData || CompilerOracle::should_print(mh))) {
@@ -722,6 +719,8 @@ void JDK_Version::to_string(char* buffer, size_t buflen) const {
     index += rc;
     if (_security > 0) {
       rc = jio_snprintf(&buffer[index], buflen - index, ".%d", _security);
+      if (rc == -1) return;
+      index += rc;
     }
     if (_patch > 0) {
       rc = jio_snprintf(&buffer[index], buflen - index, ".%d", _patch);

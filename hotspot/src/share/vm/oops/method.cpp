@@ -1101,12 +1101,11 @@ address Method::make_adapters(methodHandle mh, TRAPS) {
 }
 
 void Method::restore_unshareable_info(TRAPS) {
+  assert(is_method() && is_valid_method(), "ensure C++ vtable is restored");
+
   // Since restore_unshareable_info can be called more than once for a method, don't
   // redo any work.
   if (adapter() == NULL) {
-    // Restore Method's C++ vtable by calling a virtual function
-    restore_vtable();
-
     methodHandle mh(THREAD, this);
     link_method(mh, CHECK);
   }
@@ -2166,7 +2165,6 @@ void Method::clear_jmethod_ids(ClassLoaderData* loader_data) {
 bool Method::has_method_vptr(const void* ptr) {
   Method m;
   // This assumes that the vtbl pointer is the first word of a C++ object.
-  // This assumption is also in universe.cpp patch_klass_vtble
   return dereference_vptr(&m) == dereference_vptr(ptr);
 }
 
@@ -2177,10 +2175,12 @@ bool Method::is_valid_method() const {
   } else if ((intptr_t(this) & (wordSize-1)) != 0) {
     // Quick sanity check on pointer.
     return false;
-  } else if (!is_metaspace_object()) {
-    return false;
-  } else {
+  } else if (MetaspaceShared::is_in_shared_space(this)) {
+    return MetaspaceShared::is_valid_shared_method(this);
+  } else if (Metaspace::contains_non_shared(this)) {
     return has_method_vptr((const void*)this);
+  } else {
+    return false;
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -657,8 +657,8 @@ public:
   static instanceKlassHandle load_shared_class(Symbol* class_name,
                                                Handle class_loader,
                                                TRAPS);
-  static bool is_system_class_loader(Handle class_loader);
-  static bool is_platform_class_loader(Handle class_loader);
+  static bool is_system_class_loader(oop class_loader);
+  static bool is_platform_class_loader(oop class_loader);
 
 protected:
   static Klass* find_shared_class(Symbol* class_name);

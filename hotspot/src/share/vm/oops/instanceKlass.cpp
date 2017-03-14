@@ -434,8 +434,9 @@ void InstanceKlass::fence_and_clear_init_lock() {
 
 void InstanceKlass::eager_initialize_impl(instanceKlassHandle this_k) {
   EXCEPTION_MARK;
-  oop init_lock = this_k->init_lock();
-  ObjectLocker ol(init_lock, THREAD, init_lock != NULL);
+  HandleMark hm(THREAD);
+  Handle init_lock(THREAD, this_k->init_lock());
+  ObjectLocker ol(init_lock, THREAD, init_lock() != NULL);
 
   // abort if someone beat us to the initialization
   if (!this_k->is_not_initialized()) return;  // note: not equivalent to is_initialized()
@@ -469,7 +470,6 @@ void InstanceKlass::eager_initialize_impl(instanceKlassHandle this_k) {
 // Note: implementation moved to static method to expose the this pointer.
 void InstanceKlass::initialize(TRAPS) {
   if (this->should_be_initialized()) {
-    HandleMark hm(THREAD);
     instanceKlassHandle this_k(THREAD, this);
     initialize_impl(this_k, CHECK);
     // Note: at this point the class may be initialized
@@ -501,7 +501,6 @@ void InstanceKlass::unlink_class() {
 void InstanceKlass::link_class(TRAPS) {
   assert(is_loaded(), "must be loaded");
   if (!is_linked()) {
-    HandleMark hm(THREAD);
     instanceKlassHandle this_k(THREAD, this);
     link_class_impl(this_k, true, CHECK);
   }
@@ -512,7 +511,6 @@ void InstanceKlass::link_class(TRAPS) {
 bool InstanceKlass::link_class_or_fail(TRAPS) {
   assert(is_loaded(), "must be loaded");
   if (!is_linked()) {
-    HandleMark hm(THREAD);
     instanceKlassHandle this_k(THREAD, this);
     link_class_impl(this_k, false, CHECK_false);
   }
@@ -565,7 +563,6 @@ bool InstanceKlass::link_class_impl(
   Array<Klass*>* interfaces = this_k->local_interfaces();
   int num_interfaces = interfaces->length();
   for (int index = 0; index < num_interfaces; index++) {
-    HandleMark hm(THREAD);
     instanceKlassHandle ih(THREAD, interfaces->at(index));
     link_class_impl(ih, throw_verifyerror, CHECK_false);
   }
@@ -586,11 +583,13 @@ bool InstanceKlass::link_class_impl(
 
   // verification & rewriting
   {
-    oop init_lock = this_k->init_lock();
-    ObjectLocker ol(init_lock, THREAD, init_lock != NULL);
+    HandleMark hm(THREAD);
+    Handle init_lock(THREAD, this_k->init_lock());
+    ObjectLocker ol(init_lock, THREAD, init_lock() != NULL);
     // rewritten will have been set if loader constraint error found
     // on an earlier link attempt
     // don't verify or rewrite if already rewritten
+    //
 
     if (!this_k->is_linked()) {
       if (!this_k->is_rewritten()) {
@@ -700,6 +699,8 @@ void InstanceKlass::initialize_super_interfaces(instanceKlassHandle this_k, TRAP
 }
 
 void InstanceKlass::initialize_impl(instanceKlassHandle this_k, TRAPS) {
+  HandleMark hm(THREAD);
+
   // Make sure klass is linked (verified) before initialization
   // A class could already be verified, since it has been reflected upon.
   this_k->link_class(CHECK);
@@ -711,8 +712,8 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_k, TRAPS) {
   // refer to the JVM book page 47 for description of steps
   // Step 1
   {
-    oop init_lock = this_k->init_lock();
-    ObjectLocker ol(init_lock, THREAD, init_lock != NULL);
+    Handle init_lock(THREAD, this_k->init_lock());
+    ObjectLocker ol(init_lock, THREAD, init_lock() != NULL);
 
     Thread *self = THREAD; // it's passed the current thread
 
@@ -853,14 +854,14 @@ void InstanceKlass::set_initialization_state_and_notify(ClassState state, TRAPS)
 }
 
 void InstanceKlass::set_initialization_state_and_notify_impl(instanceKlassHandle this_k, ClassState state, TRAPS) {
-  oop init_lock = this_k->init_lock();
-  if (init_lock != NULL) {
+  Handle init_lock(THREAD, this_k->init_lock());
+  if (init_lock() != NULL) {
     ObjectLocker ol(init_lock, THREAD);
     this_k->set_init_state(state);
     this_k->fence_and_clear_init_lock();
     ol.notify_all(CHECK);
   } else {
-    assert(init_lock != NULL, "The initialization state should never be set twice");
+    assert(init_lock() != NULL, "The initialization state should never be set twice");
     this_k->set_init_state(state);
   }
 }
@@ -2298,7 +2299,8 @@ ModuleEntry* InstanceKlass::module() const {
 void InstanceKlass::set_package(ClassLoaderData* loader_data, TRAPS) {
 
   // ensure java/ packages only loaded by boot or platform builtin loaders
-  check_prohibited_package(name(), loader_data->class_loader(), CHECK);
+  Handle class_loader(THREAD, loader_data->class_loader());
+  check_prohibited_package(name(), class_loader, CHECK);
 
   TempNewSymbol pkg_name = package_from_name(name(), CHECK);
 
@@ -2458,7 +2460,7 @@ void InstanceKlass::check_prohibited_package(Symbol* class_name,
                                              TRAPS) {
   ResourceMark rm(THREAD);
   if (!class_loader.is_null() &&
-      !SystemDictionary::is_platform_class_loader(class_loader) &&
+      !SystemDictionary::is_platform_class_loader(class_loader()) &&
       class_name != NULL &&
       strncmp(class_name->as_C_string(), JAVAPKG, JAVAPKG_LEN) == 0) {
     TempNewSymbol pkg_name = InstanceKlass::package_from_name(class_name, CHECK);
@@ -3141,7 +3143,7 @@ void InstanceKlass::print_loading_log(LogLevel::type type,
         // source is unknown
       }
     } else {
-      Handle class_loader(loader_data->class_loader());
+      oop class_loader = loader_data->class_loader();
       log->print(" source: %s", class_loader->klass()->external_name());
     }
   } else {
