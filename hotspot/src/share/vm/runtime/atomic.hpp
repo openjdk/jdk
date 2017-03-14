@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,8 +81,6 @@ class Atomic : AllStatic {
   inline static size_t   add    (size_t   add_value, volatile size_t*   dest);
   inline static intptr_t add_ptr(intptr_t add_value, volatile intptr_t* dest);
   inline static void*    add_ptr(intptr_t add_value, volatile void*     dest);
-  // See comment above about using jlong atomics on 32-bit platforms
-  inline static jlong    add    (jlong    add_value, volatile jlong*    dest);
 
   // Atomically increment location. inc*() provide:
   // <fence> increment-dest <membar StoreLoad|StoreStore>
@@ -197,16 +195,6 @@ inline unsigned Atomic::cmpxchg(unsigned int exchange_value,
   assert(sizeof(unsigned int) == sizeof(jint), "more work to do");
   return (unsigned int)Atomic::cmpxchg((jint)exchange_value, (volatile jint*)dest,
                                        (jint)compare_value, order);
-}
-
-inline jlong Atomic::add(jlong    add_value, volatile jlong*    dest) {
-  jlong old = load(dest);
-  jlong new_value = old + add_value;
-  while (old != cmpxchg(new_value, dest, old)) {
-    old = load(dest);
-    new_value = old + add_value;
-  }
-  return old;
 }
 
 inline jshort Atomic::add(jshort add_value, volatile jshort* dest) {

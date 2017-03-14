@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,16 +171,6 @@ address TemplateInterpreterGenerator::generate_exception_handler_common(
   return entry;
 }
 
-
-address TemplateInterpreterGenerator::generate_continuation_for(TosState state) {
-  address entry = __ pc();
-  // NULL last_sp until next java call
-  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD);
-  __ dispatch_next(state);
-  return entry;
-}
-
-
 address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, int step, size_t index_size) {
   address entry = __ pc();
 
@@ -230,6 +220,17 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   __ movl(flags, Address(cache, index, Address::times_ptr, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
   __ andl(flags, ConstantPoolCacheEntry::parameter_size_mask);
   __ lea(rsp, Address(rsp, flags, Interpreter::stackElementScale()));
+
+   const Register java_thread = NOT_LP64(rcx) LP64_ONLY(r15_thread);
+   if (JvmtiExport::can_pop_frame()) {
+     NOT_LP64(__ get_thread(java_thread));
+     __ check_and_handle_popframe(java_thread);
+   }
+   if (JvmtiExport::can_force_early_return()) {
+     NOT_LP64(__ get_thread(java_thread));
+     __ check_and_handle_earlyret(java_thread);
+   }
+
   __ dispatch_next(state, step);
 
   return entry;

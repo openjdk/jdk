@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,18 +59,6 @@ void LIRItem::load_nonconstant() {
     _result = r;
   } else {
     load_item();
-  }
-}
-
-
-inline void load_int_as_long(LIR_List *ll, LIRItem &li, LIR_Opr dst) {
-  LIR_Opr r = li.value()->operand();
-  if (r->is_register()) {
-    LIR_Opr dst_l = FrameMap::as_long_opr(dst->as_register());
-    ll->convert(Bytecodes::_i2l, li.result(), dst_l); // Convert.
-  } else {
-    // Constants or memory get loaded with sign extend on this platform.
-    ll->move(li.result(), dst);
   }
 }
 
@@ -1419,12 +1407,71 @@ void LIRGenerator::do_update_CRC32(Intrinsic* x) {
               arg2 = cc->at(1),
               arg3 = cc->at(2);
 
-      // CCallingConventionRequiresIntsAsLongs
       crc.load_item_force(arg1); // We skip int->long conversion here, because CRC32 stub doesn't care about high bits.
       __ leal(LIR_OprFact::address(a), arg2);
-      load_int_as_long(gen()->lir(), len, arg3);
+      len.load_item_force(arg3); // We skip int->long conversion here, , because CRC32 stub expects int.
 
       __ call_runtime_leaf(StubRoutines::updateBytesCRC32(), LIR_OprFact::illegalOpr, result_reg, cc->args());
+      __ move(result_reg, result);
+      break;
+    }
+    default: {
+      ShouldNotReachHere();
+    }
+  }
+}
+
+void LIRGenerator::do_update_CRC32C(Intrinsic* x) {
+  assert(UseCRC32CIntrinsics, "or should not be here");
+  LIR_Opr result = rlock_result(x);
+
+  switch (x->id()) {
+    case vmIntrinsics::_updateBytesCRC32C:
+    case vmIntrinsics::_updateDirectByteBufferCRC32C: {
+      bool is_updateBytes = (x->id() == vmIntrinsics::_updateBytesCRC32C);
+
+      LIRItem crc(x->argument_at(0), this);
+      LIRItem buf(x->argument_at(1), this);
+      LIRItem off(x->argument_at(2), this);
+      LIRItem len(x->argument_at(3), this);
+      buf.load_item();
+      off.load_nonconstant();
+
+      LIR_Opr index = off.result();
+      int offset = is_updateBytes ? arrayOopDesc::base_offset_in_bytes(T_BYTE) : 0;
+      if (off.result()->is_constant()) {
+        index = LIR_OprFact::illegalOpr;
+        offset += off.result()->as_jint();
+      }
+      LIR_Opr base_op = buf.result();
+      LIR_Address* a = NULL;
+
+      if (index->is_valid()) {
+        LIR_Opr tmp = new_register(T_LONG);
+        __ convert(Bytecodes::_i2l, index, tmp);
+        index = tmp;
+        __ add(index, LIR_OprFact::intptrConst(offset), index);
+        a = new LIR_Address(base_op, index, T_BYTE);
+      } else {
+        a = new LIR_Address(base_op, offset, T_BYTE);
+      }
+
+      BasicTypeList signature(3);
+      signature.append(T_INT);
+      signature.append(T_ADDRESS);
+      signature.append(T_INT);
+      CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+      const LIR_Opr result_reg = result_register_for(x->type());
+
+      LIR_Opr arg1 = cc->at(0),
+              arg2 = cc->at(1),
+              arg3 = cc->at(2);
+
+      crc.load_item_force(arg1); // We skip int->long conversion here, because CRC32 stub doesn't care about high bits.
+      __ leal(LIR_OprFact::address(a), arg2);
+      len.load_item_force(arg3); // We skip int->long conversion here, , because CRC32 stub expects int.
+
+      __ call_runtime_leaf(StubRoutines::updateBytesCRC32C(), LIR_OprFact::illegalOpr, result_reg, cc->args());
       __ move(result_reg, result);
       break;
     }
@@ -1459,8 +1506,4 @@ void LIRGenerator::do_FmaIntrinsic(Intrinsic* x) {
 
 void LIRGenerator::do_vectorizedMismatch(Intrinsic* x) {
   fatal("vectorizedMismatch intrinsic is not implemented on this platform");
-}
-
-void LIRGenerator::do_update_CRC32C(Intrinsic* x) {
-  Unimplemented();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,15 +36,6 @@ oop* HandleArea::allocate_handle(oop obj) {
   assert(_no_handle_mark_nesting == 0, "allocating handle inside NoHandleMark");
   assert(obj->is_oop(), "not an oop: " INTPTR_FORMAT, p2i(obj));
   return real_allocate_handle(obj);
-}
-
-Handle::Handle(Thread* thread, oop obj) {
-  assert(thread == Thread::current(), "sanity check");
-  if (obj == NULL) {
-    _handle = NULL;
-  } else {
-    _handle = thread->handle_area()->allocate_handle(obj);
-  }
 }
 #endif
 

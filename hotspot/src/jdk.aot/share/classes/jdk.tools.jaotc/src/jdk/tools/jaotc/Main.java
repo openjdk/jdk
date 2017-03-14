@@ -136,9 +136,6 @@ public class Main implements LogPrinter {
         @Override
         void process(Main task, String opt, String arg) {
             String name = arg;
-            if (name.endsWith(".so")) {
-                name = name.substring(0, name.length() - ".so".length());
-            }
             task.options.outputName = name;
         }
     }, new Option("  --class-name <class names> List of classes to compile", true, "--class-name", "--classname") {
@@ -234,6 +231,11 @@ public class Main implements LogPrinter {
         void process(Main task, String opt, String arg) {
             task.options.version = true;
         }
+    }, new Option("  --linker-path              Full path to linker executable", true, "--linker-path") {
+        @Override
+        void process(Main task, String opt, String arg) {
+            task.options.linkerpath = arg;
+        }
     }, new Option("  -J<flag>                   Pass <flag> directly to the runtime system", false, "-J") {
         @Override
         void process(Main task, String opt, String arg) {
@@ -242,9 +244,10 @@ public class Main implements LogPrinter {
 
     public static class Options {
         public List<SearchFor> files = new LinkedList<>();
-        public String outputName = "unnamed";
+        public String outputName = "unnamed.so";
         public String methodList;
         public List<ClassSource> sources = new ArrayList<>();
+        public String linkerpath = null;
         public SearchPath searchPath = new SearchPath();
 
         /**
@@ -345,6 +348,62 @@ public class Main implements LogPrinter {
                             humanReadableByteCount(memusage.getCommitted()),
                             freeratio * 100);
         }
+    }
+
+    /**
+     * Visual Studio supported versions
+     * Search Order is:  VS2013, VS2015, VS2012
+     */
+    public enum VSVERSIONS {
+        VS2013("VS120COMNTOOLS", "C:\\Program Files (x86)\\Microsoft Visual Studio 12.0\\VC\\bin\\amd64\\link.exe"),
+        VS2015("VS140COMNTOOLS", "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\bin\\amd64\\link.exe"),
+        VS2012("VS110COMNTOOLS", "C:\\Program Files (x86)\\Microsoft Visual Studio 11.0\\VC\\bin\\amd64\\link.exe");
+
+        private final String envvariable;
+        private final String wkp;
+
+        VSVERSIONS(String envvariable, String wellknownpath) {
+            this.envvariable = envvariable;
+            this.wkp = wellknownpath;
+        }
+
+        String EnvVariable()   { return envvariable; }
+        String WellKnownPath() { return wkp; }
+    }
+
+    /**
+     * Search for Visual Studio link.exe
+     * Search Order is:  VS2013, VS2015, VS2012
+     */
+    private static String getWindowsLinkPath() {
+        String link = "\\VC\\bin\\amd64\\link.exe";
+
+        /**
+         * First try searching the paths pointed to by
+         * the VS environment variables.
+         */
+        for (VSVERSIONS vs : VSVERSIONS.values()) {
+            String vspath = System.getenv(vs.EnvVariable());
+            if (vspath != null) {
+                File commonTools = new File(vspath);
+                File vsRoot = commonTools.getParentFile().getParentFile();
+                File linkPath = new File(vsRoot, link);
+                if (linkPath.exists()) return linkPath.getPath();
+            }
+        }
+
+        /**
+         * If we didn't find via the VS environment variables,
+         * try the well known paths
+         */
+        for (VSVERSIONS vs : VSVERSIONS.values()) {
+            String wkp = vs.WellKnownPath();
+            if (new File(wkp).exists()) {
+                return wkp;
+            }
+        }
+
+        return null;
     }
 
     @SuppressWarnings("try")
@@ -451,8 +510,62 @@ public class Main implements LogPrinter {
                 System.gc();
             }
 
-            String objectFileName = options.outputName + ".o";
-            String libraryFileName = options.outputName + ".so";
+            String name = options.outputName;
+            String objectFileName = name;
+
+            // [TODO] The jtregs tests expect .so extension so don't
+            // override with platform specific file extension until the
+            // tests are fixed.
+            String libraryFileName = name;
+
+            String linkerCmd;
+            String linkerPath;
+            String osName = System.getProperty("os.name");
+
+            if (name.endsWith(".so")) {
+                objectFileName = name.substring(0, name.length() - ".so".length());
+            }
+            else if (name.endsWith(".dylib")) {
+                objectFileName = name.substring(0, name.length() - ".dylib".length());
+            }
+            else if (name.endsWith(".dll")) {
+                objectFileName = name.substring(0, name.length() - ".dll".length());
+            }
+
+            switch (osName) {
+                case "Linux":
+                    // libraryFileName = options.outputName + ".so";
+                    objectFileName = objectFileName + ".o";
+                    linkerPath = (options.linkerpath != null) ?  options.linkerpath : "ld";
+                    linkerCmd = linkerPath + " -shared -z noexecstack -o " + libraryFileName + " " + objectFileName;
+                    break;
+                case "SunOS":
+                    // libraryFileName = options.outputName + ".so";
+                    objectFileName = objectFileName + ".o";
+                    linkerPath = (options.linkerpath != null) ?  options.linkerpath : "ld";
+                    linkerCmd = linkerPath + " -shared -o " + libraryFileName + " " + objectFileName;
+                    break;
+                case "Mac OS X":
+                    // libraryFileName = options.outputName + ".dylib";
+                    objectFileName = objectFileName + ".o";
+                    linkerPath = (options.linkerpath != null) ?  options.linkerpath : "ld";
+                    linkerCmd = linkerPath + " -dylib -o " + libraryFileName + " " + objectFileName;
+                    break;
+                default:
+                    if (osName.startsWith("Windows")) {
+                        // libraryFileName = options.outputName + ".dll";
+                        objectFileName = objectFileName + ".obj";
+                        linkerPath = (options.linkerpath != null) ?
+                            options.linkerpath : getWindowsLinkPath();
+                        if (linkerPath == null) {
+                            throw new InternalError("Can't locate Microsoft Visual Studio amd64 link.exe");
+                        }
+                        linkerCmd = linkerPath + " /DLL /OPT:NOREF /NOLOGO /NOENTRY" + " /OUT:" + libraryFileName + " " + objectFileName;
+                        break;
+                    }
+                    else
+                        throw new InternalError("Unsupported platform: " + osName);
+            }
 
             try (Timer t = new Timer(this, "Creating binary: " + objectFileName)) {
                 binaryContainer.createBinary(objectFileName, JVM_VERSION);
@@ -466,7 +579,7 @@ public class Main implements LogPrinter {
             }
 
             try (Timer t = new Timer(this, "Creating shared library: " + libraryFileName)) {
-                Process p = Runtime.getRuntime().exec("ld -shared -z noexecstack -o " + libraryFileName + " " + objectFileName);
+                Process p = Runtime.getRuntime().exec(linkerCmd);
                 final int exitCode = p.waitFor();
                 if (exitCode != 0) {
                     InputStream stderr = p.getErrorStream();
@@ -484,7 +597,7 @@ public class Main implements LogPrinter {
                 }
                 // Make non-executable for all.
                 File libFile = new File(libraryFileName);
-                if (libFile.exists()) {
+                if (libFile.exists() && !osName.startsWith("Windows")) {
                     if (!libFile.setExecutable(false, false)) {
                         throw new InternalError("Failed to change attribute for " + libraryFileName + " file");
                     }

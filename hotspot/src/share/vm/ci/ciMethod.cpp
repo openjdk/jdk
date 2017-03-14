@@ -504,10 +504,11 @@ ciCallProfile ciMethod::call_profile_at_bci(int bci) {
           morphism++;
         }
         int epsilon = 0;
-        if (TieredCompilation && ProfileInterpreter) {
-          // Interpreter and C1 treat final and special invokes differently.
-          // C1 will record a type, whereas the interpreter will just
-          // increment the count. Detect this case.
+        if (TieredCompilation) {
+          // For a call, it is assumed that either the type of the receiver(s)
+          // is recorded or an associated counter is incremented, but not both. With
+          // tiered compilation, however, both can happen due to the interpreter and
+          // C1 profiling invocations differently. Address that inconsistency here.
           if (morphism == 1 && count > 0) {
             epsilon = count;
             count = 0;
@@ -525,8 +526,8 @@ ciCallProfile ciMethod::call_profile_at_bci(int bci) {
           // we will set result._method also.
         }
         // Determine call site's morphism.
-        // The call site count is 0 with known morphism (onlt 1 or 2 receivers)
-        // or < 0 in the case of a type check failured for checkcast, aastore, instanceof.
+        // The call site count is 0 with known morphism (only 1 or 2 receivers)
+        // or < 0 in the case of a type check failure for checkcast, aastore, instanceof.
         // The call site count is > 0 in the case of a polymorphic virtual call.
         if (morphism > 0 && morphism == result._limit) {
            // The morphism <= MorphismLimit.

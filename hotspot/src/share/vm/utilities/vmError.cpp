@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@
 #include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_operations.hpp"
+#include "runtime/vm_version.hpp"
 #include "services/memTracker.hpp"
 #include "trace/traceMacros.hpp"
 #include "utilities/debug.hpp"
@@ -312,10 +313,41 @@ static void report_vm_version(outputStream* st, char* buf, int buflen) {
 int          VMError::_current_step;
 const char*  VMError::_current_step_info;
 
+volatile jlong VMError::_reporting_start_time = -1;
+volatile bool VMError::_reporting_did_timeout = false;
+volatile jlong VMError::_step_start_time = -1;
+volatile bool VMError::_step_did_timeout = false;
+
+// Helper, return current timestamp for timeout handling.
+jlong VMError::get_current_timestamp() {
+  return os::javaTimeNanos();
+}
+// Factor to translate the timestamp to seconds.
+#define TIMESTAMP_TO_SECONDS_FACTOR (1000 * 1000 * 1000)
+
+void VMError::record_reporting_start_time() {
+  const jlong now = get_current_timestamp();
+  Atomic::store(now, &_reporting_start_time);
+}
+
+jlong VMError::get_reporting_start_time() {
+  return Atomic::load(&_reporting_start_time);
+}
+
+void VMError::record_step_start_time() {
+  const jlong now = get_current_timestamp();
+  Atomic::store(now, &_step_start_time);
+}
+
+jlong VMError::get_step_start_time() {
+  return Atomic::load(&_step_start_time);
+}
+
 void VMError::report(outputStream* st, bool _verbose) {
 
 # define BEGIN if (_current_step == 0) { _current_step = __LINE__;
-# define STEP(s) } if (_current_step < __LINE__) { _current_step = __LINE__; _current_step_info = s;
+# define STEP(s) } if (_current_step < __LINE__) { _current_step = __LINE__; _current_step_info = s; \
+  record_step_start_time(); _step_did_timeout = false;
 # define END }
 
   // don't allocate large buffer on stack
@@ -351,6 +383,18 @@ void VMError::report(outputStream* st, bool _verbose) {
         TestCrashInErrorHandler);
       controlled_crash(TestCrashInErrorHandler);
     }
+
+  // TestUnresponsiveErrorHandler: We want to test both step timeouts and global timeout.
+  // Step to global timeout ratio is 4:1, so in order to be absolutely sure we hit the
+  // global timeout, let's execute the timeout step five times.
+  // See corresponding test in test/runtime/ErrorHandling/TimeoutInErrorHandlingTest.java
+  #define TIMEOUT_TEST_STEP STEP("test unresponsive error reporting step") \
+    if (_verbose && TestUnresponsiveErrorHandler) { os::infinite_sleep(); }
+  TIMEOUT_TEST_STEP
+  TIMEOUT_TEST_STEP
+  TIMEOUT_TEST_STEP
+  TIMEOUT_TEST_STEP
+  TIMEOUT_TEST_STEP
 
   STEP("test safefetch in error handler")
     // test whether it is safe to use SafeFetch32 in Crash Handler. Test twice
@@ -1176,6 +1220,9 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     // first time
     set_error_reported();
 
+    reporting_started();
+    record_reporting_start_time();
+
     if (ShowMessageBoxOnError || PauseAtExit) {
       show_message_box(buffer, sizeof(buffer));
 
@@ -1216,17 +1263,31 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
         os::die();
       }
 
-      jio_snprintf(buffer, sizeof(buffer),
-                   "[error occurred during error reporting (%s), id 0x%x]",
-                   _current_step_info, _id);
-      if (log.is_open()) {
-        log.cr();
-        log.print_raw_cr(buffer);
-        log.cr();
+      outputStream* const st = log.is_open() ? &log : &out;
+      st->cr();
+
+      // Timeout handling.
+      if (_step_did_timeout) {
+        // The current step had a timeout. Lets continue reporting with the next step.
+        st->print_raw("[timeout occurred during error reporting in step \"");
+        st->print_raw(_current_step_info);
+        st->print_cr("\"] after " INT64_FORMAT " s.",
+          (get_current_timestamp() - _step_start_time) / TIMESTAMP_TO_SECONDS_FACTOR);
+      } else if (_reporting_did_timeout) {
+        // We hit ErrorLogTimeout. Reporting will stop altogether. Let's wrap things
+        // up, the process is about to be stopped by the WatcherThread.
+        st->print_cr("------ Timeout during error reporting after " INT64_FORMAT " s. ------",
+          (get_current_timestamp() - _reporting_start_time) / TIMESTAMP_TO_SECONDS_FACTOR);
+        st->flush();
+        // Watcherthread is about to call os::die. Lets just wait.
+        os::infinite_sleep();
       } else {
-        out.cr();
-        out.print_raw_cr(buffer);
-        out.cr();
+        // Crash or assert during error reporting. Lets continue reporting with the next step.
+        jio_snprintf(buffer, sizeof(buffer),
+           "[error occurred during error reporting (%s), id 0x%x]",
+                   _current_step_info, _id);
+        st->print_raw_cr(buffer);
+        st->cr();
       }
     }
   }
@@ -1262,6 +1323,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     }
 
     report(&log, true);
+    log_done = true;
     _current_step = 0;
     _current_step_info = "";
 
@@ -1282,7 +1344,6 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     }
 
     log.set_fd(-1);
-    log_done = true;
   }
 
   static bool skip_replay = ReplayCompiles; // Do not overwrite file during replay
@@ -1421,3 +1482,50 @@ void VMError::show_message_box(char *buf, int buflen) {
     yes = os::start_debugging(buf,buflen);
   } while (yes);
 }
+
+// Timeout handling: check if a timeout happened (either a single step did
+// timeout or the whole of error reporting hit ErrorLogTimeout). Interrupt
+// the reporting thread if that is the case.
+bool VMError::check_timeout() {
+
+  if (ErrorLogTimeout == 0) {
+    return false;
+  }
+
+  // Do not check for timeouts if we still have a message box to show to the
+  // user or if there are OnError handlers to be run.
+  if (ShowMessageBoxOnError
+      || (OnError != NULL && OnError[0] != '\0')
+      || Arguments::abort_hook() != NULL) {
+    return false;
+  }
+
+  const jlong reporting_start_time_l = get_reporting_start_time();
+  const jlong now = get_current_timestamp();
+  // Timestamp is stored in nanos.
+  if (reporting_start_time_l > 0) {
+    const jlong end = reporting_start_time_l + (jlong)ErrorLogTimeout * TIMESTAMP_TO_SECONDS_FACTOR;
+    if (end <= now) {
+      _reporting_did_timeout = true;
+      interrupt_reporting_thread();
+      return true; // global timeout
+    }
+  }
+
+  const jlong step_start_time_l = get_step_start_time();
+  if (step_start_time_l > 0) {
+    // A step times out after a quarter of the total timeout. Steps are mostly fast unless they
+    // hang for some reason, so this simple rule allows for three hanging step and still
+    // hopefully leaves time enough for the rest of the steps to finish.
+    const jlong end = step_start_time_l + (jlong)ErrorLogTimeout * TIMESTAMP_TO_SECONDS_FACTOR / 4;
+    if (end <= now) {
+      _step_did_timeout = true;
+      interrupt_reporting_thread();
+      return false; // (Not a global timeout)
+    }
+  }
+
+  return false;
+
+}
+

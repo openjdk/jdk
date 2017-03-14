@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -598,7 +598,8 @@ JvmtiEnvBase::vframeFor(JavaThread* java_thread, jint depth) {
 jclass
 JvmtiEnvBase::get_jni_class_non_null(Klass* k) {
   assert(k != NULL, "k != NULL");
-  return (jclass)jni_reference(k->java_mirror());
+  Thread *thread = Thread::current();
+  return (jclass)jni_reference(Handle(thread, k->java_mirror()));
 }
 
 //
@@ -693,7 +694,7 @@ JvmtiEnvBase::get_current_contended_monitor(JavaThread *calling_thread, JavaThre
     *monitor_ptr = NULL;
   } else {
     HandleMark hm;
-    Handle     hobj(obj);
+    Handle     hobj(Thread::current(), obj);
     *monitor_ptr = jni_reference(calling_thread, hobj);
   }
   return JVMTI_ERROR_NONE;
@@ -813,7 +814,7 @@ JvmtiEnvBase::get_locked_objects_in_frame(JavaThread* calling_thread, JavaThread
     if (err != JVMTI_ERROR_NONE) {
         return err;
     }
-    Handle hobj(obj);
+    Handle hobj(Thread::current(), obj);
     jmsdi->monitor = jni_reference(calling_thread, hobj);
     jmsdi->stack_depth = stack_depth;
     owned_monitors_list->append(jmsdi);
@@ -953,6 +954,7 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
   HandleMark hm;
   Handle hobj;
 
+  Thread* current_thread = Thread::current();
   bool at_safepoint = SafepointSynchronize::is_at_safepoint();
 
   // Check arguments
@@ -961,7 +963,7 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
     NULL_CHECK(mirror, JVMTI_ERROR_INVALID_OBJECT);
     NULL_CHECK(info_ptr, JVMTI_ERROR_NULL_POINTER);
 
-    hobj = Handle(mirror);
+    hobj = Handle(current_thread, mirror);
   }
 
   JavaThread *owning_thread = NULL;
@@ -1027,7 +1029,7 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
           return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
         }
         HandleMark hm;
-        Handle     th(owning_thread->threadObj());
+        Handle     th(current_thread, owning_thread->threadObj());
         ret.owner = (jthread)jni_reference(calling_thread, th);
       }
       // implied else: no owner
@@ -1110,7 +1112,7 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
             deallocate((unsigned char*)ret.notify_waiters);
             return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
           }
-          Handle th(pending_thread->threadObj());
+          Handle th(current_thread, pending_thread->threadObj());
           ret.waiters[i] = (jthread)jni_reference(calling_thread, th);
         }
       }
@@ -1130,7 +1132,7 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
             // If the thread was found on the ObjectWaiter list, then
             // it has not been notified. This thread can't change the
             // state of the monitor so it doesn't need to be suspended.
-            Handle th(wjava_thread->threadObj());
+            Handle th(current_thread, wjava_thread->threadObj());
             ret.waiters[offset + j] = (jthread)jni_reference(calling_thread, th);
             ret.notify_waiters[j++] = (jthread)jni_reference(calling_thread, th);
           }
@@ -1362,7 +1364,7 @@ JvmtiEnvBase::check_top_frame(JavaThread* current_thread, JavaThread* java_threa
   // Check that the jobject class matches the return type signature.
   jobject jobj = value.l;
   if (tos == atos && jobj != NULL) { // NULL reference is allowed
-    Handle ob_h = Handle(current_thread, JNIHandles::resolve_external_guard(jobj));
+    Handle ob_h(current_thread, JNIHandles::resolve_external_guard(jobj));
     NULL_CHECK(ob_h, JVMTI_ERROR_INVALID_OBJECT);
     KlassHandle ob_kh = KlassHandle(current_thread, ob_h()->klass());
     NULL_CHECK(ob_kh, JVMTI_ERROR_INVALID_OBJECT);
@@ -1425,7 +1427,7 @@ JvmtiEnvBase::force_early_return(JavaThread* java_thread, jvalue value, TosState
       return JVMTI_ERROR_OPAQUE_FRAME;
     }
   }
-  Handle ret_ob_h = Handle();
+  Handle ret_ob_h;
   jvmtiError err = check_top_frame(current_thread, java_thread, value, tos, &ret_ob_h);
   if (err != JVMTI_ERROR_NONE) {
     return err;
@@ -1479,7 +1481,7 @@ JvmtiMonitorClosure::do_monitor(ObjectMonitor* mon) {
         _error = err;
         return;
       }
-      Handle hobj(obj);
+      Handle hobj(Thread::current(), obj);
       jmsdi->monitor = _env->jni_reference(_calling_thread, hobj);
       // stack depth is unknown for this monitor.
       jmsdi->stack_depth = -1;

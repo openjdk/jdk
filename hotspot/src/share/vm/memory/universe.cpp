@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -410,30 +410,6 @@ void Universe::genesis(TRAPS) {
 
 }
 
-// CDS support for patching vtables in metadata in the shared archive.
-// All types inherited from Metadata have vtables, but not types inherited
-// from MetaspaceObj, because the latter does not have virtual functions.
-// If the metadata type has a vtable, it cannot be shared in the read-only
-// section of the CDS archive, because the vtable pointer is patched.
-static inline void add_vtable(void** list, int* n, void* o, int count) {
-  guarantee((*n) < count, "vtable list too small");
-  void* vtable = dereference_vptr(o);
-  assert(*(void**)(vtable) != NULL, "invalid vtable");
-  list[(*n)++] = vtable;
-}
-
-void Universe::init_self_patching_vtbl_list(void** list, int count) {
-  int n = 0;
-  { InstanceKlass o;          add_vtable(list, &n, &o, count); }
-  { InstanceClassLoaderKlass o; add_vtable(list, &n, &o, count); }
-  { InstanceMirrorKlass o;    add_vtable(list, &n, &o, count); }
-  { InstanceRefKlass o;       add_vtable(list, &n, &o, count); }
-  { TypeArrayKlass o;         add_vtable(list, &n, &o, count); }
-  { ObjArrayKlass o;          add_vtable(list, &n, &o, count); }
-  { Method o;                 add_vtable(list, &n, &o, count); }
-  { ConstantPool o;           add_vtable(list, &n, &o, count); }
-}
-
 void Universe::initialize_basic_type_mirrors(TRAPS) {
     assert(_int_mirror==NULL, "basic type mirrors already initialized");
     _int_mirror     =
@@ -615,20 +591,22 @@ oop Universe::gen_out_of_memory_error(oop default_err) {
     // return default
     return default_err;
   } else {
+    Thread* THREAD = Thread::current();
+    Handle default_err_h(THREAD, default_err);
     // get the error object at the slot and set set it to NULL so that the
     // array isn't keeping it alive anymore.
-    oop exc = preallocated_out_of_memory_errors()->obj_at(next);
-    assert(exc != NULL, "slot has been used already");
+    Handle exc(THREAD, preallocated_out_of_memory_errors()->obj_at(next));
+    assert(exc() != NULL, "slot has been used already");
     preallocated_out_of_memory_errors()->obj_at_put(next, NULL);
 
     // use the message from the default error
-    oop msg = java_lang_Throwable::message(default_err);
+    oop msg = java_lang_Throwable::message(default_err_h());
     assert(msg != NULL, "no message");
-    java_lang_Throwable::set_message(exc, msg);
+    java_lang_Throwable::set_message(exc(), msg);
 
     // populate the stack trace and return it.
     java_lang_Throwable::fill_in_stack_trace_of_preallocated_backtrace(exc);
-    return exc;
+    return exc();
   }
 }
 

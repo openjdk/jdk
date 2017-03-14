@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,11 +122,6 @@ class Method : public Metadata {
   // CDS and vtbl checking can create an empty Method to get vtbl pointer.
   Method(){}
 
-  // The Method vtable is restored by this call when the Method is in the
-  // shared archive.  See patch_klass_vtables() in metaspaceShared.cpp for
-  // all the gory details.  SA, dtrace and pstack helpers distinguish metadata
-  // by their vtable.
-  void restore_vtable() { guarantee(is_method(), "vtable restored by this call"); }
   bool is_method() const volatile { return true; }
 
   void restore_unshareable_info(TRAPS);

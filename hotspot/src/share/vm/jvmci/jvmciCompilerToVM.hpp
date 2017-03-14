@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,11 +170,11 @@ class JavaArgumentUnboxer : public SignatureIterator {
   arrayOop _args;
   int _index;
 
-  oop next_arg(BasicType expectedType) {
+  Handle next_arg(BasicType expectedType) {
     assert(_index < _args->length(), "out of bounds");
     oop arg=((objArrayOop) (_args))->obj_at(_index++);
     assert(expectedType == T_OBJECT || java_lang_boxing_object::is_instance(arg, expectedType), "arg type mismatch");
-    return arg;
+    return Handle(Thread::current(), arg);
   }
 
  public:
