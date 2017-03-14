@@ -408,9 +408,18 @@ public class Modules extends JCTree.Visitor {
                         }
                         if (msym.sourceLocation == null) {
                             msym.sourceLocation = msplocn;
+                            if (fileManager.hasLocation(StandardLocation.PATCH_MODULE_PATH)) {
+                                msym.patchLocation = fileManager.getLocationForModule(
+                                        StandardLocation.PATCH_MODULE_PATH, msym.name.toString());
+                            }
                             if (fileManager.hasLocation(StandardLocation.CLASS_OUTPUT)) {
-                                msym.classLocation = fileManager.getLocationForModule(
+                                Location outputLocn = fileManager.getLocationForModule(
                                         StandardLocation.CLASS_OUTPUT, msym.name.toString());
+                                if (msym.patchLocation == null) {
+                                    msym.classLocation = outputLocn;
+                                } else {
+                                    msym.patchOutputLocation = outputLocn;
+                                }
                             }
                         }
                         tree.modle = msym;
@@ -460,7 +469,6 @@ public class Modules extends JCTree.Visitor {
                                 defaultModule.classLocation = StandardLocation.CLASS_PATH;
                             }
                         } else {
-                            checkSpecifiedModule(trees, moduleOverride, Errors.ModuleInfoWithPatchedModuleClassoutput);
                             checkNoAllModulePath();
                             defaultModule.complete();
                             // Question: why not do completeModule here?
@@ -470,18 +478,30 @@ public class Modules extends JCTree.Visitor {
                         rootModules.add(defaultModule);
                         break;
                     case 1:
-                        checkSpecifiedModule(trees, moduleOverride, Errors.ModuleInfoWithPatchedModuleSourcepath);
                         checkNoAllModulePath();
                         defaultModule = rootModules.iterator().next();
                         defaultModule.sourceLocation = StandardLocation.SOURCE_PATH;
-                        defaultModule.classLocation = StandardLocation.CLASS_OUTPUT;
+                        if (fileManager.hasLocation(StandardLocation.PATCH_MODULE_PATH)) {
+                            try {
+                                defaultModule.patchLocation = fileManager.getLocationForModule(
+                                        StandardLocation.PATCH_MODULE_PATH, defaultModule.name.toString());
+                            } catch (IOException ex) {
+                                throw new Error(ex);
+                            }
+                        }
+                        if (defaultModule.patchLocation == null) {
+                            defaultModule.classLocation = StandardLocation.CLASS_OUTPUT;
+                        } else {
+                            defaultModule.patchOutputLocation = StandardLocation.CLASS_OUTPUT;
+                        }
                         break;
                     default:
                         Assert.error("too many modules");
                 }
-            } else if (rootModules.size() == 1 && defaultModule == rootModules.iterator().next()) {
-                defaultModule.complete();
-                defaultModule.completer = sym -> completeModule((ModuleSymbol) sym);
+            } else if (rootModules.size() == 1) {
+                module = rootModules.iterator().next();
+                module.complete();
+                module.completer = sym -> completeModule((ModuleSymbol) sym);
             } else {
                 Assert.check(rootModules.isEmpty());
                 String moduleOverride = singleModuleOverride(trees);
@@ -560,17 +580,6 @@ public class Modules extends JCTree.Visitor {
                 fileManager.getLocationForModule(sourceOutput, fo);
         }
         return loc;
-    }
-
-    private void checkSpecifiedModule(List<JCCompilationUnit> trees, String moduleOverride, JCDiagnostic.Error error) {
-        if (moduleOverride != null) {
-            JavaFileObject prev = log.useSource(trees.head.sourcefile);
-            try {
-                log.error(trees.head.pos(), error);
-            } finally {
-                log.useSource(prev);
-            }
-        }
     }
 
     private void checkNoAllModulePath() {

@@ -269,13 +269,22 @@ public class EdgeCases extends ModuleTestBase {
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
-        new JavacTask(tb)
+        List<String> log = new JavacTask(tb)
                 .options("--source-path", src_m1.toString(),
                          "-XDrawDiagnostics")
                 .outdir(classes)
                 .files(findJavaFiles(src_m1.resolve("test")))
                 .run(Task.Expect.FAIL)
-                .writeAll();
+                .writeAll()
+                .getOutputLines(OutputKind.DIRECT);
+
+        List<String> expected = Arrays.asList(
+                "- compiler.err.cant.access: module-info, (compiler.misc.bad.source.file.header: module-info.java, (compiler.misc.file.does.not.contain.module))",
+                "1 error");
+
+        if (!expected.equals(log)) {
+            throw new AssertionError("Unexpected output: " + log);
+        }
 
         tb.writeJavaFiles(src_m1,
                           "module m1x {}");
