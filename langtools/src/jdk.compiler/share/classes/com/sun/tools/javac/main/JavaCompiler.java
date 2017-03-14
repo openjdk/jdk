@@ -412,6 +412,7 @@ public class JavaCompiler {
         diags = Factory.instance(context);
 
         finder.sourceCompleter = sourceCompleter;
+        modules.findPackageInFile = this::findPackageInFile;
         moduleFinder.moduleNameFromSourceReader = this::readModuleName;
 
         options = Options.instance(context);
@@ -1735,6 +1736,11 @@ public class JavaCompiler {
 
             return md != null ? TreeInfo.fullName(md.getName()) : null;
         });
+    }
+
+    private Name findPackageInFile(JavaFileObject fo) {
+        return parseAndGetName(fo, t -> t.getPackage() != null ?
+                                        TreeInfo.fullName(t.getPackage().getPackageName()) : null);
     }
 
     private Name parseAndGetName(JavaFileObject fo,

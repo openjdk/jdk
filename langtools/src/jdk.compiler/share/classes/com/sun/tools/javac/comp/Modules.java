@@ -89,7 +89,6 @@ import com.sun.tools.javac.tree.JCTree.JCExports;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCModuleDecl;
 import com.sun.tools.javac.tree.JCTree.JCOpens;
-import com.sun.tools.javac.tree.JCTree.JCPackageDecl;
 import com.sun.tools.javac.tree.JCTree.JCProvides;
 import com.sun.tools.javac.tree.JCTree.JCRequires;
 import com.sun.tools.javac.tree.JCTree.JCUses;
@@ -112,6 +111,7 @@ import static com.sun.tools.javac.code.Flags.ABSTRACT;
 import static com.sun.tools.javac.code.Flags.ENUM;
 import static com.sun.tools.javac.code.Flags.PUBLIC;
 import static com.sun.tools.javac.code.Flags.UNATTRIBUTED;
+import com.sun.tools.javac.code.Kinds;
 import static com.sun.tools.javac.code.Kinds.Kind.ERR;
 import static com.sun.tools.javac.code.Kinds.Kind.MDL;
 import static com.sun.tools.javac.code.Kinds.Kind.MTH;
@@ -166,6 +166,8 @@ public class Modules extends JCTree.Visitor {
 
     private Set<ModuleSymbol> rootModules = null;
     private final Set<ModuleSymbol> warnedMissing = new HashSet<>();
+
+    public PackageNameFinder findPackageInFile;
 
     public static Modules instance(Context context) {
         Modules instance = context.get(Modules.class);
@@ -956,7 +958,30 @@ public class Modules extends JCTree.Visitor {
 
         @Override
         public void visitExports(JCExports tree) {
-            if (tree.directive.packge.members().isEmpty()) {
+            Iterable<Symbol> packageContent = tree.directive.packge.members().getSymbols();
+            List<JavaFileObject> filesToCheck = List.nil();
+            boolean packageNotEmpty = false;
+            for (Symbol sym : packageContent) {
+                if (sym.kind != Kinds.Kind.TYP)
+                    continue;
+                ClassSymbol csym = (ClassSymbol) sym;
+                if (sym.completer.isTerminal() ||
+                    csym.classfile.getKind() == Kind.CLASS) {
+                    packageNotEmpty = true;
+                    filesToCheck = List.nil();
+                    break;
+                }
+                if (csym.classfile.getKind() == Kind.SOURCE) {
+                    filesToCheck = filesToCheck.prepend(csym.classfile);
+                }
+            }
+            for (JavaFileObject jfo : filesToCheck) {
+                if (findPackageInFile.findPackageNameOf(jfo) == tree.directive.packge.fullname) {
+                    packageNotEmpty = true;
+                    break;
+                }
+            }
+            if (!packageNotEmpty) {
                 log.error(tree.qualid.pos(), Errors.PackageEmptyOrNotFound(tree.directive.packge));
             }
             msym.directives = msym.directives.prepend(tree.directive);
@@ -1675,5 +1700,9 @@ public class Modules extends JCTree.Visitor {
         allModules = null;
         rootModules = null;
         warnedMissing.clear();
+    }
+
+    public interface PackageNameFinder {
+        public Name findPackageNameOf(JavaFileObject jfo);
     }
 }

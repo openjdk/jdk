@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8154283 8167320 8171098 8172809 8173068 8173117
+ * @bug 8154283 8167320 8171098 8172809 8173068 8173117 8176045
  * @summary tests for multi-module mode compilation
  * @library /tools/lib
  * @modules
@@ -36,6 +36,7 @@
  * @run main EdgeCases
  */
 
+import java.io.BufferedWriter;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -67,10 +68,7 @@ import com.sun.source.tree.CompilationUnitTree;
 //import com.sun.source.util.JavacTask; // conflicts with toolbox.JavacTask
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
-import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symtab;
-import com.sun.tools.javac.processing.JavacProcessingEnvironment;
-import com.sun.tools.javac.util.Context;
 
 import toolbox.JarTask;
 import toolbox.JavacTask;
@@ -821,4 +819,143 @@ public class EdgeCases extends ModuleTestBase {
         }
 
     }
+
+    @Test
+    public void testEmptyInExportedPackage(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path m = src.resolve("m");
+        tb.writeJavaFiles(m,
+                          "module m { exports api; }");
+        Path apiFile = m.resolve("api").resolve("Api.java");
+        Files.createDirectories(apiFile.getParent());
+        try (BufferedWriter w = Files.newBufferedWriter(apiFile)) {
+            w.write("//no package decl");
+        }
+        Path classes = base.resolve("classes");
+        tb.createDirectories(classes);
+
+        List<String> log;
+        List<String> expected =
+                Arrays.asList("module-info.java:1:20: compiler.err.package.empty.or.not.found: api",
+                              "1 error");
+
+        System.err.println("file explicitly specified:");
+
+        log = new JavacTask(tb)
+            .options("-XDrawDiagnostics",
+                     "--module-source-path", src.toString())
+            .outdir(classes)
+            .files(findJavaFiles(src))
+            .run(Task.Expect.FAIL)
+            .writeAll()
+            .getOutputLines(Task.OutputKind.DIRECT);
+
+        if (!expected.equals(log))
+            throw new Exception("expected output not found: " + log);
+
+        System.err.println("file not specified:");
+
+        tb.cleanDirectory(classes);
+
+        log = new JavacTask(tb)
+            .options("-XDrawDiagnostics",
+                     "--module-source-path", src.toString())
+            .outdir(classes)
+            .files(findJavaFiles(m.resolve("module-info.java")))
+            .run(Task.Expect.FAIL)
+            .writeAll()
+            .getOutputLines(Task.OutputKind.DIRECT);
+
+        if (!expected.equals(log))
+            throw new Exception("expected output not found: " + log);
+    }
+
+    @Test
+    public void testJustPackageInExportedPackage(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path m = src.resolve("m");
+        tb.writeJavaFiles(m,
+                          "module m { exports api; }");
+        Path apiFile = m.resolve("api").resolve("Api.java");
+        Files.createDirectories(apiFile.getParent());
+        try (BufferedWriter w = Files.newBufferedWriter(apiFile)) {
+            w.write("package api;");
+        }
+        Path classes = base.resolve("classes");
+        tb.createDirectories(classes);
+
+        System.err.println("file explicitly specified:");
+
+        new JavacTask(tb)
+            .options("-XDrawDiagnostics",
+                     "--module-source-path", src.toString())
+            .outdir(classes)
+            .files(findJavaFiles(src))
+            .run()
+            .writeAll();
+
+        System.err.println("file not specified:");
+
+        tb.cleanDirectory(classes);
+
+        new JavacTask(tb)
+            .options("-XDrawDiagnostics",
+                     "--module-source-path", src.toString())
+            .outdir(classes)
+            .files(findJavaFiles(m.resolve("module-info.java")))
+            .run()
+            .writeAll();
+    }
+
+    @Test
+    public void testWrongPackageInExportedPackage(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path m = src.resolve("m");
+        tb.writeJavaFiles(m,
+                          "module m { exports api; }");
+        Path apiFile = m.resolve("api").resolve("Api.java");
+        Files.createDirectories(apiFile.getParent());
+        try (BufferedWriter w = Files.newBufferedWriter(apiFile)) {
+            w.write("package impl; public class Api { }");
+        }
+        Path classes = base.resolve("classes");
+        tb.createDirectories(classes);
+
+        List<String> log;
+
+        List<String> expected =
+                Arrays.asList("module-info.java:1:20: compiler.err.package.empty.or.not.found: api",
+                              "1 error");
+
+        System.err.println("file explicitly specified:");
+
+        log = new JavacTask(tb)
+                .options("-XDrawDiagnostics",
+                         "--module-source-path", src.toString())
+                .outdir(classes)
+                .files(findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        if (!expected.equals(log))
+            throw new Exception("expected output not found: " + log);
+
+        System.err.println("file not specified:");
+
+        tb.cleanDirectory(classes);
+
+        log = new JavacTask(tb)
+                .options("-XDrawDiagnostics",
+                         "--module-source-path", src.toString())
+                .outdir(classes)
+                .files(findJavaFiles(m.resolve("module-info.java")))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        if (!expected.equals(log))
+            throw new Exception("expected output not found: " + log);
+    }
+
 }
