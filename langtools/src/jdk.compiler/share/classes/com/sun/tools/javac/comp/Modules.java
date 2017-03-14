@@ -714,6 +714,11 @@ public class Modules extends JCTree.Visitor {
         return rootModules.contains(module);
     }
 
+    public Set<ModuleSymbol> getRootModules() {
+        Assert.checkNonNull(rootModules);
+        return rootModules;
+    }
+
     class ModuleVisitor extends JCTree.Visitor {
         private ModuleSymbol sym;
         private final Set<ModuleSymbol> allRequires = new HashSet<>();
