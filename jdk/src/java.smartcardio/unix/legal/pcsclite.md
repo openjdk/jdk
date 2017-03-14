@@ -1,6 +1,6 @@
 ## PC/SC Lite for Suse Linux v1.1.1
 
-### PC/SC Lite for Suse Linux License
+### PC/SC Lite License
 <pre>
 
 Copyright (c) 1999-2004 David Corcoran <corcoran@linuxnet.com>
