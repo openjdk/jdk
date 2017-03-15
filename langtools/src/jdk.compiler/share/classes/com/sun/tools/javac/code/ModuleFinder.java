@@ -355,7 +355,7 @@ public class ModuleFinder {
 
             if (fo == null) {
                 fo = getModuleInfoFromLocation(msym.classLocation, Kind.CLASS);
-                fo = preferredFileObject(fo, getModuleInfoFromLocation(msym.sourceLocation, Kind.SOURCE));
+                fo = preferredFileObject(getModuleInfoFromLocation(msym.sourceLocation, Kind.SOURCE), fo);
             }
 
             if (fo == null) {

@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8146946
+ * @bug 8146946 8176743
  * @summary implement javac -m option
  * @library /tools/lib
  * @modules
