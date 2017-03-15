@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8141492 8071982 8141636 8147890 8166175 8168965
+ * @bug 8141492 8071982 8141636 8147890 8166175 8168965 8176794
  * @summary Test the search feature of javadoc.
  * @author bpatel
  * @library ../lib
@@ -489,6 +489,8 @@ public class TestSearch extends JavadocTester {
                 "camelCaseMatcher.test(item.l)",
                 "var secondaryresult = new Array();",
                 "function nestedName(e) {",
-                "function sortAndConcatResults(a1, a2) {");
+                "function sortAndConcatResults(a1, a2) {",
+                "if (exactMatcher.test(item.l)) {\n"
+                + "                        presult.unshift(item);");
     }
 }

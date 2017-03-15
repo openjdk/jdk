@@ -229,8 +229,7 @@ $(function() {
                     pkg = (item.m)
                             ? (item.m + "/" + item.l)
                             : item.l;
-                    var s = nestedName(item);
-                    if (exactMatcher.test(s)) {
+                    if (exactMatcher.test(item.l)) {
                         presult.unshift(item);
                         pCount++;
                     } else if (camelCaseMatcher.test(pkg)) {
