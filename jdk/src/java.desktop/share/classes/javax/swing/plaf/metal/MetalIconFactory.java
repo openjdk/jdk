@@ -1247,9 +1247,15 @@ public class MetalIconFactory implements Serializable {
 
         protected void drawCheck(Component c, Graphics g, int x, int y) {
             int controlSize = getControlSize();
-            g.fillRect( x+3, y+5, 2, controlSize-8 );
-            g.drawLine( x+(controlSize-4), y+3, x+5, y+(controlSize-6) );
-            g.drawLine( x+(controlSize-4), y+4, x+5, y+(controlSize-5) );
+            int csx = controlSize - 3;
+            int csy1 = controlSize - 6;
+            int csy2 = controlSize - 4;
+            int csy3 = controlSize - 3;
+            int[] xPoints = {3, 5, 5, csx, csx, 5, 5, 3};
+            int[] yPoints = {5, 5, csy1, 2, 4, csy2, csy3, csy3};
+            g.translate(x, y);
+            g.fillPolygon(xPoints, yPoints, 8);
+            g.translate(-x, -y);
         }
 
         public int getIconWidth() {
@@ -1358,48 +1364,21 @@ public class MetalIconFactory implements Serializable {
 
             // draw Dark Circle (start at top, go clockwise)
             g.setColor(darkCircle);
-            g.drawLine( 4, 0,  7, 0);
-            g.drawLine( 8, 1,  9, 1);
-            g.drawLine(10, 2, 10, 3);
-            g.drawLine(11, 4, 11, 7);
-            g.drawLine(10, 8, 10, 9);
-            g.drawLine( 9,10,  8,10);
-            g.drawLine( 7,11,  4,11);
-            g.drawLine( 3,10,  2,10);
-            g.drawLine( 1, 9,  1, 8);
-            g.drawLine( 0, 7,  0, 4);
-            g.drawLine( 1, 3,  1, 2);
-            g.drawLine( 2, 1,  3, 1);
+            g.drawOval(0, 0, 11, 11);
 
             // draw Inner Left (usually) White Arc
             //  start at lower left corner, go clockwise
             g.setColor(whiteInnerLeftArc);
-            g.drawLine( 2, 9,  2, 8);
-            g.drawLine( 1, 7,  1, 4);
-            g.drawLine( 2, 2,  2, 3);
-            g.drawLine( 2, 2,  3, 2);
-            g.drawLine( 4, 1,  7, 1);
-            g.drawLine( 8, 2,  9, 2);
+            g.drawArc(1, 1, 10, 10, 60, 160);
             // draw Outer Right White Arc
             //  start at upper right corner, go clockwise
             g.setColor(whiteOuterRightArc);
-            g.drawLine(10, 1, 10, 1);
-            g.drawLine(11, 2, 11, 3);
-            g.drawLine(12, 4, 12, 7);
-            g.drawLine(11, 8, 11, 9);
-            g.drawLine(10,10, 10,10);
-            g.drawLine( 9,11,  8,11);
-            g.drawLine( 7,12,  4,12);
-            g.drawLine( 3,11,  2,11);
+            g.drawArc(-1, -1, 13, 13, 235, 180);
 
             // selected dot
             if ( drawDot ) {
                 g.setColor(dotColor);
-                g.fillRect( 4, 4,  4, 4);
-                g.drawLine( 4, 3,  7, 3);
-                g.drawLine( 8, 4,  8, 7);
-                g.drawLine( 7, 8,  4, 8);
-                g.drawLine( 3, 7,  3, 4);
+                g.fillOval(2, 2, 7, 7);
             }
 
             g.translate(-x, -y);
@@ -2051,16 +2030,17 @@ public class MetalIconFactory implements Serializable {
                     g.setColor( b.getForeground() );
                 }
             }
-            if( MetalUtils.isLeftToRight(b) ) {
-                g.drawLine( 0, 0, 0, 7 );
-                g.drawLine( 1, 1, 1, 6 );
-                g.drawLine( 2, 2, 2, 5 );
-                g.drawLine( 3, 3, 3, 4 );
+            if (MetalUtils.isLeftToRight(b)) {
+                int[] xPoints = {0, 3, 3, 0};
+                int[] yPoints = {0, 3, 4, 7};
+                g.fillPolygon(xPoints, yPoints, 4);
+                g.drawPolygon(xPoints, yPoints, 4);
+
             } else {
-                g.drawLine( 4, 0, 4, 7 );
-                g.drawLine( 3, 1, 3, 6 );
-                g.drawLine( 2, 2, 2, 5 );
-                g.drawLine( 1, 3, 1, 4 );
+                int[] xPoints = {4, 4, 1, 1};
+                int[] yPoints = {0, 7, 4, 3};
+                g.fillPolygon(xPoints, yPoints, 4);
+                g.drawPolygon(xPoints, yPoints, 4);
             }
 
             g.translate( -x, -y );
@@ -2138,10 +2118,7 @@ public class MetalIconFactory implements Serializable {
                     g.setColor( MetalLookAndFeel.getMenuDisabledForeground());
                 }
 
-                g.drawLine( 2, 2, 2, 6 );
-                g.drawLine( 3, 2, 3, 6 );
-                g.drawLine( 4, 4, 8, 0 );
-                g.drawLine( 4, 5, 9, 0 );
+                drawCheck(g);
             }
             g.translate( -x, -y );
         }
@@ -2217,13 +2194,16 @@ public class MetalIconFactory implements Serializable {
                     g.setColor( MetalLookAndFeel.getMenuDisabledForeground()  );
                 }
 
-                g.drawLine( 2, 2, 2, 6 );
-                g.drawLine( 3, 2, 3, 6 );
-                g.drawLine( 4, 4, 8, 0 );
-                g.drawLine( 4, 5, 9, 0 );
+                drawCheck(g);
             }
 
             g.translate( -x, -y );
+        }
+
+        private void drawCheck(Graphics g) {
+            int[] xPoints = {2, 3, 3, 8, 9, 3, 2};
+            int[] yPoints = {2, 2, 5, 0, 0, 6, 6};
+            g.drawPolygon(xPoints, yPoints, 7);
         }
 
         public int getIconWidth() { return menuCheckIconSize.width; }
@@ -2252,9 +2232,8 @@ public class MetalIconFactory implements Serializable {
                 else {
                     g.setColor(MetalLookAndFeel.getControlHighlight());
                 }
-                g.drawLine( 2, 9, 7, 9 );
-                g.drawLine( 9, 2, 9, 7 );
-                g.drawLine( 8, 8, 8, 8 );
+
+                g.drawArc(-1, -1, 10, 10, 245, 140);
 
                 if (isPressed || isArmed) {
                     g.setColor(MetalLookAndFeel.getControlInfo());
@@ -2266,14 +2245,8 @@ public class MetalIconFactory implements Serializable {
             else {
                 g.setColor( MetalLookAndFeel.getMenuDisabledForeground()  );
             }
-            g.drawLine( 2, 0, 6, 0 );
-            g.drawLine( 2, 8, 6, 8 );
-            g.drawLine( 0, 2, 0, 6 );
-            g.drawLine( 8, 2, 8, 6 );
-            g.drawLine( 1, 1, 1, 1 );
-            g.drawLine( 7, 1, 7, 1 );
-            g.drawLine( 1, 7, 1, 7 );
-            g.drawLine( 7, 7, 7, 7 );
+
+            g.drawOval(0, 0, 8, 8);
 
             if (isSelected) {
                 if (isEnabled) {
@@ -2288,11 +2261,9 @@ public class MetalIconFactory implements Serializable {
                 else {
                     g.setColor(MetalLookAndFeel.getMenuDisabledForeground());
                 }
-                g.drawLine( 3, 2, 5, 2 );
-                g.drawLine( 2, 3, 6, 3 );
-                g.drawLine( 2, 4, 6, 4 );
-                g.drawLine( 2, 5, 6, 5 );
-                g.drawLine( 3, 6, 5, 6 );
+
+                g.fillOval(2, 2, 4, 4);
+                g.drawOval(2, 2, 4, 4);
             }
 
             g.translate( -x, -y );
@@ -2319,55 +2290,24 @@ public class MetalIconFactory implements Serializable {
                 if ( isPressed || isArmed )
                 {
                     g.setColor( MetalLookAndFeel.getPrimaryControl()  );
-                    g.drawLine( 3, 1, 8, 1 );
-                    g.drawLine( 2, 9, 7, 9 );
-                    g.drawLine( 1, 3, 1, 8 );
-                    g.drawLine( 9, 2, 9, 7 );
-                    g.drawLine( 2, 2, 2, 2 );
-                    g.drawLine( 8, 8, 8, 8 );
+                    g.drawOval(1, 1, 8, 8);
 
                     g.setColor( MetalLookAndFeel.getControlInfo()  );
-                    g.drawLine( 2, 0, 6, 0 );
-                    g.drawLine( 2, 8, 6, 8 );
-                    g.drawLine( 0, 2, 0, 6 );
-                    g.drawLine( 8, 2, 8, 6 );
-                    g.drawLine( 1, 1, 1, 1 );
-                    g.drawLine( 7, 1, 7, 1 );
-                    g.drawLine( 1, 7, 1, 7 );
-                    g.drawLine( 7, 7, 7, 7 );
+                    g.drawOval(0, 0, 8, 8);
                 }
                 else
                 {
                     g.setColor( MetalLookAndFeel.getControlHighlight()  );
-                    g.drawLine( 3, 1, 8, 1 );
-                    g.drawLine( 2, 9, 7, 9 );
-                    g.drawLine( 1, 3, 1, 8 );
-                    g.drawLine( 9, 2, 9, 7 );
-                    g.drawLine( 2, 2, 2, 2 );
-                    g.drawLine( 8, 8, 8, 8 );
+                    g.drawOval(1, 1, 8, 8);
 
                     g.setColor( MetalLookAndFeel.getControlDarkShadow()  );
-                    g.drawLine( 2, 0, 6, 0 );
-                    g.drawLine( 2, 8, 6, 8 );
-                    g.drawLine( 0, 2, 0, 6 );
-                    g.drawLine( 8, 2, 8, 6 );
-                    g.drawLine( 1, 1, 1, 1 );
-                    g.drawLine( 7, 1, 7, 1 );
-                    g.drawLine( 1, 7, 1, 7 );
-                    g.drawLine( 7, 7, 7, 7 );
+                    g.drawOval(0, 0, 8, 8);
                 }
             }
             else
             {
                 g.setColor( MetalLookAndFeel.getMenuDisabledForeground()  );
-                g.drawLine( 2, 0, 6, 0 );
-                g.drawLine( 2, 8, 6, 8 );
-                g.drawLine( 0, 2, 0, 6 );
-                g.drawLine( 8, 2, 8, 6 );
-                g.drawLine( 1, 1, 1, 1 );
-                g.drawLine( 7, 1, 7, 1 );
-                g.drawLine( 1, 7, 1, 7 );
-                g.drawLine( 7, 7, 7, 7 );
+                g.drawOval(0, 0, 8, 8);
             }
 
             if ( isSelected )
@@ -2388,11 +2328,8 @@ public class MetalIconFactory implements Serializable {
                     g.setColor( MetalLookAndFeel.getMenuDisabledForeground()  );
                 }
 
-                g.drawLine( 3, 2, 5, 2 );
-                g.drawLine( 2, 3, 6, 3 );
-                g.drawLine( 2, 4, 6, 4 );
-                g.drawLine( 2, 5, 6, 5 );
-                g.drawLine( 3, 6, 5, 6 );
+                g.fillOval(2, 2, 4, 4);
+                g.drawOval(2, 2, 4, 4);
             }
 
             g.translate( -x, -y );
