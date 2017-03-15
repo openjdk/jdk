@@ -287,12 +287,12 @@ void JvmtiBreakpoint::each_method_version_do(method_action meth_act) {
 
   // add/remove breakpoint to/from versions of the method that are EMCP.
   Thread *thread = Thread::current();
-  instanceKlassHandle ikh = instanceKlassHandle(thread, _method->method_holder());
+  InstanceKlass* ik = _method->method_holder();
   Symbol* m_name = _method->name();
   Symbol* m_signature = _method->signature();
 
   // search previous versions if they exist
-  for (InstanceKlass* pv_node = ikh->previous_versions();
+  for (InstanceKlass* pv_node = ik->previous_versions();
        pv_node != NULL;
        pv_node = pv_node->previous_versions()) {
     Array<Method*>* methods = pv_node->methods();
@@ -696,10 +696,10 @@ bool VM_GetOrSetLocal::check_slot_type(javaVFrame* jvf) {
 
     Handle obj(cur_thread, JNIHandles::resolve_external_guard(jobj));
     NULL_CHECK(obj, (_result = JVMTI_ERROR_INVALID_OBJECT, false));
-    KlassHandle ob_kh = KlassHandle(cur_thread, obj->klass());
-    NULL_CHECK(ob_kh, (_result = JVMTI_ERROR_INVALID_OBJECT, false));
+    Klass* ob_k = obj->klass();
+    NULL_CHECK(ob_k, (_result = JVMTI_ERROR_INVALID_OBJECT, false));
 
-    if (!is_assignable(signature, ob_kh(), cur_thread)) {
+    if (!is_assignable(signature, ob_k, cur_thread)) {
       _result = JVMTI_ERROR_TYPE_MISMATCH;
       return false;
     }

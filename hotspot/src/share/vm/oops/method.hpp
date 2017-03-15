@@ -323,7 +323,7 @@ class Method : public Metadata {
   // exception handler which caused the exception to be thrown, which
   // is needed for proper retries. See, for example,
   // InterpreterRuntime::exception_handler_for_exception.
-  static int fast_exception_handler_bci_for(methodHandle mh, KlassHandle ex_klass, int throw_bci, TRAPS);
+  static int fast_exception_handler_bci_for(methodHandle mh, Klass* ex_klass, int throw_bci, TRAPS);
 
   // method data access
   MethodData* method_data() const              {
@@ -811,8 +811,7 @@ class Method : public Metadata {
   static void print_jmethod_ids(ClassLoaderData* loader_data, outputStream* out) PRODUCT_RETURN;
 
   // Get this method's jmethodID -- allocate if it doesn't exist
-  jmethodID jmethod_id()                            { methodHandle this_h(this);
-                                                      return InstanceKlass::get_jmethod_id(method_holder(), this_h); }
+  jmethodID jmethod_id()                            { return InstanceKlass::get_jmethod_id(method_holder(), this); }
 
   // Lookup the jmethodID for this method.  Return NULL if not found.
   // NOTE that this function can be called from a signal handler

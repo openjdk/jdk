@@ -560,7 +560,7 @@ void AOTCodeHeap::print_statistics() {
 }
 #endif
 
-Method* AOTCodeHeap::find_method(KlassHandle klass, Thread* thread, const char* method_name) {
+Method* AOTCodeHeap::find_method(Klass* klass, Thread* thread, const char* method_name) {
   int method_name_len = build_u2_from((address)method_name);
   method_name += 2;
   const char* signature_name = method_name + method_name_len;
@@ -578,14 +578,14 @@ Method* AOTCodeHeap::find_method(KlassHandle klass, Thread* thread, const char* 
              name == vmSymbols::class_initializer_name()) {
     // Never search superclasses for constructors
     if (klass->is_instance_klass()) {
-      m = InstanceKlass::cast(klass())->find_method(name, signature);
+      m = InstanceKlass::cast(klass)->find_method(name, signature);
     } else {
       m = NULL;
     }
   } else {
     m = klass->lookup_method(name, signature);
     if (m == NULL && klass->is_instance_klass()) {
-      m = InstanceKlass::cast(klass())->lookup_method_in_ordered_interfaces(name, signature);
+      m = InstanceKlass::cast(klass)->lookup_method_in_ordered_interfaces(name, signature);
     }
   }
   if (m == NULL) {
@@ -669,28 +669,28 @@ void AOTCodeHeap::sweep_dependent_methods(AOTKlassData* klass_data) {
   }
 }
 
-bool AOTCodeHeap::load_klass_data(instanceKlassHandle kh, Thread* thread) {
+bool AOTCodeHeap::load_klass_data(InstanceKlass* ik, Thread* thread) {
   ResourceMark rm;
 
   NOT_PRODUCT( klasses_seen++; )
 
-  AOTKlassData* klass_data = find_klass(kh());
+  AOTKlassData* klass_data = find_klass(ik);
   if (klass_data == NULL) {
     return false;
   }
 
-  if (!kh->has_passed_fingerprint_check()) {
+  if (!ik->has_passed_fingerprint_check()) {
     NOT_PRODUCT( aot_klasses_fp_miss++; )
     log_trace(aot, class, fingerprint)("class  %s%s  has bad fingerprint in  %s tid=" INTPTR_FORMAT,
-                                   kh->internal_name(), kh->is_shared() ? " (shared)" : "",
+                                   ik->internal_name(), ik->is_shared() ? " (shared)" : "",
                                    _lib->name(), p2i(thread));
     sweep_dependent_methods(klass_data);
     return false;
   }
 
-  if (kh->has_been_redefined()) {
+  if (ik->has_been_redefined()) {
     log_trace(aot, class, load)("class  %s%s in %s  has been redefined tid=" INTPTR_FORMAT,
-                                   kh->internal_name(), kh->is_shared() ? " (shared)" : "",
+                                   ik->internal_name(), ik->is_shared() ? " (shared)" : "",
                                    _lib->name(), p2i(thread));
     sweep_dependent_methods(klass_data);
     return false;
@@ -698,26 +698,26 @@ bool AOTCodeHeap::load_klass_data(instanceKlassHandle kh, Thread* thread) {
 
   assert(klass_data->_class_id < _class_count, "invalid class id");
   AOTClass* aot_class = &_classes[klass_data->_class_id];
-  if (aot_class->_classloader != NULL && aot_class->_classloader != kh->class_loader_data()) {
+  if (aot_class->_classloader != NULL && aot_class->_classloader != ik->class_loader_data()) {
     log_trace(aot, class, load)("class  %s  in  %s already loaded for classloader %p vs %p tid=" INTPTR_FORMAT,
-                             kh->internal_name(), _lib->name(), aot_class->_classloader, kh->class_loader_data(), p2i(thread));
+                             ik->internal_name(), _lib->name(), aot_class->_classloader, ik->class_loader_data(), p2i(thread));
     NOT_PRODUCT( aot_klasses_cl_miss++; )
     return false;
   }
 
-  if (_lib->config()->_omitAssertions && JavaAssertions::enabled(kh->name()->as_C_string(), kh->class_loader() == NULL)) {
-    log_trace(aot, class, load)("class  %s  in  %s does not have java assertions in compiled code, but assertions are enabled for this execution.", kh->internal_name(), _lib->name());
+  if (_lib->config()->_omitAssertions && JavaAssertions::enabled(ik->name()->as_C_string(), ik->class_loader() == NULL)) {
+    log_trace(aot, class, load)("class  %s  in  %s does not have java assertions in compiled code, but assertions are enabled for this execution.", ik->internal_name(), _lib->name());
     sweep_dependent_methods(klass_data);
     return false;
   }
 
   NOT_PRODUCT( aot_klasses_found++; )
 
-  log_trace(aot, class, load)("found  %s  in  %s for classloader %p tid=" INTPTR_FORMAT, kh->internal_name(), _lib->name(), kh->class_loader_data(), p2i(thread));
+  log_trace(aot, class, load)("found  %s  in  %s for classloader %p tid=" INTPTR_FORMAT, ik->internal_name(), _lib->name(), ik->class_loader_data(), p2i(thread));
 
-  aot_class->_classloader = kh->class_loader_data();
+  aot_class->_classloader = ik->class_loader_data();
   // Set klass's Resolve (second) got cell.
-  _metaspace_got[klass_data->_got_index] = kh();
+  _metaspace_got[klass_data->_got_index] = ik;
 
   // Initialize global symbols of the DSO to the corresponding VM symbol values.
   link_global_lib_symbols();
@@ -745,7 +745,7 @@ bool AOTCodeHeap::load_klass_data(instanceKlassHandle kh, Thread* thread) {
       // aot_name format: "<u2_size>Ljava/lang/ThreadGroup;<u2_size>addUnstarted<u2_size>()V"
       int klass_len = build_u2_from((address)aot_name);
       const char* method_name = aot_name + 2 + klass_len;
-      Method* m = AOTCodeHeap::find_method(kh, thread, method_name);
+      Method* m = AOTCodeHeap::find_method(ik, thread, method_name);
       methodHandle mh(thread, m);
       if (mh->code() != NULL) { // Does it have already compiled code?
         continue; // Don't overwrite
@@ -866,7 +866,7 @@ int AOTCodeHeap::verify_icholder_relocations() {
 }
 #endif
 
-void AOTCodeHeap::flush_evol_dependents_on(instanceKlassHandle dependee) {
+void AOTCodeHeap::flush_evol_dependents_on(InstanceKlass* dependee) {
   for (int index = 0; index < _method_count; index++) {
     if (_code_to_aot[index]._state != in_use) {
       continue; // Skip uninitialized entries.

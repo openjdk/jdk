@@ -37,10 +37,10 @@ GrowableArray<AOTLib*>* AOTLoader::_libraries = new(ResourceObj::C_HEAP, mtCode)
 // Iterate over all AOT Libraries
 #define FOR_ALL_AOT_LIBRARIES(lib) for (GrowableArrayIterator<AOTLib*> lib = libraries()->begin(); lib != libraries()->end(); ++lib)
 
-void AOTLoader::load_for_klass(instanceKlassHandle kh, Thread* thread) {
+void AOTLoader::load_for_klass(InstanceKlass* ik, Thread* thread) {
   if (UseAOT) {
     FOR_ALL_AOT_HEAPS(heap) {
-      (*heap)->load_klass_data(kh, thread);
+      (*heap)->load_klass_data(ik, thread);
     }
   }
 }
@@ -98,7 +98,7 @@ address AOTLoader::exception_begin(JavaThread* thread, CodeBlob* blob, address r
 }
 
 // Flushing and deoptimization in case of evolution
-void AOTLoader::flush_evol_dependents_on(instanceKlassHandle dependee) {
+void AOTLoader::flush_evol_dependents_on(InstanceKlass* dependee) {
   // make non entrant and mark for deoptimization
   FOR_ALL_AOT_HEAPS(heap) {
     (*heap)->flush_evol_dependents_on(dependee);

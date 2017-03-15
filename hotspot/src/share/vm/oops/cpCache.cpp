@@ -101,14 +101,14 @@ bool ConstantPoolCacheEntry::init_flags_atomic(intptr_t flags) {
 // are updated, lest other processors see a non-zero bytecode but zero f1/f2.
 void ConstantPoolCacheEntry::set_field(Bytecodes::Code get_code,
                                        Bytecodes::Code put_code,
-                                       KlassHandle field_holder,
+                                       Klass* field_holder,
                                        int field_index,
                                        int field_offset,
                                        TosState field_type,
                                        bool is_final,
                                        bool is_volatile,
                                        Klass* root_klass) {
-  set_f1(field_holder());
+  set_f1(field_holder);
   set_f2(field_offset);
   assert((field_index & field_index_mask) == field_index,
          "field index does not fit in low flag bits");

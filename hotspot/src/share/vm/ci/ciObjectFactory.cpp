@@ -377,14 +377,13 @@ ciMetadata* ciObjectFactory::create_new_metadata(Metadata* o) {
   }
 
   if (o->is_klass()) {
-    KlassHandle h_k(THREAD, (Klass*)o);
     Klass* k = (Klass*)o;
     if (k->is_instance_klass()) {
-      return new (arena()) ciInstanceKlass(h_k);
+      return new (arena()) ciInstanceKlass(k);
     } else if (k->is_objArray_klass()) {
-      return new (arena()) ciObjArrayKlass(h_k);
+      return new (arena()) ciObjArrayKlass(k);
     } else if (k->is_typeArray_klass()) {
-      return new (arena()) ciTypeArrayKlass(h_k);
+      return new (arena()) ciTypeArrayKlass(k);
     }
   } else if (o->is_method()) {
     methodHandle h_m(THREAD, (Method*)o);

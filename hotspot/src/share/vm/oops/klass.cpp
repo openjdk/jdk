@@ -264,7 +264,6 @@ void Klass::initialize_supers(Klass* k, TRAPS) {
   }
 
   if (secondary_supers() == NULL) {
-    KlassHandle this_kh (THREAD, this);
 
     // Now compute the list of secondary supertypes.
     // Secondaries can occasionally be on the super chain,
@@ -286,7 +285,7 @@ void Klass::initialize_supers(Klass* k, TRAPS) {
 
     GrowableArray<Klass*>* primaries = new GrowableArray<Klass*>(extras);
 
-    for (p = this_kh->super(); !(p == NULL || p->can_be_primary_super()); p = p->super()) {
+    for (p = super(); !(p == NULL || p->can_be_primary_super()); p = p->super()) {
       int i;                    // Scan for overflow primaries being duplicates of 2nd'arys
 
       // This happens frequently for very deeply nested arrays: the
@@ -324,7 +323,7 @@ void Klass::initialize_supers(Klass* k, TRAPS) {
     }
   #endif
 
-    this_kh->set_secondary_supers(s2);
+    set_secondary_supers(s2);
   }
 }
 
@@ -698,7 +697,7 @@ void Klass::oop_verify_on(oop obj, outputStream* st) {
 }
 
 klassVtable* Klass::vtable() const {
-  return new klassVtable(this, start_of_vtable(), vtable_length() / vtableEntry::size());
+  return new klassVtable(const_cast<Klass*>(this), start_of_vtable(), vtable_length() / vtableEntry::size());
 }
 
 vtableEntry* Klass::start_of_vtable() const {

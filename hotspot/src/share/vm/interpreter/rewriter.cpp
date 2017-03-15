@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -544,16 +544,16 @@ void Rewriter::rewrite_bytecodes(TRAPS) {
   patch_invokedynamic_bytecodes();
 }
 
-void Rewriter::rewrite(instanceKlassHandle klass, TRAPS) {
+void Rewriter::rewrite(InstanceKlass* klass, TRAPS) {
   if (!DumpSharedSpaces) {
-    assert(!MetaspaceShared::is_in_shared_space(klass()), "archive methods must not be rewritten at run time");
+    assert(!MetaspaceShared::is_in_shared_space(klass), "archive methods must not be rewritten at run time");
   }
   ResourceMark rm(THREAD);
   Rewriter     rw(klass, klass->constants(), klass->methods(), CHECK);
   // (That's all, folks.)
 }
 
-Rewriter::Rewriter(instanceKlassHandle klass, const constantPoolHandle& cpool, Array<Method*>* methods, TRAPS)
+Rewriter::Rewriter(InstanceKlass* klass, const constantPoolHandle& cpool, Array<Method*>* methods, TRAPS)
   : _klass(klass),
     _pool(cpool),
     _methods(methods),

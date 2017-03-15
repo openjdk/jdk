@@ -428,7 +428,7 @@ void ModuleEntryTable::patch_javabase_entries(Handle module_handle) {
   for (int i = 0; i < list_length; i++) {
     Klass* k = list->at(i);
     assert(k->is_klass(), "List should only hold classes");
-    java_lang_Class::fixup_module_field(KlassHandle(k), module_handle);
+    java_lang_Class::fixup_module_field(k, module_handle);
     k->class_loader_data()->dec_keep_alive();
   }
 

@@ -815,13 +815,13 @@ void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
     int index;
     for (index = 0; index < itfs_len; index++) {
       const u2 interface_index = stream->get_u2(CHECK);
-      KlassHandle interf;
+      Klass* interf;
       check_property(
         valid_klass_reference_at(interface_index),
         "Interface name has bad constant pool index %u in class file %s",
         interface_index, CHECK);
       if (cp->tag_at(interface_index).is_klass()) {
-        interf = KlassHandle(THREAD, cp->resolved_klass_at(interface_index));
+        interf = cp->resolved_klass_at(interface_index);
       } else {
         Symbol* const unresolved_klass  = cp->klass_name_at(interface_index);
 
@@ -831,25 +831,24 @@ void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
                            "Bad interface name in class file %s", CHECK);
 
         // Call resolve_super so classcircularity is checked
-        const Klass* const k =
-          SystemDictionary::resolve_super_or_fail(_class_name,
+        interf = SystemDictionary::resolve_super_or_fail(
+                                                  _class_name,
                                                   unresolved_klass,
                                                   Handle(THREAD, _loader_data->class_loader()),
                                                   _protection_domain,
                                                   false,
                                                   CHECK);
-        interf = KlassHandle(THREAD, k);
       }
 
-      if (!interf()->is_interface()) {
+      if (!interf->is_interface()) {
         THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(),
                    "Implementing class");
       }
 
-      if (InstanceKlass::cast(interf())->has_nonstatic_concrete_methods()) {
+      if (InstanceKlass::cast(interf)->has_nonstatic_concrete_methods()) {
         *has_nonstatic_concrete_methods = true;
       }
-      _local_interfaces->at_put(index, interf());
+      _local_interfaces->at_put(index, interf);
     }
 
     if (!_need_verify || itfs_len <= 1) {

@@ -521,14 +521,14 @@ void vframeStreamCommon::skip_prefixed_method_and_wrappers() {
 
   int    method_prefix_count = 0;
   char** method_prefixes = JvmtiExport::get_all_native_method_prefixes(&method_prefix_count);
-  KlassHandle prefixed_klass(method()->method_holder());
+  Klass* prefixed_klass = method()->method_holder();
   const char* prefixed_name = method()->name()->as_C_string();
   size_t prefixed_name_len = strlen(prefixed_name);
   int prefix_index = method_prefix_count-1;
 
   while (!at_end()) {
     next();
-    if (method()->method_holder() != prefixed_klass()) {
+    if (method()->method_holder() != prefixed_klass) {
       break; // classes don't match, can't be a wrapper
     }
     const char* name = method()->name()->as_C_string();

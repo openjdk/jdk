@@ -209,29 +209,23 @@ class java_lang_Class : AllStatic {
   static void set_protection_domain(oop java_class, oop protection_domain);
   static void set_class_loader(oop java_class, oop class_loader);
   static void set_component_mirror(oop java_class, oop comp_mirror);
-  static void initialize_mirror_fields(KlassHandle k, Handle mirror, Handle protection_domain, TRAPS);
-  static void set_mirror_module_field(KlassHandle K, Handle mirror, Handle module, TRAPS);
+  static void initialize_mirror_fields(Klass* k, Handle mirror, Handle protection_domain, TRAPS);
+  static void set_mirror_module_field(Klass* K, Handle mirror, Handle module, TRAPS);
  public:
   static void compute_offsets();
 
   // Instance creation
-  static void create_mirror(KlassHandle k, Handle class_loader, Handle module,
+  static void create_mirror(Klass* k, Handle class_loader, Handle module,
                             Handle protection_domain, TRAPS);
-  static void fixup_mirror(KlassHandle k, TRAPS);
+  static void fixup_mirror(Klass* k, TRAPS);
   static oop  create_basic_type_mirror(const char* basic_type_name, BasicType type, TRAPS);
 
-  static void fixup_module_field(KlassHandle k, Handle module);
+  static void fixup_module_field(Klass* k, Handle module);
 
   // Conversion
   static Klass* as_Klass(oop java_class);
   static void set_klass(oop java_class, Klass* klass);
   static BasicType as_BasicType(oop java_class, Klass** reference_klass = NULL);
-  static BasicType as_BasicType(oop java_class, KlassHandle* reference_klass) {
-    Klass* refk_oop = NULL;
-    BasicType result = as_BasicType(java_class, &refk_oop);
-    (*reference_klass) = KlassHandle(refk_oop);
-    return result;
-  }
   static Symbol* as_signature(oop java_class, bool intern_if_not_found, TRAPS);
   static void print_signature(oop java_class, outputStream *st);
   static const char* as_external_name(oop java_class);

@@ -41,7 +41,7 @@ class BoolObjectClosure;
 // The data structure for the system dictionary (and the shared system
 // dictionary).
 
-class Dictionary : public TwoOopHashtable<Klass*, mtClass> {
+class Dictionary : public TwoOopHashtable<InstanceKlass*, mtClass> {
   friend class VMStructs;
 private:
   // current iteration index.
@@ -56,16 +56,16 @@ private:
 
 protected:
   DictionaryEntry* bucket(int i) const {
-    return (DictionaryEntry*)Hashtable<Klass*, mtClass>::bucket(i);
+    return (DictionaryEntry*)Hashtable<InstanceKlass*, mtClass>::bucket(i);
   }
 
   // The following method is not MT-safe and must be done under lock.
   DictionaryEntry** bucket_addr(int i) {
-    return (DictionaryEntry**)Hashtable<Klass*, mtClass>::bucket_addr(i);
+    return (DictionaryEntry**)Hashtable<InstanceKlass*, mtClass>::bucket_addr(i);
   }
 
   void add_entry(int index, DictionaryEntry* new_entry) {
-    Hashtable<Klass*, mtClass>::add_entry(index, (HashtableEntry<Klass*, mtClass>*)new_entry);
+    Hashtable<InstanceKlass*, mtClass>::add_entry(index, (HashtableEntry<InstanceKlass*, mtClass>*)new_entry);
   }
 
   static size_t entry_size();
@@ -73,21 +73,21 @@ public:
   Dictionary(int table_size);
   Dictionary(int table_size, HashtableBucket<mtClass>* t, int number_of_entries);
 
-  DictionaryEntry* new_entry(unsigned int hash, Klass* klass, ClassLoaderData* loader_data);
+  DictionaryEntry* new_entry(unsigned int hash, InstanceKlass* klass, ClassLoaderData* loader_data);
 
   DictionaryEntry* new_entry();
 
   void free_entry(DictionaryEntry* entry);
 
-  void add_klass(Symbol* class_name, ClassLoaderData* loader_data,KlassHandle obj);
+  void add_klass(Symbol* class_name, ClassLoaderData* loader_data, InstanceKlass* obj);
 
-  Klass* find_class(int index, unsigned int hash,
-                      Symbol* name, ClassLoaderData* loader_data);
+  InstanceKlass* find_class(int index, unsigned int hash,
+                            Symbol* name, ClassLoaderData* loader_data);
 
-  Klass* find_shared_class(int index, unsigned int hash, Symbol* name);
+  InstanceKlass* find_shared_class(int index, unsigned int hash, Symbol* name);
 
   // Compiler support
-  Klass* try_get_next_class();
+  InstanceKlass* try_get_next_class();
 
   // GC support
   void oops_do(OopClosure* f);
@@ -116,13 +116,13 @@ public:
   void do_unloading();
 
   // Protection domains
-  Klass* find(int index, unsigned int hash, Symbol* name,
-                ClassLoaderData* loader_data, Handle protection_domain, TRAPS);
+  InstanceKlass* find(int index, unsigned int hash, Symbol* name,
+                      ClassLoaderData* loader_data, Handle protection_domain, TRAPS);
   bool is_valid_protection_domain(int index, unsigned int hash,
                                   Symbol* name, ClassLoaderData* loader_data,
                                   Handle protection_domain);
   void add_protection_domain(int index, unsigned int hash,
-                             instanceKlassHandle klass, ClassLoaderData* loader_data,
+                             InstanceKlass* klass, ClassLoaderData* loader_data,
                              Handle protection_domain, TRAPS);
 
   // Sharing support
@@ -243,9 +243,9 @@ class ProtectionDomainEntry :public CHeapObj<mtClass> {
 };
 
 // An entry in the system dictionary, this describes a class as
-// { Klass*, loader, protection_domain }.
+// { InstanceKlass*, loader, protection_domain }.
 
-class DictionaryEntry : public HashtableEntry<Klass*, mtClass> {
+class DictionaryEntry : public HashtableEntry<InstanceKlass*, mtClass> {
   friend class VMStructs;
  private:
   // Contains the set of approved protection domains that can access
@@ -277,15 +277,15 @@ class DictionaryEntry : public HashtableEntry<Klass*, mtClass> {
   // Adds a protection domain to the approved set.
   void add_protection_domain(Dictionary* dict, Handle protection_domain);
 
-  Klass* klass() const { return (Klass*)literal(); }
-  Klass** klass_addr() { return (Klass**)literal_addr(); }
+  InstanceKlass* klass() const { return (InstanceKlass*)literal(); }
+  InstanceKlass** klass_addr() { return (InstanceKlass**)literal_addr(); }
 
   DictionaryEntry* next() const {
-    return (DictionaryEntry*)HashtableEntry<Klass*, mtClass>::next();
+    return (DictionaryEntry*)HashtableEntry<InstanceKlass*, mtClass>::next();
   }
 
   DictionaryEntry** next_addr() {
-    return (DictionaryEntry**)HashtableEntry<Klass*, mtClass>::next_addr();
+    return (DictionaryEntry**)HashtableEntry<InstanceKlass*, mtClass>::next_addr();
   }
 
   ClassLoaderData* loader_data() const { return _loader_data; }
@@ -323,7 +323,7 @@ class DictionaryEntry : public HashtableEntry<Klass*, mtClass> {
   }
 
   bool equals(const Symbol* class_name, ClassLoaderData* loader_data) const {
-    Klass* klass = (Klass*)literal();
+    InstanceKlass* klass = (InstanceKlass*)literal();
     return (klass->name() == class_name && _loader_data == loader_data);
   }
 

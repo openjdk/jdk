@@ -426,7 +426,7 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
   } else {
     fail_type = _unloaded_ciinstance_klass;
   }
-  KlassHandle found_klass;
+  Klass* found_klass;
   {
     ttyUnlocker ttyul;  // release tty lock to avoid ordering problems
     MutexLocker ml(Compile_lock);
@@ -438,7 +438,7 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
       kls = SystemDictionary::find_instance_or_array_klass(sym, loader, domain,
                                                            KILL_COMPILE_ON_FATAL_(fail_type));
     }
-    found_klass = KlassHandle(THREAD, kls);
+    found_klass = kls;
   }
 
   // If we fail to find an array klass, look again for its element type.
@@ -467,22 +467,22 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
     }
   }
 
-  if (found_klass() == NULL && !cpool.is_null() && cpool->has_preresolution()) {
+  if (found_klass == NULL && !cpool.is_null() && cpool->has_preresolution()) {
     // Look inside the constant pool for pre-resolved class entries.
     for (int i = cpool->length() - 1; i >= 1; i--) {
       if (cpool->tag_at(i).is_klass()) {
         Klass* kls = cpool->resolved_klass_at(i);
         if (kls->name() == sym) {
-          found_klass = KlassHandle(THREAD, kls);
+          found_klass = kls;
           break;
         }
       }
     }
   }
 
-  if (found_klass() != NULL) {
+  if (found_klass != NULL) {
     // Found it.  Build a CI handle.
-    return get_klass(found_klass());
+    return get_klass(found_klass);
   }
 
   if (require_local)  return NULL;
@@ -512,21 +512,21 @@ ciKlass* ciEnv::get_klass_by_index_impl(const constantPoolHandle& cpool,
                                         bool& is_accessible,
                                         ciInstanceKlass* accessor) {
   EXCEPTION_CONTEXT;
-  KlassHandle klass; // = NULL;
+  Klass* klass = NULL;
   Symbol* klass_name = NULL;
 
   if (cpool->tag_at(index).is_symbol()) {
     klass_name = cpool->symbol_at(index);
   } else {
     // Check if it's resolved if it's not a symbol constant pool entry.
-    klass = KlassHandle(THREAD, ConstantPool::klass_at_if_loaded(cpool, index));
+    klass =  ConstantPool::klass_at_if_loaded(cpool, index);
     // Try to look it up by name.
-  if (klass.is_null()) {
+    if (klass == NULL) {
       klass_name = cpool->klass_name_at(index);
-  }
+    }
   }
 
-  if (klass.is_null()) {
+  if (klass == NULL) {
     // Not found in constant pool.  Use the name to do the lookup.
     ciKlass* k = get_klass_by_name_impl(accessor,
                                         cpool,
@@ -548,7 +548,7 @@ ciKlass* ciEnv::get_klass_by_index_impl(const constantPoolHandle& cpool,
 
   // Check for prior unloaded klass.  The SystemDictionary's answers
   // can vary over time but the compiler needs consistency.
-  ciSymbol* name = get_symbol(klass()->name());
+  ciSymbol* name = get_symbol(klass->name());
   ciKlass* unloaded_klass = check_get_unloaded_klass(accessor, name);
   if (unloaded_klass != NULL) {
     is_accessible = false;
@@ -557,7 +557,7 @@ ciKlass* ciEnv::get_klass_by_index_impl(const constantPoolHandle& cpool,
 
   // It is known to be accessible, since it was found in the constant pool.
   is_accessible = true;
-  return get_klass(klass());
+  return get_klass(klass);
 }
 
 // ------------------------------------------------------------------
@@ -713,10 +713,10 @@ Method* ciEnv::lookup_method(ciInstanceKlass* accessor,
   // Accessibility checks are performed in ciEnv::get_method_by_index_impl.
   assert(check_klass_accessibility(accessor, holder->get_Klass()), "holder not accessible");
 
-  KlassHandle h_accessor(accessor->get_instanceKlass());
-  KlassHandle h_holder(holder->get_Klass());
+  InstanceKlass* accessor_klass = accessor->get_instanceKlass();
+  Klass* holder_klass = holder->get_Klass();
   methodHandle dest_method;
-  LinkInfo link_info(h_holder, name, sig, h_accessor, LinkInfo::needs_access_check, tag);
+  LinkInfo link_info(holder_klass, name, sig, accessor_klass, LinkInfo::needs_access_check, tag);
   switch (bc) {
   case Bytecodes::_invokestatic:
     dest_method =

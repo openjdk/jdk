@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -675,7 +675,7 @@ address SharedRuntime::compute_compiled_exc_handler(CompiledMethod* cm, address 
     do {
       bool skip_scope_increment = false;
       // exception handler lookup
-      KlassHandle ek (THREAD, exception->klass());
+      Klass* ek = exception->klass();
       methodHandle mh(THREAD, sd->method());
       handler_bci = Method::fast_exception_handler_bci_for(mh, ek, bci, THREAD);
       if (HAS_PENDING_EXCEPTION) {
@@ -1185,7 +1185,7 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
   // Check that the receiver klass is of the right subtype and that it is initialized for virtual calls
   if (has_receiver) {
     assert(receiver.not_null(), "should have thrown exception");
-    KlassHandle receiver_klass(THREAD, receiver->klass());
+    Klass* receiver_klass = receiver->klass();
     Klass* rk = NULL;
     if (attached_method.not_null()) {
       // In case there's resolved method attached, use its holder during the check.
@@ -1195,16 +1195,16 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
       constantPoolHandle constants(THREAD, caller->constants());
       rk = constants->klass_ref_at(bytecode_index, CHECK_NH);
     }
-    KlassHandle static_receiver_klass(THREAD, rk);
+    Klass* static_receiver_klass = rk;
     methodHandle callee = callinfo.selected_method();
-    assert(receiver_klass->is_subtype_of(static_receiver_klass()),
+    assert(receiver_klass->is_subtype_of(static_receiver_klass),
            "actual receiver must be subclass of static receiver klass");
     if (receiver_klass->is_instance_klass()) {
-      if (InstanceKlass::cast(receiver_klass())->is_not_initialized()) {
+      if (InstanceKlass::cast(receiver_klass)->is_not_initialized()) {
         tty->print_cr("ERROR: Klass not yet initialized!!");
-        receiver_klass()->print();
+        receiver_klass->print();
       }
-      assert(!InstanceKlass::cast(receiver_klass())->is_not_initialized(), "receiver_klass must be initialized");
+      assert(!InstanceKlass::cast(receiver_klass)->is_not_initialized(), "receiver_klass must be initialized");
     }
   }
 #endif
@@ -1363,8 +1363,8 @@ methodHandle SharedRuntime::resolve_sub_helper(JavaThread *thread,
   if (is_virtual) {
     assert(receiver.not_null() || invoke_code == Bytecodes::_invokehandle, "sanity check");
     bool static_bound = call_info.resolved_method()->can_be_statically_bound();
-    KlassHandle h_klass(THREAD, invoke_code == Bytecodes::_invokehandle ? NULL : receiver->klass());
-    CompiledIC::compute_monomorphic_entry(callee_method, h_klass,
+    Klass* klass = invoke_code == Bytecodes::_invokehandle ? NULL : receiver->klass();
+    CompiledIC::compute_monomorphic_entry(callee_method, klass,
                      is_optimized, static_bound, is_nmethod, virtual_call_info,
                      CHECK_(methodHandle()));
   } else {
@@ -1625,7 +1625,7 @@ methodHandle SharedRuntime::handle_ic_miss_helper(JavaThread *thread, TRAPS) {
         // and now we have (or had) a compiled entry. We correct the IC
         // by using a new icBuffer.
         CompiledICInfo info;
-        KlassHandle receiver_klass(THREAD, receiver()->klass());
+        Klass* receiver_klass = receiver()->klass();
         inline_cache->compute_monomorphic_entry(callee_method,
                                                 receiver_klass,
                                                 inline_cache->is_optimized(),

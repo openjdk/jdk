@@ -472,7 +472,7 @@ class InstanceKlass: public Klass {
                                                      TRAPS);
 
   // Find InnerClasses attribute for k and return outer_class_info_index & inner_name_index.
-  static bool find_inner_classes_attr(instanceKlassHandle k,
+  static bool find_inner_classes_attr(const InstanceKlass* k,
                                       int* ooff, int* noff, TRAPS);
 
  private:
@@ -524,7 +524,7 @@ class InstanceKlass: public Klass {
   void unlink_class();
   void rewrite_class(TRAPS);
   void link_methods(TRAPS);
-  Method* class_initializer();
+  Method* class_initializer() const;
 
   // set the class to initialized if no static initializer is present
   void eager_initialize(Thread *thread);
@@ -711,7 +711,7 @@ class InstanceKlass: public Klass {
   void set_is_being_redefined(bool value)  { _is_being_redefined = value; }
 
   // RedefineClasses() support for previous versions:
-  void add_previous_version(instanceKlassHandle ikh, int emcp_method_count);
+  void add_previous_version(InstanceKlass* ik, int emcp_method_count);
   void purge_previous_version_list();
 
   InstanceKlass* previous_versions() const { return _previous_versions; }
@@ -883,9 +883,9 @@ public:
                                     u2 method_index);
 
   // jmethodID support
-  static jmethodID get_jmethod_id(instanceKlassHandle ik_h,
+  static jmethodID get_jmethod_id(InstanceKlass* ik,
                      const methodHandle& method_h);
-  static jmethodID get_jmethod_id_fetch_or_update(instanceKlassHandle ik_h,
+  static jmethodID get_jmethod_id_fetch_or_update(InstanceKlass* ik,
                      size_t idnum, jmethodID new_id, jmethodID* new_jmeths,
                      jmethodID* to_dealloc_id_p,
                      jmethodID** to_dealloc_jmeths_p);
@@ -1308,17 +1308,17 @@ private:
 
   // Static methods that are used to implement member methods where an exposed this pointer
   // is needed due to possible GCs
-  static bool link_class_impl                           (instanceKlassHandle this_k, bool throw_verifyerror, TRAPS);
-  static bool verify_code                               (instanceKlassHandle this_k, bool throw_verifyerror, TRAPS);
-  static void initialize_impl                           (instanceKlassHandle this_k, TRAPS);
-  static void initialize_super_interfaces               (instanceKlassHandle this_k, TRAPS);
-  static void eager_initialize_impl                     (instanceKlassHandle this_k);
-  static void set_initialization_state_and_notify_impl  (instanceKlassHandle this_k, ClassState state, TRAPS);
-  static void call_class_initializer_impl               (instanceKlassHandle this_k, TRAPS);
-  static Klass* array_klass_impl                        (instanceKlassHandle this_k, bool or_null, int n, TRAPS);
-  static void do_local_static_fields_impl               (instanceKlassHandle this_k, void f(fieldDescriptor* fd, Handle, TRAPS), Handle, TRAPS);
+  static bool link_class_impl                           (InstanceKlass* this_k, bool throw_verifyerror, TRAPS);
+  static bool verify_code                               (InstanceKlass* this_k, bool throw_verifyerror, TRAPS);
+  static void initialize_impl                           (InstanceKlass* this_k, TRAPS);
+  static void initialize_super_interfaces               (InstanceKlass* this_k, TRAPS);
+  static void eager_initialize_impl                     (InstanceKlass* this_k);
+  static void set_initialization_state_and_notify_impl  (InstanceKlass* this_k, ClassState state, TRAPS);
+  static void call_class_initializer_impl               (InstanceKlass* this_k, TRAPS);
+  static Klass* array_klass_impl                        (InstanceKlass* this_k, bool or_null, int n, TRAPS);
+  static void do_local_static_fields_impl               (InstanceKlass* this_k, void f(fieldDescriptor* fd, Handle, TRAPS), Handle, TRAPS);
   /* jni_id_for_impl for jfieldID only */
-  static JNIid* jni_id_for_impl                         (instanceKlassHandle this_k, int offset);
+  static JNIid* jni_id_for_impl                         (InstanceKlass* this_k, int offset);
 
   // Returns the array class for the n'th dimension
   Klass* array_klass_impl(bool or_null, int n, TRAPS);
@@ -1447,7 +1447,7 @@ class InnerClassesIterator : public StackObj {
   int _idx;
  public:
 
-  InnerClassesIterator(instanceKlassHandle k) {
+  InnerClassesIterator(const InstanceKlass* k) {
     _inner_classes = k->inner_classes();
     if (k->inner_classes() != NULL) {
       _length = _inner_classes->length();

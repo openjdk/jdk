@@ -103,8 +103,8 @@ class Reflection: public AllStatic {
   // If inner_is_member, require the inner to be a member of the outer.
   // If !inner_is_member, require the inner to be anonymous (a non-member).
   // Caller is responsible for figuring out in advance which case must be true.
-  static void check_for_inner_class(instanceKlassHandle outer,
-                                    instanceKlassHandle inner,
+  static void check_for_inner_class(const InstanceKlass* outer,
+                                    const InstanceKlass* inner,
                                     bool inner_is_member,
                                     TRAPS);
 

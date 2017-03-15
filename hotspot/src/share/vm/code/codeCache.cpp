@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1141,7 +1141,7 @@ bool CodeCache::is_far_target(address target) {
 }
 
 #ifdef HOTSWAP
-int CodeCache::mark_for_evol_deoptimization(instanceKlassHandle dependee) {
+int CodeCache::mark_for_evol_deoptimization(InstanceKlass* dependee) {
   MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   int number_of_marked_CodeBlobs = 0;
 
@@ -1162,7 +1162,7 @@ int CodeCache::mark_for_evol_deoptimization(instanceKlassHandle dependee) {
     CompiledMethod* nm = iter.method();
     if (nm->is_marked_for_deoptimization()) {
       // ...Already marked in the previous pass; don't count it again.
-    } else if (nm->is_evol_dependent_on(dependee())) {
+    } else if (nm->is_evol_dependent_on(dependee)) {
       ResourceMark rm;
       nm->mark_for_deoptimization();
       number_of_marked_CodeBlobs++;
@@ -1218,7 +1218,7 @@ void CodeCache::make_marked_nmethods_not_entrant() {
 }
 
 // Flushes compiled methods dependent on dependee.
-void CodeCache::flush_dependents_on(instanceKlassHandle dependee) {
+void CodeCache::flush_dependents_on(InstanceKlass* dependee) {
   assert_lock_strong(Compile_lock);
 
   if (number_of_nmethods_with_dependencies() == 0) return;
@@ -1239,7 +1239,7 @@ void CodeCache::flush_dependents_on(instanceKlassHandle dependee) {
 
 #ifdef HOTSWAP
 // Flushes compiled methods dependent on dependee in the evolutionary sense
-void CodeCache::flush_evol_dependents_on(instanceKlassHandle ev_k_h) {
+void CodeCache::flush_evol_dependents_on(InstanceKlass* ev_k) {
   // --- Compile_lock is not held. However we are at a safepoint.
   assert_locked_or_safepoint(Compile_lock);
   if (number_of_nmethods_with_dependencies() == 0 && !UseAOT) return;
@@ -1249,7 +1249,7 @@ void CodeCache::flush_evol_dependents_on(instanceKlassHandle ev_k_h) {
   // holding the CodeCache_lock.
 
   // Compute the dependent nmethods
-  if (mark_for_evol_deoptimization(ev_k_h) > 0) {
+  if (mark_for_evol_deoptimization(ev_k) > 0) {
     // At least one nmethod has been marked for deoptimization
 
     // All this already happens inside a VM_Operation, so we'll do all the work here.

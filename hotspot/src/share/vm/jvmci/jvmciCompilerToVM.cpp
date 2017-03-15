@@ -77,8 +77,8 @@ oop CompilerToVM::get_jvmci_method(const methodHandle& method, TRAPS) {
   return NULL;
 }
 
-oop CompilerToVM::get_jvmci_type(KlassHandle klass, TRAPS) {
-  if (klass() != NULL) {
+oop CompilerToVM::get_jvmci_type(Klass* klass, TRAPS) {
+  if (klass != NULL) {
     JavaValue result(T_OBJECT);
     JavaCallArguments args;
     args.push_oop(Handle(THREAD, klass->java_mirror()));
@@ -678,7 +678,7 @@ C2V_VMENTRY(jobject, getConstantPool, (JNIEnv *, jobject, jobject object_handle)
 }
 
 C2V_VMENTRY(jobject, getResolvedJavaType, (JNIEnv *, jobject, jobject base, jlong offset, jboolean compressed))
-  KlassHandle klass;
+  Klass* klass = NULL;
   oop base_object = JNIHandles::resolve(base);
   jlong base_address = 0;
   if (base_object != NULL && offset == oopDesc::klass_offset_in_bytes()) {
@@ -703,7 +703,7 @@ C2V_VMENTRY(jobject, getResolvedJavaType, (JNIEnv *, jobject, jobject base, jlon
     THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
                 err_msg("Unexpected arguments: %s " JLONG_FORMAT " %s", base_object->klass()->external_name(), offset, compressed ? "true" : "false"));
   }
-  assert (klass.is_null() || klass->is_klass(), "invalid read");
+  assert (klass == NULL || klass->is_klass(), "invalid read");
   oop result = CompilerToVM::get_jvmci_type(klass, CHECK_NULL);
   return JNIHandles::make_local(THREAD, result);
 }
@@ -711,7 +711,7 @@ C2V_VMENTRY(jobject, getResolvedJavaType, (JNIEnv *, jobject, jobject base, jlon
 C2V_VMENTRY(jobject, findUniqueConcreteMethod, (JNIEnv *, jobject, jobject jvmci_type, jobject jvmci_method))
   ResourceMark rm;
   methodHandle method = CompilerToVM::asMethod(jvmci_method);
-  KlassHandle holder = CompilerToVM::asKlass(jvmci_type);
+  Klass* holder = CompilerToVM::asKlass(jvmci_type);
   if (holder->is_interface()) {
     THROW_MSG_0(vmSymbols::java_lang_InternalError(), err_msg("Interface %s should be handled in Java code", holder->external_name()));
   }
@@ -719,7 +719,7 @@ C2V_VMENTRY(jobject, findUniqueConcreteMethod, (JNIEnv *, jobject, jobject jvmci
   methodHandle ucm;
   {
     MutexLocker locker(Compile_lock);
-    ucm = Dependencies::find_unique_concrete_method(holder(), method());
+    ucm = Dependencies::find_unique_concrete_method(holder, method());
   }
   oop result = CompilerToVM::get_jvmci_method(ucm, CHECK_NULL);
   return JNIHandles::make_local(THREAD, result);
@@ -848,15 +848,15 @@ C2V_END
 
 C2V_VMENTRY(jobject, lookupKlassInPool, (JNIEnv*, jobject, jobject jvmci_constant_pool, jint index, jbyte opcode))
   constantPoolHandle cp = CompilerToVM::asConstantPool(jvmci_constant_pool);
-  KlassHandle loading_klass(cp->pool_holder());
+  Klass* loading_klass = cp->pool_holder();
   bool is_accessible = false;
-  KlassHandle klass = JVMCIEnv::get_klass_by_index(cp, index, is_accessible, loading_klass);
+  Klass* klass = JVMCIEnv::get_klass_by_index(cp, index, is_accessible, loading_klass);
   Symbol* symbol = NULL;
-  if (klass.is_null()) {
+  if (klass == NULL) {
     symbol = cp->klass_name_at(index);
   }
   oop result_oop;
-  if (!klass.is_null()) {
+  if (klass != NULL) {
     result_oop = CompilerToVM::get_jvmci_type(klass, CHECK_NULL);
   } else {
     Handle result = java_lang_String::create_from_symbol(symbol, CHECK_NULL);
@@ -873,7 +873,7 @@ C2V_END
 
 C2V_VMENTRY(jobject, lookupMethodInPool, (JNIEnv*, jobject, jobject jvmci_constant_pool, jint index, jbyte opcode))
   constantPoolHandle cp = CompilerToVM::asConstantPool(jvmci_constant_pool);
-  instanceKlassHandle pool_holder(cp->pool_holder());
+  InstanceKlass* pool_holder = cp->pool_holder();
   Bytecodes::Code bc = (Bytecodes::Code) (((int) opcode) & 0xFF);
   methodHandle method = JVMCIEnv::get_method_by_index(cp, index, bc, pool_holder);
   oop result = CompilerToVM::get_jvmci_method(method, CHECK_NULL);
@@ -920,11 +920,11 @@ C2V_VMENTRY(jint, getVtableIndexForInterfaceMethod, (JNIEnv *, jobject, jobject 
 C2V_END
 
 C2V_VMENTRY(jobject, resolveMethod, (JNIEnv *, jobject, jobject receiver_jvmci_type, jobject jvmci_method, jobject caller_jvmci_type))
-  KlassHandle recv_klass = CompilerToVM::asKlass(receiver_jvmci_type);
-  KlassHandle caller_klass = CompilerToVM::asKlass(caller_jvmci_type);
+  Klass* recv_klass = CompilerToVM::asKlass(receiver_jvmci_type);
+  Klass* caller_klass = CompilerToVM::asKlass(caller_jvmci_type);
   methodHandle method = CompilerToVM::asMethod(jvmci_method);
 
-  KlassHandle h_resolved   (THREAD, method->method_holder());
+  Klass* resolved     = method->method_holder();
   Symbol* h_name      = method->name();
   Symbol* h_signature = method->signature();
 
@@ -933,13 +933,13 @@ C2V_VMENTRY(jobject, resolveMethod, (JNIEnv *, jobject, jobject receiver_jvmci_t
       return NULL;
   }
 
-  LinkInfo link_info(h_resolved, h_name, h_signature, caller_klass);
+  LinkInfo link_info(resolved, h_name, h_signature, caller_klass);
   methodHandle m;
   // Only do exact lookup if receiver klass has been linked.  Otherwise,
   // the vtable has not been setup, and the LinkResolver will fail.
   if (recv_klass->is_array_klass() ||
-      InstanceKlass::cast(recv_klass())->is_linked() && !recv_klass->is_interface()) {
-    if (h_resolved->is_interface()) {
+      InstanceKlass::cast(recv_klass)->is_linked() && !recv_klass->is_interface()) {
+    if (resolved->is_interface()) {
       m = LinkResolver::resolve_interface_call_or_null(recv_klass, link_info);
     } else {
       m = LinkResolver::resolve_virtual_call_or_null(recv_klass, link_info);
@@ -1482,12 +1482,12 @@ C2V_END
 
 C2V_VMENTRY(void, resolveInvokeHandleInPool, (JNIEnv*, jobject, jobject jvmci_constant_pool, jint index))
   constantPoolHandle cp = CompilerToVM::asConstantPool(jvmci_constant_pool);
-  KlassHandle holder = cp->klass_ref_at(index, CHECK);
+  Klass* holder = cp->klass_ref_at(index, CHECK);
   Symbol* name = cp->name_ref_at(index);
-  if (MethodHandles::is_signature_polymorphic_name(holder(), name)) {
+  if (MethodHandles::is_signature_polymorphic_name(holder, name)) {
     CallInfo callInfo;
     LinkResolver::resolve_invoke(callInfo, Handle(), cp, index, Bytecodes::_invokehandle, CHECK);
-    ConstantPoolCacheEntry* cp_cache_entry = cp_cache_entry = cp->cache()->entry_at(cp->decode_cpcache_index(index));
+    ConstantPoolCacheEntry* cp_cache_entry = cp->cache()->entry_at(cp->decode_cpcache_index(index));
     cp_cache_entry->set_method_handle(cp, callInfo);
   }
 C2V_END

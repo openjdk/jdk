@@ -79,8 +79,7 @@ bool GCNotifier::has_event() {
 
 static Handle getGcInfoBuilder(GCMemoryManager *gcManager,TRAPS) {
 
-  Klass* k = Management::com_sun_management_internal_GarbageCollectorExtImpl_klass(CHECK_NH);
-  instanceKlassHandle gcMBeanKlass (THREAD, k);
+  Klass* gcMBeanKlass = Management::com_sun_management_internal_GarbageCollectorExtImpl_klass(CHECK_NH);
 
   instanceOop i = gcManager->get_memory_manager_instance(THREAD);
   instanceHandle ih(THREAD, i);
@@ -102,16 +101,15 @@ static Handle createGcInfo(GCMemoryManager *gcManager, GCStatInfo *gcStatInfo,TR
   // Fill the arrays of MemoryUsage objects with before and after GC
   // per pool memory usage
 
-  Klass* mu_klass = Management::java_lang_management_MemoryUsage_klass(CHECK_NH);
-  instanceKlassHandle mu_kh(THREAD, mu_klass);
+  InstanceKlass* mu_klass = Management::java_lang_management_MemoryUsage_klass(CHECK_NH);
 
   // The array allocations below should use a handle containing mu_klass
   // as the first allocation could trigger a GC, causing the actual
   // klass oop to move, and leaving mu_klass pointing to the old
   // location.
-  objArrayOop bu = oopFactory::new_objArray(mu_kh(), MemoryService::num_memory_pools(), CHECK_NH);
+  objArrayOop bu = oopFactory::new_objArray(mu_klass, MemoryService::num_memory_pools(), CHECK_NH);
   objArrayHandle usage_before_gc_ah(THREAD, bu);
-  objArrayOop au = oopFactory::new_objArray(mu_kh(), MemoryService::num_memory_pools(), CHECK_NH);
+  objArrayOop au = oopFactory::new_objArray(mu_klass, MemoryService::num_memory_pools(), CHECK_NH);
   objArrayHandle usage_after_gc_ah(THREAD, au);
 
   for (int i = 0; i < MemoryService::num_memory_pools(); i++) {
@@ -135,8 +133,7 @@ static Handle createGcInfo(GCMemoryManager *gcManager, GCStatInfo *gcStatInfo,TR
   // The type is 'I'
   objArrayOop extra_args_array = oopFactory::new_objArray(SystemDictionary::Integer_klass(), 1, CHECK_NH);
   objArrayHandle extra_array (THREAD, extra_args_array);
-  Klass* itKlass = SystemDictionary::Integer_klass();
-  instanceKlassHandle intK(THREAD, itKlass);
+  InstanceKlass* intK = SystemDictionary::Integer_klass();
 
   instanceHandle extra_arg_val = intK->allocate_instance_handle(CHECK_NH);
 
@@ -155,10 +152,9 @@ static Handle createGcInfo(GCMemoryManager *gcManager, GCStatInfo *gcStatInfo,TR
   }
   extra_array->obj_at_put(0,extra_arg_val());
 
-  Klass* gcInfoklass = Management::com_sun_management_GcInfo_klass(CHECK_NH);
-  instanceKlassHandle ik(THREAD, gcInfoklass);
+  InstanceKlass* gcInfoklass = Management::com_sun_management_GcInfo_klass(CHECK_NH);
 
-  Handle gcInfo_instance = ik->allocate_instance_handle(CHECK_NH);
+  Handle gcInfo_instance = gcInfoklass->allocate_instance_handle(CHECK_NH);
 
   JavaValue constructor_result(T_VOID);
   JavaCallArguments constructor_args(16);
@@ -172,7 +168,7 @@ static Handle createGcInfo(GCMemoryManager *gcManager, GCStatInfo *gcStatInfo,TR
   constructor_args.push_oop(extra_array);
 
   JavaCalls::call_special(&constructor_result,
-                          ik,
+                          gcInfoklass,
                           vmSymbols::object_initializer_name(),
                           vmSymbols::com_sun_management_GcInfo_constructor_signature(),
                           &constructor_args,
@@ -216,13 +212,11 @@ void GCNotifier::sendNotificationInternal(TRAPS) {
     Handle objName = java_lang_String::create_from_str(request->gcManager->name(), CHECK);
     Handle objAction = java_lang_String::create_from_str(request->gcAction, CHECK);
     Handle objCause = java_lang_String::create_from_str(request->gcCause, CHECK);
-    Klass* k = Management::com_sun_management_internal_GarbageCollectorExtImpl_klass(CHECK);
-
-    instanceKlassHandle gc_mbean_klass(THREAD, k);
+    InstanceKlass* gc_mbean_klass = Management::com_sun_management_internal_GarbageCollectorExtImpl_klass(CHECK);
 
     instanceOop gc_mbean = request->gcManager->get_memory_manager_instance(THREAD);
     instanceHandle gc_mbean_h(THREAD, gc_mbean);
-    if (!gc_mbean_h->is_a(k)) {
+    if (!gc_mbean_h->is_a(gc_mbean_klass)) {
       THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
                 "This GCMemoryManager doesn't have a GarbageCollectorMXBean");
     }

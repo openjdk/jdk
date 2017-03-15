@@ -107,12 +107,12 @@ JRT_BLOCK_ENTRY(void, JVMCIRuntime::new_instance(JavaThread* thread, Klass* klas
   JRT_BLOCK;
   assert(klass->is_klass(), "not a class");
   Handle holder(THREAD, klass->klass_holder()); // keep the klass alive
-  instanceKlassHandle h(thread, klass);
-  h->check_valid_for_instantiation(true, CHECK);
+  InstanceKlass* ik = InstanceKlass::cast(klass);
+  ik->check_valid_for_instantiation(true, CHECK);
   // make sure klass is initialized
-  h->initialize(CHECK);
+  ik->initialize(CHECK);
   // allocate instance and return via TLS
-  oop obj = h->allocate_instance(CHECK);
+  oop obj = ik->allocate_instance(CHECK);
   thread->set_vm_result(obj);
   JRT_BLOCK_END;
 
@@ -187,7 +187,7 @@ JRT_ENTRY(void, JVMCIRuntime::dynamic_new_array(JavaThread* thread, oopDesc* ele
 JRT_END
 
 JRT_ENTRY(void, JVMCIRuntime::dynamic_new_instance(JavaThread* thread, oopDesc* type_mirror))
-  instanceKlassHandle klass(THREAD, java_lang_Class::as_Klass(type_mirror));
+  InstanceKlass* klass = InstanceKlass::cast(java_lang_Class::as_Klass(type_mirror));
 
   if (klass == NULL) {
     ResourceMark rm(THREAD);
@@ -641,7 +641,7 @@ JVM_END
 
 Handle JVMCIRuntime::callStatic(const char* className, const char* methodName, const char* signature, JavaCallArguments* args, TRAPS) {
   TempNewSymbol name = SymbolTable::new_symbol(className, CHECK_(Handle()));
-  KlassHandle klass = SystemDictionary::resolve_or_fail(name, true, CHECK_(Handle()));
+  Klass* klass = SystemDictionary::resolve_or_fail(name, true, CHECK_(Handle()));
   TempNewSymbol runtime = SymbolTable::new_symbol(methodName, CHECK_(Handle()));
   TempNewSymbol sig = SymbolTable::new_symbol(signature, CHECK_(Handle()));
   JavaValue result(T_OBJECT);
@@ -657,7 +657,7 @@ void JVMCIRuntime::initialize_HotSpotJVMCIRuntime(TRAPS) {
   guarantee(!_HotSpotJVMCIRuntime_initialized, "cannot reinitialize HotSpotJVMCIRuntime");
   JVMCIRuntime::initialize_well_known_classes(CHECK);
   // This should only be called in the context of the JVMCI class being initialized
-  instanceKlassHandle klass = InstanceKlass::cast(SystemDictionary::JVMCI_klass());
+  InstanceKlass* klass = SystemDictionary::JVMCI_klass();
   guarantee(klass->is_being_initialized() && klass->is_reentrant_initialization(THREAD),
          "HotSpotJVMCIRuntime initialization should only be triggered through JVMCI initialization");
 

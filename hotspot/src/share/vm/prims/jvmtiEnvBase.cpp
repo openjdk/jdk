@@ -1366,13 +1366,13 @@ JvmtiEnvBase::check_top_frame(JavaThread* current_thread, JavaThread* java_threa
   if (tos == atos && jobj != NULL) { // NULL reference is allowed
     Handle ob_h(current_thread, JNIHandles::resolve_external_guard(jobj));
     NULL_CHECK(ob_h, JVMTI_ERROR_INVALID_OBJECT);
-    KlassHandle ob_kh = KlassHandle(current_thread, ob_h()->klass());
-    NULL_CHECK(ob_kh, JVMTI_ERROR_INVALID_OBJECT);
+    Klass* ob_k = ob_h()->klass();
+    NULL_CHECK(ob_k, JVMTI_ERROR_INVALID_OBJECT);
 
     // Method return type signature.
     char* ty_sign = 1 + strchr(signature->as_C_string(), ')');
 
-    if (!VM_GetOrSetLocal::is_assignable(ty_sign, ob_kh(), current_thread)) {
+    if (!VM_GetOrSetLocal::is_assignable(ty_sign, ob_k, current_thread)) {
       return JVMTI_ERROR_TYPE_MISMATCH;
     }
     *ret_ob_h = ob_h;

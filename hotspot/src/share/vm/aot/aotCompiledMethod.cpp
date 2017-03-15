@@ -143,9 +143,8 @@ Metadata* AOTCompiledMethod::metadata_at(int index) const {
       int full_len = 2 + klass_len + 2 + method_name_len + 2 + signature_len;
       if (!klass_matched || memcmp(_name, meta_name, full_len) != 0) { // Does not match?
         Thread* thread = Thread::current();
-        KlassHandle klass = KlassHandle(thread, k);
         const char* method_name = klass_name + klass_len;
-        m = AOTCodeHeap::find_method(klass, thread, method_name);
+        m = AOTCodeHeap::find_method(k, thread, method_name);
       }
       meta = ((intptr_t)m) | 1;
       *entry = (Metadata*)meta; // Should be atomic on x64
@@ -239,7 +238,7 @@ bool AOTCompiledMethod::make_entrant() {
 
 // We don't have full dependencies for AOT methods, so flushing is
 // more conservative than for nmethods.
-void AOTCompiledMethod::flush_evol_dependents_on(instanceKlassHandle dependee) {
+void AOTCompiledMethod::flush_evol_dependents_on(InstanceKlass* dependee) {
   if (is_java_method()) {
     cleanup_inline_caches();
     mark_for_deoptimization();

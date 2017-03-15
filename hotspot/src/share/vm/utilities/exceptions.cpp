@@ -265,11 +265,10 @@ Handle Exceptions::new_exception(Thread *thread, Symbol* name,
   Handle h_exception;
 
   // Resolve exception klass
-  Klass* ik = SystemDictionary::resolve_or_fail(name, h_loader, h_protection_domain, true, thread);
-  instanceKlassHandle klass(thread, ik);
+  InstanceKlass* klass = InstanceKlass::cast(SystemDictionary::resolve_or_fail(name, h_loader, h_protection_domain, true, thread));
 
   if (!thread->has_pending_exception()) {
-    assert(klass.not_null(), "klass must exist");
+    assert(klass != NULL, "klass must exist");
     // We are about to create an instance - so make sure that klass is initialized
     klass->initialize(thread);
     if (!thread->has_pending_exception()) {
