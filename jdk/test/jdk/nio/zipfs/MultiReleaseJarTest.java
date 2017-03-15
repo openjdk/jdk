@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8144355 8144062
+ * @bug 8144355 8144062 8176709
  * @summary Test aliasing additions to ZipFileSystem for multi-release jar files
  * @library /lib/testlibrary/java/util/jar
  * @build Compiler JarBuilder CreateMultiReleaseTestJars
@@ -42,6 +42,7 @@ import java.net.URI;
 import java.nio.file.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.testng.Assert;
 import org.testng.annotations.*;
@@ -50,6 +51,7 @@ public class MultiReleaseJarTest {
     final private int MAJOR_VERSION = Runtime.version().major();
 
     final private String userdir = System.getProperty("user.dir",".");
+    final private CreateMultiReleaseTestJars creator =  new CreateMultiReleaseTestJars();
     final private Map<String,String> stringEnv = new HashMap<>();
     final private Map<String,Integer> integerEnv = new HashMap<>();
     final private Map<String,Version> versionEnv = new HashMap<>();
@@ -63,7 +65,6 @@ public class MultiReleaseJarTest {
 
     @BeforeClass
     public void initialize() throws Exception {
-        CreateMultiReleaseTestJars creator =  new CreateMultiReleaseTestJars();
         creator.compileEntries();
         creator.buildUnversionedJar();
         creator.buildMultiReleaseJar();
@@ -185,6 +186,44 @@ public class MultiReleaseJarTest {
             MethodHandle mh = MethodHandles.lookup().findVirtual(vcls, "getVersion", mt);
             Assert.assertEquals((int)mh.invoke(vcls.newInstance()), expected);
         }
+    }
+
+    @Test
+    public void testIsMultiReleaseJar() throws Exception {
+        testCustomMultiReleaseValue("true", true);
+        testCustomMultiReleaseValue("true\r\nOther: value", true);
+        testCustomMultiReleaseValue("true\nOther: value", true);
+        testCustomMultiReleaseValue("true\rOther: value", true);
+
+        testCustomMultiReleaseValue("false", false);
+        testCustomMultiReleaseValue(" true", false);
+        testCustomMultiReleaseValue("true ", false);
+        testCustomMultiReleaseValue("true\n ", false);
+        testCustomMultiReleaseValue("true\r ", false);
+        testCustomMultiReleaseValue("true\n true", false);
+        testCustomMultiReleaseValue("true\r\n true", false);
+    }
+
+    private static final AtomicInteger JAR_COUNT = new AtomicInteger(0);
+
+    private void testCustomMultiReleaseValue(String value, boolean expected)
+            throws Exception {
+        String fileName = "custom-mr" + JAR_COUNT.incrementAndGet() + ".jar";
+        creator.buildCustomMultiReleaseJar(fileName, value, Map.of(),
+                /*addEntries*/true);
+
+        Map<String,String> env = Map.of("multi-release", "runtime");
+        Path filePath = Paths.get(userdir, fileName);
+        String ssp = filePath.toUri().toString();
+        URI customJar = new URI("jar", ssp , null);
+        try (FileSystem fs = FileSystems.newFileSystem(customJar, env)) {
+            if (expected) {
+                Assert.assertTrue(readAndCompare(fs, MAJOR_VERSION));
+            } else {
+                Assert.assertTrue(readAndCompare(fs, 8));
+            }
+        }
+        Files.delete(filePath);
     }
 
     private static class ByteArrayClassLoader extends ClassLoader {
