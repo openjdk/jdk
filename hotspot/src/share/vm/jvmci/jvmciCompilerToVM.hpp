@@ -161,7 +161,7 @@ class CompilerToVM {
 
   static oop get_jvmci_method(const methodHandle& method, TRAPS);
 
-  static oop get_jvmci_type(KlassHandle klass, TRAPS);
+  static oop get_jvmci_type(Klass* klass, TRAPS);
 };
 
 class JavaArgumentUnboxer : public SignatureIterator {

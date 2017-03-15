@@ -218,9 +218,4 @@ ResetNoHandleMark::~ResetNoHandleMark() {
   area->_no_handle_mark_nesting = _no_handle_mark_nesting;
 }
 
-bool instanceKlassHandle::is_instanceKlass(const Klass* k) {
-  // Need this to avoid circular include dependency
-  return k->is_instance_klass();
-}
-
 #endif

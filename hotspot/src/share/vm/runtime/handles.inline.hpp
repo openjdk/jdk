@@ -40,7 +40,7 @@ inline Handle::Handle(Thread* thread, oop obj) {
   }
 }
 
-// Constructors for metadata handles
+// Constructor for metadata handles
 #define DEF_METADATA_HANDLE_FN(name, type) \
 inline name##Handle::name##Handle(type* obj) : _value(obj), _thread(NULL) {       \
   if (obj != NULL) {                                                   \

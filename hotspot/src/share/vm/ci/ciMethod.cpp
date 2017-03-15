@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -783,24 +783,24 @@ ciMethod* ciMethod::resolve_invoke(ciKlass* caller, ciKlass* exact_receiver, boo
    check_is_loaded();
    VM_ENTRY_MARK;
 
-   KlassHandle caller_klass (THREAD, caller->get_Klass());
-   KlassHandle h_recv       (THREAD, exact_receiver->get_Klass());
-   KlassHandle h_resolved   (THREAD, holder()->get_Klass());
+   Klass* caller_klass = caller->get_Klass();
+   Klass* recv         = exact_receiver->get_Klass();
+   Klass* resolved     = holder()->get_Klass();
    Symbol* h_name      = name()->get_symbol();
    Symbol* h_signature = signature()->get_symbol();
 
-   LinkInfo link_info(h_resolved, h_name, h_signature, caller_klass,
+   LinkInfo link_info(resolved, h_name, h_signature, caller_klass,
                       check_access ? LinkInfo::needs_access_check : LinkInfo::skip_access_check);
    methodHandle m;
    // Only do exact lookup if receiver klass has been linked.  Otherwise,
    // the vtable has not been setup, and the LinkResolver will fail.
-   if (h_recv->is_array_klass()
+   if (recv->is_array_klass()
         ||
-       InstanceKlass::cast(h_recv())->is_linked() && !exact_receiver->is_interface()) {
+       InstanceKlass::cast(recv)->is_linked() && !exact_receiver->is_interface()) {
      if (holder()->is_interface()) {
-       m = LinkResolver::resolve_interface_call_or_null(h_recv, link_info);
+       m = LinkResolver::resolve_interface_call_or_null(recv, link_info);
      } else {
-       m = LinkResolver::resolve_virtual_call_or_null(h_recv, link_info);
+       m = LinkResolver::resolve_virtual_call_or_null(recv, link_info);
      }
    }
 
@@ -839,13 +839,13 @@ int ciMethod::resolve_vtable_index(ciKlass* caller, ciKlass* receiver) {
            receiver->as_instance_klass()->is_linked())) {
      VM_ENTRY_MARK;
 
-     KlassHandle caller_klass (THREAD, caller->get_Klass());
-     KlassHandle h_recv       (THREAD, receiver->get_Klass());
+     Klass* caller_klass = caller->get_Klass();
+     Klass* recv         = receiver->get_Klass();
      Symbol* h_name = name()->get_symbol();
      Symbol* h_signature = signature()->get_symbol();
 
-     LinkInfo link_info(h_recv, h_name, h_signature, caller_klass);
-     vtable_index = LinkResolver::resolve_virtual_vtable_index(h_recv, link_info);
+     LinkInfo link_info(recv, h_name, h_signature, caller_klass);
+     vtable_index = LinkResolver::resolve_virtual_vtable_index(recv, link_info);
      if (vtable_index == Method::nonvirtual_vtable_index) {
        // A statically bound method.  Return "no such index".
        vtable_index = Method::invalid_vtable_index;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -371,7 +371,7 @@ class ClassLoader: AllStatic {
                                                 const char* const file_name, TRAPS);
 
   // Load individual .class file
-  static instanceKlassHandle load_class(Symbol* class_name, bool search_append_only, TRAPS);
+  static InstanceKlass* load_class(Symbol* class_name, bool search_append_only, TRAPS);
 
   // If the specified package has been loaded by the system, then returns
   // the name of the directory or ZIP file that the package was loaded from.

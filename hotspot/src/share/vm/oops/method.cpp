@@ -173,7 +173,7 @@ char* Method::name_and_sig_as_C_string(Klass* klass, Symbol* method_name, Symbol
   return buf;
 }
 
-int Method::fast_exception_handler_bci_for(methodHandle mh, KlassHandle ex_klass, int throw_bci, TRAPS) {
+int Method::fast_exception_handler_bci_for(methodHandle mh, Klass* ex_klass, int throw_bci, TRAPS) {
   // exception table holds quadruple entries of the form (beg_bci, end_bci, handler_bci, klass_index)
   // access exception table
   ExceptionTable table(mh());
@@ -192,16 +192,15 @@ int Method::fast_exception_handler_bci_for(methodHandle mh, KlassHandle ex_klass
       int klass_index = table.catch_type_index(i);
       if (klass_index == 0) {
         return handler_bci;
-      } else if (ex_klass.is_null()) {
+      } else if (ex_klass == NULL) {
         return handler_bci;
       } else {
         // we know the exception class => get the constraint class
         // this may require loading of the constraint class; if verification
         // fails or some other exception occurs, return handler_bci
         Klass* k = pool->klass_at(klass_index, CHECK_(handler_bci));
-        KlassHandle klass = KlassHandle(THREAD, k);
-        assert(klass.not_null(), "klass not loaded");
-        if (ex_klass->is_subtype_of(klass())) {
+        assert(k != NULL, "klass not loaded");
+        if (ex_klass->is_subtype_of(k)) {
           return handler_bci;
         }
       }
@@ -1271,7 +1270,7 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
   ResourceMark rm;
   methodHandle empty;
 
-  KlassHandle holder = SystemDictionary::MethodHandle_klass();
+  InstanceKlass* holder = SystemDictionary::MethodHandle_klass();
   Symbol* name = MethodHandles::signature_polymorphic_intrinsic_name(iid);
   assert(iid == MethodHandles::signature_polymorphic_name_id(name), "");
   if (TraceMethodHandles) {
@@ -1289,7 +1288,7 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
     ConstantPool* cp_oop = ConstantPool::allocate(loader_data, cp_length, CHECK_(empty));
     cp = constantPoolHandle(THREAD, cp_oop);
   }
-  cp->set_pool_holder(InstanceKlass::cast(holder()));
+  cp->set_pool_holder(holder);
   cp->symbol_at_put(_imcp_invoke_name,       name);
   cp->symbol_at_put(_imcp_invoke_signature,  signature);
   cp->set_has_preresolution();

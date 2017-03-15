@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,17 +120,14 @@ public:
 // FIXME: make this piece of code to be shared by M&M and JVMTI
 class LoadedClassesEnumerator : public StackObj {
 private:
-  static GrowableArray<KlassHandle>* _loaded_classes;
-  // _current_thread is for creating a KlassHandle with a faster version constructor
-  static Thread*                     _current_thread;
-
-  GrowableArray<KlassHandle>* _klass_handle_array;
+  static GrowableArray<Klass*>* _loaded_classes;
+  GrowableArray<Klass*>* _klass_array;
 
 public:
-  LoadedClassesEnumerator(Thread* cur_thread);
+  LoadedClassesEnumerator();
 
-  int num_loaded_classes()         { return _klass_handle_array->length(); }
-  KlassHandle get_klass(int index) { return _klass_handle_array->at(index); }
+  int num_loaded_classes()         { return _klass_array->length(); }
+  Klass* get_klass(int index)      { return _klass_array->at(index); }
 
   static void add_loaded_class(Klass* k) {
     // FIXME: For now - don't include array klasses
@@ -138,11 +135,9 @@ public:
     // and also indirect creation of array of super class and secondaries
     //
     // for (Klass* l = k; l != NULL; l = l->array_klass_or_null()) {
-    //  KlassHandle h(_current_thread, l);
-    //  _loaded_classes->append(h);
+    //  _loaded_classes->append(l);
     // }
-    KlassHandle h(_current_thread, k);
-    _loaded_classes->append(h);
+    _loaded_classes->append(k);
   }
 };
 

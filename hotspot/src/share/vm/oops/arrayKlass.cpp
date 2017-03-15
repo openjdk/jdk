@@ -96,9 +96,9 @@ ArrayKlass::ArrayKlass(Symbol* name) :
 
 // Initialization of vtables and mirror object is done separatly from base_create_array_klass,
 // since a GC can happen. At this point all instance variables of the ArrayKlass must be setup.
-void ArrayKlass::complete_create_array_klass(ArrayKlass* k, KlassHandle super_klass, ModuleEntry* module_entry, TRAPS) {
+void ArrayKlass::complete_create_array_klass(ArrayKlass* k, Klass* super_klass, ModuleEntry* module_entry, TRAPS) {
   ResourceMark rm(THREAD);
-  k->initialize_supers(super_klass(), CHECK);
+  k->initialize_supers(super_klass, CHECK);
   k->vtable()->initialize_vtable(false, CHECK);
 
   // During bootstrapping, before java.base is defined, the module_entry may not be present yet.

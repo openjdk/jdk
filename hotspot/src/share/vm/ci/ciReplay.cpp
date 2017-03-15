@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -799,8 +799,8 @@ class CompileReplay : public StackObj {
         } else if (strcmp(field_signature, "[J") == 0) {
           value = oopFactory::new_longArray(length, CHECK);
         } else if (field_signature[0] == '[' && field_signature[1] == 'L') {
-          KlassHandle kelem = resolve_klass(field_signature + 1, CHECK);
-          value = oopFactory::new_objArray(kelem(), length, CHECK);
+          Klass* kelem = resolve_klass(field_signature + 1, CHECK);
+          value = oopFactory::new_objArray(kelem, length, CHECK);
         } else {
           report_error("unhandled array staticfield");
         }
@@ -840,8 +840,8 @@ class CompileReplay : public StackObj {
         Handle value = java_lang_String::create_from_str(string_value, CHECK);
         java_mirror->obj_field_put(fd.offset(), value());
       } else if (field_signature[0] == 'L') {
-        KlassHandle k = resolve_klass(string_value, CHECK);
-        oop value = InstanceKlass::cast(k())->allocate_instance(CHECK);
+        Klass* k = resolve_klass(string_value, CHECK);
+        oop value = InstanceKlass::cast(k)->allocate_instance(CHECK);
         java_mirror->obj_field_put(fd.offset(), value);
       } else {
         report_error("unhandled staticfield");

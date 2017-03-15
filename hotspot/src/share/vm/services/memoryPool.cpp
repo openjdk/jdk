@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,8 +86,7 @@ instanceOop MemoryPool::get_memory_pool_instance(TRAPS) {
   if (pool_obj == NULL) {
     // It's ok for more than one thread to execute the code up to the locked region.
     // Extra pool instances will just be gc'ed.
-    Klass* k = Management::sun_management_ManagementFactoryHelper_klass(CHECK_NULL);
-    instanceKlassHandle ik(THREAD, k);
+    InstanceKlass* ik = Management::sun_management_ManagementFactoryHelper_klass(CHECK_NULL);
 
     Handle pool_name = java_lang_String::create_from_str(_name, CHECK_NULL);
     jlong usage_threshold_value = (_usage_threshold->is_high_threshold_supported() ? 0 : -1L);

@@ -1405,7 +1405,7 @@ ClassFileStream* ClassLoader::search_module_entries(const GrowableArray<ModuleCl
   return NULL;
 }
 
-instanceKlassHandle ClassLoader::load_class(Symbol* name, bool search_append_only, TRAPS) {
+InstanceKlass* ClassLoader::load_class(Symbol* name, bool search_append_only, TRAPS) {
   assert(name != NULL, "invariant");
   assert(THREAD->is_Java_thread(), "must be a JavaThread");
 
@@ -1512,13 +1512,13 @@ instanceKlassHandle ClassLoader::load_class(Symbol* name, bool search_append_onl
   ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
   Handle protection_domain;
 
-  instanceKlassHandle result = KlassFactory::create_from_stream(stream,
-                                                                name,
-                                                                loader_data,
-                                                                protection_domain,
-                                                                NULL, // host_klass
-                                                                NULL, // cp_patches
-                                                                THREAD);
+  InstanceKlass* result = KlassFactory::create_from_stream(stream,
+                                                           name,
+                                                           loader_data,
+                                                           protection_domain,
+                                                           NULL, // host_klass
+                                                           NULL, // cp_patches
+                                                           THREAD);
   if (HAS_PENDING_EXCEPTION) {
     if (DumpSharedSpaces) {
       tty->print_cr("Preload Error: Failed to load %s", class_name);
@@ -1891,15 +1891,15 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
       // Construct name without extension
       TempNewSymbol sym = SymbolTable::new_symbol(buffer, CHECK);
       // Use loader to load and initialize class
-      Klass* ik = SystemDictionary::resolve_or_null(sym, loader, Handle(), THREAD);
-      instanceKlassHandle k (THREAD, ik);
-      if (k.not_null() && !HAS_PENDING_EXCEPTION) {
+      Klass* k = SystemDictionary::resolve_or_null(sym, loader, Handle(), THREAD);
+      if (k != NULL && !HAS_PENDING_EXCEPTION) {
         k->initialize(THREAD);
       }
       bool exception_occurred = HAS_PENDING_EXCEPTION;
       clear_pending_exception_if_not_oom(CHECK);
-      if (CompileTheWorldPreloadClasses && k.not_null()) {
-        ConstantPool::preload_and_initialize_all_classes(k->constants(), THREAD);
+      if (CompileTheWorldPreloadClasses && k != NULL) {
+        InstanceKlass* ik = InstanceKlass::cast(k);
+        ConstantPool::preload_and_initialize_all_classes(ik->constants(), THREAD);
         if (HAS_PENDING_EXCEPTION) {
           // If something went wrong in preloading we just ignore it
           clear_pending_exception_if_not_oom(CHECK);
@@ -1908,7 +1908,7 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
       }
 
       if (_compile_the_world_class_counter >= CompileTheWorldStartAt) {
-        if (k.is_null() || exception_occurred) {
+        if (k == NULL || exception_occurred) {
           // If something went wrong (e.g. ExceptionInInitializerError) we skip this class
           tty->print_cr("CompileTheWorld (%d) : Skipping %s", _compile_the_world_class_counter, buffer);
         } else {
@@ -1916,8 +1916,9 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
           // Preload all classes to get around uncommon traps
           // Iterate over all methods in class
           int comp_level = CompilationPolicy::policy()->initial_compile_level();
-          for (int n = 0; n < k->methods()->length(); n++) {
-            methodHandle m (THREAD, k->methods()->at(n));
+          InstanceKlass* ik = InstanceKlass::cast(k);
+          for (int n = 0; n < ik->methods()->length(); n++) {
+            methodHandle m (THREAD, ik->methods()->at(n));
             if (can_be_compiled(m, comp_level)) {
               if (++_codecache_sweep_counter == CompileTheWorldSafepointInterval) {
                 // Give sweeper a chance to keep up with CTW

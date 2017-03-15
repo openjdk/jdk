@@ -735,7 +735,7 @@ static void initialize_static_field(fieldDescriptor* fd, Handle mirror, TRAPS) {
 }
 
 
-void java_lang_Class::fixup_mirror(KlassHandle k, TRAPS) {
+void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
   assert(InstanceMirrorKlass::offset_of_static_fields() != 0, "must have been computed already");
 
   // If the offset was read from the shared archive, it was fixed up already
@@ -744,7 +744,7 @@ void java_lang_Class::fixup_mirror(KlassHandle k, TRAPS) {
       // During bootstrap, java.lang.Class wasn't loaded so static field
       // offsets were computed without the size added it.  Go back and
       // update all the static field offsets to included the size.
-        for (JavaFieldStream fs(InstanceKlass::cast(k())); !fs.done(); fs.next()) {
+        for (JavaFieldStream fs(InstanceKlass::cast(k)); !fs.done(); fs.next()) {
         if (fs.access_flags().is_static()) {
           int real_offset = fs.offset() + InstanceMirrorKlass::offset_of_static_fields();
           fs.set_offset(real_offset);
@@ -755,7 +755,7 @@ void java_lang_Class::fixup_mirror(KlassHandle k, TRAPS) {
   create_mirror(k, Handle(), Handle(), Handle(), CHECK);
 }
 
-void java_lang_Class::initialize_mirror_fields(KlassHandle k,
+void java_lang_Class::initialize_mirror_fields(Klass* k,
                                                Handle mirror,
                                                Handle protection_domain,
                                                TRAPS) {
@@ -769,11 +769,11 @@ void java_lang_Class::initialize_mirror_fields(KlassHandle k,
   set_protection_domain(mirror(), protection_domain());
 
   // Initialize static fields
-  InstanceKlass::cast(k())->do_local_static_fields(&initialize_static_field, mirror, CHECK);
+  InstanceKlass::cast(k)->do_local_static_fields(&initialize_static_field, mirror, CHECK);
 }
 
 // Set the java.lang.reflect.Module module field in the java_lang_Class mirror
-void java_lang_Class::set_mirror_module_field(KlassHandle k, Handle mirror, Handle module, TRAPS) {
+void java_lang_Class::set_mirror_module_field(Klass* k, Handle mirror, Handle module, TRAPS) {
   if (module.is_null()) {
     // During startup, the module may be NULL only if java.base has not been defined yet.
     // Put the class on the fixup_module_list to patch later when the java.lang.reflect.Module
@@ -791,7 +791,7 @@ void java_lang_Class::set_mirror_module_field(KlassHandle k, Handle mirror, Hand
           set_fixup_module_field_list(list);
         }
         k->class_loader_data()->inc_keep_alive();
-        fixup_module_field_list()->push(k());
+        fixup_module_field_list()->push(k);
       } else {
         javabase_was_defined = true;
       }
@@ -814,7 +814,7 @@ void java_lang_Class::set_mirror_module_field(KlassHandle k, Handle mirror, Hand
   }
 }
 
-void java_lang_Class::create_mirror(KlassHandle k, Handle class_loader,
+void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
                                     Handle module, Handle protection_domain, TRAPS) {
   assert(k->java_mirror() == NULL, "should only assign mirror once");
   // Use this moment of initialization to cache modifier_flags also,
@@ -831,8 +831,8 @@ void java_lang_Class::create_mirror(KlassHandle k, Handle class_loader,
     Handle mirror(THREAD, mirror_oop);
 
     // Setup indirection from mirror->klass
-    if (!k.is_null()) {
-      java_lang_Class::set_klass(mirror(), k());
+    if (k != NULL) {
+      java_lang_Class::set_klass(mirror(), k);
     }
 
     InstanceMirrorKlass* mk = InstanceMirrorKlass::cast(mirror->klass());
@@ -844,11 +844,11 @@ void java_lang_Class::create_mirror(KlassHandle k, Handle class_loader,
     if (k->is_array_klass()) {
       oop comp_mirror;
       if (k->is_typeArray_klass()) {
-        BasicType type = TypeArrayKlass::cast(k())->element_type();
+        BasicType type = TypeArrayKlass::cast(k)->element_type();
         comp_mirror = Universe::java_mirror(type);
       } else {
         assert(k->is_objArray_klass(), "Must be");
-        Klass* element_klass = ObjArrayKlass::cast(k())->element_klass();
+        Klass* element_klass = ObjArrayKlass::cast(k)->element_klass();
         assert(element_klass != NULL, "Must have an element klass");
         comp_mirror = element_klass->java_mirror();
       }
@@ -857,7 +857,7 @@ void java_lang_Class::create_mirror(KlassHandle k, Handle class_loader,
       // Two-way link between the array klass and its component mirror:
       // (array_klass) k -> mirror -> component_mirror -> array_klass -> k
       set_component_mirror(mirror(), comp_mirror);
-      set_array_klass(comp_mirror, k());
+      set_array_klass(comp_mirror, k);
     } else {
       assert(k->is_instance_klass(), "Must be");
 
@@ -881,7 +881,7 @@ void java_lang_Class::create_mirror(KlassHandle k, Handle class_loader,
 
     // Setup indirection from klass->mirror last
     // after any exceptions can happen during allocations.
-    if (!k.is_null()) {
+    if (k != NULL) {
       k->set_java_mirror(mirror());
     }
   } else {
@@ -890,11 +890,11 @@ void java_lang_Class::create_mirror(KlassHandle k, Handle class_loader,
        new (ResourceObj::C_HEAP, mtClass) GrowableArray<Klass*>(40, true);
       set_fixup_mirror_list(list);
     }
-    fixup_mirror_list()->push(k());
+    fixup_mirror_list()->push(k);
   }
 }
 
-void java_lang_Class::fixup_module_field(KlassHandle k, Handle module) {
+void java_lang_Class::fixup_module_field(Klass* k, Handle module) {
   assert(_module_offset != 0, "must have been computed already");
   java_lang_Class::set_module(k->java_mirror(), module());
 }
@@ -1876,7 +1876,7 @@ void java_lang_Throwable::print_stack_trace(Handle throwable, outputStream* st) 
       JavaValue cause(T_OBJECT);
       JavaCalls::call_virtual(&cause,
                               throwable,
-                              KlassHandle(THREAD, throwable->klass()),
+                              throwable->klass(),
                               vmSymbols::getCause_name(),
                               vmSymbols::void_throwable_signature(),
                               THREAD);
@@ -1904,7 +1904,7 @@ void java_lang_Throwable::java_printStackTrace(Handle throwable, TRAPS) {
   JavaValue result(T_VOID);
   JavaCalls::call_virtual(&result,
                           throwable,
-                          KlassHandle(THREAD, SystemDictionary::Throwable_klass()),
+                          SystemDictionary::Throwable_klass(),
                           vmSymbols::printStackTrace_name(),
                           vmSymbols::void_method_signature(),
                           THREAD);
@@ -2153,14 +2153,13 @@ void java_lang_Throwable::get_stack_trace_elements(Handle throwable,
 
 oop java_lang_StackTraceElement::create(const methodHandle& method, int bci, TRAPS) {
   // Allocate java.lang.StackTraceElement instance
-  Klass* k = SystemDictionary::StackTraceElement_klass();
+  InstanceKlass* k = SystemDictionary::StackTraceElement_klass();
   assert(k != NULL, "must be loaded in 1.4+");
-  instanceKlassHandle ik (THREAD, k);
-  if (ik->should_be_initialized()) {
-    ik->initialize(CHECK_0);
+  if (k->should_be_initialized()) {
+    k->initialize(CHECK_0);
   }
 
-  Handle element = ik->allocate_instance_handle(CHECK_0);
+  Handle element = k->allocate_instance_handle(CHECK_0);
 
   int version = method->constants()->version();
   fill_in(element, method->method_holder(), method, version, bci, method->name(), CHECK_0);
@@ -2489,10 +2488,10 @@ Handle java_lang_reflect_Constructor::create(TRAPS) {
   assert(Universe::is_fully_initialized(), "Need to find another solution to the reflection problem");
   Symbol* name = vmSymbols::java_lang_reflect_Constructor();
   Klass* k = SystemDictionary::resolve_or_fail(name, true, CHECK_NH);
-  instanceKlassHandle klass (THREAD, k);
+  InstanceKlass* ik = InstanceKlass::cast(k);
   // Ensure it is initialized
-  klass->initialize(CHECK_NH);
-  return klass->allocate_instance_handle(THREAD);
+  ik->initialize(CHECK_NH);
+  return ik->allocate_instance_handle(THREAD);
 }
 
 oop java_lang_reflect_Constructor::clazz(oop reflect) {
@@ -2629,10 +2628,10 @@ Handle java_lang_reflect_Field::create(TRAPS) {
   assert(Universe::is_fully_initialized(), "Need to find another solution to the reflection problem");
   Symbol* name = vmSymbols::java_lang_reflect_Field();
   Klass* k = SystemDictionary::resolve_or_fail(name, true, CHECK_NH);
-  instanceKlassHandle klass (THREAD, k);
+  InstanceKlass* ik = InstanceKlass::cast(k);
   // Ensure it is initialized
-  klass->initialize(CHECK_NH);
-  return klass->allocate_instance_handle(THREAD);
+  ik->initialize(CHECK_NH);
+  return ik->allocate_instance_handle(THREAD);
 }
 
 oop java_lang_reflect_Field::clazz(oop reflect) {
@@ -2756,10 +2755,10 @@ Handle java_lang_reflect_Parameter::create(TRAPS) {
   assert(Universe::is_fully_initialized(), "Need to find another solution to the reflection problem");
   Symbol* name = vmSymbols::java_lang_reflect_Parameter();
   Klass* k = SystemDictionary::resolve_or_fail(name, true, CHECK_NH);
-  instanceKlassHandle klass (THREAD, k);
+  InstanceKlass* ik = InstanceKlass::cast(k);
   // Ensure it is initialized
-  klass->initialize(CHECK_NH);
-  return klass->allocate_instance_handle(THREAD);
+  ik->initialize(CHECK_NH);
+  return ik->allocate_instance_handle(THREAD);
 }
 
 oop java_lang_reflect_Parameter::name(oop param) {
@@ -2812,11 +2811,10 @@ Handle java_lang_reflect_Module::create(Handle loader, Handle module_name, TRAPS
 
   Symbol* name = vmSymbols::java_lang_reflect_Module();
   Klass* k = SystemDictionary::resolve_or_fail(name, true, CHECK_NH);
-  instanceKlassHandle klass (THREAD, k);
-
-  Handle jlrmh = klass->allocate_instance_handle(CHECK_NH);
+  InstanceKlass* ik = InstanceKlass::cast(k);
+  Handle jlrmh = ik->allocate_instance_handle(CHECK_NH);
   JavaValue result(T_VOID);
-  JavaCalls::call_special(&result, jlrmh, KlassHandle(THREAD, klass()),
+  JavaCalls::call_special(&result, jlrmh, ik,
                           vmSymbols::object_initializer_name(),
                           vmSymbols::java_lang_reflect_module_init_signature(),
                           loader, module_name, CHECK_NH);
@@ -2879,11 +2877,10 @@ void java_lang_reflect_Module::set_module_entry(oop module, ModuleEntry* module_
 
 Handle reflect_ConstantPool::create(TRAPS) {
   assert(Universe::is_fully_initialized(), "Need to find another solution to the reflection problem");
-  Klass* k = SystemDictionary::reflect_ConstantPool_klass();
-  instanceKlassHandle klass (THREAD, k);
+  InstanceKlass* k = SystemDictionary::reflect_ConstantPool_klass();
   // Ensure it is initialized
-  klass->initialize(CHECK_NH);
-  return klass->allocate_instance_handle(THREAD);
+  k->initialize(CHECK_NH);
+  return k->allocate_instance_handle(THREAD);
 }
 
 
@@ -2921,9 +2918,9 @@ void reflect_UnsafeStaticFieldAccessorImpl::compute_offsets() {
 oop java_lang_boxing_object::initialize_and_allocate(BasicType type, TRAPS) {
   Klass* k = SystemDictionary::box_klass(type);
   if (k == NULL)  return NULL;
-  instanceKlassHandle h (THREAD, k);
-  if (!h->is_initialized())  h->initialize(CHECK_0);
-  return h->allocate_instance(THREAD);
+  InstanceKlass* ik = InstanceKlass::cast(k);
+  if (!ik->is_initialized())  ik->initialize(CHECK_0);
+  return ik->allocate_instance(THREAD);
 }
 
 
@@ -3894,10 +3891,10 @@ bool JavaClasses::check_offset(const char *klass_name, int hardcoded_offset, con
   fieldDescriptor fd;
   TempNewSymbol klass_sym = SymbolTable::new_symbol(klass_name, CATCH);
   Klass* k = SystemDictionary::resolve_or_fail(klass_sym, true, CATCH);
-  instanceKlassHandle h_klass (THREAD, k);
+  InstanceKlass* ik = InstanceKlass::cast(k);
   TempNewSymbol f_name = SymbolTable::new_symbol(field_name, CATCH);
   TempNewSymbol f_sig  = SymbolTable::new_symbol(field_sig, CATCH);
-  if (!h_klass->find_local_field(f_name, f_sig, &fd)) {
+  if (!ik->find_local_field(f_name, f_sig, &fd)) {
     tty->print_cr("Nonstatic field %s.%s not found", klass_name, field_name);
     return false;
   }
@@ -3920,10 +3917,10 @@ bool JavaClasses::check_static_offset(const char *klass_name, int hardcoded_offs
   fieldDescriptor fd;
   TempNewSymbol klass_sym = SymbolTable::new_symbol(klass_name, CATCH);
   Klass* k = SystemDictionary::resolve_or_fail(klass_sym, true, CATCH);
-  instanceKlassHandle h_klass (THREAD, k);
+  InstanceKlass* ik = InstanceKlass::cast(k);
   TempNewSymbol f_name = SymbolTable::new_symbol(field_name, CATCH);
   TempNewSymbol f_sig  = SymbolTable::new_symbol(field_sig, CATCH);
-  if (!h_klass->find_local_field(f_name, f_sig, &fd)) {
+  if (!ik->find_local_field(f_name, f_sig, &fd)) {
     tty->print_cr("Static field %s.%s not found", klass_name, field_name);
     return false;
   }
@@ -3945,10 +3942,10 @@ bool JavaClasses::check_constant(const char *klass_name, int hardcoded_constant,
   fieldDescriptor fd;
   TempNewSymbol klass_sym = SymbolTable::new_symbol(klass_name, CATCH);
   Klass* k = SystemDictionary::resolve_or_fail(klass_sym, true, CATCH);
-  instanceKlassHandle h_klass (THREAD, k);
+  InstanceKlass* ik = InstanceKlass::cast(k);
   TempNewSymbol f_name = SymbolTable::new_symbol(field_name, CATCH);
   TempNewSymbol f_sig  = SymbolTable::new_symbol(field_sig, CATCH);
-  if (!h_klass->find_local_field(f_name, f_sig, &fd)) {
+  if (!ik->find_local_field(f_name, f_sig, &fd)) {
     tty->print_cr("Static field %s.%s not found", klass_name, field_name);
     return false;
   }

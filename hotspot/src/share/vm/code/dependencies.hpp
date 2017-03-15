@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -737,13 +737,13 @@ class DepChange : public StackObj {
 class KlassDepChange : public DepChange {
  private:
   // each change set is rooted in exactly one new type (at present):
-  KlassHandle _new_type;
+  Klass* _new_type;
 
   void initialize();
 
  public:
   // notes the new type, marks it and all its super-types
-  KlassDepChange(KlassHandle new_type)
+  KlassDepChange(Klass* new_type)
     : _new_type(new_type)
   {
     initialize();
@@ -759,7 +759,7 @@ class KlassDepChange : public DepChange {
     nm->mark_for_deoptimization(/*inc_recompile_counts=*/true);
   }
 
-  Klass* new_type() { return _new_type(); }
+  Klass* new_type() { return _new_type; }
 
   // involves_context(k) is true if k is new_type or any of the super types
   bool involves_context(Klass* k);

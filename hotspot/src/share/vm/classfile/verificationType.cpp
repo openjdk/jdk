@@ -42,17 +42,15 @@ VerificationType VerificationType::from_tag(u1 tag) {
   }
 }
 
-bool VerificationType::resolve_and_check_assignability(instanceKlassHandle klass, Symbol* name,
+bool VerificationType::resolve_and_check_assignability(InstanceKlass* klass, Symbol* name,
          Symbol* from_name, bool from_field_is_protected, bool from_is_array, bool from_is_object, TRAPS) {
   HandleMark hm(THREAD);
-  Klass* obj = SystemDictionary::resolve_or_fail(
+  Klass* this_class = SystemDictionary::resolve_or_fail(
       name, Handle(THREAD, klass->class_loader()),
       Handle(THREAD, klass->protection_domain()), true, CHECK_false);
   if (log_is_enabled(Debug, class, resolve)) {
-    Verifier::trace_class_resolution(obj, klass());
+    Verifier::trace_class_resolution(this_class, klass);
   }
-
-  KlassHandle this_class(THREAD, obj);
 
   if (this_class->is_interface() && (!from_field_is_protected ||
       from_name != vmSymbols::java_lang_Object())) {
@@ -68,9 +66,9 @@ bool VerificationType::resolve_and_check_assignability(instanceKlassHandle klass
         from_name, Handle(THREAD, klass->class_loader()),
         Handle(THREAD, klass->protection_domain()), true, CHECK_false);
     if (log_is_enabled(Debug, class, resolve)) {
-      Verifier::trace_class_resolution(from_class, klass());
+      Verifier::trace_class_resolution(from_class, klass);
     }
-    return InstanceKlass::cast(from_class)->is_subclass_of(this_class());
+    return InstanceKlass::cast(from_class)->is_subclass_of(this_class);
   }
 
   return false;
@@ -79,7 +77,7 @@ bool VerificationType::resolve_and_check_assignability(instanceKlassHandle klass
 bool VerificationType::is_reference_assignable_from(
     const VerificationType& from, ClassVerifier* context,
     bool from_field_is_protected, TRAPS) const {
-  instanceKlassHandle klass = context->current_class();
+  InstanceKlass* klass = context->current_class();
   if (from.is_null()) {
     // null is assignable to any reference
     return true;
@@ -94,7 +92,7 @@ bool VerificationType::is_reference_assignable_from(
       return true;
     }
 
-    if (DumpSharedSpaces && SystemDictionaryShared::add_verification_constraint(klass(),
+    if (DumpSharedSpaces && SystemDictionaryShared::add_verification_constraint(klass,
               name(), from.name(), from_field_is_protected, from.is_array(),
               from.is_object())) {
       // If add_verification_constraint() returns true, the resolution/check should be
@@ -102,7 +100,7 @@ bool VerificationType::is_reference_assignable_from(
       return true;
     }
 
-    return resolve_and_check_assignability(klass(), name(), from.name(),
+    return resolve_and_check_assignability(klass, name(), from.name(),
           from_field_is_protected, from.is_array(), from.is_object(), THREAD);
   } else if (is_array() && from.is_array()) {
     VerificationType comp_this = get_component(context, CHECK_false);

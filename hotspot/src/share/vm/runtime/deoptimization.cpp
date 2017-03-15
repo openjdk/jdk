@@ -810,19 +810,19 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, GrowableArra
     assert(objects->at(i)->is_object(), "invalid debug information");
     ObjectValue* sv = (ObjectValue*) objects->at(i);
 
-    KlassHandle k(java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()()));
+    Klass* k = java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()());
     oop obj = NULL;
 
     if (k->is_instance_klass()) {
-      InstanceKlass* ik = InstanceKlass::cast(k());
+      InstanceKlass* ik = InstanceKlass::cast(k);
       obj = ik->allocate_instance(THREAD);
     } else if (k->is_typeArray_klass()) {
-      TypeArrayKlass* ak = TypeArrayKlass::cast(k());
+      TypeArrayKlass* ak = TypeArrayKlass::cast(k);
       assert(sv->field_size() % type2size[ak->element_type()] == 0, "non-integral array length");
       int len = sv->field_size() / type2size[ak->element_type()];
       obj = ak->allocate(len, THREAD);
     } else if (k->is_objArray_klass()) {
-      ObjArrayKlass* ak = ObjArrayKlass::cast(k());
+      ObjArrayKlass* ak = ObjArrayKlass::cast(k);
       obj = ak->allocate(sv->field_size(), THREAD);
     }
 
@@ -1079,7 +1079,7 @@ static int reassign_fields_by_klass(InstanceKlass* klass, frame* fr, RegisterMap
 void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, bool realloc_failures, bool skip_internal) {
   for (int i = 0; i < objects->length(); i++) {
     ObjectValue* sv = (ObjectValue*) objects->at(i);
-    KlassHandle k(java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()()));
+    Klass* k = java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()());
     Handle obj = sv->value();
     assert(obj.not_null() || realloc_failures, "reallocation was missed");
     if (PrintDeoptimizationDetails) {
@@ -1090,10 +1090,10 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
     }
 
     if (k->is_instance_klass()) {
-      InstanceKlass* ik = InstanceKlass::cast(k());
+      InstanceKlass* ik = InstanceKlass::cast(k);
       reassign_fields_by_klass(ik, fr, reg_map, sv, 0, obj(), skip_internal);
     } else if (k->is_typeArray_klass()) {
-      TypeArrayKlass* ak = TypeArrayKlass::cast(k());
+      TypeArrayKlass* ak = TypeArrayKlass::cast(k);
       reassign_type_array_elements(fr, reg_map, sv, (typeArrayOop) obj(), ak->element_type());
     } else if (k->is_objArray_klass()) {
       reassign_object_array_elements(fr, reg_map, sv, (objArrayOop) obj());
@@ -1137,7 +1137,7 @@ void Deoptimization::print_objects(GrowableArray<ScopeValue*>* objects, bool rea
 
   for (int i = 0; i < objects->length(); i++) {
     ObjectValue* sv = (ObjectValue*) objects->at(i);
-    KlassHandle k(java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()()));
+    Klass* k = java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()());
     Handle obj = sv->value();
 
     tty->print("     object <" INTPTR_FORMAT "> of type ", p2i(sv->value()()));

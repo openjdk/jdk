@@ -760,7 +760,7 @@ void ClassLoaderDataGraph::log_creation(Handle loader, ClassLoaderData* cld, TRA
     // Include the result of loader.toString() in the output. This allows
     // the user of the log to identify the class loader instance.
     JavaValue result(T_OBJECT);
-    KlassHandle spec_klass(THREAD, SystemDictionary::ClassLoader_klass());
+    Klass* spec_klass = SystemDictionary::ClassLoader_klass();
     JavaCalls::call_virtual(&result,
                             loader,
                             spec_klass,

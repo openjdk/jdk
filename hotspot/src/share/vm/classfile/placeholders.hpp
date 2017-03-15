@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,7 +163,7 @@ class PlaceholderEntry : public HashtableEntry<Symbol*, mtClass> {
   bool              _havesupername; // distinguish between null supername, and unknown
   Symbol*           _supername;
   Thread*           _definer;       // owner of define token
-  Klass*            _instanceKlass; // InstanceKlass from successful define
+  InstanceKlass*    _instanceKlass; // InstanceKlass from successful define
   SeenThread*       _superThreadQ;  // doubly-linked queue of Threads loading a superclass for this class
   SeenThread*       _loadInstanceThreadQ;  // loadInstance thread
                                     // can be multiple threads if classloader object lock broken by application
@@ -193,8 +193,8 @@ class PlaceholderEntry : public HashtableEntry<Symbol*, mtClass> {
   Thread*            definer()             const {return _definer; }
   void               set_definer(Thread* definer) { _definer = definer; }
 
-  Klass*             instance_klass()      const {return _instanceKlass; }
-  void               set_instance_klass(Klass* ik) { _instanceKlass = ik; }
+  InstanceKlass*     instance_klass()      const {return _instanceKlass; }
+  void               set_instance_klass(InstanceKlass* ik) { _instanceKlass = ik; }
 
   SeenThread*        superThreadQ()        const { return _superThreadQ; }
   void               set_superThreadQ(SeenThread* SeenThread) { _superThreadQ = SeenThread; }

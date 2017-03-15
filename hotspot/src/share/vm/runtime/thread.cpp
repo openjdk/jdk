@@ -950,27 +950,27 @@ static void initialize_class(Symbol* class_name, TRAPS) {
 // Creates the initial ThreadGroup
 static Handle create_initial_thread_group(TRAPS) {
   Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_ThreadGroup(), true, CHECK_NH);
-  instanceKlassHandle klass (THREAD, k);
+  InstanceKlass* ik = InstanceKlass::cast(k);
 
-  Handle system_instance = klass->allocate_instance_handle(CHECK_NH);
+  Handle system_instance = ik->allocate_instance_handle(CHECK_NH);
   {
     JavaValue result(T_VOID);
     JavaCalls::call_special(&result,
                             system_instance,
-                            klass,
+                            ik,
                             vmSymbols::object_initializer_name(),
                             vmSymbols::void_method_signature(),
                             CHECK_NH);
   }
   Universe::set_system_thread_group(system_instance());
 
-  Handle main_instance = klass->allocate_instance_handle(CHECK_NH);
+  Handle main_instance = ik->allocate_instance_handle(CHECK_NH);
   {
     JavaValue result(T_VOID);
     Handle string = java_lang_String::create_from_str("main", CHECK_NH);
     JavaCalls::call_special(&result,
                             main_instance,
-                            klass,
+                            ik,
                             vmSymbols::object_initializer_name(),
                             vmSymbols::threadgroup_string_void_signature(),
                             system_instance,
@@ -984,8 +984,8 @@ static Handle create_initial_thread_group(TRAPS) {
 static oop create_initial_thread(Handle thread_group, JavaThread* thread,
                                  TRAPS) {
   Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_Thread(), true, CHECK_NULL);
-  instanceKlassHandle klass (THREAD, k);
-  instanceHandle thread_oop = klass->allocate_instance_handle(CHECK_NULL);
+  InstanceKlass* ik = InstanceKlass::cast(k);
+  instanceHandle thread_oop = ik->allocate_instance_handle(CHECK_NULL);
 
   java_lang_Thread::set_thread(thread_oop(), thread);
   java_lang_Thread::set_priority(thread_oop(), NormPriority);
@@ -995,7 +995,7 @@ static oop create_initial_thread(Handle thread_group, JavaThread* thread,
 
   JavaValue result(T_VOID);
   JavaCalls::call_special(&result, thread_oop,
-                          klass,
+                          ik,
                           vmSymbols::object_initializer_name(),
                           vmSymbols::threadgroup_string_void_signature(),
                           thread_group,
@@ -1054,9 +1054,8 @@ static const char* get_java_runtime_version(TRAPS) {
 // General purpose hook into Java code, run once when the VM is initialized.
 // The Java library method itself may be changed independently from the VM.
 static void call_postVMInitHook(TRAPS) {
-  Klass* k = SystemDictionary::resolve_or_null(vmSymbols::jdk_internal_vm_PostVMInitHook(), THREAD);
-  instanceKlassHandle klass (THREAD, k);
-  if (klass.not_null()) {
+  Klass* klass = SystemDictionary::resolve_or_null(vmSymbols::jdk_internal_vm_PostVMInitHook(), THREAD);
+  if (klass != NULL) {
     JavaValue result(T_VOID);
     JavaCalls::call_static(&result, klass, vmSymbols::run_method_name(),
                            vmSymbols::void_method_signature(),
@@ -1070,8 +1069,7 @@ static void reset_vm_info_property(TRAPS) {
   const char *vm_info = VM_Version::vm_info_string();
 
   // java.lang.System class
-  Klass* k =  SystemDictionary::resolve_or_fail(vmSymbols::java_lang_System(), true, CHECK);
-  instanceKlassHandle klass (THREAD, k);
+  Klass* klass =  SystemDictionary::resolve_or_fail(vmSymbols::java_lang_System(), true, CHECK);
 
   // setProperty arguments
   Handle key_str    = java_lang_String::create_from_str("java.vm.info", CHECK);
@@ -1097,8 +1095,8 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
   assert(threadObj() == NULL, "should only create Java thread object once");
 
   Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_Thread(), true, CHECK);
-  instanceKlassHandle klass (THREAD, k);
-  instanceHandle thread_oop = klass->allocate_instance_handle(CHECK);
+  InstanceKlass* ik = InstanceKlass::cast(k);
+  instanceHandle thread_oop = ik->allocate_instance_handle(CHECK);
 
   java_lang_Thread::set_thread(thread_oop(), this);
   java_lang_Thread::set_priority(thread_oop(), NormPriority);
@@ -1110,7 +1108,7 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
     // Thread gets assigned specified name and null target
     JavaCalls::call_special(&result,
                             thread_oop,
-                            klass,
+                            ik,
                             vmSymbols::object_initializer_name(),
                             vmSymbols::threadgroup_string_void_signature(),
                             thread_group, // Argument 1
@@ -1121,7 +1119,7 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
     // (java.lang.Thread doesn't have a constructor taking only a ThreadGroup argument)
     JavaCalls::call_special(&result,
                             thread_oop,
-                            klass,
+                            ik,
                             vmSymbols::object_initializer_name(),
                             vmSymbols::threadgroup_runnable_void_signature(),
                             thread_group, // Argument 1
@@ -1138,7 +1136,7 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
     return;
   }
 
-  KlassHandle group(THREAD, SystemDictionary::ThreadGroup_klass());
+  Klass* group =  SystemDictionary::ThreadGroup_klass();
   Handle threadObj(THREAD, this->threadObj());
 
   JavaCalls::call_special(&result,
@@ -1779,7 +1777,7 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     if (uncaught_exception.not_null()) {
       EXCEPTION_MARK;
       // Call method Thread.dispatchUncaughtException().
-      KlassHandle thread_klass(THREAD, SystemDictionary::Thread_klass());
+      Klass* thread_klass = SystemDictionary::Thread_klass();
       JavaValue result(T_VOID);
       JavaCalls::call_virtual(&result,
                               threadObj, thread_klass,
@@ -1817,7 +1815,7 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
       while (java_lang_Thread::threadGroup(threadObj()) != NULL && (count-- > 0)) {
         EXCEPTION_MARK;
         JavaValue result(T_VOID);
-        KlassHandle thread_klass(THREAD, SystemDictionary::Thread_klass());
+        Klass* thread_klass = SystemDictionary::Thread_klass();
         JavaCalls::call_virtual(&result,
                                 threadObj, thread_klass,
                                 vmSymbols::exit_method_name(),
@@ -3388,9 +3386,7 @@ void Threads::threads_do(ThreadClosure* tc) {
 //     fields in, out, and err. Set up java signal handlers, OS-specific
 //     system settings, and thread group of the main thread.
 static void call_initPhase1(TRAPS) {
-  Klass* k =  SystemDictionary::resolve_or_fail(vmSymbols::java_lang_System(), true, CHECK);
-  instanceKlassHandle klass (THREAD, k);
-
+  Klass* klass =  SystemDictionary::resolve_or_fail(vmSymbols::java_lang_System(), true, CHECK);
   JavaValue result(T_VOID);
   JavaCalls::call_static(&result, klass, vmSymbols::initPhase1_name(),
                                          vmSymbols::void_method_signature(), CHECK);
@@ -3410,8 +3406,7 @@ static void call_initPhase1(TRAPS) {
 static void call_initPhase2(TRAPS) {
   TraceTime timer("Phase2 initialization", TRACETIME_LOG(Info, modules, startuptime));
 
-  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_System(), true, CHECK);
-  instanceKlassHandle klass (THREAD, k);
+  Klass* klass = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_System(), true, CHECK);
 
   JavaValue result(T_VOID);
   JavaCalls::call_static(&result, klass, vmSymbols::initPhase2_name(),
@@ -3426,9 +3421,7 @@ static void call_initPhase2(TRAPS) {
 //     and system class loader may be a custom class loaded from -Xbootclasspath/a,
 //     other modules or the application's classpath.
 static void call_initPhase3(TRAPS) {
-  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_System(), true, CHECK);
-  instanceKlassHandle klass (THREAD, k);
-
+  Klass* klass = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_System(), true, CHECK);
   JavaValue result(T_VOID);
   JavaCalls::call_static(&result, klass, vmSymbols::initPhase3_name(),
                                          vmSymbols::void_method_signature(), CHECK);
@@ -4064,10 +4057,10 @@ void JavaThread::invoke_shutdown_hooks() {
   }
 
   EXCEPTION_MARK;
-  Klass* k =
+  Klass* shutdown_klass =
     SystemDictionary::resolve_or_null(vmSymbols::java_lang_Shutdown(),
                                       THREAD);
-  if (k != NULL) {
+  if (shutdown_klass != NULL) {
     // SystemDictionary::resolve_or_null will return null if there was
     // an exception.  If we cannot load the Shutdown class, just don't
     // call Shutdown.shutdown() at all.  This will mean the shutdown hooks
@@ -4075,7 +4068,6 @@ void JavaThread::invoke_shutdown_hooks() {
     // Note that if a shutdown hook was registered or runFinalizersOnExit
     // was called, the Shutdown class would have already been loaded
     // (Runtime.addShutdownHook and runFinalizersOnExit will load it).
-    instanceKlassHandle shutdown_klass (THREAD, k);
     JavaValue result(T_VOID);
     JavaCalls::call_static(&result,
                            shutdown_klass,

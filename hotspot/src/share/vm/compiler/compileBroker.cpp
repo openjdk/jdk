@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -683,7 +683,7 @@ JavaThread* CompileBroker::make_thread(const char* name, CompileQueue* queue, Co
                                        AbstractCompiler* comp, bool compiler_thread, TRAPS) {
   JavaThread* thread = NULL;
   Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_Thread(), true, CHECK_0);
-  instanceKlassHandle klass (THREAD, k);
+  InstanceKlass* klass = InstanceKlass::cast(k);
   instanceHandle thread_oop = klass->allocate_instance_handle(CHECK_0);
   Handle string = java_lang_String::create_from_str(name, CHECK_0);
 

@@ -708,7 +708,7 @@ bool Reflection::is_same_class_package(const Klass* class1, const Klass* class2)
 // If inner_is_member, require the inner to be a member of the outer.
 // If !inner_is_member, require the inner to be anonymous (a non-member).
 // Caller is responsible for figuring out in advance which case must be true.
-void Reflection::check_for_inner_class(instanceKlassHandle outer, instanceKlassHandle inner,
+void Reflection::check_for_inner_class(const InstanceKlass* outer, const InstanceKlass* inner,
                                        bool inner_is_member, TRAPS) {
   InnerClassesIterator iter(outer);
   constantPoolHandle cp   (THREAD, outer->constants());
@@ -718,9 +718,9 @@ void Reflection::check_for_inner_class(instanceKlassHandle outer, instanceKlassH
 
      if (inner_is_member && ioff != 0 && ooff != 0) {
         Klass* o = cp->klass_at(ooff, CHECK);
-        if (o == outer()) {
+        if (o == outer) {
           Klass* i = cp->klass_at(ioff, CHECK);
-          if (i == inner()) {
+          if (i == inner) {
             return;
           }
         }
@@ -728,7 +728,7 @@ void Reflection::check_for_inner_class(instanceKlassHandle outer, instanceKlassH
      if (!inner_is_member && ioff != 0 && ooff == 0 &&
          cp->klass_name_at_matches(inner, ioff)) {
         Klass* i = cp->klass_at(ioff, CHECK);
-        if (i == inner()) {
+        if (i == inner) {
           return;
         }
      }
@@ -802,7 +802,7 @@ static objArrayHandle get_exception_types(methodHandle method, TRAPS) {
   return method->resolved_checked_exceptions(THREAD);
 }
 
-static Handle new_type(Symbol* signature, KlassHandle k, TRAPS) {
+static Handle new_type(Symbol* signature, Klass* k, TRAPS) {
   // Basic types
   BasicType type = vmSymbols::signature_type(signature);
   if (type != T_OBJECT) {
@@ -829,7 +829,7 @@ oop Reflection::new_method(const methodHandle& method, bool for_constant_pool_ac
   assert(!method()->is_initializer() ||
          (for_constant_pool_access && method()->is_static()),
          "should call new_constructor instead");
-  instanceKlassHandle holder (THREAD, method->method_holder());
+  InstanceKlass* holder = method->method_holder();
   int slot = method->method_idnum();
 
   Symbol*  signature  = method->signature();
@@ -890,7 +890,7 @@ oop Reflection::new_method(const methodHandle& method, bool for_constant_pool_ac
 oop Reflection::new_constructor(const methodHandle& method, TRAPS) {
   assert(method()->is_initializer(), "should call new_method instead");
 
-  instanceKlassHandle  holder (THREAD, method->method_holder());
+  InstanceKlass* holder = method->method_holder();
   int slot = method->method_idnum();
 
   Symbol*  signature  = method->signature();
@@ -938,7 +938,7 @@ oop Reflection::new_field(fieldDescriptor* fd, TRAPS) {
   oop name_oop = StringTable::intern(field_name, CHECK_NULL);
   Handle name = Handle(THREAD, name_oop);
   Symbol*  signature  = fd->signature();
-  instanceKlassHandle  holder    (THREAD, fd->field_holder());
+  InstanceKlass* holder = fd->field_holder();
   Handle type = new_type(signature, holder, CHECK_NULL);
   Handle rh  = java_lang_reflect_Field::create(CHECK_NULL);
 
@@ -985,9 +985,9 @@ oop Reflection::new_parameter(Handle method, int index, Symbol* sym,
 }
 
 
-static methodHandle resolve_interface_call(instanceKlassHandle klass,
+static methodHandle resolve_interface_call(InstanceKlass* klass,
                                            const methodHandle& method,
-                                           KlassHandle recv_klass,
+                                           Klass* recv_klass,
                                            Handle receiver,
                                            TRAPS) {
 
@@ -1035,7 +1035,7 @@ static void narrow(jvalue* value, BasicType narrow_type, TRAPS) {
 
 
 // Method call (shared by invoke_method and invoke_constructor)
-static oop invoke(instanceKlassHandle klass,
+static oop invoke(InstanceKlass* klass,
                   methodHandle reflected_method,
                   Handle receiver,
                   bool override,
@@ -1048,7 +1048,7 @@ static oop invoke(instanceKlassHandle klass,
   ResourceMark rm(THREAD);
 
   methodHandle method;      // actual method to invoke
-  KlassHandle target_klass; // target klass, receiver's klass for non-static
+  Klass* target_klass;      // target klass, receiver's klass for non-static
 
   // Ensure klass is initialized
   klass->initialize(CHECK_NULL);
@@ -1064,11 +1064,11 @@ static oop invoke(instanceKlassHandle klass,
       THROW_0(vmSymbols::java_lang_NullPointerException());
     }
     // Check class of receiver against class declaring method
-    if (!receiver->is_a(klass())) {
+    if (!receiver->is_a(klass)) {
       THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "object is not an instance of declaring class");
     }
     // target klass is receiver's klass
-    target_klass = KlassHandle(THREAD, receiver->klass());
+    target_klass = receiver->klass();
     // no need to resolve if method is private or <init>
     if (reflected_method->is_private() || reflected_method->name() == vmSymbols::object_initializer_name()) {
       method = reflected_method;
@@ -1109,7 +1109,7 @@ static oop invoke(instanceKlassHandle klass,
             ResourceMark rm(THREAD);
             Handle h_origexception = Exceptions::new_exception(THREAD,
               vmSymbols::java_lang_AbstractMethodError(),
-              Method::name_and_sig_as_C_string(target_klass(),
+              Method::name_and_sig_as_C_string(target_klass,
               method->name(),
               method->signature()));
             JavaCallArguments args(h_origexception);
@@ -1127,7 +1127,7 @@ static oop invoke(instanceKlassHandle klass,
   if (method.is_null()) {
     ResourceMark rm(THREAD);
     THROW_MSG_0(vmSymbols::java_lang_NoSuchMethodError(),
-                Method::name_and_sig_as_C_string(klass(),
+                Method::name_and_sig_as_C_string(klass,
                 reflected_method->name(),
                 reflected_method->signature()));
   }
@@ -1229,7 +1229,7 @@ oop Reflection::invoke_method(oop method_mirror, Handle receiver, objArrayHandle
     rtype = T_OBJECT;
   }
 
-  instanceKlassHandle klass(THREAD, java_lang_Class::as_Klass(mirror));
+  InstanceKlass* klass = InstanceKlass::cast(java_lang_Class::as_Klass(mirror));
   Method* m = klass->method_with_idnum(slot);
   if (m == NULL) {
     THROW_MSG_0(vmSymbols::java_lang_InternalError(), "invoke");
@@ -1246,7 +1246,7 @@ oop Reflection::invoke_constructor(oop constructor_mirror, objArrayHandle args, 
   bool override          = java_lang_reflect_Constructor::override(constructor_mirror) != 0;
   objArrayHandle ptypes(THREAD, objArrayOop(java_lang_reflect_Constructor::parameter_types(constructor_mirror)));
 
-  instanceKlassHandle klass(THREAD, java_lang_Class::as_Klass(mirror));
+  InstanceKlass* klass = InstanceKlass::cast(java_lang_Class::as_Klass(mirror));
   Method* m = klass->method_with_idnum(slot);
   if (m == NULL) {
     THROW_MSG_0(vmSymbols::java_lang_InternalError(), "invoke");

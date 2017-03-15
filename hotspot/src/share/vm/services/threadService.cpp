@@ -607,12 +607,11 @@ bool ThreadStackTrace::is_owned_monitor_on_stack(oop object) {
 }
 
 Handle ThreadStackTrace::allocate_fill_stack_trace_element_array(TRAPS) {
-  Klass* k = SystemDictionary::StackTraceElement_klass();
-  assert(k != NULL, "must be loaded in 1.4+");
-  instanceKlassHandle ik(THREAD, k);
+  InstanceKlass* ik = SystemDictionary::StackTraceElement_klass();
+  assert(ik != NULL, "must be loaded in 1.4+");
 
   // Allocate an array of java/lang/StackTraceElement object
-  objArrayOop ste = oopFactory::new_objArray(ik(), _depth, CHECK_NH);
+  objArrayOop ste = oopFactory::new_objArray(ik, _depth, CHECK_NH);
   objArrayHandle backtrace(THREAD, ste);
   for (int j = 0; j < _depth; j++) {
     StackFrameInfo* frame = _frames->at(j);
