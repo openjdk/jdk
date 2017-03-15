@@ -108,6 +108,7 @@ package java.lang.invoke;
  * }
  * }</pre>
  * @author Remi Forax, JSR 292 EG
+ * @since 1.7
  */
 public class SwitchPoint {
     private static final MethodHandle

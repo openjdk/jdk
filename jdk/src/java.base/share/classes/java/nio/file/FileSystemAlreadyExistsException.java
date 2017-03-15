@@ -28,6 +28,8 @@ package java.nio.file;
 /**
  * Runtime exception thrown when an attempt is made to create a file system that
  * already exists.
+ *
+ * @since 1.7
  */
 
 public class FileSystemAlreadyExistsException
