@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,12 @@ import java.rmi.server.RemoteObject;
 import java.rmi.server.RemoteObjectInvocationHandler;
 import java.rmi.server.RemoteRef;
 import java.rmi.server.UID;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.Permissions;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
+import java.security.ProtectionDomain;
 
 /**
  * Activation makes use of special identifiers to denote remote
@@ -81,6 +87,14 @@ public class ActivationID implements Serializable {
     /** indicate compatibility with the Java 2 SDK v1.2 version of class */
     private static final long serialVersionUID = -4608673054848209235L;
 
+    /** an AccessControlContext with no permissions */
+    private static final AccessControlContext NOPERMS_ACC;
+    static {
+        Permissions perms = new Permissions();
+        ProtectionDomain[] pd = { new ProtectionDomain(null, perms) };
+        NOPERMS_ACC = new AccessControlContext(pd);
+    }
+
     /**
      * The constructor for <code>ActivationID</code> takes a single
      * argument, activator, that specifies a remote reference to the
@@ -116,13 +130,19 @@ public class ActivationID implements Serializable {
         try {
             MarshalledObject<? extends Remote> mobj =
                 activator.activate(this, force);
-            return mobj.get();
-        } catch (RemoteException e) {
-            throw e;
-        } catch (IOException e) {
-            throw new UnmarshalException("activation failed", e);
-        } catch (ClassNotFoundException e) {
-            throw new UnmarshalException("activation failed", e);
+            return AccessController.doPrivileged(
+                new PrivilegedExceptionAction<Remote>() {
+                    public Remote run() throws IOException, ClassNotFoundException {
+                        return mobj.get();
+                    }
+                }, NOPERMS_ACC);
+        } catch (PrivilegedActionException pae) {
+            Exception ex = pae.getException();
+            if (ex instanceof RemoteException) {
+                throw (RemoteException) ex;
+            } else {
+                throw new UnmarshalException("activation failed", ex);
+            }
         }
 
     }
