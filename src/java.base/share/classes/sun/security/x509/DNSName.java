@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,31 +194,45 @@ public class DNSName implements GeneralNameInterface {
      */
     public int constrains(GeneralNameInterface inputName) throws UnsupportedOperationException {
         int constraintType;
-        if (inputName == null)
-            constraintType = NAME_DIFF_TYPE;
-        else if (inputName.getType() != NAME_DNS)
-            constraintType = NAME_DIFF_TYPE;
-        else {
-            String inName =
-                (((DNSName)inputName).getName()).toLowerCase(Locale.ENGLISH);
-            String thisName = name.toLowerCase(Locale.ENGLISH);
-            if (inName.equals(thisName))
-                constraintType = NAME_MATCH;
-            else if (thisName.endsWith(inName)) {
-                int inNdx = thisName.lastIndexOf(inName);
-                if (thisName.charAt(inNdx-1) == '.' )
-                    constraintType = NAME_WIDENS;
-                else
-                    constraintType = NAME_SAME_TYPE;
-            } else if (inName.endsWith(thisName)) {
-                int ndx = inName.lastIndexOf(thisName);
-                if (inName.charAt(ndx-1) == '.' )
-                    constraintType = NAME_NARROWS;
-                else
-                    constraintType = NAME_SAME_TYPE;
-            } else {
+        if (inputName == null) {
+            return NAME_DIFF_TYPE;
+        }
+        String inName;
+        switch (inputName.getType()) {
+            case NAME_DNS:
+                inName = ((DNSName)inputName).getName();
+                break;
+            case NAME_DIRECTORY:
+                try {
+                    inName = ((X500Name) inputName).getCommonName();
+                    if (inName == null) {
+                        return NAME_DIFF_TYPE;
+                    }
+                } catch (IOException ioe) {
+                    return NAME_DIFF_TYPE;
+                }
+                break;
+            default:
+                return NAME_DIFF_TYPE;
+        }
+        inName = inName.toLowerCase(Locale.ENGLISH);
+        String thisName = name.toLowerCase(Locale.ENGLISH);
+        if (inName.equals(thisName))
+            constraintType = NAME_MATCH;
+        else if (thisName.endsWith(inName)) {
+            int inNdx = thisName.lastIndexOf(inName);
+            if (thisName.charAt(inNdx-1) == '.' )
+                constraintType = NAME_WIDENS;
+            else
                 constraintType = NAME_SAME_TYPE;
-            }
+        } else if (inName.endsWith(thisName)) {
+            int ndx = inName.lastIndexOf(thisName);
+            if (inName.charAt(ndx-1) == '.' )
+                constraintType = NAME_NARROWS;
+            else
+                constraintType = NAME_SAME_TYPE;
+        } else {
+            constraintType = NAME_SAME_TYPE;
         }
         return constraintType;
     }
