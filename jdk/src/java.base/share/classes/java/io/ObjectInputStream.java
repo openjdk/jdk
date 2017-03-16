@@ -812,23 +812,24 @@ public class ObjectInputStream
     }
 
     /**
-     * Enable the stream to allow objects read from the stream to be replaced.
-     * When enabled, the resolveObject method is called for every object being
+     * Enables the stream to do replacement of objects read from the stream. When
+     * enabled, the {@link #resolveObject} method is called for every object being
      * deserialized.
      *
-     * <p>If <i>enable</i> is true, and there is a security manager installed,
+     * <p>If object replacement is currently not enabled, and
+     * {@code enable} is true, and there is a security manager installed,
      * this method first calls the security manager's
-     * <code>checkPermission</code> method with the
-     * <code>SerializablePermission("enableSubstitution")</code> permission to
-     * ensure it's ok to enable the stream to allow objects read from the
-     * stream to be replaced.
+     * {@code checkPermission} method with the
+     * {@code SerializablePermission("enableSubstitution")} permission to
+     * ensure that the caller is permitted to enable the stream to do replacement
+     * of objects read from the stream.
      *
-     * @param   enable true for enabling use of <code>resolveObject</code> for
+     * @param   enable true for enabling use of {@code resolveObject} for
      *          every object being deserialized
      * @return  the previous setting before this method was invoked
      * @throws  SecurityException if a security manager exists and its
-     *          <code>checkPermission</code> method denies enabling the stream
-     *          to allow objects read from the stream to be replaced.
+     *          {@code checkPermission} method denies enabling the stream
+     *          to do replacement of objects read from the stream.
      * @see SecurityManager#checkPermission
      * @see java.io.SerializablePermission
      */
