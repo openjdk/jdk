@@ -110,7 +110,6 @@ public final class MinimalFuture<T> extends CompletableFuture<T> {
         }
     }
 
-    @Override
     public <U> MinimalFuture<U> newIncompleteFuture() {
         return new MinimalFuture<>();
     }

@@ -70,6 +70,8 @@ grant codeBase "jrt:/java.sql.rowset" {
 
 grant codeBase "jrt:/java.xml.bind" {
     permission java.lang.RuntimePermission
+                   "accessClassInPackage.sun.misc";
+    permission java.lang.RuntimePermission
                    "accessClassInPackage.com.sun.xml.internal.*";
     permission java.lang.RuntimePermission
                    "accessClassInPackage.com.sun.istack.internal";
@@ -102,18 +104,16 @@ grant codeBase "jrt:/java.xml.crypto" {
 };
 
 grant codeBase "jrt:/java.xml.ws" {
+    permission java.net.NetPermission
+                   "getProxySelector";
     permission java.lang.RuntimePermission
-                   "accessClassInPackage.com.sun.org.apache.xml.internal.resolver";
-    permission java.lang.RuntimePermission
-                   "accessClassInPackage.com.sun.org.apache.xml.internal.resolver.tools";
+                   "accessClassInPackage.sun.misc";
     permission java.lang.RuntimePermission
                    "accessClassInPackage.com.sun.xml.internal.*";
     permission java.lang.RuntimePermission
                    "accessClassInPackage.com.sun.istack.internal";
     permission java.lang.RuntimePermission
                    "accessClassInPackage.com.sun.istack.internal.*";
-    permission java.lang.RuntimePermission
-                   "accessClassInPackage.com.sun.org.apache.xerces.internal.*";
     permission java.lang.RuntimePermission "accessDeclaredMembers";
     permission java.lang.reflect.ReflectPermission "suppressAccessChecks";
     permission java.util.PropertyPermission "*", "read";
@@ -212,4 +212,8 @@ grant {
     permission java.lang.RuntimePermission "accessClassInPackage.com.sun.beans.*";
     permission java.lang.RuntimePermission "accessClassInPackage.com.sun.java.swing.plaf.*";
     permission java.lang.RuntimePermission "accessClassInPackage.com.apple.*";
+};
+
+grant codeBase "jrt:/jdk.vm.compiler" {
+    permission java.security.AllPermission;
 };

@@ -126,7 +126,7 @@ public class WithSecurityManager {
         Layer bootLayer = Layer.boot();
         Configuration cf = bootLayer
             .configuration()
-            .resolveRequires(finder, ModuleFinder.of(), Set.of(ANOTHER_MODULE));
+            .resolve(finder, ModuleFinder.of(), Set.of(ANOTHER_MODULE));
         Layer layer = bootLayer.defineModulesWithOneLoader(cf, null);
 
         Optional<Module> om = layer.findModule(mn);
