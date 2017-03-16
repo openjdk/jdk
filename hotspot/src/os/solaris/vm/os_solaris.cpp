@@ -2034,7 +2034,9 @@ void os::jvm_path(char *buf, jint buflen) {
   int ret = dladdr(CAST_FROM_FN_PTR(void *, os::jvm_path), &dlinfo);
   assert(ret != 0, "cannot locate libjvm");
   if (ret != 0 && dlinfo.dli_fname != NULL) {
-    realpath((char *)dlinfo.dli_fname, buf);
+    if (os::Posix::realpath((char *)dlinfo.dli_fname, buf, buflen) == NULL) {
+      return;
+    }
   } else {
     buf[0] = '\0';
     return;
@@ -2065,7 +2067,9 @@ void os::jvm_path(char *buf, jint buflen) {
         p = strrchr(buf, '/');
         assert(strstr(p, "/libjvm") == p, "invalid library name");
 
-        realpath(java_home_var, buf);
+        if (os::Posix::realpath(java_home_var, buf, buflen) == NULL) {
+          return;
+        }
         // determine if this is a legacy image or modules image
         // modules image doesn't have "jre" subdirectory
         len = strlen(buf);
@@ -2082,7 +2086,9 @@ void os::jvm_path(char *buf, jint buflen) {
           snprintf(buf + len, buflen-len, "/hotspot/libjvm.so");
         } else {
           // Go back to path of .so
-          realpath((char *)dlinfo.dli_fname, buf);
+          if (os::Posix::realpath((char *)dlinfo.dli_fname, buf, buflen) == NULL) {
+            return;
+          }
         }
       }
     }
