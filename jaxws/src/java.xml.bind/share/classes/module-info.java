@@ -28,6 +28,7 @@
  *
  * @since 9
  */
+@Deprecated(since="9", forRemoval=true)
 module java.xml.bind {
     requires transitive java.activation;
     requires transitive java.xml;
