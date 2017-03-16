@@ -281,7 +281,8 @@ public class TreePosTest {
         JavacTool tool = JavacTool.create();
         r.errors = 0;
         Iterable<? extends JavaFileObject> files = fm.getJavaFileObjects(file);
-        JavacTask task = tool.getTask(pw, fm, r, Collections.<String>emptyList(), null, files);
+        JavacTask task = tool.getTask(pw, fm, r, Collections.<String>emptyList(),
+                List.of("-proc:none"), files);
         Iterable<? extends CompilationUnitTree> trees = task.parse();
         pw.flush();
         if (r.errors > 0)
