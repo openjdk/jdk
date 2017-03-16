@@ -112,6 +112,9 @@ void G1GCPhaseTimes::reset() {
   _cur_evac_fail_restore_remsets = 0.0;
   _cur_evac_fail_remove_self_forwards = 0.0;
   _cur_string_dedup_fixup_time_ms = 0.0;
+  _cur_prepare_tlab_time_ms = 0.0;
+  _cur_resize_tlab_time_ms = 0.0;
+  _cur_derived_pointer_table_update_time_ms = 0.0;
   _cur_clear_ct_time_ms = 0.0;
   _cur_expand_heap_time_ms = 0.0;
   _cur_ref_proc_time_ms = 0.0;
@@ -125,6 +128,7 @@ void G1GCPhaseTimes::reset() {
   _recorded_redirty_logged_cards_time_ms = 0.0;
   _recorded_preserve_cm_referents_time_ms = 0.0;
   _recorded_merge_pss_time_ms = 0.0;
+  _recorded_start_new_cset_time_ms = 0.0;
   _recorded_total_free_cset_time_ms = 0.0;
   _recorded_serial_free_cset_time_ms = 0.0;
   _cur_fast_reclaim_humongous_time_ms = 0.0;
@@ -288,6 +292,7 @@ double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
   if (_root_region_scan_wait_time_ms > 0.0) {
     debug_time("Root Region Scan Waiting", _root_region_scan_wait_time_ms);
   }
+  debug_time("Prepare TLABs", _cur_prepare_tlab_time_ms);
   debug_time("Choose Collection Set", (_recorded_young_cset_choice_time_ms + _recorded_non_young_cset_choice_time_ms));
   if (G1EagerReclaimHumongousObjects) {
     debug_time("Humongous Register", _cur_fast_reclaim_humongous_register_time_ms);
@@ -375,6 +380,9 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
   debug_time("Code Roots Purge", _cur_strong_code_root_purge_time_ms);
 
   debug_time("Redirty Cards", _recorded_redirty_logged_cards_time_ms);
+#if defined(COMPILER2) || INCLUDE_JVMCI
+  debug_time("DerivedPointerTable Update", _cur_derived_pointer_table_update_time_ms);
+#endif
   if (_recorded_clear_claimed_marks_time_ms > 0.0) {
     debug_time("Clear Claimed Marks", _recorded_clear_claimed_marks_time_ms);
   }
@@ -389,6 +397,10 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
   if (G1EagerReclaimHumongousObjects) {
     debug_time("Humongous Reclaim", _cur_fast_reclaim_humongous_time_ms);
     trace_count("Humongous Reclaimed", _cur_fast_reclaim_humongous_reclaimed);
+  }
+  debug_time("Start New Collection Set", _recorded_start_new_cset_time_ms);
+  if (UseTLAB && ResizeTLAB) {
+    debug_time("Resize TLABs", _cur_resize_tlab_time_ms);
   }
   debug_time("Expand Heap After Collection", _cur_expand_heap_time_ms);
 

@@ -159,6 +159,8 @@ private:
   HeapRegionSet _humongous_set;
 
   void eagerly_reclaim_humongous_regions();
+  // Start a new incremental collection set for the next pause.
+  void start_new_collection_set();
 
   // The number of regions we could create by expansion.
   uint _expansion_regions;
