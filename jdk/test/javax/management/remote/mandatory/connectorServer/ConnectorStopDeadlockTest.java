@@ -26,7 +26,6 @@
  * @bug 6475157
  * @summary Tests deadlock in simultaneous connection and connector-server close
  * @author Eamonn McManus
- * @modules java.management.rmi
  */
 
 /* This test is somewhat dependent on implementation details.  If it suddenly

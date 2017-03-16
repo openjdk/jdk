@@ -26,7 +26,7 @@
  * @bug 6192124
  * @summary Tests that you can turn off the server connection timeout thread
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean NoServerTimeoutTest
  * @run build NoServerTimeoutTest
  * @run main NoServerTimeoutTest

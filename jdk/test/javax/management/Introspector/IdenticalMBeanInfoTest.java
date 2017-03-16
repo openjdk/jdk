@@ -27,7 +27,7 @@
  * @summary Check that MBeans with the same class have identical MBeanInfo
  * unless they are NotificationBroadcasters
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean IdenticalMBeanInfoTest
  * @run build IdenticalMBeanInfoTest
  * @run main IdenticalMBeanInfoTest

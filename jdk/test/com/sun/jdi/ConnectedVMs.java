@@ -22,20 +22,18 @@
  */
 
 /**
- *  @test
- *  @bug 4329140
- *  @author Robert Field
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g InstTarg.java
- *  @run driver ConnectedVMs Kill
- *  @run driver ConnectedVMs Resume-to-exit
- *  @run driver ConnectedVMs dispose()
- *  @run driver ConnectedVMs exit()
- *
+ * @test
+ * @bug 4329140
  * @summary ConnectedVMs checks the method
  * VirtualMachineManager.connectedVirtualMachines()
+ * @author Robert Field
+ *
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g InstTarg.java
+ * @run driver ConnectedVMs Kill
+ * @run driver ConnectedVMs Resume-to-exit
+ * @run driver ConnectedVMs dispose()
+ * @run driver ConnectedVMs exit()
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

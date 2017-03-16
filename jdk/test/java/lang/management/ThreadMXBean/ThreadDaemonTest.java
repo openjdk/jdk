@@ -31,7 +31,6 @@ import java.util.concurrent.atomic.*;
  * @bug     6588467
  * @summary Basic test of ThreadInfo.isDaemon
  * @author  Jeremy Manson
- * @modules java.management
  */
 public class ThreadDaemonTest {
 

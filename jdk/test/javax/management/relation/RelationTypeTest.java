@@ -26,7 +26,7 @@
  * @bug 4716675
  * @summary Test that relation type checking uses isInstanceOf
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean RelationTypeTest
  * @run build RelationTypeTest
  * @run main RelationTypeTest

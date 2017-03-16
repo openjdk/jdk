@@ -22,15 +22,14 @@
  */
 
 /**
- *  @test
- *  @bug 5024119
- *  @summary Add ReferenceType.getAllInstances () method to JDI.
- *  @author jjh
+ * @test
+ * @bug 5024119
+ * @summary Add ReferenceType.getAllInstances () method to JDI.
+ * @author jjh
  *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g InstancesTest.java
- *  @run driver InstancesTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g InstancesTest.java
+ * @run driver InstancesTest
  */
 
 /*

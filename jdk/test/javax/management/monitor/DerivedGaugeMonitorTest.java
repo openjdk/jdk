@@ -26,7 +26,7 @@
  * @bug 6683213
  * @summary Test that the initial derived gauge is (Integer)0
  * @author Daniel Fuchs
- * @modules java.management
+ *
  * @run clean DerivedGaugeMonitorTest
  * @run build DerivedGaugeMonitorTest
  * @run main DerivedGaugeMonitorTest

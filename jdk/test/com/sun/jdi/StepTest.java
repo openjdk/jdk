@@ -22,16 +22,15 @@
  */
 
 /**
- *  @test
- *  @bug 4270488 4787861
- *  @author Gordon Hirsch
+ * @test
+ * @bug 4270488 4787861
+ * @author Gordon Hirsch
  *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetAdapter TargetListener
- *  @run compile -g MethodCalls.java
- *  @run compile -g MethodCallsReflection.java
- *  @run compile -g ControlFlow.java
- *  @run build StepTest
+ * @run build TestScaffold VMConnection TargetAdapter TargetListener
+ * @run compile -g MethodCalls.java
+ * @run compile -g MethodCallsReflection.java
+ * @run compile -g ControlFlow.java
+ * @run build StepTest
  *
  * @summary StepTest starts at a method named "go()" in the debuggee and
  * repetitively steps. It will do a step into until the maximum
@@ -46,21 +45,21 @@
  * for the debuggee files- MethodCalls.java, ...
  * See LineNumberInfo.java for more info.
  *
- *                     +--- maximum stack depth in debuggee
- *                     |  +--- step granularity: "line" or "min"
- *                     |  |    +---Expected number of steps
- *                     |  |    |  +--- Debuggee command Line
- *                     V  V    V  V      Workaround-----+
- *                                                      V
- *  @run driver StepTest 2 line  2 MethodCalls
- *  @run driver StepTest 3 line 14 MethodCalls
+ *                      +--- maximum stack depth in debuggee
+ *                      |  +--- step granularity: "line" or "min"
+ *                      |  |    +---Expected number of steps
+ *                      |  |    |  +--- Debuggee command Line
+ *                      V  V    V  V      Workaround-----+
+ *                                                       V
+ * @run driver StepTest 2 line  2 MethodCalls
+ * @run driver StepTest 3 line 14 MethodCalls
  *
- *  @run driver StepTest 2 line 18 MethodCallsReflection  12
+ * @run driver StepTest 2 line 18 MethodCallsReflection  12
  *
- *  @run driver StepTest 2 min   4 MethodCalls
- *  @run driver StepTest 3 min  43 MethodCalls
+ * @run driver StepTest 2 min   4 MethodCalls
+ * @run driver StepTest 3 min  43 MethodCalls
  *
- *  @run driver StepTest 2 line 65 ControlFlow            64
+ * @run driver StepTest 2 line 65 ControlFlow            64
  */
 
 /*
