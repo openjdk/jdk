@@ -359,18 +359,6 @@ public final class LWCToolkit extends LWToolkit {
     }
 
     @Override
-    protected int getScreenHeight() {
-        return GraphicsEnvironment.getLocalGraphicsEnvironment()
-                .getDefaultScreenDevice().getDefaultConfiguration().getBounds().height;
-    }
-
-    @Override
-    protected int getScreenWidth() {
-        return GraphicsEnvironment.getLocalGraphicsEnvironment()
-                .getDefaultScreenDevice().getDefaultConfiguration().getBounds().width;
-    }
-
-    @Override
     protected void initializeDesktopProperties() {
         super.initializeDesktopProperties();
         Map <Object, Object> fontHints = new HashMap<>();

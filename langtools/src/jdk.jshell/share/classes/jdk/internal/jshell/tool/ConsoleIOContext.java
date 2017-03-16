@@ -43,7 +43,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
@@ -82,7 +81,7 @@ class ConsoleIOContext extends IOContext {
 
     ConsoleIOContext(JShellTool repl, InputStream cmdin, PrintStream cmdout) throws Exception {
         this.repl = repl;
-        this.input = new StopDetectingInputStream(() -> repl.state.stop(), ex -> repl.hard("Error on input: %s", ex));
+        this.input = new StopDetectingInputStream(() -> repl.stop(), ex -> repl.hard("Error on input: %s", ex));
         Terminal term;
         if (System.getProperty("test.jdk") != null) {
             term = new TestTerminal(input);
@@ -617,7 +616,7 @@ class ConsoleIOContext extends IOContext {
 
                             @Override
                             public void perform(ConsoleReader in) throws IOException {
-                                repl.state.eval("import " + type + ";");
+                                repl.processCompleteSource("import " + type + ";");
                                 in.println("Imported: " + type);
                                 performToVar(in, stype);
                             }
@@ -641,7 +640,7 @@ class ConsoleIOContext extends IOContext {
 
                         @Override
                         public void perform(ConsoleReader in) throws IOException {
-                            repl.state.eval("import " + fqn + ";");
+                            repl.processCompleteSource("import " + fqn + ";");
                             in.println("Imported: " + fqn);
                             in.redrawLine();
                         }

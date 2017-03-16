@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -686,11 +686,10 @@ public abstract class JavadocHelper implements AutoCloseable {
 
             @Override @DefinedBy(Api.COMPILER)
             public Location getLocationForModule(Location location,
-                                                 JavaFileObject fo,
-                                                 String pkgName) throws IOException {
+                                                 JavaFileObject fo) throws IOException {
                 return fo == file
                         ? PATCH_LOCATION
-                        : super.getLocationForModule(location, fo, pkgName);
+                        : super.getLocationForModule(location, fo);
             }
 
             @Override @DefinedBy(Api.COMPILER)
