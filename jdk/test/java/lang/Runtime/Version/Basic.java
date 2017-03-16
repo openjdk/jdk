@@ -129,6 +129,9 @@ public class Basic {
         testEHC("9",          "10",               false, false, -1,   -1);
         testEHC("9",          "8",                false, false,  1,    1);
 
+        testEHC("10.512.1",   "10.512.2",         false, false, -1,   -1);
+        testEHC("512.10.1",   "512.11.1",         false, false, -1,   -1);
+
         // $OPT comparison
         testEHC("9",          "9+-oink",          false, true,  -1,    0);
         testEHC("9+-ribbit",  "9+-moo",           false, true,   1,    0);
