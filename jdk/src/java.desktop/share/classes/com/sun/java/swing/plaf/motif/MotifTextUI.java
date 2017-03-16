@@ -155,6 +155,7 @@ public class MotifTextUI {
     /**
      * Default bindings all keymaps implementing the Motif feel.
      */
+    @SuppressWarnings("deprecation")
     static final JTextComponent.KeyBinding[] defaultBindings = {
         new JTextComponent.KeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_INSERT,
                                                                     InputEvent.CTRL_MASK),

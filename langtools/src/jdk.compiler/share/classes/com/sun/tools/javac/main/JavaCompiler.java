@@ -888,7 +888,7 @@ public class JavaCompiler {
 
     public void compile(List<JavaFileObject> sourceFileObject)
         throws Throwable {
-        compile(sourceFileObject, List.nil(), null);
+        compile(sourceFileObject, List.nil(), null, List.nil());
     }
 
     /**
@@ -898,10 +898,13 @@ public class JavaCompiler {
      * @param classnames class names to process for annotations
      * @param processors user provided annotation processors to bypass
      * discovery, {@code null} means that no processors were provided
+     * @param addModules additional root modules to be used during
+     * module resolution.
      */
     public void compile(Collection<JavaFileObject> sourceFileObjects,
                         Collection<String> classnames,
-                        Iterable<? extends Processor> processors)
+                        Iterable<? extends Processor> processors,
+                        Collection<String> addModules)
     {
         if (!taskListener.isEmpty()) {
             taskListener.started(new TaskEvent(TaskEvent.Kind.COMPILATION));
@@ -930,6 +933,10 @@ public class JavaCompiler {
                 if (sep != -1) {
                     modules.addExtraAddModules(className.substring(0, sep));
                 }
+            }
+
+            for (String moduleName : addModules) {
+                modules.addExtraAddModules(moduleName);
             }
 
             // These method calls must be chained to avoid memory leaks
@@ -1447,6 +1454,11 @@ public class JavaCompiler {
 
         if (implicitSourcePolicy == ImplicitSourcePolicy.NONE
                 && !inputFiles.contains(env.toplevel.sourcefile)) {
+            return;
+        }
+
+        if (!modules.multiModuleMode && env.toplevel.modle != modules.getDefaultModule()) {
+            //can only generate classfiles for a single module:
             return;
         }
 
