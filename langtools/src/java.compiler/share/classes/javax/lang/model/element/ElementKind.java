@@ -99,6 +99,7 @@ public enum ElementKind {
     /**
      * A module.
      * @since 9
+     * @spec JPMS
      */
      MODULE;
 
