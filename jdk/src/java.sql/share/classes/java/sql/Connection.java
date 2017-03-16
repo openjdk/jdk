@@ -80,6 +80,7 @@ import java.util.concurrent.Executor;
  * @see Statement
  * @see ResultSet
  * @see DatabaseMetaData
+ * @since 1.1
  */
 public interface Connection  extends Wrapper, AutoCloseable {
 
