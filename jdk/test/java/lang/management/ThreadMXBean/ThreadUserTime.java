@@ -27,7 +27,6 @@
  * @summary Basic test of ThreadMXBean.getThreadUserTime and
  *          getCurrentThreadUserTime.
  * @author  Mandy Chung
- * @modules java.management
  */
 
 import java.lang.management.*;

@@ -1,21 +1,20 @@
 /**
- *  @test
- *  @bug 4390869
- *  @bug 4460328
- *  @summary Test Stepping in the new SourceDebugExtension facility
+ * @test
+ * @bug 4390869
+ * @bug 4460328
+ * @summary Test Stepping in the new SourceDebugExtension facility
+ * @author Robert Field
  *
- *  @author Robert Field
+ * @library ..
  *
- *  @library ..
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter InstallSDE
- *  @run compile MangleStepTest.java
- *  @run compile -g  onion/pickle/Mangle.java
- *  @run driver MangleStepTest unset
- *  @run driver MangleStepTest Java
- *  @run driver MangleStepTest XYZ
- *  @run driver MangleStepTest Rats
- *  @run driver MangleStepTest bogus
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter InstallSDE
+ * @run compile MangleStepTest.java
+ * @run compile -g  onion/pickle/Mangle.java
+ * @run driver MangleStepTest unset
+ * @run driver MangleStepTest Java
+ * @run driver MangleStepTest XYZ
+ * @run driver MangleStepTest Rats
+ * @run driver MangleStepTest bogus
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

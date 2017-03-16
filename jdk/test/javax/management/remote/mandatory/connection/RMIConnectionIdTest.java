@@ -26,7 +26,7 @@
  * @bug 4901808 7183800
  * @summary Check that RMI connection ids include IP address of a client network interface
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean RMIConnectionIdTest
  * @run build RMIConnectionIdTest
  * @run main RMIConnectionIdTest

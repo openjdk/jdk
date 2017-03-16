@@ -22,18 +22,16 @@
  */
 
 /**
- *  @test
- *  @bug 4836939 6646613
- *  @summary JDI add addSourceNameFilter to ClassPrepareRequest
+ * @test
+ * @bug 4836939 6646613
+ * @summary JDI add addSourceNameFilter to ClassPrepareRequest
+ * @author jjh
  *
- *  @author jjh
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g SourceNameFilterTest.java
- *  @run driver SourceNameFilterTest
- *  @run compile -g:none SourceNameFilterTest.java
- *  @run driver SourceNameFilterTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g SourceNameFilterTest.java
+ * @run driver SourceNameFilterTest
+ * @run compile -g:none SourceNameFilterTest.java
+ * @run driver SourceNameFilterTest
  */
 // The compile -g:none suppresses the lineNumber table to trigger bug 6646613.
 

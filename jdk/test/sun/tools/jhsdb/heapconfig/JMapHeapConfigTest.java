@@ -36,9 +36,11 @@ import jdk.test.lib.Platform;
  * @test
  * @bug 8042397
  * @summary Unit test for jmap utility test heap configuration reader
- * @modules jdk.hotspot.agent/sun.jvm.hotspot
+ *
  * @library /test/lib
  * @library /lib/testlibrary
+ * @modules jdk.hotspot.agent/sun.jvm.hotspot
+ *
  * @build jdk.testlibrary.*
  * @build jdk.test.lib.apps.*
  * @build JMapHeapConfigTest TmtoolTestScenario

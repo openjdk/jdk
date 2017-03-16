@@ -35,7 +35,7 @@ import javax.management.openmbean.SimpleType;
  * @bug 8023669
  * @summary Test that hashCode()throws NullPointerException
  * @author Shanliang JIANG
- * @modules java.management
+ *
  * @run clean MBeanInfoHashCodeNPETest
  * @run build MBeanInfoHashCodeNPETest
  * @run main MBeanInfoHashCodeNPETest

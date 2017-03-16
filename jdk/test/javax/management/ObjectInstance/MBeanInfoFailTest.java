@@ -26,7 +26,7 @@
  * @bug 5001857
  * @summary Test queryNames() and queryMBeans() with a buggy DynamicMBean
  * @author Daniel Fuchs
- * @modules java.management
+ *
  * @run clean MBeanInfoFailTest
  * @run build MBeanInfoFailTest
  * @run main MBeanInfoFailTest

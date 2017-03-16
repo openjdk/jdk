@@ -26,7 +26,7 @@
  * @bug 4757273
  * @summary Test that registered notification is sent early enough
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean NewMBeanListenerTest
  * @run build NewMBeanListenerTest
  * @run main NewMBeanListenerTest

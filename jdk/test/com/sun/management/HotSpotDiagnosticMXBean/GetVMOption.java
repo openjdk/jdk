@@ -27,7 +27,6 @@
  * @summary Basic Test for HotSpotDiagnosticMXBean.getVMOption()
  * @author  Mandy Chung
  *
- * @modules jdk.management
  * @run main/othervm -XX:+HeapDumpOnOutOfMemoryError GetVMOption
  */
 

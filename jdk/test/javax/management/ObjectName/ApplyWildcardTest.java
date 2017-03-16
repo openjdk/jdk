@@ -27,7 +27,7 @@
  * @summary Test the ObjectName.apply(ObjectName) method
  *          with wildcards in the key properties value part.
  * @author Luis-Miguel Alventosa
- * @modules java.management
+ *
  * @run clean ApplyWildcardTest
  * @run build ApplyWildcardTest
  * @run main ApplyWildcardTest

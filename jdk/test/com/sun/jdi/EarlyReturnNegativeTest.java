@@ -22,15 +22,14 @@
  */
 
 /**
- *  @test
- *  @bug 6431735
- *  @summary Unexpected ClassCastException in ThreadReference.forceEarlyReturn
- *  @author Jim Holmlund
+ * @test
+ * @bug 6431735
+ * @summary Unexpected ClassCastException in ThreadReference.forceEarlyReturn
+ * @author Jim Holmlund
  *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g EarlyReturnNegativeTest.java
- *  @run driver EarlyReturnNegativeTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g EarlyReturnNegativeTest.java
+ * @run driver EarlyReturnNegativeTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;
