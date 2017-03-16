@@ -1,6 +1,6 @@
-## Apache Byte Code Engineering Library v5.2
+## Apache Byte Code Engineering Library (BCEL) v5.2
 
-### Notice
+### Apache BCEL Notice
 <pre>
 
     =========================================================================
