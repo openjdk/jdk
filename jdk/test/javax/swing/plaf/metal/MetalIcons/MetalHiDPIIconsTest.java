@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8160986 8174845
+ * @bug 8160986 8174845 8176883
  * @summary Bad rendering of Swing UI controls with Metal L&F on HiDPI display
  * @run main/manual MetalHiDPIIconsTest
  */

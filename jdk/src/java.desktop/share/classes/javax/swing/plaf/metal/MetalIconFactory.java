@@ -33,6 +33,8 @@ import java.io.Serializable;
 import java.util.Enumeration;
 import java.util.Vector;
 import sun.swing.CachedPainter;
+import static sun.swing.SwingUtilities2.setAntialiasingHintForScaledGraphics;
+import static sun.swing.SwingUtilities2.getAndSetAntialisingHintForScaledGraphics;
 
 /**
  * Factory object that vends <code>Icon</code>s for
@@ -1329,8 +1331,12 @@ public class MetalIconFactory implements Serializable {
         }
 
         public void paintIcon(Component c, Graphics g, int x, int y) {
+
+            Object aaHint = getAndSetAntialisingHintForScaledGraphics(g);
+
             if (MetalLookAndFeel.usingOcean()) {
                 paintOceanIcon(c, g, x, y);
+                setAntialiasingHintForScaledGraphics(g, aaHint);
                 return;
             }
             JRadioButton rb = (JRadioButton)c;
@@ -1382,6 +1388,7 @@ public class MetalIconFactory implements Serializable {
             }
 
             g.translate(-x, -y);
+            setAntialiasingHintForScaledGraphics(g, aaHint);
         }
 
         public int getIconWidth() {
@@ -2271,8 +2278,12 @@ public class MetalIconFactory implements Serializable {
 
         public void paintIcon( Component c, Graphics g, int x, int y )
         {
+
+            Object aaHint = getAndSetAntialisingHintForScaledGraphics(g);
+
             if (MetalLookAndFeel.usingOcean()) {
                 paintOceanIcon(c, g, x, y);
+                setAntialiasingHintForScaledGraphics(g, aaHint);
                 return;
             }
             JMenuItem b = (JMenuItem) c;
@@ -2333,6 +2344,7 @@ public class MetalIconFactory implements Serializable {
             }
 
             g.translate( -x, -y );
+            setAntialiasingHintForScaledGraphics(g, aaHint);
         }
 
         public int getIconWidth() { return menuCheckIconSize.width; }
