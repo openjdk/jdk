@@ -583,6 +583,7 @@ public:
     virtual MsgRouting WmNcPaint(HRGN hrgn);
     virtual MsgRouting WmNcHitTest(UINT x, UINT y, LRESULT &retVal);
     virtual MsgRouting WmSysCommand(UINT uCmdType, int xPos, int yPos);
+    virtual MsgRouting WmEnterSizeMove();
     virtual MsgRouting WmExitSizeMove();
     virtual MsgRouting WmEnterMenuLoop(BOOL isTrackPopupMenu);
     virtual MsgRouting WmExitMenuLoop(BOOL isTrackPopupMenu);

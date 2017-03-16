@@ -33,6 +33,8 @@ import java.util.concurrent.Callable;
 /**
  * Interface to invoke Java&trade; programming language documentation tools from
  * programs.
+ *
+ * @since 1.8
  */
 public interface DocumentationTool extends Tool, OptionChecker {
     /**
@@ -130,6 +132,7 @@ public interface DocumentationTool extends Tool, OptionChecker {
          * @throws IllegalArgumentException may be thrown for some
          *      invalid module names
          * @throws IllegalStateException if the task has started
+         * @since 9
          */
         void addModules(Iterable<String> moduleNames);
 

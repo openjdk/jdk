@@ -1505,6 +1505,9 @@ LRESULT AwtComponent::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
           mr = WmSysCommand(static_cast<UINT>(wParam & 0xFFF0),
                             GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
           break;
+      case WM_ENTERSIZEMOVE:
+          mr = WmEnterSizeMove();
+          break;
       case WM_EXITSIZEMOVE:
           mr = WmExitSizeMove();
           break;
@@ -2047,6 +2050,11 @@ MsgRouting AwtComponent::WmSizing()
 }
 
 MsgRouting AwtComponent::WmSysCommand(UINT uCmdType, int xPos, int yPos)
+{
+    return mrDoDefault;
+}
+
+MsgRouting AwtComponent::WmEnterSizeMove()
 {
     return mrDoDefault;
 }

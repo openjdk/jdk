@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8165102
+ * @bug 8165102 8175560
  * @summary incorrect message from javac
  * @library /tools/lib
  * @modules
@@ -48,6 +48,27 @@ public class ModulesAndModuleSourcePathTest extends ModuleTestBase {
 
     @Test
     public void testModuleNotInModuleSrcPath(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path m = src.resolve("m");
+        Files.createDirectories(m);
+        Path extra = base.resolve("m");
+        tb.writeJavaFiles(extra, "module m {}");
+        Path classes = base.resolve("classes");
+        Files.createDirectories(classes);
+
+        String log = new JavacTask(tb)
+                .options("-XDrawDiagnostics", "--module-source-path", src.toString())
+                .outdir(classes)
+                .files(findJavaFiles(extra))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutput(Task.OutputKind.DIRECT);
+        if (!log.contains("module-info.java:1:1: compiler.err.module.not.found.on.module.source.path"))
+            throw new Exception("expected output not found");
+    }
+
+    @Test
+    public void testModuleNotInPackageHierarchy(Path base) throws Exception {
         Path src = base.resolve("src");
         Path m = src.resolve("m");
         Path extra = m.resolve("extra");
