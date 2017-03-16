@@ -305,6 +305,7 @@ public interface JavaCompiler extends Tool, OptionChecker {
          * @throws IllegalArgumentException may be thrown for some
          *      invalid module names
          * @throws IllegalStateException if the task has started
+         * @since 9
          */
         void addModules(Iterable<String> moduleNames);
 

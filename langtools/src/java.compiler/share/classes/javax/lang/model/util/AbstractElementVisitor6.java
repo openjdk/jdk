@@ -81,7 +81,7 @@ public abstract class AbstractElementVisitor6<R, P> implements ElementVisitor<R,
     /**
      * Visits any program element as if by passing itself to that
      * element's {@link Element#accept accept} method.  The invocation
-     * {@code v.visit(elem)} is equivalent to {@code elem.accept(v,
+     * {@code v.visit(elem, p)} is equivalent to {@code elem.accept(v,
      * p)}.
      *
      * @param e  the element to visit
@@ -111,7 +111,7 @@ public abstract class AbstractElementVisitor6<R, P> implements ElementVisitor<R,
      *
      * @implSpec The default implementation of this method in
      * {@code AbstractElementVisitor6} will always throw
-     * {@code UnknownElementException}.
+     * {@code new UnknownElementException(e, p)}.
      * This behavior is not required of a subclass.
      *
      * @param e {@inheritDoc}
