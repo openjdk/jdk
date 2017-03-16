@@ -274,7 +274,7 @@ public class FrameOperator extends WindowOperator implements Outputable {
         output.printGolden("Maximizing frame");
         driver.maximize(this);
         if (getVerification()) {
-            waitState(Frame.NORMAL);
+            waitState(Frame.MAXIMIZED_BOTH);
         }
     }
 
@@ -306,7 +306,7 @@ public class FrameOperator extends WindowOperator implements Outputable {
         waitState(new ComponentChooser() {
             @Override
             public boolean checkComponent(Component comp) {
-                return ((Frame) comp).getState() == state;
+                return ((Frame) comp).getExtendedState() == state;
             }
 
             @Override
@@ -371,6 +371,19 @@ public class FrameOperator extends WindowOperator implements Outputable {
             @Override
             public int map() {
                 return ((Frame) getSource()).getState();
+            }
+        }));
+    }
+
+    /**
+     * Maps {@code Frame.getExtendedState()} through queue
+     * @return the state of the frame
+     */
+    public int getExtendedState() {
+        return (runMapping(new MapAction<Integer>("getExtendedState") {
+            @Override
+            public Integer map() {
+                return ((Frame) getSource()).getExtendedState();
             }
         }));
     }
@@ -445,6 +458,21 @@ public class FrameOperator extends WindowOperator implements Outputable {
                 ((Frame) getSource()).setState(i);
             }
         });
+    }
+
+    /**
+     * Maps {@code Frame.setExtendedState(int)} through queue
+     * @param state of the frame
+     */
+    public void setExtendedState(final int state) {
+        runMapping(new MapAction<Void>("setExtendedState") {
+            @Override
+            public Void map() {
+                ((Frame) getSource()).setExtendedState(state);
+                return null;
+            }
+        });
+
     }
 
     /**

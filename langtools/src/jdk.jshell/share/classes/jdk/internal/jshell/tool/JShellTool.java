@@ -187,7 +187,7 @@ public class JShellTool implements MessageHandler {
     private Options options;
 
     SourceCodeAnalysis analysis;
-    JShell state = null;
+    private JShell state = null;
     Subscription shutdownSubscription = null;
 
     static final EditorSetting BUILT_IN_EDITOR = new EditorSetting(null, false);
@@ -195,6 +195,7 @@ public class JShellTool implements MessageHandler {
     private boolean debug = false;
     public boolean testPrompt = false;
     private Startup startup = null;
+    private boolean isCurrentlyRunningStartup = false;
     private String executionControlSpec = null;
     private EditorSetting editor = BUILT_IN_EDITOR;
 
@@ -1019,7 +1020,19 @@ public class JShellTool implements MessageHandler {
         analysis = state.sourceCodeAnalysis();
         live = true;
 
-        startUpRun(startup.toString());
+        // Run the start-up script.
+        // Avoid an infinite loop running start-up while running start-up.
+        // This could, otherwise, occur when /env /reset or /reload commands are
+        // in the start-up script.
+        if (!isCurrentlyRunningStartup) {
+            try {
+                isCurrentlyRunningStartup = true;
+                startUpRun(startup.toString());
+            } finally {
+                isCurrentlyRunningStartup = false;
+            }
+        }
+        // Record subsequent snippets in the main namespace.
         currentNameSpace = mainNamespace;
     }
 
@@ -1689,6 +1702,11 @@ public class JShellTool implements MessageHandler {
         }
 
         return null;
+    }
+
+    // Attempt to stop currently running evaluation
+    void stop() {
+        state.stop();
     }
 
     // --- Command implementations ---
@@ -2844,7 +2862,7 @@ public class JShellTool implements MessageHandler {
         }
     }
     //where
-    private boolean processCompleteSource(String source) throws IllegalStateException {
+    boolean processCompleteSource(String source) throws IllegalStateException {
         debug("Compiling: %s", source);
         boolean failed = false;
         boolean isActive = false;

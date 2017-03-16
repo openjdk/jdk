@@ -647,7 +647,7 @@ h1.hidden {
     color:#474747;
 }
 .deprecatedLabel, .descfrmTypeLabel, .implementationLabel, .memberNameLabel, .memberNameLink,
-.moduleLabelInClass, .overrideSpecifyLabel, .packageLabelInClass,
+.moduleLabelInPackage, .moduleLabelInType, .overrideSpecifyLabel, .packageLabelInType,
 .packageHierarchyLabel, .paramLabel, .returnLabel, .seeLabel, .simpleTagLabel,
 .throwsLabel, .typeNameLabel, .typeNameLink, .searchTagLink {
     font-weight:bold;

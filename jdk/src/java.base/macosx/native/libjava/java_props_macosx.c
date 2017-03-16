@@ -46,6 +46,8 @@ char *getPosixLocale(int cat) {
 
 #define LOCALEIDLENGTH  128
 char *getMacOSXLocale(int cat) {
+    const char* retVal = NULL;
+
     switch (cat) {
     case LC_MESSAGES:
         {
@@ -72,41 +74,7 @@ char *getMacOSXLocale(int cat) {
             }
             CFRelease(languages);
 
-            // Language IDs use the language designators and (optional) region
-            // and script designators of BCP 47.  So possible formats are:
-            //
-            // "en"         (language designator only)
-            // "haw"        (3-letter lanuage designator)
-            // "en-GB"      (language with alpha-2 region designator)
-            // "es-419"     (language with 3-digit UN M.49 area code)
-            // "zh-Hans"    (language with ISO 15924 script designator)
-            // "zh-Hans-US"  (language with ISO 15924 script designator and region)
-            // "zh-Hans-419" (language with ISO 15924 script designator and UN M.49)
-            //
-            // In the case of region designators (alpha-2 and/or UN M.49), we convert
-            // to our locale string format by changing '-' to '_'.  That is, if
-            // the '-' is followed by fewer than 4 chars.
-            char* scriptOrRegion = strchr(languageString, '-');
-            if (scriptOrRegion != NULL) {
-                int length = strlen(scriptOrRegion);
-                if (length > 5) {
-                    // Region and script both exist. Honor the script for now
-                    scriptOrRegion[5] = '\0';
-                } else if (length < 5) {
-                    *scriptOrRegion = '_';
-
-                    assert((length == 3 &&
-                        // '-' followed by a 2 character region designator
-                          isalpha(scriptOrRegion[1]) &&
-                          isalpha(scriptOrRegion[2])) ||
-                           (length == 4 &&
-                        // '-' followed by a 3-digit UN M.49 area code
-                          isdigit(scriptOrRegion[1]) &&
-                          isdigit(scriptOrRegion[2]) &&
-                          isdigit(scriptOrRegion[3])));
-                }
-            }
-            const char* retVal = languageString;
+            retVal = languageString;
 
             // Special case for Portuguese in Brazil:
             // The language code needs the "_BR" region code (to distinguish it
@@ -120,20 +88,58 @@ char *getMacOSXLocale(int cat) {
                     strcmp(localeString, "pt_BR") == 0) {
                 retVal = localeString;
             }
-            return strdup(retVal);
         }
         break;
     default:
         {
             char localeString[LOCALEIDLENGTH];
-            if (CFStringGetCString(CFLocaleGetIdentifier(CFLocaleCopyCurrent()),
-                                   localeString, LOCALEIDLENGTH, CFStringGetSystemEncoding())) {
-                return strdup(localeString);
+            if (!CFStringGetCString(CFLocaleGetIdentifier(CFLocaleCopyCurrent()),
+                                    localeString, LOCALEIDLENGTH, CFStringGetSystemEncoding())) {
+                return NULL;
             }
+            retVal = localeString;
         }
         break;
     }
 
+    if (retVal != NULL) {
+        // Language IDs use the language designators and (optional) region
+        // and script designators of BCP 47.  So possible formats are:
+        //
+        // "en"         (language designator only)
+        // "haw"        (3-letter lanuage designator)
+        // "en-GB"      (language with alpha-2 region designator)
+        // "es-419"     (language with 3-digit UN M.49 area code)
+        // "zh-Hans"    (language with ISO 15924 script designator)
+        // "zh-Hans-US"  (language with ISO 15924 script designator and region)
+        // "zh-Hans-419" (language with ISO 15924 script designator and UN M.49)
+        //
+        // In the case of region designators (alpha-2 and/or UN M.49), we convert
+        // to our locale string format by changing '-' to '_'.  That is, if
+        // the '-' is followed by fewer than 4 chars.
+        char* scriptOrRegion = strchr(retVal, '-');
+        if (scriptOrRegion != NULL) {
+            int length = strlen(scriptOrRegion);
+            if (length > 5) {
+                // Region and script both exist. Honor the script for now
+                scriptOrRegion[5] = '\0';
+            } else if (length < 5) {
+                *scriptOrRegion = '_';
+
+                assert((length == 3 &&
+                    // '-' followed by a 2 character region designator
+                      isalpha(scriptOrRegion[1]) &&
+                      isalpha(scriptOrRegion[2])) ||
+                       (length == 4 &&
+                    // '-' followed by a 3-digit UN M.49 area code
+                      isdigit(scriptOrRegion[1]) &&
+                      isdigit(scriptOrRegion[2]) &&
+                      isdigit(scriptOrRegion[3])));
+            }
+        }
+
+        return strdup(retVal);
+    }
     return NULL;
 }
 

@@ -214,6 +214,6 @@ grant {
     permission java.lang.RuntimePermission "accessClassInPackage.com.apple.*";
 };
 
-grant codeBase "jrt:/jdk.vm.compiler" {
+grant codeBase "jrt:/jdk.internal.vm.compiler" {
     permission java.security.AllPermission;
 };
