@@ -1278,6 +1278,7 @@ public final class DateTimeFormatterBuilder {
      *
      * @param textStyle  the text style to use, not null
      * @return this, for chaining, not null
+     * @since 9
      */
     public DateTimeFormatterBuilder appendGenericZoneText(TextStyle textStyle) {
         appendInternal(new ZoneTextPrinterParser(textStyle, null, true));
@@ -1303,6 +1304,7 @@ public final class DateTimeFormatterBuilder {
      * @param textStyle  the text style to use, not null
      * @param preferredZones  the set of preferred zone ids, not null
      * @return this, for chaining, not null
+     * @since 9
      */
     public DateTimeFormatterBuilder appendGenericZoneText(TextStyle textStyle,
                                                           Set<ZoneId> preferredZones) {
