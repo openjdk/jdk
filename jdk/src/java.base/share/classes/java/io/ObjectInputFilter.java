@@ -104,7 +104,6 @@ public interface ObjectInputFilter {
      * @return  {@link Status#ALLOWED Status.ALLOWED} if accepted,
      *          {@link Status#REJECTED Status.REJECTED} if rejected,
      *          {@link Status#UNDECIDED Status.UNDECIDED} if undecided.
-     * @since 9
      */
     Status checkInput(FilterInfo filterInfo);
 
