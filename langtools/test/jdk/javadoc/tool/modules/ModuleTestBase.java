@@ -180,11 +180,11 @@ public class ModuleTestBase extends TestRunner {
         assertPresent(regex, STDOUT);
     }
 
-    void assertErrorPresent(String regex) throws Exception {
+    void assertMessagePresent(String regex) throws Exception {
         assertPresent(regex, Task.OutputKind.DIRECT);
     }
 
-    void assertErrorNotPresent(String regex) throws Exception {
+    void assertMessageNotPresent(String regex) throws Exception {
         assertNotPresent(regex, Task.OutputKind.DIRECT);
     }
 

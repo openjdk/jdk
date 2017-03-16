@@ -103,10 +103,11 @@ public class ToolEnvironment {
 
     final Symbol externalizableSym;
 
-    /**
-     * True if we do not want to print any notifications at all.
-     */
+    /** If true, prevent printing of any notifications. */
     boolean quiet = false;
+
+    /** If true, ignore all errors encountered during Enter. */
+    boolean ignoreSourceErrors = false;
 
     Check chk;
     com.sun.tools.javac.code.Types types;
@@ -163,6 +164,7 @@ public class ToolEnvironment {
 
     public void initialize(Map<ToolOption, Object> toolOpts) {
         this.quiet = (boolean)toolOpts.getOrDefault(ToolOption.QUIET, false);
+        this.ignoreSourceErrors = (boolean)toolOpts.getOrDefault(ToolOption.IGNORE_SOURCE_ERRORS, false);
     }
 
     /**

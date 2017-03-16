@@ -160,11 +160,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
             // Parse the files and collect the package names.
             for (String arg: javaNames) {
                 if (fm != null && arg.endsWith(".java") && new File(arg).exists()) {
-                    if (new File(arg).getName().equals("module-info.java")) {
-                        messager.printWarningUsingKey("main.file_ignored", arg);
-                    } else {
-                        parse(fm.getJavaFileObjects(arg), classTrees, true);
-                    }
+                    parse(fm.getJavaFileObjects(arg), classTrees, true);
                 } else if (isValidPackageName(arg)) {
                     packageNames.add(arg);
                 } else if (arg.endsWith(".java")) {
@@ -205,6 +201,11 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
             // Enter symbols for all files
             toolEnv.notice("main.Building_tree");
             javadocEnter.main(classTrees.toList().appendList(packageTrees));
+
+            if (messager.hasErrors()) {
+                return null;
+            }
+
             etable.setClassDeclList(listClasses(classTrees.toList()));
 
             etable.analyze();

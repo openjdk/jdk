@@ -441,6 +441,11 @@ public abstract class Configuration {
             }
         }
 
+        // add entries for modules which may not have exported packages
+        modules.forEach((ModuleElement mdle) -> {
+            modulePackages.computeIfAbsent(mdle, m -> Collections.emptySet());
+        });
+
         modules.addAll(modulePackages.keySet());
         showModules = !modules.isEmpty();
         for (Set<PackageElement> pkgs : modulePackages.values()) {

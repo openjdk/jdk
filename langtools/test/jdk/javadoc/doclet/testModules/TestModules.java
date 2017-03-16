@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8154119 8154262 8156077 8157987 8154261 8154817 8135291 8155995 8162363
- *      8168766 8168688 8162674 8160196 8175799 8174974
+ *      8168766 8168688 8162674 8160196 8175799 8174974 8176778
  * @summary Test modules support in javadoc.
  * @author bpatel
  * @library ../lib
@@ -179,6 +179,19 @@ public class TestModules extends JavadocTester {
         checkExit(Exit.OK);
         checkModuleSummary();
         checkNegatedModuleSummary();
+    }
+
+    /**
+     * Test generated module summary page of an aggregating module.
+     */
+    @Test
+    void testAggregatorModuleSummary() {
+        javadoc("-d", "out-aggregatorModuleSummary", "-use",
+                "--module-source-path", testSrc,
+                "--expand-requires", "transitive",
+                "--module", "moduleT");
+        checkExit(Exit.OK);
+        checkAggregatorModuleSummary();
     }
 
     /**
@@ -597,6 +610,32 @@ public class TestModules extends JavadocTester {
                 + "<th class=\"colFirst\" scope=\"col\">Type</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
                 + "</tr>");
+    }
+
+    void checkAggregatorModuleSummary() {
+        checkOutput("moduleT-summary.html", true,
+                "<div class=\"header\">\n"
+                + "<h1 title=\"Module\" class=\"title\">Module&nbsp;moduleT</h1>\n"
+                + "</div>",
+                "<div class=\"block\">This is a test description for the moduleT module. "
+                + "Search phrase <a id=\"searchphrase\">search phrase</a>. "
+                + "Make sure there are no exported packages.</div>",
+                "<tbody>\n"
+                + "<tr class=\"altColor\">\n"
+                + "<td class=\"colFirst\">transitive</td>\n"
+                + "<th class=\"colSecond\" scope=\"row\"><a href=\"moduleA-summary.html\">moduleA</a></th>\n"
+                + "<td class=\"colLast\">\n"
+                + "<div class=\"block\">This is a test description for the moduleA module.</div>\n"
+                + "</td>\n"
+                + "</tr>\n"
+                + "<tr class=\"rowColor\">\n"
+                + "<td class=\"colFirst\">transitive</td>\n"
+                + "<th class=\"colSecond\" scope=\"row\"><a href=\"moduleB-summary.html\">moduleB</a></th>\n"
+                + "<td class=\"colLast\">\n"
+                + "<div class=\"block\">This is a test description for the moduleB module.</div>\n"
+                + "</td>\n"
+                + "</tr>\n"
+                + "</tbody>");
     }
 
     void checkNegatedModuleSummary() {

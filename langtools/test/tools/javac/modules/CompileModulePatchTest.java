@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,7 +180,9 @@ public class CompileModulePatchTest extends ModuleTestBase {
 
         List<String> expectedOut = Arrays.asList(
                 "Test.java:1:1: compiler.err.file.patched.and.msp: m1x, m2x",
-                "1 error"
+                "module-info.java:1:1: compiler.err.module.name.mismatch: m2x, m1x",
+                "- compiler.err.cant.access: m1x.module-info, (compiler.misc.cant.resolve.modules)",
+                "3 errors"
         );
 
         if (!expectedOut.equals(log))
@@ -255,112 +257,6 @@ public class CompileModulePatchTest extends ModuleTestBase {
         );
 
         if (!expectedOut.equals(log))
-            throw new Exception("expected output not found: " + log);
-    }
-
-    @Test
-    public void testNoModuleInfoOnSourcePath(Path base) throws Exception {
-        //note: avoiding use of java.base, as that gets special handling on some places:
-        Path src = base.resolve("src");
-        tb.writeJavaFiles(src,
-                          "module java.compiler {}",
-                          "package javax.lang.model.element; public interface Extra { }");
-        Path classes = base.resolve("classes");
-        tb.createDirectories(classes);
-
-        List<String> log;
-        List<String> expected;
-
-        log = new JavacTask(tb)
-                .options("-XDrawDiagnostics",
-                         "--patch-module", "java.compiler=" + src.toString())
-                .outdir(classes)
-                .files(findJavaFiles(src))
-                .run(Task.Expect.FAIL)
-                .writeAll()
-                .getOutputLines(Task.OutputKind.DIRECT);
-
-        expected = Arrays.asList("Extra.java:1:1: compiler.err.module-info.with.patched.module.sourcepath",
-                                 "1 error");
-
-        if (!expected.equals(log))
-            throw new Exception("expected output not found: " + log);
-
-        //multi-module mode:
-        log = new JavacTask(tb)
-                .options("-XDrawDiagnostics",
-                         "--patch-module", "java.compiler=" + src.toString(),
-                         "--module-source-path", "dummy")
-                .outdir(classes)
-                .files(findJavaFiles(src))
-                .run(Task.Expect.FAIL)
-                .writeAll()
-                .getOutputLines(Task.OutputKind.DIRECT);
-
-        expected = Arrays.asList("- compiler.err.locn.module-info.not.allowed.on.patch.path: module-info.java",
-                                 "1 error");
-
-        if (!expected.equals(log))
-            throw new Exception("expected output not found: " + log);
-    }
-
-    @Test
-    public void testNoModuleInfoInClassOutput(Path base) throws Exception {
-        //note: avoiding use of java.base, as that gets special handling on some places:
-        Path srcMod = base.resolve("src-mod");
-        tb.writeJavaFiles(srcMod,
-                          "module mod {}");
-        Path classes = base.resolve("classes").resolve("java.compiler");
-        tb.createDirectories(classes);
-
-        String logMod = new JavacTask(tb)
-                .options()
-                .outdir(classes)
-                .files(findJavaFiles(srcMod))
-                .run()
-                .writeAll()
-                .getOutput(Task.OutputKind.DIRECT);
-
-        if (!logMod.isEmpty())
-            throw new Exception("unexpected output found: " + logMod);
-
-        Path src = base.resolve("src");
-        tb.writeJavaFiles(src,
-                          "package javax.lang.model.element; public interface Extra { }");
-        tb.createDirectories(classes);
-
-        List<String> log;
-        List<String> expected;
-
-        log = new JavacTask(tb)
-                .options("-XDrawDiagnostics",
-                         "--patch-module", "java.compiler=" + src.toString())
-                .outdir(classes)
-                .files(findJavaFiles(src))
-                .run(Task.Expect.FAIL)
-                .writeAll()
-                .getOutputLines(Task.OutputKind.DIRECT);
-
-        expected = Arrays.asList("Extra.java:1:1: compiler.err.module-info.with.patched.module.classoutput",
-                                 "1 error");
-
-        if (!expected.equals(log))
-            throw new Exception("expected output not found: " + log);
-
-        log = new JavacTask(tb)
-                .options("-XDrawDiagnostics",
-                         "--patch-module", "java.compiler=" + src.toString(),
-                         "--module-source-path", "dummy")
-                .outdir(classes.getParent())
-                .files(findJavaFiles(src))
-                .run(Task.Expect.FAIL)
-                .writeAll()
-                .getOutputLines(Task.OutputKind.DIRECT);
-
-        expected = Arrays.asList("- compiler.err.locn.module-info.not.allowed.on.patch.path: module-info.class",
-                                 "1 error");
-
-        if (!expected.equals(log))
             throw new Exception("expected output not found: " + log);
     }
 
