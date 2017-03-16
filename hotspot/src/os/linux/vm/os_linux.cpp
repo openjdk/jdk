@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2318,7 +2318,7 @@ void os::jvm_path(char *buf, jint buflen) {
   assert(ret, "cannot locate libjvm");
   char *rp = NULL;
   if (ret && dli_fname[0] != '\0') {
-    rp = realpath(dli_fname, buf);
+    rp = os::Posix::realpath(dli_fname, buf, buflen);
   }
   if (rp == NULL) {
     return;
@@ -2352,7 +2352,7 @@ void os::jvm_path(char *buf, jint buflen) {
         }
         assert(strstr(p, "/libjvm") == p, "invalid library name");
 
-        rp = realpath(java_home_var, buf);
+        rp = os::Posix::realpath(java_home_var, buf, buflen);
         if (rp == NULL) {
           return;
         }
@@ -2373,7 +2373,7 @@ void os::jvm_path(char *buf, jint buflen) {
           snprintf(buf + len, buflen-len, "/hotspot/libjvm.so");
         } else {
           // Go back to path of .so
-          rp = realpath(dli_fname, buf);
+          rp = os::Posix::realpath(dli_fname, buf, buflen);
           if (rp == NULL) {
             return;
           }
