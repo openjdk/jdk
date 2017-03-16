@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -977,31 +977,21 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     }
 
     @Override @DefinedBy(Api.COMPILER)
-    public Location getLocationForModule(Location location, JavaFileObject fo, String pkgName) throws IOException {
+    public Location getLocationForModule(Location location, JavaFileObject fo) throws IOException {
         checkModuleOrientedOrOutputLocation(location);
         if (!(fo instanceof PathFileObject))
             return null;
-        int depth = 1; // allow 1 for filename
-        if (pkgName != null && !pkgName.isEmpty()) {
-            depth += 1;
-            for (int i = 0; i < pkgName.length(); i++) {
-                switch (pkgName.charAt(i)) {
-                    case '/': case '.':
-                        depth++;
-                }
-            }
-        }
         Path p = Locations.normalize(((PathFileObject) fo).path);
-        int fc = p.getNameCount();
-        if (depth < fc) {
-            Path root = p.getRoot();
-            Path subpath = p.subpath(0, fc - depth);
-            Path dir = (root == null) ? subpath : root.resolve(subpath);
-            // need to find dir in location
-            return locations.getLocationForModule(location, dir);
-        } else {
-            return null;
-        }
+            // need to find p in location
+        return locations.getLocationForModule(location, p);
+    }
+
+    @Override @DefinedBy(Api.COMPILER)
+    public void setLocationForModule(Location location, String moduleName, Collection<? extends Path> paths)
+            throws IOException {
+        nullCheck(location);
+        checkModuleOrientedOrOutputLocation(location);
+        locations.setLocationForModule(location, nullCheck(moduleName), nullCheck(paths));
     }
 
     @Override @DefinedBy(Api.COMPILER)

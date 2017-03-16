@@ -530,6 +530,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   BASIC_PATH_PROGS(DF, df)
   BASIC_PATH_PROGS(CPIO, [cpio bsdcpio])
   BASIC_PATH_PROGS(NICE, nice)
+  BASIC_PATH_PROGS(PANDOC, pandoc)
 ])
 
 # Setup basic configuration paths, and platform-specific stuff related to PATHs.

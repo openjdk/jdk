@@ -21,11 +21,22 @@
  * questions.
  */
 
+/**
+ * @test
+ * @modules jdk.aot/jdk.tools.jaotc
+ *          jdk.aot/jdk.tools.jaotc.collect
+ *          jdk.aot/jdk.tools.jaotc.collect.directory
+ * @compile ../Utils.java
+ * @compile ../FakeFileSupport.java
+ * @run junit/othervm jdk.tools.jaotc.test.collect.directory.DirectorySourceProviderTest
+ */
+
 package jdk.tools.jaotc.test.collect.directory;
 
 import jdk.tools.jaotc.collect.ClassSource;
+import jdk.tools.jaotc.collect.directory.DirectorySourceProvider;
 import jdk.tools.jaotc.test.collect.FakeFileSupport;
-import jdk.tools.jaotc.test.collect.FileSupport;
+import jdk.tools.jaotc.collect.FileSupport;
 import org.junit.Assert;
 import org.junit.Test;
 
