@@ -90,7 +90,7 @@ public class BadProvidersTest {
         Layer bootLayer = Layer.boot();
 
         Configuration cf = bootLayer.configuration()
-                .resolveRequiresAndUses(finder, ModuleFinder.of(), Set.of(moduleName));
+                .resolveAndBind(finder, ModuleFinder.of(), Set.of(moduleName));
 
         ClassLoader scl = ClassLoader.getSystemClassLoader();
 

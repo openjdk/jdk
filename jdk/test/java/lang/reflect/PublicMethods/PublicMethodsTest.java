@@ -57,6 +57,9 @@ import static java.util.stream.Collectors.toMap;
 /*
  * @test
  * @bug 8062389
+ * @modules java.compiler
+ *          jdk.compiler
+ *          jdk.zipfs
  * @summary Nearly exhaustive test of Class.getMethod() and Class.getMethods()
  * @run main PublicMethodsTest
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,5 +27,5 @@
  * @summary java.lang.Object can't be redefined without crashing javac
  * @author gafter
  *
- * @compile/module=java.base/fail/ref=Object2.out -XDrawDiagnostics  Object2.java
+ * @compile/module=java.base/fail/ref=Object2.out -XDrawDiagnostics java/lang/Object2.java
  */
