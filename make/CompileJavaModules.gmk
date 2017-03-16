@@ -85,7 +85,7 @@ endif
 
 ################################################################################
 
-java.compiler_ADD_JAVAC_FLAGS := -Xdoclint:all/protected,-reference '-Xdoclint/package:java.*,javax.*'
+java.compiler_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
 
 ################################################################################
 
@@ -247,7 +247,7 @@ java.management_ADD_JAVAC_FLAGS := -Xdoclint:all/protected,-reference '-Xdoclint
 
 ################################################################################
 
-java.management.rmi_ADD_JAVAC_FLAGS := -Xdoclint:all/protected,-reference '-Xdoclint/package:javax.*'
+java.management.rmi_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:javax.*'
 
 ################################################################################
 
