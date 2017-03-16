@@ -45,7 +45,7 @@ public class AquaSliderUI extends BasicSliderUI implements Sizeable {
 //    static final Dimension roundThumbSize = new Dimension(21 + 4, 21 + 4); // +2px on both sides for focus fuzz
 //    static final Dimension pointingThumbSize = new Dimension(19 + 4, 22 + 4);
 
-    protected static final RecyclableSingleton<SizeDescriptor> roundThumbDescriptor = new RecyclableSingleton<SizeDescriptor>() {
+    private static final RecyclableSingleton<SizeDescriptor> roundThumbDescriptor = new RecyclableSingleton<SizeDescriptor>() {
         protected SizeDescriptor getInstance() {
             return new SizeDescriptor(new SizeVariant(25, 25)) {
                 public SizeVariant deriveSmall(final SizeVariant v) {
@@ -57,7 +57,7 @@ public class AquaSliderUI extends BasicSliderUI implements Sizeable {
             };
         }
     };
-    protected static final RecyclableSingleton<SizeDescriptor> pointingThumbDescriptor = new RecyclableSingleton<SizeDescriptor>() {
+    private static final RecyclableSingleton<SizeDescriptor> pointingThumbDescriptor = new RecyclableSingleton<SizeDescriptor>() {
         protected SizeDescriptor getInstance() {
             return new SizeDescriptor(new SizeVariant(23, 26)) {
                 public SizeVariant deriveSmall(final SizeVariant v) {

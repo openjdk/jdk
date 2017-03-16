@@ -154,7 +154,7 @@ public class AquaScrollBarUI extends ScrollBarUI {
         return State.ACTIVE;
     }
 
-    static final RecyclableSingleton<Map<Hit, ScrollBarPart>> hitToPressedPartMap = new RecyclableSingleton<Map<Hit,ScrollBarPart>>(){
+    private static final RecyclableSingleton<Map<Hit, ScrollBarPart>> hitToPressedPartMap = new RecyclableSingleton<Map<Hit,ScrollBarPart>>(){
         @Override
         protected Map<Hit, ScrollBarPart> getInstance() {
             final Map<Hit, ScrollBarPart> map = new HashMap<Hit, ScrollBarPart>(7);

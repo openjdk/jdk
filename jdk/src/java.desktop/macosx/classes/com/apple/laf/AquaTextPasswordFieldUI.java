@@ -38,7 +38,7 @@ import com.apple.laf.AquaUtils.RecyclableSingleton;
 import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 
 public class AquaTextPasswordFieldUI extends AquaTextFieldUI {
-    static final RecyclableSingleton<CapsLockSymbolPainter> capsLockPainter = new RecyclableSingletonFromDefaultConstructor<CapsLockSymbolPainter>(CapsLockSymbolPainter.class);
+    private static final RecyclableSingleton<CapsLockSymbolPainter> capsLockPainter = new RecyclableSingletonFromDefaultConstructor<CapsLockSymbolPainter>(CapsLockSymbolPainter.class);
     static CapsLockSymbolPainter getCapsLockPainter() {
         return capsLockPainter.get();
     }
