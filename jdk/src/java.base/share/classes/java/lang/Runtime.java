@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -955,7 +955,7 @@ public class Runtime {
      *
      * <p> A <em>version number</em>, {@code $VNUM}, is a non-empty sequence
      * of elements separated by period characters (U+002E).  An element is
-     * either zero, or a unsigned integer numeral without leading zeros.  The
+     * either zero, or an unsigned integer numeral without leading zeros.  The
      * final element in a version number must not be zero.  The format is:
      * </p>
      *
@@ -1053,8 +1053,8 @@ public class Runtime {
      *
      * </ul>
      *
-     * <p> A version number {@code 10-ea} matches {@code $VNUM = "10"} and
-     * {@code $PRE = "ea"}.  The version number {@code 10+-ea} matches
+     * <p> A version string {@code 10-ea} matches {@code $VNUM = "10"} and
+     * {@code $PRE = "ea"}.  The version string {@code 10+-ea} matches
      * {@code $VNUM = "10"} and {@code $OPT = "ea"}. </p>
      *
      * <p> When comparing two version strings, the value of {@code $OPT}, if
@@ -1247,7 +1247,7 @@ public class Runtime {
          * Compares this version to another.
          *
          * <p> Each of the components in the <a href="#verStr">version</a> is
-         * compared in the follow order of precedence: version numbers,
+         * compared in the following order of precedence: version numbers,
          * pre-release identifiers, build numbers, optional build information.
          * </p>
          *
@@ -1375,9 +1375,9 @@ public class Runtime {
             if (oBuild.isPresent()) {
                 return (build.isPresent()
                         ? build.get().compareTo(oBuild.get())
-                        : 1);
+                        : -1);
             } else if (build.isPresent()) {
-                return -1;
+                return 1;
             }
             return 0;
         }
@@ -1461,7 +1461,7 @@ public class Runtime {
          *
          * @return  {@code true} if, and only if, the given object is a {@code
          *          Version} that is identical to this {@code Version}
-         *          ignoring the optinal build information
+         *          ignoring the optional build information
          *
          */
         public boolean equalsIgnoreOptional(Object ob) {

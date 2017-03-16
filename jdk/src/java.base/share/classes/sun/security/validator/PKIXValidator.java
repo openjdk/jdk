@@ -195,18 +195,16 @@ public final class PKIXValidator extends Validator {
                 ("null or zero-length certificate chain");
         }
 
-        // Check if 'parameter' affects 'pkixParameters'
+        // Use PKIXExtendedParameters for timestamp and variant additions
         PKIXBuilderParameters pkixParameters = null;
-        if (parameter instanceof Timestamp && plugin) {
-            try {
-                pkixParameters = new PKIXExtendedParameters(
-                        (PKIXBuilderParameters) parameterTemplate.clone(),
-                        (Timestamp) parameter, variant);
-            } catch (InvalidAlgorithmParameterException e) {
-                // ignore exception
-            }
-        } else {
-            pkixParameters = (PKIXBuilderParameters) parameterTemplate.clone();
+        try {
+            pkixParameters = new PKIXExtendedParameters(
+                    (PKIXBuilderParameters) parameterTemplate.clone(),
+                    (parameter instanceof Timestamp) ?
+                            (Timestamp) parameter : null,
+                    variant);
+        } catch (InvalidAlgorithmParameterException e) {
+            // ignore exception
         }
 
         // add new algorithm constraints checker

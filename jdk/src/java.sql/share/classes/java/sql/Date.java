@@ -41,6 +41,8 @@ import jdk.internal.misc.JavaLangAccess;
  * must be 'normalized' by setting the
  * hours, minutes, seconds, and milliseconds to zero in the particular
  * time zone with which the instance is associated.
+ *
+ * @since 1.1
  */
 public class Date extends java.util.Date {
 

@@ -1,6 +1,6 @@
-## Mozilla Elliptic Curve Cryptography
+## Mozilla Elliptic Curve Cryptography (ECC)
 
-### Notice
+### Mozilla ECC Notice
 <pre>
 
 This notice is provided with respect to Elliptic Curve Cryptography,
@@ -21,7 +21,7 @@ Elliptic Curve Cryptography library:
 
 </pre>
 
-### LGPL 2.1 License
+### LGPL 2.1
 <pre>
 
                   GNU LESSER GENERAL PUBLIC LICENSE

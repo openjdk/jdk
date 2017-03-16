@@ -42,6 +42,7 @@ import static java.util.stream.Collectors.joining;
  *
  * @see Connection#createStatement
  * @see ResultSet
+ * @since 1.1
  */
 public interface Statement extends Wrapper, AutoCloseable {
 
@@ -1399,6 +1400,8 @@ public interface Statement extends Wrapper, AutoCloseable {
      * converted to two single quotes
      * @throws NullPointerException if val is {@code null}
      * @throws SQLException if a database access error occurs
+     *
+     * @since 9
      */
      default String enquoteLiteral(String val)  throws SQLException {
          return "'" + val.replace("'", "''") +  "'";
@@ -1503,6 +1506,8 @@ public interface Statement extends Wrapper, AutoCloseable {
      * @throws SQLFeatureNotSupportedException if the datasource does not support
      * delimited identifiers
      * @throws NullPointerException if identifier is {@code null}
+     *
+     * @since 9
      */
     default String enquoteIdentifier(String identifier, boolean alwaysQuote) throws SQLException {
         int len = identifier.length();
@@ -1576,6 +1581,8 @@ public interface Statement extends Wrapper, AutoCloseable {
      * @return  true if  a simple SQL identifier, false otherwise
      * @throws NullPointerException if identifier is {@code null}
      * @throws SQLException if a database access error occurs
+     *
+     * @since 9
      */
     default boolean isSimpleIdentifier(String identifier) throws SQLException {
         int len = identifier.length();
@@ -1617,6 +1624,8 @@ public interface Statement extends Wrapper, AutoCloseable {
     * then prefixed with 'N'.
     * @throws NullPointerException if val is {@code null}
     * @throws SQLException if a database access error occurs
+    *
+    * @since 9
     */
     default String enquoteNCharLiteral(String val)  throws SQLException {
         return "N'" + val.replace("'", "''") +  "'";

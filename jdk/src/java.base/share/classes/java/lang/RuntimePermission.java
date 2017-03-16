@@ -298,6 +298,14 @@ import java.util.StringTokenizer;
  * </tr>
  *
  * <tr>
+ *   <td>getStackWalkerWithClassReference</td>
+ *   <td>Get a stack walker that can retrieve stack frames with class reference.</td>
+ *   <td>This allows retrieval of Class objects from stack walking.
+ *   This might allow malicious code to access Class objects on the stack
+ *   outside its own context.</td>
+ * </tr>
+ *
+ * <tr>
  *   <td>setDefaultUncaughtExceptionHandler</td>
  *   <td>Setting the default handler to be used when a thread
  *   terminates abruptly due to an uncaught exception</td>
