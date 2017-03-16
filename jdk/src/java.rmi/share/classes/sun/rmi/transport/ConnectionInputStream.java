@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,14 @@ class ConnectionInputStream extends MarshalInputStream {
 
         // add ref to list of refs for endpoint ep
         refList.add(ref);
+    }
+
+    /**
+     * Discard the saved incoming refs so there is nothing to register
+     * when {@code registerRefs} is called.
+     */
+    void discardRefs() {
+        incomingRefTable.clear();
     }
 
     /**

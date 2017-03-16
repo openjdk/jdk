@@ -24,9 +24,11 @@
  */
 package sun.rmi.transport;
 
+import java.io.InvalidClassException;
 import java.lang.ref.PhantomReference;
 import java.lang.ref.ReferenceQueue;
 import java.net.SocketPermission;
+import java.rmi.UnmarshalException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.HashMap;
@@ -41,6 +43,8 @@ import java.rmi.dgc.DGC;
 import java.rmi.dgc.Lease;
 import java.rmi.dgc.VMID;
 import java.rmi.server.ObjID;
+
+import sun.rmi.runtime.Log;
 import sun.rmi.runtime.NewThreadAction;
 import sun.rmi.server.UnicastRef;
 import sun.rmi.server.Util;
@@ -387,6 +391,12 @@ final class DGCClient {
 
                 synchronized (this) {
                     dirtyFailures++;
+
+                    if (e instanceof UnmarshalException
+                            && e.getCause() instanceof InvalidClassException) {
+                        DGCImpl.dgcLog.log(Log.BRIEF, "InvalidClassException exception in DGC dirty call", e);
+                        return;             // protocol error, do not register these refs
+                    }
 
                     if (dirtyFailures == 1) {
                         /*

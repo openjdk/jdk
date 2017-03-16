@@ -41,8 +41,7 @@ $(eval $(call SetupRMICompilation,RMI_12, \
 GENCLASSES += $(RMI_12)
 
 $(eval $(call SetupRMICompilation,RMI_11, \
-    CLASSES := sun.rmi.registry.RegistryImpl \
-        sun.rmi.transport.DGCImpl, \
+    CLASSES := sun.rmi.registry.RegistryImpl, \
     CLASSES_DIR := $(CLASSES_DIR)/java.rmi, \
     STUB_CLASSES_DIR := $(STUB_CLASSES_DIR)/java.rmi, \
     RUN_V11 := true))
