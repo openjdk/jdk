@@ -329,6 +329,13 @@ public enum ToolOption {
         }
     },
 
+    IGNORE_SOURCE_ERRORS("--ignore-source-errors", HIDDEN) {
+        @Override
+        public void process(Helper helper) {
+            helper.jdtoolOpts.put(IGNORE_SOURCE_ERRORS, true);
+        }
+    },
+
     // ----- help options -----
 
     HELP("--help -help", STANDARD) {

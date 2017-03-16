@@ -111,8 +111,8 @@ public class Modules extends ModuleTestBase {
         execNegativeTask("--source-path", mod.toString(),
                 javafile.toString());
 
-        assertErrorPresent("error: cannot access module-info");
-        assertErrorNotPresent("error - fatal error encountered");
+        assertMessagePresent("error: cannot access module-info");
+        assertMessageNotPresent("error - fatal error encountered");
 
     }
 
@@ -174,7 +174,7 @@ public class Modules extends ModuleTestBase {
         // no module path
         execNegativeTask("--module-source-path", src.toString(),
                 "--module", "m2");
-        assertErrorPresent("error: module not found: m1");
+        assertMessagePresent("error: module not found: m1");
     }
 
     @Test
@@ -213,7 +213,7 @@ public class Modules extends ModuleTestBase {
         execNegativeTask("--module-source-path", src.toString(),
                 "--module-path", modulePath.toString(),
                 "--module", "m2");
-        assertErrorPresent("error: cannot find symbol");
+        assertMessagePresent("error: cannot find symbol");
 
         // dependency from module path
         ModuleBuilder mb3 = new ModuleBuilder(tb, "m3");
@@ -226,7 +226,7 @@ public class Modules extends ModuleTestBase {
                 "--module-path", modulePath.toString(),
                 "--upgrade-module-path", upgradePath.toString(),
                 "--module", "m3");
-        assertErrorPresent("Z.java:1: error: cannot find symbol");
+        assertMessagePresent("Z.java:1: error: cannot find symbol");
     }
 
     @Test
@@ -292,7 +292,7 @@ public class Modules extends ModuleTestBase {
                 "--module-path", modulePath.toString(),
                 "--limit-modules", "java.base",
                 "--module", "m2");
-        assertErrorPresent("error: module not found: m1");
+        assertMessagePresent("error: module not found: m1");
     }
 
     @Test
@@ -525,7 +525,7 @@ public class Modules extends ModuleTestBase {
                 "--module", "MIA",
                 "--expand-requires", "all");
 
-        assertErrorPresent("javadoc: error - module MIA not found.");
+        assertMessagePresent("javadoc: error - module MIA not found.");
     }
 
     @Test
@@ -547,7 +547,7 @@ public class Modules extends ModuleTestBase {
                 "--module", "M,N,L,MIA,O,P",
                 "--expand-requires", "all");
 
-        assertErrorPresent("javadoc: error - module MIA not found");
+        assertMessagePresent("javadoc: error - module MIA not found");
     }
 
     void createAuxiliaryModules(Path src) throws IOException {

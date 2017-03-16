@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8002387 8014636 8078320
+ * @bug      8002387 8014636 8078320 8175200
  * @summary  Improve rendered HTML formatting for {@code}
  * @library  ../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -47,19 +47,19 @@ public class TestLiteralCodeInPre extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/Test.html", true,
-                "no_pre()</pre>\n"
+                "no_pre&#8203;()</pre>\n"
                 + "<div class=\"block\">abc<code>def</code>ghi</div>",
-                "no_pre_extra_whitespace()</pre>\n"
+                "no_pre_extra_whitespace&#8203;()</pre>\n"
                 + "<div class=\"block\">abc<code> def  </code>ghi</div>",
-                "in_pre()</pre>\n"
+                "in_pre&#8203;()</pre>\n"
                 + "<div class=\"block\"><pre> abc<code> def  </code>ghi</pre></div>",
-                "pre_after_text()</pre>\n"
+                "pre_after_text&#8203;()</pre>\n"
                 + "<div class=\"block\">xyz <pre> abc<code> def  </code>ghi</pre></div>",
-                "after_pre()</pre>\n"
+                "after_pre&#8203;()</pre>\n"
                 + "<div class=\"block\">xyz <pre> pqr </pre> abc<code> def  </code>ghi</div>",
-                "back_in_pre()</pre>\n"
+                "back_in_pre&#8203;()</pre>\n"
                 + "<div class=\"block\">xyz <pre> pqr </pre> mno <pre> abc<code> def  </code>ghi</pre></div>",
-                "typical_usage_code()</pre>\n"
+                "typical_usage_code&#8203;()</pre>\n"
                 + "<div class=\"block\">Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n"
                 + " Example:  <pre><code>\n"
                 + "   line 0 @Override\n"
@@ -68,7 +68,7 @@ public class TestLiteralCodeInPre extends JavadocTester {
                 + "   line 3 }\n"
                 + " </code></pre>\n"
                 + " and so it goes.</div>",
-                "typical_usage_literal()</pre>\n"
+                "typical_usage_literal&#8203;()</pre>\n"
                 + "<div class=\"block\">Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n"
                 + " Example:  <pre>\n"
                 + "   line 0 @Override\n"
@@ -77,7 +77,7 @@ public class TestLiteralCodeInPre extends JavadocTester {
                 + "   line 3 }\n"
                 + " </pre>\n"
                 + " and so it goes.</div>",
-                "recommended_usage_literal()</pre>\n"
+                "recommended_usage_literal&#8203;()</pre>\n"
                 + "<div class=\"block\">Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n"
                 + " Example:  <pre>\n"
                 + "   line 0 @Override\n"
@@ -89,7 +89,7 @@ public class TestLiteralCodeInPre extends JavadocTester {
                 + " <PRE>\n"
                 + " <b>id           </b>\n"
                 + " </PRE></div>",
-                "<pre>public&nbsp;void&nbsp;htmlAttrInPre1()</pre>\n"
+                "<pre>public&nbsp;void&nbsp;htmlAttrInPre1&#8203;()</pre>\n"
                 + "<div class=\"block\">More html tag outliers.\n"
                 + " <pre>\n"
                 + " @Override\n"

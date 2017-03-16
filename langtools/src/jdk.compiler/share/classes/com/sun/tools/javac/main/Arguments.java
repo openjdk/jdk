@@ -614,6 +614,7 @@ public class Arguments {
         validateAddModules(sv);
         validateAddReads(sv);
         validateLimitModules(sv);
+        validateDefaultModuleForCreatedFiles(sv);
 
         if (lintOptions && options.isSet(Option.ADD_OPENS)) {
             log.warning(LintCategory.OPTIONS, Warnings.AddopensIgnored);
@@ -747,6 +748,17 @@ public class Arguments {
                         }
                         break;
                 }
+            }
+        }
+    }
+
+    private void validateDefaultModuleForCreatedFiles(SourceVersion sv) {
+        String moduleName = options.get(Option.DEFAULT_MODULE_FOR_CREATED_FILES);
+        if (moduleName != null) {
+            if (!SourceVersion.isName(moduleName, sv)) {
+                // syntactically invalid module name:  e.g. --default-module-for-created-files m!
+                log.error(Errors.BadNameForOption(Option.DEFAULT_MODULE_FOR_CREATED_FILES,
+                                                  moduleName));
             }
         }
     }

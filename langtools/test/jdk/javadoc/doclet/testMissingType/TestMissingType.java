@@ -44,7 +44,8 @@ public class TestMissingType extends JavadocTester {
                 "-use",
                 "-sourcepath", testSrc,
                 "p");
-        checkExit(Exit.OK);
-        checkFiles(true, "p/class-use/MissingType.html");
+        checkExit(Exit.ERROR);
+        checkOutput(Output.STDERR, false,
+                "java.lang.UnsupportedOperationException: should not happen");
     }
 }

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8174839
+ * @bug      8174839 8175200
  * @summary  Bad overriding method should not crash
  * @library  ../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -52,7 +52,7 @@ public class TestBadOverride extends JavadocTester {
         checkOutput("pkg4/Foo.html", true,
                 "<li class=\"blockList\">\n"
                 + "<h4>toString</h4>\n"
-                + "<pre>public&nbsp;void&nbsp;toString()</pre>\n"
+                + "<pre>public&nbsp;void&nbsp;toString&#8203;()</pre>\n"
                 + "<div class=\"block\">Why can't I do this ?</div>\n"
                 + "</li>");
     }
