@@ -1211,7 +1211,7 @@ void CodeCache::make_marked_nmethods_not_entrant() {
   CompiledMethodIterator iter;
   while(iter.next_alive()) {
     CompiledMethod* nm = iter.method();
-    if (nm->is_marked_for_deoptimization()) {
+    if (nm->is_marked_for_deoptimization() && !nm->is_not_entrant()) {
       nm->make_not_entrant();
     }
   }

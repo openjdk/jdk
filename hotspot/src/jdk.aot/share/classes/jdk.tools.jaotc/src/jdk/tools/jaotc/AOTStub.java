@@ -25,6 +25,7 @@ package jdk.tools.jaotc;
 
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.target.Backend;
+import org.graalvm.compiler.hotspot.HotSpotCompiledCodeBuilder;
 import org.graalvm.compiler.hotspot.stubs.Stub;
 
 import jdk.vm.ci.hotspot.HotSpotCompiledCode;
@@ -48,7 +49,7 @@ public class AOTStub implements JavaMethodInfo {
     }
 
     public HotSpotCompiledCode compiledCode(CompilationResult result) {
-        return stub.getCompiledCode(backend);
+        return HotSpotCompiledCodeBuilder.createCompiledCode(null, null, result);
     }
 
 }
