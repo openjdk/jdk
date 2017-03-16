@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.tools.javac.comp;
 
 import com.sun.tools.javac.code.Type.UndetVar.UndetVarListener;
+import com.sun.tools.javac.code.Types.TypeMapping;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCTypeCast;
 import com.sun.tools.javac.tree.TreeInfo;
@@ -61,9 +62,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
-import java.util.stream.Collectors;
-
-import com.sun.tools.javac.main.Option;
 
 import static com.sun.tools.javac.code.TypeTag.*;
 
@@ -628,7 +626,7 @@ public class Infer {
             }
         }
 
-    TypeMapping<Void> fromTypeVarFun = new TypeMapping<Void>() {
+    TypeMapping<Void> fromTypeVarFun = new StructuralTypeMapping<Void>() {
         @Override
         public Type visitTypeVar(TypeVar tv, Void aVoid) {
             UndetVar uv = new UndetVar(tv, incorporationEngine(), types);
@@ -1748,23 +1746,6 @@ public class Infer {
                  */
                 protected boolean removeDependency(Node n) {
                     return deps.remove(n);
-                }
-
-                /**
-                 * Compute closure of a give node, by recursively walking
-                 * through all its dependencies (of given kinds)
-                 */
-                protected Set<Node> closure() {
-                    boolean progress = true;
-                    Set<Node> closure = new HashSet<>();
-                    closure.add(this);
-                    while (progress) {
-                        progress = false;
-                        for (Node n1 : new HashSet<>(closure)) {
-                            progress = closure.addAll(n1.deps);
-                        }
-                    }
-                    return closure;
                 }
 
                 /**

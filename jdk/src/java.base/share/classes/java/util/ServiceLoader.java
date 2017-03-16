@@ -48,6 +48,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import jdk.internal.loader.BootLoader;
+import jdk.internal.loader.ClassLoaders;
 import jdk.internal.misc.JavaLangAccess;
 import jdk.internal.misc.JavaLangReflectModuleAccess;
 import jdk.internal.misc.SharedSecrets;
@@ -1076,10 +1077,19 @@ public final class ServiceLoader<S>
                 if (configs == null) {
                     try {
                         String fullName = PREFIX + service.getName();
-                        if (loader == null)
+                        if (loader == null) {
                             configs = ClassLoader.getSystemResources(fullName);
-                        else
+                        } else if (loader == ClassLoaders.platformClassLoader()) {
+                            // The platform classloader doesn't have a class path,
+                            // but the boot loader might.
+                            if (BootLoader.hasClassPath()) {
+                                configs = BootLoader.findResources(fullName);
+                            } else {
+                                configs = Collections.emptyEnumeration();
+                            }
+                        } else {
                             configs = loader.getResources(fullName);
+                        }
                     } catch (IOException x) {
                         fail(service, "Error locating configuration files", x);
                     }

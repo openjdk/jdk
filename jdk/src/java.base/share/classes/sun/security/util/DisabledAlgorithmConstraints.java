@@ -27,6 +27,8 @@ package sun.security.util;
 
 import sun.security.validator.Validator;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.security.CryptoPrimitive;
 import java.security.AlgorithmParameters;
 import java.security.Key;
@@ -670,8 +672,14 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 }
 
                 if (debug != null) {
-                    debug.println("Checking if usage constraint " + v +
-                            " matches " + cp.getVariant());
+                    debug.println("Checking if usage constraint \"" + v +
+                            "\" matches \"" + cp.getVariant() + "\"");
+                    // Because usage checking can come from many places
+                    // a stack trace is very helpful.
+                    ByteArrayOutputStream ba = new ByteArrayOutputStream();
+                    PrintStream ps = new PrintStream(ba);
+                    (new Exception()).printStackTrace(ps);
+                    debug.println(ba.toString());
                 }
                 if (cp.getVariant().compareTo(v) == 0) {
                     if (next(cp)) {

@@ -21,69 +21,71 @@
  or visit www.oracle.com if you need additional information or have any
  questions.
 -->
-<package name="sampleapi.tiny.sub" module="sat.sampleapi">
+<sampleapi>
+    <module name="UNNAMED">
+        <package name="sampleapi.tiny.sub" module="sat.sampleapi">
+            <class basename="TSClass">
+                <modifier>public</modifier>
+                <modifier>none|abstract</modifier>
+                <implement>TSInterface0</implement>
+                <member>
+                    <field basename="id">
+                        <modifier>public</modifier>
+                        <type>int</type>
+                    </field>
+                    <method basename="get">
+                        <modifier>public</modifier>
+                        <type>int</type>
+                        <throw>TSException0</throw>
+                    </method>
+                    <method basename="put">
+                        <modifier>public</modifier>
+                        <param>int</param>
+                        <type>void</type>
+                        <throw>TSException0</throw>
+                    </method>
+                </member>
+            </class>
 
-    <class basename="TSClass">
-        <modifier>public</modifier>
-        <modifier>none|abstract</modifier>
-        <implement>TSInterface0</implement>
-        <member>
-            <field basename="id">
+            <class basename="TSException">
                 <modifier>public</modifier>
-                <type>int</type>
-            </field>
-            <method basename="get">
-                <modifier>public</modifier>
-                <type>int</type>
-                <throw>TSException0</throw>
-            </method>
-            <method basename="put">
-                <modifier>public</modifier>
-                <param>int</param>
-                <type>void</type>
-                <throw>TSException0</throw>
-            </method>
-        </member>
-    </class>
+                <extend ref="java.lang.Exception"/>
+                <member>
+                    <constructor>
+                        <modifier>public</modifier>
+                        <param>String</param>
+                    </constructor>
+                </member>
+            </class>
 
-    <class basename="TSException">
-        <modifier>public</modifier>
-        <extend ref="java.lang.Exception"/>
-        <member>
-            <constructor>
+            <interface basename="TSInterface">
                 <modifier>public</modifier>
-                <param>String</param>
-            </constructor>
-        </member>
-    </class>
+                <member>
+                    <method basename="put">
+                        <modifier>public</modifier>
+                        <type>void</type>
+                        <param>int</param>
+                    </method>
+                </member>
+            </interface>
 
-    <interface basename="TSInterface">
-        <modifier>public</modifier>
-        <member>
-            <method basename="put">
+            <enum basename="TSEnum">
                 <modifier>public</modifier>
-                <type>void</type>
-                <param>int</param>
-            </method>
-        </member>
-    </interface>
+                <member>
+                    <constant basename="ON" count="1"/>
+                    <constant basename="OFF" count="1"/>
+                </member>
+            </enum>
 
-    <enum basename="TSEnum">
-        <modifier>public</modifier>
-        <member>
-            <constant basename="ON" count="1"/>
-            <constant basename="OFF" count="1"/>
-        </member>
-    </enum>
-
-    <annotation basename="TSAnno">
-        <modifier>public</modifier>
-        <member>
-            <method basename="value">
+            <annotation basename="TSAnno">
                 <modifier>public</modifier>
-                <type>boolean</type>
-            </method>
-        </member>
-    </annotation>
-        
-</package>
+                <member>
+                    <method basename="value">
+                        <modifier>public</modifier>
+                        <type>boolean</type>
+                    </method>
+                </member>
+            </annotation> 
+        </package>
+    </module>
+</sampleapi>
