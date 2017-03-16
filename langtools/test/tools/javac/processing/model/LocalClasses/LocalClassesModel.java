@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@
  * @bug 8166700
  * @summary Check that local classes originating in static initializer can be loaded properly.
  * @modules jdk.compiler
- * @build LocalTest$1Local LocalTest$2Local LocalTest$3Local LocalTest$4Local LocalTest$5Local LocalTest
+ * @library /tools/javac/lib
+ * @build LocalTest$1Local LocalTest$2Local LocalTest$3Local LocalTest$4Local LocalTest$5Local LocalTest JavacTestingAbstractProcessor
  * @compile LocalClassesModel.java
  * @compile/process/ref=LocalClassesModel.out -processor LocalClassesModel LocalTest$1Local LocalTest$2Local LocalTest$3Local LocalTest$4Local LocalTest$5Local LocalTest
  */
@@ -42,8 +43,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.util.ElementFilter;
 
-@SupportedAnnotationTypes("*")
-public class LocalClassesModel extends AbstractProcessor {
+public class LocalClassesModel extends JavacTestingAbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -64,10 +64,5 @@ public class LocalClassesModel extends AbstractProcessor {
         }
 
         return false;
-    }
-
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latestSupported();
     }
 }

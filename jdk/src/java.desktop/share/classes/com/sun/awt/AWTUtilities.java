@@ -456,8 +456,7 @@ public final class AWTUtilities {
                     "The component argument should not be null.");
         }
 
-        AWTAccessor.getComponentAccessor().setMixingCutoutShape(component,
-                shape);
+        component.setMixingCutoutShape(shape);
     }
 }
 
