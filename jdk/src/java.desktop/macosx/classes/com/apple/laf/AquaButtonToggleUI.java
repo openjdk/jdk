@@ -32,7 +32,7 @@ import com.apple.laf.AquaUtils.*;
 
 public class AquaButtonToggleUI extends AquaButtonUI {
     // Create PLAF
-    static final RecyclableSingleton<AquaButtonToggleUI> aquaToggleButtonUI = new RecyclableSingletonFromDefaultConstructor<AquaButtonToggleUI>(AquaButtonToggleUI.class);
+    private static final RecyclableSingleton<AquaButtonToggleUI> aquaToggleButtonUI = new RecyclableSingletonFromDefaultConstructor<AquaButtonToggleUI>(AquaButtonToggleUI.class);
     public static ComponentUI createUI(final JComponent b) {
         return aquaToggleButtonUI.get();
     }

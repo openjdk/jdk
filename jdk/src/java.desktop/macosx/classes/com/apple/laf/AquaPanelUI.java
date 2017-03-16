@@ -35,7 +35,7 @@ import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 import java.awt.Graphics;
 
 public class AquaPanelUI extends BasicPanelUI {
-    static RecyclableSingleton<AquaPanelUI> instance = new RecyclableSingletonFromDefaultConstructor<AquaPanelUI>(AquaPanelUI.class);
+    private static final RecyclableSingleton<AquaPanelUI> instance = new RecyclableSingletonFromDefaultConstructor<AquaPanelUI>(AquaPanelUI.class);
 
     public static ComponentUI createUI(final JComponent c) {
         return instance.get();
