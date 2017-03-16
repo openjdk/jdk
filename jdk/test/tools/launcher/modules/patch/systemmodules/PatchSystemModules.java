@@ -73,9 +73,10 @@ public class PatchSystemModules {
         }
 
         // compile patched source
+        String patchDir = PATCH_SRC_DIR.resolve(JAVA_BASE).toString();
         assertTrue(CompilerUtils.compile(PATCH_SRC_DIR.resolve(JAVA_BASE),
                                          PATCH_DIR.resolve(JAVA_BASE),
-                                         "-Xmodule:java.base"));
+                                         "--patch-module", "java.base=" + patchDir));
         assertTrue(CompilerUtils.compile(PATCH_SRC_DIR.resolve("m2"),
                                          PATCH_DIR.resolve("m2")));
 
