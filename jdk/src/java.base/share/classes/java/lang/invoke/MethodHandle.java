@@ -423,6 +423,7 @@ mh.invokeExact(System.out, "Hello, world.");
  * @see MethodType
  * @see MethodHandles
  * @author John Rose, JSR 292 EG
+ * @since 1.7
  */
 public abstract class MethodHandle {
 

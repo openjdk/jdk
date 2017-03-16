@@ -215,9 +215,8 @@ sun/security/tools/jarsigner/warnings/BadKeyUsageTest.java      8026393 generic-
 javax/net/ssl/DTLS/PacketLossRetransmission.java                8169086 macosx-x64
 javax/net/ssl/DTLS/RespondToRetransmit.java                     8169086 macosx-x64
 
-sun/security/krb5/auto/Basic.java                               8176296 generic-all
-
 sun/security/ssl/X509KeyManager/PreferredKey.java               8176354 generic-all
+
 ############################################################################
 
 # jdk_sound

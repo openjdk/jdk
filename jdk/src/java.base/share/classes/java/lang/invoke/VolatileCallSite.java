@@ -40,6 +40,7 @@ package java.lang.invoke;
  * with {@code MutableCallSite}.
  * @see MutableCallSite
  * @author John Rose, JSR 292 EG
+ * @since 1.7
  */
 public class VolatileCallSite extends CallSite {
     /**

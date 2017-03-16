@@ -39,6 +39,7 @@ import java.util.stream.Stream;
 import jdk.testlibrary.FileUtils;
 import jdk.testlibrary.JDKToolFinder;
 import org.testng.annotations.BeforeTest;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static java.lang.String.format;
@@ -46,7 +47,7 @@ import static java.lang.System.out;
 
 /*
  * @test
- * @bug 8167328 8171830 8165640 8174248
+ * @bug 8167328 8171830 8165640 8174248 8176772
  * @library /lib/testlibrary
  * @modules jdk.compiler
  *          jdk.jartool
@@ -754,7 +755,7 @@ public class Basic {
             .assertSuccess();
 
 
-        for (String option : new String[]  {"--print-module-descriptor", "-d" }) {
+        for (String option : new String[]  {"--describe-module", "-d" }) {
 
             jar(option,
                 "--file=" + modularJar.toString())
@@ -801,8 +802,8 @@ public class Basic {
     }
 
     @Test
-    public void printModuleDescriptorFoo() throws IOException {
-        Path mp = Paths.get("printModuleDescriptorFoo");
+    public void describeModuleFoo() throws IOException {
+        Path mp = Paths.get("describeModuleFoo");
         createTestDir(mp);
         Path modClasses = MODULE_CLASSES.resolve(FOO.moduleName);
         Path modularJar = mp.resolve(FOO.moduleName + ".jar");
@@ -815,7 +816,7 @@ public class Basic {
             "-C", modClasses.toString(), ".")
             .assertSuccess();
 
-        for (String option : new String[]  {"--print-module-descriptor", "-d" }) {
+        for (String option : new String[]  {"--describe-module", "-d" }) {
             jar(option,
                 "--file=" + modularJar.toString())
                 .assertSuccess()
@@ -836,8 +837,8 @@ public class Basic {
     }
 
     @Test
-    public void printModuleDescriptorFooFromStdin() throws IOException {
-        Path mp = Paths.get("printModuleDescriptorFooFromStdin");
+    public void describeModuleFooFromStdin() throws IOException {
+        Path mp = Paths.get("describeModuleFooFromStdin");
         createTestDir(mp);
         Path modClasses = MODULE_CLASSES.resolve(FOO.moduleName);
         Path modularJar = mp.resolve(FOO.moduleName + ".jar");
@@ -850,7 +851,7 @@ public class Basic {
             "-C", modClasses.toString(), ".")
             .assertSuccess();
 
-        for (String option : new String[]  {"--print-module-descriptor", "-d" }) {
+        for (String option : new String[]  {"--describe-module", "-d" }) {
             jarWithStdin(modularJar.toFile(),
                          option)
                          .assertSuccess()
@@ -858,6 +859,50 @@ public class Basic {
                              assertTrue(r.output.contains(FOO.moduleName + "@" + FOO.version),
                                 "Expected to find ", FOO.moduleName + "@" + FOO.version,
                                 " in [", r.output, "]")
+                );
+        }
+    }
+
+
+    @DataProvider(name = "autoNames")
+    public Object[][] autoNames() {
+        return new Object[][] {
+            // JAR file name                module-name[@version]
+            { "foo.jar",                    "foo" },
+            { "foo4j.jar",                  "foo4j", },
+            { "foo1.2.3.jar",               "foo" },
+            { "foo-1.2.3.4.jar",            "foo@1.2.3.4" },
+            { "foo-bar.jar",                "foo.bar" },
+            { "foo-1.2-SNAPSHOT.jar",       "foo@1.2-SNAPSHOT" },
+        };
+    }
+
+    @Test(dataProvider = "autoNames")
+    public void describeAutomaticModule(String jarName, String mid)
+        throws IOException
+    {
+        Path mp = Paths.get("describeAutomaticModule");
+        createTestDir(mp);
+        Path regularJar = mp.resolve(jarName);
+        Path t = Paths.get("t");
+        if (Files.notExists(t))
+            Files.createFile(t);
+
+        jar("--create",
+            "--file=" + regularJar.toString(),
+            t.toString())
+            .assertSuccess();
+
+        for (String option : new String[]  {"--describe-module", "-d" }) {
+            jar(option,
+                "--file=" + regularJar.toString())
+                .assertSuccess()
+                .resultChecker(r -> {
+                    assertTrue(r.output.contains("No module descriptor found"));
+                    assertTrue(r.output.contains("Derived automatic module"));
+                    assertTrue(r.output.contains("module " + mid),
+                               "Expected [", "module " + mid,"] in [", r.output, "]");
+                    }
                 );
         }
     }
