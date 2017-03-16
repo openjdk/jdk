@@ -1251,6 +1251,7 @@ public final class ProcessBuilder
      *          If the operating system does not support the creation of processes
      *
      * @throws IOException if an I/O error occurs
+     * @since 9
      */
     public static List<Process> startPipeline(List<ProcessBuilder> builders) throws IOException {
         // Accumulate and check the builders
