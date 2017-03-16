@@ -621,7 +621,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
         // 4 and 5 buttons are usually considered assigned to a first wheel
         return button == XConstants.buttons[3] || button == XConstants.buttons[4];
     }
-
+    @SuppressWarnings("deprecation")
     static int getXModifiers(AWTKeyStroke stroke) {
         int mods = stroke.getModifiers();
         int res = 0;

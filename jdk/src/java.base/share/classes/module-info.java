@@ -25,6 +25,8 @@
 
 /**
  * Defines the foundational APIs of the Java SE Platform.
+ *
+ * @since 9
  */
 module java.base {
 
@@ -237,8 +239,7 @@ module java.base {
         java.management.rmi,
         java.rmi,
         java.sql.rowset,
-        java.xml,
-        java.xml.ws;
+        java.xml;
     exports sun.security.action to
         java.desktop,
         java.security.jgss;

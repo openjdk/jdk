@@ -76,5 +76,8 @@ public class LoopingTruncate {
         } finally {
             Files.deleteIfExists(path);
         }
+
+        System.out.println("Test succeeded.");
+        System.out.flush();
     }
 }
