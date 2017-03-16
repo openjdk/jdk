@@ -212,6 +212,7 @@ public class MenuSelectionManager {
      *
      * @param event  a MouseEvent object
      */
+    @SuppressWarnings("deprecation")
     public void processMouseEvent(MouseEvent event) {
         int screenX,screenY;
         Point p;

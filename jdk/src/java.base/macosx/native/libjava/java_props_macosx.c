@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,23 +80,31 @@ char *getMacOSXLocale(int cat) {
             // "en-GB"      (language with alpha-2 region designator)
             // "es-419"     (language with 3-digit UN M.49 area code)
             // "zh-Hans"    (language with ISO 15924 script designator)
+            // "zh-Hans-US"  (language with ISO 15924 script designator and region)
+            // "zh-Hans-419" (language with ISO 15924 script designator and UN M.49)
             //
-            // In the case of region designators (alpha-2 or UN M.49), we convert
+            // In the case of region designators (alpha-2 and/or UN M.49), we convert
             // to our locale string format by changing '-' to '_'.  That is, if
             // the '-' is followed by fewer than 4 chars.
             char* scriptOrRegion = strchr(languageString, '-');
-            if (scriptOrRegion != NULL && strlen(scriptOrRegion) < 5) {
-                *scriptOrRegion = '_';
+            if (scriptOrRegion != NULL) {
+                int length = strlen(scriptOrRegion);
+                if (length > 5) {
+                    // Region and script both exist. Honor the script for now
+                    scriptOrRegion[5] = '\0';
+                } else if (length < 5) {
+                    *scriptOrRegion = '_';
 
-                assert((strlen(scriptOrRegion) == 3 &&
+                    assert((length == 3 &&
                         // '-' followed by a 2 character region designator
                           isalpha(scriptOrRegion[1]) &&
                           isalpha(scriptOrRegion[2])) ||
-                       (strlen(scriptOrRegion) == 4 &&
+                           (length == 4 &&
                         // '-' followed by a 3-digit UN M.49 area code
                           isdigit(scriptOrRegion[1]) &&
                           isdigit(scriptOrRegion[2]) &&
                           isdigit(scriptOrRegion[3])));
+                }
             }
             const char* retVal = languageString;
 
