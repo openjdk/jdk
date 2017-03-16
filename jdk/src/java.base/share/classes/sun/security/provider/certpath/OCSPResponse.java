@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import javax.security.auth.x500.X500Principal;
 
@@ -375,7 +374,8 @@ public final class OCSPResponse {
     }
 
     void verify(List<CertId> certIds, IssuerInfo issuerInfo,
-            X509Certificate responderCert, Date date, byte[] nonce)
+            X509Certificate responderCert, Date date, byte[] nonce,
+            String variant)
         throws CertPathValidatorException
     {
         switch (responseStatus) {
@@ -508,7 +508,8 @@ public final class OCSPResponse {
                 // Check algorithm constraints specified in security property
                 // "jdk.certpath.disabledAlgorithms".
                 AlgorithmChecker algChecker =
-                        new AlgorithmChecker(issuerInfo.getAnchor(), date);
+                        new AlgorithmChecker(issuerInfo.getAnchor(), date,
+                                variant);
                 algChecker.init(false);
                 algChecker.check(signerCert, Collections.<String>emptySet());
 
@@ -568,7 +569,7 @@ public final class OCSPResponse {
         if (signerCert != null) {
             // Check algorithm constraints specified in security property
             // "jdk.certpath.disabledAlgorithms".
-            AlgorithmChecker.check(signerCert.getPublicKey(), sigAlgId);
+            AlgorithmChecker.check(signerCert.getPublicKey(), sigAlgId, variant);
 
             if (!verifySignature(signerCert)) {
                 throw new CertPathValidatorException(
