@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ import com.sun.tools.javac.file.CacheFSInfo;
 import com.sun.tools.javac.file.BaseFileManager;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.jvm.Target;
+import com.sun.tools.javac.main.CommandLine.UnmatchedQuote;
 import com.sun.tools.javac.platform.PlatformDescription;
 import com.sun.tools.javac.processing.AnnotationProcessingError;
 import com.sun.tools.javac.util.*;
@@ -80,6 +81,7 @@ public class Main {
      */
     boolean apiMode;
 
+    private static final String ENV_OPT_NAME = "JDK_JAVAC_OPTIONS";
 
     /** Result codes.
      */
@@ -201,19 +203,12 @@ public class Main {
             return Result.CMDERR;
         }
 
-        // prefix argv with contents of _JAVAC_OPTIONS if set
-        String envOpt = System.getenv("_JAVAC_OPTIONS");
-        if (envOpt != null && !envOpt.trim().isEmpty()) {
-            String[] envv = envOpt.split("\\s+");
-            String[] result = new String[envv.length + argv.length];
-            System.arraycopy(envv, 0, result, 0, envv.length);
-            System.arraycopy(argv, 0, result, envv.length, argv.length);
-            argv = result;
-        }
-
-        // expand @-files
+        // prefix argv with contents of environment variable and expand @-files
         try {
-            argv = CommandLine.parse(argv);
+            argv = CommandLine.parse(ENV_OPT_NAME, argv);
+        } catch (UnmatchedQuote ex) {
+            error("err.unmatched.quote", ex.variableName);
+            return Result.CMDERR;
         } catch (FileNotFoundException | NoSuchFileException e) {
             warning("err.file.not.found", e.getMessage());
             return Result.SYSERR;
@@ -304,7 +299,7 @@ public class Main {
         }
 
         try {
-            comp.compile(args.getFileObjects(), args.getClassNames(), null);
+            comp.compile(args.getFileObjects(), args.getClassNames(), null, List.nil());
 
             if (log.expectDiagKeys != null) {
                 if (log.expectDiagKeys.isEmpty()) {

@@ -32,7 +32,9 @@ import jdk.jshell.spi.ExecutionEnv;
 
 /**
  * A provider of execution engines which run in the same process as JShell.
+ *
  * @author Robert Field
+ * @since 9
  */
 public class LocalExecutionControlProvider implements ExecutionControlProvider{
 
