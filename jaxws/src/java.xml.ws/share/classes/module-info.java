@@ -29,6 +29,7 @@
  *
  * @since 9
  */
+@Deprecated(since="9", forRemoval=true)
 module java.xml.ws {
     requires transitive java.activation;
     requires transitive java.xml;

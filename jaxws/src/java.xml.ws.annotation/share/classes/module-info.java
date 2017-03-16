@@ -29,6 +29,7 @@
  *
  * @since 9
  */
+@Deprecated(since="9", forRemoval=true)
 module java.xml.ws.annotation {
     exports javax.annotation;
 }
