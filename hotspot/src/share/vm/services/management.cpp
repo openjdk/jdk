@@ -1291,25 +1291,6 @@ JVM_ENTRY(jobjectArray, jmm_DumpThreads(JNIEnv *env, jlongArray thread_ids, jboo
   return (jobjectArray) JNIHandles::make_local(env, result_h());
 JVM_END
 
-// Returns an array of Class objects.
-JVM_ENTRY(jobjectArray, jmm_GetLoadedClasses(JNIEnv *env))
-  ResourceMark rm(THREAD);
-
-  LoadedClassesEnumerator lce;
-
-  int num_classes = lce.num_loaded_classes();
-  objArrayOop r = oopFactory::new_objArray(SystemDictionary::Class_klass(), num_classes, CHECK_0);
-  objArrayHandle classes_ah(THREAD, r);
-
-  for (int i = 0; i < num_classes; i++) {
-    Klass* k = lce.get_klass(i);
-    oop mirror = k->java_mirror();
-    classes_ah->obj_at_put(i, mirror);
-  }
-
-  return (jobjectArray) JNIHandles::make_local(env, classes_ah());
-JVM_END
-
 // Reset statistic.  Return true if the requested statistic is reset.
 // Otherwise, return false.
 //
