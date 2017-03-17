@@ -53,6 +53,7 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 
 import com.sun.tools.javac.code.Kinds.Kind;
+import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
@@ -60,8 +61,11 @@ import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.comp.Modules;
+import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
+import com.sun.tools.javac.tree.JCTree.JCModuleDecl;
+import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
@@ -70,7 +74,9 @@ import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.DocletEnvironment.ModuleMode;
 
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
+
 import static javax.tools.JavaFileObject.Kind.*;
+
 import static jdk.javadoc.internal.tool.Main.Result.*;
 import static jdk.javadoc.internal.tool.JavadocTool.isValidClassName;
 
@@ -153,10 +159,11 @@ public class ElementsTable {
     private final Symtab syms;
     private final Names names;
     private final JavaFileManager fm;
-    private final Location location;
+    private final List<Location> locations;
     private final Modules modules;
     private final Map<ToolOption, Object> opts;
     private final Messager messager;
+    private final JavaCompiler compiler;
 
     private final Map<String, Entry> entries = new LinkedHashMap<>();
 
@@ -201,12 +208,22 @@ public class ElementsTable {
         this.modules = Modules.instance(context);
         this.opts = opts;
         this.messager = Messager.instance0(context);
+        this.compiler = JavaCompiler.instance(context);
+        Source source = Source.instance(context);
 
-        this.location = modules.multiModuleMode
-                ? StandardLocation.MODULE_SOURCE_PATH
-                : toolEnv.fileManager.hasLocation(StandardLocation.SOURCE_PATH)
-                    ? StandardLocation.SOURCE_PATH
-                    : StandardLocation.CLASS_PATH;
+        List<Location> locs = new ArrayList<>();
+        if (modules.multiModuleMode) {
+            locs.add(StandardLocation.MODULE_SOURCE_PATH);
+        } else {
+            if (toolEnv.fileManager.hasLocation(StandardLocation.SOURCE_PATH))
+                locs.add(StandardLocation.SOURCE_PATH);
+            else
+                locs.add(StandardLocation.CLASS_PATH);
+        }
+        if (source.allowModules() && toolEnv.fileManager.hasLocation(StandardLocation.PATCH_MODULE_PATH))
+            locs.add(StandardLocation.PATCH_MODULE_PATH);
+        this.locations = Collections.unmodifiableList(locs);
+
         getEntry("").excluded = false;
 
         accessFilter = new ModifierFilter(opts);
@@ -341,6 +358,52 @@ public class ElementsTable {
         return this;
     }
 
+    /*
+     * This method sanity checks the following cases:
+     * a. a source-path containing a single module and many modules specified with --module
+     * b. no modules on source-path
+     * c. mismatched source-path and many modules specified with --module
+     */
+    void sanityCheckSourcePathModules(List<String> moduleNames) throws ToolException {
+        if (!haveSourceLocationWithModule)
+            return;
+
+        if (moduleNames.size() > 1) {
+            String text = messager.getText("main.cannot_use_sourcepath_for_modules",
+                    String.join(", ", moduleNames));
+            throw new ToolException(CMDERR, text);
+        }
+
+        String foundModule = getModuleName(StandardLocation.SOURCE_PATH);
+        if (foundModule == null) {
+            String text = messager.getText("main.module_not_found_on_sourcepath", moduleNames.get(0));
+            throw new ToolException(CMDERR, text);
+        }
+
+        if (!moduleNames.get(0).equals(foundModule)) {
+            String text = messager.getText("main.sourcepath_does_not_contain_module", moduleNames.get(0));
+            throw new ToolException(CMDERR, text);
+        }
+    }
+
+    private String getModuleName(Location location) throws ToolException {
+        try {
+            JavaFileObject jfo = fm.getJavaFileForInput(location,
+                    "module-info", JavaFileObject.Kind.SOURCE);
+            if (jfo != null) {
+                JCCompilationUnit jcu = compiler.parse(jfo);
+                JCModuleDecl module = TreeInfo.getModule(jcu);
+                if (module != null) {
+                    return module.getName().toString();
+                }
+            }
+        } catch (IOException ioe) {
+            String text = messager.getText("main.file.manager.list", location);
+            throw new ToolException(SYSERR, text, ioe);
+        }
+        return null;
+    }
+
     @SuppressWarnings("unchecked")
     ElementsTable scanSpecifiedItems() throws ToolException {
 
@@ -349,15 +412,17 @@ public class ElementsTable {
                 s -> Collections.EMPTY_LIST);
         List<String> mlist = new ArrayList<>();
         for (String m : moduleNames) {
-            Location moduleLoc = getModuleLocation(location, m);
-            if (moduleLoc == null) {
+            List<Location> moduleLocations = getModuleLocation(locations, m);
+            if (moduleLocations.isEmpty()) {
                 String text = messager.getText("main.module_not_found", m);
                 throw new ToolException(CMDERR, text);
-            } else {
-                mlist.add(m);
-                ModuleSymbol msym = syms.enterModule(names.fromString(m));
-                specifiedModuleElements.add((ModuleElement) msym);
             }
+            if (moduleLocations.contains(StandardLocation.SOURCE_PATH)) {
+                sanityCheckSourcePathModules(moduleNames);
+            }
+            mlist.add(m);
+            ModuleSymbol msym = syms.enterModule(names.fromString(m));
+            specifiedModuleElements.add((ModuleElement) msym);
         }
 
         // scan for modules with qualified packages
@@ -448,35 +513,41 @@ public class ElementsTable {
         });
 
         for (ModulePackage modpkg : subPackages) {
-            Location packageLocn = getLocation(modpkg);
-            Iterable<JavaFileObject> list = null;
-            try {
-                list = fm.list(packageLocn, modpkg.packageName, sourceKinds, true);
-            } catch (IOException ioe) {
-                String text = messager.getText("main.file.manager.list", modpkg.packageName);
-                throw new ToolException(SYSERR, text, ioe);
+            List<Location> locs = getLocation(modpkg);
+            for (Location loc : locs) {
+                addPackagesFromLocations(loc, modpkg);
             }
-            for (JavaFileObject fo : list) {
-                String binaryName = fm.inferBinaryName(packageLocn, fo);
-                String pn = getPackageName(binaryName);
-                String simpleName = getSimpleName(binaryName);
-                Entry e = getEntry(pn);
-                if (!e.isExcluded() && isValidClassName(simpleName)) {
-                    ModuleSymbol msym = (modpkg.hasModule())
-                            ? syms.getModule(names.fromString(modpkg.moduleName))
-                            : findModuleOfPackageName(modpkg.packageName);
+        }
+    }
 
-                    if (msym != null && !msym.isUnnamed()) {
-                        syms.enterPackage(msym, names.fromString(pn));
-                        ModulePackage npkg = new ModulePackage(msym.toString(), pn);
-                        cmdLinePackages.add(npkg);
-                    } else {
-                        cmdLinePackages.add(e.modpkg);
-                    }
-                    e.files = (e.files == null
-                            ? com.sun.tools.javac.util.List.of(fo)
-                            : e.files.prepend(fo));
+    private void addPackagesFromLocations(Location packageLocn, ModulePackage modpkg) throws ToolException {
+        Iterable<JavaFileObject> list = null;
+        try {
+            list = fm.list(packageLocn, modpkg.packageName, sourceKinds, true);
+        } catch (IOException ioe) {
+            String text = messager.getText("main.file.manager.list", modpkg.packageName);
+            throw new ToolException(SYSERR, text, ioe);
+        }
+        for (JavaFileObject fo : list) {
+            String binaryName = fm.inferBinaryName(packageLocn, fo);
+            String pn = getPackageName(binaryName);
+            String simpleName = getSimpleName(binaryName);
+            Entry e = getEntry(pn);
+            if (!e.isExcluded() && isValidClassName(simpleName)) {
+                ModuleSymbol msym = (modpkg.hasModule())
+                        ? syms.getModule(names.fromString(modpkg.moduleName))
+                        : findModuleOfPackageName(modpkg.packageName);
+
+                if (msym != null && !msym.isUnnamed()) {
+                    syms.enterPackage(msym, names.fromString(pn));
+                    ModulePackage npkg = new ModulePackage(msym.toString(), pn);
+                    cmdLinePackages.add(npkg);
+                } else {
+                    cmdLinePackages.add(e.modpkg);
                 }
+                e.files = (e.files == null
+                        ? com.sun.tools.javac.util.List.of(fo)
+                        : e.files.prepend(fo));
             }
         }
     }
@@ -544,20 +615,23 @@ public class ElementsTable {
     private Set<PackageElement> getAllModulePackages(ModuleElement mdle) throws ToolException {
         Set<PackageElement> result = new HashSet<>();
         ModuleSymbol msym = (ModuleSymbol) mdle;
-        Location msymloc = getModuleLocation(location, msym.name.toString());
-        try {
-            for (JavaFileObject fo : fm.list(msymloc, "", sourceKinds, true)) {
-                if (fo.getName().endsWith("module-info.java"))
-                    continue;
-                String binaryName = fm.inferBinaryName(msymloc, fo);
-                String pn = getPackageName(binaryName);
-                PackageSymbol psym = syms.enterPackage(msym, names.fromString(pn));
-                result.add((PackageElement) psym);
-            }
+        List<Location> msymlocs = getModuleLocation(locations, msym.name.toString());
+        for (Location msymloc : msymlocs) {
+            try {
+                for (JavaFileObject fo : fm.list(msymloc, "", sourceKinds, true)) {
+                    if (fo.getName().endsWith("module-info.java")) {
+                        continue;
+                    }
+                    String binaryName = fm.inferBinaryName(msymloc, fo);
+                    String pn = getPackageName(binaryName);
+                    PackageSymbol psym = syms.enterPackage(msym, names.fromString(pn));
+                    result.add((PackageElement) psym);
+                }
 
-        } catch (IOException ioe) {
-            String text = messager.getText("main.file.manager.list", msymloc.getName());
-            throw new ToolException(SYSERR, text, ioe);
+            } catch (IOException ioe) {
+                String text = messager.getText("main.file.manager.list", msymloc.getName());
+                throw new ToolException(SYSERR, text, ioe);
+            }
         }
         return result;
     }
@@ -741,25 +815,25 @@ public class ElementsTable {
         }
 
         ListBuffer<JavaFileObject> lb = new ListBuffer<>();
-        Location packageLocn = getLocation(modpkg);
-        if (packageLocn == null) {
+        List<Location> locs = getLocation(modpkg);
+        if (locs.isEmpty()) {
             return Collections.emptyList();
         }
         String pname = modpkg.packageName;
-
-        try {
-            for (JavaFileObject fo : fm.list(packageLocn, pname, sourceKinds, recurse)) {
-                String binaryName = fm.inferBinaryName(packageLocn, fo);
-                String simpleName = getSimpleName(binaryName);
-                if (isValidClassName(simpleName)) {
-                    lb.append(fo);
+        for (Location packageLocn : locs) {
+            try {
+                for (JavaFileObject fo : fm.list(packageLocn, pname, sourceKinds, recurse)) {
+                    String binaryName = fm.inferBinaryName(packageLocn, fo);
+                    String simpleName = getSimpleName(binaryName);
+                    if (isValidClassName(simpleName)) {
+                        lb.append(fo);
+                    }
                 }
+            } catch (IOException ioe) {
+                String text = messager.getText("main.file.manager.list", pname);
+                throw new ToolException(SYSERR, text, ioe);
             }
-        } catch (IOException ioe) {
-            String text = messager.getText("main.file.manager.list", pname);
-            throw new ToolException(SYSERR, text, ioe);
         }
-
         return lb.toList();
     }
 
@@ -774,24 +848,49 @@ public class ElementsTable {
             return null;
     }
 
-    private Location getLocation(ModulePackage modpkg) throws ToolException {
-        if (location != StandardLocation.MODULE_SOURCE_PATH) {
-            return location;
+    private List<Location> getLocation(ModulePackage modpkg) throws ToolException {
+        if (locations.size() == 1 && !locations.contains(StandardLocation.MODULE_SOURCE_PATH)) {
+            return Collections.singletonList(locations.get(0));
         }
 
         if (modpkg.hasModule()) {
-            return getModuleLocation(location, modpkg.moduleName);
+            return getModuleLocation(locations, modpkg.moduleName);
         }
         // TODO: handle invalid results better.
         ModuleSymbol msym = findModuleOfPackageName(modpkg.packageName);
         if (msym == null) {
-            return null;
+            return Collections.emptyList();
         }
-        return getModuleLocation(location, msym.name.toString());
+        return getModuleLocation(locations, msym.name.toString());
     }
 
-    private Location getModuleLocation(Location location, String msymName)
-            throws ToolException {
+    boolean haveSourceLocationWithModule = false;
+
+    private List<Location> getModuleLocation(List<Location> locations, String msymName) throws ToolException {
+        List<Location> out = new ArrayList<>();
+        // search in the patch module first, this overrides others
+        if (locations.contains(StandardLocation.PATCH_MODULE_PATH)) {
+            Location loc = getModuleLocation(StandardLocation.PATCH_MODULE_PATH, msymName);
+            if (loc != null)
+                out.add(loc);
+        }
+        for (Location location : locations) {
+            // skip patch module, already done
+            if (location == StandardLocation.PATCH_MODULE_PATH) {
+                continue;
+            } else if (location == StandardLocation.MODULE_SOURCE_PATH) {
+                Location loc = getModuleLocation(location, msymName);
+                if (loc != null)
+                    out.add(loc);
+            } else if (location == StandardLocation.SOURCE_PATH) {
+                haveSourceLocationWithModule = true;
+                out.add(StandardLocation.SOURCE_PATH);
+            }
+        }
+        return out;
+    }
+
+    private Location getModuleLocation(Location location, String msymName) throws ToolException {
         try {
             return fm.getLocationForModule(location, msymName);
         } catch (IOException ioe) {
