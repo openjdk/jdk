@@ -134,20 +134,14 @@ class ChunkManager : public CHeapObj<mtInternal> {
     return &_humongous_dictionary;
   }
 
-  // ChunkManager in all lists of this type
+  // Size, in metaspace words, of all chunks managed by this ChunkManager
   size_t _free_chunks_total;
+  // Number of chunks in this ChunkManager
   size_t _free_chunks_count;
 
-  void dec_free_chunks_total(size_t v) {
-    assert(_free_chunks_count > 0,
-      "ChunkManager::_free_chunks_count: about to go negative (" SIZE_FORMAT ").", _free_chunks_count);
-    assert(_free_chunks_total >= v,
-      "ChunkManager::_free_chunks_total: about to go negative"
-       "(now: " SIZE_FORMAT ", decrement value: " SIZE_FORMAT ").", _free_chunks_total, v);
-    Atomic::add_ptr(-1, &_free_chunks_count);
-    jlong minus_v = (jlong) - (jlong) v;
-    Atomic::add_ptr(minus_v, &_free_chunks_total);
-  }
+  // Update counters after a chunk was added or removed removed.
+  void account_for_added_chunk(const Metachunk* c);
+  void account_for_removed_chunk(const Metachunk* c);
 
   // Debug support
 
@@ -205,11 +199,6 @@ class ChunkManager : public CHeapObj<mtInternal> {
 
   // Number of chunks in the free chunks list
   size_t free_chunks_count();
-
-  void inc_free_chunks_total(size_t v, size_t count = 1) {
-    Atomic::add_ptr(count, &_free_chunks_count);
-    Atomic::add_ptr(v, &_free_chunks_total);
-  }
 
   // Remove from a list by size.  Selects list based on size of chunk.
   Metachunk* free_chunks_get(size_t chunk_word_size);
@@ -1186,8 +1175,8 @@ void ChunkManager::remove_chunk(Metachunk* chunk) {
     humongous_dictionary()->remove_chunk(chunk);
   }
 
-  // Chunk is being removed from the chunks free list.
-  dec_free_chunks_total(chunk->word_size());
+  // Chunk has been removed from the chunks free list, update counters.
+  account_for_removed_chunk(chunk);
 }
 
 // Walk the list of VirtualSpaceNodes and delete
@@ -1278,7 +1267,6 @@ void VirtualSpaceNode::retire(ChunkManager* chunk_manager) {
       assert(chunk != NULL, "allocation should have been successful");
 
       chunk_manager->return_single_chunk(index, chunk);
-      chunk_manager->inc_free_chunks_total(chunk_size);
     }
     DEBUG_ONLY(verify_container_count();)
   }
@@ -1755,6 +1743,25 @@ size_t ChunkManager::free_chunks_total_bytes() {
   return free_chunks_total_words() * BytesPerWord;
 }
 
+// Update internal accounting after a chunk was added
+void ChunkManager::account_for_added_chunk(const Metachunk* c) {
+  assert_lock_strong(SpaceManager::expand_lock());
+  _free_chunks_count ++;
+  _free_chunks_total += c->word_size();
+}
+
+// Update internal accounting after a chunk was removed
+void ChunkManager::account_for_removed_chunk(const Metachunk* c) {
+  assert_lock_strong(SpaceManager::expand_lock());
+  assert(_free_chunks_count >= 1,
+    "ChunkManager::_free_chunks_count: about to go negative (" SIZE_FORMAT ").", _free_chunks_count);
+  assert(_free_chunks_total >= c->word_size(),
+    "ChunkManager::_free_chunks_total: about to go negative"
+     "(now: " SIZE_FORMAT ", decrement value: " SIZE_FORMAT ").", _free_chunks_total, c->word_size());
+  _free_chunks_count --;
+  _free_chunks_total -= c->word_size();
+}
+
 size_t ChunkManager::free_chunks_count() {
 #ifdef ASSERT
   if (!UseConcMarkSweepGC && !SpaceManager::expand_lock()->is_locked()) {
@@ -1922,8 +1929,8 @@ Metachunk* ChunkManager::free_chunks_get(size_t word_size) {
                                     chunk->word_size(), word_size, chunk->word_size() - word_size);
   }
 
-  // Chunk is being removed from the chunks free list.
-  dec_free_chunks_total(chunk->word_size());
+  // Chunk has been removed from the chunk manager; update counters.
+  account_for_removed_chunk(chunk);
 
   // Remove it from the links to this freelist
   chunk->set_next(NULL);
@@ -2000,6 +2007,9 @@ void ChunkManager::return_single_chunk(ChunkIndex index, Metachunk* chunk) {
   }
   chunk->container()->dec_container_count();
   DEBUG_ONLY(chunk->set_is_tagged_free(true);)
+
+  // Chunk has been added; update counters.
+  account_for_added_chunk(chunk);
 
 }
 
@@ -2393,11 +2403,6 @@ SpaceManager::~SpaceManager() {
     block_freelists()->print_on(log.trace_stream());
   }
   }
-
-  // Have to update before the chunks_in_use lists are emptied
-  // below.
-  chunk_manager()->inc_free_chunks_total(allocated_chunks_words(),
-                                         sum_count_in_chunks_in_use());
 
   // Add all the chunks in use by this space manager
   // to the global list of free chunks.
@@ -4251,10 +4256,6 @@ class ChunkManagerReturnTestImpl {
     _cm.return_single_chunk(_cm.list_index(c->word_size()), c);
     _chunks_in_chunkmanager ++;
     _words_in_chunkmanager += c->word_size();
-    // (Note: until 8170520 is fixed, internal ChunkManager counters have to be updated
-    // by the caller - but only when returning chunks, ChunkManager->remove_chunk()
-    // already updates the counter.)
-    _cm.inc_free_chunks_total(c->word_size(), 1);
     assert(c->is_tagged_free() == true, "wrong chunk information");
     assert_counters();
     _cm.locked_verify();
@@ -4277,10 +4278,6 @@ class ChunkManagerReturnTestImpl {
     _cm.return_chunk_list(aChunkList.index, aChunkList.head);
     _chunks_in_chunkmanager += aChunkList.num;
     _words_in_chunkmanager += aChunkList.size;
-    // (Note: until 8170520 is fixed, internal ChunkManager counters have to be updated
-    // by the caller - but only when returning chunks, ChunkManager->remove_chunk()
-    // already updates the counter.)
-    _cm.inc_free_chunks_total(aChunkList.size, aChunkList.num);
     // After all chunks are returned, check that they are now tagged free.
     for (int i = 0; i < aChunkList.num; i ++) {
       assert(aChunkList.all[i]->is_tagged_free(), "chunk state mismatch.");
