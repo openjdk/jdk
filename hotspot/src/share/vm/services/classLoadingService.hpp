@@ -117,28 +117,4 @@ public:
   }
 };
 
-// FIXME: make this piece of code to be shared by M&M and JVMTI
-class LoadedClassesEnumerator : public StackObj {
-private:
-  static GrowableArray<Klass*>* _loaded_classes;
-  GrowableArray<Klass*>* _klass_array;
-
-public:
-  LoadedClassesEnumerator();
-
-  int num_loaded_classes()         { return _klass_array->length(); }
-  Klass* get_klass(int index)      { return _klass_array->at(index); }
-
-  static void add_loaded_class(Klass* k) {
-    // FIXME: For now - don't include array klasses
-    // The spec is unclear at this point to count array klasses or not
-    // and also indirect creation of array of super class and secondaries
-    //
-    // for (Klass* l = k; l != NULL; l = l->array_klass_or_null()) {
-    //  _loaded_classes->append(l);
-    // }
-    _loaded_classes->append(k);
-  }
-};
-
 #endif // SHARE_VM_SERVICES_CLASSLOADINGSERVICE_HPP

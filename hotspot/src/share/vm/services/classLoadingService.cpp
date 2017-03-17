@@ -197,26 +197,4 @@ void ClassLoadingService::reset_trace_class_unloading() {
   LogConfiguration::configure_stdout(level, false, LOG_TAGS(class, unload));
 }
 
-GrowableArray<Klass*>* LoadedClassesEnumerator::_loaded_classes = NULL;
-
-LoadedClassesEnumerator::LoadedClassesEnumerator() {
-
-  int init_size = ClassLoadingService::loaded_class_count();
-  _klass_array = new GrowableArray<Klass*>(init_size);
-
-  // For consistency of the loaded classes, grab the SystemDictionary lock
-  MutexLocker sd_mutex(SystemDictionary_lock);
-
-  // Set _loaded_classes and begin enumerating all classes.
-  // Only one thread will do the enumeration at a time.
-  // These static variables are needed and they are used by the static method
-  // add_loaded_class called from classes_do().
-  _loaded_classes = _klass_array;
-
-  SystemDictionary::classes_do(&add_loaded_class);
-
-  // FIXME: Exclude array klasses for now
-  // Universe::basic_type_classes_do(&add_loaded_class);
-}
-
 #endif // INCLUDE_MANAGEMENT
