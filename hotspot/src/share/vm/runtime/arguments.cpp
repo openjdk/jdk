@@ -3174,6 +3174,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
     // -Xprof
     } else if (match_option(option, "-Xprof")) {
 #if INCLUDE_FPROF
+      log_warning(arguments)("Option -Xprof was deprecated in version 9 and will likely be removed in a future release.");
       _has_profile = true;
 #else // INCLUDE_FPROF
       jio_fprintf(defaultStream::error_stream(),
