@@ -213,17 +213,8 @@ PerfLongVariant::PerfLongVariant(CounterNS ns, const char* namep, Units u,
 }
 
 void PerfLongVariant::sample() {
-
-  // JJJ - This should not happen.  Maybe the first sample is taken
-  // while the _sample_helper is being null'ed out.
-  // assert(_sample_helper != NULL || _sampled != NULL, "unexpected state");
-  if (_sample_helper == NULL) return;
-
   if (_sample_helper != NULL) {
     *(jlong*)_valuep = _sample_helper->take_sample();
-  }
-  else if (_sampled != NULL) {
-    *(jlong*)_valuep = *_sampled;
   }
 }
 
