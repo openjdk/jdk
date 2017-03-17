@@ -35,6 +35,7 @@
  * @run main Modules
  */
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -321,38 +322,6 @@ public class Modules extends ModuleTestBase {
     }
 
     @Test
-    public void testPatchModuleOption(Path base) throws Exception {
-        Path src = base.resolve("src");
-        Path modulePath = base.resolve("modules");
-        Path patchPath = base.resolve("patch");
-
-        ModuleBuilder mb1 = new ModuleBuilder(tb, "m1");
-        mb1.comment("Module on module path.")
-                .exports("pkg1")
-                .classes("package pkg1; /** Class A */ public class A { }")
-                .build(modulePath);
-
-        tb.writeJavaFiles(patchPath, "package pkg1; /** Class A */ public class A { public static int k; }");
-        new JavacTask(tb)
-                .files(patchPath.resolve("pkg1/A.java"))
-                .run();
-
-        ModuleBuilder mb2 = new ModuleBuilder(tb, "m2");
-        mb2.comment("The second module.")
-                .exports("pkg2")
-                .requires("m1")
-                .classes("package pkg2; /** Class B */ public class B { /** Field f */ public int f = pkg1.A.k; }")
-                .write(src);
-        execTask("--module-source-path", src.toString(),
-                "--patch-module", "m1=" + patchPath.toString(),
-                "--module-path", modulePath.toString(),
-                "--module", "m2");
-        checkModulesSpecified("m2");
-        checkPackagesIncluded("pkg2");
-        checkMembersSelected("pkg2.B.f");
-    }
-
-    @Test
     public void testAddReadsOption(Path base) throws Exception {
         Path src = base.resolve("src");
         Path modulePath = base.resolve("modules");
@@ -548,6 +517,52 @@ public class Modules extends ModuleTestBase {
                 "--expand-requires", "all");
 
         assertMessagePresent("javadoc: error - module MIA not found");
+    }
+
+    @Test
+    public void testSingleModuleOptionWithSourcePath(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path mod = createSimpleModule(src, "m1");
+        execTask("--source-path", mod.toString(),
+                 "--module", "m1");
+        checkModulesSpecified("m1");
+        checkPackagesIncluded("p");
+        checkTypesIncluded("p.C");
+    }
+
+    @Test
+    public void testSingleModuleOptionWithMissingModuleInSourcePath(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path mod = createSimpleModule(src, "m1");
+        execNegativeTask("--source-path", mod.toString(),
+                 "--module", "m2");
+        assertMessagePresent("source path does not contain module m2");
+    }
+
+    @Test
+    public void testMultipleModuleOptionWithSourcePath(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path mod = createSimpleModule(src, "m1");
+        execNegativeTask("--source-path", mod.toString(),
+                 "--module", "m1,m2,m3");
+        assertMessagePresent("cannot use source path for multiple modules m1, m2, m3");
+    }
+
+    @Test
+    public void testSingleModuleOptionWithNoModuleOnSourcePath(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path mod1 = Paths.get(src.toString(), "m1");
+        execNegativeTask("--source-path", mod1.toString(),
+                 "--module", "m1");
+        assertMessagePresent("module m1 not found on source path");
+    }
+
+    Path createSimpleModule(Path src, String mname) throws IOException {
+        Path mpath = Paths.get(src.toString(), mname);
+        tb.writeJavaFiles(mpath,
+                "module " + mname + " { exports p; }",
+                "package p; public class C { }");
+        return mpath;
     }
 
     void createAuxiliaryModules(Path src) throws IOException {
