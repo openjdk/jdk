@@ -26,7 +26,7 @@
  * @bug 4934236
  * @summary Tests that NotificationBuffer is created when used.
  * @author jfd@...
- * @modules java.management.rmi
+ *
  * @run clean NotificationBufferCreationTest NotificationSender
  * @run build NotificationBufferCreationTest
  * @run main NotificationBufferCreationTest

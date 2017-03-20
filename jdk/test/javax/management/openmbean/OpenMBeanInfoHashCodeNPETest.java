@@ -40,7 +40,7 @@ import javax.management.openmbean.SimpleType;
  * @bug 8023529
  * @summary Test that OpenMBean*Info.hashCode do not throw NPE
  * @author Shanliang JIANG
- * @modules java.management
+ *
  * @run clean OpenMBeanInfoHashCodeNPETest
  * @run build OpenMBeanInfoHashCodeNPETest
  * @run main OpenMBeanInfoHashCodeNPETest

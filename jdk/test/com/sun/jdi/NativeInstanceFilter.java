@@ -22,16 +22,14 @@
  */
 
 /**
- *  @test
- *  @bug 6426034
- *  @summary Instance filter doesn't filter event if it occurs in native method
+ * @test
+ * @bug 6426034
+ * @summary Instance filter doesn't filter event if it occurs in native method
+ * @author Keith McGuigan
  *
- *  @author Keith McGuigan
- *
- *  @modules jdk.jdi
- *  @run build JDIScaffold VMConnection
- *  @compile -XDignore.symbol.file NativeInstanceFilterTarg.java
- *  @run driver NativeInstanceFilter
+ * @run build JDIScaffold VMConnection
+ * @compile -XDignore.symbol.file NativeInstanceFilterTarg.java
+ * @run driver NativeInstanceFilter
  */
 
 /*

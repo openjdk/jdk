@@ -22,20 +22,20 @@
  */
 
 /**
- *  @test
- *  @bug 4287595
- *  @bug 4462989
- *  @bug 4531511
- *  @summary Test class redefinition
+ * @test
+ * @bug 4287595
+ * @bug 4462989
+ * @bug 4531511
+ * @summary Test class redefinition
  *
- *  @author Robert Field
+ * @author Robert Field
  *
- *  @library ..
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g RedefineTest.java
- *  @run shell RedefineSetUp.sh
- *  @run driver RedefineTest
+ * @library ..
+ *
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g RedefineTest.java
+ * @run shell RedefineSetUp.sh
+ * @run driver RedefineTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

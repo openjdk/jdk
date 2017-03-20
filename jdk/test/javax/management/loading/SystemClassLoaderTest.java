@@ -27,7 +27,7 @@
  * @summary Test that a class can load MBeans from its class loader
  * (at least if it is the system class loader)
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean SystemClassLoaderTest
  * @run build SystemClassLoaderTest
  * @run main SystemClassLoaderTest

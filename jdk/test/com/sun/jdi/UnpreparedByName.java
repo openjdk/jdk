@@ -22,18 +22,17 @@
  */
 
 /**
- *  @test
- *  @bug 4368402
- *  @summary UnpreparedByName verifies that unprepared classes
- *  won't be returned by classesByName.
- *  @author Robert Field
+ * @test
+ * @bug 4368402
+ * @summary UnpreparedByName verifies that unprepared classes
+ * won't be returned by classesByName.
+ * @author Robert Field
  *
- *  @modules jdk.jdi
- *  @run build JDIScaffold VMConnection
- *  @run compile -g InnerTarg.java
- *  @run build UnpreparedByName
+ * @run build JDIScaffold VMConnection
+ * @run compile -g InnerTarg.java
+ * @run build UnpreparedByName
  *
- *  @run driver UnpreparedByName InnerTarg
+ * @run driver UnpreparedByName InnerTarg
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

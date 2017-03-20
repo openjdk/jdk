@@ -24,17 +24,16 @@
 #
 
 #
-#   @test       JITDebug.sh 1.7 03/09/05
-#   @bug        4291701 4376819 4422312 4522770 4913748
-#   @summary    Test JIT debugging - assure that launching on
-#               uncaught exception works
-#   @author     Tim Bell
-#   Based on test/java/awt/TEMPLATE/AutomaticShellTest.sh
+# @test       JITDebug.sh 1.7 03/09/05
+# @bug        4291701 4376819 4422312 4522770 4913748
+# @summary    Test JIT debugging - assure that launching on
+#             uncaught exception works
+# @author     Tim Bell
+# Based on test/java/awt/TEMPLATE/AutomaticShellTest.sh
 #
-#   @modules jdk.jdi
-#   @run build TestScaffold VMConnection TargetListener TargetAdapter
-#   @run compile -g JITDebug.java
-#   @run shell JITDebug.sh
+# @run build TestScaffold VMConnection TargetListener TargetAdapter
+# @run compile -g JITDebug.java
+# @run shell JITDebug.sh
 
 # Beginning of subroutines:
 status=1

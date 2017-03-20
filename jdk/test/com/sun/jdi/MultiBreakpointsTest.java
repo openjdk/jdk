@@ -23,16 +23,14 @@
 
 
 /**
- *  @test
- *  @bug 4359247
- *  @summary Breakpoints on multiple threads have problems.
+ * @test
+ * @bug 4359247
+ * @summary Breakpoints on multiple threads have problems.
+ * @author tbell, jjh
  *
- *  @author tbell, jjh
- *
- *  @modules jdk.jdi
- *  @build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g MultiBreakpointsTest.java
- *  @run driver MultiBreakpointsTest
+ * @build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g MultiBreakpointsTest.java
+ * @run driver MultiBreakpointsTest
  */
 
 /*
