@@ -359,52 +359,76 @@ WB_END
 
 #if INCLUDE_ALL_GCS
 WB_ENTRY(jboolean, WB_G1IsHumongous(JNIEnv* env, jobject o, jobject obj))
-  G1CollectedHeap* g1 = G1CollectedHeap::heap();
-  oop result = JNIHandles::resolve(obj);
-  const HeapRegion* hr = g1->heap_region_containing(result);
-  return hr->is_humongous();
+  if (UseG1GC) {
+    G1CollectedHeap* g1 = G1CollectedHeap::heap();
+    oop result = JNIHandles::resolve(obj);
+    const HeapRegion* hr = g1->heap_region_containing(result);
+    return hr->is_humongous();
+  }
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1IsHumongous: G1 GC is not enabled");
 WB_END
 
 WB_ENTRY(jboolean, WB_G1BelongsToHumongousRegion(JNIEnv* env, jobject o, jlong addr))
-  G1CollectedHeap* g1 = G1CollectedHeap::heap();
-  const HeapRegion* hr = g1->heap_region_containing((void*) addr);
-  return hr->is_humongous();
+  if (UseG1GC) {
+    G1CollectedHeap* g1 = G1CollectedHeap::heap();
+    const HeapRegion* hr = g1->heap_region_containing((void*) addr);
+    return hr->is_humongous();
+  }
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1BelongsToHumongousRegion: G1 GC is not enabled");
 WB_END
 
 WB_ENTRY(jboolean, WB_G1BelongsToFreeRegion(JNIEnv* env, jobject o, jlong addr))
-  G1CollectedHeap* g1 = G1CollectedHeap::heap();
-  const HeapRegion* hr = g1->heap_region_containing((void*) addr);
-  return hr->is_free();
+  if (UseG1GC) {
+    G1CollectedHeap* g1 = G1CollectedHeap::heap();
+    const HeapRegion* hr = g1->heap_region_containing((void*) addr);
+    return hr->is_free();
+  }
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1BelongsToFreeRegion: G1 GC is not enabled");
 WB_END
 
 WB_ENTRY(jlong, WB_G1NumMaxRegions(JNIEnv* env, jobject o))
-  G1CollectedHeap* g1 = G1CollectedHeap::heap();
-  size_t nr = g1->max_regions();
-  return (jlong)nr;
+  if (UseG1GC) {
+    G1CollectedHeap* g1 = G1CollectedHeap::heap();
+    size_t nr = g1->max_regions();
+    return (jlong)nr;
+  }
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1NumMaxRegions: G1 GC is not enabled");
 WB_END
 
 WB_ENTRY(jlong, WB_G1NumFreeRegions(JNIEnv* env, jobject o))
-  G1CollectedHeap* g1 = G1CollectedHeap::heap();
-  size_t nr = g1->num_free_regions();
-  return (jlong)nr;
+  if (UseG1GC) {
+    G1CollectedHeap* g1 = G1CollectedHeap::heap();
+    size_t nr = g1->num_free_regions();
+    return (jlong)nr;
+  }
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1NumFreeRegions: G1 GC is not enabled");
 WB_END
 
 WB_ENTRY(jboolean, WB_G1InConcurrentMark(JNIEnv* env, jobject o))
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  return g1h->concurrent_mark()->cmThread()->during_cycle();
+  if (UseG1GC) {
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
+    return g1h->concurrent_mark()->cmThread()->during_cycle();
+  }
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1InConcurrentMark: G1 GC is not enabled");
 WB_END
 
 WB_ENTRY(jboolean, WB_G1StartMarkCycle(JNIEnv* env, jobject o))
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  if (!g1h->concurrent_mark()->cmThread()->during_cycle()) {
-    g1h->collect(GCCause::_wb_conc_mark);
-    return true;
+  if (UseG1GC) {
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
+    if (!g1h->concurrent_mark()->cmThread()->during_cycle()) {
+      g1h->collect(GCCause::_wb_conc_mark);
+      return true;
+    }
+    return false;
   }
-  return false;
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1StartMarkCycle: G1 GC is not enabled");
 WB_END
 
 WB_ENTRY(jint, WB_G1RegionSize(JNIEnv* env, jobject o))
-  return (jint)HeapRegion::GrainBytes;
+  if (UseG1GC) {
+    return (jint)HeapRegion::GrainBytes;
+  }
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1RegionSize: G1 GC is not enabled");
 WB_END
 
 WB_ENTRY(jlong, WB_PSVirtualSpaceAlignment(JNIEnv* env, jobject o))
@@ -413,7 +437,7 @@ WB_ENTRY(jlong, WB_PSVirtualSpaceAlignment(JNIEnv* env, jobject o))
     return ParallelScavengeHeap::heap()->gens()->virtual_spaces()->alignment();
   }
 #endif // INCLUDE_ALL_GCS
-  THROW_MSG_0(vmSymbols::java_lang_RuntimeException(), "WB_PSVirtualSpaceAlignment: Parallel GC is not enabled");
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_PSVirtualSpaceAlignment: Parallel GC is not enabled");
 WB_END
 
 WB_ENTRY(jlong, WB_PSHeapGenerationAlignment(JNIEnv* env, jobject o))
@@ -422,15 +446,20 @@ WB_ENTRY(jlong, WB_PSHeapGenerationAlignment(JNIEnv* env, jobject o))
     return ParallelScavengeHeap::heap()->generation_alignment();
   }
 #endif // INCLUDE_ALL_GCS
-  THROW_MSG_0(vmSymbols::java_lang_RuntimeException(), "WB_PSHeapGenerationAlignment: Parallel GC is not enabled");
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_PSHeapGenerationAlignment: Parallel GC is not enabled");
 WB_END
 
 WB_ENTRY(jobject, WB_G1AuxiliaryMemoryUsage(JNIEnv* env))
-  ResourceMark rm(THREAD);
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  MemoryUsage usage = g1h->get_auxiliary_data_memory_usage();
-  Handle h = MemoryService::create_MemoryUsage_obj(usage, CHECK_NULL);
-  return JNIHandles::make_local(env, h());
+#if INCLUDE_ALL_GCS
+  if (UseG1GC) {
+    ResourceMark rm(THREAD);
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
+    MemoryUsage usage = g1h->get_auxiliary_data_memory_usage();
+    Handle h = MemoryService::create_MemoryUsage_obj(usage, CHECK_NULL);
+    return JNIHandles::make_local(env, h());
+  }
+#endif // INCLUDE_ALL_GCS
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1AuxiliaryMemoryUsage: G1 GC is not enabled");
 WB_END
 
 class OldRegionsLivenessClosure: public HeapRegionClosure {
@@ -475,7 +504,7 @@ class OldRegionsLivenessClosure: public HeapRegionClosure {
 
 WB_ENTRY(jlongArray, WB_G1GetMixedGCInfo(JNIEnv* env, jobject o, jint liveness))
   if (!UseG1GC) {
-    THROW_MSG_NULL(vmSymbols::java_lang_RuntimeException(), "WB_G1GetMixedGCInfo: G1 is not enabled");
+    THROW_MSG_NULL(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1GetMixedGCInfo: G1 GC is not enabled");
   }
   if (liveness < 0) {
     THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(), "liveness value should be non-negative");
@@ -491,8 +520,6 @@ WB_ENTRY(jlongArray, WB_G1GetMixedGCInfo(JNIEnv* env, jobject o, jint liveness))
   result->long_at_put(2, rli.total_memory_to_free());
   return (jlongArray) JNIHandles::make_local(env, result);
 WB_END
-
-
 
 #endif // INCLUDE_ALL_GCS
 
