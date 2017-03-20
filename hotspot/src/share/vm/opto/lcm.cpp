@@ -254,10 +254,12 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
       const TypePtr *adr_type = NULL;  // Do not need this return value here
       const Node* base = mach->get_base_and_disp(offset, adr_type);
       if (base == NULL || base == NodeSentinel) {
-        // Narrow oop address doesn't have base, only index
-        if( val->bottom_type()->isa_narrowoop() &&
-            MacroAssembler::needs_explicit_null_check(offset) )
-          continue;             // Give up if offset is beyond page size
+        // Narrow oop address doesn't have base, only index.
+        // Give up if offset is beyond page size or if heap base is not protected.
+        if (val->bottom_type()->isa_narrowoop() &&
+            (MacroAssembler::needs_explicit_null_check(offset) ||
+             !Universe::narrow_oop_use_implicit_null_checks()))
+          continue;
         // cannot reason about it; is probably not implicit null exception
       } else {
         const TypePtr* tptr;
@@ -269,12 +271,17 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
           // only regular oops are expected here
           tptr = base->bottom_type()->is_ptr();
         }
-        // Give up if offset is not a compile-time constant
-        if( offset == Type::OffsetBot || tptr->_offset == Type::OffsetBot )
+        // Give up if offset is not a compile-time constant.
+        if (offset == Type::OffsetBot || tptr->_offset == Type::OffsetBot)
           continue;
         offset += tptr->_offset; // correct if base is offseted
-        if( MacroAssembler::needs_explicit_null_check(offset) )
-          continue;             // Give up is reference is beyond 4K page size
+        // Give up if reference is beyond page size.
+        if (MacroAssembler::needs_explicit_null_check(offset))
+          continue;
+        // Give up if base is a decode node and the heap base is not protected.
+        if (base->is_Mach() && base->as_Mach()->ideal_Opcode() == Op_DecodeN &&
+            !Universe::narrow_oop_use_implicit_null_checks())
+          continue;
       }
     }
 
