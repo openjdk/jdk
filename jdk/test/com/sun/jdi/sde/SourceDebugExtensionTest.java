@@ -1,17 +1,16 @@
 /**
- *  @test
- *  @bug 4390869
- *  @bug 4460328
- *  @summary Test the new SourceDebugExtension facility
+ * @test
+ * @bug 4390869
+ * @bug 4460328
+ * @summary Test the new SourceDebugExtension facility
+ * @author Robert Field
  *
- *  @author Robert Field
+ * @library ..
  *
- *  @library ..
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter InstallSDE
- *  @run compile SourceDebugExtensionTest.java
- *  @run compile -g SourceDebugExtensionTarg.java
- *  @run driver SourceDebugExtensionTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter InstallSDE
+ * @run compile SourceDebugExtensionTest.java
+ * @run compile -g SourceDebugExtensionTarg.java
+ * @run driver SourceDebugExtensionTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

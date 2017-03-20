@@ -26,7 +26,7 @@
  * @bug 6204469
  * @summary Test that MBean*Info can be constructed with default descriptor
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean DefaultDescriptorTest
  * @run build DefaultDescriptorTest
  * @run main DefaultDescriptorTest

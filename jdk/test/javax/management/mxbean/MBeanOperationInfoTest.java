@@ -26,7 +26,7 @@
  * @bug 6359948
  * @summary Check that MXBean operations have the expected ReturnType in MBeanOperationInfo
  * @author Luis-Miguel Alventosa
- * @modules java.management
+ *
  * @run clean MBeanOperationInfoTest
  * @run build MBeanOperationInfoTest
  * @run main MBeanOperationInfoTest

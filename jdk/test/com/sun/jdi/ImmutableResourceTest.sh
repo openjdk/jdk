@@ -21,13 +21,15 @@
 # questions.
 #
 
-#   @test
-#   @bug        6287579
-#   @summary    SubClasses of ListResourceBundle should fix getContents()
-#   @author     Tim Bell
 #
-#   @run shell ImmutableResourceTest.sh
+# @test
+# @bug        6287579
+# @summary    SubClasses of ListResourceBundle should fix getContents()
+# @author     Tim Bell
 #
+# @modules jdk.jdi/com.sun.tools.example.debug.tty
+#
+# @run shell ImmutableResourceTest.sh
 #
 
 # Beginning of subroutines:
