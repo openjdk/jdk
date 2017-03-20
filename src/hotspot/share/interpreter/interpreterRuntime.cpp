@@ -804,7 +804,7 @@ void InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes::Code byte
   // it is not an interface.  The receiver for invokespecial calls within interface
   // methods must be checked for every call.
   InstanceKlass* sender = pool->pool_holder();
-  sender = sender->is_anonymous() ? sender->host_klass() : sender;
+  sender = sender->has_host_klass() ? sender->host_klass() : sender;
 
   switch (info.call_kind()) {
   case CallInfo::direct_call:
