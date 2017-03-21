@@ -380,14 +380,13 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
   debug_time("Code Roots Purge", _cur_strong_code_root_purge_time_ms);
 
   debug_time("Redirty Cards", _recorded_redirty_logged_cards_time_ms);
+  trace_phase(_gc_par_phases[RedirtyCards]);
 #if defined(COMPILER2) || INCLUDE_JVMCI
   debug_time("DerivedPointerTable Update", _cur_derived_pointer_table_update_time_ms);
 #endif
   if (_recorded_clear_claimed_marks_time_ms > 0.0) {
     debug_time("Clear Claimed Marks", _recorded_clear_claimed_marks_time_ms);
   }
-
-  trace_phase(_gc_par_phases[RedirtyCards]);
 
   debug_time("Free Collection Set", _recorded_total_free_cset_time_ms);
   trace_time("Free Collection Set Serial", _recorded_serial_free_cset_time_ms);
