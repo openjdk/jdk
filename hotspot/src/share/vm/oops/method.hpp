@@ -811,7 +811,7 @@ class Method : public Metadata {
   static void print_jmethod_ids(ClassLoaderData* loader_data, outputStream* out) PRODUCT_RETURN;
 
   // Get this method's jmethodID -- allocate if it doesn't exist
-  jmethodID jmethod_id()                            { return InstanceKlass::get_jmethod_id(method_holder(), this); }
+  jmethodID jmethod_id()                            { return method_holder()->get_jmethod_id(this); }
 
   // Lookup the jmethodID for this method.  Return NULL if not found.
   // NOTE that this function can be called from a signal handler
