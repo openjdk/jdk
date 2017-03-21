@@ -1532,7 +1532,7 @@ JVM_ENTRY(jstring, JVM_GetSimpleBinaryName(JNIEnv *env, jclass cls))
   }
   InstanceKlass* k = InstanceKlass::cast(java_lang_Class::as_Klass(mirror));
   int ooff = 0, noff = 0;
-  if (InstanceKlass::find_inner_classes_attr(k, &ooff, &noff, THREAD)) {
+  if (k->find_inner_classes_attr(&ooff, &noff, THREAD)) {
     if (noff != 0) {
       constantPoolHandle i_cp(thread, k->constants());
       Symbol* name = i_cp->symbol_at(noff);
