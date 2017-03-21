@@ -27,6 +27,7 @@ package sun.tools.jar;
 
 import java.io.*;
 import java.lang.module.Configuration;
+import java.lang.module.FindException;
 import java.lang.module.InvalidModuleDescriptorException;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Exports;
@@ -407,11 +408,11 @@ public class Main {
                 boolean found;
                 if (fname != null) {
                     try (ZipFile zf = new ZipFile(fname)) {
-                        found = printModuleDescriptor(zf);
+                        found = describeModule(zf);
                     }
                 } else {
                     try (FileInputStream fin = new FileInputStream(FileDescriptor.in)) {
-                        found = printModuleDescriptor(fin);
+                        found = describeModule(fin);
                     }
                 }
                 if (!found)
@@ -603,7 +604,7 @@ public class Main {
         int n = args.length - count;
         if (n > 0) {
             if (dflag) {
-                // "--print-module-descriptor/-d" does not require file argument(s)
+                // "--describe-module/-d" does not require file argument(s)
                 usageError(formatMsg("error.bad.dflag", args[count]));
                 return false;
             }
@@ -1728,24 +1729,43 @@ public class Main {
                            .collect(joining(", ", prefix, suffix));
     }
 
-    private boolean printModuleDescriptor(ZipFile zipFile)
-        throws IOException
-    {
+    private boolean describeModule(ZipFile zipFile) throws IOException {
         ZipEntry[] zes = zipFile.stream()
             .filter(e -> isModuleInfoEntry(e.getName()))
             .sorted(Validator.ENTRY_COMPARATOR)
             .toArray(ZipEntry[]::new);
-        if (zes.length == 0)
-            return false;
-        for (ZipEntry ze : zes) {
-            try (InputStream is = zipFile.getInputStream(ze)) {
-                printModuleDescriptor(is, ze.getName());
+
+        if (zes.length == 0) {
+            // No module descriptor found, derive the automatic module name
+            String fn = zipFile.getName();
+            ModuleFinder mf = ModuleFinder.of(Paths.get(fn));
+            try {
+                Set<ModuleReference> mref = mf.findAll();
+                if (mref.isEmpty()) {
+                    output(formatMsg("error.unable.derive.automodule", fn));
+                    return true;
+                }
+                ModuleDescriptor md = mref.iterator().next().descriptor();
+                output(getMsg("out.automodule"));
+                describeModule(md, null, "automatic");
+            } catch (FindException e) {
+                String msg = formatMsg("error.unable.derive.automodule", fn);
+                Throwable t = e.getCause();
+                if (t != null)
+                    msg = msg + "\n" + t.getMessage();
+                output(msg);
+            }
+        } else {
+            for (ZipEntry ze : zes) {
+                try (InputStream is = zipFile.getInputStream(ze)) {
+                    describeModule(is, ze.getName());
+                }
             }
         }
         return true;
     }
 
-    private boolean printModuleDescriptor(FileInputStream fis)
+    private boolean describeModule(FileInputStream fis)
         throws IOException
     {
         try (BufferedInputStream bis = new BufferedInputStream(fis);
@@ -1764,7 +1784,7 @@ public class Main {
             .sorted(Validator.ENTRYNAME_COMPARATOR)
             .toArray(String[]::new);
         for (String name : names) {
-            printModuleDescriptor(new ByteArrayInputStream(moduleInfos.get(name)), name);
+            describeModule(new ByteArrayInputStream(moduleInfos.get(name)), name);
         }
         return true;
     }
@@ -1775,13 +1795,21 @@ public class Main {
                   .collect(joining(" "));
     }
 
-    private void printModuleDescriptor(InputStream entryInputStream, String ename)
+    private void describeModule(InputStream entryInputStream, String ename)
         throws IOException
     {
         ModuleInfo.Attributes attrs = ModuleInfo.read(entryInputStream, null);
         ModuleDescriptor md = attrs.descriptor();
         ModuleHashes hashes = attrs.recordedHashes();
 
+        describeModule(md, hashes, ename);
+    }
+
+    private void describeModule(ModuleDescriptor md,
+                                ModuleHashes hashes,
+                                String ename)
+        throws IOException
+    {
         StringBuilder sb = new StringBuilder();
         sb.append("\nmodule ")
           .append(md.toNameAndVersion())
