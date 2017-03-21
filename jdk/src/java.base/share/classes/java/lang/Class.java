@@ -2771,7 +2771,7 @@ public final class Class<T> implements java.io.Serializable,
          * In all other cases, it requires RuntimePermission("accessDeclaredMembers")
          * permission.
          */
-        final ClassLoader ccl = caller.getClassLoader0();
+        final ClassLoader ccl = ClassLoader.getClassLoader(caller);
         if (which != Member.PUBLIC) {
             final ClassLoader cl = getClassLoader0();
             if (ccl != cl) {

@@ -1337,14 +1337,12 @@ public class Runtime {
             int oSize = ob.version().size();
             int min = Math.min(size, oSize);
             for (int i = 0; i < min; i++) {
-                Integer val = version.get(i);
-                Integer oVal = ob.version().get(i);
+                int val = version.get(i);
+                int oVal = ob.version().get(i);
                 if (val != oVal)
                     return val - oVal;
             }
-            if (size != oSize)
-                return size - oSize;
-            return 0;
+            return size - oSize;
         }
 
         private int comparePre(Version ob) {
