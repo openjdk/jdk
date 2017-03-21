@@ -28,8 +28,6 @@
 tier1 = \
     :jdk_lang \
     :jdk_util \
-    -java/util/concurrent/ThreadPoolExecutor/ConfigChanges.java \
-    -java/util/concurrent/forkjoin/FJExceptionTableLeak.java \
     sun/nio/cs/ISO8859x.java \
     java/nio/Buffer \
     com/sun/crypto/provider/Cipher \
@@ -37,8 +35,6 @@ tier1 = \
     tools/pack200
 
 tier2 = \
-    java/util/concurrent/ThreadPoolExecutor/ConfigChanges.java \
-    java/util/concurrent/forkjoin/FJExceptionTableLeak.java \
     :jdk_io \
     :jdk_nio \
     -sun/nio/cs/ISO8859x.java \
