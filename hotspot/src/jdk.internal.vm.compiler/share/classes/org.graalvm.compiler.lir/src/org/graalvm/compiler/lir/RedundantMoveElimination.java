@@ -25,13 +25,11 @@ package org.graalvm.compiler.lir;
 import static jdk.vm.ci.code.ValueUtil.isRegister;
 import static jdk.vm.ci.code.ValueUtil.isStackSlot;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
 
-import org.graalvm.compiler.core.common.CollectionsFactory;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.debug.Debug;
@@ -44,6 +42,8 @@ import org.graalvm.compiler.lir.StandardOp.ValueMoveOp;
 import org.graalvm.compiler.lir.framemap.FrameMap;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.phases.PostAllocationOptimizationPhase;
+import org.graalvm.util.Equivalence;
+import org.graalvm.util.EconomicMap;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.RegisterArray;
@@ -103,7 +103,7 @@ public final class RedundantMoveElimination extends PostAllocationOptimizationPh
 
     private static final class Optimization {
 
-        Map<AbstractBlockBase<?>, BlockData> blockData = CollectionsFactory.newMap();
+        EconomicMap<AbstractBlockBase<?>, BlockData> blockData = EconomicMap.create(Equivalence.IDENTITY);
 
         RegisterArray callerSaveRegs;
 
@@ -116,7 +116,7 @@ public final class RedundantMoveElimination extends PostAllocationOptimizationPh
          * A map from the {@link StackSlot} {@link #getOffset offset} to an index into the state.
          * StackSlots of different kinds that map to the same location will map to the same index.
          */
-        Map<Integer, Integer> stackIndices = CollectionsFactory.newMap();
+        EconomicMap<Integer, Integer> stackIndices = EconomicMap.create(Equivalence.DEFAULT);
 
         int numRegs;
 
@@ -179,7 +179,7 @@ public final class RedundantMoveElimination extends PostAllocationOptimizationPh
              * slots which occur as destinations of move instructions.
              */
             for (AbstractBlockBase<?> block : blocks) {
-                List<LIRInstruction> instructions = lir.getLIRforBlock(block);
+                ArrayList<LIRInstruction> instructions = lir.getLIRforBlock(block);
                 for (LIRInstruction op : instructions) {
                     if (isEligibleMove(op)) {
                         Value dest = ((MoveOp) op).getResult();
@@ -286,7 +286,7 @@ public final class RedundantMoveElimination extends PostAllocationOptimizationPh
                                      */
                                     int[] iterState = data.exitState;
                                     copyState(iterState, data.entryState);
-                                    List<LIRInstruction> instructions = lir.getLIRforBlock(block);
+                                    ArrayList<LIRInstruction> instructions = lir.getLIRforBlock(block);
 
                                     for (LIRInstruction op : instructions) {
                                         valueNum = updateState(iterState, op, valueNum);
@@ -331,7 +331,7 @@ public final class RedundantMoveElimination extends PostAllocationOptimizationPh
 
                     try (Indent indent2 = Debug.logAndIndent("eliminate moves in block %d", block.getId())) {
 
-                        List<LIRInstruction> instructions = lir.getLIRforBlock(block);
+                        ArrayList<LIRInstruction> instructions = lir.getLIRforBlock(block);
                         BlockData data = blockData.get(block);
                         boolean hasDead = false;
 
@@ -385,7 +385,7 @@ public final class RedundantMoveElimination extends PostAllocationOptimizationPh
                     int sourceIdx = getStateIdx(moveOp.getInput());
                     int destIdx = getStateIdx(moveOp.getResult());
                     if (sourceIdx >= 0 && destIdx >= 0) {
-                        assert isObjectValue(state[sourceIdx]) || LIRKind.isValue(moveOp.getInput()) : "move op moves object but input is not defined as object";
+                        assert isObjectValue(state[sourceIdx]) || LIRKind.isValue(moveOp.getInput()) : "move op moves object but input is not defined as object " + moveOp;
                         state[destIdx] = state[sourceIdx];
                         Debug.log("move value %d from %d to %d", state[sourceIdx], sourceIdx, destIdx);
                         return initValueNum;

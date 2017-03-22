@@ -23,11 +23,12 @@
 package org.graalvm.compiler.lir.amd64;
 
 import org.graalvm.compiler.asm.amd64.AMD64MacroAssembler;
+import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstructionClass;
-import org.graalvm.compiler.lir.StandardOp.AbstractBlockEndOp;
+import org.graalvm.compiler.lir.StandardOp.BlockEndOp;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 
-public abstract class AMD64BlockEndOp extends AbstractBlockEndOp {
+public abstract class AMD64BlockEndOp extends LIRInstruction implements BlockEndOp {
 
     public static final LIRInstructionClass<AMD64BlockEndOp> TYPE = LIRInstructionClass.create(AMD64BlockEndOp.class);
 

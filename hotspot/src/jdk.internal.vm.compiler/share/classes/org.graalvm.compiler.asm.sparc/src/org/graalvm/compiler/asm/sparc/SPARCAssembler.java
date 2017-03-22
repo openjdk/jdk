@@ -135,8 +135,8 @@ import java.util.Map;
 
 import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.asm.Label;
-import org.graalvm.compiler.asm.NumUtil;
-import org.graalvm.compiler.common.PermanentBailoutException;
+import org.graalvm.compiler.core.common.NumUtil;
+import org.graalvm.compiler.core.common.PermanentBailoutException;
 import org.graalvm.compiler.debug.GraalError;
 
 import jdk.vm.ci.code.Register;

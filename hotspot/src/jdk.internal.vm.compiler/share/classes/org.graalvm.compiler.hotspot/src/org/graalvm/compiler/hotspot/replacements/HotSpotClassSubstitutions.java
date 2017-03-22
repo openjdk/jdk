@@ -39,6 +39,7 @@ import org.graalvm.compiler.api.replacements.ClassSubstitution;
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
 import org.graalvm.compiler.hotspot.word.KlassPointer;
 import org.graalvm.compiler.nodes.PiNode;
+import org.graalvm.compiler.nodes.SnippetAnchorNode;
 
 // JaCoCo Exclude
 
@@ -78,7 +79,8 @@ public class HotSpotClassSubstitutions {
             // Class for primitive type
             return false;
         } else {
-            return klassIsArray(klass);
+            KlassPointer klassNonNull = ClassGetHubNode.piCastNonNull(klass, SnippetAnchorNode.anchor());
+            return klassIsArray(klassNonNull);
         }
     }
 
@@ -92,16 +94,18 @@ public class HotSpotClassSubstitutions {
     public static Class<?> getSuperclass(final Class<?> thisObj) {
         KlassPointer klass = ClassGetHubNode.readClass(thisObj);
         if (!klass.isNull()) {
-            int accessFlags = klass.readInt(klassAccessFlagsOffset(INJECTED_VMCONFIG), KLASS_ACCESS_FLAGS_LOCATION);
+            KlassPointer klassNonNull = ClassGetHubNode.piCastNonNull(klass, SnippetAnchorNode.anchor());
+            int accessFlags = klassNonNull.readInt(klassAccessFlagsOffset(INJECTED_VMCONFIG), KLASS_ACCESS_FLAGS_LOCATION);
             if ((accessFlags & Modifier.INTERFACE) == 0) {
-                if (klassIsArray(klass)) {
+                if (klassIsArray(klassNonNull)) {
                     return Object.class;
                 } else {
-                    KlassPointer superKlass = klass.readKlassPointer(klassSuperKlassOffset(INJECTED_VMCONFIG), KLASS_SUPER_KLASS_LOCATION);
+                    KlassPointer superKlass = klassNonNull.readKlassPointer(klassSuperKlassOffset(INJECTED_VMCONFIG), KLASS_SUPER_KLASS_LOCATION);
                     if (superKlass.isNull()) {
                         return null;
                     } else {
-                        return readJavaMirror(superKlass);
+                        KlassPointer superKlassNonNull = ClassGetHubNode.piCastNonNull(superKlass, SnippetAnchorNode.anchor());
+                        return HubGetClassNode.readClass(superKlassNonNull);
                     }
                 }
             }
@@ -111,16 +115,13 @@ public class HotSpotClassSubstitutions {
         return null;
     }
 
-    public static Class<?> readJavaMirror(KlassPointer klass) {
-        return PiNode.asNonNullClass(HubGetClassNode.readClass(klass));
-    }
-
     @MethodSubstitution(isStatic = false)
     public static Class<?> getComponentType(final Class<?> thisObj) {
         KlassPointer klass = ClassGetHubNode.readClass(thisObj);
         if (!klass.isNull()) {
-            if (klassIsArray(klass)) {
-                return PiNode.asNonNullClass(klass.readObject(arrayKlassComponentMirrorOffset(INJECTED_VMCONFIG), ARRAY_KLASS_COMPONENT_MIRROR));
+            KlassPointer klassNonNull = ClassGetHubNode.piCastNonNull(klass, SnippetAnchorNode.anchor());
+            if (klassIsArray(klassNonNull)) {
+                return PiNode.asNonNullClass(klassNonNull.readObject(arrayKlassComponentMirrorOffset(INJECTED_VMCONFIG), ARRAY_KLASS_COMPONENT_MIRROR));
             }
         } else {
             // Class for primitive type

@@ -27,13 +27,12 @@ import static org.graalvm.compiler.lir.LIRValueUtil.isVirtualStackSlot;
 import static org.graalvm.compiler.lir.phases.LIRPhase.Options.LIROptimization;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.EnumMap;
 import java.util.EnumSet;
-import java.util.List;
 import java.util.PriorityQueue;
-import java.util.Set;
 
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.debug.Debug;
@@ -52,9 +51,10 @@ import org.graalvm.compiler.lir.framemap.SimpleVirtualStackSlot;
 import org.graalvm.compiler.lir.framemap.VirtualStackSlotRange;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.phases.AllocationPhase;
-import org.graalvm.compiler.options.NestedBooleanOptionValue;
+import org.graalvm.compiler.options.NestedBooleanOptionKey;
 import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionType;
+import org.graalvm.util.EconomicSet;
 
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.code.TargetDescription;
@@ -76,7 +76,7 @@ public final class LSStackSlotAllocator extends AllocationPhase {
     public static class Options {
         // @formatter:off
         @Option(help = "Use linear scan stack slot allocation.", type = OptionType.Debug)
-        public static final NestedBooleanOptionValue LIROptLSStackSlotAllocator = new NestedBooleanOptionValue(LIROptimization, true);
+        public static final NestedBooleanOptionKey LIROptLSStackSlotAllocator = new NestedBooleanOptionKey(LIROptimization, true);
         // @formatter:on
     }
 
@@ -134,7 +134,7 @@ public final class LSStackSlotAllocator extends AllocationPhase {
             Debug.dump(Debug.INFO_LOG_LEVEL, lir, "After StackSlot numbering");
 
             long currentFrameSize = StackSlotAllocatorUtil.allocatedFramesize.isEnabled() ? frameMapBuilder.getFrameMap().currentFrameSize() : 0;
-            Set<LIRInstruction> usePos;
+            EconomicSet<LIRInstruction> usePos;
             // step 2: build intervals
             try (Scope s = Debug.scope("StackSlotAllocationBuildIntervals"); Indent indent = Debug.logAndIndent("BuildIntervals"); DebugCloseable t = BuildIntervalsTimer.start()) {
                 usePos = buildIntervals();
@@ -180,7 +180,7 @@ public final class LSStackSlotAllocator extends AllocationPhase {
             int index = 0;
             for (AbstractBlockBase<?> block : sortedBlocks) {
 
-                List<LIRInstruction> instructions = lir.getLIRforBlock(block);
+                ArrayList<LIRInstruction> instructions = lir.getLIRforBlock(block);
 
                 int numInst = instructions.size();
                 for (int j = 0; j < numInst; j++) {
@@ -199,7 +199,7 @@ public final class LSStackSlotAllocator extends AllocationPhase {
         // step 2: build intervals
         // ====================
 
-        private Set<LIRInstruction> buildIntervals() {
+        private EconomicSet<LIRInstruction> buildIntervals() {
             return new FixPointIntervalBuilder(lir, stackSlotMap, maxOpId()).build();
         }
 
@@ -394,7 +394,7 @@ public final class LSStackSlotAllocator extends AllocationPhase {
         // step 5: assign stack slots
         // ====================
 
-        private void assignStackSlots(Set<LIRInstruction> usePos) {
+        private void assignStackSlots(EconomicSet<LIRInstruction> usePos) {
             for (LIRInstruction op : usePos) {
                 op.forEachInput(assignSlot);
                 op.forEachAlive(assignSlot);

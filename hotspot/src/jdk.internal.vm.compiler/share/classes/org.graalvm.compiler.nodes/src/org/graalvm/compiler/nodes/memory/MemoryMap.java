@@ -22,8 +22,6 @@
  */
 package org.graalvm.compiler.nodes.memory;
 
-import java.util.Collection;
-
 import org.graalvm.compiler.core.common.LocationIdentity;
 
 /**
@@ -40,5 +38,5 @@ public interface MemoryMap {
     /**
      * Gets the location identities in the domain of this map.
      */
-    Collection<LocationIdentity> getLocations();
+    Iterable<LocationIdentity> getLocations();
 }

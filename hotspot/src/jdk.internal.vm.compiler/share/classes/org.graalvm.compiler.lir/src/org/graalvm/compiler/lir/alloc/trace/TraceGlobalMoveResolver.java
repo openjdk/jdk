@@ -22,22 +22,21 @@
  */
 package org.graalvm.compiler.lir.alloc.trace;
 
-import static org.graalvm.compiler.lir.LIRValueUtil.asVirtualStackSlot;
-import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
-import static org.graalvm.compiler.lir.LIRValueUtil.isVirtualStackSlot;
-import static org.graalvm.compiler.lir.alloc.trace.TraceUtil.asShadowedRegisterValue;
-import static org.graalvm.compiler.lir.alloc.trace.TraceUtil.isShadowedRegisterValue;
 import static jdk.vm.ci.code.ValueUtil.asAllocatableValue;
 import static jdk.vm.ci.code.ValueUtil.asRegister;
 import static jdk.vm.ci.code.ValueUtil.asStackSlot;
 import static jdk.vm.ci.code.ValueUtil.isIllegal;
 import static jdk.vm.ci.code.ValueUtil.isRegister;
 import static jdk.vm.ci.code.ValueUtil.isStackSlot;
+import static org.graalvm.compiler.lir.LIRValueUtil.asVirtualStackSlot;
+import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
+import static org.graalvm.compiler.lir.LIRValueUtil.isVirtualStackSlot;
+import static org.graalvm.compiler.lir.alloc.trace.TraceUtil.asShadowedRegisterValue;
+import static org.graalvm.compiler.lir.alloc.trace.TraceUtil.isShadowedRegisterValue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.debug.Debug;
@@ -52,6 +51,7 @@ import org.graalvm.compiler.lir.framemap.FrameMapBuilder;
 import org.graalvm.compiler.lir.framemap.FrameMapBuilderTool;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool.MoveFactory;
+import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.RegisterArray;
@@ -69,15 +69,16 @@ public final class TraceGlobalMoveResolver extends TraceGlobalMoveResolutionPhas
     private int insertIdx;
     private LIRInsertionBuffer insertionBuffer; // buffer where moves are inserted
 
-    private final List<Value> mappingFrom;
-    private final List<Value> mappingFromStack;
-    private final List<AllocatableValue> mappingTo;
+    private final ArrayList<Value> mappingFrom;
+    private final ArrayList<Value> mappingFromStack;
+    private final ArrayList<AllocatableValue> mappingTo;
     private final int[] registerBlocked;
     private static final int STACK_SLOT_IN_CALLER_FRAME_IDX = -1;
     private int[] stackBlocked;
     private final int firstVirtualStackIndex;
     private final MoveFactory spillMoveFactory;
     private final FrameMapBuilder frameMapBuilder;
+    private final OptionValues options;
 
     private void setValueBlocked(Value location, int direction) {
         assert direction == 1 || direction == -1 : "out of bounds";
@@ -152,6 +153,7 @@ public final class TraceGlobalMoveResolver extends TraceGlobalMoveResolutionPhas
 
         FrameMap frameMap = frameMapBuilderTool.getFrameMap();
         this.firstVirtualStackIndex = !frameMap.frameNeedsAllocating() ? 0 : frameMap.currentFrameSize() + 1;
+        this.options = res.getLIR().getOptions();
     }
 
     private boolean checkEmpty() {
@@ -296,7 +298,7 @@ public final class TraceGlobalMoveResolver extends TraceGlobalMoveResolutionPhas
         return isRegister(location) || isStackSlotValue(location);
     }
 
-    private void createInsertionBuffer(List<LIRInstruction> list) {
+    private void createInsertionBuffer(ArrayList<LIRInstruction> list) {
         assert !insertionBuffer.initialized() : "overwriting existing buffer";
         insertionBuffer.init(list);
     }
@@ -404,7 +406,7 @@ public final class TraceGlobalMoveResolver extends TraceGlobalMoveResolutionPhas
         Value from = mappingFrom.get(spillCandidate);
         try (Indent indent = Debug.logAndIndent("BreakCycle: %s", from)) {
             AllocatableValue spillSlot = null;
-            if (TraceRegisterAllocationPhase.Options.TraceRAreuseStackSlotsForMoveResolutionCycleBreaking.getValue() && !isStackSlotValue(from)) {
+            if (TraceRegisterAllocationPhase.Options.TraceRAreuseStackSlotsForMoveResolutionCycleBreaking.getValue(options) && !isStackSlotValue(from)) {
                 // don't use the stack slot if from is already the stack slot
                 Value fromStack = mappingFromStack.get(spillCandidate);
                 if (fromStack != null) {
@@ -435,7 +437,7 @@ public final class TraceGlobalMoveResolver extends TraceGlobalMoveResolutionPhas
         }
     }
 
-    public void setInsertPosition(List<LIRInstruction> insertList, int insertIdx) {
+    public void setInsertPosition(ArrayList<LIRInstruction> insertList, int insertIdx) {
         assert this.insertIdx == -1 : "use moveInsertPosition instead of setInsertPosition when data already set";
 
         createInsertionBuffer(insertList);

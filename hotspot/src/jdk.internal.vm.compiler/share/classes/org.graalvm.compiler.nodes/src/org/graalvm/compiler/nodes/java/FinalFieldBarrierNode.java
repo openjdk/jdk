@@ -43,7 +43,7 @@ import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
 public class FinalFieldBarrierNode extends FixedWithNextNode implements Virtualizable, Lowerable {
     public static final NodeClass<FinalFieldBarrierNode> TYPE = NodeClass.create(FinalFieldBarrierNode.class);
 
-    @Input private ValueNode value;
+    @OptionalInput private ValueNode value;
 
     public FinalFieldBarrierNode(ValueNode value) {
         super(TYPE, StampFactory.forVoid());
@@ -56,7 +56,7 @@ public class FinalFieldBarrierNode extends FixedWithNextNode implements Virtuali
 
     @Override
     public void virtualize(VirtualizerTool tool) {
-        if (tool.getAlias(value) instanceof VirtualObjectNode) {
+        if (value != null && tool.getAlias(value) instanceof VirtualObjectNode) {
             tool.delete();
         }
     }

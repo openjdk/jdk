@@ -22,8 +22,6 @@
  */
 package org.graalvm.compiler.phases.common.inlining.info.elem;
 
-import static org.graalvm.compiler.core.common.CompilationIdentifier.INVALID_COMPILATION_ID;
-import static org.graalvm.compiler.core.common.GraalOptions.UseGraalInstrumentation;
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
 
 import java.util.ArrayList;
@@ -42,7 +40,6 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.common.inlining.InliningUtil;
-import org.graalvm.compiler.phases.common.instrumentation.ExtractInstrumentationPhase;
 import org.graalvm.compiler.phases.graph.FixedNodeProbabilityCache;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 
@@ -196,7 +193,7 @@ public class InlineableGraph implements Inlineable {
      */
     @SuppressWarnings("try")
     private static StructuredGraph parseBytecodes(ResolvedJavaMethod method, HighTierContext context, CanonicalizerPhase canonicalizer, StructuredGraph caller) {
-        StructuredGraph newGraph = new StructuredGraph(method, AllowAssumptions.from(caller.getAssumptions() != null), INVALID_COMPILATION_ID);
+        StructuredGraph newGraph = new StructuredGraph.Builder(caller.getOptions(), AllowAssumptions.ifNonNull(caller.getAssumptions())).method(method).build();
         try (Debug.Scope s = Debug.scope("InlineGraph", newGraph)) {
             if (!caller.isUnsafeAccessTrackingEnabled()) {
                 newGraph.disableUnsafeAccessTracking();
@@ -206,9 +203,6 @@ public class InlineableGraph implements Inlineable {
             }
             assert newGraph.start().next() != null : "graph needs to be populated by the GraphBuilderSuite " + method + ", " + method.canBeInlined();
 
-            if (UseGraalInstrumentation.getValue()) {
-                new ExtractInstrumentationPhase().apply(newGraph, context);
-            }
             new DeadCodeEliminationPhase(Optional).apply(newGraph);
 
             canonicalizer.apply(newGraph, context);

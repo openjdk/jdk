@@ -28,7 +28,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import org.graalvm.compiler.api.directives.GraalDirectives;
-import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
@@ -36,6 +35,7 @@ import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
 import org.graalvm.compiler.replacements.Snippets;
+import org.graalvm.compiler.replacements.classfile.ClassfileBytecodeProvider;
 import org.graalvm.compiler.word.Word;
 import org.graalvm.compiler.word.nodes.WordCastNode;
 
@@ -44,7 +44,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 /**
  * Tests for derived oops in reference maps.
  */
-public class DerivedOopTest extends GraalCompilerTest implements Snippets {
+public class DerivedOopTest extends ReplacementsTest implements Snippets {
 
     private static class Pointers {
         public long basePointer;
@@ -139,12 +139,13 @@ public class DerivedOopTest extends GraalCompilerTest implements Snippets {
     protected Plugins getDefaultGraphBuilderPlugins() {
         Plugins plugins = super.getDefaultGraphBuilderPlugins();
         Registration r = new Registration(plugins.getInvocationPlugins(), DerivedOopTest.class);
+        ClassfileBytecodeProvider bytecodeProvider = getSystemClassLoaderBytecodeProvider();
 
         ResolvedJavaMethod intrinsic = getResolvedJavaMethod("getRawPointerIntrinsic");
         r.register1("getRawPointer", Object.class, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode arg) {
-                return b.intrinsify(getReplacements().getReplacementBytecodeProvider(), targetMethod, intrinsic, receiver, new ValueNode[]{arg});
+                return b.intrinsify(bytecodeProvider, targetMethod, intrinsic, receiver, new ValueNode[]{arg});
             }
         });
 

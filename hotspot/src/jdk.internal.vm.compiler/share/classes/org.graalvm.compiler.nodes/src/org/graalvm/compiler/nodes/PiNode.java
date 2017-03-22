@@ -25,6 +25,7 @@ package org.graalvm.compiler.nodes;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_0;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_0;
 
+import org.graalvm.compiler.core.common.type.AbstractPointerStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.TypeReference;
@@ -35,8 +36,7 @@ import org.graalvm.compiler.graph.spi.Canonicalizable;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.extended.GuardingNode;
-import org.graalvm.compiler.nodes.extended.UnsafeLoadNode;
-import org.graalvm.compiler.nodes.java.LoadFieldNode;
+import org.graalvm.compiler.nodes.memory.ReadNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.nodes.spi.ValueProxy;
@@ -47,7 +47,6 @@ import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
 
 //JaCoCo Exclude
 
-import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
 /**
@@ -71,8 +70,10 @@ public class PiNode extends FloatingGuardedNode implements LIRLowerable, Virtual
 
     protected PiNode(NodeClass<? extends PiNode> c, ValueNode object, Stamp stamp, GuardingNode guard) {
         super(c, stamp, guard);
+        assert stamp != StampFactory.forNodeIntrinsic();
         this.object = object;
         this.piStamp = stamp;
+        assert piStamp.isCompatible(object.stamp()) : "Object stamp not compatible to piStamp";
         inferStamp();
     }
 
@@ -85,16 +86,20 @@ public class PiNode extends FloatingGuardedNode implements LIRLowerable, Virtual
     }
 
     public PiNode(ValueNode object, ValueNode anchor) {
-        this(object, object.stamp().join(StampFactory.objectNonNull()), anchor);
+        this(object, AbstractPointerStamp.pointerNonNull(object.stamp()), anchor);
     }
 
     public PiNode(ValueNode object, ResolvedJavaType toType, boolean exactType, boolean nonNull) {
         this(object, StampFactory.object(exactType ? TypeReference.createExactTrusted(toType) : TypeReference.createWithoutAssumptions(toType), nonNull || StampTool.isPointerNonNull(object.stamp())));
     }
 
+    public final Stamp piStamp() {
+        return piStamp;
+    }
+
     @Override
     public void generate(NodeLIRBuilderTool generator) {
-        if (object.getStackKind() != JavaKind.Void && object.getStackKind() != JavaKind.Illegal) {
+        if (generator.hasOperand(object)) {
             generator.setResult(this, generator.operand(object));
         }
     }
@@ -105,12 +110,6 @@ public class PiNode extends FloatingGuardedNode implements LIRLowerable, Virtual
     }
 
     private Stamp computeStamp() {
-        // When piStamp == StampFactory.forNodeIntrinsic() then stamp is either
-        // StampFactory.forNodeIntrinsic() or it has been updated during snippet
-        // lowering to be the stamp of the node being replaced by the snippet.
-        if (piStamp == StampFactory.forNodeIntrinsic()) {
-            return stamp;
-        }
         return piStamp.improveWith(object().stamp());
     }
 
@@ -127,10 +126,6 @@ public class PiNode extends FloatingGuardedNode implements LIRLowerable, Virtual
 
     @Override
     public Node canonical(CanonicalizerTool tool) {
-        if (stamp() == StampFactory.forNodeIntrinsic()) {
-            /* The actual stamp has not been set yet. */
-            return this;
-        }
         // Use most up to date stamp.
         Stamp computedStamp = computeStamp();
 
@@ -145,14 +140,10 @@ public class PiNode extends FloatingGuardedNode implements LIRLowerable, Virtual
         if (g == null) {
 
             // Try to merge the pi node with a load node.
-            if (o instanceof LoadFieldNode) {
-                LoadFieldNode loadFieldNode = (LoadFieldNode) o;
-                loadFieldNode.setStamp(loadFieldNode.stamp().improveWith(this.piStamp));
-                return loadFieldNode;
-            } else if (o instanceof UnsafeLoadNode) {
-                UnsafeLoadNode unsafeLoadNode = (UnsafeLoadNode) o;
-                unsafeLoadNode.setStamp(unsafeLoadNode.stamp().improveWith(this.piStamp));
-                return unsafeLoadNode;
+            if (o instanceof ReadNode) {
+                ReadNode readNode = (ReadNode) o;
+                readNode.setStamp(readNode.stamp().improveWith(this.piStamp));
+                return readNode;
             }
         } else {
             for (Node n : g.asNode().usages()) {
@@ -179,6 +170,12 @@ public class PiNode extends FloatingGuardedNode implements LIRLowerable, Virtual
         return object;
     }
 
+    public void setOriginalNode(ValueNode newNode) {
+        this.updateUsages(object, newNode);
+        this.object = newNode;
+        assert piStamp.isCompatible(object.stamp()) : "New object stamp not compatible to piStamp";
+    }
+
     /**
      * Casts an object to have an exact, non-null stamp representing {@link Class}.
      */
@@ -197,17 +194,11 @@ public class PiNode extends FloatingGuardedNode implements LIRLowerable, Virtual
     private static native Class<?> asNonNullClassIntrinsic(Object object, @ConstantNodeParameter Class<?> toType, @ConstantNodeParameter boolean exactType, @ConstantNodeParameter boolean nonNull);
 
     /**
-     * Changes the stamp of an object.
+     * Changes the stamp of an object inside a snippet to be the stamp of the node replaced by the
+     * snippet.
      */
-    @NodeIntrinsic
-    public static native Object piCast(Object object, @ConstantNodeParameter Stamp stamp);
-
-    /**
-     * Changes the stamp of an object and ensures the newly stamped value does not float above a
-     * given anchor.
-     */
-    @NodeIntrinsic
-    public static native Object piCast(Object object, @ConstantNodeParameter Stamp stamp, GuardingNode anchor);
+    @NodeIntrinsic(PiNode.Placeholder.class)
+    public static native Object piCastToSnippetReplaceeStamp(Object object);
 
     /**
      * Changes the stamp of an object and ensures the newly stamped value is non-null and does not
@@ -215,6 +206,13 @@ public class PiNode extends FloatingGuardedNode implements LIRLowerable, Virtual
      */
     @NodeIntrinsic
     public static native Object piCastNonNull(Object object, GuardingNode anchor);
+
+    /**
+     * Changes the stamp of an object and ensures the newly stamped value is non-null and does not
+     * float above a given anchor.
+     */
+    @NodeIntrinsic
+    public static native Class<?> piCastNonNullClass(Class<?> type, GuardingNode anchor);
 
     /**
      * Changes the stamp of an object to represent a given type and to indicate that the object is
@@ -226,4 +224,38 @@ public class PiNode extends FloatingGuardedNode implements LIRLowerable, Virtual
 
     @NodeIntrinsic
     public static native Object piCast(Object object, @ConstantNodeParameter Class<?> toType, @ConstantNodeParameter boolean exactType, @ConstantNodeParameter boolean nonNull);
+
+    /**
+     * A placeholder node in a snippet that will be replaced with an appropriate {@link PiNode} when
+     * the snippet is instantiated. Using a placeholder means that {@link PiNode} never needs to
+     * deal with {@link StampFactory#forNodeIntrinsic()} stamps.
+     */
+    @NodeInfo(cycles = CYCLES_0, size = SIZE_0)
+    public static class Placeholder extends FloatingGuardedNode {
+
+        public static final NodeClass<Placeholder> TYPE = NodeClass.create(Placeholder.class);
+        @Input ValueNode object;
+
+        public ValueNode object() {
+            return object;
+        }
+
+        protected Placeholder(NodeClass<? extends Placeholder> c, ValueNode object) {
+            super(c, StampFactory.forNodeIntrinsic(), null);
+            this.object = object;
+        }
+
+        public Placeholder(ValueNode object) {
+            this(TYPE, object);
+        }
+
+        /**
+         * Gets a new {@link PiNode} that replaces this placeholder during snippet instantiation.
+         *
+         * @param snippetReplaceeStamp the stamp of the node being replace by the snippet
+         */
+        public PiNode getReplacement(Stamp snippetReplaceeStamp) {
+            return graph().addOrUnique(new PiNode(object(), snippetReplaceeStamp, null));
+        }
+    }
 }

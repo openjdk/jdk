@@ -48,6 +48,7 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.Phase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
@@ -68,6 +69,7 @@ public class CanonicalizerPhase extends BasePhase<PhaseContext> {
     private static final DebugCounter COUNTER_SIMPLIFICATION_CONSIDERED_NODES = Debug.counter("SimplificationConsideredNodes");
     private static final DebugCounter COUNTER_GLOBAL_VALUE_NUMBERING_HITS = Debug.counter("GlobalValueNumberingHits");
 
+    private boolean globalValueNumber = true;
     private boolean canonicalizeReads = true;
     private boolean simplify = true;
     private final CustomCanonicalizer customCanonicalizer;
@@ -89,6 +91,10 @@ public class CanonicalizerPhase extends BasePhase<PhaseContext> {
 
     public CanonicalizerPhase(CustomCanonicalizer customCanonicalizer) {
         this.customCanonicalizer = customCanonicalizer;
+    }
+
+    public void disableGVN() {
+        globalValueNumber = false;
     }
 
     public void disableReadCanonicalization() {
@@ -185,7 +191,7 @@ public class CanonicalizerPhase extends BasePhase<PhaseContext> {
             if (!wholeGraph) {
                 workList.addAll(graph.getNewNodes(newNodesMark));
             }
-            tool = new Tool(graph.getAssumptions());
+            tool = new Tool(graph.getAssumptions(), graph.getOptions());
             processWorkSet(graph);
         }
 
@@ -231,22 +237,16 @@ public class CanonicalizerPhase extends BasePhase<PhaseContext> {
             if (!node.isAlive()) {
                 return false;
             }
-            if (node instanceof FloatingNode && node.hasNoUsages()) {
-                // Dead but on the worklist so simply kill it
-                GraphUtil.killWithUnusedFloatingInputs(node);
-                return false;
-            }
             COUNTER_PROCESSED_NODES.increment();
-
-            NodeClass<?> nodeClass = node.getNodeClass();
-            if (tryGlobalValueNumbering(node, nodeClass)) {
-                return true;
-            }
-            StructuredGraph graph = (StructuredGraph) node.graph();
             if (GraphUtil.tryKillUnused(node)) {
                 return true;
             }
+            NodeClass<?> nodeClass = node.getNodeClass();
+            StructuredGraph graph = (StructuredGraph) node.graph();
             if (tryCanonicalize(node, nodeClass)) {
+                return true;
+            }
+            if (globalValueNumber && tryGlobalValueNumbering(node, nodeClass)) {
                 return true;
             }
             if (node instanceof ValueNode) {
@@ -372,7 +372,7 @@ public class CanonicalizerPhase extends BasePhase<PhaseContext> {
                                     (canonical.predecessor() != null || canonical instanceof StartNode || canonical instanceof AbstractMergeNode) : node +
                                                     " -> " + canonical + " : replacement should be floating or fixed and connected";
                     node.replaceAtUsages(canonical);
-                    GraphUtil.killWithUnusedFloatingInputs(node);
+                    GraphUtil.killWithUnusedFloatingInputs(node, true);
                 } else {
                     assert node instanceof FixedNode && node.predecessor() != null : node + " -> " + canonical + " : node should be fixed & connected (" + node.predecessor() + ")";
                     FixedNode fixed = (FixedNode) node;
@@ -437,9 +437,11 @@ public class CanonicalizerPhase extends BasePhase<PhaseContext> {
         private final class Tool implements SimplifierTool {
 
             private final Assumptions assumptions;
+            private final OptionValues options;
 
-            Tool(Assumptions assumptions) {
+            Tool(Assumptions assumptions, OptionValues options) {
                 this.assumptions = assumptions;
+                this.options = options;
             }
 
             @Override
@@ -497,6 +499,11 @@ public class CanonicalizerPhase extends BasePhase<PhaseContext> {
             @Override
             public boolean supportSubwordCompare(int bits) {
                 return context.getLowerer().supportSubwordCompare(bits);
+            }
+
+            @Override
+            public OptionValues getOptions() {
+                return options;
             }
         }
     }

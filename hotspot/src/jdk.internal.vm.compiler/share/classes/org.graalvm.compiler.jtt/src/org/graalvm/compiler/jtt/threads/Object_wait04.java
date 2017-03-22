@@ -24,9 +24,8 @@
  */
 package org.graalvm.compiler.jtt.threads;
 
-import org.junit.Test;
-
 import org.graalvm.compiler.jtt.JTTTest;
+import org.junit.Test;
 
 public class Object_wait04 extends JTTTest {
 
@@ -73,31 +72,37 @@ public class Object_wait04 extends JTTTest {
 
     @Test(timeout = 20000)
     public void run0() throws Throwable {
+        initializeForTimeout();
         runTest("test", 0);
     }
 
     @Test(timeout = 20000)
     public void run1() throws Throwable {
+        initializeForTimeout();
         runTest("test", 1);
     }
 
     @Test(timeout = 20000)
     public void run2() throws Throwable {
+        initializeForTimeout();
         runTest("test", 2);
     }
 
     @Test(timeout = 20000)
     public void run3() throws Throwable {
+        initializeForTimeout();
         runTest("test", 3);
     }
 
     @Test(timeout = 20000)
     public void run4() throws Throwable {
+        initializeForTimeout();
         runTest("test", 4);
     }
 
     @Test(timeout = 20000)
     public void run5() throws Throwable {
+        initializeForTimeout();
         runTest("test", 5);
     }
 

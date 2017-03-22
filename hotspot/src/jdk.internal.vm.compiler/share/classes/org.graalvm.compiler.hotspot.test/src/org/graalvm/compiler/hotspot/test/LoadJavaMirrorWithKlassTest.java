@@ -30,8 +30,7 @@ import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.options.OptionValue;
-import org.graalvm.compiler.options.OptionValue.OverrideScope;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.tiers.Suites;
 
 import jdk.vm.ci.meta.JavaKind;
@@ -58,10 +57,8 @@ public class LoadJavaMirrorWithKlassTest extends GraalCompilerTest {
 
     @Override
     @SuppressWarnings("try")
-    protected Suites createSuites() {
-        try (OverrideScope s = OptionValue.override(GraalOptions.ImmutableCode, true)) {
-            return super.createSuites();
-        }
+    protected Suites createSuites(OptionValues options) {
+        return super.createSuites(new OptionValues(options, GraalOptions.ImmutableCode, true));
     }
 
     @Override

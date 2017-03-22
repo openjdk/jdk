@@ -26,7 +26,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.nio.ByteBuffer;
 
-import org.graalvm.compiler.common.PermanentBailoutException;
+import org.graalvm.compiler.core.common.PermanentBailoutException;
 import org.graalvm.compiler.core.common.type.DataPointerConstant;
 
 import jdk.vm.ci.hotspot.HotSpotMetaspaceConstant;

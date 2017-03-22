@@ -71,6 +71,7 @@ public class AMD64GraphBuilderPlugins {
                 registerIntegerLongPlugins(invocationPlugins, IntegerSubstitutions.class, JavaKind.Int, arch, replacementsBytecodeProvider);
                 registerIntegerLongPlugins(invocationPlugins, LongSubstitutions.class, JavaKind.Long, arch, replacementsBytecodeProvider);
                 registerUnsafePlugins(invocationPlugins, replacementsBytecodeProvider);
+                registerStringPlugins(invocationPlugins, arch, replacementsBytecodeProvider);
                 registerMathPlugins(invocationPlugins, arch, arithmeticStubs, replacementsBytecodeProvider);
             }
         });
@@ -175,6 +176,16 @@ public class AMD64GraphBuilderPlugins {
                 return true;
             }
         });
+    }
+
+    private static void registerStringPlugins(InvocationPlugins plugins, AMD64 arch, BytecodeProvider replacementsBytecodeProvider) {
+        if (Java8OrEarlier && arch.getFeatures().contains(CPUFeature.SSE4_2)) {
+            Registration r;
+            r = new Registration(plugins, String.class, replacementsBytecodeProvider);
+            r.setAllowOverwrite(true);
+            r.registerMethodSubstitution(AMD64StringSubstitutions.class, "indexOf", char[].class, int.class,
+                            int.class, char[].class, int.class, int.class, int.class);
+        }
     }
 
     private static void registerUnsafePlugins(InvocationPlugins plugins, BytecodeProvider replacementsBytecodeProvider) {

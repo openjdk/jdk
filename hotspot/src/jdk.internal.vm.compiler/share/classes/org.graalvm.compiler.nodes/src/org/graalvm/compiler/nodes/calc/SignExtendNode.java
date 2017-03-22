@@ -84,13 +84,13 @@ public final class SignExtendNode extends IntegerConvertNode<SignExtend, Narrow>
             // sxxx -(sign-extend)-> ssss sxxx -(sign-extend)-> ssssssss sssssxxx
             // ==> sxxx -(sign-extend)-> ssssssss sssssxxx
             SignExtendNode other = (SignExtendNode) forValue;
-            return new SignExtendNode(other.getValue(), other.getInputBits(), getResultBits());
+            return SignExtendNode.create(other.getValue(), other.getInputBits(), getResultBits());
         } else if (forValue instanceof ZeroExtendNode) {
             ZeroExtendNode other = (ZeroExtendNode) forValue;
             if (other.getResultBits() > other.getInputBits()) {
                 // sxxx -(zero-extend)-> 0000 sxxx -(sign-extend)-> 00000000 0000sxxx
                 // ==> sxxx -(zero-extend)-> 00000000 0000sxxx
-                return new ZeroExtendNode(other.getValue(), other.getInputBits(), getResultBits());
+                return ZeroExtendNode.create(other.getValue(), other.getInputBits(), getResultBits());
             }
         }
 
@@ -99,7 +99,7 @@ public final class SignExtendNode extends IntegerConvertNode<SignExtend, Narrow>
             if ((inputStamp.upMask() & (1L << (getInputBits() - 1))) == 0L) {
                 // 0xxx -(sign-extend)-> 0000 0xxx
                 // ==> 0xxx -(zero-extend)-> 0000 0xxx
-                return new ZeroExtendNode(forValue, getInputBits(), getResultBits());
+                return ZeroExtendNode.create(forValue, getInputBits(), getResultBits());
             }
         }
 
@@ -109,5 +109,10 @@ public final class SignExtendNode extends IntegerConvertNode<SignExtend, Narrow>
     @Override
     public void generate(NodeLIRBuilderTool nodeValueMap, ArithmeticLIRGeneratorTool gen) {
         nodeValueMap.setResult(this, gen.emitSignExtend(nodeValueMap.operand(getValue()), getInputBits(), getResultBits()));
+    }
+
+    @Override
+    public boolean mayNullCheckSkipConversion() {
+        return true;
     }
 }
