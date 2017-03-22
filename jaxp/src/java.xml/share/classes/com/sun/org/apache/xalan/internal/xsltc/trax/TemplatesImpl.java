@@ -486,7 +486,7 @@ public final class TemplatesImpl implements Templates, Serializable {
             ModuleDescriptor descriptor =
                 ModuleDescriptor.newModule(mn, Set.of(ModuleDescriptor.Modifier.SYNTHETIC))
                                 .requires("java.xml")
-                                .exports(pn)
+                                .exports(pn, Set.of("java.xml"))
                                 .build();
 
             Module m = createModule(descriptor, loader);
