@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -619,6 +619,13 @@ void vm_notify_during_shutdown(const char* error, const char* message) {
   if (ShowMessageBoxOnError && WizardMode) {
     fatal("Error occurred during initialization of VM");
   }
+}
+
+void vm_exit_during_initialization() {
+  vm_notify_during_shutdown(NULL, NULL);
+
+  // Failure during initialization, we don't want to dump core
+  vm_abort(false);
 }
 
 void vm_exit_during_initialization(Handle exception) {
