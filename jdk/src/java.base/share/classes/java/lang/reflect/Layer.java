@@ -66,9 +66,7 @@ import sun.security.util.SecurityConstants;
  * ResolvedModule} in the configuration. For each resolved module that is
  * {@link ResolvedModule#reads() read}, the {@code Module} {@link
  * Module#canRead reads} the corresponding run-time {@code Module}, which may
- * be in the same layer or a {@link #parents() parent} layer. The {@code Module}
- * {@link Module#isExported(String) exports} and {@link Module#isOpen(String)
- * opens} the packages described by its {@link ModuleDescriptor}. </p>
+ * be in the same layer or a {@link #parents() parent} layer. </p>
  *
  * <p> The {@link #defineModulesWithOneLoader defineModulesWithOneLoader} and
  * {@link #defineModulesWithManyLoaders defineModulesWithManyLoaders} methods
@@ -90,6 +88,28 @@ import sun.security.util.SecurityConstants;
  * other class loaders that are <a href="../ClassLoader.html#builtinLoaders">
  * built-in</a> into the Java virtual machine. The boot layer will often be
  * the {@link #parents() parent} when creating additional layers. </p>
+ *
+ * <p> Each {@code Module} in a layer is created so that it {@link
+ * Module#isExported(String) exports} and {@link Module#isOpen(String) opens}
+ * the packages described by its {@link ModuleDescriptor}. Qualified exports
+ * (where a package is exported to a set of target modules rather than all
+ * modules) are reified when creating the layer as follows: </p>
+ * <ul>
+ *     <li> If module {@code X} exports a package to {@code Y}, and if the
+ *     runtime {@code Module} {@code X} reads {@code Module} {@code Y}, then
+ *     the package is exported to {@code Module} {@code Y} (which may be in
+ *     the same layer as {@code X} or a parent layer). </li>
+ *
+ *     <li> If module {@code X} exports a package to {@code Y}, and if the
+ *     runtime {@code Module} {@code X} does not read {@code Y} then target
+ *     {@code Y} is located as if by invoking {@link #findModule(String)
+ *     findModule} to find the module in the layer or its parent layers. If
+ *     {@code Y} is found then the package is exported to the instance of
+ *     {@code Y} that was found. If {@code Y} is not found then the qualified
+ *     export is ignored. </li>
+ * </ul>
+ *
+ * <p> Qualified opens are handled in same way as qualified exports. </p>
  *
  * <p> As when creating a {@code Configuration},
  * {@link ModuleDescriptor#isAutomatic() automatic} modules receive special
@@ -193,7 +213,7 @@ public final class Layer {
         }
 
         private void ensureInLayer(Module source) {
-            if (!layer.modules().contains(source))
+            if (source.getLayer() != layer)
                 throw new IllegalArgumentException(source + " not in layer");
         }
 
@@ -220,9 +240,8 @@ public final class Layer {
          * @see Module#addReads
          */
         public Controller addReads(Module source, Module target) {
-            Objects.requireNonNull(source);
-            Objects.requireNonNull(target);
             ensureInLayer(source);
+            Objects.requireNonNull(target);
             Modules.addReads(source, target);
             return this;
         }
@@ -248,9 +267,9 @@ public final class Layer {
          * @see Module#addOpens
          */
         public Controller addOpens(Module source, String pn, Module target) {
-            Objects.requireNonNull(source);
-            Objects.requireNonNull(target);
             ensureInLayer(source);
+            Objects.requireNonNull(pn);
+            Objects.requireNonNull(target);
             Modules.addOpens(source, pn, target);
             return this;
         }
@@ -408,8 +427,8 @@ public final class Layer {
      * </ul>
      *
      * <p> In addition, a layer cannot be created if the configuration contains
-     * a module named "{@code java.base}" or a module with a package name
-     * starting with "{@code java.}". </p>
+     * a module named "{@code java.base}", or a module contains a package named
+     * "{@code java}" or a package with a name starting with "{@code java.}". </p>
      *
      * <p> If there is a security manager then the class loader created by
      * this method will load classes and resources with privileges that are
@@ -418,7 +437,7 @@ public final class Layer {
      * @param  cf
      *         The configuration for the layer
      * @param  parentLayers
-     *         The list parent layers in search order
+     *         The list of parent layers in search order
      * @param  parentLoader
      *         The parent class loader for the class loader created by this
      *         method; may be {@code null} for the bootstrap class loader
@@ -485,7 +504,7 @@ public final class Layer {
      * @param  cf
      *         The configuration for the layer
      * @param  parentLayers
-     *         The list parent layers in search order
+     *         The list of parent layers in search order
      * @param  parentLoader
      *         The parent class loader for each of the class loaders created by
      *         this method; may be {@code null} for the bootstrap class loader
@@ -497,8 +516,10 @@ public final class Layer {
      *         the parent layers, including order
      * @throws LayerInstantiationException
      *         If the layer cannot be created because the configuration contains
-     *         a module named "{@code java.base}" or a module with a package
-     *         name starting with "{@code java.}"
+     *         a module named "{@code java.base}" or a module contains a package
+     *         named "{@code java}" or a package with a name starting with
+     *         "{@code java.}"
+     *
      * @throws SecurityException
      *         If {@code RuntimePermission("createClassLoader")} or
      *         {@code RuntimePermission("getClassLoader")} is denied by
@@ -558,10 +579,11 @@ public final class Layer {
      *
      * <p> In addition, a layer cannot be created if the configuration contains
      * a module named "{@code java.base}", a configuration contains a module
-     * with a package name starting with "{@code java.}" is mapped to a class
-     * loader other than the {@link ClassLoader#getPlatformClassLoader()
-     * platform class loader}, or the function to map a module name to a class
-     * loader returns {@code null}. </p>
+     * with a package named "{@code java}" or a package name starting with
+     * "{@code java.}" and the module is mapped to a class loader other than
+     * the {@link ClassLoader#getPlatformClassLoader() platform class loader},
+     * or the function to map a module name to a class loader returns
+     * {@code null}. </p>
      *
      * <p> If the function to map a module name to class loader throws an error
      * or runtime exception then it is propagated to the caller of this method.
@@ -575,7 +597,7 @@ public final class Layer {
      * @param  cf
      *         The configuration for the layer
      * @param  parentLayers
-     *         The list parent layers in search order
+     *         The list of parent layers in search order
      * @param  clf
      *         The function to map a module name to a class loader
      *
@@ -754,9 +776,15 @@ public final class Layer {
      * @return A possibly-empty unmodifiable set of the modules in this layer
      */
     public Set<Module> modules() {
-        return Collections.unmodifiableSet(
-                nameToModule.values().stream().collect(Collectors.toSet()));
+        Set<Module> modules = this.modules;
+        if (modules == null) {
+            this.modules = modules =
+                Collections.unmodifiableSet(new HashSet<>(nameToModule.values()));
+        }
+        return modules;
     }
+
+    private volatile Set<Module> modules;
 
 
     /**
@@ -776,6 +804,8 @@ public final class Layer {
      */
     public Optional<Module> findModule(String name) {
         Objects.requireNonNull(name);
+        if (this == EMPTY_LAYER)
+            return Optional.empty();
         Module m = nameToModule.get(name);
         if (m != null)
             return Optional.of(m);

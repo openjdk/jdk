@@ -25,7 +25,6 @@
 
 package jdk.internal.module;
 
-import java.io.File;
 import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,7 +49,6 @@ import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
 import jdk.internal.jmod.JmodFile;
-import jdk.internal.loader.ResourceHelper;
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.module.ModuleHashes.HashSupplier;
 import jdk.internal.util.jar.VersionedStream;
@@ -78,6 +76,7 @@ class ModuleReferences {
                                                        uri,
                                                        supplier,
                                                        null,
+                                                       attrs.target(),
                                                        attrs.recordedHashes(),
                                                        hasher,
                                                        attrs.moduleResolution());
@@ -242,8 +241,7 @@ class ModuleReferences {
         }
 
         private JarEntry getEntry(String name) {
-            JarEntry entry = jf.getJarEntry(Objects.requireNonNull(name));
-            return (entry == null || entry.isDirectory()) ? null : entry;
+            return jf.getJarEntry(Objects.requireNonNull(name));
         }
 
         @Override
@@ -252,6 +250,8 @@ class ModuleReferences {
             if (je != null) {
                 if (jf.isMultiRelease())
                     name = SharedSecrets.javaUtilJarAccess().getRealName(jf, je);
+                if (je.isDirectory() && !name.endsWith("/"))
+                    name += "/";
                 String encodedPath = ParseUtil.encodePath(name, false);
                 String uris = "jar:" + uri + "!/" + encodedPath;
                 return Optional.of(URI.create(uris));
@@ -274,7 +274,6 @@ class ModuleReferences {
         Stream<String> implList() throws IOException {
             // take snapshot to avoid async close
             List<String> names = VersionedStream.stream(jf)
-                    .filter(e -> !e.isDirectory())
                     .map(JarEntry::getName)
                     .collect(Collectors.toList());
             return names.stream();
@@ -316,6 +315,8 @@ class ModuleReferences {
         Optional<URI> implFind(String name) {
             JmodFile.Entry je = getEntry(name);
             if (je != null) {
+                if (je.isDirectory() && !name.endsWith("/"))
+                    name += "/";
                 String encodedPath = ParseUtil.encodePath(name, false);
                 String uris = "jmod:" + uri + "!/" + encodedPath;
                 return Optional.of(URI.create(uris));
@@ -376,26 +377,10 @@ class ModuleReferences {
             if (closed) throw new IOException("ModuleReader is closed");
         }
 
-        /**
-         * Returns a Path to access the given resource. Returns null if the
-         * resource name does not convert to a file path that locates a regular
-         * file in the module.
-         */
-        private Path toFilePath(String name) {
-            Path path = ResourceHelper.toFilePath(name);
-            if (path != null) {
-                Path file = dir.resolve(path);
-                if (Files.isRegularFile(file)) {
-                    return file;
-                }
-            }
-            return null;
-        }
-
         @Override
         public Optional<URI> find(String name) throws IOException {
             ensureOpen();
-            Path path = toFilePath(name);
+            Path path = Resources.toFilePath(dir, name);
             if (path != null) {
                 try {
                     return Optional.of(path.toUri());
@@ -410,7 +395,7 @@ class ModuleReferences {
         @Override
         public Optional<InputStream> open(String name) throws IOException {
             ensureOpen();
-            Path path = toFilePath(name);
+            Path path = Resources.toFilePath(dir, name);
             if (path != null) {
                 return Optional.of(Files.newInputStream(path));
             } else {
@@ -421,7 +406,7 @@ class ModuleReferences {
         @Override
         public Optional<ByteBuffer> read(String name) throws IOException {
             ensureOpen();
-            Path path = toFilePath(name);
+            Path path = Resources.toFilePath(dir, name);
             if (path != null) {
                 return Optional.of(ByteBuffer.wrap(Files.readAllBytes(path)));
             } else {
@@ -432,12 +417,9 @@ class ModuleReferences {
         @Override
         public Stream<String> list() throws IOException {
             ensureOpen();
-            // sym links not followed
-            return Files.find(dir, Integer.MAX_VALUE,
-                              (path, attrs) -> attrs.isRegularFile())
-                    .map(f -> dir.relativize(f)
-                                 .toString()
-                                 .replace(File.separatorChar, '/'));
+            return Files.walk(dir, Integer.MAX_VALUE)
+                        .map(f -> Resources.toResourceName(dir, f))
+                        .filter(s -> s.length() > 0);
         }
 
         @Override

@@ -1544,7 +1544,6 @@ class AttributeVisitor implements Attribute.Visitor<Element, Element> {
         Element e = new Element(x.getCpString(attr.attribute_name_index));
         e.add(x.getCpString(attr.os_name_index));
         e.add(x.getCpString(attr.os_arch_index));
-        e.add(x.getCpString(attr.os_version_index));
         e.trimToSize();
         p.add(e);
         return null;

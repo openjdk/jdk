@@ -52,6 +52,7 @@ import jdk.internal.module.ModuleHashes;
 import jdk.internal.module.ModuleInfo.Attributes;
 import jdk.internal.module.ModuleInfoExtender;
 import jdk.internal.module.ModuleResolution;
+import jdk.internal.module.ModuleTarget;
 import jdk.internal.module.SystemModules;
 import jdk.internal.org.objectweb.asm.Attribute;
 import jdk.internal.org.objectweb.asm.ClassReader;
@@ -206,12 +207,12 @@ public final class SystemModulesPlugin implements Plugin {
             // add ModulePackages attribute if this module contains some packages
             // and ModulePackages is not present
             this.addModulePackages = packages.size() > 0 && !hasModulePackages();
+
             // drop target attribute only if any OS property is present
-            if (dropModuleTarget) {
-                this.dropModuleTarget =
-                    descriptor.osName().isPresent() ||
-                    descriptor.osArch().isPresent() ||
-                    descriptor.osVersion().isPresent();
+            ModuleTarget target = attrs.target();
+            if (dropModuleTarget && target != null) {
+                this.dropModuleTarget = (target.osName() != null)
+                                        || (target.osArch() != null);
             } else {
                 this.dropModuleTarget = false;
             }
@@ -228,6 +229,10 @@ public final class SystemModulesPlugin implements Plugin {
 
         Set<String> packages() {
             return packages;
+        }
+
+        ModuleTarget target() {
+            return attrs.target();
         }
 
         ModuleHashes recordedHashes() {
@@ -372,7 +377,7 @@ public final class SystemModulesPlugin implements Plugin {
             }
 
             void dropModuleTarget() {
-                extender.targetPlatform("", "", "");
+                extender.targetPlatform("", "");
             }
 
             byte[] getBytes() throws IOException {
@@ -399,6 +404,10 @@ public final class SystemModulesPlugin implements Plugin {
             "java/lang/module/ModuleDescriptor$Exports$Modifier";
         private static final String OPENS_MODIFIER_CLASSNAME =
             "java/lang/module/ModuleDescriptor$Opens$Modifier";
+        private static final String MODULE_TARGET_CLASSNAME  =
+            "jdk/internal/module/ModuleTarget";
+        private static final String MODULE_TARGET_ARRAY_SIGNATURE  =
+            "[Ljdk/internal/module/ModuleTarget;";
         private static final String MODULE_HASHES_ARRAY_SIGNATURE  =
             "[Ljdk/internal/module/ModuleHashes;";
         private static final String MODULE_RESOLUTION_CLASSNAME  =
@@ -414,6 +423,7 @@ public final class SystemModulesPlugin implements Plugin {
 
         private final int BUILDER_VAR    = 0;
         private final int MD_VAR         = 1;  // variable for ModuleDescriptor
+        private final int MT_VAR         = 1;  // variable for ModuleTarget
         private final int MH_VAR         = 1;  // variable for ModuleHashes
         private int nextLocalVar         = 2;  // index to next local variable
 
@@ -515,11 +525,10 @@ public final class SystemModulesPlugin implements Plugin {
             if (entry.moduleName().equals("java.base")) {
                 moduleInfo = new ModuleInfo(entry.contentBytes(), packages, false);
                 ModuleDescriptor md = moduleInfo.descriptor;
-                // drop Moduletarget attribute only if java.base has all OS properties
-                // otherwise, retain it
-                if (dropModuleTarget &&
-                        md.osName().isPresent() && md.osArch().isPresent() &&
-                        md.osVersion().isPresent()) {
+                // drop ModuleTarget attribute if java.base has all OS properties
+                ModuleTarget target = moduleInfo.target();
+                if (dropModuleTarget
+                    && (target.osName() != null) && (target.osArch() != null)) {
                     dropModuleTarget = true;
                 } else {
                     dropModuleTarget = false;
@@ -584,15 +593,20 @@ public final class SystemModulesPlugin implements Plugin {
 
             // generate SystemModules::descriptors
             genDescriptorsMethod();
+
+            // generate SystemModules::targets
+            genTargetsMethod();
+
             // generate SystemModules::hashes
             genHashesMethod();
+
             // generate SystemModules::moduleResolutions
             genModuleResolutionsMethod();
 
             return cw;
         }
 
-        /*
+        /**
          * Generate bytecode for SystemModules::descriptors method
          */
         private void genDescriptorsMethod() {
@@ -616,10 +630,47 @@ public final class SystemModulesPlugin implements Plugin {
             mv.visitInsn(ARETURN);
             mv.visitMaxs(0, 0);
             mv.visitEnd();
-
         }
 
-        /*
+        /**
+         * Generate bytecode for SystemModules::targets method
+         */
+        private void genTargetsMethod() {
+            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC+ACC_STATIC,
+                                              "targets",
+                                              "()" + MODULE_TARGET_ARRAY_SIGNATURE,
+                                              "()" + MODULE_TARGET_ARRAY_SIGNATURE,
+                                              null);
+            mv.visitCode();
+            pushInt(mv, moduleInfos.size());
+            mv.visitTypeInsn(ANEWARRAY, MODULE_TARGET_CLASSNAME);
+            mv.visitVarInsn(ASTORE, MT_VAR);
+
+            for (int index=0; index < moduleInfos.size(); index++) {
+                ModuleInfo minfo = moduleInfos.get(index);
+                if (minfo.target() != null && !minfo.dropModuleTarget) {
+                    mv.visitVarInsn(ALOAD, MT_VAR);
+                    pushInt(mv, index);
+
+                    // new ModuleTarget(String, String)
+                    mv.visitTypeInsn(NEW, MODULE_TARGET_CLASSNAME);
+                    mv.visitInsn(DUP);
+                    mv.visitLdcInsn(minfo.target().osName());
+                    mv.visitLdcInsn(minfo.target().osArch());
+                    mv.visitMethodInsn(INVOKESPECIAL, MODULE_TARGET_CLASSNAME,
+                        "<init>", "(Ljava/lang/String;Ljava/lang/String;)V", false);
+
+                    mv.visitInsn(AASTORE);
+                }
+            }
+
+            mv.visitVarInsn(ALOAD, MT_VAR);
+            mv.visitInsn(ARETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        /**
          * Generate bytecode for SystemModules::hashes method
          */
         private void genHashesMethod() {
@@ -647,10 +698,9 @@ public final class SystemModulesPlugin implements Plugin {
             hmv.visitInsn(ARETURN);
             hmv.visitMaxs(0, 0);
             hmv.visitEnd();
-
         }
 
-        /*
+        /**
          * Generate bytecode for SystemModules::methodResoultions method
          */
         private void genModuleResolutionsMethod() {
@@ -749,6 +799,7 @@ public final class SystemModulesPlugin implements Plugin {
             final ModuleDescriptor md;
             final Set<String> packages;
             final int index;
+
             ModuleDescriptorBuilder(ModuleDescriptor md, Set<String> packages, int index) {
                 if (md.isAutomatic()) {
                     throw new InternalError("linking automatic module is not supported");
@@ -785,11 +836,6 @@ public final class SystemModulesPlugin implements Plugin {
 
                 // main class
                 md.mainClass().ifPresent(this::mainClass);
-
-                // os name, arch, version
-                targetPlatform(md.osName().orElse(null),
-                               md.osArch().orElse(null),
-                               md.osVersion().orElse(null));
 
                 putModuleDescriptor();
             }
@@ -1086,25 +1132,6 @@ public final class SystemModulesPlugin implements Plugin {
                 mv.visitMethodInsn(INVOKEVIRTUAL, MODULE_DESCRIPTOR_BUILDER,
                     "version", STRING_SIG, false);
                 mv.visitInsn(POP);
-            }
-
-            /*
-             * Invoke Builder.osName(String name)
-             *        Builder.osArch(String arch)
-             *        Builder.osVersion(String version)
-             */
-            void targetPlatform(String osName, String osArch, String osVersion) {
-                if (osName != null) {
-                    invokeBuilderMethod("osName", osName);
-                }
-
-                if (osArch != null) {
-                    invokeBuilderMethod("osArch", osArch);
-                }
-
-                if (osVersion != null) {
-                    invokeBuilderMethod("osVersion", osVersion);
-                }
             }
 
             void invokeBuilderMethod(String methodName, String value) {

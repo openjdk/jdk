@@ -134,16 +134,16 @@ public class AddExportsTestWarningError {
         return new Object[][]{
 
             // source not found
-            {"DoesNotExist/p=m1",  "WARNING: Unknown module: DoesNotExist specified in --add-exports"},
+            {"DoesNotExist/p=m1",  "WARNING: Unknown module: DoesNotExist specified to --add-exports"},
             {"m1/DoesNotExist=m2", "WARNING: package DoesNotExist not in m1"},
 
             // target not found
-            {"m1/p1=DoesNotExist", "WARNING: Unknown module: DoesNotExist specified in --add-exports"},
+            {"m1/p1=DoesNotExist", "WARNING: Unknown module: DoesNotExist specified to --add-exports"},
 
             // bad names
-            {"m*/p1=m2",           "WARNING: Unknown module: m* specified in --add-exports"},
+            {"m*/p1=m2",           "WARNING: Unknown module: m* specified to --add-exports"},
             {"m1/p!=m2",           "WARNING: package p! not in m1"},
-            {"m1/p1=m!",           "WARNING: Unknown module: m! specified in --add-exports"},
+            {"m1/p1=m!",           "WARNING: Unknown module: m! specified to --add-exports"},
 
         };
     }
