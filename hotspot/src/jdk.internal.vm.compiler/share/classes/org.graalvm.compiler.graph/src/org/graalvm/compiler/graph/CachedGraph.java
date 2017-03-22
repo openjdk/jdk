@@ -22,8 +22,9 @@
  */
 package org.graalvm.compiler.graph;
 
-import java.util.Map;
 import java.util.function.Consumer;
+
+import org.graalvm.util.UnmodifiableEconomicMap;
 
 /**
  * This class is a container of a graph that needs to be readonly and optionally a lazily created
@@ -59,7 +60,7 @@ public final class CachedGraph<G extends Graph> {
     }
 
     @SuppressWarnings("unchecked")
-    public G getMutableCopy(Consumer<Map<Node, Node>> duplicationMapCallback) {
+    public G getMutableCopy(Consumer<UnmodifiableEconomicMap<Node, Node>> duplicationMapCallback) {
         if (!hasMutableCopy()) {
             mutableCopy = (G) readonlyCopy.copy(duplicationMapCallback);
         }

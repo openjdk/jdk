@@ -25,6 +25,7 @@ package org.graalvm.compiler.nodes.util;
 import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
 import org.graalvm.compiler.core.common.spi.ConstantFieldProvider.ConstantFieldTool;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.JavaConstant;
@@ -34,7 +35,7 @@ import jdk.vm.ci.meta.ResolvedJavaField;
 public class ConstantFoldUtil {
 
     public static ConstantNode tryConstantFold(ConstantFieldProvider fieldProvider, ConstantReflectionProvider constantReflection, MetaAccessProvider metaAccess, ResolvedJavaField field,
-                    JavaConstant receiver) {
+                    JavaConstant receiver, OptionValues options) {
         if (!field.isStatic()) {
             if (receiver == null || receiver.isNull()) {
                 return null;
@@ -69,6 +70,11 @@ public class ConstantFoldUtil {
                 } else {
                     return null;
                 }
+            }
+
+            @Override
+            public OptionValues getOptions() {
+                return options;
             }
         });
     }

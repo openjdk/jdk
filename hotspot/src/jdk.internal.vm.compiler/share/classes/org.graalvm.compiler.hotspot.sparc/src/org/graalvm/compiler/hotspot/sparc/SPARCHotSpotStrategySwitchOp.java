@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,14 @@
  */
 package org.graalvm.compiler.hotspot.sparc;
 
+import static jdk.vm.ci.code.ValueUtil.asRegister;
+import static jdk.vm.ci.sparc.SPARC.g0;
 import static org.graalvm.compiler.asm.sparc.SPARCAssembler.BPCC;
 import static org.graalvm.compiler.asm.sparc.SPARCAssembler.CBCOND;
 import static org.graalvm.compiler.asm.sparc.SPARCAssembler.INSTRUCTION_SIZE;
 import static org.graalvm.compiler.asm.sparc.SPARCAssembler.Annul.ANNUL;
 import static org.graalvm.compiler.asm.sparc.SPARCAssembler.BranchPredict.PREDICT_TAKEN;
 import static org.graalvm.compiler.lir.sparc.SPARCMove.loadFromConstantTable;
-import static jdk.vm.ci.code.ValueUtil.asRegister;
-import static jdk.vm.ci.sparc.SPARC.g0;
 
 import org.graalvm.compiler.asm.Assembler.LabelHint;
 import org.graalvm.compiler.asm.Label;
@@ -40,6 +40,7 @@ import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.LabelRef;
 import org.graalvm.compiler.lir.SwitchStrategy;
+import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 import org.graalvm.compiler.lir.sparc.SPARCControlFlow;
 import org.graalvm.compiler.lir.sparc.SPARCDelayedControlTransfer;
@@ -54,7 +55,7 @@ import jdk.vm.ci.sparc.SPARC.CPUFeature;
 final class SPARCHotSpotStrategySwitchOp extends SPARCControlFlow.StrategySwitchOp {
     public static final LIRInstructionClass<SPARCHotSpotStrategySwitchOp> TYPE = LIRInstructionClass.create(SPARCHotSpotStrategySwitchOp.class);
 
-    SPARCHotSpotStrategySwitchOp(Value constantTableBase, SwitchStrategy strategy, LabelRef[] keyTargets, LabelRef defaultTarget, Value key, Value scratch) {
+    SPARCHotSpotStrategySwitchOp(Value constantTableBase, SwitchStrategy strategy, LabelRef[] keyTargets, LabelRef defaultTarget, AllocatableValue key, Variable scratch) {
         super(TYPE, constantTableBase, strategy, keyTargets, defaultTarget, key, scratch);
     }
 

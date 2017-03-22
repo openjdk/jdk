@@ -22,18 +22,18 @@
  */
 package org.graalvm.compiler.lir.alloc.trace.lsra;
 
-import static org.graalvm.compiler.core.common.GraalOptions.DetailedAsserts;
-import static org.graalvm.compiler.lir.LIRValueUtil.isVariable;
 import static jdk.vm.ci.code.CodeUtil.isEven;
 import static jdk.vm.ci.code.ValueUtil.asRegister;
 import static jdk.vm.ci.code.ValueUtil.asRegisterValue;
 import static jdk.vm.ci.code.ValueUtil.isIllegal;
 import static jdk.vm.ci.code.ValueUtil.isLegal;
 import static jdk.vm.ci.code.ValueUtil.isRegister;
+import static org.graalvm.compiler.core.common.GraalOptions.DetailedAsserts;
+import static org.graalvm.compiler.lir.LIRValueUtil.isVariable;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
-import java.util.List;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
@@ -53,10 +53,12 @@ import org.graalvm.compiler.lir.StandardOp.BlockEndOp;
 import org.graalvm.compiler.lir.ValueConsumer;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.VirtualStackSlot;
+import org.graalvm.compiler.lir.alloc.trace.GlobalLivenessInfo;
 import org.graalvm.compiler.lir.alloc.trace.TraceAllocationPhase;
 import org.graalvm.compiler.lir.alloc.trace.TraceAllocationPhase.TraceAllocationContext;
 import org.graalvm.compiler.lir.alloc.trace.TraceBuilderPhase;
 import org.graalvm.compiler.lir.alloc.trace.TraceRegisterAllocationPhase;
+import org.graalvm.compiler.lir.alloc.trace.TraceUtil;
 import org.graalvm.compiler.lir.alloc.trace.lsra.TraceInterval.RegisterPriority;
 import org.graalvm.compiler.lir.alloc.trace.lsra.TraceLinearScanAllocationPhase.TraceLinearScanAllocationContext;
 import org.graalvm.compiler.lir.debug.IntervalDumper;
@@ -65,10 +67,11 @@ import org.graalvm.compiler.lir.framemap.FrameMapBuilder;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool.MoveFactory;
 import org.graalvm.compiler.lir.phases.LIRPhase;
-import org.graalvm.compiler.options.NestedBooleanOptionValue;
+import org.graalvm.compiler.options.NestedBooleanOptionKey;
 import org.graalvm.compiler.options.Option;
+import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
-import org.graalvm.compiler.options.OptionValue;
+import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.RegisterArray;
@@ -91,7 +94,7 @@ public final class TraceLinearScanPhase extends TraceAllocationPhase<TraceAlloca
     public static class Options {
         // @formatter:off
         @Option(help = "Enable spill position optimization", type = OptionType.Debug)
-        public static final OptionValue<Boolean> LIROptTraceRAEliminateSpillMoves = new NestedBooleanOptionValue(LIRPhase.Options.LIROptimization, true);
+        public static final OptionKey<Boolean> LIROptTraceRAEliminateSpillMoves = new NestedBooleanOptionKey(LIRPhase.Options.LIROptimization, true);
         // @formatter:on
     }
 
@@ -121,9 +124,10 @@ public final class TraceLinearScanPhase extends TraceAllocationPhase<TraceAlloca
     private final AllocatableValue[] cachedStackSlots;
 
     private final LIRGenerationResult res;
+    private final GlobalLivenessInfo livenessInfo;
 
     public TraceLinearScanPhase(TargetDescription target, LIRGenerationResult res, MoveFactory spillMoveFactory, RegisterAllocationConfig regAllocConfig, TraceBuilderResult traceBuilderResult,
-                    boolean neverSpillConstants, AllocatableValue[] cachedStackSlots) {
+                    boolean neverSpillConstants, AllocatableValue[] cachedStackSlots, GlobalLivenessInfo livenessInfo) {
         this.res = res;
         this.moveFactory = spillMoveFactory;
         this.frameMapBuilder = res.getFrameMapBuilder();
@@ -134,7 +138,8 @@ public final class TraceLinearScanPhase extends TraceAllocationPhase<TraceAlloca
         this.traceBuilderResult = traceBuilderResult;
         this.neverSpillConstants = neverSpillConstants;
         this.cachedStackSlots = cachedStackSlots;
-
+        this.livenessInfo = livenessInfo;
+        assert livenessInfo != null;
     }
 
     public static boolean isVariableOrRegister(Value value) {
@@ -246,6 +251,10 @@ public final class TraceLinearScanPhase extends TraceAllocationPhase<TraceAlloca
             this.fixedIntervals = new FixedInterval[registers.size()];
         }
 
+        GlobalLivenessInfo getGlobalLivenessInfo() {
+            return livenessInfo;
+        }
+
         /**
          * Converts an operand (variable or register) to an index in a flat address space covering
          * all the {@linkplain Variable variables} and {@linkplain RegisterValue registers} being
@@ -255,6 +264,10 @@ public final class TraceLinearScanPhase extends TraceAllocationPhase<TraceAlloca
             assert !isRegister(operand) : "Register do not have operand numbers: " + operand;
             assert isVariable(operand) : "Unsupported Value " + operand;
             return ((Variable) operand).index;
+        }
+
+        OptionValues getOptions() {
+            return getLIR().getOptions();
         }
 
         /**
@@ -278,7 +291,7 @@ public final class TraceLinearScanPhase extends TraceAllocationPhase<TraceAlloca
         }
 
         public int getLastLirInstructionId(AbstractBlockBase<?> block) {
-            List<LIRInstruction> instructions = getLIR().getLIRforBlock(block);
+            ArrayList<LIRInstruction> instructions = getLIR().getLIRforBlock(block);
             int result = instructions.get(instructions.size() - 1).id();
             assert result >= 0;
             return result;
@@ -324,7 +337,8 @@ public final class TraceLinearScanPhase extends TraceAllocationPhase<TraceAlloca
          */
         private AllocatableValue allocateSpillSlot(TraceInterval interval) {
             int variableIndex = LIRValueUtil.asVariable(interval.splitParent().operand).index;
-            if (TraceRegisterAllocationPhase.Options.TraceRACacheStackSlots.getValue()) {
+            OptionValues options = getOptions();
+            if (TraceRegisterAllocationPhase.Options.TraceRACacheStackSlots.getValue(options)) {
                 AllocatableValue cachedStackSlot = cachedStackSlots[variableIndex];
                 if (cachedStackSlot != null) {
                     TraceRegisterAllocationPhase.globalStackSlots.increment();
@@ -333,7 +347,7 @@ public final class TraceLinearScanPhase extends TraceAllocationPhase<TraceAlloca
                 }
             }
             VirtualStackSlot slot = frameMapBuilder.allocateSpillSlot(interval.kind());
-            if (TraceRegisterAllocationPhase.Options.TraceRACacheStackSlots.getValue()) {
+            if (TraceRegisterAllocationPhase.Options.TraceRACacheStackSlots.getValue(options)) {
                 cachedStackSlots[variableIndex] = slot;
             }
             TraceRegisterAllocationPhase.allocatedStackSlots.increment();
@@ -598,14 +612,15 @@ public final class TraceLinearScanPhase extends TraceAllocationPhase<TraceAlloca
                     Debug.dump(TraceBuilderPhase.TRACE_DUMP_LEVEL, sortedBlocks(), "%s", TRACE_LINEAR_SCAN_RESOLVE_DATA_FLOW_PHASE.getName());
 
                     // eliminate spill moves
-                    if (Options.LIROptTraceRAEliminateSpillMoves.getValue()) {
+                    OptionValues options = getOptions();
+                    if (Options.LIROptTraceRAEliminateSpillMoves.getValue(options)) {
                         TRACE_LINEAR_SCAN_ELIMINATE_SPILL_MOVE_PHASE.apply(target, lirGenRes, trace, context, false);
                         Debug.dump(TraceBuilderPhase.TRACE_DUMP_LEVEL, sortedBlocks(), "%s", TRACE_LINEAR_SCAN_ELIMINATE_SPILL_MOVE_PHASE.getName());
                     }
 
                     TRACE_LINEAR_SCAN_ASSIGN_LOCATIONS_PHASE.apply(target, lirGenRes, trace, context, false);
 
-                    if (DetailedAsserts.getValue()) {
+                    if (DetailedAsserts.getValue(options)) {
                         verifyIntervals();
                     }
                 } catch (Throwable e) {
@@ -749,12 +764,12 @@ public final class TraceLinearScanPhase extends TraceAllocationPhase<TraceAlloca
                 FixedInterval fixedInts = createFixedUnhandledList();
                 // to ensure a walking until the last instruction id, add a dummy interval
                 // with a high operation id
-                otherIntervals = new TraceInterval(Value.ILLEGAL, -1);
+                otherIntervals = new TraceInterval(Value.ILLEGAL, -1, getOptions());
                 otherIntervals.addRange(Integer.MAX_VALUE - 2, Integer.MAX_VALUE - 1);
                 TraceIntervalWalker iw = new TraceIntervalWalker(this, fixedInts, otherIntervals);
 
                 for (AbstractBlockBase<?> block : sortedBlocks()) {
-                    List<LIRInstruction> instructions = getLIR().getLIRforBlock(block);
+                    ArrayList<LIRInstruction> instructions = getLIR().getLIRforBlock(block);
 
                     for (int j = 0; j < instructions.size(); j++) {
                         LIRInstruction op = instructions.get(j);
@@ -902,7 +917,7 @@ public final class TraceLinearScanPhase extends TraceAllocationPhase<TraceAlloca
         private TraceInterval createInterval(AllocatableValue operand) {
             assert isLegal(operand);
             int operandNumber = operandNumber(operand);
-            TraceInterval interval = new TraceInterval(operand, operandNumber);
+            TraceInterval interval = new TraceInterval(operand, operandNumber, getOptions());
             assert operandNumber < intervalsSize;
             assert intervals[operandNumber] == null;
             intervals[operandNumber] = interval;
@@ -966,7 +981,10 @@ public final class TraceLinearScanPhase extends TraceAllocationPhase<TraceAlloca
         }
 
         TraceInterval intervalFor(Value operand) {
-            int operandNumber = operandNumber(operand);
+            return intervalFor(operandNumber(operand));
+        }
+
+        TraceInterval intervalFor(int operandNumber) {
             assert operandNumber < intervalsSize;
             return intervals[operandNumber];
         }
@@ -1071,6 +1089,14 @@ public final class TraceLinearScanPhase extends TraceAllocationPhase<TraceAlloca
                     printInterval(interval, visitor);
                 }
             }
+        }
+
+        boolean hasInterTracePredecessor(AbstractBlockBase<?> block) {
+            return TraceUtil.hasInterTracePredecessor(traceBuilderResult, trace, block);
+        }
+
+        boolean hasInterTraceSuccessor(AbstractBlockBase<?> block) {
+            return TraceUtil.hasInterTraceSuccessor(traceBuilderResult, trace, block);
         }
 
     }

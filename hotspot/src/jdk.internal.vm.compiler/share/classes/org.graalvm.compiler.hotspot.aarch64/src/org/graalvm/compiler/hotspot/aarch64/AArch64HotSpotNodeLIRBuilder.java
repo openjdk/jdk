@@ -39,13 +39,11 @@ import org.graalvm.compiler.hotspot.HotSpotDebugInfoBuilder;
 import org.graalvm.compiler.hotspot.HotSpotLIRGenerator;
 import org.graalvm.compiler.hotspot.HotSpotLockStack;
 import org.graalvm.compiler.hotspot.HotSpotNodeLIRBuilder;
-import org.graalvm.compiler.hotspot.nodes.DirectCompareAndSwapNode;
 import org.graalvm.compiler.hotspot.nodes.HotSpotDirectCallTargetNode;
 import org.graalvm.compiler.hotspot.nodes.HotSpotIndirectCallTargetNode;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.aarch64.AArch64BreakpointOp;
-import org.graalvm.compiler.lir.aarch64.AArch64Move.CompareAndSwapOp;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodes.BreakpointNode;
 import org.graalvm.compiler.nodes.CallTargetNode.InvokeKind;
@@ -70,7 +68,6 @@ import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.Value;
-import jdk.vm.ci.meta.ValueKind;
 
 /**
  * LIR generator specialized for AArch64 HotSpot.
@@ -178,20 +175,6 @@ public class AArch64HotSpotNodeLIRBuilder extends AArch64NodeLIRBuilder implemen
         } else {
             super.visitFullInfopointNode(i);
         }
-    }
-
-    @Override
-    public void visitDirectCompareAndSwap(DirectCompareAndSwapNode x) {
-        AllocatableValue address = gen.asAllocatable(operand(x.getAddress()));
-        AllocatableValue cmpValue = gen.asAllocatable(operand(x.expectedValue()));
-        AllocatableValue newValue = gen.asAllocatable(operand(x.newValue()));
-        ValueKind<?> kind = cmpValue.getValueKind();
-        assert kind.equals(newValue.getValueKind());
-
-        Variable result = gen.newVariable(newValue.getValueKind());
-        Variable scratch = gen.newVariable(LIRKind.value(AArch64Kind.DWORD));
-        append(new CompareAndSwapOp(result, cmpValue, newValue, address, scratch));
-        setResult(x, result);
     }
 
     @Override

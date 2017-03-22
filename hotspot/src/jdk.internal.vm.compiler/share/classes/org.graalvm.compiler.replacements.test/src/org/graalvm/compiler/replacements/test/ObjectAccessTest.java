@@ -22,13 +22,8 @@
  */
 package org.graalvm.compiler.replacements.test;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import org.graalvm.compiler.api.replacements.Snippet;
-import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.LocationIdentity;
-import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.nodes.NamedLocationIdentity;
 import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -37,33 +32,22 @@ import org.graalvm.compiler.nodes.calc.SignExtendNode;
 import org.graalvm.compiler.nodes.extended.JavaReadNode;
 import org.graalvm.compiler.nodes.extended.JavaWriteNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
-import org.graalvm.compiler.replacements.ReplacementsImpl;
-import org.graalvm.compiler.replacements.Snippets;
 import org.graalvm.compiler.word.ObjectAccess;
 import org.graalvm.compiler.word.Pointer;
 import org.graalvm.compiler.word.Word;
+import org.junit.Assert;
+import org.junit.Test;
 
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 /**
  * Tests for the {@link Pointer} read and write operations.
  */
-public class ObjectAccessTest extends GraalCompilerTest implements Snippets {
+public class ObjectAccessTest extends SnippetsTest {
 
     private static final LocationIdentity ID = NamedLocationIdentity.mutable("ObjectAccessTestID");
     private static final JavaKind[] KINDS = new JavaKind[]{JavaKind.Byte, JavaKind.Char, JavaKind.Short, JavaKind.Int, JavaKind.Long, JavaKind.Float, JavaKind.Double, JavaKind.Object};
-    private final ReplacementsImpl installer;
-
-    public ObjectAccessTest() {
-        installer = (ReplacementsImpl) getReplacements();
-    }
-
-    @Override
-    protected StructuredGraph parseEager(ResolvedJavaMethod m, AllowAssumptions allowAssumptions, CompilationIdentifier compilationId) {
-        return installer.makeGraph(m, null, null);
-    }
 
     @Test
     public void testRead1() {

@@ -25,7 +25,7 @@ package org.graalvm.compiler.hotspot.nodes.aot;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_3;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_3;
 
-import org.graalvm.compiler.common.PermanentBailoutException;
+import org.graalvm.compiler.core.common.PermanentBailoutException;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.Canonicalizable;
@@ -55,14 +55,14 @@ public class LoadConstantIndirectlyNode extends FloatingNode implements Canonica
     protected HotSpotConstantLoadAction action;
 
     public LoadConstantIndirectlyNode(ValueNode value) {
-        super(TYPE, value.stamp().unrestricted());
+        super(TYPE, value.stamp());
         this.value = value;
         this.constant = null;
         this.action = HotSpotConstantLoadAction.RESOLVE;
     }
 
     public LoadConstantIndirectlyNode(ValueNode value, HotSpotConstantLoadAction action) {
-        super(TYPE, value.stamp().unrestricted());
+        super(TYPE, value.stamp());
         this.value = value;
         this.constant = null;
         this.action = action;

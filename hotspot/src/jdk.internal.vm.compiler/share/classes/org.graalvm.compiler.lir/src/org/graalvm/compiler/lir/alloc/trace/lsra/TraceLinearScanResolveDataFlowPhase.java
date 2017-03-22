@@ -22,14 +22,14 @@
  */
 package org.graalvm.compiler.lir.alloc.trace.lsra;
 
+import static jdk.vm.ci.code.ValueUtil.isRegister;
 import static org.graalvm.compiler.core.common.GraalOptions.DetailedAsserts;
 import static org.graalvm.compiler.lir.LIRValueUtil.asConstant;
 import static org.graalvm.compiler.lir.LIRValueUtil.isConstantValue;
 import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
 import static org.graalvm.compiler.lir.LIRValueUtil.isVirtualStackSlot;
-import static jdk.vm.ci.code.ValueUtil.isRegister;
 
-import java.util.List;
+import java.util.ArrayList;
 
 import org.graalvm.compiler.core.common.alloc.Trace;
 import org.graalvm.compiler.core.common.alloc.TraceBuilderResult;
@@ -37,12 +37,15 @@ import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.DebugCounter;
 import org.graalvm.compiler.debug.Indent;
+import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.StandardOp;
+import org.graalvm.compiler.lir.StandardOp.JumpOp;
+import org.graalvm.compiler.lir.StandardOp.LabelOp;
+import org.graalvm.compiler.lir.alloc.trace.GlobalLivenessInfo;
 import org.graalvm.compiler.lir.alloc.trace.lsra.TraceLinearScanPhase.TraceLinearScan;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
-import org.graalvm.compiler.lir.ssa.SSAUtil.PhiValueVisitor;
-import org.graalvm.compiler.lir.ssi.SSIUtil;
+import org.graalvm.compiler.lir.ssa.SSAUtil;
 
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.Value;
@@ -76,7 +79,7 @@ final class TraceLinearScanResolveDataFlowPhase extends TraceLinearScanAllocatio
                     Debug.log("inserting moves at end of fromBlock B%d", fromBlock.getId());
                 }
 
-                List<LIRInstruction> instructions = allocator.getLIR().getLIRforBlock(fromBlock);
+                ArrayList<LIRInstruction> instructions = allocator.getLIR().getLIRforBlock(fromBlock);
                 LIRInstruction instr = instructions.get(instructions.size() - 1);
                 if (instr instanceof StandardOp.JumpOp) {
                     // insert moves before branch
@@ -90,7 +93,7 @@ final class TraceLinearScanResolveDataFlowPhase extends TraceLinearScanAllocatio
                     Debug.log("inserting moves at beginning of toBlock B%d", toBlock.getId());
                 }
 
-                if (DetailedAsserts.getValue()) {
+                if (DetailedAsserts.getValue(allocator.getOptions())) {
                     assert allocator.getLIR().getLIRforBlock(fromBlock).get(0) instanceof StandardOp.LabelOp : "block does not start with a label";
 
                     /*
@@ -146,7 +149,24 @@ final class TraceLinearScanResolveDataFlowPhase extends TraceLinearScanAllocatio
             try (Indent indent0 = Debug.logAndIndent("Edge %s -> %s", fromBlock, toBlock)) {
                 // collect all intervals that have been split between
                 // fromBlock and toBlock
-                SSIUtil.forEachValuePair(allocator.getLIR(), toBlock, fromBlock, new MappingCollector(moveResolver, toBlock, fromBlock));
+                int toId = allocator.getFirstLirInstructionId(toBlock);
+                int fromId = allocator.getLastLirInstructionId(fromBlock);
+                assert fromId >= 0;
+                LIR lir = allocator.getLIR();
+                if (SSAUtil.isMerge(toBlock)) {
+                    JumpOp blockEnd = SSAUtil.phiOut(lir, fromBlock);
+                    LabelOp label = SSAUtil.phiIn(lir, toBlock);
+                    for (int i = 0; i < label.getPhiSize(); i++) {
+                        addMapping(blockEnd.getOutgoingValue(i), label.getIncomingValue(i), fromId, toId, moveResolver);
+                    }
+                }
+                GlobalLivenessInfo livenessInfo = allocator.getGlobalLivenessInfo();
+                int[] locTo = livenessInfo.getBlockIn(toBlock);
+                for (int i = 0; i < locTo.length; i++) {
+                    TraceInterval interval = allocator.intervalFor(locTo[i]);
+                    addMapping(interval, interval, fromId, toId, moveResolver);
+                }
+
                 if (moveResolver.hasMappings()) {
                     resolveFindInsertPos(fromBlock, toBlock, moveResolver);
                     moveResolver.resolveAndAppendMoves();
@@ -158,49 +178,40 @@ final class TraceLinearScanResolveDataFlowPhase extends TraceLinearScanAllocatio
             return currentTrace.getId() == traceBuilderResult.getTraceForBlock(block).getId();
         }
 
-        private static final DebugCounter numSSIResolutionMoves = Debug.counter("SSI LSRA[numSSIResolutionMoves]");
-        private static final DebugCounter numStackToStackMoves = Debug.counter("SSI LSRA[numStackToStackMoves]");
+        private static final DebugCounter numResolutionMoves = Debug.counter("TraceRA[numTraceLSRAResolutionMoves]");
+        private static final DebugCounter numStackToStackMoves = Debug.counter("TraceRA[numTraceLSRAStackToStackMoves]");
 
-        private class MappingCollector implements PhiValueVisitor {
-            final TraceLocalMoveResolver moveResolver;
-            final int toId;
-            final int fromId;
-
-            MappingCollector(TraceLocalMoveResolver moveResolver, AbstractBlockBase<?> toBlock, AbstractBlockBase<?> fromBlock) {
-                this.moveResolver = moveResolver;
-                toId = allocator.getFirstLirInstructionId(toBlock);
-                fromId = allocator.getLastLirInstructionId(fromBlock);
-                assert fromId >= 0;
+        private void addMapping(Value phiFrom, Value phiTo, int fromId, int toId, TraceLocalMoveResolver moveResolver) {
+            assert !isRegister(phiFrom) : "Out is a register: " + phiFrom;
+            assert !isRegister(phiTo) : "In is a register: " + phiTo;
+            assert !Value.ILLEGAL.equals(phiTo) : "The value not needed in this branch? " + phiFrom;
+            if (isVirtualStackSlot(phiTo) && isVirtualStackSlot(phiFrom) && phiTo.equals(phiFrom)) {
+                // no need to handle virtual stack slots
+                return;
             }
+            TraceInterval toParent = allocator.intervalFor(phiTo);
+            if (isConstantValue(phiFrom)) {
+                numResolutionMoves.increment();
+                TraceInterval toInterval = allocator.splitChildAtOpId(toParent, toId, LIRInstruction.OperandMode.DEF);
+                moveResolver.addMapping(asConstant(phiFrom), toInterval);
+            } else {
+                addMapping(allocator.intervalFor(phiFrom), toParent, fromId, toId, moveResolver);
+            }
+        }
 
-            @Override
-            public void visit(Value phiIn, Value phiOut) {
-                assert !isRegister(phiOut) : "Out is a register: " + phiOut;
-                assert !isRegister(phiIn) : "In is a register: " + phiIn;
-                if (Value.ILLEGAL.equals(phiIn)) {
-                    // The value not needed in this branch.
-                    return;
+        private void addMapping(TraceInterval fromParent, TraceInterval toParent, int fromId, int toId, TraceLocalMoveResolver moveResolver) {
+            TraceInterval fromInterval = allocator.splitChildAtOpId(fromParent, fromId, LIRInstruction.OperandMode.USE);
+            TraceInterval toInterval = toParent.getSplitChildAtOpIdOrNull(toId, LIRInstruction.OperandMode.DEF);
+            if (toInterval == null) {
+                // not alive
+                return;
+            }
+            if (fromInterval != toInterval) {
+                numResolutionMoves.increment();
+                if (numStackToStackMoves.isEnabled() && isStackSlotValue(toInterval.location()) && isStackSlotValue(fromInterval.location())) {
+                    numStackToStackMoves.increment();
                 }
-                if (isVirtualStackSlot(phiIn) && isVirtualStackSlot(phiOut) && phiIn.equals(phiOut)) {
-                    // no need to handle virtual stack slots
-                    return;
-                }
-                TraceInterval toInterval = allocator.splitChildAtOpId(allocator.intervalFor(phiIn), toId, LIRInstruction.OperandMode.DEF);
-                if (isConstantValue(phiOut)) {
-                    numSSIResolutionMoves.increment();
-                    moveResolver.addMapping(asConstant(phiOut), toInterval);
-                } else {
-                    TraceInterval fromInterval = allocator.splitChildAtOpId(allocator.intervalFor(phiOut), fromId, LIRInstruction.OperandMode.DEF);
-                    if (fromInterval != toInterval) {
-                        numSSIResolutionMoves.increment();
-                        if (!(isStackSlotValue(toInterval.location()) && isStackSlotValue(fromInterval.location()))) {
-                            moveResolver.addMapping(fromInterval, toInterval);
-                        } else {
-                            numStackToStackMoves.increment();
-                            moveResolver.addMapping(fromInterval, toInterval);
-                        }
-                    }
-                }
+                moveResolver.addMapping(fromInterval, toInterval);
             }
         }
     }

@@ -124,4 +124,9 @@ public final class FloatConvertNode extends UnaryArithmeticNode<FloatConvertOp> 
     public void generate(NodeLIRBuilderTool nodeValueMap, ArithmeticLIRGeneratorTool gen) {
         nodeValueMap.setResult(this, gen.emitFloatConvert(getFloatConvert(), nodeValueMap.operand(getValue())));
     }
+
+    @Override
+    public boolean mayNullCheckSkipConversion() {
+        return false;
+    }
 }

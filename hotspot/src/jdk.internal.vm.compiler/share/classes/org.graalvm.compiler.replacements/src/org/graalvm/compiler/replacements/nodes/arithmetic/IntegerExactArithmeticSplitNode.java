@@ -27,6 +27,7 @@ import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_2;
 
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.NodeClass;
+import org.graalvm.compiler.graph.spi.Simplifiable;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.BeginNode;
@@ -46,7 +47,7 @@ import jdk.vm.ci.meta.DeoptimizationReason;
 import jdk.vm.ci.meta.Value;
 
 @NodeInfo(cycles = CYCLES_2, cyclesRationale = "add+cmp", size = SIZE_2)
-public abstract class IntegerExactArithmeticSplitNode extends ControlSplitNode implements LIRLowerable {
+public abstract class IntegerExactArithmeticSplitNode extends ControlSplitNode implements Simplifiable, LIRLowerable {
     public static final NodeClass<IntegerExactArithmeticSplitNode> TYPE = NodeClass.create(IntegerExactArithmeticSplitNode.class);
 
     @Successor AbstractBeginNode next;
@@ -71,6 +72,12 @@ public abstract class IntegerExactArithmeticSplitNode extends ControlSplitNode i
     @Override
     public double probability(AbstractBeginNode successor) {
         return successor == next ? 1 : 0;
+    }
+
+    @Override
+    public boolean setProbability(AbstractBeginNode successor, double value) {
+        // Successor probabilities for arithmetic split nodes are fixed.
+        return false;
     }
 
     public AbstractBeginNode getNext() {
@@ -110,5 +117,10 @@ public abstract class IntegerExactArithmeticSplitNode extends ControlSplitNode i
             previous.setNext(split);
             floatingNode.replaceAndDelete(split);
         }
+    }
+
+    @Override
+    public int getSuccessorCount() {
+        return 2;
     }
 }

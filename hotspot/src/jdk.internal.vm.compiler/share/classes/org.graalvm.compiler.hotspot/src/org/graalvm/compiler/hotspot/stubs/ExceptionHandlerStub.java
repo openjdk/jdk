@@ -41,6 +41,7 @@ import org.graalvm.compiler.api.replacements.Fold.InjectedParameter;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.Snippet.ConstantParameter;
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
+import org.graalvm.compiler.debug.Assertions;
 import org.graalvm.compiler.graph.Node.ConstantNodeParameter;
 import org.graalvm.compiler.graph.Node.NodeIntrinsic;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
@@ -48,6 +49,7 @@ import org.graalvm.compiler.hotspot.HotSpotBackend;
 import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.hotspot.nodes.StubForeignCallNode;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.word.Word;
 
 import jdk.vm.ci.code.Register;
@@ -62,8 +64,8 @@ import jdk.vm.ci.code.Register;
  */
 public class ExceptionHandlerStub extends SnippetStub {
 
-    public ExceptionHandlerStub(HotSpotProviders providers, HotSpotForeignCallLinkage linkage) {
-        super("exceptionHandler", providers, linkage);
+    public ExceptionHandlerStub(OptionValues options, HotSpotProviders providers, HotSpotForeignCallLinkage linkage) {
+        super("exceptionHandler", options, providers, linkage);
     }
 
     /**
@@ -78,18 +80,21 @@ public class ExceptionHandlerStub extends SnippetStub {
 
     @Override
     protected Object getConstantParameterValue(int index, String name) {
-        assert index == 2;
-        return providers.getRegisters().getThreadRegister();
+        if (index == 2) {
+            return providers.getRegisters().getThreadRegister();
+        }
+        assert index == 3;
+        return options;
     }
 
     @Snippet
-    private static void exceptionHandler(Object exception, Word exceptionPc, @ConstantParameter Register threadRegister) {
+    private static void exceptionHandler(Object exception, Word exceptionPc, @ConstantParameter Register threadRegister, @ConstantParameter OptionValues options) {
         Word thread = registerAsWord(threadRegister);
         checkNoExceptionInThread(thread, assertionsEnabled(INJECTED_VMCONFIG));
         checkExceptionNotNull(assertionsEnabled(INJECTED_VMCONFIG), exception);
         writeExceptionOop(thread, exception);
         writeExceptionPc(thread, exceptionPc);
-        if (logging()) {
+        if (logging(options)) {
             printf("handling exception %p (", Word.objectToTrackedPointer(exception).rawValue());
             decipher(Word.objectToTrackedPointer(exception).rawValue());
             printf(") at %p (", exceptionPc.rawValue());
@@ -102,7 +107,7 @@ public class ExceptionHandlerStub extends SnippetStub {
 
         Word handlerPc = exceptionHandlerForPc(EXCEPTION_HANDLER_FOR_PC, thread);
 
-        if (logging()) {
+        if (logging(options)) {
             printf("handler for exception %p at %p is at %p (", Word.objectToTrackedPointer(exception).rawValue(), exceptionPc.rawValue(), handlerPc.rawValue());
             decipher(handlerPc.rawValue());
             printf(")\n");
@@ -136,23 +141,18 @@ public class ExceptionHandlerStub extends SnippetStub {
     }
 
     @Fold
-    static boolean logging() {
-        return StubOptions.TraceExceptionHandlerStub.getValue();
+    static boolean logging(OptionValues options) {
+        return StubOptions.TraceExceptionHandlerStub.getValue(options);
     }
 
     /**
-     * Determines if either Java assertions are enabled for {@link ExceptionHandlerStub} or if this
-     * is a HotSpot build where the ASSERT mechanism is enabled.
-     * <p>
-     * This first check relies on the per-class assertion status which is why this method must be in
-     * this class.
+     * Determines if either Java assertions are enabled for Graal or if this is a HotSpot build
+     * where the ASSERT mechanism is enabled.
      */
     @Fold
     @SuppressWarnings("all")
     static boolean assertionsEnabled(@InjectedParameter GraalHotSpotVMConfig config) {
-        boolean enabled = false;
-        assert enabled = true;
-        return enabled || cAssertionsEnabled(config);
+        return Assertions.ENABLED || cAssertionsEnabled(config);
     }
 
     public static final ForeignCallDescriptor EXCEPTION_HANDLER_FOR_PC = newDescriptor(ExceptionHandlerStub.class, "exceptionHandlerForPc", Word.class, Word.class);
