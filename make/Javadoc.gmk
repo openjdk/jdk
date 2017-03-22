@@ -124,6 +124,7 @@ CORE_EXCLUDED_PACKAGES += \
     org.w3c.dom.stylesheets \
     org.w3c.dom.xpath \
     org.graalvm.compiler.% \
+    org.graalvm.util% \
     #
 
 CORE_PACKAGES := $(filter-out $(CORE_EXCLUDED_PACKAGES), \
