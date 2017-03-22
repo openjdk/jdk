@@ -994,6 +994,7 @@ OPENJDK_TARGET_CPU_ISADIR
 OPENJDK_TARGET_CPU_LEGACY_LIB
 OPENJDK_TARGET_CPU_LEGACY
 REQUIRED_OS_VERSION
+REQUIRED_OS_ARCH
 REQUIRED_OS_NAME
 COMPILE_TYPE
 OPENJDK_TARGET_CPU_ENDIAN
@@ -5173,7 +5174,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1489410066
+DATE_WHEN_GENERATED=1489754785
 
 ###############################################################################
 #
@@ -16038,13 +16039,15 @@ $as_echo "$COMPILE_TYPE" >&6; }
     fi
   fi
   if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
-    REQUIRED_OS_NAME=Darwin
+    REQUIRED_OS_NAME="Mac OS X"
     REQUIRED_OS_VERSION=11.2
   fi
   if test "x$OPENJDK_TARGET_OS" = "xaix"; then
     REQUIRED_OS_NAME=AIX
     REQUIRED_OS_VERSION=7.1
   fi
+  REQUIRED_OS_ARCH=${OPENJDK_TARGET_CPU}
+
 
 
 
