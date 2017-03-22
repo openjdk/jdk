@@ -125,10 +125,9 @@ module java.base {
         jdk.jlink;
     exports jdk.internal.loader to
         java.instrument,
-        java.logging,
-        jdk.jlink;
+        java.logging;
     exports jdk.internal.jmod to
-        jdk.compiler,
+        jdk.compiler,   // reflective dependency
         jdk.jlink;
     exports jdk.internal.logger to
         java.logging;
@@ -140,10 +139,7 @@ module java.base {
     exports jdk.internal.org.objectweb.asm.tree to
         jdk.jlink;
     exports jdk.internal.org.objectweb.asm.util to
-        jdk.jlink,
         jdk.scripting.nashorn;
-    exports jdk.internal.org.objectweb.asm.tree.analysis to
-        jdk.jlink;
     exports jdk.internal.org.objectweb.asm.commons to
         jdk.scripting.nashorn;
     exports jdk.internal.org.objectweb.asm.signature to
@@ -157,7 +153,6 @@ module java.base {
         jdk.jlink;
     exports jdk.internal.misc to
         java.desktop,
-        jdk.incubator.httpclient,
         java.logging,
         java.management,
         java.naming,
@@ -166,8 +161,8 @@ module java.base {
         java.sql,
         java.xml,
         jdk.charsets,
-        jdk.compiler,
-        jdk.jartool,
+        jdk.compiler,   // reflective dependency
+        jdk.incubator.httpclient,
         jdk.jdeps,
         jdk.jlink,
         jdk.jshell,
@@ -210,11 +205,10 @@ module java.base {
         jdk.naming.dns;
     exports sun.net.util to
         java.desktop,
-        jdk.jconsole,
-        jdk.naming.dns;
+        jdk.jconsole;
     exports sun.net.www to
-        jdk.incubator.httpclient,
         java.desktop,
+        jdk.incubator.httpclient,
         jdk.jartool;
     exports sun.net.www.protocol.http to
         java.security.jgss;

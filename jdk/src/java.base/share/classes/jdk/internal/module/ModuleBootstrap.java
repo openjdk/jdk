@@ -33,6 +33,7 @@ import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
 import java.lang.reflect.Layer;
+import java.lang.reflect.LayerInstantiationException;
 import java.lang.reflect.Module;
 import java.net.URI;
 import java.nio.file.Path;
@@ -46,7 +47,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.BuiltinClassLoader;
@@ -327,8 +327,9 @@ public final class ModuleBootstrap {
                 for (String p : descriptor.packages()) {
                     String other = packageToModule.putIfAbsent(p, name);
                     if (other != null) {
-                        fail("Package " + p + " in both module "
-                             + name + " and module " + other);
+                        String msg = "Package " + p + " in both module "
+                                     + name + " and module " + other;
+                        throw new LayerInstantiationException(msg);
                     }
                 }
             }
@@ -359,7 +360,7 @@ public final class ModuleBootstrap {
         PerfCounters.loadModulesTime.addElapsedTimeFrom(t5);
 
 
-        // --add-reads, -add-exports/-add-opens
+        // --add-reads, --add-exports/--add-opens
         addExtraReads(bootLayer);
         addExtraExportsAndOpens(bootLayer);
 
@@ -514,26 +515,44 @@ public final class ModuleBootstrap {
      * additional packages specified on the command-line.
      */
     private static void addExtraExportsAndOpens(Layer bootLayer) {
+        IllegalAccessLogger.Builder builder = new IllegalAccessLogger.Builder();
 
         // --add-exports
         String prefix = "jdk.module.addexports.";
         Map<String, List<String>> extraExports = decode(prefix);
         if (!extraExports.isEmpty()) {
-            addExtraExportsOrOpens(bootLayer, extraExports, false);
+            addExtraExportsOrOpens(bootLayer, extraExports, false, builder);
         }
 
         // --add-opens
         prefix = "jdk.module.addopens.";
         Map<String, List<String>> extraOpens = decode(prefix);
         if (!extraOpens.isEmpty()) {
-            addExtraExportsOrOpens(bootLayer, extraOpens, true);
+            addExtraExportsOrOpens(bootLayer, extraOpens, true, builder);
         }
 
+        // --permit-illegal-access
+        if (getAndRemoveProperty("jdk.module.permitIllegalAccess") != null) {
+            warn("--permit-illegal-access will be removed in the next major release");
+            bootLayer.modules().stream().forEach(m -> {
+                m.getDescriptor()
+                 .packages()
+                 .stream()
+                 .filter(pn -> !m.isOpen(pn))
+                 .forEach(pn -> {
+                     builder.logAccessToOpenPackage(m, pn, "--permit-illegal-access");
+                     Modules.addOpensToAllUnnamed(m, pn);
+                 });
+            });
+        }
+
+        IllegalAccessLogger.setIllegalAccessLogger(builder.build());
     }
 
     private static void addExtraExportsOrOpens(Layer bootLayer,
                                                Map<String, List<String>> map,
-                                               boolean opens)
+                                               boolean opens,
+                                               IllegalAccessLogger.Builder builder)
     {
         String option = opens ? ADD_OPENS : ADD_EXPORTS;
         for (Map.Entry<String, List<String>> e : map.entrySet()) {
@@ -542,12 +561,12 @@ public final class ModuleBootstrap {
             String key = e.getKey();
             String[] s = key.split("/");
             if (s.length != 2)
-                fail(unableToParse(option,  "<module>/<package>", key));
+                fail(unableToParse(option, "<module>/<package>", key));
 
             String mn = s[0];
             String pn = s[1];
             if (mn.isEmpty() || pn.isEmpty())
-                fail(unableToParse(option,  "<module>/<package>", key));
+                fail(unableToParse(option, "<module>/<package>", key));
 
             // The exporting module is in the boot layer
             Module m;
@@ -581,8 +600,10 @@ public final class ModuleBootstrap {
                 }
                 if (allUnnamed) {
                     if (opens) {
+                        builder.logAccessToOpenPackage(m, pn, option);
                         Modules.addOpensToAllUnnamed(m, pn);
                     } else {
+                        builder.logAccessToExportedPackage(m, pn, option);
                         Modules.addExportsToAllUnnamed(m, pn);
                     }
                 } else {
@@ -632,7 +653,7 @@ public final class ModuleBootstrap {
 
             // value is <module>(,<module>)* or <file>(<pathsep><file>)*
             if (!allowDuplicates && map.containsKey(key))
-                fail(key + " specified more than once in " + option(prefix));
+                fail(key + " specified more than once to " + option(prefix));
             List<String> values = map.computeIfAbsent(key, k -> new ArrayList<>());
             int ntargets = 0;
             for (String s : rhs.split(regex)) {
@@ -676,10 +697,6 @@ public final class ModuleBootstrap {
             ModuleReference mref = rm.reference();
             String mn = mref.descriptor().name();
 
-            // emit warning if module name ends with a non-Java letter
-            if (!Checks.hasLegalModuleNameLastCharacter(mn))
-                warn("Module name \"" + mn + "\" may soon be illegal");
-
             // emit warning if the WARN_INCUBATING module resolution bit set
             if (ModuleResolution.hasIncubatingWarning(mref)) {
                 if (incubating == null) {
@@ -705,7 +722,7 @@ public final class ModuleBootstrap {
     }
 
     static void warnUnknownModule(String option, String mn) {
-        warn("Unknown module: " + mn + " specified in " + option);
+        warn("Unknown module: " + mn + " specified to " + option);
     }
 
     static String unableToParse(String option, String text, String value) {

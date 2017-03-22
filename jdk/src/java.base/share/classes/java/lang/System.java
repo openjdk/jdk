@@ -43,6 +43,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Module;
 import java.net.URL;
 import java.security.AccessControlContext;
+import java.security.ProtectionDomain;
 import java.util.Properties;
 import java.util.PropertyPermission;
 import java.util.Map;
@@ -1845,6 +1846,39 @@ public final class System {
     }
 
     /**
+     * Logs an exception/error at initialization time to stdout or stderr.
+     *
+     * @param printToStderr to print to stderr rather than stdout
+     * @param printStackTrace to print the stack trace
+     * @param msg the message to print before the exception, can be {@code null}
+     * @param e the exception or error
+     */
+    private static void logInitException(boolean printToStderr,
+                                         boolean printStackTrace,
+                                         String msg,
+                                         Throwable e) {
+        if (VM.initLevel() < 1) {
+            throw new InternalError("system classes not initialized");
+        }
+        PrintStream log = (printToStderr) ? err : out;
+        if (msg != null) {
+            log.println(msg);
+        }
+        if (printStackTrace) {
+            e.printStackTrace(log);
+        } else {
+            log.println(e);
+            for (Throwable suppressed : e.getSuppressed()) {
+                log.println("Suppressed: " + suppressed);
+            }
+            Throwable cause = e.getCause();
+            if (cause != null) {
+                log.println("Caused by: " + cause);
+            }
+        }
+    }
+
+    /**
      * Initialize the system class.  Called after thread initialization.
      */
     private static void initPhase1() {
@@ -1922,13 +1956,25 @@ public final class System {
     /*
      * Invoked by VM.  Phase 2 module system initialization.
      * Only classes in java.base can be loaded in this phase.
+     *
+     * @param printToStderr print exceptions to stderr rather than stdout
+     * @param printStackTrace print stack trace when exception occurs
+     *
+     * @return JNI_OK for success, JNI_ERR for failure
      */
-    private static void initPhase2() {
-        // initialize the module system
-        System.bootLayer = ModuleBootstrap.boot();
+    private static int initPhase2(boolean printToStderr, boolean printStackTrace) {
+        try {
+            bootLayer = ModuleBootstrap.boot();
+        } catch (Exception | Error e) {
+            logInitException(printToStderr, printStackTrace,
+                             "Error occurred during initialization of boot layer", e);
+            return -1; // JNI_ERR
+        }
 
         // module system initialized
         VM.initLevel(2);
+
+        return 0; // JNI_OK
     }
 
     /*
@@ -2033,6 +2079,9 @@ public final class System {
             }
             public ConcurrentHashMap<?, ?> createOrGetClassLoaderValueMap(ClassLoader cl) {
                 return cl.createOrGetClassLoaderValueMap();
+            }
+            public Class<?> defineClass(ClassLoader loader, String name, byte[] b, ProtectionDomain pd, String source) {
+                return ClassLoader.defineClass1(loader, name, b, 0, b.length, pd, source);
             }
             public Class<?> findBootstrapClassOrNull(ClassLoader cl, String name) {
                 return cl.findBootstrapClassOrNull(name);
