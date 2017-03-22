@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,10 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4703361
+ * @modules jdk.security.auth
  * @summary can not specify Configuration to LoginContext constructor
  *
  * @run main/othervm/policy=ConfigConstructorNoPerm.policy -Djava.security.auth.login.config=file:${test.src}/ConfigConstructor.config ConfigConstructorNoPerm
@@ -36,10 +37,11 @@
  */
 
 import java.util.Map;
-import javax.security.auth.*;
-import javax.security.auth.login.*;
-import javax.security.auth.spi.*;
-import javax.security.auth.callback.*;
+import javax.security.auth.Subject;
+import javax.security.auth.login.AppConfigurationEntry;
+import javax.security.auth.login.Configuration;
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.callback.CallbackHandler;
 
 public class ConfigConstructorNoPerm {
 
