@@ -373,7 +373,7 @@ public class ModuleFinderTest {
 
 
     /**
-     * Test ModuleModule with a JAR file containing a .class file in the top
+     * Test ModuleFinder with a JAR file containing a .class file in the top
      * level directory.
      */
     public void testOfOneJarFileWithTopLevelClass() throws Exception {
@@ -386,6 +386,7 @@ public class ModuleFinderTest {
             assertTrue(false);
         } catch (FindException e) {
             assertTrue(e.getCause() instanceof InvalidModuleDescriptorException);
+            assertTrue(e.getCause().getMessage().contains("Mojo.class"));
         }
 
         finder = ModuleFinder.of(jar);
@@ -394,11 +395,12 @@ public class ModuleFinderTest {
             assertTrue(false);
         } catch (FindException e) {
             assertTrue(e.getCause() instanceof InvalidModuleDescriptorException);
+            assertTrue(e.getCause().getMessage().contains("Mojo.class"));
         }
     }
 
     /**
-     * Test ModuleModule with a JAR file containing a .class file in the top
+     * Test ModuleFinder with a JAR file containing a .class file in the top
      * level directory.
      */
     public void testOfOneExplodedModuleWithTopLevelClass() throws Exception {
@@ -411,6 +413,7 @@ public class ModuleFinderTest {
             assertTrue(false);
         } catch (FindException e) {
             assertTrue(e.getCause() instanceof InvalidModuleDescriptorException);
+            assertTrue(e.getCause().getMessage().contains("Mojo.class"));
         }
 
         finder = ModuleFinder.of(m_dir);
@@ -419,6 +422,7 @@ public class ModuleFinderTest {
             assertTrue(false);
         } catch (FindException e) {
             assertTrue(e.getCause() instanceof InvalidModuleDescriptorException);
+            assertTrue(e.getCause().getMessage().contains("Mojo.class"));
         }
     }
 

@@ -33,6 +33,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Module;
 import java.net.URL;
 import java.security.AccessControlContext;
+import java.security.ProtectionDomain;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
@@ -148,6 +149,11 @@ public interface JavaLangAccess {
      * associated with the given class loader, creating it if it doesn't already exist.
      */
     ConcurrentHashMap<?, ?> createOrGetClassLoaderValueMap(ClassLoader cl);
+
+    /**
+     * Defines a class with the given name to a class loader.
+     */
+    Class<?> defineClass(ClassLoader cl, String name, byte[] b, ProtectionDomain pd, String source);
 
     /**
      * Returns a class loaded by the bootstrap class loader.

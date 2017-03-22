@@ -115,7 +115,7 @@ public final class ExcludeVMPlugin implements Plugin {
     @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         ResourcePoolModule javaBase = in.moduleView().findModule("java.base").get();
-        String[] jvmlibs = jvmlibs(javaBase.descriptor().osName().get());
+        String[] jvmlibs = jvmlibs(javaBase.osName());
         TreeSet<Jvm> existing = new TreeSet<>(new JvmComparator());
         TreeSet<Jvm> removed = new TreeSet<>(new JvmComparator());
         if (!keepAll) {

@@ -180,41 +180,38 @@ public final class Checks {
     }
 
     /**
-     * Returns {@code true} if the last character of the given name is legal
-     * as the last character of a module name.
-     *
-     * @throws IllegalArgumentException if name is empty
+     * Returns {@code true} if a given legal module name contains an identifier
+     * that doesn't end with a Java letter.
      */
-    public static boolean hasLegalModuleNameLastCharacter(String name) {
-        if (name.isEmpty())
-            throw new IllegalArgumentException("name is empty");
-        int len = name.length();
-        if (isASCIIString(name)) {
-            char c = name.charAt(len-1);
-            return Character.isJavaIdentifierStart(c);
-        } else {
-            int i = 0;
-            int cp = -1;
-            while (i < len) {
-                cp = name.codePointAt(i);
-                i += Character.charCount(cp);
-            }
-            return Character.isJavaIdentifierStart(cp);
-        }
-    }
-
-    /**
-     * Returns true if the given string only contains ASCII characters.
-     */
-    private static boolean isASCIIString(String s) {
+    public static boolean hasJavaIdentifierWithTrailingDigit(String name) {
+        // quick scan to allow names that are just ASCII without digits
+        boolean needToParse = false;
         int i = 0;
-        while (i < s.length()) {
-            int c = s.charAt(i);
-            if (c > 0x7F)
-                return false;
+        while (i < name.length()) {
+            int c = name.charAt(i);
+            if (c > 0x7F || (c >= '0' && c <= '9')) {
+                needToParse = true;
+                break;
+            }
             i++;
         }
-        return true;
+        if (!needToParse)
+            return false;
+
+        // slow path
+        int next;
+        int off = 0;
+        while ((next = name.indexOf('.', off)) != -1) {
+            int last = isJavaIdentifier(name, off, (next - off));
+            if (!Character.isJavaIdentifierStart(last))
+                return true;
+            off = next+1;
+        }
+        int last = isJavaIdentifier(name, off, name.length() - off);
+        if (!Character.isJavaIdentifierStart(last))
+            return true;
+        return false;
+
     }
 
     /**
