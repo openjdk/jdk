@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +85,9 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
     __ movptr (rdx, Address(rsp, 2*wordSize));  // obj
   }
   __ movptr(rax, Address(rsp, 3*wordSize));  // jfieldID
+
+  __ clear_jweak_tag(rdx);
+
   __ movptr(rdx, Address(rdx, 0));           // *obj
   __ shrptr (rax, 2);                         // offset
 
@@ -202,6 +205,9 @@ address JNI_FastGetField::generate_fast_get_long_field() {
     __ movptr(rdx, Address(rsp, 3*wordSize));  // obj
   }
   __ movptr(rsi, Address(rsp, 4*wordSize));  // jfieldID
+
+  __ clear_jweak_tag(rdx);
+
   __ movptr(rdx, Address(rdx, 0));           // *obj
   __ shrptr(rsi, 2);                         // offset
 
@@ -291,6 +297,9 @@ address JNI_FastGetField::generate_fast_get_float_field0(BasicType type) {
     __ movptr(rdx, Address(rsp, 2*wordSize)); // obj
   }
   __ movptr(rax, Address(rsp, 3*wordSize));  // jfieldID
+
+  __ clear_jweak_tag(rdx);
+
   __ movptr(rdx, Address(rdx, 0));           // *obj
   __ shrptr(rax, 2);                         // offset
 
