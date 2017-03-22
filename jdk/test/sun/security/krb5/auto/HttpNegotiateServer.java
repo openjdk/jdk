@@ -28,6 +28,7 @@
  *          java.security.jgss/sun.security.krb5.internal:+open
  *          java.security.jgss/sun.security.jgss
  *          java.security.jgss/sun.security.krb5:+open
+ *          java.security.jgss/sun.security.krb5.internal.ccache
  *          java.security.jgss/sun.security.krb5.internal.crypto
  *          java.security.jgss/sun.security.krb5.internal.ktab
  *          jdk.security.auth

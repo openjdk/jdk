@@ -63,6 +63,7 @@ import jdk.internal.module.ModuleHashesBuilder;
 import jdk.internal.module.ModuleInfo;
 import jdk.internal.module.ModuleInfoExtender;
 import jdk.internal.module.ModuleResolution;
+import jdk.internal.module.ModuleTarget;
 import jdk.internal.util.jar.JarIndex;
 
 import static jdk.internal.util.jar.JarIndex.INDEX_NAME;
@@ -1780,6 +1781,7 @@ public class Main {
     {
         ModuleInfo.Attributes attrs = ModuleInfo.read(entryInputStream, null);
         ModuleDescriptor md = attrs.descriptor();
+        ModuleTarget target = attrs.target();
         ModuleHashes hashes = attrs.recordedHashes();
 
         StringBuilder sb = new StringBuilder();
@@ -1824,11 +1826,14 @@ public class Main {
 
         md.mainClass().ifPresent(v -> sb.append("\n  main-class " + v));
 
-        md.osName().ifPresent(v -> sb.append("\n  operating-system-name " + v));
-
-        md.osArch().ifPresent(v -> sb.append("\n  operating-system-architecture " + v));
-
-        md.osVersion().ifPresent(v -> sb.append("\n  operating-system-version " + v));
+        if (target != null) {
+            String osName = target.osName();
+            if (osName != null)
+                sb.append("\n  operating-system-name " + osName);
+            String osArch = target.osArch();
+            if (osArch != null)
+                sb.append("\n  operating-system-architecture " + osArch);
+       }
 
        if (hashes != null) {
            hashes.names().stream().sorted().forEach(

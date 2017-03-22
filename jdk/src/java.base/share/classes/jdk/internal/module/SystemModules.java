@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package jdk.internal.module;
 
 import java.lang.module.ModuleDescriptor;
 
-/*
+/**
  * SystemModules class will be generated at link time to create
  * ModuleDescriptor for the system modules directly to improve
  * the module descriptor reconstitution time.
@@ -65,11 +65,20 @@ public final class SystemModules {
     }
 
     /**
-     * Returns a non-empty array of ModuleDescriptors in the run-time image.
+     * Returns a non-empty array of ModuleDescriptor objects in the run-time image.
      *
      * When running an exploded image it returns an empty array.
      */
     public static ModuleDescriptor[] descriptors() {
+        throw new InternalError("expected to be overridden at link time");
+    }
+
+    /**
+     * Returns a non-empty array of ModuleTarget objects in the run-time image.
+     *
+     * When running an exploded image it returns an empty array.
+     */
+    public static ModuleTarget[] targets() {
         throw new InternalError("expected to be overridden at link time");
     }
 

@@ -982,13 +982,6 @@ final class StackStreamFactory {
     }
 
     private static boolean isReflectionFrame(Class<?> c) {
-        if (c.getName().startsWith("jdk.internal.reflect") &&
-                !MethodAccessor.class.isAssignableFrom(c) &&
-                !ConstructorAccessor.class.isAssignableFrom(c)) {
-            throw new InternalError("Not jdk.internal.reflect.MethodAccessor"
-                    + " or jdk.internal.reflect.ConstructorAccessor: "
-                    + c.toString());
-        }
         // ## should filter all @Hidden frames?
         return c == Method.class ||
                c == Constructor.class ||
