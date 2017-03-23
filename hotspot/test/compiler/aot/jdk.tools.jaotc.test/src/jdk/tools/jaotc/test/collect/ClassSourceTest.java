@@ -25,6 +25,7 @@
  * @test
  * @modules jdk.aot/jdk.tools.jaotc
  *          jdk.aot/jdk.tools.jaotc.collect
+ * @build jdk.tools.jaotc.test.collect.Utils
  * @run junit/othervm jdk.tools.jaotc.test.collect.ClassSourceTest
  */
 
@@ -37,6 +38,8 @@ import java.nio.file.Paths;
 
 import static jdk.tools.jaotc.collect.ClassSource.makeClassName;
 
+import static jdk.tools.jaotc.test.collect.Utils.getpath;
+
 public class ClassSourceTest {
     @Test(expected=IllegalArgumentException.class)
     public void itShouldThrowExceptionIfPathDoesntEndWithClass() {
@@ -45,16 +48,16 @@ public class ClassSourceTest {
 
     @Test
     public void itShouldReplaceSlashesWithDots() {
-        Assert.assertEquals("foo.Bar", makeClassName(Paths.get("foo/Bar.class")));
+        Assert.assertEquals("foo.Bar", makeClassName(getpath("foo/Bar.class")));
     }
 
     @Test
     public void itShouldStripLeadingSlash() {
-        Assert.assertEquals("Hello", makeClassName(Paths.get("/Hello.class")));
+        Assert.assertEquals("Hello", makeClassName(getpath("/Hello.class")));
     }
 
     @Test
     public void itShouldReplaceMultipleDots() {
-        Assert.assertEquals("some.foo.bar.FooBar", makeClassName(Paths.get("/some/foo/bar/FooBar.class")));
+        Assert.assertEquals("some.foo.bar.FooBar", makeClassName(getpath("/some/foo/bar/FooBar.class")));
     }
 }
