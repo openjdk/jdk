@@ -725,7 +725,7 @@ public class Utils {
         return result.toString();
     }
 
-    private String getTypeSignature(TypeMirror t, boolean qualifiedName, boolean noTypeParameters) {
+    public String getTypeSignature(TypeMirror t, boolean qualifiedName, boolean noTypeParameters) {
         return new SimpleTypeVisitor9<StringBuilder, Void>() {
             final StringBuilder sb = new StringBuilder();
 

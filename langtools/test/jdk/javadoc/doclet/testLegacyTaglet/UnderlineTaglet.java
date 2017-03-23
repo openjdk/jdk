@@ -24,6 +24,7 @@
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.doclet.Taglet;
@@ -70,9 +71,10 @@ public class UnderlineTaglet implements Taglet {
      * Given the <code>DocTree</code> representation of this custom
      * tag, return its string representation.
      * @param tags the <code>DocTree</code> representation of this custom tag.
+     * @param element the declaration to which the enclosing comment belongs
      */
     @Override
-    public String toString(List<? extends DocTree> tags) {
+    public String toString(List<? extends DocTree> tags, Element element) {
         return "<u>" + ToDoTaglet.getText(tags.get(0)) + "</u>";
     }
 }
