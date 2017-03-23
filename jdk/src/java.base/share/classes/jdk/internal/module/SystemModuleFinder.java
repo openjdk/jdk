@@ -150,18 +150,21 @@ public class SystemModuleFinder implements ModuleFinder {
             System.getProperty("jdk.system.module.finder.disabledFastPath") != null;
 
         ModuleDescriptor[] descriptors;
+        ModuleTarget[] targets;
         ModuleHashes[] recordedHashes;
         ModuleResolution[] moduleResolutions;
 
         // fast loading of ModuleDescriptor of system modules
         if (isFastPathSupported() && !disabled) {
             descriptors = SystemModules.descriptors();
+            targets = SystemModules.targets();
             recordedHashes = SystemModules.hashes();
             moduleResolutions = SystemModules.moduleResolutions();
         } else {
             // if fast loading of ModuleDescriptors is disabled
             // fallback to read module-info.class
             descriptors = new ModuleDescriptor[n];
+            targets = new ModuleTarget[n];
             recordedHashes = new ModuleHashes[n];
             moduleResolutions = new ModuleResolution[n];
             ImageReader imageReader = SystemImage.reader();
@@ -171,6 +174,7 @@ public class SystemModuleFinder implements ModuleFinder {
                 ModuleInfo.Attributes attrs =
                     ModuleInfo.read(imageReader.getResourceBuffer(loc), null);
                 descriptors[i] = attrs.descriptor();
+                targets[i] = attrs.target();
                 recordedHashes[i] = attrs.recordedHashes();
                 moduleResolutions[i] = attrs.moduleResolution();
             }
@@ -206,6 +210,7 @@ public class SystemModuleFinder implements ModuleFinder {
 
             // create the ModuleReference
             ModuleReference mref = toModuleReference(md,
+                                                     targets[i],
                                                      recordedHashes[i],
                                                      hashSupplier(names[i]),
                                                      moduleResolutions[i]);
@@ -233,6 +238,7 @@ public class SystemModuleFinder implements ModuleFinder {
     }
 
     private ModuleReference toModuleReference(ModuleDescriptor md,
+                                              ModuleTarget target,
                                               ModuleHashes recordedHashes,
                                               HashSupplier hasher,
                                               ModuleResolution mres) {
@@ -246,9 +252,14 @@ public class SystemModuleFinder implements ModuleFinder {
             }
         };
 
-        ModuleReference mref =
-            new ModuleReferenceImpl(md, uri, readerSupplier, null,
-                                    recordedHashes, hasher, mres);
+        ModuleReference mref = new ModuleReferenceImpl(md,
+                                                       uri,
+                                                       readerSupplier,
+                                                       null,
+                                                       target,
+                                                       recordedHashes,
+                                                       hasher,
+                                                       mres);
 
         // may need a reference to a patched module if --patch-module specified
         mref = ModuleBootstrap.patcher().patchIfNeeded(mref);

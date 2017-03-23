@@ -138,7 +138,7 @@ public class AquaButtonExtendedTypes {
         return typeDefinitions.get().get(name);
     }
 
-    protected static final RecyclableSingleton<Map<String, TypeSpecifier>> typeDefinitions = new RecyclableSingleton<Map<String, TypeSpecifier>>() {
+    private static final RecyclableSingleton<Map<String, TypeSpecifier>> typeDefinitions = new RecyclableSingleton<Map<String, TypeSpecifier>>() {
         protected Map<String, TypeSpecifier> getInstance() {
             return getAllTypes();
         }

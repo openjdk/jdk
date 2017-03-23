@@ -168,14 +168,14 @@ public class AddReadsTestWarningError {
         return new Object[][]{
 
             // source not found
-            {"DoesNotExist=m2",    "WARNING: Unknown module: DoesNotExist specified in --add-reads"},
+            {"DoesNotExist=m2",    "WARNING: Unknown module: DoesNotExist specified to --add-reads"},
 
             // target not found
-            {"m2=DoesNotExist",    "WARNING: Unknown module: DoesNotExist specified in --add-reads"},
+            {"m2=DoesNotExist",    "WARNING: Unknown module: DoesNotExist specified to --add-reads"},
 
             // bad names
-            {"m*=m2",              "WARNING: Unknown module: m* specified in --add-reads"},
-            {"m2=m!",              "WARNING: Unknown module: m! specified in --add-reads"},
+            {"m*=m2",              "WARNING: Unknown module: m* specified to --add-reads"},
+            {"m2=m!",              "WARNING: Unknown module: m! specified to --add-reads"},
 
         };
     }

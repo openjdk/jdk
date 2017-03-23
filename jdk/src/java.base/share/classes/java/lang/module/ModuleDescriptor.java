@@ -179,8 +179,10 @@ public class ModuleDescriptor
         private final Set<Modifier> mods;
         private final String name;
         private final Version compiledVersion;
+        private final String rawCompiledVersion;
 
-        private Requires(Set<Modifier> ms, String mn, Version v) {
+        private Requires(Set<Modifier> ms, String mn, Version v, String vs) {
+            assert v == null || vs == null;
             if (ms.isEmpty()) {
                 ms = Collections.emptySet();
             } else {
@@ -189,12 +191,14 @@ public class ModuleDescriptor
             this.mods = ms;
             this.name = mn;
             this.compiledVersion = v;
+            this.rawCompiledVersion = vs;
         }
 
         private Requires(Set<Modifier> ms, String mn, Version v, boolean unused) {
             this.mods = ms;
             this.name = mn;
             this.compiledVersion = v;
+            this.rawCompiledVersion = null;
         }
 
         /**
@@ -218,10 +222,31 @@ public class ModuleDescriptor
         /**
          * Returns the version of the module if recorded at compile-time.
          *
-         * @return The version of the module if recorded at compile-time
+         * @return The version of the module if recorded at compile-time,
+         *         or an empty {@code Optional} if no version was recorded or
+         *         the version string recorded is {@linkplain Version#parse(String)
+         *         unparseable}
          */
         public Optional<Version> compiledVersion() {
             return Optional.ofNullable(compiledVersion);
+        }
+
+        /**
+         * Returns the string with the possibly-unparseable version of the module
+         * if recorded at compile-time.
+         *
+         * @return The string containing the version of the module if recorded
+         *         at compile-time, or an empty {@code Optional} if no version
+         *         was recorded
+         *
+         * @see #compiledVersion()
+         */
+        public Optional<String> rawCompiledVersion() {
+            if (compiledVersion != null) {
+                return Optional.of(compiledVersion.toString());
+            } else {
+                return Optional.ofNullable(rawCompiledVersion);
+            }
         }
 
         /**
@@ -236,7 +261,10 @@ public class ModuleDescriptor
          * recorded at compile-time are compared. When comparing the versions
          * recorded at compile-time then a dependence that has a recorded
          * version is considered to succeed a dependence that does not have a
-         * recorded version. </p>
+         * recorded version. If both recorded versions are {@linkplain
+         * Version#parse(String) unparseable} then the {@linkplain
+         * #rawCompiledVersion() raw version strings} are compared
+         * lexicographically. </p>
          *
          * @param  that
          *         The module dependence to compare
@@ -260,6 +288,10 @@ public class ModuleDescriptor
 
             // compiledVersion
             c = compare(this.compiledVersion, that.compiledVersion);
+            if (c != 0) return c;
+
+            // rawCompiledVersion
+            c = compare(this.rawCompiledVersion, that.rawCompiledVersion);
             if (c != 0) return c;
 
             return 0;
@@ -289,7 +321,8 @@ public class ModuleDescriptor
                 return false;
             Requires that = (Requires)ob;
             return name.equals(that.name) && mods.equals(that.mods)
-                    && Objects.equals(compiledVersion, that.compiledVersion);
+                    && Objects.equals(compiledVersion, that.compiledVersion)
+                    && Objects.equals(rawCompiledVersion, that.rawCompiledVersion);
         }
 
         /**
@@ -306,6 +339,8 @@ public class ModuleDescriptor
             int hash = name.hashCode() * 43 + mods.hashCode();
             if (compiledVersion != null)
                 hash = hash * 43 + compiledVersion.hashCode();
+            if (rawCompiledVersion != null)
+                hash = hash * 43 + rawCompiledVersion.hashCode();
             return hash;
         }
 
@@ -774,7 +809,7 @@ public class ModuleDescriptor
         /**
          * Returns the fully qualified class name of the service type.
          *
-         * @return The fully qualified class name of the service type.
+         * @return The fully qualified class name of the service type
          */
         public String service() { return service; }
 
@@ -1199,6 +1234,7 @@ public class ModuleDescriptor
 
     private final String name;
     private final Version version;
+    private final String rawVersionString;
     private final Set<Modifier> modifiers;
     private final boolean open;  // true if modifiers contains OPEN
     private final boolean automatic;  // true if modifiers contains AUTOMATIC
@@ -1209,12 +1245,10 @@ public class ModuleDescriptor
     private final Set<Provides> provides;
     private final Set<String> packages;
     private final String mainClass;
-    private final String osName;
-    private final String osArch;
-    private final String osVersion;
 
     private ModuleDescriptor(String name,
                              Version version,
+                             String rawVersionString,
                              Set<Modifier> modifiers,
                              Set<Requires> requires,
                              Set<Exports> exports,
@@ -1222,13 +1256,12 @@ public class ModuleDescriptor
                              Set<String> uses,
                              Set<Provides> provides,
                              Set<String> packages,
-                             String mainClass,
-                             String osName,
-                             String osArch,
-                             String osVersion)
+                             String mainClass)
     {
+        assert version == null || rawVersionString == null;
         this.name = name;
         this.version = version;
+        this.rawVersionString = rawVersionString;
         this.modifiers = emptyOrUnmodifiableSet(modifiers);
         this.open = modifiers.contains(Modifier.OPEN);
         this.automatic = modifiers.contains(Modifier.AUTOMATIC);
@@ -1242,9 +1275,6 @@ public class ModuleDescriptor
 
         this.packages = emptyOrUnmodifiableSet(packages);
         this.mainClass = mainClass;
-        this.osName = osName;
-        this.osArch = osArch;
-        this.osVersion = osVersion;
     }
 
     /**
@@ -1261,13 +1291,11 @@ public class ModuleDescriptor
                      Set<Provides> provides,
                      Set<String> packages,
                      String mainClass,
-                     String osName,
-                     String osArch,
-                     String osVersion,
                      int hashCode,
                      boolean unused) {
         this.name = name;
         this.version = version;
+        this.rawVersionString = null;
         this.modifiers = modifiers;
         this.open = modifiers.contains(Modifier.OPEN);
         this.automatic = modifiers.contains(Modifier.AUTOMATIC);
@@ -1278,9 +1306,6 @@ public class ModuleDescriptor
         this.provides = provides;
         this.packages = packages;
         this.mainClass = mainClass;
-        this.osName = osName;
-        this.osArch = osArch;
-        this.osVersion = osVersion;
         this.hash = hashCode;
     }
 
@@ -1394,10 +1419,29 @@ public class ModuleDescriptor
     /**
      * <p> Returns the module version. </p>
      *
-     * @return This module's version
+     * @return This module's version, or an empty {@code Optional} if the
+     *         module does not have a version or the version is
+     *         {@linkplain Version#parse(String) unparseable}
      */
     public Optional<Version> version() {
         return Optional.ofNullable(version);
+    }
+
+    /**
+     * <p> Returns the string with the possibly-unparseable version of the
+     * module </p>
+     *
+     * @return The string containing the version of the module or an empty
+     *         {@code Optional} if the module does not have a version
+     *
+     * @see #version()
+     */
+    public Optional<String> rawVersion() {
+        if (version != null) {
+            return Optional.of(version.toString());
+        } else {
+            return Optional.ofNullable(rawVersionString);
+        }
     }
 
     /**
@@ -1405,7 +1449,7 @@ public class ModuleDescriptor
      * version. </p>
      *
      * @return A string containing the module name and, if present, its
-     *         version.
+     *         version
      */
     public String toNameAndVersion() {
         if (version != null) {
@@ -1425,40 +1469,11 @@ public class ModuleDescriptor
     }
 
     /**
-     * Returns the operating system name if the module is operating system
-     * specific.
-     *
-     * @return The operating system name or an empty {@code Optional}
-     *         if the module is not operating system specific
-     */
-    public Optional<String> osName() {
-        return Optional.ofNullable(osName);
-    }
-
-    /**
-     * Returns the operating system architecture if the module is operating
-     * system architecture specific.
-     *
-     * @return The operating system architecture or an empty {@code Optional}
-     *         if the module is not operating system architecture specific
-     */
-    public Optional<String> osArch() {
-        return Optional.ofNullable(osArch);
-    }
-
-    /**
-     * Returns the operating system version if the module is operating
-     * system version specific.
-     *
-     * @return The operating system version or an empty {@code Optional}
-     *         if the module is not operating system version specific
-     */
-    public Optional<String> osVersion() {
-        return Optional.ofNullable(osVersion);
-    }
-
-    /**
      * Returns the set of packages in the module.
+     *
+     * <p> The set of packages includes all exported and open packages, as well
+     * as the packages of any service providers, and the package for the main
+     * class. </p>
      *
      * @return A possibly-empty unmodifiable set of the packages in the module
      */
@@ -1518,9 +1533,7 @@ public class ModuleDescriptor
         final Set<String> uses = new HashSet<>();
         final Map<String, Provides> provides = new HashMap<>();
         Version version;
-        String osName;
-        String osArch;
-        String osVersion;
+        String rawVersionString;
         String mainClass;
 
         /**
@@ -1604,24 +1617,21 @@ public class ModuleDescriptor
             Objects.requireNonNull(compiledVersion);
             if (strict)
                 mn = requireModuleName(mn);
-            return requires(new Requires(ms, mn, compiledVersion));
+            return requires(new Requires(ms, mn, compiledVersion, null));
         }
 
         /* package */Builder requires(Set<Requires.Modifier> ms,
                                       String mn,
-                                      String compiledVersion) {
-            Version v = null;
+                                      String rawCompiledVersion) {
+            Requires r;
             try {
-                v = Version.parse(compiledVersion);
+                Version v = Version.parse(rawCompiledVersion);
+                r = new Requires(ms, mn, v, null);
             } catch (IllegalArgumentException e) {
-                // for now, drop un-parsable version when non-strict
                 if (strict) throw e;
+                r = new Requires(ms, mn, null, rawCompiledVersion);
             }
-            if (v == null) {
-                return requires(ms, mn);
-            } else {
-                return requires(ms, mn, v);
-            }
+            return requires(r);
         }
 
         /**
@@ -1646,7 +1656,7 @@ public class ModuleDescriptor
         public Builder requires(Set<Requires.Modifier> ms, String mn) {
             if (strict)
                 mn = requireModuleName(mn);
-            return requires(new Requires(ms, mn, null));
+            return requires(new Requires(ms, mn, null, null));
         }
 
         /**
@@ -1952,7 +1962,7 @@ public class ModuleDescriptor
          *         a class in a named package
          * @throws IllegalStateException
          *         If a dependency on the service type has already been declared
-         *         or this is a builder for an an automatic module
+         *         or this is a builder for an automatic module
          */
         public Builder uses(String service) {
             if (automatic)
@@ -2068,6 +2078,7 @@ public class ModuleDescriptor
          */
         public Builder version(Version v) {
             version = requireNonNull(v);
+            rawVersionString = null;
             return this;
         }
 
@@ -2086,18 +2097,15 @@ public class ModuleDescriptor
          * @see Version#parse(String)
          */
         public Builder version(String vs) {
-            Version v;
-            if (strict) {
-                v = Version.parse(vs);
-            } else {
-                try {
-                    v = Version.parse(vs);
-                } catch (IllegalArgumentException ignore) {
-                    // for now, ignore when non-strict
-                    return this;
-                }
+            try {
+                version = Version.parse(vs);
+                rawVersionString = null;
+            } catch (IllegalArgumentException e) {
+                if (strict) throw e;
+                version = null;
+                rawVersionString = vs;
             }
-            return version(v);
+            return this;
         }
 
         /**
@@ -2132,60 +2140,6 @@ public class ModuleDescriptor
         }
 
         /**
-         * Sets the operating system name.
-         *
-         * @param  name
-         *         The operating system name
-         *
-         * @return This builder
-         *
-         * @throws IllegalArgumentException
-         *         If {@code name} is {@code null} or the empty String
-         */
-        public Builder osName(String name) {
-            if (name == null || name.isEmpty())
-                throw new IllegalArgumentException("OS name is null or empty");
-            osName = name;
-            return this;
-        }
-
-        /**
-         * Sets the operating system architecture.
-         *
-         * @param  arch
-         *         The operating system architecture
-         *
-         * @return This builder
-         *
-         * @throws IllegalArgumentException
-         *         If {@code name} is {@code null} or the empty String
-         */
-        public Builder osArch(String arch) {
-            if (arch == null || arch.isEmpty())
-                throw new IllegalArgumentException("OS arch is null or empty");
-            osArch = arch;
-            return this;
-        }
-
-        /**
-         * Sets the operating system version.
-         *
-         * @param  version
-         *         The operating system version
-         *
-         * @return This builder
-         *
-         * @throws IllegalArgumentException
-         *         If {@code name} is {@code null} or the empty String
-         */
-        public Builder osVersion(String version) {
-            if (version == null || version.isEmpty())
-                throw new IllegalArgumentException("OS version is null or empty");
-            osVersion = version;
-            return this;
-        }
-
-        /**
          * Builds and returns a {@code ModuleDescriptor} from its components.
          *
          * <p> The module will require "{@code java.base}" even if the dependence
@@ -2208,6 +2162,7 @@ public class ModuleDescriptor
                     && !this.requires.containsKey("java.base")) {
                 requires.add(new Requires(Set.of(Requires.Modifier.MANDATED),
                                           "java.base",
+                                          null,
                                           null));
             }
 
@@ -2215,6 +2170,7 @@ public class ModuleDescriptor
 
             return new ModuleDescriptor(name,
                                         version,
+                                        rawVersionString,
                                         modifiers,
                                         requires,
                                         exports,
@@ -2222,10 +2178,7 @@ public class ModuleDescriptor
                                         uses,
                                         provides,
                                         packages,
-                                        mainClass,
-                                        osName,
-                                        osArch,
-                                        osVersion);
+                                        mainClass);
         }
 
     }
@@ -2237,9 +2190,11 @@ public class ModuleDescriptor
      * module names lexicographically. Where the module names are equal then the
      * module versions are compared. When comparing the module versions then a
      * module descriptor with a version is considered to succeed a module
-     * descriptor that does not have a version. Where the module names are equal
-     * and the versions are equal (or not present in both), then the set of
-     * modifiers are compared. Sets of modifiers are compared by comparing
+     * descriptor that does not have a version. If both versions are {@linkplain
+     * Version#parse(String) unparseable} then the {@linkplain #rawVersion()
+     * raw version strings} are compared lexicographically. Where the module names
+     * are equal and the versions are equal (or not present in both), then the
+     * set of modifiers are compared. Sets of modifiers are compared by comparing
      * a <em>binary value</em> computed for each set. If a modifier is present
      * in the set then the bit at the position of its ordinal is {@code 1}
      * in the binary value, otherwise {@code 0}. If the two set of modifiers
@@ -2261,6 +2216,9 @@ public class ModuleDescriptor
         if (c != 0) return c;
 
         c = compare(this.version, that.version);
+        if (c != 0) return c;
+
+        c = compare(this.rawVersionString, that.rawVersionString);
         if (c != 0) return c;
 
         long v1 = modsValue(this.modifiers());
@@ -2287,15 +2245,6 @@ public class ModuleDescriptor
         if (c != 0) return c;
 
         c = compare(this.mainClass, that.mainClass);
-        if (c != 0) return c;
-
-        c = compare(this.osName, that.osName);
-        if (c != 0) return c;
-
-        c = compare(this.osArch, that.osArch);
-        if (c != 0) return c;
-
-        c = compare(this.osVersion, that.osVersion);
         if (c != 0) return c;
 
         return 0;
@@ -2333,10 +2282,8 @@ public class ModuleDescriptor
                 && uses.equals(that.uses)
                 && provides.equals(that.provides)
                 && Objects.equals(version, that.version)
-                && Objects.equals(mainClass, that.mainClass)
-                && Objects.equals(osName, that.osName)
-                && Objects.equals(osArch, that.osArch)
-                && Objects.equals(osVersion, that.osVersion));
+                && Objects.equals(rawVersionString, that.rawVersionString)
+                && Objects.equals(mainClass, that.mainClass));
     }
 
     /**
@@ -2361,10 +2308,8 @@ public class ModuleDescriptor
             hc = hc * 43 + uses.hashCode();
             hc = hc * 43 + provides.hashCode();
             hc = hc * 43 + Objects.hashCode(version);
+            hc = hc * 43 + Objects.hashCode(rawVersionString);
             hc = hc * 43 + Objects.hashCode(mainClass);
-            hc = hc * 43 + Objects.hashCode(osName);
-            hc = hc * 43 + Objects.hashCode(osArch);
-            hc = hc * 43 + Objects.hashCode(osVersion);
             if (hc == 0)
                 hc = -1;
             hash = hc;
@@ -2713,8 +2658,8 @@ public class ModuleDescriptor
                 public void requires(ModuleDescriptor.Builder builder,
                                      Set<Requires.Modifier> ms,
                                      String mn,
-                                     String compiledVersion) {
-                    builder.requires(ms, mn, compiledVersion);
+                                     String rawCompiledVersion) {
+                    builder.requires(ms, mn, rawCompiledVersion);
                 }
 
                 @Override
@@ -2762,9 +2707,6 @@ public class ModuleDescriptor
                                                             Set<Provides> provides,
                                                             Set<String> packages,
                                                             String mainClass,
-                                                            String osName,
-                                                            String osArch,
-                                                            String osVersion,
                                                             int hashCode) {
                     return new ModuleDescriptor(name,
                                                 version,
@@ -2776,9 +2718,6 @@ public class ModuleDescriptor
                                                 provides,
                                                 packages,
                                                 mainClass,
-                                                osName,
-                                                osArch,
-                                                osVersion,
                                                 hashCode,
                                                 false);
                 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public final class ModuleInfoWriter {
      * Writes the given module descriptor to a module-info.class file,
      * returning it in a byte array.
      */
-    private static byte[] toModuleInfo(ModuleDescriptor md) {
+    private static byte[] toModuleInfo(ModuleDescriptor md, ModuleTarget target) {
         ClassWriter cw = new ClassWriter(0);
         cw.visit(Opcodes.V1_9, ACC_MODULE, "module-info", null, null, null);
         cw.visitAttribute(new ModuleAttribute(md));
@@ -66,12 +66,10 @@ public final class ModuleInfoWriter {
         // write ModuleMainClass if the module has a main class
         md.mainClass().ifPresent(mc -> cw.visitAttribute(new ModuleMainClassAttribute(mc)));
 
-        // write ModuleTarget attribute if have any of OS name/arch/version
-        String osName = md.osName().orElse(null);
-        String osArch = md.osArch().orElse(null);
-        String osVersion = md.osVersion().orElse(null);
-        if (osName != null || osArch != null || osVersion != null) {
-            cw.visitAttribute(new ModuleTargetAttribute(osName, osArch, osVersion));
+        // write ModuleTarget if there is a platform OS/arch
+        if (target != null) {
+            cw.visitAttribute(new ModuleTargetAttribute(target.osName(),
+                                                        target.osArch()));
         }
 
         cw.visitEnd();
@@ -82,11 +80,23 @@ public final class ModuleInfoWriter {
      * Writes a module descriptor to the given output stream as a
      * module-info.class.
      */
+    public static void write(ModuleDescriptor descriptor,
+                             ModuleTarget target,
+                             OutputStream out)
+        throws IOException
+    {
+        byte[] bytes = toModuleInfo(descriptor, target);
+        out.write(bytes);
+    }
+
+    /**
+     * Writes a module descriptor to the given output stream as a
+     * module-info.class.
+     */
     public static void write(ModuleDescriptor descriptor, OutputStream out)
         throws IOException
     {
-        byte[] bytes = toModuleInfo(descriptor);
-        out.write(bytes);
+        write(descriptor, null, out);
     }
 
     /**
@@ -94,8 +104,7 @@ public final class ModuleInfoWriter {
      * in module-info.class format.
      */
     public static ByteBuffer toByteBuffer(ModuleDescriptor descriptor) {
-        byte[] bytes = toModuleInfo(descriptor);
+        byte[] bytes = toModuleInfo(descriptor, null);
         return ByteBuffer.wrap(bytes);
     }
-
 }

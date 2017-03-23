@@ -112,11 +112,9 @@ public final class Configuration {
     // module constraints on target
     private final String osName;
     private final String osArch;
-    private final String osVersion;
 
     String osName() { return osName; }
     String osArch() { return osArch; }
-    String osVersion() { return osVersion; }
 
     private Configuration() {
         this.parents = Collections.emptyList();
@@ -125,7 +123,6 @@ public final class Configuration {
         this.nameToModule = Collections.emptyMap();
         this.osName = null;
         this.osArch = null;
-        this.osVersion = null;
     }
 
     private Configuration(List<Configuration> parents,
@@ -152,7 +149,6 @@ public final class Configuration {
 
         this.osName = resolver.osName();
         this.osArch = resolver.osArch();
-        this.osVersion = resolver.osVersion();
     }
 
     /**
@@ -281,6 +277,7 @@ public final class Configuration {
      * <em>observability-related</em> reasons: </p>
      *
      * <ul>
+     *
      *     <li><p> A root module, or a direct or transitive dependency, is not
      *     found. </p></li>
      *
@@ -288,13 +285,6 @@ public final class Configuration {
      *     Possible errors include I/O errors, errors detected parsing a module
      *     descriptor ({@code module-info.class}) or two versions of the same
      *     module are found in the same directory. </p></li>
-     *
-     *     <li><p> A module with the required name is found but the module
-     *     requires a different {@link ModuleDescriptor#osName() operating
-     *     system}, {@link ModuleDescriptor#osArch() architecture}, or {@link
-     *     ModuleDescriptor#osVersion() version} to other modules that have
-     *     been resolved for the new configuration or modules in the parent
-     *     configurations. </p></li>
      *
      * </ul>
      *
@@ -305,6 +295,10 @@ public final class Configuration {
      *
      *     <li><p> A cycle is detected, say where module {@code m1} requires
      *     module {@code m2} and {@code m2} requires {@code m1}. </p></li>
+     *
+     *     <li><p> A module reads two or more modules with the same name. This
+     *     includes the case where a module reads another with the same name as
+     *     itself. </p></li>
      *
      *     <li><p> Two or more modules in the configuration export the same
      *     package to a module that reads both. This includes the case where a
@@ -319,8 +313,9 @@ public final class Configuration {
      * </ul>
      *
      * @implNote In the implementation then observability of modules may depend
-     * on referential integrity checks that ensure different builds of tightly
-     * coupled modules are not combined in the same configuration.
+     * on referential integrity or other checks that ensure different builds of
+     * tightly coupled modules or modules for specific operating systems or
+     * architectures are not combined in the same configuration.
      *
      * @param  before
      *         The <em>before</em> module finder to find modules

@@ -64,6 +64,7 @@ import jdk.internal.module.ModuleHashesBuilder;
 import jdk.internal.module.ModuleInfo;
 import jdk.internal.module.ModuleInfoExtender;
 import jdk.internal.module.ModuleResolution;
+import jdk.internal.module.ModuleTarget;
 import jdk.internal.util.jar.JarIndex;
 
 import static jdk.internal.util.jar.JarIndex.INDEX_NAME;
@@ -1747,7 +1748,7 @@ public class Main {
                 }
                 ModuleDescriptor md = mref.iterator().next().descriptor();
                 output(getMsg("out.automodule"));
-                describeModule(md, null, "automatic");
+                describeModule(md, null, null, "automatic");
             } catch (FindException e) {
                 String msg = formatMsg("error.unable.derive.automodule", fn);
                 Throwable t = e.getCause();
@@ -1800,12 +1801,14 @@ public class Main {
     {
         ModuleInfo.Attributes attrs = ModuleInfo.read(entryInputStream, null);
         ModuleDescriptor md = attrs.descriptor();
+        ModuleTarget target = attrs.target();
         ModuleHashes hashes = attrs.recordedHashes();
 
-        describeModule(md, hashes, ename);
+        describeModule(md, target, hashes, ename);
     }
 
     private void describeModule(ModuleDescriptor md,
+                                ModuleTarget target,
                                 ModuleHashes hashes,
                                 String ename)
         throws IOException
@@ -1852,11 +1855,14 @@ public class Main {
 
         md.mainClass().ifPresent(v -> sb.append("\n  main-class " + v));
 
-        md.osName().ifPresent(v -> sb.append("\n  operating-system-name " + v));
-
-        md.osArch().ifPresent(v -> sb.append("\n  operating-system-architecture " + v));
-
-        md.osVersion().ifPresent(v -> sb.append("\n  operating-system-version " + v));
+        if (target != null) {
+            String osName = target.osName();
+            if (osName != null)
+                sb.append("\n  operating-system-name " + osName);
+            String osArch = target.osArch();
+            if (osArch != null)
+                sb.append("\n  operating-system-architecture " + osArch);
+       }
 
        if (hashes != null) {
            hashes.names().stream().sorted().forEach(
