@@ -24,12 +24,10 @@
 /*
  * @test
  * @bug     6876135 7024172 7067691
- *
  * @summary Test PlatformLoggingMXBean
  *          This test performs similar testing as
  *          java/util/logging/LoggingMXBeanTest.
  *
- * @modules jdk.management
  * @build PlatformLoggingMXBeanTest
  * @run main PlatformLoggingMXBeanTest
  */

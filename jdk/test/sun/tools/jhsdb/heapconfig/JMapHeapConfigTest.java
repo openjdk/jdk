@@ -39,10 +39,9 @@ import jdk.test.lib.Platform;
  *
  * @library /test/lib
  * @library /lib/testlibrary
- * @modules jdk.hotspot.agent/sun.jvm.hotspot
+ * @modules java.management
+ *          jdk.hotspot.agent/sun.jvm.hotspot
  *
- * @build jdk.testlibrary.*
- * @build jdk.test.lib.apps.*
  * @build JMapHeapConfigTest TmtoolTestScenario
  * @run main JMapHeapConfigTest
  */
