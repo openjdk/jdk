@@ -4275,16 +4275,6 @@ void os::init(void) {
 
   main_thread = thr_self();
 
-  // Constant minimum stack size allowed. It must be at least
-  // the minimum of what the OS supports (thr_min_stack()), and
-  // enough to allow the thread to get to user bytecode execution.
-  Posix::_compiler_thread_min_stack_allowed = MAX2(thr_min_stack(),
-                                                   Posix::_compiler_thread_min_stack_allowed);
-  Posix::_java_thread_min_stack_allowed = MAX2(thr_min_stack(),
-                                               Posix::_java_thread_min_stack_allowed);
-  Posix::_vm_internal_thread_min_stack_allowed = MAX2(thr_min_stack(),
-                                                      Posix::_vm_internal_thread_min_stack_allowed);
-
   // dynamic lookup of functions that may not be available in our lowest
   // supported Solaris release
   void * handle = dlopen("libc.so.1", RTLD_LAZY);

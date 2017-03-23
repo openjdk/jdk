@@ -2807,9 +2807,11 @@ JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
       jlong size =
              java_lang_Thread::stackSize(JNIHandles::resolve_non_null(jthread));
       // Allocate the C++ Thread structure and create the native thread.  The
-      // stack size retrieved from java is signed, but the constructor takes
-      // size_t (an unsigned type), so avoid passing negative values which would
-      // result in really large stacks.
+      // stack size retrieved from java is 64-bit signed, but the constructor takes
+      // size_t (an unsigned type), which may be 32 or 64-bit depending on the platform.
+      //  - Avoid truncating on 32-bit platforms if size is greater than UINT_MAX.
+      //  - Avoid passing negative values which would result in really large stacks.
+      NOT_LP64(if (size > SIZE_MAX) size = SIZE_MAX;)
       size_t sz = size > 0 ? (size_t) size : 0;
       native_thread = new JavaThread(&thread_entry, sz);
 
