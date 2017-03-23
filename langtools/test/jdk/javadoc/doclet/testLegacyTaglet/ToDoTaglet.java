@@ -24,8 +24,8 @@
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
-
 import java.util.Set;
+import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.TextTree;
@@ -87,9 +87,10 @@ public class ToDoTaglet implements Taglet {
      * Given an array of <code>Tag</code>s representing this custom
      * tag, return its string representation.
      * @param tags  the array of <code>DocTree</code>s representing this custom tag.
+     * @param element the declaration to which the enclosing comment belongs
      */
     @Override
-    public String toString(List<? extends DocTree> tags) {
+    public String toString(List<? extends DocTree> tags, Element element) {
         if (tags.isEmpty()) {
             return "";
         }

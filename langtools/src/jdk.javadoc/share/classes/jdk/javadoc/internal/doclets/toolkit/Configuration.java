@@ -74,6 +74,10 @@ import static javax.tools.Diagnostic.Kind.*;
  * @author Jamie Ho
  */
 public abstract class Configuration {
+    /**
+     * The doclet that created this configuration.
+     */
+    public final Doclet doclet;
 
     /**
      * The factory for builders.
@@ -342,8 +346,10 @@ public abstract class Configuration {
             "jdk.javadoc.internal.doclets.toolkit.resources.doclets";
     /**
      * Constructs the configurations needed by the doclet.
+     * @param doclet the doclet that created this configuration
      */
-    public Configuration() {
+    public Configuration(Doclet doclet) {
+        this.doclet = doclet;
         excludedDocFileDirs = new HashSet<>();
         excludedQualifiers = new HashSet<>();
         setTabWidth(DocletConstants.DEFAULT_TAB_STOP_LENGTH);
