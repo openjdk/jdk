@@ -1007,6 +1007,7 @@ public final class ServiceLoader<S>
     {
         static final String PREFIX = "META-INF/services/";
 
+        Set<String> providerNames = new HashSet<>();  // to avoid duplicates
         Enumeration<URL> configs;
         Iterator<String> pending;
         Class<?> nextClass;
@@ -1016,7 +1017,7 @@ public final class ServiceLoader<S>
 
         /**
          * Parse a single line from the given configuration file, adding the
-         * name on the line to the names list.
+         * name on the line to set of names if not already seen.
          */
         private int parseLine(URL u, BufferedReader r, int lc, Set<String> names)
             throws IOException
@@ -1041,7 +1042,9 @@ public final class ServiceLoader<S>
                     if (!Character.isJavaIdentifierPart(cp) && (cp != '.'))
                         fail(service, u, lc, "Illegal provider-class name: " + ln);
                 }
-                names.add(ln);
+                if (providerNames.add(ln)) {
+                    names.add(ln);
+                }
             }
             return lc + 1;
         }
@@ -1072,7 +1075,7 @@ public final class ServiceLoader<S>
                 return true;
             }
 
-            Class<?> clazz = null;
+            Class<?> clazz;
             do {
                 if (configs == null) {
                     try {

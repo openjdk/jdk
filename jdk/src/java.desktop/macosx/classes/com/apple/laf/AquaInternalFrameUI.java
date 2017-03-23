@@ -147,7 +147,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
         southPane = c;
     }
 
-    static final RecyclableSingleton<Icon> closeIcon = new RecyclableSingleton<Icon>() {
+    private static final RecyclableSingleton<Icon> closeIcon = new RecyclableSingleton<Icon>() {
         @Override
         protected Icon getInstance() {
             return new AquaInternalFrameButtonIcon(Widget.TITLE_BAR_CLOSE_BOX);
@@ -157,7 +157,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
         return closeIcon.get();
     }
 
-    static final RecyclableSingleton<Icon> minimizeIcon = new RecyclableSingleton<Icon>() {
+    private static final RecyclableSingleton<Icon> minimizeIcon = new RecyclableSingleton<Icon>() {
         @Override
         protected Icon getInstance() {
             return new AquaInternalFrameButtonIcon(Widget.TITLE_BAR_COLLAPSE_BOX);
@@ -167,7 +167,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
         return minimizeIcon.get();
     }
 
-    static final RecyclableSingleton<Icon> zoomIcon = new RecyclableSingleton<Icon>() {
+    private static final RecyclableSingleton<Icon> zoomIcon = new RecyclableSingleton<Icon>() {
         @Override
         protected Icon getInstance() {
             return new AquaInternalFrameButtonIcon(Widget.TITLE_BAR_ZOOM_BOX);
@@ -738,7 +738,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
         }
     } // end class PaletteListener
 
-    static final InternalFrameShadow documentWindowShadow = new InternalFrameShadow() {
+    private static final InternalFrameShadow documentWindowShadow = new InternalFrameShadow() {
         @Override
         Border getForegroundShadowBorder() {
             return new AquaUtils.SlicedShadowBorder(new Painter() {
@@ -778,7 +778,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
         }
     };
 
-    static final InternalFrameShadow paletteWindowShadow = new InternalFrameShadow() {
+    private static final InternalFrameShadow paletteWindowShadow = new InternalFrameShadow() {
         @Override
         Border getForegroundShadowBorder() {
             return new AquaUtils.SlicedShadowBorder(new Painter() {
@@ -834,7 +834,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
         }
     }
 
-    static final RecyclableSingleton<Icon> RESIZE_ICON = new RecyclableSingleton<Icon>() {
+    private static final RecyclableSingleton<Icon> RESIZE_ICON = new RecyclableSingleton<Icon>() {
         @Override
         protected Icon getInstance() {
             return new AquaIcon.ScalingJRSUIIcon(11, 11) {

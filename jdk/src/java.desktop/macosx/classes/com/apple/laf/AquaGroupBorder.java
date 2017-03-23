@@ -35,17 +35,17 @@ import com.apple.laf.AquaUtilControlSize.*;
 import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 
 public abstract class AquaGroupBorder extends AquaBorder {
-    static final RecyclableSingletonFromDefaultConstructor<? extends Border> tabbedPaneGroupBorder = new RecyclableSingletonFromDefaultConstructor<TabbedPane>(TabbedPane.class);
+    private static final RecyclableSingletonFromDefaultConstructor<? extends Border> tabbedPaneGroupBorder = new RecyclableSingletonFromDefaultConstructor<TabbedPane>(TabbedPane.class);
     public static Border getTabbedPaneGroupBorder() {
         return tabbedPaneGroupBorder.get();
     }
 
-    static final RecyclableSingletonFromDefaultConstructor<? extends Border> titleBorderGroupBorder = new RecyclableSingletonFromDefaultConstructor<Titled>(Titled.class);
+    private static final RecyclableSingletonFromDefaultConstructor<? extends Border> titleBorderGroupBorder = new RecyclableSingletonFromDefaultConstructor<Titled>(Titled.class);
     public static Border getBorderForTitledBorder() {
         return titleBorderGroupBorder.get();
     }
 
-    static final RecyclableSingletonFromDefaultConstructor<? extends Border> titlelessGroupBorder = new RecyclableSingletonFromDefaultConstructor<Titleless>(Titleless.class);
+    private static final RecyclableSingletonFromDefaultConstructor<? extends Border> titlelessGroupBorder = new RecyclableSingletonFromDefaultConstructor<Titleless>(Titleless.class);
     public static Border getTitlelessBorder() {
         return titlelessGroupBorder.get();
     }

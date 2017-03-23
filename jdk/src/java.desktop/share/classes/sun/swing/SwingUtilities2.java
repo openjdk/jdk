@@ -2164,6 +2164,41 @@ public class SwingUtilities2 {
         return false;
     }
 
+    /**
+     * Enables the antialiasing rendering hint for the scaled graphics and
+     * returns the previous hint value.
+     * The returned null value indicates that the passed graphics is not
+     * instance of Graphics2D.
+     *
+     * @param g the graphics
+     * @return the previous antialiasing rendering hint value if the passed
+     * graphics is instance of Graphics2D, null otherwise.
+     */
+    public static Object getAndSetAntialisingHintForScaledGraphics(Graphics g) {
+        if (isScaledGraphics(g) && isLocalDisplay()) {
+            Graphics2D g2d = (Graphics2D) g;
+            Object hint = g2d.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                    RenderingHints.VALUE_ANTIALIAS_ON);
+            return hint;
+        }
+        return null;
+    }
+
+    /**
+     * Sets the antialiasing rendering hint if its value is not null.
+     * Null hint value indicates that the passed graphics is not instance of
+     * Graphics2D.
+     *
+     * @param g the graphics
+     * @param hint the antialiasing rendering hint
+     */
+    public static void setAntialiasingHintForScaledGraphics(Graphics g, Object hint) {
+        if (hint != null) {
+            ((Graphics2D) g).setRenderingHint(RenderingHints.KEY_ANTIALIASING, hint);
+        }
+    }
+
     public static boolean isFloatingPointScale(AffineTransform tx) {
         int type = tx.getType() & ~(TYPE_FLIP | TYPE_TRANSLATION);
         if (type == 0) {

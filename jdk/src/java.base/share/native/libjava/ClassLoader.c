@@ -72,23 +72,9 @@ getUTF(JNIEnv *env, jstring str, char* localBuf, int bufSize)
     return utfStr;
 }
 
-// The existence or signature of this method is not guaranteed since it
-// supports a private method.  This method will be changed in 1.7.
-JNIEXPORT jclass JNICALL
-Java_java_lang_ClassLoader_defineClass0(JNIEnv *env,
-                                        jobject loader,
-                                        jstring name,
-                                        jbyteArray data,
-                                        jint offset,
-                                        jint length,
-                                        jobject pd)
-{
-    return Java_java_lang_ClassLoader_defineClass1(env, loader, name, data, offset,
-                                                   length, pd, NULL);
-}
-
 JNIEXPORT jclass JNICALL
 Java_java_lang_ClassLoader_defineClass1(JNIEnv *env,
+                                        jclass cls,
                                         jobject loader,
                                         jstring name,
                                         jbyteArray data,
@@ -163,6 +149,7 @@ Java_java_lang_ClassLoader_defineClass1(JNIEnv *env,
 
 JNIEXPORT jclass JNICALL
 Java_java_lang_ClassLoader_defineClass2(JNIEnv *env,
+                                        jclass cls,
                                         jobject loader,
                                         jstring name,
                                         jobject data,

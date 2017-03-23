@@ -125,7 +125,7 @@ public class AquaMenuPainter {
         return buf.toString();
     }
 
-    static final RecyclableSingleton<AquaMenuPainter> sPainter = new RecyclableSingletonFromDefaultConstructor<AquaMenuPainter>(AquaMenuPainter.class);
+    private static final RecyclableSingleton<AquaMenuPainter> sPainter = new RecyclableSingletonFromDefaultConstructor<AquaMenuPainter>(AquaMenuPainter.class);
     static AquaMenuPainter instance() {
         return sPainter.get();
     }
@@ -139,9 +139,9 @@ public class AquaMenuPainter {
         protected Border getInstance() { return UIManager.getBorder(borderName); }
     }
 
-    protected final RecyclableBorder menuBarPainter = new RecyclableBorder("MenuBar.backgroundPainter");
-    protected final RecyclableBorder selectedMenuBarItemPainter = new RecyclableBorder("MenuBar.selectedBackgroundPainter");
-    protected final RecyclableBorder selectedMenuItemPainter = new RecyclableBorder("MenuItem.selectedBackgroundPainter");
+    private static final RecyclableBorder menuBarPainter = new RecyclableBorder("MenuBar.backgroundPainter");
+    private static final RecyclableBorder selectedMenuBarItemPainter = new RecyclableBorder("MenuBar.selectedBackgroundPainter");
+    private static final RecyclableBorder selectedMenuItemPainter = new RecyclableBorder("MenuItem.selectedBackgroundPainter");
 
     public void paintMenuBarBackground(final Graphics g, final int width, final int height, final JComponent c) {
         g.setColor(c == null ? Color.white : c.getBackground());

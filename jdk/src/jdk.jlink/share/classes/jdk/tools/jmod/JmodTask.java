@@ -96,13 +96,14 @@ import jdk.internal.joptsimple.OptionParser;
 import jdk.internal.joptsimple.OptionSet;
 import jdk.internal.joptsimple.OptionSpec;
 import jdk.internal.joptsimple.ValueConverter;
-import jdk.internal.loader.ResourceHelper;
 import jdk.internal.module.ModuleHashes;
 import jdk.internal.module.ModuleHashesBuilder;
 import jdk.internal.module.ModuleInfo;
 import jdk.internal.module.ModuleInfoExtender;
 import jdk.internal.module.ModulePath;
 import jdk.internal.module.ModuleResolution;
+import jdk.internal.module.ModuleTarget;
+import jdk.internal.module.Resources;
 import jdk.tools.jlink.internal.Utils;
 
 import static java.util.stream.Collectors.joining;
@@ -178,7 +179,6 @@ public class JmodTask {
         String mainClass;
         String osName;
         String osArch;
-        String osVersion;
         Pattern modulesToHash;
         ModuleResolution moduleResolution;
         boolean dryrun;
@@ -311,7 +311,9 @@ public class JmodTask {
         try (JmodFile jf = new JmodFile(options.jmodFile)) {
             try (InputStream in = jf.getInputStream(Section.CLASSES, MODULE_INFO)) {
                 ModuleInfo.Attributes attrs = ModuleInfo.read(in, null);
-                printModuleDescriptor(attrs.descriptor(), attrs.recordedHashes());
+                printModuleDescriptor(attrs.descriptor(),
+                                      attrs.target(),
+                                      attrs.recordedHashes());
                 return true;
             } catch (IOException e) {
                 throw new CommandException("err.module.descriptor.not.found");
@@ -325,7 +327,9 @@ public class JmodTask {
                   .collect(joining(" "));
     }
 
-    private void printModuleDescriptor(ModuleDescriptor md, ModuleHashes hashes)
+    private void printModuleDescriptor(ModuleDescriptor md,
+                                       ModuleTarget target,
+                                       ModuleHashes hashes)
         throws IOException
     {
         StringBuilder sb = new StringBuilder();
@@ -365,11 +369,14 @@ public class JmodTask {
 
         md.mainClass().ifPresent(v -> sb.append("\n  main-class " + v));
 
-        md.osName().ifPresent(v -> sb.append("\n  operating-system-name " + v));
-
-        md.osArch().ifPresent(v -> sb.append("\n  operating-system-architecture " + v));
-
-        md.osVersion().ifPresent(v -> sb.append("\n  operating-system-version " + v));
+        if (target != null) {
+            String osName = target.osName();
+            if (osName != null)
+                sb.append("\n  operating-system-name " + osName);
+            String osArch = target.osArch();
+            if (osArch != null)
+                sb.append("\n  operating-system-architecture " + osArch);
+        }
 
         if (hashes != null) {
             hashes.names().stream().sorted().forEach(
@@ -432,7 +439,6 @@ public class JmodTask {
         final String mainClass = options.mainClass;
         final String osName = options.osName;
         final String osArch = options.osArch;
-        final String osVersion = options.osVersion;
         final List<PathMatcher> excludes = options.excludes;
         final ModuleResolution moduleResolution = options.moduleResolution;
 
@@ -528,9 +534,9 @@ public class JmodTask {
                 if (mainClass != null)
                     extender.mainClass(mainClass);
 
-                // --os-name, --os-arch, --os-version
-                if (osName != null || osArch != null || osVersion != null)
-                    extender.targetPlatform(osName, osArch, osVersion);
+                // --os-name, --os-arch
+                if (osName != null || osArch != null)
+                    extender.targetPlatform(osName, osArch);
 
                 // --module-version
                 if (moduleVersion != null)
@@ -675,7 +681,7 @@ public class JmodTask {
          */
         boolean isResource(String name) {
             name = name.replace(File.separatorChar, '/');
-            return name.endsWith(".class") || !ResourceHelper.isSimpleResource(name);
+            return name.endsWith(".class") || Resources.canEncapsulate(name);
         }
 
 
@@ -1331,11 +1337,6 @@ public class JmodTask {
                         .withRequiredArg()
                         .describedAs(getMessage("main.opt.os-arch.arg"));
 
-        OptionSpec<String> osVersion
-                = parser.accepts("os-version", getMessage("main.opt.os-version"))
-                        .withRequiredArg()
-                        .describedAs(getMessage("main.opt.os-version.arg"));
-
         OptionSpec<Void> doNotResolveByDefault
                 = parser.accepts("do-not-resolve-by-default",
                                  getMessage("main.opt.do-not-resolve-by-default"));
@@ -1403,8 +1404,6 @@ public class JmodTask {
                 options.osName = getLastElement(opts.valuesOf(osName));
             if (opts.has(osArch))
                 options.osArch = getLastElement(opts.valuesOf(osArch));
-            if (opts.has(osVersion))
-                options.osVersion = getLastElement(opts.valuesOf(osVersion));
             if (opts.has(warnIfResolved))
                 options.moduleResolution = getLastElement(opts.valuesOf(warnIfResolved));
             if (opts.has(doNotResolveByDefault)) {

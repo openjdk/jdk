@@ -54,6 +54,7 @@ jmethodID AwtPrintControl::getDevmodeID;
 jmethodID AwtPrintControl::setDevmodeID;
 jmethodID AwtPrintControl::getDevnamesID;
 jmethodID AwtPrintControl::setDevnamesID;
+jmethodID AwtPrintControl::getParentWindowID;
 jfieldID  AwtPrintControl::driverDoesMultipleCopiesID;
 jfieldID  AwtPrintControl::driverDoesCollationID;
 jmethodID AwtPrintControl::getWin32MediaID;
@@ -239,6 +240,11 @@ void AwtPrintControl::initIDs(JNIEnv *env, jclass cls)
       env->GetFieldID(cls, "dialogOwnerPeer", "Ljava/awt/peer/ComponentPeer;");
     DASSERT(AwtPrintControl::dialogOwnerPeerID != NULL);
     CHECK_NULL(AwtPrintControl::dialogOwnerPeerID);
+
+    AwtPrintControl::getParentWindowID = env->GetMethodID(cls,
+                                       "getParentWindowID", "()J");
+    DASSERT(AwtPrintControl::getParentWindowID != NULL);
+    CHECK_NULL(AwtPrintControl::getParentWindowID);
 
     AwtPrintControl::getPrintDCID = env->GetMethodID(cls, "getPrintDC", "()J");
     DASSERT(AwtPrintControl::getPrintDCID != NULL);

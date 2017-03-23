@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,77 +24,78 @@
 /*
  * @test
  * @key headful
- * @bug 7072653 8144161
+ * @bug 7072653 8144161 8176448
  * @summary JComboBox popup mispositioned if its height exceeds the screen height
  * @run main bug7072653
  */
+
 import java.awt.FlowLayout;
 import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
 import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.Robot;
-import javax.swing.event.PopupMenuEvent;
-import javax.swing.event.PopupMenuListener;
 import java.awt.Toolkit;
 import java.awt.Window;
-import java.util.Arrays;
+
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
 
 public class bug7072653 {
 
     private static JComboBox combobox;
     private static JFrame frame;
     private static Robot robot;
-    private static volatile String errorString = "";
 
     public static void main(String[] args) throws Exception {
         robot = new Robot();
-        robot.delay(100);
-        UIManager.LookAndFeelInfo[] lookAndFeelArray
-                = UIManager.getInstalledLookAndFeels();
-        for (UIManager.LookAndFeelInfo lookAndFeelItem : lookAndFeelArray) {
-            executeCase(lookAndFeelItem.getClassName());
-            robot.delay(1000);
-        }
-        if (!"".equals(errorString)) {
-
-            throw new RuntimeException("Error Log:\n" + errorString);
+        GraphicsEnvironment ge =
+                GraphicsEnvironment.getLocalGraphicsEnvironment();
+        UIManager.LookAndFeelInfo[] lookAndFeelArray =
+                UIManager.getInstalledLookAndFeels();
+        for (GraphicsDevice sd : ge.getScreenDevices()) {
+            for (UIManager.LookAndFeelInfo lookAndFeelItem : lookAndFeelArray) {
+                executeCase(lookAndFeelItem.getClassName(), sd);
+                robot.waitForIdle();
+            }
         }
     }
 
-    private static void executeCase(String lookAndFeelString) throws Exception {
+    private static void executeCase(String lookAndFeelString, GraphicsDevice sd)
+            throws Exception {
         if (tryLookAndFeel(lookAndFeelString)) {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        setup(lookAndFeelString);
-                        test();
-                    } catch (Exception ex) {
-                        errorString += "\n";
-                        errorString += Arrays.toString(ex.getStackTrace());
-                    }
-                    finally {
-                        frame.dispose();
-                    }
+            SwingUtilities.invokeAndWait(() -> {
+                try {
+                    setup(lookAndFeelString, sd);
+                    test();
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
+                } finally {
+                    frame.dispose();
                 }
             });
         }
-
     }
 
-    private static void setup(String lookAndFeelString)
+    private static void setup(String lookAndFeelString, GraphicsDevice sd)
             throws Exception {
-
-        frame = new JFrame("JComboBox Test " + lookAndFeelString);
+        GraphicsConfiguration gc = sd.getDefaultConfiguration();
+        Rectangle gcBounds = gc.getBounds();
+        frame = new JFrame("JComboBox Test " + lookAndFeelString, gc);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(320, 200);
+        frame.setSize(400, 200);
         frame.getContentPane().setLayout(new FlowLayout());
-        frame.setLocationRelativeTo(null);
+        frame.setLocation(
+                gcBounds.x + gcBounds.width / 2 - frame.getWidth() / 2,
+                gcBounds.y + gcBounds.height / 2 - frame.getHeight() / 2);
+
         combobox = new JComboBox(new DefaultComboBoxModel() {
             @Override
             public Object getElementAt(int index) {
@@ -108,6 +109,7 @@ public class bug7072653 {
         });
 
         combobox.setMaximumRowCount(100);
+        combobox.putClientProperty("JComboBox.isPopDown", true);
         frame.getContentPane().add(combobox);
         frame.setVisible(true);
         combobox.addPopupMenuListener(new PopupMenuListener() {
@@ -120,30 +122,24 @@ public class bug7072653 {
                 int height = 0;
                 for (Window window : JFrame.getWindows()) {
                     if (Window.Type.POPUP == window.getType()) {
-                        height = window.getSize().height;
-                        break;
+                        if (window.getOwner().isVisible()) {
+                            height = window.getSize().height;
+                            break;
+                        }
                     }
                 }
-                GraphicsConfiguration gc
-                        = combobox.getGraphicsConfiguration();
-                Insets screenInsets = Toolkit.getDefaultToolkit()
-                        .getScreenInsets(gc);
+                GraphicsConfiguration gc = combobox.getGraphicsConfiguration();
+                Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(gc);
                 int gcHeight = gc.getBounds().height;
-                if (lookAndFeelString.contains("aqua")) {
-                    gcHeight = gcHeight - screenInsets.top;
-                    //For Aqua LAF
-                } else {
-                    gcHeight = gcHeight - screenInsets.top
-                            - screenInsets.bottom;
-                }
+                gcHeight = gcHeight - insets.top - insets.bottom;
                 if (height == gcHeight) {
                     return;
                 }
 
                 String exception = "Popup window height "
                         + "For LookAndFeel" + lookAndFeelString + " is wrong"
-                        + "\nShould be " + height + "Actually " + gcHeight;
-                errorString += exception;
+                        + "\nShould be " + gcHeight + ", Actually " + height;
+                throw new RuntimeException(exception);
             }
 
             @Override
