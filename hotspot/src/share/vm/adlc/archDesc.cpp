@@ -1166,6 +1166,7 @@ void ArchDesc::buildMustCloneMap(FILE *fp_hpp, FILE *fp_cpp) {
          || strcmp(idealName,"CmpP") == 0
          || strcmp(idealName,"CmpN") == 0
          || strcmp(idealName,"CmpL") == 0
+         || strcmp(idealName,"CmpUL") == 0
          || strcmp(idealName,"CmpD") == 0
          || strcmp(idealName,"CmpF") == 0
          || strcmp(idealName,"FastLock") == 0

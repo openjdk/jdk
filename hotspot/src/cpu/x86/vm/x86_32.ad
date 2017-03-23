@@ -4030,6 +4030,26 @@ operand flagsReg_long_LEGT() %{
   interface(REG_INTER);
 %}
 
+// Condition Code Register used by unsigned long compare
+operand flagsReg_ulong_LTGE() %{
+  constraint(ALLOC_IN_RC(int_flags));
+  match(RegFlags);
+  format %{ "FLAGS_U_LTGE" %}
+  interface(REG_INTER);
+%}
+operand flagsReg_ulong_EQNE() %{
+  constraint(ALLOC_IN_RC(int_flags));
+  match(RegFlags);
+  format %{ "FLAGS_U_EQNE" %}
+  interface(REG_INTER);
+%}
+operand flagsReg_ulong_LEGT() %{
+  constraint(ALLOC_IN_RC(int_flags));
+  match(RegFlags);
+  format %{ "FLAGS_U_LEGT" %}
+  interface(REG_INTER);
+%}
+
 // Float register operands
 operand regDPR() %{
   predicate( UseSSE < 2 );
@@ -4588,7 +4608,7 @@ operand cmpOp_fcmov() %{
   %}
 %}
 
-// Comparision Code used in long compares
+// Comparison Code used in long compares
 operand cmpOp_commute() %{
   match(Bool);
 
@@ -4600,6 +4620,23 @@ operand cmpOp_commute() %{
     greater_equal(0xE, "le");
     less_equal(0xD, "ge");
     greater(0xC, "l");
+    overflow(0x0, "o");
+    no_overflow(0x1, "no");
+  %}
+%}
+
+// Comparison Code used in unsigned long compares
+operand cmpOpU_commute() %{
+  match(Bool);
+
+  format %{ "" %}
+  interface(COND_INTER) %{
+    equal(0x4, "e");
+    not_equal(0x5, "ne");
+    less(0x7, "nbe");
+    greater_equal(0x6, "be");
+    less_equal(0x3, "nb");
+    greater(0x2, "b");
     overflow(0x0, "o");
     no_overflow(0x1, "no");
   %}
@@ -12639,6 +12676,44 @@ instruct cmpL_LTGE(cmpOp cmp, flagsReg_long_LTGE flags, label labl) %{
   %}
 %}
 
+//======
+// Manifest a CmpUL result in the normal flags.  Only good for LT or GE
+// compares.  Can be used for LE or GT compares by reversing arguments.
+// NOT GOOD FOR EQ/NE tests.
+instruct cmpUL_zero_flags_LTGE(flagsReg_ulong_LTGE flags, eRegL src, immL0 zero) %{
+  match(Set flags (CmpUL src zero));
+  ins_cost(100);
+  format %{ "TEST   $src.hi,$src.hi" %}
+  opcode(0x85);
+  ins_encode(OpcP, RegReg_Hi2(src, src));
+  ins_pipe(ialu_cr_reg_reg);
+%}
+
+// Manifest a CmpUL result in the normal flags.  Only good for LT or GE
+// compares.  Can be used for LE or GT compares by reversing arguments.
+// NOT GOOD FOR EQ/NE tests.
+instruct cmpUL_reg_flags_LTGE(flagsReg_ulong_LTGE flags, eRegL src1, eRegL src2, rRegI tmp) %{
+  match(Set flags (CmpUL src1 src2));
+  effect(TEMP tmp);
+  ins_cost(300);
+  format %{ "CMP    $src1.lo,$src2.lo\t! Unsigned long compare; set flags for low bits\n\t"
+            "MOV    $tmp,$src1.hi\n\t"
+            "SBB    $tmp,$src2.hi\t! Compute flags for unsigned long compare" %}
+  ins_encode(long_cmp_flags2(src1, src2, tmp));
+  ins_pipe(ialu_cr_reg_reg);
+%}
+
+// Unsigned long compares reg < zero/req OR reg >= zero/req.
+// Just a wrapper for a normal branch, plus the predicate test.
+instruct cmpUL_LTGE(cmpOpU cmp, flagsReg_ulong_LTGE flags, label labl) %{
+  match(If cmp flags);
+  effect(USE labl);
+  predicate(_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge);
+  expand %{
+    jmpCon(cmp, flags, labl);    // JLT or JGE...
+  %}
+%}
+
 // Compare 2 longs and CMOVE longs.
 instruct cmovLL_reg_LTGE(cmpOp cmp, flagsReg_long_LTGE flags, eRegL dst, eRegL src) %{
   match(Set dst (CMoveL (Binary cmp flags) (Binary dst src)));
@@ -12764,6 +12839,41 @@ instruct cmpL_EQNE(cmpOp cmp, flagsReg_long_EQNE flags, label labl) %{
   predicate( _kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne );
   expand %{
     jmpCon(cmp,flags,labl);    // JEQ or JNE...
+  %}
+%}
+
+//======
+// Manifest a CmpUL result in the normal flags.  Only good for EQ/NE compares.
+instruct cmpUL_zero_flags_EQNE(flagsReg_ulong_EQNE flags, eRegL src, immL0 zero, rRegI tmp) %{
+  match(Set flags (CmpUL src zero));
+  effect(TEMP tmp);
+  ins_cost(200);
+  format %{ "MOV    $tmp,$src.lo\n\t"
+            "OR     $tmp,$src.hi\t! Unsigned long is EQ/NE 0?" %}
+  ins_encode(long_cmp_flags0(src, tmp));
+  ins_pipe(ialu_reg_reg_long);
+%}
+
+// Manifest a CmpUL result in the normal flags.  Only good for EQ/NE compares.
+instruct cmpUL_reg_flags_EQNE(flagsReg_ulong_EQNE flags, eRegL src1, eRegL src2) %{
+  match(Set flags (CmpUL src1 src2));
+  ins_cost(200+300);
+  format %{ "CMP    $src1.lo,$src2.lo\t! Unsigned long compare; set flags for low bits\n\t"
+            "JNE,s  skip\n\t"
+            "CMP    $src1.hi,$src2.hi\n\t"
+     "skip:\t" %}
+  ins_encode(long_cmp_flags1(src1, src2));
+  ins_pipe(ialu_cr_reg_reg);
+%}
+
+// Unsigned long compare reg == zero/reg OR reg != zero/reg
+// Just a wrapper for a normal branch, plus the predicate test.
+instruct cmpUL_EQNE(cmpOpU cmp, flagsReg_ulong_EQNE flags, label labl) %{
+  match(If cmp flags);
+  effect(USE labl);
+  predicate(_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne);
+  expand %{
+    jmpCon(cmp, flags, labl);    // JEQ or JNE...
   %}
 %}
 
@@ -12897,6 +13007,46 @@ instruct cmpL_LEGT(cmpOp_commute cmp, flagsReg_long_LEGT flags, label labl) %{
   ins_cost(300);
   expand %{
     jmpCon(cmp,flags,labl);    // JGT or JLE...
+  %}
+%}
+
+//======
+// Manifest a CmpUL result in the normal flags.  Only good for LE or GT compares.
+// Same as cmpUL_reg_flags_LEGT except must negate src
+instruct cmpUL_zero_flags_LEGT(flagsReg_ulong_LEGT flags, eRegL src, immL0 zero, rRegI tmp) %{
+  match(Set flags (CmpUL src zero));
+  effect(TEMP tmp);
+  ins_cost(300);
+  format %{ "XOR    $tmp,$tmp\t# Unsigned long compare for -$src < 0, use commuted test\n\t"
+            "CMP    $tmp,$src.lo\n\t"
+            "SBB    $tmp,$src.hi\n\t" %}
+  ins_encode(long_cmp_flags3(src, tmp));
+  ins_pipe(ialu_reg_reg_long);
+%}
+
+// Manifest a CmpUL result in the normal flags.  Only good for LE or GT compares.
+// Same as cmpUL_reg_flags_LTGE except operands swapped.  Swapping operands
+// requires a commuted test to get the same result.
+instruct cmpUL_reg_flags_LEGT(flagsReg_ulong_LEGT flags, eRegL src1, eRegL src2, rRegI tmp) %{
+  match(Set flags (CmpUL src1 src2));
+  effect(TEMP tmp);
+  ins_cost(300);
+  format %{ "CMP    $src2.lo,$src1.lo\t! Unsigned long compare, swapped operands, use with commuted test\n\t"
+            "MOV    $tmp,$src2.hi\n\t"
+            "SBB    $tmp,$src1.hi\t! Compute flags for unsigned long compare" %}
+  ins_encode(long_cmp_flags2( src2, src1, tmp));
+  ins_pipe(ialu_cr_reg_reg);
+%}
+
+// Unsigned long compares reg < zero/req OR reg >= zero/req.
+// Just a wrapper for a normal branch, plus the predicate test
+instruct cmpUL_LEGT(cmpOpU_commute cmp, flagsReg_ulong_LEGT flags, label labl) %{
+  match(If cmp flags);
+  effect(USE labl);
+  predicate(_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt || _kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le);
+  ins_cost(300);
+  expand %{
+    jmpCon(cmp, flags, labl);    // JGT or JLE...
   %}
 %}
 
