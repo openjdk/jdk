@@ -843,18 +843,36 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         this(u, null, handler);
     }
 
-    public HttpURLConnection(URL u, String host, int port) {
-        this(u, new Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved(host, port)));
+    private static String checkHost(String h) throws IOException {
+        if (h != null) {
+            if (h.indexOf('\n') > -1) {
+                throw new MalformedURLException("Illegal character in host");
+            }
+        }
+        return h;
+    }
+    public HttpURLConnection(URL u, String host, int port) throws IOException {
+        this(u, new Proxy(Proxy.Type.HTTP,
+                InetSocketAddress.createUnresolved(checkHost(host), port)));
     }
 
     /** this constructor is used by other protocol handlers such as ftp
         that want to use http to fetch urls on their behalf.*/
-    public HttpURLConnection(URL u, Proxy p) {
+    public HttpURLConnection(URL u, Proxy p) throws IOException {
         this(u, p, new Handler());
     }
 
-    protected HttpURLConnection(URL u, Proxy p, Handler handler) {
-        super(u);
+    private static URL checkURL(URL u) throws IOException {
+        if (u != null) {
+            if (u.toExternalForm().indexOf('\n') > -1) {
+                throw new MalformedURLException("Illegal character in URL");
+            }
+        }
+        return u;
+    }
+    protected HttpURLConnection(URL u, Proxy p, Handler handler)
+            throws IOException {
+        super(checkURL(u));
         requests = new MessageHeader();
         responses = new MessageHeader();
         userHeaders = new MessageHeader();

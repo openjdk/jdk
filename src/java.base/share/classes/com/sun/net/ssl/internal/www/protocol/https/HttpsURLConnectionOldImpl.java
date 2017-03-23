@@ -38,6 +38,7 @@ package com.sun.net.ssl.internal.www.protocol.https;
 import java.net.URL;
 import java.net.Proxy;
 import java.net.ProtocolException;
+import java.net.MalformedURLException;
 import java.io.*;
 import java.net.Authenticator;
 import javax.net.ssl.*;
@@ -78,10 +79,18 @@ public class HttpsURLConnectionOldImpl
         this(u, null, handler);
     }
 
+    static URL checkURL(URL u) throws IOException {
+        if (u != null) {
+            if (u.toExternalForm().indexOf('\n') > -1) {
+                throw new MalformedURLException("Illegal character in URL");
+            }
+        }
+        return u;
+    }
 // For both copies of the file, uncomment one line and comment the other
 //    HttpsURLConnectionImpl(URL u, Handler handler) throws IOException {
     HttpsURLConnectionOldImpl(URL u, Proxy p, Handler handler) throws IOException {
-        super(u);
+        super(checkURL(u));
         delegate = new DelegateHttpsURLConnection(url, p, handler, this);
     }
 
