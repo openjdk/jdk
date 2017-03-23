@@ -26,7 +26,7 @@
  * @bug 6175517
  * @summary Test the PropertyNames annotation with MXBeans
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean PropertyNamesTest
  * @run build PropertyNamesTest
  * @run main PropertyNamesTest

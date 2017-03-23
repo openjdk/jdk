@@ -27,7 +27,7 @@
  * @summary Query.{initial,any,final}SubString fail if the
  *          matching constraint string contains wildcards.
  * @author Luis-Miguel Alventosa
- * @modules java.management
+ *
  * @run clean QuerySubstringTest
  * @run build QuerySubstringTest
  * @run main QuerySubstringTest

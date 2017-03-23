@@ -22,14 +22,13 @@
  */
 
 /**
- *  @test
- *  @bug 8049365
- *  @summary Tests the JDI and JDWP update for modules
+ * @test
+ * @bug 8049365
+ * @summary Tests the JDI and JDWP update for modules
  *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g ModulesTest.java
- *  @run driver ModulesTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g ModulesTest.java
+ * @run driver ModulesTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

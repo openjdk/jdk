@@ -29,7 +29,9 @@
  * when traces enabled and no attributes.
  * @author Luis-Miguel Alventosa
  * @author Paul Cheeseman
- * @modules java.management
+ *
+ * @modules java.logging
+ *          java.management
  */
 
 import java.util.logging.ConsoleHandler;

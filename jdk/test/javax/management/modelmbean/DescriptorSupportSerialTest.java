@@ -26,7 +26,7 @@
  * @bug 6332962
  * @summary Test that DescriptorSupport does not serialize targetObject
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean DescriptorSupportSerialTest
  * @run build DescriptorSupportSerialTest
  * @run main DescriptorSupportSerialTest

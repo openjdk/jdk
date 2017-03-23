@@ -27,7 +27,7 @@
  * @summary Test that DescriptorSupport.toXMLString() can be used to
  * reconstruct an equivalent DescriptorSupport
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean DescriptorSupportXMLTest
  * @run build DescriptorSupportXMLTest
  * @run main DescriptorSupportXMLTest

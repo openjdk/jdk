@@ -30,7 +30,6 @@
  *                             mbean.getDaemonThreadCount()
  * @author  Alexei Guibadoulline
  *
- * @modules java.management
  * @run main ThreadCounts
  */
 

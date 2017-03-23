@@ -36,11 +36,12 @@ import jdk.test.lib.apps.LingeredApp;
 /*
  * @test
  * @summary Unit test for jinfo utility
- * @modules java.base/jdk.internal.misc
+ *
  * @library /test/lib
- * @build jdk.test.lib.*
- * @build jdk.test.lib.apps.*
- * @build jdk.test.lib.process.*
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ *          jdk.jcmd
+ *
  * @run main JInfoTest
  */
 public class JInfoTest {

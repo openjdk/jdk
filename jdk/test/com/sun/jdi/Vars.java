@@ -22,15 +22,13 @@
  */
 
 /**
- *  @test
- *  @summary Test Method.variables() and the like.
+ * @test
+ * @summary Test Method.variables() and the like.
+ * @author Robert Field
  *
- *  @author Robert Field
- *
- *  @modules jdk.jdi
- *  @run build JDIScaffold VMConnection
- *  @run compile -g Vars.java
- *  @run driver Vars
+ * @run build JDIScaffold VMConnection
+ * @run compile -g Vars.java
+ * @run driver Vars
  */
 
 import com.sun.jdi.*;

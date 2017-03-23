@@ -28,7 +28,6 @@
  *          MBeanServer.
  * @author  Mandy Chung
  *
- * @modules jdk.management
  * @compile ValidateOpenTypes.java
  * @run main/othervm -verbose:gc ValidateOpenTypes
  */

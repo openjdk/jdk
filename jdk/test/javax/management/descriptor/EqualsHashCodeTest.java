@@ -26,7 +26,7 @@
  * @bug 6255956
  * @summary Test equals and hashCode for descriptors
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean EqualsHashCodeTest
  * @run build EqualsHashCodeTest
  * @run main EqualsHashCodeTest

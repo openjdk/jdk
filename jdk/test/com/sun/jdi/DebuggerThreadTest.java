@@ -22,16 +22,14 @@
  */
 
 /**
- *  @test
- *  @bug 4513488
- *  @summary Test for JDI: Internal JDI helper threads should setDaemon(true)
+ * @test
+ * @bug 4513488
+ * @summary Test for JDI: Internal JDI helper threads should setDaemon(true)
+ * @author Tim Bell
  *
- *  @author Tim Bell
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g DebuggerThreadTest.java
- *  @run driver DebuggerThreadTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g DebuggerThreadTest.java
+ * @run driver DebuggerThreadTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

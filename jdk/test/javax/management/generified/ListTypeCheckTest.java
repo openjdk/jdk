@@ -26,7 +26,7 @@
  * @bug 6250772
  * @summary Test that *List objects are checked after asList is called.
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean ListTypeCheckTest
  * @run build ListTypeCheckTest
  * @run main ListTypeCheckTest

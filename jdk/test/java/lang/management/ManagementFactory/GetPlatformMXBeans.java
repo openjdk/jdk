@@ -28,7 +28,6 @@
  *          methods and PlatformManagedObject.getObjectName()
  * @author  Mandy Chung
  *
- * @modules jdk.management
  * @run main GetPlatformMXBeans
  */
 
