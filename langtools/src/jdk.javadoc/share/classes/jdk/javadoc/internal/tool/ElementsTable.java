@@ -30,6 +30,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -75,6 +76,7 @@ import jdk.javadoc.doclet.DocletEnvironment.ModuleMode;
 
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 
+import static javax.lang.model.util.Elements.Origin.*;
 import static javax.tools.JavaFileObject.Kind.*;
 
 import static jdk.javadoc.internal.tool.Main.Result.*;
@@ -520,15 +522,21 @@ public class ElementsTable {
         }
     }
 
-    private void addPackagesFromLocations(Location packageLocn, ModulePackage modpkg) throws ToolException {
-        Iterable<JavaFileObject> list = null;
+    /* Call fm.list and wrap any IOException that occurs in a ToolException */
+    private Iterable<JavaFileObject> fmList(Location location,
+                                            String packagename,
+                                            Set<JavaFileObject.Kind> kinds,
+                                            boolean recurse) throws ToolException {
         try {
-            list = fm.list(packageLocn, modpkg.packageName, sourceKinds, true);
+            return fm.list(location, packagename, kinds, recurse);
         } catch (IOException ioe) {
-            String text = messager.getText("main.file.manager.list", modpkg.packageName);
+            String text = messager.getText("main.file.manager.list", packagename);
             throw new ToolException(SYSERR, text, ioe);
         }
-        for (JavaFileObject fo : list) {
+    }
+
+    private void addPackagesFromLocations(Location packageLocn, ModulePackage modpkg) throws ToolException {
+        for (JavaFileObject fo : fmList(packageLocn, modpkg.packageName, sourceKinds, true)) {
             String binaryName = fm.inferBinaryName(packageLocn, fo);
             String pn = getPackageName(binaryName);
             String simpleName = getSimpleName(binaryName);
@@ -555,25 +563,51 @@ public class ElementsTable {
     /**
      * Returns the "requires" modules for the target module.
      * @param mdle the target module element
-     * @param isPublic true gets all the public requires, otherwise
-     *                 gets all the non-public requires
+     * @param onlyTransitive true gets all the requires transitive, otherwise
+     *                 gets all the non-transitive requires
      *
      * @return a set of modules
      */
-    private Set<ModuleElement> getModuleRequires(ModuleElement mdle, boolean isPublic) {
+    private Set<ModuleElement> getModuleRequires(ModuleElement mdle, boolean onlyTransitive) throws ToolException {
         Set<ModuleElement> result = new HashSet<>();
         for (RequiresDirective rd : ElementFilter.requiresIn(mdle.getDirectives())) {
-            if (isPublic && rd.isTransitive()) {
-                result.add(rd.getDependency());
-            }
-            if (!isPublic && !rd.isTransitive()) {
-                result.add(rd.getDependency());
+            ModuleElement dep = rd.getDependency();
+            if (result.contains(dep))
+                continue;
+            if (!isMandated(mdle, rd) && onlyTransitive == rd.isTransitive()) {
+                if (!haveModuleSources(dep)) {
+                    messager.printWarning(dep, "main.module_not_found", dep.getSimpleName());
+                }
+                result.add(dep);
+            } else if (isMandated(mdle, rd) && haveModuleSources(dep)) {
+                result.add(dep);
             }
         }
         return result;
     }
 
-    private void computeSpecifiedModules() {
+    private boolean isMandated(ModuleElement mdle, RequiresDirective rd) {
+        return toolEnv.elements.getOrigin(mdle, rd) == MANDATED;
+    }
+
+    Map<ModuleSymbol, Boolean> haveModuleSourcesCache = new HashMap<>();
+    private boolean haveModuleSources(ModuleElement mdle) throws ToolException {
+        ModuleSymbol msym =  (ModuleSymbol)mdle;
+        if (msym.sourceLocation != null) {
+            return true;
+        }
+        if (msym.patchLocation != null) {
+            Boolean value = haveModuleSourcesCache.get(msym);
+            if (value == null) {
+                value = fmList(msym.patchLocation, "", sourceKinds, true).iterator().hasNext();
+                haveModuleSourcesCache.put(msym, value);
+            }
+            return value;
+        }
+        return false;
+    }
+
+    private void computeSpecifiedModules() throws ToolException {
         if (expandRequires == null) { // no expansion requested
             specifiedModuleElements = Collections.unmodifiableSet(specifiedModuleElements);
             return;
@@ -617,20 +651,14 @@ public class ElementsTable {
         ModuleSymbol msym = (ModuleSymbol) mdle;
         List<Location> msymlocs = getModuleLocation(locations, msym.name.toString());
         for (Location msymloc : msymlocs) {
-            try {
-                for (JavaFileObject fo : fm.list(msymloc, "", sourceKinds, true)) {
-                    if (fo.getName().endsWith("module-info.java")) {
-                        continue;
-                    }
-                    String binaryName = fm.inferBinaryName(msymloc, fo);
-                    String pn = getPackageName(binaryName);
-                    PackageSymbol psym = syms.enterPackage(msym, names.fromString(pn));
-                    result.add((PackageElement) psym);
+            for (JavaFileObject fo : fmList(msymloc, "", sourceKinds, true)) {
+                if (fo.getName().endsWith("module-info.java")) {
+                    continue;
                 }
-
-            } catch (IOException ioe) {
-                String text = messager.getText("main.file.manager.list", msymloc.getName());
-                throw new ToolException(SYSERR, text, ioe);
+                String binaryName = fm.inferBinaryName(msymloc, fo);
+                String pn = getPackageName(binaryName);
+                PackageSymbol psym = syms.enterPackage(msym, names.fromString(pn));
+                result.add((PackageElement) psym);
             }
         }
         return result;
@@ -727,10 +755,9 @@ public class ElementsTable {
 
         Set<PackageElement> packlist = new LinkedHashSet<>();
         cmdLinePackages.forEach((modpkg) -> {
-            ModuleElement mdle = null;
             PackageElement pkg;
             if (modpkg.hasModule()) {
-                mdle = toolEnv.elements.getModuleElement(modpkg.moduleName);
+                ModuleElement mdle = toolEnv.elements.getModuleElement(modpkg.moduleName);
                 pkg = toolEnv.elements.getPackageElement(mdle, modpkg.packageName);
             } else {
                 pkg = toolEnv.elements.getPackageElement(modpkg.toString());
@@ -821,17 +848,12 @@ public class ElementsTable {
         }
         String pname = modpkg.packageName;
         for (Location packageLocn : locs) {
-            try {
-                for (JavaFileObject fo : fm.list(packageLocn, pname, sourceKinds, recurse)) {
-                    String binaryName = fm.inferBinaryName(packageLocn, fo);
-                    String simpleName = getSimpleName(binaryName);
-                    if (isValidClassName(simpleName)) {
-                        lb.append(fo);
-                    }
+            for (JavaFileObject fo : fmList(packageLocn, pname, sourceKinds, recurse)) {
+                String binaryName = fm.inferBinaryName(packageLocn, fo);
+                String simpleName = getSimpleName(binaryName);
+                if (isValidClassName(simpleName)) {
+                    lb.append(fo);
                 }
-            } catch (IOException ioe) {
-                String text = messager.getText("main.file.manager.list", pname);
-                throw new ToolException(SYSERR, text, ioe);
             }
         }
         return lb.toList();
