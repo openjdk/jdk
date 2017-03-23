@@ -3403,6 +3403,16 @@ operand immU12() %{
   interface(CONST_INTER);
 %}
 
+// Unsigned Long Immediate: 12-bit (non-negative that fits in simm13)
+operand immUL12() %{
+  predicate((0 <= n->get_long()) && (n->get_long() == (int)n->get_long()) && Assembler::is_simm13((int)n->get_long()));
+  match(ConL);
+  op_cost(0);
+
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // Integer Immediate non-negative
 operand immU31()
 %{
@@ -3933,6 +3943,15 @@ operand flagsRegL() %{
   match(RegFlags);
 
   format %{ "xcc_L" %}
+  interface(REG_INTER);
+%}
+
+// Condition Code Register, unsigned long comparisons.
+operand flagsRegUL() %{
+  constraint(ALLOC_IN_RC(int_flags));
+  match(RegFlags);
+
+  format %{ "xcc_UL" %}
   interface(REG_INTER);
 %}
 
@@ -8797,6 +8816,17 @@ instruct compU_iReg(flagsRegU icc, iRegI op1, iRegI op2) %{
   ins_pipe(ialu_cconly_reg_reg);
 %}
 
+instruct compUL_iReg(flagsRegUL xcc, iRegL op1, iRegL op2) %{
+  match(Set xcc (CmpUL op1 op2));
+  effect(DEF xcc, USE op1, USE op2);
+
+  size(4);
+  format %{ "CMP    $op1,$op2\t! unsigned long" %}
+  opcode(Assembler::subcc_op3, Assembler::arith_op);
+  ins_encode(form3_rs1_rs2_rd(op1, op2, R_G0));
+  ins_pipe(ialu_cconly_reg_reg);
+%}
+
 instruct compI_iReg_imm13(flagsReg icc, iRegI op1, immI13 op2) %{
   match(Set icc (CmpI op1 op2));
   effect( DEF icc, USE op1 );
@@ -8880,6 +8910,17 @@ instruct compU_iReg_imm13(flagsRegU icc, iRegI op1, immU12 op2 ) %{
   format %{ "CMP    $op1,$op2\t! unsigned" %}
   opcode(Assembler::subcc_op3, Assembler::arith_op);
   ins_encode( form3_rs1_simm13_rd( op1, op2, R_G0 ) );
+  ins_pipe(ialu_cconly_reg_imm);
+%}
+
+instruct compUL_iReg_imm13(flagsRegUL xcc, iRegL op1, immUL12 op2) %{
+  match(Set xcc (CmpUL op1 op2));
+  effect(DEF xcc, USE op1, USE op2);
+
+  size(4);
+  format %{ "CMP    $op1,$op2\t! unsigned long" %}
+  opcode(Assembler::subcc_op3, Assembler::arith_op);
+  ins_encode(form3_rs1_simm13_rd(op1, op2, R_G0));
   ins_pipe(ialu_cconly_reg_imm);
 %}
 
@@ -9256,6 +9297,44 @@ instruct cmpU_imm_branch(cmpOpU cmp, iRegI op1, immI5 op2, label labl, flagsRegU
   ins_pipe(cmp_br_reg_imm);
 %}
 
+instruct cmpUL_reg_branch(cmpOpU cmp, iRegL op1, iRegL op2, label labl, flagsRegUL xcc) %{
+  match(If cmp (CmpUL op1 op2));
+  effect(USE labl, KILL xcc);
+
+  size(12);
+  ins_cost(BRANCH_COST);
+  format %{ "CMP    $op1,$op2\t! unsigned long\n\t"
+            "BP$cmp   $labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+    __ cmp($op1$$Register, $op2$$Register);
+    __ bp((Assembler::Condition)($cmp$$cmpcode), false, Assembler::xcc, predict_taken, *L);
+    __ delayed()->nop();
+  %}
+  ins_pipe(cmp_br_reg_reg);
+%}
+
+instruct cmpUL_imm_branch(cmpOpU cmp, iRegL op1, immL5 op2, label labl, flagsRegUL xcc) %{
+  match(If cmp (CmpUL op1 op2));
+  effect(USE labl, KILL xcc);
+
+  size(12);
+  ins_cost(BRANCH_COST);
+  format %{ "CMP    $op1,$op2\t! unsigned long\n\t"
+            "BP$cmp   $labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+    __ cmp($op1$$Register, $op2$$constant);
+    __ bp((Assembler::Condition)($cmp$$cmpcode), false, Assembler::xcc, predict_taken, *L);
+    __ delayed()->nop();
+  %}
+  ins_pipe(cmp_br_reg_imm);
+%}
+
 instruct cmpL_reg_branch(cmpOp cmp, iRegL op1, iRegL op2, label labl, flagsRegL xcc) %{
   match(If cmp (CmpL op1 op2));
   effect(USE labl, KILL xcc);
@@ -9478,6 +9557,42 @@ instruct cmpU_imm_branch_short(cmpOpU cmp, iRegI op1, immI5 op2, label labl, fla
     Label* L = $labl$$label;
     assert(__ use_cbcond(*L), "back to back cbcond");
     __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::icc, $op1$$Register, $op2$$constant, *L);
+  %}
+  ins_short_branch(1);
+  ins_avoid_back_to_back(AVOID_BEFORE_AND_AFTER);
+  ins_pipe(cbcond_reg_imm);
+%}
+
+instruct cmpUL_reg_branch_short(cmpOpU cmp, iRegL op1, iRegL op2, label labl, flagsRegUL xcc) %{
+  match(If cmp (CmpUL op1 op2));
+  predicate(UseCBCond);
+  effect(USE labl, KILL xcc);
+
+  size(4);
+  ins_cost(BRANCH_COST);
+  format %{ "CXB$cmp  $op1,$op2,$labl\t! unsigned long" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    assert(__ use_cbcond(*L), "back to back cbcond");
+    __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::xcc, $op1$$Register, $op2$$Register, *L);
+  %}
+  ins_short_branch(1);
+  ins_avoid_back_to_back(AVOID_BEFORE_AND_AFTER);
+  ins_pipe(cbcond_reg_reg);
+%}
+
+instruct cmpUL_imm_branch_short(cmpOpU cmp, iRegL op1, immL5 op2, label labl, flagsRegUL xcc) %{
+  match(If cmp (CmpUL op1 op2));
+  predicate(UseCBCond);
+  effect(USE labl, KILL xcc);
+
+  size(4);
+  ins_cost(BRANCH_COST);
+  format %{ "CXB$cmp  $op1,$op2,$labl\t! unsigned long" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    assert(__ use_cbcond(*L), "back to back cbcond");
+    __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::xcc, $op1$$Register, $op2$$constant, *L);
   %}
   ins_short_branch(1);
   ins_avoid_back_to_back(AVOID_BEFORE_AND_AFTER);
@@ -9716,6 +9831,25 @@ instruct branchCon_long(cmpOp cmp, flagsRegL xcc, label labl) %{
       cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
 
     __ bp( (Assembler::Condition)($cmp$$cmpcode), false, Assembler::xcc, predict_taken, *L);
+    __ delayed()->nop();
+  %}
+  ins_avoid_back_to_back(AVOID_BEFORE);
+  ins_pipe(br_cc);
+%}
+
+instruct branchConU_long(cmpOpU cmp, flagsRegUL xcc, label labl) %{
+  match(If cmp xcc);
+  effect(USE labl);
+
+  size(8);
+  ins_cost(BRANCH_COST);
+  format %{ "BP$cmp   $xcc,$labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+
+    __ bp((Assembler::Condition)($cmp$$cmpcode), false, Assembler::xcc, predict_taken, *L);
     __ delayed()->nop();
   %}
   ins_avoid_back_to_back(AVOID_BEFORE);
