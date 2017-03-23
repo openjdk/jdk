@@ -22,18 +22,16 @@
  */
 
 /**
- *  @test
- *  @bug 4334008
- *  @author Robert Field
- *
- *  @modules jdk.jdi
- *  @run compile -g RepStepTarg.java
- *  @run build VMConnection RepStep
- *
- *  @run driver RepStep
- *
+ * @test
+ * @bug 4334008
  * @summary RepStep detects missed step events due to lack of
  * frame pop events (in back-end).
+ * @author Robert Field
+ *
+ * @run compile -g RepStepTarg.java
+ * @run build VMConnection RepStep
+ *
+ * @run driver RepStep
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

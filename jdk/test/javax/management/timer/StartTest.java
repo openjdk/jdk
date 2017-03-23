@@ -26,7 +26,7 @@
  * @bug 6659215
  * @summary Test on timer start method with past notifications
  * @author Shanliang JIANG
- * @modules java.management
+ *
  * @run clean StartTest
  * @run build StartTest
  * @run main StartTest

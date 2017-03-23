@@ -26,7 +26,7 @@
  * @bug 4757273
  * @summary Test deadlock in MBeanServerDelegate listeners
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean NotifDeadlockTest
  * @run build NotifDeadlockTest
  * @run main NotifDeadlockTest

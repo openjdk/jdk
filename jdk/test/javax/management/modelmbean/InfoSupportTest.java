@@ -29,7 +29,7 @@
  * that getDescriptors("mbean") works, and that default values for
  * MBean descriptors are correctly assigned.
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean InfoSupportTest
  * @run build InfoSupportTest
  * @run main InfoSupportTest

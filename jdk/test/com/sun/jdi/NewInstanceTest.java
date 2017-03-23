@@ -22,17 +22,15 @@
  */
 
 /**
- *  @test
- *  @bug 4419450
- *  @summary Test newInstance() for arrays - currently covers
- *  only reference type arrays (see bug #4450091).
+ * @test
+ * @bug 4419450
+ * @summary Test newInstance() for arrays - currently covers
+ * only reference type arrays (see bug #4450091).
+ * @author Robert Field
  *
- *  @author Robert Field
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g NewInstanceTest.java
- *  @run driver NewInstanceTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g NewInstanceTest.java
+ * @run driver NewInstanceTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;
