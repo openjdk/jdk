@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,50 +26,56 @@ import java.util.List;
 import java.util.Set;
 import javax.lang.model.element.Element;
 
-import com.sun.source.doctree.DocTree;
+import jdk.javadoc.doclet.Doclet;
+import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Taglet;
+import static jdk.javadoc.doclet.Taglet.Location.*;
 
-public class Check implements Taglet {
+import com.sun.source.doctree.DocTree;
 
-    private static final String TAG_NAME = "check";
-
-    private final EnumSet<Location> allowedSet = EnumSet.allOf(Location.class);
+/**
+ * A taglet to test access to a taglet's context.
+ */
+public class InfoTaglet implements Taglet {
+    private DocletEnvironment env;
+    private Doclet doclet;
 
     @Override
-    public Set<Taglet.Location> getAllowedLocations() {
-        return allowedSet;
+    public void init(DocletEnvironment env, Doclet doclet) {
+        this.env = env;
+        this.doclet = doclet;
     }
 
-    /**
-     * Return false since the tag is not an inline tag.
-     *
-     * @return false since the tag is not an inline tag.
-     */
+    @Override
+    public Set<Location> getAllowedLocations() {
+        return EnumSet.of(TYPE);
+    }
+
     @Override
     public boolean isInlineTag() {
         return false;
     }
 
-    /**
-     * Return the name of this custom tag.
-     *
-     * @return the name of this tag.
-     */
     @Override
     public String getName() {
-        return TAG_NAME;
+        return "info";
     }
 
-    /**
-     * Given a list of DocTrees representing this custom tag, return its string
-     * representation.
-     *
-     * @param tags the array of tags representing this custom tag.
-     * @param element the declaration to which the enclosing comment belongs
-     * @return null to test if the javadoc throws an exception or not.
-     */
     @Override
     public String toString(List<? extends DocTree> tags, Element element) {
-        return null;
+        // The content lines below are primarily to help verify the element
+        // and the values passed to init.
+        return "<dt>"
+                +"<span class=\"simpleTagLabel\">Info:</span>\n"
+                + "</dt>"
+                + "<dd>"
+                + "<ul>\n"
+                + "<li>Element: " + element.getKind() + " " + element.getSimpleName() + "\n"
+                + "<li>Element supertypes: " +
+                        env.getTypeUtils().directSupertypes(element.asType()) + "\n"
+                + "<li>Doclet: " + doclet.getClass() + "\n"
+                + "</ul>\n"
+                + "</dd>";
     }
 }
+

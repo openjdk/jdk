@@ -28,6 +28,8 @@ package jdk.javadoc.doclet;
 import java.util.List;
 import java.util.Set;
 
+import javax.lang.model.element.Element;
+
 import com.sun.source.doctree.DocTree;
 
 /**
@@ -65,18 +67,34 @@ public interface Taglet {
     String getName();
 
     /**
+     * Initializes this taglet with the given doclet environment and doclet.
+     *
+     * @apiNote
+     * The environment may be used to access utility classes for
+     * {@link javax.lang.model.util.Elements elements} and
+     * {@link javax.lang.model.util.Types types} if needed.
+     *
+     * @implSpec
+     * This implementation does nothing.
+     *
+     * @param env the environment in which the doclet and taglet are running
+     * @param doclet the doclet that instantiated this taglet
+     */
+    default void init(DocletEnvironment env, Doclet doclet) { }
+
+    /**
      * Returns the string representation of a series of instances of
      * this tag to be included in the generated output.
      * If this taglet is for an {@link #isInlineTag inline} tag} it will
      * be called once per instance of the tag, each time with a singleton list.
      * Otherwise, if this tag is a block tag, it will be called once per
-     * comment, with a list of all the instances of the tag in the comment.
-     * @param tags the list of {@code DocTree} containing one or more
-     *  instances of this tag
+     * comment, with a list of all the instances of the tag in a comment.
+     * @param tags the list of instances of this tag
+     * @param element the element to which the enclosing comment belongs
      * @return the string representation of the tags to be included in
      *  the generated output
      */
-    String toString(List<? extends DocTree> tags);
+    String toString(List<? extends DocTree> tags, Element element);
 
     /**
      * The kind of location in which a tag may be used.
