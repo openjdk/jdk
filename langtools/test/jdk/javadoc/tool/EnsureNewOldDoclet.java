@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import javax.lang.model.element.Element;
 
 import com.sun.javadoc.Tag;
 import com.sun.source.doctree.DocTree;
@@ -186,7 +187,7 @@ public class EnsureNewOldDoclet extends TestRunner {
                 "-tagletpath",
                 testClasses,
                 testSrc.toString());
-        Task.Result tr = task.run(Task.Expect.FAIL, 1);
+        Task.Result tr = task.run(Task.Expect.FAIL, 1).writeAll();
         //Task.Result tr = task.run();
         List<String> out = tr.getOutputLines(Task.OutputKind.STDOUT);
         List<String> err = tr.getOutputLines(Task.OutputKind.STDERR);
@@ -358,7 +359,7 @@ public class EnsureNewOldDoclet extends TestRunner {
         }
 
         @Override
-        public String toString(List<? extends DocTree> tags) {
+        public String toString(List<? extends DocTree> tags, Element element) {
             return tags.toString();
         }
 

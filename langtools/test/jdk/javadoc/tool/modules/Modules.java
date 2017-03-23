@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8159305 8166127 8175860
+ * @bug 8159305 8166127 8175860 8176481
  * @summary Tests primarily the module graph computations.
  * @modules
  *      jdk.javadoc/jdk.javadoc.internal.api
@@ -35,7 +35,6 @@
  * @run main Modules
  */
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -421,6 +420,7 @@ public class Modules extends ModuleTestBase {
         checkPackagesIncluded("p");
         checkTypesIncluded("p.Main");
         checkPackagesNotIncluded(".*open.*");
+        assertMessageNotPresent("warning");
     }
 
     @Test
@@ -442,9 +442,46 @@ public class Modules extends ModuleTestBase {
                 "--expand-requires", "transitive");
 
         checkModulesSpecified("M", "N", "O");
+        checkModulesNotSpecified("java.base");
         checkModulesIncluded("M", "N", "O");
+        checkModulesNotIncluded("java.base");
         checkPackagesIncluded("p", "openN", "openO");
         checkTypesIncluded("p.Main", "openN.N", "openO.O");
+        assertMessageNotPresent("warning");
+    }
+
+    @Test
+    public void testExpandRequiresTransitiveWithMandated(Path base) throws Exception {
+        Path src = base.resolve("src");
+
+        createAuxiliaryModules(src);
+
+        Path patchSrc = Paths.get(src.toString(), "patch");
+
+        new ModuleBuilder(tb, "M")
+                .comment("The M module.")
+                .requiresTransitive("N", src)
+                .requires("L", src)
+                .exports("p")
+                .classes("package p; public class Main { openO.O o; openN.N n; openL.L l; }")
+                .write(src);
+
+        // build the patching module
+        tb.writeJavaFiles(patchSrc, "package pkg1;\n" +
+                "/** Class A */ public class A extends java.util.ArrayList { }");
+        tb.writeJavaFiles(patchSrc, "package pkg1;\n"
+                + "/** Class B */ public class B { }");
+
+        execTask("--module-source-path", src.toString(),
+                "--patch-module", "java.base=" + patchSrc.toString(),
+                "--module", "M",
+                "--expand-requires", "transitive");
+
+        checkModulesSpecified("java.base", "M", "N", "O");
+        checkModulesIncluded("java.base", "M", "N", "O");
+        checkPackagesIncluded("p", "openN", "openO");
+        checkTypesIncluded("p.Main", "openN.N", "openO.O");
+        assertMessageNotPresent("warning");
     }
 
     @Test
@@ -466,13 +503,14 @@ public class Modules extends ModuleTestBase {
                 "--module", "M",
                 "--expand-requires", "all");
 
-        checkModulesSpecified("M", "java.base", "N", "L", "O");
-        checkModulesIncluded("M", "java.base", "N", "L", "O");
+        checkModulesSpecified("M", "N", "L", "O");
+        checkModulesIncluded("M", "N", "L", "O");
         checkModulesNotIncluded("P", "J", "Q");
         checkPackagesIncluded("p", "openN", "openL", "openO");
         checkPackagesNotIncluded(".*openP.*", ".*openJ.*");
         checkTypesIncluded("p.Main", "openN.N", "openL.L", "openO.O");
         checkTypesNotIncluded(".*openP.*", ".*openJ.*");
+        assertMessageNotPresent("warning");
     }
 
     @Test
@@ -577,7 +615,7 @@ public class Modules extends ModuleTestBase {
         new ModuleBuilder(tb, "L")
                 .comment("The L module.")
                 .exports("openL")
-                . requiresTransitive("P")
+                .requiresTransitive("P")
                 .classes("package openL; /** Class L open */ public class L { }")
                 .classes("package closedL;  /** Class L closed */ public class L { }")
                 .write(src);
@@ -599,7 +637,7 @@ public class Modules extends ModuleTestBase {
                 .write(src);
 
         new ModuleBuilder(tb, "P")
-                .comment("The O module.")
+                .comment("The P module.")
                 .exports("openP")
                 .requires("J")
                 .classes("package openP; /** Class O open. */ public class O { openJ.J j; }")

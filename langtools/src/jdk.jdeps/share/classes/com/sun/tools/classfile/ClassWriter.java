@@ -618,7 +618,6 @@ public class ClassWriter {
         public Void visitModuleTarget(ModuleTarget_attribute attr, ClassOutputStream out) {
             out.writeShort(attr.os_name_index);
             out.writeShort(attr.os_arch_index);
-            out.writeShort(attr.os_version_index);
             return null;
         }
 

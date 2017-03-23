@@ -132,7 +132,7 @@ public class UserTaglet implements Taglet {
      */
     public Content getTagletOutput(Element element, DocTree tag, TagletWriter writer){
         Content output = writer.getOutputInstance();
-        output.addContent(new RawHtml(userTaglet.toString(Collections.singletonList(tag))));
+        output.addContent(new RawHtml(userTaglet.toString(Collections.singletonList(tag), element)));
         return output;
     }
 
@@ -144,7 +144,7 @@ public class UserTaglet implements Taglet {
         Utils utils = writer.configuration().utils;
         List<? extends DocTree> tags = utils.getBlockTags(holder, getName());
         if (!tags.isEmpty()) {
-            String tagString = userTaglet.toString(tags);
+            String tagString = userTaglet.toString(tags, holder);
             if (tagString != null) {
                 output.addContent(new RawHtml(tagString));
             }
