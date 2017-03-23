@@ -129,7 +129,6 @@ public class PatchModules extends ModuleTestBase {
     // Case B.1: (jsr166) augment and override system module
     @Test
     public void testPatchModuleModifyingSystemModule(Path base) throws Exception {
-        Path src = base.resolve("src");
         Path patchSrc = base.resolve("patch");
 
         // build the patching sources
