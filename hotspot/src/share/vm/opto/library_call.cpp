@@ -2375,7 +2375,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   bool need_mem_bar;
   switch (kind) {
       case Relaxed:
-          need_mem_bar = mismatched || can_access_non_heap;
+          need_mem_bar = mismatched && !adr_type->isa_aryptr();
           break;
       case Opaque:
           // Opaque uses CPUOrder membars for protection against code movement.
