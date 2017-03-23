@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2015, 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -401,11 +401,8 @@ address TemplateInterpreterGenerator::generate_result_handler_for(BasicType type
   case T_LONG:
      break;
   case T_OBJECT:
-    // unbox result if not null
-    __ cmpdi(CCR0, R3_RET, 0);
-    __ beq(CCR0, done);
-    __ ld(R3_RET, 0, R3_RET);
-    __ verify_oop(R3_RET);
+    // JNIHandles::resolve result.
+    __ resolve_jobject(R3_RET, R11_scratch1, R12_scratch2, /* needs_frame */ true); // kills R31
     break;
   case T_FLOAT:
      break;
