@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,10 +171,7 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
     switch (method->result_type()) {
       case T_OBJECT:
       case T_ARRAY: {
-        oop* obj_p = *(oop**)lresult;
-        oop obj = (obj_p == NULL) ? (oop)NULL : *obj_p;
-        assert(obj == NULL || Universe::heap()->is_in(obj), "sanity check");
-        *oop_result = obj;
+        *oop_result = JNIHandles::resolve(*(jobject*)lresult);
         break;
       }
       // We use std/stfd to store the values.
