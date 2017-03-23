@@ -73,7 +73,7 @@ void MethodHandles::verify_klass(MacroAssembler* _masm,
                                  const char* error_message) {
 
   InstanceKlass** klass_addr = SystemDictionary::well_known_klass_addr(klass_id);
-  KLass* klass = SystemDictionary::well_known_klass(klass_id);
+  Klass* klass = SystemDictionary::well_known_klass(klass_id);
 
   assert(temp_reg != Z_R0 && // Is used as base register!
          temp_reg != noreg && temp2_reg != noreg, "need valid registers!");
