@@ -25,25 +25,31 @@
  * @test
  * @library /lib/testlibrary
  * @modules java.base/jdk.internal.misc
+ *          java.base/jdk.internal.module
  * @build ConfigurationTest ModuleUtils
  * @run testng ConfigurationTest
  * @summary Basic tests for java.lang.module.Configuration
  */
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.module.Configuration;
 import java.lang.module.FindException;
 import java.lang.module.ModuleDescriptor;
-import java.lang.module.ModuleDescriptor.Builder;
 import java.lang.module.ModuleDescriptor.Requires;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ResolutionException;
 import java.lang.module.ResolvedModule;
 import java.lang.reflect.Layer;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import jdk.internal.misc.SharedSecrets;
+import jdk.internal.module.ModuleInfoWriter;
+import jdk.internal.module.ModuleTarget;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
@@ -432,70 +438,6 @@ public class ConfigurationTest {
         assertTrue(m4.configuration() == cf2);
         assertTrue(m4.reads().size() == 3);
         assertTrue(m4.reads().contains(m1));
-        assertTrue(m4.reads().contains(m2));
-        assertTrue(m4.reads().contains(m3));
-    }
-
-
-    /**
-     * Basic test of "requires transitive" with configurations.
-     *
-     * The test consists of three configurations:
-     * - Configuration cf1: m1, m2 requires transitive m1
-     * - Configuration cf2: m1, m3 requires transitive m1
-     * - Configuration cf3(cf1,cf2): m4 requires m2, m3
-     */
-    public void testRequiresTransitive6() {
-        ModuleDescriptor descriptor1 = newBuilder("m1")
-                .build();
-
-        ModuleDescriptor descriptor2 = newBuilder("m2")
-                .requires(Set.of(Requires.Modifier.TRANSITIVE), "m1")
-                .build();
-
-        ModuleDescriptor descriptor3 = newBuilder("m3")
-                .requires(Set.of(Requires.Modifier.TRANSITIVE), "m1")
-                .build();
-
-        ModuleDescriptor descriptor4 = newBuilder("m4")
-                .requires("m2")
-                .requires("m3")
-                .build();
-
-        ModuleFinder finder1 = ModuleUtils.finderOf(descriptor1, descriptor2);
-        Configuration cf1 = resolve(finder1, "m2");
-        assertTrue(cf1.modules().size() == 2);
-        assertTrue(cf1.findModule("m1").isPresent());
-        assertTrue(cf1.findModule("m2").isPresent());
-        assertTrue(cf1.parents().size() == 1);
-        assertTrue(cf1.parents().get(0) == Configuration.empty());
-
-        ModuleFinder finder2 = ModuleUtils.finderOf(descriptor1, descriptor3);
-        Configuration cf2 = resolve(finder2, "m3");
-        assertTrue(cf2.modules().size() == 2);
-        assertTrue(cf2.findModule("m3").isPresent());
-        assertTrue(cf2.findModule("m1").isPresent());
-        assertTrue(cf2.parents().size() == 1);
-        assertTrue(cf2.parents().get(0) == Configuration.empty());
-
-        ModuleFinder finder3 = ModuleUtils.finderOf(descriptor4);
-        Configuration cf3 = Configuration.resolve(finder3,
-                List.of(cf1, cf2),
-                ModuleFinder.of(),
-                Set.of("m4"));
-        assertTrue(cf3.modules().size() == 1);
-        assertTrue(cf3.findModule("m4").isPresent());
-
-        ResolvedModule m1_l = cf1.findModule("m1").get();
-        ResolvedModule m1_r = cf2.findModule("m1").get();
-        ResolvedModule m2 = cf1.findModule("m2").get();
-        ResolvedModule m3 = cf2.findModule("m3").get();
-        ResolvedModule m4 = cf3.findModule("m4").get();
-        assertTrue(m4.configuration() == cf3);
-
-        assertTrue(m4.reads().size() == 4);
-        assertTrue(m4.reads().contains(m1_l));
-        assertTrue(m4.reads().contains(m1_r));
         assertTrue(m4.reads().contains(m2));
         assertTrue(m4.reads().contains(m3));
     }
@@ -1603,6 +1545,76 @@ public class ConfigurationTest {
 
 
     /**
+     * Basic test to detect reading a module with the same name as itself
+     *
+     * The test consists of three configurations:
+     * - Configuration cf1: m1, m2 requires transitive m1
+     * - Configuration cf2: m1 requires m2
+     */
+    @Test(expectedExceptions = { ResolutionException.class })
+    public void testReadModuleWithSameNameAsSelf() {
+        ModuleDescriptor descriptor1_v1 = newBuilder("m1")
+                .build();
+
+        ModuleDescriptor descriptor2 = newBuilder("m2")
+                .requires(Set.of(Requires.Modifier.TRANSITIVE), "m1")
+                .build();
+
+        ModuleDescriptor descriptor1_v2 = newBuilder("m1")
+                .requires("m2")
+                .build();
+
+        ModuleFinder finder1 = ModuleUtils.finderOf(descriptor1_v1, descriptor2);
+        Configuration cf1 = resolve(finder1, "m2");
+        assertTrue(cf1.modules().size() == 2);
+
+        // resolve should throw ResolutionException
+        ModuleFinder finder2 = ModuleUtils.finderOf(descriptor1_v2);
+        resolve(cf1, finder2, "m1");
+    }
+
+
+    /**
+     * Basic test to detect reading two modules with the same name
+     *
+     * The test consists of three configurations:
+     * - Configuration cf1: m1, m2 requires transitive m1
+     * - Configuration cf2: m1, m3 requires transitive m1
+     * - Configuration cf3(cf1,cf2): m4 requires m2, m3
+     */
+    @Test(expectedExceptions = { ResolutionException.class })
+    public void testReadTwoModuleWithSameName() {
+        ModuleDescriptor descriptor1 = newBuilder("m1")
+                .build();
+
+        ModuleDescriptor descriptor2 = newBuilder("m2")
+                .requires(Set.of(Requires.Modifier.TRANSITIVE), "m1")
+                .build();
+
+        ModuleDescriptor descriptor3 = newBuilder("m3")
+                .requires(Set.of(Requires.Modifier.TRANSITIVE), "m1")
+                .build();
+
+        ModuleDescriptor descriptor4 = newBuilder("m4")
+                .requires("m2")
+                .requires("m3")
+                .build();
+
+        ModuleFinder finder1 = ModuleUtils.finderOf(descriptor1, descriptor2);
+        Configuration cf1 = resolve(finder1, "m2");
+        assertTrue(cf1.modules().size() == 2);
+
+        ModuleFinder finder2 = ModuleUtils.finderOf(descriptor1, descriptor3);
+        Configuration cf2 = resolve(finder2, "m3");
+        assertTrue(cf2.modules().size() == 2);
+
+        // should throw ResolutionException as m4 will read modules named "m1".
+        ModuleFinder finder3 = ModuleUtils.finderOf(descriptor4);
+        Configuration.resolve(finder3, List.of(cf1, cf2), ModuleFinder.of(), Set.of("m4"));
+    }
+
+
+    /**
      * Test two modules exporting package p to a module that reads both.
      */
     @Test(expectedExceptions = { ResolutionException.class })
@@ -1832,26 +1844,17 @@ public class ConfigurationTest {
     public Object[][] createPlatformMatches() {
         return new Object[][]{
 
-            { "linux-*-*",       "*-*-*" },
-            { "*-arm-*",         "*-*-*" },
-            { "*-*-2.6",         "*-*-*" },
+            { "linux-arm",     "*-*" },
+            { "linux-*",       "*-*" },
+            { "*-arm",         "*-*" },
 
-            { "linux-arm-*",     "*-*-*" },
-            { "linux-*-2.6",     "*-*-*" },
-            { "*-arm-2.6",       "*-*-*" },
+            { "linux-*",       "linux-*" },
+            { "linux-arm",     "linux-*" },
 
-            { "linux-arm-2.6",   "*-*-*" },
+            { "*-arm",         "*-arm" },
+            { "linux-arm",     "*-arm" },
 
-            { "linux-*-*",       "linux-*-*" },
-            { "*-arm-*",         "*-arm-*"   },
-            { "*-*-2.6",         "*-*-2.6"   },
-
-            { "linux-arm-*",     "linux-arm-*" },
-            { "linux-arm-*",     "linux-*-*"   },
-            { "linux-*-2.6",     "linux-*-2.6" },
-            { "linux-*-2.6",     "linux-arm-*" },
-
-            { "linux-arm-2.6",   "linux-arm-2.6" },
+            { "linux-arm",   "linux-arm" },
 
         };
 
@@ -1861,9 +1864,10 @@ public class ConfigurationTest {
     public Object[][] createBad() {
         return new Object[][] {
 
-            { "linux-*-*",        "solaris-*-*"   },
-            { "linux-x86-*",      "linux-arm-*"   },
-            { "linux-*-2.4",      "linux-x86-2.6" },
+            { "linux-*",        "solaris-*"     },
+            { "*-arm",          "*-sparc"       },
+            { "linux-x86",      "solaris-sparc" },
+
         };
     }
 
@@ -1871,21 +1875,25 @@ public class ConfigurationTest {
      * Test creating a configuration containing platform specific modules.
      */
     @Test(dataProvider = "platformmatch")
-    public void testPlatformMatch(String s1, String s2) {
+    public void testPlatformMatch(String s1, String s2) throws IOException {
 
-        Builder builder = newBuilder("m1").requires("m2");
-        addPlatformConstraints(builder, s1);
-        ModuleDescriptor descriptor1 = builder.build();
+        ModuleDescriptor base =  ModuleDescriptor.newModule("java.base").build();
+        Path system = writeModule(base, "*-*");
 
-        builder = newBuilder("m2");
-        addPlatformConstraints(builder, s2);
-        ModuleDescriptor descriptor2 = builder.build();
+        ModuleDescriptor descriptor1 = ModuleDescriptor.newModule("m1")
+                .requires("m2")
+                .build();
+        Path dir1 = writeModule(descriptor1, s1);
 
-        ModuleFinder finder = ModuleUtils.finderOf(descriptor1, descriptor2);
+        ModuleDescriptor descriptor2 = ModuleDescriptor.newModule("m2").build();
+        Path dir2 = writeModule(descriptor2, s2);
+
+        ModuleFinder finder = ModuleFinder.of(system, dir1, dir2);
 
         Configuration cf = resolve(finder, "m1");
 
-        assertTrue(cf.modules().size() == 2);
+        assertTrue(cf.modules().size() == 3);
+        assertTrue(cf.findModule("java.base").isPresent());
         assertTrue(cf.findModule("m1").isPresent());
         assertTrue(cf.findModule("m2").isPresent());
     }
@@ -1896,10 +1904,9 @@ public class ConfigurationTest {
      */
     @Test(dataProvider = "platformmismatch",
           expectedExceptions = FindException.class )
-    public void testPlatformMisMatch(String s1, String s2) {
+    public void testPlatformMisMatch(String s1, String s2) throws IOException {
         testPlatformMatch(s1, s2);
     }
-
 
     // no parents
 
@@ -1917,21 +1924,23 @@ public class ConfigurationTest {
 
 
     // parents with modules for specific platforms
-
     @Test(dataProvider = "platformmatch")
-    public void testResolveRequiresWithCompatibleParents(String s1, String s2) {
-        Builder builder = newBuilder("m1");
-        addPlatformConstraints(builder, s1);
-        ModuleDescriptor descriptor1 = builder.build();
+    public void testResolveRequiresWithCompatibleParents(String s1, String s2)
+        throws IOException
+    {
+        ModuleDescriptor base =  ModuleDescriptor.newModule("java.base").build();
+        Path system = writeModule(base, "*-*");
 
-        builder = newBuilder("m2");
-        addPlatformConstraints(builder, s2);
-        ModuleDescriptor descriptor2 = builder.build();
+        ModuleDescriptor descriptor1 = ModuleDescriptor.newModule("m1").build();
+        Path dir1 = writeModule(descriptor1, s1);
 
-        ModuleFinder finder1 = ModuleUtils.finderOf(descriptor1);
+        ModuleDescriptor descriptor2 = ModuleDescriptor.newModule("m2").build();
+        Path dir2 = writeModule(descriptor2, s2);
+
+        ModuleFinder finder1 = ModuleFinder.of(system, dir1);
         Configuration cf1 = resolve(finder1, "m1");
 
-        ModuleFinder finder2 = ModuleUtils.finderOf(descriptor2);
+        ModuleFinder finder2 = ModuleFinder.of(system, dir2);
         Configuration cf2 = resolve(finder2, "m2");
 
         Configuration cf3 = Configuration.resolve(ModuleFinder.of(),
@@ -1941,30 +1950,14 @@ public class ConfigurationTest {
         assertTrue(cf3.parents().size() == 2);
     }
 
+
     @Test(dataProvider = "platformmismatch",
           expectedExceptions = IllegalArgumentException.class )
-    public void testResolveRequiresWithConflictingParents(String s1, String s2) {
-        Builder builder = newBuilder("m1");
-        addPlatformConstraints(builder, s1);
-        ModuleDescriptor descriptor1 = builder.build();
-
-        builder = newBuilder("m2");
-        addPlatformConstraints(builder, s2);
-        ModuleDescriptor descriptor2 = builder.build();
-
-        ModuleFinder finder1 = ModuleUtils.finderOf(descriptor1);
-        Configuration cf1 = resolve(finder1, "m1");
-
-        ModuleFinder finder2 = ModuleUtils.finderOf(descriptor2);
-        Configuration cf2 = resolve(finder2, "m2");
-
-        // should throw IAE
-        Configuration.resolve(ModuleFinder.of(),
-                              List.of(cf1, cf2),
-                              ModuleFinder.of(),
-                              Set.of());
+    public void testResolveRequiresWithConflictingParents(String s1, String s2)
+        throws IOException
+    {
+        testResolveRequiresWithCompatibleParents(s1, s2);
     }
-
 
 
     // null handling
@@ -2121,30 +2114,23 @@ public class ConfigurationTest {
 
 
     /**
-     * Returns {@code true} if the configuration contains module mn1
-     * that reads module mn2.
-     */
-    static boolean reads(Configuration cf, String mn1, String mn2) {
-        Optional<ResolvedModule> om1 = cf.findModule(mn1);
-        if (!om1.isPresent())
-            return false;
-
-        return om1.get().reads().stream()
-                .map(ResolvedModule::name)
-                .anyMatch(mn2::equals);
-    }
-
-    /**
      * Decodes the platform string and calls the builder osName/osArch/osVersion
      * methods to set the platform constraints.
      */
-    static void addPlatformConstraints(Builder builder, String platformString) {
+    static Path writeModule(ModuleDescriptor descriptor, String platformString)
+        throws IOException
+    {
         String[] s = platformString.split("-");
-        if (!s[0].equals("*"))
-            builder.osName(s[0]);
-        if (!s[1].equals("*"))
-            builder.osArch(s[1]);
-        if (!s[2].equals("*"))
-            builder.osVersion(s[2]);
+        String osName = !s[0].equals("*") ? s[0] : null;
+        String osArch = !s[1].equals("*") ? s[1] : null;
+        ModuleTarget target = new ModuleTarget(osName, osArch);
+
+        String name = descriptor.name();
+        Path dir = Files.createTempDirectory(name);
+        Path mi = dir.resolve("module-info.class");
+        try (OutputStream out = Files.newOutputStream(mi)) {
+            ModuleInfoWriter.write(descriptor, target, out);
+        }
+        return dir;
     }
 }

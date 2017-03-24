@@ -53,8 +53,7 @@ import static java.util.Arrays.asList;
 /*
  * @test
  * @bug 8064924
- * @modules java.compiler
- *          jdk.compiler
+ * @modules jdk.compiler
  * @summary Basic test for URLStreamHandlerProvider
  * @library /lib/testlibrary
  * @build jdk.testlibrary.FileUtils jdk.testlibrary.JDKToolFinder

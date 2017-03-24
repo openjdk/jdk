@@ -214,7 +214,8 @@ public class IntegrationTest {
         checkReleaseProperty(props, "JAVA_FULL_VERSION");
         checkReleaseProperty(props, "OS_NAME");
         checkReleaseProperty(props, "OS_ARCH");
-        checkReleaseProperty(props, "OS_VERSION");
+        // OS_VERSION is added from makefile. We're testing API-way to create image here!
+        // checkReleaseProperty(props, "OS_VERSION");
 
         if (!Files.exists(output.resolve("toto.txt"))) {
             throw new AssertionError("Post processing not called");
