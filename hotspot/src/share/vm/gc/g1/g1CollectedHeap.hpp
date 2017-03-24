@@ -1403,12 +1403,16 @@ public:
   // after a full GC.
   void rebuild_strong_code_roots();
 
-  // Delete entries for dead interned string and clean up unreferenced symbols
-  // in symbol table, possibly in parallel.
-  void unlink_string_and_symbol_table(BoolObjectClosure* is_alive, bool unlink_strings = true, bool unlink_symbols = true);
+  // Partial cleaning used when class unloading is disabled.
+  // Let the caller choose what structures to clean out:
+  // - StringTable
+  // - SymbolTable
+  // - StringDeduplication structures
+  void partial_cleaning(BoolObjectClosure* is_alive, bool unlink_strings, bool unlink_symbols, bool unlink_string_dedup);
 
-  // Parallel phase of unloading/cleaning after G1 concurrent mark.
-  void parallel_cleaning(BoolObjectClosure* is_alive, bool process_strings, bool process_symbols, bool class_unloading_occurred);
+  // Complete cleaning used when class unloading is enabled.
+  // Cleans out all structures handled by partial_cleaning and also the CodeCache.
+  void complete_cleaning(BoolObjectClosure* is_alive, bool class_unloading_occurred);
 
   // Redirty logged cards in the refinement queue.
   void redirty_logged_cards();
