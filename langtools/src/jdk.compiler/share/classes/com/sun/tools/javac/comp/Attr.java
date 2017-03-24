@@ -448,13 +448,21 @@ public class Attr extends JCTree.Visitor {
 
         NORMAL,
 
-        NO_TREE_UPDATE {     // Mode signalling 'fake check' - skip tree update
+        /**
+         * Mode signalling 'fake check' - skip tree update. A side-effect of this mode is
+         * that the captured var cache in {@code InferenceContext} will be used in read-only
+         * mode when performing inference checks.
+         */
+        NO_TREE_UPDATE {
             @Override
             public boolean updateTreeType() {
                 return false;
             }
         },
-        NO_INFERENCE_HOOK { // Mode signalling that caller will manage free types in tree decorations.
+        /**
+         * Mode signalling that caller will manage free types in tree decorations.
+         */
+        NO_INFERENCE_HOOK {
             @Override
             public boolean installPostInferenceHook() {
                 return false;
@@ -3769,7 +3777,7 @@ public class Attr extends JCTree.Visitor {
                 break;
             case MTH: {
                 owntype = checkMethod(site, sym,
-                        new ResultInfo(resultInfo.pkind, resultInfo.pt.getReturnType(), resultInfo.checkContext),
+                        new ResultInfo(resultInfo.pkind, resultInfo.pt.getReturnType(), resultInfo.checkContext, resultInfo.checkMode),
                         env, TreeInfo.args(env.tree), resultInfo.pt.getParameterTypes(),
                         resultInfo.pt.getTypeArguments());
                 break;

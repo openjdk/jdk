@@ -27,6 +27,7 @@ package com.sun.tools.javac.comp;
 
 import com.sun.tools.javac.code.Type.UndetVar.UndetVarListener;
 import com.sun.tools.javac.code.Types.TypeMapping;
+import com.sun.tools.javac.comp.Attr.CheckMode;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCTypeCast;
 import com.sun.tools.javac.tree.TreeInfo;
@@ -419,7 +420,7 @@ public class Infer {
             }
         } else if (rsInfoInfContext.free(resultInfo.pt)) {
             //propagation - cache captured vars
-            qtype = inferenceContext.asUndetVar(rsInfoInfContext.cachedCapture(tree, from, false));
+            qtype = inferenceContext.asUndetVar(rsInfoInfContext.cachedCapture(tree, from, !resultInfo.checkMode.updateTreeType()));
         }
         Assert.check(allowGraphInference || !rsInfoInfContext.free(to),
                 "legacy inference engine cannot handle constraints on both sides of a subtyping assertion");
@@ -509,7 +510,7 @@ public class Infer {
         inferenceContext.solve(List.of(from.qtype), new Warner());
         inferenceContext.notifyChange();
         Type capturedType = resultInfo.checkContext.inferenceContext()
-                .cachedCapture(tree, from.getInst(), false);
+                .cachedCapture(tree, from.getInst(), !resultInfo.checkMode.updateTreeType());
         if (types.isConvertible(capturedType,
                 resultInfo.checkContext.inferenceContext().asUndetVar(to))) {
             //effectively skip additional return-type constraint generation (compatibility)
