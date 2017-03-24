@@ -26,7 +26,7 @@
  * @bug 6190873
  * @summary Tests that thread creation can use a user-supplied Executor
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean ExecutorTest
  * @run build ExecutorTest
  * @run main ExecutorTest

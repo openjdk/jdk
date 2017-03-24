@@ -22,17 +22,15 @@
  */
 
 /**
- *  @test
- *  @bug 4467564
- *  @summary Test the popping of frames in an asynchronous context
- *           (that is, when suspended by the debugger at random points)
+ * @test
+ * @bug 4467564
+ * @summary Test the popping of frames in an asynchronous context
+ *          (that is, when suspended by the debugger at random points)
+ * @author Robert Field
  *
- *  @author Robert Field
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g PopAsynchronousTest.java
- *  @run driver PopAsynchronousTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g PopAsynchronousTest.java
+ * @run driver PopAsynchronousTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

@@ -22,16 +22,14 @@
  */
 
 /**
- *  @test
- *  @bug 4916263
- *  @summary Test
+ * @test
+ * @bug 4916263
+ * @summary Test
+ * @author Serguei Spitsyn
  *
- *  @author Serguei Spitsyn
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g LocalVariableEqual.java
- *  @run driver LocalVariableEqual
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g LocalVariableEqual.java
+ * @run driver LocalVariableEqual
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

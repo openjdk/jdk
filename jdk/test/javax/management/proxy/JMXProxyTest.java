@@ -33,7 +33,7 @@ import javax.management.ObjectName;
  * @summary Tests that javax.management.JMX creates proxies only for the
  *          compliant MBeans/MXBeans
  * @author Jaroslav Bachorik
- * @modules java.management
+ *
  * @run clean JMXProxyTest
  * @run build JMXProxyTest
  * @run main JMXProxyTest

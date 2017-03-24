@@ -22,17 +22,16 @@
  */
 
 /**
- *  @test
- *  @bug 4528948
- *  @summary Unable to finish a debugging in NetBeans IDE
+ * @test
+ * @bug 4528948
+ * @summary Unable to finish a debugging in NetBeans IDE
+ * @author jjh
  *
- *  @author jjh
+ * @library ..
  *
- *  @library ..
- *  @modules jdk.jdi
- *  @run build  TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g DeleteAllBkptsTest.java
- *  @run driver DeleteAllBkptsTest
+ * @run build  TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g DeleteAllBkptsTest.java
+ * @run driver DeleteAllBkptsTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

@@ -26,7 +26,6 @@
  * @bug     4530538
  * @summary Basic unit test of RuntimeMXBean.getUptime()
  * @author  Alexei Guibadoulline
- * @modules java.management
  */
 
 import java.lang.management.*;

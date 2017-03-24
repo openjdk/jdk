@@ -22,17 +22,16 @@
  */
 
 /**
- *  @test
- *  @bug 4451941 4527072
- *  @summary Test argument types for invoke
+ * @test
+ * @bug 4451941 4527072
+ * @summary Test argument types for invoke
+ * @author Robert Field
  *
- *  @author Robert Field
+ * @library ..
  *
- *  @library ..
- *  @modules jdk.jdi
- *  @run build  TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g InvokeTest.java
- *  @run driver InvokeTest
+ * @run build  TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g InvokeTest.java
+ * @run driver InvokeTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

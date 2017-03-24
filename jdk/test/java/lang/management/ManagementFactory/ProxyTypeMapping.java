@@ -28,7 +28,6 @@
  *          returned from Management.newPlatformMXBeanProxy().
  * @author  Mandy Chung
  *
- * @modules jdk.management
  * @compile ProxyTypeMapping.java
  * @run main/othervm -verbose:gc ProxyTypeMapping
  */

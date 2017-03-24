@@ -27,7 +27,6 @@
  * @summary Basic Test for HotSpotDiagnosticMXBean.getVMOption() and double values
  * @author  Jaroslav Bachorik
  *
- * @modules jdk.management
  * @run main/othervm -XX:CompileThresholdScaling=0.14 GetDoubleVMOption
  */
 

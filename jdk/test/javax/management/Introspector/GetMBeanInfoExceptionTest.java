@@ -27,7 +27,7 @@
  * @summary Test that the exception thrown by DynamicMBean.getMBeanInfo()
  *          keeps the init cause.
  * @author Luis-Miguel Alventosa
- * @modules java.management
+ *
  * @run clean GetMBeanInfoExceptionTest
  * @run build GetMBeanInfoExceptionTest
  * @run main GetMBeanInfoExceptionTest
