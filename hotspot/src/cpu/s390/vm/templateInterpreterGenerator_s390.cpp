@@ -1930,8 +1930,11 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   return entry_point;
 }
 
-// Method entry for static native methods:
-//   int java.util.zip.CRC32.update(int crc, int b)
+
+/**
+ * Method entry for static native methods:
+ *   int java.util.zip.CRC32.update(int crc, int b)
+ */
 address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
 
   if (UseCRC32Intrinsics) {
@@ -1980,9 +1983,11 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
 }
 
 
-// Method entry for static native methods:
-//   int java.util.zip.CRC32.updateBytes(int crc, byte[] b, int off, int len)
-//   int java.util.zip.CRC32.updateByteBuffer(int crc, long buf, int off, int len)
+/**
+ * Method entry for static native methods:
+ *   int java.util.zip.CRC32.updateBytes(     int crc, byte[] b,  int off, int len)
+ *   int java.util.zip.CRC32.updateByteBuffer(int crc, long* buf, int off, int len)
+ */
 address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
 
   if (UseCRC32Intrinsics) {
@@ -2058,9 +2063,13 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
 }
 
 
-// Method entry for static native methods:
-//   int java.util.zip.CRC32C.updateBytes(int crc, byte[] b, int off, int len)
-//   int java.util.zip.CRC32C.updateDirectByteBuffer(int crc, long buf, int off, int len)
+/**
+ * Method entry for intrinsic-candidate (non-native) methods:
+ *   int java.util.zip.CRC32C.updateBytes(           int crc, byte[] b,  int off, int end)
+ *   int java.util.zip.CRC32C.updateDirectByteBuffer(int crc, long* buf, int off, int end)
+ * Unlike CRC32, CRC32C does not have any methods marked as native
+ * CRC32C also uses an "end" variable instead of the length variable CRC32 uses
+ */
 address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
 
   if (UseCRC32CIntrinsics) {
@@ -2093,7 +2102,8 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
       __ z_llgf(crc,    5*wordSize, argP);  // current crc state
       __ z_lg(data,     3*wordSize, argP);  // start of byte buffer
       __ z_agf(data,    2*wordSize, argP);  // Add byte buffer offset.
-      __ z_lgf(dataLen, 1*wordSize, argP);  // #bytes to process
+      __ z_lgf(dataLen, 1*wordSize, argP);  // #bytes to process, calculated as
+      __ z_sgf(dataLen, Address(argP, 2*wordSize));  // (end_index - offset)
     } else {                                                                // Used for "updateBytes update".
       // crc     @ (SP + 4W) (32bit)
       // buf     @ (SP + 3W) (64bit ptr to byte array)
@@ -2104,7 +2114,8 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
       __ z_llgf(crc,    4*wordSize, argP);  // current crc state
       __ z_lg(data,     3*wordSize, argP);  // start of byte buffer
       __ z_agf(data,    2*wordSize, argP);  // Add byte buffer offset.
-      __ z_lgf(dataLen, 1*wordSize, argP);  // #bytes to process
+      __ z_lgf(dataLen, 1*wordSize, argP);  // #bytes to process, calculated as
+      __ z_sgf(dataLen, Address(argP, 2*wordSize));  // (end_index - offset)
       __ z_aghi(data, arrayOopDesc::base_offset_in_bytes(T_BYTE));
     }
 
