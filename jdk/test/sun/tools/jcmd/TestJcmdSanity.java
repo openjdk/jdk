@@ -35,15 +35,14 @@ import jdk.testlibrary.OutputAnalyzer;
 import jdk.testlibrary.ProcessTools;
 import jdk.testlibrary.Utils;
 
-/**
- * Unit test for jcmd utility. The test will send different diagnostic command
- * requests to the current java process.
- */
 /*
  * @test
  * @bug 7104647 7154822
+ * @summary Unit test for jcmd utility. The test will send different diagnostic
+ * command requests to the current java process.
+ *
  * @library /lib/testlibrary
- * @modules java.management
+ *
  * @build jdk.testlibrary.*
  * @run main/othervm -XX:+UsePerfData TestJcmdSanity
  */

@@ -22,17 +22,15 @@
  */
 
 /**
- *  @test
- *  @bug 4446677
- *  @bug 8158237
- *  @summary debuggee used to crash when debugging under jbuilder
+ * @test
+ * @bug 4446677
+ * @bug 8158237
+ * @summary debuggee used to crash when debugging under jbuilder
+ * @author jjh
  *
- *  @author jjh
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g BacktraceFieldTest.java
- *  @run driver BacktraceFieldTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g BacktraceFieldTest.java
+ * @run driver BacktraceFieldTest
  */
 
 /*

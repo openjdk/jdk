@@ -27,7 +27,7 @@
  * @summary Test that NotCompliantMBeanException has a cause in case of
  *          type mapping problems.
  * @author Daniel Fuchs, Alexander Shusherov
- * @modules java.management
+ *
  * @run clean NotCompliantCauseTest
  * @run build NotCompliantCauseTest
  * @run main NotCompliantCauseTest
@@ -40,7 +40,6 @@
  */
 
 import java.util.Random;
-import java.util.logging.Logger;
 
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
@@ -53,12 +52,6 @@ import javax.management.openmbean.OpenDataException;
  * @author Sun Microsystems, 2005 - All rights reserved.
  */
 public class NotCompliantCauseTest {
-
-    /**
-     * A logger for this class.
-     **/
-    private static final Logger LOG =
-            Logger.getLogger(NotCompliantCauseTest.class.getName());
 
     /**
      * Creates a new instance of NotCompliantCauseTest

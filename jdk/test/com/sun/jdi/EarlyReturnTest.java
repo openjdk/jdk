@@ -22,22 +22,21 @@
  */
 
 /*
- *  @test
- *  @bug 6175634
- *  @summary Allow early return from methods
+ * @test
+ * @bug 6175634
+ * @summary Allow early return from methods
  *
- *  @bug 6431720
- *  @summary Unexpected InvalidTypeException when call ThreadReference.forceEarlyReturn with VoidValue
+ * @bug 6431720
+ * @summary Unexpected InvalidTypeException when call ThreadReference.forceEarlyReturn with VoidValue
  *
- *  @bug 6432855
- *  @summary Need a way to create JDI VoidValue for use in ThreadReference.forceEarlyReturn
+ * @bug 6432855
+ * @summary Need a way to create JDI VoidValue for use in ThreadReference.forceEarlyReturn
  *
- *  @author Tim Bell (based on MethodExitReturnValuesTest by Jim Holmlund)
+ * @author Tim Bell (based on MethodExitReturnValuesTest by Jim Holmlund)
  *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g EarlyReturnTest.java
- *  @run driver EarlyReturnTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g EarlyReturnTest.java
+ * @run driver EarlyReturnTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

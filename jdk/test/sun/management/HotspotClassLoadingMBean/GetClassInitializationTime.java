@@ -26,7 +26,7 @@
  * @bug     4858522
  * @summary Basic unit test of HotspotClassLoadingMBean.getClassInitializationTime()
  * @author  Steve Bohne
- * @modules java.management/sun.management
+ *
  * @run main/othervm -XX:+UsePerfData GetClassInitializationTime
  */
 

@@ -26,7 +26,6 @@
  * @bug 6713777
  * @summary Test that exception messages include all relevant information
  * @author Eamonn McManus
- * @modules java.management
  */
 
 import javax.management.ConstructorParameters;

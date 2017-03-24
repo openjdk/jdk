@@ -28,7 +28,7 @@
  * null name in it and calling setFields with a field names array with an
  * empty name in it throw the expected exceptions.
  * @author Luis-Miguel Alventosa
- * @modules java.management
+ *
  * @run clean ImmutableDescriptorSetFieldsTest
  * @run build ImmutableDescriptorSetFieldsTest
  * @run main ImmutableDescriptorSetFieldsTest

@@ -26,7 +26,7 @@
  * @bug 4886011
  * @summary Test that QueryExp.toString() is reversible
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean QueryExpStringTest
  * @run build QueryExpStringTest
  * @run main QueryExpStringTest

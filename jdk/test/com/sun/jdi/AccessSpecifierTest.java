@@ -22,16 +22,14 @@
  */
 
 /**
- *  @test
- *  @bug 4359628
- *  @summary Test fix for JDI: methods Accessible.is...() lie about array types
+ * @test
+ * @bug 4359628
+ * @summary Test fix for JDI: methods Accessible.is...() lie about array types
+ * @author Tim Bell
  *
- *  @author Tim Bell
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g AccessSpecifierTest.java
- *  @run driver AccessSpecifierTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g AccessSpecifierTest.java
+ * @run driver AccessSpecifierTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;
