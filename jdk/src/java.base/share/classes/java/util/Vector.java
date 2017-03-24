@@ -154,7 +154,7 @@ public class Vector<E>
 
     /**
      * Constructs an empty vector so that its internal data array
-     * has size {@code 10} and its standard capacBasity increment is
+     * has size {@code 10} and its standard capacity increment is
      * zero.
      */
     public Vector() {
