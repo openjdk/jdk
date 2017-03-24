@@ -50,11 +50,6 @@ public class TransferTo6GBFile {
     // Test transferTo with file positions larger than 2 and 4GB
     @Test
     public void xferTest08() throws Exception { // for bug 6253145
-        // Creating a sparse 6GB file on Windows takes too long
-        String osName = System.getProperty("os.name");
-        if (osName.startsWith("Windows"))
-            return;
-
         final long G = 1024L * 1024L * 1024L;
 
         // Create 6GB file
