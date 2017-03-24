@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -362,14 +362,9 @@ public class Analyzer {
 
             TreeMapper treeMapper = new TreeMapper(context);
             //TODO: to further refine the analysis, try all rewriting combinations
-            LocalCacheContext localCacheContext = argumentAttr.withLocalCacheContext();
-            try {
-                deferredAttr.attribSpeculative(fakeBlock, env, attr.statInfo, treeMapper,
-                        t -> new AnalyzeDeferredDiagHandler(context));
-            } finally {
-                localCacheContext.leave();
-            }
-
+            deferredAttr.attribSpeculative(fakeBlock, env, attr.statInfo, treeMapper,
+                    t -> new AnalyzeDeferredDiagHandler(context),
+                    argumentAttr.withLocalCacheContext());
             context.treeMap.entrySet().forEach(e -> {
                 context.treesToAnalyzer.get(e.getKey())
                         .process(e.getKey(), e.getValue(), context.errors.nonEmpty());

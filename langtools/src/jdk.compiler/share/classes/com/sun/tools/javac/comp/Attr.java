@@ -1525,7 +1525,9 @@ public class Attr extends JCTree.Visitor {
                             isBooleanOrNumeric(env, condTree.falsepart);
                 case APPLY:
                     JCMethodInvocation speculativeMethodTree =
-                            (JCMethodInvocation)deferredAttr.attribSpeculative(tree, env, unknownExprInfo);
+                            (JCMethodInvocation)deferredAttr.attribSpeculative(
+                                    tree, env, unknownExprInfo,
+                                    argumentAttr.withLocalCacheContext());
                     Symbol msym = TreeInfo.symbol(speculativeMethodTree.meth);
                     Type receiverType = speculativeMethodTree.meth.hasTag(IDENT) ?
                             env.enclClass.type :
@@ -1536,10 +1538,13 @@ public class Attr extends JCTree.Visitor {
                     JCExpression className =
                             removeClassParams.translate(((JCNewClass)tree).clazz);
                     JCExpression speculativeNewClassTree =
-                            (JCExpression)deferredAttr.attribSpeculative(className, env, unknownTypeInfo);
+                            (JCExpression)deferredAttr.attribSpeculative(
+                                    className, env, unknownTypeInfo,
+                                    argumentAttr.withLocalCacheContext());
                     return primitiveOrBoxed(speculativeNewClassTree.type);
                 default:
-                    Type speculativeType = deferredAttr.attribSpeculative(tree, env, unknownExprInfo).type;
+                    Type speculativeType = deferredAttr.attribSpeculative(tree, env, unknownExprInfo,
+                            argumentAttr.withLocalCacheContext()).type;
                     return primitiveOrBoxed(speculativeType);
             }
         }
