@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,16 @@ import static catalog.CatalogTestUtils.DEFER_FALSE;
 import static catalog.CatalogTestUtils.DEFER_TRUE;
 import static catalog.CatalogTestUtils.getCatalogPath;
 import static javax.xml.catalog.CatalogFeatures.Feature.DEFER;
-import static javax.xml.catalog.CatalogManager.catalog;
 import static jaxp.library.JAXPTestUtilities.runWithAllPerm;
 import static jaxp.library.JAXPTestUtilities.tryRunWithAllPerm;
 
 import java.lang.reflect.Method;
 
 import javax.xml.catalog.Catalog;
+import javax.xml.catalog.CatalogException;
 import javax.xml.catalog.CatalogFeatures;
+import javax.xml.catalog.CatalogManager;
+import javax.xml.catalog.CatalogResolver;
 
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
@@ -43,7 +45,7 @@ import org.testng.annotations.Test;
 
 /*
  * @test
- * @bug 8077931
+ * @bug 8077931 8176405
  * @library /javax/xml/jaxp/libs
  * @modules java.xml/javax.xml.catalog:open
  * @run testng/othervm -DrunSecMngr=true catalog.DeferFeatureTest
@@ -61,6 +63,18 @@ public class DeferFeatureTest {
         Assert.assertEquals(loadedCatalogCount(catalog), catalogCount);
     }
 
+    @Test(dataProvider = "testDeferFeatureByResolve")
+    public void testDeferFeatureByResolve(Catalog catalog, int catalogCount)
+            throws Exception {
+        CatalogResolver cr = createResolver(catalog);
+        // trigger loading alternative catalogs
+        try {
+            cr.resolveEntity("-//REMOTE//DTD ALICE DOCALICE", "http://remote/dtd/alice/");
+        } catch (CatalogException ce) {}
+
+        Assert.assertEquals(loadedCatalogCount(catalog), catalogCount);
+    }
+
     @DataProvider(name = "catalog-countOfLoadedCatalogFile")
     public Object[][] data() {
         return new Object[][]{
@@ -73,12 +87,23 @@ public class DeferFeatureTest {
             {createCatalog(createDeferFeature(DEFER_FALSE)), 4}};
     }
 
+    @DataProvider(name = "testDeferFeatureByResolve")
+    public Object[][] getData() {
+        return new Object[][]{
+            {createCatalog(createDeferFeature(DEFER_TRUE)), 4}
+        };
+    }
+
     private CatalogFeatures createDeferFeature(String defer) {
         return CatalogFeatures.builder().with(DEFER, defer).build();
     }
 
     private Catalog createCatalog(CatalogFeatures feature) {
-        return catalog(feature, getCatalogPath("deferFeature.xml"));
+        return CatalogManager.catalog(feature, getCatalogPath("deferFeature.xml"));
+    }
+
+    private CatalogResolver createResolver(Catalog catalog) {
+        return CatalogManager.catalogResolver(catalog);
     }
 
     private int loadedCatalogCount(Catalog catalog) throws Exception {
