@@ -26,7 +26,7 @@
  * @bug 8164705
  * @library /lib/testlibrary /test/lib
  * @modules java.base/jdk.internal.misc
- *          java.compiler
+ *          jdk.compiler
  * @run main ReadFileOnPath
  * @summary Still able to read file on the same path
  */

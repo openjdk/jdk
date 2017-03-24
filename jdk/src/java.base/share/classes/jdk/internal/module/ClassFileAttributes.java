@@ -292,11 +292,11 @@ public final class ClassFileAttributes {
             attr.putShort(module_flags);
 
             // module_version
-            Version v = descriptor.version().orElse(null);
-            if (v == null) {
+            String vs = descriptor.rawVersion().orElse(null);
+            if (vs == null) {
                 attr.putShort(0);
             } else {
-                int module_version_index = cw.newUTF8(v.toString());
+                int module_version_index = cw.newUTF8(vs);
                 attr.putShort(module_version_index);
             }
 
@@ -320,11 +320,11 @@ public final class ClassFileAttributes {
                 attr.putShort(requires_flags);
 
                 int requires_version_index;
-                v = r.compiledVersion().orElse(null);
-                if (v == null) {
+                vs = r.rawCompiledVersion().orElse(null);
+                if (vs == null) {
                     requires_version_index = 0;
                 } else {
-                    requires_version_index = cw.newUTF8(v.toString());
+                    requires_version_index = cw.newUTF8(vs);
                 }
                 attr.putShort(requires_version_index);
             }
@@ -553,8 +553,6 @@ public final class ClassFileAttributes {
      *   u2 os_name_index;
      *   // index to CONSTANT_utf8_info structure with the OS arch
      *   u2 os_arch_index
-     *   // index to CONSTANT_utf8_info structure with the OS version
-     *   u2 os_version_index;
      * }
      *
      * } </pre>
@@ -562,17 +560,23 @@ public final class ClassFileAttributes {
     public static class ModuleTargetAttribute extends Attribute {
         private final String osName;
         private final String osArch;
-        private final String osVersion;
 
-        public ModuleTargetAttribute(String osName, String osArch, String osVersion) {
+        public ModuleTargetAttribute(String osName, String osArch) {
             super(MODULE_TARGET);
             this.osName = osName;
             this.osArch = osArch;
-            this.osVersion = osVersion;
         }
 
         public ModuleTargetAttribute() {
-            this(null, null, null);
+            this(null, null);
+        }
+
+        public String osName() {
+            return osName;
+        }
+
+        public String osArch() {
+            return osArch;
         }
 
         @Override
@@ -586,7 +590,6 @@ public final class ClassFileAttributes {
 
             String osName = null;
             String osArch = null;
-            String osVersion = null;
 
             int name_index = cr.readUnsignedShort(off);
             if (name_index != 0)
@@ -598,12 +601,7 @@ public final class ClassFileAttributes {
                 osArch = cr.readUTF8(off, buf);
             off += 2;
 
-            int version_index = cr.readUnsignedShort(off);
-            if (version_index != 0)
-                osVersion = cr.readUTF8(off, buf);
-            off += 2;
-
-            return new ModuleTargetAttribute(osName, osArch, osVersion);
+            return new ModuleTargetAttribute(osName, osArch);
         }
 
         @Override
@@ -624,11 +622,6 @@ public final class ClassFileAttributes {
             if (osArch != null && osArch.length() > 0)
                 arch_index = cw.newUTF8(osArch);
             attr.putShort(arch_index);
-
-            int version_index = 0;
-            if (osVersion != null && osVersion.length() > 0)
-                version_index = cw.newUTF8(osVersion);
-            attr.putShort(version_index);
 
             return attr;
         }
