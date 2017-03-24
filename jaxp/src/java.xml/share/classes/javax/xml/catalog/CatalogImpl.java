@@ -88,6 +88,7 @@ class CatalogImpl extends GroupEntry implements Catalog {
     /**
      * Construct a Catalog with specified URI.
      *
+     * @param f the features object
      * @param uris the uri(s) to one or more catalogs
      * @throws CatalogException If an error happens while parsing the specified
      * catalog file.
@@ -100,6 +101,7 @@ class CatalogImpl extends GroupEntry implements Catalog {
      * Construct a Catalog with specified URI.
      *
      * @param parent The parent catalog
+     * @param f the features object
      * @param uris the uri(s) to one or more catalogs
      * @throws CatalogException If an error happens while parsing the specified
      * catalog file.
@@ -137,7 +139,7 @@ class CatalogImpl extends GroupEntry implements Catalog {
             for (String temp : catalogFile) {
                 uri = URI.create(temp);
                 start++;
-                if (verifyCatalogFile(uri)) {
+                if (verifyCatalogFile(null, uri)) {
                     systemId = temp;
                     try {
                         baseURI = new URL(systemId);
@@ -169,12 +171,14 @@ class CatalogImpl extends GroupEntry implements Catalog {
             parse(systemId);
         }
 
+        setCatalog(this);
+
         //save this catalog before loading the next
         loadedCatalogs.put(systemId, this);
 
         //Load delegate and alternative catalogs if defer is false.
         if (!isDeferred()) {
-           loadDelegateCatalogs();
+           loadDelegateCatalogs(this);
            loadNextCatalogs();
         }
     }
@@ -365,14 +369,16 @@ class CatalogImpl extends GroupEntry implements Catalog {
                 //Check those specified in nextCatalogs
                 if (nextCatalogs != null) {
                     while (c == null && nextCatalogIndex < nextCatalogs.size()) {
-                        c = getCatalog(nextCatalogs.get(nextCatalogIndex++).getCatalogURI());
+                        c = getCatalog(catalog,
+                                nextCatalogs.get(nextCatalogIndex++).getCatalogURI());
                     }
                 }
 
                 //Check the input list
                 if (c == null && inputFiles != null) {
                     while (c == null && inputFilesIndex < inputFiles.size()) {
-                        c = getCatalog(URI.create(inputFiles.get(inputFilesIndex++)));
+                        c = getCatalog(null,
+                                URI.create(inputFiles.get(inputFilesIndex++)));
                     }
                 }
 
@@ -408,14 +414,14 @@ class CatalogImpl extends GroupEntry implements Catalog {
         //loads catalogs specified in nextCatalogs
         if (nextCatalogs != null) {
             nextCatalogs.stream().forEach((next) -> {
-                getCatalog(next.getCatalogURI());
+                getCatalog(this, next.getCatalogURI());
             });
         }
 
         //loads catalogs from the input list
         if (inputFiles != null) {
             inputFiles.stream().forEach((uri) -> {
-                getCatalog(URI.create(uri));
+                getCatalog(null, URI.create(uri));
             });
         }
     }
@@ -423,17 +429,19 @@ class CatalogImpl extends GroupEntry implements Catalog {
     /**
      * Returns a Catalog object by the specified path.
      *
-     * @param path the path to a catalog
+     * @param parent the parent catalog for the alternative catalogs to be loaded.
+     * It will be null if the ones to be loaded are from the input list.
+     * @param uri the path to a catalog
      * @return a Catalog object
      */
-    Catalog getCatalog(URI uri) {
+    Catalog getCatalog(CatalogImpl parent, URI uri) {
         if (uri == null) {
             return null;
         }
 
         CatalogImpl c = null;
 
-        if (verifyCatalogFile(uri)) {
+        if (verifyCatalogFile(parent, uri)) {
             c = getLoadedCatalog(uri.toASCIIString());
             if (c == null) {
                 c = new CatalogImpl(this, features, uri);
@@ -459,6 +467,6 @@ class CatalogImpl extends GroupEntry implements Catalog {
      * @return a count of all loaded catalogs
      */
     int loadedCatalogCount() {
-        return loadedCatalogs.size() + delegateCatalogs.size();
+        return loadedCatalogs.size();
     }
 }
