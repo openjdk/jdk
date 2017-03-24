@@ -1378,9 +1378,7 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
       }
       _verifier->check_bitmaps("Full GC End");
 
-      double start = os::elapsedTime();
       start_new_collection_set();
-      g1_policy()->phase_times()->record_start_new_cset_time_ms((os::elapsedTime() - start) * 1000.0);
 
       _allocator->init_mutator_alloc_region();
 
@@ -3212,7 +3210,9 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         _survivor_evac_stats.adjust_desired_plab_sz();
         _old_evac_stats.adjust_desired_plab_sz();
 
+        double start = os::elapsedTime();
         start_new_collection_set();
+        g1_policy()->phase_times()->record_start_new_cset_time_ms((os::elapsedTime() - start) * 1000.0);
 
         if (evacuation_failed()) {
           set_used(recalculate_used());
