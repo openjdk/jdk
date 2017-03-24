@@ -1433,9 +1433,19 @@ void LIRGenerator::do_update_CRC32C(Intrinsic* x) {
       LIRItem crc(x->argument_at(0), this);
       LIRItem buf(x->argument_at(1), this);
       LIRItem off(x->argument_at(2), this);
-      LIRItem len(x->argument_at(3), this);
+      LIRItem end(x->argument_at(3), this);
       buf.load_item();
       off.load_nonconstant();
+      end.load_nonconstant();
+
+      // len = end - off
+      LIR_Opr len  = end.result();
+      LIR_Opr tmpA = new_register(T_INT);
+      LIR_Opr tmpB = new_register(T_INT);
+      __ move(end.result(), tmpA);
+      __ move(off.result(), tmpB);
+      __ sub(tmpA, tmpB, tmpA);
+      len = tmpA;
 
       LIR_Opr index = off.result();
       int offset = is_updateBytes ? arrayOopDesc::base_offset_in_bytes(T_BYTE) : 0;
@@ -1467,9 +1477,9 @@ void LIRGenerator::do_update_CRC32C(Intrinsic* x) {
               arg2 = cc->at(1),
               arg3 = cc->at(2);
 
-      crc.load_item_force(arg1); // We skip int->long conversion here, because CRC32 stub doesn't care about high bits.
+      crc.load_item_force(arg1); // We skip int->long conversion here, because CRC32C stub doesn't care about high bits.
       __ leal(LIR_OprFact::address(a), arg2);
-      len.load_item_force(arg3); // We skip int->long conversion here, , because CRC32 stub expects int.
+      __ move(len, cc->at(2));   // We skip int->long conversion here, because CRC32C stub expects int.
 
       __ call_runtime_leaf(StubRoutines::updateBytesCRC32C(), LIR_OprFact::illegalOpr, result_reg, cc->args());
       __ move(result_reg, result);

@@ -1908,11 +1908,7 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
   return NULL;
 }
 
-// TODO: generate_CRC32_updateBytes_entry and generate_CRC32C_updateBytes_entry are identical
-//       except for using different crc tables and some block comment strings.
-//       We should provide a common implementation.
 
-// CRC32 Intrinsics.
 /**
  * Method entry for static native methods:
  *   int java.util.zip.CRC32.updateBytes(     int crc, byte[] b,  int off, int len)
@@ -2004,11 +2000,13 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
   return NULL;
 }
 
-// CRC32C Intrinsics.
+
 /**
- * Method entry for static native methods:
- *   int java.util.zip.CRC32C.updateBytes(           int crc, byte[] b,  int off, int len)
- *   int java.util.zip.CRC32C.updateDirectByteBuffer(int crc, long* buf, int off, int len)
+ * Method entry for intrinsic-candidate (non-native) methods:
+ *   int java.util.zip.CRC32C.updateBytes(           int crc, byte[] b,  int off, int end)
+ *   int java.util.zip.CRC32C.updateDirectByteBuffer(int crc, long* buf, int off, int end)
+ * Unlike CRC32, CRC32C does not have any methods marked as native
+ * CRC32C also uses an "end" variable instead of the length variable CRC32 uses
  **/
 address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
   if (UseCRC32CIntrinsics) {
@@ -2052,6 +2050,7 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
       __ lwa( dataLen, 1*wordSize, argP);  // #bytes to process
       __ lwz( crc,     5*wordSize, argP);  // current crc state
       __ add( data, data, tmp);            // Add byte buffer offset.
+      __ sub( dataLen, dataLen, tmp);      // (end_index - offset)
     } else {                                                         // Used for "updateBytes update".
       BLOCK_COMMENT("CRC32C_updateBytes {");
       // crc     @ (SP + 4W) (32bit)
@@ -2063,6 +2062,7 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
       __ lwa( tmp,     2*wordSize, argP);  // byte buffer offset
       __ lwa( dataLen, 1*wordSize, argP);  // #bytes to process
       __ add( data, data, tmp);            // add byte buffer offset
+      __ sub( dataLen, dataLen, tmp);      // (end_index - offset)
       __ lwz( crc,     4*wordSize, argP);  // current crc state
       __ addi(data, data, arrayOopDesc::base_offset_in_bytes(T_BYTE));
     }
