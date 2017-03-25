@@ -25,6 +25,6 @@
 
 module jdk.aot {
     requires jdk.management;
-    requires jdk.vm.ci;
-    requires jdk.vm.compiler;
+    requires jdk.internal.vm.ci;
+    requires jdk.internal.vm.compiler;
 }

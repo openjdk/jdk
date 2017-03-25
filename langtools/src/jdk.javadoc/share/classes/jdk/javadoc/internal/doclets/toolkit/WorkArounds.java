@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.tools.FileObject;
 import javax.tools.JavaFileManager.Location;
-import javax.tools.JavaFileObject;
 
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.util.JavacTask;
@@ -62,7 +61,6 @@ import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
-import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.model.JavacElements;
@@ -295,6 +293,33 @@ public class WorkArounds {
             }
         }
         return null;
+    }
+
+    // TODO: the method jx.l.m.Elements::overrides does not check
+    // the return type, see JDK-8174840 until that is resolved,
+    // use a  copy of the same method, with a return type check.
+
+    // Note: the rider.overrides call in this method *must* be consistent
+    // with the call in overrideType(....), the method above.
+    public boolean overrides(ExecutableElement e1, ExecutableElement e2, TypeElement cls) {
+        MethodSymbol rider = (MethodSymbol)e1;
+        MethodSymbol ridee = (MethodSymbol)e2;
+        ClassSymbol origin = (ClassSymbol)cls;
+
+        return rider.name == ridee.name &&
+
+               // not reflexive as per JLS
+               rider != ridee &&
+
+               // we don't care if ridee is static, though that wouldn't
+               // compile
+               !rider.isStatic() &&
+
+               // Symbol.overrides assumes the following
+               ridee.isMemberOf(origin, toolEnv.getTypes()) &&
+
+               // check access, signatures and check return types
+               rider.overrides(ridee, origin, toolEnv.getTypes(), true);
     }
 
     // TODO: jx.l.m ?
