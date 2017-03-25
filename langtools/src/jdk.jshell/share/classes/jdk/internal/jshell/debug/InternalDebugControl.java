@@ -90,6 +90,17 @@ public class InternalDebugControl {
     }
 
     /**
+     * Release a JShell instance.
+     *
+     * @param state the JShell instance
+     */
+    public static void release(JShell state) {
+        if (debugMap != null) {
+            debugMap.remove(state);
+        }
+    }
+
+    /**
      * Tests if any of the specified debug flags are enabled.
      *
      * @param state the JShell instance

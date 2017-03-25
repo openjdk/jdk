@@ -53,6 +53,7 @@ import jdk.jshell.spi.ExecutionControl.ExecutionControlException;
  *
  * @author Jan Lahoda
  * @author Robert Field
+ * @since 9
  */
 public class Util {
 
@@ -60,7 +61,7 @@ public class Util {
     private static final int TAG_CLOSED = 1;
     private static final int TAG_EXCEPTION = 2;
 
-    // never instanciated
+    // never instantiated
     private Util() {}
 
     /**

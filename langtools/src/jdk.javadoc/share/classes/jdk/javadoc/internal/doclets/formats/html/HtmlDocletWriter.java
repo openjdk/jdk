@@ -647,6 +647,13 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 tree.addContent(fixedNavDiv);
                 HtmlTree paddingDiv = HtmlTree.DIV(HtmlStyle.navPadding, Contents.SPACE);
                 tree.addContent(paddingDiv);
+                HtmlTree scriptTree = HtmlTree.SCRIPT();
+                String scriptCode = "<!--\n"
+                        + "$('.navPadding').css('padding-top', $('.fixedNav').css(\"height\"));\n"
+                        + "//-->\n";
+                RawHtml scriptContent = new RawHtml(scriptCode.replace("\n", DocletConstants.NL));
+                scriptTree.addContent(scriptContent);
+                tree.addContent(scriptTree);
             } else {
                 subDiv.addContent(getMarkerAnchor(SectionName.SKIP_NAVBAR_BOTTOM));
                 tree.addContent(subDiv);

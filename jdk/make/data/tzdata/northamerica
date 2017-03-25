@@ -201,22 +201,6 @@ Zone	CST6CDT		 -6:00	US	C%sT
 Zone	MST7MDT		 -7:00	US	M%sT
 Zone	PST8PDT		 -8:00	US	P%sT
 
-# From Bob Devine (1988-01-28):
-# ...Alaska (and Hawaii) had the timezone names changed in 1967.
-#    old			 new
-#    Pacific Standard Time(PST)  -same-
-#    Yukon Standard Time(YST)    -same-
-#    Central Alaska S.T. (CAT)   Alaska-Hawaii St[an]dard Time (AHST)
-#    Nome Standard Time (NT)     Bering Standard Time (BST)
-#
-# ...Alaska's timezone lines were redrawn in 1983 to give only 2 tz.
-#    The YST zone now covers nearly all of the state, AHST just part
-#    of the Aleutian islands.   No DST.
-
-# From Paul Eggert (1995-12-19):
-# The tables below use 'NST', not 'NT', for Nome Standard Time.
-# I invented 'CAWT' for Central Alaska War Time.
-
 # From U. S. Naval Observatory (1989-01-19):
 # USA  EASTERN       5 H  BEHIND UTC    NEW YORK, WASHINGTON
 # USA  EASTERN       4 H  BEHIND UTC    APR 3 - OCT 30
@@ -273,6 +257,21 @@ Zone	PST8PDT		 -8:00	US	P%sT
 #	Samoa standard time
 # The law doesn't give abbreviations.
 #
+# From Paul Eggert (2016-12-19):
+# Here are URLs for the 1918 and 1966 legislation:
+# http://uscode.house.gov/statviewer.htm?volume=40&page=451
+# http://uscode.house.gov/statviewer.htm?volume=80&page=108
+# Although the 1918 names were officially "United States Standard
+# Eastern Time" and similarly for "Central", "Mountain", "Pacific",
+# and "Alaska", in practice "Standard" was placed just before "Time",
+# as codified in 1966.  In practice, Alaska time was abbreviated "AST"
+# before 1968.  Summarizing the 1967 name changes:
+#	1918 names			1967 names
+#  -08	Standard Pacific Time (PST)	Pacific standard time (PST)
+#  -09	(unofficial) Yukon (YST)	Yukon standard time (YST)
+#  -10	Standard Alaska Time (AST)	Alaska-Hawaii standard time (AHST)
+#  -11	(unofficial) Nome (NST)		Bering standard time (BST)
+#
 # From Paul Eggert (2000-01-08), following a heads-up from Rives McDow:
 # Public law 106-564 (2000-12-23) introduced ... "Chamorro Standard Time"
 # for time in Guam and the Northern Marianas.  See the file "australasia".
@@ -328,6 +327,15 @@ Zone	PST8PDT		 -8:00	US	P%sT
 # Roberts, city administrator in Phenix City. as saying "We are in the Central
 # time zone, but we do go by the Eastern time zone because so many people work
 # in Columbus."
+#
+# From Paul Eggert (2017-02-22):
+# Four cities are involved.  The two not mentioned above are Smiths Station
+# and Valley.  Barbara Brooks, Valley's assistant treasurer, heard it started
+# because West Point Pepperell textile mills were in Alabama while the
+# corporate office was in Georgia, and residents voted to keep Eastern
+# time even after the mills closed.  See: Kazek K. Did you know which
+# Alabama towns are in a different time zone?  al.com 2017-02-06.
+# http://www.al.com/living/index.ssf/2017/02/do_you_know_which_alabama_town.html
 
 # From Paul Eggert (2014-09-06):
 # Monthly Notices of the Royal Astronomical Society 44, 4 (1884-02-08), 208
@@ -505,7 +513,7 @@ Zone America/Los_Angeles -7:52:58 -	LMT	1883 Nov 18 12:07:02
 			-8:00	US	P%sT
 
 # Alaska
-# AK%sT is the modern abbreviation for -9:00 per USNO.
+# AK%sT is the modern abbreviation for -09 per USNO.
 #
 # From Paul Eggert (2001-05-30):
 # Howse writes that Alaska switched from the Julian to the Gregorian calendar,
@@ -611,10 +619,8 @@ Zone America/Yakutat	 14:41:05 -	LMT	1867 Oct 18
 			 -9:00	US	AK%sT
 Zone America/Anchorage	 14:00:24 -	LMT	1867 Oct 18
 			 -9:59:36 -	LMT	1900 Aug 20 12:00
-			-10:00	-	CAT	1942
-			-10:00	US	CAT/CAWT 1945 Aug 14 23:00u
-			-10:00	US	CAT/CAPT 1946 # Peace
-			-10:00	-	CAT	1967 Apr
+			-10:00	-	AST	1942
+			-10:00	US	A%sT	1967 Apr
 			-10:00	-	AHST	1969
 			-10:00	US	AH%sT	1983 Oct 30  2:00
 			 -9:00	US	Y%sT	1983 Nov 30
@@ -703,7 +709,6 @@ Zone Pacific/Honolulu	-10:31:26 -	LMT	1896 Jan 13 12:00
 			-10:30	1:00	HDT	1945 Sep 30  2:00
 			-10:30	-	HST	1947 Jun  8  2:00
 			-10:00	-	HST
-Link Pacific/Honolulu Pacific/Johnston
 
 # Now we turn to US areas that have diverged from the consensus since 1970.
 
@@ -1091,15 +1096,15 @@ Zone America/Menominee	-5:50:27 -	LMT	1885 Sep 18 12:00
 ################################################################################
 
 
-# From Paul Eggert (2014-10-31):
+# From Paul Eggert (2017-02-10):
 #
 # Unless otherwise specified, the source for data through 1990 is:
 # Thomas G. Shanks and Rique Pottenger, The International Atlas (6th edition),
 # San Diego: ACS Publications, Inc. (2003).
 # Unfortunately this book contains many errors and cites no sources.
 #
-# Gwillim Law writes that a good source
-# for recent time zone data is the International Air Transport
+# Many years ago Gwillim Law wrote that a good source
+# for time zone data was the International Air Transport
 # Association's Standard Schedules Information Manual (IATA SSIM),
 # published semiannually.  Law sent in several helpful summaries
 # of the IATA's data after 1990.  Except where otherwise noted,
@@ -2757,15 +2762,15 @@ Zone America/Barbados	-3:58:29 -	LMT	1924 # Bridgetown
 # Belize
 # Whitman entirely disagrees with Shanks; go with Shanks & Pottenger.
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	Belize	1918	1942	-	Oct	Sun>=2	0:00	0:30	HD
-Rule	Belize	1919	1943	-	Feb	Sun>=9	0:00	0	S
-Rule	Belize	1973	only	-	Dec	 5	0:00	1:00	D
-Rule	Belize	1974	only	-	Feb	 9	0:00	0	S
-Rule	Belize	1982	only	-	Dec	18	0:00	1:00	D
-Rule	Belize	1983	only	-	Feb	12	0:00	0	S
+Rule	Belize	1918	1942	-	Oct	Sun>=2	0:00	0:30	-0530
+Rule	Belize	1919	1943	-	Feb	Sun>=9	0:00	0	CST
+Rule	Belize	1973	only	-	Dec	 5	0:00	1:00	CDT
+Rule	Belize	1974	only	-	Feb	 9	0:00	0	CST
+Rule	Belize	1982	only	-	Dec	18	0:00	1:00	CDT
+Rule	Belize	1983	only	-	Feb	12	0:00	0	CST
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	America/Belize	-5:52:48 -	LMT	1912 Apr
-			-6:00	Belize	C%sT
+			-6:00	Belize	%s
 
 # Bermuda
 
@@ -3037,16 +3042,16 @@ Zone	America/Havana	-5:29:28 -	LMT	1890
 
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	DR	1966	only	-	Oct	30	0:00	1:00	D
-Rule	DR	1967	only	-	Feb	28	0:00	0	S
-Rule	DR	1969	1973	-	Oct	lastSun	0:00	0:30	HD
-Rule	DR	1970	only	-	Feb	21	0:00	0	S
-Rule	DR	1971	only	-	Jan	20	0:00	0	S
-Rule	DR	1972	1974	-	Jan	21	0:00	0	S
+Rule	DR	1966	only	-	Oct	30	0:00	1:00	EDT
+Rule	DR	1967	only	-	Feb	28	0:00	0	EST
+Rule	DR	1969	1973	-	Oct	lastSun	0:00	0:30	-0430
+Rule	DR	1970	only	-	Feb	21	0:00	0	EST
+Rule	DR	1971	only	-	Jan	20	0:00	0	EST
+Rule	DR	1972	1974	-	Jan	21	0:00	0	EST
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone America/Santo_Domingo -4:39:36 -	LMT	1890
 			-4:40	-	SDMT	1933 Apr  1 12:00 # S. Dom. MT
-			-5:00	DR	E%sT	1974 Oct 27
+			-5:00	DR	%s	1974 Oct 27
 			-4:00	-	AST	2000 Oct 29  2:00
 			-5:00	US	E%sT	2000 Dec  3  1:00
 			-4:00	-	AST
@@ -3336,8 +3341,8 @@ Zone America/Puerto_Rico -4:24:25 -	LMT	1899 Mar 28 12:00 # San Juan
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone America/Miquelon	-3:44:40 -	LMT	1911 May 15 # St Pierre
 			-4:00	-	AST	1980 May
-			-3:00	-	PMST	1987 # Pierre & Miquelon Time
-			-3:00	Canada	PM%sT
+			-3:00	-	-03	1987
+			-3:00	Canada	-03/-02
 
 # St Vincent and the Grenadines
 # See America/Port_of_Spain.
