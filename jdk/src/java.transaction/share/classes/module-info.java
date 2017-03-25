@@ -28,6 +28,8 @@
  * <P>
  * The subset consists of RMI exception types which are mapped to CORBA system
  * exceptions by the 'Java Language to IDL Mapping Specification'.
+ *
+ * @since 9
  */
 module java.transaction {
     requires transitive java.rmi;

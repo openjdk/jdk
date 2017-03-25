@@ -457,6 +457,7 @@ abstract class XScrollbar {
      * MouseEvent.MOUSE_EXITED
      * MouseEvent.MOUSE_DRAGGED
      */
+    @SuppressWarnings("deprecation")
     public void handleMouseEvent(int id, int modifiers, int x, int y) {
         if ((modifiers & InputEvent.BUTTON1_MASK) == 0) {
             return;

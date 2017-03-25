@@ -37,6 +37,7 @@ import java.util.Set;
  * module's content.
  *
  * @since 9
+ * @spec JPMS
  * @see Configuration#modules()
  */
 public final class ResolvedModule {
