@@ -31,11 +31,11 @@
  *          java.base/jdk.internal.reflect
  *          java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.org.objectweb.asm.tree
- *          jdk.vm.ci/jdk.vm.ci.hotspot
- *          jdk.vm.ci/jdk.vm.ci.meta
- *          jdk.vm.ci/jdk.vm.ci.runtime
+ *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
+ *          jdk.internal.vm.ci/jdk.vm.ci.meta
+ *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *
- * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper sun.hotspot.WhiteBox
+ * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
@@ -103,7 +103,7 @@ public class ResolveFieldInPoolTest {
             cached = "cached ";
         }
         for (int j = 0; j < entry.opcodes.length; j++) {
-            long[] info = new long[2];
+            int[] info = new int[3];
             HotSpotResolvedObjectType fieldToVerify
                     = CompilerToVMHelper.resolveFieldInPool(constantPoolCTVM,
                                                            index,
@@ -147,11 +147,11 @@ public class ResolveFieldInPoolTest {
             } catch (Exception ex) {
                 throw new Error("Unexpected exception", ex);
             }
-            long offsetToRefer;
+            int offsetToRefer;
             if ((entry.accFlags & Opcodes.ACC_STATIC) != 0) {
-                offsetToRefer = UNSAFE.staticFieldOffset(fieldToRefer);
+                offsetToRefer = (int) UNSAFE.staticFieldOffset(fieldToRefer);
             } else {
-                offsetToRefer = UNSAFE.objectFieldOffset(fieldToRefer);
+                offsetToRefer = (int) UNSAFE.objectFieldOffset(fieldToRefer);
             }
             msg = String.format("Field offset returned by resolveFieldInPool"
                                         + " method is wrong for the field %s.%s"

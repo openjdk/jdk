@@ -27,7 +27,7 @@
  * @requires vm.jvmci
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
- * @modules jdk.vm.ci/jdk.vm.ci.runtime
+ * @modules jdk.internal.vm.ci/jdk.vm.ci.runtime
  * @run main/othervm -XX:+UnlockExperimentalVMOptions
  *      -Dcompiler.jvmci.JVM_GetJVMCIRuntimeTest.positive=true
  *      -XX:+EnableJVMCI

@@ -188,6 +188,14 @@ public class BootLoader {
     }
 
     /**
+     * Returns {@code true} if there is a class path associated with the
+     * BootLoader.
+     */
+    public static boolean hasClassPath() {
+        return ClassLoaders.bootLoader().hasClassPath();
+    }
+
+    /**
      * Helper class to define {@code Package} objects for packages in modules
      * defined to the boot loader.
      */
