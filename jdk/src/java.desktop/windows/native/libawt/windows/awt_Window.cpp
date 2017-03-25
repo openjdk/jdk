@@ -239,7 +239,9 @@ AwtWindow::AwtWindow() {
 
     fullScreenExclusiveModeState = FALSE;
     m_winSizeMove = FALSE;
-    prevScaleRec = { -1, -1, -1 };
+    prevScaleRec.screen = -1;
+    prevScaleRec.scaleX = -1.0f;
+    prevScaleRec.scaleY = -1.0f;
 }
 
 AwtWindow::~AwtWindow()
