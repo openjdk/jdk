@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,10 +39,10 @@ import static jdk.test.lib.Asserts.*;
 
 public class JVMAddModuleExportToAllUnnamed {
 
-    // Check that a class in a package in module1 cannot access a class
+    // Check that a class in a package in module_one cannot access a class
     // that is in the unnamed module if the accessing package is strict.
     public static void main(String args[]) throws Throwable {
-        Object m1;
+        Object m1x;
 
         // Get the java.lang.reflect.Module object for module java.base.
         Class jlObject = Class.forName("java.lang.Object");
@@ -54,13 +54,13 @@ public class JVMAddModuleExportToAllUnnamed {
         ClassLoader this_cldr = JVMAddModuleExportToAllUnnamed.class.getClassLoader();
 
         // Define a module for p1.
-        m1 = ModuleHelper.ModuleObject("module1", this_cldr, new String[] { "p1" });
-        assertNotNull(m1, "Module should not be null");
-        ModuleHelper.DefineModule(m1, "9.0", "m1/here", new String[] { "p1" });
-        ModuleHelper.AddReadsModule(m1, jlObject_jlrM);
+        m1x = ModuleHelper.ModuleObject("module_one", this_cldr, new String[] { "p1" });
+        assertNotNull(m1x, "Module should not be null");
+        ModuleHelper.DefineModule(m1x, "9.0", "m1x/here", new String[] { "p1" });
+        ModuleHelper.AddReadsModule(m1x, jlObject_jlrM);
 
-        // Make package p1 in m1 visible to everyone.
-        ModuleHelper.AddModuleExportsToAll(m1, "p1");
+        // Make package p1 in m1x visible to everyone.
+        ModuleHelper.AddModuleExportsToAll(m1x, "p1");
 
         // p1.c1's ctor tries to call a method in p2.c2.  This should not work
         // because p2 is in the unnamed module and p1.c1 is strict.
