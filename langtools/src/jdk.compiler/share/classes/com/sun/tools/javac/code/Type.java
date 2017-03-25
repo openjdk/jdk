@@ -30,12 +30,12 @@ import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.Map;
-import java.util.function.Function;
 
 import javax.lang.model.type.*;
 
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.TypeMetadata.Entry;
+import com.sun.tools.javac.code.Types.TypeMapping;
 import com.sun.tools.javac.comp.Infer.IncorporationAction;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.DefinedBy.Api;
@@ -222,18 +222,12 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         this.metadata = metadata;
     }
 
-    /** An abstract class for mappings from types to types
+    /**
+     * A subclass of {@link Types.TypeMapping} which applies a mapping recursively to the subterms
+     * of a given type expression. This mapping returns the original type is no changes occurred
+     * when recursively mapping the original type's subterms.
      */
-    public static abstract class TypeMapping<S> extends Types.MapVisitor<S> implements Function<Type, Type> {
-
-        @Override
-        public Type apply(Type type) {
-            return visit(type);
-        }
-
-        List<Type> visit(List<Type> ts, S s) {
-            return ts.map(t -> visit(t, s));
-        }
+    public static abstract class StructuralTypeMapping<S> extends Types.TypeMapping<S> {
 
         @Override
         public Type visitClassType(ClassType t, S s) {
@@ -296,11 +290,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
                     return true;
                 }
             };
-        }
-
-        @Override
-        public Type visitCapturedType(CapturedType t, S s) {
-            return visitTypeVar(t, s);
         }
 
         @Override
@@ -373,7 +362,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         return accept(stripMetadata, null);
     }
     //where
-        private final static TypeMapping<Void> stripMetadata = new TypeMapping<Void>() {
+        private final static TypeMapping<Void> stripMetadata = new StructuralTypeMapping<Void>() {
             @Override
             public Type visitClassType(ClassType t, Void aVoid) {
                 return super.visitClassType((ClassType)t.typeNoMetadata(), aVoid);
@@ -2125,7 +2114,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             }
         }
         //where
-            TypeMapping<Void> toTypeVarMap = new TypeMapping<Void>() {
+            TypeMapping<Void> toTypeVarMap = new StructuralTypeMapping<Void>() {
                 @Override
                 public Type visitUndetVar(UndetVar uv, Void _unused) {
                     return uv.inst != null ? uv.inst : uv.qtype;
