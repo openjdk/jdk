@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
+import java.util.Collections;
 import java.util.List;
 
 import javax.lang.model.element.Element;
@@ -33,10 +34,10 @@ import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
-import static jdk.javadoc.doclet.taglet.Taglet.Location.*;
+import static jdk.javadoc.doclet.Taglet.Location.*;
 
 /**
- * A taglet wrapper, allows the public taglet {@link jdk.javadoc.doclet.taglet.Taglet}
+ * A taglet wrapper, allows the public taglet {@link jdk.javadoc.doclet.Taglet}
  * wrapped into an internal Taglet representation.
  *
  *  <p><b>This is NOT part of any supported API.
@@ -48,9 +49,9 @@ import static jdk.javadoc.doclet.taglet.Taglet.Location.*;
  */
 public class UserTaglet implements Taglet {
 
-    final private jdk.javadoc.doclet.taglet.Taglet userTaglet;
+    final private jdk.javadoc.doclet.Taglet userTaglet;
 
-    public UserTaglet(jdk.javadoc.doclet.taglet.Taglet t) {
+    public UserTaglet(jdk.javadoc.doclet.Taglet t) {
         userTaglet = t;
     }
 
@@ -131,7 +132,7 @@ public class UserTaglet implements Taglet {
      */
     public Content getTagletOutput(Element element, DocTree tag, TagletWriter writer){
         Content output = writer.getOutputInstance();
-        output.addContent(new RawHtml(userTaglet.toString(tag)));
+        output.addContent(new RawHtml(userTaglet.toString(Collections.singletonList(tag))));
         return output;
     }
 
