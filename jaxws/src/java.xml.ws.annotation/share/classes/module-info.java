@@ -26,6 +26,8 @@
 /**
  * Defines a subset of the Common Annotations API to support programs running
  * on the Java SE Platform.
+ *
+ * @since 9
  */
 module java.xml.ws.annotation {
     exports javax.annotation;

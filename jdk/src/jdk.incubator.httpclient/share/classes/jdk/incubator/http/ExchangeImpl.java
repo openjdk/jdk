@@ -102,16 +102,12 @@ abstract class ExchangeImpl<T> {
 
     // Blocking impl but in async style
 
-    CompletableFuture<Void> sendHeadersAsync() {
-        CompletableFuture<Void> cf = new MinimalFuture<>();
-        try {
-            sendHeadersOnly();
-            cf.complete(null);
-        } catch (Throwable t) {
-            cf.completeExceptionally(t);
-        }
+    CompletableFuture<ExchangeImpl<T>> sendHeadersAsync() {
         // this is blocking. cf will already be completed.
-        return cf;
+        return MinimalFuture.supply(() -> {
+            sendHeadersOnly();
+            return this;
+        });
     }
 
     /**
@@ -121,11 +117,11 @@ abstract class ExchangeImpl<T> {
      */
     abstract Response getResponse() throws IOException;
 
-    abstract T readBody(HttpResponse.BodyHandler<T> handler, boolean returnToCache)
-            throws IOException;
+    abstract T readBody(HttpResponse.BodyHandler<T> handler,
+                        boolean returnConnectionToPool) throws IOException;
 
     abstract CompletableFuture<T> readBodyAsync(HttpResponse.BodyHandler<T> handler,
-                                                boolean returnToCache,
+                                                boolean returnConnectionToPool,
                                                 Executor executor);
 
     // Builtin processors need access to HttpClientImpl
@@ -156,39 +152,13 @@ abstract class ExchangeImpl<T> {
 
     // Async version of sendBody(). This only used when body sent separately
     // to headers (100 continue)
-    CompletableFuture<Void> sendBodyAsync(Executor executor) {
-        CompletableFuture<Void> cf = new MinimalFuture<>();
-        executor.execute(() -> {
-            try {
-                sendBody();
-                cf.complete(null);
-            } catch (Throwable t) {
-                cf.completeExceptionally(t);
-            }
+    CompletableFuture<ExchangeImpl<T>> sendBodyAsync() {
+        return MinimalFuture.supply(() -> {
+            sendBody();
+            return this;
         });
-        return cf;
     }
 
-    /**
-     * Sends the entire request (headers and body) blocking.
-     */
-    void sendRequest() throws IOException, InterruptedException {
-        sendHeadersOnly();
-        sendBody();
-    }
-
-    CompletableFuture<Void> sendRequestAsync(Executor executor) {
-        CompletableFuture<Void> cf = new MinimalFuture<>();
-        executor.execute(() -> {
-            try {
-                sendRequest();
-                cf.complete(null);
-            } catch (Throwable t) {
-                cf.completeExceptionally(t);
-            }
-        });
-        return cf;
-    }
     /**
      * Cancels a request.  Not currently exposed through API.
      */
