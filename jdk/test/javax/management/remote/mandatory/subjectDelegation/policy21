@@ -2,6 +2,7 @@ grant codebase "file:/-" {
     permission javax.security.auth.AuthPermission "createLoginContext.JMXPluggableAuthenticator";
     permission java.net.SocketPermission "*:*", "accept,connect,listen,resolve";
     permission java.security.SecurityPermission "createAccessControlContext";
+    permission java.lang.RuntimePermission "*";
     permission javax.management.MBeanPermission "*", "getDomains";
     permission javax.management.MBeanPermission "SimpleStandard#State[MBeans:type=SimpleStandard]", "getAttribute";
     permission javax.security.auth.AuthPermission "getSubject";

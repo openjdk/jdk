@@ -536,13 +536,18 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
      * @return value of this CRL in a printable form.
      */
     public String toString() {
+        return toStringWithAlgName("" + sigAlgId);
+    }
+
+    // Specifically created for keytool to append a (weak) label to sigAlg
+    public String toStringWithAlgName(String name) {
         StringBuilder sb = new StringBuilder();
         sb.append("X.509 CRL v")
             .append(version+1)
             .append('\n');
         if (sigAlgId != null)
             sb.append("Signature Algorithm: ")
-                .append(sigAlgId)
+                .append(name)
                 .append(", OID=")
                 .append(sigAlgId.getOID())
                 .append('\n');

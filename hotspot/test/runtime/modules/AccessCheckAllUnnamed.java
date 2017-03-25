@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ public class AccessCheckAllUnnamed {
     // and then test that a class in the unnamed module can access a package in a
     // named module that has been exported to all unnamed modules.
     public static void main(String args[]) throws Throwable {
-        Object m1, m2;
+        Object m1x, m2x;
 
         // Get the java.lang.reflect.Module object for module java.base.
         Class jlObject = Class.forName("java.lang.Object");
@@ -55,16 +55,16 @@ public class AccessCheckAllUnnamed {
         ClassLoader this_cldr = AccessCheckAllUnnamed.class.getClassLoader();
 
         // Define a module for p3.
-        m1 = ModuleHelper.ModuleObject("module1", this_cldr, new String[] { "p3" });
-        assertNotNull(m1, "Module should not be null");
-        ModuleHelper.DefineModule(m1, "9.0", "m1/there", new String[] { "p3" });
-        ModuleHelper.AddReadsModule(m1, jlObject_jlrM);
+        m1x = ModuleHelper.ModuleObject("module_one", this_cldr, new String[] { "p3" });
+        assertNotNull(m1x, "Module should not be null");
+        ModuleHelper.DefineModule(m1x, "9.0", "m1x/there", new String[] { "p3" });
+        ModuleHelper.AddReadsModule(m1x, jlObject_jlrM);
 
         // Define a module for p2.
-        m2 = ModuleHelper.ModuleObject("module2", this_cldr, new String[] { "p2" });
-        assertNotNull(m2, "Module should not be null");
-        ModuleHelper.DefineModule(m2, "9.0", "m2/there", new String[] { "p2" });
-        ModuleHelper.AddReadsModule(m2, jlObject_jlrM);
+        m2x = ModuleHelper.ModuleObject("module_two", this_cldr, new String[] { "p2" });
+        assertNotNull(m2x, "Module should not be null");
+        ModuleHelper.DefineModule(m2x, "9.0", "m2x/there", new String[] { "p2" });
+        ModuleHelper.AddReadsModule(m2x, jlObject_jlrM);
 
         try {
             ModuleHelper.AddModuleExportsToAllUnnamed((Module)null, "p2");
@@ -74,7 +74,7 @@ public class AccessCheckAllUnnamed {
         }
 
         try {
-            ModuleHelper.AddModuleExportsToAllUnnamed(m2, null);
+            ModuleHelper.AddModuleExportsToAllUnnamed(m2x, null);
             throw new RuntimeException("Failed to get the expected NPE for null package");
         } catch(NullPointerException e) {
             // Expected
@@ -88,21 +88,21 @@ public class AccessCheckAllUnnamed {
         }
 
         try {
-            ModuleHelper.AddModuleExportsToAllUnnamed(m2, "p3");
+            ModuleHelper.AddModuleExportsToAllUnnamed(m2x, "p3");
             throw new RuntimeException("Failed to get the expected IAE for package in other module");
         } catch(IllegalArgumentException e) {
             // Expected
         }
 
         try {
-            ModuleHelper.AddModuleExportsToAllUnnamed(m2, "p4");
+            ModuleHelper.AddModuleExportsToAllUnnamed(m2x, "p4");
             throw new RuntimeException("Failed to get the expected IAE for package not in module");
         } catch(IllegalArgumentException e) {
             // Expected
         }
 
-        // Export package p2 in m2 to allUnnamed.
-        ModuleHelper.AddModuleExportsToAllUnnamed(m2, "p2");
+        // Export package p2 in m2x to allUnnamed.
+        ModuleHelper.AddModuleExportsToAllUnnamed(m2x, "p2");
 
         // p1.c1's ctor tries to call a method in p2.c2.  This should succeed because
         // p1 is in an unnamed module and p2.c2 is exported to all unnamed modules.

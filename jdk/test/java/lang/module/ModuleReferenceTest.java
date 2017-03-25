@@ -31,6 +31,7 @@ import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleReader;
 import java.lang.module.ModuleReference;
 import java.net.URI;
+import java.util.Set;
 
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
@@ -49,10 +50,10 @@ public class ModuleReferenceTest {
 
     public void testBasic() throws Exception {
         ModuleDescriptor descriptor
-            = ModuleDescriptor.module("m")
+            = ModuleDescriptor.newModule("m")
                 .exports("p")
                 .exports("q")
-                .contains("p.internal")
+                .packages(Set.of("p.internal"))
                 .build();
 
         URI uri = URI.create("module:/m");
@@ -71,7 +72,7 @@ public class ModuleReferenceTest {
 
     public void testNullLocation() {
         ModuleDescriptor descriptor
-            = ModuleDescriptor.module("m")
+            = ModuleDescriptor.newModule("m")
                 .exports("p")
                 .build();
         ModuleReference mref = newModuleReference(descriptor, null);

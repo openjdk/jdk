@@ -79,9 +79,9 @@ public abstract class AbstractAnnotationValueVisitor6<R, P>
     protected AbstractAnnotationValueVisitor6() {}
 
     /**
-     * Visits an annotation value as if by passing itself to that
+     * Visits any annotation value as if by passing itself to that
      * value's {@link AnnotationValue#accept accept}.  The invocation
-     * {@code v.visit(av)} is equivalent to {@code av.accept(v, p)}.
+     * {@code v.visit(av, p)} is equivalent to {@code av.accept(v, p)}.
      * @param av {@inheritDoc}
      * @param p  {@inheritDoc}
      */
@@ -106,7 +106,7 @@ public abstract class AbstractAnnotationValueVisitor6<R, P>
      *
      * @implSpec The default implementation of this method in {@code
      * AbstractAnnotationValueVisitor6} will always throw {@code
-     * UnknownAnnotationValueException}.  This behavior is not
+     * new UnknownAnnotationValueException(av, p)}.  This behavior is not
      * required of a subclass.
      *
      * @param av {@inheritDoc}

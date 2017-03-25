@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,6 @@ public class BasicLauncherTest {
 
             try (OutputStream out = toolProcess.getOutputStream()) {
                 out.write("universe\n".getBytes());
-                out.write("printmdo -a\n".getBytes());
                 out.write("quit\n".getBytes());
             }
 
@@ -94,13 +93,6 @@ public class BasicLauncherTest {
             try (BufferedReader reader =
                  new BufferedReader(new InputStreamReader(toolProcess.getInputStream()))) {
                 String line;
-                String unexpectedMsg =
-                   "One or more of 'VirtualCallData', 'CounterData', " +
-                   "'ReceiverTypeData', 'bci', 'MethodData' "  +
-                   "or 'java/lang/Object' not found";
-                boolean knownClassFound = false;
-                boolean knownProfileDataTypeFound = false;
-                boolean knownTokensFound = false;
 
                 while ((line = reader.readLine()) != null) {
                     line = line.trim();
@@ -110,27 +102,6 @@ public class BasicLauncherTest {
                         unexpected = new RuntimeException("CollectedHeap type should be known.");
                         break;
                     }
-                    else if (line.contains("missing reason for ")) {
-                        unexpected = new RuntimeException("missing reason for ");
-                        break;
-                    }
-                    if (line.contains("VirtualCallData")  ||
-                        line.contains("CounterData")      ||
-                        line.contains("ReceiverTypeData")) {
-                        knownProfileDataTypeFound = true;
-                    }
-                    if (line.contains("bci") ||
-                        line.contains("MethodData")) {
-                        knownTokensFound = true;
-                    }
-                    if (line.contains("java/lang/Object")) {
-                        knownClassFound = true;
-                    }
-                }
-                if ((knownClassFound           == false)  ||
-                    (knownTokensFound          == false)  ||
-                    (knownProfileDataTypeFound == false)) {
-                    unexpected = new RuntimeException(unexpectedMsg);
                 }
             }
 
@@ -144,9 +115,6 @@ public class BasicLauncherTest {
                 throw unexpected;
             }
 
-            if (unexpected != null) {
-                throw unexpected;
-            }
         } catch (Exception ex) {
             throw new RuntimeException("Test ERROR " + ex, ex);
         } finally {

@@ -79,7 +79,7 @@ public class ProxyLayerTest {
         Layer bootLayer = Layer.boot();
         Configuration cf = bootLayer
                 .configuration()
-                .resolveRequiresAndUses(ModuleFinder.of(), finder, Arrays.asList(modules));
+                .resolveAndBind(ModuleFinder.of(), finder, Arrays.asList(modules));
         ClassLoader scl = ClassLoader.getSystemClassLoader();
         Layer layer = bootLayer.defineModulesWithOneLoader(cf, scl);
 
@@ -113,7 +113,7 @@ public class ProxyLayerTest {
         Layer bootLayer = Layer.boot();
         Configuration cf = bootLayer
                 .configuration()
-                .resolveRequiresAndUses(ModuleFinder.of(), finder, Arrays.asList(modules));
+                .resolveAndBind(ModuleFinder.of(), finder, Arrays.asList(modules));
         ClassLoader scl = ClassLoader.getSystemClassLoader();
         Layer layer = bootLayer.defineModulesWithOneLoader(cf, scl);
 
@@ -143,7 +143,7 @@ public class ProxyLayerTest {
         Layer bootLayer = Layer.boot();
         Configuration cf = bootLayer
                 .configuration()
-                .resolveRequiresAndUses(ModuleFinder.of(), finder, Arrays.asList(modules));
+                .resolveAndBind(ModuleFinder.of(), finder, Arrays.asList(modules));
         ClassLoader scl = ClassLoader.getSystemClassLoader();
         Layer layer = bootLayer.defineModulesWithOneLoader(cf, scl);
 
