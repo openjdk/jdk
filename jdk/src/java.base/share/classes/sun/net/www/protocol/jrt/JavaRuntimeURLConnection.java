@@ -32,7 +32,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.AccessController;
 import java.security.Permission;
+import java.security.PrivilegedAction;
 
 import jdk.internal.jimage.ImageLocation;
 import jdk.internal.jimage.ImageReader;
@@ -51,7 +53,11 @@ import sun.security.action.GetPropertyAction;
 public class JavaRuntimeURLConnection extends URLConnection {
 
     // ImageReader to access resources in jimage
-    private static final ImageReader reader = ImageReaderFactory.getImageReader();
+    private static final ImageReader reader;
+    static {
+        PrivilegedAction<ImageReader> pa = ImageReaderFactory::getImageReader;
+        reader = AccessController.doPrivileged(pa);
+    }
 
     // the module and resource name in the URL
     private final String module;
