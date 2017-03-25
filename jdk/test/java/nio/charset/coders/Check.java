@@ -24,6 +24,7 @@
 /* @test
  * @bug 4712786
  * @summary Check charsets against reference files
+ * @modules jdk.charsets
  *
  * @build Util
  * @run main Check shift_jis ref.shift_jis

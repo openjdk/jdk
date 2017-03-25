@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,24 +224,11 @@ void AwtRobot::GetRGBPixels(jint x, jint y, jint width, jint height, jintArray p
         AwtWin32GraphicsDevice::SelectPalette(hdcMem, primaryIndex);
     AwtWin32GraphicsDevice::RealizePalette(hdcMem, primaryIndex);
 
-    Devices::InstanceAccess devices;
-    AwtWin32GraphicsDevice *device = devices->GetDevice(primaryIndex);
-    int sWidth = (device == NULL) ? width : device->ScaleUpX(width);
-    int sHeight = (device == NULL) ? height : device->ScaleUpY(height);
-
     // copy screen image to offscreen bitmap
     // CAPTUREBLT flag is required to capture WS_EX_LAYERED windows' contents
     // correctly on Win2K/XP
-    if (width == sWidth && height == sHeight) {
-        VERIFY(::BitBlt(hdcMem, 0, 0, width, height, hdcScreen, x, y,
-               SRCCOPY | CAPTUREBLT) != 0);
-    } else {
-        int sX = (device == NULL) ? x : device->ScaleUpX(x);
-        int sY = (device == NULL) ? y : device->ScaleUpY(y);
-        VERIFY(::StretchBlt(hdcMem, 0, 0, width, height,
-               hdcScreen, sX, sY, sWidth, sHeight,
-               SRCCOPY | CAPTUREBLT) != 0);
-    }
+    VERIFY(::BitBlt(hdcMem, 0, 0, width, height, hdcScreen, x, y,
+           SRCCOPY | CAPTUREBLT) != 0);
 
     static const int BITS_PER_PIXEL = 32;
     static const int BYTES_PER_PIXEL = BITS_PER_PIXEL/8;

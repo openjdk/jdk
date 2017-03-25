@@ -70,18 +70,17 @@ JNIEXPORT jint JNICALL Java_jdk_tools_jaotc_jnilibelf_JNILibELFAPI_elf_1version
  */
 
 static jlong getNativeAddress(JNIEnv* env, jobject ptrObj) {
-   jclass ptrClass;
-   jfieldID fidNumber;
    jlong nativeAddress = -1;
-    assert (ptrObj != NULL);
+   assert (ptrObj != NULL);
    // Get a reference to ptr object's class
-   ptrClass = (*env)->GetObjectClass(env, ptrObj);
-
-   // Get the Field ID of the instance variables "address"
-   fidNumber = (*env)->GetFieldID(env, ptrClass, "address", "J");
-   if (fidNumber != NULL) {
-       // Get the long given the Field ID
-       nativeAddress = (*env)->GetLongField(env, ptrObj, fidNumber);
+   jclass ptrClass = (*env)->GetObjectClass(env, ptrObj);
+   if (ptrClass != NULL) {
+       // Get the Field ID of the instance variables "address"
+       jfieldID fidNumber = (*env)->GetFieldID(env, ptrClass, "address", "J");
+       if (fidNumber != NULL) {
+           // Get the long given the Field ID
+           nativeAddress = (*env)->GetLongField(env, ptrObj, fidNumber);
+       }
    }
    // fprintf(stderr, "Native address : %lx\n", nativeAddress);
    return nativeAddress;
@@ -91,10 +90,15 @@ static jlong getNativeAddress(JNIEnv* env, jobject ptrObj) {
  * Box the nativeAddress as a Pointer object.
  */
 static jobject makePointerObject(JNIEnv* env, jlong nativeAddr) {
+   jobject retObj = NULL;
    jclass ptrClass = (*env)->FindClass(env, "jdk/tools/jaotc/jnilibelf/Pointer");
-   // Call back constructor to allocate a Pointer object, with an int argument
-   jmethodID constructorId = (*env)->GetMethodID(env, ptrClass, "<init>", "(J)V");
-   jobject retObj = (*env)->NewObject(env, ptrClass, constructorId, nativeAddr);
+   if (ptrClass != NULL) {
+       // Call back constructor to allocate a Pointer object, with an int argument
+       jmethodID constructorId = (*env)->GetMethodID(env, ptrClass, "<init>", "(J)V");
+       if (constructorId != NULL) {
+           retObj = (*env)->NewObject(env, ptrClass, constructorId, nativeAddr);
+       }
+   }
    return retObj;
 }
 

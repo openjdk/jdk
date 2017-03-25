@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@
 package com.sun.xml.internal.messaging.saaj.packaging.mime.internet;
 
 
-import com.sun.xml.internal.messaging.saaj.packaging.mime.Header;
 import com.sun.xml.internal.messaging.saaj.packaging.mime.MessagingException;
 import com.sun.xml.internal.messaging.saaj.packaging.mime.util.OutputUtil;
 import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
@@ -52,12 +51,12 @@ import com.sun.xml.internal.org.jvnet.mimepull.MIMEPart;
 /**
  * This class represents a MIME body part.
  * MimeBodyParts are contained in <code>MimeMultipart</code>
- * objects. <p>
- *
+ * objects.
+ * <p>
  * MimeBodyPart uses the <code>InternetHeaders</code> class to parse
- * and store the headers of that body part. <p>
+ * and store the headers of that body part.
  *
- * <hr><strong>A note on RFC 822 and MIME headers</strong><p>
+ * <hr><strong>A note on RFC 822 and MIME headers</strong>
  *
  * RFC 822 header fields <strong>must</strong> contain only
  * US-ASCII characters. MIME allows non ASCII characters to be present
@@ -70,7 +69,7 @@ import com.sun.xml.internal.org.jvnet.mimepull.MIMEPart;
  * header fields must be folded (wrapped) before being sent if they
  * exceed the line length limitation for the transport (1000 bytes for
  * SMTP).  Received headers may have been folded.  The application is
- * responsible for folding and unfolding headers as appropriate. <p>
+ * responsible for folding and unfolding headers as appropriate.
  *
  * @author John Mani
  * @author Bill Shannon
@@ -179,6 +178,8 @@ public final class MimeBodyPart {
      * the delimiter strings.
      *
      * @param   is      the body part Input Stream
+     *
+     * @exception MessagingException in case of error
      */
     public MimeBodyPart(InputStream is) throws MessagingException {
         if (!(is instanceof ByteArrayInputStream) &&
@@ -216,6 +217,7 @@ public final class MimeBodyPart {
      *
      * @param   headers The header of this part
      * @param   content bytes representing the body of this part.
+     * @param   len content length.
      */
     public MimeBodyPart(InternetHeaders headers, byte[] content, int len) {
         this.headers = headers;
@@ -242,6 +244,7 @@ public final class MimeBodyPart {
     /**
      * Return the containing <code>MimeMultipart</code> object,
      * or <code>null</code> if not known.
+     * @return parent part.
      */
     public MimeMultipart getParent() {
         return parent;
@@ -253,6 +256,7 @@ public final class MimeBodyPart {
      * <code>addBodyPart</code> method.  <code>parent</code> may be
      * <code>null</code> if the <code>MimeBodyPart</code> is being removed
      * from its containing <code>MimeMultipart</code>.
+     * @param parent parent part
      * @since   JavaMail 1.1
      */
     public void setParent(MimeMultipart parent) {
@@ -351,6 +355,9 @@ public final class MimeBodyPart {
      * If the <code>subType</code> of <code>mimeType</code> is the
      * special character '*', then the subtype is ignored during the
      * comparison.
+     *
+     * @param mimeType string
+     * @return true if it is valid mime type
      */
     public boolean isMimeType(String mimeType) {
         boolean result;
@@ -375,6 +382,9 @@ public final class MimeBodyPart {
      * This implementation uses <code>getHeader(name)</code>
      * to obtain the requisite header field.
      *
+     * @return content disposition
+     * @exception MessagingException in case of error
+     *
      * @see #headers
      */
     public String getDisposition() throws MessagingException {
@@ -392,6 +402,9 @@ public final class MimeBodyPart {
      * If the disposition is null, any existing "Content-Disposition"
      * header field is removed.
      *
+     * @param disposition value
+     *
+     * @exception MessagingException in case of error
      * @exception       IllegalStateException if this body part is
      *                  obtained from a READ_ONLY folder.
      */
@@ -422,6 +435,9 @@ public final class MimeBodyPart {
      *
      * This implementation uses <code>getHeader(name)</code>
      * to obtain the requisite header field.
+     *
+     * @return encoding
+     * @exception MessagingException in case of error
      *
      * @see #headers
      */
@@ -465,6 +481,8 @@ public final class MimeBodyPart {
      *
      * This implementation uses <code>getHeader(name)</code>
      * to obtain the requisite header field.
+     *
+     * @return conent id
      */
     public String getContentID() {
         return getHeader("Content-ID", null);
@@ -475,6 +493,7 @@ public final class MimeBodyPart {
      * If the <code>cid</code> parameter is null, any existing
      * "Content-ID" is removed.
      *
+     * @param cid content id
      * @exception       IllegalStateException if this body part is
      *                  obtained from a READ_ONLY folder.
      * @since           JavaMail 1.3
@@ -493,6 +512,8 @@ public final class MimeBodyPart {
      *
      * This implementation uses <code>getHeader(name)</code>
      * to obtain the requisite header field.
+     *
+     * @return content MD5 sum
      */
     public String getContentMD5() {
         return getHeader("Content-MD5", null);
@@ -500,6 +521,8 @@ public final class MimeBodyPart {
 
     /**
      * Set the "Content-MD5" header field of this body part.
+     *
+     * @param md5 content md5 sum
      *
      * @exception       IllegalStateException if this body part is
      *                  obtained from a READ_ONLY folder.
@@ -516,6 +539,9 @@ public final class MimeBodyPart {
      *
      * This implementation uses <code>getHeader(name)</code>
      * to obtain the requisite header field.
+     *
+     * @return array of language tags
+     * @exception MessagingException in case of error
      */
     public String[] getContentLanguage() throws MessagingException {
         String s = getHeader("Content-Language", null);
@@ -663,6 +689,7 @@ public final class MimeBodyPart {
      * Returns <code>null</code> if both are absent.
      *
      * @return  filename
+     * @exception MessagingException in case of error
      */
     public String getFileName() throws MessagingException {
         String filename = null;
@@ -692,6 +719,9 @@ public final class MimeBodyPart {
      * Sets the "filename" parameter of the "Content-Disposition"
      * header field of this body part.
      *
+     * @param filename filename
+     *
+     * @exception MessagingException in case of error
      * @exception       IllegalStateException if this body part is
      *                  obtained from a READ_ONLY folder.
      */
@@ -769,9 +799,14 @@ public final class MimeBodyPart {
      * This implementation simply calls the <code>getContentStream</code>
      * method.
      *
+     * @return input stream
+     *
+     * @exception MessagingException in case of error
+     *
      * @see     #getInputStream
      * @see     #getContentStream
      * @since   JavaMail 1.2
+     *
      */
     public InputStream getRawInputStream() throws MessagingException {
         return getContentStream();
@@ -782,24 +817,30 @@ public final class MimeBodyPart {
      *
      * The implementation provided here works just like the
      * the implementation in MimeMessage.
+     *
+     * @return data handler
      */
     public DataHandler getDataHandler() {
         if (mimePart != null) {
             //return an inputstream
             return new DataHandler(new DataSource() {
 
+                @Override
                 public InputStream getInputStream() throws IOException {
                     return mimePart.read();
                 }
 
+                @Override
                 public OutputStream getOutputStream() throws IOException {
                     throw new UnsupportedOperationException("getOutputStream cannot be supported : You have enabled LazyAttachments Option");
                 }
 
+                @Override
                 public String getContentType() {
                     return mimePart.getContentType();
                 }
 
+                @Override
                 public String getName() {
                     return "MIMEPart Wrapped DataSource";
                 }
@@ -890,6 +931,8 @@ public final class MimeBodyPart {
      * If the charset is already known, use the
      * setText() version that takes the charset parameter.
      *
+     * @param text string
+     *
      * @see     #setText(String text, String charset)
      */
     public void setText(String text) {
@@ -902,6 +945,9 @@ public final class MimeBodyPart {
      * charset. The given Unicode string will be charset-encoded
      * using the specified charset. The charset is also used to set
      * the "charset" parameter.
+     *
+     * @param text string
+     * @param charset character set
      */
     public void setText(String text, String charset) {
         if (charset == null) {
@@ -932,7 +978,9 @@ public final class MimeBodyPart {
     /**
      * Output the body part as an RFC 822 format stream.
      *
-     * @exception MessagingException
+     * @param os output stream
+     *
+     * @exception MessagingException in case of error
      * @exception IOException   if an error occurs writing to the
      *                          stream or if an error is generated
      *                          by the javax.activation layer.
@@ -1033,6 +1081,8 @@ public final class MimeBodyPart {
 
     /**
      * Remove all headers with this name.
+     *
+     * @param name header name
      */
     public void removeHeader(String name) {
         headers.removeHeader(name);
@@ -1041,14 +1091,18 @@ public final class MimeBodyPart {
     /**
      * Return all the headers from this Message as an Enumeration of
      * Header objects.
+     *
+     * @return all headers
      */
-    public List<? extends Header> getAllHeaders() {
+    public FinalArrayList<hdr> getAllHeaders() {
         return headers.getAllHeaders();
     }
 
 
     /**
      * Add a header line to this body part
+     *
+     * @param line header line to add
      */
     public void addHeaderLine(String line) {
         headers.addHeaderLine(line);
@@ -1075,6 +1129,8 @@ public final class MimeBodyPart {
      * <br>
      * In both cases this method is typically called by the
      * <code>Message.saveChanges</code> method.
+     *
+     * @exception MessagingException in case of error.
      */
     protected void updateHeaders() throws MessagingException {
         DataHandler dh = getDataHandler();

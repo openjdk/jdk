@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * in the same JVM as the JShell-core.
  *
  * @author Grigory Ptashko
+ * @since 9
  */
 public class LocalExecutionControl extends DirectExecutionControl {
 
