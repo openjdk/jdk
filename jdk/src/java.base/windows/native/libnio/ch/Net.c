@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,13 +50,13 @@
 
 #endif  /* MCAST_BLOCK_SOURCE */
 
-typedef struct my_ip_mreq_source {
+struct my_ip_mreq_source {
     IN_ADDR imr_multiaddr;
     IN_ADDR imr_sourceaddr;
     IN_ADDR imr_interface;
 };
 
-typedef struct my_group_source_req {
+struct my_group_source_req {
     ULONG gsr_interface;
     SOCKADDR_STORAGE gsr_group;
     SOCKADDR_STORAGE gsr_source;

@@ -23,6 +23,11 @@
  * questions.
  */
 
+/**
+ * The SunPKCS11 security provider.
+ *
+ * @since 9
+ */
 module jdk.crypto.cryptoki {
     // Depends on SunEC provider for EC related functionality
     requires jdk.crypto.ec;
