@@ -27,7 +27,6 @@ package jdk.incubator.http;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.SocketPermission;
 import java.net.URI;
@@ -71,7 +70,6 @@ final class Exchange<T> {
     final Executor parentExecutor;
     final HttpRequest.BodyProcessor requestProcessor;
     boolean upgrading; // to HTTP/2
-    volatile Executor responseExecutor;
     final PushGroup<?,T> pushGroup;
 
     // buffer for receiving response headers
@@ -135,11 +133,13 @@ final class Exchange<T> {
     }
 
     public T readBody(HttpResponse.BodyHandler<T> responseHandler) throws IOException {
-        return exchImpl.readBody(responseHandler, true);
+        // The connection will not be returned to the pool in the case of WebSocket
+        return exchImpl.readBody(responseHandler, !request.isWebSocket());
     }
 
     public CompletableFuture<T> readBodyAsync(HttpResponse.BodyHandler<T> handler) {
-        return exchImpl.readBodyAsync(handler, true, responseExecutor);
+        // The connection will not be returned to the pool in the case of WebSocket
+        return exchImpl.readBodyAsync(handler, !request.isWebSocket(), parentExecutor);
     }
 
     public void cancel() {
@@ -224,7 +224,8 @@ final class Exchange<T> {
 
             return checkForUpgrade(resp, exchImpl);
         } else {
-            exchImpl.sendRequest();
+            exchImpl.sendHeadersOnly();
+            exchImpl.sendBody();
             Response resp = exchImpl.getResponse();
             HttpResponseImpl.logResponse(resp);
             return checkForUpgrade(resp, exchImpl);
@@ -235,8 +236,6 @@ final class Exchange<T> {
     // will be a non null responseAsync if expect continue returns an error
 
     public CompletableFuture<Response> responseAsync() {
-        // take one thread from supplied executor to handle response headers and body
-        responseExecutor = Utils.singleThreadExecutor(parentExecutor);
         return responseAsyncImpl(null);
     }
 
@@ -267,20 +266,18 @@ final class Exchange<T> {
             Log.logTrace("Sending Expect: 100-Continue");
             return exchImpl
                     .sendHeadersAsync()
-                    .thenCompose((v) -> exchImpl.getResponseAsync(responseExecutor))
+                    .thenCompose(v -> exchImpl.getResponseAsync(parentExecutor))
                     .thenCompose((Response r1) -> {
                         HttpResponseImpl.logResponse(r1);
                         int rcode = r1.statusCode();
                         if (rcode == 100) {
                             Log.logTrace("Received 100-Continue: sending body");
-                            return exchImpl.sendBodyAsync(parentExecutor)
-                                .thenCompose((v) -> exchImpl.getResponseAsync(responseExecutor))
-                                .thenCompose((Response r2) -> {
-                                    return checkForUpgradeAsync(r2, exchImpl);
-                                }).thenApply((Response r) -> {
-                                    HttpResponseImpl.logResponse(r);
-                                    return r;
-                                });
+                            CompletableFuture<Response> cf =
+                                    exchImpl.sendBodyAsync()
+                                            .thenCompose(exIm -> exIm.getResponseAsync(parentExecutor));
+                            cf = wrapForUpgrade(cf);
+                            cf = wrapForLog(cf);
+                            return cf;
                         } else {
                             Log.logTrace("Expectation failed: Received {0}",
                                          rcode);
@@ -289,24 +286,36 @@ final class Exchange<T> {
                                         "Unable to handle 101 while waiting for 100");
                                 return MinimalFuture.failedFuture(failed);
                             }
-                            return exchImpl.readBodyAsync(this::ignoreBody, false, responseExecutor)
-                                  .thenApply((v) -> {
-                                      return r1;
-                                  });
+                            return exchImpl.readBodyAsync(this::ignoreBody, false, parentExecutor)
+                                  .thenApply(v ->  r1);
                         }
                     });
         } else {
-            return exchImpl
-                .sendRequestAsync(parentExecutor)
-                .thenCompose((v) -> exchImpl.getResponseAsync(responseExecutor))
-                .thenCompose((Response r1) -> {
-                    return checkForUpgradeAsync(r1, exchImpl);
-                })
-                .thenApply((Response response) -> {
-                    HttpResponseImpl.logResponse(response);
-                    return response;
-                });
+            CompletableFuture<Response> cf = exchImpl
+                    .sendHeadersAsync()
+                    .thenCompose(ExchangeImpl::sendBodyAsync)
+                    .thenCompose(exIm -> exIm.getResponseAsync(parentExecutor));
+            cf = wrapForUpgrade(cf);
+            cf = wrapForLog(cf);
+            return cf;
         }
+    }
+
+    private CompletableFuture<Response> wrapForUpgrade(CompletableFuture<Response> cf) {
+        if (upgrading) {
+            return cf.thenCompose(r -> checkForUpgradeAsync(r, exchImpl));
+        }
+        return cf;
+    }
+
+    private CompletableFuture<Response> wrapForLog(CompletableFuture<Response> cf) {
+        if (Log.requests()) {
+            return cf.thenApply(response -> {
+                HttpResponseImpl.logResponse(response);
+                return response;
+            });
+        }
+        return cf;
     }
 
     HttpResponse.BodyProcessor<T> ignoreBody(int status, HttpHeaders hdrs) {
