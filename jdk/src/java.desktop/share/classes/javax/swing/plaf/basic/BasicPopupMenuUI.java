@@ -268,6 +268,7 @@ public class BasicPopupMenuUI extends PopupMenuUI {
         return list;
     }
 
+    @SuppressWarnings("deprecation")
     public boolean isPopupTrigger(MouseEvent e) {
         return ((e.getID()==MouseEvent.MOUSE_RELEASED)
                 && ((e.getModifiers() & MouseEvent.BUTTON3_MASK)!=0));

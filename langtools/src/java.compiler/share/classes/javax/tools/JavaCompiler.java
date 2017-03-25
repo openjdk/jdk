@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package javax.tools;
 
-import java.io.File;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.Locale;
@@ -296,6 +295,19 @@ public interface JavaCompiler extends Tool, OptionChecker {
      * {@linkplain #setProcessors setProcessors} method.
      */
     interface CompilationTask extends Callable<Boolean> {
+        /**
+         * Adds root modules to be taken into account during module
+         * resolution.
+         * Invalid module names may cause either
+         * {@code IllegalArgumentException} to be thrown,
+         * or diagnostics to be reported when the task is started.
+         * @param moduleNames the names of the root modules
+         * @throws IllegalArgumentException may be thrown for some
+         *      invalid module names
+         * @throws IllegalStateException if the task has started
+         * @since 9
+         */
+        void addModules(Iterable<String> moduleNames);
 
         /**
          * Sets processors (for annotation processing).  This will
@@ -307,7 +319,7 @@ public interface JavaCompiler extends Tool, OptionChecker {
         void setProcessors(Iterable<? extends Processor> processors);
 
         /**
-         * Set the locale to be applied when formatting diagnostics and
+         * Sets the locale to be applied when formatting diagnostics and
          * other localized data.
          *
          * @param locale the locale to apply; {@code null} means apply no
@@ -330,6 +342,7 @@ public interface JavaCompiler extends Tool, OptionChecker {
          * in user code.
          * @throws IllegalStateException if called more than once
          */
+        @Override
         Boolean call();
     }
 }
