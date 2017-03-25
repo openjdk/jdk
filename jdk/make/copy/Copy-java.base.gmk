@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -235,8 +235,8 @@ endif
 
 # JDK license and assembly exception files to be packaged in JMOD
 
-JDK_LICENSE ?= $(JDK_TOPDIR)/LICENSE
-JDK_NOTICE  ?= $(JDK_TOPDIR)/ASSEMBLY_EXCEPTION
+JDK_LICENSE ?= $(TOPDIR)/LICENSE
+JDK_NOTICE  ?= $(TOPDIR)/ASSEMBLY_EXCEPTION
 
 $(eval $(call SetupCopyFiles, COPY_JDK_NOTICES, \
     FILES := $(JDK_LICENSE) $(JDK_NOTICE), \

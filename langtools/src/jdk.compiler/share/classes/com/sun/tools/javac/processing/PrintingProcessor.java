@@ -55,7 +55,7 @@ import com.sun.tools.javac.util.StringUtils;
  * deletion without notice.</b>
  */
 @SupportedAnnotationTypes("*")
-@SupportedSourceVersion(SourceVersion.RELEASE_9)
+@SupportedSourceVersion(SourceVersion.RELEASE_10)
 public class PrintingProcessor extends AbstractProcessor {
     PrintWriter writer;
 
@@ -323,72 +323,77 @@ public class PrintingProcessor extends AbstractProcessor {
 
         private void printDirective(ModuleElement.Directive directive) {
             indent();
-            switch (directive.getKind()) {
-            case EXPORTS: // "exports package-name [to module-name-list]"
-                {
-                    ExportsDirective exportsDirective = (ExportsDirective) directive;
-                    writer.print("exports ");
-                    writer.print(exportsDirective.getPackage().getQualifiedName());
-                    printModuleList(exportsDirective.getTargetModules());
-                }
-                break;
-
-            case OPENS: // opens package-name [to module-name-list]
-                {
-                    OpensDirective opensDirective = (OpensDirective) directive;
-                    writer.print("opens ");
-                    writer.print(opensDirective.getPackage().getQualifiedName());
-                    printModuleList(opensDirective.getTargetModules());
-                }
-                break;
-
-            case PROVIDES: // provides service-name with implementation-name
-                {
-                    ProvidesDirective providesDirective = (ProvidesDirective) directive;
-                    writer.print("provides ");
-                    writer.print(providesDirective.getService().getQualifiedName());
-                    writer.print(" with ");
-                    printNameableList(providesDirective.getImplementations());
-                }
-                break;
-
-            case REQUIRES: // requires (static|transitive)* module-name
-                {
-                    RequiresDirective requiresDirective = (RequiresDirective) directive;
-                    writer.print("requires ");
-                    if (requiresDirective.isStatic())
-                        writer.print("static ");
-                    if (requiresDirective.isTransitive())
-                        writer.print("transitive ");
-                    writer.print(requiresDirective.getDependency().getQualifiedName());
-                }
-                break;
-
-            case USES: // uses service-name
-                {
-                    UsesDirective usesDirective = (UsesDirective) directive;
-                    writer.print("uses ");
-                    writer.print(usesDirective.getService().getQualifiedName());
-                }
-                break;
-
-            default:
-                throw new UnsupportedOperationException("unknown directive " + directive);
-            }
+            (new PrintDirective(writer)).visit(directive);
             writer.println(";");
         }
 
-        private void printModuleList(List<? extends ModuleElement> modules) {
-            if (modules != null) {
-                writer.print(" to ");
-                printNameableList(modules);
-            }
-        }
+        private static class PrintDirective implements ModuleElement.DirectiveVisitor<Void, Void> {
+            private final PrintWriter writer;
 
-        private void printNameableList(List<? extends QualifiedNameable> nameables) {
+            PrintDirective(PrintWriter writer) {
+                this.writer = writer;
+            }
+
+            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            public Void visitExports(ExportsDirective d, Void p) {
+                // "exports package-name [to module-name-list]"
+                writer.print("exports ");
+                writer.print(d.getPackage().getQualifiedName());
+                printModuleList(d.getTargetModules());
+                return null;
+            }
+
+            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            public Void visitOpens(OpensDirective d, Void p) {
+                // opens package-name [to module-name-list]
+                writer.print("opens ");
+                writer.print(d.getPackage().getQualifiedName());
+                printModuleList(d.getTargetModules());
+                return null;
+            }
+
+            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            public Void visitProvides(ProvidesDirective d, Void p) {
+                // provides service-name with implementation-name
+                writer.print("provides ");
+                writer.print(d.getService().getQualifiedName());
+                writer.print(" with ");
+                printNameableList(d.getImplementations());
+                return null;
+            }
+
+            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            public Void visitRequires(RequiresDirective d, Void p) {
+                // requires (static|transitive)* module-name
+                writer.print("requires ");
+                if (d.isStatic())
+                    writer.print("static ");
+                if (d.isTransitive())
+                    writer.print("transitive ");
+                writer.print(d.getDependency().getQualifiedName());
+                return null;
+            }
+
+            @Override @DefinedBy(Api.LANGUAGE_MODEL)
+            public Void visitUses(UsesDirective d, Void p) {
+                // uses service-name
+                writer.print("uses ");
+                writer.print(d.getService().getQualifiedName());
+                return null;
+            }
+
+            private void printModuleList(List<? extends ModuleElement> modules) {
+                if (modules != null) {
+                    writer.print(" to ");
+                    printNameableList(modules);
+                }
+            }
+
+            private void printNameableList(List<? extends QualifiedNameable> nameables) {
                 writer.print(nameables.stream().
                              map(QualifiedNameable::getQualifiedName).
                              collect(Collectors.joining(", ")));
+            }
         }
 
         public void flush() {

@@ -377,7 +377,7 @@ public class ProvidesTest extends ModuleTestBase {
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
 
-        List<String> expected = Arrays.asList("module-info.java:1:34: compiler.err.not.def.public.cant.access: p2.C2, p2",
+        List<String> expected = Arrays.asList("module-info.java:1:34: compiler.err.not.def.public: p2.C2, p2",
                 "1 error");
         if (!output.containsAll(expected)) {
             throw new Exception("Expected output not found");

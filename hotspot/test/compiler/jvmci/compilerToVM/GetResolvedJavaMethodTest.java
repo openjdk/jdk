@@ -28,10 +28,10 @@
  * @library / /test/lib
  * @library ../common/patches
  * @modules java.base/jdk.internal.misc:+open
- * @modules jdk.vm.ci/jdk.vm.ci.hotspot:+open
+ * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot:+open
  *
- * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
- *        jdk.vm.ci/jdk.vm.ci.hotspot.PublicMetaspaceWrapperObject
+ * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
+ *        jdk.internal.vm.ci/jdk.vm.ci.hotspot.PublicMetaspaceWrapperObject
  *        sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
