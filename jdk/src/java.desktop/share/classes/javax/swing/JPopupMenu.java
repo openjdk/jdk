@@ -1385,6 +1385,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      * @param path the <code>MenuElement</code> path array
      * @param manager   the <code>MenuSelectionManager</code>
      */
+    @SuppressWarnings("deprecation")
     public void processKeyEvent(KeyEvent e, MenuElement path[],
                                 MenuSelectionManager manager) {
         MenuKeyEvent mke = new MenuKeyEvent(e.getComponent(), e.getID(),

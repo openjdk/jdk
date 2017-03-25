@@ -328,6 +328,7 @@ public class BasicSplitPaneUI extends SplitPaneUI
     /**
      * Installs the UI defaults.
      */
+    @SuppressWarnings("deprecation")
     protected void installDefaults(){
         LookAndFeel.installBorder(splitPane, "SplitPane.border");
         LookAndFeel.installColors(splitPane, "SplitPane.background",

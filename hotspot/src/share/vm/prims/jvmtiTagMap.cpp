@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@
 #include "services/serviceUtil.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
+#include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #endif // INCLUDE_ALL_GCS
 
@@ -1534,6 +1535,14 @@ class TagObjectCollector : public JvmtiTagHashmapEntryClosure {
       if (_tags[i] == entry->tag()) {
         oop o = entry->object();
         assert(o != NULL && Universe::heap()->is_in_reserved(o), "sanity check");
+#if INCLUDE_ALL_GCS
+        if (UseG1GC) {
+          // The reference in this tag map could be the only (implicitly weak)
+          // reference to that object. If we hand it out, we need to keep it live wrt
+          // SATB marking similar to other j.l.ref.Reference referents.
+          G1SATBCardTableModRefBS::enqueue(o);
+        }
+#endif
         jobject ref = JNIHandles::make_local(JavaThread::current(), o);
         _object_results->append(ref);
         _tag_results->append((uint64_t)entry->tag());

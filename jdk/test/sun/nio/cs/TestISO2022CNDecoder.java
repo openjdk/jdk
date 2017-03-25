@@ -22,8 +22,9 @@
  */
 
 /* @test
-   @bug 4779029 4924625 6392664 6730652
-   @summary Test decoding of various permutations of valid ISO-2022-CN byte sequences
+ * @bug 4779029 4924625 6392664 6730652
+ * @summary Test decoding of various permutations of valid ISO-2022-CN byte sequences
+ * @modules jdk.charsets
  */
 
 /*
