@@ -29,7 +29,10 @@
  * @summary Basic test for java --permit-illegal-access
  */
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
 import jdk.testlibrary.ProcessTools;
 import jdk.testlibrary.OutputAnalyzer;
@@ -58,10 +61,13 @@ public class PermitIllegalAccess {
      * Launches AttemptAccess to execute an action, returning the OutputAnalyzer
      * to analyze the output/exitCode.
      */
-    private OutputAnalyzer tryAction(String action, int count) throws Exception {
-        String arg = "" + count;
-        return ProcessTools
-                .executeTestJava("-cp", TEST_CLASSES, TEST_MAIN, action, arg)
+    private OutputAnalyzer tryAction(String action, int count, String... args)
+        throws Exception
+    {
+        Stream<String> s1 = Stream.of(args);
+        Stream<String> s2 = Stream.of("-cp", TEST_CLASSES, TEST_MAIN, action, "" + count);
+        String[] opts = Stream.concat(s1, s2).toArray(String[]::new);
+        return ProcessTools.executeTestJava(opts)
                 .outputTo(System.out)
                 .errorTo(System.out);
     }
@@ -70,16 +76,10 @@ public class PermitIllegalAccess {
      * Launches AttemptAccess with --permit-illegal-access to execute an action,
      * returning the OutputAnalyzer to analyze the output/exitCode.
      */
-    private OutputAnalyzer tryActionPermittingIllegalAccess(String action,
-                                                            int count)
+    private OutputAnalyzer tryActionPermittingIllegalAccess(String action, int count)
         throws Exception
     {
-        String arg = "" + count;
-        return ProcessTools
-                .executeTestJava("-cp", TEST_CLASSES, "--permit-illegal-access",
-                                 TEST_MAIN, action, arg)
-                .outputTo(System.out)
-                .errorTo(System.out);
+        return tryAction(action, count, "--permit-illegal-access");
     }
 
     /**
@@ -193,6 +193,61 @@ public class PermitIllegalAccess {
         assertTrue(containsCount(outputAnalyzer.asLines(), ILLEGAL_ACCESS_WARNING) == 1);
 
     }
+
+    /**
+     * Permit access to succeed with --add-exports. No warning should be printed.
+     */
+    public void testAccessWithAddExports() throws Exception {
+        tryAction("access", 1, "--add-exports", "java.base/sun.security.x509=ALL-UNNAMED")
+                .stdoutShouldNotContain(WARNING)
+                .stdoutShouldNotContain("IllegalAccessException")
+                .stderrShouldNotContain(WARNING)
+                .stderrShouldNotContain("IllegalAccessException")
+                .shouldHaveExitValue(0);
+    }
+
+    /**
+     * Permit access to succeed with --add-exports and --permit-illegal-access.
+     * The only warning emitted should be the startup warning.
+     */
+    public void testAccessWithePermittedAddExports() throws Exception {
+        tryAction("access", 1, "--permit-illegal-access",
+                    "--add-exports", "java.base/sun.security.x509=ALL-UNNAMED")
+                .stdoutShouldNotContain(WARNING)
+                .stdoutShouldNotContain("IllegalAccessException")
+                .stderrShouldContain(STARTUP_WARNING)
+                .stderrShouldNotContain("IllegalAccessException")
+                .stderrShouldNotContain(ILLEGAL_ACCESS_WARNING)
+                .shouldHaveExitValue(0);
+    }
+
+    /**
+     * Permit setAccessible to succeed with --add-opens. No warning should be printed.
+     */
+    public void testSetAccessibleWithAddOpens() throws Exception {
+        tryAction("setAccessible", 1, "--add-opens", "java.base/java.lang=ALL-UNNAMED")
+                .stdoutShouldNotContain(WARNING)
+                .stdoutShouldNotContain("InaccessibleObjectException")
+                .stderrShouldNotContain(WARNING)
+                .stderrShouldNotContain("InaccessibleObjectException")
+                .shouldHaveExitValue(0);
+    }
+
+    /**
+     * Permit setAccessible to succeed with both --add-opens and --permit-illegal-access.
+     * The only warning emitted should be the startup warning.
+     */
+    public void testSetAccessiblePermittedWithAddOpens() throws Exception {
+        tryAction("setAccessible", 1, "--permit-illegal-access",
+                    "--add-opens", "java.base/java.lang=ALL-UNNAMED")
+                .stdoutShouldNotContain(WARNING)
+                .stdoutShouldNotContain("InaccessibleObjectException")
+                .stderrShouldContain(STARTUP_WARNING)
+                .stderrShouldNotContain("InaccessibleObjectException")
+                .stderrShouldNotContain(ILLEGAL_ACCESS_WARNING)
+                .shouldHaveExitValue(0);
+    }
+
 
     /**
      * Returns the number of lines in the given input that contain the
