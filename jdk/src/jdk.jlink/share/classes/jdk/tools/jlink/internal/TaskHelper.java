@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import java.util.Map.Entry;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.tools.jlink.internal.plugins.ExcludeJmodSectionPlugin;
@@ -101,8 +102,15 @@ public final class TaskHelper {
         final boolean hidden;
         final String name;
         final String shortname;
+        final boolean terminalOption;
 
-        public Option(boolean hasArg, Processing<T> processing, boolean hidden, String name, String shortname) {
+        public Option(boolean hasArg,
+                      Processing<T> processing,
+                      boolean hidden,
+                      String name,
+                      String shortname,
+                      boolean isTerminal)
+        {
             if (!name.startsWith("--")) {
                 throw new RuntimeException("option name missing --, " + name);
             }
@@ -115,22 +123,31 @@ public final class TaskHelper {
             this.hidden = hidden;
             this.name = name;
             this.shortname = shortname;
+            this.terminalOption = isTerminal;
+        }
+
+        public Option(boolean hasArg, Processing<T> processing, String name, String shortname, boolean isTerminal) {
+            this(hasArg, processing, false, name, shortname, isTerminal);
         }
 
         public Option(boolean hasArg, Processing<T> processing, String name, String shortname) {
-            this(hasArg, processing, false, name, shortname);
+            this(hasArg, processing, false, name, shortname, false);
         }
 
         public Option(boolean hasArg, Processing<T> processing, boolean hidden, String name) {
-            this(hasArg, processing, hidden, name, "");
+            this(hasArg, processing, hidden, name, "", false);
         }
 
         public Option(boolean hasArg, Processing<T> processing, String name) {
-            this(hasArg, processing, false, name, "");
+            this(hasArg, processing, false, name, "", false);
         }
 
         public boolean isHidden() {
             return hidden;
+        }
+
+        public boolean isTerminal() {
+            return terminalOption;
         }
 
         public boolean matches(String opt) {
@@ -179,12 +196,12 @@ public final class TaskHelper {
     private static class PluginOption extends Option<PluginsHelper> {
         public PluginOption(boolean hasArg,
                 Processing<PluginsHelper> processing, boolean hidden, String name, String shortname) {
-            super(hasArg, processing, hidden, name, shortname);
+            super(hasArg, processing, hidden, name, shortname, false);
         }
 
         public PluginOption(boolean hasArg,
                 Processing<PluginsHelper> processing, boolean hidden, String name) {
-            super(hasArg, processing, hidden, name, "");
+            super(hasArg, processing, hidden, name, "", false);
         }
 
         public String resourcePrefix() {
@@ -498,21 +515,13 @@ public final class TaskHelper {
             return null;
         }
 
-        // used by jimage. Return unhandled arguments like "create", "describe".
+        /**
+         * Handles all options.  This method stops processing the argument
+         * at the first non-option argument i.e. not starts with `-`, or
+         * at the first terminal option and returns the remaining arguments,
+         * if any.
+         */
         public List<String> handleOptions(T task, String[] args) throws BadArgs {
-            return handleOptions(task, args, true);
-        }
-
-        // used by jlink. No unhandled arguments like "create", "describe".
-        void handleOptionsNoUnhandled(T task, String[] args) throws BadArgs {
-            handleOptions(task, args, false);
-        }
-
-        // shared code that handles options for both jlink and jimage. jimage uses arguments like
-        // "create", "describe" etc. as "task names". Those arguments are unhandled here and returned
-        // as "unhandled arguments list". jlink does not want such arguments. "collectUnhandled" flag
-        // tells whether to allow for unhandled arguments or not.
-        private List<String> handleOptions(T task, String[] args, boolean collectUnhandled) throws BadArgs {
             // findbugs warning, copy instead of keeping a reference.
             command = Arrays.copyOf(args, args.length);
 
@@ -521,7 +530,6 @@ public final class TaskHelper {
             // Unit tests can call Task multiple time in same JVM.
             pluginOptions = new PluginsHelper(null);
 
-            List<String> rest = collectUnhandled? new ArrayList<>() : null;
             // process options
             for (int i = 0; i < args.length; i++) {
                 if (args[i].startsWith("-")) {
@@ -531,7 +539,6 @@ public final class TaskHelper {
                     if (option == null) {
                         pluginOption = pluginOptions.getOption(name);
                         if (pluginOption == null) {
-
                             throw new BadArgs("err.unknown.option", name).
                                     showUsage(true);
                         }
@@ -556,20 +563,23 @@ public final class TaskHelper {
                         pluginOption.process(pluginOptions, name, param);
                     } else {
                         option.process(task, name, param);
+                        if (option.isTerminal()) {
+                            return ++i < args.length
+                                        ? Stream.of(Arrays.copyOfRange(args, i, args.length))
+                                                .collect(Collectors.toList())
+                                        : Collections.emptyList();
+
+                        }
                     }
                     if (opt.ignoreRest()) {
                         i = args.length;
                     }
                 } else {
-                    if (collectUnhandled) {
-                        rest.add(args[i]);
-                    } else {
-                        throw new BadArgs("err.orphan.argument", args[i]).
-                            showUsage(true);
-                    }
+                    return Stream.of(Arrays.copyOfRange(args, i, args.length))
+                                 .collect(Collectors.toList());
                 }
             }
-            return rest;
+            return Collections.emptyList();
         }
 
         private Option<T> getOption(String name) {

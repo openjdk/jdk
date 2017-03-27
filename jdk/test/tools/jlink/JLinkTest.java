@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -274,7 +274,7 @@ public class JLinkTest {
             String[] userOptions = {"--compress", "2", "foo" };
             String moduleName = "orphanarg1";
             helper.generateDefaultJModule(moduleName, "composite2");
-            helper.generateDefaultImage(userOptions, moduleName).assertFailure("Error: orphan argument: foo");
+            helper.generateDefaultImage(userOptions, moduleName).assertFailure("Error: invalid argument: foo");
         }
 
         // orphan argument - JDK-8166810
@@ -282,7 +282,7 @@ public class JLinkTest {
             String[] userOptions = {"--output", "foo", "bar" };
             String moduleName = "orphanarg2";
             helper.generateDefaultJModule(moduleName, "composite2");
-            helper.generateDefaultImage(userOptions, moduleName).assertFailure("Error: orphan argument: bar");
+            helper.generateDefaultImage(userOptions, moduleName).assertFailure("Error: invalid argument: bar");
         }
 
         // basic check for --help - JDK-8173717
