@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -369,9 +369,15 @@ ifeq ($(LIMIT_JTREG_VM_MEMORY), true)
 endif
 # Give tests access to JT_JAVA, see JDK-8141609
 JTREG_BASIC_OPTIONS += -e:JDK8_HOME=${JT_JAVA}
+# Give aot tests access to Visual Studio installation
+ifneq ($(VS120COMNTOOLS), )
+  JTREG_BASIC_OPTIONS += -e:VS120COMNTOOLS=$(shell $(GETMIXEDPATH) "$(VS120COMNTOOLS)")
+endif
 # Set other vm and test options
 JTREG_TEST_OPTIONS += $(JAVA_ARGS:%=-javaoptions:%) $(JAVA_OPTIONS:%=-vmoption:%) $(JAVA_VM_ARGS:%=-vmoption:%)
-
+ifneq ($(JIB_JAR), )
+  JTREG_BASIC_OPTIONS += -cpa:$(shell $(GETMIXEDPATH) "$(JIB_JAR)")
+endif
 ifeq ($(IGNORE_MARKED_TESTS), true)
   # Option to tell jtreg to not run tests marked with "ignore"
   ifeq ($(PLATFORM), windows)
