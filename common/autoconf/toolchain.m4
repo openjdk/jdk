@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -963,4 +963,32 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_JTREG],
 
   AC_SUBST(JT_HOME)
   AC_SUBST(JTREGEXE)
+])
+
+# Setup the JIB dependency resolver
+AC_DEFUN_ONCE([TOOLCHAIN_SETUP_JIB],
+[
+  AC_ARG_WITH(jib, [AS_HELP_STRING([--with-jib],
+      [Jib dependency management tool @<:@not used@:>@])])
+
+  if test "x$with_jib" = xno || test "x$with_jib" = x; then
+    # jib disabled
+    AC_MSG_CHECKING([for jib])
+    AC_MSG_RESULT(no)
+  elif test "x$with_jib" = xyes; then
+    AC_MSG_ERROR([Must supply a value to --with-jib])
+  else
+    JIB_HOME="${with_jib}"
+    AC_MSG_CHECKING([for jib])
+    AC_MSG_RESULT(${JIB_HOME})
+    if test ! -d "${JIB_HOME}"; then
+      AC_MSG_ERROR([--with-jib must be a directory])
+    fi
+    JIB_JAR=$(ls ${JIB_HOME}/lib/jib-*.jar)
+    if test ! -f "${JIB_JAR}"; then
+      AC_MSG_ERROR([Could not find jib jar file in ${JIB_HOME}])
+    fi
+  fi
+
+  AC_SUBST(JIB_JAR)
 ])
