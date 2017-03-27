@@ -35,9 +35,8 @@ import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.FloatingGuardedNode;
 import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.extended.GuardingNode;
+import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.extended.LoadHubNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
@@ -52,20 +51,16 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  * information in {@code klass}.
  */
 @NodeInfo(cycles = CYCLES_4, size = SIZE_1)
-public final class KlassLayoutHelperNode extends FloatingGuardedNode implements Canonicalizable, Lowerable {
+public final class KlassLayoutHelperNode extends FloatingNode implements Canonicalizable, Lowerable {
 
     public static final NodeClass<KlassLayoutHelperNode> TYPE = NodeClass.create(KlassLayoutHelperNode.class);
     @Input protected ValueNode klass;
     protected final GraalHotSpotVMConfig config;
 
     public KlassLayoutHelperNode(@InjectedNodeParameter GraalHotSpotVMConfig config, ValueNode klass) {
-        this(config, klass, null);
-    }
-
-    public KlassLayoutHelperNode(@InjectedNodeParameter GraalHotSpotVMConfig config, ValueNode klass, ValueNode guard) {
-        super(TYPE, StampFactory.forKind(JavaKind.Int), (GuardingNode) guard);
-        this.klass = klass;
+        super(TYPE, StampFactory.forKind(JavaKind.Int));
         this.config = config;
+        this.klass = klass;
     }
 
     @Override

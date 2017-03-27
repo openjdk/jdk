@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -63,7 +63,7 @@ void MethodHandles::verify_klass(MacroAssembler* _masm,
                                  Register obj, SystemDictionary::WKID klass_id,
                                  const char* error_message) {
   InstanceKlass** klass_addr = SystemDictionary::well_known_klass_addr(klass_id);
-  KlassHandle klass = SystemDictionary::well_known_klass(klass_id);
+  Klass* klass = SystemDictionary::well_known_klass(klass_id);
   Register temp = rscratch2;
   Register temp2 = rscratch1; // used by MacroAssembler::cmpptr
   Label L_ok, L_bad;

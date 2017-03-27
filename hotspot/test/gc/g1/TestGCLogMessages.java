@@ -115,6 +115,12 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Preserve CM Refs", Level.DEBUG),
         // Merge PSS
         new LogMessageWithLevel("Merge Per-Thread State", Level.DEBUG),
+        // TLAB handling
+        new LogMessageWithLevel("Prepare TLABs", Level.DEBUG),
+        new LogMessageWithLevel("Resize TLABs", Level.DEBUG),
+
+        new LogMessageWithLevel("DerivedPointerTable Update", Level.DEBUG),
+        new LogMessageWithLevel("Start New Collection Set", Level.DEBUG),
     };
 
     void checkMessagesAtLevel(OutputAnalyzer output, LogMessageWithLevel messages[], Level level) throws Exception {

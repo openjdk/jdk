@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,20 +40,20 @@
 // JVMSpec|     field_info fields[fields_count];
 void JvmtiClassFileReconstituter::write_field_infos() {
   HandleMark hm(thread());
-  Array<AnnotationArray*>* fields_anno = ikh()->fields_annotations();
-  Array<AnnotationArray*>* fields_type_anno = ikh()->fields_type_annotations();
+  Array<AnnotationArray*>* fields_anno = ik()->fields_annotations();
+  Array<AnnotationArray*>* fields_type_anno = ik()->fields_type_annotations();
 
   // Compute the real number of Java fields
-  int java_fields = ikh()->java_fields_count();
+  int java_fields = ik()->java_fields_count();
 
   write_u2(java_fields);
-  for (JavaFieldStream fs(ikh()); !fs.done(); fs.next()) {
+  for (JavaFieldStream fs(ik()); !fs.done(); fs.next()) {
     AccessFlags access_flags = fs.access_flags();
     int name_index = fs.name_index();
     int signature_index = fs.signature_index();
     int initial_value_index = fs.initval_index();
     guarantee(name_index != 0 && signature_index != 0, "bad constant pool index for field");
-    // int offset = ikh()->field_offset( index );
+    // int offset = ik()->field_offset( index );
     int generic_signature_index = fs.generic_signature_index();
     AnnotationArray* anno = fields_anno == NULL ? NULL : fields_anno->at(fs.index());
     AnnotationArray* type_anno = fields_type_anno == NULL ? NULL : fields_type_anno->at(fs.index());
@@ -278,11 +278,11 @@ void JvmtiClassFileReconstituter::write_exceptions_attribute(ConstMethod* const_
 // JVMSpec|     u2 sourcefile_index;
 // JVMSpec|   }
 void JvmtiClassFileReconstituter::write_source_file_attribute() {
-  assert(ikh()->source_file_name() != NULL, "caller must check");
+  assert(ik()->source_file_name() != NULL, "caller must check");
 
   write_attribute_name_index("SourceFile");
   write_u4(2);  // always length 2
-  write_u2(symbol_to_cpool_index(ikh()->source_file_name()));
+  write_u2(symbol_to_cpool_index(ik()->source_file_name()));
 }
 
 // Write SourceDebugExtension attribute
@@ -292,12 +292,12 @@ void JvmtiClassFileReconstituter::write_source_file_attribute() {
 // JSR45|       u1 debug_extension[attribute_length];
 // JSR45|   }
 void JvmtiClassFileReconstituter::write_source_debug_extension_attribute() {
-  assert(ikh()->source_debug_extension() != NULL, "caller must check");
+  assert(ik()->source_debug_extension() != NULL, "caller must check");
 
   write_attribute_name_index("SourceDebugExtension");
-  int len = (int)strlen(ikh()->source_debug_extension());
+  int len = (int)strlen(ik()->source_debug_extension());
   write_u4(len);
-  u1* ext = (u1*)ikh()->source_debug_extension();
+  u1* ext = (u1*)ik()->source_debug_extension();
   for (int i=0; i<len; i++) {
     write_u1(ext[i]);
   }
@@ -317,7 +317,7 @@ void JvmtiClassFileReconstituter::write_signature_attribute(u2 generic_signature
 
 // Compute the number of entries in the InnerClasses attribute
 u2 JvmtiClassFileReconstituter::inner_classes_attribute_length() {
-  InnerClassesIterator iter(ikh());
+  InnerClassesIterator iter(ik());
   return iter.length();
 }
 
@@ -387,7 +387,7 @@ void JvmtiClassFileReconstituter::write_bootstrapmethod_attribute() {
 // JVMSpec|     } classes[number_of_classes];
 // JVMSpec|   }
 void JvmtiClassFileReconstituter::write_inner_classes_attribute(int length) {
-  InnerClassesIterator iter(ikh());
+  InnerClassesIterator iter(ik());
   guarantee(iter.length() != 0 && iter.length() == length,
             "caller must check");
   u2 entry_count = length / InstanceKlass::inner_class_next_offset;
@@ -618,18 +618,18 @@ void JvmtiClassFileReconstituter::write_method_info(const methodHandle& method) 
 // JVMSpec|     attribute_info attributes[attributes_count];
 void JvmtiClassFileReconstituter::write_class_attributes() {
   u2 inner_classes_length = inner_classes_attribute_length();
-  Symbol* generic_signature = ikh()->generic_signature();
-  AnnotationArray* anno = ikh()->class_annotations();
-  AnnotationArray* type_anno = ikh()->class_type_annotations();
+  Symbol* generic_signature = ik()->generic_signature();
+  AnnotationArray* anno = ik()->class_annotations();
+  AnnotationArray* type_anno = ik()->class_type_annotations();
 
   int attr_count = 0;
   if (generic_signature != NULL) {
     ++attr_count;
   }
-  if (ikh()->source_file_name() != NULL) {
+  if (ik()->source_file_name() != NULL) {
     ++attr_count;
   }
-  if (ikh()->source_debug_extension() != NULL) {
+  if (ik()->source_debug_extension() != NULL) {
     ++attr_count;
   }
   if (inner_classes_length > 0) {
@@ -650,10 +650,10 @@ void JvmtiClassFileReconstituter::write_class_attributes() {
   if (generic_signature != NULL) {
     write_signature_attribute(symbol_to_cpool_index(generic_signature));
   }
-  if (ikh()->source_file_name() != NULL) {
+  if (ik()->source_file_name() != NULL) {
     write_source_file_attribute();
   }
-  if (ikh()->source_debug_extension() != NULL) {
+  if (ik()->source_debug_extension() != NULL) {
     write_source_debug_extension_attribute();
   }
   if (inner_classes_length > 0) {
@@ -675,7 +675,7 @@ void JvmtiClassFileReconstituter::write_class_attributes() {
 // JVMSpec|     method_info methods[methods_count];
 void JvmtiClassFileReconstituter::write_method_infos() {
   HandleMark hm(thread());
-  Array<Method*>* methods = ikh()->methods();
+  Array<Method*>* methods = ik()->methods();
   int num_methods = methods->length();
   int num_overpass = 0;
 
@@ -697,7 +697,7 @@ void JvmtiClassFileReconstituter::write_method_infos() {
 
     // invert the method order mapping
     for (index = 0; index < num_methods; index++) {
-      original_index = ikh()->method_ordering()->at(index);
+      original_index = ik()->method_ordering()->at(index);
       assert(original_index >= 0 && original_index < num_methods,
              "invalid original method index");
       method_order.at_put(original_index, index);
@@ -727,8 +727,8 @@ void JvmtiClassFileReconstituter::write_class_file_format() {
 
   // JVMSpec|           u2 minor_version;
   // JVMSpec|           u2 major_version;
-  write_u2(ikh()->minor_version());
-  u2 major = ikh()->major_version();
+  write_u2(ik()->minor_version());
+  u2 major = ik()->major_version();
   write_u2(major);
 
   // JVMSpec|           u2 constant_pool_count;
@@ -737,24 +737,24 @@ void JvmtiClassFileReconstituter::write_class_file_format() {
   copy_cpool_bytes(writeable_address(cpool_size()));
 
   // JVMSpec|           u2 access_flags;
-  write_u2(ikh()->access_flags().get_flags() & JVM_RECOGNIZED_CLASS_MODIFIERS);
+  write_u2(ik()->access_flags().get_flags() & JVM_RECOGNIZED_CLASS_MODIFIERS);
 
   // JVMSpec|           u2 this_class;
   // JVMSpec|           u2 super_class;
-  write_u2(class_symbol_to_cpool_index(ikh()->name()));
-  Klass* super_class = ikh()->super();
+  write_u2(class_symbol_to_cpool_index(ik()->name()));
+  Klass* super_class = ik()->super();
   write_u2(super_class == NULL? 0 :  // zero for java.lang.Object
                 class_symbol_to_cpool_index(super_class->name()));
 
   // JVMSpec|           u2 interfaces_count;
   // JVMSpec|           u2 interfaces[interfaces_count];
-  Array<Klass*>* interfaces =  ikh()->local_interfaces();
+  Array<Klass*>* interfaces =  ik()->local_interfaces();
   int num_interfaces = interfaces->length();
   write_u2(num_interfaces);
   for (int index = 0; index < num_interfaces; index++) {
     HandleMark hm(thread());
-    instanceKlassHandle iikh(thread(), interfaces->at(index));
-    write_u2(class_symbol_to_cpool_index(iikh->name()));
+    InstanceKlass* iik = InstanceKlass::cast(interfaces->at(index));
+    write_u2(class_symbol_to_cpool_index(iik->name()));
   }
 
   // JVMSpec|           u2 fields_count;

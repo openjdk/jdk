@@ -43,7 +43,6 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
 /**
- *
  * Verifies that call sites calling one of the methods in {@link Debug} use them correctly. Correct
  * usage of the methods in {@link Debug} requires call sites to not eagerly evaluate their
  * arguments. Additionally this phase verifies that no argument is the result of a call to

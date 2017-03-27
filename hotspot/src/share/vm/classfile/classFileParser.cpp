@@ -837,13 +837,13 @@ void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
     int index;
     for (index = 0; index < itfs_len; index++) {
       const u2 interface_index = stream->get_u2(CHECK);
-      KlassHandle interf;
+      Klass* interf;
       check_property(
         valid_klass_reference_at(interface_index),
         "Interface name has bad constant pool index %u in class file %s",
         interface_index, CHECK);
       if (cp->tag_at(interface_index).is_klass()) {
-        interf = KlassHandle(THREAD, cp->resolved_klass_at(interface_index));
+        interf = cp->resolved_klass_at(interface_index);
       } else {
         Symbol* const unresolved_klass  = cp->klass_name_at(interface_index);
 
@@ -853,25 +853,24 @@ void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
                            "Bad interface name in class file %s", CHECK);
 
         // Call resolve_super so classcircularity is checked
-        const Klass* const k =
-          SystemDictionary::resolve_super_or_fail(_class_name,
+        interf = SystemDictionary::resolve_super_or_fail(
+                                                  _class_name,
                                                   unresolved_klass,
-                                                  _loader_data->class_loader(),
+                                                  Handle(THREAD, _loader_data->class_loader()),
                                                   _protection_domain,
                                                   false,
                                                   CHECK);
-        interf = KlassHandle(THREAD, k);
       }
 
-      if (!interf()->is_interface()) {
+      if (!interf->is_interface()) {
         THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(),
                    "Implementing class");
       }
 
-      if (InstanceKlass::cast(interf())->has_nonstatic_concrete_methods()) {
+      if (InstanceKlass::cast(interf)->has_nonstatic_concrete_methods()) {
         *has_nonstatic_concrete_methods = true;
       }
-      _local_interfaces->at_put(index, interf());
+      _local_interfaces->at_put(index, interf);
     }
 
     if (!_need_verify || itfs_len <= 1) {
@@ -885,11 +884,12 @@ void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
                                                                  HASH_ROW_SIZE);
     initialize_hashtable(interface_names);
     bool dup = false;
+    const Symbol* name = NULL;
     {
       debug_only(NoSafepointVerifier nsv;)
       for (index = 0; index < itfs_len; index++) {
         const Klass* const k = _local_interfaces->at(index);
-        const Symbol* const name = InstanceKlass::cast(k)->name();
+        name = InstanceKlass::cast(k)->name();
         // If no duplicates, add (name, NULL) in hashtable interface_names.
         if (!put_after_lookup(name, NULL, interface_names)) {
           dup = true;
@@ -898,7 +898,8 @@ void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
       }
     }
     if (dup) {
-      classfile_parse_error("Duplicate interface name in class file %s", CHECK);
+      classfile_parse_error("Duplicate interface name \"%s\" in class file %s",
+                             name->as_C_string(), CHECK);
     }
   }
 }
@@ -1654,11 +1655,13 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
       THREAD, NameSigHash*, HASH_ROW_SIZE);
     initialize_hashtable(names_and_sigs);
     bool dup = false;
+    const Symbol* name = NULL;
+    const Symbol* sig = NULL;
     {
       debug_only(NoSafepointVerifier nsv;)
       for (AllFieldStream fs(_fields, cp); !fs.done(); fs.next()) {
-        const Symbol* const name = fs.name();
-        const Symbol* const sig = fs.signature();
+        name = fs.name();
+        sig = fs.signature();
         // If no duplicates, add name/signature in hashtable names_and_sigs.
         if (!put_after_lookup(name, sig, names_and_sigs)) {
           dup = true;
@@ -1667,8 +1670,8 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
       }
     }
     if (dup) {
-      classfile_parse_error("Duplicate field name&signature in class file %s",
-                            CHECK);
+      classfile_parse_error("Duplicate field name \"%s\" with signature \"%s\" in class file %s",
+                             name->as_C_string(), sig->as_klass_external_name(), CHECK);
     }
   }
 }
@@ -2889,7 +2892,6 @@ void ClassFileParser::parse_methods(const ClassFileStream* const cfs,
                                                    NULL,
                                                    CHECK);
 
-    HandleMark hm(THREAD);
     for (int index = 0; index < length; index++) {
       Method* method = parse_method(cfs,
                                     is_interface,
@@ -2916,20 +2918,24 @@ void ClassFileParser::parse_methods(const ClassFileStream* const cfs,
         THREAD, NameSigHash*, HASH_ROW_SIZE);
       initialize_hashtable(names_and_sigs);
       bool dup = false;
+      const Symbol* name = NULL;
+      const Symbol* sig = NULL;
       {
         debug_only(NoSafepointVerifier nsv;)
         for (int i = 0; i < length; i++) {
           const Method* const m = _methods->at(i);
+          name = m->name();
+          sig = m->signature();
           // If no duplicates, add name/signature in hashtable names_and_sigs.
-          if (!put_after_lookup(m->name(), m->signature(), names_and_sigs)) {
+          if (!put_after_lookup(name, sig, names_and_sigs)) {
             dup = true;
             break;
           }
         }
       }
       if (dup) {
-        classfile_parse_error("Duplicate method name&signature in class file %s",
-                              CHECK);
+        classfile_parse_error("Duplicate method name \"%s\" with signature \"%s\" in class file %s",
+                               name->as_C_string(), sig->as_klass_external_name(), CHECK);
       }
     }
   }
@@ -4423,10 +4429,12 @@ static void check_super_class_access(const InstanceKlass* this_klass, TRAPS) {
     }
 
     Reflection::VerifyClassAccessResults vca_result =
-      Reflection::verify_class_access(this_klass, super, false);
+      Reflection::verify_class_access(this_klass, InstanceKlass::cast(super), false);
     if (vca_result != Reflection::ACCESS_OK) {
       ResourceMark rm(THREAD);
-      char* msg =  Reflection::verify_class_access_msg(this_klass, super, vca_result);
+      char* msg = Reflection::verify_class_access_msg(this_klass,
+                                                      InstanceKlass::cast(super),
+                                                      vca_result);
       if (msg == NULL) {
         Exceptions::fthrow(
           THREAD_AND_LOCATION,
@@ -4455,10 +4463,12 @@ static void check_super_interface_access(const InstanceKlass* this_klass, TRAPS)
     Klass* const k = local_interfaces->at(i);
     assert (k != NULL && k->is_interface(), "invalid interface");
     Reflection::VerifyClassAccessResults vca_result =
-      Reflection::verify_class_access(this_klass, k, false);
+      Reflection::verify_class_access(this_klass, InstanceKlass::cast(k), false);
     if (vca_result != Reflection::ACCESS_OK) {
       ResourceMark rm(THREAD);
-      char* msg =  Reflection::verify_class_access_msg(this_klass, k, vca_result);
+      char* msg = Reflection::verify_class_access_msg(this_klass,
+                                                      InstanceKlass::cast(k),
+                                                      vca_result);
       if (msg == NULL) {
         Exceptions::fthrow(
           THREAD_AND_LOCATION,
@@ -5412,7 +5422,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
   // Allocate mirror and initialize static fields
   // The create_mirror() call will also call compute_modifiers()
   java_lang_Class::create_mirror(ik,
-                                 _loader_data->class_loader(),
+                                 Handle(THREAD, _loader_data->class_loader()),
                                  module_handle,
                                  _protection_domain,
                                  CHECK);
@@ -5984,10 +5994,11 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
         "Interfaces must have java.lang.Object as superclass in class file %s",
         CHECK);
     }
+    Handle loader(THREAD, _loader_data->class_loader());
     _super_klass = (const InstanceKlass*)
                        SystemDictionary::resolve_super_or_fail(_class_name,
                                                                super_class_name,
-                                                               _loader_data->class_loader(),
+                                                               loader,
                                                                _protection_domain,
                                                                true,
                                                                CHECK);
@@ -6029,6 +6040,7 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
 
   _all_mirandas = new GrowableArray<Method*>(20);
 
+  Handle loader(THREAD, _loader_data->class_loader());
   klassVtable::compute_vtable_size_and_num_mirandas(&_vtable_size,
                                                     &_num_miranda_methods,
                                                     _all_mirandas,
@@ -6036,7 +6048,7 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
                                                     _methods,
                                                     _access_flags,
                                                     _major_version,
-                                                    _loader_data->class_loader(),
+                                                    loader,
                                                     _class_name,
                                                     _local_interfaces,
                                                     CHECK);

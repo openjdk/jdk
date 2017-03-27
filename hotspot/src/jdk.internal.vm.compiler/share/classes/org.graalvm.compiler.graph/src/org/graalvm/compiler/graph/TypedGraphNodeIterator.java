@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 package org.graalvm.compiler.graph;
 
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -40,7 +39,6 @@ class TypedGraphNodeIterator<T extends IterableNodeType> implements Iterator<T> 
         ids = clazz.iterableIds();
         currentIdIndex = 0;
         current = new Node[ids.length];
-        Arrays.fill(current, Graph.PLACE_HOLDER);
         needsForward = true;
     }
 
@@ -67,7 +65,7 @@ class TypedGraphNodeIterator<T extends IterableNodeType> implements Iterator<T> 
         int startIdx = currentIdIndex;
         while (true) {
             Node next;
-            if (current() == Graph.PLACE_HOLDER) {
+            if (current() == null) {
                 next = graph.getIterableNodeStart(ids[currentIdIndex]);
             } else {
                 next = graph.getIterableNodeNext(current().typeCacheNext);

@@ -33,6 +33,7 @@ import org.graalvm.compiler.debug.DebugEnvironment;
 import org.graalvm.compiler.debug.Management;
 import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.debug.internal.DebugScope;
+import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
@@ -54,6 +55,8 @@ public class AOTCompilationTask implements Runnable, Comparable<Object> {
 
     private final Main main;
 
+    private OptionValues graalOptions;
+
     /**
      * The compilation id of this task.
      */
@@ -73,8 +76,9 @@ public class AOTCompilationTask implements Runnable, Comparable<Object> {
      */
     private CompiledMethodInfo result;
 
-    public AOTCompilationTask(Main main, AOTCompiledClass holder, ResolvedJavaMethod method, AOTBackend aotBackend) {
+    public AOTCompilationTask(Main main, OptionValues graalOptions, AOTCompiledClass holder, ResolvedJavaMethod method, AOTBackend aotBackend) {
         this.main = main;
+        this.graalOptions = graalOptions;
         this.id = ids.getAndIncrement();
         this.holder = holder;
         this.method = method;
@@ -91,14 +95,14 @@ public class AOTCompilationTask implements Runnable, Comparable<Object> {
 
         // Ensure a debug configuration for this thread is initialized
         if (Debug.isEnabled() && DebugScope.getConfig() == null) {
-            DebugEnvironment.initialize(TTY.out);
+            DebugEnvironment.ensureInitialized(graalOptions);
         }
         AOTCompiler.logCompilation(MiscUtils.uniqueMethodName(method), "Compiling");
 
         final long threadId = Thread.currentThread().getId();
 
-        final boolean printCompilation = GraalCompilerOptions.PrintCompilation.getValue() && !TTY.isSuppressed();
-        final boolean printAfterCompilation = GraalCompilerOptions.PrintAfterCompilation.getValue() && !TTY.isSuppressed();
+        final boolean printCompilation = GraalCompilerOptions.PrintCompilation.getValue(graalOptions) && !TTY.isSuppressed();
+        final boolean printAfterCompilation = GraalCompilerOptions.PrintAfterCompilation.getValue(graalOptions) && !TTY.isSuppressed();
         if (printCompilation) {
             TTY.println(getMethodDescription() + "...");
         }

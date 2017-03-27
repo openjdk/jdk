@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,8 +44,8 @@
 // ciInstanceKlass::ciInstanceKlass
 //
 // Loaded instance klass.
-ciInstanceKlass::ciInstanceKlass(KlassHandle h_k) :
-  ciKlass(h_k)
+ciInstanceKlass::ciInstanceKlass(Klass* k) :
+  ciKlass(k)
 {
   assert(get_Klass()->is_instance_klass(), "wrong type");
   assert(get_instanceKlass()->is_loaded(), "must be at least loaded");
@@ -83,7 +83,7 @@ ciInstanceKlass::ciInstanceKlass(KlassHandle h_k) :
   _java_mirror = NULL;
 
   if (is_shared()) {
-    if (h_k() != SystemDictionary::Object_klass()) {
+    if (k != SystemDictionary::Object_klass()) {
       super();
     }
     //compute_nonstatic_fields();  // done outside of constructor

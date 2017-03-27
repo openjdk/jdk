@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,9 @@ package org.graalvm.compiler.graph;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.function.Consumer;
 
-import org.graalvm.compiler.core.common.CollectionsFactory;
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugCounter;
@@ -39,8 +36,12 @@ import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node.ValueNumberable;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.options.Option;
+import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
-import org.graalvm.compiler.options.OptionValue;
+import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.util.EconomicMap;
+import org.graalvm.util.Equivalence;
+import org.graalvm.util.UnmodifiableEconomicMap;
 
 /**
  * This class is a graph container, it contains the set of nodes that belong to this graph.
@@ -49,13 +50,17 @@ public class Graph {
 
     public static class Options {
         @Option(help = "Verify graphs often during compilation when assertions are turned on", type = OptionType.Debug)//
-        public static final OptionValue<Boolean> VerifyGraalGraphs = new OptionValue<>(true);
+        public static final OptionKey<Boolean> VerifyGraalGraphs = new OptionKey<>(true);
         @Option(help = "Perform expensive verification of graph inputs, usages, successors and predecessors", type = OptionType.Debug)//
-        public static final OptionValue<Boolean> VerifyGraalGraphEdges = new OptionValue<>(false);
+        public static final OptionKey<Boolean> VerifyGraalGraphEdges = new OptionKey<>(false);
         @Option(help = "Graal graph compression is performed when percent of live nodes falls below this value", type = OptionType.Debug)//
-        public static final OptionValue<Integer> GraphCompressionThreshold = new OptionValue<>(70);
-        @Option(help = "Use Unsafe to clone graph nodes thus avoiding copying fields that will be re-initialized anyway", type = OptionType.Debug)//
-        public static final OptionValue<Boolean> CloneNodesWithUnsafe = new OptionValue<>(true);
+        public static final OptionKey<Integer> GraphCompressionThreshold = new OptionKey<>(70);
+    }
+
+    private enum FreezeState {
+        Unfrozen,
+        TemporaryFreeze,
+        DeepFreeze
     }
 
     public final String name;
@@ -109,51 +114,36 @@ public class Graph {
      * Used to global value number {@link ValueNumberable} {@linkplain NodeClass#isLeafNode() leaf}
      * nodes.
      */
-    private final HashMap<CacheEntry, Node> cachedLeafNodes = CollectionsFactory.newMap();
+    private EconomicMap<Node, Node>[] cachedLeafNodes;
 
-    /*
-     * Indicates that the graph should no longer be modified. Frozen graphs can be used my multiple
-     * threads so it's only safe to read them.
-     */
-    private boolean isFrozen = false;
-
-    /**
-     * Entry in {@link Graph#cachedLeafNodes}.
-     */
-    private static final class CacheEntry {
-
-        private final Node node;
-
-        CacheEntry(Node node) {
-            assert node.getNodeClass().valueNumberable();
-            assert node.getNodeClass().isLeafNode();
-            this.node = node;
-        }
+    private static final Equivalence NODE_VALUE_COMPARE = new Equivalence() {
 
         @Override
-        public int hashCode() {
-            return node.getNodeClass().valueNumber(node);
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj == this) {
+        public boolean equals(Object a, Object b) {
+            if (a == b) {
                 return true;
             }
-            if (obj instanceof CacheEntry) {
-                CacheEntry other = (CacheEntry) obj;
-                if (other.node.getClass() == node.getClass()) {
-                    return node.valueEquals(other.node);
-                }
-            }
-            return false;
+
+            assert a.getClass() == b.getClass();
+            return ((Node) a).valueEquals((Node) b);
         }
 
         @Override
-        public String toString() {
-            return node.toString();
+        public int hashCode(Object k) {
+            return ((Node) k).getNodeClass().valueNumber((Node) k);
         }
-    }
+    };
+
+    /**
+     * Indicates that the graph should no longer be modified. Frozen graphs can be used by multiple
+     * threads so it's only safe to read them.
+     */
+    private FreezeState freezeState = FreezeState.Unfrozen;
+
+    /**
+     * The option values used while compiling this graph.
+     */
+    private final OptionValues options;
 
     private class NodeSourcePositionScope implements DebugCloseable {
         private final NodeSourcePosition previous;
@@ -225,8 +215,8 @@ public class Graph {
     /**
      * Creates an empty Graph with no name.
      */
-    public Graph() {
-        this(null);
+    public Graph(OptionValues options) {
+        this(null, options);
     }
 
     /**
@@ -247,11 +237,13 @@ public class Graph {
      *
      * @param name the name of the graph, used for debugging purposes
      */
-    public Graph(String name) {
+    public Graph(String name, OptionValues options) {
         nodes = new Node[INITIAL_NODES_SIZE];
         iterableNodesFirst = new ArrayList<>(NodeClass.allocatedNodeIterabledIds());
         iterableNodesLast = new ArrayList<>(NodeClass.allocatedNodeIterabledIds());
         this.name = name;
+        this.options = options;
+
         if (isModificationCountsEnabled()) {
             nodeModCounts = new int[INITIAL_NODES_SIZE];
             nodeUsageModCounts = new int[INITIAL_NODES_SIZE];
@@ -318,7 +310,7 @@ public class Graph {
      *
      * @param duplicationMapCallback consumer of the duplication map created during the copying
      */
-    public final Graph copy(Consumer<Map<Node, Node>> duplicationMapCallback) {
+    public final Graph copy(Consumer<UnmodifiableEconomicMap<Node, Node>> duplicationMapCallback) {
         return copy(name, duplicationMapCallback);
     }
 
@@ -337,13 +329,17 @@ public class Graph {
      * @param newName the name of the copy, used for debugging purposes (can be null)
      * @param duplicationMapCallback consumer of the duplication map created during the copying
      */
-    protected Graph copy(String newName, Consumer<Map<Node, Node>> duplicationMapCallback) {
-        Graph copy = new Graph(newName);
-        Map<Node, Node> duplicates = copy.addDuplicates(getNodes(), this, this.getNodeCount(), (Map<Node, Node>) null);
+    protected Graph copy(String newName, Consumer<UnmodifiableEconomicMap<Node, Node>> duplicationMapCallback) {
+        Graph copy = new Graph(newName, options);
+        UnmodifiableEconomicMap<Node, Node> duplicates = copy.addDuplicates(getNodes(), this, this.getNodeCount(), (EconomicMap<Node, Node>) null);
         if (duplicationMapCallback != null) {
             duplicationMapCallback.accept(duplicates);
         }
         return copy;
+    }
+
+    public final OptionValues getOptions() {
+        return options;
     }
 
     @Override
@@ -404,22 +400,23 @@ public class Graph {
 
     public <T extends Node> T addOrUnique(T node) {
         if (node.getNodeClass().valueNumberable()) {
-            return uniqueHelper(node, true);
+            return uniqueHelper(node);
         }
         return add(node);
-    }
-
-    public <T extends Node> T addWithoutUniqueWithInputs(T node) {
-        addInputs(node);
-        return addHelper(node);
     }
 
     public <T extends Node> T addOrUniqueWithInputs(T node) {
-        addInputs(node);
-        if (node.getNodeClass().valueNumberable()) {
-            return uniqueHelper(node, true);
+        if (node.isAlive()) {
+            assert node.graph() == this;
+            return node;
+        } else {
+            assert node.isUnregistered();
+            addInputs(node);
+            if (node.getNodeClass().valueNumberable()) {
+                return uniqueHelper(node);
+            }
+            return add(node);
         }
-        return add(node);
     }
 
     private final class AddInputsFilter extends Node.EdgeVisitor {
@@ -583,16 +580,16 @@ public class Graph {
      * @return a node similar to {@code node} if one exists, otherwise {@code node}
      */
     public <T extends Node & ValueNumberable> T unique(T node) {
-        return uniqueHelper(node, true);
+        return uniqueHelper(node);
     }
 
-    <T extends Node> T uniqueHelper(T node, boolean addIfMissing) {
+    <T extends Node> T uniqueHelper(T node) {
         assert node.getNodeClass().valueNumberable();
         T other = this.findDuplicate(node);
         if (other != null) {
             return other;
         } else {
-            T result = addIfMissing ? addHelper(node) : node;
+            T result = addHelper(node);
             if (node.getNodeClass().isLeafNode()) {
                 putNodeIntoCache(result);
             }
@@ -600,21 +597,47 @@ public class Graph {
         }
     }
 
+    void removeNodeFromCache(Node node) {
+        assert node.graph() == this || node.graph() == null;
+        assert node.getNodeClass().valueNumberable();
+        assert node.getNodeClass().isLeafNode() : node.getClass();
+
+        int leafId = node.getNodeClass().getLeafId();
+        if (cachedLeafNodes != null && cachedLeafNodes.length > leafId && cachedLeafNodes[leafId] != null) {
+            cachedLeafNodes[leafId].removeKey(node);
+        }
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
     void putNodeIntoCache(Node node) {
         assert node.graph() == this || node.graph() == null;
         assert node.getNodeClass().valueNumberable();
         assert node.getNodeClass().isLeafNode() : node.getClass();
-        CacheEntry entry = new CacheEntry(node);
-        cachedLeafNodes.put(entry, node);
+
+        int leafId = node.getNodeClass().getLeafId();
+        if (cachedLeafNodes == null || cachedLeafNodes.length <= leafId) {
+            EconomicMap[] newLeafNodes = new EconomicMap[leafId + 1];
+            if (cachedLeafNodes != null) {
+                System.arraycopy(cachedLeafNodes, 0, newLeafNodes, 0, cachedLeafNodes.length);
+            }
+            cachedLeafNodes = newLeafNodes;
+        }
+
+        if (cachedLeafNodes[leafId] == null) {
+            cachedLeafNodes[leafId] = EconomicMap.create(NODE_VALUE_COMPARE);
+        }
+
+        cachedLeafNodes[leafId].put(node, node);
     }
 
     Node findNodeInCache(Node node) {
-        CacheEntry key = new CacheEntry(node);
-        Node result = cachedLeafNodes.get(key);
-        if (result != null && result.isDeleted()) {
-            cachedLeafNodes.remove(key);
+        int leafId = node.getNodeClass().getLeafId();
+        if (cachedLeafNodes == null || cachedLeafNodes.length <= leafId || cachedLeafNodes[leafId] == null) {
             return null;
         }
+
+        Node result = cachedLeafNodes[leafId].get(node);
+        assert result == null || result.isAlive() : result;
         return result;
     }
 
@@ -774,16 +797,12 @@ public class Graph {
 
     }
 
-    static final Node PLACE_HOLDER = new PlaceHolderNode();
-
-    public static final int COMPRESSION_THRESHOLD = Options.GraphCompressionThreshold.getValue();
-
     private static final DebugCounter GraphCompressions = Debug.counter("GraphCompressions");
 
     /**
-     * If the {@linkplain #COMPRESSION_THRESHOLD compression threshold} is met, the list of nodes is
-     * compressed such that all non-null entries precede all null entries while preserving the
-     * ordering between the nodes within the list.
+     * If the {@linkplain Options#GraphCompressionThreshold compression threshold} is met, the list
+     * of nodes is compressed such that all non-null entries precede all null entries while
+     * preserving the ordering between the nodes within the list.
      */
     public boolean maybeCompress() {
         if (Debug.isDumpEnabledForMethod() || Debug.isLogEnabledForMethod()) {
@@ -791,7 +810,8 @@ public class Graph {
         }
         int liveNodeCount = getNodeCount();
         int liveNodePercent = liveNodeCount * 100 / nodesSize;
-        if (COMPRESSION_THRESHOLD == 0 || liveNodePercent >= COMPRESSION_THRESHOLD) {
+        int compressionThreshold = Options.GraphCompressionThreshold.getValue(options);
+        if (compressionThreshold == 0 || liveNodePercent >= compressionThreshold) {
             return false;
         }
         GraphCompressions.increment();
@@ -937,31 +957,36 @@ public class Graph {
         assert !isFrozen();
         assert node.id() == Node.INITIAL_ID;
         if (nodes.length == nodesSize) {
-            Node[] newNodes = new Node[(nodesSize * 2) + 1];
-            System.arraycopy(nodes, 0, newNodes, 0, nodesSize);
-            nodes = newNodes;
+            grow();
         }
-        int id = nodesSize;
+        int id = nodesSize++;
         nodes[id] = node;
+        node.id = id;
         if (currentNodeSourcePosition != null) {
             node.setNodeSourcePosition(currentNodeSourcePosition);
-        } else if (!seenNodeSourcePosition && node.getNodeSourcePosition() != null) {
-            seenNodeSourcePosition = true;
         }
-        nodesSize++;
+        seenNodeSourcePosition = seenNodeSourcePosition || node.getNodeSourcePosition() != null;
 
         updateNodeCaches(node);
 
-        node.id = id;
         if (nodeEventListener != null) {
             nodeEventListener.nodeAdded(node);
-        }
-        if (!seenNodeSourcePosition && node.sourcePosition != null) {
-            seenNodeSourcePosition = true;
         }
         if (Fingerprint.ENABLED) {
             Fingerprint.submit("%s: %s", NodeEvent.NODE_ADDED, node);
         }
+        afterRegister(node);
+    }
+
+    private void grow() {
+        Node[] newNodes = new Node[(nodesSize * 2) + 1];
+        System.arraycopy(nodes, 0, newNodes, 0, nodesSize);
+        nodes = newNodes;
+    }
+
+    @SuppressWarnings("unused")
+    protected void afterRegister(Node node) {
+
     }
 
     @SuppressWarnings("unused")
@@ -1003,7 +1028,10 @@ public class Graph {
 
     void unregister(Node node) {
         assert !isFrozen();
-        assert !node.isDeleted() : "cannot delete a node twice! node=" + node;
+        assert !node.isDeleted() : node;
+        if (node.getNodeClass().isLeafNode() && node.getNodeClass().valueNumberable()) {
+            removeNodeFromCache(node);
+        }
         nodes[node.id] = null;
         nodesDeletedSinceLastCompression++;
 
@@ -1011,7 +1039,7 @@ public class Graph {
     }
 
     public boolean verify() {
-        if (Options.VerifyGraalGraphs.getValue()) {
+        if (Options.VerifyGraalGraphs.getValue(options)) {
             for (Node node : getNodes()) {
                 try {
                     try {
@@ -1053,7 +1081,7 @@ public class Graph {
      * @param replacementsMap the replacement map (can be null if no replacement is to be performed)
      * @return a map which associates the original nodes from {@code nodes} to their duplicates
      */
-    public Map<Node, Node> addDuplicates(Iterable<? extends Node> newNodes, final Graph oldGraph, int estimatedNodeCount, Map<Node, Node> replacementsMap) {
+    public UnmodifiableEconomicMap<Node, Node> addDuplicates(Iterable<? extends Node> newNodes, final Graph oldGraph, int estimatedNodeCount, EconomicMap<Node, Node> replacementsMap) {
         DuplicationReplacement replacements;
         if (replacementsMap == null) {
             replacements = null;
@@ -1070,9 +1098,9 @@ public class Graph {
 
     private static final class MapReplacement implements DuplicationReplacement {
 
-        private final Map<Node, Node> map;
+        private final EconomicMap<Node, Node> map;
 
-        MapReplacement(Map<Node, Node> map) {
+        MapReplacement(EconomicMap<Node, Node> map) {
             this.map = map;
         }
 
@@ -1087,27 +1115,31 @@ public class Graph {
     private static final DebugTimer DuplicateGraph = Debug.timer("DuplicateGraph");
 
     @SuppressWarnings({"all", "try"})
-    public Map<Node, Node> addDuplicates(Iterable<? extends Node> newNodes, final Graph oldGraph, int estimatedNodeCount, DuplicationReplacement replacements) {
+    public EconomicMap<Node, Node> addDuplicates(Iterable<? extends Node> newNodes, final Graph oldGraph, int estimatedNodeCount, DuplicationReplacement replacements) {
         try (DebugCloseable s = DuplicateGraph.start()) {
             return NodeClass.addGraphDuplicate(this, oldGraph, estimatedNodeCount, newNodes, replacements);
         }
     }
 
-    /**
-     * Reverses the usage orders of all nodes. This is used for debugging to make sure an unorthodox
-     * usage order does not trigger bugs in the compiler.
-     */
-    public void reverseUsageOrder() {
-        for (Node n : getNodes()) {
-            n.reverseUsageOrder();
-        }
-    }
-
     public boolean isFrozen() {
-        return isFrozen;
+        return freezeState != FreezeState.Unfrozen;
     }
 
     public void freeze() {
-        this.isFrozen = true;
+        this.freezeState = FreezeState.DeepFreeze;
+    }
+
+    public void temporaryFreeze() {
+        if (this.freezeState == FreezeState.DeepFreeze) {
+            throw new GraalError("Graph was permanetly frozen.");
+        }
+        this.freezeState = FreezeState.TemporaryFreeze;
+    }
+
+    public void unfreeze() {
+        if (this.freezeState == FreezeState.DeepFreeze) {
+            throw new GraalError("Graph was permanetly frozen.");
+        }
+        this.freezeState = FreezeState.Unfrozen;
     }
 }

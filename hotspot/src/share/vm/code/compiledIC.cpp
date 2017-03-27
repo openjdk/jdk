@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -457,7 +457,7 @@ void CompiledIC::set_to_monomorphic(CompiledICInfo& info) {
 // null check, while a static_bound won't. A static_bound (but not optimized) must
 // therefore use the unverified entry point.
 void CompiledIC::compute_monomorphic_entry(const methodHandle& method,
-                                           KlassHandle receiver_klass,
+                                           Klass* receiver_klass,
                                            bool is_optimized,
                                            bool static_bound,
                                            bool caller_is_nmethod,
@@ -494,7 +494,7 @@ void CompiledIC::compute_monomorphic_entry(const methodHandle& method,
   bool far_c2a = entry != NULL && caller_is_nmethod && method_code->is_far_code();
   if (entry != NULL && !far_c2a) {
     // Call to near compiled code (nmethod or aot).
-    info.set_compiled_entry(entry, (static_bound || is_optimized) ? NULL : receiver_klass(), is_optimized);
+    info.set_compiled_entry(entry, (static_bound || is_optimized) ? NULL : receiver_klass, is_optimized);
   } else {
     if (is_optimized) {
       if (far_c2a) {
@@ -507,7 +507,7 @@ void CompiledIC::compute_monomorphic_entry(const methodHandle& method,
     } else {
       // Use icholder entry
       assert(method_code == NULL || method_code->is_compiled(), "must be compiled");
-      CompiledICHolder* holder = new CompiledICHolder(method(), receiver_klass());
+      CompiledICHolder* holder = new CompiledICHolder(method(), receiver_klass);
       info.set_icholder_entry(method()->get_c2i_unverified_entry(), holder);
     }
   }

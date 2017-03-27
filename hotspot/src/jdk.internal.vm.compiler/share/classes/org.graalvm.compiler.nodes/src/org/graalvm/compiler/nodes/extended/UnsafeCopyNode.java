@@ -39,8 +39,8 @@ public final class UnsafeCopyNode {
 
     public static boolean intrinsify(GraphBuilderContext b, @SuppressWarnings("unused") ResolvedJavaMethod targetMethod, ValueNode sourceObject, ValueNode sourceOffset, ValueNode destinationObject,
                     ValueNode destinationOffset, JavaKind accessKind, LocationIdentity locationIdentity) {
-        UnsafeLoadNode value = b.add(new UnsafeLoadNode(sourceObject, sourceOffset, accessKind, locationIdentity));
-        b.add(new UnsafeStoreNode(destinationObject, destinationOffset, value, accessKind, locationIdentity));
+        RawLoadNode value = b.add(new RawLoadNode(sourceObject, sourceOffset, accessKind, locationIdentity));
+        b.add(new RawStoreNode(destinationObject, destinationOffset, value, accessKind, locationIdentity));
         return true;
     }
 

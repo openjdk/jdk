@@ -30,7 +30,6 @@ import org.graalvm.compiler.graph.IterableNodeType;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.SimplifierTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.extended.ValueAnchorNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 
@@ -95,8 +94,7 @@ public final class FixedGuardNode extends AbstractFixedGuardNode implements Lowe
             if (getAction() != DeoptimizationAction.None || getReason() != DeoptimizationReason.RuntimeConstraint) {
                 ValueNode guard = tool.createGuard(this, getCondition(), getReason(), getAction(), getSpeculation(), isNegated()).asNode();
                 this.replaceAtUsages(guard);
-                ValueAnchorNode newAnchor = graph().add(new ValueAnchorNode(guard.asNode()));
-                graph().replaceFixedWithFixed(this, newAnchor);
+                graph().removeFixed(this);
             }
         } else {
             lowerToIf().lower(tool);

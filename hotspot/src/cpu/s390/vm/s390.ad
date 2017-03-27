@@ -6768,6 +6768,7 @@ instruct sllI_reg_imm(iRegI dst, iRegI src, immI nbits) %{
   format %{ "SLL     $dst,$src,$nbits\t# use RISC-like SLLG also for int" %}
   ins_encode %{
     int Nbit = $nbits$$constant;
+    assert((Nbit & (BitsPerJavaInteger - 1)) == Nbit, "Check shift mask in ideal graph");
     __ z_sllg($dst$$Register, $src$$Register, Nbit & (BitsPerJavaInteger - 1), Z_R0);
   %}
   ins_pipe(pipe_class_dummy);
@@ -6841,6 +6842,7 @@ instruct sraI_reg_imm(iRegI dst, immI src, flagsReg cr) %{
   format %{ "SRA     $dst,$src" %}
   ins_encode %{
     int Nbit = $src$$constant;
+    assert((Nbit & (BitsPerJavaInteger - 1)) == Nbit, "Check shift mask in ideal graph");
     __ z_sra($dst$$Register, Nbit & (BitsPerJavaInteger - 1), Z_R0);
   %}
   ins_pipe(pipe_class_dummy);
@@ -6893,6 +6895,7 @@ instruct srlI_reg_imm(iRegI dst, immI src) %{
   format %{ "SRL     $dst,$src" %}
   ins_encode %{
     int Nbit = $src$$constant;
+    assert((Nbit & (BitsPerJavaInteger - 1)) == Nbit, "Check shift mask in ideal graph");
     __ z_srl($dst$$Register, Nbit & (BitsPerJavaInteger - 1), Z_R0);
   %}
   ins_pipe(pipe_class_dummy);

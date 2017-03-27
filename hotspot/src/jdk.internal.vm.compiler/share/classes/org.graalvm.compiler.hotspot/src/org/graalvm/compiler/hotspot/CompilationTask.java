@@ -30,7 +30,7 @@ import static org.graalvm.compiler.core.GraalCompilerOptions.PrintCompilation;
 import static org.graalvm.compiler.core.GraalCompilerOptions.PrintFilter;
 import static org.graalvm.compiler.core.GraalCompilerOptions.PrintStackTraceOnException;
 import static org.graalvm.compiler.core.phases.HighTier.Options.Inline;
-
+import static org.graalvm.compiler.java.BytecodeParserOptions.InlineDuringParsing;
 import java.util.List;
 
 import org.graalvm.compiler.code.CompilationResult;
@@ -44,8 +44,9 @@ import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.Management;
 import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.debug.TimeSource;
-import org.graalvm.compiler.options.OptionValue;
-import org.graalvm.compiler.options.OptionValue.OverrideScope;
+import org.graalvm.compiler.options.OptionKey;
+import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.util.EconomicMap;
 
 import jdk.vm.ci.code.BailoutException;
 import jdk.vm.ci.code.CodeCacheProvider;
@@ -93,6 +94,7 @@ public class CompilationTask {
     private final boolean installAsDefault;
 
     private final boolean useProfilingInfo;
+    private final OptionValues options;
 
     static class Lazy {
         /**
@@ -102,12 +104,33 @@ public class CompilationTask {
         static final com.sun.management.ThreadMXBean threadMXBean = (com.sun.management.ThreadMXBean) Management.getThreadMXBean();
     }
 
-    public CompilationTask(HotSpotJVMCIRuntimeProvider jvmciRuntime, HotSpotGraalCompiler compiler, HotSpotCompilationRequest request, boolean useProfilingInfo, boolean installAsDefault) {
+    public CompilationTask(HotSpotJVMCIRuntimeProvider jvmciRuntime, HotSpotGraalCompiler compiler, HotSpotCompilationRequest request, boolean useProfilingInfo, boolean installAsDefault,
+                    OptionValues options) {
         this.jvmciRuntime = jvmciRuntime;
         this.compiler = compiler;
         this.compilationId = new HotSpotCompilationIdentifier(request);
         this.useProfilingInfo = useProfilingInfo;
         this.installAsDefault = installAsDefault;
+
+        /*
+         * Disable inlining if HotSpot has it disabled unless it's been explicitly set in Graal.
+         */
+        HotSpotGraalRuntimeProvider graalRuntime = compiler.getGraalRuntime();
+        GraalHotSpotVMConfig config = graalRuntime.getVMConfig();
+        OptionValues newOptions = options;
+        if (!config.inline) {
+            EconomicMap<OptionKey<?>, Object> m = OptionValues.newOptionMap();
+            if (Inline.getValue(options) && !Inline.hasBeenSet(options)) {
+                m.put(Inline, false);
+            }
+            if (InlineDuringParsing.getValue(options) && !InlineDuringParsing.hasBeenSet(options)) {
+                m.put(InlineDuringParsing, false);
+            }
+            if (!m.isEmpty()) {
+                newOptions = new OptionValues(options, m);
+            }
+        }
+        this.options = newOptions;
     }
 
     public HotSpotResolvedJavaMethod getMethod() {
@@ -199,14 +222,14 @@ public class CompilationTask {
 
         CompilationResult result = null;
         try (DebugCloseable a = CompilationTime.start()) {
-            CompilationStatistics stats = CompilationStatistics.create(method, isOSR);
-            final boolean printCompilation = PrintCompilation.getValue() && !TTY.isSuppressed();
-            final boolean printAfterCompilation = PrintAfterCompilation.getValue() && !TTY.isSuppressed();
+            CompilationStatistics stats = CompilationStatistics.create(options, method, isOSR);
+            final boolean printCompilation = PrintCompilation.getValue(options) && !TTY.isSuppressed();
+            final boolean printAfterCompilation = PrintAfterCompilation.getValue(options) && !TTY.isSuppressed();
             if (printCompilation) {
                 TTY.println(getMethodDescription() + "...");
             }
 
-            TTY.Filter filter = new TTY.Filter(PrintFilter.getValue(), method);
+            TTY.Filter filter = new TTY.Filter(PrintFilter.getValue(options), method);
             final long start;
             final long allocatedBytesBefore;
             if (printAfterCompilation || printCompilation) {
@@ -220,14 +243,7 @@ public class CompilationTask {
             try (Scope s = Debug.scope("Compiling", new DebugDumpScope(getIdString(), true))) {
                 // Begin the compilation event.
                 compilationEvent.begin();
-                /*
-                 * Disable inlining if HotSpot has it disabled unless it's been explicitly set in
-                 * Graal.
-                 */
-                boolean disableInlining = !config.inline && !Inline.hasBeenSet();
-                try (OverrideScope s1 = disableInlining ? OptionValue.override(Inline, false) : null) {
-                    result = compiler.compile(method, entryBCI, useProfilingInfo, compilationId);
-                }
+                result = compiler.compile(method, entryBCI, useProfilingInfo, compilationId, options);
             } catch (Throwable e) {
                 throw Debug.handle(e);
             } finally {
@@ -264,11 +280,11 @@ public class CompilationTask {
             return null;
         } catch (BailoutException bailout) {
             BAILOUTS.increment();
-            if (ExitVMOnBailout.getValue()) {
+            if (ExitVMOnBailout.getValue(options)) {
                 TTY.out.println(method.format("Bailout in %H.%n(%p)"));
                 bailout.printStackTrace(TTY.out);
                 System.exit(-1);
-            } else if (PrintBailout.getValue()) {
+            } else if (PrintBailout.getValue(options)) {
                 TTY.out.println(method.format("Bailout in %H.%n(%p)"));
                 bailout.printStackTrace(TTY.out);
             }
@@ -279,7 +295,7 @@ public class CompilationTask {
              * will happen if retry is false.
              */
             final boolean permanentBailout = bailout.isPermanent();
-            if (permanentBailout && PrintBailout.getValue()) {
+            if (permanentBailout && PrintBailout.getValue(options)) {
                 TTY.println("Permanent bailout %s compiling method %s %s.", bailout.getMessage(), HotSpotGraalCompiler.str(method), (isOSR ? "OSR" : ""));
             }
             return HotSpotCompilationRequestResult.failure(bailout.getMessage(), !permanentBailout);
@@ -335,8 +351,8 @@ public class CompilationTask {
          * Automatically enable ExitVMOnException during bootstrap or when asserts are enabled but
          * respect ExitVMOnException if it's been explicitly set.
          */
-        boolean exitVMOnException = ExitVMOnException.getValue();
-        if (!ExitVMOnException.hasBeenSet()) {
+        boolean exitVMOnException = ExitVMOnException.getValue(options);
+        if (!ExitVMOnException.hasBeenSet(options)) {
             assert (exitVMOnException = true) == true;
             if (!exitVMOnException) {
                 HotSpotGraalRuntimeProvider runtime = compiler.getGraalRuntime();
@@ -346,7 +362,7 @@ public class CompilationTask {
             }
         }
 
-        if (PrintStackTraceOnException.getValue() || exitVMOnException) {
+        if (PrintStackTraceOnException.getValue(options) || exitVMOnException) {
             try {
                 t.printStackTrace(TTY.out);
             } catch (Throwable throwable) {

@@ -41,25 +41,23 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.ServiceLoader;
 import java.util.Set;
-
-import org.junit.Test;
 
 import org.graalvm.compiler.options.OptionDescriptor;
 import org.graalvm.compiler.options.OptionDescriptors;
-import org.graalvm.compiler.options.OptionValue;
+import org.graalvm.compiler.options.OptionKey;
+import org.graalvm.compiler.options.OptionsParser;
 import org.graalvm.compiler.test.GraalTest;
-
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.Label;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.Type;
+import org.junit.Test;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 
 /**
- * Verifies a class declaring one or more {@linkplain OptionValue options} has a class initializer
+ * Verifies a class declaring one or more {@linkplain OptionKey options} has a class initializer
  * that only initializes the option(s). This sanity check mitigates the possibility of an option
  * value being used before being set.
  */
@@ -69,7 +67,7 @@ public class OptionsVerifierTest {
     public void verifyOptions() throws IOException {
         try (Classpath cp = new Classpath()) {
             HashSet<Class<?>> checked = new HashSet<>();
-            for (OptionDescriptors opts : ServiceLoader.load(OptionDescriptors.class, getClass().getClassLoader())) {
+            for (OptionDescriptors opts : OptionsParser.getOptionsLoader()) {
                 for (OptionDescriptor desc : opts) {
                     OptionsVerifier.checkClass(desc.getDeclaringClass(), desc, checked, cp);
                 }
@@ -259,7 +257,7 @@ public class OptionsVerifierTest {
                     private boolean checkInvokeTarget(Executable method) {
                         Class<?> holder = method.getDeclaringClass();
                         if (method instanceof Constructor) {
-                            if (OptionValue.class.isAssignableFrom(holder)) {
+                            if (OptionKey.class.isAssignableFrom(holder)) {
                                 return true;
                             }
                         } else if (Arrays.asList(boxingTypes).contains(holder)) {

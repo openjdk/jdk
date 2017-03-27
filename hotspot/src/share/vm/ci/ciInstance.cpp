@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,8 +58,8 @@ ciType* ciInstance::java_mirror_type() {
 // ------------------------------------------------------------------
 // ciInstance::field_value_impl
 ciConstant ciInstance::field_value_impl(BasicType field_btype, int offset) {
-  Handle obj = get_oop();
-  assert(!obj.is_null(), "bad oop");
+  oop obj = get_oop();
+  assert(obj != NULL, "bad oop");
   switch(field_btype) {
     case T_BYTE:    return ciConstant(field_btype, obj->byte_field(offset));
     case T_CHAR:    return ciConstant(field_btype, obj->char_field(offset));

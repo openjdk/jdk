@@ -40,7 +40,6 @@ import org.graalvm.compiler.hotspot.nodes.type.MethodPointerStamp;
 import org.graalvm.compiler.hotspot.word.HotSpotOperation;
 import org.graalvm.compiler.hotspot.word.HotSpotOperation.HotspotOpcode;
 import org.graalvm.compiler.hotspot.word.PointerCastNode;
-import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.ConditionalNode;
@@ -149,11 +148,6 @@ class HotSpotWordOperationPlugin extends WordOperationPlugin {
                     location = snippetReflection.asObject(LocationIdentity.class, args[2].asJavaConstant());
                 }
                 ReadNode read = b.add(new ReadNode(address, location, readStamp, BarrierType.NONE));
-                /*
-                 * The read must not float outside its block otherwise it may float above an
-                 * explicit zero check on its base address.
-                 */
-                read.setGuard(AbstractBeginNode.prevBegin(read));
                 b.push(returnKind, read);
                 break;
 

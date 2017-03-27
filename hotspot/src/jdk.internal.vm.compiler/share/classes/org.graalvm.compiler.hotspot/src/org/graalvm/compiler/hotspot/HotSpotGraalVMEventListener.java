@@ -59,7 +59,7 @@ public class HotSpotGraalVMEventListener implements HotSpotVMEventListener {
     @Override
     public void notifyBootstrapFinished() {
         runtime.notifyBootstrapFinished();
-        if (GraalDebugConfig.Options.ClearMetricsAfterBootstrap.getValue()) {
+        if (GraalDebugConfig.Options.ClearMetricsAfterBootstrap.getValue(runtime.getOptions())) {
             runtime.clearMeters();
         }
     }

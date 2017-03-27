@@ -26,13 +26,13 @@ import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_2;
 
+import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.core.common.type.AbstractObjectStamp;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
-import org.graalvm.compiler.hotspot.CompressEncoding;
 import org.graalvm.compiler.hotspot.HotSpotLIRGenerator;
 import org.graalvm.compiler.hotspot.nodes.type.KlassPointerStamp;
 import org.graalvm.compiler.hotspot.nodes.type.NarrowOopStamp;
@@ -176,7 +176,7 @@ public final class CompressionNode extends UnaryNode implements ConvertNode, LIR
     @Override
     public ValueNode canonical(CanonicalizerTool tool, ValueNode forValue) {
         if (forValue.isConstant()) {
-            if (GeneratePIC.getValue()) {
+            if (GeneratePIC.getValue(tool.getOptions())) {
                 // We always want uncompressed constants
                 return this;
             }
@@ -214,9 +214,12 @@ public final class CompressionNode extends UnaryNode implements ConvertNode, LIR
             default:
                 throw GraalError.shouldNotReachHere();
         }
+
         gen.setResult(this, result);
     }
 
-    @NodeIntrinsic
-    public static native Object compression(@ConstantNodeParameter CompressionOp op, Object object, @ConstantNodeParameter CompressEncoding encoding);
+    @Override
+    public boolean mayNullCheckSkipConversion() {
+        return true;
+    }
 }

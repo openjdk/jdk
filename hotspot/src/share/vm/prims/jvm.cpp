@@ -341,7 +341,7 @@ static void set_property(Handle props, const char* key, const char* value, TRAPS
   Handle value_str  = java_lang_String::create_from_platform_dependent_str((value != NULL ? value : ""), CHECK);
   JavaCalls::call_virtual(&r,
                           props,
-                          KlassHandle(THREAD, SystemDictionary::Properties_klass()),
+                          SystemDictionary::Properties_klass(),
                           vmSymbols::put_name(),
                           vmSymbols::object_object_object_signature(),
                           key_str,
@@ -549,9 +549,9 @@ JVM_ENTRY(jobject, JVM_CallStackWalk(JNIEnv *env, jobject stackStream, jlong mod
     THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(), "not enough space in buffers", NULL);
   }
 
-  Handle result = StackWalk::walk(stackStream_h, mode, skip_frames, frame_count,
-                                  start_index, frames_array_h, CHECK_NULL);
-  return JNIHandles::make_local(env, result());
+  oop result = StackWalk::walk(stackStream_h, mode, skip_frames, frame_count,
+                               start_index, frames_array_h, CHECK_NULL);
+  return JNIHandles::make_local(env, result);
 JVM_END
 
 
@@ -621,7 +621,7 @@ JVM_END
 JVM_ENTRY(jobject, JVM_Clone(JNIEnv* env, jobject handle))
   JVMWrapper("JVM_Clone");
   Handle obj(THREAD, JNIHandles::resolve_non_null(handle));
-  const KlassHandle klass (THREAD, obj->klass());
+  Klass* klass = obj->klass();
   JvmtiVMObjectAllocEventCollector oam;
 
 #ifdef ASSERT
@@ -684,7 +684,7 @@ JVM_ENTRY(jobject, JVM_Clone(JNIEnv* env, jobject handle))
       // This can safepoint and redefine method, so need both new_obj and method
       // in a handle, for two different reasons.  new_obj can move, method can be
       // deleted if nothing is using it on the stack.
-      m->method_holder()->add_member_name(new_obj(), false);
+      m->method_holder()->add_member_name(new_obj, false);
     }
   }
 
@@ -997,9 +997,7 @@ JVM_ENTRY(jclass, JVM_FindLoadedClass(JNIEnv *env, jobject loader, jstring name)
   if (k == NULL) {
     // If the class is not already loaded, try to see if it's in the shared
     // archive for the current classloader (h_loader).
-    instanceKlassHandle ik = SystemDictionaryShared::find_or_load_shared_class(
-        klass_name, h_loader, CHECK_NULL);
-    k = ik();
+    k = SystemDictionaryShared::find_or_load_shared_class(klass_name, h_loader, CHECK_NULL);
   }
 #endif
   return (k == NULL) ? NULL :
@@ -1077,11 +1075,11 @@ JVM_ENTRY(jobjectArray, JVM_GetClassInterfaces(JNIEnv *env, jclass cls))
     return (jobjectArray) JNIHandles::make_local(env, r);
   }
 
-  KlassHandle klass(thread, java_lang_Class::as_Klass(mirror));
+  Klass* klass = java_lang_Class::as_Klass(mirror);
   // Figure size of result array
   int size;
   if (klass->is_instance_klass()) {
-    size = InstanceKlass::cast(klass())->local_interfaces()->length();
+    size = InstanceKlass::cast(klass)->local_interfaces()->length();
   } else {
     assert(klass->is_objArray_klass() || klass->is_typeArray_klass(), "Illegal mirror klass");
     size = 2;
@@ -1094,7 +1092,7 @@ JVM_ENTRY(jobjectArray, JVM_GetClassInterfaces(JNIEnv *env, jclass cls))
   if (klass->is_instance_klass()) {
     // Regular instance klass, fill in all local interfaces
     for (int index = 0; index < size; index++) {
-      Klass* k = InstanceKlass::cast(klass())->local_interfaces()->at(index);
+      Klass* k = InstanceKlass::cast(klass)->local_interfaces()->at(index);
       result->obj_at_put(index, k->java_mirror());
     }
   } else {
@@ -1178,7 +1176,7 @@ JVM_ENTRY(jobject, JVM_GetProtectionDomain(JNIEnv *env, jclass cls))
 JVM_END
 
 
-static bool is_authorized(Handle context, instanceKlassHandle klass, TRAPS) {
+static bool is_authorized(Handle context, InstanceKlass* klass, TRAPS) {
   // If there is a security manager and protection domain, check the access
   // in the protection domain, otherwise it is authorized.
   if (java_lang_System::has_security_manager()) {
@@ -1218,7 +1216,7 @@ oop create_dummy_access_control_context(TRAPS) {
   Handle obj = pd_klass->allocate_instance_handle(CHECK_NULL);
   // Call constructor ProtectionDomain(null, null);
   JavaValue result(T_VOID);
-  JavaCalls::call_special(&result, obj, KlassHandle(THREAD, pd_klass),
+  JavaCalls::call_special(&result, obj, pd_klass,
                           vmSymbols::object_initializer_name(),
                           vmSymbols::codesource_permissioncollection_signature(),
                           Handle(), Handle(), CHECK_NULL);
@@ -1249,7 +1247,7 @@ JVM_ENTRY(jobject, JVM_DoPrivileged(JNIEnv *env, jclass cls, jobject action, job
   }
 
   Method* method        = vfst.method();
-  instanceKlassHandle klass (THREAD, method->method_holder());
+  InstanceKlass* klass  = method->method_holder();
 
   // Check that action object understands "Object run()"
   Handle h_context;
@@ -1452,7 +1450,7 @@ JVM_ENTRY(jobjectArray, JVM_GetDeclaredClasses(JNIEnv *env, jclass ofClass))
     return (jobjectArray)JNIHandles::make_local(env, result);
   }
 
-  instanceKlassHandle k(thread, java_lang_Class::as_Klass(JNIHandles::resolve_non_null(ofClass)));
+  InstanceKlass* k = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(ofClass)));
   InnerClassesIterator iter(k);
 
   if (iter.length() == 0) {
@@ -1479,9 +1477,9 @@ JVM_ENTRY(jobjectArray, JVM_GetDeclaredClasses(JNIEnv *env, jclass ofClass))
       // before attempting to find the class.
       if (cp->klass_name_at_matches(k, ooff)) {
         Klass* outer_klass = cp->klass_at(ooff, CHECK_NULL);
-        if (outer_klass == k()) {
+        if (outer_klass == k) {
            Klass* ik = cp->klass_at(ioff, CHECK_NULL);
-           instanceKlassHandle inner_klass (THREAD, ik);
+           InstanceKlass* inner_klass = InstanceKlass::cast(ik);
 
            // Throws an exception if outer klass has not declared k as
            // an inner klass
@@ -1532,9 +1530,9 @@ JVM_ENTRY(jstring, JVM_GetSimpleBinaryName(JNIEnv *env, jclass cls))
       !java_lang_Class::as_Klass(mirror)->is_instance_klass()) {
     return NULL;
   }
-  instanceKlassHandle k(THREAD, InstanceKlass::cast(java_lang_Class::as_Klass(mirror)));
+  InstanceKlass* k = InstanceKlass::cast(java_lang_Class::as_Klass(mirror));
   int ooff = 0, noff = 0;
-  if (InstanceKlass::find_inner_classes_attr(k, &ooff, &noff, THREAD)) {
+  if (k->find_inner_classes_attr(&ooff, &noff, THREAD)) {
     if (noff != 0) {
       constantPoolHandle i_cp(thread, k->constants());
       Symbol* name = i_cp->symbol_at(noff);
@@ -1590,19 +1588,19 @@ static bool jvm_get_field_common(jobject field, fieldDescriptor& fd, TRAPS) {
   int slot      = java_lang_reflect_Field::slot(reflected);
   int modifiers = java_lang_reflect_Field::modifiers(reflected);
 
-  KlassHandle kh(THREAD, k);
-  intptr_t offset = InstanceKlass::cast(kh())->field_offset(slot);
+  InstanceKlass* ik = InstanceKlass::cast(k);
+  intptr_t offset = ik->field_offset(slot);
 
   if (modifiers & JVM_ACC_STATIC) {
     // for static fields we only look in the current class
-    if (!InstanceKlass::cast(kh())->find_local_field_from_offset(offset, true, &fd)) {
+    if (!ik->find_local_field_from_offset(offset, true, &fd)) {
       assert(false, "cannot find static field");
       return false;
     }
   } else {
     // for instance fields we start with the current class and work
     // our way up through the superclass chain
-    if (!InstanceKlass::cast(kh())->find_field_from_offset(offset, false, &fd)) {
+    if (!ik->find_field_from_offset(offset, false, &fd)) {
       assert(false, "cannot find instance field");
       return false;
     }
@@ -1757,7 +1755,7 @@ JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredFields(JNIEnv *env, jclass ofClass, 
     return (jobjectArray) JNIHandles::make_local(env, res);
   }
 
-  instanceKlassHandle k(THREAD, java_lang_Class::as_Klass(JNIHandles::resolve_non_null(ofClass)));
+  InstanceKlass* k = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(ofClass)));
   constantPoolHandle cp(THREAD, k->constants());
 
   // Ensure class is linked
@@ -1768,7 +1766,7 @@ JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredFields(JNIEnv *env, jclass ofClass, 
 
   if (publicOnly) {
     num_fields = 0;
-    for (JavaFieldStream fs(k()); !fs.done(); fs.next()) {
+    for (JavaFieldStream fs(k); !fs.done(); fs.next()) {
       if (fs.access_flags().is_public()) ++num_fields;
     }
   } else {
@@ -1782,7 +1780,7 @@ JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredFields(JNIEnv *env, jclass ofClass, 
   fieldDescriptor fd;
   for (JavaFieldStream fs(k); !fs.done(); fs.next()) {
     if (!publicOnly || fs.access_flags().is_public()) {
-      fd.reinitialize(k(), fs.index());
+      fd.reinitialize(k, fs.index());
       oop field = Reflection::new_field(&fd, CHECK_NULL);
       result->obj_at_put(out_idx, field);
       ++out_idx;
@@ -1817,7 +1815,7 @@ static jobjectArray get_class_declared_methods_helper(
     return (jobjectArray) JNIHandles::make_local(env, res);
   }
 
-  instanceKlassHandle k(THREAD, java_lang_Class::as_Klass(JNIHandles::resolve_non_null(ofClass)));
+  InstanceKlass* k = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(ofClass)));
 
   // Ensure class is linked
   k->link_class(CHECK_NULL);
@@ -1913,7 +1911,7 @@ JVM_ENTRY(jobject, JVM_GetClassConstantPool(JNIEnv *env, jclass cls))
   if (!java_lang_Class::is_primitive(JNIHandles::resolve_non_null(cls))) {
     Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
     if (k->is_instance_klass()) {
-      instanceKlassHandle k_h(THREAD, k);
+      InstanceKlass* k_h = InstanceKlass::cast(k);
       Handle jcp = reflect_ConstantPool::create(CHECK_NULL);
       reflect_ConstantPool::set_cp(jcp(), k_h->constants());
       return JNIHandles::make_local(jcp());
@@ -1975,7 +1973,7 @@ static jobject get_method_at_helper(constantPoolHandle cp, jint index, bool forc
     k_o = ConstantPool::klass_at_if_loaded(cp, klass_ref);
     if (k_o == NULL) return NULL;
   }
-  instanceKlassHandle k(THREAD, k_o);
+  InstanceKlass* k = InstanceKlass::cast(k_o);
   Symbol* name = cp->uncached_name_ref_at(index);
   Symbol* sig  = cp->uncached_signature_ref_at(index);
   methodHandle m (THREAD, k->find_method(name, sig));
@@ -2026,7 +2024,7 @@ static jobject get_field_at_helper(constantPoolHandle cp, jint index, bool force
     k_o = ConstantPool::klass_at_if_loaded(cp, klass_ref);
     if (k_o == NULL) return NULL;
   }
-  instanceKlassHandle k(THREAD, k_o);
+  InstanceKlass* k = InstanceKlass::cast(k_o);
   Symbol* name = cp->uncached_name_ref_at(index);
   Symbol* sig  = cp->uncached_signature_ref_at(index);
   fieldDescriptor fd;
@@ -2616,7 +2614,8 @@ JVM_ENTRY(jint, JVM_GetCPFieldModifiers(JNIEnv *env, jclass cls, int cp_index, j
     case JVM_CONSTANT_Fieldref: {
       Symbol* name      = cp->uncached_name_ref_at(cp_index);
       Symbol* signature = cp->uncached_signature_ref_at(cp_index);
-      for (JavaFieldStream fs(k_called); !fs.done(); fs.next()) {
+      InstanceKlass* ik = InstanceKlass::cast(k_called);
+      for (JavaFieldStream fs(ik); !fs.done(); fs.next()) {
         if (fs.name() == name && fs.signature() == signature) {
           return fs.access_flags().as_short() & JVM_RECOGNIZED_FIELD_MODIFIERS;
         }
@@ -2770,7 +2769,7 @@ static void thread_entry(JavaThread* thread, TRAPS) {
   JavaValue result(T_VOID);
   JavaCalls::call_virtual(&result,
                           obj,
-                          KlassHandle(THREAD, SystemDictionary::Thread_klass()),
+                          SystemDictionary::Thread_klass(),
                           vmSymbols::run_method_name(),
                           vmSymbols::void_method_signature(),
                           THREAD);
@@ -2808,9 +2807,11 @@ JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
       jlong size =
              java_lang_Thread::stackSize(JNIHandles::resolve_non_null(jthread));
       // Allocate the C++ Thread structure and create the native thread.  The
-      // stack size retrieved from java is signed, but the constructor takes
-      // size_t (an unsigned type), so avoid passing negative values which would
-      // result in really large stacks.
+      // stack size retrieved from java is 64-bit signed, but the constructor takes
+      // size_t (an unsigned type), which may be 32 or 64-bit depending on the platform.
+      //  - Avoid truncating on 32-bit platforms if size is greater than UINT_MAX.
+      //  - Avoid passing negative values which would result in really large stacks.
+      NOT_LP64(if (size > SIZE_MAX) size = SIZE_MAX;)
       size_t sz = size > 0 ? (size_t) size : 0;
       native_thread = new JavaThread(&thread_entry, sz);
 
@@ -3226,7 +3227,7 @@ JVM_ENTRY(jobjectArray, JVM_GetClassContext(JNIEnv *env))
   }
 
   // Collect method holders
-  GrowableArray<KlassHandle>* klass_array = new GrowableArray<KlassHandle>();
+  GrowableArray<Klass*>* klass_array = new GrowableArray<Klass*>();
   for (; !vfst.at_end(); vfst.security_next()) {
     Method* m = vfst.method();
     // Native frames are not returned
@@ -3593,12 +3594,11 @@ jclass find_class_from_class_loader(JNIEnv* env, Symbol* name, jboolean init,
   //   if there is no security manager in 3-arg Class.forName().
   Klass* klass = SystemDictionary::resolve_or_fail(name, loader, protection_domain, throwError != 0, CHECK_NULL);
 
-  KlassHandle klass_handle(THREAD, klass);
   // Check if we should initialize the class
-  if (init && klass_handle->is_instance_klass()) {
-    klass_handle->initialize(CHECK_NULL);
+  if (init && klass->is_instance_klass()) {
+    klass->initialize(CHECK_NULL);
   }
-  return (jclass) JNIHandles::make_local(env, klass_handle->java_mirror());
+  return (jclass) JNIHandles::make_local(env, klass->java_mirror());
 }
 
 
@@ -3746,25 +3746,25 @@ JVM_ENTRY(jobjectArray, JVM_GetEnclosingMethodInfo(JNIEnv *env, jclass ofClass))
   if (!k->is_instance_klass()) {
     return NULL;
   }
-  instanceKlassHandle ik_h(THREAD, k);
-  int encl_method_class_idx = ik_h->enclosing_method_class_index();
+  InstanceKlass* ik = InstanceKlass::cast(k);
+  int encl_method_class_idx = ik->enclosing_method_class_index();
   if (encl_method_class_idx == 0) {
     return NULL;
   }
   objArrayOop dest_o = oopFactory::new_objArray(SystemDictionary::Object_klass(), 3, CHECK_NULL);
   objArrayHandle dest(THREAD, dest_o);
-  Klass* enc_k = ik_h->constants()->klass_at(encl_method_class_idx, CHECK_NULL);
+  Klass* enc_k = ik->constants()->klass_at(encl_method_class_idx, CHECK_NULL);
   dest->obj_at_put(0, enc_k->java_mirror());
-  int encl_method_method_idx = ik_h->enclosing_method_method_index();
+  int encl_method_method_idx = ik->enclosing_method_method_index();
   if (encl_method_method_idx != 0) {
-    Symbol* sym = ik_h->constants()->symbol_at(
+    Symbol* sym = ik->constants()->symbol_at(
                         extract_low_short_from_int(
-                          ik_h->constants()->name_and_type_at(encl_method_method_idx)));
+                          ik->constants()->name_and_type_at(encl_method_method_idx)));
     Handle str = java_lang_String::create_from_symbol(sym, CHECK_NULL);
     dest->obj_at_put(1, str());
-    sym = ik_h->constants()->symbol_at(
+    sym = ik->constants()->symbol_at(
               extract_high_short_from_int(
-                ik_h->constants()->name_and_type_at(encl_method_method_idx)));
+                ik->constants()->name_and_type_at(encl_method_method_idx)));
     str = java_lang_String::create_from_symbol(sym, CHECK_NULL);
     dest->obj_at_put(2, str());
   }
@@ -3799,8 +3799,8 @@ JVM_ENTRY(jobjectArray, JVM_GetVmArguments(JNIEnv *env))
   int num_flags = Arguments::num_jvm_flags();
   int num_args = Arguments::num_jvm_args();
 
-  instanceKlassHandle ik (THREAD, SystemDictionary::String_klass());
-  objArrayOop r = oopFactory::new_objArray(ik(), num_args + num_flags, CHECK_NULL);
+  InstanceKlass* ik = SystemDictionary::String_klass();
+  objArrayOop r = oopFactory::new_objArray(ik, num_args + num_flags, CHECK_NULL);
   objArrayHandle result_h(THREAD, r);
 
   int index = 0;

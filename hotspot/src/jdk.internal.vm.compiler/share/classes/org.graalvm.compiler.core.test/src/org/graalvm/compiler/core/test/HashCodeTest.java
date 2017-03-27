@@ -31,6 +31,7 @@ import org.graalvm.compiler.nodes.InvokeNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.extended.LoadHubNode;
 import org.graalvm.compiler.nodes.extended.LoadMethodNode;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.tiers.MidTierContext;
 
@@ -151,8 +152,9 @@ public class HashCodeTest extends GraalCompilerTest {
     @SuppressWarnings("try")
     private StructuredGraph buildGraphAfterMidTier(String name) {
         StructuredGraph g = parseForCompile(getResolvedJavaMethod(name));
-        new HighTier().apply(g, getDefaultHighTierContext());
-        new MidTier().apply(g, new MidTierContext(getProviders(), getTargetProvider(), OptimisticOptimizations.ALL, g.getProfilingInfo()));
+        OptionValues options = getInitialOptions();
+        new HighTier(options).apply(g, getDefaultHighTierContext());
+        new MidTier(options).apply(g, new MidTierContext(getProviders(), getTargetProvider(), OptimisticOptimizations.ALL, g.getProfilingInfo()));
         return g;
     }
 
