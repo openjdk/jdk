@@ -170,11 +170,11 @@ public class TooSmallStackSize {
         checkStack("-XX:ThreadStackSize=", ThreadStackSizeString, "16");
 
         /*
-         * Try with a 32k stack size, which is the size that the launcher will
+         * Try with a 64k stack size, which is the size that the launcher will
          * set to if you try setting to anything smaller. This should produce the same
          * result as setting to 16k if the fix for 6762191 is in place.
          */
-        String min_stack_allowed = checkStack("-XX:ThreadStackSize=", ThreadStackSizeString, "32");
+        String min_stack_allowed = checkStack("-XX:ThreadStackSize=", ThreadStackSizeString, "64");
 
         /*
          * Try again with a the minimum stack size that was given in the error message
@@ -190,7 +190,7 @@ public class TooSmallStackSize {
          * Now redo the same tests with the compiler thread stack size:
          */
         checkStack("-XX:CompilerThreadStackSize=", CompilerThreadStackSizeString, "16");
-        min_stack_allowed = checkStack("-XX:CompilerThreadStackSize=", CompilerThreadStackSizeString, "32");
+        min_stack_allowed = checkStack("-XX:CompilerThreadStackSize=", CompilerThreadStackSizeString, "64");
         checkMinStackAllowed("-XX:CompilerThreadStackSize=", CompilerThreadStackSizeString, min_stack_allowed);
         checkMinStackAllowed("-XX:CompilerThreadStackSize=", CompilerThreadStackSizeString, "513");
 
@@ -198,7 +198,7 @@ public class TooSmallStackSize {
          * Now redo the same tests with the VM thread stack size:
          */
         checkStack("-XX:VMThreadStackSize=", VMThreadStackSizeString, "16");
-        min_stack_allowed = checkStack("-XX:VMThreadStackSize=", VMThreadStackSizeString, "32");
+        min_stack_allowed = checkStack("-XX:VMThreadStackSize=", VMThreadStackSizeString, "64");
         checkMinStackAllowed("-XX:VMThreadStackSize=", VMThreadStackSizeString, min_stack_allowed);
         checkMinStackAllowed("-XX:VMThreadStackSize=", VMThreadStackSizeString, "513");
     }
