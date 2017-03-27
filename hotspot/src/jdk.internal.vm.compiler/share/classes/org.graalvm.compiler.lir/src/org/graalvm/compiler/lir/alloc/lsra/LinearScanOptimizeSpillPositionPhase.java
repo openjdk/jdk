@@ -197,7 +197,7 @@ public final class LinearScanOptimizeSpillPositionPhase extends AllocationPhase 
                 block = allocator.sortedBlocks()[nextBlockIndex];
                 if (range.to <= allocator.getFirstLirInstructionId(block)) {
                     range = range.next;
-                    if (range == Range.EndMarker) {
+                    if (range.isEndMarker()) {
                         block = null;
                     } else {
                         block = allocator.blockForId(range.from);

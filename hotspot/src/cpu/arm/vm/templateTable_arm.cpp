@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2286,13 +2286,18 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
       }
       __ bind(no_mdo);
       // Increment backedge counter in MethodCounters*
-      __ get_method_counters(Rmethod, Rcounters, dispatch);
+      // Note Rbumped_taken_count is a callee saved registers for ARM32, but caller saved for ARM64
+      __ get_method_counters(Rmethod, Rcounters, dispatch, true /*saveRegs*/,
+                             Rdisp, R3_bytecode,
+                             AARCH64_ONLY(Rbumped_taken_count) NOT_AARCH64(noreg));
       const Address mask(Rcounters, in_bytes(MethodCounters::backedge_mask_offset()));
       __ increment_mask_and_jump(Address(Rcounters, be_offset), increment, mask,
                                  Rcnt, R4_tmp, eq, &backedge_counter_overflow);
     } else {
-      // increment counter
-      __ get_method_counters(Rmethod, Rcounters, dispatch);
+      // Increment backedge counter in MethodCounters*
+      __ get_method_counters(Rmethod, Rcounters, dispatch, true /*saveRegs*/,
+                             Rdisp, R3_bytecode,
+                             AARCH64_ONLY(Rbumped_taken_count) NOT_AARCH64(noreg));
       __ ldr_u32(Rtemp, Address(Rcounters, be_offset));           // load backedge counter
       __ add(Rtemp, Rtemp, InvocationCounter::count_increment);   // increment counter
       __ str_32(Rtemp, Address(Rcounters, be_offset));            // store counter

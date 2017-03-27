@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,6 @@
 #include "utilities/globalDefinitions.hpp"
 
 #define CALC_OBJ_SIZE_IN_TYPE(obj, type) (align_size_up_(sizeof(obj), sizeof(type))/sizeof(type))
-
-// Data type for memory counters
-#ifdef _LP64
-  typedef jlong    MemoryCounterType;
-#else
-  typedef jint     MemoryCounterType;
-#endif
 
 // Native memory tracking level
 enum NMT_TrackingLevel {

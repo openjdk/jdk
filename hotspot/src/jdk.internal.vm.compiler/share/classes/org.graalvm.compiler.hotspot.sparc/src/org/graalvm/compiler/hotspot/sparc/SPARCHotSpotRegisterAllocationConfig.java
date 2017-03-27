@@ -112,8 +112,8 @@ public class SPARCHotSpotRegisterAllocationConfig extends RegisterAllocationConf
     };
     // @formatter:on
 
-    public SPARCHotSpotRegisterAllocationConfig(RegisterConfig registerConfig) {
-        super(registerConfig);
+    public SPARCHotSpotRegisterAllocationConfig(RegisterConfig registerConfig, String[] allocationRestrictedTo) {
+        super(registerConfig, allocationRestrictedTo);
     }
 
     @Override

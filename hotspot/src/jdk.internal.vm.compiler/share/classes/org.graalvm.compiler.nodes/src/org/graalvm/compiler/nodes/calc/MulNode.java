@@ -90,11 +90,25 @@ public class MulNode extends BinaryArithmeticNode<Mul> implements NarrowableArit
 
             if (c instanceof PrimitiveConstant && ((PrimitiveConstant) c).getJavaKind().isNumericInteger()) {
                 long i = ((PrimitiveConstant) c).asLong();
-                if (i > 0 && CodeUtil.isPowerOf2(i)) {
-                    return new LeftShiftNode(forX, ConstantNode.forInt(CodeUtil.log2(i)));
-                }
+
                 if (i == 0) {
                     return ConstantNode.forIntegerStamp(stamp, 0);
+                } else if (i == 1) {
+                    return forX;
+                } else if (i == -1) {
+                    return new NegateNode(forX);
+                } else if (i > 0) {
+                    if (CodeUtil.isPowerOf2(i)) {
+                        return new LeftShiftNode(forX, ConstantNode.forInt(CodeUtil.log2(i)));
+                    } else if (CodeUtil.isPowerOf2(i - 1)) {
+                        return AddNode.create(new LeftShiftNode(forX, ConstantNode.forInt(CodeUtil.log2(i - 1))), forX);
+                    } else if (CodeUtil.isPowerOf2(i + 1)) {
+                        return SubNode.create(new LeftShiftNode(forX, ConstantNode.forInt(CodeUtil.log2(i + 1))), forX);
+                    }
+                } else if (i < 0) {
+                    if (CodeUtil.isPowerOf2(-i)) {
+                        return new NegateNode(new LeftShiftNode(forX, ConstantNode.forInt(CodeUtil.log2(-i))));
+                    }
                 }
             }
 

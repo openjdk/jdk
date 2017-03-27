@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -54,9 +54,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
                             int number_of_arguments,
                             bool check_exceptions);
 
-  virtual void check_and_handle_popframe(Register java_thread);
-  virtual void check_and_handle_earlyret(Register java_thread);
-
   // base routine for all dispatches
   void dispatch_base(TosState state, address* table, bool verifyoop = true);
 
@@ -66,6 +63,9 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void load_earlyret_value(TosState state);
 
   void jump_to_entry(address entry);
+
+  virtual void check_and_handle_popframe(Register java_thread);
+  virtual void check_and_handle_earlyret(Register java_thread);
 
   // Interpreter-specific registers
   void save_bcp() {

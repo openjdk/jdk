@@ -23,7 +23,6 @@
 package org.graalvm.compiler.nodes;
 
 import static org.graalvm.compiler.nodeinfo.InputType.Extension;
-import static org.graalvm.compiler.nodeinfo.InputType.Guard;
 import static org.graalvm.compiler.nodeinfo.InputType.Memory;
 import static org.graalvm.compiler.nodeinfo.InputType.State;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_UNKNOWN;
@@ -39,7 +38,6 @@ import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodeinfo.Verbosity;
 import org.graalvm.compiler.nodes.extended.ForeignCallNode;
-import org.graalvm.compiler.nodes.extended.GuardingNode;
 import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
 import org.graalvm.compiler.nodes.memory.AbstractMemoryCheckpoint;
 import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
@@ -70,7 +68,6 @@ public final class InvokeNode extends AbstractMemoryCheckpoint implements Invoke
     @OptionalInput ValueNode classInit;
     @Input(Extension) CallTargetNode callTarget;
     @OptionalInput(State) FrameState stateDuring;
-    @OptionalInput(Guard) GuardingNode guard;
     protected final int bci;
     protected boolean polymorphic;
     protected boolean useForInlining;
@@ -213,17 +210,6 @@ public final class InvokeNode extends AbstractMemoryCheckpoint implements Invoke
     public void setStateDuring(FrameState stateDuring) {
         updateUsages(this.stateDuring, stateDuring);
         this.stateDuring = stateDuring;
-    }
-
-    @Override
-    public GuardingNode getGuard() {
-        return guard;
-    }
-
-    @Override
-    public void setGuard(GuardingNode guard) {
-        updateUsagesInterface(this.guard, guard);
-        this.guard = guard;
     }
 
     @Override

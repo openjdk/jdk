@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ Method**  VM_RedefineClasses::_added_methods        = NULL;
 int         VM_RedefineClasses::_matching_methods_length = 0;
 int         VM_RedefineClasses::_deleted_methods_length  = 0;
 int         VM_RedefineClasses::_added_methods_length    = 0;
-Klass*      VM_RedefineClasses::_the_class_oop = NULL;
+Klass*      VM_RedefineClasses::_the_class = NULL;
 
 
 VM_RedefineClasses::VM_RedefineClasses(jint class_count,
@@ -227,8 +227,8 @@ void VM_RedefineClasses::doit_epilogue() {
   // Free os::malloc allocated memory.
   os::free(_scratch_classes);
 
-  // Reset the_class_oop to null for error printing.
-  _the_class_oop = NULL;
+  // Reset the_class to null for error printing.
+  _the_class = NULL;
 
   if (log_is_enabled(Info, redefine, class, timer)) {
     // Used to have separate timers for "doit" and "all", but the timer
@@ -657,8 +657,8 @@ void VM_RedefineClasses::finalize_operands_merge(const constantPoolHandle& merge
 
 
 jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
-             instanceKlassHandle the_class,
-             instanceKlassHandle scratch_class) {
+             InstanceKlass* the_class,
+             InstanceKlass* scratch_class) {
   int i;
 
   // Check superclasses, or rather their names, since superclasses themselves can be
@@ -993,8 +993,8 @@ bool VM_RedefineClasses::is_unresolved_class_mismatch(const constantPoolHandle& 
 jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
 
   // For consistency allocate memory using os::malloc wrapper.
-  _scratch_classes = (Klass**)
-    os::malloc(sizeof(Klass*) * _class_count, mtClass);
+  _scratch_classes = (InstanceKlass**)
+    os::malloc(sizeof(InstanceKlass*) * _class_count, mtClass);
   if (_scratch_classes == NULL) {
     return JVMTI_ERROR_OUT_OF_MEMORY;
   }
@@ -1014,7 +1014,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
     // versions are deleted. Constant pools are deallocated while merging
     // constant pools
     HandleMark hm(THREAD);
-    instanceKlassHandle the_class(THREAD, get_ik(_class_defs[i].klass));
+    InstanceKlass* the_class = get_ik(_class_defs[i].klass);
     Symbol*  the_class_sym = the_class->name();
 
     log_debug(redefine, class, load)
@@ -1032,24 +1032,23 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
     // Set redefined class handle in JvmtiThreadState class.
     // This redefined class is sent to agent event handler for class file
     // load hook event.
-    state->set_class_being_redefined(&the_class, _class_load_kind);
+    state->set_class_being_redefined(the_class, _class_load_kind);
 
-    Klass* k = SystemDictionary::parse_stream(the_class_sym,
-                                                the_class_loader,
-                                                protection_domain,
-                                                &st,
-                                                THREAD);
+    InstanceKlass* scratch_class = SystemDictionary::parse_stream(
+                                                      the_class_sym,
+                                                      the_class_loader,
+                                                      protection_domain,
+                                                      &st,
+                                                      THREAD);
     // Clear class_being_redefined just to be sure.
     state->clear_class_being_redefined();
 
     // TODO: if this is retransform, and nothing changed we can skip it
 
-    instanceKlassHandle scratch_class (THREAD, k);
-
     // Need to clean up allocated InstanceKlass if there's an error so assign
     // the result here. Caller deallocates all the scratch classes in case of
     // an error.
-    _scratch_classes[i] = k;
+    _scratch_classes[i] = scratch_class;
 
     if (HAS_PENDING_EXCEPTION) {
       Symbol* ex_name = PENDING_EXCEPTION->klass()->name();
@@ -1106,7 +1105,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
       // the_class to scratch_class in the JVM_* functions called by the
       // verifier. Please, refer to jvmtiThreadState.hpp for the detailed
       // description.
-      RedefineVerifyMark rvm(&the_class, &scratch_class, state);
+      RedefineVerifyMark rvm(the_class, scratch_class, state);
       Verifier::verify(
         scratch_class, Verifier::ThrowException, true, THREAD);
     }
@@ -1138,7 +1137,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
     if (VerifyMergedCPBytecodes) {
       // verify what we have done during constant pool merging
       {
-        RedefineVerifyMark rvm(&the_class, &scratch_class, state);
+        RedefineVerifyMark rvm(the_class, scratch_class, state);
         Verifier::verify(scratch_class, Verifier::ThrowException, true, THREAD);
       }
 
@@ -1434,7 +1433,7 @@ class MergeCPCleaner {
 // potentially rewrite bytecodes in scratch_class to use the merged
 // constant pool.
 jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
-             instanceKlassHandle the_class, instanceKlassHandle scratch_class,
+             InstanceKlass* the_class, InstanceKlass* scratch_class,
              TRAPS) {
   // worst case merged constant pool length is old and new combined
   int merge_cp_length = the_class->constants()->length()
@@ -1483,7 +1482,7 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
   _operands_index_map_p = new intArray(operands_index_map_len, operands_index_map_len, -1);
 
   // reference to the cp holder is needed for copy_operands()
-  merge_cp->set_pool_holder(scratch_class());
+  merge_cp->set_pool_holder(scratch_class);
   bool result = merge_constant_pools(old_cp, scratch_cp, &merge_cp,
                   &merge_cp_length, THREAD);
   merge_cp->set_pool_holder(NULL);
@@ -1568,7 +1567,7 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
 
 
 // Rewrite constant pool references in klass scratch_class.
-bool VM_RedefineClasses::rewrite_cp_refs(instanceKlassHandle scratch_class,
+bool VM_RedefineClasses::rewrite_cp_refs(InstanceKlass* scratch_class,
        TRAPS) {
 
   // rewrite constant pool references in the methods:
@@ -1655,7 +1654,7 @@ bool VM_RedefineClasses::rewrite_cp_refs(instanceKlassHandle scratch_class,
 
 // Rewrite constant pool references in the methods.
 bool VM_RedefineClasses::rewrite_cp_refs_in_methods(
-       instanceKlassHandle scratch_class, TRAPS) {
+       InstanceKlass* scratch_class, TRAPS) {
 
   Array<Method*>* methods = scratch_class->methods();
 
@@ -1834,7 +1833,7 @@ void VM_RedefineClasses::rewrite_cp_refs_in_method(methodHandle method,
 
 // Rewrite constant pool references in the class_annotations field.
 bool VM_RedefineClasses::rewrite_cp_refs_in_class_annotations(
-       instanceKlassHandle scratch_class, TRAPS) {
+       InstanceKlass* scratch_class, TRAPS) {
 
   AnnotationArray* class_annotations = scratch_class->class_annotations();
   if (class_annotations == NULL || class_annotations->length() == 0) {
@@ -2124,7 +2123,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_element_value(
 
 // Rewrite constant pool references in a fields_annotations field.
 bool VM_RedefineClasses::rewrite_cp_refs_in_fields_annotations(
-       instanceKlassHandle scratch_class, TRAPS) {
+       InstanceKlass* scratch_class, TRAPS) {
 
   Array<AnnotationArray*>* fields_annotations = scratch_class->fields_annotations();
 
@@ -2157,7 +2156,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_fields_annotations(
 
 // Rewrite constant pool references in a methods_annotations field.
 bool VM_RedefineClasses::rewrite_cp_refs_in_methods_annotations(
-       instanceKlassHandle scratch_class, TRAPS) {
+       InstanceKlass* scratch_class, TRAPS) {
 
   for (int i = 0; i < scratch_class->methods()->length(); i++) {
     Method* m = scratch_class->methods()->at(i);
@@ -2195,7 +2194,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_methods_annotations(
 // }
 //
 bool VM_RedefineClasses::rewrite_cp_refs_in_methods_parameter_annotations(
-       instanceKlassHandle scratch_class, TRAPS) {
+       InstanceKlass* scratch_class, TRAPS) {
 
   for (int i = 0; i < scratch_class->methods()->length(); i++) {
     Method* m = scratch_class->methods()->at(i);
@@ -2244,7 +2243,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_methods_parameter_annotations(
 // }
 //
 bool VM_RedefineClasses::rewrite_cp_refs_in_methods_default_annotations(
-       instanceKlassHandle scratch_class, TRAPS) {
+       InstanceKlass* scratch_class, TRAPS) {
 
   for (int i = 0; i < scratch_class->methods()->length(); i++) {
     Method* m = scratch_class->methods()->at(i);
@@ -2271,7 +2270,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_methods_default_annotations(
 
 // Rewrite constant pool references in a class_type_annotations field.
 bool VM_RedefineClasses::rewrite_cp_refs_in_class_type_annotations(
-       instanceKlassHandle scratch_class, TRAPS) {
+       InstanceKlass* scratch_class, TRAPS) {
 
   AnnotationArray* class_type_annotations = scratch_class->class_type_annotations();
   if (class_type_annotations == NULL || class_type_annotations->length() == 0) {
@@ -2289,7 +2288,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_class_type_annotations(
 
 // Rewrite constant pool references in a fields_type_annotations field.
 bool VM_RedefineClasses::rewrite_cp_refs_in_fields_type_annotations(
-       instanceKlassHandle scratch_class, TRAPS) {
+       InstanceKlass* scratch_class, TRAPS) {
 
   Array<AnnotationArray*>* fields_type_annotations = scratch_class->fields_type_annotations();
   if (fields_type_annotations == NULL || fields_type_annotations->length() == 0) {
@@ -2321,7 +2320,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_fields_type_annotations(
 
 // Rewrite constant pool references in a methods_type_annotations field.
 bool VM_RedefineClasses::rewrite_cp_refs_in_methods_type_annotations(
-       instanceKlassHandle scratch_class, TRAPS) {
+       InstanceKlass* scratch_class, TRAPS) {
 
   for (int i = 0; i < scratch_class->methods()->length(); i++) {
     Method* m = scratch_class->methods()->at(i);
@@ -3074,7 +3073,7 @@ void VM_RedefineClasses::rewrite_cp_refs_in_verification_type_info(
 // smaller constant pool is associated with scratch_class.
 void VM_RedefineClasses::set_new_constant_pool(
        ClassLoaderData* loader_data,
-       instanceKlassHandle scratch_class, constantPoolHandle scratch_cp,
+       InstanceKlass* scratch_class, constantPoolHandle scratch_cp,
        int scratch_cp_length, TRAPS) {
   assert(scratch_cp->length() >= scratch_cp_length, "sanity check");
 
@@ -3091,7 +3090,7 @@ void VM_RedefineClasses::set_new_constant_pool(
 
   // attach klass to new constant pool
   // reference to the cp holder is needed for copy_operands()
-  smaller_cp->set_pool_holder(scratch_class());
+  smaller_cp->set_pool_holder(scratch_class);
 
   scratch_cp->copy_cp_to(1, scratch_cp_length - 1, smaller_cp, 1, THREAD);
   if (HAS_PENDING_EXCEPTION) {
@@ -3268,11 +3267,11 @@ void VM_RedefineClasses::AdjustCpoolCacheAndVtable::do_klass(Klass* k) {
   // This is a very busy routine. We don't want too much tracing
   // printed out.
   bool trace_name_printed = false;
-  InstanceKlass *the_class = InstanceKlass::cast(_the_class_oop);
+  InstanceKlass *the_class = InstanceKlass::cast(_the_class);
 
   // If the class being redefined is java.lang.Object, we need to fix all
   // array class vtables also
-  if (k->is_array_klass() && _the_class_oop == SystemDictionary::Object_klass()) {
+  if (k->is_array_klass() && _the_class == SystemDictionary::Object_klass()) {
     k->vtable()->adjust_method_entries(the_class, &trace_name_printed);
 
   } else if (k->is_instance_klass()) {
@@ -3291,8 +3290,7 @@ void VM_RedefineClasses::AdjustCpoolCacheAndVtable::do_klass(Klass* k) {
     // If the current class being redefined has a user-defined class
     // loader as its defining class loader, then we can skip all
     // classes loaded by the bootstrap class loader.
-    bool is_user_defined =
-           InstanceKlass::cast(_the_class_oop)->class_loader() != NULL;
+    bool is_user_defined = (_the_class->class_loader() != NULL);
     if (is_user_defined && ik->class_loader() == NULL) {
       return;
     }
@@ -3311,9 +3309,9 @@ void VM_RedefineClasses::AdjustCpoolCacheAndVtable::do_klass(Klass* k) {
     // This must be done after we adjust the default_methods and
     // default_vtable_indices for methods already in the vtable.
     // If redefining Unsafe, walk all the vtables looking for entries.
-    if (ik->vtable_length() > 0 && (_the_class_oop->is_interface()
-        || _the_class_oop == SystemDictionary::internal_Unsafe_klass()
-        || ik->is_subtype_of(_the_class_oop))) {
+    if (ik->vtable_length() > 0 && (_the_class->is_interface()
+        || _the_class == SystemDictionary::internal_Unsafe_klass()
+        || ik->is_subtype_of(_the_class))) {
       // ik->vtable() creates a wrapper object; rm cleans it up
       ResourceMark rm(_thread);
 
@@ -3328,9 +3326,9 @@ void VM_RedefineClasses::AdjustCpoolCacheAndVtable::do_klass(Klass* k) {
     // every InstanceKlass that has an itable since there isn't a
     // subclass relationship between an interface and an InstanceKlass.
     // If redefining Unsafe, walk all the itables looking for entries.
-    if (ik->itable_length() > 0 && (_the_class_oop->is_interface()
-        || _the_class_oop == SystemDictionary::internal_Unsafe_klass()
-        || ik->is_subclass_of(_the_class_oop))) {
+    if (ik->itable_length() > 0 && (_the_class->is_interface()
+        || _the_class == SystemDictionary::internal_Unsafe_klass()
+        || ik->is_subclass_of(_the_class))) {
       // ik->itable() creates a wrapper object; rm cleans it up
       ResourceMark rm(_thread);
 
@@ -3353,7 +3351,7 @@ void VM_RedefineClasses::AdjustCpoolCacheAndVtable::do_klass(Klass* k) {
     constantPoolHandle other_cp;
     ConstantPoolCache* cp_cache;
 
-    if (ik != _the_class_oop) {
+    if (ik != _the_class) {
       // this klass' constant pool cache may need adjustment
       other_cp = constantPoolHandle(ik->constants());
       cp_cache = other_cp->cache();
@@ -3499,7 +3497,7 @@ int VM_RedefineClasses::check_methods_and_mark_as_obsolete() {
       // obsolete methods need a unique idnum so they become new entries in
       // the jmethodID cache in InstanceKlass
       assert(old_method->method_idnum() == new_method->method_idnum(), "must match");
-      u2 num = InstanceKlass::cast(_the_class_oop)->next_method_idnum();
+      u2 num = InstanceKlass::cast(_the_class)->next_method_idnum();
       if (num != ConstMethod::UNSET_IDNUM) {
         old_method->set_method_idnum(num);
       }
@@ -3563,7 +3561,7 @@ int VM_RedefineClasses::check_methods_and_mark_as_obsolete() {
 //
 class TransferNativeFunctionRegistration {
  private:
-  instanceKlassHandle the_class;
+  InstanceKlass* the_class;
   int prefix_count;
   char** prefixes;
 
@@ -3578,7 +3576,7 @@ class TransferNativeFunctionRegistration {
                                      Symbol* signature) {
     TempNewSymbol name_symbol = SymbolTable::probe(name_str, (int)name_len);
     if (name_symbol != NULL) {
-      Method* method = the_class()->lookup_method(name_symbol, signature);
+      Method* method = the_class->lookup_method(name_symbol, signature);
       if (method != NULL) {
         // Even if prefixed, intermediate methods must exist.
         if (method->is_native()) {
@@ -3641,7 +3639,7 @@ class TransferNativeFunctionRegistration {
  public:
 
   // Construct a native method transfer processor for this class.
-  TransferNativeFunctionRegistration(instanceKlassHandle _the_class) {
+  TransferNativeFunctionRegistration(InstanceKlass* _the_class) {
     assert(SafepointSynchronize::is_at_safepoint(), "sanity check");
 
     the_class = _the_class;
@@ -3668,7 +3666,7 @@ class TransferNativeFunctionRegistration {
 };
 
 // Don't lose the association between a native method and its JNI function.
-void VM_RedefineClasses::transfer_old_native_function_registrations(instanceKlassHandle the_class) {
+void VM_RedefineClasses::transfer_old_native_function_registrations(InstanceKlass* the_class) {
   TransferNativeFunctionRegistration transfer(the_class);
   transfer.transfer_registrations(_deleted_methods, _deleted_methods_length);
   transfer.transfer_registrations(_matching_old_methods, _matching_methods_length);
@@ -3689,13 +3687,13 @@ void VM_RedefineClasses::transfer_old_native_function_registrations(instanceKlas
 // subsequent calls to RedefineClasses need only throw away code
 // that depends on the class.
 //
-void VM_RedefineClasses::flush_dependent_code(instanceKlassHandle k_h, TRAPS) {
+void VM_RedefineClasses::flush_dependent_code(InstanceKlass* ik, TRAPS) {
   assert_locked_or_safepoint(Compile_lock);
 
   // All dependencies have been recorded from startup or this is a second or
   // subsequent use of RedefineClasses
   if (JvmtiExport::all_dependencies_are_recorded()) {
-    CodeCache::flush_evol_dependents_on(k_h);
+    CodeCache::flush_evol_dependents_on(ik);
   } else {
     CodeCache::mark_all_nmethods_for_deoptimization();
 
@@ -3775,8 +3773,8 @@ void VM_RedefineClasses::compute_added_deleted_matching_methods() {
 }
 
 
-void VM_RedefineClasses::swap_annotations(instanceKlassHandle the_class,
-                                          instanceKlassHandle scratch_class) {
+void VM_RedefineClasses::swap_annotations(InstanceKlass* the_class,
+                                          InstanceKlass* scratch_class) {
   // Swap annotation fields values
   Annotations* old_annotations = the_class->annotations();
   the_class->set_annotations(scratch_class->annotations());
@@ -3797,7 +3795,7 @@ void VM_RedefineClasses::swap_annotations(instanceKlassHandle the_class,
 //      that we would like to pass to the helper method are saved in
 //      static global fields in the VM operation.
 void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
-       Klass* scratch_class_oop, TRAPS) {
+       InstanceKlass* scratch_class, TRAPS) {
 
   HandleMark hm(THREAD);   // make sure handles from this call are freed
 
@@ -3805,25 +3803,24 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
     _timer_rsc_phase1.start();
   }
 
-  instanceKlassHandle scratch_class(THREAD, scratch_class_oop);
-  instanceKlassHandle the_class(THREAD, get_ik(the_jclass));
+  InstanceKlass* the_class = get_ik(the_jclass);
 
   // Remove all breakpoints in methods of this class
   JvmtiBreakpoints& jvmti_breakpoints = JvmtiCurrentBreakpoints::get_jvmti_breakpoints();
-  jvmti_breakpoints.clearall_in_class_at_safepoint(the_class());
+  jvmti_breakpoints.clearall_in_class_at_safepoint(the_class);
 
   // Deoptimize all compiled code that depends on this class
   flush_dependent_code(the_class, THREAD);
 
   _old_methods = the_class->methods();
   _new_methods = scratch_class->methods();
-  _the_class_oop = the_class();
+  _the_class = the_class;
   compute_added_deleted_matching_methods();
   update_jmethod_ids();
 
   // Attach new constant pool to the original klass. The original
   // klass still refers to the old constant pool (for now).
-  scratch_class->constants()->set_pool_holder(the_class());
+  scratch_class->constants()->set_pool_holder(the_class);
 
 #if 0
   // In theory, with constant pool merging in place we should be able
@@ -3853,13 +3850,11 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
 
   {
     // walk all previous versions of the klass
-    InstanceKlass *ik = (InstanceKlass *)the_class();
+    InstanceKlass *ik = the_class;
     PreviousVersionWalker pvw(ik);
-    instanceKlassHandle ikh;
     do {
-      ikh = pvw.next_previous_version();
-      if (!ikh.is_null()) {
-        ik = ikh();
+      ik = pvw.next_previous_version();
+      if (ik != NULL) {
 
         // attach previous version of klass to the new constant pool
         ik->set_constants(scratch_class->constants());
@@ -3872,7 +3867,7 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
           method->set_constants(scratch_class->constants());
         }
       }
-    } while (!ikh.is_null());
+    } while (ik != NULL);
   }
 #endif
 
@@ -4041,7 +4036,7 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
   MemberNameTable* mnt = the_class->member_names();
   if (mnt != NULL) {
     bool trace_name_printed = false;
-    mnt->adjust_method_entries(the_class(), &trace_name_printed);
+    mnt->adjust_method_entries(the_class, &trace_name_printed);
   }
 
   if (the_class->oop_map_cache() != NULL) {
@@ -4050,11 +4045,11 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
     the_class->oop_map_cache()->flush_obsolete_entries();
   }
 
+  increment_class_counter((InstanceKlass *)the_class, THREAD);
   {
     ResourceMark rm(THREAD);
     // increment the classRedefinedCount field in the_class and in any
     // direct and indirect subclasses of the_class
-    increment_class_counter((InstanceKlass *)the_class(), THREAD);
     log_info(redefine, class, load)
       ("redefined name=%s, count=%d (avail_mem=" UINT64_FORMAT "K)",
        the_class->external_name(), java_lang_Class::classRedefinedCount(the_class->java_mirror()), os::available_memory() >> 10);
@@ -4075,8 +4070,8 @@ void VM_RedefineClasses::increment_class_counter(InstanceKlass *ik, TRAPS) {
   int new_count = java_lang_Class::classRedefinedCount(class_mirror) + 1;
   java_lang_Class::set_classRedefinedCount(class_mirror, new_count);
 
-  if (class_oop != _the_class_oop) {
-    // _the_class_oop count is printed at end of redefine_single_class()
+  if (class_oop != _the_class) {
+    // _the_class count is printed at end of redefine_single_class()
     log_debug(redefine, class, subclass)("updated count in subclass=%s to %d", ik->external_name(), new_count);
   }
 
@@ -4212,8 +4207,8 @@ void VM_RedefineClasses::dump_methods() {
 
 void VM_RedefineClasses::print_on_error(outputStream* st) const {
   VM_Operation::print_on_error(st);
-  if (_the_class_oop != NULL) {
+  if (_the_class != NULL) {
     ResourceMark rm;
-    st->print_cr(", redefining class %s", _the_class_oop->external_name());
+    st->print_cr(", redefining class %s", _the_class->external_name());
   }
 }

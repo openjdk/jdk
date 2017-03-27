@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,28 +138,28 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   virtual void resize_all_tlabs();
 
   // Allocate from the current thread's TLAB, with broken-out slow path.
-  inline static HeapWord* allocate_from_tlab(KlassHandle klass, Thread* thread, size_t size);
-  static HeapWord* allocate_from_tlab_slow(KlassHandle klass, Thread* thread, size_t size);
+  inline static HeapWord* allocate_from_tlab(Klass* klass, Thread* thread, size_t size);
+  static HeapWord* allocate_from_tlab_slow(Klass* klass, Thread* thread, size_t size);
 
   // Allocate an uninitialized block of the given size, or returns NULL if
   // this is impossible.
-  inline static HeapWord* common_mem_allocate_noinit(KlassHandle klass, size_t size, TRAPS);
+  inline static HeapWord* common_mem_allocate_noinit(Klass* klass, size_t size, TRAPS);
 
   // Like allocate_init, but the block returned by a successful allocation
   // is guaranteed initialized to zeros.
-  inline static HeapWord* common_mem_allocate_init(KlassHandle klass, size_t size, TRAPS);
+  inline static HeapWord* common_mem_allocate_init(Klass* klass, size_t size, TRAPS);
 
   // Helper functions for (VM) allocation.
-  inline static void post_allocation_setup_common(KlassHandle klass, HeapWord* obj);
-  inline static void post_allocation_setup_no_klass_install(KlassHandle klass,
+  inline static void post_allocation_setup_common(Klass* klass, HeapWord* obj);
+  inline static void post_allocation_setup_no_klass_install(Klass* klass,
                                                             HeapWord* objPtr);
 
-  inline static void post_allocation_setup_obj(KlassHandle klass, HeapWord* obj, int size);
+  inline static void post_allocation_setup_obj(Klass* klass, HeapWord* obj, int size);
 
-  inline static void post_allocation_setup_array(KlassHandle klass,
+  inline static void post_allocation_setup_array(Klass* klass,
                                                  HeapWord* obj, int length);
 
-  inline static void post_allocation_setup_class(KlassHandle klass, HeapWord* obj, int size);
+  inline static void post_allocation_setup_class(Klass* klass, HeapWord* obj, int size);
 
   // Clears an allocated object.
   inline static void init_obj(HeapWord* obj, size_t size);
@@ -299,10 +299,10 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   GCCause::Cause gc_cause() { return _gc_cause; }
 
   // General obj/array allocation facilities.
-  inline static oop obj_allocate(KlassHandle klass, int size, TRAPS);
-  inline static oop array_allocate(KlassHandle klass, int size, int length, TRAPS);
-  inline static oop array_allocate_nozero(KlassHandle klass, int size, int length, TRAPS);
-  inline static oop class_allocate(KlassHandle klass, int size, TRAPS);
+  inline static oop obj_allocate(Klass* klass, int size, TRAPS);
+  inline static oop array_allocate(Klass* klass, int size, int length, TRAPS);
+  inline static oop array_allocate_nozero(Klass* klass, int size, int length, TRAPS);
+  inline static oop class_allocate(Klass* klass, int size, TRAPS);
 
   // Raw memory allocation facilities
   // The obj and array allocate methods are covers for these methods.

@@ -81,7 +81,7 @@ void ModuleEntry::set_version(Symbol* version) {
 
 // Returns the shared ProtectionDomain
 Handle ModuleEntry::shared_protection_domain() {
-  return Handle(JNIHandles::resolve(_pd));
+  return Handle(Thread::current(), JNIHandles::resolve(_pd));
 }
 
 // Set the shared ProtectionDomain atomically
@@ -269,12 +269,12 @@ void ModuleEntryTable::create_unnamed_module(ClassLoaderData* loader_data) {
     // For the boot loader, the java.lang.reflect.Module for the unnamed module
     // is not known until a call to JVM_SetBootLoaderUnnamedModule is made. At
     // this point initially create the ModuleEntry for the unnamed module.
-    _unnamed_module = new_entry(0, Handle(NULL), NULL, NULL, NULL, loader_data);
+    _unnamed_module = new_entry(0, Handle(), NULL, NULL, NULL, loader_data);
   } else {
     // For all other class loaders the java.lang.reflect.Module for their
     // corresponding unnamed module can be found in the java.lang.ClassLoader object.
     oop module = java_lang_ClassLoader::unnamedModule(loader_data->class_loader());
-    _unnamed_module = new_entry(0, Handle(module), NULL, NULL, NULL, loader_data);
+    _unnamed_module = new_entry(0, Handle(Thread::current(), module), NULL, NULL, NULL, loader_data);
 
     // Store pointer to the ModuleEntry in the unnamed module's java.lang.reflect.Module
     // object.
@@ -428,7 +428,7 @@ void ModuleEntryTable::patch_javabase_entries(Handle module_handle) {
   for (int i = 0; i < list_length; i++) {
     Klass* k = list->at(i);
     assert(k->is_klass(), "List should only hold classes");
-    java_lang_Class::fixup_module_field(KlassHandle(k), module_handle);
+    java_lang_Class::fixup_module_field(k, module_handle);
     k->class_loader_data()->dec_keep_alive();
   }
 

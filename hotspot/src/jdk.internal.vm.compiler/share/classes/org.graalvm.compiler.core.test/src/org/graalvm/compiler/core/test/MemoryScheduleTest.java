@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,7 @@ import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.memory.FloatingReadNode;
 import org.graalvm.compiler.nodes.memory.WriteNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
-import org.graalvm.compiler.options.OptionValue;
-import org.graalvm.compiler.options.OptionValue.OverrideScope;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.FloatingReadPhase;
@@ -89,6 +88,7 @@ public class MemoryScheduleTest extends GraphScheduleTest {
 
     private static final Container container = new Container();
     private static final List<Container> containerList = new ArrayList<>();
+    private static final double LOOP_ENTRY_PROBABILITY = 0.9;
 
     /**
      * In this test the read should be scheduled before the write.
@@ -165,7 +165,7 @@ public class MemoryScheduleTest extends GraphScheduleTest {
         try {
             return container.a;
         } finally {
-            for (int i = 0; i < a; i++) {
+            for (int i = 0; GraalDirectives.injectBranchProbability(LOOP_ENTRY_PROBABILITY, i < a); i++) {
                 if (b < 0) {
                     container.b = 10;
                 } else {
@@ -190,7 +190,7 @@ public class MemoryScheduleTest extends GraphScheduleTest {
         try {
             return container.a;
         } finally {
-            for (int i = 0; i < a; i++) {
+            for (int i = 0; GraalDirectives.injectBranchProbability(LOOP_ENTRY_PROBABILITY, i < a); i++) {
                 if (b < 0) {
                     container.b = 10;
                 } else {
@@ -213,7 +213,7 @@ public class MemoryScheduleTest extends GraphScheduleTest {
      */
     public static int testLoop3Snippet(int a) {
         int j = 0;
-        for (int i = 0; i < a; i++) {
+        for (int i = 0; GraalDirectives.injectBranchProbability(LOOP_ENTRY_PROBABILITY, i < a); i++) {
             if (i - container.a == 0) {
                 break;
             }
@@ -246,7 +246,7 @@ public class MemoryScheduleTest extends GraphScheduleTest {
     public static int testLoop5Snippet(int a, int b, MemoryScheduleTest obj) {
         int ret = 0;
         int bb = b;
-        for (int i = 0; i < a; i++) {
+        for (int i = 0; GraalDirectives.injectBranchProbability(LOOP_ENTRY_PROBABILITY, i < a); i++) {
             ret = obj.hash;
             if (a > 10) {
                 bb++;
@@ -272,13 +272,13 @@ public class MemoryScheduleTest extends GraphScheduleTest {
     public static int testLoop6Snippet(int a, int b, MemoryScheduleTest obj) {
         int ret = 0;
         int bb = b;
-        for (int i = 0; i < a; i++) {
+        for (int i = 0; GraalDirectives.injectBranchProbability(LOOP_ENTRY_PROBABILITY, i < a); i++) {
             ret = obj.hash;
             if (a > 10) {
                 bb++;
             } else {
                 bb--;
-                for (int j = 0; j < b; ++j) {
+                for (int j = 0; GraalDirectives.injectBranchProbability(LOOP_ENTRY_PROBABILITY, j < b); ++j) {
                     obj.hash = 3;
                 }
             }
@@ -301,15 +301,15 @@ public class MemoryScheduleTest extends GraphScheduleTest {
     public static int testLoop7Snippet(int a, int b, MemoryScheduleTest obj) {
         int ret = 0;
         int bb = b;
-        for (int i = 0; i < a; i++) {
+        for (int i = 0; GraalDirectives.injectBranchProbability(LOOP_ENTRY_PROBABILITY, i < a); i++) {
             ret = obj.hash;
             if (a > 10) {
                 bb++;
             } else {
                 bb--;
-                for (int k = 0; k < a; ++k) {
+                for (int k = 0; GraalDirectives.injectBranchProbability(LOOP_ENTRY_PROBABILITY, k < a); ++k) {
                     if (k % 2 == 1) {
-                        for (int j = 0; j < b; ++j) {
+                        for (int j = 0; GraalDirectives.injectBranchProbability(LOOP_ENTRY_PROBABILITY, j < b); ++j) {
                             obj.hash = 3;
                         }
                     }
@@ -333,12 +333,12 @@ public class MemoryScheduleTest extends GraphScheduleTest {
      */
     public static int testLoop8Snippet(int a, int b) {
         int result = container.a;
-        for (int i = 0; i < a; i++) {
+        for (int i = 0; GraalDirectives.injectBranchProbability(LOOP_ENTRY_PROBABILITY, i < a); i++) {
             if (b < 0) {
                 container.b = 10;
                 break;
             } else {
-                for (int j = 0; j < b; j++) {
+                for (int j = 0; GraalDirectives.injectBranchProbability(LOOP_ENTRY_PROBABILITY, j < b); j++) {
                     container.a = 0;
                 }
             }
@@ -376,25 +376,6 @@ public class MemoryScheduleTest extends GraphScheduleTest {
         assertThat(ret.result(), instanceOf(FloatingReadNode.class));
         Block readBlock = schedule.getNodeToBlockMap().get(ret.result());
         Assert.assertEquals(0, readBlock.getLoopDepth());
-    }
-
-    /**
-     * Here the read should float to the end (into the same block as the return).
-     */
-    public static int testArrayCopySnippet(Integer intValue, char[] a, char[] b, int len) {
-        System.arraycopy(a, 0, b, 0, len);
-        return intValue.intValue();
-    }
-
-    @Test
-    public void testArrayCopy() {
-        ScheduleResult schedule = getFinalSchedule("testArrayCopySnippet", TestMode.INLINED_WITHOUT_FRAMESTATES);
-        StructuredGraph graph = schedule.getCFG().getStartBlock().getBeginNode().graph();
-        assertDeepEquals(1, graph.getNodes(ReturnNode.TYPE).count());
-        ReturnNode ret = graph.getNodes(ReturnNode.TYPE).first();
-        assertTrue(ret.result() + " should be a FloatingReadNode", ret.result() instanceof FloatingReadNode);
-        assertDeepEquals(schedule.getCFG().blockFor(ret), schedule.getCFG().blockFor(ret.result()));
-        assertReadWithinAllReturnBlocks(schedule, true);
     }
 
     /**
@@ -644,7 +625,7 @@ public class MemoryScheduleTest extends GraphScheduleTest {
     public static int testLoop4Snippet(int count) {
         int[] a = new int[count];
 
-        for (int i = 0; i < a.length; i++) {
+        for (int i = 0; GraalDirectives.injectBranchProbability(LOOP_ENTRY_PROBABILITY, i < a.length); i++) {
             a[i] = i;
         }
 
@@ -652,7 +633,7 @@ public class MemoryScheduleTest extends GraphScheduleTest {
         int iwrap = count - 1;
         int sum = 0;
 
-        while (i < count) {
+        while (GraalDirectives.injectBranchProbability(LOOP_ENTRY_PROBABILITY, i < count)) {
             sum += (a[i] + a[iwrap]) / 2;
             iwrap = i;
             i++;
@@ -723,34 +704,33 @@ public class MemoryScheduleTest extends GraphScheduleTest {
 
     @SuppressWarnings("try")
     private ScheduleResult getFinalSchedule(final String snippet, final TestMode mode, final SchedulingStrategy schedulingStrategy) {
-        final StructuredGraph graph = parseEager(snippet, AllowAssumptions.NO);
+        OptionValues options = new OptionValues(getInitialOptions(), OptScheduleOutOfLoops, schedulingStrategy == SchedulingStrategy.LATEST_OUT_OF_LOOPS, OptImplicitNullChecks, false);
+        final StructuredGraph graph = parseEager(snippet, AllowAssumptions.NO, options);
         try (Scope d = Debug.scope("FloatingReadTest", graph)) {
-            try (OverrideScope s = OptionValue.override(OptScheduleOutOfLoops, schedulingStrategy == SchedulingStrategy.LATEST_OUT_OF_LOOPS, OptImplicitNullChecks, false)) {
-                HighTierContext context = getDefaultHighTierContext();
-                CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
-                canonicalizer.apply(graph, context);
-                if (mode == TestMode.INLINED_WITHOUT_FRAMESTATES) {
-                    new InliningPhase(canonicalizer).apply(graph, context);
-                }
-                new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, context);
-                if (mode == TestMode.WITHOUT_FRAMESTATES || mode == TestMode.INLINED_WITHOUT_FRAMESTATES) {
-                    graph.clearAllStateAfter();
-                }
-                Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "after removal of framestates");
-
-                new FloatingReadPhase().apply(graph);
-                new RemoveValueProxyPhase().apply(graph);
-
-                MidTierContext midContext = new MidTierContext(getProviders(), getTargetProvider(), OptimisticOptimizations.ALL, graph.getProfilingInfo());
-                new GuardLoweringPhase().apply(graph, midContext);
-                new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.MID_TIER).apply(graph, midContext);
-                new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.LOW_TIER).apply(graph, midContext);
-
-                SchedulePhase schedule = new SchedulePhase(schedulingStrategy);
-                schedule.apply(graph);
-                assertDeepEquals(1, graph.getNodes().filter(StartNode.class).count());
-                return graph.getLastSchedule();
+            HighTierContext context = getDefaultHighTierContext();
+            CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
+            canonicalizer.apply(graph, context);
+            if (mode == TestMode.INLINED_WITHOUT_FRAMESTATES) {
+                new InliningPhase(canonicalizer).apply(graph, context);
             }
+            new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, context);
+            if (mode == TestMode.WITHOUT_FRAMESTATES || mode == TestMode.INLINED_WITHOUT_FRAMESTATES) {
+                graph.clearAllStateAfter();
+            }
+            Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "after removal of framestates");
+
+            new FloatingReadPhase().apply(graph);
+            new RemoveValueProxyPhase().apply(graph);
+
+            MidTierContext midContext = new MidTierContext(getProviders(), getTargetProvider(), OptimisticOptimizations.ALL, graph.getProfilingInfo());
+            new GuardLoweringPhase().apply(graph, midContext);
+            new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.MID_TIER).apply(graph, midContext);
+            new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.LOW_TIER).apply(graph, midContext);
+
+            SchedulePhase schedule = new SchedulePhase(schedulingStrategy);
+            schedule.apply(graph);
+            assertDeepEquals(1, graph.getNodes().filter(StartNode.class).count());
+            return graph.getLastSchedule();
         } catch (Throwable e) {
             throw Debug.handle(e);
         }

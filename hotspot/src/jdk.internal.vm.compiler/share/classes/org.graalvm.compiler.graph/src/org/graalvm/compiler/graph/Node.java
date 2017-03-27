@@ -29,20 +29,16 @@ import static org.graalvm.compiler.graph.UnsafeAccess.UNSAFE;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.RetentionPolicy;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Formattable;
 import java.util.FormattableFlags;
 import java.util.Formatter;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.function.Predicate;
 
-import org.graalvm.compiler.core.common.CollectionsFactory;
 import org.graalvm.compiler.core.common.Fields;
 import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.Fingerprint;
@@ -56,6 +52,7 @@ import org.graalvm.compiler.graph.spi.SimplifierTool;
 import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodeinfo.Verbosity;
+import org.graalvm.compiler.options.OptionValues;
 
 import sun.misc.Unsafe;
 
@@ -71,21 +68,6 @@ import sun.misc.Unsafe;
  * <p>
  * Nodes which are be value numberable should implement the {@link ValueNumberable} interface.
  *
- * <h1>Replay Compilation</h1>
- *
- * To enable deterministic replay compilation, node sets and node maps should be instantiated with
- * the following methods:
- * <ul>
- * <li>{@link #newSet()}</li>
- * <li>{@link #newSet(Collection)}</li>
- * <li>{@link #newMap()}</li>
- * <li>{@link #newMap(int)}</li>
- * <li>{@link #newMap(Map)}</li>
- * <li>{@link #newIdentityMap()}</li>
- * <li>{@link #newIdentityMap(int)}</li>
- * <li>{@link #newIdentityMap(Map)}</li>
- * </ul>
- *
  * <h1>Assertions and Verification</h1>
  *
  * The Node class supplies the {@link #assertTrue(boolean, String, Object...)} and
@@ -98,7 +80,7 @@ import sun.misc.Unsafe;
 public abstract class Node implements Cloneable, Formattable, NodeInterface {
 
     public static final NodeClass<?> TYPE = null;
-    public static final boolean USE_UNSAFE_TO_CLONE = Graph.Options.CloneNodesWithUnsafe.getValue();
+    public static final boolean USE_UNSAFE_TO_CLONE = true;
 
     static final int DELETED_ID_START = -1000000000;
     static final int INITIAL_ID = -1;
@@ -258,60 +240,17 @@ public abstract class Node implements Cloneable, Formattable, NodeInterface {
     }
 
     /**
-     * @see CollectionsFactory#newSet()
-     */
-    public static <E extends Node> Set<E> newSet() {
-        return CollectionsFactory.newSet();
-    }
-
-    /**
-     * @see #newSet()
-     */
-    public static <E extends Node> Set<E> newSet(Collection<? extends E> c) {
-        return CollectionsFactory.newSet(c);
-    }
-
-    public static <K extends Node, V> Map<K, V> newMap() {
-        // Node.equals() and Node.hashCode() are final and are implemented
-        // purely in terms of identity so HashMap and IdentityHashMap with
-        // Node's as keys will behave the same. We choose to use the latter
-        // due to its lighter memory footprint.
-        return newIdentityMap();
-    }
-
-    public static <K extends Node, V> Map<K, V> newMap(Map<K, V> m) {
-        // Node.equals() and Node.hashCode() are final and are implemented
-        // purely in terms of identity so HashMap and IdentityHashMap with
-        // Node's as keys will behave the same. We choose to use the latter
-        // due to its lighter memory footprint.
-        return newIdentityMap(m);
-    }
-
-    public static <K extends Node, V> Map<K, V> newMap(int expectedMaxSize) {
-        // Node.equals() and Node.hashCode() are final and are implemented
-        // purely in terms of identity so HashMap and IdentityHashMap with
-        // Node's as keys will behave the same. We choose to use the latter
-        // due to its lighter memory footprint.
-        return newIdentityMap(expectedMaxSize);
-    }
-
-    public static <K extends Node, V> Map<K, V> newIdentityMap() {
-        return CollectionsFactory.newIdentityMap();
-    }
-
-    public static <K extends Node, V> Map<K, V> newIdentityMap(Map<K, V> m) {
-        return CollectionsFactory.newIdentityMap(m);
-    }
-
-    public static <K extends Node, V> Map<K, V> newIdentityMap(int expectedMaxSize) {
-        return CollectionsFactory.newIdentityMap(expectedMaxSize);
-    }
-
-    /**
      * Gets the graph context of this node.
      */
     public Graph graph() {
         return graph;
+    }
+
+    /**
+     * Gets the option values associated with this node's graph.
+     */
+    public final OptionValues getOptions() {
+        return graph == null ? null : graph.getOptions();
     }
 
     /**
@@ -413,15 +352,18 @@ public abstract class Node implements Cloneable, Formattable, NodeInterface {
         return this.usage0 != null;
     }
 
-    void reverseUsageOrder() {
-        List<Node> snapshot = this.usages().snapshot();
-        for (Node n : snapshot) {
-            this.removeUsage(n);
-        }
-        Collections.reverse(snapshot);
-        for (Node n : snapshot) {
-            this.addUsage(n);
-        }
+    /**
+     * Checks whether this node has more than one usages.
+     */
+    public final boolean hasMoreThanOneUsage() {
+        return this.usage1 != null;
+    }
+
+    /**
+     * Checks whether this node has exactly one usgae.
+     */
+    public final boolean hasExactlyOneUsage() {
+        return hasUsages() && !hasMoreThanOneUsage();
     }
 
     /**
@@ -533,12 +475,16 @@ public abstract class Node implements Cloneable, Formattable, NodeInterface {
         }
     }
 
-    public boolean isDeleted() {
+    public final boolean isDeleted() {
         return id <= DELETED_ID_START;
     }
 
-    public boolean isAlive() {
+    public final boolean isAlive() {
         return id >= ALIVE_ID_START;
+    }
+
+    public final boolean isUnregistered() {
+        return id == INITIAL_ID;
     }
 
     /**
@@ -761,7 +707,9 @@ public abstract class Node implements Cloneable, Formattable, NodeInterface {
     public void replaceAndDelete(Node other) {
         assert checkReplaceWith(other);
         assert other != null;
-        replaceAtUsages(other);
+        if (this.hasUsages()) {
+            replaceAtUsages(other);
+        }
         replaceAtPredecessor(other);
         this.safeDelete();
     }
@@ -852,12 +800,8 @@ public abstract class Node implements Cloneable, Formattable, NodeInterface {
         if (edgesToCopy.contains(type)) {
             getNodeClass().getEdges(type).copy(this, newNode);
         } else {
-            if (USE_UNSAFE_TO_CLONE) {
-                // The direct edges are already null
-                getNodeClass().getEdges(type).initializeLists(newNode, this);
-            } else {
-                getNodeClass().getEdges(type).clear(newNode);
-            }
+            // The direct edges are already null
+            getNodeClass().getEdges(type).initializeLists(newNode, this);
         }
     }
 
@@ -891,22 +835,11 @@ public abstract class Node implements Cloneable, Formattable, NodeInterface {
 
         Node newNode = null;
         try {
-            if (USE_UNSAFE_TO_CLONE) {
-                newNode = (Node) UNSAFE.allocateInstance(getClass());
-                newNode.nodeClass = nodeClassTmp;
-                nodeClassTmp.getData().copy(this, newNode);
-                copyOrClearEdgesForClone(newNode, Inputs, edgesToCopy);
-                copyOrClearEdgesForClone(newNode, Successors, edgesToCopy);
-            } else {
-                newNode = (Node) this.clone();
-                newNode.typeCacheNext = null;
-                newNode.usage0 = null;
-                newNode.usage1 = null;
-                newNode.predecessor = null;
-                newNode.extraUsagesCount = 0;
-                copyOrClearEdgesForClone(newNode, Inputs, edgesToCopy);
-                copyOrClearEdgesForClone(newNode, Successors, edgesToCopy);
-            }
+            newNode = (Node) UNSAFE.allocateInstance(getClass());
+            newNode.nodeClass = nodeClassTmp;
+            nodeClassTmp.getData().copy(this, newNode);
+            copyOrClearEdgesForClone(newNode, Inputs, edgesToCopy);
+            copyOrClearEdgesForClone(newNode, Successors, edgesToCopy);
         } catch (Exception e) {
             throw new GraalGraphError(e).addContext(this);
         }
@@ -936,7 +869,7 @@ public abstract class Node implements Cloneable, Formattable, NodeInterface {
             if (input == null) {
                 assertTrue(pos.isInputOptional(), "non-optional input %s cannot be null in %s (fix nullness or use @OptionalInput)", pos, this);
             } else {
-                assertFalse(input.isDeleted(), "input was deleted");
+                assertFalse(input.isDeleted(), "input was deleted %s", input);
                 assertTrue(input.isAlive(), "input is not alive yet, i.e., it was not yet added to the graph");
                 assertTrue(pos.getInputType() == InputType.Unchecked || input.isAllowedUsageType(pos.getInputType()), "invalid usage type %s %s", input, pos.getInputType());
             }
@@ -948,7 +881,7 @@ public abstract class Node implements Cloneable, Formattable, NodeInterface {
         assertTrue(isAlive(), "cannot verify inactive nodes (id=%d)", id);
         assertTrue(graph() != null, "null graph");
         verifyInputs();
-        if (Options.VerifyGraalGraphEdges.getValue()) {
+        if (Options.VerifyGraalGraphEdges.getValue(getOptions())) {
             verifyEdges();
         }
         return true;
@@ -1028,20 +961,23 @@ public abstract class Node implements Cloneable, Formattable, NodeInterface {
     }
 
     /**
-     * Nodes always use an {@linkplain System#identityHashCode(Object) identity} hash code.
+     * Nodes using their {@link #id} as the hash code. This works very well when nodes of the same
+     * graph are stored in sets. It can give bad behavior when storing nodes of different graphs in
+     * the same set.
      */
     @Override
     public final int hashCode() {
-        return System.identityHashCode(this);
+        assert !this.isUnregistered() : "node not yet constructed";
+        if (this.isDeleted()) {
+            return -id + DELETED_ID_START;
+        }
+        return id;
     }
 
     /**
-     * Equality tests must rely solely on identity.
+     * Do not overwrite the equality test of a node in subclasses. Equality tests must rely solely
+     * on identity.
      */
-    @Override
-    public final boolean equals(Object obj) {
-        return super.equals(obj);
-    }
 
     /**
      * Provides a {@link Map} of properties of this node for use in debugging (e.g., to view in the

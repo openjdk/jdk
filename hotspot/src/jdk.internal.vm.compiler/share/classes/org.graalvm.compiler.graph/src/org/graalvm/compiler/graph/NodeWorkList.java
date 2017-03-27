@@ -27,6 +27,8 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Queue;
 
+import org.graalvm.compiler.core.common.PermanentBailoutException;
+
 public abstract class NodeWorkList implements Iterable<Node> {
 
     protected final Queue<Node> worklist;
@@ -70,11 +72,12 @@ public abstract class NodeWorkList implements Iterable<Node> {
     }
 
     public static final class IterativeNodeWorkList extends NodeWorkList {
-
+        private static final int HARD_ITERATION_LIMIT = 1_000_000;
         private static final int EXPLICIT_BITMAP_THRESHOLD = 10;
         protected NodeBitMap inQueue;
 
-        private int iterationLimit = Integer.MAX_VALUE;
+        private int iterationLimit;
+        private boolean hardLimit;
         private Node firstNoChange;
         private Node lastPull;
         private Node lastChain;
@@ -82,7 +85,12 @@ public abstract class NodeWorkList implements Iterable<Node> {
         public IterativeNodeWorkList(Graph graph, boolean fill, int iterationLimitPerNode) {
             super(graph, fill);
             if (iterationLimitPerNode > 0) {
-                iterationLimit = iterationLimitPerNode * graph.getNodeCount();
+                long limit = (long) iterationLimitPerNode * graph.getNodeCount();
+                iterationLimit = (int) Long.min(Integer.MAX_VALUE, limit);
+                hardLimit = false;
+            } else {
+                iterationLimit = HARD_ITERATION_LIMIT;
+                hardLimit = true;
             }
         }
 
@@ -92,7 +100,14 @@ public abstract class NodeWorkList implements Iterable<Node> {
                 @Override
                 public boolean hasNext() {
                     dropDeleted();
-                    return iterationLimit > 0 && !worklist.isEmpty();
+                    if (iterationLimit <= 0) {
+                        if (hardLimit) {
+                            throw new PermanentBailoutException("Iteration limit reached");
+                        } else {
+                            return false;
+                        }
+                    }
+                    return !worklist.isEmpty();
                 }
 
                 @Override

@@ -23,8 +23,6 @@
 package org.graalvm.compiler.hotspot.test;
 
 import java.util.List;
-import java.util.Map;
-
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -66,6 +64,7 @@ import org.graalvm.compiler.phases.graph.ReentrantNodeIterator;
 import org.graalvm.compiler.phases.graph.ReentrantNodeIterator.NodeIteratorClosure;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.tiers.MidTierContext;
+import org.graalvm.util.EconomicMap;
 
 import jdk.vm.ci.meta.ResolvedJavaField;
 
@@ -306,7 +305,7 @@ public class WriteBarrierVerificationTest extends HotSpotGraalCompilerTest {
         test("test6Snippet", 5, new int[]{1, 2});
     }
 
-    @Test(expected = AssertionError.class)
+    @Test
     public void test23() {
         test("test6Snippet", 5, new int[]{3});
     }
@@ -712,7 +711,7 @@ public class WriteBarrierVerificationTest extends HotSpotGraalCompilerTest {
                 }
 
                 @Override
-                protected Map<LoopExitNode, Boolean> processLoop(LoopBeginNode loop, Boolean initialState) {
+                protected EconomicMap<LoopExitNode, Boolean> processLoop(LoopBeginNode loop, Boolean initialState) {
                     return ReentrantNodeIterator.processLoop(this, loop, initialState).exitStates;
                 }
 
@@ -729,7 +728,7 @@ public class WriteBarrierVerificationTest extends HotSpotGraalCompilerTest {
 
             DebugConfig debugConfig = DebugScope.getConfig();
             DebugConfig fixedConfig = debugConfig == null ? null
-                            : Debug.fixedConfig(0, 0, false, false, false, false, false, debugConfig.dumpHandlers(), debugConfig.verifyHandlers(), debugConfig.output());
+                            : Debug.fixedConfig(debugConfig.getOptions(), 0, 0, false, false, false, false, false, debugConfig.dumpHandlers(), debugConfig.verifyHandlers(), debugConfig.output());
             try (DebugConfigScope s = Debug.setConfig(fixedConfig)) {
                 ReentrantNodeIterator.apply(closure, graph.start(), false);
                 new WriteBarrierVerificationPhase(config).apply(graph);
