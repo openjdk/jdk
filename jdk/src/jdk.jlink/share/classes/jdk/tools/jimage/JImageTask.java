@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import jdk.internal.jimage.BasicImageReader;
 import jdk.internal.jimage.ImageHeader;
 import jdk.internal.jimage.ImageLocation;
@@ -99,7 +103,7 @@ class JImageTask {
     }
 
     static class OptionsValues {
-        Task task = Task.LIST;
+        Task task = null;
         String directory = ".";
         String include = "";
         boolean fullVersion;
@@ -172,24 +176,31 @@ class JImageTask {
         }
 
         try {
-            List<String> unhandled = OPTION_HELPER.handleOptions(this, args);
+            String command;
+            String[] remaining = args;
+            try {
+                command = args[0];
+                options.task = Enum.valueOf(Task.class, args[0].toUpperCase(Locale.ENGLISH));
+                remaining = args.length > 1 ? Arrays.copyOfRange(args, 1, args.length)
+                                            : new String[0];
+            } catch (IllegalArgumentException ex) {
+                command = null;
+                options.task = null;
+            }
 
-            if(!unhandled.isEmpty()) {
-                try {
-                    options.task = Enum.valueOf(Task.class, unhandled.get(0).toUpperCase());
-                } catch (IllegalArgumentException ex) {
-                    throw TASK_HELPER.newBadArgs("err.not.a.task", unhandled.get(0));
-                }
+            // process arguments
+            List<String> unhandled = OPTION_HELPER.handleOptions(this, remaining);
+            for (String f : unhandled) {
+                options.jimages.add(new File(f));
+            }
 
-                for(int i = 1; i < unhandled.size(); i++) {
-                    options.jimages.add(new File(unhandled.get(i)));
-                }
-            } else if (!options.help && !options.version && !options.fullVersion) {
-                throw TASK_HELPER.newBadArgs("err.invalid.task", "<unspecified>");
+            if (options.task == null && !options.help && !options.version && !options.fullVersion) {
+                throw TASK_HELPER.newBadArgs("err.not.a.task",
+                    command != null ? command : "<unspecified>");
             }
 
             if (options.help) {
-                if (unhandled.isEmpty()) {
+                if (options.task == null) {
                     log.println(TASK_HELPER.getMessage("main.usage", PROGNAME));
                     Arrays.asList(RECOGNIZED_OPTIONS).stream()
                         .filter(option -> !option.isHidden())
@@ -203,15 +214,19 @@ class JImageTask {
                         log.println(TASK_HELPER.getMessage("main.usage." +
                                 options.task.toString().toLowerCase()));
                     } catch (MissingResourceException ex) {
-                        throw TASK_HELPER.newBadArgs("err.not.a.task", unhandled.get(0));
+                        throw TASK_HELPER.newBadArgs("err.not.a.task", command);
                     }
                 }
                 return EXIT_OK;
             }
 
             if (options.version || options.fullVersion) {
-                TASK_HELPER.showVersion(options.fullVersion);
+                if (options.task == null && !unhandled.isEmpty()) {
+                    throw TASK_HELPER.newBadArgs("err.not.a.task",
+                        Stream.of(args).collect(Collectors.joining(" ")));
+                }
 
+                TASK_HELPER.showVersion(options.fullVersion);
                 if (unhandled.isEmpty()) {
                     return EXIT_OK;
                 }
@@ -435,7 +450,7 @@ class JImageTask {
                 iterate(this::listTitle, null, this::verify);
                 break;
             default:
-                throw TASK_HELPER.newBadArgs("err.invalid.task",
+                throw TASK_HELPER.newBadArgs("err.not.a.task",
                         options.task.name()).showUsage(true);
         }
         return true;
