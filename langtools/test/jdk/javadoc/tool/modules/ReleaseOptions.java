@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8175346
+ * @bug 8175346 8175277
  * @summary Test release option interactions
  * @modules
  *      jdk.javadoc/jdk.javadoc.internal.api
@@ -58,7 +58,7 @@ public class ReleaseOptions extends ModuleTestBase {
         Task.Result result = execNegativeTask("--release", "8",
                 "--patch-module", "m=" + mpath.toString(),
                 "p");
-        assertMessagePresent(".*No source files for package p.*");
+        assertMessagePresent(".*not allowed with target 1.8.*");
         assertMessageNotPresent(".*Exception*");
         assertMessageNotPresent(".java.lang.AssertionError.*");
     }
@@ -80,20 +80,20 @@ public class ReleaseOptions extends ModuleTestBase {
         assertMessageNotPresent(".java.lang.AssertionError.*");
     }
 
-//    @Test TBD, JDK-8175277, argument validation should fail on this
-//    public void testReleaseWithModuleSourcepath(Path base) throws Exception {
-//        Path src = Paths.get(base.toString(), "src");
-//        Path mpath = Paths.get(src.toString(), "m");
-//
-//        tb.writeJavaFiles(mpath,
-//                "module m { exports p; }",
-//                "package p; public class C { }");
-//
-//        Task.Result result = execNegativeTask("--release", "8",
-//                "--module-source-path", src.toString(),
-//                "--module", "m");
-//        assertMessagePresent(".*(use -source 9 or higher to enable modules).*");
-//        assertMessageNotPresent(".*Exception*");
-//        assertMessageNotPresent(".java.lang.AssertionError.*");
-//    }
+    @Test
+    public void testReleaseWithModuleSourcepath(Path base) throws Exception {
+        Path src = Paths.get(base.toString(), "src");
+        Path mpath = Paths.get(src.toString(), "m");
+
+        tb.writeJavaFiles(mpath,
+                "module m { exports p; }",
+                "package p; public class C { }");
+
+        Task.Result result = execNegativeTask("--release", "8",
+                "--module-source-path", src.toString(),
+                "--module", "m");
+        assertMessagePresent(".*not allowed with target 1.8.*");
+        assertMessageNotPresent(".*Exception*");
+        assertMessageNotPresent(".java.lang.AssertionError.*");
+    }
 }
