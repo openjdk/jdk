@@ -3733,7 +3733,11 @@ public abstract class JComponent extends Container implements Serializable,
          * Fire PropertyChange listener, if one is registered,
          * when focus events happen
          * @since 1.3
+         * @deprecated This class is no longer used or needed.
+         * {@code java.awt.Component.AccessibleAWTComponent} provides
+         * the same functionality and it is handled in {@Component}.
          */
+        @Deprecated
         protected class AccessibleFocusHandler implements FocusListener {
            public void focusGained(FocusEvent event) {
                if (accessibleContext != null) {
