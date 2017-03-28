@@ -4429,13 +4429,6 @@ void G1CollectedHeap::pre_evacuate_collection_set() {
 
   g1_rem_set()->prepare_for_oops_into_collection_set_do();
   _preserved_marks_set.assert_empty();
-}
-
-void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* per_thread_states) {
-  // Should G1EvacuationFailureALot be in effect for this GC?
-  NOT_PRODUCT(set_evacuation_failure_alot_for_current_gc();)
-
-  assert(dirty_card_queue_set().completed_buffers_num() == 0, "Should be empty");
 
   G1GCPhaseTimes* phase_times = g1_policy()->phase_times();
 
@@ -4448,6 +4441,15 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info, G
     double recorded_clear_claimed_marks_time_ms = (os::elapsedTime() - start_clear_claimed_marks) * 1000.0;
     phase_times->record_clear_claimed_marks_time_ms(recorded_clear_claimed_marks_time_ms);
   }
+}
+
+void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* per_thread_states) {
+  // Should G1EvacuationFailureALot be in effect for this GC?
+  NOT_PRODUCT(set_evacuation_failure_alot_for_current_gc();)
+
+  assert(dirty_card_queue_set().completed_buffers_num() == 0, "Should be empty");
+
+  G1GCPhaseTimes* phase_times = g1_policy()->phase_times();
 
   double start_par_time_sec = os::elapsedTime();
   double end_par_time_sec;
