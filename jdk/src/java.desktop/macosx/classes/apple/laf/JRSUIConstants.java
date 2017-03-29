@@ -78,7 +78,7 @@ public final class JRSUIConstants {
                 return "THUMB_START";
             } else if (hit == WINDOW_TITLE_BAR_HEIGHT) {
                 return "WINDOW_TITLE_BAR_HEIGHT";
-            } else if (hit == THUMB_START) {
+            } else if (hit == ANIMATION_FRAME) {
                 return "ANIMATION_FRAME";
             }
             return getClass().getSimpleName();
