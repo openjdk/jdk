@@ -73,6 +73,7 @@ jdk_lang = \
     jdk/internal/misc \
     jdk/internal/ref \
     jdk/internal/jimage \
+    jdk/internal/math \
     jdk/modules \
     vm
 
@@ -141,8 +142,7 @@ jdk_stream = \
     java/util/stream
 
 jdk_math = \
-    java/math \
-    jdk/internal/math
+    java/math
 
 jdk_io = \
     java/io
