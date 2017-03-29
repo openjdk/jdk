@@ -26,6 +26,7 @@
 /**
  * Defines the Java Logging API.
  *
+ * @moduleGraph
  * @since 9
  */
 module java.logging {

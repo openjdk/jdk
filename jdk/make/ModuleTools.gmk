@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,9 @@
 # questions.
 #
 
-include $(SPEC)
-include MakeBase.gmk
+ifndef _MODULE_TOOLS_GMK
+_MODULE_TOOLS_GMK := 1
+
 include JavaCompilation.gmk
 
 TOOLS_CLASSES_DIR := $(BUILDTOOLS_OUTPUTDIR)/tools_jigsaw_classes
@@ -32,7 +33,7 @@ TOOLS_CLASSES_DIR := $(BUILDTOOLS_OUTPUTDIR)/tools_jigsaw_classes
 # To avoid reevaluating the compilation setup for the tools each time this file
 # is included, the actual compilation is handled by CompileModuleTools.gmk. The
 # following trick is used to be able to declare a dependency on the built tools.
-BUILD_TOOLS_JDK := $(call SetupJavaCompilationCompileTarget, \
+BUILD_JIGSAW_TOOLS := $(call SetupJavaCompilationCompileTarget, \
     BUILD_JIGSAW_TOOLS, $(TOOLS_CLASSES_DIR))
 
 TOOL_GENGRAPHS := $(BUILD_JAVA) -esa -ea -cp $(TOOLS_CLASSES_DIR) \
@@ -47,3 +48,5 @@ TOOL_ADD_PACKAGES_ATTRIBUTE := $(BUILD_JAVA) $(JAVA_FLAGS_SMALL) \
     -cp $(TOOLS_CLASSES_DIR) \
     --add-exports java.base/jdk.internal.module=ALL-UNNAMED \
     build.tools.jigsaw.AddPackagesAttribute
+
+endif # _MODULE_TOOLS_GMK

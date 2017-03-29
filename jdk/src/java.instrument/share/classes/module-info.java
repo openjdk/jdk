@@ -27,6 +27,7 @@
  * Defines services that allow agents to
  * instrument programs running on the JVM.
  *
+ * @moduleGraph
  * @since 9
  */
 module java.instrument {

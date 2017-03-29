@@ -26,6 +26,7 @@
 /**
  * Defines the attach API.
  *
+ * @moduleGraph
  * @since 9
  */
 module jdk.attach {
