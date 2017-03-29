@@ -52,6 +52,7 @@
  *     definitions.
  * </p>
  *
+ * @moduleGraph
  * @since 9
  */
 module jdk.jshell {
