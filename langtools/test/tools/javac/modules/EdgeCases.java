@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8154283 8167320 8171098 8172809 8173068 8173117 8176045
+ * @bug 8154283 8167320 8171098 8172809 8173068 8173117 8176045 8177311
  * @summary tests for multi-module mode compilation
  * @library /tools/lib
  * @modules
@@ -956,6 +956,43 @@ public class EdgeCases extends ModuleTestBase {
 
         if (!expected.equals(log))
             throw new Exception("expected output not found: " + log);
+    }
+
+    @Test
+    public void testDependOnUnnamedAccessibility(Path base) throws Exception {
+        Path unnamedSrc = base.resolve("unnamed-src");
+        tb.writeJavaFiles(unnamedSrc,
+                          "package p1; public class First { public static p2.Second get() { return null; } }",
+                          "package p2; public class Second { public void test() { } }");
+        Path unnamedClasses = base.resolve("unnamed-classes");
+        tb.createDirectories(unnamedClasses);
+
+        System.err.println("compiling unnamed sources:");
+
+        new JavacTask(tb)
+                .outdir(unnamedClasses)
+                .files(findJavaFiles(unnamedSrc))
+                .run()
+                .writeAll();
+
+        //test sources:
+        Path src = base.resolve("src");
+        Path m = src.resolve("m");
+        tb.writeJavaFiles(m,
+                          "module m { }",
+                          "package p; public class Test { { p1.First.get().test(); } }");
+        Path classes = base.resolve("classes");
+        tb.createDirectories(classes);
+
+        System.err.println("compiling test module:");
+
+        new JavacTask(tb)
+            .options("-classpath", unnamedClasses.toString(),
+                     "--add-reads", "m=ALL-UNNAMED")
+            .outdir(classes)
+            .files(findJavaFiles(src))
+            .run()
+            .writeAll();
     }
 
 }
