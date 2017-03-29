@@ -27,6 +27,7 @@
  * Defines the AWT and Swing user interface toolkits, plus APIs for
  * accessibility, audio, imaging, printing, and JavaBeans.
  *
+ * @moduleGraph
  * @since 9
  */
 module java.desktop {
