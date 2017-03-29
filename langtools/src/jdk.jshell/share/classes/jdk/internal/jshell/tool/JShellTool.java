@@ -1429,9 +1429,15 @@ public class JShellTool implements MessageHandler {
             List<Suggestion> result;
             int pastSpace = code.indexOf(' ') + 1; // zero if no space
             if (pastSpace == 0) {
+                // initially suggest commands (with slash) and subjects,
+                // however, if their subject starts without slash, include
+                // commands without slash
+                boolean noslash = code.length() > 0 && !code.startsWith("/");
                 result = new FixedCompletionProvider(commands.values().stream()
                         .filter(cmd -> cmd.kind.showInHelp || cmd.kind == CommandKind.HELP_SUBJECT)
-                        .map(c -> c.command + " ")
+                        .map(c -> ((noslash && c.command.startsWith("/"))
+                                ? c.command.substring(1)
+                                : c.command) + " ")
                         .toArray(String[]::new))
                         .completionSuggestions(code, cursor, anchor);
             } else if (code.startsWith("/se")) {
@@ -2087,8 +2093,11 @@ public class JShellTool implements MessageHandler {
         ArgTokenizer at = new ArgTokenizer("/help", arg);
         String subject = at.next();
         if (subject != null) {
+            // check if the requested subject is a help subject or
+            // a command, with or without slash
             Command[] matches = commands.values().stream()
-                    .filter(c -> c.command.startsWith(subject))
+                    .filter(c -> c.command.startsWith(subject)
+                              || c.command.substring(1).startsWith(subject))
                     .toArray(Command[]::new);
             if (matches.length == 1) {
                 String cmd = matches[0].command;
@@ -2113,6 +2122,18 @@ public class JShellTool implements MessageHandler {
                 }
                 return true;
             } else {
+                // failing everything else, check if this is the start of
+                // a /set sub-command name
+                String[] subs = Arrays.stream(SET_SUBCOMMANDS)
+                        .filter(s -> s.startsWith(subject))
+                        .toArray(String[]::new);
+                if (subs.length > 0) {
+                    for (String sub : subs) {
+                        hardrb("help.set." + sub);
+                        hard("");
+                    }
+                    return true;
+                }
                 errormsg("jshell.err.help.arg", arg);
             }
         }
