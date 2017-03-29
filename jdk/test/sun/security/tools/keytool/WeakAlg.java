@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8171319
+ * @bug 8171319 8177569
  * @summary keytool should print out warnings when reading or generating
   *         cert/cert req using weak algorithms
  * @library /test/lib
@@ -78,7 +78,8 @@ public class WeakAlg {
                 .shouldMatch("<b>.*512-bit RSA key.*risk")
                 .shouldContain("512-bit RSA key (weak)");
 
-        // Multiple warnings for multiple cert in -printcert or -list or -exportcert
+        // Multiple warnings for multiple cert in -printcert
+        // or -list or -exportcert
 
         // -certreq, -printcertreq, -gencert
         checkCertReq("a", "", null);
@@ -184,7 +185,7 @@ public class WeakAlg {
                 .shouldMatch("The input.*MD5withRSA.*risk")
                 .shouldNotContain("[no]");
 
-        // cert is self-signed cacerts
+        // JDK-8177569: no warning for sigalg of trusted cert
         String weakSigAlgCA = null;
         KeyStore ks = KeyStoreUtil.getCacertsKeyStore();
         if (ks != null) {
@@ -208,12 +209,40 @@ public class WeakAlg {
             }
         }
         if (weakSigAlgCA != null) {
+            // The following 2 commands still have a warning on why not using
+            // the -cacerts option directly.
+            kt("-list -keystore " + KeyStoreUtil.getCacerts())
+                    .shouldNotContain("risk");
+            kt("-list -v -keystore " + KeyStoreUtil.getCacerts())
+                    .shouldNotContain("risk");
+
+            // -printcert will always show warnings
+            kt("-printcert -file ca.cert")
+                    .shouldContain("name: " + weakSigAlgCA + " (weak)")
+                    .shouldContain("Warning")
+                    .shouldMatch("The certificate.*" + weakSigAlgCA + ".*risk");
+            kt("-printcert -file ca.cert -trustcacerts") // -trustcacerts useless
+                    .shouldContain("name: " + weakSigAlgCA + " (weak)")
+                    .shouldContain("Warning")
+                    .shouldMatch("The certificate.*" + weakSigAlgCA + ".*risk");
+
+            // Importing with -trustcacerts ignore CA cert's sig alg
             kt("-delete -alias d");
             kt("-importcert -alias d -trustcacerts -file ca.cert", "no")
                     .shouldContain("Certificate already exists in system-wide CA")
+                    .shouldNotContain("risk")
+                    .shouldContain("Do you still want to add it to your own keystore?");
+            kt("-importcert -alias d -trustcacerts -file ca.cert -noprompt")
+                    .shouldNotContain("risk")
+                    .shouldNotContain("[no]");
+
+            // but not without -trustcacerts
+            kt("-delete -alias d");
+            kt("-importcert -alias d -file ca.cert", "no")
+                    .shouldContain("name: " + weakSigAlgCA + " (weak)")
                     .shouldContain("Warning")
                     .shouldMatch("The input.*" + weakSigAlgCA + ".*risk")
-                    .shouldContain("Do you still want to add it to your own keystore?");
+                    .shouldContain("Trust this certificate?");
             kt("-importcert -alias d -file ca.cert -noprompt")
                     .shouldContain("Warning")
                     .shouldMatch("The input.*" + weakSigAlgCA + ".*risk")
@@ -264,6 +293,26 @@ public class WeakAlg {
                 .shouldNotContain("[no]");
 
         // install reply
+
+        reStore();
+        certreq("c", "");
+        gencert("a-c", "");
+        kt("-importcert -alias c -file a-c.cert")
+                .shouldContain("Warning")
+                .shouldMatch("Issuer <a>.*MD5withRSA.*risk");
+
+        // JDK-8177569: no warning for sigalg of trusted cert
+        reStore();
+        // Change a into a TrustedCertEntry
+        kt("-exportcert -alias a -file a.cert");
+        kt("-delete -alias a");
+        kt("-importcert -alias a -file a.cert -noprompt");
+        kt("-list -alias a -v")
+                .shouldNotContain("weak")
+                .shouldNotContain("Warning");
+        // This time a is trusted and no warning on its weak sig alg
+        kt("-importcert -alias c -file a-c.cert")
+                .shouldNotContain("Warning");
 
         reStore();
 
