@@ -334,7 +334,10 @@ public class Resolve {
                     currModule.complete();
                     PackageSymbol p = c.packge();
                     isAccessible =
-                        (currModule == p.modle) || currModule.visiblePackages.get(p.fullname) == p || p == syms.rootPackage;
+                        currModule == p.modle ||
+                        currModule.visiblePackages.get(p.fullname) == p ||
+                        p == syms.rootPackage ||
+                        (p.modle == syms.unnamedModule && currModule.readModules.contains(p.modle));
                 } else {
                     isAccessible = true;
                 }
