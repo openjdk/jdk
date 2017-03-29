@@ -26,6 +26,7 @@
 /**
  * Defines the JavaBeans Activation Framework (JAF) API.
  *
+ * @moduleGraph
  * @since 9
  */
 @Deprecated(since="9", forRemoval=true)
