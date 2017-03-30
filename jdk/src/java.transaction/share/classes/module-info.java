@@ -29,6 +29,7 @@
  * The subset consists of RMI exception types which are mapped to CORBA system
  * exceptions by the 'Java Language to IDL Mapping Specification'.
  *
+ * @moduleGraph
  * @since 9
  */
 @Deprecated(since="9", forRemoval=true)
