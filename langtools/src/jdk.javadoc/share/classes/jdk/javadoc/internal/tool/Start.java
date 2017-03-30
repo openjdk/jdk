@@ -88,9 +88,8 @@ import static jdk.javadoc.internal.tool.Main.Result.*;
  */
 public class Start extends ToolOption.Helper {
 
-    @SuppressWarnings("deprecation")
-    private static final Class<?> OldStdDoclet =
-            com.sun.tools.doclets.standard.Standard.class;
+    private static final String OldStdDocletName =
+        "com.sun.tools.doclets.standard.Standard";
 
     private static final Class<?> StdDoclet =
             jdk.javadoc.doclet.StandardDoclet.class;
@@ -334,7 +333,7 @@ public class Start extends ToolOption.Helper {
                     messager.getWriter(WriterKind.ERROR),
                     messager.getWriter(WriterKind.WARNING),
                     messager.getWriter(WriterKind.NOTICE),
-                    "com.sun.tools.doclets.standard.Standard",
+                    OldStdDocletName,
                     nargv);
             return (rc == 0) ? OK : ERROR;
         }
@@ -764,25 +763,29 @@ public class Start extends ToolOption.Helper {
 
         // Step 4: we have a doclet, try loading it
         if (docletName != null) {
-            try {
-                return Class.forName(docletName, true, getClass().getClassLoader());
-            } catch (ClassNotFoundException cnfe) {
-                if (apiMode) {
-                    throw new IllegalArgumentException("Cannot find doclet class " + userDocletName);
-                }
-                String text = messager.getText("main.doclet_class_not_found", userDocletName);
-                throw new ToolException(CMDERR, text, cnfe);
-            }
+            return loadDocletClass(docletName);
         }
 
         // Step 5: we don't have a doclet specified, do we have taglets ?
         if (!userTagletNames.isEmpty() && hasOldTaglet(userTagletNames, userTagletPath)) {
             // found a bogey, return the old doclet
-            return OldStdDoclet;
+            return loadDocletClass(OldStdDocletName);
         }
 
         // finally
         return StdDoclet;
+    }
+
+    private Class<?> loadDocletClass(String docletName) throws ToolException {
+        try {
+            return Class.forName(docletName, true, getClass().getClassLoader());
+        } catch (ClassNotFoundException cnfe) {
+            if (apiMode) {
+                throw new IllegalArgumentException("Cannot find doclet class " + docletName);
+            }
+            String text = messager.getText("main.doclet_class_not_found", docletName);
+            throw new ToolException(CMDERR, text, cnfe);
+        }
     }
 
     /*
