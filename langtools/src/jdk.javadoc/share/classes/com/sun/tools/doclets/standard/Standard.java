@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import com.sun.tools.doclets.formats.html.*;
  * @deprecated The doclet has been superseded by its replacement,
  * {@code jdk.javadoc.doclets.StandardDoclet}.
  */
-@Deprecated
+@Deprecated(forRemoval=true, since="9")
 public class Standard {
 
     public static int optionLength(String option) {
