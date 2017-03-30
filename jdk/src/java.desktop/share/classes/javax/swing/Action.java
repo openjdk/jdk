@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -384,8 +384,8 @@ public interface Action extends ActionListener {
      * @param sender the object to check, can be null
      * @return {@code true} if the action should be performed with the sender
      *         object, must be false if the action is disabled.
-     * @see isEnabled
-     * @see setEnabled
+     * @see #isEnabled
+     * @see #setEnabled
      */
     default boolean accept(Object sender) {
         return isEnabled();

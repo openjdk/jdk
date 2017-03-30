@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,16 @@
  */
 
 package sun.awt.image;
+
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.image.DataBuffer;
+import java.awt.image.DataBufferByte;
+import java.awt.image.MultiPixelPackedSampleModel;
 import java.awt.image.Raster;
-import java.awt.image.WritableRaster;
 import java.awt.image.RasterFormatException;
 import java.awt.image.SampleModel;
-import java.awt.image.MultiPixelPackedSampleModel;
-import java.awt.image.DataBufferByte;
-import java.awt.Rectangle;
-import java.awt.Point;
+import java.awt.image.WritableRaster;
 
 /**
  * This class is useful for describing 1, 2, or 4 bit image data

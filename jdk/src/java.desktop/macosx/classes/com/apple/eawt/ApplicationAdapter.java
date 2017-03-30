@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,26 @@
 
 package com.apple.eawt;
 
+import java.awt.desktop.AboutHandler;
+import java.awt.desktop.AppForegroundListener;
+import java.awt.desktop.AppHiddenListener;
+import java.awt.desktop.AppReopenedListener;
+import java.awt.desktop.OpenFilesHandler;
+import java.awt.desktop.OpenURIHandler;
+import java.awt.desktop.PreferencesHandler;
+import java.awt.desktop.PrintFilesHandler;
+import java.awt.desktop.QuitHandler;
+import java.awt.desktop.ScreenSleepListener;
+import java.awt.desktop.SystemEventListener;
+import java.awt.desktop.SystemSleepListener;
+import java.awt.desktop.UserSessionListener;
+
 /**
  * An abstract adapter class for receiving {@code ApplicationEvents}.
  *
  * ApplicationEvents are deprecated. Use individual app event listeners or handlers instead.
  *
- * @see Application#addAppEventListener(AppEventListener)
+ * @see Application#addAppEventListener(SystemEventListener)
  *
  * @see AboutHandler
  * @see PreferencesHandler
@@ -39,14 +53,14 @@ package com.apple.eawt;
  * @see PrintFilesHandler
  * @see QuitHandler
  *
- * @see AppReOpenedListener
+ * @see AppReopenedListener
  * @see AppForegroundListener
  * @see AppHiddenListener
  * @see UserSessionListener
  * @see ScreenSleepListener
  * @see SystemSleepListener
  *
- * @deprecated replaced by {@link AboutHandler}, {@link PreferencesHandler}, {@link AppReOpenedListener}, {@link OpenFilesHandler}, {@link PrintFilesHandler}, {@link QuitHandler}, {@link MacQuitResponse}.
+ * @deprecated replaced by {@link AboutHandler}, {@link PreferencesHandler}, {@link AppReopenedListener}, {@link OpenFilesHandler}, {@link PrintFilesHandler}, {@link QuitHandler}, {@link MacQuitResponse}.
  * @since 1.4
  */
 @SuppressWarnings("deprecation")

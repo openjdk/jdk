@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3732,7 +3732,6 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
          * <p>
          * This should be used if the ActionMap can be shared.
          *
-         * @param c JComponent to install the ActionMap on.
          * @param loaderClass Class object that gets loadActionMap invoked
          *                    on.
          * @param defaultsKey Key to use to defaults table to check for

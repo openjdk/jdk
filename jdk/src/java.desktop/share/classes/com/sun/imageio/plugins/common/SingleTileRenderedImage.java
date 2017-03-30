@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ public class SingleTileRenderedImage extends SimpleRenderedImage {
      * and a ColorModel.
      *
      * @param ras A Raster that will define tile (0, 0) of the image.
-     * @param cm A ColorModel that will serve as the image's
+     * @param colorModel A ColorModel that will serve as the image's
      *           ColorModel.
      */
     public SingleTileRenderedImage(Raster ras, ColorModel colorModel) {

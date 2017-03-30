@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,25 +38,25 @@ package com.apple.eawt.event;
 public interface SwipeListener extends GestureListener {
     /**
      * Invoked when an upwards swipe gesture is performed by the user.
-     * @param event representing the occurrence of a swipe.
+     * @param e representing the occurrence of a swipe.
      */
     public void swipedUp(final SwipeEvent e);
 
     /**
      * Invoked when a downward swipe gesture is performed by the user.
-     * @param event representing the occurrence of a swipe.
+     * @param e representing the occurrence of a swipe.
      */
     public void swipedDown(final SwipeEvent e);
 
     /**
      * Invoked when a leftward swipe gesture is performed by the user.
-     * @param event representing the occurrence of a swipe.
+     * @param e representing the occurrence of a swipe.
      */
     public void swipedLeft(final SwipeEvent e);
 
     /**
      * Invoked when a rightward swipe gesture is performed by the user.
-     * @param event representing the occurrence of a swipe.
+     * @param e representing the occurrence of a swipe.
      */
     public void swipedRight(final SwipeEvent e);
 }
