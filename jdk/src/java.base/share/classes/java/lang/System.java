@@ -1568,6 +1568,14 @@ public final class System {
      * obtained by calling {@link LoggerFinder#getLogger(java.lang.String,
      * java.lang.reflect.Module) LoggerFinder.getLogger(name, module)}, where
      * {@code module} is the caller's module.
+     * In cases where {@code System.getLogger} is called from a context where
+     * there is no caller frame on the stack (e.g when called directly
+     * from a JNI attached thread), {@code IllegalCallerException} is thrown.
+     * To obtain a logger in such a context, use an auxiliary class that will
+     * implicitly be identified as the caller, or use the system {@link
+     * LoggerFinder#getLoggerFinder() LoggerFinder} to obtain a logger instead.
+     * Note that doing the latter may eagerly initialize the underlying
+     * logging system.
      *
      * @apiNote
      * This method may defer calling the {@link
@@ -1580,6 +1588,8 @@ public final class System {
      * @return an instance of {@link Logger} that can be used by the calling
      *         class.
      * @throws NullPointerException if {@code name} is {@code null}.
+     * @throws IllegalCallerException if there is no Java caller frame on the
+     *         stack.
      *
      * @since 9
      */
@@ -1587,6 +1597,9 @@ public final class System {
     public static Logger getLogger(String name) {
         Objects.requireNonNull(name);
         final Class<?> caller = Reflection.getCallerClass();
+        if (caller == null) {
+            throw new IllegalCallerException("no caller frame");
+        }
         return LazyLoggers.getLogger(name, caller.getModule());
     }
 
@@ -1600,8 +1613,16 @@ public final class System {
      * The returned logger will perform message localization as specified
      * by {@link LoggerFinder#getLocalizedLogger(java.lang.String,
      * java.util.ResourceBundle, java.lang.reflect.Module)
-     * LoggerFinder.getLocalizedLogger(name, bundle, module}, where
+     * LoggerFinder.getLocalizedLogger(name, bundle, module)}, where
      * {@code module} is the caller's module.
+     * In cases where {@code System.getLogger} is called from a context where
+     * there is no caller frame on the stack (e.g when called directly
+     * from a JNI attached thread), {@code IllegalCallerException} is thrown.
+     * To obtain a logger in such a context, use an auxiliary class that
+     * will implicitly be identified as the caller, or use the system {@link
+     * LoggerFinder#getLoggerFinder() LoggerFinder} to obtain a logger instead.
+     * Note that doing the latter may eagerly initialize the underlying
+     * logging system.
      *
      * @apiNote
      * This method is intended to be used after the system is fully initialized.
@@ -1620,6 +1641,8 @@ public final class System {
      * resource bundle for message localization.
      * @throws NullPointerException if {@code name} is {@code null} or
      *         {@code bundle} is {@code null}.
+     * @throws IllegalCallerException if there is no Java caller frame on the
+     *         stack.
      *
      * @since 9
      */
@@ -1628,6 +1651,9 @@ public final class System {
         final ResourceBundle rb = Objects.requireNonNull(bundle);
         Objects.requireNonNull(name);
         final Class<?> caller = Reflection.getCallerClass();
+        if (caller == null) {
+            throw new IllegalCallerException("no caller frame");
+        }
         final SecurityManager sm = System.getSecurityManager();
         // We don't use LazyLoggers if a resource bundle is specified.
         // Bootstrap sensitive classes in the JDK do not use resource bundles

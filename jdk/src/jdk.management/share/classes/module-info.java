@@ -23,6 +23,12 @@
  * questions.
  */
 
+/**
+ * Defines the JDK-specific Management Interfaces for JVM.
+ *
+ * @moduleGraph
+ * @since 9
+ */
 module jdk.management {
     requires transitive java.management;
 

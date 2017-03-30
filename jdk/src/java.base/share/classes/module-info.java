@@ -26,6 +26,7 @@
 /**
  * Defines the foundational APIs of the Java SE Platform.
  *
+ * @moduleGraph
  * @since 9
  */
 module java.base {

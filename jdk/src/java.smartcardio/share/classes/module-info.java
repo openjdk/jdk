@@ -26,6 +26,7 @@
 /**
  * Defines the Java Smart Card I/O API.
  *
+ * @moduleGraph
  * @since 9
  */
 module java.smartcardio {
