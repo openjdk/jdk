@@ -27,6 +27,7 @@
  * Defines the Java API for XML Processing (JAXP), the Streaming API for XML (StAX),
  * the Simple API for XML (SAX), and the W3C Document Object Model (DOM) API.
  *
+ * @moduleGraph
  * @since 9
  */
 module java.xml {
