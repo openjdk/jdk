@@ -30,6 +30,7 @@
   * and define interfaces for tools such as compilers which can be invoked
   * from a program.
   *
+  * @moduleGraph
   * @since 9
   */
 module java.compiler {
