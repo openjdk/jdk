@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,8 +143,7 @@ class FrameView extends ComponentView implements HyperlinkListener {
      * contains it is editable. And then proceeds to call
      * the superclass to do the paint().
      *
-     * @param parent View
-     * @see text.ComponentView#paint
+     * @see javax.swing.text.ComponentView#paint
      */
     public void paint(Graphics g, Shape allocation) {
 
@@ -289,8 +288,6 @@ class FrameView extends ComponentView implements HyperlinkListener {
      * firing the event to the outermost JEditorPane, this
      * method also invokes the setPage() method and explicitly
      * replaces the current document with the destination url.
-     *
-     * @param HyperlinkEvent
      */
     public void hyperlinkUpdate(HyperlinkEvent evt) {
 

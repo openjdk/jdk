@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -948,7 +948,6 @@ public class CSS implements Serializable {
      * Returns the size of a font from the passed in string.
      *
      * @param size CSS string describing font size
-     * @param baseFontSize size to use for relative units.
      */
     float getPointSize(String size, StyleSheet ss) {
         int relSize, absSize, diff, index;
@@ -1658,8 +1657,8 @@ public class CSS implements Serializable {
      * value, this method returns a CssValue object to associate with the
      * CSS attribute.
      *
-     * @param the CSS.Attribute
-     * @param a String containing the value associated HTML.Attribtue.
+     * @param cssAttr the CSS.Attribute
+     * @param htmlAttrValue a String containing the value associated HTML.Attribute.
      */
     Object getCssValue(CSS.Attribute cssAttr, String htmlAttrValue) {
         CssValue value = (CssValue)valueConvertor.get(cssAttr);
@@ -1670,7 +1669,7 @@ public class CSS implements Serializable {
     /**
      * Maps an HTML.Attribute object to its appropriate CSS.Attributes.
      *
-     * @param HTML.Attribute
+     * @param hAttr HTML.Attribute
      * @return CSS.Attribute[]
      */
     private CSS.Attribute[] getCssAttribute(HTML.Attribute hAttr) {
@@ -1685,7 +1684,7 @@ public class CSS implements Serializable {
      * based on the tag associated with the attribute and the
      * value of the attribute.
      *
-     * @param AttributeSet containing HTML attributes.
+     * @param tag the AttributeSet containing HTML attributes.
      * @return CSS.Attribute mapping for HTML.Attribute.ALIGN.
      */
     private CSS.Attribute getCssAlignAttribute(HTML.Tag tag,
@@ -1711,7 +1710,7 @@ public class CSS implements Serializable {
     /**
      * Fetches the tag associated with the HTML AttributeSet.
      *
-     * @param  AttributeSet containing the HTML attributes.
+     * @param  htmlAttrSet the AttributeSet containing the HTML attributes.
      * @return HTML.Tag
      */
     private HTML.Tag getHTMLTag(AttributeSet htmlAttrSet) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
      * of the list if it is present, and any JFXX or APP2ICC marker
      * segments are subordinate to the JFIF marker segment.  This
      * list is package visible so that the writer can access it.
-     * @see #MarkerSegment
+     * @see MarkerSegment
      */
     List<MarkerSegment> markerSequence = new ArrayList<>();
 

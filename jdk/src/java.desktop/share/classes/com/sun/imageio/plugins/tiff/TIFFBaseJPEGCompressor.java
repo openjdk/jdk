@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,13 +74,13 @@ public abstract class TIFFBaseJPEGCompressor extends TIFFCompressor {
 
     /**
      * ImageWriteParam for JPEG writer.
-     * May be initialized by {@link #initJPEGWriter()}.
+     * May be initialized by {@link #initJPEGWriter}.
      */
     protected JPEGImageWriteParam JPEGParam = null;
 
     /**
      * The JPEG writer.
-     * May be initialized by {@link #initJPEGWriter()}.
+     * May be initialized by {@link #initJPEGWriter}.
      */
     protected ImageWriter JPEGWriter = null;
 
@@ -95,7 +95,7 @@ public abstract class TIFFBaseJPEGCompressor extends TIFFCompressor {
      * Stream metadata equivalent to a tables-only stream such as in
      * the {@code JPEGTables}. Default value is {@code null}.
      * This should be set by any subclass which sets
-     * {@link writeAbbreviatedStream} to {@code true}.
+     * {@link #writeAbbreviatedStream} to {@code true}.
      */
     protected IIOMetadata JPEGStreamMetadata = null;
 
