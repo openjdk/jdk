@@ -787,3 +787,15 @@ ul.ui-autocomplete  li {
     font-style:italic;
     font-size:12px;
 }
+
+.moduleGraph span {
+    display:none;
+    position:absolute;
+}
+.moduleGraph:hover span {
+    display:block;
+    margin: -100px 0 0 100px;
+    z-index: 1;
+}
+
+

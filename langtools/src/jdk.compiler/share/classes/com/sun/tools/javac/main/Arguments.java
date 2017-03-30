@@ -39,6 +39,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -283,23 +284,14 @@ public class Arguments {
     }
 
     /**
-     * Processes strings containing options and operands.
-     * @param args the strings to be processed
-     * @param allowableOpts the set of option declarations that are applicable
-     * @param helper a help for use by Option.process
-     * @param allowOperands whether or not to check for files and classes
-     * @param checkFileManager whether or not to check if the file manager can handle
-     *      options which are not recognized by any of allowableOpts
-     * @return true if all the strings were successfully processed; false otherwise
-     * @throws IllegalArgumentException if a problem occurs and errorMode is set to
-     *      ILLEGAL_ARGUMENT
+     * Handles the {@code --release} option.
+     *
+     * @param additionalOptions a predicate to handle additional options implied by the
+     * {@code --release} option. The predicate should return true if all the additional
+     * options were processed successfully.
+     * @return true if successful, false otherwise
      */
-    private boolean processArgs(Iterable<String> args,
-            Set<Option> allowableOpts, OptionHelper helper,
-            boolean allowOperands, boolean checkFileManager) {
-        if (!doProcessArgs(args, allowableOpts, helper, allowOperands, checkFileManager))
-            return false;
-
+    public boolean handleReleaseOptions(Predicate<Iterable<String>> additionalOptions) {
         String platformString = options.get(Option.RELEASE);
 
         checkOptionAllowed(platformString == null,
@@ -323,7 +315,7 @@ public class Arguments {
 
             context.put(PlatformDescription.class, platformDescription);
 
-            if (!doProcessArgs(platformDescription.getAdditionalOptions(), allowableOpts, helper, allowOperands, checkFileManager))
+            if (!additionalOptions.test(platformDescription.getAdditionalOptions()))
                 return false;
 
             Collection<Path> platformCP = platformDescription.getPlatformPath();
@@ -347,6 +339,30 @@ public class Arguments {
                 }
             }
         }
+
+        return true;
+    }
+
+    /**
+     * Processes strings containing options and operands.
+     * @param args the strings to be processed
+     * @param allowableOpts the set of option declarations that are applicable
+     * @param helper a help for use by Option.process
+     * @param allowOperands whether or not to check for files and classes
+     * @param checkFileManager whether or not to check if the file manager can handle
+     *      options which are not recognized by any of allowableOpts
+     * @return true if all the strings were successfully processed; false otherwise
+     * @throws IllegalArgumentException if a problem occurs and errorMode is set to
+     *      ILLEGAL_ARGUMENT
+     */
+    private boolean processArgs(Iterable<String> args,
+            Set<Option> allowableOpts, OptionHelper helper,
+            boolean allowOperands, boolean checkFileManager) {
+        if (!doProcessArgs(args, allowableOpts, helper, allowOperands, checkFileManager))
+            return false;
+
+        if (!handleReleaseOptions(extra -> doProcessArgs(extra, allowableOpts, helper, allowOperands, checkFileManager)))
+            return false;
 
         options.notifyListeners();
 

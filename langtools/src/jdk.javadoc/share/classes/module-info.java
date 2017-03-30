@@ -27,6 +27,7 @@
  *  {@link javax.tools.ToolProvider#getSystemDocumentationTool system documentation tool}
  *  and its command line equivalent, <em>javadoc</em>.
  *
+ *  @moduleGraph
  *  @since 9
  */
 module jdk.javadoc {
