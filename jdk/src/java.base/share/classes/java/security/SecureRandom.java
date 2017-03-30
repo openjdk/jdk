@@ -651,8 +651,6 @@ public class SecureRandom extends java.util.Random {
      * {@code SecureRandom}.
      *
      * @return the string representation
-     *
-     * @since 9
      */
     @Override
     public String toString() {
