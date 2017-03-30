@@ -27,6 +27,7 @@
  * Defines the subset of the W3C Document Object Model (DOM) API that is not part
  * of the Java SE API.
  *
+ * @moduleGraph
  * @since 9
  */
 module jdk.xml.dom {
