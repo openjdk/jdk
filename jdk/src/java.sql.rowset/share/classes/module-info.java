@@ -26,6 +26,7 @@
 /**
  * Defines the JDBC RowSet API.
  *
+ * @moduleGraph
  * @since 9
  */
 module java.sql.rowset {

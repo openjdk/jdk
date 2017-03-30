@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -135,11 +136,6 @@ public class IntegrationTest {
         }
         System.out.println(jl);
 
-        JlinkConfiguration config
-                = new JlinkConfiguration(null, null, null, null);
-
-        System.out.println(config);
-
         Plugin p = Jlink.newPlugin("toto", Collections.emptyMap(), null);
         if (p != null) {
             throw new Exception("Plugin should be null");
@@ -163,7 +159,7 @@ public class IntegrationTest {
         Set<String> limits = new HashSet<>();
         limits.add("java.management");
         JlinkConfiguration config = new Jlink.JlinkConfiguration(output,
-                modulePaths, mods, limits, null);
+                modulePaths, mods, limits, ByteOrder.nativeOrder());
 
         List<Plugin> lst = new ArrayList<>();
 

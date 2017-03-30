@@ -23,6 +23,12 @@
  * questions.
  */
 
+/**
+ * Define the JMX management agent.
+ *
+ * @moduleGraph
+ * @since 9
+ */
 module jdk.management.agent {
     requires java.management;
     requires java.management.rmi;

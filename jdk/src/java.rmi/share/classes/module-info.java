@@ -26,6 +26,7 @@
 /**
  * Defines the Remote Method Invocation (RMI) API.
  *
+ * @moduleGraph
  * @since 9
  */
 module java.rmi {
