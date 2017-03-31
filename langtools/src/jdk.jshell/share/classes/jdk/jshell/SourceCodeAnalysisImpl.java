@@ -1277,11 +1277,15 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                  .allMatch(param -> param.getSimpleName().toString().startsWith("arg"));
     }
 
+    private static List<Path> availableSourcesOverride; //for tests
     private List<Path> availableSources;
 
     private List<Path> findSources() {
         if (availableSources != null) {
             return availableSources;
+        }
+        if (availableSourcesOverride != null) {
+            return availableSources = availableSourcesOverride;
         }
         List<Path> result = new ArrayList<>();
         Path home = Paths.get(System.getProperty("java.home"));

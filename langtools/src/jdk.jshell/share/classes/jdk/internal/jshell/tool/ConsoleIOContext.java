@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.PrintStream;
-import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -44,7 +43,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -59,10 +58,10 @@ import jdk.internal.jline.console.ConsoleReader;
 import jdk.internal.jline.console.KeyMap;
 import jdk.internal.jline.console.Operation;
 import jdk.internal.jline.console.UserInterruptException;
-import jdk.internal.jline.console.completer.Completer;
 import jdk.internal.jline.console.history.History;
 import jdk.internal.jline.console.history.MemoryHistory;
 import jdk.internal.jline.extra.EditingHistory;
+import jdk.internal.jline.internal.NonBlockingInputStream;
 import jdk.internal.jshell.tool.StopDetectingInputStream.State;
 import jdk.internal.misc.Signal;
 import jdk.internal.misc.Signal.Handler;
@@ -91,10 +90,14 @@ class ConsoleIOContext extends IOContext {
             term = new JShellUnixTerminal(input);
         }
         term.init();
-        AtomicBoolean allowSmart = new AtomicBoolean();
+        List<CompletionTask> completionTODO = new ArrayList<>();
         in = new ConsoleReader(cmdin, cmdout, term) {
             @Override public KeyMap getKeys() {
-                return new CheckCompletionKeyMap(super.getKeys(), allowSmart);
+                return new CheckCompletionKeyMap(super.getKeys(), completionTODO);
+            }
+            @Override
+            protected boolean complete() throws IOException {
+                return ConsoleIOContext.this.complete(completionTODO);
             }
         };
         in.setExpandEvents(false);
@@ -111,67 +114,7 @@ class ConsoleIOContext extends IOContext {
         });
         in.setBellEnabled(true);
         in.setCopyPasteDetection(true);
-        in.addCompleter(new Completer() {
-            @Override public int complete(String test, int cursor, List<CharSequence> result) {
-                int[] anchor = new int[] {-1};
-                List<Suggestion> suggestions;
-                if (prefix.isEmpty() && test.trim().startsWith("/")) {
-                    suggestions = repl.commandCompletionSuggestions(test, cursor, anchor);
-                } else {
-                    int prefixLength = prefix.length();
-                    suggestions = repl.analysis.completionSuggestions(prefix + test, cursor + prefixLength, anchor);
-                    anchor[0] -= prefixLength;
-                }
-                boolean smart = allowSmart.get() &&
-                                suggestions.stream()
-                                           .anyMatch(Suggestion::matchesType);
-
-                allowSmart.set(!allowSmart.get());
-
-                suggestions.stream()
-                           .filter(s -> !smart || s.matchesType())
-                           .map(Suggestion::continuation)
-                           .forEach(result::add);
-
-                boolean onlySmart = suggestions.stream()
-                                               .allMatch(Suggestion::matchesType);
-
-                if (smart && !onlySmart) {
-                    Optional<String> prefix =
-                            suggestions.stream()
-                                       .map(Suggestion::continuation)
-                                       .reduce(ConsoleIOContext::commonPrefix);
-
-                    String prefixStr = prefix.orElse("").substring(cursor - anchor[0]);
-                    try {
-                        in.putString(prefixStr);
-                        cursor += prefixStr.length();
-                    } catch (IOException ex) {
-                        throw new IllegalStateException(ex);
-                    }
-                    result.add(repl.messageFormat("jshell.console.see.more"));
-                    return cursor; //anchor should not be used.
-                }
-
-                if (result.isEmpty()) {
-                    try {
-                        //provide "empty completion" feedback
-                        //XXX: this only works correctly when there is only one Completer:
-                        in.beep();
-                    } catch (IOException ex) {
-                        throw new UncheckedIOException(ex);
-                    }
-                }
-
-                return anchor[0];
-            }
-        });
-        bind(DOCUMENTATION_SHORTCUT, (Runnable) () -> documentation(repl));
-        for (FixComputer computer : FIX_COMPUTERS) {
-            for (String shortcuts : SHORTCUT_FIXES) {
-                bind(shortcuts + computer.shortcut, (Runnable) () -> fixes(computer));
-            }
-        }
+        bind(FIXES_SHORTCUT, (Runnable) () -> fixes());
         try {
             Signal.handle(new Signal("CONT"), new Handler() {
                 @Override public void handle(Signal sig) {
@@ -248,135 +191,183 @@ class ConsoleIOContext extends IOContext {
         }
     }
 
-    private static final String DOCUMENTATION_SHORTCUT = "\033\133\132"; //Shift-TAB
-    private static final String[] SHORTCUT_FIXES = {
-        "\033\015", //Alt-Enter (Linux)
-        "\033\012", //Alt-Enter (Linux)
-        "\033\133\061\067\176", //F6/Alt-F1 (Mac)
-        "\u001BO3P" //Alt-F1 (Linux)
-    };
+    private static final String FIXES_SHORTCUT = "\033\133\132"; //Shift-TAB
 
-    private String lastDocumentationBuffer;
-    private int lastDocumentationCursor = (-1);
+    private static final String LINE_SEPARATOR = System.getProperty("line.separator");
+    private static final String LINE_SEPARATORS2 = LINE_SEPARATOR + LINE_SEPARATOR;
 
-    private void documentation(JShellTool repl) {
-        String buffer = in.getCursorBuffer().buffer.toString();
-        int cursor = in.getCursorBuffer().cursor;
-        boolean firstInvocation = !buffer.equals(lastDocumentationBuffer) || cursor != lastDocumentationCursor;
-        lastDocumentationBuffer = buffer;
-        lastDocumentationCursor = cursor;
-        List<String> doc;
-        String seeMore;
-        Terminal term = in.getTerminal();
-        if (prefix.isEmpty() && buffer.trim().startsWith("/")) {
-            doc = Arrays.asList(repl.commandDocumentation(buffer, cursor, firstInvocation));
-            seeMore = "jshell.console.see.help";
-        } else {
-            JavadocFormatter formatter = new JavadocFormatter(term.getWidth(),
-                                                              term.isAnsiSupported());
-            Function<Documentation, String> convertor;
-            if (firstInvocation) {
-                convertor = Documentation::signature;
-            } else {
-                convertor = d -> formatter.formatJavadoc(d.signature(), d.javadoc()) +
-                                 (d.javadoc() == null ? repl.messageFormat("jshell.console.no.javadoc")
-                                                      : "");
-            }
-            doc = repl.analysis.documentation(prefix + buffer, cursor + prefix.length(), !firstInvocation)
-                               .stream()
-                               .map(convertor)
-                               .collect(Collectors.toList());
-            seeMore = "jshell.console.see.javadoc";
-        }
-
+    @SuppressWarnings("fallthrough")
+    private boolean complete(List<CompletionTask> todo) {
+        //The completion has multiple states (invoked by subsequent presses of <tab>).
+        //On the first invocation in a given sequence, all steps are precomputed
+        //and placed into the todo list. The todo list is then followed on both the first
+        //and subsequent <tab> presses:
         try {
-            if (doc != null && !doc.isEmpty()) {
-                if (firstInvocation) {
-                    in.println();
-                    in.println(doc.stream().collect(Collectors.joining("\n")));
-                    in.println(repl.messageFormat(seeMore));
-                    in.redrawLine();
-                    in.flush();
+            String text = in.getCursorBuffer().toString();
+            int cursor = in.getCursorBuffer().cursor;
+            if (todo.isEmpty()) {
+                int[] anchor = new int[] {-1};
+                List<Suggestion> suggestions;
+                List<String> doc;
+                boolean command = prefix.isEmpty() && text.trim().startsWith("/");
+                if (command) {
+                    suggestions = repl.commandCompletionSuggestions(text, cursor, anchor);
+                    doc = repl.commandDocumentation(text, cursor, true);
                 } else {
-                    in.println();
+                    int prefixLength = prefix.length();
+                    suggestions = repl.analysis.completionSuggestions(prefix + text, cursor + prefixLength, anchor);
+                    anchor[0] -= prefixLength;
+                    doc = repl.analysis.documentation(prefix + text, cursor + prefix.length(), false)
+                                       .stream()
+                                       .map(Documentation::signature)
+                                       .collect(Collectors.toList());
+                }
+                long smartCount = suggestions.stream().filter(Suggestion::matchesType).count();
+                boolean hasSmart = smartCount > 0 && smartCount <= in.getAutoprintThreshold();
+                boolean hasBoth = hasSmart &&
+                                  suggestions.stream()
+                                             .map(s -> s.matchesType())
+                                             .distinct()
+                                             .count() == 2;
+                boolean tooManyItems = suggestions.size() > in.getAutoprintThreshold();
+                CompletionTask ordinaryCompletion = new OrdinaryCompletionTask(suggestions, anchor[0], !command && !doc.isEmpty(), hasSmart);
+                CompletionTask allCompletion = new AllSuggestionsCompletionTask(suggestions, anchor[0]);
 
-                    int height = term.getHeight();
-                    String lastNote = "";
+                //the main decission tree:
+                if (command) {
+                    CompletionTask shortDocumentation = new CommandSynopsisTask(doc);
+                    CompletionTask fullDocumentation = new CommandFullDocumentationTask(todo);
 
-                    PRINT_DOC: for (Iterator<String> docIt = doc.iterator(); docIt.hasNext(); ) {
-                        String currentDoc = docIt.next();
-                        String[] lines = currentDoc.split("\n");
-                        int firstLine = 0;
-
-                        PRINT_PAGE: while (true) {
-                            in.print(lastNote.replaceAll(".", " ") + ConsoleReader.RESET_LINE);
-
-                            int toPrint = height - 1;
-
-                            while (toPrint > 0 && firstLine < lines.length) {
-                                in.println(lines[firstLine++]);
-                                toPrint--;
-                            }
-
-                            if (firstLine >= lines.length) {
-                                break;
-                            }
-
-                            lastNote = repl.getResourceString("jshell.console.see.next.page");
-                            in.print(lastNote + ConsoleReader.RESET_LINE);
-                            in.flush();
-
-                            while (true) {
-                                int r = in.readCharacter();
-
-                                switch (r) {
-                                    case ' ': continue PRINT_PAGE;
-                                    case 'q':
-                                    case 3:
-                                        break PRINT_DOC;
-                                    default:
-                                        in.beep();
-                                        break;
-                                }
-                            }
+                    if (!doc.isEmpty()) {
+                        if (tooManyItems) {
+                            todo.add(new NoopCompletionTask());
+                            todo.add(allCompletion);
+                        } else {
+                            todo.add(ordinaryCompletion);
                         }
+                        todo.add(shortDocumentation);
+                        todo.add(fullDocumentation);
+                    } else {
+                        todo.add(new NoSuchCommandCompletionTask());
+                    }
+                } else {
+                    if (doc.isEmpty()) {
+                        if (hasSmart) {
+                            todo.add(ordinaryCompletion);
+                        } else if (tooManyItems) {
+                            todo.add(new NoopCompletionTask());
+                        }
+                        if (!hasSmart || hasBoth) {
+                            todo.add(allCompletion);
+                        }
+                    } else {
+                        CompletionTask shortDocumentation = new ExpressionSignaturesTask(doc);
+                        CompletionTask fullDocumentation = new ExpressionJavadocTask(todo);
 
-                        if (docIt.hasNext()) {
-                            lastNote = repl.getResourceString("jshell.console.see.next.javadoc");
-                            in.print(lastNote + ConsoleReader.RESET_LINE);
-                            in.flush();
-
-                            while (true) {
-                                int r = in.readCharacter();
-
-                                switch (r) {
-                                    case ' ': continue PRINT_DOC;
-                                    case 'q':
-                                    case 3:
-                                        break PRINT_DOC;
-                                    default:
-                                        in.beep();
-                                        break;
-                                }
-                            }
+                        if (hasSmart) {
+                            todo.add(ordinaryCompletion);
+                        }
+                        todo.add(shortDocumentation);
+                        if (!hasSmart || hasBoth) {
+                            todo.add(allCompletion);
+                        }
+                        if (tooManyItems) {
+                            todo.add(todo.size() - 1, fullDocumentation);
+                        } else {
+                            todo.add(fullDocumentation);
                         }
                     }
-                    //clear the "press space" line:
-                    in.getCursorBuffer().buffer.replace(0, buffer.length(), lastNote);
-                    in.getCursorBuffer().cursor = 0;
-                    in.killLine();
-                    in.getCursorBuffer().buffer.append(buffer);
-                    in.getCursorBuffer().cursor = cursor;
-                    in.redrawLine();
-                    in.flush();
                 }
-            } else {
-                in.beep();
             }
+
+            boolean success = false;
+            boolean repaint = true;
+
+            OUTER: while (!todo.isEmpty()) {
+                CompletionTask.Result result = todo.remove(0).perform(text, cursor);
+
+                switch (result) {
+                    case CONTINUE:
+                        break;
+                    case SKIP_NOREPAINT:
+                        repaint = false;
+                    case SKIP:
+                        todo.clear();
+                        //intentional fall-through
+                    case FINISH:
+                        success = true;
+                        //intentional fall-through
+                    case NO_DATA:
+                        if (!todo.isEmpty()) {
+                            in.println();
+                            in.println(todo.get(0).description());
+                        }
+                        break OUTER;
+                }
+            }
+
+            if (repaint) {
+                in.redrawLine();
+                in.flush();
+            }
+
+            return success;
         } catch (IOException ex) {
             throw new IllegalStateException(ex);
         }
     }
+
+    private CompletionTask.Result doPrintFullDocumentation(List<CompletionTask> todo, List<String> doc, boolean command) {
+        if (doc != null && !doc.isEmpty()) {
+            Terminal term = in.getTerminal();
+            int pageHeight = term.getHeight() - NEEDED_LINES;
+            List<CompletionTask> thisTODO = new ArrayList<>();
+
+            for (Iterator<String> docIt = doc.iterator(); docIt.hasNext(); ) {
+                String currentDoc = docIt.next();
+                String[] lines = currentDoc.split("\n");
+                int firstLine = 0;
+
+                while (firstLine < lines.length) {
+                    boolean first = firstLine == 0;
+                    String[] thisPageLines =
+                            Arrays.copyOfRange(lines,
+                                               firstLine,
+                                               Math.min(firstLine + pageHeight, lines.length));
+
+                    thisTODO.add(new CompletionTask() {
+                        @Override
+                        public String description() {
+                            String key =  !first ? "jshell.console.see.next.page"
+                                                 : command ? "jshell.console.see.next.command.doc"
+                                                           : "jshell.console.see.next.javadoc";
+
+                            return repl.getResourceString(key);
+                        }
+
+                        @Override
+                        public Result perform(String text, int cursor) throws IOException {
+                            in.println();
+                            for (String line : thisPageLines) {
+                                in.println(line);
+                            }
+                            return Result.FINISH;
+                        }
+                    });
+
+                    firstLine += pageHeight;
+                }
+            }
+
+            todo.addAll(0, thisTODO);
+
+            return CompletionTask.Result.CONTINUE;
+        }
+
+        return CompletionTask.Result.FINISH;
+    }
+    //where:
+        private static final int NEEDED_LINES = 4;
 
     private static String commonPrefix(String str1, String str2) {
         for (int i = 0; i < str2.length(); i++) {
@@ -386,6 +377,262 @@ class ConsoleIOContext extends IOContext {
         }
 
         return str2;
+    }
+
+    private interface CompletionTask {
+        public String description();
+        public Result perform(String text, int cursor) throws IOException;
+
+        enum Result {
+            NO_DATA,
+            CONTINUE,
+            FINISH,
+            SKIP,
+            SKIP_NOREPAINT;
+        }
+    }
+
+    private final class NoopCompletionTask implements CompletionTask {
+
+        @Override
+        public String description() {
+            throw new UnsupportedOperationException("Should not get here.");
+        }
+
+        @Override
+        public Result perform(String text, int cursor) throws IOException {
+            return Result.FINISH;
+        }
+
+    }
+
+    private final class NoSuchCommandCompletionTask implements CompletionTask {
+
+        @Override
+        public String description() {
+            throw new UnsupportedOperationException("Should not get here.");
+        }
+
+        @Override
+        public Result perform(String text, int cursor) throws IOException {
+            in.println();
+            in.println(repl.getResourceString("jshell.console.no.such.command"));
+            in.println();
+            return Result.SKIP;
+        }
+
+    }
+
+    private final class OrdinaryCompletionTask implements CompletionTask {
+        private final List<Suggestion> suggestions;
+        private final int anchor;
+        private final boolean cont;
+        private final boolean smart;
+
+        public OrdinaryCompletionTask(List<Suggestion> suggestions,
+                                      int anchor,
+                                      boolean cont,
+                                      boolean smart) {
+            this.suggestions = suggestions;
+            this.anchor = anchor;
+            this.cont = cont;
+            this.smart = smart;
+        }
+
+        @Override
+        public String description() {
+            throw new UnsupportedOperationException("Should not get here.");
+        }
+
+        @Override
+        public Result perform(String text, int cursor) throws IOException {
+            List<CharSequence> toShow;
+
+            if (smart) {
+                toShow =
+                    suggestions.stream()
+                               .filter(Suggestion::matchesType)
+                               .map(Suggestion::continuation)
+                               .distinct()
+                               .collect(Collectors.toList());
+            } else {
+                toShow =
+                    suggestions.stream()
+                               .map(Suggestion::continuation)
+                               .distinct()
+                               .collect(Collectors.toList());
+            }
+
+            if (toShow.isEmpty()) {
+                return Result.CONTINUE;
+            }
+
+            Optional<String> prefix =
+                    suggestions.stream()
+                               .map(Suggestion::continuation)
+                               .reduce(ConsoleIOContext::commonPrefix);
+
+            String prefixStr = prefix.orElse("").substring(cursor - anchor);
+            in.putString(prefixStr);
+
+            boolean showItems = toShow.size() > 1 || smart;
+
+            if (showItems) {
+                in.println();
+                in.printColumns(toShow);
+            }
+
+            if (!prefixStr.isEmpty())
+                return showItems ? Result.SKIP : Result.SKIP_NOREPAINT;
+
+            return cont ? Result.CONTINUE : Result.FINISH;
+        }
+
+    }
+
+    private final class AllSuggestionsCompletionTask implements CompletionTask {
+        private final List<Suggestion> suggestions;
+        private final int anchor;
+
+        public AllSuggestionsCompletionTask(List<Suggestion> suggestions,
+                                            int anchor) {
+            this.suggestions = suggestions;
+            this.anchor = anchor;
+        }
+
+        @Override
+        public String description() {
+            if (suggestions.size() <= in.getAutoprintThreshold()) {
+                return repl.getResourceString("jshell.console.completion.all.completions");
+            } else {
+                return repl.messageFormat("jshell.console.completion.all.completions.number", suggestions.size());
+            }
+        }
+
+        @Override
+        public Result perform(String text, int cursor) throws IOException {
+            List<String> candidates =
+                    suggestions.stream()
+                               .map(Suggestion::continuation)
+                               .distinct()
+                               .collect(Collectors.toList());
+
+            Optional<String> prefix =
+                    candidates.stream()
+                              .reduce(ConsoleIOContext::commonPrefix);
+
+            String prefixStr = prefix.map(str -> str.substring(cursor - anchor)).orElse("");
+            in.putString(prefixStr);
+            if (candidates.size() > 1) {
+                in.println();
+                in.printColumns(candidates);
+            }
+            return suggestions.isEmpty() ? Result.NO_DATA : Result.FINISH;
+        }
+
+    }
+
+    private final class CommandSynopsisTask implements CompletionTask {
+
+        private final List<String> synopsis;
+
+        public CommandSynopsisTask(List<String> synposis) {
+            this.synopsis = synposis;
+        }
+
+        @Override
+        public String description() {
+            return repl.getResourceString("jshell.console.see.synopsis");
+        }
+
+        @Override
+        public Result perform(String text, int cursor) throws IOException {
+            try {
+                in.println();
+                in.println(synopsis.stream()
+                                   .map(l -> l.replaceAll("\n", LINE_SEPARATOR))
+                                   .collect(Collectors.joining(LINE_SEPARATORS2)));
+            } catch (IOException ex) {
+                throw new IllegalStateException(ex);
+            }
+            return Result.FINISH;
+        }
+
+    }
+
+    private final class CommandFullDocumentationTask implements CompletionTask {
+
+        private final List<CompletionTask> todo;
+
+        public CommandFullDocumentationTask(List<CompletionTask> todo) {
+            this.todo = todo;
+        }
+
+        @Override
+        public String description() {
+            return repl.getResourceString("jshell.console.see.full.documentation");
+        }
+
+        @Override
+        public Result perform(String text, int cursor) throws IOException {
+            List<String> fullDoc = repl.commandDocumentation(text, cursor, false);
+            return doPrintFullDocumentation(todo, fullDoc, true);
+        }
+
+    }
+
+    private final class ExpressionSignaturesTask implements CompletionTask {
+
+        private final List<String> doc;
+
+        public ExpressionSignaturesTask(List<String> doc) {
+            this.doc = doc;
+        }
+
+        @Override
+        public String description() {
+            throw new UnsupportedOperationException("Should not get here.");
+        }
+
+        @Override
+        public Result perform(String text, int cursor) throws IOException {
+            in.println();
+            in.println(repl.getResourceString("jshell.console.completion.current.signatures"));
+            in.println(doc.stream().collect(Collectors.joining(LINE_SEPARATOR)));
+            return Result.FINISH;
+        }
+
+    }
+
+    private final class ExpressionJavadocTask implements CompletionTask {
+
+        private final List<CompletionTask> todo;
+
+        public ExpressionJavadocTask(List<CompletionTask> todo) {
+            this.todo = todo;
+        }
+
+        @Override
+        public String description() {
+            return repl.getResourceString("jshell.console.see.documentation");
+        }
+
+        @Override
+        public Result perform(String text, int cursor) throws IOException {
+            //schedule showing javadoc:
+            Terminal term = in.getTerminal();
+            JavadocFormatter formatter = new JavadocFormatter(term.getWidth(),
+                                                              term.isAnsiSupported());
+            Function<Documentation, String> convertor = d -> formatter.formatJavadoc(d.signature(), d.javadoc()) +
+                             (d.javadoc() == null ? repl.messageFormat("jshell.console.no.javadoc")
+                                                  : "");
+            List<String> doc = repl.analysis.documentation(prefix + text, cursor + prefix.length(), true)
+                                            .stream()
+                                            .map(convertor)
+                                            .collect(Collectors.toList());
+            return doPrintFullDocumentation(todo, doc, false);
+        }
+
     }
 
     @Override
@@ -426,6 +673,50 @@ class ConsoleIOContext extends IOContext {
     @Override
     public void replaceLastHistoryEntry(String source) {
         history.fullHistoryReplace(source);
+    }
+
+    private static final long ESCAPE_TIMEOUT = 100;
+
+    private void fixes() {
+        try {
+            int c = in.readCharacter();
+
+            if (c == (-1)) {
+                return ;
+            }
+
+            for (FixComputer computer : FIX_COMPUTERS) {
+                if (computer.shortcut == c) {
+                    fixes(computer);
+                    return ;
+                }
+            }
+
+            readOutRemainingEscape(c);
+
+            in.beep();
+            in.println();
+            in.println(repl.getResourceString("jshell.fix.wrong.shortcut"));
+            in.redrawLine();
+            in.flush();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private void readOutRemainingEscape(int c) throws IOException {
+        if (c == '\033') {
+            //escape, consume waiting input:
+            InputStream inp = in.getInput();
+
+            if (inp instanceof NonBlockingInputStream) {
+                NonBlockingInputStream nbis = (NonBlockingInputStream) inp;
+
+                while (nbis.isNonBlockingEnabled() && nbis.peek(ESCAPE_TIMEOUT) > 0) {
+                    in.readCharacter();
+                }
+            }
+        }
     }
 
     //compute possible options/Fixes based on the selected FixComputer, present them to the user,
@@ -493,7 +784,7 @@ class ConsoleIOContext extends IOContext {
                 in.flush();
             }
         } catch (IOException ex) {
-            ex.printStackTrace();
+            throw new IllegalStateException(ex);
         }
     }
 
@@ -766,7 +1057,7 @@ class ConsoleIOContext extends IOContext {
         public TestTerminal(StopDetectingInputStream input) throws Exception {
             super(true);
             setAnsiSupported(false);
-            setEchoEnabled(true);
+            setEchoEnabled(false);
             this.input = input;
         }
 
@@ -786,12 +1077,12 @@ class ConsoleIOContext extends IOContext {
     private static final class CheckCompletionKeyMap extends KeyMap {
 
         private final KeyMap del;
-        private final AtomicBoolean allowSmart;
+        private final List<CompletionTask> completionTODO;
 
-        public CheckCompletionKeyMap(KeyMap del, AtomicBoolean allowSmart) {
+        public CheckCompletionKeyMap(KeyMap del, List<CompletionTask> completionTODO) {
             super(del.getName(), del.isViKeyMap());
             this.del = del;
-            this.allowSmart = allowSmart;
+            this.completionTODO = completionTODO;
         }
 
         @Override
@@ -819,7 +1110,7 @@ class ConsoleIOContext extends IOContext {
             Object res = del.getBound(keySeq);
 
             if (res != Operation.COMPLETE) {
-                allowSmart.set(true);
+                completionTODO.clear();
             }
 
             return res;
@@ -835,4 +1126,4 @@ class ConsoleIOContext extends IOContext {
             return "check: " + del.toString();
         }
     }
-}
+    }

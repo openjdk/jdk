@@ -1695,19 +1695,29 @@ public class JShellTool implements MessageHandler {
         return commandCompletions.completionSuggestions(code, cursor, anchor);
     }
 
-    public String commandDocumentation(String code, int cursor, boolean shortDescription) {
+    public List<String> commandDocumentation(String code, int cursor, boolean shortDescription) {
         code = code.substring(0, cursor);
         int space = code.indexOf(' ');
+        String prefix = space != (-1) ? code.substring(0, space) : code;
+        List<String> result = new ArrayList<>();
 
-        if (space != (-1)) {
-            String cmd = code.substring(0, space);
-            Command command = commands.get(cmd);
-            if (command != null) {
-                return getResourceString(command.helpKey + (shortDescription ? ".summary" : ""));
+        List<Entry<String, Command>> toShow =
+                commands.entrySet()
+                        .stream()
+                        .filter(e -> e.getKey().startsWith(prefix))
+                        .filter(e -> e.getValue().kind.showInHelp)
+                        .sorted((e1, e2) -> e1.getKey().compareTo(e2.getKey()))
+                        .collect(Collectors.toList());
+
+        if (toShow.size() == 1) {
+            result.add(getResourceString(toShow.get(0).getValue().helpKey + (shortDescription ? ".summary" : "")));
+        } else {
+            for (Entry<String, Command> e : toShow) {
+                result.add(e.getKey() + "\n" +getResourceString(e.getValue().helpKey + (shortDescription ? ".summary" : "")));
             }
         }
 
-        return null;
+        return result;
     }
 
     // Attempt to stop currently running evaluation
