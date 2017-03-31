@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -440,18 +440,6 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
             throw new SignatureException("Signature does not match.");
         }
         verifiedPublicKey = key;
-    }
-
-    /**
-     * This static method is the default implementation of the
-     * verify(PublicKey key, Provider sigProvider) method in X509CRL.
-     * Called from java.security.cert.X509CRL.verify(PublicKey key,
-     * Provider sigProvider)
-     */
-    public static void verify(X509CRL crl, PublicKey key,
-            Provider sigProvider) throws CRLException,
-            NoSuchAlgorithmException, InvalidKeyException, SignatureException {
-        crl.verify(key, sigProvider);
     }
 
     /**
