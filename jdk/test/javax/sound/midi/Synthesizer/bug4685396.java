@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 import javax.sound.midi.Instrument;
 import javax.sound.midi.MidiSystem;
+import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Soundbank;
 import javax.sound.midi.Synthesizer;
 
@@ -31,7 +32,6 @@ import javax.sound.midi.Synthesizer;
  * @bug 4685396
  * @summary Tests that Synthesizer.remapInstrument works
  * @run main bug4685396
- * @key headful
  */
 public class bug4685396 {
 
@@ -49,8 +49,7 @@ public class bug4685396 {
             boolean reloadInstr,    // reload all instruments?
             boolean unloadFrom,     // unload "from" instrument?
             boolean unloadTo        // unload "to" instrument?
-            ) throws Exception
-    {
+            ) throws MidiUnavailableException {
         log("Starting test: reloadInstr=" + reloadInstr
                 + ", unloadFrom=" + unloadFrom
                 + ", unloadTo=" + unloadTo
@@ -164,6 +163,9 @@ public class bug4685396 {
         boolean success = false;
         try {
             success = test(reloadInstr, unloadFrom, unloadTo);
+        } catch (final MidiUnavailableException ignored) {
+            // the test is not applicable
+            success = true;
         } catch (Exception ex) {
             log("Exception: " + ex.toString());
         }
@@ -171,7 +173,7 @@ public class bug4685396 {
         return success;
     }
 
-    public static void main(String args[]) throws Exception {
+    public static void main(String args[]) {
         boolean failed = false;
         if (!runTest(true, false, false))
             failed = true;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,21 @@
 import java.awt.Toolkit;
 
 import javax.sound.midi.MidiSystem;
+import javax.sound.midi.MidiUnavailableException;
 
 /**
  * @test
  * @bug 8068412
- * @key headful
- * @author Sergey Bylokhov
  */
 public final class InitializationHang {
 
-    public static void main(final String[] argv) throws Exception {
-        MidiSystem.getReceiver();
-        Toolkit.getDefaultToolkit();
+    public static void main(final String[] argv) {
+        try {
+            MidiSystem.getReceiver();
+            Toolkit.getDefaultToolkit();
+        } catch (final MidiUnavailableException ignored) {
+            // the test is not applicable
+        }
     }
 }
 
