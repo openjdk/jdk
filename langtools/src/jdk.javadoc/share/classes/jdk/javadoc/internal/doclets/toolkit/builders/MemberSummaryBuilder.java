@@ -70,10 +70,6 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
     public static final String NAME = "MemberSummary";
 
     /**
-     * The visible members for the given class.
-     */
-    private final EnumMap<VisibleMemberMap.Kind, VisibleMemberMap> visibleMemberMaps;
-    /**
      * The member summary writers for the given class.
      */
     private final EnumMap<VisibleMemberMap.Kind, MemberSummaryWriter> memberSummaryWriters;
@@ -94,14 +90,6 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
         super(context);
         this.typeElement = typeElement;
         memberSummaryWriters = new EnumMap<>(VisibleMemberMap.Kind.class);
-        visibleMemberMaps = new EnumMap<>(VisibleMemberMap.Kind.class);
-        for (VisibleMemberMap.Kind kind : VisibleMemberMap.Kind.values()) {
-            visibleMemberMaps.put(kind,
-                    new VisibleMemberMap(
-                    typeElement,
-                    kind,
-                    configuration));
-        }
     }
 
     /**
@@ -117,7 +105,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
                 classWriter.getTypeElement());
         WriterFactory wf = context.configuration.getWriterFactory();
         for (VisibleMemberMap.Kind kind : VisibleMemberMap.Kind.values()) {
-            MemberSummaryWriter msw = builder.visibleMemberMaps.get(kind).noVisibleMembers()
+            MemberSummaryWriter msw =  builder.getVisibleMemberMap(kind).noVisibleMembers()
                     ? null
                     : wf.getMemberSummaryWriter(classWriter, kind);
             builder.memberSummaryWriters.put(kind, msw);
@@ -138,7 +126,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
                 annotationTypeWriter.getAnnotationTypeElement());
         WriterFactory wf = context.configuration.getWriterFactory();
         for (VisibleMemberMap.Kind kind : VisibleMemberMap.Kind.values()) {
-            MemberSummaryWriter msw = builder.visibleMemberMaps.get(kind).noVisibleMembers()
+            MemberSummaryWriter msw = builder.getVisibleMemberMap(kind).noVisibleMembers()
                     ? null
                     : wf.getMemberSummaryWriter(annotationTypeWriter, kind);
             builder.memberSummaryWriters.put(kind, msw);
@@ -157,25 +145,25 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
     /**
      * Return the specified visible member map.
      *
-     * @param type the type of visible member map to return.
+     * @param kind the kind of visible member map to return.
      * @return the specified visible member map.
      * @throws ArrayIndexOutOfBoundsException when the type is invalid.
      * @see VisibleMemberMap
      */
-    public VisibleMemberMap getVisibleMemberMap(VisibleMemberMap.Kind type) {
-        return visibleMemberMaps.get(type);
+    public VisibleMemberMap getVisibleMemberMap(VisibleMemberMap.Kind kind) {
+        return configuration.getVisibleMemberMap(typeElement, kind);
     }
 
     /**.
      * Return the specified member summary writer.
      *
-     * @param type the type of member summary writer to return.
+     * @param kind the kind of member summary writer to return.
      * @return the specified member summary writer.
      * @throws ArrayIndexOutOfBoundsException when the type is invalid.
      * @see VisibleMemberMap
      */
-    public MemberSummaryWriter getMemberSummaryWriter(VisibleMemberMap.Kind type) {
-        return memberSummaryWriters.get(type);
+    public MemberSummaryWriter getMemberSummaryWriter(VisibleMemberMap.Kind kind) {
+        return memberSummaryWriters.get(kind);
     }
 
     /**
@@ -183,13 +171,13 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
      * This information can be used for doclet specific documentation
      * generation.
      *
-     * @param type the type of members to return.
+     * @param kind the kind of elements to return.
      * @return a list of methods that will be documented.
      * @see VisibleMemberMap
      */
-    public SortedSet<Element> members(VisibleMemberMap.Kind type) {
+    public SortedSet<Element> members(VisibleMemberMap.Kind kind) {
         TreeSet<Element> out = new TreeSet<>(comparator);
-        out.addAll(visibleMemberMaps.get(type).getLeafMembers());
+        out.addAll(getVisibleMemberMap(kind).getLeafMembers());
         return out;
     }
 
@@ -204,7 +192,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
             return !utils.getAnnotationMethods(typeElement).isEmpty();
         }
         for (VisibleMemberMap.Kind kind : VisibleMemberMap.Kind.values()) {
-            VisibleMemberMap members = visibleMemberMaps.get(kind);
+            VisibleMemberMap members = getVisibleMemberMap(kind);
             if (!members.noVisibleMembers()) {
                 return true;
             }
@@ -222,7 +210,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
         MemberSummaryWriter writer =
                 memberSummaryWriters.get(VisibleMemberMap.Kind.ENUM_CONSTANTS);
         VisibleMemberMap visibleMemberMap =
-                visibleMemberMaps.get(VisibleMemberMap.Kind.ENUM_CONSTANTS);
+                getVisibleMemberMap(VisibleMemberMap.Kind.ENUM_CONSTANTS);
         addSummary(writer, visibleMemberMap, false, memberSummaryTree);
     }
 
@@ -236,7 +224,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
         MemberSummaryWriter writer =
                 memberSummaryWriters.get(VisibleMemberMap.Kind.ANNOTATION_TYPE_FIELDS);
         VisibleMemberMap visibleMemberMap =
-                visibleMemberMaps.get(VisibleMemberMap.Kind.ANNOTATION_TYPE_FIELDS);
+                getVisibleMemberMap(VisibleMemberMap.Kind.ANNOTATION_TYPE_FIELDS);
         addSummary(writer, visibleMemberMap, false, memberSummaryTree);
     }
 
@@ -250,7 +238,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
         MemberSummaryWriter writer =
                 memberSummaryWriters.get(VisibleMemberMap.Kind.ANNOTATION_TYPE_MEMBER_OPTIONAL);
         VisibleMemberMap visibleMemberMap =
-                visibleMemberMaps.get(VisibleMemberMap.Kind.ANNOTATION_TYPE_MEMBER_OPTIONAL);
+                getVisibleMemberMap(VisibleMemberMap.Kind.ANNOTATION_TYPE_MEMBER_OPTIONAL);
         addSummary(writer, visibleMemberMap, false, memberSummaryTree);
     }
 
@@ -264,7 +252,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
         MemberSummaryWriter writer =
                 memberSummaryWriters.get(VisibleMemberMap.Kind.ANNOTATION_TYPE_MEMBER_REQUIRED);
         VisibleMemberMap visibleMemberMap =
-                visibleMemberMaps.get(VisibleMemberMap.Kind.ANNOTATION_TYPE_MEMBER_REQUIRED);
+                getVisibleMemberMap(VisibleMemberMap.Kind.ANNOTATION_TYPE_MEMBER_REQUIRED);
         addSummary(writer, visibleMemberMap, false, memberSummaryTree);
     }
 
@@ -278,7 +266,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
         MemberSummaryWriter writer =
                 memberSummaryWriters.get(VisibleMemberMap.Kind.FIELDS);
         VisibleMemberMap visibleMemberMap =
-                visibleMemberMaps.get(VisibleMemberMap.Kind.FIELDS);
+                getVisibleMemberMap(VisibleMemberMap.Kind.FIELDS);
         addSummary(writer, visibleMemberMap, true, memberSummaryTree);
     }
 
@@ -289,7 +277,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
         MemberSummaryWriter writer =
                 memberSummaryWriters.get(VisibleMemberMap.Kind.PROPERTIES);
         VisibleMemberMap visibleMemberMap =
-                visibleMemberMaps.get(VisibleMemberMap.Kind.PROPERTIES);
+                getVisibleMemberMap(VisibleMemberMap.Kind.PROPERTIES);
         addSummary(writer, visibleMemberMap, true, memberSummaryTree);
     }
 
@@ -303,7 +291,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
         MemberSummaryWriter writer =
                 memberSummaryWriters.get(VisibleMemberMap.Kind.INNER_CLASSES);
         VisibleMemberMap visibleMemberMap =
-                visibleMemberMaps.get(VisibleMemberMap.Kind.INNER_CLASSES);
+                getVisibleMemberMap(VisibleMemberMap.Kind.INNER_CLASSES);
         addSummary(writer, visibleMemberMap, true, memberSummaryTree);
     }
 
@@ -317,7 +305,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
         MemberSummaryWriter writer =
                 memberSummaryWriters.get(VisibleMemberMap.Kind.METHODS);
         VisibleMemberMap visibleMemberMap =
-                visibleMemberMaps.get(VisibleMemberMap.Kind.METHODS);
+               getVisibleMemberMap(VisibleMemberMap.Kind.METHODS);
         addSummary(writer, visibleMemberMap, true, memberSummaryTree);
     }
 
@@ -331,7 +319,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
         MemberSummaryWriter writer =
                 memberSummaryWriters.get(VisibleMemberMap.Kind.CONSTRUCTORS);
         VisibleMemberMap visibleMemberMap =
-                visibleMemberMaps.get(VisibleMemberMap.Kind.CONSTRUCTORS);
+                getVisibleMemberMap(VisibleMemberMap.Kind.CONSTRUCTORS);
         addSummary(writer, visibleMemberMap, false, memberSummaryTree);
     }
 

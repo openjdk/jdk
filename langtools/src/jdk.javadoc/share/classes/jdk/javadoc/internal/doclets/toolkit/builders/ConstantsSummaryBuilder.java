@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -273,8 +273,8 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
      * @return true if the given package has constant fields to document.
      */
     private boolean hasConstantField (TypeElement typeElement) {
-        VisibleMemberMap visibleMemberMapFields = new VisibleMemberMap(typeElement,
-            VisibleMemberMap.Kind.FIELDS, configuration);
+        VisibleMemberMap visibleMemberMapFields = configuration.getVisibleMemberMap(typeElement,
+            VisibleMemberMap.Kind.FIELDS);
         List<Element> fields = visibleMemberMapFields.getLeafMembers();
         for (Element f : fields) {
             VariableElement field = (VariableElement)f;
@@ -329,10 +329,10 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
          */
         public ConstantFieldBuilder(TypeElement typeElement) {
             this.typeElement = typeElement;
-            visibleMemberMapFields = new VisibleMemberMap(typeElement,
-                VisibleMemberMap.Kind.FIELDS, configuration);
-            visibleMemberMapEnumConst = new VisibleMemberMap(typeElement,
-                VisibleMemberMap.Kind.ENUM_CONSTANTS, configuration);
+            visibleMemberMapFields = configuration.getVisibleMemberMap(typeElement,
+                VisibleMemberMap.Kind.FIELDS);
+            visibleMemberMapEnumConst = configuration.getVisibleMemberMap(typeElement,
+                VisibleMemberMap.Kind.ENUM_CONSTANTS);
         }
 
         /**
