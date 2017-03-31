@@ -27,13 +27,13 @@ import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.DataLine;
+import javax.sound.sampled.LineUnavailableException;
 
 /*
  * @test
  * @bug 5070081
  * @summary Tests that javax.sound.sampled.Clip does not loses position through
  *          stop/start
- * @key headful
  */
 public class bug5070081 {
 
@@ -45,10 +45,15 @@ public class bug5070081 {
 
     static boolean test() throws Exception {
         DataLine.Info info = new DataLine.Info(Clip.class, format);
-        Clip clip = (Clip)AudioSystem.getLine(info);
-        clip.open(format, soundData, 0, soundData.length);
-
+        Clip clip = null;
         boolean bSuccess = true;
+        try {
+            clip = (Clip) AudioSystem.getLine(info);
+            clip.open(format, soundData, 0, soundData.length);
+        } catch (LineUnavailableException | IllegalArgumentException ignored) {
+            // the test is not applicable
+            return bSuccess;
+        }
 
         long nLengthMS = clip.getMicrosecondLength()/1000;
 
