@@ -70,6 +70,7 @@ jdk_lang = \
     sun/reflect \
     jdk/internal/reflect \
     jdk/lambda \
+    jdk/internal/loader \
     jdk/internal/misc \
     jdk/internal/ref \
     jdk/internal/jimage \
@@ -88,6 +89,7 @@ jdk_util = \
 jdk_util_other = \
     java/util \
     sun/util \
+    jdk/internal/util \
     -:jdk_collections \
     -:jdk_concurrent \
     -:jdk_stream
@@ -177,6 +179,7 @@ jdk_security2 = \
 jdk_security3 = \
     javax/security  \
     -javax/security/auth/kerberos \
+    com/sun/jarsigner \
     com/sun/security \
     -com/sun/security/jgss \
     com/sun/org/apache/xml/internal/security \
@@ -207,7 +210,8 @@ jdk_text = \
 jdk_management = \
     java/lang/management \
     com/sun/management \
-    sun/management
+    sun/management \
+    jdk/internal/agent
 
 jdk_instrument = \
     java/lang/instrument
