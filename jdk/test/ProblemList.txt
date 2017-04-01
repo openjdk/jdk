@@ -284,6 +284,7 @@ com/sun/jdi/sde/SourceDebugExtensionTest.java                   8158066 windows-
 
 java/util/BitSet/BitSetStreamTest.java                          8079538 generic-all
 
+jdk/internal/util/jar/TestVersionedStream.java                  8177640 windows-all
 
 ############################################################################
 
