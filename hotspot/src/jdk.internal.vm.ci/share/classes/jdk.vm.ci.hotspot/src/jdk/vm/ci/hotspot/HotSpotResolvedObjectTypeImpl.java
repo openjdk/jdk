@@ -847,6 +847,15 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     @Override
     public ResolvedJavaField findInstanceFieldWithOffset(long offset, JavaKind expectedEntryKind) {
         ResolvedJavaField[] declaredFields = getInstanceFields(true);
+        return findFieldWithOffset(offset, expectedEntryKind, declaredFields);
+    }
+
+    public ResolvedJavaField findStaticFieldWithOffset(long offset, JavaKind expectedEntryKind) {
+        ResolvedJavaField[] declaredFields = getStaticFields();
+        return findFieldWithOffset(offset, expectedEntryKind, declaredFields);
+    }
+
+    private static ResolvedJavaField findFieldWithOffset(long offset, JavaKind expectedEntryKind, ResolvedJavaField[] declaredFields) {
         for (ResolvedJavaField field : declaredFields) {
             HotSpotResolvedJavaField resolvedField = (HotSpotResolvedJavaField) field;
             long resolvedFieldOffset = resolvedField.offset();
