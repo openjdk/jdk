@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8154119 8154262 8156077 8157987 8154261 8154817 8135291 8155995 8162363
- *      8168766 8168688 8162674 8160196 8175799 8174974 8176778
+ *      8168766 8168688 8162674 8160196 8175799 8174974 8176778 8177562
  * @summary Test modules support in javadoc.
  * @author bpatel
  * @library ../lib
@@ -311,7 +311,7 @@ public class TestModules extends JavadocTester {
                 + "<li class=\"blockList\">\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\">\n"
-                + "<!-- ============ MODULES SUMMARY =========== -->");
+                + "<!-- ============ PACKAGES SUMMARY =========== -->");
         checkOutput("moduleB-summary.html", found,
                 "<div class=\"contentContainer\">\n"
                 + "<ul class=\"blockList\">\n"
@@ -372,7 +372,7 @@ public class TestModules extends JavadocTester {
                 + "<li class=\"blockList\">\n"
                 + "<ul class=\"blockList\">\n"
                 + "<li class=\"blockList\">\n"
-                + "<!-- ============ MODULES SUMMARY =========== -->");
+                + "<!-- ============ PACKAGES SUMMARY =========== -->");
         checkOutput("moduleB-summary.html", found,
                 "<div class=\"contentContainer\">\n"
                 + "<ul class=\"blockList\">\n"
@@ -595,7 +595,7 @@ public class TestModules extends JavadocTester {
                 + "<th class=\"colFirst\" scope=\"row\"><a href=\"testpkg2mdlB/TestInterface2InModuleB.html\" title=\"interface in testpkg2mdlB\">TestInterface2InModuleB</a></th>\n"
                 + "<td class=\"colLast\">&nbsp;</td>\n"
                 + "</tr>",
-                "<caption><span>Opened Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                "<caption><span>Opens</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
@@ -730,17 +730,12 @@ public class TestModules extends JavadocTester {
         checkOutput("moduleA-summary.html", true,
                 "<li><a href=\"#module.description\">Description</a>&nbsp;|&nbsp;<a href=\"#modules.summary\">"
                 + "Modules</a>&nbsp;|&nbsp;<a href=\"#packages.summary\">Packages</a>&nbsp;|&nbsp;Services</li>",
-                "<td class=\"colFirst\">transitive</td>\n"
-                + "<th class=\"colSecond\" scope=\"row\"><a href=\"moduleB-summary.html\">moduleB</a></th>\n"
-                + "<td class=\"colLast\">\n"
-                + "<div class=\"block\">This is a test description for the moduleB module.</div>\n"
-                + "</td>",
-                "<table class=\"packagesSummary\" summary=\"Additional Exported Packages table, listing modules, and packages\">\n"
-                + "<caption><span>Additional Exported Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>",
-                "<table class=\"packagesSummary\" summary=\"Additional Opened Packages table, listing modules, and packages\">\n"
-                + "<caption><span>Additional Opened Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                "<table class=\"packagesSummary\" summary=\"Indirect Exports table, listing modules, and packages\">\n"
+                + "<caption><span>Indirect Exports</span><span class=\"tabEnd\">&nbsp;</span></caption>",
+                "<table class=\"packagesSummary\" summary=\"Indirect Opens table, listing modules, and packages\">\n"
+                + "<caption><span>Indirect Opens</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
-                + "<th class=\"colFirst\" scope=\"col\">Module</th>\n"
+                + "<th class=\"colFirst\" scope=\"col\">From</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Packages</th>\n"
                 + "</tr>\n",
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"moduleB-summary.html\">moduleB</a></th>\n"
@@ -751,15 +746,15 @@ public class TestModules extends JavadocTester {
         checkOutput("moduletags-summary.html", true,
                 "<li><a href=\"#module.description\">Description</a>&nbsp;|&nbsp;<a href=\"#modules.summary\">Modules"
                 + "</a>&nbsp;|&nbsp;<a href=\"#packages.summary\">Packages</a>&nbsp;|&nbsp;Services</li>",
-                "<table class=\"requiresSummary\" summary=\"Additional Modules Required table, listing modules, and an explanation\">\n"
-                + "<caption><span>Additional Modules Required</span><span class=\"tabEnd\">&nbsp;</span></caption>",
+                "<table class=\"requiresSummary\" summary=\"Indirect Requires table, listing modules, and an explanation\">\n"
+                + "<caption><span>Indirect Requires</span><span class=\"tabEnd\">&nbsp;</span></caption>",
                 "<td class=\"colFirst\">transitive</td>\n"
                 + "<th class=\"colSecond\" scope=\"row\"><a href=\"moduleB-summary.html\">moduleB</a></th>\n"
                 + "<td class=\"colLast\">\n"
                 + "<div class=\"block\">This is a test description for the moduleB module.</div>\n"
                 + "</td>",
-                "<table class=\"packagesSummary\" summary=\"Additional Exported Packages table, listing modules, and packages\">\n"
-                + "<caption><span>Additional Exported Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>",
+                "<table class=\"packagesSummary\" summary=\"Indirect Exports table, listing modules, and packages\">\n"
+                + "<caption><span>Indirect Exports</span><span class=\"tabEnd\">&nbsp;</span></caption>",
                 "<td class=\"colFirst\">transitive static</td>\n"
                 + "<th class=\"colSecond\" scope=\"row\"><a href=\"moduleA-summary.html\">moduleA</a></th>\n"
                 + "<td class=\"colLast\">\n"
@@ -771,16 +766,16 @@ public class TestModules extends JavadocTester {
                 + "<th class=\"colFirst\" scope=\"col\">Modifier</th>\n"
                 + "<th class=\"colSecond\" scope=\"col\">Module</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>",
-                "<table class=\"requiresSummary\" summary=\"Additional Modules Required table, listing modules, and an explanation\">\n"
-                + "<caption><span>Additional Modules Required</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                "<table class=\"requiresSummary\" summary=\"Indirect Requires table, listing modules, and an explanation\">\n"
+                + "<caption><span>Indirect Requires</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Modifier</th>\n"
                 + "<th class=\"colSecond\" scope=\"col\">Module</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>",
-                "<table class=\"packagesSummary\" summary=\"Additional Opened Packages table, listing modules, and packages\">\n"
-                + "<caption><span>Additional Opened Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                "<table class=\"packagesSummary\" summary=\"Indirect Opens table, listing modules, and packages\">\n"
+                + "<caption><span>Indirect Opens</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
-                + "<th class=\"colFirst\" scope=\"col\">Module</th>\n"
+                + "<th class=\"colFirst\" scope=\"col\">From</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Packages</th>\n"
                 + "</tr>\n",
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"moduleB-summary.html\">moduleB</a></th>\n"
@@ -797,7 +792,7 @@ public class TestModules extends JavadocTester {
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"testpkgmdlB/package-summary.html\">testpkgmdlB</a></th>\n"
                 + "<td class=\"colLast\">&nbsp;</td>",
                 "<table class=\"packagesSummary\" summary=\"Packages table, listing packages, and an explanation\">\n"
-                + "<caption><span>Opened Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<caption><span>Opens</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
@@ -830,9 +825,9 @@ public class TestModules extends JavadocTester {
                 + "<td class=\"colSecond\">All Modules</td>\n"
                 + "<td class=\"colLast\">&nbsp;</td>",
                 "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All Packages</span><span class=\"tabEnd\">&nbsp;</span></span>"
-                + "<span id=\"t1\" class=\"tableTab\"><span><a href=\"javascript:showPkgs(1);\">Exported Packages</a></span>"
+                + "<span id=\"t1\" class=\"tableTab\"><span><a href=\"javascript:showPkgs(1);\">Exports</a></span>"
                 + "<span class=\"tabEnd\">&nbsp;</span></span><span id=\"t3\" class=\"tableTab\"><span><a href=\"javascript:showPkgs(4);\">"
-                + "Concealed Packages</a></span><span class=\"tabEnd\">&nbsp;</span></span></caption>",
+                + "Concealed</a></span><span class=\"tabEnd\">&nbsp;</span></span></caption>",
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"concealedpkgmdlA/package-summary.html\">concealedpkgmdlA</a></th>\n"
                 + "<td class=\"colSecond\">None</td>\n"
                 + "<td class=\"colLast\">&nbsp;</td>");
@@ -854,10 +849,10 @@ public class TestModules extends JavadocTester {
                 + "<td class=\"colLast\">&nbsp;<br>(<span class=\"implementationLabel\">Implementation(s):</span>&nbsp;<a href=\"testpkgmdlB/TestClassInModuleB.html\" "
                 + "title=\"class in testpkgmdlB\">TestClassInModuleB</a>)</td>",
                 "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All Packages</span><span class=\"tabEnd\">&nbsp;</span></span><span id=\"t1\" class=\"tableTab\"><span>"
-                + "<a href=\"javascript:showPkgs(1);\">Exported Packages</a></span><span class=\"tabEnd\">&nbsp;</span></span><span id=\"t2\" class=\"tableTab\"><span>"
-                + "<a href=\"javascript:showPkgs(2);\">Opened Packages</a></span><span class=\"tabEnd\">&nbsp;</span></span></caption>");
+                + "<a href=\"javascript:showPkgs(1);\">Exports</a></span><span class=\"tabEnd\">&nbsp;</span></span><span id=\"t2\" class=\"tableTab\"><span>"
+                + "<a href=\"javascript:showPkgs(2);\">Opens</a></span><span class=\"tabEnd\">&nbsp;</span></span></caption>");
         checkOutput("moduleC-summary.html", found,
-                "<caption><span>Exported Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                "<caption><span>Exports</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
                 + "<th class=\"colSecond\" scope=\"col\">Module</th>\n"
