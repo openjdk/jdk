@@ -46,6 +46,7 @@ public enum HtmlStyle {
     bottomNav,
     circle,
     classUseContainer,
+    colConstructorName,
     colFirst,
     colLast,
     colSecond,
