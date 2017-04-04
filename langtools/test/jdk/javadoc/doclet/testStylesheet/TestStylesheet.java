@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4494033 7028815 7052425 8007338 8023608 8008164 8016549 8072461 8154261 8162363 8160196 8151743
+ * @bug      4494033 7028815 7052425 8007338 8023608 8008164 8016549 8072461 8154261 8162363 8160196 8151743 8177417
  * @summary  Run tests on doclet stylesheet.
  * @author   jamieh
  * @library  ../lib
@@ -140,8 +140,8 @@ public class TestStylesheet extends JavadocTester {
                 + ".usesSummary td.colFirst, .usesSummary th.colFirst,\n"
                 + ".providesSummary td.colFirst, .providesSummary th.colFirst,\n"
                 + ".memberSummary td.colFirst, .memberSummary th.colFirst,\n"
-                + ".memberSummary td.colSecond, .memberSummary th.colSecond,\n"
-                + ".typeSummary td.colFirst{\n"
+                + ".memberSummary td.colSecond, .memberSummary th.colSecond, .memberSummary th.colConstructorName,\n"
+                + ".typeSummary td.colFirst {\n"
                 + "    vertical-align:top;\n"
                 + "}",
                 ".overviewSummary td, .memberSummary td, .typeSummary td,\n"
