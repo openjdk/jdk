@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public class TestJcmdDefaults {
 
     private static final String TEST_SRC = System.getProperty("test.src").trim();
     private static final String[] VM_ARGS = new String[] { "-XX:+UsePerfData" };
-    private static final String JCMD_LIST_REGEX = "^\\d+\\s*.*";
+    private static final String JCMD_LIST_REGEX = "(?s)^\\d+\\s*.*";
 
     public static void main(String[] args) throws Exception {
         testJcmdUsage("-h");
