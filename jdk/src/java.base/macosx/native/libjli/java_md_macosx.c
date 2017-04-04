@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -886,6 +886,7 @@ ContinueInNewThread0(int (JNICALL *continuation)(void *), jlong stack_size, void
     if (stack_size > 0) {
       pthread_attr_setstacksize(&attr, stack_size);
     }
+    pthread_attr_setguardsize(&attr, 0); // no pthread guard page on java threads
 
     if (pthread_create(&tid, &attr, (void *(*)(void*))continuation, (void*)args) == 0) {
       void * tmp;

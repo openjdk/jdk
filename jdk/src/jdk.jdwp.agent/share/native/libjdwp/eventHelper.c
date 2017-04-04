@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,10 +240,10 @@ dequeueCommand(void)
 
         size = commandSize(command);
         /*
-         * Immediately close out any commands enqueued from a
-         * previously attached debugger.
+         * Immediately close out any commands enqueued from
+         * a dead VM or a previously attached debugger.
          */
-        if (command->sessionID != currentSessionID) {
+        if (gdata->vmDead || command->sessionID != currentSessionID) {
             log_debugee_location("dequeueCommand(): command session removal", NULL, NULL, 0);
             completeCommand(command);
             command = NULL;
