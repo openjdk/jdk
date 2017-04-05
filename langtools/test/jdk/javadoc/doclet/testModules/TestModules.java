@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8154119 8154262 8156077 8157987 8154261 8154817 8135291 8155995 8162363
- *      8168766 8168688 8162674 8160196 8175799 8174974 8176778 8177562
+ *      8168766 8168688 8162674 8160196 8175799 8174974 8176778 8177562 8175218
  * @summary Test modules support in javadoc.
  * @author bpatel
  * @library ../lib
@@ -277,14 +277,14 @@ public class TestModules extends JavadocTester {
                 + "<!--   -->\n"
                 + "</a>\n"
                 + "<div class=\"block\">This is a test description for the moduleA module. Search "
-                + "phrase <a id=\"searchphrase\">search phrase</a>.</div>");
+                + "phrase <a id=\"searchphrase\" class=\"searchTagResult\">search phrase</a>.</div>");
         checkOutput("moduleB-summary.html", found,
                 "<!-- ============ MODULE DESCRIPTION =========== -->\n"
                 + "<a name=\"module.description\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
                 + "<div class=\"block\">This is a test description for the moduleB module. Search "
-                + "word <a id=\"search_word\">search_word</a> with no description.</div>");
+                + "word <a id=\"search_word\" class=\"searchTagResult\">search_word</a> with no description.</div>");
         checkOutput("overview-summary.html", found,
                 "</script>\n"
                 + "<div class=\"contentContainer\">\n"
@@ -325,7 +325,7 @@ public class TestModules extends JavadocTester {
         checkOutput("moduleA-summary.html", found,
                 "<section role=\"region\">\n"
                 + "<div class=\"deprecatedContent\"><span class=\"deprecatedLabel\">Deprecated, for removal:"
-                + " This API element is subject to removal in a future version. </span>\n"
+                + " This API element is subject to removal in a future version.</span>\n"
                 + "<div class=\"block\"><span class=\"deprecationComment\">This module is deprecated.</span></div>\n"
                 + "</div>\n"
                 + "<!-- ============ MODULE DESCRIPTION =========== -->\n"
@@ -333,7 +333,7 @@ public class TestModules extends JavadocTester {
                 + "<!--   -->\n"
                 + "</a>\n"
                 + "<div class=\"block\">This is a test description for the moduleA module. Search "
-                + "phrase <a id=\"searchphrase\">search phrase</a>.</div>");
+                + "phrase <a id=\"searchphrase\" class=\"searchTagResult\">search phrase</a>.</div>");
         checkOutput("moduleB-summary.html", found,
                 "<section role=\"region\">\n"
                 + "<!-- ============ MODULE DESCRIPTION =========== -->\n"
@@ -341,7 +341,7 @@ public class TestModules extends JavadocTester {
                 + "<!--   -->\n"
                 + "</a>\n"
                 + "<div class=\"block\">This is a test description for the moduleB module. Search "
-                + "word <a id=\"search_word\">search_word</a> with no description.</div>");
+                + "word <a id=\"search_word\" class=\"searchTagResult\">search_word</a> with no description.</div>");
         checkOutput("overview-summary.html", found,
                 "</nav>\n"
                 + "</header>\n"
@@ -618,7 +618,7 @@ public class TestModules extends JavadocTester {
                 + "<h1 title=\"Module\" class=\"title\">Module&nbsp;moduleT</h1>\n"
                 + "</div>",
                 "<div class=\"block\">This is a test description for the moduleT module. "
-                + "Search phrase <a id=\"searchphrase\">search phrase</a>. "
+                + "Search phrase <a id=\"searchphrase\" class=\"searchTagResult\">search phrase</a>. "
                 + "Make sure there are no exported packages.</div>",
                 "<tbody>\n"
                 + "<tr class=\"altColor\">\n"
@@ -867,7 +867,7 @@ public class TestModules extends JavadocTester {
     void checkModuleDeprecation(boolean found) {
         checkOutput("moduleA-summary.html", found,
                 "<div class=\"deprecatedContent\"><span class=\"deprecatedLabel\">Deprecated, for removal:"
-                + " This API element is subject to removal in a future version. </span>\n"
+                + " This API element is subject to removal in a future version.</span>\n"
                 + "<div class=\"block\"><span class=\"deprecationComment\">This module is deprecated.</span></div>\n"
                 + "</div>");
         checkOutput("deprecated-list.html", found,

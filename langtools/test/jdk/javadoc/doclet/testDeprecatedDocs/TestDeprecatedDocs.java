@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4927552 8026567 8071982 8162674 8175200
+ * @bug      4927552 8026567 8071982 8162674 8175200 8175218
  * @summary  <DESC>
  * @author   jamieh
  * @library  ../lib
@@ -81,16 +81,16 @@ public class TestDeprecatedDocs extends JavadocTester {
                 + "extends java.lang.Object</pre>",
                 "<pre>@Deprecated(forRemoval=true)\n"
                 + "public&nbsp;int field</pre>\n"
-                + "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version. </span>&nbsp;</div>",
+                + "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version.</span>&nbsp;</div>",
                 "<pre>@Deprecated(forRemoval=true)\n"
                 + "public&nbsp;DeprecatedClassByAnnotation&#8203;()</pre>\n"
-                + "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version. </span>&nbsp;</div>",
+                + "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version.</span>&nbsp;</div>",
                 "<pre>@Deprecated\n"
                 + "public&nbsp;void&nbsp;method&#8203;()</pre>\n"
                 + "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;</div>");
 
         checkOutput("pkg/TestAnnotationType.html", true,
-                "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version. </span>&nbsp;\n"
+                "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version.</span>&nbsp;\n"
                 + "<div class=\"block\"><span class=\"deprecationComment\">annotation_test1 passes.</span></div>\n"
                 + "</div>\n"
                 + "<br>\n"
@@ -100,16 +100,16 @@ public class TestDeprecatedDocs extends JavadocTester {
                 "<pre>@Deprecated(forRemoval=true)\n"
                 + "static final&nbsp;int&nbsp;field</pre>\n"
                 + "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated, for removal: This "
-                + "API element is subject to removal in a future version. </span>&nbsp;<span class=\"deprecationComment\">annotation_test4 passes.</span></div>",
+                + "API element is subject to removal in a future version.</span>&nbsp;<span class=\"deprecationComment\">annotation_test4 passes.</span></div>",
                 "<pre>@Deprecated(forRemoval=true)\n"
                 + "int&nbsp;required</pre>\n"
-                + "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version. </span>&nbsp;"
+                + "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version.</span>&nbsp;"
                 + "<span class=\"deprecationComment\">annotation_test3 passes.</span></div>",
                 "<pre>java.lang.String&nbsp;optional</pre>\n"
                 + "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;<span class=\"deprecationComment\">annotation_test2 passes.</span></div>");
 
         checkOutput("pkg/TestClass.html", true,
-                "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version. </span>&nbsp;\n"
+                "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version.</span>&nbsp;\n"
                 + "<div class=\"block\"><span class=\"deprecationComment\">class_test1 passes.</span></div>\n"
                 + "</div>\n"
                 + "<br>\n"
@@ -118,11 +118,11 @@ public class TestDeprecatedDocs extends JavadocTester {
                 + "extends java.lang.Object</pre>",
                 "<pre>@Deprecated(forRemoval=true)\n"
                 + "public&nbsp;TestClass&#8203;()</pre>\n"
-                + "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version. </span>&nbsp;"
+                + "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version.</span>&nbsp;"
                 + "<span class=\"deprecationComment\">class_test3 passes.</span></div>");
 
         checkOutput("pkg/TestEnum.html", true,
-                "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version. </span>&nbsp;\n"
+                "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version.</span>&nbsp;\n"
                 + "<div class=\"block\"><span class=\"deprecationComment\">enum_test1 passes.</span></div>\n"
                 + "</div>\n"
                 + "<br>\n"
@@ -131,11 +131,11 @@ public class TestDeprecatedDocs extends JavadocTester {
                 + "extends java.lang.Enum&lt;<a href=\"../pkg/TestEnum.html\" title=\"enum in pkg\">TestEnum</a>&gt;</pre>",
                 "<pre>@Deprecated(forRemoval=true)\n"
                 + "public static final&nbsp;<a href=\"../pkg/TestEnum.html\" title=\"enum in pkg\">TestEnum</a> FOR_REMOVAL</pre>\n"
-                + "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version. </span>&nbsp;"
+                + "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version.</span>&nbsp;"
                 + "<span class=\"deprecationComment\">enum_test3 passes.</span></div>");
 
         checkOutput("pkg/TestError.html", true,
-                "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version. </span>&nbsp;\n"
+                "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version.</span>&nbsp;\n"
                 + "<div class=\"block\"><span class=\"deprecationComment\">error_test1 passes.</span></div>\n"
                 + "</div>\n"
                 + "<br>\n"
@@ -144,7 +144,7 @@ public class TestDeprecatedDocs extends JavadocTester {
                 + "extends java.lang.Error</pre>");
 
         checkOutput("pkg/TestException.html", true,
-                "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version. </span>&nbsp;\n"
+                "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version.</span>&nbsp;\n"
                 + "<div class=\"block\"><span class=\"deprecationComment\">exception_test1 passes.</span></div>\n"
                 + "</div>\n"
                 + "<br>\n"
@@ -153,7 +153,7 @@ public class TestDeprecatedDocs extends JavadocTester {
                 + "extends java.lang.Exception</pre>");
 
         checkOutput("pkg/TestInterface.html", true,
-                "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version. </span>&nbsp;\n"
+                "<div class=\"block\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version.</span>&nbsp;\n"
                 + "<div class=\"block\"><span class=\"deprecationComment\">interface_test1 passes.</span></div>\n"
                 + "</div>\n"
                 + "<br>\n"
