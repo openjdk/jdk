@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug      4494033 7028815 7052425 8007338 8023608 8008164 8016549 8072461 8154261 8162363 8160196 8151743 8177417
+ *           8175218
  * @summary  Run tests on doclet stylesheet.
  * @author   jamieh
  * @library  ../lib
@@ -162,6 +163,16 @@ public class TestStylesheet extends JavadocTester {
                 "@import url('resources/fonts/dejavu.css');",
                 ".navPadding {\n"
                 + "    padding-top: 107px;\n"
+                + "}",
+                "a[name]:before, a[name]:target, a[id]:before, a[id]:target {\n"
+                + "    content:\"\";\n"
+                + "    display:inline-block;\n"
+                + "    position:relative;\n"
+                + "    padding-top:129px;\n"
+                + "    margin-top:-129px;\n"
+                + "}\n"
+                + ".searchTagResult:before, .searchTagResult:target {\n"
+                + "    color:red;\n"
                 + "}");
 
         // Test whether a link to the stylesheet file is inserted properly

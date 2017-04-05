@@ -99,6 +99,7 @@ public enum HtmlStyle {
     rightIframe,
     rowColor,
     searchTagLink,
+    searchTagResult,
     seeLabel,
     serializedFormContainer,
     simpleTagLabel,
