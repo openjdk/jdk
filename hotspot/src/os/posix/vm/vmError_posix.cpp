@@ -115,7 +115,12 @@ static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
 
   // support safefetch faults in error handling
   ucontext_t* const uc = (ucontext_t*) ucVoid;
-  address const pc = uc ? os::Posix::ucontext_get_pc(uc) : NULL;
+  address pc = (uc != NULL) ? os::Posix::ucontext_get_pc(uc) : NULL;
+
+  // Correct pc for SIGILL, SIGFPE (see JDK-8176872)
+  if (sig == SIGILL || sig == SIGFPE) {
+    pc = (address) info->si_addr;
+  }
 
   if (uc && pc && StubRoutines::is_safefetch_fault(pc)) {
     os::Posix::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
