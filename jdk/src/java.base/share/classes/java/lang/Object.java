@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -561,10 +561,53 @@ public class Object {
      * the finalization of this object to be halted, but is otherwise
      * ignored.
      *
+     * @apiNote
+     * Classes that embed non-heap resources have many options
+     * for cleanup of those resources. The class must ensure that the
+     * lifetime of each instance is longer than that of any resource it embeds.
+     * {@link java.lang.ref.Reference#reachabilityFence} can be used to ensure that
+     * objects remain reachable while resources embedded in the object are in use.
+     * <p>
+     * A subclass should avoid overriding the {@code finalize} method
+     * unless the subclass embeds non-heap resources that must be cleaned up
+     * before the instance is collected.
+     * Finalizer invocations are not automatically chained, unlike constructors.
+     * If a subclass overrides {@code finalize} it must invoke the superclass
+     * finalizer explicitly.
+     * To guard against exceptions prematurely terminating the finalize chain,
+     * the subclass should use a {@code try-finally} block to ensure
+     * {@code super.finalize()} is always invoked. For example,
+     * <pre>{@code      @Override
+     *     protected void finalize() throws Throwable {
+     *         try {
+     *             ... // cleanup subclass state
+     *         } finally {
+     *             super.finalize();
+     *         }
+     *     }
+     * }</pre>
+     *
+     * @deprecated The finalization mechanism is inherently problematic.
+     * Finalization can lead to performance issues, deadlocks, and hangs.
+     * Errors in finalizers can lead to resource leaks; there is no way to cancel
+     * finalization if it is no longer necessary; and no ordering is specified
+     * among calls to {@code finalize} methods of different objects.
+     * Furthermore, there are no guarantees regarding the timing of finalization.
+     * The {@code finalize} method might be called on an finalizable object
+     * only after an indefinite delay, if at all.
+     *
+     * Classes whose instances hold non-heap resources should provide a method
+     * to enable explicit release of those resources, and they should also
+     * implement {@link AutoCloseable} if appropriate.
+     * The {@link java.lang.ref.Cleaner} and {@link java.lang.ref.PhantomReference}
+     * provide more flexible and efficient ways to release resources when an object
+     * becomes unreachable.
+     *
      * @throws Throwable the {@code Exception} raised by this method
      * @see java.lang.ref.WeakReference
      * @see java.lang.ref.PhantomReference
      * @jls 12.6 Finalization of Class Instances
      */
+    @Deprecated(since="9")
     protected void finalize() throws Throwable { }
 }
