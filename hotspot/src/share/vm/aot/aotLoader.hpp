@@ -63,7 +63,6 @@ public:
   static uint64_t get_saved_fingerprint(InstanceKlass* ik) NOT_AOT({ return 0; });
   static void oops_do(OopClosure* f) NOT_AOT_RETURN;
   static void metadata_do(void f(Metadata*)) NOT_AOT_RETURN;
-  static address exception_begin(JavaThread* thread, CodeBlob* blob, address return_address) NOT_AOT({ return NULL; });
 
   NOT_PRODUCT( static void print_statistics() NOT_AOT_RETURN; )
 

@@ -89,14 +89,6 @@ void AOTLoader::metadata_do(void f(Metadata*)) {
   }
 }
 
-address AOTLoader::exception_begin(JavaThread* thread, CodeBlob* blob, address return_address) {
-  assert(blob->is_aot(), "sanity");
-  AOTCompiledMethod* aotm = (AOTCompiledMethod*)blob;
-  // Set flag if return address is a method handle call site.
-  thread->set_is_method_handle_return(aotm->is_method_handle_return(return_address));
-  return aotm->exception_begin();
-}
-
 // Flushing and deoptimization in case of evolution
 void AOTLoader::flush_evol_dependents_on(InstanceKlass* dependee) {
   // make non entrant and mark for deoptimization
