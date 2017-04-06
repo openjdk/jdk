@@ -39,7 +39,9 @@ import java.util.List;
  * state engine, query {@code JShell} passing the Snippet.
  * <p>
  * Because it is immutable, {@code Snippet} (and subclasses) is thread-safe.
+ *
  * @author Robert Field
+ * @since 9
  * @see jdk.jshell.JShell#status
  */
 public abstract class Snippet {

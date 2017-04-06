@@ -158,6 +158,18 @@ ifeq ($(HAS_SPEC),)
     # If the "cmdline" argument is given, act on it and strip it away
     $$(eval $$(call ParseLogOption, cmdlines, LOG_CMDLINES))
 
+    # If the "profile-to-log" argument is given, write shell times in build log
+    $$(eval $$(call ParseLogOption, profile-to-log, LOG_PROFILE_TIMES_LOG))
+
+    # If the "profile" argument is given, write shell times in separate log file
+    # IMPORTANT: $(ParseLogOption profile-to-log) should go first. Otherwise
+    # parsing of 'LOG=debug,profile-to-log,nofile' ends up in the following error:
+    # Error: LOG contains unknown option or log level: debug-to-log.
+    $$(eval $$(call ParseLogOption, profile, LOG_PROFILE_TIMES_FILE))
+
+    # Treat LOG=profile-to-log as if it were LOG=profile,profile-to-log
+    LOG_PROFILE_TIMES_FILE := $$(firstword $$(LOG_PROFILE_TIMES_FILE) $$(LOG_PROFILE_TIMES_LOG))
+
     LOG_LEVEL := $$(LOG)
 
     ifeq ($$(LOG_LEVEL),)
@@ -175,7 +187,7 @@ ifeq ($(HAS_SPEC),)
       MAKE_LOG_FLAGS :=
     else
       $$(info Error: LOG contains unknown option or log level: $$(LOG).)
-      $$(info LOG can be <level>[,<opt>[...]] where <opt> is nofile | cmdlines)
+      $$(info LOG can be <level>[,<opt>[...]] where <opt> is nofile | cmdlines | profile | profile-to-log)
       $$(info and <level> is warn | info | debug | trace)
       $$(error Cannot continue)
     endif
@@ -309,7 +321,7 @@ ifeq ($(HAS_SPEC),)
 	@( cd $$(topdir) && \
 	$$(MAKE) $$(MAKE_LOG_FLAGS) -r -R -f $$(topdir)/make/Main.gmk \
 	    -I $$(topdir)/make/common SPEC=$(strip $2) NO_RECIPES=true \
-	    LOG_LEVEL=$$(LOG_LEVEL) \
+	    $$(MAKE_LOG_VARS) \
 	    create-main-targets-include )
 
     # Now include main-targets.gmk. This will define ALL_MAIN_TARGETS.
@@ -334,7 +346,7 @@ else # $(HAS_SPEC)=true
 
   # Define basic logging setup
   BUILD_LOG := $(OUTPUT_ROOT)/build.log
-  BUILD_TRACE_LOG := $(OUTPUT_ROOT)/build-trace-time.log
+  BUILD_PROFILE_LOG := $(OUTPUT_ROOT)/build-profile.log
 
   BUILD_LOG_PIPE := > >($(TEE) -a $(BUILD_LOG)) 2> >($(TEE) -a $(BUILD_LOG) >&2) && wait
 
@@ -494,9 +506,9 @@ else # $(HAS_SPEC)=true
   define RotateLogFiles
 	$(RM) $(BUILD_LOG).old 2> /dev/null && \
 	$(MV) $(BUILD_LOG) $(BUILD_LOG).old 2> /dev/null || true
-	$(if $(findstring trace, $(LOG_LEVEL)), \
-	  $(RM) $(BUILD_TRACE_LOG).old 2> /dev/null && \
-	  $(MV) $(BUILD_TRACE_LOG) $(BUILD_TRACE_LOG).old 2> /dev/null || true \
+	$(if $(findstring true, $(LOG_PROFILE_TIMES_FILE)), \
+	  $(RM) $(BUILD_PROFILE_LOG).old 2> /dev/null && \
+	  $(MV) $(BUILD_PROFILE_LOG) $(BUILD_PROFILE_LOG).old 2> /dev/null || true \
 	)
   endef
 
@@ -558,6 +570,22 @@ else # $(HAS_SPEC)=true
 	    $(BUILD_LOG_PIPE)
   endef
 
+  define ReportProfileTimes
+    $(if $(findstring true, $(LOG_PROFILE_TIMES_LOG)), \
+      [ ! -f $(BUILD_PROFILE_LOG) ] || \
+      { $(ECHO) Begin $(notdir $(BUILD_PROFILE_LOG)) && \
+        $(CAT) $(BUILD_PROFILE_LOG) && \
+        $(ECHO) End $(notdir $(BUILD_PROFILE_LOG)); \
+      } \
+      $(BUILD_LOG_PIPE)
+    )
+  endef
+
 endif # HAS_SPEC
+
+MAKE_LOG_VARS = $(foreach v, \
+    LOG_LEVEL LOG_NOFILE LOG_CMDLINES LOG_PROFILE_TIMES_LOG LOG_PROFILE_TIMES_FILE, \
+    $v=$($v) \
+)
 
 endif # _INITSUPPORT_GMK

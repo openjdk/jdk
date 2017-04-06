@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ public class VerifyAccess {
 
     private VerifyAccess() { }  // cannot instantiate
 
+    private static final int UNCONDITIONAL_ALLOWED = java.lang.invoke.MethodHandles.Lookup.UNCONDITIONAL;
     private static final int MODULE_ALLOWED = java.lang.invoke.MethodHandles.Lookup.MODULE;
     private static final int PACKAGE_ONLY = 0;
     private static final int PACKAGE_ALLOWED = java.lang.invoke.MethodHandles.Lookup.PACKAGE;
@@ -92,7 +93,7 @@ public class VerifyAccess {
                                              int      allowedModes) {
         if (allowedModes == 0)  return false;
         assert((allowedModes & PUBLIC) != 0 &&
-               (allowedModes & ~(ALL_ACCESS_MODES|PACKAGE_ALLOWED|MODULE_ALLOWED)) == 0);
+               (allowedModes & ~(ALL_ACCESS_MODES|PACKAGE_ALLOWED|MODULE_ALLOWED|UNCONDITIONAL_ALLOWED)) == 0);
         // The symbolic reference class (refc) must always be fully verified.
         if (!isClassAccessible(refc, lookupClass, allowedModes)) {
             return false;
@@ -173,7 +174,7 @@ public class VerifyAccess {
                                             int allowedModes) {
         if (allowedModes == 0)  return false;
         assert((allowedModes & PUBLIC) != 0 &&
-               (allowedModes & ~(ALL_ACCESS_MODES|PACKAGE_ALLOWED|MODULE_ALLOWED)) == 0);
+               (allowedModes & ~(ALL_ACCESS_MODES|PACKAGE_ALLOWED|MODULE_ALLOWED|UNCONDITIONAL_ALLOWED)) == 0);
         int mods = getClassModifiers(refc);
         if (isPublic(mods)) {
 
@@ -191,22 +192,17 @@ public class VerifyAccess {
                 (lookupModule == refModule))
                 return true;
 
-            // check readability
-            if (lookupModule.canRead(refModule)) {
+            // check readability when UNCONDITIONAL not allowed
+            if (((allowedModes & UNCONDITIONAL_ALLOWED) != 0)
+                || lookupModule.canRead(refModule)) {
 
                 // check that refc is in an exported package
-                Class<?> c = refc;
-                while (c.isArray()) {
-                    c = c.getComponentType();
-                }
-                if (c.isPrimitive())
-                    return true;
                 if ((allowedModes & MODULE_ALLOWED) != 0) {
-                    if (refModule.isExported(c.getPackageName(), lookupModule))
+                    if (refModule.isExported(refc.getPackageName(), lookupModule))
                         return true;
                 } else {
                     // exported unconditionally
-                    if (refModule.isExported(c.getPackageName()))
+                    if (refModule.isExported(refc.getPackageName()))
                         return true;
                 }
 
