@@ -593,7 +593,7 @@ public class Object {
      * finalization if it is no longer necessary; and no ordering is specified
      * among calls to {@code finalize} methods of different objects.
      * Furthermore, there are no guarantees regarding the timing of finalization.
-     * The {@code finalize} method might be called on an finalizable object
+     * The {@code finalize} method might be called on a finalizable object
      * only after an indefinite delay, if at all.
      *
      * Classes whose instances hold non-heap resources should provide a method
