@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ void MethodHandles::verify_klass(MacroAssembler* _masm,
                                  Register temp_reg, Register temp2_reg,
                                  const char* error_message) {
   InstanceKlass** klass_addr = SystemDictionary::well_known_klass_addr(klass_id);
-  KlassHandle klass = SystemDictionary::well_known_klass(klass_id);
+  Klass* klass = SystemDictionary::well_known_klass(klass_id);
   bool did_save = false;
   if (temp_reg == noreg || temp2_reg == noreg) {
     temp_reg = L1;

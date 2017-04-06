@@ -41,7 +41,7 @@ public class ConditionalEliminationTest11 extends ConditionalEliminationTestBase
     @SuppressWarnings("all")
     public static int referenceSnippet(int a) {
         if ((a & 15) != 15) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         return 0;
     }
@@ -54,10 +54,10 @@ public class ConditionalEliminationTest11 extends ConditionalEliminationTestBase
     @SuppressWarnings("all")
     public static int test1Snippet(int a) {
         if ((a & 8) != 8) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         if ((a & 15) != 15) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         return 0;
     }
@@ -65,10 +65,10 @@ public class ConditionalEliminationTest11 extends ConditionalEliminationTestBase
     @SuppressWarnings("all")
     public static int test2Snippet(int a) {
         if ((a & 8) == 0) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         if ((a & 15) != 15) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         return 0;
     }
@@ -81,10 +81,10 @@ public class ConditionalEliminationTest11 extends ConditionalEliminationTestBase
     @SuppressWarnings("all")
     public static int test3Snippet(int a) {
         if ((a & 15) != 15) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         if ((a & 8) != 8) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         return 0;
     }
@@ -98,10 +98,10 @@ public class ConditionalEliminationTest11 extends ConditionalEliminationTestBase
     @SuppressWarnings("all")
     public static int test4Snippet(int a) {
         if ((a & 15) != 15) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         if ((a & 8) == 0) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         return 0;
     }
@@ -114,7 +114,7 @@ public class ConditionalEliminationTest11 extends ConditionalEliminationTestBase
 
     public static int test5Snippet(int a) {
         if ((a & 5) == 5) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         if ((a & 7) != 0) {
             return 0;
@@ -130,19 +130,19 @@ public class ConditionalEliminationTest11 extends ConditionalEliminationTestBase
 
     public static int test6Snippet(int a) {
         if ((a & 8) != 0) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         if ((a & 15) != 15) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         return 0;
     }
 
     public static int reference6Snippet(int a) {
         if ((a & 8) != 0) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
-        GraalDirectives.deoptimize();
+        GraalDirectives.deoptimizeAndInvalidate();
         return 0;
     }
 
@@ -153,17 +153,17 @@ public class ConditionalEliminationTest11 extends ConditionalEliminationTestBase
 
     public static int test7Snippet(int a) {
         if ((a & 15) == 15) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         if ((a & 8) == 8) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         return a;
     }
 
     public static int reference7Snippet(int a) {
         if ((a & 8) == 8) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         return a;
     }
@@ -175,20 +175,20 @@ public class ConditionalEliminationTest11 extends ConditionalEliminationTestBase
 
     public static int test8Snippet(int a) {
         if ((a & 16) == 16) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         if ((a & 8) != 8) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         if ((a & 44) != 44) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         return a;
     }
 
     public static int reference8Snippet(int a) {
         if ((a & 60) != 44) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         return a;
     }
@@ -201,23 +201,23 @@ public class ConditionalEliminationTest11 extends ConditionalEliminationTestBase
 
     public static int test9Snippet(int a) {
         if ((a & 16) == 16) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         if ((a & 8) != 8) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         if ((a & 44) != 44) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         if (a != 44) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         return a;
     }
 
     public static int reference9Snippet(int a) {
         if (a != 44) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         return a;
     }
@@ -239,16 +239,16 @@ public class ConditionalEliminationTest11 extends ConditionalEliminationTestBase
         int v = b.byteValue();
         long a = v & 0xffffffff;
         if (v != 44) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         if ((a & 16) == 16) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         if ((a & 8) != 8) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         if ((a & 44) != 44) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
 
         return v;
@@ -257,12 +257,13 @@ public class ConditionalEliminationTest11 extends ConditionalEliminationTestBase
     public static int reference10Snippet(ByteHolder b) {
         byte v = b.byteValue();
         if (v != 44) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         return v;
     }
 
     @Test
+    @Ignore
     public void test10() {
         testConditionalElimination("test10Snippet", "reference10Snippet");
     }
@@ -272,16 +273,16 @@ public class ConditionalEliminationTest11 extends ConditionalEliminationTestBase
         long a = v & 0xffffffff;
 
         if ((a & 16) == 16) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         if ((a & 8) != 8) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         if ((a & 44) != 44) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         if (v != 44) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         return v;
     }
@@ -289,12 +290,13 @@ public class ConditionalEliminationTest11 extends ConditionalEliminationTestBase
     public static int reference11Snippet(ByteHolder b) {
         byte v = b.byteValue();
         if (v != 44) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         return v;
     }
 
     @Test
+    @Ignore
     public void test11() {
         testConditionalElimination("test11Snippet", "reference11Snippet");
     }

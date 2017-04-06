@@ -132,7 +132,7 @@ public final class BranchProbabilityNode extends FloatingNode implements Simplif
     }
 
     private boolean isSubstitutionGraph() {
-        return getUsageCount() == 1 && usages().first() instanceof ReturnNode;
+        return hasExactlyOneUsage() && usages().first() instanceof ReturnNode;
     }
 
     /**

@@ -2445,12 +2445,6 @@ void ObjectMonitor::sanity_checks() {
 }
 
 #ifndef PRODUCT
-void ObjectMonitor::verify() {
-}
-
-void ObjectMonitor::print() {
-}
-
 void ObjectMonitor_test() {
   ObjectMonitor::sanity_checks();
 }

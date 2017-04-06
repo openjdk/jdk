@@ -60,6 +60,11 @@ public abstract class MetaspacePointerStamp extends AbstractPointerStamp {
     }
 
     @Override
+    public Stamp join(Stamp other) {
+        return defaultPointerJoin(other);
+    }
+
+    @Override
     public ResolvedJavaType javaType(MetaAccessProvider metaAccess) {
         throw GraalError.shouldNotReachHere("metaspace pointer has no Java type");
     }

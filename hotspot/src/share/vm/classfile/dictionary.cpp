@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ size_t Dictionary::entry_size() {
 }
 
 Dictionary::Dictionary(int table_size)
-  : TwoOopHashtable<Klass*, mtClass>(table_size, (int)entry_size()) {
+  : TwoOopHashtable<InstanceKlass*, mtClass>(table_size, (int)entry_size()) {
   _current_class_index = 0;
   _current_class_entry = NULL;
   _pd_cache_table = new ProtectionDomainCacheTable(defaultProtectionDomainCacheSize);
@@ -55,19 +55,19 @@ Dictionary::Dictionary(int table_size)
 
 Dictionary::Dictionary(int table_size, HashtableBucket<mtClass>* t,
                        int number_of_entries)
-  : TwoOopHashtable<Klass*, mtClass>(table_size, (int)entry_size(), t, number_of_entries) {
+  : TwoOopHashtable<InstanceKlass*, mtClass>(table_size, (int)entry_size(), t, number_of_entries) {
   _current_class_index = 0;
   _current_class_entry = NULL;
   _pd_cache_table = new ProtectionDomainCacheTable(defaultProtectionDomainCacheSize);
 };
 
-ProtectionDomainCacheEntry* Dictionary::cache_get(oop protection_domain) {
+ProtectionDomainCacheEntry* Dictionary::cache_get(Handle protection_domain) {
   return _pd_cache_table->get(protection_domain);
 }
 
-DictionaryEntry* Dictionary::new_entry(unsigned int hash, Klass* klass,
+DictionaryEntry* Dictionary::new_entry(unsigned int hash, InstanceKlass* klass,
                                        ClassLoaderData* loader_data) {
-  DictionaryEntry* entry = (DictionaryEntry*)Hashtable<Klass*, mtClass>::new_entry(hash, klass);
+  DictionaryEntry* entry = (DictionaryEntry*)Hashtable<InstanceKlass*, mtClass>::new_entry(hash, klass);
   entry->set_loader_data(loader_data);
   entry->set_pd_set(NULL);
   assert(klass->is_instance_klass(), "Must be");
@@ -85,7 +85,7 @@ void Dictionary::free_entry(DictionaryEntry* entry) {
     entry->set_pd_set(to_delete->next());
     delete to_delete;
   }
-  Hashtable<Klass*, mtClass>::free_entry(entry);
+  Hashtable<InstanceKlass*, mtClass>::free_entry(entry);
 }
 
 
@@ -123,9 +123,9 @@ bool DictionaryEntry::contains_protection_domain(oop protection_domain) const {
 }
 
 
-void DictionaryEntry::add_protection_domain(Dictionary* dict, oop protection_domain) {
+void DictionaryEntry::add_protection_domain(Dictionary* dict, Handle protection_domain) {
   assert_locked_or_safepoint(SystemDictionary_lock);
-  if (!contains_protection_domain(protection_domain)) {
+  if (!contains_protection_domain(protection_domain())) {
     ProtectionDomainCacheEntry* entry = dict->cache_get(protection_domain);
     ProtectionDomainEntry* new_head =
                 new ProtectionDomainEntry(entry, _pd_set);
@@ -351,10 +351,10 @@ void Dictionary::unlink(BoolObjectClosure* is_alive) {
   _pd_cache_table->unlink(is_alive);
 }
 
-Klass* Dictionary::try_get_next_class() {
+InstanceKlass* Dictionary::try_get_next_class() {
   while (true) {
     if (_current_class_entry != NULL) {
-      Klass* k = _current_class_entry->klass();
+      InstanceKlass* k = _current_class_entry->klass();
       _current_class_entry = _current_class_entry->next();
       return k;
     }
@@ -371,15 +371,15 @@ Klass* Dictionary::try_get_next_class() {
 // by the compilers.
 
 void Dictionary::add_klass(Symbol* class_name, ClassLoaderData* loader_data,
-                           KlassHandle obj) {
+                           InstanceKlass* obj) {
   assert_locked_or_safepoint(SystemDictionary_lock);
-  assert(obj() != NULL, "adding NULL obj");
-  assert(obj()->name() == class_name, "sanity check on name");
+  assert(obj != NULL, "adding NULL obj");
+  assert(obj->name() == class_name, "sanity check on name");
   assert(loader_data != NULL, "Must be non-NULL");
 
   unsigned int hash = compute_hash(class_name, loader_data);
   int index = hash_to_index(hash);
-  DictionaryEntry* entry = new_entry(hash, obj(), loader_data);
+  DictionaryEntry* entry = new_entry(hash, obj, loader_data);
   add_entry(index, entry);
 }
 
@@ -410,8 +410,8 @@ DictionaryEntry* Dictionary::get_entry(int index, unsigned int hash,
 }
 
 
-Klass* Dictionary::find(int index, unsigned int hash, Symbol* name,
-                          ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
+InstanceKlass* Dictionary::find(int index, unsigned int hash, Symbol* name,
+                                ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
   DictionaryEntry* entry = get_entry(index, hash, name, loader_data);
   if (entry != NULL && entry->is_valid_protection_domain(protection_domain)) {
     return entry->klass();
@@ -421,30 +421,30 @@ Klass* Dictionary::find(int index, unsigned int hash, Symbol* name,
 }
 
 
-Klass* Dictionary::find_class(int index, unsigned int hash,
-                                Symbol* name, ClassLoaderData* loader_data) {
+InstanceKlass* Dictionary::find_class(int index, unsigned int hash,
+                                      Symbol* name, ClassLoaderData* loader_data) {
   assert_locked_or_safepoint(SystemDictionary_lock);
   assert (index == index_for(name, loader_data), "incorrect index?");
 
   DictionaryEntry* entry = get_entry(index, hash, name, loader_data);
-  return (entry != NULL) ? entry->klass() : (Klass*)NULL;
+  return (entry != NULL) ? entry->klass() : NULL;
 }
 
 
 // Variant of find_class for shared classes.  No locking required, as
 // that table is static.
 
-Klass* Dictionary::find_shared_class(int index, unsigned int hash,
-                                       Symbol* name) {
+InstanceKlass* Dictionary::find_shared_class(int index, unsigned int hash,
+                                             Symbol* name) {
   assert (index == index_for(name, NULL), "incorrect index?");
 
   DictionaryEntry* entry = get_entry(index, hash, name, NULL);
-  return (entry != NULL) ? entry->klass() : (Klass*)NULL;
+  return (entry != NULL) ? entry->klass() : NULL;
 }
 
 
 void Dictionary::add_protection_domain(int index, unsigned int hash,
-                                       instanceKlassHandle klass,
+                                       InstanceKlass* klass,
                                        ClassLoaderData* loader_data, Handle protection_domain,
                                        TRAPS) {
   Symbol*  klass_name = klass->name();
@@ -454,7 +454,7 @@ void Dictionary::add_protection_domain(int index, unsigned int hash,
   assert(protection_domain() != NULL,
          "real protection domain should be present");
 
-  entry->add_protection_domain(this, protection_domain());
+  entry->add_protection_domain(this, protection_domain);
 
   assert(entry->contains_protection_domain(protection_domain()),
          "now protection domain should be present");
@@ -505,11 +505,12 @@ void Dictionary::reorder_dictionary() {
 }
 
 
-unsigned int ProtectionDomainCacheTable::compute_hash(oop protection_domain) {
+unsigned int ProtectionDomainCacheTable::compute_hash(Handle protection_domain) {
+  // Identity hash can safepoint, so keep protection domain in a Handle.
   return (unsigned int)(protection_domain->identity_hash());
 }
 
-int ProtectionDomainCacheTable::index_for(oop protection_domain) {
+int ProtectionDomainCacheTable::index_for(Handle protection_domain) {
   return hash_to_index(compute_hash(protection_domain));
 }
 
@@ -619,7 +620,7 @@ void ProtectionDomainCacheTable::always_strong_oops_do(OopClosure* f) {
   }
 }
 
-ProtectionDomainCacheEntry* ProtectionDomainCacheTable::get(oop protection_domain) {
+ProtectionDomainCacheEntry* ProtectionDomainCacheTable::get(Handle protection_domain) {
   unsigned int hash = compute_hash(protection_domain);
   int index = hash_to_index(hash);
 
@@ -630,9 +631,9 @@ ProtectionDomainCacheEntry* ProtectionDomainCacheTable::get(oop protection_domai
   return entry;
 }
 
-ProtectionDomainCacheEntry* ProtectionDomainCacheTable::find_entry(int index, oop protection_domain) {
+ProtectionDomainCacheEntry* ProtectionDomainCacheTable::find_entry(int index, Handle protection_domain) {
   for (ProtectionDomainCacheEntry* e = bucket(index); e != NULL; e = e->next()) {
-    if (e->protection_domain() == protection_domain) {
+    if (e->protection_domain() == protection_domain()) {
       return e;
     }
   }
@@ -640,7 +641,7 @@ ProtectionDomainCacheEntry* ProtectionDomainCacheTable::find_entry(int index, oo
   return NULL;
 }
 
-ProtectionDomainCacheEntry* ProtectionDomainCacheTable::add_entry(int index, unsigned int hash, oop protection_domain) {
+ProtectionDomainCacheEntry* ProtectionDomainCacheTable::add_entry(int index, unsigned int hash, Handle protection_domain) {
   assert_locked_or_safepoint(SystemDictionary_lock);
   assert(index == index_for(protection_domain), "incorrect index?");
   assert(find_entry(index, protection_domain) == NULL, "no double entry");
@@ -651,7 +652,7 @@ ProtectionDomainCacheEntry* ProtectionDomainCacheTable::add_entry(int index, uns
 }
 
 void ProtectionDomainCacheTable::free(ProtectionDomainCacheEntry* to_delete) {
-  unsigned int hash = compute_hash(to_delete->protection_domain());
+  unsigned int hash = compute_hash(Handle(Thread::current(), to_delete->protection_domain()));
   int index = hash_to_index(hash);
 
   ProtectionDomainCacheEntry** p = bucket_addr(index);
@@ -731,7 +732,6 @@ void SymbolPropertyTable::methods_do(void f(Method*)) {
 
 void Dictionary::print(bool details) {
   ResourceMark rm;
-  HandleMark   hm;
 
   if (details) {
     tty->print_cr("Java system dictionary (table_size=%d, classes=%d)",
@@ -777,7 +777,6 @@ void Dictionary::print(bool details) {
 void Dictionary::printPerformanceInfoDetails() {
   if (log_is_enabled(Info, hashtables)) {
     ResourceMark rm;
-    HandleMark   hm;
 
     log_info(hashtables)(" ");
     log_info(hashtables)("Java system dictionary (table_size=%d, classes=%d)",

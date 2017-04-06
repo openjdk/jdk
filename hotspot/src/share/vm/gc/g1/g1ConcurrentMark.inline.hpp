@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,12 +97,12 @@ inline void G1CMMarkStack::iterate(Fn fn) const {
 
   size_t num_chunks = 0;
 
-  OopChunk* cur = _chunk_list;
+  TaskQueueEntryChunk* cur = _chunk_list;
   while (cur != NULL) {
     guarantee(num_chunks <= _chunks_in_chunk_list, "Found " SIZE_FORMAT " oop chunks which is more than there should be", num_chunks);
 
-    for (size_t i = 0; i < OopsPerChunk; ++i) {
-      if (cur->data[i] == NULL) {
+    for (size_t i = 0; i < EntriesPerChunk; ++i) {
+      if (cur->data[i].is_null()) {
         break;
       }
       fn(cur->data[i]);
@@ -114,17 +114,16 @@ inline void G1CMMarkStack::iterate(Fn fn) const {
 #endif
 
 // It scans an object and visits its children.
-inline void G1CMTask::scan_object(oop obj) { process_grey_object<true>(obj); }
+inline void G1CMTask::scan_task_entry(G1TaskQueueEntry task_entry) { process_grey_task_entry<true>(task_entry); }
 
-inline void G1CMTask::push(oop obj) {
-  HeapWord* objAddr = (HeapWord*) obj;
-  assert(G1CMObjArrayProcessor::is_array_slice(obj) || _g1h->is_in_g1_reserved(objAddr), "invariant");
-  assert(G1CMObjArrayProcessor::is_array_slice(obj) || !_g1h->is_on_master_free_list(
-              _g1h->heap_region_containing((HeapWord*) objAddr)), "invariant");
-  assert(G1CMObjArrayProcessor::is_array_slice(obj) || !_g1h->is_obj_ill(obj), "invariant");
-  assert(G1CMObjArrayProcessor::is_array_slice(obj) || _nextMarkBitMap->isMarked(objAddr), "invariant");
+inline void G1CMTask::push(G1TaskQueueEntry task_entry) {
+  assert(task_entry.is_array_slice() || _g1h->is_in_g1_reserved(task_entry.obj()), "invariant");
+  assert(task_entry.is_array_slice() || !_g1h->is_on_master_free_list(
+              _g1h->heap_region_containing(task_entry.obj())), "invariant");
+  assert(task_entry.is_array_slice() || !_g1h->is_obj_ill(task_entry.obj()), "invariant");  // FIXME!!!
+  assert(task_entry.is_array_slice() || _nextMarkBitMap->isMarked((HeapWord*)task_entry.obj()), "invariant");
 
-  if (!_task_queue->push(obj)) {
+  if (!_task_queue->push(task_entry)) {
     // The local task queue looks full. We need to push some entries
     // to the global stack.
     move_entries_to_global_stack();
@@ -132,7 +131,7 @@ inline void G1CMTask::push(oop obj) {
     // this should succeed since, even if we overflow the global
     // stack, we should have definitely removed some entries from the
     // local queue. So, there must be space on it.
-    bool success = _task_queue->push(obj);
+    bool success = _task_queue->push(task_entry);
     assert(success, "invariant");
   }
 }
@@ -168,18 +167,21 @@ inline bool G1CMTask::is_below_finger(oop obj, HeapWord* global_finger) const {
 }
 
 template<bool scan>
-inline void G1CMTask::process_grey_object(oop obj) {
-  assert(scan || obj->is_typeArray(), "Skipping scan of grey non-typeArray");
-  assert(G1CMObjArrayProcessor::is_array_slice(obj) || _nextMarkBitMap->isMarked((HeapWord*) obj),
+inline void G1CMTask::process_grey_task_entry(G1TaskQueueEntry task_entry) {
+  assert(scan || (task_entry.is_oop() && task_entry.obj()->is_typeArray()), "Skipping scan of grey non-typeArray");
+  assert(task_entry.is_array_slice() || _nextMarkBitMap->isMarked((HeapWord*)task_entry.obj()),
          "Any stolen object should be a slice or marked");
 
   if (scan) {
-    if (G1CMObjArrayProcessor::is_array_slice(obj)) {
-      _words_scanned += _objArray_processor.process_slice(obj);
-    } else if (G1CMObjArrayProcessor::should_be_sliced(obj)) {
-      _words_scanned += _objArray_processor.process_obj(obj);
+    if (task_entry.is_array_slice()) {
+      _words_scanned += _objArray_processor.process_slice(task_entry.slice());
     } else {
-      _words_scanned += obj->oop_iterate_size(_cm_oop_closure);;
+      oop obj = task_entry.obj();
+      if (G1CMObjArrayProcessor::should_be_sliced(obj)) {
+        _words_scanned += _objArray_processor.process_obj(obj);
+      } else {
+        _words_scanned += obj->oop_iterate_size(_cm_oop_closure);;
+      }
     }
   }
   check_limits();
@@ -210,6 +212,7 @@ inline void G1CMTask::make_reference_grey(oop obj) {
     // be pushed on the stack. So, some duplicate work, but no
     // correctness problems.
     if (is_below_finger(obj, global_finger)) {
+      G1TaskQueueEntry entry = G1TaskQueueEntry::from_oop(obj);
       if (obj->is_typeArray()) {
         // Immediately process arrays of primitive types, rather
         // than pushing on the mark stack.  This keeps us from
@@ -221,9 +224,9 @@ inline void G1CMTask::make_reference_grey(oop obj) {
         // by only doing a bookkeeping update and avoiding the
         // actual scan of the object - a typeArray contains no
         // references, and the metadata is built-in.
-        process_grey_object<false>(obj);
+        process_grey_task_entry<false>(entry);
       } else {
-        push(obj);
+        push(entry);
       }
     }
   }

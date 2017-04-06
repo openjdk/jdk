@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,6 @@ public:
   // * Module's Class loader has already defined types for any of the module's packages
   // * Module_name is syntactically bad
   // * Packages contains an illegal package name
-  // * Packages contains a duplicate package name
   // * A package already exists in another module for this class loader
   // * Module is an unnamed module
   // * num_packages is negative
@@ -105,7 +104,6 @@ public:
   // NullPointerException is thrown if package is null.
   // IllegalArgumentException is thrown if loader is neither null nor a subtype of
   // java/lang/ClassLoader.
-  static jobject get_module_by_package_name(jobject loader, const char* package, TRAPS);
   static jobject get_named_module(Handle h_loader, const char* package, TRAPS);
 
   // If package is defined by loader, return the

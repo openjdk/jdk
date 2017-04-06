@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -331,7 +331,7 @@ JRT_ENTRY(void, Runtime1::new_instance(JavaThread* thread, Klass* klass))
 
   assert(klass->is_klass(), "not a class");
   Handle holder(THREAD, klass->klass_holder()); // keep the klass alive
-  instanceKlassHandle h(thread, klass);
+  InstanceKlass* h = InstanceKlass::cast(klass);
   h->check_valid_for_instantiation(true, CHECK);
   // make sure klass is initialized
   h->initialize(CHECK);
@@ -857,8 +857,8 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
   bool deoptimize_for_volatile = false;
   bool deoptimize_for_atomic = false;
   int patch_field_offset = -1;
-  KlassHandle init_klass(THREAD, NULL); // klass needed by load_klass_patching code
-  KlassHandle load_klass(THREAD, NULL); // klass needed by load_klass_patching code
+  Klass* init_klass = NULL; // klass needed by load_klass_patching code
+  Klass* load_klass = NULL; // klass needed by load_klass_patching code
   Handle mirror(THREAD, NULL);                    // oop needed by load_mirror_patching code
   Handle appendix(THREAD, NULL);                  // oop needed by appendix_patching code
   bool load_klass_or_mirror_patch_id =
@@ -905,7 +905,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
       case Bytecodes::_putstatic:
       case Bytecodes::_getstatic:
         { Klass* klass = resolve_field_return_klass(caller_method, bci, CHECK);
-          init_klass = KlassHandle(THREAD, klass);
+          init_klass = klass;
           mirror = Handle(THREAD, klass->java_mirror());
         }
         break;
@@ -945,8 +945,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
         break;
       default: fatal("unexpected bytecode for load_klass_or_mirror_patch_id");
     }
-    // convert to handle
-    load_klass = KlassHandle(THREAD, k);
+    load_klass = k;
   } else if (stub_id == load_appendix_patching_id) {
     Bytecode_invoke bytecode(caller_method, bci);
     Bytecodes::Code bc = bytecode.invoke_code();
@@ -961,13 +960,13 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
         assert(cache_index >= 0 && cache_index < pool->cache()->length(), "unexpected cache index");
         ConstantPoolCacheEntry* cpce = pool->cache()->entry_at(cache_index);
         cpce->set_method_handle(pool, info);
-        appendix = cpce->appendix_if_resolved(pool); // just in case somebody already resolved the entry
+        appendix = Handle(THREAD, cpce->appendix_if_resolved(pool)); // just in case somebody already resolved the entry
         break;
       }
       case Bytecodes::_invokedynamic: {
         ConstantPoolCacheEntry* cpce = pool->invokedynamic_cp_cache_entry_at(index);
         cpce->set_dynamic_call(pool, info);
-        appendix = cpce->appendix_if_resolved(pool); // just in case somebody already resolved the entry
+        appendix = Handle(THREAD, cpce->appendix_if_resolved(pool)); // just in case somebody already resolved the entry
         break;
       }
       default: fatal("unexpected bytecode for load_appendix_patching_id");
@@ -1067,7 +1066,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
           // initializing thread are forced to come into the VM and
           // block.
           do_patch = (code != Bytecodes::_getstatic && code != Bytecodes::_putstatic) ||
-                     InstanceKlass::cast(init_klass())->is_initialized();
+                     InstanceKlass::cast(init_klass)->is_initialized();
           NativeGeneralJump* jump = nativeGeneralJump_at(instr_pc);
           if (jump->jump_destination() == being_initialized_entry) {
             assert(do_patch == true, "initialization must be complete at this point");
@@ -1079,8 +1078,8 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
                    n_copy->data() == (intptr_t)Universe::non_oop_word(),
                    "illegal init value");
             if (stub_id == Runtime1::load_klass_patching_id) {
-              assert(load_klass() != NULL, "klass not set");
-              n_copy->set_data((intx) (load_klass()));
+              assert(load_klass != NULL, "klass not set");
+              n_copy->set_data((intx) (load_klass));
             } else {
               assert(mirror() != NULL, "klass not set");
               // Don't need a G1 pre-barrier here since we assert above that data isn't an oop.
@@ -1131,7 +1130,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
               assert(stub_id == Runtime1::load_klass_patching_id, "wrong stub id");
               metadata_Relocation* r = mds.metadata_reloc();
               Metadata** metadata_adr = r->metadata_addr();
-              *metadata_adr = load_klass();
+              *metadata_adr = load_klass;
               r->fix_metadata_relocation();
               found = true;
             }

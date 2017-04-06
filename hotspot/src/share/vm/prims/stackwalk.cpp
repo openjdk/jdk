@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,7 +179,7 @@ void JavaFrameStream::fill_frame(int index, objArrayHandle  frames_array,
 oop LiveFrameStream::create_primitive_slot_instance(StackValueCollection* values,
                                                     int i, BasicType type, TRAPS) {
   Klass* k = SystemDictionary::resolve_or_null(vmSymbols::java_lang_LiveStackFrameInfo(), CHECK_NULL);
-  instanceKlassHandle ik (THREAD, k);
+  InstanceKlass* ik = InstanceKlass::cast(k);
 
   JavaValue result(T_OBJECT);
   JavaCallArguments args;
@@ -272,7 +272,7 @@ objArrayHandle LiveFrameStream::monitors_to_object_array(GrowableArray<MonitorIn
 // Fill StackFrameInfo with declaringClass and bci and initialize memberName
 void BaseFrameStream::fill_stackframe(Handle stackFrame, const methodHandle& method) {
   java_lang_StackFrameInfo::set_declaringClass(stackFrame(), method->method_holder()->java_mirror());
-  java_lang_StackFrameInfo::set_method_and_bci(stackFrame(), method, bci());
+  java_lang_StackFrameInfo::set_method_and_bci(stackFrame, method, bci());
 }
 
 // Fill LiveStackFrameInfo with locals, monitors, and expressions

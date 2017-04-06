@@ -91,7 +91,7 @@ public class ProfileCompiledMethodsPhase extends Phase {
 
     @Override
     protected void run(StructuredGraph graph) {
-        SchedulePhase schedule = new SchedulePhase();
+        SchedulePhase schedule = new SchedulePhase(graph.getOptions());
         schedule.apply(graph, false);
 
         ControlFlowGraph cfg = ControlFlowGraph.compute(graph, true, true, true, true);

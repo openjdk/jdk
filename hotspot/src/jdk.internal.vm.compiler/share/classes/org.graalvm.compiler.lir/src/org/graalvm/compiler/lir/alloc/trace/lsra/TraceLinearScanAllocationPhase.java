@@ -34,7 +34,7 @@ abstract class TraceLinearScanAllocationPhase extends TraceAllocationPhase<Trace
         public final TraceLinearScan allocator;
 
         TraceLinearScanAllocationContext(MoveFactory spillMoveFactory, RegisterAllocationConfig registerAllocationConfig, TraceBuilderResult traceBuilderResult, TraceLinearScan allocator) {
-            super(spillMoveFactory, registerAllocationConfig, traceBuilderResult);
+            super(spillMoveFactory, registerAllocationConfig, traceBuilderResult, allocator.getGlobalLivenessInfo());
             this.allocator = allocator;
         }
     }

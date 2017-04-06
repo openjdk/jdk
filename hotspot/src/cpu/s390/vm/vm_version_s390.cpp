@@ -111,12 +111,22 @@ void VM_Version::initialize() {
     ContendedPaddingWidth = cache_line_size;
   }
 
-  // On z/Architecture, the CRC32 intrinsics had to be implemented "by hand".
-  // They cannot be based on the CHECKSUM instruction which has been there
-  // since the very beginning (of z/Architecture). It computes "some kind of" a checksum
-  // which has nothing to do with the CRC32 algorithm.
+  // On z/Architecture, the CRC32/CRC32C intrinsics are implemented "by hand".
+  // TODO: Provide implementation based on the vector instructions available from z13.
+  // Note: The CHECKSUM instruction, which has been there since the very beginning
+  //       (of z/Architecture), computes "some kind of" a checksum.
+  //       It has nothing to do with the CRC32 algorithm.
   if (FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
     FLAG_SET_DEFAULT(UseCRC32Intrinsics, true);
+  }
+  if (FLAG_IS_DEFAULT(UseCRC32CIntrinsics)) {
+    FLAG_SET_DEFAULT(UseCRC32CIntrinsics, true);
+  }
+
+  // TODO: Provide implementation.
+  if (UseAdler32Intrinsics) {
+    warning("Adler32Intrinsics not available on this CPU.");
+    FLAG_SET_DEFAULT(UseAdler32Intrinsics, false);
   }
 
   // On z/Architecture, we take UseAES as the general switch to enable/disable the AES intrinsics.
@@ -193,11 +203,6 @@ void VM_Version::initialize() {
   } else if (UseSHA512Intrinsics) {
     warning("Intrinsics for SHA-384 and SHA-512 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
-  }
-
-  if (UseAdler32Intrinsics) {
-    warning("Adler32Intrinsics not available on this CPU.");
-    FLAG_SET_DEFAULT(UseAdler32Intrinsics, false);
   }
 
   if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {

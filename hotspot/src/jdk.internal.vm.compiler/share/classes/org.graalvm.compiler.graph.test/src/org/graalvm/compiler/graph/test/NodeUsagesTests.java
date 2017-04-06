@@ -37,7 +37,7 @@ import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 
-public class NodeUsagesTests {
+public class NodeUsagesTests extends GraphTest {
 
     @NodeInfo(cycles = CYCLES_IGNORED, size = SIZE_IGNORED)
     static final class Def extends Node {
@@ -66,7 +66,7 @@ public class NodeUsagesTests {
 
     @Test
     public void testReplaceAtUsages() {
-        Graph graph = new Graph();
+        Graph graph = new Graph(getOptions());
         Def def0 = graph.add(new Def());
         Def def1 = graph.add(new Def());
         Use use0 = graph.add(new Use(def0, null, null));
@@ -95,7 +95,7 @@ public class NodeUsagesTests {
 
     @Test
     public void testReplaceAtUsagesWithPredicateAll() {
-        Graph graph = new Graph();
+        Graph graph = new Graph(getOptions());
         Def def0 = graph.add(new Def());
         Def def1 = graph.add(new Def());
         Use use0 = graph.add(new Use(def0, null, null));
@@ -124,7 +124,7 @@ public class NodeUsagesTests {
 
     @Test
     public void testReplaceAtUsagesWithPredicateNone() {
-        Graph graph = new Graph();
+        Graph graph = new Graph(getOptions());
         Def def0 = graph.add(new Def());
         Def def1 = graph.add(new Def());
         Use use0 = graph.add(new Use(def0, null, null));
@@ -153,7 +153,7 @@ public class NodeUsagesTests {
 
     @Test
     public void testReplaceAtUsagesWithPredicate1() {
-        Graph graph = new Graph();
+        Graph graph = new Graph(getOptions());
         Def def0 = graph.add(new Def());
         Def def1 = graph.add(new Def());
         Use use0 = graph.add(new Use(def0, null, null));
@@ -184,7 +184,7 @@ public class NodeUsagesTests {
 
     @Test
     public void testReplaceAtUsagesWithPredicate2() {
-        Graph graph = new Graph();
+        Graph graph = new Graph(getOptions());
         Def def0 = graph.add(new Def());
         Def def1 = graph.add(new Def());
         Use use0 = graph.add(new Use(def0, null, null));
@@ -215,7 +215,7 @@ public class NodeUsagesTests {
 
     @Test
     public void testReplaceAtUsagesWithPredicate0() {
-        Graph graph = new Graph();
+        Graph graph = new Graph(getOptions());
         Def def0 = graph.add(new Def());
         Def def1 = graph.add(new Def());
         Use use0 = graph.add(new Use(def0, null, null));
@@ -246,7 +246,7 @@ public class NodeUsagesTests {
 
     @Test
     public void testReplaceAtUsagesWithPredicate02() {
-        Graph graph = new Graph();
+        Graph graph = new Graph(getOptions());
         Def def0 = graph.add(new Def());
         Def def1 = graph.add(new Def());
         Use use0 = graph.add(new Use(def0, null, null));
@@ -277,7 +277,7 @@ public class NodeUsagesTests {
 
     @Test
     public void testReplaceAtUsagesWithPredicate023() {
-        Graph graph = new Graph();
+        Graph graph = new Graph(getOptions());
         Def def0 = graph.add(new Def());
         Def def1 = graph.add(new Def());
         Use use0 = graph.add(new Use(def0, null, null));
@@ -311,7 +311,7 @@ public class NodeUsagesTests {
 
     @Test
     public void testReplaceAtUsagesWithPredicate013() {
-        Graph graph = new Graph();
+        Graph graph = new Graph(getOptions());
         Def def0 = graph.add(new Def());
         Def def1 = graph.add(new Def());
         Use use0 = graph.add(new Use(def0, null, null));
@@ -345,7 +345,7 @@ public class NodeUsagesTests {
 
     @Test
     public void testReplaceAtUsagesWithPredicate203() {
-        Graph graph = new Graph();
+        Graph graph = new Graph(getOptions());
         Def def0 = graph.add(new Def());
         Def def1 = graph.add(new Def());
         Use use0 = graph.add(new Use(def0, null, null));
@@ -379,7 +379,7 @@ public class NodeUsagesTests {
 
     @Test
     public void testReplaceAtUsagesWithPredicate01() {
-        Graph graph = new Graph();
+        Graph graph = new Graph(getOptions());
         Def def0 = graph.add(new Def());
         Def def1 = graph.add(new Def());
         Use use0 = graph.add(new Use(def0, null, null));
@@ -410,7 +410,7 @@ public class NodeUsagesTests {
 
     @Test
     public void testReplaceAtUsagesWithPredicate12() {
-        Graph graph = new Graph();
+        Graph graph = new Graph(getOptions());
         Def def0 = graph.add(new Def());
         Def def1 = graph.add(new Def());
         Use use0 = graph.add(new Use(def0, null, null));

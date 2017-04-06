@@ -24,13 +24,11 @@ package org.graalvm.compiler.core.gen;
 
 import java.util.ArrayDeque;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.Queue;
 
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.DebugCounter;
 import org.graalvm.compiler.debug.GraalError;
-import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.LabelRef;
@@ -44,9 +42,12 @@ import org.graalvm.compiler.nodes.virtual.EscapeObjectState;
 import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
 import org.graalvm.compiler.virtual.nodes.MaterializedObjectState;
 import org.graalvm.compiler.virtual.nodes.VirtualObjectState;
+import org.graalvm.util.Equivalence;
+import org.graalvm.util.EconomicMap;
 
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.code.VirtualObject;
+import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.JavaValue;
@@ -68,8 +69,8 @@ public class DebugInfoBuilder {
     private static final JavaValue[] NO_JAVA_VALUES = {};
     private static final JavaKind[] NO_JAVA_KINDS = {};
 
-    protected final Map<VirtualObjectNode, VirtualObject> virtualObjects = Node.newMap();
-    protected final Map<VirtualObjectNode, EscapeObjectState> objectStates = Node.newIdentityMap();
+    protected final EconomicMap<VirtualObjectNode, VirtualObject> virtualObjects = EconomicMap.create(Equivalence.IDENTITY);
+    protected final EconomicMap<VirtualObjectNode, EscapeObjectState> objectStates = EconomicMap.create(Equivalence.IDENTITY);
 
     protected final Queue<VirtualObjectNode> pendingVirtualObjects = new ArrayDeque<>();
 
@@ -118,8 +119,13 @@ public class DebugInfoBuilder {
                     assert currentField != null;
                     int pos = 0;
                     for (int i = 0; i < entryCount; i++) {
-                        if (!currentField.values().get(i).isConstant() || currentField.values().get(i).asJavaConstant().getJavaKind() != JavaKind.Illegal) {
-                            ValueNode value = currentField.values().get(i);
+                        ValueNode value = currentField.values().get(i);
+                        if (value == null) {
+                            JavaKind entryKind = vobjNode.entryKind(i);
+                            values[pos] = JavaConstant.defaultForKind(entryKind.getStackKind());
+                            slotKinds[pos] = entryKind.getStackKind();
+                            pos++;
+                        } else if (!value.isConstant() || value.asJavaConstant().getJavaKind() != JavaKind.Illegal) {
                             values[pos] = toJavaValue(value);
                             slotKinds[pos] = toSlotKind(value);
                             pos++;
@@ -137,7 +143,11 @@ public class DebugInfoBuilder {
                 vobjValue.setValues(values, slotKinds);
             }
 
-            virtualObjectsArray = virtualObjects.values().toArray(new VirtualObject[virtualObjects.size()]);
+            virtualObjectsArray = new VirtualObject[virtualObjects.size()];
+            int index = 0;
+            for (VirtualObject value : virtualObjects.getValues()) {
+                virtualObjectsArray[index++] = value;
+            }
             virtualObjects.clear();
         }
         objectStates.clear();

@@ -61,15 +61,15 @@ class MethodHandles: AllStatic {
 
  public:
   // working with member names
-  static Handle resolve_MemberName(Handle mname, KlassHandle caller, TRAPS); // compute vmtarget/vmindex from name/type
+  static Handle resolve_MemberName(Handle mname, Klass* caller, TRAPS); // compute vmtarget/vmindex from name/type
   static void expand_MemberName(Handle mname, int suppress, TRAPS);  // expand defc/name/type if missing
   static Handle new_MemberName(TRAPS);  // must be followed by init_MemberName
   static oop init_MemberName(Handle mname_h, Handle target_h); // compute vmtarget/vmindex from target
   static oop init_field_MemberName(Handle mname_h, fieldDescriptor& fd, bool is_setter = false);
   static oop init_method_MemberName(Handle mname_h, CallInfo& info, bool intern = true);
   static int method_ref_kind(Method* m, bool do_dispatch_if_possible = true);
-  static int find_MemberNames(KlassHandle k, Symbol* name, Symbol* sig,
-                              int mflags, KlassHandle caller,
+  static int find_MemberNames(Klass* k, Symbol* name, Symbol* sig,
+                              int mflags, Klass* caller,
                               int skip, objArrayHandle results);
   // bit values for suppress argument to expand_MemberName:
   enum { _suppress_defc = 1, _suppress_name = 2, _suppress_type = 4 };

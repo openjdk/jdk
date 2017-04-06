@@ -301,10 +301,6 @@ public class FloatStamp extends PrimitiveStamp {
         return null;
     }
 
-    public boolean isConstant() {
-        return (nonNaN && Double.compare(lowerBound, upperBound) == 0);
-    }
-
     private static final ArithmeticOpTable OPS = new ArithmeticOpTable(
 
                     new UnaryOp.Neg() {

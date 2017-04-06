@@ -124,7 +124,7 @@ Monitor* Service_lock                 = NULL;
 Monitor* PeriodicTask_lock            = NULL;
 Monitor* RedefineClasses_lock         = NULL;
 
-#ifdef INCLUDE_TRACE
+#if INCLUDE_TRACE
 Mutex*   JfrStacktrace_lock           = NULL;
 Monitor* JfrMsg_lock                  = NULL;
 Mutex*   JfrBuffer_lock               = NULL;
@@ -276,7 +276,7 @@ void mutex_init() {
     def(Compilation_lock           , PaddedMonitor, leaf,        false, Monitor::_safepoint_check_never);
   }
 
-#ifdef INCLUDE_TRACE
+#if INCLUDE_TRACE
   def(JfrMsg_lock                  , PaddedMonitor, leaf,        true,  Monitor::_safepoint_check_always);
   def(JfrBuffer_lock               , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_never);
   def(JfrThreadGroups_lock         , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_always);

@@ -122,7 +122,7 @@ public class SubNode extends BinaryArithmeticNode<Sub> implements NarrowableArit
                 return forX;
             }
             if (associative) {
-                BinaryNode reassociated = reassociate(this, ValueNode.isConstantPredicate(), forX, forY);
+                ValueNode reassociated = reassociate(this, ValueNode.isConstantPredicate(), forX, forY);
                 if (reassociated != this) {
                     return reassociated;
                 }

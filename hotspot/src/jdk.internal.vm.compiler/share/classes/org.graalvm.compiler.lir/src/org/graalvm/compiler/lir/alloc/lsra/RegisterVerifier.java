@@ -27,14 +27,13 @@ import static jdk.vm.ci.code.ValueUtil.isRegister;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.List;
 
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
-import org.graalvm.compiler.core.common.util.ArrayMap;
+import org.graalvm.compiler.core.common.cfg.BlockMap;
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.Debug.Scope;
-import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.debug.GraalError;
+import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.lir.InstructionValueConsumer;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstruction.OperandFlag;
@@ -48,8 +47,8 @@ import jdk.vm.ci.meta.Value;
 final class RegisterVerifier {
 
     LinearScan allocator;
-    List<AbstractBlockBase<?>> workList; // all blocks that must be processed
-    ArrayMap<Interval[]> savedStates; // saved information of previous check
+    ArrayList<AbstractBlockBase<?>> workList; // all blocks that must be processed
+    BlockMap<Interval[]> savedStates; // saved information of previous check
 
     // simplified access to methods of LinearScan
     Interval intervalAt(Value operand) {
@@ -63,11 +62,11 @@ final class RegisterVerifier {
 
     // accessors
     Interval[] stateForBlock(AbstractBlockBase<?> block) {
-        return savedStates.get(block.getId());
+        return savedStates.get(block);
     }
 
     void setStateForBlock(AbstractBlockBase<?> block, Interval[] savedState) {
-        savedStates.put(block.getId(), savedState);
+        savedStates.put(block, savedState);
     }
 
     void addToWorkList(AbstractBlockBase<?> block) {
@@ -79,7 +78,7 @@ final class RegisterVerifier {
     RegisterVerifier(LinearScan allocator) {
         this.allocator = allocator;
         workList = new ArrayList<>(16);
-        this.savedStates = new ArrayMap<>();
+        this.savedStates = new BlockMap<>(allocator.getLIR().getControlFlowGraph());
 
     }
 
@@ -209,7 +208,7 @@ final class RegisterVerifier {
     }
 
     void processOperations(AbstractBlockBase<?> block, final Interval[] inputState) {
-        List<LIRInstruction> ops = allocator.getLIR().getLIRforBlock(block);
+        ArrayList<LIRInstruction> ops = allocator.getLIR().getLIRforBlock(block);
         InstructionValueConsumer useConsumer = new InstructionValueConsumer() {
 
             @Override

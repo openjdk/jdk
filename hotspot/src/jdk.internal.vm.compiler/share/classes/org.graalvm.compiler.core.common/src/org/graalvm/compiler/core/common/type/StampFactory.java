@@ -22,6 +22,9 @@
  */
 package org.graalvm.compiler.core.common.type;
 
+import static jdk.vm.ci.code.CodeUtil.signExtend;
+
+import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.debug.GraalError;
 
 import jdk.vm.ci.code.CodeUtil;
@@ -56,6 +59,11 @@ public class StampFactory {
         public boolean equals(Object obj) {
             return this == obj;
         }
+
+        @Override
+        public String toString() {
+            return "NodeIntrinsicStamp";
+        }
     }
 
     // JaCoCo Exclude
@@ -82,7 +90,7 @@ public class StampFactory {
         } else {
             mask = CodeUtil.mask(bits);
         }
-        setCache(kind, new IntegerStamp(bits, kind.getMinValue(), kind.getMaxValue(), 0, mask));
+        setCache(kind, IntegerStamp.create(bits, kind.getMinValue(), kind.getMaxValue(), 0, mask));
     }
 
     private static void setFloatCache(JavaKind kind) {
@@ -156,7 +164,7 @@ public class StampFactory {
     }
 
     public static IntegerStamp forInteger(JavaKind kind, long lowerBound, long upperBound, long downMask, long upMask) {
-        return new IntegerStamp(kind.getBitCount(), lowerBound, upperBound, downMask, upMask);
+        return IntegerStamp.create(kind.getBitCount(), lowerBound, upperBound, downMask, upMask);
     }
 
     public static IntegerStamp forInteger(JavaKind kind, long lowerBound, long upperBound) {
@@ -176,46 +184,35 @@ public class StampFactory {
      */
     public static IntegerStamp forIntegerWithMask(int bits, long newLowerBound, long newUpperBound, IntegerStamp maskStamp) {
         IntegerStamp limit = StampFactory.forInteger(bits, newLowerBound, newUpperBound);
-        return new IntegerStamp(bits, newLowerBound, newUpperBound, limit.downMask() | maskStamp.downMask(), limit.upMask() & maskStamp.upMask());
+        return IntegerStamp.create(bits, newLowerBound, newUpperBound, limit.downMask() | maskStamp.downMask(), limit.upMask() & maskStamp.upMask());
     }
 
     public static IntegerStamp forIntegerWithMask(int bits, long newLowerBound, long newUpperBound, long newDownMask, long newUpMask) {
         IntegerStamp limit = StampFactory.forInteger(bits, newLowerBound, newUpperBound);
-        return new IntegerStamp(bits, newLowerBound, newUpperBound, limit.downMask() | newDownMask, limit.upMask() & newUpMask);
+        return IntegerStamp.create(bits, newLowerBound, newUpperBound, limit.downMask() | newDownMask, limit.upMask() & newUpMask);
     }
 
     public static IntegerStamp forInteger(int bits) {
-        return new IntegerStamp(bits, CodeUtil.minValue(bits), CodeUtil.maxValue(bits), 0, CodeUtil.mask(bits));
+        return IntegerStamp.create(bits, CodeUtil.minValue(bits), CodeUtil.maxValue(bits), 0, CodeUtil.mask(bits));
+    }
+
+    public static IntegerStamp forUnsignedInteger(int bits, long unsignedLowerBound, long unsignedUpperBound) {
+        return forUnsignedInteger(bits, unsignedLowerBound, unsignedUpperBound, 0, CodeUtil.mask(bits));
+    }
+
+    public static IntegerStamp forUnsignedInteger(int bits, long unsignedLowerBound, long unsignedUpperBound, long downMask, long upMask) {
+        long lowerBound = signExtend(unsignedLowerBound, bits);
+        long upperBound = signExtend(unsignedUpperBound, bits);
+        if (!NumUtil.sameSign(lowerBound, upperBound)) {
+            lowerBound = CodeUtil.minValue(bits);
+            upperBound = CodeUtil.maxValue(bits);
+        }
+        long mask = CodeUtil.mask(bits);
+        return IntegerStamp.create(bits, lowerBound, upperBound, downMask & mask, upMask & mask);
     }
 
     public static IntegerStamp forInteger(int bits, long lowerBound, long upperBound) {
-        long defaultMask = CodeUtil.mask(bits);
-        if (lowerBound == upperBound) {
-            return new IntegerStamp(bits, lowerBound, lowerBound, lowerBound & defaultMask, lowerBound & defaultMask);
-        }
-        final long downMask;
-        final long upMask;
-        if (lowerBound >= 0) {
-            int upperBoundLeadingZeros = Long.numberOfLeadingZeros(upperBound);
-            long differentBits = lowerBound ^ upperBound;
-            int sameBitCount = Long.numberOfLeadingZeros(differentBits << upperBoundLeadingZeros);
-
-            upMask = upperBound | -1L >>> (upperBoundLeadingZeros + sameBitCount);
-            downMask = upperBound & ~(-1L >>> (upperBoundLeadingZeros + sameBitCount));
-        } else {
-            if (upperBound >= 0) {
-                upMask = defaultMask;
-                downMask = 0;
-            } else {
-                int lowerBoundLeadingOnes = Long.numberOfLeadingZeros(~lowerBound);
-                long differentBits = lowerBound ^ upperBound;
-                int sameBitCount = Long.numberOfLeadingZeros(differentBits << lowerBoundLeadingOnes);
-
-                upMask = lowerBound | -1L >>> (lowerBoundLeadingOnes + sameBitCount) | ~(-1L >>> lowerBoundLeadingOnes);
-                downMask = lowerBound & ~(-1L >>> (lowerBoundLeadingOnes + sameBitCount)) | ~(-1L >>> lowerBoundLeadingOnes);
-            }
-        }
-        return new IntegerStamp(bits, lowerBound, upperBound, downMask & defaultMask, upMask & defaultMask);
+        return IntegerStamp.create(bits, lowerBound, upperBound, 0, CodeUtil.mask(bits));
     }
 
     public static FloatStamp forFloat(JavaKind kind, double lowerBound, double upperBound, boolean nonNaN) {

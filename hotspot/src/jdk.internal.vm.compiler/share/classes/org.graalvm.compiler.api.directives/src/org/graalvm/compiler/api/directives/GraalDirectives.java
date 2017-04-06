@@ -22,8 +22,6 @@
  */
 package org.graalvm.compiler.api.directives;
 
-import java.nio.charset.Charset;
-
 // JaCoCo Exclude
 
 /**
@@ -367,67 +365,4 @@ public final class GraalDirectives {
      */
     public static void ensureVirtualizedHere(@SuppressWarnings("unused") Object object) {
     }
-
-    /**
-     * Marks the beginning of an instrumentation boundary. The instrumentation code will be folded
-     * during compilation and will not affect inlining heuristics regarding graph size except one on
-     * compiled low-level graph size (e.g., {@code GraalOptions.SmallCompiledLowLevelGraphSize}).
-     */
-    public static void instrumentationBegin() {
-    }
-
-    /**
-     * Marks the beginning of an instrumentation boundary and associates the instrumentation with
-     * the preceding bytecode. If the instrumented instruction is {@code new}, then instrumentation
-     * will adapt to optimizations concerning allocation, and only be executed if allocation really
-     * happens.
-     *
-     * Example (the instrumentation is associated with {@code new}):
-     *
-     * <blockquote>
-     *
-     * <pre>
-     *  0  new java.lang.Object
-     *  3  invokestatic org.graalvm.compiler.api.directives.GraalDirectives.instrumentationBeginForPredecessor() : void
-     *  6  invokestatic AllocationProfiler.countActualAllocation() : void
-     *  9  invokestatic org.graalvm.compiler.api.directives.GraalDirectives.instrumentationEnd() : void
-     * 12  invokespecial java.lang.Object()
-     * </pre>
-     *
-     * </blockquote>
-     *
-     * @see #instrumentationBegin()
-     */
-    public static void instrumentationBeginForPredecessor() {
-    }
-
-    /**
-     * Marks the end of the instrumentation boundary.
-     *
-     * @see #instrumentationBegin()
-     */
-    public static void instrumentationEnd() {
-    }
-
-    /**
-     * @return true if the enclosing method is inlined.
-     */
-    public static boolean isMethodInlined() {
-        return false;
-    }
-
-    private static final Charset UTF8 = Charset.forName("UTF-8");
-
-    /**
-     * @return the name of the root method for the current compilation task. If the enclosing method
-     *         is inlined, it returns the name of the method into which it is inlined.
-     */
-    public static String rootName() {
-        return new String(rawRootName(), UTF8);
-    }
-
-    public static byte[] rawRootName() {
-        return new byte[0];
-    }
-
 }

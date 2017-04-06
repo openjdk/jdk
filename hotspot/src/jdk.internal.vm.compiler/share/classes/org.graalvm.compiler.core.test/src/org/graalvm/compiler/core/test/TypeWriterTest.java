@@ -123,7 +123,7 @@ public class TypeWriterTest extends GraalCompilerTest {
         UnsafeArrayTypeWriter writer = UnsafeArrayTypeWriter.create(supportsUnalignedMemoryAccess);
         putValues(writer);
 
-        byte[] array = new byte[(int) writer.getBytesWritten()];
+        byte[] array = new byte[TypeConversion.asU4(writer.getBytesWritten())];
         writer.toArray(array);
         UnsafeArrayTypeReader reader = UnsafeArrayTypeReader.create(array, 0, supportsUnalignedMemoryAccess);
         checkValues(reader);

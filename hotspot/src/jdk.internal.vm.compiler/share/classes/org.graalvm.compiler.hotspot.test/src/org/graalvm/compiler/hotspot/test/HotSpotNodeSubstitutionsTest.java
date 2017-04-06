@@ -22,8 +22,6 @@
  */
 package org.graalvm.compiler.hotspot.test;
 
-import static org.graalvm.compiler.core.common.CompilationIdentifier.INVALID_COMPILATION_ID;
-
 import org.junit.Test;
 
 import org.graalvm.compiler.graph.Node;
@@ -40,7 +38,7 @@ public class HotSpotNodeSubstitutionsTest extends MethodSubstitutionTest {
 
     @Test
     public void test() {
-        StructuredGraph graph = new StructuredGraph(AllowAssumptions.YES, INVALID_COMPILATION_ID);
+        StructuredGraph graph = new StructuredGraph.Builder(getInitialOptions(), AllowAssumptions.YES).build();
         test("getNodeClass", ConstantNode.forInt(42, graph));
     }
 

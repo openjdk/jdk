@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,7 +212,7 @@ public:
   const OopMapSet* oopMapSet() const { return _debug_recorder->_oopmaps; }
 
 protected:
-  Location::Type get_oop_type(Handle value);
+  Location::Type get_oop_type(Thread* thread, Handle value);
   ScopeValue* get_scope_value(Handle value, BasicType type, GrowableArray<ScopeValue*>* objects, ScopeValue* &second, TRAPS);
   MonitorValue* get_monitor_value(Handle value, GrowableArray<ScopeValue*>* objects, TRAPS);
 
@@ -230,11 +230,11 @@ protected:
   // perform data and call relocation on the CodeBuffer
   JVMCIEnv::CodeInstallResult initialize_buffer(CodeBuffer& buffer, bool check_size, TRAPS);
 
-  void assumption_NoFinalizableSubclass(Handle assumption);
-  void assumption_ConcreteSubtype(Handle assumption);
-  void assumption_LeafType(Handle assumption);
-  void assumption_ConcreteMethod(Handle assumption);
-  void assumption_CallSiteTargetValue(Handle assumption);
+  void assumption_NoFinalizableSubclass(Thread* thread, Handle assumption);
+  void assumption_ConcreteSubtype(Thread* thread, Handle assumption);
+  void assumption_LeafType(Thread* thread, Handle assumption);
+  void assumption_ConcreteMethod(Thread* thread, Handle assumption);
+  void assumption_CallSiteTargetValue(Thread* thread, Handle assumption);
 
   void site_Safepoint(CodeBuffer& buffer, jint pc_offset, Handle site, TRAPS);
   void site_Infopoint(CodeBuffer& buffer, jint pc_offset, Handle site, TRAPS);
