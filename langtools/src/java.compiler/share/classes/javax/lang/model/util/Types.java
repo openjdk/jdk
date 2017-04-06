@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,7 @@ public interface Types {
      * @param t2  the second type
      * @return {@code true} if and only if the first type is a subtype
      *          of the second
-     * @throws IllegalArgumentException if given an executable or package type
+     * @throws IllegalArgumentException if given a type for an executable, package, or module
      * @jls 4.10 Subtyping
      */
     boolean isSubtype(TypeMirror t1, TypeMirror t2);
@@ -103,7 +103,7 @@ public interface Types {
      * @param t2  the second type
      * @return {@code true} if and only if the first type is assignable
      *          to the second
-     * @throws IllegalArgumentException if given an executable or package type
+     * @throws IllegalArgumentException if given a type for an executable, package, or module
      * @jls 5.2 Assignment Conversion
      */
     boolean isAssignable(TypeMirror t1, TypeMirror t2);
@@ -114,7 +114,7 @@ public interface Types {
      * @param t1  the first type
      * @param t2  the second type
      * @return {@code true} if and only if the first type contains the second
-     * @throws IllegalArgumentException if given an executable or package type
+     * @throws IllegalArgumentException if given a type for an executable, package, or module
      * @jls 4.5.1.1 Type Argument Containment and Equivalence
      */
     boolean contains(TypeMirror t1, TypeMirror t2);
@@ -139,7 +139,7 @@ public interface Types {
      *
      * @param t  the type being examined
      * @return the direct supertypes, or an empty list if none
-     * @throws IllegalArgumentException if given an executable or package type
+     * @throws IllegalArgumentException if given a type for an executable, package, or module
      * @jls 4.10 Subtyping
      */
     List<? extends TypeMirror> directSupertypes(TypeMirror t);
@@ -149,7 +149,7 @@ public interface Types {
      *
      * @param t  the type to be erased
      * @return the erasure of the given type
-     * @throws IllegalArgumentException if given a package type
+     * @throws IllegalArgumentException if given a type for a package or module
      * @jls 4.6 Type Erasure
      */
     TypeMirror erasure(TypeMirror t);
@@ -181,7 +181,7 @@ public interface Types {
      *
      * @param t  the type to be converted
      * @return the result of applying capture conversion
-     * @throws IllegalArgumentException if given an executable or package type
+     * @throws IllegalArgumentException if given a type for an executable, package, or module
      * @jls 5.1.10 Capture Conversion
      */
     TypeMirror capture(TypeMirror t);
@@ -206,9 +206,14 @@ public interface Types {
      * Returns a pseudo-type used where no actual type is appropriate.
      * The kind of type to return may be either
      * {@link TypeKind#VOID VOID} or {@link TypeKind#NONE NONE}.
-     * For packages, use
-     * {@link Elements#getPackageElement(CharSequence)}{@code .asType()}
-     * instead.
+     *
+     * <p>To get the pseudo-type corresponding to a package or module,
+     * call {@code asType()} on the element modeling the {@linkplain
+     * PackageElement package} or {@linkplain ModuleElement
+     * module}. Names can be converted to elements for packages or
+     * modules using {@link Elements#getPackageElement(CharSequence)}
+     * or {@link Elements#getModuleElement(CharSequence)},
+     * respectively.
      *
      * @param kind  the kind of type to return
      * @return a pseudo-type of kind {@code VOID} or {@code NONE}
