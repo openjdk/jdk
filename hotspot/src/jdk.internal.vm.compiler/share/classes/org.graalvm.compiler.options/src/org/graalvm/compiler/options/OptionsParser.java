@@ -23,6 +23,7 @@
 package org.graalvm.compiler.options;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Formatter;
 import java.util.List;
 import java.util.ServiceLoader;
@@ -225,13 +226,29 @@ public class OptionsParser {
     private static List<OptionDescriptor> fuzzyMatch(Iterable<OptionDescriptors> loader, String optionName) {
         List<OptionDescriptor> matches = new ArrayList<>();
         for (OptionDescriptors options : loader) {
-            for (OptionDescriptor option : options) {
-                float score = stringSimiliarity(option.getName(), optionName);
-                if (score >= FUZZY_MATCH_THRESHOLD) {
-                    matches.add(option);
-                }
-            }
+            collectFuzzyMatches(options, optionName, matches);
         }
         return matches;
+    }
+
+    /**
+     * Collects the set of options that fuzzy match a given option name. String similarity for fuzzy
+     * matching is based on Dice's coefficient.
+     *
+     * @param toSearch the set of option descriptors to search
+     * @param name the option name to search for
+     * @param matches the collection to which fuzzy matches of {@code name} will be added
+     * @return whether any fuzzy matches were found
+     */
+    public static boolean collectFuzzyMatches(Iterable<OptionDescriptor> toSearch, String name, Collection<OptionDescriptor> matches) {
+        boolean found = false;
+        for (OptionDescriptor option : toSearch) {
+            float score = stringSimiliarity(option.getName(), name);
+            if (score >= FUZZY_MATCH_THRESHOLD) {
+                found = true;
+                matches.add(option);
+            }
+        }
+        return found;
     }
 }

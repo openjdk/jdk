@@ -70,8 +70,9 @@ public interface GraphBuilderContext extends GraphBuilderTool {
     void push(JavaKind kind, ValueNode value);
 
     /**
-     * Adds a node to the graph. If the returned node is a {@link StateSplit} with a null
-     * {@linkplain StateSplit#stateAfter() frame state}, the frame state is initialized.
+     * Adds a node to the graph. If the node is in the graph, returns immediately. If the node is a
+     * {@link StateSplit} with a null {@linkplain StateSplit#stateAfter() frame state}, the frame
+     * state is initialized.
      *
      * @param value the value to add to the graph and push to the stack. The
      *            {@code value.getJavaKind()} kind is used when type checking this operation.
@@ -92,6 +93,30 @@ public interface GraphBuilderContext extends GraphBuilderTool {
         return equivalentValue;
     }
 
+    /**
+     * Adds a node and its inputs to the graph. If the node is in the graph, returns immediately. If
+     * the node is a {@link StateSplit} with a null {@linkplain StateSplit#stateAfter() frame state}
+     * , the frame state is initialized.
+     *
+     * @param value the value to add to the graph and push to the stack. The
+     *            {@code value.getJavaKind()} kind is used when type checking this operation.
+     * @return a node equivalent to {@code value} in the graph
+     */
+    default <T extends ValueNode> T addWithInputs(T value) {
+        if (value.graph() != null) {
+            assert !(value instanceof StateSplit) || ((StateSplit) value).stateAfter() != null;
+            return value;
+        }
+        T equivalentValue = recursiveAppend(value);
+        if (equivalentValue instanceof StateSplit) {
+            StateSplit stateSplit = (StateSplit) equivalentValue;
+            if (stateSplit.stateAfter() == null && stateSplit.hasSideEffect()) {
+                setStateAfter(stateSplit);
+            }
+        }
+        return equivalentValue;
+    }
+
     default ValueNode addNonNullCast(ValueNode value) {
         AbstractPointerStamp valueStamp = (AbstractPointerStamp) value.stamp();
         if (valueStamp.nonNull()) {
@@ -100,7 +125,7 @@ public interface GraphBuilderContext extends GraphBuilderTool {
             LogicNode isNull = add(IsNullNode.create(value));
             FixedGuardNode fixedGuard = add(new FixedGuardNode(isNull, DeoptimizationReason.NullCheckException, DeoptimizationAction.None, true));
             Stamp newStamp = valueStamp.improveWith(StampFactory.objectNonNull());
-            return add(new PiNode(value, newStamp, fixedGuard));
+            return add(PiNode.create(value, newStamp, fixedGuard));
         }
     }
 
@@ -245,12 +270,12 @@ public interface GraphBuilderContext extends GraphBuilderTool {
      * non-null} stamp.
      */
     default ValueNode nullCheckedValue(ValueNode value, DeoptimizationAction action) {
-        if (!StampTool.isPointerNonNull(value.stamp())) {
+        if (!StampTool.isPointerNonNull(value)) {
             LogicNode condition = getGraph().unique(IsNullNode.create(value));
             ObjectStamp receiverStamp = (ObjectStamp) value.stamp();
             Stamp stamp = receiverStamp.join(objectNonNull());
             FixedGuardNode fixedGuard = append(new FixedGuardNode(condition, NullCheckException, action, true));
-            PiNode nonNullReceiver = getGraph().unique(new PiNode(value, stamp, fixedGuard));
+            ValueNode nonNullReceiver = getGraph().addOrUnique(PiNode.create(value, stamp, fixedGuard));
             // TODO: Propogating the non-null into the frame state would
             // remove subsequent null-checks on the same value. However,
             // it currently causes an assertion failure when merging states.

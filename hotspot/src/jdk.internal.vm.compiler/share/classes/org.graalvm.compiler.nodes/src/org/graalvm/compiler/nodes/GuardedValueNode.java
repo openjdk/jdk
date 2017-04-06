@@ -87,7 +87,7 @@ public final class GuardedValueNode extends FloatingGuardedNode implements LIRLo
             if (stamp().equals(object().stamp())) {
                 return object();
             } else {
-                return new PiNode(object(), stamp());
+                return PiNode.create(object(), stamp());
             }
         }
         return this;

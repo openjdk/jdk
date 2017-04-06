@@ -46,10 +46,10 @@ public class HotSpotGraalVMEventListener implements HotSpotVMEventListener {
 
     @Override
     public void notifyInstall(HotSpotCodeCacheProvider codeCache, InstalledCode installedCode, CompiledCode compiledCode) {
-        if (Debug.isDumpEnabled(Debug.BASIC_LOG_LEVEL)) {
+        if (Debug.isDumpEnabled(Debug.BASIC_LEVEL)) {
             CompilationResult compResult = Debug.contextLookup(CompilationResult.class);
             assert compResult != null : "can't dump installed code properly without CompilationResult";
-            Debug.dump(Debug.BASIC_LOG_LEVEL, installedCode, "After code installation");
+            Debug.dump(Debug.BASIC_LEVEL, installedCode, "After code installation");
         }
         if (Debug.isLogEnabled()) {
             Debug.log("%s", codeCache.disassemble(installedCode));

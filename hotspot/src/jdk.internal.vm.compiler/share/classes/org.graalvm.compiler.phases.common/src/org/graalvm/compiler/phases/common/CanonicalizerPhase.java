@@ -218,13 +218,13 @@ public class CanonicalizerPhase extends BasePhase<PhaseContext> {
                 public void usagesDroppedToZero(Node node) {
                     workList.add(node);
                 }
-
             };
+
             try (NodeEventScope nes = graph.trackNodeEvents(listener)) {
                 for (Node n : workList) {
                     boolean changed = processNode(n);
-                    if (changed && Debug.isDumpEnabled(Debug.DETAILED_LOG_LEVEL)) {
-                        Debug.dump(Debug.DETAILED_LOG_LEVEL, graph, "CanonicalizerPhase %s", n);
+                    if (changed && Debug.isDumpEnabled(Debug.DETAILED_LEVEL)) {
+                        Debug.dump(Debug.DETAILED_LEVEL, graph, "CanonicalizerPhase %s", n);
                     }
                 }
             }
@@ -329,7 +329,7 @@ public class CanonicalizerPhase extends BasePhase<PhaseContext> {
                 }
 
                 if (nodeClass.isSimplifiable() && simplify) {
-                    Debug.log(Debug.VERBOSE_LOG_LEVEL, "Canonicalizer: simplifying %s", node);
+                    Debug.log(Debug.VERBOSE_LEVEL, "Canonicalizer: simplifying %s", node);
                     COUNTER_SIMPLIFICATION_CONSIDERED_NODES.increment();
                     node.simplify(tool);
                     return node.isDeleted();
@@ -356,7 +356,7 @@ public class CanonicalizerPhase extends BasePhase<PhaseContext> {
 // @formatter:on
         private boolean performReplacement(final Node node, Node newCanonical) {
             if (newCanonical == node) {
-                Debug.log(Debug.VERBOSE_LOG_LEVEL, "Canonicalizer: work on %1s", node);
+                Debug.log(Debug.VERBOSE_LEVEL, "Canonicalizer: work on %1s", node);
                 return false;
             } else {
                 Node canonical = newCanonical;
@@ -448,7 +448,7 @@ public class CanonicalizerPhase extends BasePhase<PhaseContext> {
             public void deleteBranch(Node branch) {
                 FixedNode fixedBranch = (FixedNode) branch;
                 fixedBranch.predecessor().replaceFirstSuccessor(fixedBranch, null);
-                GraphUtil.killCFG(fixedBranch, this);
+                GraphUtil.killCFG(fixedBranch);
             }
 
             @Override

@@ -118,6 +118,7 @@ public abstract class PartialEscapeBlockState<T extends PartialEscapeBlockState<
     private ObjectState[] getObjectStateArrayForModification() {
         if (arrayRefCount.refCount > 1) {
             objectStates = objectStates.clone();
+            arrayRefCount.refCount--;
             arrayRefCount = new RefCount();
         }
         return objectStates;

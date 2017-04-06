@@ -77,8 +77,8 @@ public class LoopsDataTest extends GraalCompilerTest {
         Assert.assertEquals(1, loops.outerFirst().get(0).loop().getDepth());
         Assert.assertEquals(1, loops.outerFirst().get(1).loop().getDepth());
         Assert.assertEquals(2, loops.outerFirst().get(2).loop().getDepth());
-        Assert.assertEquals(2, loops.outerFirst().get(3).loop().getDepth());
-        Assert.assertEquals(3, loops.outerFirst().get(4).loop().getDepth());
+        Assert.assertEquals(3, loops.outerFirst().get(3).loop().getDepth());
+        Assert.assertEquals(2, loops.outerFirst().get(4).loop().getDepth());
         Assert.assertEquals(2, loops.outerFirst().get(5).loop().getDepth());
         Assert.assertEquals(3, loops.outerFirst().get(6).loop().getDepth());
         Assert.assertEquals(4, loops.outerFirst().get(7).loop().getDepth());

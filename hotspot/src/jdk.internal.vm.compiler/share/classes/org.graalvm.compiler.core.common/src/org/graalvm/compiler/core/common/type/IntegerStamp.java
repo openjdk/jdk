@@ -254,6 +254,7 @@ public final class IntegerStamp extends PrimitiveStamp {
         return upMask;
     }
 
+    @Override
     public boolean isUnrestricted() {
         return lowerBound == CodeUtil.minValue(getBits()) && upperBound == CodeUtil.maxValue(getBits()) && downMask == 0 && upMask == CodeUtil.mask(getBits());
     }

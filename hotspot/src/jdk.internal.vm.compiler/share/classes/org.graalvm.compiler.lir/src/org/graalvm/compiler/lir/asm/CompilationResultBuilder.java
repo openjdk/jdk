@@ -461,7 +461,7 @@ public class CompilationResultBuilder {
         if (block == null) {
             return;
         }
-        boolean emitComment = Debug.isDumpEnabled(Debug.BASIC_LOG_LEVEL) || PrintLIRWithAssembly.getValue(getOptions());
+        boolean emitComment = Debug.isDumpEnabled(Debug.BASIC_LEVEL) || PrintLIRWithAssembly.getValue(getOptions());
         if (emitComment) {
             blockComment(String.format("block B%d %s", block.getId(), block.getLoop()));
         }

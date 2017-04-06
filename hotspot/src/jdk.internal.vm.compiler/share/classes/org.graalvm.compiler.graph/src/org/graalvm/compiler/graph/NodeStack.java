@@ -23,14 +23,17 @@
 package org.graalvm.compiler.graph;
 
 public final class NodeStack {
-
-    private static final int INITIAL_SIZE = 8;
+    private static final int DEFAULT_INITIAL_SIZE = 8;
 
     protected Node[] values;
     public int tos;
 
     public NodeStack() {
-        values = new Node[INITIAL_SIZE];
+        this(DEFAULT_INITIAL_SIZE);
+    }
+
+    public NodeStack(int initialSize) {
+        values = new Node[initialSize];
     }
 
     public int size() {

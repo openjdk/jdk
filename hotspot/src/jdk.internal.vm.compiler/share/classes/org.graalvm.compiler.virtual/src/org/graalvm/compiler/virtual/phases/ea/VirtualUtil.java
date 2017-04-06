@@ -115,7 +115,7 @@ public final class VirtualUtil {
         }
         if (!success) {
             TTY.println();
-            Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "assertNonReachable");
+            Debug.forceDump(graph, "assertNonReachable");
         }
         return success;
     }

@@ -67,9 +67,8 @@ public final class ZeroExtendNode extends IntegerConvertNode<ZeroExtend, Narrow>
         ValueNode synonym = findSynonym(signExtend, input, inputBits, resultBits, signExtend.foldStamp(inputBits, resultBits, input.stamp()));
         if (synonym != null) {
             return synonym;
-        } else {
-            return new ZeroExtendNode(input, inputBits, resultBits);
         }
+        return canonical(null, input, inputBits, resultBits);
     }
 
     @Override
@@ -97,11 +96,16 @@ public final class ZeroExtendNode extends IntegerConvertNode<ZeroExtend, Narrow>
             return ret;
         }
 
+        return canonical(this, forValue, getInputBits(), getResultBits());
+    }
+
+    private static ValueNode canonical(ZeroExtendNode zeroExtendNode, ValueNode forValue, int inputBits, int resultBits) {
+        ZeroExtendNode self = zeroExtendNode;
         if (forValue instanceof ZeroExtendNode) {
             // xxxx -(zero-extend)-> 0000 xxxx -(zero-extend)-> 00000000 0000xxxx
             // ==> xxxx -(zero-extend)-> 00000000 0000xxxx
             ZeroExtendNode other = (ZeroExtendNode) forValue;
-            return new ZeroExtendNode(other.getValue(), other.getInputBits(), getResultBits());
+            return new ZeroExtendNode(other.getValue(), other.getInputBits(), resultBits);
         }
         if (forValue instanceof NarrowNode) {
             NarrowNode narrow = (NarrowNode) forValue;
@@ -128,7 +132,10 @@ public final class ZeroExtendNode extends IntegerConvertNode<ZeroExtend, Narrow>
             }
         }
 
-        return this;
+        if (self == null) {
+            self = new ZeroExtendNode(forValue, inputBits, resultBits);
+        }
+        return self;
     }
 
     @Override

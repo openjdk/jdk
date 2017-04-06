@@ -87,7 +87,7 @@ final class SSAVerifier {
                 doBlock(pred);
             }
         }
-        try (Indent indent = Debug.logAndIndent(Debug.INFO_LOG_LEVEL, "handle block %s", b)) {
+        try (Indent indent = Debug.logAndIndent(Debug.INFO_LEVEL, "handle block %s", b)) {
             assert verifyBlock(b);
         }
     }

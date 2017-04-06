@@ -26,6 +26,7 @@ import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_1;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
 
 import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
@@ -71,8 +72,8 @@ public final class ReadRegisterNode extends FixedWithNextNode implements LIRLowe
         this.incoming = incoming;
     }
 
-    public ReadRegisterNode(Register register, boolean directUse, boolean incoming) {
-        super(TYPE, StampFactory.forNodeIntrinsic());
+    public ReadRegisterNode(@InjectedNodeParameter Stamp stamp, Register register, boolean directUse, boolean incoming) {
+        super(TYPE, stamp);
         assert register != null;
         this.register = register;
         this.directUse = directUse;

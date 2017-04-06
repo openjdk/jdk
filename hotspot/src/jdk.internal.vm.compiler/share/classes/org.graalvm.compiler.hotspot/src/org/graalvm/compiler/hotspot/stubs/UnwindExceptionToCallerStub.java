@@ -122,6 +122,6 @@ public class UnwindExceptionToCallerStub extends SnippetStub {
     public static final ForeignCallDescriptor EXCEPTION_HANDLER_FOR_RETURN_ADDRESS = newDescriptor(UnwindExceptionToCallerStub.class, "exceptionHandlerForReturnAddress", Word.class, Word.class,
                     Word.class);
 
-    @NodeIntrinsic(value = StubForeignCallNode.class, setStampFromReturnType = true)
+    @NodeIntrinsic(value = StubForeignCallNode.class)
     public static native Word exceptionHandlerForReturnAddress(@ConstantNodeParameter ForeignCallDescriptor exceptionHandlerForReturnAddress, Word thread, Word returnAddress);
 }

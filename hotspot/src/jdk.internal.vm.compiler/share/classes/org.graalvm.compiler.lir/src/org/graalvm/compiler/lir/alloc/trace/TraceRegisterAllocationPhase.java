@@ -89,7 +89,7 @@ public final class TraceRegisterAllocationPhase extends AllocationPhase {
         final TraceRegisterAllocationPolicy plan = DefaultTraceRegisterAllocationPolicy.allocationPolicy(target, lirGenRes, spillMoveFactory, registerAllocationConfig, cachedStackSlots, resultTraces,
                         neverSpillConstant, livenessInfo, lir.getOptions());
 
-        Debug.dump(Debug.INFO_LOG_LEVEL, lir, "Before TraceRegisterAllocation");
+        Debug.dump(Debug.INFO_LEVEL, lir, "Before TraceRegisterAllocation");
         try (Scope s0 = Debug.scope("AllocateTraces", resultTraces, livenessInfo)) {
             for (Trace trace : resultTraces.getTraces()) {
                 tracesCounter.increment();
@@ -101,9 +101,9 @@ public final class TraceRegisterAllocationPhase extends AllocationPhase {
         } catch (Throwable e) {
             throw Debug.handle(e);
         }
-        if (Debug.isDumpEnabled(Debug.INFO_LOG_LEVEL)) {
+        if (Debug.isDumpEnabled(Debug.INFO_LEVEL)) {
             unnumberInstructions(lir);
-            Debug.dump(Debug.INFO_LOG_LEVEL, lir, "After trace allocation");
+            Debug.dump(Debug.INFO_LEVEL, lir, "After trace allocation");
         }
 
         TRACE_GLOBAL_MOVE_RESOLUTION_PHASE.apply(target, lirGenRes, traceContext);

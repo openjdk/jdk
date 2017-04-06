@@ -599,23 +599,24 @@ public final class NodeClass<T> extends FieldIntrospection<T> {
     }
 
     private static boolean deepEquals0(Object e1, Object e2) {
-        assert e1 != null;
-        if (e2 == null) {
+        if (e1 == e2) {
+            return true;
+        } else if (e1 == null || e2 == null) {
             return false;
-        } else if (e1 instanceof Object[] && e2 instanceof Object[]) {
-            return Arrays.deepEquals((Object[]) e1, (Object[]) e2);
         } else if (!e1.getClass().isArray() || e1.getClass() != e2.getClass()) {
             return e1.equals(e2);
-        } else if (e1 instanceof byte[]) {
-            return Arrays.equals((byte[]) e1, (byte[]) e2);
-        } else if (e1 instanceof short[]) {
-            return Arrays.equals((short[]) e1, (short[]) e2);
+        } else if (e1 instanceof Object[] && e2 instanceof Object[]) {
+            return deepEquals((Object[]) e1, (Object[]) e2);
         } else if (e1 instanceof int[]) {
             return Arrays.equals((int[]) e1, (int[]) e2);
         } else if (e1 instanceof long[]) {
             return Arrays.equals((long[]) e1, (long[]) e2);
+        } else if (e1 instanceof byte[]) {
+            return Arrays.equals((byte[]) e1, (byte[]) e2);
         } else if (e1 instanceof char[]) {
             return Arrays.equals((char[]) e1, (char[]) e2);
+        } else if (e1 instanceof short[]) {
+            return Arrays.equals((short[]) e1, (short[]) e2);
         } else if (e1 instanceof float[]) {
             return Arrays.equals((float[]) e1, (float[]) e2);
         } else if (e1 instanceof double[]) {
@@ -625,6 +626,20 @@ public final class NodeClass<T> extends FieldIntrospection<T> {
         } else {
             throw shouldNotReachHere();
         }
+    }
+
+    private static boolean deepEquals(Object[] a1, Object[] a2) {
+        int length = a1.length;
+        if (a2.length != length) {
+            return false;
+        }
+
+        for (int i = 0; i < length; i++) {
+            if (!deepEquals0(a1[i], a2[i])) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public boolean dataEquals(Node a, Node b) {

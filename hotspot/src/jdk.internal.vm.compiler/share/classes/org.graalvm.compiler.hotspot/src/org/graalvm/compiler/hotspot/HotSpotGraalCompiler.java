@@ -24,6 +24,7 @@ package org.graalvm.compiler.hotspot;
 
 import static org.graalvm.compiler.core.common.GraalOptions.OptAssumptions;
 import static org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext.CompilationContext.ROOT_COMPILATION;
+
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.Formattable;
@@ -98,6 +99,9 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
     @Override
     @SuppressWarnings("try")
     public CompilationRequestResult compileMethod(CompilationRequest request) {
+        if (graalRuntime.isShutdown()) {
+            return HotSpotCompilationRequestResult.failure(String.format("Shutdown entered"), false);
+        }
         OptionValues options = graalRuntime.getOptions();
         if (graalRuntime.isBootstrapping()) {
             if (GraalDebugConfig.Options.BootstrapInitializeOnly.getValue(options)) {

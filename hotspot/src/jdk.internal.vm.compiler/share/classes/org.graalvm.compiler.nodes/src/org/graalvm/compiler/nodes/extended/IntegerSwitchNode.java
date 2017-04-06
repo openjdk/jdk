@@ -194,7 +194,7 @@ public final class IntegerSwitchNode extends SwitchNode implements LIRLowerable,
         } else {
             int newDefaultSuccessor = addNewSuccessor(defaultSuccessor(), newSuccessors);
             double newDefaultProbability = keyProbabilities[keyProbabilities.length - 1];
-            doReplace(tool, value(), newKeyDatas, newSuccessors, newDefaultSuccessor, newDefaultProbability);
+            doReplace(value(), newKeyDatas, newSuccessors, newDefaultSuccessor, newDefaultProbability);
             return true;
         }
     }
@@ -294,7 +294,7 @@ public final class IntegerSwitchNode extends SwitchNode implements LIRLowerable,
          * Build the low-level representation of the new switch keys and replace ourself with a new
          * node.
          */
-        doReplace(tool, newValue, newKeyDatas, newSuccessors, newDefaultSuccessor, newDefaultProbability);
+        doReplace(newValue, newKeyDatas, newSuccessors, newDefaultSuccessor, newDefaultProbability);
 
         /* The array load is now unnecessary. */
         assert loadIndexed.hasNoUsages();
@@ -312,7 +312,7 @@ public final class IntegerSwitchNode extends SwitchNode implements LIRLowerable,
         return index;
     }
 
-    private void doReplace(SimplifierTool tool, ValueNode newValue, List<KeyData> newKeyDatas, ArrayList<AbstractBeginNode> newSuccessors, int newDefaultSuccessor, double newDefaultProbability) {
+    private void doReplace(ValueNode newValue, List<KeyData> newKeyDatas, ArrayList<AbstractBeginNode> newSuccessors, int newDefaultSuccessor, double newDefaultProbability) {
         /* Sort the new keys (invariant of the IntegerSwitchNode). */
         newKeyDatas.sort((k1, k2) -> k1.key - k2.key);
 
@@ -353,7 +353,7 @@ public final class IntegerSwitchNode extends SwitchNode implements LIRLowerable,
             if (!newSuccessors.contains(successor)) {
                 FixedNode fixedBranch = successor;
                 fixedBranch.predecessor().replaceFirstSuccessor(fixedBranch, null);
-                GraphUtil.killCFG(fixedBranch, tool);
+                GraphUtil.killCFG(fixedBranch);
             }
             setBlockSuccessor(i, null);
         }

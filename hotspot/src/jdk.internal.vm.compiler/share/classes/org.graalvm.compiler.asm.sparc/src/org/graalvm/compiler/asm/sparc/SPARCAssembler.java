@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1755,6 +1755,10 @@ public abstract class SPARCAssembler extends Assembler {
 
     public static boolean isSimm5(JavaConstant constant) {
         return constant.isNull() || isSimm(constant.asLong(), 5);
+    }
+
+    public static boolean isSimm5(long imm) {
+        return isSimm(imm, 5);
     }
 
     public static boolean isSimm13(int imm) {

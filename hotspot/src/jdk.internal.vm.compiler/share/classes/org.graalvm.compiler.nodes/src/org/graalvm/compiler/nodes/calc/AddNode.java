@@ -57,28 +57,16 @@ public class AddNode extends BinaryArithmeticNode<Add> implements NarrowableArit
         ConstantNode tryConstantFold = tryConstantFold(op, x, y, stamp);
         if (tryConstantFold != null) {
             return tryConstantFold;
+        }
+        if (x.isConstant() && !y.isConstant()) {
+            return canonical(null, op, y, x);
         } else {
-            return new AddNode(x, y).maybeCommuteInputs();
+            return canonical(null, op, x, y);
         }
     }
 
-    @Override
-    public ValueNode canonical(CanonicalizerTool tool, ValueNode forX, ValueNode forY) {
-        ValueNode ret = super.canonical(tool, forX, forY);
-        if (ret != this) {
-            return ret;
-        }
-
-        if (forX.isConstant() && !forY.isConstant()) {
-            // we try to swap and canonicalize
-            ValueNode improvement = canonical(tool, forY, forX);
-            if (improvement != this) {
-                return improvement;
-            }
-            // if this fails we only swap
-            return new AddNode(forY, forX);
-        }
-        BinaryOp<Add> op = getOp(forX, forY);
+    private static ValueNode canonical(AddNode addNode, BinaryOp<Add> op, ValueNode forX, ValueNode forY) {
+        AddNode self = addNode;
         boolean associative = op.isAssociative();
         if (associative) {
             if (forX instanceof SubNode) {
@@ -101,10 +89,10 @@ public class AddNode extends BinaryArithmeticNode<Add> implements NarrowableArit
             if (op.isNeutral(c)) {
                 return forX;
             }
-            if (associative) {
+            if (associative && self != null) {
                 // canonicalize expressions like "(a + 1) + 2"
-                ValueNode reassociated = reassociate(this, ValueNode.isConstantPredicate(), forX, forY);
-                if (reassociated != this) {
+                ValueNode reassociated = reassociate(self, ValueNode.isConstantPredicate(), forX, forY);
+                if (reassociated != self) {
                     return reassociated;
                 }
             }
@@ -114,7 +102,30 @@ public class AddNode extends BinaryArithmeticNode<Add> implements NarrowableArit
         } else if (forY instanceof NegateNode) {
             return BinaryArithmeticNode.sub(forX, ((NegateNode) forY).getValue());
         }
-        return this;
+        if (self == null) {
+            self = (AddNode) new AddNode(forX, forY).maybeCommuteInputs();
+        }
+        return self;
+    }
+
+    @Override
+    public ValueNode canonical(CanonicalizerTool tool, ValueNode forX, ValueNode forY) {
+        ValueNode ret = super.canonical(tool, forX, forY);
+        if (ret != this) {
+            return ret;
+        }
+
+        if (forX.isConstant() && !forY.isConstant()) {
+            // we try to swap and canonicalize
+            ValueNode improvement = canonical(tool, forY, forX);
+            if (improvement != this) {
+                return improvement;
+            }
+            // if this fails we only swap
+            return new AddNode(forY, forX);
+        }
+        BinaryOp<Add> op = getOp(forX, forY);
+        return canonical(this, op, forX, forY);
     }
 
     @Override

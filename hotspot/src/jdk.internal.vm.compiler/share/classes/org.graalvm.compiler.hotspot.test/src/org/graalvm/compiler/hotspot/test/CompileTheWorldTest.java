@@ -47,7 +47,7 @@ public class CompileTheWorldTest extends GraalCompilerTest {
         System.setProperty(CompileTheWorld.LIMITMODS_PROPERTY_NAME, "java.base");
         OptionValues initialOptions = getInitialOptions();
         EconomicMap<OptionKey<?>, Object> compilationOptions = CompileTheWorld.parseOptions("Inline=false");
-        new CompileTheWorld(runtime, (HotSpotGraalCompiler) runtime.getCompiler(), CompileTheWorld.SUN_BOOT_CLASS_PATH, 1, 5, null, null, true, initialOptions, compilationOptions).compile();
+        new CompileTheWorld(runtime, (HotSpotGraalCompiler) runtime.getCompiler(), CompileTheWorld.SUN_BOOT_CLASS_PATH, 1, 5, null, null, false, initialOptions, compilationOptions).compile();
         assert ExitVMOnException.getValue(initialOptions) == originalSetting;
     }
 }

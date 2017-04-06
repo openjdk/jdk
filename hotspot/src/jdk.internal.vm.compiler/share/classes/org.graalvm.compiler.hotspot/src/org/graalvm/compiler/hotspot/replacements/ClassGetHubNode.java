@@ -25,8 +25,11 @@ package org.graalvm.compiler.hotspot.replacements;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_4;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
 
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.core.common.calc.Condition;
+import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.Canonicalizable;
@@ -42,6 +45,7 @@ import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.extended.GetClassNode;
 import org.graalvm.compiler.nodes.extended.GuardingNode;
 import org.graalvm.compiler.nodes.extended.LoadHubNode;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.memory.ReadNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
@@ -69,19 +73,30 @@ public final class ClassGetHubNode extends FloatingNode implements Lowerable, Ca
         this.clazz = clazz;
     }
 
-    @Override
-    public Node canonical(CanonicalizerTool tool) {
-        if (tool.allUsagesAvailable() && hasNoUsages()) {
+    public static ValueNode create(ValueNode clazz, MetaAccessProvider metaAccess, ConstantReflectionProvider constantReflection, boolean allUsagesAvailable) {
+        return canonical(null, metaAccess, constantReflection, allUsagesAvailable, KlassPointerStamp.klass(), clazz);
+    }
+
+    @SuppressWarnings("unused")
+    public static boolean intrinsify(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode clazz) {
+        ValueNode clazzValue = create(clazz, b.getMetaAccess(), b.getConstantReflection(), false);
+        b.push(JavaKind.Object, b.recursiveAppend(clazzValue));
+        return true;
+    }
+
+    public static ValueNode canonical(ClassGetHubNode classGetHubNode, MetaAccessProvider metaAccess, ConstantReflectionProvider constantReflection, boolean allUsagesAvailable, Stamp stamp,
+                    ValueNode clazz) {
+        ClassGetHubNode self = classGetHubNode;
+        if (allUsagesAvailable && self != null && self.hasNoUsages()) {
             return null;
         } else {
             if (clazz.isConstant()) {
-                MetaAccessProvider metaAccess = tool.getMetaAccess();
                 if (metaAccess != null) {
-                    ResolvedJavaType exactType = tool.getConstantReflection().asJavaType(clazz.asJavaConstant());
+                    ResolvedJavaType exactType = constantReflection.asJavaType(clazz.asJavaConstant());
                     if (exactType.isPrimitive()) {
-                        return ConstantNode.forConstant(stamp(), JavaConstant.NULL_POINTER, metaAccess);
+                        return ConstantNode.forConstant(stamp, JavaConstant.NULL_POINTER, metaAccess);
                     } else {
-                        return ConstantNode.forConstant(stamp(), tool.getConstantReflection().asObjectHub(exactType), metaAccess);
+                        return ConstantNode.forConstant(stamp, constantReflection.asObjectHub(exactType), metaAccess);
                     }
                 }
             }
@@ -90,11 +105,19 @@ public final class ClassGetHubNode extends FloatingNode implements Lowerable, Ca
                 return new LoadHubNode(KlassPointerStamp.klassNonNull(), getClass.getObject());
             }
             if (clazz instanceof HubGetClassNode) {
-                // replace _klass._java_mirror._klass -> _klass
+                // Replace: _klass._java_mirror._klass -> _klass
                 return ((HubGetClassNode) clazz).getHub();
             }
-            return this;
+            if (self == null) {
+                self = new ClassGetHubNode(clazz);
+            }
+            return self;
         }
+    }
+
+    @Override
+    public Node canonical(CanonicalizerTool tool) {
+        return canonical(this, tool.getMetaAccess(), tool.getConstantReflection(), tool.allUsagesAvailable(), stamp(), clazz);
     }
 
     @Override

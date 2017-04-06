@@ -62,4 +62,19 @@ public interface HotSpotGraalRuntimeProvider extends GraalRuntime, RuntimeProvid
      * Determines if the VM is currently bootstrapping the JVMCI compiler.
      */
     boolean isBootstrapping();
+
+    /**
+     * This runtime has been requested to shutdown.
+     */
+    boolean isShutdown();
+
+    /**
+     * Gets a directory into which diagnostics such crash reports and dumps should be written. This
+     * method will create the directory if it doesn't exist so it should only be called if
+     * diagnostics are about to be generated.
+     *
+     * @return the directory into which diagnostics can be written or {@code null} if the directory
+     *         does not exist and could not be created
+     */
+    String getOutputDirectory();
 }

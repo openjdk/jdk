@@ -267,7 +267,31 @@ public class GraalHotSpotVMConfig extends HotSpotVMConfigAccess {
     public final int secondarySuperCacheOffset = getFieldOffset("Klass::_secondary_super_cache", Integer.class, "Klass*");
     public final int secondarySupersOffset = getFieldOffset("Klass::_secondary_supers", Integer.class, "Array<Klass*>*");
 
-    public final int classMirrorOffset = getFieldOffset("Klass::_java_mirror", Integer.class, "oop");
+    public final boolean classMirrorIsHandle;
+    public final int classMirrorOffset;
+    {
+        String name = "Klass::_java_mirror";
+        int offset = -1;
+        boolean isHandle = false;
+        try {
+            offset = getFieldOffset(name, Integer.class, "oop");
+        } catch (JVMCIError e) {
+
+        }
+        if (offset == -1) {
+            try {
+                offset = getFieldOffset(name, Integer.class, "jobject");
+                isHandle = true;
+            } catch (JVMCIError e) {
+
+            }
+        }
+        if (offset == -1) {
+            throw new JVMCIError("cannot get offset of field " + name + " with type oop or jobject");
+        }
+        classMirrorOffset = offset;
+        classMirrorIsHandle = isHandle;
+    }
 
     public final int klassSuperKlassOffset = getFieldOffset("Klass::_super", Integer.class, "Klass*");
     public final int klassModifierFlagsOffset = getFieldOffset("Klass::_modifier_flags", Integer.class, "jint");

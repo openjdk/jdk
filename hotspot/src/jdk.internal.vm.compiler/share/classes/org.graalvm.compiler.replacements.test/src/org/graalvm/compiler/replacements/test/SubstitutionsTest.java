@@ -133,7 +133,7 @@ public class SubstitutionsTest extends ReplacementsTest {
     @Override
     protected Plugins getDefaultGraphBuilderPlugins() {
         Plugins ret = super.getDefaultGraphBuilderPlugins();
-        // manually register generated factories, jvmci service providers don't work from unit tests
+        // manually register generated factories, Graal service providers don't work from unit tests
         new PluginFactory_SubstitutionsTest().registerPlugins(ret.getInvocationPlugins(), null);
         return ret;
     }

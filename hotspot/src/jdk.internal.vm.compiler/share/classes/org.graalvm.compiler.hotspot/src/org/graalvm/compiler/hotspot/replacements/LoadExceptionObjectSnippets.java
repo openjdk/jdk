@@ -35,8 +35,10 @@ import static org.graalvm.compiler.replacements.SnippetTemplate.DEFAULT_REPLACER
 
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.Snippet.ConstantParameter;
+import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.hotspot.meta.HotSpotRegistersProvider;
+import org.graalvm.compiler.hotspot.word.HotSpotWordTypes;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.extended.ForeignCallNode;
 import org.graalvm.compiler.nodes.java.LoadExceptionObjectNode;
@@ -52,6 +54,7 @@ import org.graalvm.compiler.word.Word;
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.meta.ResolvedJavaType;
 
 /**
  * Snippet for loading the exception object at the start of an exception dispatcher.
@@ -76,15 +79,19 @@ public class LoadExceptionObjectSnippets implements Snippets {
     public static class Templates extends AbstractTemplates {
 
         private final SnippetInfo loadException = snippet(LoadExceptionObjectSnippets.class, "loadException", EXCEPTION_OOP_LOCATION, EXCEPTION_PC_LOCATION);
+        private final HotSpotWordTypes wordTypes;
 
         public Templates(OptionValues options, HotSpotProviders providers, TargetDescription target) {
             super(options, providers, providers.getSnippetReflection(), target);
+            this.wordTypes = providers.getWordTypes();
         }
 
         public void lower(LoadExceptionObjectNode loadExceptionObject, HotSpotRegistersProvider registers, LoweringTool tool) {
             StructuredGraph graph = loadExceptionObject.graph();
             if (LoadExceptionObjectInVM.getValue(graph.getOptions())) {
-                ReadRegisterNode thread = graph.add(new ReadRegisterNode(registers.getThreadRegister(), true, false));
+                ResolvedJavaType wordType = providers.getMetaAccess().lookupJavaType(Word.class);
+                Stamp stamp = wordTypes.getWordStamp(wordType);
+                ReadRegisterNode thread = graph.add(new ReadRegisterNode(stamp, registers.getThreadRegister(), true, false));
                 graph.addBeforeFixed(loadExceptionObject, thread);
                 ForeignCallNode loadExceptionC = graph.add(new ForeignCallNode(providers.getForeignCalls(), LOAD_AND_CLEAR_EXCEPTION, thread));
                 loadExceptionC.setStateAfter(loadExceptionObject.stateAfter());

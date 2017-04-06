@@ -352,7 +352,7 @@ public final class DebugScope implements Debug.Scope {
                 dumpHandler.dump(object, message);
             }
         } else {
-            TTY.println("Forced dump ignored because debugging is disabled - use -Dgraal.Dump=xxx");
+            TTY.println("Forced dump ignored because debugging is disabled - use -Dgraal.ForceDebugEnable=true");
         }
     }
 
