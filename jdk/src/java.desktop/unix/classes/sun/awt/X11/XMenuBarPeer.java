@@ -503,6 +503,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
      * This function is called from XWindow
      * @see XWindow.handleF10onEDT()
      */
+    @SuppressWarnings("deprecation")
     void handleF10KeyPress(KeyEvent event) {
         int keyState = event.getModifiers();
         if (((keyState & InputEvent.ALT_MASK) != 0) ||
