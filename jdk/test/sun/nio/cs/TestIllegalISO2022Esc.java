@@ -22,8 +22,9 @@
  */
 
 /* @test
-   @bug 4429369
-   @summary  ISO2022CN and ISO2022KR converters throw exception
+ * @bug 4429369
+ * @summary  ISO2022CN and ISO2022KR converters throw exception
+ * @modules jdk.charsets
  */
 
 import java.io.*;

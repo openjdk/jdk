@@ -429,7 +429,7 @@ public abstract class InfoWindow extends Window {
                 gtkImagesLoaded = true;
             }
         }
-
+        @SuppressWarnings("deprecation")
         private class ActionPerformer extends MouseAdapter {
             public void mouseClicked(MouseEvent e) {
                 // hide the balloon by any click

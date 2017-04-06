@@ -392,9 +392,11 @@ public class Http2TestServerConnection {
         //System.err.println ("Stream window size = " + winsize);
 
         final InputStream bis;
-        if (endStreamReceived) {
+        if (endStreamReceived && queue.size() == 0) {
+            System.err.println("Server: got END_STREAM for stream " + streamid);
             bis = NullInputStream.INSTANCE;
         } else {
+            System.err.println("Server: creating input stream for stream " + streamid);
             bis = new BodyInputStream(queue, streamid, this);
         }
         try (bis;

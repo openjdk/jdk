@@ -355,17 +355,28 @@ FindAllReposRel = \
 ################################################################################
 
 define SetupLogging
+  ifeq ($$(LOG_PROFILE_TIMES_FILE), true)
+    ifeq ($$(IS_GNU_TIME), yes)
+      SHELL :=  $$(BASH) $$(SRC_ROOT)/common/bin/shell-profiler.sh \
+                gnutime $$(TIME) \
+                $$(OUTPUT_ROOT)/build-profile.log $$(SHELL)
+    else ifneq ($$(FLOCK), )
+      SHELL :=  $$(BASH) $$(SRC_ROOT)/common/bin/shell-profiler.sh \
+                flock $$(FLOCK) \
+                $$(OUTPUT_ROOT)/build-profile.log $$(SHELL)
+    endif
+  endif
+
   ifeq ($$(LOG_LEVEL), trace)
+    SHELL_NO_RECURSE := $$(SHELL)
     # Shell redefinition trick inspired by http://www.cmcrossroads.com/ask-mr-make/6535-tracing-rule-execution-in-gnu-make
     # For each target executed, will print
     # Building <TARGET> (from <FIRST PREREQUISITE>) (<ALL NEWER PREREQUISITES> newer)
     # but with a limit of 20 on <ALL NEWER PREREQUISITES>, to avoid cluttering logs too much
     # (and causing a crash on Cygwin).
-    # Default shell seems to always be /bin/sh. Must override with bash to get this to work on Solaris.
-    # Only use time if it's GNU time which supports format and output file.
-    WRAPPER_SHELL := $$(BASH) $$(SRC_ROOT)/common/bin/shell-tracer.sh $$(if $$(findstring yes,$$(IS_GNU_TIME)),$$(TIME),-) $$(OUTPUT_ROOT)/build-trace-time.log $$(SHELL)
-    SHELL = $$(warning $$(if $$@,Building $$@,Running shell command) $$(if $$<, (from $$<))$$(if $$?, ($$(wordlist 1, 20, $$?) $$(if $$(wordlist 21, 22, $$?), ... [in total $$(words $$?) files]) newer)))$$(WRAPPER_SHELL)
+    SHELL = $$(warning $$(if $$@,Building $$@,Running shell command) $$(if $$<, (from $$<))$$(if $$?, ($$(wordlist 1, 20, $$?) $$(if $$(wordlist 21, 22, $$?), ... [in total $$(words $$?) files]) newer)))$$(SHELL_NO_RECURSE) -x
   endif
+
   # The warn level can never be turned off
   LogWarn = $$(info $$(strip $$1))
   LOG_WARN :=

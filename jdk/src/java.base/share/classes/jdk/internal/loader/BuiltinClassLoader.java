@@ -57,8 +57,9 @@ import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.stream.Stream;
 
-import jdk.internal.module.ModulePatcher.PatchedModuleReader;
 import jdk.internal.misc.VM;
+import jdk.internal.module.ModulePatcher.PatchedModuleReader;
+import jdk.internal.module.SystemModules;
 
 
 /**
@@ -135,7 +136,7 @@ public class BuiltinClassLoader
 
     // maps package name to loaded module for modules in the boot layer
     private static final Map<String, LoadedModule> packageToModule
-        = new ConcurrentHashMap<>(1024);
+        = new ConcurrentHashMap<>(SystemModules.PACKAGES_IN_BOOT_LAYER);
 
     // maps a module name to a module reference
     private final Map<String, ModuleReference> nameToModule;
@@ -424,7 +425,7 @@ public class BuiltinClassLoader
      * Returns a URL to a resource on the class path.
      */
     private URL findResourceOnClassPath(String name) {
-        if (ucp != null) {
+        if (hasClassPath()) {
             if (System.getSecurityManager() == null) {
                 return ucp.findResource(name, false);
             } else {
@@ -441,7 +442,7 @@ public class BuiltinClassLoader
      * Returns the URLs of all resources of the given name on the class path.
      */
     private Enumeration<URL> findResourcesOnClassPath(String name) {
-        if (ucp != null) {
+        if (hasClassPath()) {
             if (System.getSecurityManager() == null) {
                 return ucp.findResources(name, false);
             } else {
@@ -480,7 +481,7 @@ public class BuiltinClassLoader
         } else {
 
             // search class path
-            if (ucp != null) {
+            if (hasClassPath()) {
                 c = findClassOnClassPathOrNull(cn);
             }
 
@@ -513,7 +514,7 @@ public class BuiltinClassLoader
         }
 
         // search class path
-        if (ucp != null) {
+        if (hasClassPath()) {
             return findClassOnClassPathOrNull(cn);
         }
 
@@ -568,7 +569,7 @@ public class BuiltinClassLoader
                     }
 
                     // check class path
-                    if (c == null && ucp != null && VM.isModuleSystemInited()) {
+                    if (c == null && hasClassPath() && VM.isModuleSystemInited()) {
                         c = findClassOnClassPathOrNull(cn);
                     }
                 }
@@ -869,6 +870,14 @@ public class BuiltinClassLoader
     }
 
     /**
+     * Returns {@code true} if there is a class path associated with this
+     * class loader.
+     */
+    boolean hasClassPath() {
+        return ucp != null;
+    }
+
+    /**
      * Returns {@code true} if the specified package name is sealed according to
      * the given manifest.
      */
@@ -922,13 +931,13 @@ public class BuiltinClassLoader
      * Returns the ModuleReader for the given module.
      */
     private ModuleReader moduleReaderFor(ModuleReference mref) {
-        return moduleToReader.computeIfAbsent(mref, m -> createModuleReader(mref));
+        return moduleToReader.computeIfAbsent(mref, BuiltinClassLoader::createModuleReader);
     }
 
     /**
      * Creates a ModuleReader for the given module.
      */
-    private ModuleReader createModuleReader(ModuleReference mref) {
+    private static ModuleReader createModuleReader(ModuleReference mref) {
         try {
             return mref.open();
         } catch (IOException e) {

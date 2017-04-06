@@ -22,46 +22,95 @@
  */
 
 /* @test
- * @bug 8163449
+ * @bug 8163449 8175261
  * @summary Allow per protocol setting for URLConnection defaultUseCaches
- * @run main/othervm SetDefaultUseCaches
+ * @run testng/othervm SetDefaultUseCaches
  */
 
-import java.net.*;
-import java.io.*;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.net.URL;
+import java.net.URLConnection;
+import org.testng.annotations.Test;
+import static org.testng.Assert.*;
 
 public class SetDefaultUseCaches {
-    static void testAssert(boolean value, boolean comparator) {
-        if (value != comparator) {
-            System.err.println("Expected " + comparator + " Got " + value);
-            throw new RuntimeException("Test failed:");
-        } else
-            System.err.println("OK");
+
+    final URL fileURL = uncheckURL("file:///a/b.txt");
+    final URL httpURL = uncheckURL("http://www.foo.com/");
+    final URL jarFileURL = uncheckURL("jar:file:///a/b.jar!/anEntry");
+    final URL jarHttpURL = uncheckURL("jar:http://www.foo.com/a/b.jar!/anEntry");
+
+    @Test
+    public void test() throws Exception {
+        // check JAR both before and after other protocol tests as JAR URLs
+        // effectively wrap/embed other URLs. The syntax is jar:<url>!/{entry}
+        checkJAR(true);
+        checkJAR(false);
+        checkJAR(true);
+
+        checkHTTP();
+        checkFile();
+
+        // ensure that JAR URLs still respect their per-protocol value
+        checkJAR(false);
+        checkJAR(true);
+        checkJAR(false);
     }
 
-    public static void main(String s[]) throws Exception {
-        URL url = new URL("http://www.foo.com/");
-        URL url1 = new URL("file:///a/b.txt");
-
+    void checkHTTP() throws IOException {
         // check default default is true
-        URLConnection urlc = url.openConnection();
-        testAssert(urlc.getDefaultUseCaches(), true);
+        URLConnection httpURLConn = httpURL.openConnection();
+        assertTrue(httpURLConn.getDefaultUseCaches());
 
         // set default for http to false and check
         URLConnection.setDefaultUseCaches("HTTP", false);
 
-        urlc = url.openConnection();
-        testAssert(urlc.getDefaultUseCaches(), true);
-        testAssert(urlc.getUseCaches(), false);
-        testAssert(URLConnection.getDefaultUseCaches("http"), false);
+        httpURLConn = httpURL.openConnection();
+        assertTrue(httpURLConn.getDefaultUseCaches());
+        assertFalse(httpURLConn.getUseCaches());
+        assertFalse(URLConnection.getDefaultUseCaches("http"));
+    }
 
-        URLConnection urlc1 = url1.openConnection();
-        testAssert(urlc1.getDefaultUseCaches(), true);
+    void checkFile() throws IOException {
+        URLConnection fileURLConn = fileURL.openConnection();
+        assertTrue(fileURLConn.getDefaultUseCaches());
 
         // set default default to false and check other values the same
-        urlc.setDefaultUseCaches(false);
-        urlc1.setDefaultUseCaches("fiLe", true);
-        testAssert(urlc1.getDefaultUseCaches(), false);
-        testAssert(URLConnection.getDefaultUseCaches("fiLE"), true);
+        fileURLConn.setDefaultUseCaches(false);
+        fileURLConn.setDefaultUseCaches("fiLe", true);
+        assertFalse(fileURLConn.getDefaultUseCaches());
+        assertTrue(URLConnection.getDefaultUseCaches("fiLE"));
+    }
+
+    void checkJAR(boolean defaultValue) throws IOException {
+        URLConnection.setDefaultUseCaches("JAR", defaultValue);
+        assertEquals(URLConnection.getDefaultUseCaches("JAr"), defaultValue);
+
+        URLConnection jarFileURLConn = jarFileURL.openConnection();
+        URLConnection jarHttpURLConn = jarHttpURL.openConnection();
+        assertEquals(jarFileURLConn.getUseCaches(), defaultValue);
+        assertEquals(jarHttpURLConn.getUseCaches(), defaultValue);
+        jarFileURLConn.setUseCaches(!defaultValue);
+        jarHttpURLConn.setUseCaches(!defaultValue);
+        assertEquals(jarFileURLConn.getUseCaches(), !defaultValue);
+        assertEquals(jarHttpURLConn.getUseCaches(), !defaultValue);
+
+        URLConnection.setDefaultUseCaches("JaR", !defaultValue); // case-insensitive
+        assertEquals(URLConnection.getDefaultUseCaches("jAR"), !defaultValue);
+
+        jarFileURLConn = jarFileURL.openConnection();
+        jarHttpURLConn = jarHttpURL.openConnection();
+        assertEquals(jarFileURLConn.getUseCaches(), !defaultValue);
+        assertEquals(jarHttpURLConn.getUseCaches(), !defaultValue);
+        jarFileURLConn.setUseCaches(defaultValue);
+        jarHttpURLConn.setUseCaches(defaultValue);
+        assertEquals(jarFileURLConn.getUseCaches(), defaultValue);
+        assertEquals(jarHttpURLConn.getUseCaches(), defaultValue);
+    }
+
+    static URL uncheckURL(String url) {
+        try { return new URL(url); }
+        catch (IOException e) { throw new UncheckedIOException(e); }
     }
 }
