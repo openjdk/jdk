@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,8 +63,11 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import tck.java.time.AbstractTCKTest;
 
-import java.io.*;
-import java.lang.reflect.Field;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectStreamConstants;
 import java.time.DateTimeException;
 import java.time.ZoneId;
 import java.time.zone.ZoneRulesException;
@@ -153,10 +156,8 @@ public class TCKZoneIdSerialization extends AbstractTCKTest {
 
     private ZoneId deserialize(String id) throws Exception {
         String serClass = ZoneId.class.getPackage().getName() + ".Ser";
-        Class<?> serCls = Class.forName(serClass);
-        Field field = serCls.getDeclaredField("serialVersionUID");
-        field.setAccessible(true);
-        long serVer = (Long) field.get(null);
+        long serVer = getSUID(ZoneId.class);
+
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (DataOutputStream dos = new DataOutputStream(baos)) {
             dos.writeShort(ObjectStreamConstants.STREAM_MAGIC);

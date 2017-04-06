@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,8 @@ public class MVJarSigningTest {
     private static final String KEYPASS = "changeit";
     private static final String SIGNED_JAR = "Signed.jar";
     private static final String POLICY_FILE = "SignedJar.policy";
-    private static final String VERSION_MESSAGE = "I am running on version 9";
+    private static final String VERSION = "" + Runtime.version().major();
+    private static final String VERSION_MESSAGE = "I am running on version " + VERSION;
 
     public static void main(String[] args) throws Throwable {
         // compile java files in jarContent directory

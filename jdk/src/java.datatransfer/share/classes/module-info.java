@@ -25,6 +25,8 @@
 
 /**
  * Defines an API for transferring data between and within applications.
+ *
+ * @since 9
  */
 module java.datatransfer {
     exports java.awt.datatransfer;

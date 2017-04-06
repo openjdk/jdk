@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,7 @@ public class BASE64DecoderStream extends FilterInputStream {
      * @exception  IOException  if an I/O error occurs.
      * @see        java.io.FilterInputStream#in
      */
+    @Override
     public int read() throws IOException {
         if (index >= bufsize) {
             decode(); // Fills up buffer
@@ -94,6 +95,7 @@ public class BASE64DecoderStream extends FilterInputStream {
      *             the stream has been reached.
      * @exception  IOException  if an I/O error occurs.
      */
+    @Override
     public int read(byte[] buf, int off, int len) throws IOException {
         int i, c;
         for (i = 0; i < len; i++) {
@@ -112,6 +114,7 @@ public class BASE64DecoderStream extends FilterInputStream {
      * Tests if this input stream supports marks. Currently this class
      * does not support marks
      */
+    @Override
     public boolean markSupported() {
         return false; // Maybe later ..
     }
@@ -122,6 +125,7 @@ public class BASE64DecoderStream extends FilterInputStream {
      * a close approximation in case the original encoded stream
      * contains embedded CRLFs; since the CRLFs are discarded, not decoded
      */
+    @Override
     public int available() throws IOException {
          // This is only an estimate, since in.available()
          // might include CRLFs too ..
@@ -199,6 +203,10 @@ public class BASE64DecoderStream extends FilterInputStream {
      * This method is suitable for short strings, such as those
      * in the IMAP AUTHENTICATE protocol, but not to decode the
      * entire content of a MIME part.
+     *
+     * @param inbuf byte array to decode
+     *
+     * @return decoded byte array
      *
      * NOTE: inbuf may only contain valid base64 characters.
      *       Whitespace is not ignored.
