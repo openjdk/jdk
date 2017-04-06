@@ -30,6 +30,8 @@
  *          jdk.compiler/com.sun.tools.javac.parser
  *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
+ *          jdk.javadoc/jdk.javadoc.internal.tool
+ * @build sampleapi.SampleApiDefaultRunner
  * @run main SampleApiTest
  */
 

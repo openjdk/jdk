@@ -1568,9 +1568,10 @@ public class JTree extends JComponent implements Scrollable, Accessible
                     Rectangle       pathBounds = getPathBounds(path);
 
                     p.translate(-pathBounds.x, -pathBounds.y);
+                    @SuppressWarnings("deprecation")
+                    final int modifiers = event.getModifiers();
                     newEvent = new MouseEvent(rComponent, event.getID(),
-                                          event.getWhen(),
-                                              event.getModifiers(),
+                                          event.getWhen(), modifiers,
                                               p.x, p.y,
                                               event.getXOnScreen(),
                                               event.getYOnScreen(),

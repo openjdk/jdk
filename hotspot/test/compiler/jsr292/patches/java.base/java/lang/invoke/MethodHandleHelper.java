@@ -99,7 +99,7 @@ public class MethodHandleHelper {
 
         public static MethodHandle make(MethodHandle target) {
             LambdaForm lform = DelegatingMethodHandle.makeReinvokerForm(
-                    target, -1, DelegatingMethodHandle.class, "reinvoker.dontInline",
+                    target, -1, DelegatingMethodHandle.class,
                 /*forceInline=*/false, DelegatingMethodHandle.NF_getTarget, null);
             return new NonInlinedReinvoker(target, lform);
         }
