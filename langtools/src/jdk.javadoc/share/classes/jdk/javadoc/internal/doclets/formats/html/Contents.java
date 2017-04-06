@@ -130,6 +130,7 @@ public class Contents {
     public final Content nextPackageLabel;
     public final Content noFramesLabel;
     public final Content noScriptMessage;
+    public final Content openModuleLabel;
     public final Content overridesLabel;
     public final Content overviewLabel;
     public final Content packageHierarchies;
@@ -244,6 +245,7 @@ public class Contents {
         nextPackageLabel = getNonBreakContent("doclet.Next_Package");
         noFramesLabel = getNonBreakContent("doclet.No_Frames");
         noScriptMessage = getContent("doclet.No_Script_Message");
+        openModuleLabel = getContent("doclet.Open_Module");
         overridesLabel = getContent("doclet.Overrides");
         overviewLabel = getContent("doclet.Overview");
         packageHierarchies = getContent("doclet.Package_Hierarchies");
