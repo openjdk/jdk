@@ -105,7 +105,7 @@ public class ArgumentAttr extends JCTree.Visitor {
     private Env<AttrContext> env;
 
     /** Result of method attribution. */
-    private Type result;
+    Type result;
 
     /** Cache for argument types; behavior is influences by the currrently selected cache policy. */
     Map<UniquePos, ArgumentType<?>> argumentTypeCache = new LinkedHashMap<>();
@@ -215,13 +215,8 @@ public class ArgumentAttr extends JCTree.Visitor {
         processArg(that, () -> {
             T speculativeTree = (T)deferredAttr.attribSpeculative(that, env, attr.new MethodAttrInfo() {
                 @Override
-                protected void attr(JCTree tree, Env<AttrContext> env) {
-                    //avoid speculative attribution loops
-                    if (!new UniquePos(tree).equals(pos)) {
-                        super.attr(tree, env);
-                    } else {
-                        visitTree(tree);
-                    }
+                protected boolean needsArgumentAttr(JCTree tree) {
+                    return !new UniquePos(tree).equals(pos);
                 }
             });
             return argumentTypeFactory.apply(speculativeTree);
