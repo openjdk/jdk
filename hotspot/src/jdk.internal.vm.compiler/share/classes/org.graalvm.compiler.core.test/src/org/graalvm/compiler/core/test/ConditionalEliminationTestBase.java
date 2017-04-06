@@ -42,15 +42,9 @@ import org.junit.Assert;
  * that triggered bugs in this phase.
  */
 public class ConditionalEliminationTestBase extends GraalCompilerTest {
-    private final boolean disableSimplification;
-
-    protected ConditionalEliminationTestBase() {
-        this(true);
-    }
-
-    protected ConditionalEliminationTestBase(boolean disableSimplification) {
-        this.disableSimplification = disableSimplification;
-    }
+    protected static int sink0;
+    protected static int sink1;
+    protected static int sink2;
 
     protected void testConditionalElimination(String snippet, String referenceSnippet) {
         testConditionalElimination(snippet, referenceSnippet, false, false);
@@ -59,15 +53,9 @@ public class ConditionalEliminationTestBase extends GraalCompilerTest {
     @SuppressWarnings("try")
     protected void testConditionalElimination(String snippet, String referenceSnippet, boolean applyConditionalEliminationOnReference, boolean applyLowering) {
         StructuredGraph graph = parseEager(snippet, AllowAssumptions.YES);
-        Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "Graph");
+        Debug.dump(Debug.BASIC_LEVEL, graph, "Graph");
         PhaseContext context = new PhaseContext(getProviders());
         CanonicalizerPhase canonicalizer1 = new CanonicalizerPhase();
-        if (disableSimplification) {
-            /**
-             * Some tests break if simplification is done so only do it when needed.
-             */
-            canonicalizer1.disableSimplification();
-        }
         CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
         try (Debug.Scope scope = Debug.scope("ConditionalEliminationTest", graph)) {
             prepareGraph(graph, canonicalizer1, context, applyLowering);

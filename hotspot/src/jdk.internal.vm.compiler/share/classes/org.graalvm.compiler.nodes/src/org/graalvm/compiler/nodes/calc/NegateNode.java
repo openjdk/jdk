@@ -49,20 +49,37 @@ public final class NegateNode extends UnaryArithmeticNode<Neg> implements Narrow
         super(TYPE, ArithmeticOpTable::getNeg, value);
     }
 
+    public static ValueNode create(ValueNode value) {
+        ValueNode synonym = findSynonym(value);
+        if (synonym != null) {
+            return synonym;
+        }
+        return new NegateNode(value);
+    }
+
     @Override
     public ValueNode canonical(CanonicalizerTool tool, ValueNode forValue) {
-        ValueNode ret = super.canonical(tool, forValue);
-        if (ret != this) {
-            return ret;
+        ValueNode synonym = findSynonym(forValue, getOp(forValue));
+        if (synonym != null) {
+            return synonym;
+        }
+        return this;
+    }
+
+    protected static ValueNode findSynonym(ValueNode forValue) {
+        ArithmeticOpTable.UnaryOp<Neg> negOp = ArithmeticOpTable.forStamp(forValue.stamp()).getNeg();
+        ValueNode synonym = UnaryArithmeticNode.findSynonym(forValue, negOp);
+        if (synonym != null) {
+            return synonym;
         }
         if (forValue instanceof NegateNode) {
             return ((NegateNode) forValue).getValue();
         }
         if (forValue instanceof SubNode && !(forValue.stamp() instanceof FloatStamp)) {
             SubNode sub = (SubNode) forValue;
-            return new SubNode(sub.getY(), sub.getX());
+            return SubNode.create(sub.getY(), sub.getX());
         }
-        return this;
+        return null;
     }
 
     @Override

@@ -27,6 +27,7 @@ import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
 
 import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.core.common.type.PrimitiveStamp;
+import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
@@ -52,8 +53,19 @@ import jdk.vm.ci.meta.ResolvedJavaField;
 public class RawLoadNode extends UnsafeAccessNode implements Lowerable, Virtualizable {
     public static final NodeClass<RawLoadNode> TYPE = NodeClass.create(RawLoadNode.class);
 
+    /**
+     * This constructor exists for node intrinsics that need a stamp based on {@code accessKind}.
+     */
     public RawLoadNode(ValueNode object, ValueNode offset, JavaKind accessKind, LocationIdentity locationIdentity) {
         super(TYPE, StampFactory.forKind(accessKind.getStackKind()), object, offset, accessKind, locationIdentity, false);
+    }
+
+    /**
+     * This constructor exists for node intrinsics that need a stamp based on the return type of the
+     * {@link org.graalvm.compiler.graph.Node.NodeIntrinsic} annotated method.
+     */
+    public RawLoadNode(@InjectedNodeParameter Stamp stamp, ValueNode object, ValueNode offset, LocationIdentity locationIdentity, JavaKind accessKind) {
+        super(TYPE, stamp, object, offset, accessKind, locationIdentity, false);
     }
 
     public RawLoadNode(NodeClass<? extends RawLoadNode> c, ValueNode object, ValueNode offset, JavaKind accessKind, LocationIdentity locationIdentity) {

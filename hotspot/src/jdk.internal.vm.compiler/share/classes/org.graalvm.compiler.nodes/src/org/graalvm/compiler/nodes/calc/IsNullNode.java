@@ -57,8 +57,7 @@ public final class IsNullNode extends UnaryOpLogicNode implements LIRLowerable, 
     }
 
     public static LogicNode create(ValueNode forValue) {
-        LogicNode result = tryCanonicalize(forValue);
-        return result == null ? new IsNullNode(GraphUtil.skipPi(forValue)) : result;
+        return canonicalized(null, forValue);
     }
 
     public static LogicNode tryCanonicalize(ValueNode forValue) {
@@ -84,7 +83,11 @@ public final class IsNullNode extends UnaryOpLogicNode implements LIRLowerable, 
 
     @Override
     public ValueNode canonical(CanonicalizerTool tool, ValueNode forValue) {
+        return canonicalized(this, forValue);
+    }
 
+    private static LogicNode canonicalized(IsNullNode isNullNode, ValueNode forValue) {
+        IsNullNode self = isNullNode;
         LogicNode result = tryCanonicalize(forValue);
         if (result != null) {
             return result;
@@ -101,7 +104,10 @@ public final class IsNullNode extends UnaryOpLogicNode implements LIRLowerable, 
             }
         }
 
-        return this;
+        if (self == null) {
+            self = new IsNullNode(GraphUtil.skipPi(forValue));
+        }
+        return self;
     }
 
     @Override

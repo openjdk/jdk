@@ -135,8 +135,8 @@ public class NewConditionalEliminationPhase extends BasePhase<PhaseContext> {
             }
 
             AbstractBeginNode beginNode = b.getBeginNode();
-            if (beginNode instanceof MergeNode && anchorBlock != b) {
-                MergeNode mergeNode = (MergeNode) beginNode;
+            if (beginNode instanceof AbstractMergeNode && anchorBlock != b) {
+                AbstractMergeNode mergeNode = (AbstractMergeNode) beginNode;
                 for (GuardNode guard : mergeNode.guards().snapshot()) {
                     try (DebugCloseable closeable = guard.withNodeSourcePosition()) {
                         GuardNode newlyCreatedGuard = new GuardNode(guard.getCondition(), anchorBlock.getBeginNode(), guard.getReason(), guard.getAction(), guard.isNegated(), guard.getSpeculation());
@@ -411,7 +411,7 @@ public class NewConditionalEliminationPhase extends BasePhase<PhaseContext> {
                                 allow = true;
                             } else if (integerStamp.asConstant() != null) {
                                 allow = true;
-                            } else if (oldStamp.unrestricted().equals(oldStamp)) {
+                            } else if (oldStamp.isUnrestricted()) {
                                 allow = true;
                             }
                         } else {
@@ -432,8 +432,8 @@ public class NewConditionalEliminationPhase extends BasePhase<PhaseContext> {
                                     if (input == null) {
                                         input = valueAt;
                                     }
-                                    PiNode piNode = graph.unique(new PiNode(input, curBestStamp, (ValueNode) infoElement.guard));
-                                    valueAt = piNode;
+                                    ValueNode valueNode = graph.maybeAddOrUnique(PiNode.create(input, curBestStamp, (ValueNode) infoElement.guard));
+                                    valueAt = valueNode;
                                 }
                                 newPhi.addInput(valueAt);
                             }
@@ -948,6 +948,10 @@ public class NewConditionalEliminationPhase extends BasePhase<PhaseContext> {
 
         @Override
         public Node apply(Node node, Node curNode) {
+            if (!ok) {
+                // Abort the recursion
+                return curNode;
+            }
             if (!(curNode instanceof ValueNode)) {
                 ok = false;
                 return curNode;

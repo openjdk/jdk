@@ -145,7 +145,7 @@ public class AOTCompilationTask implements Runnable, Comparable<Object> {
             aotBackend.printCompiledMethod((HotSpotResolvedJavaMethod) method, compResult);
         }
 
-        result = new CompiledMethodInfo(compResult, new AOTHotSpotResolvedJavaMethod((HotSpotResolvedJavaMethod) method));
+        result = new CompiledMethodInfo(compResult, new AOTHotSpotResolvedJavaMethod((HotSpotResolvedJavaMethod) method, aotBackend.getBackend()));
     }
 
     private String getMethodDescription() {

@@ -158,7 +158,7 @@ interface GraphPrinter extends Closeable {
         } else if (isToStringTrusted(c)) {
             return value.toString();
         }
-        return MetaUtil.getSimpleName(c, true) + "@" + System.identityHashCode(value);
+        return MetaUtil.getSimpleName(c, true) + "@" + Integer.toHexString(System.identityHashCode(value));
 
     }
 

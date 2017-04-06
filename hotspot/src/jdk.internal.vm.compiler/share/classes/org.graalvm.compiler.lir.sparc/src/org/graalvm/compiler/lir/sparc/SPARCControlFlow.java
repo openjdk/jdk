@@ -22,6 +22,11 @@
  */
 package org.graalvm.compiler.lir.sparc;
 
+import static jdk.vm.ci.code.ValueUtil.asRegister;
+import static jdk.vm.ci.sparc.SPARC.CPU;
+import static jdk.vm.ci.sparc.SPARC.g0;
+import static jdk.vm.ci.sparc.SPARCKind.WORD;
+import static jdk.vm.ci.sparc.SPARCKind.XWORD;
 import static org.graalvm.compiler.asm.sparc.SPARCAssembler.BPCC;
 import static org.graalvm.compiler.asm.sparc.SPARCAssembler.CBCOND;
 import static org.graalvm.compiler.asm.sparc.SPARCAssembler.FBPCC;
@@ -68,19 +73,14 @@ import static org.graalvm.compiler.lir.LIRValueUtil.isConstantValue;
 import static org.graalvm.compiler.lir.LIRValueUtil.isJavaConstant;
 import static org.graalvm.compiler.lir.sparc.SPARCMove.const2reg;
 import static org.graalvm.compiler.lir.sparc.SPARCOP3Op.emitOp3;
-import static jdk.vm.ci.code.ValueUtil.asRegister;
-import static jdk.vm.ci.sparc.SPARC.CPU;
-import static jdk.vm.ci.sparc.SPARC.g0;
-import static jdk.vm.ci.sparc.SPARCKind.WORD;
-import static jdk.vm.ci.sparc.SPARCKind.XWORD;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+
 import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.asm.Assembler.LabelHint;
 import org.graalvm.compiler.asm.Label;
-import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.asm.sparc.SPARCAssembler;
 import org.graalvm.compiler.asm.sparc.SPARCAssembler.BranchPredict;
 import org.graalvm.compiler.asm.sparc.SPARCAssembler.CC;
@@ -98,8 +98,8 @@ import org.graalvm.compiler.lir.SwitchStrategy;
 import org.graalvm.compiler.lir.SwitchStrategy.BaseSwitchClosure;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
-import org.graalvm.util.Equivalence;
 import org.graalvm.util.EconomicMap;
+import org.graalvm.util.Equivalence;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.meta.AllocatableValue;
@@ -159,6 +159,7 @@ public class SPARCControlFlow {
         public CompareBranchOp(AllocatableValue x, Value y, Condition condition, LabelRef trueDestination, LabelRef falseDestination, SPARCKind kind, boolean unorderedIsTrue,
                         double trueDestinationProbability) {
             super(TYPE, SIZE);
+            assert x.getPlatformKind() == y.getPlatformKind() : String.format("PlatformKind of x must match PlatformKind of y. %s!=%s", x.getPlatformKind(), y.getPlatformKind());
             this.x = x;
             this.y = y;
             this.trueDestination = trueDestination;
@@ -250,6 +251,7 @@ public class SPARCControlFlow {
          * @return true if the branch could be emitted
          */
         private boolean emitShortCompareBranch(CompilationResultBuilder crb, SPARCMacroAssembler masm) {
+            boolean isLong = kind == SPARCKind.XWORD;
             ConditionFlag actualConditionFlag = conditionFlag;
             Label actualTrueTarget = trueDestination.label();
             Label actualFalseTarget = falseDestination.label();
@@ -274,7 +276,7 @@ public class SPARCControlFlow {
                     actualFalseTarget = tmpTarget;
                 }
             }
-            emitCBCond(masm, x, y, actualTrueTarget, actualConditionFlag);
+            emitCBCond(masm, x, y, actualTrueTarget, actualConditionFlag, isLong);
             if (needJump) {
                 masm.jmp(actualFalseTarget);
                 masm.nop();
@@ -282,16 +284,24 @@ public class SPARCControlFlow {
             return true;
         }
 
-        private void emitCBCond(SPARCMacroAssembler masm, Value actualX, Value actualY, Label actualTrueTarget, ConditionFlag cFlag) {
+        private static void emitCBCond(SPARCMacroAssembler masm, Value actualX, Value actualY, Label actualTrueTarget, ConditionFlag cFlag, boolean isLong) {
             PlatformKind xKind = actualX.getPlatformKind();
-            boolean isLong = kind == SPARCKind.XWORD;
+            Register rs1 = asRegister(actualX, xKind);
             if (isJavaConstant(actualY)) {
                 JavaConstant c = asJavaConstant(actualY);
                 long constantY = c.isNull() ? 0 : c.asLong();
-                assert NumUtil.isInt(constantY);
-                CBCOND.emit(masm, cFlag, isLong, asRegister(actualX, xKind), (int) constantY, actualTrueTarget);
+                try (ScratchRegister scratch = masm.getScratchRegister()) {
+                    if (SPARCMacroAssembler.isSimm5(constantY)) {
+                        CBCOND.emit(masm, cFlag, isLong, rs1, (int) constantY, actualTrueTarget);
+                    } else { // !simm5
+                        Register rs2 = scratch.getRegister();
+                        masm.setx(constantY, rs2, false);
+                        CBCOND.emit(masm, cFlag, isLong, rs1, rs2, actualTrueTarget);
+                    }
+                }
             } else {
-                CBCOND.emit(masm, cFlag, isLong, asRegister(actualX, xKind), asRegister(actualY, xKind), actualTrueTarget);
+                Register rs2 = asRegister(actualY, xKind);
+                CBCOND.emit(masm, cFlag, isLong, rs1, rs2, actualTrueTarget);
             }
         }
 

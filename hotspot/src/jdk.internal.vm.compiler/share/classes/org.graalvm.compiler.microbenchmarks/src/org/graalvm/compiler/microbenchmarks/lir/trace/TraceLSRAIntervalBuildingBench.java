@@ -28,6 +28,7 @@ import org.graalvm.compiler.core.common.alloc.TraceBuilderResult;
 import org.graalvm.compiler.lir.alloc.trace.GlobalLivenessAnalysisPhase;
 import org.graalvm.compiler.lir.alloc.trace.GlobalLivenessInfo;
 import org.graalvm.compiler.lir.alloc.trace.TraceBuilderPhase;
+import org.graalvm.compiler.lir.alloc.trace.TraceRegisterAllocationPhase;
 import org.graalvm.compiler.lir.alloc.trace.lsra.TraceLinearScanLifetimeAnalysisPhase;
 import org.graalvm.compiler.lir.alloc.trace.lsra.TraceLinearScanLifetimeAnalysisPhase.Analyser;
 import org.graalvm.compiler.lir.alloc.trace.lsra.TraceLinearScanPhase;
@@ -40,6 +41,7 @@ import org.graalvm.compiler.lir.phases.LIRPhaseSuite;
 import org.graalvm.compiler.lir.phases.LIRSuites;
 import org.graalvm.compiler.microbenchmarks.graal.GraalBenchmark;
 import org.graalvm.compiler.microbenchmarks.lir.GraalCompilerState;
+import org.graalvm.compiler.options.OptionValues;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Param;
@@ -88,6 +90,11 @@ public class TraceLSRAIntervalBuildingBench extends GraalBenchmark {
             allocationStage.appendPhase(TRACE_BUILDER_PHASE);
             allocationStage.appendPhase(LIVENESS_ANALYSIS_PHASE);
             return new LIRSuites(ls.getPreAllocationOptimizationStage(), allocationStage, ls.getPostAllocationOptimizationStage());
+        }
+
+        @Override
+        protected OptionValues getGraphOptions() {
+            return new OptionValues(super.getGraphOptions(), TraceRegisterAllocationPhase.Options.TraceRAuseInterTraceHints, false);
         }
 
         @Setup(Level.Trial)

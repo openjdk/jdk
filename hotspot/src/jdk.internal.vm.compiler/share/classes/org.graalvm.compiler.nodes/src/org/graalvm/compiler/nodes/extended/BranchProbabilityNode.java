@@ -97,23 +97,22 @@ public final class BranchProbabilityNode extends FloatingNode implements Simplif
             }
             boolean usageFound = false;
             for (IntegerEqualsNode node : this.usages().filter(IntegerEqualsNode.class)) {
-                if (node.condition() == Condition.EQ) {
-                    ValueNode other = node.getX();
-                    if (node.getX() == this) {
-                        other = node.getY();
+                assert node.condition() == Condition.EQ;
+                ValueNode other = node.getX();
+                if (node.getX() == this) {
+                    other = node.getY();
+                }
+                if (other.isConstant()) {
+                    double probabilityToSet = probabilityValue;
+                    if (other.asJavaConstant().asInt() == 0) {
+                        probabilityToSet = 1.0 - probabilityToSet;
                     }
-                    if (other.isConstant()) {
-                        double probabilityToSet = probabilityValue;
-                        if (other.asJavaConstant().asInt() == 0) {
-                            probabilityToSet = 1.0 - probabilityToSet;
-                        }
-                        for (IfNode ifNodeUsages : node.usages().filter(IfNode.class)) {
-                            usageFound = true;
-                            ifNodeUsages.setTrueSuccessorProbability(probabilityToSet);
-                        }
-                        if (!usageFound) {
-                            usageFound = node.usages().filter(NodePredicates.isA(FixedGuardNode.class).or(ConditionalNode.class)).isNotEmpty();
-                        }
+                    for (IfNode ifNodeUsages : node.usages().filter(IfNode.class)) {
+                        usageFound = true;
+                        ifNodeUsages.setTrueSuccessorProbability(probabilityToSet);
+                    }
+                    if (!usageFound) {
+                        usageFound = node.usages().filter(NodePredicates.isA(FixedGuardNode.class).or(ConditionalNode.class)).isNotEmpty();
                     }
                 }
             }

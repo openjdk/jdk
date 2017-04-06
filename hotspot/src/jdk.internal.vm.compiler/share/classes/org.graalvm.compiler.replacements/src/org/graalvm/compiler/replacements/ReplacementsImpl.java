@@ -322,7 +322,7 @@ public class ReplacementsImpl implements Replacements, InlineInvokePlugin {
 
                 finalizeGraph(graph);
 
-                Debug.dump(Debug.INFO_LOG_LEVEL, graph, "%s: Final", method.getName());
+                Debug.dump(Debug.INFO_LEVEL, graph, "%s: Final", method.getName());
 
                 return graph;
             } catch (Throwable e) {

@@ -91,12 +91,12 @@ public class GraphChangeMonitoringPhase<C extends PhaseContext> extends PhaseSui
             listener = new HashSetNodeEventListener();
             try (NodeEventScope s = graph.trackNodeEvents(listener)) {
                 try (Scope s2 = Debug.scope("WithGraphChangeMonitoring")) {
-                    if (Debug.isDumpEnabled(Debug.BASIC_LOG_LEVEL)) {
-                        Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "*** Before phase %s", getName());
+                    if (Debug.isDumpEnabled(Debug.DETAILED_LEVEL)) {
+                        Debug.dump(Debug.DETAILED_LEVEL, graph, "*** Before phase %s", getName());
                     }
                     super.run(graph, context);
-                    if (Debug.isDumpEnabled(Debug.BASIC_LOG_LEVEL)) {
-                        Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "*** After phase %s %s", getName(), filteredNodes);
+                    if (Debug.isDumpEnabled(Debug.DETAILED_LEVEL)) {
+                        Debug.dump(Debug.DETAILED_LEVEL, graph, "*** After phase %s %s", getName(), filteredNodes);
                     }
                     Debug.log("*** %s %s %s\n", message, graph, filteredNodes);
                 }

@@ -1073,7 +1073,7 @@ public final class TraceLinearScanPhase extends TraceAllocationPhase<TraceAlloca
                         }
                     }
                 }
-                Debug.dump(Debug.INFO_LOG_LEVEL, this, label);
+                Debug.dump(Debug.INFO_LEVEL, this, label);
             }
         }
 

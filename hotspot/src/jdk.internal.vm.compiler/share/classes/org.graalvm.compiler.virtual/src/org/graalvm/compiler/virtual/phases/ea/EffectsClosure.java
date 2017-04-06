@@ -194,7 +194,7 @@ public abstract class EffectsClosure<BlockT extends EffectsBlockState<BlockT>> e
             Debug.log(" ==== cfg kill effects");
             effects.apply(graph, obsoleteNodes, true);
         }
-        Debug.dump(Debug.VERBOSE_LOG_LEVEL, graph, "After applying effects");
+        Debug.dump(Debug.DETAILED_LEVEL, graph, "After applying effects");
         assert VirtualUtil.assertNonReachable(graph, obsoleteNodes);
         for (Node node : obsoleteNodes) {
             if (node.isAlive() && node.hasNoUsages()) {

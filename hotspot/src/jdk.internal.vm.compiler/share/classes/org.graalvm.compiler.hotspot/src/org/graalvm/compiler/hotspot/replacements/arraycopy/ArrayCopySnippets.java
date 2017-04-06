@@ -63,6 +63,7 @@ import org.graalvm.compiler.nodes.extended.RawStoreNode;
 import org.graalvm.compiler.nodes.java.ArrayLengthNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.nodes.type.StampTool;
+import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.replacements.SnippetCounter;
 import org.graalvm.compiler.replacements.SnippetCounter.Group;
@@ -628,7 +629,7 @@ public class ArrayCopySnippets implements Snippets {
         private void instantiate(Arguments args, BasicArrayCopyNode arraycopy) {
             StructuredGraph graph = arraycopy.graph();
             SnippetTemplate template = template(args);
-            UnmodifiableEconomicMap<Node, Node> replacements = template.instantiate(providers.getMetaAccess(), arraycopy, SnippetTemplate.DEFAULT_REPLACER, args);
+            UnmodifiableEconomicMap<Node, Node> replacements = template.instantiate(providers.getMetaAccess(), arraycopy, SnippetTemplate.DEFAULT_REPLACER, args, false);
             for (Node originalNode : replacements.getKeys()) {
                 if (originalNode instanceof Invoke) {
                     Invoke invoke = (Invoke) replacements.get(originalNode);
@@ -643,17 +644,18 @@ public class ArrayCopySnippets implements Snippets {
                     if (arraycopy.stateDuring() != null) {
                         newInvoke.setStateDuring(arraycopy.stateDuring());
                     } else {
-                        assert arraycopy.stateAfter() != null;
+                        assert arraycopy.stateAfter() != null : arraycopy;
                         newInvoke.setStateAfter(arraycopy.stateAfter());
                     }
                     graph.replaceFixedWithFixed((InvokeNode) invoke.asNode(), newInvoke);
                 } else if (originalNode instanceof ArrayCopySlowPathNode) {
                     ArrayCopySlowPathNode slowPath = (ArrayCopySlowPathNode) replacements.get(originalNode);
-                    assert arraycopy.stateAfter() != null;
-                    slowPath.setStateAfter(arraycopy.stateAfter());
+                    assert arraycopy.stateAfter() != null : arraycopy;
+                    assert slowPath.stateAfter() == arraycopy.stateAfter();
                     slowPath.setBci(arraycopy.getBci());
                 }
             }
+            GraphUtil.killCFG(arraycopy);
         }
     }
 }

@@ -34,13 +34,6 @@ import org.junit.Test;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 public class ConditionalEliminationTest13 extends ConditionalEliminationTestBase {
-    public ConditionalEliminationTest13() {
-        super(false);
-    }
-
-    private static int sink0;
-    private static int sink1;
-    private static int sink2;
 
     @Override
     protected InlineInvokePlugin.InlineInfo bytecodeParserShouldInlineInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
@@ -317,7 +310,7 @@ public class ConditionalEliminationTest13 extends ConditionalEliminationTestBase
         super.prepareGraph(graph, canonicalizer, context, applyLowering);
         graph.clearAllStateAfter();
         graph.setGuardsStage(StructuredGraph.GuardsStage.AFTER_FSA);
-        Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "After preparation");
+        Debug.dump(Debug.BASIC_LEVEL, graph, "After preparation");
         canonicalizer.apply(graph, context);
     }
 }

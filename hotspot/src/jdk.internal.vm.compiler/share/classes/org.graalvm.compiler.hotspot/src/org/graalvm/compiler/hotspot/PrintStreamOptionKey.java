@@ -45,7 +45,7 @@ public class PrintStreamOptionKey extends OptionKey<String> {
     }
 
     /**
-     * Replace any instance of %p with a an identifying name. Try to get it from the RuntimeMXBean
+     * Replace any instance of %p with an identifying name. Try to get it from the RuntimeMXBean
      * name.
      *
      * @return the name of the file to log to
