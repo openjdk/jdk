@@ -1,14 +1,39 @@
-/** hard coded linenumbers in this test - DO NOT CHANGE
- *  @test/nodynamiccopyright/
- *  @bug 4359312 4450091
- *  @summary Test PTR 1421 JVM exceptions making a call to LocalVariable.type().name()
+/*
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- *  @author Tim Bell (based on the PTR 1421 report submitted by IBM).
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
  *
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g GetLocalVariables.java
- *  @run driver GetLocalVariables
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
+
+//    THIS TEST IS LINE NUMBER SENSITIVE
+
+/**
+ * @test
+ * @bug 4359312 4450091
+ * @summary Test PTR 1421 JVM exceptions making a call to LocalVariable.type().name()
+ * @author Tim Bell (based on the PTR 1421 report submitted by IBM).
+ *
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g GetLocalVariables.java
+ * @run driver GetLocalVariables
+ */
+
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;
 import com.sun.jdi.request.*;
@@ -194,7 +219,7 @@ class GetLocalVariablesTarg {
                                      l_long, l_float, l_double, l_iarray,
                                      l_marray, l_string);
 
-        e1.test_1();            // <-- this is line 197
+        e1.test_1();            // RESUME_TO_LINE
         e3.test_1();
         e4.test_1();
         e5.test_1();
@@ -231,6 +256,7 @@ class GetLocalVariablesTarg {
  /********** test program **********/
 
 public class GetLocalVariables extends TestScaffold {
+    static final int RESUME_TO_LINE = 222;
     ReferenceType targetClass;
     ThreadReference mainThread;
 
@@ -257,7 +283,7 @@ public class GetLocalVariables extends TestScaffold {
         mainThread = bpe.thread();
         EventRequestManager erm = vm().eventRequestManager();
 
-        bpe = resumeTo("GetLocalVariablesTarg", 197);
+        bpe = resumeTo("GetLocalVariablesTarg", RESUME_TO_LINE);
         /*
          * We've arrived.  Look around at some variables.
          */

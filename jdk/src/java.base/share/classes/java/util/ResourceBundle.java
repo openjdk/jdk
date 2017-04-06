@@ -1836,7 +1836,7 @@ public abstract class ResourceBundle {
                         cacheKey.setFormat(format);
                         break;
                     }
-                } catch (Exception e) {
+                } catch (LinkageError|Exception e) {
                     cacheKey.setCause(e);
                 }
             }
