@@ -649,6 +649,8 @@ class MacroAssembler: public Assembler {
   void card_write_barrier_post(Register Rstore_addr, Register Rnew_val, Register Rtmp);
   void card_table_write(jbyte* byte_map_base, Register Rtmp, Register Robj);
 
+  void resolve_jobject(Register value, Register tmp1, Register tmp2, bool needs_frame);
+
 #if INCLUDE_ALL_GCS
   // General G1 pre-barrier generator.
   void g1_write_barrier_pre(Register Robj, RegisterOrConstant offset, Register Rpre_val,

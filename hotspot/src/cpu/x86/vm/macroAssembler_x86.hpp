@@ -297,6 +297,9 @@ class MacroAssembler: public Assembler {
   void store_check(Register obj);                // store check for obj - register is destroyed afterwards
   void store_check(Register obj, Address dst);   // same as above, dst is exact store location (reg. is destroyed)
 
+  void resolve_jobject(Register value, Register thread, Register tmp);
+  void clear_jweak_tag(Register possibly_jweak);
+
 #if INCLUDE_ALL_GCS
 
   void g1_write_barrier_pre(Register obj,
