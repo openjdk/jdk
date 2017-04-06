@@ -927,7 +927,7 @@ class Thread implements Runnable {
      *       for example), the <code>interrupt</code> method should be used to
      *       interrupt the wait.
      *       For more information, see
-     *       <a href="{@docRoot}/../technotes/guides/concurrency/threadPrimitiveDeprecation.html">Why
+     *       <a href="{@docRoot}/java/lang/doc-files/threadPrimitiveDeprecation.html">Why
      *       are Thread.stop, Thread.suspend and Thread.resume Deprecated?</a>.
      */
     @Deprecated(since="1.2")
@@ -960,7 +960,7 @@ class Thread implements Runnable {
      *        could be used to generate exceptions that the target thread was
      *        not prepared to handle.
      *        For more information, see
-     *        <a href="{@docRoot}/../technotes/guides/concurrency/threadPrimitiveDeprecation.html">Why
+     *        <a href="{@docRoot}/java/lang/doc-files/threadPrimitiveDeprecation.html">Why
      *        are Thread.stop, Thread.suspend and Thread.resume Deprecated?</a>.
      *        This method is subject to removal in a future version of Java SE.
      */
@@ -1082,7 +1082,7 @@ class Thread implements Runnable {
      *     If another thread ever attempted to lock this resource, deadlock
      *     would result. Such deadlocks typically manifest themselves as
      *     "frozen" processes. For more information, see
-     *     <a href="{@docRoot}/../technotes/guides/concurrency/threadPrimitiveDeprecation.html">
+     *     <a href="{@docRoot}/java/lang/doc-files/threadPrimitiveDeprecation.html">
      *     Why are Thread.stop, Thread.suspend and Thread.resume Deprecated?</a>.
      *     This method is subject to removal in a future version of Java SE.
      * @throws NoSuchMethodError always
@@ -1122,7 +1122,7 @@ class Thread implements Runnable {
      *   monitor prior to calling <code>resume</code>, deadlock results.  Such
      *   deadlocks typically manifest themselves as "frozen" processes.
      *   For more information, see
-     *   <a href="{@docRoot}/../technotes/guides/concurrency/threadPrimitiveDeprecation.html">Why
+     *   <a href="{@docRoot}/java/lang/doc-files/threadPrimitiveDeprecation.html">Why
      *   are Thread.stop, Thread.suspend and Thread.resume Deprecated?</a>.
      */
     @Deprecated(since="1.2")
@@ -1148,7 +1148,7 @@ class Thread implements Runnable {
      * @deprecated This method exists solely for use with {@link #suspend},
      *     which has been deprecated because it is deadlock-prone.
      *     For more information, see
-     *     <a href="{@docRoot}/../technotes/guides/concurrency/threadPrimitiveDeprecation.html">Why
+     *     <a href="{@docRoot}/java/lang/doc-files/threadPrimitiveDeprecation.html">Why
      *     are Thread.stop, Thread.suspend and Thread.resume Deprecated?</a>.
      */
     @Deprecated(since="1.2")
