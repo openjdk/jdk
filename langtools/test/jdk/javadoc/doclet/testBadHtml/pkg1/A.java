@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,22 @@
  * questions.
  */
 
-package pkg;
+package pkg1;
 
-class PrivateParent {
-    /**
-     * Test private constructor.
-     * @param i a test parameter.
-     */
-    private PrivateParent(int i) {
-    }
+/**
+ * The first sentence.
+ * <parameters the word action is crucial here object>
+ * <parameters the word cite is crucial here object>
+ * <parameters the word classid is crucial here object>
+ * <parameters the word codebase is crucial here object>
+ * <parameters the word data is crucial here object>
+ * <parameters the word datasrc is crucial here object>
+ * <parameters the word for is crucial here object>
+ * <parameters the word href is crucial here object>
+ * <parameters the word longdesc is crucial here object>
+ * <parameters the word profile is crucial here object>
+ * <parameters the word src is crucial here object>
+ * <parameters the word usemap is crucial here object>
+ */
 
-    /**
-     * Test to make sure the member summary inherits documentation
-     * properly.
-     */
-    public PrivateParent returnTypeTest() {
-        return this;
-    }
-}
+public class A {}
