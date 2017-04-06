@@ -186,12 +186,12 @@ public class TypeSystemTest extends GraalCompilerTest {
          * tail-duplication gets activated thus resulting in a graph with more nodes than the
          * reference graph.
          */
-        new DominatorConditionalEliminationPhase(false).apply(graph, new PhaseContext(getProviders()));
+        DominatorConditionalEliminationPhase.create(false).apply(graph, new PhaseContext(getProviders()));
         new CanonicalizerPhase().apply(graph, new PhaseContext(getProviders()));
         // a second canonicalizer is needed to process nested MaterializeNodes
         new CanonicalizerPhase().apply(graph, new PhaseContext(getProviders()));
         StructuredGraph referenceGraph = parseEager(referenceSnippet, AllowAssumptions.NO);
-        new DominatorConditionalEliminationPhase(false).apply(referenceGraph, new PhaseContext(getProviders()));
+        DominatorConditionalEliminationPhase.create(false).apply(referenceGraph, new PhaseContext(getProviders()));
         new CanonicalizerPhase().apply(referenceGraph, new PhaseContext(getProviders()));
         new CanonicalizerPhase().apply(referenceGraph, new PhaseContext(getProviders()));
         assertEquals(referenceGraph, graph);
@@ -208,7 +208,7 @@ public class TypeSystemTest extends GraalCompilerTest {
 
     public static void outputGraph(StructuredGraph graph, String message) {
         TTY.println("========================= " + message);
-        SchedulePhase schedulePhase = new SchedulePhase();
+        SchedulePhase schedulePhase = new SchedulePhase(graph.getOptions());
         schedulePhase.apply(graph);
         ScheduleResult schedule = graph.getLastSchedule();
         for (Block block : schedule.getCFG().getBlocks()) {

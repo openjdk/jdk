@@ -285,7 +285,8 @@ double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
   const double sum_ms = _root_region_scan_wait_time_ms +
                         _recorded_young_cset_choice_time_ms +
                         _recorded_non_young_cset_choice_time_ms +
-                        _cur_fast_reclaim_humongous_register_time_ms;
+                        _cur_fast_reclaim_humongous_register_time_ms +
+                        _recorded_clear_claimed_marks_time_ms;
 
   info_time("Pre Evacuate Collection Set", sum_ms);
 
@@ -300,6 +301,9 @@ double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
     trace_count("Humongous Candidate", _cur_fast_reclaim_humongous_candidates);
   }
 
+  if (_recorded_clear_claimed_marks_time_ms > 0.0) {
+    debug_time("Clear Claimed Marks", _recorded_clear_claimed_marks_time_ms);
+  }
   return sum_ms;
 }
 
@@ -344,7 +348,6 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
                         _recorded_merge_pss_time_ms +
                         _cur_strong_code_root_purge_time_ms +
                         _recorded_redirty_logged_cards_time_ms +
-                        _recorded_clear_claimed_marks_time_ms +
                         _recorded_total_free_cset_time_ms +
                         _cur_fast_reclaim_humongous_time_ms +
                         _cur_expand_heap_time_ms +
@@ -384,9 +387,6 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
 #if defined(COMPILER2) || INCLUDE_JVMCI
   debug_time("DerivedPointerTable Update", _cur_derived_pointer_table_update_time_ms);
 #endif
-  if (_recorded_clear_claimed_marks_time_ms > 0.0) {
-    debug_time("Clear Claimed Marks", _recorded_clear_claimed_marks_time_ms);
-  }
 
   debug_time("Free Collection Set", _recorded_total_free_cset_time_ms);
   trace_time("Free Collection Set Serial", _recorded_serial_free_cset_time_ms);

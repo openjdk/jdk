@@ -28,18 +28,20 @@ import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.UnaryOp.Neg;
 import org.graalvm.compiler.core.common.type.FloatStamp;
+import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import org.graalvm.compiler.nodes.spi.StampInverter;
 
 /**
  * The {@code NegateNode} node negates its operand.
  */
 @NodeInfo(cycles = CYCLES_2, size = SIZE_1)
-public final class NegateNode extends UnaryArithmeticNode<Neg> implements NarrowableArithmeticNode {
+public final class NegateNode extends UnaryArithmeticNode<Neg> implements NarrowableArithmeticNode, StampInverter {
 
     public static final NodeClass<NegateNode> TYPE = NodeClass.create(NegateNode.class);
 
@@ -66,5 +68,10 @@ public final class NegateNode extends UnaryArithmeticNode<Neg> implements Narrow
     @Override
     public void generate(NodeLIRBuilderTool nodeValueMap, ArithmeticLIRGeneratorTool gen) {
         nodeValueMap.setResult(this, gen.emitNegate(nodeValueMap.operand(getValue())));
+    }
+
+    @Override
+    public Stamp invertStamp(Stamp outStamp) {
+        return getArithmeticOp().foldStamp(outStamp);
     }
 }

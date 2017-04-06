@@ -22,11 +22,6 @@
  */
 package org.graalvm.compiler.core.test;
 
-import java.lang.reflect.Field;
-
-import org.junit.Assert;
-import org.junit.Test;
-
 import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
@@ -34,26 +29,18 @@ import org.graalvm.compiler.nodes.extended.UnsafeAccessNode;
 import org.graalvm.compiler.nodes.memory.ReadNode;
 import org.graalvm.compiler.nodes.memory.WriteNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
 import org.graalvm.compiler.virtual.phases.ea.EarlyReadEliminationPhase;
 import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
+import org.junit.Assert;
+import org.junit.Test;
 
 import sun.misc.Unsafe;
 
 public class UnsafeReadEliminationTest extends GraalCompilerTest {
-
-    public static final Unsafe UNSAFE;
-    static {
-        try {
-            Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
-            theUnsafe.setAccessible(true);
-            UNSAFE = (Unsafe) theUnsafe.get(Unsafe.class);
-        } catch (Exception e) {
-            throw new RuntimeException("Exception while trying to get Unsafe", e);
-        }
-    }
 
     public static long[] Memory = new long[]{1, 2};
     public static double SideEffectD;
@@ -129,15 +116,16 @@ public class UnsafeReadEliminationTest extends GraalCompilerTest {
     }
 
     public void testPartialEscapeReadElimination(StructuredGraph graph, int reads, int writes) {
+        OptionValues options = graph.getOptions();
         PhaseContext context = getDefaultHighTierContext();
         CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
         canonicalizer.apply(graph, context);
-        new PartialEscapePhase(true, true, canonicalizer, null).apply(graph, context);
+        new PartialEscapePhase(true, true, canonicalizer, null, options).apply(graph, context);
         Assert.assertEquals(3, graph.getNodes().filter(UnsafeAccessNode.class).count());
         // after lowering the same applies for reads and writes
         new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, context);
         canonicalizer.apply(graph, context);
-        new PartialEscapePhase(true, true, canonicalizer, null).apply(graph, context);
+        new PartialEscapePhase(true, true, canonicalizer, null, options).apply(graph, context);
         Assert.assertEquals(reads, graph.getNodes().filter(ReadNode.class).count());
         Assert.assertEquals(writes, graph.getNodes().filter(WriteNode.class).count());
     }

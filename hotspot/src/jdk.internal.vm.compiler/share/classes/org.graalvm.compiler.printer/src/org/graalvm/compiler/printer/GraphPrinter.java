@@ -28,15 +28,12 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
-
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.core.common.util.ModuleAPI;
 import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.nodes.ConstantNode;
-
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MetaUtil;
@@ -60,6 +57,8 @@ interface GraphPrinter extends Closeable {
 
     SnippetReflectionProvider getSnippetReflectionProvider();
 
+    void setSnippetReflectionProvider(SnippetReflectionProvider snippetReflection);
+
     /**
      * Ends the current group.
      */
@@ -82,7 +81,7 @@ interface GraphPrinter extends Closeable {
     /**
      * Classes whose {@link #toString()} method does not run any untrusted code.
      */
-    Set<Class<?>> TRUSTED_CLASSES = new HashSet<>(Arrays.asList(
+    List<Class<?>> TRUSTED_CLASSES = Arrays.asList(
                     String.class,
                     Class.class,
                     Boolean.class,
@@ -92,7 +91,7 @@ interface GraphPrinter extends Closeable {
                     Integer.class,
                     Float.class,
                     Long.class,
-                    Double.class));
+                    Double.class);
     int MAX_CONSTANT_TO_STRING_LENGTH = 50;
 
     /**

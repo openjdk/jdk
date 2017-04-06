@@ -35,6 +35,6 @@ import java.io.IOException;
  */
 public class TestGCBasherWithCMS {
     public static void main(String[] args) throws IOException {
-        TestGCBasher.run(args);
+        TestGCBasher.main(args);
     }
 }

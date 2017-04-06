@@ -37,7 +37,6 @@ SRC_DIR := $(HOTSPOT_TOPDIR)/src/$(MODULE)/share/classes
 
 PROC_SRC_SUBDIRS := \
     org.graalvm.compiler.code \
-    org.graalvm.compiler.common \
     org.graalvm.compiler.core \
     org.graalvm.compiler.core.aarch64 \
     org.graalvm.compiler.core.amd64 \
@@ -81,6 +80,7 @@ PROCESSOR_JARS := \
 PROCESSOR_PATH := $(call PathList, $(PROCESSOR_JARS))
 
 ADD_EXPORTS := \
+    --add-modules jdk.internal.vm.ci \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.aarch64=ALL-UNNAMED \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.amd64=ALL-UNNAMED \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.code=ALL-UNNAMED \

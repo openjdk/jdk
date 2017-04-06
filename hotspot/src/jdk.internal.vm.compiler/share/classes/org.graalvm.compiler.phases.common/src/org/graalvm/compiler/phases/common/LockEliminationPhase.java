@@ -24,6 +24,7 @@ package org.graalvm.compiler.phases.common;
 
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.extended.OSRMonitorEnterNode;
 import org.graalvm.compiler.nodes.java.AccessMonitorNode;
 import org.graalvm.compiler.nodes.java.MonitorEnterNode;
 import org.graalvm.compiler.nodes.java.MonitorExitNode;
@@ -37,7 +38,10 @@ public class LockEliminationPhase extends Phase {
     protected void run(StructuredGraph graph) {
         for (MonitorExitNode node : graph.getNodes(MonitorExitNode.TYPE)) {
             FixedNode next = node.next();
-            if (next instanceof MonitorEnterNode || next instanceof RawMonitorEnterNode) {
+            if ((next instanceof MonitorEnterNode || next instanceof RawMonitorEnterNode)) {
+                // should never happen, osr monitor enters are always direct successors of the graph
+                // start
+                assert !(next instanceof OSRMonitorEnterNode);
                 AccessMonitorNode monitorEnterNode = (AccessMonitorNode) next;
                 if (GraphUtil.unproxify(monitorEnterNode.object()) == GraphUtil.unproxify(node.object())) {
                     GraphUtil.removeFixedWithUnusedInputs(monitorEnterNode);

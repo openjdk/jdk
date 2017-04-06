@@ -65,6 +65,14 @@ public final class AMD64AddressValue extends CompositeValue {
         assert scale != null;
     }
 
+    public AllocatableValue getBase() {
+        return base;
+    }
+
+    public AllocatableValue getIndex() {
+        return index;
+    }
+
     @Override
     public CompositeValue forEachComponent(LIRInstruction inst, OperandMode mode, InstructionValueProcedure proc) {
         AllocatableValue newBase = (AllocatableValue) proc.doValue(inst, base, mode, flags);
@@ -79,6 +87,10 @@ public final class AMD64AddressValue extends CompositeValue {
     protected void visitEachComponent(LIRInstruction inst, OperandMode mode, InstructionValueConsumer proc) {
         proc.visitValue(inst, base, mode, flags);
         proc.visitValue(inst, index, mode, flags);
+    }
+
+    public AMD64AddressValue withKind(ValueKind<?> newKind) {
+        return new AMD64AddressValue(newKind, base, index, scale, displacement);
     }
 
     private static Register toRegister(AllocatableValue value) {

@@ -26,6 +26,7 @@ import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.DebugCounter;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.Position;
+import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.Verbosity;
 
 /**
@@ -252,7 +253,7 @@ public class MatchPattern {
         }
 
         if (singleUser && !atRoot) {
-            if (node.getUsageCount() > 1) {
+            if (!isSingleValueUser(node)) {
                 return Result.tooManyUsers(node, statement.getPattern());
             }
         }
@@ -265,6 +266,31 @@ public class MatchPattern {
         }
 
         return result;
+    }
+
+    public static boolean isSingleValueUser(Node node) {
+        int valueUsage = node.getUsageCount();
+        if (valueUsage == 1) {
+            return true;
+        }
+        if (node.isAllowedUsageType(InputType.Guard)) {
+            // See if the other usages are non-Value usages.
+            valueUsage = 0;
+            for (Node usage : node.usages()) {
+                for (Position input : usage.inputPositions()) {
+                    if (input.getInputType() == InputType.Value && input.get(usage) == node) {
+                        valueUsage++;
+                        if (valueUsage > 1) {
+                            // Too many value users
+                            return false;
+                        }
+                    }
+                }
+            }
+            assert valueUsage == 1;
+            return true;
+        }
+        return false;
     }
 
     /**

@@ -74,7 +74,7 @@ public class NodePropertiesTest extends GraalCompilerTest {
         }
         sideEffect = null;
         // cannot shift
-        return a * x * 3;
+        return a * x * 41;
     }
 
     public static final int ITERATIONS_LOOP_1 = 128;
@@ -298,7 +298,7 @@ public class NodePropertiesTest extends GraalCompilerTest {
         new CanonicalizerPhase().apply(g1, htc);
         GraphCostPhase gc1 = new GraphCostPhase();
         gc1.apply(g1, htc);
-        Assert.assertEquals(120, gc1.finalCycles, 25);
+        Assert.assertEquals(40, gc1.finalCycles, 25);
     }
 
     static class ImprovementSavingCanonicalizer extends CustomCanonicalizer {

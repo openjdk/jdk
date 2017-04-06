@@ -24,7 +24,7 @@ package org.graalvm.compiler.lir;
 
 import static org.graalvm.compiler.lir.LIR.verifyBlocks;
 
-import java.util.List;
+import java.util.ArrayList;
 
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.debug.Debug;
@@ -70,7 +70,7 @@ public final class ControlFlowOptimizer extends PostAllocationOptimizationPhase 
                 return false;
             }
 
-            List<LIRInstruction> instructions = lir.getLIRforBlock(block);
+            ArrayList<LIRInstruction> instructions = lir.getLIRforBlock(block);
 
             assert instructions.size() >= 2 : "block must have label and branch";
             assert instructions.get(0) instanceof StandardOp.LabelOp : "first instruction must always be a label";
@@ -85,7 +85,7 @@ public final class ControlFlowOptimizer extends PostAllocationOptimizationPhase 
         private void alignBlock(AbstractBlockBase<?> block) {
             if (!block.isAligned()) {
                 block.setAlign(true);
-                List<LIRInstruction> instructions = lir.getLIRforBlock(block);
+                ArrayList<LIRInstruction> instructions = lir.getLIRforBlock(block);
                 assert instructions.get(0) instanceof StandardOp.LabelOp : "first instruction must always be a label";
                 StandardOp.LabelOp label = (StandardOp.LabelOp) instructions.get(0);
                 instructions.set(0, new StandardOp.LabelOp(label.getLabel(), true));

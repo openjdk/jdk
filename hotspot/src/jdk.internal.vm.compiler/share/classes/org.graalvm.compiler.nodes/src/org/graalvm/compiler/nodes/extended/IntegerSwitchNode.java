@@ -31,6 +31,8 @@ import java.util.Map;
 import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
 import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.PrimitiveStamp;
+import org.graalvm.compiler.core.common.type.Stamp;
+import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.Simplifiable;
 import org.graalvm.compiler.graph.spi.SimplifierTool;
@@ -38,6 +40,7 @@ import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedGuardNode;
+import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -139,7 +142,7 @@ public final class IntegerSwitchNode extends SwitchNode implements LIRLowerable,
             killOtherSuccessors(tool, successorIndexAtKey(value().asJavaConstant().asInt()));
         } else if (tryOptimizeEnumSwitch(tool)) {
             return;
-        } else if (tryRemoveUnreachableKeys(tool)) {
+        } else if (tryRemoveUnreachableKeys(tool, value().stamp())) {
             return;
         }
     }
@@ -160,11 +163,11 @@ public final class IntegerSwitchNode extends SwitchNode implements LIRLowerable,
      * Remove unreachable keys from the switch based on the stamp of the value, i.e., based on the
      * known range of the switch value.
      */
-    private boolean tryRemoveUnreachableKeys(SimplifierTool tool) {
-        if (!(value().stamp() instanceof IntegerStamp)) {
+    public boolean tryRemoveUnreachableKeys(SimplifierTool tool, Stamp valueStamp) {
+        if (!(valueStamp instanceof IntegerStamp)) {
             return false;
         }
-        IntegerStamp integerStamp = (IntegerStamp) value().stamp();
+        IntegerStamp integerStamp = (IntegerStamp) valueStamp;
         if (integerStamp.isUnrestricted()) {
             return false;
         }
@@ -172,7 +175,7 @@ public final class IntegerSwitchNode extends SwitchNode implements LIRLowerable,
         List<KeyData> newKeyDatas = new ArrayList<>(keys.length);
         ArrayList<AbstractBeginNode> newSuccessors = new ArrayList<>(blockSuccessorCount());
         for (int i = 0; i < keys.length; i++) {
-            if (integerStamp.contains(keys[i])) {
+            if (integerStamp.contains(keys[i]) && keySuccessor(i) != defaultSuccessor()) {
                 newKeyDatas.add(new KeyData(keys[i], keyProbabilities[i], addNewSuccessor(keySuccessor(i), newSuccessors)));
             }
         }
@@ -182,7 +185,9 @@ public final class IntegerSwitchNode extends SwitchNode implements LIRLowerable,
             return false;
 
         } else if (newKeyDatas.size() == 0) {
-            tool.addToWorkList(defaultSuccessor());
+            if (tool != null) {
+                tool.addToWorkList(defaultSuccessor());
+            }
             graph().removeSplitPropagate(this, defaultSuccessor());
             return true;
 
@@ -346,7 +351,9 @@ public final class IntegerSwitchNode extends SwitchNode implements LIRLowerable,
         for (int i = 0; i < blockSuccessorCount(); i++) {
             AbstractBeginNode successor = blockSuccessor(i);
             if (!newSuccessors.contains(successor)) {
-                tool.deleteBranch(successor);
+                FixedNode fixedBranch = successor;
+                fixedBranch.predecessor().replaceFirstSuccessor(fixedBranch, null);
+                GraphUtil.killCFG(fixedBranch, tool);
             }
             setBlockSuccessor(i, null);
         }
@@ -356,5 +363,22 @@ public final class IntegerSwitchNode extends SwitchNode implements LIRLowerable,
         SwitchNode newSwitch = graph().add(new IntegerSwitchNode(newValue, successorsArray, newKeys, newKeyProbabilities, newKeySuccessors));
         ((FixedWithNextNode) predecessor()).setNext(newSwitch);
         GraphUtil.killWithUnusedFloatingInputs(this);
+    }
+
+    @Override
+    public Stamp getValueStampForSuccessor(AbstractBeginNode beginNode) {
+        Stamp result = null;
+        if (beginNode != this.defaultSuccessor()) {
+            for (int i = 0; i < keyCount(); i++) {
+                if (keySuccessor(i) == beginNode) {
+                    if (result == null) {
+                        result = StampFactory.forConstant(keyAt(i));
+                    } else {
+                        result = result.meet(StampFactory.forConstant(keyAt(i)));
+                    }
+                }
+            }
+        }
+        return result;
     }
 }

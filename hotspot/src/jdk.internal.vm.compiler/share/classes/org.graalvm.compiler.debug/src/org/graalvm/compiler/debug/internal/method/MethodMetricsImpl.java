@@ -201,7 +201,7 @@ public class MethodMetricsImpl implements DebugMethodMetrics {
         if (threadCache == null) {
             // this branch will only be executed once for each compiler thread on the first request
             // of a method metric
-            threadCache = new HashMap<>(GraalDebugConfig.Options.MethodFilter.getValue() == null ? 128 : 16);
+            threadCache = new HashMap<>(GraalDebugConfig.Options.MethodFilter.getValue(DebugScope.getConfig().getOptions()) == null ? 128 : 16);
             threadEntries.set(threadCache);
             addThreadCompilationData(threadCache);
         }
@@ -334,7 +334,7 @@ public class MethodMetricsImpl implements DebugMethodMetrics {
             Set<ResolvedJavaMethod> methods = new HashSet<>();
 
             // gather all methods we found
-            threadMaps.stream().forEach(x -> {
+            threadMaps.forEach(x -> {
                 // snapshot the current compilations to only capture all methods compiled until now
                 HashMap<ResolvedJavaMethod, CompilationData> snapShot = new HashMap<>(x);
                 snapShot.keySet().forEach(y -> methods.add(y));

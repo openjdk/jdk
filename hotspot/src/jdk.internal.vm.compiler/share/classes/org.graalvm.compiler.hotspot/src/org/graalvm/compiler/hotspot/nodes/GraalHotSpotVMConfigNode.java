@@ -170,20 +170,20 @@ public class GraalHotSpotVMConfigNode extends FloatingNode implements LIRLowerab
     @Override
     public Node canonical(CanonicalizerTool tool) {
         if (markId == 0) {
-            return ConstantNode.forBoolean(!GeneratePIC.getValue());
+            return ConstantNode.forBoolean(!GeneratePIC.getValue(tool.getOptions()));
         }
-        if (!GeneratePIC.getValue()) {
-            if (markId == cardTableAddressMark(config)) {
+        if (!GeneratePIC.getValue(tool.getOptions())) {
+            if (markId == config.MARKID_CARD_TABLE_ADDRESS) {
                 return ConstantNode.forLong(config.cardtableStartAddress);
-            } else if (markId == heapTopAddressMark(config)) {
+            } else if (markId == config.MARKID_HEAP_TOP_ADDRESS) {
                 return ConstantNode.forLong(config.heapTopAddress);
-            } else if (markId == heapEndAddressMark(config)) {
+            } else if (markId == config.MARKID_HEAP_END_ADDRESS) {
                 return ConstantNode.forLong(config.heapEndAddress);
-            } else if (markId == crcTableAddressMark(config)) {
+            } else if (markId == config.MARKID_CRC_TABLE_ADDRESS) {
                 return ConstantNode.forLong(config.crcTableAddress);
-            } else if (markId == logOfHeapRegionGrainBytesMark(config)) {
+            } else if (markId == config.MARKID_LOG_OF_HEAP_REGION_GRAIN_BYTES) {
                 return ConstantNode.forInt(config.logOfHRGrainBytes);
-            } else if (markId == inlineContiguousAllocationSupportedMark(config)) {
+            } else if (markId == config.MARKID_INLINE_CONTIGUOUS_ALLOCATION_SUPPORTED) {
                 return ConstantNode.forBoolean(config.inlineContiguousAllocationSupported);
             } else {
                 assert false;

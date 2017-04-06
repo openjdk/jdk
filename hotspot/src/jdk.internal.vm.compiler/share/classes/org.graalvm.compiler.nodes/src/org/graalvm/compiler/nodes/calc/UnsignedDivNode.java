@@ -71,10 +71,4 @@ public class UnsignedDivNode extends IntegerDivRemNode implements LIRLowerable {
     public void generate(NodeLIRBuilderTool gen) {
         gen.setResult(this, gen.getLIRGeneratorTool().getArithmetic().emitUDiv(gen.operand(getX()), gen.operand(getY()), gen.state(this)));
     }
-
-    @NodeIntrinsic
-    public static native int unsignedDivide(int a, int b);
-
-    @NodeIntrinsic
-    public static native long unsignedDivide(long a, long b);
 }

@@ -163,9 +163,7 @@ void Rewriter::rewrite_member_reference(address bcp, int offset, bool reverse) {
 // If the constant pool entry for invokespecial is InterfaceMethodref,
 // we need to add a separate cpCache entry for its resolution, because it is
 // different than the resolution for invokeinterface with InterfaceMethodref.
-// These cannot share cpCache entries.  It's unclear if all invokespecial to
-// InterfaceMethodrefs would resolve to the same thing so a new cpCache entry
-// is created for each one.  This was added with lambda.
+// These cannot share cpCache entries.
 void Rewriter::rewrite_invokespecial(address bcp, int offset, bool reverse, bool* invokespecial_error) {
   address p = bcp + offset;
   if (!reverse) {

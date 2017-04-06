@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,11 +50,16 @@ public abstract class IntegerDivRemNode extends FixedBinaryNode implements Lower
 
     private final Op op;
     private final Type type;
+    private final boolean canDeopt;
 
     protected IntegerDivRemNode(NodeClass<? extends IntegerDivRemNode> c, Stamp stamp, Op op, Type type, ValueNode x, ValueNode y) {
         super(c, stamp, x, y);
         this.op = op;
         this.type = type;
+
+        // Assigning canDeopt during constructor, because it must never change during lifetime of
+        // the node.
+        this.canDeopt = ((IntegerStamp) getY().stamp()).contains(0);
     }
 
     public final Op getOp() {
@@ -72,6 +77,6 @@ public abstract class IntegerDivRemNode extends FixedBinaryNode implements Lower
 
     @Override
     public boolean canDeoptimize() {
-        return !(getY().stamp() instanceof IntegerStamp) || ((IntegerStamp) getY().stamp()).contains(0);
+        return canDeopt;
     }
 }

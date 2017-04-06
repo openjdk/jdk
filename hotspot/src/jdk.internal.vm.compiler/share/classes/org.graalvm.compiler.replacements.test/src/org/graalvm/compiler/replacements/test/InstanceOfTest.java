@@ -50,7 +50,7 @@ import jdk.vm.ci.meta.JavaTypeProfile;
 public class InstanceOfTest extends TypeCheckTest {
 
     public InstanceOfTest() {
-        getSuites().getHighTier().findPhase(AbstractInliningPhase.class).remove();
+        createSuites(getInitialOptions()).getHighTier().findPhase(AbstractInliningPhase.class).remove();
     }
 
     @Override

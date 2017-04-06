@@ -34,9 +34,9 @@ import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.hotspot.word.KlassPointer;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.FloatingGuardedNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.ConvertNode;
+import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 
@@ -51,12 +51,12 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  * also used by {@link ClassGetHubNode} to eliminate chains of {@code klass._java_mirror._klass}.
  */
 @NodeInfo(cycles = CYCLES_4, size = SIZE_1)
-public final class HubGetClassNode extends FloatingGuardedNode implements Lowerable, Canonicalizable, ConvertNode {
+public final class HubGetClassNode extends FloatingNode implements Lowerable, Canonicalizable, ConvertNode {
     public static final NodeClass<HubGetClassNode> TYPE = NodeClass.create(HubGetClassNode.class);
     @Input protected ValueNode hub;
 
     public HubGetClassNode(@InjectedNodeParameter MetaAccessProvider metaAccess, ValueNode hub) {
-        super(TYPE, StampFactory.objectNonNull(TypeReference.createWithoutAssumptions(metaAccess.lookupJavaType(Class.class))), null);
+        super(TYPE, StampFactory.objectNonNull(TypeReference.createWithoutAssumptions(metaAccess.lookupJavaType(Class.class))));
         this.hub = hub;
     }
 
@@ -114,11 +114,16 @@ public final class HubGetClassNode extends FloatingGuardedNode implements Lowera
         }
     }
 
+    /**
+     * Any concrete Klass* has a corresponding {@link java.lang.Class}.
+     */
     @Override
     public boolean isLossless() {
-        /*
-         * Any concrete Klass* has a corresponding java.lang.Class
-         */
+        return true;
+    }
+
+    @Override
+    public boolean mayNullCheckSkipConversion() {
         return true;
     }
 }

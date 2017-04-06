@@ -40,14 +40,15 @@ import jdk.tools.jaotc.binformat.macho.JMachORelocObject;
 import jdk.tools.jaotc.binformat.pecoff.JPECoffRelocObject;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
+import org.graalvm.compiler.options.OptionValues;
 
 /**
  * A format-agnostic container class that holds various components of a binary.
  *
  * <p>
  * This class holds information necessary to create platform-specific binary containers such as
- * ELFContainer for Linux and Solaris operating systems or MachOContainer for Mac
- * OS or PEContainer for MS Windows operating systems.
+ * ELFContainer for Linux and Solaris operating systems or MachOContainer for Mac OS or PEContainer
+ * for MS Windows operating systems.
  *
  * <p>
  * Method APIs provided by this class are used to construct and populate platform-independent
@@ -58,6 +59,7 @@ import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
  * Methods to record and access code section contents, symbols and relocations are provided.
  */
 public class BinaryContainer implements SymbolTable {
+    private final OptionValues graalOptions;
 
     private final int codeSegmentSize;
 
@@ -259,8 +261,12 @@ public class BinaryContainer implements SymbolTable {
      * Allocates a {@code BinaryContainer} object whose content will be generated in a file with the
      * prefix {@code prefix}. It also initializes internal code container, symbol table and
      * relocation tables.
+     *
+     * @param graalOptions
      */
-    public BinaryContainer(GraalHotSpotVMConfig graalHotSpotVMConfig, GraphBuilderConfiguration graphBuilderConfig, String jvmVersion) {
+    public BinaryContainer(OptionValues graalOptions, GraalHotSpotVMConfig graalHotSpotVMConfig, GraphBuilderConfiguration graphBuilderConfig, String jvmVersion) {
+        this.graalOptions = graalOptions;
+
         this.codeSegmentSize = graalHotSpotVMConfig.codeSegmentSize;
         this.codeEntryAlignment = graalHotSpotVMConfig.codeEntryAlignment;
 
@@ -305,17 +311,17 @@ public class BinaryContainer implements SymbolTable {
                                    graalHotSpotVMConfig.useCMSGC,
                                    graalHotSpotVMConfig.useTLAB,
                                    graalHotSpotVMConfig.useBiasedLocking,
-                                   TieredAOT.getValue(),
+                                   TieredAOT.getValue(graalOptions),
                                    graalHotSpotVMConfig.enableContended,
                                    graalHotSpotVMConfig.restrictContended,
                                    graphBuilderConfig.omitAssertions()
         };
 
-        int[] intFlags         = { graalHotSpotVMConfig.getOopEncoding().shift,
-                                   graalHotSpotVMConfig.getKlassEncoding().shift,
+        int[] intFlags         = { graalHotSpotVMConfig.getOopEncoding().getShift(),
+                                   graalHotSpotVMConfig.getKlassEncoding().getShift(),
                                    graalHotSpotVMConfig.contendedPaddingWidth,
                                    graalHotSpotVMConfig.fieldsAllocationStyle,
-                                   1 << graalHotSpotVMConfig.getOopEncoding().alignment,
+                                   1 << graalHotSpotVMConfig.logMinObjAlignment(),
                                    graalHotSpotVMConfig.codeSegmentSize,
         };
         // @formatter:on
@@ -511,8 +517,7 @@ public class BinaryContainer implements SymbolTable {
                     JPECoffRelocObject pecoffobj = new JPECoffRelocObject(this, outputFileName, aotVersion);
                     pecoffobj.createPECoffRelocObject(relocationTable, symbolTable.values());
                     break;
-                }
-                else
+                } else
                     throw new InternalError("Unsupported platform: " + osName);
         }
     }

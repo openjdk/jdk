@@ -81,7 +81,6 @@ import static org.graalvm.compiler.core.common.GraalOptions.SupportJsrBytecodes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -93,9 +92,11 @@ import org.graalvm.compiler.bytecode.BytecodeStream;
 import org.graalvm.compiler.bytecode.BytecodeSwitch;
 import org.graalvm.compiler.bytecode.BytecodeTableSwitch;
 import org.graalvm.compiler.bytecode.Bytecodes;
-import org.graalvm.compiler.common.PermanentBailoutException;
-import org.graalvm.compiler.core.common.CollectionsFactory;
+import org.graalvm.compiler.core.common.PermanentBailoutException;
 import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.util.EconomicMap;
+import org.graalvm.util.Equivalence;
 
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.meta.ExceptionHandler;
@@ -157,7 +158,7 @@ public final class BciBlockMapping {
         public JSRData jsrData;
 
         public static class JSRData implements Cloneable {
-            public HashMap<JsrScope, BciBlock> jsrAlternatives;
+            public EconomicMap<JsrScope, BciBlock> jsrAlternatives;
             public JsrScope jsrScope = JsrScope.EMPTY_SCOPE;
             public BciBlock jsrSuccessor;
             public int jsrReturnBci;
@@ -361,7 +362,7 @@ public final class BciBlockMapping {
             }
         }
 
-        public HashMap<JsrScope, BciBlock> getJsrAlternatives() {
+        public EconomicMap<JsrScope, BciBlock> getJsrAlternatives() {
             if (this.jsrData == null) {
                 return null;
             } else {
@@ -372,7 +373,7 @@ public final class BciBlockMapping {
         public void initJsrAlternatives() {
             JSRData data = this.getOrCreateJSRData();
             if (data.jsrAlternatives == null) {
-                data.jsrAlternatives = new HashMap<>();
+                data.jsrAlternatives = EconomicMap.create(Equivalence.DEFAULT);
             }
         }
 
@@ -415,7 +416,7 @@ public final class BciBlockMapping {
 
     public static class ExceptionDispatchBlock extends BciBlock {
 
-        private HashMap<ExceptionHandler, ExceptionDispatchBlock> exceptionDispatch = new HashMap<>();
+        private EconomicMap<ExceptionHandler, ExceptionDispatchBlock> exceptionDispatch = EconomicMap.create(Equivalence.DEFAULT);
 
         public ExceptionHandler handler;
         public int deoptBci;
@@ -458,13 +459,13 @@ public final class BciBlockMapping {
     /**
      * Builds the block map and conservative CFG and numbers blocks.
      */
-    public void build(BytecodeStream stream) {
+    public void build(BytecodeStream stream, OptionValues options) {
         int codeSize = code.getCodeSize();
         BciBlock[] blockMap = new BciBlock[codeSize];
         makeExceptionEntries(blockMap);
         iterateOverBytecodes(blockMap, stream);
         if (hasJsrBytecodes) {
-            if (!SupportJsrBytecodes.getValue()) {
+            if (!SupportJsrBytecodes.getValue(options)) {
                 throw new JsrNotSupportedBailout("jsr/ret parsing disabled");
             }
             createJsrAlternatives(blockMap, blockMap[0]);
@@ -753,7 +754,14 @@ public final class BciBlockMapping {
         }
     }
 
-    private HashMap<ExceptionHandler, ExceptionDispatchBlock> initialExceptionDispatch = CollectionsFactory.newMap();
+    private EconomicMap<ExceptionHandler, ExceptionDispatchBlock> initialExceptionDispatch;
+
+    private EconomicMap<ExceptionHandler, ExceptionDispatchBlock> getInitialExceptionDispatch() {
+        if (initialExceptionDispatch == null) {
+            initialExceptionDispatch = EconomicMap.create(Equivalence.DEFAULT);
+        }
+        return initialExceptionDispatch;
+    }
 
     private ExceptionDispatchBlock handleExceptions(BciBlock[] blockMap, int bci) {
         ExceptionDispatchBlock lastHandler = null;
@@ -767,7 +775,7 @@ public final class BciBlockMapping {
                     lastHandler = null;
                 }
 
-                HashMap<ExceptionHandler, ExceptionDispatchBlock> exceptionDispatch = lastHandler != null ? lastHandler.exceptionDispatch : initialExceptionDispatch;
+                EconomicMap<ExceptionHandler, ExceptionDispatchBlock> exceptionDispatch = lastHandler != null ? lastHandler.exceptionDispatch : getInitialExceptionDispatch();
                 ExceptionDispatchBlock curHandler = exceptionDispatch.get(h);
                 if (curHandler == null) {
                     curHandler = new ExceptionDispatchBlock();
@@ -1040,9 +1048,9 @@ public final class BciBlockMapping {
         return loops;
     }
 
-    public static BciBlockMapping create(BytecodeStream stream, Bytecode code) {
+    public static BciBlockMapping create(BytecodeStream stream, Bytecode code, OptionValues options) {
         BciBlockMapping map = new BciBlockMapping(code);
-        map.build(stream);
+        map.build(stream, options);
         if (Debug.isDumpEnabled(Debug.INFO_LOG_LEVEL)) {
             Debug.dump(Debug.INFO_LOG_LEVEL, map, code.getMethod().format("After block building %f %R %H.%n(%P)"));
         }

@@ -482,7 +482,7 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* thre
 
   // The fastest case first
   CodeBlob* blob = CodeCache::find_blob(return_address);
-  nmethod* nm = (blob != NULL) ? blob->as_nmethod_or_null() : NULL;
+  CompiledMethod* nm = (blob != NULL) ? blob->as_compiled_method_or_null() : NULL;
   if (nm != NULL) {
     // Set flag if return address is a method handle call site.
     thread->set_is_method_handle_return(nm->is_method_handle_return(return_address));
@@ -505,13 +505,6 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* thre
       return nm->exception_begin();
     }
   }
-
-#if INCLUDE_AOT
-  if (UseAOT && blob->is_aot()) {
-    // AOT Compiled code
-    return AOTLoader::exception_begin(thread, blob, return_address);
-  }
-#endif
 
   // Entry code
   if (StubRoutines::returns_to_call_stub(return_address)) {

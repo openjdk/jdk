@@ -103,12 +103,12 @@ public class MatchStatement {
             }
             // The pattern matched but some other code generation constraint disallowed code
             // generation for the pattern.
-            if (LogVerbose.getValue()) {
+            if (LogVerbose.getValue(node.getOptions())) {
                 Debug.log("while matching %s|%s %s %s returned null", context.getRoot().toString(Verbosity.Id), context.getRoot().getClass().getSimpleName(), getName(), generatorMethod.getName());
                 Debug.log("with nodes %s", formatMatch(node));
             }
         } else {
-            if (LogVerbose.getValue() && result.code != MatchResultCode.WRONG_CLASS) {
+            if (LogVerbose.getValue(node.getOptions()) && result.code != MatchResultCode.WRONG_CLASS) {
                 Debug.log("while matching %s|%s %s %s", context.getRoot().toString(Verbosity.Id), context.getRoot().getClass().getSimpleName(), getName(), result);
             }
         }

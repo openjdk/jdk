@@ -103,7 +103,7 @@ public class AddNode extends BinaryArithmeticNode<Add> implements NarrowableArit
             }
             if (associative) {
                 // canonicalize expressions like "(a + 1) + 2"
-                BinaryNode reassociated = reassociate(this, ValueNode.isConstantPredicate(), forX, forY);
+                ValueNode reassociated = reassociate(this, ValueNode.isConstantPredicate(), forX, forY);
                 if (reassociated != this) {
                     return reassociated;
                 }

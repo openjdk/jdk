@@ -1652,10 +1652,6 @@ void G1CMRefProcTaskExecutor::execute(EnqueueTask& enq_task) {
   _workers->run_task(&enq_task_proxy);
 }
 
-void G1ConcurrentMark::weakRefsWorkParallelPart(BoolObjectClosure* is_alive, bool purged_classes) {
-  G1CollectedHeap::heap()->parallel_cleaning(is_alive, true, true, purged_classes);
-}
-
 void G1ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
   if (has_overflown()) {
     // Skip processing the discovered references if we have
@@ -1762,22 +1758,15 @@ void G1ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
 
   // Unload Klasses, String, Symbols, Code Cache, etc.
   if (ClassUnloadingWithConcurrentMark) {
-    bool purged_classes;
+    GCTraceTime(Debug, gc, phases) debug("Class Unloading", _gc_timer_cm);
+    bool purged_classes = SystemDictionary::do_unloading(&g1_is_alive, false /* Defer klass cleaning */);
+    g1h->complete_cleaning(&g1_is_alive, purged_classes);
+  } else {
+    GCTraceTime(Debug, gc, phases) debug("Cleanup", _gc_timer_cm);
+    // No need to clean string table and symbol table as they are treated as strong roots when
+    // class unloading is disabled.
+    g1h->partial_cleaning(&g1_is_alive, false, false, G1StringDedup::is_enabled());
 
-    {
-      GCTraceTime(Debug, gc, phases) trace("System Dictionary Unloading", _gc_timer_cm);
-      purged_classes = SystemDictionary::do_unloading(&g1_is_alive, false /* Defer klass cleaning */);
-    }
-
-    {
-      GCTraceTime(Debug, gc, phases) trace("Parallel Unloading", _gc_timer_cm);
-      weakRefsWorkParallelPart(&g1_is_alive, purged_classes);
-    }
-  }
-
-  if (G1StringDedup::is_enabled()) {
-    GCTraceTime(Debug, gc, phases) trace("String Deduplication Unlink", _gc_timer_cm);
-    G1StringDedup::unlink(&g1_is_alive);
   }
 }
 
