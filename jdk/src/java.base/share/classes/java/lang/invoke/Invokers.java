@@ -132,7 +132,7 @@ class Invokers {
         MethodType mtype = targetType;
         MethodType invokerType = mtype.insertParameterTypes(0, VarHandle.class);
 
-        LambdaForm lform = varHandleMethodInvokerHandleForm(ak.methodName(), mtype, isExact);
+        LambdaForm lform = varHandleMethodInvokerHandleForm(ak, mtype, isExact);
         VarHandle.AccessDescriptor ad = new VarHandle.AccessDescriptor(mtype, ak.at.ordinal(), ak.ordinal());
         MethodHandle invoker = BoundMethodHandle.bindSingle(invokerType, lform, ad);
 
@@ -325,9 +325,9 @@ class Invokers {
         }
         names[LINKER_CALL] = new Name(outCallType, outArgs);
         if (customized) {
-            lform = new LambdaForm(kind.defaultLambdaName, INARG_LIMIT, names);
+            lform = new LambdaForm(INARG_LIMIT, names);
         } else {
-            lform = new LambdaForm(kind.defaultLambdaName, INARG_LIMIT, names, kind);
+            lform = new LambdaForm(INARG_LIMIT, names, kind);
         }
         if (isLinker)
             lform.compileToBytecode();  // JVM needs a real methodOop
@@ -337,11 +337,10 @@ class Invokers {
     }
 
 
-    static MemberName varHandleInvokeLinkerMethod(String name,
-                                                  MethodType mtype) {
+    static MemberName varHandleInvokeLinkerMethod(VarHandle.AccessMode ak, MethodType mtype) {
         LambdaForm lform;
         if (mtype.parameterSlotCount() <= MethodType.MAX_MH_ARITY - MH_LINKER_ARG_APPENDED) {
-            lform = varHandleMethodGenericLinkerHandleForm(name, mtype);
+            lform = varHandleMethodGenericLinkerHandleForm(ak, mtype);
         } else {
             // TODO
             throw newInternalError("Unsupported parameter slot count " + mtype.parameterSlotCount());
@@ -349,7 +348,8 @@ class Invokers {
         return lform.vmentry;
     }
 
-    private static LambdaForm varHandleMethodGenericLinkerHandleForm(String name, MethodType mtype) {
+    private static LambdaForm varHandleMethodGenericLinkerHandleForm(VarHandle.AccessMode ak,
+            MethodType mtype) {
         // TODO Cache form?
 
         final int THIS_VH      = 0;
@@ -383,14 +383,18 @@ class Invokers {
         MethodType outCallType = mtype.insertParameterTypes(0, VarHandle.class)
                 .basicType();
         names[LINKER_CALL] = new Name(outCallType, outArgs);
-        LambdaForm lform = new LambdaForm(name + ":VarHandle_invoke_MT_" + shortenSignature(basicTypeSignature(mtype)),
-                                          ARG_LIMIT + 1, names);
-
+        LambdaForm lform = new LambdaForm(ARG_LIMIT + 1, names, VARHANDLE_LINKER);
+        if (LambdaForm.debugNames()) {
+            String name = ak.methodName() + ":VarHandle_invoke_MT_" +
+                    shortenSignature(basicTypeSignature(mtype));
+            LambdaForm.associateWithDebugName(lform, name);
+        }
         lform.compileToBytecode();
         return lform;
     }
 
-    private static LambdaForm varHandleMethodInvokerHandleForm(String name, MethodType mtype, boolean isExact) {
+    private static LambdaForm varHandleMethodInvokerHandleForm(VarHandle.AccessMode ak,
+            MethodType mtype, boolean isExact) {
         // TODO Cache form?
 
         final int THIS_MH      = 0;
@@ -429,10 +433,14 @@ class Invokers {
         MethodType outCallType = mtype.insertParameterTypes(0, VarHandle.class)
                 .basicType();
         names[LINKER_CALL] = new Name(outCallType, outArgs);
-        String debugName = isExact ? ":VarHandle_exactInvoker" : ":VarHandle_invoker";
-        LambdaForm lform = new LambdaForm(name + debugName + shortenSignature(basicTypeSignature(mtype)),
-                                          ARG_LIMIT, names);
-
+        Kind kind = isExact ? VARHANDLE_EXACT_INVOKER : VARHANDLE_INVOKER;
+        LambdaForm lform = new LambdaForm(ARG_LIMIT, names, kind);
+        if (LambdaForm.debugNames()) {
+            String name = ak.methodName() +
+                    (isExact ? ":VarHandle_exactInvoker_" : ":VarHandle_invoker_") +
+                    shortenSignature(basicTypeSignature(mtype));
+            LambdaForm.associateWithDebugName(lform, name);
+        }
         lform.prepare();
         return lform;
     }
@@ -543,7 +551,8 @@ class Invokers {
         System.arraycopy(outArgs, 0, outArgs, PREPEND_COUNT, outArgs.length - PREPEND_COUNT);
         outArgs[PREPEND_MH] = names[CALL_MH];
         names[LINKER_CALL] = new Name(mtype, outArgs);
-        lform = new LambdaForm((skipCallSite ? "linkToTargetMethod" : "linkToCallSite"), INARG_LIMIT, names);
+        lform = new LambdaForm(INARG_LIMIT, names,
+                (skipCallSite ? LINK_TO_TARGET_METHOD : LINK_TO_CALL_SITE));
         lform.compileToBytecode();  // JVM needs a real methodOop
         lform = mtype.form().setCachedLambdaForm(which, lform);
         return lform;

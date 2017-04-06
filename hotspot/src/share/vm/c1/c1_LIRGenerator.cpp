@@ -1752,8 +1752,10 @@ void LIRGenerator::do_StoreField(StoreField* x) {
   if (x->needs_null_check() &&
       (needs_patching ||
        MacroAssembler::needs_explicit_null_check(x->offset()))) {
-    // emit an explicit null check because the offset is too large
-    __ null_check(object.result(), new CodeEmitInfo(info));
+    // Emit an explicit null check because the offset is too large.
+    // If the class is not loaded and the object is NULL, we need to deoptimize to throw a
+    // NoClassDefFoundError in the interpreter instead of an implicit NPE from compiled code.
+    __ null_check(object.result(), new CodeEmitInfo(info), /* deoptimize */ needs_patching);
   }
 
   LIR_Address* address;
@@ -1838,8 +1840,10 @@ void LIRGenerator::do_LoadField(LoadField* x) {
       obj = new_register(T_OBJECT);
       __ move(LIR_OprFact::oopConst(NULL), obj);
     }
-    // emit an explicit null check because the offset is too large
-    __ null_check(obj, new CodeEmitInfo(info));
+    // Emit an explicit null check because the offset is too large.
+    // If the class is not loaded and the object is NULL, we need to deoptimize to throw a
+    // NoClassDefFoundError in the interpreter instead of an implicit NPE from compiled code.
+    __ null_check(obj, new CodeEmitInfo(info), /* deoptimize */ needs_patching);
   }
 
   LIR_Opr reg = rlock_result(x, field_type);

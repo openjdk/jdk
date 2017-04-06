@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,11 +184,23 @@ public class ModuleTestBase extends TestRunner {
         assertPresent(regex, Task.OutputKind.DIRECT);
     }
 
+    void assertErrorNotPresent(String regex) throws Exception {
+        assertNotPresent(regex, Task.OutputKind.DIRECT);
+    }
+
     void assertPresent(String regex, Task.OutputKind kind) throws Exception {
         List<String> foundList = tb.grep(regex, currentTask.getOutputLines(kind));
         if (foundList.isEmpty()) {
             dumpDocletDiagnostics();
             throw new Exception(regex + " not found in: " + kind);
+        }
+    }
+
+    void assertNotPresent(String regex, Task.OutputKind kind) throws Exception {
+        List<String> foundList = tb.grep(regex, currentTask.getOutputLines(kind));
+        if (!foundList.isEmpty()) {
+            dumpDocletDiagnostics();
+            throw new Exception(regex + " found in: " + kind);
         }
     }
 

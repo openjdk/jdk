@@ -25,6 +25,7 @@
  * @test
  * @bug 4777124 6920545 6911753 8073924
  * @summary Verify that all Charset subclasses are available through the API
+ * @modules jdk.charsets
  */
 
 import java.net.URI;

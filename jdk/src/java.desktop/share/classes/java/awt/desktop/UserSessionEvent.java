@@ -29,8 +29,8 @@ package java.awt.desktop;
  *
  * Some systems may provide a reason of a user session change.
  *
- * @see UserSessionListener#userSessionActivated(AppEvent.UserSessionEvent)
- * @see UserSessionListener#userSessionDeactivated(AppEvent.UserSessionEvent)
+ * @see UserSessionListener#userSessionActivated(UserSessionEvent)
+ * @see UserSessionListener#userSessionDeactivated(UserSessionEvent)
  *
  * @since 9
  */
