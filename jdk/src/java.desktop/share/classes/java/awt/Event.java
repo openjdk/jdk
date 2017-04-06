@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,7 @@
  */
 package java.awt;
 
-import java.awt.event.*;
-import java.io.*;
+import java.awt.event.KeyEvent;
 
 /**
  * <b>NOTE:</b> The {@code Event} class is obsolete and is
@@ -56,9 +55,12 @@ import java.io.*;
  * {@code Event} class ({@code PGUP},
  * {@code PGDN}, {@code F1}, {@code F2}, etc).
  *
+ * @deprecated It is recommended that {@code AWTEvent} and its subclasses be
+ *             used instead
  * @author     Sami Shaio
  * @since      1.0
  */
+@Deprecated(since = "9")
 public class Event implements java.io.Serializable {
     private transient long data;
 

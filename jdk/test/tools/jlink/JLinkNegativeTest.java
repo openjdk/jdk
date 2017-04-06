@@ -25,6 +25,7 @@
  * @test
  * @summary Negative tests for jlink
  * @bug 8130861
+ * @bug 8174718
  * @author Andrei Eremeev
  * @library ../lib
  * @modules java.base/jdk.internal.jimage
@@ -50,6 +51,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import jdk.internal.module.ModuleInfoWriter;
 import org.testng.SkipException;
@@ -250,7 +252,7 @@ public class JLinkNegativeTest {
         String moduleName = "hacked4";
         Path jmod = helper.generateDefaultJModule(moduleName).assertSuccess();
         JImageGenerator.addFiles(jmod,
-                new InMemoryFile("/native", new byte[0]),
+                new InMemoryFile("/lib", new byte[0]),
                 new InMemoryFile("/conf", new byte[0]),
                 new InMemoryFile("/bin", new byte[0]));
         try {
@@ -274,7 +276,7 @@ public class JLinkNegativeTest {
                 helper.getJmodSrcDir(), helper.getJmodClassesDir(), moduleName2, classNames);
 
         try (OutputStream out = Files.newOutputStream(module2.resolve("module-info.class"))) {
-            ModuleInfoWriter.write(ModuleDescriptor.module(moduleName1)
+            ModuleInfoWriter.write(ModuleDescriptor.newModule(moduleName1)
                     .requires("java.base").build(), out);
         }
 
@@ -332,7 +334,7 @@ public class JLinkNegativeTest {
                 helper.getJarSrcDir(), helper.getJarClassesDir(), moduleName2, classNames);
 
         try (OutputStream out = Files.newOutputStream(module2.resolve("module-info.class"))) {
-            ModuleInfoWriter.write(ModuleDescriptor.module(moduleName1)
+            ModuleInfoWriter.write(ModuleDescriptor.newModule(moduleName1)
                     .requires("java.base").build(), out);
         }
 
@@ -344,6 +346,29 @@ public class JLinkNegativeTest {
         } finally {
             deleteDirectory(jar1);
             deleteDirectory(jar2);
+        }
+    }
+
+    public void testInconsistentModuleInfo() throws IOException {
+        String moduleName = "inconsistentJar";
+        List<String> classNames = Arrays.asList("xorg.acme.internal.B");
+        Path module = helper.generateModuleCompiledClasses(
+                helper.getJarSrcDir(), helper.getJarClassesDir(), moduleName, classNames);
+
+        try (OutputStream out = Files.newOutputStream(module.resolve("module-info.class"))) {
+            ModuleInfoWriter.write(ModuleDescriptor.newModule(moduleName)
+                    .requires("java.base")
+                    .packages(Set.of("org.acme.internal"))
+                    .build(), out);
+        }
+
+        Path jar = JImageGenerator.createJarFile(helper.getJarDir().resolve(moduleName + ".jar"), module);
+        try {
+            helper.generateDefaultImage(moduleName)
+                  .assertFailure("Module inconsistentJar's descriptor indicates the set of packages is : " +
+                  "[org.acme.internal], but module contains packages: [xorg.acme.internal]");
+        } finally {
+            deleteDirectory(jar);
         }
     }
 }

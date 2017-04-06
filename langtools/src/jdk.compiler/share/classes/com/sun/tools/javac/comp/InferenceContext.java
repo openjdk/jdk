@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -334,6 +334,9 @@ public class InferenceContext {
     }
 
     InferenceContext min(List<Type> roots, boolean shouldSolve, Warner warn) {
+        if (roots.length() == inferencevars.length()) {
+            return this;
+        }
         ReachabilityVisitor rv = new ReachabilityVisitor();
         rv.scan(roots);
         if (rv.min.size() == inferencevars.length()) {
@@ -347,8 +350,8 @@ public class InferenceContext {
         ListBuffer<Type> minUndetVars = new ListBuffer<>();
         for (Type minVar : minVars) {
             UndetVar uv = (UndetVar)asUndetVar(minVar);
-            Assert.check(uv.incorporationActions.size() == 0);
-            UndetVar uv2 = new UndetVar((TypeVar)minVar, infer.incorporationEngine(), types);
+            Assert.check(uv.incorporationActions.isEmpty());
+            UndetVar uv2 = uv.dup(types);
             for (InferenceBound ib : InferenceBound.values()) {
                 List<Type> newBounds = uv.getBounds(ib).stream()
                         .filter(b -> !redundantVars.contains(b))
@@ -363,15 +366,19 @@ public class InferenceContext {
         for (Type t : minContext.inferencevars) {
             //add listener that forwards notifications to original context
             minContext.addFreeTypeListener(List.of(t), (inferenceContext) -> {
-                    List<Type> depVars = List.from(rv.minMap.get(t));
-                    solve(depVars, warn);
-                    notifyChange();
+                ((UndetVar)asUndetVar(t)).setInst(inferenceContext.asInstType(t));
+                infer.doIncorporation(inferenceContext, warn);
+                solve(List.from(rv.minMap.get(t)), warn);
+                notifyChange();
             });
         }
         if (shouldSolve) {
             //solve definitively unreachable variables
             List<Type> unreachableVars = redundantVars.diff(List.from(rv.equiv));
-            solve(unreachableVars, warn);
+            minContext.addFreeTypeListener(minVars, (inferenceContext) -> {
+                solve(unreachableVars, warn);
+                notifyChange();
+            });
         }
         return minContext;
     }

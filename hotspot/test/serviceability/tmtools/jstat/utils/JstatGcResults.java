@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,7 @@ public class JstatGcResults extends JstatResults {
     /**
      * Checks the overall consistency of the results reported by the tool
      */
+    @Override
     public void assertConsistency() {
 
         assertThat(getExitCode() == 0, "Unexpected exit code: " + getExitCode());
@@ -112,21 +113,4 @@ public class JstatGcResults extends JstatResults {
         assertThat(checkFloatIsSum(GCT, YGCT, FGCT), "GCT != (YGCT + FGCT) " + "(GCT = " + GCT + ", YGCT = " + YGCT
                 + ", FGCT = " + FGCT + ", (YCGT + FGCT) = " + (YGCT + FGCT) + ")");
     }
-
-    private static final float FLOAT_COMPARISON_TOLERANCE = 0.0011f;
-
-    private static boolean checkFloatIsSum(float sum, float... floats) {
-        for (float f : floats) {
-            sum -= f;
-        }
-
-        return Math.abs(sum) <= FLOAT_COMPARISON_TOLERANCE;
-    }
-
-    private void assertThat(boolean b, String message) {
-        if (!b) {
-            throw new RuntimeException(message);
-        }
-    }
-
 }

@@ -68,7 +68,7 @@ public class AccessExportTwice {
         // Packages:          none
         // Packages exported: none
         ModuleDescriptor descriptor_first_mod =
-                ModuleDescriptor.module("first_mod")
+                ModuleDescriptor.newModule("first_mod")
                         .requires("java.base")
                         .requires("second_mod")
                         .build();
@@ -78,7 +78,7 @@ public class AccessExportTwice {
         // Packages:          p2
         // Packages exported: p2 is exported to first_mod
         ModuleDescriptor descriptor_second_mod =
-                ModuleDescriptor.module("second_mod")
+                ModuleDescriptor.newModule("second_mod")
                         .requires("java.base")
                         .exports("p2", Set.of("first_mod"))
                         .build();
@@ -89,7 +89,7 @@ public class AccessExportTwice {
         // Resolves "first_mod"
         Configuration cf = Layer.boot()
                 .configuration()
-                .resolveRequires(finder, ModuleFinder.of(), Set.of("first_mod"));
+                .resolve(finder, ModuleFinder.of(), Set.of("first_mod"));
 
         // Map each module to the same class loader
         Map<String, ClassLoader> map = new HashMap<>();

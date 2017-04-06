@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,13 +150,7 @@ public class HeapSummary extends Tool {
    // Helper methods
 
    private void printGCAlgorithm(Map flagMap) {
-       // print about new generation
-       long l = getFlagValue("UseParNewGC", flagMap);
-       if (l == 1L) {
-          System.out.println("using parallel threads in the new generation.");
-       }
-
-       l = getFlagValue("UseTLAB", flagMap);
+       long l = getFlagValue("UseTLAB", flagMap);
        if (l == 1L) {
           System.out.println("using thread-local object allocation.");
        }
