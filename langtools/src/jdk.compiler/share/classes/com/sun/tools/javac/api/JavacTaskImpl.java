@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,17 +33,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.processing.Processor;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.util.ElementFilter;
 import javax.tools.*;
-import javax.tools.JavaFileObject.Kind;
 
 import com.sun.source.tree.*;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
-import com.sun.tools.javac.code.Symbol.ModuleSymbol;
-import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.comp.*;
 import com.sun.tools.javac.file.BaseFileManager;
 import com.sun.tools.javac.main.*;
@@ -82,6 +77,7 @@ public class JavacTaskImpl extends BasicJavacTask {
     private ListBuffer<Env<AttrContext>> genList;
     private final AtomicBoolean used = new AtomicBoolean();
     private Iterable<? extends Processor> processors;
+    private ListBuffer<String> addModules = new ListBuffer<>();
 
     protected JavacTaskImpl(Context context) {
         super(context, true);
@@ -101,7 +97,7 @@ public class JavacTaskImpl extends BasicJavacTask {
                 prepareCompiler(false);
                 if (compiler.errorCount() > 0)
                     return Main.Result.ERROR;
-                compiler.compile(args.getFileObjects(), args.getClassNames(), processors);
+                compiler.compile(args.getFileObjects(), args.getClassNames(), processors, addModules);
                 return (compiler.errorCount() > 0) ? Main.Result.ERROR : Main.Result.OK; // FIXME?
             }, Main.Result.SYSERR, Main.Result.ABNORMAL);
         } finally {
@@ -110,6 +106,18 @@ public class JavacTaskImpl extends BasicJavacTask {
             } catch (ClientCodeException e) {
                 throw new RuntimeException(e.getCause());
             }
+        }
+    }
+
+    @Override @DefinedBy(Api.COMPILER)
+    public void addModules(Iterable<String> moduleNames) {
+        Objects.requireNonNull(moduleNames);
+        // not mt-safe
+        if (used.get())
+            throw new IllegalStateException();
+        for (String m : moduleNames) {
+            Objects.requireNonNull(m);
+            addModules.add(m);
         }
     }
 

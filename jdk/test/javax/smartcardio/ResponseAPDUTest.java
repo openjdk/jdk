@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,7 @@
  * @test
  * @bug 8049021
  * @summary Construct ResponseAPDU from byte array and check NR< SW, SW1 and SW2
- * @compile --add-modules=java.smartcardio ResponseAPDUTest.java
- * @run testng/othervm --add-modules=java.smartcardio ResponseAPDUTest
+ * @run testng ResponseAPDUTest
  */
 import javax.smartcardio.ResponseAPDU;
 import static org.testng.Assert.*;

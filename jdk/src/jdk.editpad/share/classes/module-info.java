@@ -25,6 +25,8 @@
 
 /**
  * Implementation of the edit pad service.
+ *
+ * @since 9
  */
 module jdk.editpad {
     requires jdk.internal.ed;

@@ -452,8 +452,8 @@ public:
   void delete_replaced_nodes() {
     _replaced_nodes.reset();
   }
-  void apply_replaced_nodes() {
-    _replaced_nodes.apply(this);
+  void apply_replaced_nodes(uint idx) {
+    _replaced_nodes.apply(this, idx);
   }
   void merge_replaced_nodes_with(SafePointNode* sfpt) {
     _replaced_nodes.merge_with(sfpt->_replaced_nodes);
