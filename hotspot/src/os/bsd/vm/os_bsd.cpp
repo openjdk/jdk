@@ -759,7 +759,8 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
   // calculate stack size if it's not specified by caller
   size_t stack_size = os::Posix::get_initial_stack_size(thr_type, req_stack_size);
-  pthread_attr_setstacksize(&attr, stack_size);
+  int status = pthread_attr_setstacksize(&attr, stack_size);
+  assert_status(status == 0, status, "pthread_attr_setstacksize");
 
   ThreadState state;
 

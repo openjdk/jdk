@@ -1158,11 +1158,14 @@ char* os::Posix::realpath(const char* filename, char* outbuf, size_t outbuflen) 
 // page size which again depends on the concrete system the VM is running
 // on. Space for libc guard pages is not included in this size.
 jint os::Posix::set_minimum_stack_sizes() {
+  size_t os_min_stack_allowed = SOLARIS_ONLY(thr_min_stack()) NOT_SOLARIS(PTHREAD_STACK_MIN);
+
   _java_thread_min_stack_allowed = _java_thread_min_stack_allowed +
                                    JavaThread::stack_guard_zone_size() +
                                    JavaThread::stack_shadow_zone_size();
 
   _java_thread_min_stack_allowed = align_size_up(_java_thread_min_stack_allowed, vm_page_size());
+  _java_thread_min_stack_allowed = MAX2(_java_thread_min_stack_allowed, os_min_stack_allowed);
 
   size_t stack_size_in_bytes = ThreadStackSize * K;
   if (stack_size_in_bytes != 0 &&
@@ -1186,6 +1189,7 @@ jint os::Posix::set_minimum_stack_sizes() {
                                        JavaThread::stack_shadow_zone_size();
 
   _compiler_thread_min_stack_allowed = align_size_up(_compiler_thread_min_stack_allowed, vm_page_size());
+  _compiler_thread_min_stack_allowed = MAX2(_compiler_thread_min_stack_allowed, os_min_stack_allowed);
 
   stack_size_in_bytes = CompilerThreadStackSize * K;
   if (stack_size_in_bytes != 0 &&
@@ -1197,6 +1201,7 @@ jint os::Posix::set_minimum_stack_sizes() {
   }
 
   _vm_internal_thread_min_stack_allowed = align_size_up(_vm_internal_thread_min_stack_allowed, vm_page_size());
+  _vm_internal_thread_min_stack_allowed = MAX2(_vm_internal_thread_min_stack_allowed, os_min_stack_allowed);
 
   stack_size_in_bytes = VMThreadStackSize * K;
   if (stack_size_in_bytes != 0 &&
@@ -1250,6 +1255,14 @@ size_t os::Posix::get_initial_stack_size(ThreadType thr_type, size_t req_stack_s
     stack_size = MAX2(stack_size,
                       _vm_internal_thread_min_stack_allowed);
     break;
+  }
+
+  // pthread_attr_setstacksize() may require that the size be rounded up to the OS page size.
+  // Be careful not to round up to 0. Align down in that case.
+  if (stack_size <= SIZE_MAX - vm_page_size()) {
+    stack_size = align_size_up(stack_size, vm_page_size());
+  } else {
+    stack_size = align_size_down(stack_size, vm_page_size());
   }
 
   return stack_size;

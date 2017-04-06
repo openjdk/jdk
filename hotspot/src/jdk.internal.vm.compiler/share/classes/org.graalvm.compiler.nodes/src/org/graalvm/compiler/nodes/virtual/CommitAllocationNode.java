@@ -29,7 +29,6 @@ import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_UNKNOWN;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -228,24 +227,4 @@ public final class CommitAllocationNode extends FixedWithNextNode implements Vir
             ensureVirtual = newEnsureVirtual;
         }
     }
-
-    /**
-     * For all the virtual object nodes that depends on commit allocation, this method maps the node
-     * with its values. For example, a commit allocation could depend on a {@link VirtualArrayNode}
-     * with many {@link ValueNode}s. The map will contain the corresponding {@link VirtualArrayNode}
-     * as a key with the array of {@link ValueNode}s.
-     */
-    public HashMap<VirtualObjectNode, Object[]> getVirtualObjectsArrays() {
-        HashMap<VirtualObjectNode, Object[]> arrayValues = new HashMap<>();
-        int pos = 0;
-        for (int i = 0; i < virtualObjects.size(); i++) {
-            VirtualObjectNode virtualObject = virtualObjects.get(i);
-            int entryCount = virtualObject.entryCount();
-            ValueNode[] array = values.subList(pos, pos + entryCount).toArray(new ValueNode[entryCount]);
-            arrayValues.put(virtualObject, array);
-            pos += entryCount;
-        }
-        return arrayValues;
-    }
-
 }

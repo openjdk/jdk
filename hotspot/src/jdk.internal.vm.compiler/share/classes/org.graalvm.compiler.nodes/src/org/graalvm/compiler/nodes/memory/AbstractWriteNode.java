@@ -46,8 +46,6 @@ public abstract class AbstractWriteNode extends FixedAccessNode implements State
     @OptionalInput(InputType.State) FrameState stateAfter;
     @OptionalInput(InputType.Memory) Node lastLocationAccess;
 
-    protected final boolean initialization;
-
     @Override
     public FrameState stateAfter() {
         return stateAfter;
@@ -69,30 +67,9 @@ public abstract class AbstractWriteNode extends FixedAccessNode implements State
         return value;
     }
 
-    /**
-     * Returns whether this write is the initialization of the written location. If it is true, the
-     * old value of the memory location is either uninitialized or zero. If it is false, the memory
-     * location is guaranteed to contain a valid value or zero.
-     */
-    public boolean isInitialization() {
-        return initialization;
-    }
-
     protected AbstractWriteNode(NodeClass<? extends AbstractWriteNode> c, AddressNode address, LocationIdentity location, ValueNode value, BarrierType barrierType) {
-        this(c, address, location, value, barrierType, false);
-    }
-
-    protected AbstractWriteNode(NodeClass<? extends AbstractWriteNode> c, AddressNode address, LocationIdentity location, ValueNode value, BarrierType barrierType, boolean initialization) {
         super(c, address, location, StampFactory.forVoid(), barrierType);
         this.value = value;
-        this.initialization = initialization;
-    }
-
-    protected AbstractWriteNode(NodeClass<? extends AbstractWriteNode> c, AddressNode address, LocationIdentity location, ValueNode value, BarrierType barrierType, GuardingNode guard,
-                    boolean initialization) {
-        super(c, address, location, StampFactory.forVoid(), guard, barrierType, false, null);
-        this.value = value;
-        this.initialization = initialization;
     }
 
     @Override

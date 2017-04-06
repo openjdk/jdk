@@ -22,13 +22,7 @@
  */
 package org.graalvm.compiler.lir.alloc;
 
-import static org.graalvm.compiler.core.common.GraalOptions.RegisterPressure;
-import static org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig.ALL_REGISTERS;
-
 import org.graalvm.compiler.lir.BailoutAndRestartBackendException;
-import org.graalvm.compiler.lir.phases.LIRSuites;
-import org.graalvm.compiler.options.OptionValue;
-import org.graalvm.compiler.options.OptionValue.OverrideScope;
 
 /**
  * Thrown if the register allocator runs out of registers. This should never happen in normal mode.
@@ -61,20 +55,5 @@ public final class OutOfRegistersException extends BailoutAndRestartBackendExcep
 
     public String getDescription() {
         return description;
-    }
-
-    @Override
-    public boolean shouldRestart() {
-        return RegisterPressure.getValue() != null && !RegisterPressure.getValue().equals(ALL_REGISTERS);
-    }
-
-    @Override
-    public OverrideScope getOverrideScope() {
-        return OptionValue.override(RegisterPressure, ALL_REGISTERS);
-    }
-
-    @Override
-    public LIRSuites updateLIRSuites(LIRSuites lirSuites) {
-        return lirSuites;
     }
 }

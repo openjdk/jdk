@@ -27,6 +27,7 @@ import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.Canonicalizable;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.extended.GuardingNode;
 import org.graalvm.compiler.nodes.spi.ValueProxy;
 import org.graalvm.compiler.nodes.spi.Virtualizable;
 import org.graalvm.compiler.nodes.spi.VirtualizerTool;
@@ -78,5 +79,10 @@ public final class ValueProxyNode extends ProxyNode implements Canonicalizable, 
     @Override
     public ValueNode getOriginalNode() {
         return value();
+    }
+
+    @Override
+    public GuardingNode getGuard() {
+        return this.proxyPoint();
     }
 }

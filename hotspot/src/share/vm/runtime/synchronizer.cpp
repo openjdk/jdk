@@ -1879,23 +1879,6 @@ void ObjectSynchronizer::sanity_checks(const bool verbose,
 
 #ifndef PRODUCT
 
-// Verify all monitors in the monitor cache, the verification is weak.
-void ObjectSynchronizer::verify() {
-  PaddedEnd<ObjectMonitor> * block =
-    (PaddedEnd<ObjectMonitor> *)OrderAccess::load_ptr_acquire(&gBlockList);
-  while (block != NULL) {
-    assert(block->object() == CHAINMARKER, "must be a block header");
-    for (int i = 1; i < _BLOCKSIZE; i++) {
-      ObjectMonitor* mid = (ObjectMonitor *)(block + i);
-      oop object = (oop)mid->object();
-      if (object != NULL) {
-        mid->verify();
-      }
-    }
-    block = (PaddedEnd<ObjectMonitor> *)block->FreeNext;
-  }
-}
-
 // Check if monitor belongs to the monitor cache
 // The list is grow-only so it's *relatively* safe to traverse
 // the list of extant blocks without taking a lock.

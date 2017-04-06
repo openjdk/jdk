@@ -57,15 +57,18 @@ import org.graalvm.compiler.nodes.DeoptimizingGuard;
 import org.graalvm.compiler.nodes.FixedGuardNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.GuardNode;
+import org.graalvm.compiler.nodes.GuardPhiNode;
 import org.graalvm.compiler.nodes.GuardProxyNode;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.LoopExitNode;
 import org.graalvm.compiler.nodes.ParameterNode;
+import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.ShortCircuitOrNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.UnaryOpLogicNode;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.ValueProxyNode;
 import org.graalvm.compiler.nodes.calc.AndNode;
 import org.graalvm.compiler.nodes.calc.BinaryArithmeticNode;
 import org.graalvm.compiler.nodes.calc.BinaryNode;
@@ -82,11 +85,13 @@ import org.graalvm.compiler.nodes.extended.ValueAnchorNode;
 import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.java.TypeSwitchNode;
 import org.graalvm.compiler.nodes.spi.NodeWithState;
+import org.graalvm.compiler.nodes.spi.ValueProxy;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.common.LoweringPhase.Frame;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
+import org.graalvm.util.Pair;
 
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.TriState;
@@ -98,6 +103,10 @@ public class DominatorConditionalEliminationPhase extends BasePhase<PhaseContext
     private static final DebugCounter counterIfsKilled = Debug.counter("CE_KilledIfs");
     private static final DebugCounter counterLFFolded = Debug.counter("ConstantLFFolded");
     private final boolean fullSchedule;
+
+    public static BasePhase<PhaseContext> create(boolean fullSchedule) {
+        return new NewConditionalEliminationPhase(fullSchedule);
+    }
 
     public DominatorConditionalEliminationPhase(boolean fullSchedule) {
         this.fullSchedule = fullSchedule;
@@ -157,7 +166,8 @@ public class DominatorConditionalEliminationPhase extends BasePhase<PhaseContext
             this.blockToNodes = blockToNodes;
             this.nodeToBlock = nodeToBlock;
             pendingTests = new ArrayDeque<>();
-            tool = GraphUtil.getDefaultSimplifier(context.getMetaAccess(), context.getConstantReflection(), context.getConstantFieldProvider(), false, graph.getAssumptions(), context.getLowerer());
+            tool = GraphUtil.getDefaultSimplifier(context.getMetaAccess(), context.getConstantReflection(), context.getConstantFieldProvider(), false, graph.getAssumptions(), graph.getOptions(),
+                            context.getLowerer());
         }
 
         public void processBlock(Block startBlock) {
@@ -183,9 +193,10 @@ public class DominatorConditionalEliminationPhase extends BasePhase<PhaseContext
             }
 
             protected void processConditionAnchor(ConditionAnchorNode node) {
-                tryProveCondition(node.condition(), (guard, result) -> {
+                tryProveCondition(node.condition(), (guard, result, newInput) -> {
                     if (result != node.isNegated()) {
-                        node.replaceAtUsages(guard);
+                        rewirePiNodes(node, newInput);
+                        node.replaceAtUsages(guard.asNode());
                         GraphUtil.unlinkFixedNode(node);
                         GraphUtil.killWithUnusedFloatingInputs(node);
                     } else {
@@ -197,10 +208,23 @@ public class DominatorConditionalEliminationPhase extends BasePhase<PhaseContext
                 });
             }
 
+            private void rewirePiNodes(GuardingNode node, ValueProxy newInput) {
+                ValueNode unproxified = GraphUtil.unproxify(newInput);
+                for (Node usage : node.asNode().usages()) {
+                    if (usage instanceof PiNode) {
+                        PiNode piNode = (PiNode) usage;
+                        if (piNode.getOriginalNode() != newInput && GraphUtil.unproxify(piNode.getOriginalNode()) == unproxified) {
+                            piNode.setOriginalNode((ValueNode) newInput.asNode());
+                        }
+                    }
+                }
+            }
+
             protected void processGuard(GuardNode node) {
-                if (!tryProveGuardCondition(node, node.getCondition(), (guard, result) -> {
+                if (!tryProveGuardCondition(node, node.getCondition(), (guard, result, newInput) -> {
                     if (result != node.isNegated()) {
-                        node.replaceAndDelete(guard);
+                        rewirePiNodes(node, newInput);
+                        node.replaceAndDelete(guard.asNode());
                     } else {
                         DeoptimizeNode deopt = node.graph().add(new DeoptimizeNode(node.getAction(), node.getReason(), node.getSpeculation()));
                         AbstractBeginNode beginNode = (AbstractBeginNode) node.getAnchor();
@@ -215,9 +239,10 @@ public class DominatorConditionalEliminationPhase extends BasePhase<PhaseContext
             }
 
             protected void processFixedGuard(FixedGuardNode node) {
-                if (!tryProveGuardCondition(node, node.condition(), (guard, result) -> {
+                if (!tryProveGuardCondition(node, node.condition(), (guard, result, newInput) -> {
                     if (result != node.isNegated()) {
-                        node.replaceAtUsages(guard);
+                        rewirePiNodes(node, newInput);
+                        node.replaceAtUsages(guard.asNode());
                         GraphUtil.unlinkFixedNode(node);
                         GraphUtil.killWithUnusedFloatingInputs(node);
                     } else {
@@ -234,9 +259,10 @@ public class DominatorConditionalEliminationPhase extends BasePhase<PhaseContext
             }
 
             protected void processIf(IfNode node) {
-                tryProveCondition(node.condition(), (guard, result) -> {
+                tryProveCondition(node.condition(), (guard, result, newInput) -> {
                     AbstractBeginNode survivingSuccessor = node.getSuccessor(result);
-                    survivingSuccessor.replaceAtUsages(InputType.Guard, guard);
+                    rewirePiNodes(survivingSuccessor, newInput);
+                    survivingSuccessor.replaceAtUsages(InputType.Guard, guard.asNode());
                     survivingSuccessor.replaceAtPredecessor(null);
                     node.replaceAtPredecessor(survivingSuccessor);
                     GraphUtil.killCFG(node);
@@ -303,14 +329,14 @@ public class DominatorConditionalEliminationPhase extends BasePhase<PhaseContext
                 }
             }
 
-            protected void registerNewCondition(LogicNode condition, boolean negated, ValueNode guard) {
+            protected void registerNewCondition(LogicNode condition, boolean negated, GuardingNode guard) {
                 if (!negated && condition instanceof PointerEqualsNode) {
                     PointerEqualsNode pe = (PointerEqualsNode) condition;
                     ValueNode x = pe.getX();
                     ValueNode y = pe.getY();
                     if (y.isConstant()) {
                         JavaConstant constant = y.asJavaConstant();
-                        Stamp succeeding = pe.getSucceedingStampForX(negated);
+                        Stamp succeeding = pe.getSucceedingStampForX(negated, x.stamp(), getSafeStamp(y));
                         if (succeeding == null && pe instanceof ObjectEqualsNode && guard instanceof FixedGuardNode) {
                             succeeding = y.stamp();
                         }
@@ -330,14 +356,14 @@ public class DominatorConditionalEliminationPhase extends BasePhase<PhaseContext
                 } else if (condition instanceof BinaryOpLogicNode) {
                     BinaryOpLogicNode binaryOpLogicNode = (BinaryOpLogicNode) condition;
                     ValueNode x = binaryOpLogicNode.getX();
+                    ValueNode y = binaryOpLogicNode.getY();
                     if (!x.isConstant()) {
-                        Stamp newStampX = binaryOpLogicNode.getSucceedingStampForX(negated);
+                        Stamp newStampX = binaryOpLogicNode.getSucceedingStampForX(negated, x.stamp(), getSafeStamp(y));
                         registerNewStamp(x, newStampX, guard);
                     }
 
-                    ValueNode y = binaryOpLogicNode.getY();
                     if (!y.isConstant()) {
-                        Stamp newStampY = binaryOpLogicNode.getSucceedingStampForY(negated);
+                        Stamp newStampY = binaryOpLogicNode.getSucceedingStampForY(negated, getSafeStamp(x), y.stamp());
                         registerNewStamp(y, newStampY, guard);
                     }
                     if (condition instanceof IntegerEqualsNode && guard instanceof DeoptimizingGuard && !negated) {
@@ -362,6 +388,13 @@ public class DominatorConditionalEliminationPhase extends BasePhase<PhaseContext
                 registerCondition(condition, negated, guard);
             }
 
+            private Stamp getSafeStamp(ValueNode x) {
+                if (x.isConstant()) {
+                    return x.stamp();
+                }
+                return x.stamp().unrestricted();
+            }
+
             @SuppressWarnings("try")
             protected Pair<InfoElement, Stamp> foldFromConstLoadField(LoadFieldNode loadFieldNode, InfoElementProvider info) {
                 ValueNode object = loadFieldNode.object();
@@ -372,16 +405,16 @@ public class DominatorConditionalEliminationPhase extends BasePhase<PhaseContext
                         pair = recursiveFoldStamp(object, info);
                     }
                     if (pair != null) {
-                        Stamp s = pair.second;
+                        Stamp s = pair.getRight();
                         if (s instanceof GuardedConstantStamp) {
-                            ConstantNode c = tryFoldFromLoadField(loadFieldNode, pair.second);
+                            ConstantNode c = tryFoldFromLoadField(loadFieldNode, pair.getRight());
                             if (c != null) {
                                 counterLFFolded.increment();
                                 if (c.stamp() instanceof ObjectStamp) {
                                     GuardedConstantStamp cos = new GuardedConstantStamp(c.asJavaConstant(), (ObjectStamp) c.stamp());
-                                    return new Pair<>(pair.first, cos);
+                                    return Pair.create(pair.getLeft(), cos);
                                 }
-                                return new Pair<>(pair.first, c.stamp());
+                                return Pair.create(pair.getLeft(), c.stamp());
                             }
                         }
                     }
@@ -398,7 +431,7 @@ public class DominatorConditionalEliminationPhase extends BasePhase<PhaseContext
                 for (InfoElement infoElement : infos.getInfoElements(n)) {
                     Stamp s = infoElement.getStamp();
                     if (s instanceof GuardedConstantStamp) {
-                        return new Pair<>(infoElement, s);
+                        return Pair.create(infoElement, s);
                     }
                 }
                 return null;
@@ -417,14 +450,14 @@ public class DominatorConditionalEliminationPhase extends BasePhase<PhaseContext
                     for (InfoElement infoElement : info.getInfoElements(value)) {
                         Stamp result = unary.foldStamp(infoElement.getStamp());
                         if (result != null) {
-                            return new Pair<>(infoElement, result);
+                            return Pair.create(infoElement, result);
                         }
                     }
                     Pair<InfoElement, Stamp> foldResult = recursiveFoldStamp(value, info);
                     if (foldResult != null) {
-                        Stamp result = unary.foldStamp(foldResult.second);
+                        Stamp result = unary.foldStamp(foldResult.getRight());
                         if (result != null) {
-                            return new Pair<>(foldResult.first, result);
+                            return Pair.create(foldResult.getLeft(), result);
                         }
                     }
                 } else if (node instanceof BinaryNode) {
@@ -435,23 +468,23 @@ public class DominatorConditionalEliminationPhase extends BasePhase<PhaseContext
                         for (InfoElement infoElement : info.getInfoElements(x)) {
                             Stamp result = binary.foldStamp(infoElement.stamp, y.stamp());
                             if (result != null) {
-                                return new Pair<>(infoElement, result);
+                                return Pair.create(infoElement, result);
                             }
                         }
                         Pair<InfoElement, Stamp> foldResult = recursiveFoldStamp(x, info);
                         if (foldResult != null) {
-                            Stamp result = binary.foldStamp(foldResult.second, y.stamp());
+                            Stamp result = binary.foldStamp(foldResult.getRight(), y.stamp());
                             if (result != null) {
-                                return new Pair<>(foldResult.first, result);
+                                return Pair.create(foldResult.getLeft(), result);
                             }
                         }
                     } else if (x instanceof LoadFieldNode || y instanceof LoadFieldNode) {
                         boolean useX = x instanceof LoadFieldNode;
                         Pair<InfoElement, Stamp> foldResult = recursiveFoldStamp(useX ? x : y, info);
                         if (foldResult != null) {
-                            Stamp result = binary.foldStamp(useX ? foldResult.second : x.stamp(), useX ? y.stamp() : foldResult.second);
+                            Stamp result = binary.foldStamp(useX ? foldResult.getRight() : x.stamp(), useX ? y.stamp() : foldResult.getRight());
                             if (result != null) {
-                                return new Pair<>(foldResult.first, result);
+                                return Pair.create(foldResult.getLeft(), result);
                             }
                         }
                     }
@@ -485,10 +518,10 @@ public class DominatorConditionalEliminationPhase extends BasePhase<PhaseContext
             @SuppressWarnings("unchecked")
             Stamp recursiveFoldStamp(Node node, ValueNode original, Stamp newStamp) {
                 Debug.log("Recursively fold stamp for node %s original %s stamp %s", node, original, newStamp);
-                InfoElement element = new InfoElement(newStamp, original);
+                InfoElement element = new InfoElement(newStamp, null, null);
                 Pair<InfoElement, Stamp> result = recursiveFoldStamp(node, (value) -> value == original ? Collections.singleton(element) : Collections.EMPTY_LIST);
                 if (result != null) {
-                    return result.second;
+                    return result.getRight();
                 }
                 return null;
             }
@@ -546,8 +579,8 @@ public class DominatorConditionalEliminationPhase extends BasePhase<PhaseContext
             protected boolean foldGuard(DeoptimizingGuard thisGuard, DeoptimizingGuard otherGuard, GuardRewirer rewireGuardFunction) {
                 if (otherGuard.getAction() == thisGuard.getAction() && otherGuard.getReason() == thisGuard.getReason() && otherGuard.getSpeculation() == thisGuard.getSpeculation()) {
                     LogicNode condition = (LogicNode) thisGuard.getCondition().copyWithInputs();
-                    GuardRewirer rewirer = (guard, result) -> {
-                        if (rewireGuardFunction.rewire(guard, result)) {
+                    GuardRewirer rewirer = (guard, result, newInput) -> {
+                        if (rewireGuardFunction.rewire(guard, result, newInput)) {
                             otherGuard.setCondition(condition, thisGuard.isNegated());
                             return true;
                         }
@@ -555,12 +588,12 @@ public class DominatorConditionalEliminationPhase extends BasePhase<PhaseContext
                         return false;
                     };
                     // Move the later test up
-                    return rewireGuards(otherGuard.asNode(), !thisGuard.isNegated(), rewirer);
+                    return rewireGuards(otherGuard, !thisGuard.isNegated(), null, rewirer);
                 }
                 return false;
             }
 
-            protected void registerCondition(LogicNode condition, boolean negated, ValueNode guard) {
+            protected void registerCondition(LogicNode condition, boolean negated, GuardingNode guard) {
                 registerNewStamp(condition, negated ? StampFactory.contradiction() : StampFactory.tautology(), guard);
             }
 
@@ -577,28 +610,56 @@ public class DominatorConditionalEliminationPhase extends BasePhase<PhaseContext
                 }
             }
 
-            protected boolean rewireGuards(ValueNode guard, boolean result, GuardRewirer rewireGuardFunction) {
-                assert guard instanceof GuardingNode;
+            protected boolean rewireGuards(GuardingNode guard, boolean result, ValueProxy proxifiedInput, GuardRewirer rewireGuardFunction) {
                 counterStampsFound.increment();
-                ValueNode proxiedGuard = proxyGuard(guard);
-                return rewireGuardFunction.rewire(proxiedGuard, result);
+                return rewireGuardFunction.rewire(proxyGuard(guard), result, proxyValue(guard, proxifiedInput));
             }
 
-            protected ValueNode proxyGuard(ValueNode guard) {
-                ValueNode proxiedGuard = guard;
-                if (!Instance.this.loopExits.isEmpty()) {
-                    while (proxiedGuard instanceof GuardProxyNode) {
-                        proxiedGuard = ((GuardProxyNode) proxiedGuard).value();
+            private Block findBlockForGuard(GuardingNode guard) {
+                Block guardBlock;
+                if (guard instanceof GuardProxyNode) {
+                    GuardProxyNode guardProxyNode = (GuardProxyNode) guard;
+                    guardBlock = nodeToBlock.apply(guardProxyNode.proxyPoint());
+                } else if (guard instanceof GuardPhiNode) {
+                    GuardPhiNode guardPhiNode = (GuardPhiNode) guard;
+                    guardBlock = nodeToBlock.apply(guardPhiNode.merge());
+                } else {
+                    guardBlock = nodeToBlock.apply(guard.asNode());
+                }
+                assert guardBlock != null;
+                return guardBlock;
+            }
+
+            protected ValueProxy proxyValue(GuardingNode guard, ValueProxy value) {
+                ValueProxy proxiedValue = value;
+                if (proxiedValue != null && !Instance.this.loopExits.isEmpty()) {
+                    Block guardBlock = findBlockForGuard(guard);
+                    for (Iterator<LoopExitNode> iter = loopExits.descendingIterator(); iter.hasNext();) {
+                        LoopExitNode loopExitNode = iter.next();
+                        Block loopExitBlock = nodeToBlock.apply(loopExitNode);
+                        if (AbstractControlFlowGraph.dominates(guardBlock, loopExitBlock)) {
+                            Block loopBeginBlock = nodeToBlock.apply(loopExitNode.loopBegin());
+                            if ((guardBlock != loopExitBlock || guard == loopExitBlock.getBeginNode()) && !AbstractControlFlowGraph.dominates(guardBlock, loopBeginBlock) ||
+                                            guardBlock == loopBeginBlock) {
+                                proxiedValue = proxiedValue.asNode().graph().unique(new ValueProxyNode((ValueNode) proxiedValue.asNode(), loopExitNode));
+                            }
+                        }
                     }
-                    Block guardBlock = nodeToBlock.apply(proxiedGuard);
-                    assert guardBlock != null;
+                }
+                return proxiedValue;
+            }
+
+            protected GuardingNode proxyGuard(GuardingNode guard) {
+                GuardingNode proxiedGuard = guard;
+                if (!Instance.this.loopExits.isEmpty()) {
+                    Block guardBlock = findBlockForGuard(guard);
                     for (Iterator<LoopExitNode> iter = loopExits.descendingIterator(); iter.hasNext();) {
                         LoopExitNode loopExitNode = iter.next();
                         Block loopExitBlock = nodeToBlock.apply(loopExitNode);
                         if (guardBlock != loopExitBlock && AbstractControlFlowGraph.dominates(guardBlock, loopExitBlock)) {
                             Block loopBeginBlock = nodeToBlock.apply(loopExitNode.loopBegin());
                             if (!AbstractControlFlowGraph.dominates(guardBlock, loopBeginBlock) || guardBlock == loopBeginBlock) {
-                                proxiedGuard = proxiedGuard.graph().unique(new GuardProxyNode((GuardingNode) proxiedGuard, loopExitNode));
+                                proxiedGuard = proxiedGuard.asNode().graph().unique(new GuardProxyNode(proxiedGuard, loopExitNode));
                             }
                         }
                     }
@@ -615,7 +676,7 @@ public class DominatorConditionalEliminationPhase extends BasePhase<PhaseContext
                     Stamp stamp = infoElement.getStamp();
                     JavaConstant constant = (JavaConstant) stamp.asConstant();
                     if (constant != null) {
-                        return rewireGuards(infoElement.getGuard(), constant.asBoolean(), rewireGuardFunction);
+                        return rewireGuards(infoElement.getGuard(), constant.asBoolean(), infoElement.getProxifiedInput(), rewireGuardFunction);
                     }
                 }
                 if (node instanceof UnaryOpLogicNode) {
@@ -625,14 +686,14 @@ public class DominatorConditionalEliminationPhase extends BasePhase<PhaseContext
                         Stamp stamp = infoElement.getStamp();
                         TriState result = unaryLogicNode.tryFold(stamp);
                         if (result.isKnown()) {
-                            return rewireGuards(infoElement.getGuard(), result.toBoolean(), rewireGuardFunction);
+                            return rewireGuards(infoElement.getGuard(), result.toBoolean(), infoElement.getProxifiedInput(), rewireGuardFunction);
                         }
                     }
                     Pair<InfoElement, Stamp> foldResult = recursiveFoldStampFromInfo(value);
                     if (foldResult != null) {
-                        TriState result = unaryLogicNode.tryFold(foldResult.second);
+                        TriState result = unaryLogicNode.tryFold(foldResult.getRight());
                         if (result.isKnown()) {
-                            return rewireGuards(foldResult.first.getGuard(), result.toBoolean(), rewireGuardFunction);
+                            return rewireGuards(foldResult.getLeft().getGuard(), result.toBoolean(), foldResult.getLeft().getProxifiedInput(), rewireGuardFunction);
                         }
                     }
                     if (thisGuard != null) {
@@ -646,9 +707,9 @@ public class DominatorConditionalEliminationPhase extends BasePhase<PhaseContext
                     BinaryOpLogicNode binaryOpLogicNode = (BinaryOpLogicNode) node;
                     for (InfoElement infoElement : getInfoElements(binaryOpLogicNode)) {
                         if (infoElement.getStamp().equals(StampFactory.contradiction())) {
-                            return rewireGuards(infoElement.getGuard(), false, rewireGuardFunction);
+                            return rewireGuards(infoElement.getGuard(), false, infoElement.getProxifiedInput(), rewireGuardFunction);
                         } else if (infoElement.getStamp().equals(StampFactory.tautology())) {
-                            return rewireGuards(infoElement.getGuard(), true, rewireGuardFunction);
+                            return rewireGuards(infoElement.getGuard(), true, infoElement.getProxifiedInput(), rewireGuardFunction);
                         }
                     }
 
@@ -657,23 +718,23 @@ public class DominatorConditionalEliminationPhase extends BasePhase<PhaseContext
                     for (InfoElement infoElement : getInfoElements(x)) {
                         TriState result = binaryOpLogicNode.tryFold(infoElement.getStamp(), y.stamp());
                         if (result.isKnown()) {
-                            return rewireGuards(infoElement.getGuard(), result.toBoolean(), rewireGuardFunction);
+                            return rewireGuards(infoElement.getGuard(), result.toBoolean(), infoElement.getProxifiedInput(), rewireGuardFunction);
                         }
                     }
 
                     if (y.isConstant()) {
                         Pair<InfoElement, Stamp> foldResult = recursiveFoldStampFromInfo(x);
                         if (foldResult != null) {
-                            TriState result = binaryOpLogicNode.tryFold(foldResult.second, y.stamp());
+                            TriState result = binaryOpLogicNode.tryFold(foldResult.getRight(), y.stamp());
                             if (result.isKnown()) {
-                                return rewireGuards(foldResult.first.getGuard(), result.toBoolean(), rewireGuardFunction);
+                                return rewireGuards(foldResult.getLeft().getGuard(), result.toBoolean(), foldResult.getLeft().getProxifiedInput(), rewireGuardFunction);
                             }
                         }
                     } else {
                         for (InfoElement infoElement : getInfoElements(y)) {
                             TriState result = binaryOpLogicNode.tryFold(x.stamp(), infoElement.getStamp());
                             if (result.isKnown()) {
-                                return rewireGuards(infoElement.getGuard(), result.toBoolean(), rewireGuardFunction);
+                                return rewireGuards(infoElement.getGuard(), result.toBoolean(), infoElement.getProxifiedInput(), rewireGuardFunction);
                             }
                         }
                     }
@@ -693,7 +754,7 @@ public class DominatorConditionalEliminationPhase extends BasePhase<PhaseContext
                                 Stamp newStampX = binary.foldStamp(infoElement.getStamp(), binary.getY().stamp());
                                 TriState result = binaryOpLogicNode.tryFold(newStampX, y.stamp());
                                 if (result.isKnown()) {
-                                    return rewireGuards(infoElement.getGuard(), result.toBoolean(), rewireGuardFunction);
+                                    return rewireGuards(infoElement.getGuard(), result.toBoolean(), infoElement.getProxifiedInput(), rewireGuardFunction);
                                 }
                             }
                         }
@@ -717,13 +778,13 @@ public class DominatorConditionalEliminationPhase extends BasePhase<PhaseContext
                     }
                     if (thisGuard != null) {
                         if (!x.isConstant()) {
-                            Stamp newStampX = binaryOpLogicNode.getSucceedingStampForX(thisGuard.isNegated());
+                            Stamp newStampX = binaryOpLogicNode.getSucceedingStampForX(thisGuard.isNegated(), x.stamp(), getSafeStamp(y));
                             if (newStampX != null && foldPendingTest(thisGuard, x, newStampX, rewireGuardFunction)) {
                                 return true;
                             }
                         }
                         if (!y.isConstant()) {
-                            Stamp newStampY = binaryOpLogicNode.getSucceedingStampForY(thisGuard.isNegated());
+                            Stamp newStampY = binaryOpLogicNode.getSucceedingStampForY(thisGuard.isNegated(), getSafeStamp(x), y.stamp());
                             if (newStampY != null && foldPendingTest(thisGuard, y, newStampY, rewireGuardFunction)) {
                                 return true;
                             }
@@ -732,13 +793,13 @@ public class DominatorConditionalEliminationPhase extends BasePhase<PhaseContext
                 } else if (node instanceof ShortCircuitOrNode) {
                     final ShortCircuitOrNode shortCircuitOrNode = (ShortCircuitOrNode) node;
                     if (Instance.this.loopExits.isEmpty()) {
-                        return tryProveCondition(shortCircuitOrNode.getX(), (guard, result) -> {
+                        return tryProveCondition(shortCircuitOrNode.getX(), (guard, result, newInput) -> {
                             if (result == !shortCircuitOrNode.isXNegated()) {
-                                return rewireGuards(guard, true, rewireGuardFunction);
+                                return rewireGuards(guard, true, newInput, rewireGuardFunction);
                             } else {
-                                return tryProveCondition(shortCircuitOrNode.getY(), (innerGuard, innerResult) -> {
-                                    if (innerGuard == guard) {
-                                        return rewireGuards(guard, innerResult ^ shortCircuitOrNode.isYNegated(), rewireGuardFunction);
+                                return tryProveCondition(shortCircuitOrNode.getY(), (innerGuard, innerResult, innerNewInput) -> {
+                                    if (innerGuard == guard && newInput == innerNewInput) {
+                                        return rewireGuards(guard, innerResult ^ shortCircuitOrNode.isYNegated(), newInput, rewireGuardFunction);
                                     }
                                     return false;
                                 });
@@ -750,11 +811,16 @@ public class DominatorConditionalEliminationPhase extends BasePhase<PhaseContext
                 return false;
             }
 
-            protected void registerNewStamp(ValueNode proxiedValue, Stamp newStamp, ValueNode guard) {
-                assert proxiedValue != null;
+            protected void registerNewStamp(ValueNode maybeProxiedValue, Stamp newStamp, GuardingNode guard) {
+                assert maybeProxiedValue != null;
                 assert guard != null;
                 if (newStamp != null) {
-                    ValueNode value = GraphUtil.unproxify(proxiedValue);
+                    ValueNode value = maybeProxiedValue;
+                    ValueProxy proxiedValue = null;
+                    if (value instanceof ValueProxy) {
+                        proxiedValue = (ValueProxy) value;
+                        value = GraphUtil.unproxify(value);
+                    }
                     Info info = map.get(value);
                     if (info == null) {
                         info = new Info();
@@ -763,7 +829,7 @@ public class DominatorConditionalEliminationPhase extends BasePhase<PhaseContext
                     counterStampsRegistered.increment();
                     final Info finalInfo = info;
                     Debug.log("\t Saving stamp for node %s stamp %s guarded by %s", value, newStamp, guard == null ? "null" : guard);
-                    finalInfo.pushElement(new InfoElement(newStamp, guard));
+                    finalInfo.pushElement(new InfoElement(newStamp, guard, proxiedValue));
                     undoOperations.add(() -> finalInfo.popElement());
                 }
             }
@@ -823,30 +889,6 @@ public class DominatorConditionalEliminationPhase extends BasePhase<PhaseContext
         }
     }
 
-    protected static class Pair<F, S> {
-        public final F first;
-        public final S second;
-
-        Pair(F first, S second) {
-            this.first = first;
-            this.second = second;
-        }
-
-        @Override
-        public int hashCode() {
-            return first.hashCode() * 31 ^ second.hashCode();
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj instanceof Pair<?, ?>) {
-                Pair<?, ?> other = (Pair<?, ?>) obj;
-                return this.first.equals(other.first) && this.second.equals(other.second);
-            }
-            return false;
-        }
-    }
-
     @FunctionalInterface
     protected interface InfoElementProvider {
         Iterable<InfoElement> getInfoElements(ValueNode value);
@@ -889,9 +931,12 @@ public class DominatorConditionalEliminationPhase extends BasePhase<PhaseContext
          * Called if the condition could be proven to have a constant value ({@code result}) under
          * {@code guard}.
          *
-         * Return whether a transformation could be applied.
+         * @param guard the guard whose result is proven
+         * @param result the known result of the guard
+         * @param newInput new input to pi nodes depending on the new guard
+         * @return whether the transformation could be applied
          */
-        boolean rewire(ValueNode guard, boolean result);
+        boolean rewire(GuardingNode guard, boolean result, ValueProxy newInput);
     }
 
     protected static class PendingTest {
@@ -906,19 +951,25 @@ public class DominatorConditionalEliminationPhase extends BasePhase<PhaseContext
 
     protected static final class InfoElement {
         private final Stamp stamp;
-        private final ValueNode guard;
+        private final GuardingNode guard;
+        private final ValueProxy proxifiedInput;
 
-        public InfoElement(Stamp stamp, ValueNode guard) {
+        public InfoElement(Stamp stamp, GuardingNode guard, ValueProxy proxifiedInput) {
             this.stamp = stamp;
             this.guard = guard;
+            this.proxifiedInput = proxifiedInput;
         }
 
         public Stamp getStamp() {
             return stamp;
         }
 
-        public ValueNode getGuard() {
+        public GuardingNode getGuard() {
             return guard;
+        }
+
+        public ValueProxy getProxifiedInput() {
+            return proxifiedInput;
         }
 
         @Override

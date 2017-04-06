@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.nodes.test;
 
-import static org.graalvm.compiler.core.common.CompilationIdentifier.INVALID_COMPILATION_ID;
+import static org.graalvm.compiler.core.test.GraalCompilerTest.getInitialOptions;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import jdk.vm.ci.meta.JavaConstant;
@@ -53,88 +53,88 @@ public class IntegerStampTest {
 
     @Before
     public void before() {
-        graph = new StructuredGraph(AllowAssumptions.YES, INVALID_COMPILATION_ID);
+        graph = new StructuredGraph.Builder(getInitialOptions(), AllowAssumptions.YES).build();
     }
 
     @Test
     public void testBooleanConstant() {
-        assertEquals(new IntegerStamp(32, 1, 1, 0x1, 0x1), ConstantNode.forBoolean(true, graph).stamp());
-        assertEquals(new IntegerStamp(32, 0, 0, 0x0, 0x0), ConstantNode.forBoolean(false, graph).stamp());
+        assertEquals(IntegerStamp.create(32, 1, 1, 0x1, 0x1), ConstantNode.forBoolean(true, graph).stamp());
+        assertEquals(IntegerStamp.create(32, 0, 0, 0x0, 0x0), ConstantNode.forBoolean(false, graph).stamp());
     }
 
     @Test
     public void testByteConstant() {
-        assertEquals(new IntegerStamp(32, 0, 0, 0x0, 0x0), ConstantNode.forByte((byte) 0, graph).stamp());
-        assertEquals(new IntegerStamp(32, 16, 16, 0x10, 0x10), ConstantNode.forByte((byte) 16, graph).stamp());
-        assertEquals(new IntegerStamp(32, -16, -16, 0xfffffff0L, 0xfffffff0L), ConstantNode.forByte((byte) -16, graph).stamp());
-        assertEquals(new IntegerStamp(32, 127, 127, 0x7f, 0x7f), ConstantNode.forByte((byte) 127, graph).stamp());
-        assertEquals(new IntegerStamp(32, -128, -128, 0xffffff80L, 0xffffff80L), ConstantNode.forByte((byte) -128, graph).stamp());
+        assertEquals(IntegerStamp.create(32, 0, 0, 0x0, 0x0), ConstantNode.forByte((byte) 0, graph).stamp());
+        assertEquals(IntegerStamp.create(32, 16, 16, 0x10, 0x10), ConstantNode.forByte((byte) 16, graph).stamp());
+        assertEquals(IntegerStamp.create(32, -16, -16, 0xfffffff0L, 0xfffffff0L), ConstantNode.forByte((byte) -16, graph).stamp());
+        assertEquals(IntegerStamp.create(32, 127, 127, 0x7f, 0x7f), ConstantNode.forByte((byte) 127, graph).stamp());
+        assertEquals(IntegerStamp.create(32, -128, -128, 0xffffff80L, 0xffffff80L), ConstantNode.forByte((byte) -128, graph).stamp());
     }
 
     @Test
     public void testShortConstant() {
-        assertEquals(new IntegerStamp(32, 0, 0, 0x0, 0x0), ConstantNode.forShort((short) 0, graph).stamp());
-        assertEquals(new IntegerStamp(32, 128, 128, 0x80, 0x80), ConstantNode.forShort((short) 128, graph).stamp());
-        assertEquals(new IntegerStamp(32, -128, -128, 0xffffff80L, 0xffffff80L), ConstantNode.forShort((short) -128, graph).stamp());
-        assertEquals(new IntegerStamp(32, 32767, 32767, 0x7fff, 0x7fff), ConstantNode.forShort((short) 32767, graph).stamp());
-        assertEquals(new IntegerStamp(32, -32768, -32768, 0xffff8000L, 0xffff8000L), ConstantNode.forShort((short) -32768, graph).stamp());
+        assertEquals(IntegerStamp.create(32, 0, 0, 0x0, 0x0), ConstantNode.forShort((short) 0, graph).stamp());
+        assertEquals(IntegerStamp.create(32, 128, 128, 0x80, 0x80), ConstantNode.forShort((short) 128, graph).stamp());
+        assertEquals(IntegerStamp.create(32, -128, -128, 0xffffff80L, 0xffffff80L), ConstantNode.forShort((short) -128, graph).stamp());
+        assertEquals(IntegerStamp.create(32, 32767, 32767, 0x7fff, 0x7fff), ConstantNode.forShort((short) 32767, graph).stamp());
+        assertEquals(IntegerStamp.create(32, -32768, -32768, 0xffff8000L, 0xffff8000L), ConstantNode.forShort((short) -32768, graph).stamp());
     }
 
     @Test
     public void testCharConstant() {
-        assertEquals(new IntegerStamp(32, 0, 0, 0x0, 0x0), ConstantNode.forChar((char) 0, graph).stamp());
-        assertEquals(new IntegerStamp(32, 'A', 'A', 'A', 'A'), ConstantNode.forChar('A', graph).stamp());
-        assertEquals(new IntegerStamp(32, 128, 128, 0x80, 0x80), ConstantNode.forChar((char) 128, graph).stamp());
-        assertEquals(new IntegerStamp(32, 65535, 65535, 0xffff, 0xffff), ConstantNode.forChar((char) 65535, graph).stamp());
+        assertEquals(IntegerStamp.create(32, 0, 0, 0x0, 0x0), ConstantNode.forChar((char) 0, graph).stamp());
+        assertEquals(IntegerStamp.create(32, 'A', 'A', 'A', 'A'), ConstantNode.forChar('A', graph).stamp());
+        assertEquals(IntegerStamp.create(32, 128, 128, 0x80, 0x80), ConstantNode.forChar((char) 128, graph).stamp());
+        assertEquals(IntegerStamp.create(32, 65535, 65535, 0xffff, 0xffff), ConstantNode.forChar((char) 65535, graph).stamp());
     }
 
     @Test
     public void testIntConstant() {
-        assertEquals(new IntegerStamp(32, 0, 0, 0x0, 0x0), ConstantNode.forInt(0, graph).stamp());
-        assertEquals(new IntegerStamp(32, 128, 128, 0x80, 0x80), ConstantNode.forInt(128, graph).stamp());
-        assertEquals(new IntegerStamp(32, -128, -128, 0xffffff80L, 0xffffff80L), ConstantNode.forInt(-128, graph).stamp());
-        assertEquals(new IntegerStamp(32, Integer.MAX_VALUE, Integer.MAX_VALUE, 0x7fffffff, 0x7fffffff), ConstantNode.forInt(Integer.MAX_VALUE, graph).stamp());
-        assertEquals(new IntegerStamp(32, Integer.MIN_VALUE, Integer.MIN_VALUE, 0x80000000L, 0x80000000L), ConstantNode.forInt(Integer.MIN_VALUE, graph).stamp());
+        assertEquals(IntegerStamp.create(32, 0, 0, 0x0, 0x0), ConstantNode.forInt(0, graph).stamp());
+        assertEquals(IntegerStamp.create(32, 128, 128, 0x80, 0x80), ConstantNode.forInt(128, graph).stamp());
+        assertEquals(IntegerStamp.create(32, -128, -128, 0xffffff80L, 0xffffff80L), ConstantNode.forInt(-128, graph).stamp());
+        assertEquals(IntegerStamp.create(32, Integer.MAX_VALUE, Integer.MAX_VALUE, 0x7fffffff, 0x7fffffff), ConstantNode.forInt(Integer.MAX_VALUE, graph).stamp());
+        assertEquals(IntegerStamp.create(32, Integer.MIN_VALUE, Integer.MIN_VALUE, 0x80000000L, 0x80000000L), ConstantNode.forInt(Integer.MIN_VALUE, graph).stamp());
     }
 
     @Test
     public void testLongConstant() {
-        assertEquals(new IntegerStamp(64, 0, 0, 0x0, 0x0), ConstantNode.forLong(0, graph).stamp());
-        assertEquals(new IntegerStamp(64, 128, 128, 0x80, 0x80), ConstantNode.forLong(128, graph).stamp());
-        assertEquals(new IntegerStamp(64, -128, -128, 0xffffffffffffff80L, 0xffffffffffffff80L), ConstantNode.forLong(-128, graph).stamp());
-        assertEquals(new IntegerStamp(64, Long.MAX_VALUE, Long.MAX_VALUE, 0x7fffffffffffffffL, 0x7fffffffffffffffL), ConstantNode.forLong(Long.MAX_VALUE, graph).stamp());
-        assertEquals(new IntegerStamp(64, Long.MIN_VALUE, Long.MIN_VALUE, 0x8000000000000000L, 0x8000000000000000L), ConstantNode.forLong(Long.MIN_VALUE, graph).stamp());
+        assertEquals(IntegerStamp.create(64, 0, 0, 0x0, 0x0), ConstantNode.forLong(0, graph).stamp());
+        assertEquals(IntegerStamp.create(64, 128, 128, 0x80, 0x80), ConstantNode.forLong(128, graph).stamp());
+        assertEquals(IntegerStamp.create(64, -128, -128, 0xffffffffffffff80L, 0xffffffffffffff80L), ConstantNode.forLong(-128, graph).stamp());
+        assertEquals(IntegerStamp.create(64, Long.MAX_VALUE, Long.MAX_VALUE, 0x7fffffffffffffffL, 0x7fffffffffffffffL), ConstantNode.forLong(Long.MAX_VALUE, graph).stamp());
+        assertEquals(IntegerStamp.create(64, Long.MIN_VALUE, Long.MIN_VALUE, 0x8000000000000000L, 0x8000000000000000L), ConstantNode.forLong(Long.MIN_VALUE, graph).stamp());
     }
 
     @Test
     public void testPositiveRanges() {
-        assertEquals(new IntegerStamp(32, 0, 0, 0, 0), StampFactory.forInteger(JavaKind.Int, 0, 0));
-        assertEquals(new IntegerStamp(32, 0, 1, 0, 1), StampFactory.forInteger(JavaKind.Int, 0, 1));
-        assertEquals(new IntegerStamp(32, 0, 0x123, 0, 0x1ff), StampFactory.forInteger(JavaKind.Int, 0, 0x123));
-        assertEquals(new IntegerStamp(32, 0x120, 0x123, 0x120, 0x123), StampFactory.forInteger(JavaKind.Int, 0x120, 0x123));
-        assertEquals(new IntegerStamp(32, 10000, 15000, 0x2000, 0x3fff), StampFactory.forInteger(JavaKind.Int, 10000, 15000));
-        assertEquals(new IntegerStamp(64, 0, 1, 0, 1), StampFactory.forInteger(JavaKind.Long, 0, 1));
-        assertEquals(new IntegerStamp(64, 10000, 15000, 0x2000, 0x3fff), StampFactory.forInteger(JavaKind.Long, 10000, 15000));
-        assertEquals(new IntegerStamp(64, 140000000000L, 150000000000L, 0x2000000000L, 0x23ffffffffL), StampFactory.forInteger(JavaKind.Long, 140000000000L, 150000000000L));
+        assertEquals(IntegerStamp.create(32, 0, 0, 0, 0), StampFactory.forInteger(JavaKind.Int, 0, 0));
+        assertEquals(IntegerStamp.create(32, 0, 1, 0, 1), StampFactory.forInteger(JavaKind.Int, 0, 1));
+        assertEquals(IntegerStamp.create(32, 0, 0x123, 0, 0x1ff), StampFactory.forInteger(JavaKind.Int, 0, 0x123));
+        assertEquals(IntegerStamp.create(32, 0x120, 0x123, 0x120, 0x123), StampFactory.forInteger(JavaKind.Int, 0x120, 0x123));
+        assertEquals(IntegerStamp.create(32, 10000, 15000, 0x2000, 0x3fff), StampFactory.forInteger(JavaKind.Int, 10000, 15000));
+        assertEquals(IntegerStamp.create(64, 0, 1, 0, 1), StampFactory.forInteger(JavaKind.Long, 0, 1));
+        assertEquals(IntegerStamp.create(64, 10000, 15000, 0x2000, 0x3fff), StampFactory.forInteger(JavaKind.Long, 10000, 15000));
+        assertEquals(IntegerStamp.create(64, 140000000000L, 150000000000L, 0x2000000000L, 0x23ffffffffL), StampFactory.forInteger(JavaKind.Long, 140000000000L, 150000000000L));
     }
 
     @Test
     public void testNegativeRanges() {
-        assertEquals(new IntegerStamp(32, -2, -1, 0xfffffffeL, 0xffffffffL), StampFactory.forInteger(JavaKind.Int, -2, -1));
-        assertEquals(new IntegerStamp(32, -20, -10, 0xffffffe0L, 0xffffffffL), StampFactory.forInteger(JavaKind.Int, -20, -10));
-        assertEquals(new IntegerStamp(32, -10000, 0, 0, 0xffffffffL), StampFactory.forInteger(JavaKind.Int, -10000, 0));
-        assertEquals(new IntegerStamp(32, -10000, -1, 0xffffc000L, 0xffffffffL), StampFactory.forInteger(JavaKind.Int, -10000, -1));
-        assertEquals(new IntegerStamp(32, -10010, -10000, 0xffffd8e0L, 0xffffd8ffL), StampFactory.forInteger(JavaKind.Int, -10010, -10000));
-        assertEquals(new IntegerStamp(64, -2, -1, 0xfffffffffffffffeL, 0xffffffffffffffffL), StampFactory.forInteger(JavaKind.Long, -2, -1));
-        assertEquals(new IntegerStamp(64, -10010, -10000, 0xffffffffffffd8e0L, 0xffffffffffffd8ffL), StampFactory.forInteger(JavaKind.Long, -10010, -10000));
-        assertEquals(new IntegerStamp(64, -150000000000L, -140000000000L, 0xffffffdc00000000L, 0xffffffdfffffffffL), StampFactory.forInteger(JavaKind.Long, -150000000000L, -140000000000L));
+        assertEquals(IntegerStamp.create(32, -2, -1, 0xfffffffeL, 0xffffffffL), StampFactory.forInteger(JavaKind.Int, -2, -1));
+        assertEquals(IntegerStamp.create(32, -20, -10, 0xffffffe0L, 0xffffffffL), StampFactory.forInteger(JavaKind.Int, -20, -10));
+        assertEquals(IntegerStamp.create(32, -10000, 0, 0, 0xffffffffL), StampFactory.forInteger(JavaKind.Int, -10000, 0));
+        assertEquals(IntegerStamp.create(32, -10000, -1, 0xffffc000L, 0xffffffffL), StampFactory.forInteger(JavaKind.Int, -10000, -1));
+        assertEquals(IntegerStamp.create(32, -10010, -10000, 0xffffd8e0L, 0xffffd8ffL), StampFactory.forInteger(JavaKind.Int, -10010, -10000));
+        assertEquals(IntegerStamp.create(64, -2, -1, 0xfffffffffffffffeL, 0xffffffffffffffffL), StampFactory.forInteger(JavaKind.Long, -2, -1));
+        assertEquals(IntegerStamp.create(64, -10010, -10000, 0xffffffffffffd8e0L, 0xffffffffffffd8ffL), StampFactory.forInteger(JavaKind.Long, -10010, -10000));
+        assertEquals(IntegerStamp.create(64, -150000000000L, -140000000000L, 0xffffffdc00000000L, 0xffffffdfffffffffL), StampFactory.forInteger(JavaKind.Long, -150000000000L, -140000000000L));
     }
 
     @Test
     public void testMixedRanges() {
-        assertEquals(new IntegerStamp(32, -1, 0, 0, 0xffffffffL), StampFactory.forInteger(JavaKind.Int, -1, 0));
-        assertEquals(new IntegerStamp(32, -10000, 1000, 0, 0xffffffffL), StampFactory.forInteger(JavaKind.Int, -10000, 1000));
-        assertEquals(new IntegerStamp(64, -10000, 1000, 0, 0xffffffffffffffffL), StampFactory.forInteger(JavaKind.Long, -10000, 1000));
+        assertEquals(IntegerStamp.create(32, -1, 0, 0, 0xffffffffL), StampFactory.forInteger(JavaKind.Int, -1, 0));
+        assertEquals(IntegerStamp.create(32, -10000, 1000, 0, 0xffffffffL), StampFactory.forInteger(JavaKind.Int, -10000, 1000));
+        assertEquals(IntegerStamp.create(64, -10000, 1000, 0, 0xffffffffffffffffL), StampFactory.forInteger(JavaKind.Long, -10000, 1000));
     }
 
     private static Stamp narrowingKindConversion(IntegerStamp stamp, JavaKind kind) {
@@ -178,16 +178,50 @@ public class IntegerStampTest {
     }
 
     @Test
+    public void testMaskBasedNarrowing() {
+        IntegerStamp stamp = IntegerStamp.create(32, 1, 2, 0x2, 0x3);
+        IntegerStamp resultStamp = IntegerStamp.create(32, 2, 2);
+        assertEquals(resultStamp, stamp);
+    }
+
+    @Test
+    public void testJoinWeirdMasks() {
+        IntegerStamp minusOneOrThree = IntegerStamp.create(32, -1, 3, 0x3, 0xFFFFFFFFL);
+        IntegerStamp twoOrThree = IntegerStamp.create(32, 2, 3, 0x2, 0x3);
+        IntegerStamp three = IntegerStamp.create(32, 3, 3, 0x3, 0x3);
+        assertEquals(three, minusOneOrThree.join(twoOrThree));
+
+        IntegerStamp minusOneOrThreeOrOne = IntegerStamp.create(32, -1, 3, 0x1, 0xFFFFFFFFL);
+        assertEquals(three, minusOneOrThreeOrOne.join(twoOrThree));
+
+        IntegerStamp a = IntegerStamp.create(32, 0b101, 0b110, 0b100, 0b111);
+        IntegerStamp b = IntegerStamp.create(32, 0b011, 0b110, 0b010, 0b111);
+
+        // This exercises a special case:
+        // The new lowest bound is max(0b101, 0b011) = 0b101
+        // The new down mask is (0b100 | 0b010) = 0b110
+        // Now based on lowest bound and down mask, we know that the new lowest bound is 0b110
+        // Just making an or with the new down mask would give however (0b110 | 0b101) = 0b111 and
+        // would therefore be wrong.
+        // New upper bound is 0b110.
+
+        IntegerStamp result = IntegerStamp.create(32, 0b110, 0b110, 0b110, 0b110);
+        assertEquals(result, a.join(b));
+    }
+
+    @Test
     public void testXor() {
-        assertEquals(new IntegerStamp(32, 0, 0xff, 0, 0xff), IntegerStamp.OPS.getXor().foldStamp(new IntegerStamp(32, 0, 0, 0, 0), new IntegerStamp(32, 0, 0xff, 0, 0xff)));
-        assertEquals(new IntegerStamp(32, 0x10, 0x1f, 0x10, 0x1f), IntegerStamp.OPS.getXor().foldStamp(new IntegerStamp(32, 0, 0, 0, 0), new IntegerStamp(32, 0x10, 0x1f, 0x10, 0x1f)));
-        assertEquals(new IntegerStamp(32, 0x0, 0xf, 0x0, 0xf), IntegerStamp.OPS.getXor().foldStamp(new IntegerStamp(32, 0x10, 0x10, 0x10, 0x10), new IntegerStamp(32, 0x10, 0x1f, 0x10, 0x1f)));
-        assertEquals(new IntegerStamp(32, 0x10, 0x1f, 0x10, 0x1f), IntegerStamp.OPS.getXor().foldStamp(new IntegerStamp(32, 0x10, 0x10, 0x10, 0x10), new IntegerStamp(32, 0x0, 0xf, 0x0, 0xf)));
+        assertEquals(IntegerStamp.create(32, 0, 0xff, 0, 0xff), IntegerStamp.OPS.getXor().foldStamp(IntegerStamp.create(32, 0, 0, 0, 0), IntegerStamp.create(32, 0, 0xff, 0, 0xff)));
+        assertEquals(IntegerStamp.create(32, 0x10, 0x1f, 0x10, 0x1f), IntegerStamp.OPS.getXor().foldStamp(IntegerStamp.create(32, 0, 0, 0, 0), IntegerStamp.create(32, 0x10, 0x1f, 0x10, 0x1f)));
+        assertEquals(IntegerStamp.create(32, 0x0, 0xf, 0x0, 0xf),
+                        IntegerStamp.OPS.getXor().foldStamp(IntegerStamp.create(32, 0x10, 0x10, 0x10, 0x10), IntegerStamp.create(32, 0x10, 0x1f, 0x10, 0x1f)));
+        assertEquals(IntegerStamp.create(32, 0x10, 0x1f, 0x10, 0x1f),
+                        IntegerStamp.OPS.getXor().foldStamp(IntegerStamp.create(32, 0x10, 0x10, 0x10, 0x10), IntegerStamp.create(32, 0x0, 0xf, 0x0, 0xf)));
     }
 
     @Test
     public void testNot() {
-        assertEquals(new IntegerStamp(32, -11, -1, 0xffff_fff0L, 0xffff_ffffL), IntegerStamp.OPS.getNot().foldStamp(new IntegerStamp(32, 0, 10, 0, 0xf)));
+        assertEquals(IntegerStamp.create(32, -11, -1, 0xffff_fff0L, 0xffff_ffffL), IntegerStamp.OPS.getNot().foldStamp(IntegerStamp.create(32, 0, 10, 0, 0xf)));
     }
 
     @Test
@@ -278,7 +312,7 @@ public class IntegerStampTest {
 
     @Test
     public void testAnd() {
-        assertEquals(new IntegerStamp(32, Integer.MIN_VALUE, 0x40000000L, 0, 0xc0000000L),
+        assertEquals(IntegerStamp.create(32, Integer.MIN_VALUE, 0x40000000L, 0, 0xc0000000L),
                         IntegerStamp.OPS.getAnd().foldStamp(StampFactory.forKind(JavaKind.Int), StampFactory.forConstant(JavaConstant.forInt(0xc0000000))));
     }
 
@@ -316,20 +350,20 @@ public class IntegerStampTest {
 
     @Test
     public void testIllegalJoin() {
-        assertFalse(new IntegerStamp(32, 0, 0xff00, 0, 0xff00).join(new IntegerStamp(32, 1, 0xff, 0x00, 0xff)).hasValues());
-        assertFalse(new IntegerStamp(32, 0x100, 0xff00, 0, 0xff00).join(new IntegerStamp(32, 0, 0xff, 0x00, 0xff)).hasValues());
+        assertFalse(IntegerStamp.create(32, 0, 0xff00, 0, 0xff00).join(IntegerStamp.create(32, 1, 0xff, 0x00, 0xff)).hasValues());
+        assertFalse(IntegerStamp.create(32, 0x100, 0xff00, 0, 0xff00).join(IntegerStamp.create(32, 0, 0xff, 0x00, 0xff)).hasValues());
     }
 
     @Test
     public void testShiftLeft() {
         ShiftOp<?> shl = IntegerStamp.OPS.getShl();
-        assertEquals(new IntegerStamp(32, 0, 0x1ff, 0, 0x1ff), shl.foldStamp(new IntegerStamp(32, 0, 0xff, 0, 0xff), new IntegerStamp(32, 0, 1, 0, 1)));
-        assertEquals(new IntegerStamp(32, 0, 0x1fe0, 0, 0x1fe0), shl.foldStamp(new IntegerStamp(32, 0, 0xff, 0, 0xff), new IntegerStamp(32, 5, 5, 5, 5)));
-        assertEquals(new IntegerStamp(32, 0x1e0, 0x1fe0, 0, 0x1fe0), shl.foldStamp(new IntegerStamp(32, 0xf, 0xff, 0, 0xff), new IntegerStamp(32, 5, 5, 5, 5)));
+        assertEquals(IntegerStamp.create(32, 0, 0x1ff, 0, 0x1ff), shl.foldStamp(IntegerStamp.create(32, 0, 0xff, 0, 0xff), IntegerStamp.create(32, 0, 1, 0, 1)));
+        assertEquals(IntegerStamp.create(32, 0, 0x1fe0, 0, 0x1fe0), shl.foldStamp(IntegerStamp.create(32, 0, 0xff, 0, 0xff), IntegerStamp.create(32, 5, 5, 5, 5)));
+        assertEquals(IntegerStamp.create(32, 0x1e0, 0x1fe0, 0, 0x1fe0), shl.foldStamp(IntegerStamp.create(32, 0xf, 0xff, 0, 0xff), IntegerStamp.create(32, 5, 5, 5, 5)));
 
-        assertEquals(new IntegerStamp(64, 0, 0x1ff, 0, 0x1ff), shl.foldStamp(new IntegerStamp(64, 0, 0xff, 0, 0xff), new IntegerStamp(32, 0, 1, 0, 1)));
-        assertEquals(new IntegerStamp(64, 0, 0x1fe0, 0, 0x1fe0), shl.foldStamp(new IntegerStamp(64, 0, 0xff, 0, 0xff), new IntegerStamp(32, 5, 5, 5, 5)));
-        assertEquals(new IntegerStamp(64, 0x1e0, 0x1fe0, 0, 0x1fe0), shl.foldStamp(new IntegerStamp(64, 0xf, 0xff, 0, 0xff), new IntegerStamp(32, 5, 5, 5, 5)));
+        assertEquals(IntegerStamp.create(64, 0, 0x1ff, 0, 0x1ff), shl.foldStamp(IntegerStamp.create(64, 0, 0xff, 0, 0xff), IntegerStamp.create(32, 0, 1, 0, 1)));
+        assertEquals(IntegerStamp.create(64, 0, 0x1fe0, 0, 0x1fe0), shl.foldStamp(IntegerStamp.create(64, 0, 0xff, 0, 0xff), IntegerStamp.create(32, 5, 5, 5, 5)));
+        assertEquals(IntegerStamp.create(64, 0x1e0, 0x1fe0, 0, 0x1fe0), shl.foldStamp(IntegerStamp.create(64, 0xf, 0xff, 0, 0xff), IntegerStamp.create(32, 5, 5, 5, 5)));
 
     }
 }

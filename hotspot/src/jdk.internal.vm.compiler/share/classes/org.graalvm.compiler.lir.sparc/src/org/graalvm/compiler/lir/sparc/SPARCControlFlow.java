@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,14 +76,11 @@ import static jdk.vm.ci.sparc.SPARCKind.XWORD;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-
 import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.asm.Assembler.LabelHint;
 import org.graalvm.compiler.asm.Label;
-import org.graalvm.compiler.asm.NumUtil;
+import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.asm.sparc.SPARCAssembler;
 import org.graalvm.compiler.asm.sparc.SPARCAssembler.BranchPredict;
 import org.graalvm.compiler.asm.sparc.SPARCAssembler.CC;
@@ -101,6 +98,8 @@ import org.graalvm.compiler.lir.SwitchStrategy;
 import org.graalvm.compiler.lir.SwitchStrategy.BaseSwitchClosure;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
+import org.graalvm.util.Equivalence;
+import org.graalvm.util.EconomicMap;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.meta.AllocatableValue;
@@ -144,7 +143,7 @@ public class SPARCControlFlow {
         public static final SizeEstimate SIZE = SizeEstimate.create(3);
         static final EnumSet<SPARCKind> SUPPORTED_KINDS = EnumSet.of(XWORD, WORD);
 
-        @Use({REG}) protected Value x;
+        @Use({REG}) protected AllocatableValue x;
         @Use({REG, CONST}) protected Value y;
         private ConditionFlag conditionFlag;
         protected final LabelRef trueDestination;
@@ -157,7 +156,8 @@ public class SPARCControlFlow {
         private int delaySlotPosition = -1;
         private double trueDestinationProbability;
 
-        public CompareBranchOp(Value x, Value y, Condition condition, LabelRef trueDestination, LabelRef falseDestination, SPARCKind kind, boolean unorderedIsTrue, double trueDestinationProbability) {
+        public CompareBranchOp(AllocatableValue x, Value y, Condition condition, LabelRef trueDestination, LabelRef falseDestination, SPARCKind kind, boolean unorderedIsTrue,
+                        double trueDestinationProbability) {
             super(TYPE, SIZE);
             this.x = x;
             this.y = y;
@@ -426,15 +426,16 @@ public class SPARCControlFlow {
         @Alive({REG, ILLEGAL}) protected Value constantTableBase;
         @Temp({REG}) protected Value scratch;
         protected final SwitchStrategy strategy;
-        private final Map<Label, LabelHint> labelHints;
+        private final EconomicMap<Label, LabelHint> labelHints;
         private final List<Label> conditionalLabels = new ArrayList<>();
 
-        public StrategySwitchOp(Value constantTableBase, SwitchStrategy strategy, LabelRef[] keyTargets, LabelRef defaultTarget, Value key, Value scratch) {
+        public StrategySwitchOp(Value constantTableBase, SwitchStrategy strategy, LabelRef[] keyTargets, LabelRef defaultTarget, AllocatableValue key, Variable scratch) {
             this(TYPE, constantTableBase, strategy, keyTargets, defaultTarget, key, scratch);
         }
 
-        protected StrategySwitchOp(LIRInstructionClass<? extends StrategySwitchOp> c, Value constantTableBase, SwitchStrategy strategy, LabelRef[] keyTargets, LabelRef defaultTarget, Value key,
-                        Value scratch) {
+        protected StrategySwitchOp(LIRInstructionClass<? extends StrategySwitchOp> c, Value constantTableBase, SwitchStrategy strategy, LabelRef[] keyTargets, LabelRef defaultTarget,
+                        AllocatableValue key,
+                        Variable scratch) {
             super(c);
             this.strategy = strategy;
             this.keyConstants = strategy.getKeyConstants();
@@ -443,7 +444,7 @@ public class SPARCControlFlow {
             this.constantTableBase = constantTableBase;
             this.key = key;
             this.scratch = scratch;
-            this.labelHints = new HashMap<>();
+            this.labelHints = EconomicMap.create(Equivalence.IDENTITY_WITH_SYSTEM_HASHCODE);
             assert keyConstants.length == keyTargets.length;
             assert keyConstants.length == strategy.keyProbabilities.length;
         }

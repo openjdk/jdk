@@ -24,8 +24,8 @@ package org.graalvm.compiler.lir.dfa;
 
 import static jdk.vm.ci.code.ValueUtil.isIllegal;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.List;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
@@ -104,7 +104,7 @@ public abstract class LocationMarker<S extends ValueSet<S>> {
         if (updateOutBlock(block)) {
             try (Indent indent = Debug.logAndIndent("handle block %s", block)) {
                 currentSet = liveOutMap.get(block).copy();
-                List<LIRInstruction> instructions = lir.getLIRforBlock(block);
+                ArrayList<LIRInstruction> instructions = lir.getLIRforBlock(block);
                 for (int i = instructions.size() - 1; i >= 0; i--) {
                     LIRInstruction inst = instructions.get(i);
                     processInstructionBottomUp(inst);

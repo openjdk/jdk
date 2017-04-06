@@ -1378,9 +1378,7 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
       }
       _verifier->check_bitmaps("Full GC End");
 
-      double start = os::elapsedTime();
       start_new_collection_set();
-      g1_policy()->phase_times()->record_start_new_cset_time_ms((os::elapsedTime() - start) * 1000.0);
 
       _allocator->init_mutator_alloc_region();
 
@@ -3212,7 +3210,9 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         _survivor_evac_stats.adjust_desired_plab_sz();
         _old_evac_stats.adjust_desired_plab_sz();
 
+        double start = os::elapsedTime();
         start_new_collection_set();
+        g1_policy()->phase_times()->record_start_new_cset_time_ms((os::elapsedTime() - start) * 1000.0);
 
         if (evacuation_failed()) {
           set_used(recalculate_used());
@@ -3531,9 +3531,11 @@ void G1CollectedHeap::print_termination_stats(uint worker_id,
                undo_waste * HeapWordSize / K);
 }
 
-class G1StringSymbolTableUnlinkTask : public AbstractGangTask {
+class G1StringAndSymbolCleaningTask : public AbstractGangTask {
 private:
   BoolObjectClosure* _is_alive;
+  G1StringDedupUnlinkOrOopsDoClosure _dedup_closure;
+
   int _initial_string_table_size;
   int _initial_symbol_table_size;
 
@@ -3545,12 +3547,16 @@ private:
   int _symbols_processed;
   int _symbols_removed;
 
+  bool _process_string_dedup;
+
 public:
-  G1StringSymbolTableUnlinkTask(BoolObjectClosure* is_alive, bool process_strings, bool process_symbols) :
+  G1StringAndSymbolCleaningTask(BoolObjectClosure* is_alive, bool process_strings, bool process_symbols, bool process_string_dedup) :
     AbstractGangTask("String/Symbol Unlinking"),
     _is_alive(is_alive),
+    _dedup_closure(is_alive, NULL, false),
     _process_strings(process_strings), _strings_processed(0), _strings_removed(0),
-    _process_symbols(process_symbols), _symbols_processed(0), _symbols_removed(0) {
+    _process_symbols(process_symbols), _symbols_processed(0), _symbols_removed(0),
+    _process_string_dedup(process_string_dedup) {
 
     _initial_string_table_size = StringTable::the_table()->table_size();
     _initial_symbol_table_size = SymbolTable::the_table()->table_size();
@@ -3562,7 +3568,7 @@ public:
     }
   }
 
-  ~G1StringSymbolTableUnlinkTask() {
+  ~G1StringAndSymbolCleaningTask() {
     guarantee(!_process_strings || StringTable::parallel_claimed_index() >= _initial_string_table_size,
               "claim value %d after unlink less than initial string table size %d",
               StringTable::parallel_claimed_index(), _initial_string_table_size);
@@ -3592,6 +3598,9 @@ public:
       SymbolTable::possibly_parallel_unlink(&symbols_processed, &symbols_removed);
       Atomic::add(symbols_processed, &_symbols_processed);
       Atomic::add(symbols_removed, &_symbols_removed);
+    }
+    if (_process_string_dedup) {
+      G1StringDedup::parallel_unlink(&_dedup_closure, worker_id);
     }
   }
 
@@ -3828,15 +3837,15 @@ public:
 // To minimize the remark pause times, the tasks below are done in parallel.
 class G1ParallelCleaningTask : public AbstractGangTask {
 private:
-  G1StringSymbolTableUnlinkTask _string_symbol_task;
+  G1StringAndSymbolCleaningTask _string_symbol_task;
   G1CodeCacheUnloadingTask      _code_cache_task;
   G1KlassCleaningTask           _klass_cleaning_task;
 
 public:
   // The constructor is run in the VMThread.
-  G1ParallelCleaningTask(BoolObjectClosure* is_alive, bool process_strings, bool process_symbols, uint num_workers, bool unloading_occurred) :
+  G1ParallelCleaningTask(BoolObjectClosure* is_alive, uint num_workers, bool unloading_occurred) :
       AbstractGangTask("Parallel Cleaning"),
-      _string_symbol_task(is_alive, process_strings, process_symbols),
+      _string_symbol_task(is_alive, true, true, G1StringDedup::is_enabled()),
       _code_cache_task(num_workers, is_alive, unloading_occurred),
       _klass_cleaning_task(is_alive) {
   }
@@ -3865,23 +3874,26 @@ public:
 };
 
 
-void G1CollectedHeap::parallel_cleaning(BoolObjectClosure* is_alive,
-                                        bool process_strings,
-                                        bool process_symbols,
+void G1CollectedHeap::complete_cleaning(BoolObjectClosure* is_alive,
                                         bool class_unloading_occurred) {
   uint n_workers = workers()->active_workers();
 
-  G1ParallelCleaningTask g1_unlink_task(is_alive, process_strings, process_symbols,
-                                        n_workers, class_unloading_occurred);
+  G1ParallelCleaningTask g1_unlink_task(is_alive, n_workers, class_unloading_occurred);
   workers()->run_task(&g1_unlink_task);
 }
 
-void G1CollectedHeap::unlink_string_and_symbol_table(BoolObjectClosure* is_alive,
-                                                     bool process_strings, bool process_symbols) {
-  { // Timing scope
-    G1StringSymbolTableUnlinkTask g1_unlink_task(is_alive, process_strings, process_symbols);
-    workers()->run_task(&g1_unlink_task);
+void G1CollectedHeap::partial_cleaning(BoolObjectClosure* is_alive,
+                                       bool process_strings,
+                                       bool process_symbols,
+                                       bool process_string_dedup) {
+  if (!process_strings && !process_symbols && !process_string_dedup) {
+    // Nothing to clean.
+    return;
   }
+
+  G1StringAndSymbolCleaningTask g1_unlink_task(is_alive, process_strings, process_symbols, process_string_dedup);
+  workers()->run_task(&g1_unlink_task);
+
 }
 
 class G1RedirtyLoggedCardsTask : public AbstractGangTask {
@@ -4417,13 +4429,6 @@ void G1CollectedHeap::pre_evacuate_collection_set() {
 
   g1_rem_set()->prepare_for_oops_into_collection_set_do();
   _preserved_marks_set.assert_empty();
-}
-
-void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* per_thread_states) {
-  // Should G1EvacuationFailureALot be in effect for this GC?
-  NOT_PRODUCT(set_evacuation_failure_alot_for_current_gc();)
-
-  assert(dirty_card_queue_set().completed_buffers_num() == 0, "Should be empty");
 
   G1GCPhaseTimes* phase_times = g1_policy()->phase_times();
 
@@ -4436,6 +4441,15 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info, G
     double recorded_clear_claimed_marks_time_ms = (os::elapsedTime() - start_clear_claimed_marks) * 1000.0;
     phase_times->record_clear_claimed_marks_time_ms(recorded_clear_claimed_marks_time_ms);
   }
+}
+
+void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* per_thread_states) {
+  // Should G1EvacuationFailureALot be in effect for this GC?
+  NOT_PRODUCT(set_evacuation_failure_alot_for_current_gc();)
+
+  assert(dirty_card_queue_set().completed_buffers_num() == 0, "Should be empty");
+
+  G1GCPhaseTimes* phase_times = g1_policy()->phase_times();
 
   double start_par_time_sec = os::elapsedTime();
   double end_par_time_sec;

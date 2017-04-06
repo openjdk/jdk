@@ -42,13 +42,17 @@ public final class KillingBeginNode extends AbstractBeginNode implements MemoryC
         this.locationIdentity = locationIdentity;
     }
 
-    public static KillingBeginNode begin(FixedNode with, LocationIdentity locationIdentity) {
+    public static AbstractBeginNode begin(FixedNode with, LocationIdentity locationIdentity) {
         if (with instanceof KillingBeginNode) {
             return (KillingBeginNode) with;
         }
-        KillingBeginNode begin = with.graph().add(new KillingBeginNode(locationIdentity));
+        AbstractBeginNode begin = with.graph().add(KillingBeginNode.create(locationIdentity));
         begin.setNext(with);
         return begin;
+    }
+
+    public static AbstractBeginNode create(LocationIdentity locationIdentity) {
+        return new KillingBeginNode(locationIdentity);
     }
 
     @Override

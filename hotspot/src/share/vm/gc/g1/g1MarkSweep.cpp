@@ -167,22 +167,10 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
     // Unload classes and purge the SystemDictionary.
     bool purged_class = SystemDictionary::do_unloading(&GenMarkSweep::is_alive);
 
-    // Unload nmethods.
-    CodeCache::do_unloading(&GenMarkSweep::is_alive, purged_class);
-
-    // Prune dead klasses from subklass/sibling/implementor lists.
-    Klass::clean_weak_klass_links(&GenMarkSweep::is_alive);
-  }
-
-  {
-    GCTraceTime(Debug, gc, phases) trace("Scrub String and Symbol Tables", gc_timer());
-    // Delete entries for dead interned string and clean up unreferenced symbols in symbol table.
-    g1h->unlink_string_and_symbol_table(&GenMarkSweep::is_alive);
-  }
-
-  if (G1StringDedup::is_enabled()) {
-    GCTraceTime(Debug, gc, phases) trace("String Deduplication Unlink", gc_timer());
-    G1StringDedup::unlink(&GenMarkSweep::is_alive);
+    g1h->complete_cleaning(&GenMarkSweep::is_alive, purged_class);
+  } else {
+    GCTraceTime(Debug, gc, phases) trace("Cleanup", gc_timer());
+    g1h->partial_cleaning(&GenMarkSweep::is_alive, true, true, G1StringDedup::is_enabled());
   }
 
   if (VerifyDuringGC) {

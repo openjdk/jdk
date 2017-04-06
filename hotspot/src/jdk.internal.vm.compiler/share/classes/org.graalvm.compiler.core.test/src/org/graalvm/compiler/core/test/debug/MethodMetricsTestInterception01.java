@@ -23,9 +23,7 @@
 package org.graalvm.compiler.core.test.debug;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.junit.Test;
 
@@ -43,9 +41,7 @@ import org.graalvm.compiler.debug.internal.CounterImpl;
 import org.graalvm.compiler.debug.internal.MemUseTrackerImpl;
 import org.graalvm.compiler.debug.internal.TimerImpl;
 import org.graalvm.compiler.debug.internal.method.MethodMetricsImpl;
-import org.graalvm.compiler.debug.internal.method.MethodMetricsPrinter;
-import org.graalvm.compiler.options.OptionValue;
-import org.graalvm.compiler.options.OptionValue.OverrideScope;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.Phase;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -62,24 +58,19 @@ public class MethodMetricsTestInterception01 extends MethodMetricsTest {
     DebugConfig getConfig() {
         List<DebugDumpHandler> dumpHandlers = new ArrayList<>();
         List<DebugVerifyHandler> verifyHandlers = new ArrayList<>();
+        OptionValues options = getInitialOptions();
         GraalDebugConfig debugConfig = new GraalDebugConfig(
-                        GraalDebugConfig.Options.Log.getValue(),
+                        options,
+                        GraalDebugConfig.Options.Log.getValue(options),
                         "CountingAddPhase",
-                        GraalDebugConfig.Options.TrackMemUse.getValue(),
+                        GraalDebugConfig.Options.TrackMemUse.getValue(options),
                         "CountingAddPhase",
-                        GraalDebugConfig.Options.Dump.getValue(),
-                        GraalDebugConfig.Options.Verify.getValue(),
+                        GraalDebugConfig.Options.Dump.getValue(options),
+                        GraalDebugConfig.Options.Verify.getValue(options),
                         "MethodMetricsTest$TestApplication.*",
                         "CountingAddPhase",
                         System.out, dumpHandlers, verifyHandlers);
         return debugConfig;
-    }
-
-    @Override
-    protected OverrideScope getOScope() {
-        Map<OptionValue<?>, Object> mapping = new HashMap<>();
-        mapping.put(MethodMetricsPrinter.Options.MethodMeterPrintAscii, true);
-        return OptionValue.override(mapping);
     }
 
     private DebugValueFactory factory;

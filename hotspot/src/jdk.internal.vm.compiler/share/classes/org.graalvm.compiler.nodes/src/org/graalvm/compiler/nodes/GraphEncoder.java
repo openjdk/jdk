@@ -22,12 +22,9 @@
  */
 package org.graalvm.compiler.nodes;
 
-import static org.graalvm.compiler.core.common.CompilationIdentifier.INVALID_COMPILATION_ID;
-
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Objects;
 
 import org.graalvm.compiler.core.common.Fields;
@@ -45,6 +42,8 @@ import org.graalvm.compiler.graph.NodeMap;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.java.ExceptionObjectNode;
+import org.graalvm.util.UnmodifiableMapCursor;
+import org.graalvm.util.Pair;
 
 import jdk.vm.ci.code.Architecture;
 
@@ -87,8 +86,8 @@ import jdk.vm.ci.code.Architecture;
  * struct Node {
  *   unsigned typeId
  *   signed[] properties
- *   unsigned[] successorOrderIds
  *   unsigned[] inputOrderIds
+ *   unsigned[] successorOrderIds
  * }
  * </pre>
  *
@@ -153,7 +152,7 @@ public class GraphEncoder {
         GraphEncoder encoder = new GraphEncoder(architecture);
         encoder.prepare(graph);
         encoder.finishPrepare();
-        long startOffset = encoder.encode(graph);
+        int startOffset = encoder.encode(graph);
         return new EncodedGraph(encoder.getEncoding(), startOffset, encoder.getObjects(), encoder.getNodeClasses(), graph.getAssumptions(), graph.getMethods());
     }
 
@@ -203,7 +202,7 @@ public class GraphEncoder {
      *
      * @param graph The graph to encode
      */
-    public long encode(StructuredGraph graph) {
+    public int encode(StructuredGraph graph) {
         assert objectsArray != null && nodeClassesArray != null : "finishPrepare() must be called before encode()";
 
         NodeOrder nodeOrder = new NodeOrder(graph);
@@ -213,9 +212,10 @@ public class GraphEncoder {
         assert nodeCount == graph.getNodeCount() + 1;
 
         long[] nodeStartOffsets = new long[nodeCount];
-        for (Map.Entry<Node, Integer> entry : nodeOrder.orderIds.entries()) {
-            Node node = entry.getKey();
-            Integer orderId = entry.getValue();
+        UnmodifiableMapCursor<Node, Integer> cursor = nodeOrder.orderIds.getEntries();
+        while (cursor.advance()) {
+            Node node = cursor.getKey();
+            Integer orderId = cursor.getValue();
 
             assert !(node instanceof AbstractBeginNode) || nodeOrder.orderIds.get(((AbstractBeginNode) node).next()) == orderId + BEGIN_NEXT_ORDER_ID_OFFSET;
             nodeStartOffsets[orderId] = writer.getBytesWritten();
@@ -224,8 +224,8 @@ public class GraphEncoder {
             NodeClass<?> nodeClass = node.getNodeClass();
             writer.putUV(nodeClasses.getIndex(nodeClass));
             writeProperties(node, nodeClass.getData());
-            writeEdges(node, nodeClass.getEdges(Edges.Type.Successors), nodeOrder);
             writeEdges(node, nodeClass.getEdges(Edges.Type.Inputs), nodeOrder);
+            writeEdges(node, nodeClass.getEdges(Edges.Type.Successors), nodeOrder);
 
             /* Special handling for some nodes that require additional information for decoding. */
             if (node instanceof AbstractEndNode) {
@@ -277,7 +277,7 @@ public class GraphEncoder {
         }
 
         /* Write out the table of contents with the start offset for all nodes. */
-        long nodeTableStart = writer.getBytesWritten();
+        int nodeTableStart = TypeConversion.asS4(writer.getBytesWritten());
         writer.putUV(nodeCount);
         for (int i = 0; i < nodeCount; i++) {
             assert i == NULL_ORDER_ID || i == START_NODE_ORDER_ID || nodeStartOffsets[i] > 0;
@@ -338,7 +338,7 @@ public class GraphEncoder {
             } while (current != null);
 
             for (Node node : graph.getNodes()) {
-                assert (node instanceof FixedNode) == (orderIds.get(node) != null) : "all fixed nodes must be ordered";
+                assert (node instanceof FixedNode) == (orderIds.get(node) != null) : "all fixed nodes must be ordered: " + node;
                 add(node);
             }
         }
@@ -366,7 +366,7 @@ public class GraphEncoder {
 
     protected void writeEdges(Node node, Edges edges, NodeOrder nodeOrder) {
         for (int idx = 0; idx < edges.getDirectCount(); idx++) {
-            if (GraphDecoder.skipEdge(node, edges, idx, true, false)) {
+            if (GraphDecoder.skipDirectEdge(node, edges, idx)) {
                 /* Edge is not needed for decoding, so we must not write it. */
                 continue;
             }
@@ -374,7 +374,7 @@ public class GraphEncoder {
             writeOrderId(edge, nodeOrder);
         }
         for (int idx = edges.getDirectCount(); idx < edges.getCount(); idx++) {
-            if (GraphDecoder.skipEdge(node, edges, idx, false, false)) {
+            if (GraphDecoder.skipIndirectEdge(node, edges, idx, false)) {
                 /* Edge is not needed for decoding, so we must not write it. */
                 continue;
             }
@@ -404,7 +404,7 @@ public class GraphEncoder {
      */
     @SuppressWarnings("try")
     public static boolean verifyEncoding(StructuredGraph originalGraph, EncodedGraph encodedGraph, Architecture architecture) {
-        StructuredGraph decodedGraph = new StructuredGraph(originalGraph.method(), AllowAssumptions.YES, INVALID_COMPILATION_ID);
+        StructuredGraph decodedGraph = new StructuredGraph.Builder(originalGraph.getOptions(), AllowAssumptions.YES).method(originalGraph.method()).build();
         GraphDecoder decoder = new GraphDecoder(architecture);
         decoder.decode(decodedGraph, encodedGraph);
 
@@ -430,8 +430,8 @@ class GraphComparison {
         pushToWorklist(expectedGraph.start(), actualGraph.start(), nodeMapping, workList);
         while (!workList.isEmpty()) {
             Pair<Node, Node> pair = workList.removeFirst();
-            Node expectedNode = pair.first;
-            Node actualNode = pair.second;
+            Node expectedNode = pair.getLeft();
+            Node actualNode = pair.getRight();
             assert expectedNode.getClass() == actualNode.getClass();
 
             NodeClass<?> nodeClass = expectedNode.getNodeClass();
@@ -530,19 +530,9 @@ class GraphComparison {
         nodeMapping.set(expectedNode, actualNode);
         if (expectedNode instanceof AbstractEndNode) {
             /* To ensure phi nodes have been added, we handle everything before block ends. */
-            workList.addLast(new Pair<>(expectedNode, actualNode));
+            workList.addLast(Pair.create(expectedNode, actualNode));
         } else {
-            workList.addFirst(new Pair<>(expectedNode, actualNode));
+            workList.addFirst(Pair.create(expectedNode, actualNode));
         }
-    }
-}
-
-class Pair<F, S> {
-    public final F first;
-    public final S second;
-
-    Pair(F first, S second) {
-        this.first = first;
-        this.second = second;
     }
 }
