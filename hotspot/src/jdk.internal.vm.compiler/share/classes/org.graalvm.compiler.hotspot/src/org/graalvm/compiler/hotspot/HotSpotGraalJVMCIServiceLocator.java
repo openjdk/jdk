@@ -30,68 +30,77 @@ import static org.graalvm.compiler.core.common.util.Util.JAVA_SPECIFICATION_VERS
 import org.graalvm.compiler.serviceprovider.ServiceProvider;
 
 import jdk.vm.ci.hotspot.HotSpotVMEventListener;
-import jdk.vm.ci.runtime.JVMCICompiler;
 import jdk.vm.ci.runtime.JVMCICompilerFactory;
 import jdk.vm.ci.services.JVMCIServiceLocator;
+import jdk.vm.ci.services.Services;
 
 @ServiceProvider(JVMCIServiceLocator.class)
 public final class HotSpotGraalJVMCIServiceLocator extends JVMCIServiceLocator {
 
-    private boolean exportsAdded;
-
     /**
-     * Dynamically exports and opens various internal JDK packages to the Graal module. This
-     * requires only a single {@code --add-exports=java.base/jdk.internal.module=<Graal module>} on
-     * the VM command line instead of a {@code --add-exports} instance for each JDK internal package
-     * used by Graal.
+     * Holds the state shared between all {@link HotSpotGraalJVMCIServiceLocator} instances. This is
+     * necessary as {@link Services} can create a new instance of a service provider each time
+     * {@link Services#load(Class)} or {@link Services#loadSingle(Class, boolean)} is called.
      */
-    private void addExports() {
-        if (JAVA_SPECIFICATION_VERSION >= 9 && !exportsAdded) {
-            Object javaBaseModule = getModule.invoke(String.class);
-            Object graalModule = getModule.invoke(getClass());
-            addExports.invokeStatic(javaBaseModule, "jdk.internal.misc", graalModule);
-            addExports.invokeStatic(javaBaseModule, "jdk.internal.jimage", graalModule);
-            addExports.invokeStatic(javaBaseModule, "com.sun.crypto.provider", graalModule);
-            addOpens.invokeStatic(javaBaseModule, "jdk.internal.misc", graalModule);
-            addOpens.invokeStatic(javaBaseModule, "jdk.internal.jimage", graalModule);
-            addOpens.invokeStatic(javaBaseModule, "com.sun.crypto.provider", graalModule);
-            exportsAdded = true;
+    private static final class Shared {
+        static final Shared SINGLETON = new Shared();
+
+        private boolean exportsAdded;
+
+        /**
+         * Dynamically exports and opens various internal JDK packages to the Graal module. This
+         * requires only a single {@code --add-exports=java.base/jdk.internal.module=<Graal module>}
+         * on the VM command line instead of a {@code --add-exports} instance for each JDK internal
+         * package used by Graal.
+         */
+        private void addExports() {
+            if (JAVA_SPECIFICATION_VERSION >= 9 && !exportsAdded) {
+                Object javaBaseModule = getModule.invoke(String.class);
+                Object graalModule = getModule.invoke(getClass());
+                addExports.invokeStatic(javaBaseModule, "jdk.internal.misc", graalModule);
+                addExports.invokeStatic(javaBaseModule, "jdk.internal.jimage", graalModule);
+                addExports.invokeStatic(javaBaseModule, "com.sun.crypto.provider", graalModule);
+                addOpens.invokeStatic(javaBaseModule, "jdk.internal.misc", graalModule);
+                addOpens.invokeStatic(javaBaseModule, "jdk.internal.jimage", graalModule);
+                addOpens.invokeStatic(javaBaseModule, "com.sun.crypto.provider", graalModule);
+                exportsAdded = true;
+            }
+        }
+
+        <T> T getProvider(Class<T> service, HotSpotGraalJVMCIServiceLocator locator) {
+            if (service == JVMCICompilerFactory.class) {
+                addExports();
+                return service.cast(new HotSpotGraalCompilerFactory(locator));
+            } else if (service == HotSpotVMEventListener.class) {
+                if (graalRuntime != null) {
+                    addExports();
+                    return service.cast(new HotSpotGraalVMEventListener(graalRuntime));
+                }
+            }
+            return null;
+        }
+
+        private HotSpotGraalRuntime graalRuntime;
+
+        /**
+         * Notifies this object of the compiler created via {@link HotSpotGraalJVMCIServiceLocator}.
+         */
+        void onCompilerCreation(HotSpotGraalCompiler compiler) {
+            assert this.graalRuntime == null : "only expect a single JVMCICompiler to be created";
+            this.graalRuntime = (HotSpotGraalRuntime) compiler.getGraalRuntime();
         }
     }
-
-    private HotSpotGraalRuntime graalRuntime;
 
     @Override
     public <T> T getProvider(Class<T> service) {
-        if (service == JVMCICompilerFactory.class) {
-            addExports();
-            return service.cast(new HotSpotGraalCompilerFactory(this));
-        } else if (service == HotSpotVMEventListener.class) {
-            if (graalRuntime != null) {
-                addExports();
-                return service.cast(new HotSpotGraalVMEventListener(graalRuntime));
-            }
-        }
-        return null;
+        return Shared.SINGLETON.getProvider(service, this);
     }
 
     /**
-     * The signature cannot mention HotSpotGraalCompiler since it indirectly references
-     * JVMCICompiler which is in a non-exported JVMCI package. This causes an IllegalAccessError
-     * while looking for the
-     * <a href="http://hg.openjdk.java.net/jdk9/hs/jdk/rev/89ef4b822745#l32.65">provider</a> factory
-     * method:
-     *
-     * <pre>
-     * java.util.ServiceConfigurationError: jdk.vm.ci.services.JVMCIServiceLocator: Unable to get public provider() method
-     * ...
-     * Caused by: java.lang.IllegalAccessError: superinterface check failed: class org.graalvm.compiler.api.runtime.GraalJVMCICompiler
-     * (in module org.graalvm.compiler.graal_core) cannot access class jdk.vm.ci.runtime.JVMCICompiler (in module jdk.vm.ci) because
-     * module jdk.vm.ci does not export jdk.vm.ci.runtime to module org.graalvm.compiler.graal_core
-     * </pre>
+     * Notifies this object of the compiler created via {@link HotSpotGraalJVMCIServiceLocator}.
      */
-    void onCompilerCreation(JVMCICompiler compiler) {
-        assert this.graalRuntime == null : "only expect a single JVMCICompiler to be created";
-        this.graalRuntime = (HotSpotGraalRuntime) ((HotSpotGraalCompiler) compiler).getGraalRuntime();
+    @SuppressWarnings("static-method")
+    void onCompilerCreation(HotSpotGraalCompiler compiler) {
+        Shared.SINGLETON.onCompilerCreation(compiler);
     }
 }

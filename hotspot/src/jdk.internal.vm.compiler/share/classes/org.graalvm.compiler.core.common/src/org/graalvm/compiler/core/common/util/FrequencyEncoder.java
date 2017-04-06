@@ -23,10 +23,10 @@
 package org.graalvm.compiler.core.common.util;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.List;
-import java.util.Map;
+
+import org.graalvm.util.EconomicMap;
+import org.graalvm.util.Equivalence;
 
 /**
  * Creates an array of T objects order by the occurrence frequency of each object. The most
@@ -49,24 +49,24 @@ public class FrequencyEncoder<T> {
         }
     }
 
-    protected final Map<T, Entry<T>> map;
+    protected final EconomicMap<T, Entry<T>> map;
     protected boolean containsNull;
 
     /**
      * Creates an encoder that uses object identity.
      */
     public static <T> FrequencyEncoder<T> createIdentityEncoder() {
-        return new FrequencyEncoder<>(new IdentityHashMap<>());
+        return new FrequencyEncoder<>(EconomicMap.create(Equivalence.IDENTITY_WITH_SYSTEM_HASHCODE));
     }
 
     /**
      * Creates an encoder that uses {@link Object#equals(Object) object equality}.
      */
     public static <T> FrequencyEncoder<T> createEqualityEncoder() {
-        return new FrequencyEncoder<>(new HashMap<>());
+        return new FrequencyEncoder<>(EconomicMap.create(Equivalence.DEFAULT));
     }
 
-    protected FrequencyEncoder(Map<T, Entry<T>> map) {
+    protected FrequencyEncoder(EconomicMap<T, Entry<T>> map) {
         this.map = map;
     }
 
@@ -91,7 +91,7 @@ public class FrequencyEncoder<T> {
      * Returns the index of an object in the array. The object must have been
      * {@link #addObject(Object) added} before.
      */
-    public int getIndex(Object object) {
+    public int getIndex(T object) {
         if (object == null) {
             assert containsNull;
             return 0;
@@ -114,7 +114,10 @@ public class FrequencyEncoder<T> {
      */
     public T[] encodeAll(T[] allObjects) {
         assert allObjects.length == getLength();
-        List<Entry<T>> sortedEntries = new ArrayList<>(map.values());
+        List<Entry<T>> sortedEntries = new ArrayList<>(allObjects.length);
+        for (Entry<T> value : map.getValues()) {
+            sortedEntries.add(value);
+        }
         sortedEntries.sort((e1, e2) -> -Integer.compare(e1.frequency, e2.frequency));
 
         int offset = 0;

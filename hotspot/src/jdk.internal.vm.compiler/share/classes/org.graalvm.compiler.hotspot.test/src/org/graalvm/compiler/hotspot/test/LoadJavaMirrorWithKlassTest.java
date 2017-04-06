@@ -58,7 +58,11 @@ public class LoadJavaMirrorWithKlassTest extends GraalCompilerTest {
     @Override
     @SuppressWarnings("try")
     protected Suites createSuites(OptionValues options) {
-        return super.createSuites(new OptionValues(options, GraalOptions.ImmutableCode, true));
+        return super.createSuites(getOptions());
+    }
+
+    private static OptionValues getOptions() {
+        return new OptionValues(getInitialOptions(), GraalOptions.ImmutableCode, true);
     }
 
     @Override
@@ -77,7 +81,7 @@ public class LoadJavaMirrorWithKlassTest extends GraalCompilerTest {
 
     @Test
     public void testClassConstant() {
-        test("classConstant");
+        test(getOptions(), "classConstant");
     }
 
     public static Class<?> primitiveClassConstant() {
@@ -86,7 +90,7 @@ public class LoadJavaMirrorWithKlassTest extends GraalCompilerTest {
 
     @Test
     public void testPrimitiveClassConstant() {
-        test("primitiveClassConstant");
+        test(getOptions(), "primitiveClassConstant");
     }
 
     public static Wrapper compressedClassConstant(Wrapper w) {
@@ -97,7 +101,7 @@ public class LoadJavaMirrorWithKlassTest extends GraalCompilerTest {
     @Test
     public void testCompressedClassConstant() {
         ArgSupplier arg = () -> new Wrapper();
-        test("compressedClassConstant", arg);
+        test(getOptions(), "compressedClassConstant", arg);
     }
 
     public static Wrapper compressedPrimitiveClassConstant(Wrapper w) {
@@ -108,6 +112,6 @@ public class LoadJavaMirrorWithKlassTest extends GraalCompilerTest {
     @Test
     public void testCompressedPrimitiveClassConstant() {
         ArgSupplier arg = () -> new Wrapper();
-        test("compressedPrimitiveClassConstant", arg);
+        test(getOptions(), "compressedPrimitiveClassConstant", arg);
     }
 }

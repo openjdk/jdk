@@ -113,6 +113,6 @@ public class UniquePathUtilities {
         if (result.isAbsolute() || defaultDirectory == null) {
             return result;
         }
-        return Paths.get(defaultDirectory.getValue(options), name);
+        return Paths.get(defaultDirectory.getValue(options), name).normalize();
     }
 }

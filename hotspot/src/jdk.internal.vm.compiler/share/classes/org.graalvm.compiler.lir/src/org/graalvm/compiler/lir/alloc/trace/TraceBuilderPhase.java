@@ -64,8 +64,8 @@ public class TraceBuilderPhase extends AllocationPhase {
         // @formatter:on
     }
 
-    private static final int TRACE_LOG_LEVEL = 1;
-    public static final int TRACE_DUMP_LEVEL = 3;
+    private static final int TRACE_LOG_LEVEL = Debug.BASIC_LEVEL;
+    public static final int TRACE_DUMP_LEVEL = Debug.VERBOSE_LEVEL;
 
     @Override
     protected void run(TargetDescription target, LIRGenerationResult lirGenRes, AllocationContext context) {

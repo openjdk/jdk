@@ -717,7 +717,7 @@ public class MemoryScheduleTest extends GraphScheduleTest {
             if (mode == TestMode.WITHOUT_FRAMESTATES || mode == TestMode.INLINED_WITHOUT_FRAMESTATES) {
                 graph.clearAllStateAfter();
             }
-            Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "after removal of framestates");
+            Debug.dump(Debug.BASIC_LEVEL, graph, "after removal of framestates");
 
             new FloatingReadPhase().apply(graph);
             new RemoveValueProxyPhase().apply(graph);

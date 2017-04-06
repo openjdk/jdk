@@ -25,6 +25,7 @@ package org.graalvm.compiler.hotspot.stubs;
 import static org.graalvm.compiler.core.GraalCompiler.emitBackEnd;
 import static org.graalvm.compiler.core.GraalCompiler.emitFrontEnd;
 import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
+import static org.graalvm.compiler.debug.GraalDebugConfig.Options.DebugStubsAndSnippets;
 import static org.graalvm.compiler.hotspot.HotSpotHostBackend.UNCOMMON_TRAP_HANDLER;
 import static org.graalvm.util.CollectionsUtil.allMatch;
 
@@ -35,6 +36,7 @@ import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.target.Backend;
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugConfig;
 import org.graalvm.compiler.debug.internal.DebugScope;
 import org.graalvm.compiler.hotspot.HotSpotCompiledCodeBuilder;
 import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage;
@@ -176,7 +178,8 @@ public abstract class Stub {
     @SuppressWarnings("try")
     public synchronized InstalledCode getCode(final Backend backend) {
         if (code == null) {
-            try (Scope d = Debug.sandbox("CompilingStub", DebugScope.getConfig(), providers.getCodeCache(), debugScopeContext())) {
+            DebugConfig config = DebugStubsAndSnippets.getValue(options) ? DebugScope.getConfig() : Debug.silentConfig();
+            try (Scope d = Debug.sandbox("CompilingStub", config, providers.getCodeCache(), debugScopeContext())) {
                 CodeCacheProvider codeCache = providers.getCodeCache();
 
                 CompilationResult compResult = buildCompilationResult(backend);
@@ -184,7 +187,7 @@ public abstract class Stub {
                     assert destroyedCallerRegisters != null;
                     // Add a GeneratePIC check here later, we don't want to install
                     // code if we don't have a corresponding VM global symbol.
-                    HotSpotCompiledCode compiledCode = HotSpotCompiledCodeBuilder.createCompiledCode(null, null, compResult);
+                    HotSpotCompiledCode compiledCode = HotSpotCompiledCodeBuilder.createCompiledCode(codeCache, null, null, compResult);
                     code = codeCache.installCode(null, compiledCode, null, null, false);
                 } catch (Throwable e) {
                     throw Debug.handle(e);

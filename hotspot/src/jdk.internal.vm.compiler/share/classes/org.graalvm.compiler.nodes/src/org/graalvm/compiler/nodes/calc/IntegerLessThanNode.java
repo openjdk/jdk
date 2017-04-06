@@ -31,15 +31,14 @@ import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.LogicNegationNode;
 import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.ValueNode;
 
 import jdk.vm.ci.code.CodeUtil;
 import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PrimitiveConstant;
@@ -55,8 +54,8 @@ public final class IntegerLessThanNode extends IntegerLowerThanNode {
         assert !y.getStackKind().isNumericFloat() && y.getStackKind() != JavaKind.Object;
     }
 
-    public static LogicNode create(ValueNode x, ValueNode y, ConstantReflectionProvider constantReflection) {
-        return OP.create(x, y, constantReflection);
+    public static LogicNode create(ValueNode x, ValueNode y) {
+        return OP.create(x, y);
     }
 
     @Override
@@ -91,79 +90,6 @@ public final class IntegerLessThanNode extends IntegerLowerThanNode {
     }
 
     @Override
-    public ValueNode canonical(CanonicalizerTool tool, ValueNode forX, ValueNode forY) {
-        ValueNode result = super.canonical(tool, forX, forY);
-        if (result != this) {
-            return result;
-        }
-        if (forX.stamp() instanceof IntegerStamp && forY.stamp() instanceof IntegerStamp) {
-            if (IntegerStamp.sameSign((IntegerStamp) forX.stamp(), (IntegerStamp) forY.stamp())) {
-                return new IntegerBelowNode(forX, forY);
-            }
-        }
-        if (forY.isConstant() && forY.asConstant().isDefaultForKind() && forX instanceof SubNode) {
-            // (x - y) < 0 when x - y is known not to underflow <=> x < y
-            SubNode sub = (SubNode) forX;
-            IntegerStamp xStamp = (IntegerStamp) sub.getX().stamp();
-            IntegerStamp yStamp = (IntegerStamp) sub.getY().stamp();
-            long minValue = CodeUtil.minValue(xStamp.getBits());
-            long maxValue = CodeUtil.maxValue(xStamp.getBits());
-
-            if (!subtractMayUnderflow(xStamp.lowerBound(), yStamp.upperBound(), minValue) && !subtractMayOverflow(xStamp.upperBound(), yStamp.lowerBound(), maxValue)) {
-                return new IntegerLessThanNode(sub.getX(), sub.getY());
-            }
-        }
-
-        int bits = ((IntegerStamp) getX().stamp()).getBits();
-        assert ((IntegerStamp) getY().stamp()).getBits() == bits;
-        long min = OP.minValue(bits);
-        long xResidue = 0;
-        ValueNode left = null;
-        JavaConstant leftCst = null;
-        if (forX instanceof AddNode) {
-            AddNode xAdd = (AddNode) forX;
-            if (xAdd.getY().isJavaConstant()) {
-                long xCst = xAdd.getY().asJavaConstant().asLong();
-                xResidue = xCst - min;
-                left = xAdd.getX();
-            }
-        } else if (forX.isJavaConstant()) {
-            leftCst = forX.asJavaConstant();
-        }
-        if (left != null || leftCst != null) {
-            long yResidue = 0;
-            ValueNode right = null;
-            JavaConstant rightCst = null;
-            if (forY instanceof AddNode) {
-                AddNode yAdd = (AddNode) forY;
-                if (yAdd.getY().isJavaConstant()) {
-                    long yCst = yAdd.getY().asJavaConstant().asLong();
-                    yResidue = yCst - min;
-                    right = yAdd.getX();
-                }
-            } else if (forY.isJavaConstant()) {
-                rightCst = forY.asJavaConstant();
-            }
-            if (right != null || rightCst != null) {
-                if ((xResidue == 0 && left != null) || (yResidue == 0 && right != null)) {
-                    if (left == null) {
-                        left = ConstantNode.forIntegerBits(bits, leftCst.asLong() - min);
-                    } else if (xResidue != 0) {
-                        left = AddNode.create(left, ConstantNode.forIntegerBits(bits, xResidue));
-                    }
-                    if (right == null) {
-                        right = ConstantNode.forIntegerBits(bits, rightCst.asLong() - min);
-                    } else if (yResidue != 0) {
-                        right = AddNode.create(right, ConstantNode.forIntegerBits(bits, yResidue));
-                    }
-                    return new IntegerBelowNode(left, right);
-                }
-            }
-        }
-        return this;
-    }
-
-    @Override
     protected CompareNode duplicateModified(ValueNode newX, ValueNode newY) {
         if (newX.stamp() instanceof FloatStamp && newY.stamp() instanceof FloatStamp) {
             return new FloatLessThanNode(newX, newY, true);
@@ -176,12 +102,104 @@ public final class IntegerLessThanNode extends IntegerLowerThanNode {
     public static class LessThanOp extends LowerOp {
 
         @Override
+        protected LogicNode findSynonym(ValueNode forX, ValueNode forY) {
+            LogicNode result = super.findSynonym(forX, forY);
+            if (result != null) {
+                return result;
+            }
+            if (forX.stamp() instanceof IntegerStamp && forY.stamp() instanceof IntegerStamp) {
+                if (IntegerStamp.sameSign((IntegerStamp) forX.stamp(), (IntegerStamp) forY.stamp())) {
+                    return new IntegerBelowNode(forX, forY);
+                }
+            }
+            if (forY.isConstant() && forX instanceof SubNode) {
+                SubNode sub = (SubNode) forX;
+                ValueNode xx = null;
+                ValueNode yy = null;
+                boolean negate = false;
+                if (forY.asConstant().isDefaultForKind()) {
+                    // (x - y) < 0 when x - y is known not to underflow <=> x < y
+                    xx = sub.getX();
+                    yy = sub.getY();
+                } else if (forY.isJavaConstant() && forY.asJavaConstant().asLong() == 1) {
+                    // (x - y) < 1 when x - y is known not to underflow <=> !(y < x)
+                    xx = sub.getY();
+                    yy = sub.getX();
+                    negate = true;
+                }
+                if (xx != null) {
+                    assert yy != null;
+                    IntegerStamp xStamp = (IntegerStamp) sub.getX().stamp();
+                    IntegerStamp yStamp = (IntegerStamp) sub.getY().stamp();
+                    long minValue = CodeUtil.minValue(xStamp.getBits());
+                    long maxValue = CodeUtil.maxValue(xStamp.getBits());
+
+                    if (!subtractMayUnderflow(xStamp.lowerBound(), yStamp.upperBound(), minValue) && !subtractMayOverflow(xStamp.upperBound(), yStamp.lowerBound(), maxValue)) {
+                        LogicNode logic = new IntegerLessThanNode(xx, yy);
+                        if (negate) {
+                            logic = LogicNegationNode.create(logic);
+                        }
+                        return logic;
+                    }
+                }
+            }
+
+            int bits = ((IntegerStamp) forX.stamp()).getBits();
+            assert ((IntegerStamp) forY.stamp()).getBits() == bits;
+            long min = OP.minValue(bits);
+            long xResidue = 0;
+            ValueNode left = null;
+            JavaConstant leftCst = null;
+            if (forX instanceof AddNode) {
+                AddNode xAdd = (AddNode) forX;
+                if (xAdd.getY().isJavaConstant()) {
+                    long xCst = xAdd.getY().asJavaConstant().asLong();
+                    xResidue = xCst - min;
+                    left = xAdd.getX();
+                }
+            } else if (forX.isJavaConstant()) {
+                leftCst = forX.asJavaConstant();
+            }
+            if (left != null || leftCst != null) {
+                long yResidue = 0;
+                ValueNode right = null;
+                JavaConstant rightCst = null;
+                if (forY instanceof AddNode) {
+                    AddNode yAdd = (AddNode) forY;
+                    if (yAdd.getY().isJavaConstant()) {
+                        long yCst = yAdd.getY().asJavaConstant().asLong();
+                        yResidue = yCst - min;
+                        right = yAdd.getX();
+                    }
+                } else if (forY.isJavaConstant()) {
+                    rightCst = forY.asJavaConstant();
+                }
+                if (right != null || rightCst != null) {
+                    if ((xResidue == 0 && left != null) || (yResidue == 0 && right != null)) {
+                        if (left == null) {
+                            left = ConstantNode.forIntegerBits(bits, leftCst.asLong() - min);
+                        } else if (xResidue != 0) {
+                            left = AddNode.create(left, ConstantNode.forIntegerBits(bits, xResidue));
+                        }
+                        if (right == null) {
+                            right = ConstantNode.forIntegerBits(bits, rightCst.asLong() - min);
+                        } else if (yResidue != 0) {
+                            right = AddNode.create(right, ConstantNode.forIntegerBits(bits, yResidue));
+                        }
+                        return new IntegerBelowNode(left, right);
+                    }
+                }
+            }
+            return null;
+        }
+
+        @Override
         protected Condition getCondition() {
             return LT;
         }
 
         @Override
-        protected IntegerLowerThanNode create(ValueNode x, ValueNode y) {
+        protected IntegerLowerThanNode createNode(ValueNode x, ValueNode y) {
             return new IntegerLessThanNode(x, y);
         }
 

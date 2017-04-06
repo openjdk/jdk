@@ -25,6 +25,9 @@ package org.graalvm.compiler.hotspot.replacements;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_4;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
 
+import jdk.vm.ci.meta.ConstantReflectionProvider;
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -38,6 +41,7 @@ import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.extended.LoadHubNode;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 
@@ -61,6 +65,18 @@ public final class KlassLayoutHelperNode extends FloatingNode implements Canonic
         super(TYPE, StampFactory.forKind(JavaKind.Int));
         this.config = config;
         this.klass = klass;
+    }
+
+    public static ValueNode create(GraalHotSpotVMConfig config, ValueNode klass, ConstantReflectionProvider constantReflection, MetaAccessProvider metaAccess) {
+        Stamp stamp = StampFactory.forKind(JavaKind.Int);
+        return canonical(null, config, klass, stamp, constantReflection, metaAccess);
+    }
+
+    @SuppressWarnings("unused")
+    public static boolean intrinsify(GraphBuilderContext b, ResolvedJavaMethod method, @InjectedNodeParameter GraalHotSpotVMConfig config, ValueNode klass) {
+        ValueNode valueNode = create(config, klass, b.getConstantReflection(), b.getMetaAccess());
+        b.push(JavaKind.Int, b.recursiveAppend(valueNode));
+        return true;
     }
 
     @Override
@@ -92,27 +108,36 @@ public final class KlassLayoutHelperNode extends FloatingNode implements Canonic
         if (tool.allUsagesAvailable() && hasNoUsages()) {
             return null;
         } else {
-            if (klass.isConstant()) {
-                if (!klass.asConstant().isDefaultForKind()) {
-                    Constant constant = stamp().readConstant(tool.getConstantReflection().getMemoryAccessProvider(), klass.asConstant(), config.klassLayoutHelperOffset);
-                    return ConstantNode.forConstant(stamp(), constant, tool.getMetaAccess());
-                }
-            }
-            if (klass instanceof LoadHubNode) {
-                LoadHubNode hub = (LoadHubNode) klass;
-                Stamp hubStamp = hub.getValue().stamp();
-                if (hubStamp instanceof ObjectStamp) {
-                    ObjectStamp ostamp = (ObjectStamp) hubStamp;
-                    HotSpotResolvedObjectType type = (HotSpotResolvedObjectType) ostamp.type();
-                    if (type != null && type.isArray() && !type.getComponentType().isPrimitive()) {
-                        // The layout for all object arrays is the same.
-                        Constant constant = stamp().readConstant(tool.getConstantReflection().getMemoryAccessProvider(), type.klass(), config.klassLayoutHelperOffset);
-                        return ConstantNode.forConstant(stamp(), constant, tool.getMetaAccess());
-                    }
-                }
-            }
-            return this;
+            return canonical(this, config, klass, stamp(), tool.getConstantReflection(), tool.getMetaAccess());
         }
+    }
+
+    private static ValueNode canonical(KlassLayoutHelperNode klassLayoutHelperNode, GraalHotSpotVMConfig config, ValueNode klass, Stamp stamp, ConstantReflectionProvider constantReflection,
+                    MetaAccessProvider metaAccess) {
+        KlassLayoutHelperNode self = klassLayoutHelperNode;
+        if (klass.isConstant()) {
+            if (!klass.asConstant().isDefaultForKind()) {
+                Constant constant = stamp.readConstant(constantReflection.getMemoryAccessProvider(), klass.asConstant(), config.klassLayoutHelperOffset);
+                return ConstantNode.forConstant(stamp, constant, metaAccess);
+            }
+        }
+        if (klass instanceof LoadHubNode) {
+            LoadHubNode hub = (LoadHubNode) klass;
+            Stamp hubStamp = hub.getValue().stamp();
+            if (hubStamp instanceof ObjectStamp) {
+                ObjectStamp ostamp = (ObjectStamp) hubStamp;
+                HotSpotResolvedObjectType type = (HotSpotResolvedObjectType) ostamp.type();
+                if (type != null && type.isArray() && !type.getComponentType().isPrimitive()) {
+                    // The layout for all object arrays is the same.
+                    Constant constant = stamp.readConstant(constantReflection.getMemoryAccessProvider(), type.klass(), config.klassLayoutHelperOffset);
+                    return ConstantNode.forConstant(stamp, constant, metaAccess);
+                }
+            }
+        }
+        if (self == null) {
+            self = new KlassLayoutHelperNode(config, klass);
+        }
+        return self;
     }
 
     @Override

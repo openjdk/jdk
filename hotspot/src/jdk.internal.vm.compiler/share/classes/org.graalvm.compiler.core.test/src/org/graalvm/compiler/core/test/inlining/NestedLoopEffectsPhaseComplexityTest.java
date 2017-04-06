@@ -121,7 +121,7 @@ public class NestedLoopEffectsPhaseComplexityTest extends GraalCompilerTest {
         long start = System.currentTimeMillis();
         phase.apply(g, context);
         long end = System.currentTimeMillis();
-        Debug.dump(Debug.DETAILED_LOG_LEVEL, g, "After %s", phase.contractorName());
+        Debug.dump(Debug.DETAILED_LEVEL, g, "After %s", phase.contractorName());
         return end - start;
     }
 
@@ -138,7 +138,7 @@ public class NestedLoopEffectsPhaseComplexityTest extends GraalCompilerTest {
             next = callerGraph.getNodes(MethodCallTargetNode.TYPE).first().invoke();
             EconomicSet<Node> canonicalizeNodes = InliningUtil.inlineForCanonicalization(next, calleeGraph, false, calleeMethod);
             canonicalizer.applyIncremental(callerGraph, context, canonicalizeNodes);
-            Debug.dump(Debug.DETAILED_LOG_LEVEL, callerGraph, "After inlining %s into %s iteration %d", calleeMethod, callerMethod, i);
+            Debug.dump(Debug.DETAILED_LEVEL, callerGraph, "After inlining %s into %s iteration %d", calleeMethod, callerMethod, i);
         }
         return callerGraph;
     }

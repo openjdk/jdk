@@ -22,7 +22,6 @@
  */
 package org.graalvm.compiler.hotspot.phases;
 
-import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.CLASS_MIRROR_LOCATION;
 import static org.graalvm.compiler.nodes.ConstantNode.getConstantNodes;
 import static org.graalvm.compiler.nodes.NamedLocationIdentity.FINAL_LOCATION;
 
@@ -32,9 +31,11 @@ import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.TypeReference;
 import org.graalvm.compiler.debug.GraalError;
+import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.nodes.CompressionNode;
 import org.graalvm.compiler.hotspot.nodes.type.KlassPointerStamp;
 import org.graalvm.compiler.hotspot.nodes.type.NarrowOopStamp;
+import org.graalvm.compiler.hotspot.replacements.HubGetClassNode;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -67,12 +68,10 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  */
 public class LoadJavaMirrorWithKlassPhase extends BasePhase<PhaseContext> {
 
-    private final int classMirrorOffset;
     private final CompressEncoding oopEncoding;
 
-    public LoadJavaMirrorWithKlassPhase(int classMirrorOffset, CompressEncoding oopEncoding) {
-        this.classMirrorOffset = classMirrorOffset;
-        this.oopEncoding = oopEncoding;
+    public LoadJavaMirrorWithKlassPhase(GraalHotSpotVMConfig config) {
+        this.oopEncoding = config.useCompressedOops ? config.getOopEncoding() : null;
     }
 
     private ValueNode getClassConstantReplacement(StructuredGraph graph, PhaseContext context, JavaConstant constant) {
@@ -85,13 +84,12 @@ public class LoadJavaMirrorWithKlassPhase extends BasePhase<PhaseContext> {
 
                 if (type instanceof HotSpotResolvedObjectType) {
                     ConstantNode klass = ConstantNode.forConstant(KlassPointerStamp.klassNonNull(), ((HotSpotResolvedObjectType) type).klass(), metaAccess, graph);
-                    AddressNode address = graph.unique(new OffsetAddressNode(klass, ConstantNode.forLong(classMirrorOffset, graph)));
-                    ValueNode read = graph.unique(new FloatingReadNode(address, CLASS_MIRROR_LOCATION, null, stamp));
+                    ValueNode getClass = graph.unique(new HubGetClassNode(metaAccess, klass));
 
                     if (((HotSpotObjectConstant) constant).isCompressed()) {
-                        return CompressionNode.compress(read, oopEncoding);
+                        return CompressionNode.compress(getClass, oopEncoding);
                     } else {
-                        return read;
+                        return getClass;
                     }
                 } else {
                     /*

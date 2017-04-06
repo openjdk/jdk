@@ -217,7 +217,7 @@ public final class RedundantMoveElimination extends PostAllocationOptimizationPh
         /**
          * Calculates the entry and exit states for all basic blocks.
          *
-         * @return Returns true on success and false if the the control flow is too complex.
+         * @return Returns true on success and false if the control flow is too complex.
          */
         @SuppressWarnings("try")
         private boolean solveDataFlow(LIR lir) {

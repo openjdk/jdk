@@ -25,6 +25,7 @@ package org.graalvm.compiler.replacements;
 import static java.util.FormattableFlags.ALTERNATE;
 import static org.graalvm.compiler.core.common.LocationIdentity.any;
 import static org.graalvm.compiler.debug.Debug.applyFormattingFlagsAndWidth;
+import static org.graalvm.compiler.debug.GraalDebugConfig.Options.DebugStubsAndSnippets;
 import static org.graalvm.compiler.graph.iterators.NodePredicates.isNotA;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_IGNORED;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_IGNORED;
@@ -57,7 +58,9 @@ import org.graalvm.compiler.core.common.type.StampPair;
 import org.graalvm.compiler.core.common.type.TypeReference;
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.internal.DebugScope;
 import org.graalvm.compiler.debug.DebugCloseable;
+import org.graalvm.compiler.debug.DebugConfig;
 import org.graalvm.compiler.debug.DebugCounter;
 import org.graalvm.compiler.debug.DebugTimer;
 import org.graalvm.compiler.debug.GraalError;
@@ -82,8 +85,8 @@ import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.MergeNode;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.PhiNode;
-import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.PiNode.Placeholder;
+import org.graalvm.compiler.nodes.PiNode.PlaceholderStamp;
 import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StartNode;
 import org.graalvm.compiler.nodes.StateSplit;
@@ -632,7 +635,8 @@ public class SnippetTemplate {
             SnippetTemplate template = Options.UseSnippetTemplateCache.getValue(options) && args.cacheable ? templates.get(args.cacheKey) : null;
             if (template == null) {
                 SnippetTemplates.increment();
-                try (DebugCloseable a = SnippetTemplateCreationTime.start(); Scope s = Debug.scope("SnippetSpecialization", args.info.method)) {
+                DebugConfig config = DebugStubsAndSnippets.getValue(options) ? DebugScope.getConfig() : Debug.silentConfig();
+                try (DebugCloseable a = SnippetTemplateCreationTime.start(); Scope s = Debug.sandbox("SnippetSpecialization", config, args.info.method)) {
                     template = new SnippetTemplate(options, providers, snippetReflection, args);
                     if (Options.UseSnippetTemplateCache.getValue(options) && args.cacheable) {
                         templates.put(args.cacheKey, template);
@@ -744,7 +748,7 @@ public class SnippetTemplate {
             }
             snippetCopy.addDuplicates(snippetGraph.getNodes(), snippetGraph, snippetGraph.getNodeCount(), nodeReplacements);
 
-            Debug.dump(Debug.INFO_LOG_LEVEL, snippetCopy, "Before specialization");
+            Debug.dump(Debug.INFO_LEVEL, snippetCopy, "Before specialization");
 
             // Gather the template parameters
             parameters = new Object[parameterCount];
@@ -772,10 +776,10 @@ public class SnippetTemplate {
                         for (Node usage : placeholder.usages().snapshot()) {
                             if (usage instanceof LoadIndexedNode) {
                                 LoadIndexedNode loadIndexed = (LoadIndexedNode) usage;
-                                Debug.dump(Debug.INFO_LOG_LEVEL, snippetCopy, "Before replacing %s", loadIndexed);
+                                Debug.dump(Debug.INFO_LEVEL, snippetCopy, "Before replacing %s", loadIndexed);
                                 LoadSnippetVarargParameterNode loadSnippetParameter = snippetCopy.add(new LoadSnippetVarargParameterNode(params, loadIndexed.index(), loadIndexed.stamp()));
                                 snippetCopy.replaceFixedWithFixed(loadIndexed, loadSnippetParameter);
-                                Debug.dump(Debug.INFO_LOG_LEVEL, snippetCopy, "After replacing %s", loadIndexed);
+                                Debug.dump(Debug.INFO_LEVEL, snippetCopy, "After replacing %s", loadIndexed);
                             } else if (usage instanceof StoreIndexedNode) {
                                 /*
                                  * The template lowering doesn't really treat this as an array so
@@ -813,11 +817,15 @@ public class SnippetTemplate {
 
             ArrayList<StateSplit> curSideEffectNodes = new ArrayList<>();
             ArrayList<DeoptimizingNode> curDeoptNodes = new ArrayList<>();
-            ArrayList<ValueNode> curStampNodes = new ArrayList<>();
+            ArrayList<ValueNode> curPlaceholderStampedNodes = new ArrayList<>();
             for (Node node : snippetCopy.getNodes()) {
-                if (node instanceof ValueNode && ((ValueNode) node).stamp() == StampFactory.forNodeIntrinsic()) {
-                    curStampNodes.add((ValueNode) node);
+                if (node instanceof ValueNode) {
+                    ValueNode valueNode = (ValueNode) node;
+                    if (valueNode.stamp() == PlaceholderStamp.singleton()) {
+                        curPlaceholderStampedNodes.add(valueNode);
+                    }
                 }
+
                 if (node instanceof StateSplit) {
                     StateSplit stateSplit = (StateSplit) node;
                     FrameState frameState = stateSplit.stateAfter();
@@ -889,7 +897,7 @@ public class SnippetTemplate {
                     this.memoryAnchor = null;
                 }
             }
-            Debug.dump(Debug.INFO_LOG_LEVEL, snippet, "SnippetTemplate after fixing memory anchoring");
+            Debug.dump(Debug.INFO_LEVEL, snippet, "SnippetTemplate after fixing memory anchoring");
 
             List<ReturnNode> returnNodes = snippet.getNodes(ReturnNode.TYPE).snapshot();
             if (returnNodes.isEmpty()) {
@@ -924,7 +932,7 @@ public class SnippetTemplate {
 
             this.sideEffectNodes = curSideEffectNodes;
             this.deoptNodes = curDeoptNodes;
-            this.stampNodes = curStampNodes;
+            this.placeholderStampedNodes = curPlaceholderStampedNodes;
 
             nodes = new ArrayList<>(snippet.getNodeCount());
             for (Node node : snippet.getNodes()) {
@@ -934,7 +942,7 @@ public class SnippetTemplate {
             }
 
             Debug.counter("SnippetTemplateNodeCount[%#s]", args).add(nodes.size());
-            Debug.dump(Debug.INFO_LOG_LEVEL, snippet, "SnippetTemplate final state");
+            Debug.dump(Debug.INFO_LEVEL, snippet, "SnippetTemplate final state");
 
         } catch (Throwable ex) {
             throw Debug.handle(ex);
@@ -1043,9 +1051,9 @@ public class SnippetTemplate {
     private final ArrayList<DeoptimizingNode> deoptNodes;
 
     /**
-     * The nodes that inherit the {@link ValueNode#stamp()} from the replacee during instantiation.
+     * Nodes that have a stamp originating from a {@link Placeholder}.
      */
-    private final ArrayList<ValueNode> stampNodes;
+    private final ArrayList<ValueNode> placeholderStampedNodes;
 
     /**
      * The nodes to be inlined when this specialization is instantiated.
@@ -1364,6 +1372,21 @@ public class SnippetTemplate {
      */
     @SuppressWarnings("try")
     public UnmodifiableEconomicMap<Node, Node> instantiate(MetaAccessProvider metaAccess, FixedNode replacee, UsageReplacer replacer, Arguments args) {
+        return instantiate(metaAccess, replacee, replacer, args, true);
+    }
+
+    /**
+     * Replaces a given fixed node with this specialized snippet.
+     *
+     * @param metaAccess
+     * @param replacee the node that will be replaced
+     * @param replacer object that replaces the usages of {@code replacee}
+     * @param args the arguments to be bound to the flattened positional parameters of the snippet
+     * @param killReplacee is true, the replacee node is deleted
+     * @return the map of duplicated nodes (original -&gt; duplicate)
+     */
+    @SuppressWarnings("try")
+    public UnmodifiableEconomicMap<Node, Node> instantiate(MetaAccessProvider metaAccess, FixedNode replacee, UsageReplacer replacer, Arguments args, boolean killReplacee) {
         assert assertSnippetKills(replacee);
         try (DebugCloseable a = args.info.instantiationTimer.start(); DebugCloseable b = instantiationTimer.start()) {
             args.info.instantiationCounter.increment();
@@ -1375,7 +1398,7 @@ public class SnippetTemplate {
             EconomicMap<Node, Node> replacements = bind(replaceeGraph, metaAccess, args);
             replacements.put(entryPointNode, AbstractBeginNode.prevBegin(replacee));
             UnmodifiableEconomicMap<Node, Node> duplicates = replaceeGraph.addDuplicates(nodes, snippet, snippet.getNodeCount(), replacements);
-            Debug.dump(Debug.INFO_LOG_LEVEL, replaceeGraph, "After inlining snippet %s", snippet.method());
+            Debug.dump(Debug.DETAILED_LEVEL, replaceeGraph, "After inlining snippet %s", snippet.method());
 
             // Re-wire the control flow graph around the replacee
             FixedNode firstCFGNodeDuplicate = (FixedNode) duplicates.get(firstCFGNode);
@@ -1458,10 +1481,12 @@ public class SnippetTemplate {
                 }
             }
 
-            // Remove the replacee from its graph
-            GraphUtil.killCFG(replacee);
+            if (killReplacee) {
+                // Remove the replacee from its graph
+                GraphUtil.killCFG(replacee);
+            }
 
-            Debug.dump(Debug.INFO_LOG_LEVEL, replaceeGraph, "After lowering %s with %s", replacee, this);
+            Debug.dump(Debug.DETAILED_LEVEL, replaceeGraph, "After lowering %s with %s", replacee, this);
             return duplicates;
         }
     }
@@ -1478,14 +1503,14 @@ public class SnippetTemplate {
     }
 
     private void updateStamps(ValueNode replacee, UnmodifiableEconomicMap<Node, Node> duplicates) {
-        for (ValueNode stampNode : stampNodes) {
-            Node stampDup = duplicates.get(stampNode);
-            if (stampDup instanceof PiNode.Placeholder) {
-                PiNode.Placeholder placeholder = (Placeholder) stampDup;
-                PiNode pi = placeholder.getReplacement(replacee.stamp());
-                placeholder.replaceAndDelete(pi);
+        for (ValueNode node : placeholderStampedNodes) {
+            ValueNode dup = (ValueNode) duplicates.get(node);
+            Stamp replaceeStamp = replacee.stamp();
+            if (node instanceof Placeholder) {
+                Placeholder placeholderDup = (Placeholder) dup;
+                placeholderDup.makeReplacement(replaceeStamp);
             } else {
-                ((ValueNode) stampDup).setStamp(replacee.stamp());
+                dup.setStamp(replaceeStamp);
             }
         }
         for (ParameterNode paramNode : snippet.getNodes(ParameterNode.TYPE)) {
@@ -1526,7 +1551,7 @@ public class SnippetTemplate {
             EconomicMap<Node, Node> replacements = bind(replaceeGraph, metaAccess, args);
             replacements.put(entryPointNode, tool.getCurrentGuardAnchor().asNode());
             UnmodifiableEconomicMap<Node, Node> duplicates = replaceeGraph.addDuplicates(nodes, snippet, snippet.getNodeCount(), replacements);
-            Debug.dump(Debug.INFO_LOG_LEVEL, replaceeGraph, "After inlining snippet %s", snippet.method());
+            Debug.dump(Debug.DETAILED_LEVEL, replaceeGraph, "After inlining snippet %s", snippet.method());
 
             FixedWithNextNode lastFixedNode = tool.lastFixedNode();
             assert lastFixedNode != null && lastFixedNode.isAlive() : replaceeGraph + " lastFixed=" + lastFixedNode;
@@ -1550,7 +1575,7 @@ public class SnippetTemplate {
                 returnDuplicate.replaceAndDelete(next);
             }
 
-            Debug.dump(Debug.INFO_LOG_LEVEL, replaceeGraph, "After lowering %s with %s", replacee, this);
+            Debug.dump(Debug.DETAILED_LEVEL, replaceeGraph, "After lowering %s with %s", replacee, this);
         }
     }
 
@@ -1588,7 +1613,7 @@ public class SnippetTemplate {
                 }
             }
             UnmodifiableEconomicMap<Node, Node> duplicates = replaceeGraph.addDuplicates(floatingNodes, snippet, floatingNodes.size(), replacements);
-            Debug.dump(Debug.INFO_LOG_LEVEL, replaceeGraph, "After inlining snippet %s", snippet.method());
+            Debug.dump(Debug.DETAILED_LEVEL, replaceeGraph, "After inlining snippet %s", snippet.method());
 
             rewireFrameStates(replacee, duplicates);
             updateStamps(replacee, duplicates);
@@ -1600,7 +1625,7 @@ public class SnippetTemplate {
             ValueNode returnValue = (ValueNode) duplicates.get(returnNode.result());
             replacer.replace(replacee, returnValue);
 
-            Debug.dump(Debug.INFO_LOG_LEVEL, replaceeGraph, "After lowering %s with %s", replacee, this);
+            Debug.dump(Debug.DETAILED_LEVEL, replaceeGraph, "After lowering %s with %s", replacee, this);
         }
     }
 

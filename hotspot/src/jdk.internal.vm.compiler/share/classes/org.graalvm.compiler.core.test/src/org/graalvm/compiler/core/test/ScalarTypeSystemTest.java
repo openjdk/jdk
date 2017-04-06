@@ -131,7 +131,7 @@ public class ScalarTypeSystemTest extends GraalCompilerTest {
     private void test(final String snippet, final String referenceSnippet) {
         // No debug scope to reduce console noise for @Test(expected = ...) tests
         StructuredGraph graph = parseEager(snippet, AllowAssumptions.NO);
-        Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "Graph");
+        Debug.dump(Debug.BASIC_LEVEL, graph, "Graph");
         PhaseContext context = new PhaseContext(getProviders());
         new CanonicalizerPhase().apply(graph, context);
         StructuredGraph referenceGraph = parseEager(referenceSnippet, AllowAssumptions.NO);

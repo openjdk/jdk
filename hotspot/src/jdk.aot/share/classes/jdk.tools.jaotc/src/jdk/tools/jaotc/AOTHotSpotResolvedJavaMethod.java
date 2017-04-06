@@ -24,6 +24,7 @@
 package jdk.tools.jaotc;
 
 import org.graalvm.compiler.code.CompilationResult;
+import org.graalvm.compiler.core.target.Backend;
 import org.graalvm.compiler.hotspot.HotSpotCompiledCodeBuilder;
 import jdk.vm.ci.hotspot.HotSpotCompiledCode;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
@@ -31,9 +32,11 @@ import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 public class AOTHotSpotResolvedJavaMethod implements JavaMethodInfo {
 
     private final HotSpotResolvedJavaMethod method;
+    private final Backend backend;
 
-    public AOTHotSpotResolvedJavaMethod(HotSpotResolvedJavaMethod method) {
+    public AOTHotSpotResolvedJavaMethod(HotSpotResolvedJavaMethod method, Backend backend) {
         this.method = method;
+        this.backend = backend;
     }
 
     public String getSymbolName() {
@@ -46,7 +49,7 @@ public class AOTHotSpotResolvedJavaMethod implements JavaMethodInfo {
     }
 
     public HotSpotCompiledCode compiledCode(CompilationResult result) {
-        return HotSpotCompiledCodeBuilder.createCompiledCode(method, null, result);
+        return HotSpotCompiledCodeBuilder.createCompiledCode(backend.getCodeCache(), method, null, result);
     }
 
 }

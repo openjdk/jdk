@@ -46,6 +46,8 @@ public class GraalCompilerOptions {
     public static final OptionKey<Boolean> ExitVMOnException = new OptionKey<>(false);
     @Option(help = "", type = OptionType.Debug)
     public static final OptionKey<Boolean> PrintStackTraceOnException = new OptionKey<>(false);
+    @Option(help = "Pattern (see MethodFilter for format) for method that will trigger an exception when compiled. " +
+                   "This option exists to test handling compilation crashes gracefully.", type = OptionType.Debug)
+    public static final OptionKey<String> CrashAt = new OptionKey<>(null);
     // @formatter:on
-
 }

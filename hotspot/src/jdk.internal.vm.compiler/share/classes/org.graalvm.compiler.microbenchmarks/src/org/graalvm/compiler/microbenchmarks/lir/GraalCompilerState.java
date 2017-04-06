@@ -374,11 +374,15 @@ public abstract class GraalCompilerState {
         codeEmittingOrder = ComputeBlockOrder.computeCodeEmittingOrder(blocks.length, startBlock);
         linearScanOrder = ComputeBlockOrder.computeLinearScanOrder(blocks.length, startBlock);
 
-        LIR lir = new LIR(cfg, linearScanOrder, codeEmittingOrder, graph.getOptions());
+        LIR lir = new LIR(cfg, linearScanOrder, codeEmittingOrder, getGraphOptions());
         FrameMapBuilder frameMapBuilder = request.backend.newFrameMapBuilder(registerConfig);
         lirGenRes = request.backend.newLIRGenerationResult(graph.compilationId(), lir, frameMapBuilder, request.graph, stub);
         lirGenTool = request.backend.newLIRGenerator(lirGenRes);
         nodeLirGen = request.backend.newNodeLIRBuilder(request.graph, lirGenTool);
+    }
+
+    protected OptionValues getGraphOptions() {
+        return graph.getOptions();
     }
 
     private static ControlFlowGraph deepCopy(ControlFlowGraph cfg) {

@@ -154,6 +154,7 @@ public class FloatStamp extends PrimitiveStamp {
         return Double.isNaN(lowerBound);
     }
 
+    @Override
     public boolean isUnrestricted() {
         return lowerBound == Double.NEGATIVE_INFINITY && upperBound == Double.POSITIVE_INFINITY && !nonNaN;
     }

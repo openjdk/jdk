@@ -54,12 +54,9 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.TriState;
 
 public class AOTBackend {
-
     private final Main main;
     private final OptionValues graalOptions;
-
     private final HotSpotBackend backend;
-
     private final HotSpotProviders providers;
     private final HotSpotCodeCacheProvider codeCache;
     private final PhaseSuite<HighTierContext> graphBuilderSuite;
@@ -79,6 +76,10 @@ public class AOTBackend {
 
     public PhaseSuite<HighTierContext> getGraphBuilderSuite() {
         return graphBuilderSuite;
+    }
+
+    public HotSpotBackend getBackend() {
+        return backend;
     }
 
     private Suites getSuites() {
@@ -189,7 +190,7 @@ public class AOTBackend {
 
     public void printCompiledMethod(HotSpotResolvedJavaMethod resolvedMethod, CompilationResult compResult) {
         // This is really not installing the method.
-        InstalledCode installedCode = codeCache.addCode(resolvedMethod, HotSpotCompiledCodeBuilder.createCompiledCode(null, null, compResult), null, null);
+        InstalledCode installedCode = codeCache.addCode(resolvedMethod, HotSpotCompiledCodeBuilder.createCompiledCode(codeCache, null, null, compResult), null, null);
         String disassembly = codeCache.disassemble(installedCode);
         if (disassembly != null) {
             main.printlnDebug(disassembly);
