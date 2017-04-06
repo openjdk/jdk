@@ -1458,6 +1458,18 @@ class SecurityManager {
     }
 
     /**
+     * Called by java.security.Security
+     */
+    static void invalidatePackageAccessCache() {
+        synchronized (packageAccessLock) {
+            packageAccessValid = false;
+        }
+        synchronized (packageDefinitionLock) {
+            packageDefinitionValid = false;
+        }
+    }
+
+    /**
      * Returns true if the module's loader is the boot or platform loader.
      */
     private static boolean isBootOrPlatformModule(Module m) {

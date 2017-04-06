@@ -26,6 +26,8 @@
 /** Defines the implementation of the
  *  {@link javax.tools.ToolProvider#getSystemDocumentationTool system documentation tool}
  *  and its command line equivalent, <em>javadoc</em>.
+ *
+ *  @since 9
  */
 module jdk.javadoc {
     requires transitive java.compiler;
@@ -38,8 +40,6 @@ module jdk.javadoc {
     exports com.sun.tools.javadoc;
 
     exports jdk.javadoc.doclet;
-    exports jdk.javadoc.doclet.taglet;
-    exports jdk.javadoc.doclets;
 
     provides java.util.spi.ToolProvider
         with jdk.javadoc.internal.tool.JavadocToolProvider;

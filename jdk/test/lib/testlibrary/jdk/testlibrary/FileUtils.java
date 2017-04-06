@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -189,5 +190,41 @@ public final class FileUtils {
             excs.add(x);
         }
         return excs;
+    }
+
+    /**
+     * Checks whether all file systems are accessible. This is performed
+     * by checking free disk space on all mounted file systems via a
+     * separate, spawned process. File systems are considered to be
+     * accessible if this process completes successfully before a given
+     * fixed duration has elapsed.
+     *
+     * @implNote On Unix this executes the {@code df} command in a separate
+     * process and on Windows always returns {@code true}.
+     */
+    public static boolean areFileSystemsAccessible() throws IOException {
+        boolean areFileSystemsAccessible = true;
+        if (!isWindows) {
+            // try to check whether 'df' hangs
+            System.out.println("\n--- df output ---");
+            System.out.flush();
+            Process proc = new ProcessBuilder("df").inheritIO().start();
+            try {
+                proc.waitFor(90, TimeUnit.SECONDS);
+            } catch (InterruptedException ignored) {
+            }
+            try {
+                int exitValue = proc.exitValue();
+                if (exitValue != 0) {
+                    System.err.printf("df process exited with %d != 0%n",
+                        exitValue);
+                    areFileSystemsAccessible = false;
+                }
+            } catch (IllegalThreadStateException ignored) {
+                System.err.println("df command apparently hung");
+                areFileSystemsAccessible = false;
+            }
+        }
+        return areFileSystemsAccessible;
     }
 }
