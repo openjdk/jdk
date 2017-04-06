@@ -56,7 +56,7 @@ import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.writeTlabTop;
 import static org.graalvm.compiler.hotspot.replacements.HotspotSnippetsOptions.ProfileAllocations;
 import static org.graalvm.compiler.hotspot.replacements.HotspotSnippetsOptions.ProfileAllocationsContext;
-import static org.graalvm.compiler.nodes.PiArrayNode.piArrayCast;
+import static org.graalvm.compiler.nodes.PiArrayNode.piArrayCastToSnippetReplaceeStamp;
 import static org.graalvm.compiler.nodes.PiNode.piCastToSnippetReplaceeStamp;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.FAST_PATH_PROBABILITY;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.FREQUENT_PROBABILITY;
@@ -226,7 +226,7 @@ public class NewObjectSnippets implements Snippets {
         return verifyOop(result);
     }
 
-    @NodeIntrinsic(value = ForeignCallNode.class, returnStampIsNonNull = true)
+    @NodeIntrinsic(value = ForeignCallNode.class, injectedStampIsNonNull = true)
     public static native Object newInstance(@ConstantNodeParameter ForeignCallDescriptor descriptor, KlassPointer hub);
 
     @Snippet
@@ -307,7 +307,7 @@ public class NewObjectSnippets implements Snippets {
                     @ConstantParameter boolean fillContents, @ConstantParameter Register threadRegister, @ConstantParameter boolean maybeUnroll, @ConstantParameter String typeContext,
                     @ConstantParameter OptionValues options, @ConstantParameter Counters counters) {
         Object result = allocateArrayImpl(hub, length, prototypeMarkWord, headerSize, log2ElementSize, fillContents, threadRegister, maybeUnroll, typeContext, false, options, counters);
-        return piArrayCast(verifyOop(result), length);
+        return piArrayCastToSnippetReplaceeStamp(verifyOop(result), length);
     }
 
     private static Object allocateArrayImpl(KlassPointer hub, int length, Word prototypeMarkWord, int headerSize, int log2ElementSize, boolean fillContents, Register threadRegister,
@@ -334,20 +334,20 @@ public class NewObjectSnippets implements Snippets {
         return result;
     }
 
-    @NodeIntrinsic(value = ForeignCallNode.class, returnStampIsNonNull = true)
+    @NodeIntrinsic(value = ForeignCallNode.class, injectedStampIsNonNull = true)
     public static native Object newArray(@ConstantNodeParameter ForeignCallDescriptor descriptor, KlassPointer hub, int length, boolean fillContents);
 
     public static final ForeignCallDescriptor DYNAMIC_NEW_ARRAY = new ForeignCallDescriptor("dynamic_new_array", Object.class, Class.class, int.class);
     public static final ForeignCallDescriptor DYNAMIC_NEW_INSTANCE = new ForeignCallDescriptor("dynamic_new_instance", Object.class, Class.class);
 
-    @NodeIntrinsic(value = ForeignCallNode.class, returnStampIsNonNull = true)
+    @NodeIntrinsic(value = ForeignCallNode.class, injectedStampIsNonNull = true)
     public static native Object dynamicNewArrayStub(@ConstantNodeParameter ForeignCallDescriptor descriptor, Class<?> elementType, int length);
 
     public static Object dynamicNewInstanceStub(Class<?> elementType) {
         return dynamicNewInstanceStubCall(DYNAMIC_NEW_INSTANCE, elementType);
     }
 
-    @NodeIntrinsic(value = ForeignCallNode.class, returnStampIsNonNull = true)
+    @NodeIntrinsic(value = ForeignCallNode.class, injectedStampIsNonNull = true)
     public static native Object dynamicNewInstanceStubCall(@ConstantNodeParameter ForeignCallDescriptor descriptor, Class<?> elementType);
 
     @Snippet
@@ -396,7 +396,7 @@ public class NewObjectSnippets implements Snippets {
         int log2ElementSize = (layoutHelper >> layoutHelperLog2ElementSizeShift(INJECTED_VMCONFIG)) & layoutHelperLog2ElementSizeMask(INJECTED_VMCONFIG);
 
         Object result = allocateArrayImpl(nonNullKlass, length, prototypeMarkWord, headerSize, log2ElementSize, fillContents, threadRegister, false, "dynamic type", true, options, counters);
-        return piArrayCast(verifyOop(result), length);
+        return piArrayCastToSnippetReplaceeStamp(verifyOop(result), length);
     }
 
     /**
@@ -418,7 +418,7 @@ public class NewObjectSnippets implements Snippets {
         return newmultiarray(hubPIC, rank, dimensions);
     }
 
-    @NodeIntrinsic(value = ForeignCallNode.class, returnStampIsNonNull = true)
+    @NodeIntrinsic(value = ForeignCallNode.class, injectedStampIsNonNull = true)
     public static native Object newArrayCall(@ConstantNodeParameter ForeignCallDescriptor descriptor, KlassPointer hub, int rank, Word dims);
 
     /**

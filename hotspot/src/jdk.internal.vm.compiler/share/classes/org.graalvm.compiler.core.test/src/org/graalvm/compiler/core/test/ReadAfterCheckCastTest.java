@@ -94,7 +94,7 @@ public class ReadAfterCheckCastTest extends GraphScheduleTest {
             new FloatingReadPhase().apply(graph);
             canonicalizer.apply(graph, context);
 
-            Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "After lowering");
+            Debug.dump(Debug.BASIC_LEVEL, graph, "After lowering");
 
             for (FloatingReadNode node : graph.getNodes(ParameterNode.TYPE).first().usages().filter(FloatingReadNode.class)) {
                 // Checking that the parameter a is not directly used for the access to field

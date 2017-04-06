@@ -37,7 +37,6 @@ import org.graalvm.compiler.debug.JavaMethodContext;
 import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeMap;
-import org.graalvm.compiler.graph.spi.SimplifierTool;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
@@ -553,12 +552,8 @@ public final class StructuredGraph extends Graph implements JavaMethodContext {
         node.safeDelete();
     }
 
-    public void removeSplitPropagate(ControlSplitNode node, AbstractBeginNode survivingSuccessor) {
-        removeSplitPropagate(node, survivingSuccessor, null);
-    }
-
     @SuppressWarnings("static-method")
-    public void removeSplitPropagate(ControlSplitNode node, AbstractBeginNode survivingSuccessor, SimplifierTool tool) {
+    public void removeSplitPropagate(ControlSplitNode node, AbstractBeginNode survivingSuccessor) {
         assert node != null;
         assert node.hasNoUsages();
         assert survivingSuccessor != null;
@@ -569,7 +564,7 @@ public final class StructuredGraph extends Graph implements JavaMethodContext {
         for (Node successor : snapshot) {
             if (successor != null && successor.isAlive()) {
                 if (successor != survivingSuccessor) {
-                    GraphUtil.killCFG((FixedNode) successor, tool);
+                    GraphUtil.killCFG((FixedNode) successor);
                 }
             }
         }

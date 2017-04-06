@@ -557,7 +557,7 @@ public class AMD64HotSpotLIRGenerator extends AMD64LIRGenerator implements HotSp
             LIR lir = getResult().getLIR();
             ArrayList<LIRInstruction> instructions = lir.getLIRforBlock(lir.getControlFlowGraph().getStartBlock());
             instructions.add(1, op);
-            Debug.dump(Debug.INFO_LOG_LEVEL, lir, "created rescue dummy op");
+            Debug.dump(Debug.INFO_LEVEL, lir, "created rescue dummy op");
         }
     }
 

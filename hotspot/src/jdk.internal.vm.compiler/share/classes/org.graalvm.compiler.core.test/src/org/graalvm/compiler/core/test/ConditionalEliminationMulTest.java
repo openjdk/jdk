@@ -32,8 +32,8 @@ import org.junit.Test;
 public class ConditionalEliminationMulTest extends GraalCompilerTest {
 
     public static void snippet01(int a) {
-        if (a == 2) {
-            if (a * 3 != 6) {
+        if (a == 3) {
+            if (a * 11 != 33) {
                 shouldBeOptimizedAway();
             }
         }
@@ -41,7 +41,7 @@ public class ConditionalEliminationMulTest extends GraalCompilerTest {
 
     public static void snippet02(int a) {
         if (a == 0) {
-            if (a * 3 != 0) {
+            if (a * 11 != 0) {
                 shouldBeOptimizedAway();
             }
         }

@@ -39,33 +39,6 @@ import jdk.vm.ci.meta.Signature;
 
 public class StampFactory {
 
-    /*
-     * The marker stamp for node intrinsics must be its own class, so that it is never equal() to a
-     * regular ObjectStamp.
-     */
-    static final class NodeIntrinsicStamp extends ObjectStamp {
-        protected static final Stamp SINGLETON = new NodeIntrinsicStamp();
-
-        private NodeIntrinsicStamp() {
-            super(null, false, false, false);
-        }
-
-        @Override
-        public int hashCode() {
-            return System.identityHashCode(this);
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            return this == obj;
-        }
-
-        @Override
-        public String toString() {
-            return "NodeIntrinsicStamp";
-        }
-    }
-
     // JaCoCo Exclude
 
     private static final Stamp[] stampCache = new Stamp[JavaKind.values().length];
@@ -141,14 +114,6 @@ public class StampFactory {
      */
     public static Stamp forVoid() {
         return VoidStamp.getInstance();
-    }
-
-    /**
-     * A stamp used only in the graph of intrinsics, e.g., snippets. It is then replaced by an
-     * actual stamp when the intrinsic is used, i.e., when the snippet template is instantiated.
-     */
-    public static Stamp forNodeIntrinsic() {
-        return NodeIntrinsicStamp.SINGLETON;
     }
 
     public static Stamp intValue() {

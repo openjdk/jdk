@@ -124,8 +124,6 @@ public class GraalTest {
             Class<?> expectedClass = expected.getClass();
             Class<?> actualClass = actual.getClass();
             if (expectedClass.isArray()) {
-                Assert.assertTrue(message, expected != null);
-                Assert.assertTrue(message, actual != null);
                 Assert.assertEquals(message, expectedClass, actual.getClass());
                 if (expected instanceof int[]) {
                     Assert.assertArrayEquals(message, (int[]) expected, (int[]) actual);

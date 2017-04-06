@@ -22,10 +22,6 @@
  */
 package org.graalvm.compiler.core.test;
 
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import org.graalvm.compiler.loop.DefaultLoopPolicies;
 import org.graalvm.compiler.loop.phases.LoopPeelingPhase;
 import org.graalvm.compiler.nodes.ReturnNode;
@@ -37,6 +33,9 @@ import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
+import org.junit.Assert;
+import org.junit.Ignore;
+import org.junit.Test;
 
 /**
  * In the following tests, the usages of local variable "a" are replaced with the integer constant
@@ -162,7 +161,7 @@ public class BoxingEliminationTest extends GraalCompilerTest {
             sum0 = a;
         } else {
             int sum = a;
-            for (int i = 0; i < n; i++) {
+            for (int i = 1; i < n; i++) {
                 sum += i;
             }
             sum0 = sum;

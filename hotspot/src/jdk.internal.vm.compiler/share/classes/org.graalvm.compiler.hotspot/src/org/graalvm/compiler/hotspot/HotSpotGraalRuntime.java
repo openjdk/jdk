@@ -34,8 +34,22 @@ import static org.graalvm.compiler.debug.GraalDebugConfig.Options.Log;
 import static org.graalvm.compiler.debug.GraalDebugConfig.Options.MethodFilter;
 import static org.graalvm.compiler.debug.GraalDebugConfig.Options.Verify;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.zip.Deflater;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.api.runtime.GraalRuntime;
@@ -278,6 +292,7 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
     }
 
     private long runtimeStartTime;
+    private boolean shutdown;
 
     /**
      * Take action related to entering a new execution phase.
@@ -291,6 +306,7 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
     }
 
     void shutdown() {
+        shutdown = true;
         if (debugValuesPrinter != null) {
             debugValuesPrinter.printDebugValues(options);
         }
@@ -302,6 +318,8 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
             }
         }
         BenchmarkCounters.shutdown(runtime(), options, runtimeStartTime);
+
+        archiveAndDeleteOutputDirectory();
     }
 
     void clearMeters() {
@@ -320,5 +338,96 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
     @Override
     public boolean isBootstrapping() {
         return bootstrapJVMCI && !bootstrapFinished;
+    }
+
+    @Override
+    public boolean isShutdown() {
+        return shutdown;
+    }
+
+    /**
+     * Gets a unique identifier for this execution such as a process ID.
+     */
+    private static String getExecutionID() {
+        String runtimeName = ManagementFactory.getRuntimeMXBean().getName();
+        try {
+            int index = runtimeName.indexOf('@');
+            if (index != -1) {
+                long pid = Long.parseLong(runtimeName.substring(0, index));
+                return Long.toString(pid);
+            }
+        } catch (NumberFormatException e) {
+        }
+        return runtimeName;
+    }
+
+    private String outputDirectory;
+
+    @Override
+    public String getOutputDirectory() {
+        if (outputDirectory == null) {
+            outputDirectory = "graal_output_" + getExecutionID();
+            File dir = new File(outputDirectory).getAbsoluteFile();
+            if (!dir.exists()) {
+                dir.mkdirs();
+                if (!dir.exists()) {
+                    TTY.println("Warning: could not create Graal diagnostic directory " + dir);
+                    return null;
+                }
+            }
+        }
+        return outputDirectory;
+    }
+
+    /**
+     * Archives and deletes the {@linkplain #getOutputDirectory() output directory} if it exists.
+     */
+    private void archiveAndDeleteOutputDirectory() {
+        if (outputDirectory != null) {
+            Path dir = Paths.get(outputDirectory);
+            if (dir.toFile().exists()) {
+                try {
+                    // Give compiler threads a chance to finishing dumping
+                    Thread.sleep(1000);
+                } catch (InterruptedException e1) {
+                }
+                File zip = new File(outputDirectory + ".zip").getAbsoluteFile();
+                List<Path> toDelete = new ArrayList<>();
+                try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zip))) {
+                    zos.setLevel(Deflater.BEST_COMPRESSION);
+                    Files.walkFileTree(dir, Collections.emptySet(), Integer.MAX_VALUE, new SimpleFileVisitor<Path>() {
+                        @Override
+                        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                            if (attrs.isRegularFile()) {
+                                ZipEntry ze = new ZipEntry(file.toString());
+                                zos.putNextEntry(ze);
+                                zos.write(Files.readAllBytes(file));
+                                zos.closeEntry();
+                            }
+                            toDelete.add(file);
+                            return FileVisitResult.CONTINUE;
+                        }
+
+                        @Override
+                        public FileVisitResult postVisitDirectory(Path d, IOException exc) throws IOException {
+                            toDelete.add(d);
+                            return FileVisitResult.CONTINUE;
+                        }
+                    });
+                    TTY.println("Graal diagnostic output saved in %s", zip);
+                } catch (IOException e) {
+                    TTY.printf("IO error archiving %s:%n", dir);
+                    e.printStackTrace(TTY.out);
+                }
+                for (Path p : toDelete) {
+                    try {
+                        Files.delete(p);
+                    } catch (IOException e) {
+                        TTY.printf("IO error deleting %s:%n", p);
+                        e.printStackTrace(TTY.out);
+                    }
+                }
+            }
+        }
     }
 }

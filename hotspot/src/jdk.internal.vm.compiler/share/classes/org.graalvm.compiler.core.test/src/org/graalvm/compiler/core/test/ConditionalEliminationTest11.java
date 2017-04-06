@@ -22,10 +22,9 @@
  */
 package org.graalvm.compiler.core.test;
 
+import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import org.graalvm.compiler.api.directives.GraalDirectives;
 
 /**
  * Collection of tests for
@@ -33,11 +32,6 @@ import org.graalvm.compiler.api.directives.GraalDirectives;
  * that triggered bugs in this phase.
  */
 public class ConditionalEliminationTest11 extends ConditionalEliminationTestBase {
-    public ConditionalEliminationTest11() {
-        // Don't disable simplification
-        super(false);
-    }
-
     @SuppressWarnings("all")
     public static int referenceSnippet(int a) {
         if ((a & 15) != 15) {

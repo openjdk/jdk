@@ -57,7 +57,7 @@ public class ConstantPoolSubstitutionsTests extends GraalCompilerTest {
             StructuredGraph graph = parseEager(snippet, AllowAssumptions.YES);
             compile(graph.method(), graph);
             assertNotInGraph(graph, Invoke.class);
-            Debug.dump(Debug.BASIC_LOG_LEVEL, graph, snippet);
+            Debug.dump(Debug.BASIC_LEVEL, graph, snippet);
             return graph;
         } catch (Throwable e) {
             throw Debug.handle(e);
@@ -117,57 +117,30 @@ public class ConstantPoolSubstitutionsTests extends GraalCompilerTest {
         }
     }
 
-    /**
-     * Disables these tests until we know how to dynamically export the {@code jdk.internal.reflect}
-     * package from the {@code java.base} module to the unnamed module associated with
-     * {@link AsmLoader}. Without such an export, the test fails as follows:
-     *
-     * <pre>
-     * Caused by: java.lang.IllegalAccessError: class org.graalvm.compiler.hotspot.test.ConstantPoolTest
-     * (in unnamed module @0x57599b23) cannot access class jdk.internal.reflect.ConstantPool (in
-     * module java.base) because module java.base does not export jdk.internal.reflect to unnamed
-     * module @0x57599b23
-     * </pre>
-     */
-    private static void assumeJDK8() {
-        // Assume.assumeTrue(Java8OrEarlier);
-    }
-
     @Test
     public void testGetSize() {
-        assumeJDK8();
         Object cp = getConstantPoolForObject();
         test("getSize", cp);
     }
 
     @Test
     public void testGetIntAt() {
-        assumeJDK8();
         test("getIntAt");
     }
 
     @Test
     public void testGetLongAt() {
-        assumeJDK8();
         test("getLongAt");
     }
 
     @Test
     public void testGetFloatAt() {
-        assumeJDK8();
         test("getFloatAt");
     }
 
     @Test
     public void testGetDoubleAt() {
-        assumeJDK8();
         test("getDoubleAt");
-    }
-
-    // @Test
-    public void testGetUTF8At() {
-        assumeJDK8();
-        test("getUTF8At");
     }
 
     private static final String PACKAGE_NAME = ConstantPoolSubstitutionsTests.class.getPackage().getName();

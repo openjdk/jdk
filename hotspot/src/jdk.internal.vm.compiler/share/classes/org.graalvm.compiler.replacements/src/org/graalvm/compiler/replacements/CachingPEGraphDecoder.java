@@ -32,7 +32,11 @@ import org.graalvm.compiler.nodes.GraphEncoder;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
+import org.graalvm.compiler.nodes.graphbuilderconf.InlineInvokePlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
+import org.graalvm.compiler.nodes.graphbuilderconf.LoopExplosionPlugin;
+import org.graalvm.compiler.nodes.graphbuilderconf.ParameterPlugin;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
@@ -56,9 +60,11 @@ public class CachingPEGraphDecoder extends PEGraphDecoder {
     private final AllowAssumptions allowAssumptions;
     private final EconomicMap<ResolvedJavaMethod, EncodedGraph> graphCache;
 
-    public CachingPEGraphDecoder(Providers providers, GraphBuilderConfiguration graphBuilderConfig, OptimisticOptimizations optimisticOpts, AllowAssumptions allowAssumptions,
-                    Architecture architecture, OptionValues options) {
-        super(providers.getMetaAccess(), providers.getConstantReflection(), providers.getConstantFieldProvider(), providers.getStampProvider(), architecture, options);
+    public CachingPEGraphDecoder(Architecture architecture, StructuredGraph graph, Providers providers, GraphBuilderConfiguration graphBuilderConfig, OptimisticOptimizations optimisticOpts,
+                    AllowAssumptions allowAssumptions, OptionValues options, LoopExplosionPlugin loopExplosionPlugin, InvocationPlugins invocationPlugins, InlineInvokePlugin[] inlineInvokePlugins,
+                    ParameterPlugin parameterPlugin) {
+        super(architecture, graph, providers.getMetaAccess(), providers.getConstantReflection(), providers.getConstantFieldProvider(), providers.getStampProvider(), options, loopExplosionPlugin,
+                        invocationPlugins, inlineInvokePlugins, parameterPlugin);
 
         this.providers = providers;
         this.graphBuilderConfig = graphBuilderConfig;
@@ -74,22 +80,22 @@ public class CachingPEGraphDecoder extends PEGraphDecoder {
 
     @SuppressWarnings("try")
     private EncodedGraph createGraph(ResolvedJavaMethod method, BytecodeProvider intrinsicBytecodeProvider) {
-        StructuredGraph graph = new StructuredGraph.Builder(options, allowAssumptions).useProfilingInfo(false).method(method).build();
-        try (Debug.Scope scope = Debug.scope("createGraph", graph)) {
+        StructuredGraph graphToEncode = new StructuredGraph.Builder(options, allowAssumptions).useProfilingInfo(false).method(method).build();
+        try (Debug.Scope scope = Debug.scope("createGraph", graphToEncode)) {
             IntrinsicContext initialIntrinsicContext = intrinsicBytecodeProvider != null ? new IntrinsicContext(method, method, intrinsicBytecodeProvider, INLINE_AFTER_PARSING) : null;
             GraphBuilderPhase.Instance graphBuilderPhaseInstance = createGraphBuilderPhaseInstance(initialIntrinsicContext);
-            graphBuilderPhaseInstance.apply(graph);
+            graphBuilderPhaseInstance.apply(graphToEncode);
 
             PhaseContext context = new PhaseContext(providers);
-            new CanonicalizerPhase().apply(graph, context);
+            new CanonicalizerPhase().apply(graphToEncode, context);
             /*
              * ConvertDeoptimizeToGuardPhase reduces the number of merges in the graph, so that
              * fewer frame states will be created. This significantly reduces the number of nodes in
              * the initial graph.
              */
-            new ConvertDeoptimizeToGuardPhase().apply(graph, context);
+            new ConvertDeoptimizeToGuardPhase().apply(graphToEncode, context);
 
-            EncodedGraph encodedGraph = GraphEncoder.encodeSingleGraph(graph, architecture);
+            EncodedGraph encodedGraph = GraphEncoder.encodeSingleGraph(graphToEncode, architecture);
             graphCache.put(method, encodedGraph);
             return encodedGraph;
 

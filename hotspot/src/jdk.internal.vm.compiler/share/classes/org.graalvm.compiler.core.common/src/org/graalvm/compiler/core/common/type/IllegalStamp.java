@@ -59,6 +59,11 @@ public final class IllegalStamp extends Stamp {
     }
 
     @Override
+    public boolean isUnrestricted() {
+        return true;
+    }
+
+    @Override
     public Stamp empty() {
         return this;
     }

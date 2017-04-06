@@ -32,7 +32,6 @@ import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.ValueNode;
 
 import jdk.vm.ci.code.CodeUtil;
-import jdk.vm.ci.meta.ConstantReflectionProvider;
 
 @NodeInfo(shortName = "|<|")
 public final class IntegerBelowNode extends IntegerLowerThanNode {
@@ -45,8 +44,8 @@ public final class IntegerBelowNode extends IntegerLowerThanNode {
         assert y.stamp() instanceof IntegerStamp;
     }
 
-    public static LogicNode create(ValueNode x, ValueNode y, ConstantReflectionProvider constantReflection) {
-        return OP.create(x, y, constantReflection);
+    public static LogicNode create(ValueNode x, ValueNode y) {
+        return OP.create(x, y);
     }
 
     @Override
@@ -108,7 +107,7 @@ public final class IntegerBelowNode extends IntegerLowerThanNode {
         }
 
         @Override
-        protected IntegerLowerThanNode create(ValueNode x, ValueNode y) {
+        protected IntegerLowerThanNode createNode(ValueNode x, ValueNode y) {
             return new IntegerBelowNode(x, y);
         }
     }

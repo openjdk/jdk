@@ -157,6 +157,6 @@ public class ExceptionHandlerStub extends SnippetStub {
 
     public static final ForeignCallDescriptor EXCEPTION_HANDLER_FOR_PC = newDescriptor(ExceptionHandlerStub.class, "exceptionHandlerForPc", Word.class, Word.class);
 
-    @NodeIntrinsic(value = StubForeignCallNode.class, setStampFromReturnType = true)
+    @NodeIntrinsic(value = StubForeignCallNode.class)
     public static native Word exceptionHandlerForPc(@ConstantNodeParameter ForeignCallDescriptor exceptionHandlerForPc, Word thread);
 }

@@ -93,11 +93,11 @@ public final class NormalizeCompareNode extends BinaryNode implements Lowerable 
         LogicNode equalComp;
         LogicNode lessComp;
         if (getX().stamp() instanceof FloatStamp) {
-            equalComp = graph().unique(FloatEqualsNode.create(getX(), getY(), tool.getConstantReflection()));
-            lessComp = graph().unique(FloatLessThanNode.create(getX(), getY(), isUnorderedLess, tool.getConstantReflection()));
+            equalComp = graph().addOrUniqueWithInputs(FloatEqualsNode.create(getX(), getY()));
+            lessComp = graph().addOrUniqueWithInputs(FloatLessThanNode.create(getX(), getY(), isUnorderedLess));
         } else {
-            equalComp = graph().unique(IntegerEqualsNode.create(getX(), getY(), tool.getConstantReflection()));
-            lessComp = graph().unique(IntegerLessThanNode.create(getX(), getY(), tool.getConstantReflection()));
+            equalComp = graph().addOrUniqueWithInputs(IntegerEqualsNode.create(getX(), getY()));
+            lessComp = graph().addOrUniqueWithInputs(IntegerLessThanNode.create(getX(), getY()));
         }
 
         ConditionalNode equalValue = graph().unique(new ConditionalNode(equalComp, ConstantNode.forInt(0, graph()), ConstantNode.forInt(1, graph())));

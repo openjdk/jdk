@@ -44,6 +44,7 @@ import org.graalvm.compiler.nodes.ValueNode;
 
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
+import jdk.vm.ci.meta.PrimitiveConstant;
 
 @NodeInfo(cycles = CYCLES_1)
 public abstract class CompareNode extends BinaryOpLogicNode implements Canonicalizable.Binary<ValueNode> {
@@ -151,8 +152,15 @@ public abstract class CompareNode extends BinaryOpLogicNode implements Canonical
     }
 
     public static LogicNode tryConstantFold(Condition condition, ValueNode forX, ValueNode forY, ConstantReflectionProvider constantReflection, boolean unorderedIsTrue) {
-        if (forX.isConstant() && forY.isConstant() && constantReflection != null) {
+        if (forX.isConstant() && forY.isConstant() && (constantReflection != null || forX.asConstant() instanceof PrimitiveConstant)) {
             return LogicConstantNode.forBoolean(condition.foldCondition(forX.asConstant(), forY.asConstant(), constantReflection, unorderedIsTrue));
+        }
+        return null;
+    }
+
+    public static LogicNode tryConstantFoldPrimitive(Condition condition, ValueNode forX, ValueNode forY, boolean unorderedIsTrue) {
+        if (forX.asConstant() instanceof PrimitiveConstant && forY.asConstant() instanceof PrimitiveConstant) {
+            return LogicConstantNode.forBoolean(condition.foldCondition((PrimitiveConstant) forX.asConstant(), (PrimitiveConstant) forY.asConstant(), unorderedIsTrue));
         }
         return null;
     }
@@ -221,7 +229,7 @@ public abstract class CompareNode extends BinaryOpLogicNode implements Canonical
 
     public static LogicNode createCompareNode(StructuredGraph graph, Condition condition, ValueNode x, ValueNode y, ConstantReflectionProvider constantReflection) {
         LogicNode result = createCompareNode(condition, x, y, constantReflection);
-        return (result.graph() == null ? graph.unique(result) : result);
+        return (result.graph() == null ? graph.addOrUniqueWithInputs(result) : result);
     }
 
     public static LogicNode createCompareNode(Condition condition, ValueNode x, ValueNode y, ConstantReflectionProvider constantReflection) {
@@ -237,15 +245,15 @@ public abstract class CompareNode extends BinaryOpLogicNode implements Canonical
                 comparison = PointerEqualsNode.create(x, y);
             } else {
                 assert x.getStackKind().isNumericInteger();
-                comparison = IntegerEqualsNode.create(x, y, constantReflection);
+                comparison = IntegerEqualsNode.create(x, y);
             }
         } else if (condition == Condition.LT) {
             assert x.getStackKind().isNumericInteger();
-            comparison = IntegerLessThanNode.create(x, y, constantReflection);
+            comparison = IntegerLessThanNode.create(x, y);
         } else {
             assert condition == Condition.BT;
             assert x.getStackKind().isNumericInteger();
-            comparison = IntegerBelowNode.create(x, y, constantReflection);
+            comparison = IntegerBelowNode.create(x, y);
         }
 
         return comparison;

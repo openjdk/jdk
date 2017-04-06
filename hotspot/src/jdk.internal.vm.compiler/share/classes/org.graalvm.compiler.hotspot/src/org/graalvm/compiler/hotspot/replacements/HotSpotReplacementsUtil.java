@@ -702,17 +702,17 @@ public class HotSpotReplacementsUtil {
 
     public static Word loadWordFromObject(Object object, int offset) {
         ReplacementsUtil.staticAssert(offset != hubOffset(INJECTED_VMCONFIG), "Use loadHubIntrinsic instead of loadWordFromObject");
-        return loadWordFromObjectIntrinsic(object, offset, getWordKind(), LocationIdentity.any());
+        return loadWordFromObjectIntrinsic(object, offset, LocationIdentity.any(), getWordKind());
     }
 
     public static Word loadWordFromObject(Object object, int offset, LocationIdentity identity) {
         ReplacementsUtil.staticAssert(offset != hubOffset(INJECTED_VMCONFIG), "Use loadHubIntrinsic instead of loadWordFromObject");
-        return loadWordFromObjectIntrinsic(object, offset, getWordKind(), identity);
+        return loadWordFromObjectIntrinsic(object, offset, identity, getWordKind());
     }
 
     public static KlassPointer loadKlassFromObject(Object object, int offset, LocationIdentity identity) {
         ReplacementsUtil.staticAssert(offset != hubOffset(INJECTED_VMCONFIG), "Use loadHubIntrinsic instead of loadWordFromObject");
-        return loadKlassFromObjectIntrinsic(object, offset, getWordKind(), identity);
+        return loadKlassFromObjectIntrinsic(object, offset, identity, getWordKind());
     }
 
     /**
@@ -725,17 +725,17 @@ public class HotSpotReplacementsUtil {
         return registerAsWord(register, true, false);
     }
 
-    @NodeIntrinsic(value = ReadRegisterNode.class, setStampFromReturnType = true)
+    @NodeIntrinsic(value = ReadRegisterNode.class)
     public static native Word registerAsWord(@ConstantNodeParameter Register register, @ConstantNodeParameter boolean directUse, @ConstantNodeParameter boolean incoming);
 
-    @NodeIntrinsic(value = WriteRegisterNode.class, setStampFromReturnType = true)
+    @NodeIntrinsic(value = WriteRegisterNode.class)
     public static native void writeRegisterAsWord(@ConstantNodeParameter Register register, Word value);
 
-    @NodeIntrinsic(value = RawLoadNode.class, setStampFromReturnType = true)
-    private static native Word loadWordFromObjectIntrinsic(Object object, long offset, @ConstantNodeParameter JavaKind wordKind, @ConstantNodeParameter LocationIdentity locationIdentity);
+    @NodeIntrinsic(value = RawLoadNode.class)
+    private static native Word loadWordFromObjectIntrinsic(Object object, long offset, @ConstantNodeParameter LocationIdentity locationIdentity, @ConstantNodeParameter JavaKind wordKind);
 
-    @NodeIntrinsic(value = RawLoadNode.class, setStampFromReturnType = true)
-    private static native KlassPointer loadKlassFromObjectIntrinsic(Object object, long offset, @ConstantNodeParameter JavaKind wordKind, @ConstantNodeParameter LocationIdentity locationIdentity);
+    @NodeIntrinsic(value = RawLoadNode.class)
+    private static native KlassPointer loadKlassFromObjectIntrinsic(Object object, long offset, @ConstantNodeParameter LocationIdentity locationIdentity, @ConstantNodeParameter JavaKind wordKind);
 
     @NodeIntrinsic(value = LoadHubNode.class)
     public static native KlassPointer loadHubIntrinsic(Object object);
@@ -802,6 +802,8 @@ public class HotSpotReplacementsUtil {
     }
 
     public static final LocationIdentity CLASS_MIRROR_LOCATION = NamedLocationIdentity.immutable("Klass::_java_mirror");
+
+    public static final LocationIdentity CLASS_MIRROR_HANDLE_LOCATION = NamedLocationIdentity.immutable("Klass::_java_mirror handle");
 
     public static final LocationIdentity HEAP_TOP_LOCATION = NamedLocationIdentity.mutable("HeapTop");
 

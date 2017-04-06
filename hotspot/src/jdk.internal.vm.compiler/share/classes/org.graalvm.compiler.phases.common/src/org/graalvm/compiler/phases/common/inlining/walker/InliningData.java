@@ -402,7 +402,7 @@ public class InliningData {
                 EconomicSet<Node> parameterUsages = calleeInfo.inline(new Providers(context));
                 canonicalizedNodes.addAll(parameterUsages);
                 counterInliningRuns.increment();
-                Debug.dump(Debug.INFO_LOG_LEVEL, callerGraph, "after %s", calleeInfo);
+                Debug.dump(Debug.DETAILED_LEVEL, callerGraph, "after %s", calleeInfo);
 
                 Graph.Mark markBeforeCanonicalization = callerGraph.getMark();
 
@@ -572,7 +572,7 @@ public class InliningData {
      * Gets the call hierarchy of this inlining from outer most call to inner most callee.
      */
     private Object[] inliningContext() {
-        if (!Debug.isDumpEnabled(Debug.INFO_LOG_LEVEL)) {
+        if (!Debug.isDumpEnabled(Debug.INFO_LEVEL)) {
             return NO_CONTEXT;
         }
         Object[] result = new Object[graphQueue.size()];

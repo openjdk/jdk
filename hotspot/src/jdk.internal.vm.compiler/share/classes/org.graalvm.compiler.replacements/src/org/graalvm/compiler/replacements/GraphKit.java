@@ -358,7 +358,7 @@ public class GraphKit implements GraphBuilderTool {
      * {@link #endIf} to close the if-block.
      *
      * @param condition The condition for the if-block
-     * @param trueProbability The estimated probability the the condition is true
+     * @param trueProbability The estimated probability the condition is true
      */
     public void startIf(LogicNode condition, double trueProbability) {
         AbstractBeginNode thenSuccessor = graph.add(new BeginNode());

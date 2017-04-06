@@ -67,10 +67,11 @@ import jdk.vm.ci.code.Architecture;
  * encoding-local.
  *
  * The encoded graph has the following structure: First, all nodes and their edges are serialized.
- * The start offset of every node is then known. The raw node data is followed by a "table of
- * contents" that lists the start offset for every node.
+ * The start offset of every node is then known. The raw node data is followed by metadata, i.e.,
+ * the maximum fixed node order id and a "table of contents" that lists the start offset for every
+ * node.
  *
- * The beginning of that table of contents is the return value of {@link #encode} and stored in
+ * The beginning of this metadata is the return value of {@link #encode} and stored in
  * {@link EncodedGraph#getStartOffset()}. The order of nodes in the table of contents is the
  * {@link NodeOrder#orderIds orderId} of a node. Note that the orderId is not the regular node id
  * that every Graal graph node gets assigned. The orderId is computed and used just for encoding and
@@ -85,8 +86,8 @@ import jdk.vm.ci.code.Architecture;
  * <pre>
  * struct Node {
  *   unsigned typeId
- *   signed[] properties
  *   unsigned[] inputOrderIds
+ *   signed[] properties
  *   unsigned[] successorOrderIds
  * }
  * </pre>
@@ -168,9 +169,8 @@ public class GraphEncoder {
      */
     public void prepare(StructuredGraph graph) {
         for (Node node : graph.getNodes()) {
-            nodeClasses.addObject(node.getNodeClass());
-
-            NodeClass<?> nodeClass = node.getNodeClass();
+            NodeClass<? extends Node> nodeClass = node.getNodeClass();
+            nodeClasses.addObject(nodeClass);
             objects.addObject(node.getNodeSourcePosition());
             for (int i = 0; i < nodeClass.getData().getCount(); i++) {
                 if (!nodeClass.getData().getType(i).isPrimitive()) {
@@ -223,8 +223,8 @@ public class GraphEncoder {
             /* Write out the type, properties, and edges. */
             NodeClass<?> nodeClass = node.getNodeClass();
             writer.putUV(nodeClasses.getIndex(nodeClass));
-            writeProperties(node, nodeClass.getData());
             writeEdges(node, nodeClass.getEdges(Edges.Type.Inputs), nodeOrder);
+            writeProperties(node, nodeClass.getData());
             writeEdges(node, nodeClass.getEdges(Edges.Type.Successors), nodeOrder);
 
             /* Special handling for some nodes that require additional information for decoding. */
@@ -276,18 +276,23 @@ public class GraphEncoder {
             }
         }
 
-        /* Write out the table of contents with the start offset for all nodes. */
-        int nodeTableStart = TypeConversion.asS4(writer.getBytesWritten());
+        /*
+         * Write out the metadata (maximum fixed node order id and the table of contents with the
+         * start offset for all nodes).
+         */
+        int metadataStart = TypeConversion.asS4(writer.getBytesWritten());
+        writer.putUV(nodeOrder.maxFixedNodeOrderId);
         writer.putUV(nodeCount);
         for (int i = 0; i < nodeCount; i++) {
             assert i == NULL_ORDER_ID || i == START_NODE_ORDER_ID || nodeStartOffsets[i] > 0;
-            writer.putUV(nodeTableStart - nodeStartOffsets[i]);
+            writer.putUV(metadataStart - nodeStartOffsets[i]);
         }
 
         /* Check that the decoding of the encode graph is the same as the input. */
-        assert verifyEncoding(graph, new EncodedGraph(getEncoding(), nodeTableStart, getObjects(), getNodeClasses(), graph.getAssumptions(), graph.getMethods()), architecture);
+        assert verifyEncoding(graph, new EncodedGraph(getEncoding(), metadataStart, getObjects(), getNodeClasses(), graph.getAssumptions(), graph.getMethods()),
+                        architecture);
 
-        return nodeTableStart;
+        return metadataStart;
     }
 
     public byte[] getEncoding() {
@@ -297,6 +302,7 @@ public class GraphEncoder {
     static class NodeOrder {
         protected final NodeMap<Integer> orderIds;
         protected int nextOrderId;
+        protected int maxFixedNodeOrderId;
 
         NodeOrder(StructuredGraph graph) {
             this.orderIds = new NodeMap<>(graph);
@@ -337,6 +343,7 @@ public class GraphEncoder {
                 }
             } while (current != null);
 
+            maxFixedNodeOrderId = nextOrderId - 1;
             for (Node node : graph.getNodes()) {
                 assert (node instanceof FixedNode) == (orderIds.get(node) != null) : "all fixed nodes must be ordered: " + node;
                 add(node);
@@ -365,6 +372,11 @@ public class GraphEncoder {
     }
 
     protected void writeEdges(Node node, Edges edges, NodeOrder nodeOrder) {
+        if (node instanceof PhiNode) {
+            /* Edges are not needed for decoding, so we must not write it. */
+            return;
+        }
+
         for (int idx = 0; idx < edges.getDirectCount(); idx++) {
             if (GraphDecoder.skipDirectEdge(node, edges, idx)) {
                 /* Edge is not needed for decoding, so we must not write it. */
@@ -373,21 +385,23 @@ public class GraphEncoder {
             Node edge = Edges.getNode(node, edges.getOffsets(), idx);
             writeOrderId(edge, nodeOrder);
         }
-        for (int idx = edges.getDirectCount(); idx < edges.getCount(); idx++) {
-            if (GraphDecoder.skipIndirectEdge(node, edges, idx, false)) {
-                /* Edge is not needed for decoding, so we must not write it. */
-                continue;
-            }
-            NodeList<Node> edgeList = Edges.getNodeList(node, edges.getOffsets(), idx);
-            if (edgeList == null) {
-                writer.putSV(-1);
-            } else {
-                writer.putSV(edgeList.size());
-                for (Node edge : edgeList) {
-                    writeOrderId(edge, nodeOrder);
+
+        if (node instanceof AbstractMergeNode && edges.type() == Edges.Type.Inputs) {
+            /* The ends of merge nodes are decoded manually when the ends are processed. */
+        } else {
+            for (int idx = edges.getDirectCount(); idx < edges.getCount(); idx++) {
+                NodeList<Node> edgeList = Edges.getNodeList(node, edges.getOffsets(), idx);
+                if (edgeList == null) {
+                    writer.putSV(-1);
+                } else {
+                    writer.putSV(edgeList.size());
+                    for (Node edge : edgeList) {
+                        writeOrderId(edge, nodeOrder);
+                    }
                 }
             }
         }
+
     }
 
     protected void writeOrderId(Node node, NodeOrder nodeOrder) {
@@ -405,16 +419,16 @@ public class GraphEncoder {
     @SuppressWarnings("try")
     public static boolean verifyEncoding(StructuredGraph originalGraph, EncodedGraph encodedGraph, Architecture architecture) {
         StructuredGraph decodedGraph = new StructuredGraph.Builder(originalGraph.getOptions(), AllowAssumptions.YES).method(originalGraph.method()).build();
-        GraphDecoder decoder = new GraphDecoder(architecture);
-        decoder.decode(decodedGraph, encodedGraph);
+        GraphDecoder decoder = new GraphDecoder(architecture, decodedGraph);
+        decoder.decode(encodedGraph);
 
         decodedGraph.verify();
         try {
             GraphComparison.verifyGraphsEqual(originalGraph, decodedGraph);
         } catch (Throwable ex) {
             try (Debug.Scope scope = Debug.scope("GraphEncoder")) {
-                Debug.dump(Debug.INFO_LOG_LEVEL, originalGraph, "Original Graph");
-                Debug.dump(Debug.INFO_LOG_LEVEL, decodedGraph, "Decoded Graph");
+                Debug.forceDump(originalGraph, "Original Graph");
+                Debug.forceDump(decodedGraph, "Decoded Graph");
             }
             throw ex;
         }

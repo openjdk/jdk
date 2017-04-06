@@ -109,7 +109,7 @@ class HotSpotWordOperationPlugin extends WordOperationPlugin {
                 PointerEqualsNode comparison = b.add(new PointerEqualsNode(left, right));
                 ValueNode eqValue = b.add(forBoolean(opcode == POINTER_EQ));
                 ValueNode neValue = b.add(forBoolean(opcode == POINTER_NE));
-                b.addPush(returnKind, new ConditionalNode(comparison, eqValue, neValue));
+                b.addPush(returnKind, ConditionalNode.create(comparison, eqValue, neValue));
                 break;
 
             case IS_NULL:
@@ -118,7 +118,7 @@ class HotSpotWordOperationPlugin extends WordOperationPlugin {
                 assert pointer.stamp() instanceof MetaspacePointerStamp;
 
                 LogicNode isNull = b.add(IsNullNode.create(pointer));
-                b.addPush(returnKind, new ConditionalNode(isNull, b.add(forBoolean(true)), b.add(forBoolean(false))));
+                b.addPush(returnKind, ConditionalNode.create(isNull, b.add(forBoolean(true)), b.add(forBoolean(false))));
                 break;
 
             case FROM_POINTER:

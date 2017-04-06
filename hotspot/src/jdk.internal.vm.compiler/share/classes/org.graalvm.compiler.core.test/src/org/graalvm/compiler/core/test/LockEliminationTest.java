@@ -25,7 +25,8 @@ package org.graalvm.compiler.core.test;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 import org.junit.Test;
-
+import org.graalvm.compiler.loop.DefaultLoopPolicies;
+import org.graalvm.compiler.loop.phases.LoopFullUnrollPhase;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.java.MonitorExitNode;
@@ -86,6 +87,26 @@ public class LockEliminationTest extends GraalCompilerTest {
 
         StructuredGraph graph = getGraph("testSynchronizedMethodSnippet");
         new CanonicalizerPhase().apply(graph, new PhaseContext(getProviders()));
+        new LockEliminationPhase().apply(graph);
+        assertDeepEquals(1, graph.getNodes().filter(RawMonitorEnterNode.class).count());
+        assertDeepEquals(1, graph.getNodes().filter(MonitorExitNode.class).count());
+    }
+
+    public void testUnrolledSyncSnippet(Object a) {
+        for (int i = 0; i < 3; i++) {
+            synchronized (a) {
+
+            }
+        }
+    }
+
+    @Test
+    public void testUnrolledSync() {
+        StructuredGraph graph = getGraph("testUnrolledSyncSnippet");
+        CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
+        canonicalizer.apply(graph, new PhaseContext(getProviders()));
+        HighTierContext context = getDefaultHighTierContext();
+        new LoopFullUnrollPhase(canonicalizer, new DefaultLoopPolicies()).apply(graph, context);
         new LockEliminationPhase().apply(graph);
         assertDeepEquals(1, graph.getNodes().filter(RawMonitorEnterNode.class).count());
         assertDeepEquals(1, graph.getNodes().filter(MonitorExitNode.class).count());

@@ -72,19 +72,19 @@ public final class ConstantTreeAnalyzer {
         worklist.offerLast(startBlock);
         while (!worklist.isEmpty()) {
             AbstractBlockBase<?> block = worklist.pollLast();
-            try (Indent i = Debug.logAndIndent(Debug.VERBOSE_LOG_LEVEL, "analyze: %s", block)) {
+            try (Indent i = Debug.logAndIndent(Debug.VERBOSE_LEVEL, "analyze: %s", block)) {
                 assert block != null : "worklist is empty!";
                 assert isMarked(block) : "Block not part of the dominator tree: " + block;
 
                 if (isLeafBlock(block)) {
-                    Debug.log(Debug.VERBOSE_LOG_LEVEL, "leaf block");
+                    Debug.log(Debug.VERBOSE_LEVEL, "leaf block");
                     leafCost(block);
                     continue;
                 }
 
                 if (!visited.get(block.getId())) {
                     // if not yet visited (and not a leaf block) process all children first!
-                    Debug.log(Debug.VERBOSE_LOG_LEVEL, "not marked");
+                    Debug.log(Debug.VERBOSE_LEVEL, "not marked");
                     worklist.offerLast(block);
                     AbstractBlockBase<?> dominated = block.getFirstDominated();
                     while (dominated != null) {
@@ -93,7 +93,7 @@ public final class ConstantTreeAnalyzer {
                     }
                     visited.set(block.getId());
                 } else {
-                    Debug.log(Debug.VERBOSE_LOG_LEVEL, "marked");
+                    Debug.log(Debug.VERBOSE_LEVEL, "marked");
                     // otherwise, process block
                     process(block);
                 }
@@ -162,7 +162,7 @@ public final class ConstantTreeAnalyzer {
 
     private void filteredPush(Deque<AbstractBlockBase<?>> worklist, AbstractBlockBase<?> block) {
         if (isMarked(block)) {
-            Debug.log(Debug.VERBOSE_LOG_LEVEL, "adding %s to the worklist", block);
+            Debug.log(Debug.VERBOSE_LEVEL, "adding %s to the worklist", block);
             worklist.offerLast(block);
         }
     }

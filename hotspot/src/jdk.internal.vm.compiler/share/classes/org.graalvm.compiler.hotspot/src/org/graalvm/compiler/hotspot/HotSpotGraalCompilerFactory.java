@@ -45,6 +45,7 @@ import jdk.vm.ci.services.Services;
 public final class HotSpotGraalCompilerFactory extends HotSpotJVMCICompilerFactory {
 
     private static MethodFilter[] graalCompileOnlyFilter;
+    private static boolean compileGraalWithC1Only;
 
     private final HotSpotGraalJVMCIServiceLocator locator;
 
@@ -67,18 +68,17 @@ public final class HotSpotGraalCompilerFactory extends HotSpotJVMCICompilerFacto
         JVMCIVersionCheck.check(false);
         assert options == null : "cannot select " + getClass() + " service more than once";
         options = HotSpotGraalOptionValues.HOTSPOT_OPTIONS;
-        initializeGraalCompileOnlyFilter(options);
-        if (graalCompileOnlyFilter != null || !Options.UseTrivialPrefixes.getValue(options)) {
-            /*
-             * Exercise this code path early to encourage loading now. This doesn't solve problem of
-             * deadlock during class loading but seems to eliminate it in practice.
-             */
-            adjustCompilationLevelInternal(Object.class, "hashCode", "()I", CompilationLevel.FullOptimization);
-            adjustCompilationLevelInternal(Object.class, "hashCode", "()I", CompilationLevel.Simple);
-        }
+        initializeGraalCompilePolicyFields(options);
+        /*
+         * Exercise this code path early to encourage loading now. This doesn't solve problem of
+         * deadlock during class loading but seems to eliminate it in practice.
+         */
+        adjustCompilationLevelInternal(Object.class, "hashCode", "()I", CompilationLevel.FullOptimization);
+        adjustCompilationLevelInternal(Object.class, "hashCode", "()I", CompilationLevel.Simple);
     }
 
-    private static void initializeGraalCompileOnlyFilter(OptionValues options) {
+    private static void initializeGraalCompilePolicyFields(OptionValues options) {
+        compileGraalWithC1Only = Options.CompileGraalWithC1Only.getValue(options);
         String optionValue = Options.GraalCompileOnly.getValue(options);
         if (optionValue != null) {
             MethodFilter[] filter = MethodFilter.parse(optionValue);
@@ -100,9 +100,6 @@ public final class HotSpotGraalCompilerFactory extends HotSpotJVMCICompilerFacto
         // @formatter:off
         @Option(help = "In tiered mode compile Graal and JVMCI using optimized first tier code.", type = OptionType.Expert)
         public static final OptionKey<Boolean> CompileGraalWithC1Only = new OptionKey<>(true);
-
-        @Option(help = "Hook into VM-level mechanism for denoting compilations to be performed in first tier.", type = OptionType.Expert)
-        public static final OptionKey<Boolean> UseTrivialPrefixes = new OptionKey<>(false);
 
         @Option(help = "A method filter selecting what should be compiled by Graal.  All other requests will be reduced to CompilationLevel.Simple.", type = OptionType.Expert)
         public static final OptionKey<String> GraalCompileOnly = new OptionKey<>(null);
@@ -137,27 +134,15 @@ public final class HotSpotGraalCompilerFactory extends HotSpotJVMCICompilerFacto
     }
 
     @Override
-    public String[] getTrivialPrefixes() {
-        if (Options.UseTrivialPrefixes.getValue(options)) {
-            if (Options.CompileGraalWithC1Only.getValue(options)) {
-                return new String[]{"jdk/vm/ci", "org/graalvm/compiler", "com/oracle/graal"};
-            }
-        }
-        return null;
-    }
-
-    @Override
     public CompilationLevelAdjustment getCompilationLevelAdjustment() {
         if (graalCompileOnlyFilter != null) {
             return CompilationLevelAdjustment.ByFullSignature;
         }
-        if (!Options.UseTrivialPrefixes.getValue(options)) {
-            if (Options.CompileGraalWithC1Only.getValue(options)) {
-                // We only decide using the class declaring the method
-                // so no need to have the method name and signature
-                // symbols converted to a String.
-                return CompilationLevelAdjustment.ByHolder;
-            }
+        if (compileGraalWithC1Only) {
+            // We only decide using the class declaring the method
+            // so no need to have the method name and signature
+            // symbols converted to a String.
+            return CompilationLevelAdjustment.ByHolder;
         }
         return CompilationLevelAdjustment.None;
     }
@@ -193,10 +178,12 @@ public final class HotSpotGraalCompilerFactory extends HotSpotJVMCICompilerFacto
                 return CompilationLevel.Simple;
             }
         }
-        if (level.ordinal() > CompilationLevel.Simple.ordinal()) {
-            String declaringClassName = declaringClass.getName();
-            if (declaringClassName.startsWith("jdk.vm.ci") || declaringClassName.startsWith("org.graalvm.compiler") || declaringClassName.startsWith("com.oracle.graal")) {
-                return CompilationLevel.Simple;
+        if (compileGraalWithC1Only) {
+            if (level.ordinal() > CompilationLevel.Simple.ordinal()) {
+                String declaringClassName = declaringClass.getName();
+                if (declaringClassName.startsWith("jdk.vm.ci") || declaringClassName.startsWith("org.graalvm") || declaringClassName.startsWith("com.oracle.graal")) {
+                    return CompilationLevel.Simple;
+                }
             }
         }
         return level;

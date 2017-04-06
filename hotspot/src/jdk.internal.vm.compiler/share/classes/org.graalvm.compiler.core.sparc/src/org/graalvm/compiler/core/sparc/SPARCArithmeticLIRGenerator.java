@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,7 +202,7 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
 
     private Variable emitUnary(Op3s op3, Value input) {
         Variable result = getLIRGen().newVariable(LIRKind.combine(input));
-        getLIRGen().append(SPARCOP3Op.newUnary(op3, input, result));
+        getLIRGen().append(SPARCOP3Op.newUnary(op3, getLIRGen().loadSimm13(input), result));
         return result;
     }
 
@@ -227,9 +227,9 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
     private Variable emitBinary(ValueKind<?> resultKind, Op3s op3, Value a, Value b, LIRFrameState state) {
         Variable result = getLIRGen().newVariable(resultKind);
         if (op3.isCommutative() && isJavaConstant(a) && getLIRGen().getMoveFactory().canInlineConstant(asJavaConstant(a))) {
-            getLIRGen().append(new SPARCOP3Op(op3, getLIRGen().load(b), a, result, state));
+            getLIRGen().append(new SPARCOP3Op(op3, getLIRGen().load(b), getLIRGen().loadSimm13(a), result, state));
         } else {
-            getLIRGen().append(new SPARCOP3Op(op3, getLIRGen().load(a), b, result, state));
+            getLIRGen().append(new SPARCOP3Op(op3, getLIRGen().load(a), getLIRGen().loadSimm13(b), result, state));
         }
         return result;
     }
