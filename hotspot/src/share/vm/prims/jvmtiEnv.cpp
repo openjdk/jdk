@@ -1793,6 +1793,13 @@ JvmtiEnv::FollowReferences(jint heap_filter, jclass klass, jobject initial_objec
     }
   }
 
+  if (initial_object != NULL) {
+    oop init_obj = JNIHandles::resolve_external_guard(initial_object);
+    if (init_obj == NULL) {
+      return JVMTI_ERROR_INVALID_OBJECT;
+    }
+  }
+
   Thread *thread = Thread::current();
   HandleMark hm(thread);
 

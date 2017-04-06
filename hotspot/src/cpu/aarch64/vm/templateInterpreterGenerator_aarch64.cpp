@@ -1395,13 +1395,32 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // and result handler will pick it up
 
   {
-    Label no_oop, store_result;
+    Label no_oop, not_weak, store_result;
     __ adr(t, ExternalAddress(AbstractInterpreter::result_handler(T_OBJECT)));
     __ cmp(t, result_handler);
     __ br(Assembler::NE, no_oop);
-    // retrieve result
+    // Unbox oop result, e.g. JNIHandles::resolve result.
     __ pop(ltos);
-    __ cbz(r0, store_result);
+    __ cbz(r0, store_result);   // Use NULL as-is.
+    STATIC_ASSERT(JNIHandles::weak_tag_mask == 1u);
+    __ tbz(r0, 0, not_weak);    // Test for jweak tag.
+    // Resolve jweak.
+    __ ldr(r0, Address(r0, -JNIHandles::weak_tag_value));
+#if INCLUDE_ALL_GCS
+    if (UseG1GC) {
+      __ enter();                   // Barrier may call runtime.
+      __ g1_write_barrier_pre(noreg /* obj */,
+                              r0 /* pre_val */,
+                              rthread /* thread */,
+                              t /* tmp */,
+                              true /* tosca_live */,
+                              true /* expand_call */);
+      __ leave();
+    }
+#endif // INCLUDE_ALL_GCS
+    __ b(store_result);
+    __ bind(not_weak);
+    // Resolve (untagged) jobject.
     __ ldr(r0, Address(r0, 0));
     __ bind(store_result);
     __ str(r0, Address(rfp, frame::interpreter_frame_oop_temp_offset*wordSize));

@@ -2417,22 +2417,24 @@ bool InstanceKlass::is_override(const methodHandle& super_method, Handle targetc
 void InstanceKlass::check_prohibited_package(Symbol* class_name,
                                              Handle class_loader,
                                              TRAPS) {
-  ResourceMark rm(THREAD);
   if (!class_loader.is_null() &&
       !SystemDictionary::is_platform_class_loader(class_loader()) &&
-      class_name != NULL &&
-      strncmp(class_name->as_C_string(), JAVAPKG, JAVAPKG_LEN) == 0) {
-    TempNewSymbol pkg_name = InstanceKlass::package_from_name(class_name, CHECK);
-    assert(pkg_name != NULL, "Error in parsing package name starting with 'java/'");
-    char* name = pkg_name->as_C_string();
-    const char* class_loader_name = SystemDictionary::loader_name(class_loader());
-    StringUtils::replace_no_expand(name, "/", ".");
-    const char* msg_text1 = "Class loader (instance of): ";
-    const char* msg_text2 = " tried to load prohibited package name: ";
-    size_t len = strlen(msg_text1) + strlen(class_loader_name) + strlen(msg_text2) + strlen(name) + 1;
-    char* message = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, len);
-    jio_snprintf(message, len, "%s%s%s%s", msg_text1, class_loader_name, msg_text2, name);
-    THROW_MSG(vmSymbols::java_lang_SecurityException(), message);
+      class_name != NULL) {
+    ResourceMark rm(THREAD);
+    char* name = class_name->as_C_string();
+    if (strncmp(name, JAVAPKG, JAVAPKG_LEN) == 0 && name[JAVAPKG_LEN] == '/') {
+      TempNewSymbol pkg_name = InstanceKlass::package_from_name(class_name, CHECK);
+      assert(pkg_name != NULL, "Error in parsing package name starting with 'java/'");
+      name = pkg_name->as_C_string();
+      const char* class_loader_name = SystemDictionary::loader_name(class_loader());
+      StringUtils::replace_no_expand(name, "/", ".");
+      const char* msg_text1 = "Class loader (instance of): ";
+      const char* msg_text2 = " tried to load prohibited package name: ";
+      size_t len = strlen(msg_text1) + strlen(class_loader_name) + strlen(msg_text2) + strlen(name) + 1;
+      char* message = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, len);
+      jio_snprintf(message, len, "%s%s%s%s", msg_text1, class_loader_name, msg_text2, name);
+      THROW_MSG(vmSymbols::java_lang_SecurityException(), message);
+    }
   }
   return;
 }

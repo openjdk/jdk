@@ -618,6 +618,13 @@ void vm_notify_during_shutdown(const char* error, const char* message) {
   }
 }
 
+void vm_exit_during_initialization() {
+  vm_notify_during_shutdown(NULL, NULL);
+
+  // Failure during initialization, we don't want to dump core
+  vm_abort(false);
+}
+
 void vm_exit_during_initialization(Handle exception) {
   tty->print_cr("Error occurred during initialization of VM");
   // If there are exceptions on this thread it must be cleared

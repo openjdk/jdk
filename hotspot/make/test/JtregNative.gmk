@@ -50,6 +50,8 @@ BUILD_HOTSPOT_JTREG_NATIVE_SRC += \
     $(HOTSPOT_TOPDIR)/test/runtime/jni/PrivateInterfaceMethods \
     $(HOTSPOT_TOPDIR)/test/runtime/jni/ToStringInInterfaceTest \
     $(HOTSPOT_TOPDIR)/test/runtime/jni/CalleeSavedRegisters \
+    $(HOTSPOT_TOPDIR)/test/runtime/jni/CallWithJNIWeak \
+    $(HOTSPOT_TOPDIR)/test/runtime/jni/ReturnJNIWeak \
     $(HOTSPOT_TOPDIR)/test/runtime/modules/getModuleJNI \
     $(HOTSPOT_TOPDIR)/test/runtime/SameObject \
     $(HOTSPOT_TOPDIR)/test/runtime/BoolReturn \

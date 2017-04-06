@@ -146,27 +146,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void set_card(Register card_table_base, Address card_table_addr, Register tmp);
 
-#if INCLUDE_ALL_GCS
-  // G1 pre-barrier.
-  // Blows all volatile registers (R0-R3 on 32-bit ARM, R0-R18 on AArch64, Rtemp, LR).
-  // If store_addr != noreg, then previous value is loaded from [store_addr];
-  // in such case store_addr and new_val registers are preserved;
-  // otherwise pre_val register is preserved.
-  void g1_write_barrier_pre(Register store_addr,
-                            Register new_val,
-                            Register pre_val,
-                            Register tmp1,
-                            Register tmp2);
-
-  // G1 post-barrier.
-  // Blows all volatile registers (R0-R3 on 32-bit ARM, R0-R18 on AArch64, Rtemp, LR).
-  void g1_write_barrier_post(Register store_addr,
-                             Register new_val,
-                             Register tmp1,
-                             Register tmp2,
-                             Register tmp3);
-#endif // INCLUDE_ALL_GCS
-
   void pop_ptr(Register r);
   void pop_i(Register r = R0_tos);
 #ifdef AARCH64

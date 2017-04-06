@@ -2394,10 +2394,10 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   // the barriers get omitted and the unsafe reference begins to "pollute"
   // the alias analysis of the rest of the graph, either Compile::can_alias
   // or Compile::must_alias will throw a diagnostic assert.)
-  bool need_mem_bar;
+  bool need_mem_bar = false;
   switch (kind) {
       case Relaxed:
-          need_mem_bar = mismatched || can_access_non_heap;
+          need_mem_bar = mismatched && !adr_type->isa_aryptr();
           break;
       case Opaque:
           // Opaque uses CPUOrder membars for protection against code movement.

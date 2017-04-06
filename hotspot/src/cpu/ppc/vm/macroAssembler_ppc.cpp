@@ -3033,6 +3033,34 @@ void MacroAssembler::card_table_write(jbyte* byte_map_base, Register Rtmp, Regis
   stbx(R0, Rtmp, Robj);
 }
 
+// Kills R31 if value is a volatile register.
+void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp2, bool needs_frame) {
+  Label done;
+  cmpdi(CCR0, value, 0);
+  beq(CCR0, done);         // Use NULL as-is.
+
+  clrrdi(tmp1, value, JNIHandles::weak_tag_size);
+#if INCLUDE_ALL_GCS
+  if (UseG1GC) { andi_(tmp2, value, JNIHandles::weak_tag_mask); }
+#endif
+  ld(value, 0, tmp1);      // Resolve (untagged) jobject.
+
+#if INCLUDE_ALL_GCS
+  if (UseG1GC) {
+    Label not_weak;
+    beq(CCR0, not_weak);   // Test for jweak tag.
+    verify_oop(value);
+    g1_write_barrier_pre(noreg, // obj
+                         noreg, // offset
+                         value, // pre_val
+                         tmp1, tmp2, needs_frame);
+    bind(not_weak);
+  }
+#endif // INCLUDE_ALL_GCS
+  verify_oop(value);
+  bind(done);
+}
+
 #if INCLUDE_ALL_GCS
 // General G1 pre-barrier generator.
 // Goal: record the previous value if it is not null.
@@ -3094,7 +3122,7 @@ void MacroAssembler::g1_write_barrier_pre(Register Robj, RegisterOrConstant offs
 
   bind(runtime);
 
-  // VM call need frame to access(write) O register.
+  // May need to preserve LR. Also needed if current frame is not compatible with C calling convention.
   if (needs_frame) {
     save_LR_CR(Rtmp1);
     push_frame_reg_args(0, Rtmp2);

@@ -96,8 +96,12 @@ CompactHashtable<oop, char> StringTable::_shared_table;
 
 // Pick hashing algorithm
 unsigned int StringTable::hash_string(const jchar* s, int len) {
-  return use_alternate_hashcode() ? AltHashing::murmur3_32(seed(), s, len) :
+  return use_alternate_hashcode() ? alt_hash_string(s, len) :
                                     java_lang_String::hash_code(s, len);
+}
+
+unsigned int StringTable::alt_hash_string(const jchar* s, int len) {
+  return AltHashing::murmur3_32(seed(), s, len);
 }
 
 unsigned int StringTable::hash_string(oop string) {
@@ -117,11 +121,10 @@ unsigned int StringTable::hash_string(oop string) {
   }
 }
 
-oop StringTable::lookup_shared(jchar* name, int len) {
-  // java_lang_String::hash_code() was used to compute hash values in the shared table. Don't
-  // use the hash value from StringTable::hash_string() as it might use alternate hashcode.
-  return _shared_table.lookup((const char*)name,
-                              java_lang_String::hash_code(name, len), len);
+oop StringTable::lookup_shared(jchar* name, int len, unsigned int hash) {
+  assert(hash == java_lang_String::hash_code(name, len),
+         "hash must be computed using java_lang_String::hash_code");
+  return _shared_table.lookup((const char*)name, hash, len);
 }
 
 oop StringTable::lookup_in_main_table(int index, jchar* name,
@@ -156,7 +159,7 @@ oop StringTable::basic_add(int index_arg, Handle string, jchar* name,
   unsigned int hashValue;
   int index;
   if (use_alternate_hashcode()) {
-    hashValue = hash_string(name, len);
+    hashValue = alt_hash_string(name, len);
     index = hash_to_index(hashValue);
   } else {
     hashValue = hashValue_arg;
@@ -199,12 +202,15 @@ static void ensure_string_alive(oop string) {
 }
 
 oop StringTable::lookup(jchar* name, int len) {
-  oop string = lookup_shared(name, len);
+  // shared table always uses java_lang_String::hash_code
+  unsigned int hash = java_lang_String::hash_code(name, len);
+  oop string = lookup_shared(name, len, hash);
   if (string != NULL) {
     return string;
   }
-
-  unsigned int hash = hash_string(name, len);
+  if (use_alternate_hashcode()) {
+    hash = alt_hash_string(name, len);
+  }
   int index = the_table()->hash_to_index(hash);
   string = the_table()->lookup_in_main_table(index, name, len, hash);
 
@@ -215,12 +221,15 @@ oop StringTable::lookup(jchar* name, int len) {
 
 oop StringTable::intern(Handle string_or_null, jchar* name,
                         int len, TRAPS) {
-  oop found_string = lookup_shared(name, len);
+  // shared table always uses java_lang_String::hash_code
+  unsigned int hashValue = java_lang_String::hash_code(name, len);
+  oop found_string = lookup_shared(name, len, hashValue);
   if (found_string != NULL) {
     return found_string;
   }
-
-  unsigned int hashValue = hash_string(name, len);
+  if (use_alternate_hashcode()) {
+    hashValue = alt_hash_string(name, len);
+  }
   int index = the_table()->hash_to_index(hashValue);
   found_string = the_table()->lookup_in_main_table(index, name, len, hashValue);
 
