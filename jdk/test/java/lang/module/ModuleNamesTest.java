@@ -235,7 +235,7 @@ public class ModuleNamesTest {
      */
     private Builder newBuilder(String mn) {
         return SharedSecrets.getJavaLangModuleAccess()
-                            .newModuleBuilder(mn, false, false, false);
+                            .newModuleBuilder(mn, false, Set.of());
     }
 
     /**

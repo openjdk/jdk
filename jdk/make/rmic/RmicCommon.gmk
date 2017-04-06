@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ include $(SPEC)
 include MakeBase.gmk
 include RMICompilation.gmk
 
-##########################################################################################
+################################################################################
 
 ifeq ($(BOOT_JDK_MODULAR), true)
   RMIC_MAIN_CLASS := -m jdk.rmic/sun.rmi.rmic.Main
@@ -37,12 +37,13 @@ else
   RMIC_MAIN_CLASS := sun.rmi.rmic.Main
 endif
 
-RMIC := $(JAVA_SMALL) $(INTERIM_OVERRIDE_MODULES_ARGS) $(RMIC_MAIN_CLASS)
+RMIC := $(JAVA_SMALL) $(INTERIM_RMIC_OVERRIDE_MODULES_ARGS) $(RMIC_MAIN_CLASS)
 
 CLASSES_DIR := $(JDK_OUTPUTDIR)/modules
-# NOTE: If the smart javac dependency management is reintroduced, these classes risk
-# interfering with the dependency checking. In that case they will need to be kept separate.
+# NOTE: If the smart javac dependency management is reintroduced, these classes
+# risk interfering with the dependency checking. In that case they will need to
+# be kept separate.
 STUB_CLASSES_DIR := $(JDK_OUTPUTDIR)/modules
 RMIC_GENSRC_DIR := $(SUPPORT_OUTPUTDIR)/rmic
 
-##########################################################################################
+################################################################################

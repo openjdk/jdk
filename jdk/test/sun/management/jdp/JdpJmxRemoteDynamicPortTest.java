@@ -27,9 +27,9 @@
  *  @summary Verify a non-zero value is assigned to jmxremote.port
  *           when VM is started with jmxremote.port=0.
  *  @library /lib/testlibrary
- *  @modules java.management/sun.management.jdp
+ *  @modules jdk.management.agent/sun.management.jdp
  *  @build jdk.testlibrary.* ClientConnection JdpTestUtil JdpTestCase JdpJmxRemoteDynamicPortTestCase DynamicLauncher
- *  @run main JdpJmxRemoteDynamicPortTest
+ *  @run main/othervm JdpJmxRemoteDynamicPortTest
  */
 
 import java.lang.management.ManagementFactory;
@@ -40,7 +40,6 @@ public class JdpJmxRemoteDynamicPortTest  extends DynamicLauncher {
     public static void main(String[] args) throws Exception {
         DynamicLauncher launcher = new JdpJmxRemoteDynamicPortTest();
         launcher.run();
-        launcher.getProcessOutpoutAnalyzer().stderrShouldNotContain("java.lang.Exception:");
     }
 
     protected String[] options() {
