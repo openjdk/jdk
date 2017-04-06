@@ -65,11 +65,12 @@ import javax.swing.border.EmptyBorder;
  *
  * @see java.security.Policy
  * @since   1.2
- * @deprecated The policytool tool has been deprecated and
- * is planned to be removed in a future release.
+ * @deprecated {@code policytool} has been deprecated for removal because it
+ * is rarely used, and it provides little value over editing policy
+ * files using a text editor.
  */
 
-@Deprecated
+@Deprecated(since="9", forRemoval=true)
 public class PolicyTool {
 
     // for i18n

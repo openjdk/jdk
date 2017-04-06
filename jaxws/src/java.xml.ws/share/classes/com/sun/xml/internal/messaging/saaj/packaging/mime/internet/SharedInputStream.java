@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,9 @@ public interface SharedInputStream {
 
     /**
      * Writes the specified region to another {@link OutputStream}.
+     * @param   start   the starting position
+     * @param   end     the ending position + 1
+     * @param   out     output stream
      */
     public void writeTo(long start,long end, OutputStream out);
 }
