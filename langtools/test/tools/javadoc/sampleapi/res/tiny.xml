@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
- Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -21,51 +21,53 @@
  or visit www.oracle.com if you need additional information or have any
  questions.
 -->
-<package name="sampleapi.tiny">
-
-    <class basename="TinyClass">
-        <modifier>public</modifier>
-        <modifier>none|abstract</modifier>
-        <member>
-            <field basename="id">
+<sampleapi>
+    <module name="UNNAMED">
+        <package name="sampleapi.tiny">
+            <class basename="TinyClass">
                 <modifier>public</modifier>
-                <type>int</type>
-            </field>
-            <method basename="get">
-                <modifier>public</modifier>
-                <type>int</type>
-            </method>
-        </member>
-    </class>
+                <modifier>none|abstract</modifier>
+                <member>
+                    <field basename="id">
+                        <modifier>public</modifier>
+                        <type>int</type>
+                    </field>
+                    <method basename="get">
+                        <modifier>public</modifier>
+                        <type>int</type>
+                    </method>
+                </member>
+            </class>
 
-    <interface basename="TinyInterface">
-        <modifier>public</modifier>
-        <member>
-            <method basename="put">
+            <interface basename="TinyInterface">
                 <modifier>public</modifier>
-                <type>void</type>
-                <param>int</param>
-            </method>
-        </member>
-    </interface>
+                <member>
+                    <method basename="put">
+                        <modifier>public</modifier>
+                        <type>void</type>
+                        <param>int</param>
+                    </method>
+                </member>
+            </interface>
 
-    <enum basename="TinyEnum">
-        <modifier>public</modifier>
-        <member>
-            <constant basename="YES" count="1"/>
-            <constant basename="NO" count="1"/>
-            <constant basename="MAYBE" count="1"/>
-        </member>
-    </enum>
-
-    <annotation basename="TinyAnno">
-        <modifier>public</modifier>
-        <member>
-            <method basename="value">
+            <enum basename="TinyEnum">
                 <modifier>public</modifier>
-                <type>boolean</type>
-            </method>
-        </member>
-    </annotation>
-        
-</package>
+                <member>
+                    <constant basename="YES" count="1"/>
+                    <constant basename="NO" count="1"/>
+                    <constant basename="MAYBE" count="1"/>
+                </member>
+            </enum>
+
+            <annotation basename="TinyAnno">
+                <modifier>public</modifier>
+                <member>
+                    <method basename="value">
+                        <modifier>public</modifier>
+                        <type>boolean</type>
+                    </method>
+                </member>
+            </annotation>
+        </package>
+    </module>
+</sampleapi>

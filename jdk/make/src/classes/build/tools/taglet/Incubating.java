@@ -29,8 +29,8 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import com.sun.source.doctree.DocTree;
-import jdk.javadoc.doclet.taglet.Taglet;
-import static jdk.javadoc.doclet.taglet.Taglet.Location.*;
+import jdk.javadoc.doclet.Taglet;
+import static jdk.javadoc.doclet.Taglet.Location.*;
 
 /**
  * An inline tag to conveniently insert a standard Incubating warning.  For
@@ -57,11 +57,6 @@ public class Incubating implements Taglet {
     private static final String MESSAGE =
         "<BR><b><a href=\"http://openjdk.java.net/jeps/11\">Incubating Feature.</a>"
                 + " Will be removed in a future release.</b>";
-
-    @Override
-    public String toString(DocTree tag) {
-        return MESSAGE;
-    }
 
     @Override
     public String toString(List<? extends DocTree> tags) {

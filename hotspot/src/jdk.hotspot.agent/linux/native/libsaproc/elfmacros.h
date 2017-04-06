@@ -33,6 +33,7 @@
 #define ELF_NHDR        Elf64_Nhdr
 #define ELF_DYN         Elf64_Dyn
 #define ELF_ADDR        Elf64_Addr
+#define ELF_AUXV        Elf64_auxv_t
 
 #define ELF_ST_TYPE     ELF64_ST_TYPE
 
@@ -45,6 +46,7 @@
 #define ELF_NHDR        Elf32_Nhdr
 #define ELF_DYN         Elf32_Dyn
 #define ELF_ADDR        Elf32_Addr
+#define ELF_AUXV        Elf32_auxv_t
 
 #define ELF_ST_TYPE     ELF32_ST_TYPE
 
