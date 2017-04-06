@@ -3995,10 +3995,14 @@ bool GraphBuilder::try_method_handle_inline(ciMethod* callee, bool ignore_return
         ciMethod* target = type->as_ObjectType()->constant_value()->as_method_handle()->get_vmtarget();
         // We don't do CHA here so only inline static and statically bindable methods.
         if (target->is_static() || target->can_be_statically_bound()) {
-          Bytecodes::Code bc = target->is_static() ? Bytecodes::_invokestatic : Bytecodes::_invokevirtual;
-          ignore_return = ignore_return || (callee->return_type()->is_void() && !target->return_type()->is_void());
-          if (try_inline(target, /*holder_known*/ true, ignore_return, bc)) {
-            return true;
+          if (ciMethod::is_consistent_info(callee, target)) {
+            Bytecodes::Code bc = target->is_static() ? Bytecodes::_invokestatic : Bytecodes::_invokevirtual;
+            ignore_return = ignore_return || (callee->return_type()->is_void() && !target->return_type()->is_void());
+            if (try_inline(target, /*holder_known*/ true, ignore_return, bc)) {
+              return true;
+            }
+          } else {
+            print_inlining(target, "signatures mismatch", /*success*/ false);
           }
         } else {
           print_inlining(target, "not static or statically bindable", /*success*/ false);
@@ -4026,6 +4030,8 @@ bool GraphBuilder::try_method_handle_inline(ciMethod* callee, bool ignore_return
           if (try_method_handle_inline(target, ignore_return)) {
             return true;
           }
+        } else if (!ciMethod::is_consistent_info(callee, target)) {
+          print_inlining(target, "signatures mismatch", /*success*/ false);
         } else {
           ciSignature* signature = target->signature();
           const int receiver_skip = target->is_static() ? 0 : 1;

@@ -343,7 +343,8 @@ public final class Objects {
      */
     public static <T> T requireNonNull(T obj, Supplier<String> messageSupplier) {
         if (obj == null)
-            throw new NullPointerException(messageSupplier.get());
+            throw new NullPointerException(messageSupplier == null ?
+                                           null : messageSupplier.get());
         return obj;
     }
 

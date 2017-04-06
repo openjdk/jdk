@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4665566 4855876 7025314 8012375 8015997 8016328 8024756 8148985 8151921
+ * @bug      4665566 4855876 7025314 8012375 8015997 8016328 8024756 8148985 8151921 8151743
  * @summary  Verify that the output has the right javascript.
  * @author   jamieh
  * @library  ../lib
@@ -47,7 +47,11 @@ public class TestJavascript extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/C.html", true,
-                "<a href=\"../index.html?pkg/C.html\" target=\"_top\">Frames</a>");
+                "<a href=\"../index.html?pkg/C.html\" target=\"_top\">Frames</a>",
+                "<script type=\"text/javascript\"><!--\n"
+                + "$('.navPadding').css('padding-top', $('.fixedNav').css(\"height\"));\n"
+                + "//-->\n"
+                + "</script>");
 
         checkOutput("TestJavascript.html", true,
                 "<a href=\"index.html?TestJavascript.html\" target=\"_top\">Frames</a>");
@@ -119,5 +123,10 @@ public class TestJavascript extends JavadocTester {
                 + "    }\n"
                 + "    catch(err) {\n"
                 + "    }");
+
+        checkOutput("script.js", true,
+                "$(window).resize(function() {\n"
+                + "        $('.navPadding').css('padding-top', $('.fixedNav').css(\"height\"));\n"
+                + "    });");
     }
 }

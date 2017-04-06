@@ -22,11 +22,12 @@
  */
 
 /* @test
-   @bug 4122961
-   @summary Verify that converters don't drop characters on buffer boundaries
+ * @bug 4122961
+ * @summary Verify that converters don't drop characters on buffer boundaries
 
-   This is a slightly modified version of the attachment supplied with the
-   bug report.
+ * This is a slightly modified version of the attachment supplied with the
+ * bug report.
+ * @modules jdk.charsets
  */
 import java.io.*;
 
