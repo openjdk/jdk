@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,17 +27,20 @@
  * @author Steve Hanna
  *
  */
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.IOException;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathBuilder;
 import java.security.cert.CertPathValidator;
 import java.security.cert.CertStore;
 import java.security.cert.CollectionCertStoreParameters;
+import java.security.cert.CRLException;
 import java.security.cert.PKIXBuilderParameters;
 import java.security.cert.PKIXCertPathBuilderResult;
 import java.security.cert.PKIXCertPathValidatorResult;
@@ -60,59 +63,71 @@ public class CertUtils {
      * Get a DER-encoded X.509 certificate from a file.
      *
      * @param certFilePath path to file containing DER-encoded certificate
-     * @return X509Certificate
-     * @throws IOException on error
+     * @return the X509Certificate
+     * @throws CertificateException if the certificate type is not supported
+     *                              or cannot be parsed
+     * @throws IOException if the file cannot be opened
      */
     public static X509Certificate getCertFromFile(String certFilePath)
-        throws IOException {
-            X509Certificate cert = null;
-            try {
-                File certFile = new File(System.getProperty("test.src", "."),
-                    certFilePath);
-                if (!certFile.canRead())
-                    throw new IOException("File " +
-                                          certFile.toString() +
-                                          " is not a readable file.");
-                FileInputStream certFileInputStream =
-                    new FileInputStream(certFile);
-                CertificateFactory cf = CertificateFactory.getInstance("X509");
-                cert = (X509Certificate)
-                    cf.generateCertificate(certFileInputStream);
-            } catch (Exception e) {
-                e.printStackTrace();
-                throw new IOException("Can't construct X509Certificate: " +
-                                      e.getMessage());
-            }
-            return cert;
+        throws CertificateException, IOException {
+        File certFile = new File(System.getProperty("test.src", "."),
+                                 certFilePath);
+        try (FileInputStream fis = new FileInputStream(certFile)) {
+            return (X509Certificate)
+                CertificateFactory.getInstance("X.509")
+                                  .generateCertificate(fis);
+        }
+    }
+
+    /**
+     * Get a PEM-encoded X.509 certificate from a string.
+     *
+     * @param cert string containing the PEM-encoded certificate
+     * @return the X509Certificate
+     * @throws CertificateException if the certificate type is not supported
+     *                              or cannot be parsed
+     */
+    public static X509Certificate getCertFromString(String cert)
+        throws CertificateException {
+        byte[] certBytes = cert.getBytes();
+        ByteArrayInputStream bais = new ByteArrayInputStream(certBytes);
+        return (X509Certificate)
+            CertificateFactory.getInstance("X.509").generateCertificate(bais);
     }
 
     /**
      * Get a DER-encoded X.509 CRL from a file.
      *
      * @param crlFilePath path to file containing DER-encoded CRL
-     * @return X509CRL
-     * @throws IOException on error
+     * @return the X509CRL
+     * @throws CertificateException if the crl type is not supported
+     * @throws CRLException if the crl cannot be parsed
+     * @throws IOException if the file cannot be opened
      */
     public static X509CRL getCRLFromFile(String crlFilePath)
-        throws IOException {
-            X509CRL crl = null;
-            try {
-                File crlFile = new File(System.getProperty("test.src", "."),
-                    crlFilePath);
-                if (!crlFile.canRead())
-                    throw new IOException("File " +
-                                          crlFile.toString() +
-                                          " is not a readable file.");
-                FileInputStream crlFileInputStream =
-                    new FileInputStream(crlFile);
-                CertificateFactory cf = CertificateFactory.getInstance("X509");
-                crl = (X509CRL) cf.generateCRL(crlFileInputStream);
-            } catch (Exception e) {
-                e.printStackTrace();
-                throw new IOException("Can't construct X509CRL: " +
-                                      e.getMessage());
-            }
-            return crl;
+        throws CertificateException, CRLException, IOException {
+        File crlFile = new File(System.getProperty("test.src", "."),
+                                crlFilePath);
+        try (FileInputStream fis = new FileInputStream(crlFile)) {
+            return (X509CRL)
+                CertificateFactory.getInstance("X.509").generateCRL(fis);
+        }
+    }
+
+    /**
+     * Get a PEM-encoded X.509 crl from a string.
+     *
+     * @param crl string containing the PEM-encoded crl
+     * @return the X509CRL
+     * @throws CertificateException if the crl type is not supported
+     * @throws CRLException if the crl cannot be parsed
+     */
+    public static X509CRL getCRLFromString(String crl)
+        throws CertificateException, CRLException {
+        byte[] crlBytes = crl.getBytes();
+        ByteArrayInputStream bais = new ByteArrayInputStream(crlBytes);
+        return (X509CRL)
+            CertificateFactory.getInstance("X.509").generateCRL(bais);
     }
 
     /**

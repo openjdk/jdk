@@ -51,6 +51,8 @@
  *     independent, operate at different levels, and do not share functionality or
  *     definitions.
  * </p>
+ *
+ * @since 9
  */
 module jdk.jshell {
     requires transitive java.compiler;

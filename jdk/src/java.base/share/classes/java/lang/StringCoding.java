@@ -272,8 +272,7 @@ class StringCoding {
         // (2)The defensive copy of the input byte/char[] has a big performance
         // impact, as well as the outgoing result byte/char[]. Need to do the
         // optimization check of (sm==null && classLoader0==null) for both.
-        // (3)getClass().getClassLoader0() is expensive
-        // (4)There might be a timing gap in isTrusted setting. getClassLoader0()
+        // (3)There might be a timing gap in isTrusted setting. getClassLoader0()
         // is only checked (and then isTrusted gets set) when (SM==null). It is
         // possible that the SM==null for now but then SM is NOT null later
         // when safeTrim() is invoked...the "safe" way to do is to redundant
@@ -299,8 +298,8 @@ class StringCoding {
         if (len == 0) {
             return new Result().with();
         }
-        if (System.getSecurityManager() != null &&
-            cs.getClass().getClassLoader0() != null) {
+        if (cs.getClass().getClassLoader0() != null &&
+            System.getSecurityManager() != null) {
             ba =  Arrays.copyOfRange(ba, off, off + len);
             off = 0;
         }
@@ -609,8 +608,8 @@ class StringCoding {
         if (len == 0) {
             return ba;
         }
-        boolean isTrusted = System.getSecurityManager() == null ||
-                            cs.getClass().getClassLoader0() == null;
+        boolean isTrusted = cs.getClass().getClassLoader0() == null ||
+                            System.getSecurityManager() == null;
         ce.onMalformedInput(CodingErrorAction.REPLACE)
           .onUnmappableCharacter(CodingErrorAction.REPLACE)
           .reset();
