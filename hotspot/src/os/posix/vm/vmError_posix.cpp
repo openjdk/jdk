@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,21 @@ static const int NUM_SIGNALS = sizeof(SIGNALS) / sizeof(int);
 static int resettedSigflags[NUM_SIGNALS];
 static address resettedSighandler[NUM_SIGNALS];
 
+// Needed for cancelable steps.
+static volatile pthread_t reporter_thread_id;
+
+void VMError::reporting_started() {
+  // record pthread id of reporter thread.
+  reporter_thread_id = ::pthread_self();
+}
+
+void VMError::interrupt_reporting_thread() {
+  // We misuse SIGILL here, but it does not really matter. We need
+  //  a signal which is handled by crash_handler and not likely to
+  //  occurr during error reporting itself.
+  ::pthread_kill(reporter_thread_id, SIGILL);
+}
+
 static void save_signal(int idx, int sig)
 {
   struct sigaction sa;
@@ -100,7 +115,12 @@ static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
 
   // support safefetch faults in error handling
   ucontext_t* const uc = (ucontext_t*) ucVoid;
-  address const pc = uc ? os::Posix::ucontext_get_pc(uc) : NULL;
+  address pc = (uc != NULL) ? os::Posix::ucontext_get_pc(uc) : NULL;
+
+  // Correct pc for SIGILL, SIGFPE (see JDK-8176872)
+  if (sig == SIGILL || sig == SIGFPE) {
+    pc = (address) info->si_addr;
+  }
 
   if (uc && pc && StubRoutines::is_safefetch_fault(pc)) {
     os::Posix::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));

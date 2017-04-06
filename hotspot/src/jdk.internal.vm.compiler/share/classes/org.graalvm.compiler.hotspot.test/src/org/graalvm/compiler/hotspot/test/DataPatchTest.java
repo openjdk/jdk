@@ -25,8 +25,7 @@ package org.graalvm.compiler.hotspot.test;
 
 import org.junit.Assume;
 import org.junit.Test;
-
-import org.graalvm.compiler.hotspot.CompressEncoding;
+import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.hotspot.nodes.CompressionNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.debug.OpaqueNode;

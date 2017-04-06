@@ -39,7 +39,7 @@ import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
 public final class VirtualObjectState extends EscapeObjectState implements Node.ValueNumberable {
 
     public static final NodeClass<VirtualObjectState> TYPE = NodeClass.create(VirtualObjectState.class);
-    @Input NodeInputList<ValueNode> values;
+    @OptionalInput NodeInputList<ValueNode> values;
 
     public NodeInputList<ValueNode> values() {
         return values;
@@ -65,7 +65,9 @@ public final class VirtualObjectState extends EscapeObjectState implements Node.
     @Override
     public void applyToNonVirtual(NodeClosure<? super ValueNode> closure) {
         for (ValueNode value : values) {
-            closure.apply(this, value);
+            if (value != null) {
+                closure.apply(this, value);
+            }
         }
     }
 }

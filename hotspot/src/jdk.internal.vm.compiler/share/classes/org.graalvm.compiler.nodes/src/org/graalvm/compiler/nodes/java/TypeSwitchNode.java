@@ -27,6 +27,9 @@ import java.util.Arrays;
 
 import org.graalvm.compiler.core.common.type.AbstractPointerStamp;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
+import org.graalvm.compiler.core.common.type.Stamp;
+import org.graalvm.compiler.core.common.type.StampFactory;
+import org.graalvm.compiler.core.common.type.TypeReference;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.Simplifiable;
 import org.graalvm.compiler.graph.spi.SimplifierTool;
@@ -196,5 +199,22 @@ public final class TypeSwitchNode extends SwitchNode implements LIRLowerable, Si
                 }
             }
         }
+    }
+
+    @Override
+    public Stamp getValueStampForSuccessor(AbstractBeginNode beginNode) {
+        Stamp result = null;
+        if (beginNode != defaultSuccessor()) {
+            for (int i = 0; i < keyCount(); i++) {
+                if (keySuccessor(i) == beginNode) {
+                    if (result == null) {
+                        result = StampFactory.objectNonNull(TypeReference.createExactTrusted(typeAt(i)));
+                    } else {
+                        result = result.meet(StampFactory.objectNonNull(TypeReference.createExactTrusted(typeAt(i))));
+                    }
+                }
+            }
+        }
+        return result;
     }
 }

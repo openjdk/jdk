@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -410,30 +410,6 @@ void Universe::genesis(TRAPS) {
 
 }
 
-// CDS support for patching vtables in metadata in the shared archive.
-// All types inherited from Metadata have vtables, but not types inherited
-// from MetaspaceObj, because the latter does not have virtual functions.
-// If the metadata type has a vtable, it cannot be shared in the read-only
-// section of the CDS archive, because the vtable pointer is patched.
-static inline void add_vtable(void** list, int* n, void* o, int count) {
-  guarantee((*n) < count, "vtable list too small");
-  void* vtable = dereference_vptr(o);
-  assert(*(void**)(vtable) != NULL, "invalid vtable");
-  list[(*n)++] = vtable;
-}
-
-void Universe::init_self_patching_vtbl_list(void** list, int count) {
-  int n = 0;
-  { InstanceKlass o;          add_vtable(list, &n, &o, count); }
-  { InstanceClassLoaderKlass o; add_vtable(list, &n, &o, count); }
-  { InstanceMirrorKlass o;    add_vtable(list, &n, &o, count); }
-  { InstanceRefKlass o;       add_vtable(list, &n, &o, count); }
-  { TypeArrayKlass o;         add_vtable(list, &n, &o, count); }
-  { ObjArrayKlass o;          add_vtable(list, &n, &o, count); }
-  { Method o;                 add_vtable(list, &n, &o, count); }
-  { ConstantPool o;           add_vtable(list, &n, &o, count); }
-}
-
 void Universe::initialize_basic_type_mirrors(TRAPS) {
     assert(_int_mirror==NULL, "basic type mirrors already initialized");
     _int_mirror     =
@@ -484,9 +460,8 @@ void Universe::fixup_mirrors(TRAPS) {
     Klass* k = list->at(i);
     assert(k->is_klass(), "List should only hold classes");
     EXCEPTION_MARK;
-    KlassHandle kh(THREAD, k);
-    java_lang_Class::fixup_mirror(kh, CATCH);
-}
+    java_lang_Class::fixup_mirror(k, CATCH);
+  }
   delete java_lang_Class::fixup_mirror_list();
   java_lang_Class::set_fixup_mirror_list(NULL);
 }
@@ -530,7 +505,7 @@ void Universe::run_finalizers_on_exit() {
   log_trace(ref)("Callback to run finalizers on exit");
   {
     PRESERVE_EXCEPTION_MARK;
-    KlassHandle finalizer_klass(THREAD, SystemDictionary::Finalizer_klass());
+    Klass* finalizer_klass = SystemDictionary::Finalizer_klass();
     JavaValue result(T_VOID);
     JavaCalls::call_static(
       &result,
@@ -549,16 +524,15 @@ void Universe::run_finalizers_on_exit() {
 // 1) we specified true to initialize_vtable and
 // 2) this ran after gc was enabled
 // In case those ever change we use handles for oops
-void Universe::reinitialize_vtable_of(KlassHandle k_h, TRAPS) {
+void Universe::reinitialize_vtable_of(Klass* ko, TRAPS) {
   // init vtable of k and all subclasses
-  Klass* ko = k_h();
   klassVtable* vt = ko->vtable();
   if (vt) vt->initialize_vtable(false, CHECK);
   if (ko->is_instance_klass()) {
-    for (KlassHandle s_h(THREAD, ko->subklass());
-         s_h() != NULL;
-         s_h = KlassHandle(THREAD, s_h()->next_sibling())) {
-      reinitialize_vtable_of(s_h, CHECK);
+    for (Klass* sk = ko->subklass();
+         sk != NULL;
+         sk = sk->next_sibling()) {
+      reinitialize_vtable_of(sk, CHECK);
     }
   }
 }
@@ -615,20 +589,22 @@ oop Universe::gen_out_of_memory_error(oop default_err) {
     // return default
     return default_err;
   } else {
+    Thread* THREAD = Thread::current();
+    Handle default_err_h(THREAD, default_err);
     // get the error object at the slot and set set it to NULL so that the
     // array isn't keeping it alive anymore.
-    oop exc = preallocated_out_of_memory_errors()->obj_at(next);
-    assert(exc != NULL, "slot has been used already");
+    Handle exc(THREAD, preallocated_out_of_memory_errors()->obj_at(next));
+    assert(exc() != NULL, "slot has been used already");
     preallocated_out_of_memory_errors()->obj_at_put(next, NULL);
 
     // use the message from the default error
-    oop msg = java_lang_Throwable::message(default_err);
+    oop msg = java_lang_Throwable::message(default_err_h());
     assert(msg != NULL, "no message");
-    java_lang_Throwable::set_message(exc, msg);
+    java_lang_Throwable::set_message(exc(), msg);
 
     // populate the stack trace and return it.
     java_lang_Throwable::fill_in_stack_trace_of_preallocated_backtrace(exc);
-    return exc;
+    return exc();
   }
 }
 
@@ -986,28 +962,26 @@ bool universe_post_init() {
     Interpreter::initialize();      // needed for interpreter entry points
     if (!UseSharedSpaces) {
       HandleMark hm(THREAD);
-      KlassHandle ok_h(THREAD, SystemDictionary::Object_klass());
-      Universe::reinitialize_vtable_of(ok_h, CHECK_false);
+      Klass* ok = SystemDictionary::Object_klass();
+      Universe::reinitialize_vtable_of(ok, CHECK_false);
       Universe::reinitialize_itables(CHECK_false);
     }
   }
 
   HandleMark hm(THREAD);
-  Klass* k;
-  instanceKlassHandle k_h;
   // Setup preallocated empty java.lang.Class array
   Universe::_the_empty_class_klass_array = oopFactory::new_objArray(SystemDictionary::Class_klass(), 0, CHECK_false);
 
   // Setup preallocated OutOfMemoryError errors
-  k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_OutOfMemoryError(), true, CHECK_false);
-  k_h = instanceKlassHandle(THREAD, k);
-  Universe::_out_of_memory_error_java_heap = k_h->allocate_instance(CHECK_false);
-  Universe::_out_of_memory_error_metaspace = k_h->allocate_instance(CHECK_false);
-  Universe::_out_of_memory_error_class_metaspace = k_h->allocate_instance(CHECK_false);
-  Universe::_out_of_memory_error_array_size = k_h->allocate_instance(CHECK_false);
+  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_OutOfMemoryError(), true, CHECK_false);
+  InstanceKlass* ik = InstanceKlass::cast(k);
+  Universe::_out_of_memory_error_java_heap = ik->allocate_instance(CHECK_false);
+  Universe::_out_of_memory_error_metaspace = ik->allocate_instance(CHECK_false);
+  Universe::_out_of_memory_error_class_metaspace = ik->allocate_instance(CHECK_false);
+  Universe::_out_of_memory_error_array_size = ik->allocate_instance(CHECK_false);
   Universe::_out_of_memory_error_gc_overhead_limit =
-    k_h->allocate_instance(CHECK_false);
-  Universe::_out_of_memory_error_realloc_objects = k_h->allocate_instance(CHECK_false);
+    ik->allocate_instance(CHECK_false);
+  Universe::_out_of_memory_error_realloc_objects = ik->allocate_instance(CHECK_false);
 
   // Setup preallocated cause message for delayed StackOverflowError
   if (StackReservedPages > 0) {
@@ -1028,8 +1002,8 @@ bool universe_post_init() {
     vmSymbols::java_lang_VirtualMachineError(), true, CHECK_false);
   bool linked = InstanceKlass::cast(k)->link_class_or_fail(CHECK_false);
   if (!linked) {
-    tty->print_cr("Unable to link/verify VirtualMachineError class");
-    return false; // initialization failed
+     tty->print_cr("Unable to link/verify VirtualMachineError class");
+     return false; // initialization failed
   }
   Universe::_virtual_machine_error_instance =
     InstanceKlass::cast(k)->allocate_instance(CHECK_false);
@@ -1062,12 +1036,12 @@ bool universe_post_init() {
     // Setup the array of errors that have preallocated backtrace
     k = Universe::_out_of_memory_error_java_heap->klass();
     assert(k->name() == vmSymbols::java_lang_OutOfMemoryError(), "should be out of memory error");
-    k_h = instanceKlassHandle(THREAD, k);
+    ik = InstanceKlass::cast(k);
 
     int len = (StackTraceInThrowable) ? (int)PreallocatedOutOfMemoryErrorCount : 0;
-    Universe::_preallocated_out_of_memory_error_array = oopFactory::new_objArray(k_h(), len, CHECK_false);
+    Universe::_preallocated_out_of_memory_error_array = oopFactory::new_objArray(ik, len, CHECK_false);
     for (int i=0; i<len; i++) {
-      oop err = k_h->allocate_instance(CHECK_false);
+      oop err = ik->allocate_instance(CHECK_false);
       Handle err_h = Handle(THREAD, err);
       java_lang_Throwable::allocate_backtrace(err_h, CHECK_false);
       Universe::preallocated_out_of_memory_errors()->obj_at_put(i, err_h());

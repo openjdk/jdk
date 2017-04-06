@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@ package org.graalvm.compiler.nodes.cfg;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.BitSet;
 import java.util.List;
 
 import org.graalvm.compiler.core.common.cfg.AbstractControlFlowGraph;
@@ -36,6 +36,7 @@ import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeMap;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.AbstractEndNode;
+import org.graalvm.compiler.nodes.ControlSinkNode;
 import org.graalvm.compiler.nodes.ControlSplitNode;
 import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.FixedNode;
@@ -64,6 +65,13 @@ public final class ControlFlowGraph implements AbstractControlFlowGraph<Block> {
     private NodeMap<Block> nodeToBlock;
     private Block[] reversePostOrder;
     private List<Loop<Block>> loops;
+    private int maxDominatorDepth;
+
+    public interface RecursiveVisitor<V> {
+        V enter(Block b);
+
+        void exit(Block b, V value);
+    }
 
     public static ControlFlowGraph compute(StructuredGraph graph, boolean connectBlocks, boolean computeLoops, boolean computeDominators, boolean computePostdominators) {
         ControlFlowGraph cfg = new ControlFlowGraph(graph);
@@ -79,9 +87,204 @@ public final class ControlFlowGraph implements AbstractControlFlowGraph<Block> {
         if (computePostdominators) {
             cfg.computePostdominators();
         }
+
         // there's not much to verify when connectBlocks == false
         assert !(connectBlocks || computeLoops || computeDominators || computePostdominators) || CFGVerifier.verify(cfg);
         return cfg;
+    }
+
+    public String dominatorTreeString() {
+        return dominatorTreeString(getStartBlock());
+    }
+
+    private static String dominatorTreeString(Block b) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(b);
+        sb.append("(");
+        Block firstDominated = b.getFirstDominated();
+        while (firstDominated != null) {
+            if (firstDominated.getDominator().getPostdominator() == firstDominated) {
+                sb.append("!");
+            }
+            sb.append(dominatorTreeString(firstDominated));
+            firstDominated = firstDominated.getDominatedSibling();
+        }
+        sb.append(") ");
+        return sb.toString();
+    }
+
+    @SuppressWarnings("unchecked")
+    public <V> void visitDominatorTreeDefault(RecursiveVisitor<V> visitor) {
+
+        Block[] stack = new Block[maxDominatorDepth + 1];
+        Block current = getStartBlock();
+        int tos = 0;
+        Object[] values = null;
+        int valuesTOS = 0;
+
+        while (tos >= 0) {
+            Block state = stack[tos];
+            if (state == null || state.getDominator() == null || state.getDominator().getPostdominator() != state) {
+                if (state == null) {
+                    // We enter this block for the first time.
+                    V value = visitor.enter(current);
+                    if (value != null || values != null) {
+                        if (values == null) {
+                            values = new Object[maxDominatorDepth + 1];
+                        }
+                        values[valuesTOS++] = value;
+                    }
+
+                    Block dominated = skipPostDom(current.getFirstDominated());
+                    if (dominated != null) {
+                        // Descend into dominated.
+                        stack[tos] = dominated;
+                        current = dominated;
+                        stack[++tos] = null;
+                        continue;
+                    }
+                } else {
+                    Block next = skipPostDom(state.getDominatedSibling());
+                    if (next != null) {
+                        // Descend into dominated.
+                        stack[tos] = next;
+                        current = next;
+                        stack[++tos] = null;
+                        continue;
+                    }
+                }
+
+                // Finished processing all normal dominators.
+                Block postDom = current.getPostdominator();
+                if (postDom != null && postDom.getDominator() == current) {
+                    // Descend into post dominator.
+                    stack[tos] = postDom;
+                    current = postDom;
+                    stack[++tos] = null;
+                    continue;
+                }
+            }
+
+            // Finished processing this node, exit and pop from stack.
+            V value = null;
+            if (values != null && valuesTOS > 0) {
+                value = (V) values[--valuesTOS];
+            }
+            visitor.exit(current, value);
+            current = current.getDominator();
+            --tos;
+        }
+    }
+
+    private static Block skipPostDom(Block block) {
+        if (block != null && block.getDominator().getPostdominator() == block) {
+            // This is an always reached block.
+            return block.getDominatedSibling();
+        }
+        return block;
+    }
+
+    private static final class DeferredExit {
+
+        private DeferredExit(Block block, DeferredExit next) {
+            this.block = block;
+            this.next = next;
+        }
+
+        private final Block block;
+        private final DeferredExit next;
+    }
+
+    private static void addDeferredExit(DeferredExit[] deferredExits, Block b) {
+        Loop<Block> outermostExited = b.getDominator().getLoop();
+        Loop<Block> exitBlockLoop = b.getLoop();
+        assert outermostExited != null;
+        while (outermostExited.getParent() != null && outermostExited.getParent() != exitBlockLoop) {
+            outermostExited = outermostExited.getParent();
+        }
+        int loopIndex = outermostExited.getIndex();
+        deferredExits[loopIndex] = new DeferredExit(b, deferredExits[loopIndex]);
+    }
+
+    @SuppressWarnings({"unchecked"})
+    public <V> void visitDominatorTreeDeferLoopExits(RecursiveVisitor<V> visitor) {
+        Block[] stack = new Block[getBlocks().length];
+        int tos = 0;
+        BitSet visited = new BitSet(getBlocks().length);
+        int loopCount = getLoops().size();
+        DeferredExit[] deferredExits = new DeferredExit[loopCount];
+        Object[] values = null;
+        int valuesTOS = 0;
+        stack[0] = getStartBlock();
+
+        while (tos >= 0) {
+            Block cur = stack[tos];
+            int curId = cur.getId();
+            if (visited.get(curId)) {
+                V value = null;
+                if (values != null && valuesTOS > 0) {
+                    value = (V) values[--valuesTOS];
+                }
+                visitor.exit(cur, value);
+                --tos;
+                if (cur.isLoopHeader()) {
+                    int loopIndex = cur.getLoop().getIndex();
+                    DeferredExit deferredExit = deferredExits[loopIndex];
+                    if (deferredExit != null) {
+                        while (deferredExit != null) {
+                            stack[++tos] = deferredExit.block;
+                            deferredExit = deferredExit.next;
+                        }
+                        deferredExits[loopIndex] = null;
+                    }
+                }
+            } else {
+                visited.set(curId);
+                V value = visitor.enter(cur);
+                if (value != null || values != null) {
+                    if (values == null) {
+                        values = new Object[maxDominatorDepth + 1];
+                    }
+                    values[valuesTOS++] = value;
+                }
+
+                Block alwaysReached = cur.getPostdominator();
+                if (alwaysReached != null) {
+                    if (alwaysReached.getDominator() != cur) {
+                        alwaysReached = null;
+                    } else if (isDominatorTreeLoopExit(alwaysReached)) {
+                        addDeferredExit(deferredExits, alwaysReached);
+                    } else {
+                        stack[++tos] = alwaysReached;
+                    }
+                }
+
+                Block b = cur.getFirstDominated();
+                while (b != null) {
+                    if (b != alwaysReached) {
+                        if (isDominatorTreeLoopExit(b)) {
+                            addDeferredExit(deferredExits, b);
+                        } else {
+                            stack[++tos] = b;
+                        }
+                    }
+                    b = b.getDominatedSibling();
+                }
+            }
+        }
+    }
+
+    public <V> void visitDominatorTree(RecursiveVisitor<V> visitor, boolean deferLoopExits) {
+        if (deferLoopExits && this.getLoops().size() > 0) {
+            visitDominatorTreeDeferLoopExits(visitor);
+        } else {
+            visitDominatorTreeDefault(visitor);
+        }
+    }
+
+    private static boolean isDominatorTreeLoopExit(Block b) {
+        Block dominator = b.getDominator();
+        return dominator != null && b.getLoop() != dominator.getLoop() && (!b.isLoopHeader() || dominator.getLoopDepth() >= b.getLoopDepth());
     }
 
     private ControlFlowGraph(StructuredGraph graph) {
@@ -92,6 +295,7 @@ public final class ControlFlowGraph implements AbstractControlFlowGraph<Block> {
     private void computeDominators() {
         assert reversePostOrder[0].getPredecessorCount() == 0 : "start block has no predecessor and therefore no dominator";
         Block[] blocks = reversePostOrder;
+        int curMaxDominatorDepth = 0;
         for (int i = 1; i < blocks.length; i++) {
             Block block = blocks[i];
             assert block.getPredecessorCount() > 0;
@@ -101,13 +305,27 @@ public final class ControlFlowGraph implements AbstractControlFlowGraph<Block> {
                     dominator = ((dominator == null) ? pred : commonDominatorRaw(dominator, pred));
                 }
             }
-            // set dominator
+
+            // Set dominator.
             block.setDominator(dominator);
-            if (dominator.getDominated().equals(Collections.emptyList())) {
-                dominator.setDominated(new ArrayList<>());
+
+            // Keep dominated linked list sorted by block ID such that predecessor blocks are always
+            // before successor blocks.
+            Block currentDominated = dominator.getFirstDominated();
+            if (currentDominated != null && currentDominated.getId() < block.getId()) {
+                while (currentDominated.getDominatedSibling() != null && currentDominated.getDominatedSibling().getId() < block.getId()) {
+                    currentDominated = currentDominated.getDominatedSibling();
+                }
+                block.setDominatedSibling(currentDominated.getDominatedSibling());
+                currentDominated.setDominatedSibling(block);
+            } else {
+                block.setDominatedSibling(dominator.getFirstDominated());
+                dominator.setFirstDominated(block);
             }
-            dominator.getDominated().add(block);
+
+            curMaxDominatorDepth = Math.max(curMaxDominatorDepth, block.getDominatorDepth());
         }
+        this.maxDominatorDepth = curMaxDominatorDepth;
         calcDominatorRanges(getStartBlock(), reversePostOrder.length);
     }
 
@@ -119,22 +337,23 @@ public final class ControlFlowGraph implements AbstractControlFlowGraph<Block> {
 
         do {
             Block cur = stack[tos];
-            List<Block> dominated = cur.getDominated();
+            Block dominated = cur.getFirstDominated();
 
             if (cur.getDominatorNumber() == -1) {
                 cur.setDominatorNumber(myNumber);
-                if (dominated.size() > 0) {
+                if (dominated != null) {
                     // Push children onto stack.
-                    for (Block b : dominated) {
-                        stack[++tos] = b;
-                    }
+                    do {
+                        stack[++tos] = dominated;
+                        dominated = dominated.getDominatedSibling();
+                    } while (dominated != null);
                 } else {
                     cur.setMaxChildDomNumber(myNumber);
                     --tos;
                 }
                 ++myNumber;
             } else {
-                cur.setMaxChildDomNumber(dominated.get(0).getMaxChildDominatorNumber());
+                cur.setMaxChildDomNumber(dominated.getMaxChildDominatorNumber());
                 --tos;
             }
         } while (tos >= 0);
@@ -255,6 +474,8 @@ public final class ControlFlowGraph implements AbstractControlFlowGraph<Block> {
                     LoopEndNode loopEndNode = (LoopEndNode) last;
                     block.setSuccessors(new Block[]{nodeMap.get(loopEndNode.loopBegin())});
                     // Nothing to do push onto the stack.
+                } else if (last instanceof ControlSinkNode) {
+                    block.setSuccessors(Block.EMPTY_ARRAY);
                 } else {
                     assert !(last instanceof AbstractEndNode) : "Algorithm only supports EndNode and LoopEndNode.";
                     int startTos = tos;
@@ -342,12 +563,11 @@ public final class ControlFlowGraph implements AbstractControlFlowGraph<Block> {
                 }
             }
             if (probability < MIN_PROBABILITY) {
-                block.setProbability(MIN_PROBABILITY);
+                probability = MIN_PROBABILITY;
             } else if (probability > MAX_PROBABILITY) {
-                block.setProbability(MAX_PROBABILITY);
-            } else {
-                block.setProbability(probability);
+                probability = MAX_PROBABILITY;
             }
+            block.setProbability(probability);
         }
 
     }
@@ -471,7 +691,6 @@ public final class ControlFlowGraph implements AbstractControlFlowGraph<Block> {
     public void computePostdominators() {
 
         Block[] reversePostOrderTmp = this.reversePostOrder;
-
         outer: for (int j = reversePostOrderTmp.length - 1; j >= 0; --j) {
             Block block = reversePostOrderTmp[j];
             if (block.isLoopEnd()) {
@@ -496,7 +715,7 @@ public final class ControlFlowGraph implements AbstractControlFlowGraph<Block> {
                 }
             }
             assert !Arrays.asList(block.getSuccessors()).contains(postdominator) : "Block " + block + " has a wrong post dominator: " + postdominator;
-            block.postdominator = postdominator;
+            block.setPostDominator(postdominator);
         }
     }
 

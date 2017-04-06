@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -362,14 +362,14 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
     }
   }
 
-  if (sig == os::Solaris::SIGasync()) {
+  if (sig == ASYNC_SIGNAL) {
     if (thread || vmthread) {
       OSThread::SR_handler(t, uc);
       return true;
     } else if (os::Solaris::chained_handler(sig, info, ucVoid)) {
       return true;
     } else {
-      // If os::Solaris::SIGasync not chained, and this is a non-vm and
+      // If ASYNC_SIGNAL not chained, and this is a non-vm and
       // non-java thread
       return true;
     }

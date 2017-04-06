@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -693,7 +693,7 @@ class ConstantPool : public Metadata {
   }
 
   // Klass name matches name at offset
-  bool klass_name_at_matches(instanceKlassHandle k, int which);
+  bool klass_name_at_matches(const InstanceKlass* k, int which);
 
   // Sizing
   int length() const                   { return _length; }
@@ -714,6 +714,11 @@ class ConstantPool : public Metadata {
 
   friend class ClassFileParser;
   friend class SystemDictionary;
+
+  // Used by CDS. These classes need to access the private ConstantPool() constructor.
+  template <class T> friend class CppVtableTesterA;
+  template <class T> friend class CppVtableTesterB;
+  template <class T> friend class CppVtableCloner;
 
   // Used by compiler to prevent classloading.
   static Method*          method_at_if_loaded      (const constantPoolHandle& this_cp, int which);
@@ -779,7 +784,7 @@ class ConstantPool : public Metadata {
   }
 
   // Performs the LinkResolver checks
-  static void verify_constant_pool_resolve(const constantPoolHandle& this_cp, KlassHandle klass, TRAPS);
+  static void verify_constant_pool_resolve(const constantPoolHandle& this_cp, Klass* klass, TRAPS);
 
   // Implementation of methods that needs an exposed 'this' pointer, in order to
   // handle GC while executing the method
@@ -787,7 +792,7 @@ class ConstantPool : public Metadata {
                               bool save_resolution_error, TRAPS);
   static oop string_at_impl(const constantPoolHandle& this_cp, int which, int obj_index, TRAPS);
 
-  static void trace_class_resolution(const constantPoolHandle& this_cp, KlassHandle k);
+  static void trace_class_resolution(const constantPoolHandle& this_cp, Klass* k);
 
   // Resolve string constants (to prevent allocation during compilation)
   static void resolve_string_constants_impl(const constantPoolHandle& this_cp, TRAPS);

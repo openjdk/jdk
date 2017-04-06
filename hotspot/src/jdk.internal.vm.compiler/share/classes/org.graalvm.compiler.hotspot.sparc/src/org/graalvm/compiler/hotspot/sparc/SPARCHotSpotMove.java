@@ -38,7 +38,7 @@ import org.graalvm.compiler.asm.sparc.SPARCAssembler.CC;
 import org.graalvm.compiler.asm.sparc.SPARCAssembler.ConditionFlag;
 import org.graalvm.compiler.asm.sparc.SPARCMacroAssembler;
 import org.graalvm.compiler.asm.sparc.SPARCMacroAssembler.ScratchRegister;
-import org.graalvm.compiler.hotspot.CompressEncoding;
+import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.StandardOp.LoadConstantOp;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
@@ -146,7 +146,7 @@ public class SPARCHotSpotMove {
         public void emitCode(CompilationResultBuilder crb, SPARCMacroAssembler masm) {
             Register inputRegister = asRegister(input);
             Register resReg = asRegister(result);
-            if (encoding.base != 0) {
+            if (encoding.hasBase()) {
                 Register baseReg = asRegister(baseRegister);
                 if (!nonNull) {
                     masm.cmp(inputRegister, baseReg);
@@ -155,11 +155,11 @@ public class SPARCHotSpotMove {
                 } else {
                     masm.sub(inputRegister, baseReg, resReg);
                 }
-                if (encoding.shift != 0) {
-                    masm.srlx(resReg, encoding.shift, resReg);
+                if (encoding.getShift() != 0) {
+                    masm.srlx(resReg, encoding.getShift(), resReg);
                 }
             } else {
-                masm.srlx(inputRegister, encoding.shift, resReg);
+                masm.srlx(inputRegister, encoding.getShift(), resReg);
             }
         }
     }
@@ -189,14 +189,14 @@ public class SPARCHotSpotMove {
             Register inputRegister = asRegister(input);
             Register resReg = asRegister(result);
             Register secondaryInput;
-            if (encoding.shift != 0) {
-                masm.sll(inputRegister, encoding.shift, resReg);
+            if (encoding.getShift() != 0) {
+                masm.sll(inputRegister, encoding.getShift(), resReg);
                 secondaryInput = resReg;
             } else {
                 secondaryInput = inputRegister;
             }
 
-            if (encoding.base != 0) {
+            if (encoding.hasBase()) {
                 if (nonNull) {
                     masm.add(secondaryInput, asRegister(baseRegister), resReg);
                 } else {

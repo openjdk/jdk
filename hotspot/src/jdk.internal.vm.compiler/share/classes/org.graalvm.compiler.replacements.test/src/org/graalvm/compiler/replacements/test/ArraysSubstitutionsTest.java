@@ -367,7 +367,7 @@ public class ArraysSubstitutionsTest extends MethodSubstitutionTest {
         HighTierContext context = new HighTierContext(getProviders(), getDefaultGraphBuilderSuite(), OptimisticOptimizations.ALL);
         new InliningPhase(new CanonicalizerPhase()).apply(graph, context);
         new CanonicalizerPhase().apply(graph, new PhaseContext(getProviders()));
-        new PartialEscapePhase(false, new CanonicalizerPhase()).apply(graph, context);
+        new PartialEscapePhase(false, new CanonicalizerPhase(), graph.getOptions()).apply(graph, context);
         new CanonicalizerPhase().apply(graph, new PhaseContext(getProviders()));
 
         Assert.assertTrue(graph.getNodes(ReturnNode.TYPE).first().result().asJavaConstant().asLong() == 1);
@@ -385,7 +385,7 @@ public class ArraysSubstitutionsTest extends MethodSubstitutionTest {
         HighTierContext context = getDefaultHighTierContext();
         new InliningPhase(new CanonicalizerPhase()).apply(graph, context);
         new CanonicalizerPhase().apply(graph, new PhaseContext(getProviders()));
-        new PartialEscapePhase(false, new CanonicalizerPhase()).apply(graph, context);
+        new PartialEscapePhase(false, new CanonicalizerPhase(), graph.getOptions()).apply(graph, context);
         new CanonicalizerPhase().apply(graph, new PhaseContext(getProviders()));
 
         Assert.assertTrue(graph.getNodes(ReturnNode.TYPE).first().result().asJavaConstant().asLong() == 0);

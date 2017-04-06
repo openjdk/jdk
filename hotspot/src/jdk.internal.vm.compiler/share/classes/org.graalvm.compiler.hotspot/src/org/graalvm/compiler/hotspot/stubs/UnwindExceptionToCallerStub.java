@@ -22,6 +22,7 @@
  */
 package org.graalvm.compiler.hotspot.stubs;
 
+import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfig.INJECTED_VMCONFIG;
 import static org.graalvm.compiler.hotspot.nodes.JumpToExceptionHandlerInCallerNode.jumpToExceptionHandlerInCaller;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.registerAsWord;
 import static org.graalvm.compiler.hotspot.stubs.ExceptionHandlerStub.checkExceptionNotNull;
@@ -36,6 +37,7 @@ import org.graalvm.compiler.api.replacements.Fold.InjectedParameter;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.Snippet.ConstantParameter;
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
+import org.graalvm.compiler.debug.Assertions;
 import org.graalvm.compiler.graph.Node.ConstantNodeParameter;
 import org.graalvm.compiler.graph.Node.NodeIntrinsic;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
@@ -43,6 +45,7 @@ import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.hotspot.nodes.StubForeignCallNode;
 import org.graalvm.compiler.nodes.UnwindNode;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.word.Pointer;
 import org.graalvm.compiler.word.Word;
 
@@ -54,8 +57,8 @@ import jdk.vm.ci.code.Register;
  */
 public class UnwindExceptionToCallerStub extends SnippetStub {
 
-    public UnwindExceptionToCallerStub(HotSpotProviders providers, HotSpotForeignCallLinkage linkage) {
-        super("unwindExceptionToCaller", providers, linkage);
+    public UnwindExceptionToCallerStub(OptionValues options, HotSpotProviders providers, HotSpotForeignCallLinkage linkage) {
+        super("unwindExceptionToCaller", options, providers, linkage);
     }
 
     /**
@@ -69,14 +72,17 @@ public class UnwindExceptionToCallerStub extends SnippetStub {
 
     @Override
     protected Object getConstantParameterValue(int index, String name) {
-        assert index == 2;
-        return providers.getRegisters().getThreadRegister();
+        if (index == 2) {
+            return providers.getRegisters().getThreadRegister();
+        }
+        assert index == 3;
+        return options;
     }
 
     @Snippet
-    private static void unwindExceptionToCaller(Object exception, Word returnAddress, @ConstantParameter Register threadRegister) {
+    private static void unwindExceptionToCaller(Object exception, Word returnAddress, @ConstantParameter Register threadRegister, @ConstantParameter OptionValues options) {
         Pointer exceptionOop = Word.objectToTrackedPointer(exception);
-        if (logging()) {
+        if (logging(options)) {
             printf("unwinding exception %p (", exceptionOop.rawValue());
             decipher(exceptionOop.rawValue());
             printf(") at %p (", returnAddress.rawValue());
@@ -84,12 +90,12 @@ public class UnwindExceptionToCallerStub extends SnippetStub {
             printf(")\n");
         }
         Word thread = registerAsWord(threadRegister);
-        checkNoExceptionInThread(thread, assertionsEnabled(null));
-        checkExceptionNotNull(assertionsEnabled(null), exception);
+        checkNoExceptionInThread(thread, assertionsEnabled(INJECTED_VMCONFIG));
+        checkExceptionNotNull(assertionsEnabled(INJECTED_VMCONFIG), exception);
 
         Word handlerInCallerPc = exceptionHandlerForReturnAddress(EXCEPTION_HANDLER_FOR_RETURN_ADDRESS, thread, returnAddress);
 
-        if (logging()) {
+        if (logging(options)) {
             printf("handler for exception %p at return address %p is at %p (", exceptionOop.rawValue(), returnAddress.rawValue(), handlerInCallerPc.rawValue());
             decipher(handlerInCallerPc.rawValue());
             printf(")\n");
@@ -99,23 +105,18 @@ public class UnwindExceptionToCallerStub extends SnippetStub {
     }
 
     @Fold
-    static boolean logging() {
-        return StubOptions.TraceUnwindStub.getValue();
+    static boolean logging(OptionValues options) {
+        return StubOptions.TraceUnwindStub.getValue(options);
     }
 
     /**
-     * Determines if either Java assertions are enabled for {@link UnwindExceptionToCallerStub} or
-     * if this is a HotSpot build where the ASSERT mechanism is enabled.
-     * <p>
-     * This first check relies on the per-class assertion status which is why this method must be in
-     * this class.
+     * Determines if either Java assertions are enabled for Graal or if this is a HotSpot build
+     * where the ASSERT mechanism is enabled.
      */
     @Fold
     @SuppressWarnings("all")
     static boolean assertionsEnabled(@InjectedParameter GraalHotSpotVMConfig config) {
-        boolean enabled = false;
-        assert enabled = true;
-        return enabled || cAssertionsEnabled(config);
+        return Assertions.ENABLED || cAssertionsEnabled(config);
     }
 
     public static final ForeignCallDescriptor EXCEPTION_HANDLER_FOR_RETURN_ADDRESS = newDescriptor(UnwindExceptionToCallerStub.class, "exceptionHandlerForReturnAddress", Word.class, Word.class,

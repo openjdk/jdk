@@ -22,10 +22,10 @@
  */
 package org.graalvm.compiler.debug;
 
-import static org.graalvm.compiler.debug.DelegatingDebugConfig.Feature.INTERCEPT;
-import static org.graalvm.compiler.debug.DelegatingDebugConfig.Feature.LOG_METHOD;
 import static java.util.FormattableFlags.LEFT_JUSTIFY;
 import static java.util.FormattableFlags.UPPERCASE;
+import static org.graalvm.compiler.debug.DelegatingDebugConfig.Feature.INTERCEPT;
+import static org.graalvm.compiler.debug.DelegatingDebugConfig.Feature.LOG_METHOD;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -47,6 +47,8 @@ import org.graalvm.compiler.debug.internal.DebugScope;
 import org.graalvm.compiler.debug.internal.MemUseTrackerImpl;
 import org.graalvm.compiler.debug.internal.TimerImpl;
 import org.graalvm.compiler.debug.internal.method.MethodMetricsImpl;
+import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.options.OptionValuesAccess;
 import org.graalvm.compiler.serviceprovider.GraalServices;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -63,7 +65,12 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
  */
 public class Debug {
 
-    private static final Params params = new Params();
+    /**
+     * The option values available in this package.
+     */
+    static final OptionValues DEBUG_OPTIONS = GraalServices.loadSingle(OptionValuesAccess.class, true).getOptions();
+
+    static final Params params = new Params();
 
     static {
         // Load the service providers that may want to modify any of the
@@ -76,7 +83,7 @@ public class Debug {
     /**
      * The parameters for configuring the initialization of {@link Debug} class.
      */
-    public static class Params {
+    public static final class Params {
         public boolean enable;
         public boolean enableMethodFilter;
         public boolean enableUnscopedTimers;
@@ -86,13 +93,16 @@ public class Debug {
         public boolean interceptCount;
         public boolean interceptTime;
         public boolean interceptMem;
+
+        @SuppressWarnings("static-method")
+        public OptionValues getOptions() {
+            return DEBUG_OPTIONS;
+        }
     }
 
     @SuppressWarnings("all")
     private static boolean initialize() {
-        boolean assertionsEnabled = false;
-        assert assertionsEnabled = true;
-        return assertionsEnabled || params.enable || GraalDebugConfig.Options.ForceDebugEnable.getValue();
+        return Assertions.ENABLED || params.enable || GraalDebugConfig.Options.ForceDebugEnable.getValue(DEBUG_OPTIONS);
     }
 
     private static final boolean ENABLED = initialize();
@@ -1239,13 +1249,20 @@ public class Debug {
     }
 
     public static DebugConfig silentConfig() {
-        return fixedConfig(0, 0, false, false, false, false, false, Collections.<DebugDumpHandler> emptyList(), Collections.<DebugVerifyHandler> emptyList(), null);
+        return fixedConfig(new OptionValues(OptionValues.newOptionMap()), 0, 0, false, false, false, false, false, Collections.<DebugDumpHandler> emptyList(),
+                        Collections.<DebugVerifyHandler> emptyList(), null);
     }
 
-    public static DebugConfig fixedConfig(final int logLevel, final int dumpLevel, final boolean isCountEnabled, final boolean isMemUseTrackingEnabled, final boolean isTimerEnabled,
+    public static DebugConfig fixedConfig(OptionValues options, final int logLevel, final int dumpLevel, final boolean isCountEnabled, final boolean isMemUseTrackingEnabled,
+                    final boolean isTimerEnabled,
                     final boolean isVerifyEnabled, final boolean isMMEnabled, final Collection<DebugDumpHandler> dumpHandlers, final Collection<DebugVerifyHandler> verifyHandlers,
                     final PrintStream output) {
         return new DebugConfig() {
+
+            @Override
+            public OptionValues getOptions() {
+                return options;
+            }
 
             @Override
             public int getLogLevel() {

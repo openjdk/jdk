@@ -403,21 +403,27 @@ public final class DebugScope implements Debug.Scope {
 
     public RuntimeException handle(Throwable e) {
         DebugScope lastClosed = lastClosedTL.get();
-        assert lastClosed.parent == this : "Debug.handle() used with no matching Debug.scope(...) or Debug.sandbox(...)";
-        if (e != lastExceptionThrownTL.get()) {
-            RuntimeException newException = null;
-            instanceTL.set(lastClosed);
-            try (DebugScope s = lastClosed) {
-                newException = s.interceptException(e);
+        try {
+            assert lastClosed.parent == this : "Debug.handle() used with no matching Debug.scope(...) or Debug.sandbox(...) " +
+                            "or an exception occurred while opening a scope";
+            if (e != lastExceptionThrownTL.get()) {
+                RuntimeException newException = null;
+                instanceTL.set(lastClosed);
+                try (DebugScope s = lastClosed) {
+                    newException = s.interceptException(e);
+                }
+                assert instanceTL.get() == this;
+                assert lastClosed == lastClosedTL.get();
+                if (newException == null) {
+                    lastExceptionThrownTL.set(e);
+                } else {
+                    lastExceptionThrownTL.set(newException);
+                    throw newException;
+                }
             }
-            assert instanceTL.get() == this;
-            assert lastClosed == lastClosedTL.get();
-            if (newException == null) {
-                lastExceptionThrownTL.set(e);
-            } else {
-                lastExceptionThrownTL.set(newException);
-                throw newException;
-            }
+        } catch (Throwable t) {
+            t.initCause(e);
+            throw t;
         }
         if (e instanceof Error) {
             throw (Error) e;

@@ -28,6 +28,7 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 
 import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
 import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.options.OptionValues;
 
 public interface CanonicalizerTool {
 
@@ -53,4 +54,6 @@ public interface CanonicalizerTool {
      * width. This check is used by canonicalizations that might introduce subword compares.
      */
     boolean supportSubwordCompare(int bits);
+
+    OptionValues getOptions();
 }

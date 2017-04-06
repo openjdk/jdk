@@ -27,6 +27,7 @@ import java.lang.reflect.Modifier;
 
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Fold.InjectedParameter;
+import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.hotspot.nodes.GraalHotSpotVMConfigNode;
 
 import jdk.vm.ci.common.JVMCIError;
@@ -53,8 +54,10 @@ public class GraalHotSpotVMConfig extends HotSpotVMConfigAccess {
     GraalHotSpotVMConfig(HotSpotVMConfigStore store) {
         super(store);
 
-        oopEncoding = new CompressEncoding(narrowOopBase, narrowOopShift, logMinObjAlignment());
-        klassEncoding = new CompressEncoding(narrowKlassBase, narrowKlassShift, logKlassAlignment);
+        assert narrowKlassShift <= logKlassAlignment;
+        assert narrowOopShift <= logMinObjAlignment();
+        oopEncoding = new CompressEncoding(narrowOopBase, narrowOopShift);
+        klassEncoding = new CompressEncoding(narrowKlassBase, narrowKlassShift);
 
         assert check();
     }
@@ -133,6 +136,7 @@ public class GraalHotSpotVMConfig extends HotSpotVMConfigAccess {
     }
 
     private final Integer intRequiredOnAMD64 = osArch.equals("amd64") ? null : 0;
+    private final Long longRequiredOnAMD64 = osArch.equals("amd64") ? null : 0L;
     private final Integer intNotPresentInJDK8 = isJDK8 ? 0 : null;
     private final Long longNotPresentInJDK8 = isJDK8 ? 0L : null;
 
@@ -147,8 +151,6 @@ public class GraalHotSpotVMConfig extends HotSpotVMConfigAccess {
     public final boolean verifyOops = getFlag("VerifyOops", Boolean.class);
     public final boolean ciTime = getFlag("CITime", Boolean.class);
     public final boolean ciTimeEach = getFlag("CITimeEach", Boolean.class);
-    public final int compileTheWorldStartAt = getFlag("CompileTheWorldStartAt", Integer.class, 1);
-    public final int compileTheWorldStopAt = getFlag("CompileTheWorldStopAt", Integer.class, Integer.MAX_VALUE);
     public final boolean dontCompileHugeMethods = getFlag("DontCompileHugeMethods", Boolean.class);
     public final int hugeMethodLimit = getFlag("HugeMethodLimit", Integer.class);
     public final boolean printInlining = getFlag("PrintInlining", Boolean.class);
@@ -437,7 +439,14 @@ public class GraalHotSpotVMConfig extends HotSpotVMConfigAccess {
     public final long markOopDescHashMaskInPlace = getConstant("markOopDesc::hash_mask_in_place", Long.class);
 
     public final int unlockedMask = getConstant("markOopDesc::unlocked_value", Integer.class);
+    public final int monitorMask = getConstant("markOopDesc::monitor_value", Integer.class, -1);
     public final int biasedLockPattern = getConstant("markOopDesc::biased_lock_pattern", Integer.class);
+
+    // This field has no type in vmStructs.cpp
+    public final int objectMonitorOwner = getFieldOffset("ObjectMonitor::_owner", Integer.class, null, -1);
+    public final int objectMonitorRecursions = getFieldOffset("ObjectMonitor::_recursions", Integer.class, "intptr_t", -1);
+    public final int objectMonitorCxq = getFieldOffset("ObjectMonitor::_cxq", Integer.class, "ObjectWaiter*", -1);
+    public final int objectMonitorEntryList = getFieldOffset("ObjectMonitor::_EntryList", Integer.class, "ObjectWaiter*", -1);
 
     public final int markWordNoHashInPlace = getConstant("markOopDesc::no_hash_in_place", Integer.class);
     public final int markWordNoLockInPlace = getConstant("markOopDesc::no_lock_in_place", Integer.class);
@@ -637,17 +646,17 @@ public class GraalHotSpotVMConfig extends HotSpotVMConfigAccess {
     public final long sha256ImplCompressMB = getFieldValue("StubRoutines::_sha256_implCompressMB", Long.class, "address", 0L);
     public final long sha512ImplCompress = getFieldValue("StubRoutines::_sha512_implCompress", Long.class, "address", 0L);
     public final long sha512ImplCompressMB = getFieldValue("StubRoutines::_sha512_implCompressMB", Long.class, "address", 0L);
-    public final long multiplyToLen = getFieldValue("StubRoutines::_multiplyToLen", Long.class, "address", 0L);
+    public final long multiplyToLen = getFieldValue("StubRoutines::_multiplyToLen", Long.class, "address", longRequiredOnAMD64);
 
     public final long counterModeAESCrypt = getFieldValue("StubRoutines::_counterMode_AESCrypt", Long.class, "address", 0L);
     public final long ghashProcessBlocks = getFieldValue("StubRoutines::_ghash_processBlocks", Long.class, "address", 0L);
     public final long crc32cTableTddr = getFieldValue("StubRoutines::_crc32c_table_addr", Long.class, "address", 0L);
     public final long updateBytesCRC32C = getFieldValue("StubRoutines::_updateBytesCRC32C", Long.class, "address", 0L);
     public final long updateBytesAdler32 = getFieldValue("StubRoutines::_updateBytesAdler32", Long.class, "address", 0L);
-    public final long squareToLen = getFieldValue("StubRoutines::_squareToLen", Long.class, "address", 0L);
-    public final long mulAdd = getFieldValue("StubRoutines::_mulAdd", Long.class, "address", 0L);
-    public final long montgomeryMultiply = getFieldValue("StubRoutines::_montgomeryMultiply", Long.class, "address", 0L);
-    public final long montgomerySquare = getFieldValue("StubRoutines::_montgomerySquare", Long.class, "address", 0L);
+    public final long squareToLen = getFieldValue("StubRoutines::_squareToLen", Long.class, "address", longRequiredOnAMD64);
+    public final long mulAdd = getFieldValue("StubRoutines::_mulAdd", Long.class, "address", longRequiredOnAMD64);
+    public final long montgomeryMultiply = getFieldValue("StubRoutines::_montgomeryMultiply", Long.class, "address", longRequiredOnAMD64);
+    public final long montgomerySquare = getFieldValue("StubRoutines::_montgomerySquare", Long.class, "address", longRequiredOnAMD64);
     public final long vectorizedMismatch = getFieldValue("StubRoutines::_vectorizedMismatch", Long.class, "address", 0L);
 
     public final long throwDelayedStackOverflowErrorEntry = getFieldValue("StubRoutines::_throw_delayed_StackOverflowError_entry", Long.class, "address", longNotPresentInJDK8);

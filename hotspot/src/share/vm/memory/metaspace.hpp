@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,6 +243,7 @@ class Metaspace : public CHeapObj<mtClass> {
   void deallocate(MetaWord* ptr, size_t byte_size, bool is_class);
 
   static bool contains(const void* ptr);
+  static bool contains_non_shared(const void* ptr);
 
   void dump(outputStream* const out) const;
 
