@@ -23,7 +23,6 @@
 
 /*
  * package p3;
- * import java.lang.reflect.*;
  * public class c3ReadEdge {
  *    public c3ReadEdge() {
  *       // Establish read edge from module m1x, where c3ReadEdge is defined,
@@ -75,14 +74,14 @@ class p3/c3ReadEdge {
     Utf8 "java/lang/Object"; // #28     at 0xBC
     Utf8 "java/lang/Class"; // #29     at 0xCF
     Utf8 "getModule"; // #30     at 0xE1
-    Utf8 "()Ljava/lang/reflect/Module;"; // #31     at 0xED
+    Utf8 "()Ljava/lang/Module;"; // #31     at 0xED
     Utf8 "getClassLoader"; // #32     at 0x010C
     Utf8 "()Ljava/lang/ClassLoader;"; // #33     at 0x011D
     Utf8 "java/lang/ClassLoader"; // #34     at 0x0139
     Utf8 "getUnnamedModule"; // #35     at 0x0151
-    Utf8 "java/lang/reflect/Module"; // #36     at 0x0164
+    Utf8 "java/lang/Module"; // #36     at 0x0164
     Utf8 "addReads"; // #37     at 0x017F
-    Utf8 "(Ljava/lang/reflect/Module;)Ljava/lang/reflect/Module;"; // #38     at 0x018A
+    Utf8 "(Ljava/lang/Module;)Ljava/lang/Module;"; // #38     at 0x018A
     Utf8 "method4"; // #39     at 0x01C3
   } // Constant Pool
 

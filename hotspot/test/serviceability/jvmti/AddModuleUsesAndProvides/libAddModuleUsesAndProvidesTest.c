@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ extern "C" {
 #define FAILED 2
 
 static const char *EXC_CNAME = "java/lang/Exception";
-static const char* MOD_CNAME = "Ljava/lang/reflect/Module;";
+static const char* MOD_CNAME = "Ljava/lang/Module;";
 
 static jvmtiEnv *jvmti = NULL;
 static jint result = PASSED;
@@ -97,7 +97,7 @@ void throw_exc(JNIEnv *env, char *msg) {
 }
 
 static
-jclass jlrM(JNIEnv *env) {
+jclass jlM(JNIEnv *env) {
     jclass cls = NULL;
 
     cls = JNI_ENV_PTR(env)->FindClass(JNI_ENV_ARG(env, MOD_CNAME));
@@ -125,7 +125,7 @@ jboolean can_use_service(JNIEnv *env, jobject module, jclass service) {
 
     if (mCanUse == NULL) {
         const char* sign = "(Ljava/lang/Class;)Z";
-        mCanUse = get_method(env, jlrM(env), "canUse", sign);
+        mCanUse = get_method(env, jlM(env), "canUse", sign);
     }
     res = JNI_ENV_PTR(env)->CallBooleanMethod(JNI_ENV_ARG(env, module),
                                               mCanUse, service);

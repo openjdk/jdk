@@ -39,8 +39,6 @@ import static jdk.test.lib.Asserts.*;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
-import java.lang.reflect.Layer;
-import java.lang.reflect.Module;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -56,7 +54,7 @@ import java.util.Set;
 
 public class AccessReadTwice {
 
-    // Create a Layer over the boot layer.
+    // Create a layer over the boot layer.
     // Define modules within this layer to test access between
     // publicly defined classes within packages of those modules.
     public void createLayerOnBoot() throws Throwable {
@@ -85,7 +83,7 @@ public class AccessReadTwice {
         ModuleFinder finder = ModuleLibrary.of(descriptor_first_mod, descriptor_second_mod);
 
         // Resolves "first_mod" and "second_mod"
-        Configuration cf = Layer.boot()
+        Configuration cf = ModuleLayer.boot()
                 .configuration()
                 .resolve(finder, ModuleFinder.of(), Set.of("first_mod", "second_mod"));
 
@@ -95,8 +93,8 @@ public class AccessReadTwice {
         map.put("first_mod", loader);
         map.put("second_mod", loader);
 
-        // Create Layer that contains first_mod & second_mod
-        Layer layer = Layer.boot().defineModules(cf, map::get);
+        // Create layer that contains first_mod & second_mod
+        ModuleLayer layer = ModuleLayer.boot().defineModules(cf, map::get);
 
         assertTrue(layer.findLoader("first_mod") == loader);
         assertTrue(layer.findLoader("second_mod") == loader);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,22 +58,22 @@ public final class ModuleAPI {
     public static final ModuleAPI addExports;
 
     /**
-     * {@code java.lang.reflect.Module.getResourceAsStream(String)}.
+     * {@code java.lang.Module.getResourceAsStream(String)}.
      */
     public static final ModuleAPI getResourceAsStream;
 
     /**
-     * {@code java.lang.reflect.Module.canRead(Module)}.
+     * {@code java.lang.Module.canRead(Module)}.
      */
     public static final ModuleAPI canRead;
 
     /**
-     * {@code java.lang.reflect.Module.isExported(String)}.
+     * {@code java.lang.Module.isExported(String)}.
      */
     public static final ModuleAPI isExported;
 
     /**
-     * {@code java.lang.reflect.Module.isExported(String, Module)}.
+     * {@code java.lang.Module.isExported(String, Module)}.
      */
     public static final ModuleAPI isExportedTo;
 

@@ -39,8 +39,6 @@ import static jdk.test.lib.Asserts.*;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
-import java.lang.reflect.Layer;
-import java.lang.reflect.Module;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -58,7 +56,7 @@ import myloaders.MySameClassLoader;
 
 public class AccessExportTwice {
 
-    // Create a Layer over the boot layer.
+    // Create a layer over the boot layer.
     // Define modules within this layer to test access between
     // publicly defined classes within packages of those modules.
     public void createLayerOnBoot() throws Throwable {
@@ -87,7 +85,7 @@ public class AccessExportTwice {
         ModuleFinder finder = ModuleLibrary.of(descriptor_first_mod, descriptor_second_mod);
 
         // Resolves "first_mod"
-        Configuration cf = Layer.boot()
+        Configuration cf = ModuleLayer.boot()
                 .configuration()
                 .resolve(finder, ModuleFinder.of(), Set.of("first_mod"));
 
@@ -96,8 +94,8 @@ public class AccessExportTwice {
         map.put("first_mod", MySameClassLoader.loader1);
         map.put("second_mod", MySameClassLoader.loader1);
 
-        // Create Layer that contains first_mod & second_mod
-        Layer layer = Layer.boot().defineModules(cf, map::get);
+        // Create layer that contains first_mod & second_mod
+        ModuleLayer layer = ModuleLayer.boot().defineModules(cf, map::get);
 
         assertTrue(layer.findLoader("first_mod") == MySameClassLoader.loader1);
         assertTrue(layer.findLoader("second_mod") == MySameClassLoader.loader1);
