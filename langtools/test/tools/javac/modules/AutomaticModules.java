@@ -300,9 +300,8 @@ public class AutomaticModules extends ModuleTestBase {
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
 
-        expected = Arrays.asList("Impl.java:1:47: compiler.err.package.not.visible: apiB, (compiler.misc.not.def.access.does.not.read: m1x, apiB, automaticB)",
-                                 "Impl.java:1:59: compiler.err.package.not.visible: m2x, (compiler.misc.not.def.access.does.not.read: m1x, m2x, m2x)",
-                                 "2 errors");
+        expected = Arrays.asList("Impl.java:1:59: compiler.err.package.not.visible: m2x, (compiler.misc.not.def.access.does.not.read: m1x, m2x, m2x)",
+                                 "1 error");
 
         if (!expected.equals(log)) {
             throw new Exception("expected output not found: " + log);
@@ -310,7 +309,7 @@ public class AutomaticModules extends ModuleTestBase {
     }
 
     @Test
-    public void testDropTrailingVersion(Path base) throws Exception {
+    public void testWithTrailingVersion(Path base) throws Exception {
         Path legacySrc = base.resolve("legacy-src");
         tb.writeJavaFiles(legacySrc,
                           "package api; public class Api {}");
@@ -348,13 +347,79 @@ public class AutomaticModules extends ModuleTestBase {
         Files.createDirectories(classes);
 
         tb.writeJavaFiles(m,
-                          "module m { requires test; }",
+                          "module m { requires test1; }",
                           "package impl; public class Impl { public void e(api.Api api) { } }");
 
         new JavacTask(tb)
                 .options("--module-source-path", moduleSrc.toString(), "--module-path", modulePath.toString())
                 .outdir(classes)
                 .files(findJavaFiles(moduleSrc))
+                .run()
+                .writeAll();
+    }
+
+    @Test
+    public void testMultipleAutomatic(Path base) throws Exception {
+        Path modulePath = base.resolve("module-path");
+
+        Files.createDirectories(modulePath);
+
+        for (char c : new char[] {'A', 'B'}) {
+            Path automaticSrc = base.resolve("automaticSrc" + c);
+            tb.writeJavaFiles(automaticSrc, "package api" + c + "; public class Api {}");
+            Path automaticClasses = base.resolve("automaticClasses" + c);
+            tb.createDirectories(automaticClasses);
+
+            String automaticLog = new JavacTask(tb)
+                                    .outdir(automaticClasses)
+                                    .files(findJavaFiles(automaticSrc))
+                                    .run()
+                                    .writeAll()
+                                    .getOutput(Task.OutputKind.DIRECT);
+
+            if (!automaticLog.isEmpty())
+                throw new Exception("expected output not found: " + automaticLog);
+
+            Path automaticJar = modulePath.resolve("automatic" + c + "-1.0.jar");
+
+            new JarTask(tb, automaticJar)
+              .baseDir(automaticClasses)
+              .files("api" + c + "/Api.class")
+              .run();
+        }
+
+        Path src = base.resolve("src");
+
+        tb.writeJavaFiles(src.resolve("m1x"),
+                          "package impl; public class Impl { apiA.Api a; apiB.Api b; }");
+
+        Path classes = base.resolve("classes");
+
+        Files.createDirectories(classes);
+
+        List<String> log = new JavacTask(tb)
+                .options("--module-path", modulePath.toString(),
+                         "-XDrawDiagnostics")
+                .outdir(classes)
+                .files(findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        List<String> expected = Arrays.asList("Impl.java:1:35: compiler.err.package.not.visible: apiA, (compiler.misc.not.def.access.does.not.read.from.unnamed: apiA, automaticA)",
+                                              "Impl.java:1:47: compiler.err.package.not.visible: apiB, (compiler.misc.not.def.access.does.not.read.from.unnamed: apiB, automaticB)",
+                                              "2 errors");
+
+        if (!expected.equals(log)) {
+            throw new Exception("expected output not found: " + log);
+        }
+
+        new JavacTask(tb)
+                .options("--module-path", modulePath.toString(),
+                         "--add-modules", "automaticA",
+                         "-XDrawDiagnostics")
+                .outdir(classes)
+                .files(findJavaFiles(src))
                 .run()
                 .writeAll();
     }

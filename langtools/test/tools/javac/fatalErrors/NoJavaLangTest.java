@@ -74,7 +74,7 @@ public class NoJavaLangTest {
 
     // test with bootclasspath, for as long as its around
     void testBootClassPath() {
-        String[] bcpOpts = { "-Xlint:-options", "-source", "8", "-bootclasspath", "." };
+        String[] bcpOpts = { "-Xlint:-options", "-source", "8", "-bootclasspath", ".", "-classpath", "." };
         test(bcpOpts, compilerErrorMessage);
     }
 
