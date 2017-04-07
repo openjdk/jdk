@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,8 +54,26 @@ GCTaskThread::~GCTaskThread() {
   }
 }
 
+void GCTaskThread::add_task_timestamp(const char* name, jlong t_entry, jlong t_exit) {
+  if (_time_stamp_index < GCTaskTimeStampEntries) {
+    GCTaskTimeStamp* time_stamp = time_stamp_at(_time_stamp_index);
+    time_stamp->set_name(name);
+    time_stamp->set_entry_time(t_entry);
+    time_stamp->set_exit_time(t_exit);
+  } else {
+    if (_time_stamp_index ==  GCTaskTimeStampEntries) {
+      log_warning(gc, task, time)("GC-thread %u: Too many timestamps, ignoring future ones. "
+                                  "Increase GCTaskTimeStampEntries to get more info.",
+                                  id());
+    }
+    // Let _time_stamp_index keep counting to give the user an idea about how many
+    // are needed.
+  }
+  _time_stamp_index++;
+}
+
 GCTaskTimeStamp* GCTaskThread::time_stamp_at(uint index) {
-  guarantee(index < GCTaskTimeStampEntries, "increase GCTaskTimeStampEntries");
+  assert(index < GCTaskTimeStampEntries, "Precondition");
   if (_time_stamps == NULL) {
     // We allocate the _time_stamps array lazily since logging can be enabled dynamically
     GCTaskTimeStamp* time_stamps = NEW_C_HEAP_ARRAY(GCTaskTimeStamp, GCTaskTimeStampEntries, mtGC);
@@ -65,7 +83,6 @@ GCTaskTimeStamp* GCTaskThread::time_stamp_at(uint index) {
       FREE_C_HEAP_ARRAY(GCTaskTimeStamp, time_stamps);
     }
   }
-
   return &(_time_stamps[index]);
 }
 
@@ -75,8 +92,11 @@ void GCTaskThread::print_task_time_stamps() {
   // Since _time_stamps is now lazily allocated we need to check that it
   // has in fact been allocated when calling this function.
   if (_time_stamps != NULL) {
-    log_debug(gc, task, time)("GC-Thread %u entries: %d", id(), _time_stamp_index);
-    for(uint i=0; i<_time_stamp_index; i++) {
+    log_debug(gc, task, time)("GC-Thread %u entries: %d%s", id(),
+                              _time_stamp_index,
+                              _time_stamp_index >= GCTaskTimeStampEntries ? " (overflow)" : "");
+    const uint max_index = MIN2(_time_stamp_index, GCTaskTimeStampEntries);
+    for (uint i = 0; i < max_index; i++) {
       GCTaskTimeStamp* time_stamp = time_stamp_at(i);
       log_debug(gc, task, time)("\t[ %s " JLONG_FORMAT " " JLONG_FORMAT " ]",
                                 time_stamp->name(),
@@ -144,16 +164,7 @@ void GCTaskThread::run() {
 
         if (log_is_enabled(Debug, gc, task, time)) {
           timer.update();
-
-          GCTaskTimeStamp* time_stamp = time_stamp_at(_time_stamp_index);
-
-          time_stamp->set_name(name);
-          time_stamp->set_entry_time(entry_time);
-          time_stamp->set_exit_time(timer.ticks());
-
-          // Update the index after we have set up the entry correctly since
-          // GCTaskThread::print_task_time_stamps() may read this value concurrently.
-          _time_stamp_index++;
+          add_task_timestamp(name, entry_time, timer.ticks());
         }
       } else {
         // idle tasks complete outside the normal accounting
