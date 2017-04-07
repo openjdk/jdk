@@ -27,7 +27,6 @@ package jdk.nashorn.internal.runtime;
 
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Modifier;
-import java.lang.reflect.Module;
 import java.security.CodeSource;
 import java.util.Objects;
 import java.util.Set;
