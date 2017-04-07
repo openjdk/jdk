@@ -30,11 +30,10 @@
  * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @compile/module=java.base java/lang/reflect/ModuleHelper.java
+ * @compile/module=java.base java/lang/ModuleHelper.java
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI JVMAddModuleExportToAllUnnamed
  */
 
-import java.lang.reflect.Module;
 import static jdk.test.lib.Asserts.*;
 
 public class JVMAddModuleExportToAllUnnamed {
@@ -44,10 +43,10 @@ public class JVMAddModuleExportToAllUnnamed {
     public static void main(String args[]) throws Throwable {
         Object m1x;
 
-        // Get the java.lang.reflect.Module object for module java.base.
+        // Get the java.lang.Module object for module java.base.
         Class jlObject = Class.forName("java.lang.Object");
-        Object jlObject_jlrM = jlObject.getModule();
-        assertNotNull(jlObject_jlrM, "jlrModule object of java.lang.Object should not be null");
+        Object jlObject_jlM = jlObject.getModule();
+        assertNotNull(jlObject_jlM, "jlModule object of java.lang.Object should not be null");
 
         // Get the class loader for JVMAddModuleExportToAllUnnamed and assume it's also used to
         // load class p1.c1.
@@ -57,7 +56,7 @@ public class JVMAddModuleExportToAllUnnamed {
         m1x = ModuleHelper.ModuleObject("module_one", this_cldr, new String[] { "p1" });
         assertNotNull(m1x, "Module should not be null");
         ModuleHelper.DefineModule(m1x, "9.0", "m1x/here", new String[] { "p1" });
-        ModuleHelper.AddReadsModule(m1x, jlObject_jlrM);
+        ModuleHelper.AddReadsModule(m1x, jlObject_jlM);
 
         // Make package p1 in m1x visible to everyone.
         ModuleHelper.AddModuleExportsToAll(m1x, "p1");

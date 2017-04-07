@@ -23,22 +23,23 @@
 package org.graalvm.compiler.test;
 
 import java.lang.reflect.Method;
+import java.util.Set;
 
 /**
- * Facade for the {@code java.lang.reflect.Module} class introduced in JDK9 that allows tests to be
+ * Facade for the {@code java.lang.Module} class introduced in JDK9 that allows tests to be
  * developed against JDK8 but use module logic if deployed on JDK9.
  */
-public class JLRModule {
+public class JLModule {
 
     static {
         if (GraalTest.Java8OrEarlier) {
-            throw new AssertionError("Use of " + JLRModule.class + " only allowed if " + GraalTest.class.getName() + ".JDK8OrEarlier is false");
+            throw new AssertionError("Use of " + JLModule.class + " only allowed if " + GraalTest.class.getName() + ".JDK8OrEarlier is false");
         }
     }
 
     private final Object realModule;
 
-    public JLRModule(Object module) {
+    public JLModule(Object module) {
         this.realModule = module;
     }
 
@@ -51,7 +52,7 @@ public class JLRModule {
     private static final Method addExportsMethod;
     static {
         try {
-            moduleClass = Class.forName("java.lang.reflect.Module");
+            moduleClass = Class.forName("java.lang.Module");
             getModuleMethod = Class.class.getMethod("getModule");
             getUnnamedModuleMethod = ClassLoader.class.getMethod("getUnnamedModule");
             getPackagesMethod = moduleClass.getMethod("getPackages");
@@ -63,17 +64,17 @@ public class JLRModule {
         }
     }
 
-    public static JLRModule fromClass(Class<?> cls) {
+    public static JLModule fromClass(Class<?> cls) {
         try {
-            return new JLRModule(getModuleMethod.invoke(cls));
+            return new JLModule(getModuleMethod.invoke(cls));
         } catch (Exception e) {
             throw new AssertionError(e);
         }
     }
 
-    public static JLRModule getUnnamedModuleFor(ClassLoader cl) {
+    public static JLModule getUnnamedModuleFor(ClassLoader cl) {
         try {
-            return new JLRModule(getUnnamedModuleMethod.invoke(cl));
+            return new JLModule(getUnnamedModuleMethod.invoke(cl));
         } catch (Exception e) {
             throw new AssertionError(e);
         }
@@ -82,7 +83,7 @@ public class JLRModule {
     /**
      * Exports all packages in this module to a given module.
      */
-    public void exportAllPackagesTo(JLRModule module) {
+    public void exportAllPackagesTo(JLModule module) {
         if (this != module) {
             for (String pkg : getPackages()) {
                 // Export all JVMCI packages dynamically instead
@@ -95,9 +96,9 @@ public class JLRModule {
         }
     }
 
-    public String[] getPackages() {
+    public Set<String> getPackages() {
         try {
-            return (String[]) getPackagesMethod.invoke(realModule);
+            return (Set<String>) getPackagesMethod.invoke(realModule);
         } catch (Exception e) {
             throw new AssertionError(e);
         }
@@ -111,7 +112,7 @@ public class JLRModule {
         }
     }
 
-    public boolean isExported(String pn, JLRModule other) {
+    public boolean isExported(String pn, JLModule other) {
         try {
             return (Boolean) isExported2Method.invoke(realModule, pn, other.realModule);
         } catch (Exception e) {
@@ -119,7 +120,7 @@ public class JLRModule {
         }
     }
 
-    public void addExports(String pn, JLRModule other) {
+    public void addExports(String pn, JLModule other) {
         try {
             addExportsMethod.invoke(realModule, pn, other.realModule);
         } catch (Exception e) {

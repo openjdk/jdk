@@ -45,7 +45,7 @@ class ModuleClosure;
 // A ModuleEntry describes a module that has been defined by a call to JVM_DefineModule.
 // It contains:
 //   - Symbol* containing the module's name.
-//   - pointer to the java.lang.reflect.Module for this module.
+//   - pointer to the java.lang.Module for this module.
 //   - pointer to the java.security.ProtectionDomain shared by classes defined to this module.
 //   - ClassLoaderData*, class loader of this module.
 //   - a growable array containg other module entries that this module can read.
@@ -55,7 +55,7 @@ class ModuleClosure;
 // data structure.
 class ModuleEntry : public HashtableEntry<Symbol*, mtModule> {
 private:
-  jobject _module;                     // java.lang.reflect.Module
+  jobject _module;                     // java.lang.Module
   jobject _pd;                         // java.security.ProtectionDomain, cached
                                        // for shared classes from this module
   ClassLoaderData* _loader_data;

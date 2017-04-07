@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -532,7 +532,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
     } else {
       module_entry = ModuleEntryTable::javabase_moduleEntry();
     }
-    // Obtain java.lang.reflect.Module, if available
+    // Obtain java.lang.Module, if available
     Handle module_handle(THREAD, ((module_entry != NULL) ? JNIHandles::resolve(module_entry->module()) : (oop)NULL));
     java_lang_Class::create_mirror(this, loader, module_handle, protection_domain, CHECK);
   }
