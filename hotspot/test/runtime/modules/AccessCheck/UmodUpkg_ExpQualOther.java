@@ -37,7 +37,6 @@
 
 import static jdk.test.lib.Asserts.*;
 
-import java.lang.reflect.Layer;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
@@ -59,12 +58,12 @@ import myloaders.MySameClassLoader;
 //
 public class UmodUpkg_ExpQualOther {
 
-    // Create a Layer over the boot layer.
+    // Create a layer over the boot layer.
     // Define modules within this layer to test access between
     // publically defined classes within packages of those modules.
     public void createLayerOnBoot() throws Throwable {
 
-        // Define module:     m1x (need to define m1x to establish the Layer successfully)
+        // Define module:     m1x (need to define m1x to establish the layer successfully)
         // Can read:          java.base, m2x, m3x
         // Packages:          none
         // Packages exported: none
@@ -98,7 +97,7 @@ public class UmodUpkg_ExpQualOther {
         ModuleFinder finder = ModuleLibrary.of(descriptor_m1x, descriptor_m2x, descriptor_m3x);
 
         // Resolves "m1x"
-        Configuration cf = Layer.boot()
+        Configuration cf = ModuleLayer.boot()
                 .configuration()
                 .resolve(finder, ModuleFinder.of(), Set.of("m1x"));
 
@@ -108,8 +107,8 @@ public class UmodUpkg_ExpQualOther {
         map.put("m2x", MySameClassLoader.loader1);
         map.put("m3x", MySameClassLoader.loader1);
 
-        // Create Layer that contains m1x, m2x and m3x
-        Layer layer = Layer.boot().defineModules(cf, map::get);
+        // Create layer that contains m1x, m2x and m3x
+        ModuleLayer layer = ModuleLayer.boot().defineModules(cf, map::get);
 
         assertTrue(layer.findLoader("m1x") == MySameClassLoader.loader1);
         assertTrue(layer.findLoader("m2x") == MySameClassLoader.loader1);

@@ -21,7 +21,6 @@
  * questions.
  */
 
-import java.lang.reflect.Module;
 import static jdk.test.lib.Asserts.*;
 
 /*
@@ -31,7 +30,7 @@ import static jdk.test.lib.Asserts.*;
  * @compile p2/c2.java
  * @compile p1/c1.java
  * @build sun.hotspot.WhiteBox
- * @compile/module=java.base java/lang/reflect/ModuleHelper.java
+ * @compile/module=java.base java/lang/ModuleHelper.java
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI JVMAddModuleExportsToAll
@@ -45,10 +44,10 @@ public class JVMAddModuleExportsToAll {
     public static void main(String args[]) throws Throwable {
         Object m1x, m2x, m3x;
 
-        // Get the java.lang.reflect.Module object for module java.base.
+        // Get the java.lang.Module object for module java.base.
         Class jlObject = Class.forName("java.lang.Object");
-        Object jlObject_jlrM = jlObject.getModule();
-        assertNotNull(jlObject_jlrM, "jlrModule object of java.lang.Object should not be null");
+        Object jlObject_jlM = jlObject.getModule();
+        assertNotNull(jlObject_jlM, "jlModule object of java.lang.Object should not be null");
 
         // Get the class loader for JVMAddModuleExportsToAll and assume it's also used to
         // load class p2.c2.
@@ -58,13 +57,13 @@ public class JVMAddModuleExportsToAll {
         m1x = ModuleHelper.ModuleObject("module_one", this_cldr, new String[] { "p3" });
         assertNotNull(m1x, "Module should not be null");
         ModuleHelper.DefineModule(m1x, "9.0", "m1x/there", new String[] { "p3" });
-        ModuleHelper.AddReadsModule(m1x, jlObject_jlrM);
+        ModuleHelper.AddReadsModule(m1x, jlObject_jlM);
 
         // Define a module for p2.
         m2x = ModuleHelper.ModuleObject("module_two", this_cldr, new String[] { "p2" });
         assertNotNull(m2x, "Module should not be null");
         ModuleHelper.DefineModule(m2x, "9.0", "m2x/there", new String[] { "p2" });
-        ModuleHelper.AddReadsModule(m2x, jlObject_jlrM);
+        ModuleHelper.AddReadsModule(m2x, jlObject_jlM);
 
         try {
             ModuleHelper.AddModuleExportsToAll((Module)null, "p2");
@@ -80,7 +79,7 @@ public class JVMAddModuleExportsToAll {
             // Expected
         }
 
-        try { // Expect IAE when passing a ClassLoader object instead of a java.lang.reflect.Module object.
+        try { // Expect IAE when passing a ClassLoader object instead of a java.lang.Module object.
             ModuleHelper.AddModuleExportsToAll(this_cldr, "p2");
             throw new RuntimeException("Failed to get the expected IAE for bad module");
         } catch(IllegalArgumentException e) {
