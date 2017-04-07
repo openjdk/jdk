@@ -266,19 +266,19 @@ void ModuleEntryTable::create_unnamed_module(ClassLoaderData* loader_data) {
 
   // Each ModuleEntryTable has exactly one unnamed module
   if (loader_data->is_the_null_class_loader_data()) {
-    // For the boot loader, the java.lang.reflect.Module for the unnamed module
+    // For the boot loader, the java.lang.Module for the unnamed module
     // is not known until a call to JVM_SetBootLoaderUnnamedModule is made. At
     // this point initially create the ModuleEntry for the unnamed module.
     _unnamed_module = new_entry(0, Handle(NULL), NULL, NULL, NULL, loader_data);
   } else {
-    // For all other class loaders the java.lang.reflect.Module for their
+    // For all other class loaders the java.lang.Module for their
     // corresponding unnamed module can be found in the java.lang.ClassLoader object.
     oop module = java_lang_ClassLoader::unnamedModule(loader_data->class_loader());
     _unnamed_module = new_entry(0, Handle(module), NULL, NULL, NULL, loader_data);
 
-    // Store pointer to the ModuleEntry in the unnamed module's java.lang.reflect.Module
+    // Store pointer to the ModuleEntry in the unnamed module's java.lang.Module
     // object.
-    java_lang_reflect_Module::set_module_entry(module, _unnamed_module);
+    java_lang_Module::set_module_entry(module, _unnamed_module);
   }
 
   // Add to bucket 0, no name to hash on
@@ -388,27 +388,27 @@ void ModuleEntryTable::finalize_javabase(Handle module_handle, Symbol* version, 
     fatal("Unable to finalize module definition for " JAVA_BASE_NAME);
   }
 
-  // Set java.lang.reflect.Module, version and location for java.base
+  // Set java.lang.Module, version and location for java.base
   ModuleEntry* jb_module = javabase_moduleEntry();
   assert(jb_module != NULL, JAVA_BASE_NAME " ModuleEntry not defined");
   jb_module->set_version(version);
   jb_module->set_location(location);
   // Once java.base's ModuleEntry _module field is set with the known
-  // java.lang.reflect.Module, java.base is considered "defined" to the VM.
+  // java.lang.Module, java.base is considered "defined" to the VM.
   jb_module->set_module(boot_loader_data->add_handle(module_handle));
 
-  // Store pointer to the ModuleEntry for java.base in the java.lang.reflect.Module object.
-  java_lang_reflect_Module::set_module_entry(module_handle(), jb_module);
+  // Store pointer to the ModuleEntry for java.base in the java.lang.Module object.
+  java_lang_Module::set_module_entry(module_handle(), jb_module);
 }
 
-// Within java.lang.Class instances there is a java.lang.reflect.Module field
-// that must be set with the defining module.  During startup, prior to java.base's
-// definition, classes needing their module field set are added to the fixup_module_list.
-// Their module field is set once java.base's java.lang.reflect.Module is known to the VM.
+// Within java.lang.Class instances there is a java.lang.Module field that must
+// be set with the defining module.  During startup, prior to java.base's definition,
+// classes needing their module field set are added to the fixup_module_list.
+// Their module field is set once java.base's java.lang.Module is known to the VM.
 void ModuleEntryTable::patch_javabase_entries(Handle module_handle) {
   if (module_handle.is_null()) {
     fatal("Unable to patch the module field of classes loaded prior to "
-          JAVA_BASE_NAME "'s definition, invalid java.lang.reflect.Module");
+          JAVA_BASE_NAME "'s definition, invalid java.lang.Module");
   }
 
   // Do the fixups for the basic primitive types

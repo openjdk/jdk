@@ -5406,7 +5406,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
   ModuleEntry* module_entry = ik->module();
   assert(module_entry != NULL, "module_entry should always be set");
 
-  // Obtain java.lang.reflect.Module
+  // Obtain java.lang.Module
   Handle module_handle(THREAD, JNIHandles::resolve(module_entry->module()));
 
   // Allocate mirror and initialize static fields
