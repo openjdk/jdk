@@ -29,6 +29,7 @@
  * @summary Stackoverflow during compilation, starting jdk-9+163
  *
  * @library /tools/javac/lib
+ * @requires !(os.family == "solaris")
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.comp
