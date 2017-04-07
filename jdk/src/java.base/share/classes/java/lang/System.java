@@ -35,33 +35,32 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.annotation.Annotation;
+import java.lang.module.ModuleDescriptor;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
-import java.lang.reflect.Layer;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Module;
+import java.net.URI;
 import java.net.URL;
 import java.security.AccessControlContext;
 import java.security.ProtectionDomain;
-import java.util.Properties;
-import java.util.PropertyPermission;
-import java.util.Map;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.nio.channels.Channel;
 import java.nio.channels.spi.SelectorProvider;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
+import java.util.PropertyPermission;
+import java.util.ResourceBundle;
+import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
-import java.util.Objects;
-import java.util.ResourceBundle;
-import java.util.function.Supplier;
-import sun.nio.ch.Interruptible;
+import jdk.internal.module.ModuleBootstrap;
+import jdk.internal.module.ServicesCatalog;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
-import sun.security.util.SecurityConstants;
-import sun.reflect.annotation.AnnotationType;
 import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.misc.JavaLangAccess;;
 import jdk.internal.misc.SharedSecrets;;
@@ -69,8 +68,9 @@ import jdk.internal.misc.VM;
 import jdk.internal.logger.LoggerFinderLoader;
 import jdk.internal.logger.LazyLoggers;
 import jdk.internal.logger.LocalizedLoggerWrapper;
-
-import jdk.internal.module.ModuleBootstrap;
+import sun.reflect.annotation.AnnotationType;
+import sun.nio.ch.Interruptible;
+import sun.security.util.SecurityConstants;
 
 /**
  * The <code>System</code> class contains several useful class fields
@@ -1160,7 +1160,7 @@ public final class System {
          * @param msg the string message (or a key in the message catalog, if
          * this logger is a {@link
          * LoggerFinder#getLocalizedLogger(java.lang.String,
-         * java.util.ResourceBundle, java.lang.reflect.Module) localized logger});
+         * java.util.ResourceBundle, java.lang.Module) localized logger});
          * can be {@code null}.
          *
          * @throws NullPointerException if {@code level} is {@code null}.
@@ -1228,7 +1228,7 @@ public final class System {
          * @param msg the string message (or a key in the message catalog, if
          * this logger is a {@link
          * LoggerFinder#getLocalizedLogger(java.lang.String,
-         * java.util.ResourceBundle, java.lang.reflect.Module) localized logger});
+         * java.util.ResourceBundle, java.lang.Module) localized logger});
          * can be {@code null}.
          * @param thrown a {@code Throwable} associated with the log message;
          *        can be {@code null}.
@@ -1277,7 +1277,7 @@ public final class System {
          * java.text.MessageFormat} format, (or a key in the message
          * catalog, if this logger is a {@link
          * LoggerFinder#getLocalizedLogger(java.lang.String,
-         * java.util.ResourceBundle, java.lang.reflect.Module) localized logger});
+         * java.util.ResourceBundle, java.lang.Module) localized logger});
          * can be {@code null}.
          * @param params an optional list of parameters to the message (may be
          * none).
@@ -1482,7 +1482,7 @@ public final class System {
          * message localization.
          *
          * @implSpec By default, this method calls {@link
-         * #getLogger(java.lang.String, java.lang.reflect.Module)
+         * #getLogger(java.lang.String, java.lang.Module)
          * this.getLogger(name, module)} to obtain a logger, then wraps that
          * logger in a {@link Logger} instance where all methods that do not
          * take a {@link ResourceBundle} as parameter are redirected to one
@@ -1566,7 +1566,7 @@ public final class System {
      * @implSpec
      * Instances returned by this method route messages to loggers
      * obtained by calling {@link LoggerFinder#getLogger(java.lang.String,
-     * java.lang.reflect.Module) LoggerFinder.getLogger(name, module)}, where
+     * java.lang.Module) LoggerFinder.getLogger(name, module)}, where
      * {@code module} is the caller's module.
      * In cases where {@code System.getLogger} is called from a context where
      * there is no caller frame on the stack (e.g when called directly
@@ -1579,7 +1579,7 @@ public final class System {
      *
      * @apiNote
      * This method may defer calling the {@link
-     * LoggerFinder#getLogger(java.lang.String, java.lang.reflect.Module)
+     * LoggerFinder#getLogger(java.lang.String, java.lang.Module)
      * LoggerFinder.getLogger} method to create an actual logger supplied by
      * the logging backend, for instance, to allow loggers to be obtained during
      * the system initialization time.
@@ -1612,7 +1612,7 @@ public final class System {
      * @implSpec
      * The returned logger will perform message localization as specified
      * by {@link LoggerFinder#getLocalizedLogger(java.lang.String,
-     * java.util.ResourceBundle, java.lang.reflect.Module)
+     * java.util.ResourceBundle, java.lang.Module)
      * LoggerFinder.getLocalizedLogger(name, bundle, module)}, where
      * {@code module} is the caller's module.
      * In cases where {@code System.getLogger} is called from a context where
@@ -1977,7 +1977,7 @@ public final class System {
     }
 
     // @see #initPhase2()
-    private static Layer bootLayer;
+    static ModuleLayer bootLayer;
 
     /*
      * Invoked by VM.  Phase 2 module system initialization.
@@ -2101,9 +2101,6 @@ public final class System {
             public void invokeFinalize(Object o) throws Throwable {
                 o.finalize();
             }
-            public Layer getBootLayer() {
-                return bootLayer;
-            }
             public ConcurrentHashMap<?, ?> createOrGetClassLoaderValueMap(ClassLoader cl) {
                 return cl.createOrGetClassLoaderValueMap();
             }
@@ -2127,6 +2124,44 @@ public final class System {
             }
             public void invalidatePackageAccessCache() {
                 SecurityManager.invalidatePackageAccessCache();
+            }
+            public Module defineModule(ClassLoader loader,
+                                       ModuleDescriptor descriptor,
+                                       URI uri) {
+                return new Module(null, loader, descriptor, uri);
+            }
+            public Module defineUnnamedModule(ClassLoader loader) {
+                return new Module(loader);
+            }
+            public void addReads(Module m1, Module m2) {
+                m1.implAddReads(m2);
+            }
+            public void addReadsAllUnnamed(Module m) {
+                m.implAddReadsAllUnnamed();
+            }
+            public void addExports(Module m, String pn, Module other) {
+                m.implAddExports(pn, other);
+            }
+            public void addExportsToAllUnnamed(Module m, String pn) {
+                m.implAddExportsToAllUnnamed(pn);
+            }
+            public void addOpens(Module m, String pn, Module other) {
+                m.implAddOpens(pn, other);
+            }
+            public void addOpensToAllUnnamed(Module m, String pn) {
+                m.implAddOpensToAllUnnamed(pn);
+            }
+            public void addUses(Module m, Class<?> service) {
+                m.implAddUses(service);
+            }
+            public ServicesCatalog getServicesCatalog(ModuleLayer layer) {
+                return layer.getServicesCatalog();
+            }
+            public Stream<ModuleLayer> layers(ModuleLayer layer) {
+                return layer.layers();
+            }
+            public Stream<ModuleLayer> layers(ClassLoader loader) {
+                return ModuleLayer.layers(loader);
             }
         });
     }

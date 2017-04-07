@@ -23,13 +23,11 @@
 
 package listmods;
 
-import java.lang.reflect.Layer;
-import java.lang.reflect.Module;
 import static java.util.stream.Collectors.joining;
 
 public class ListModules {
     public static void main(String[] args) throws Exception {
-        System.out.println(Layer.boot()
+        System.out.println(ModuleLayer.boot()
                                 .modules()
                                 .stream()
                                 .map(Module::getName)

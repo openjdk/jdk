@@ -25,7 +25,6 @@
 
 package sun.tools.common;
 
-import java.lang.reflect.Module;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;

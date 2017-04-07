@@ -33,7 +33,6 @@ import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleReader;
 import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
-import java.lang.reflect.Layer;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -80,8 +79,8 @@ import jdk.internal.module.Resources;
  * loader. This allows automatic modules (for example) to link to types in the
  * unnamed module of the parent class loader.
  *
- * @see Layer#defineModulesWithOneLoader
- * @see Layer#defineModulesWithManyLoaders
+ * @see ModuleModuleLayer#defineModulesWithOneLoader
+ * @see ModuleModuleLayer#defineModulesWithManyLoaders
  */
 
 public final class Loader extends SecureClassLoader {
@@ -207,10 +206,10 @@ public final class Loader extends SecureClassLoader {
      * @param cf the Configuration containing at least modules to be defined to
      *           this class loader
      *
-     * @param parentLayers the parent Layers
+     * @param parentModuleLayers the parent ModuleLayers
      */
     public Loader initRemotePackageMap(Configuration cf,
-                                       List<Layer> parentLayers)
+                                       List<ModuleLayer> parentModuleLayers)
     {
         for (String name : nameToModule.keySet()) {
             ResolvedModule resolvedModule = cf.findModule(name).get();
@@ -236,8 +235,8 @@ public final class Loader extends SecureClassLoader {
                 } else {
 
                     // find the layer for the target module
-                    Layer layer = parentLayers.stream()
-                        .map(parent -> findLayer(parent, other.configuration()))
+                    ModuleLayer layer = parentModuleLayers.stream()
+                        .map(parent -> findModuleLayer(parent, other.configuration()))
                         .flatMap(Optional::stream)
                         .findAny()
                         .orElseThrow(() ->
@@ -286,8 +285,8 @@ public final class Loader extends SecureClassLoader {
      * Find the layer corresponding to the given configuration in the tree
      * of layers rooted at the given parent.
      */
-    private Optional<Layer> findLayer(Layer parent, Configuration cf) {
-        return SharedSecrets.getJavaLangReflectModuleAccess().layers(parent)
+    private Optional<ModuleLayer> findModuleLayer(ModuleLayer parent, Configuration cf) {
+        return SharedSecrets.getJavaLangAccess().layers(parent)
                 .filter(l -> l.configuration() == cf)
                 .findAny();
     }
