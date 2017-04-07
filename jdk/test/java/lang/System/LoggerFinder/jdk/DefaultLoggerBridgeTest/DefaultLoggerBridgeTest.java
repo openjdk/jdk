@@ -48,7 +48,6 @@ import java.lang.System.LoggerFinder;
 import java.lang.System.Logger;
 import java.util.stream.Stream;
 import sun.util.logging.internal.LoggingProviderImpl;
-import java.lang.reflect.Module;
 
 /**
  * @test

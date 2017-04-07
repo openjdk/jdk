@@ -27,7 +27,6 @@ package sun.invoke.util;
 
 import java.lang.reflect.Modifier;
 import static java.lang.reflect.Modifier.*;
-import java.lang.reflect.Module;
 import java.util.Objects;
 import jdk.internal.reflect.Reflection;
 

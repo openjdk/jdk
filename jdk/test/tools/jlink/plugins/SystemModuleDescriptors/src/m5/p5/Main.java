@@ -23,7 +23,6 @@
 
 package p5;
 
-import java.lang.reflect.Layer;
 import p3.Foo;
 import p3.Lib;
 
@@ -32,7 +31,7 @@ import p3.Lib;
  */
 public class Main {
     public static void main(String... args) {
-        boolean libPresent = Layer.boot().findModule("m3").isPresent();
+        boolean libPresent = ModuleLayer.boot().findModule("m3").isPresent();
         if (LibHelper.libClassFound != libPresent) {
             throw new RuntimeException("Expected module m3 not in the boot layer");
         }

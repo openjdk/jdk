@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,6 @@
 
 import java.lang.TestProvider;
 import java.lang.instrument.Instrumentation;
-import java.lang.reflect.Layer;
-import java.lang.reflect.Module;
 import java.net.URLStreamHandler;
 import java.net.spi.URLStreamHandlerProvider;
 import java.nio.file.FileSystems;
@@ -66,6 +64,10 @@ public class RedefineModuleTest {
                                            extraOpens,
                                            extraUses,
                                            extraProvides);
+    }
+
+    static boolean isModifiableModule(Module module) {
+        return RedefineModuleAgent.isModifiableModule(module);
     }
 
 
@@ -138,13 +140,13 @@ public class RedefineModuleTest {
         // pre-conditions
         assertFalse(baseModule.canUse(service));
         assertTrue(collect(ServiceLoader.load(service)).isEmpty());
-        assertTrue(collect(ServiceLoader.load(Layer.boot(), service)).isEmpty());
+        assertTrue(collect(ServiceLoader.load(ModuleLayer.boot(), service)).isEmpty());
 
         // update java.base to use TestProvider
         redefineModule(baseModule, Set.of(), Map.of(), Map.of(), Set.of(service), Map.of());
         assertTrue(baseModule.canUse(service));
         assertTrue(collect(ServiceLoader.load(service)).isEmpty());
-        assertTrue(collect(ServiceLoader.load(Layer.boot(), service)).isEmpty());
+        assertTrue(collect(ServiceLoader.load(ModuleLayer.boot(), service)).isEmpty());
 
         // update java.base to provide an implementation of TestProvider
         Class<?> type1 = Class.forName("jdk.internal.test.TestProviderImpl1");
@@ -162,7 +164,7 @@ public class RedefineModuleTest {
         assertTrue(containsInstanceOf(collect(providers), type1));
 
         // use ServiceLoader to load implementations in the boot layer
-        providers = collect(ServiceLoader.load(Layer.boot(), service));
+        providers = collect(ServiceLoader.load(ModuleLayer.boot(), service));
         assertTrue(collect(providers).size() == 1);
         assertTrue(containsInstanceOf(collect(providers), type1));
 
@@ -184,7 +186,7 @@ public class RedefineModuleTest {
         assertTrue(containsInstanceOf(providers, type2));
 
         // use ServiceLoader to load implementations in the boot layer
-        providers = collect(ServiceLoader.load(Layer.boot(), service));
+        providers = collect(ServiceLoader.load(ModuleLayer.boot(), service));
         assertTrue(collect(providers).size() == 2);
         assertTrue(containsInstanceOf(providers, type1));
         assertTrue(containsInstanceOf(providers, type2));
@@ -276,6 +278,19 @@ public class RedefineModuleTest {
         // attempt to update java.base to provide an implementation of TestProvider
         Map<Class<?>, List<Class<?>>> extraProvides = Map.of(service, List.of(impl));
         redefineModule(baseModule, Set.of(), Map.of(), Map.of(), Set.of(), extraProvides);
+    }
+
+    /**
+     * Exercise IsModifiableModule
+     */
+    @Test
+    public void testIsModifiableModule() {
+        ClassLoader pcl = ClassLoader.getPlatformClassLoader();
+        ClassLoader scl = ClassLoader.getSystemClassLoader();
+        assertTrue(isModifiableModule(pcl.getUnnamedModule()));
+        assertTrue(isModifiableModule(scl.getUnnamedModule()));
+        assertTrue(isModifiableModule(RedefineModuleTest.class.getModule()));
+        assertTrue(isModifiableModule(Object.class.getModule()));
     }
 
     /**

@@ -26,7 +26,6 @@ package p3;
 import p4.Foo;
 import java.lang.module.ModuleDescriptor;
 import java.lang.reflect.Field;
-import java.lang.reflect.Module;
 
 import static java.lang.module.ModuleDescriptor.Exports.Modifier.*;
 

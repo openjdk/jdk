@@ -31,10 +31,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Layer;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Module;
 import java.net.URL;
 import java.net.URLConnection;
 import java.security.AccessControlContext;
@@ -50,7 +48,6 @@ import java.util.stream.StreamSupport;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.ClassLoaders;
 import jdk.internal.misc.JavaLangAccess;
-import jdk.internal.misc.JavaLangReflectModuleAccess;
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.misc.VM;
 import jdk.internal.module.ServicesCatalog;
@@ -160,7 +157,7 @@ import jdk.internal.reflect.Reflection;
  * <h2> Locating providers </h2>
  *
  * <p> The {@code load} methods locate providers using a class loader or module
- * {@link Layer layer}. When locating providers using a class loader then
+ * {@link ModuleLayer layer}. When locating providers using a class loader then
  * providers in both named and unnamed modules may be located. When locating
  * providers using a module layer then only providers in named modules in
  * the layer (or parent layers) are located.
@@ -168,11 +165,11 @@ import jdk.internal.reflect.Reflection;
  * <p> When locating providers using a class loader then any providers in named
  * modules defined to the class loader, or any class loader that is reachable
  * via parent delegation, are located. Additionally, providers in module layers
- * other than the {@link Layer#boot() boot} layer, where the module layer
+ * other than the {@link ModuleLayer#boot() boot} layer, where the module layer
  * contains modules defined to the class loader, or any class loader reachable
  * via parent delegation, are also located. For example, suppose there is a
  * module layer where each module is defined to its own class loader (see {@link
- * Layer#defineModulesWithManyLoaders defineModulesWithManyLoaders}). If the
+ * ModuleLayer#defineModulesWithManyLoaders defineModulesWithManyLoaders}). If the
  * {@code load} method is invoked to locate providers using any of these class
  * loaders for this layer then it will locate all of the providers in that
  * layer, irrespective of their defining class loader.
@@ -198,7 +195,7 @@ import jdk.internal.reflect.Reflection;
  *     will locate providers in modules defined to the class loader, then its
  *     parent class loader, its parent parent, and so on to the bootstrap class
  *     loader. If a {@code ClassLoader}, or any class loader in the parent
- *     delegation chain, defines modules in a custom module {@link Layer} then
+ *     delegation chain, defines modules in a custom module {@link ModuleLayer} then
  *     all providers in that layer are located, irrespective of their class
  *     loader. The ordering of modules defined to the same class loader, or the
  *     ordering of modules in a layer, is not defined. </li>
@@ -216,11 +213,11 @@ import jdk.internal.reflect.Reflection;
  *     method finds the service configuration files. </li>
  * </ul>
  *
- * <p> Service loaders created to locate providers in a module {@link Layer}
- * will first locate providers in the layer, before locating providers in
- * parent layers. Traversal of parent layers is depth-first with each layer
- * visited at most once. For example, suppose L0 is the boot layer, L1 and
- * L2 are custom layers with L0 as their parent. Now suppose that L3 is
+ * <p> Service loaders created to locate providers in a {@linkplain ModuleLayer
+ * module layer} will first locate providers in the layer, before locating
+ * providers in parent layers. Traversal of parent layers is depth-first with
+ * each layer visited at most once. For example, suppose L0 is the boot layer,
+ * L1 and L2 are custom layers with L0 as their parent. Now suppose that L3 is
  * created with L1 and L2 as the parents (in that order). Using a service
  * loader to locate providers with L3 as the content will locate providers
  * in the following order: L3, L1, L0, L2. The ordering of modules in a layer
@@ -352,12 +349,12 @@ public final class ServiceLoader<S>
     // The class of the service type
     private final String serviceName;
 
-    // The module Layer used to locate providers; null when locating
+    // The module layer used to locate providers; null when locating
     // providers using a class loader
-    private final Layer layer;
+    private final ModuleLayer layer;
 
     // The class loader used to locate, load, and instantiate providers;
-    // null when locating provider using a module Layer
+    // null when locating provider using a module layer
     private final ClassLoader loader;
 
     // The access control context taken when the ServiceLoader is created
@@ -376,10 +373,8 @@ public final class ServiceLoader<S>
     private int reloadCount;
 
     private static JavaLangAccess LANG_ACCESS;
-    private static JavaLangReflectModuleAccess JLRM_ACCESS;
     static {
         LANG_ACCESS = SharedSecrets.getJavaLangAccess();
-        JLRM_ACCESS = SharedSecrets.getJavaLangReflectModuleAccess();
     }
 
     /**
@@ -425,13 +420,13 @@ public final class ServiceLoader<S>
 
     /**
      * Initializes a new instance of this class for locating service providers
-     * in a module Layer.
+     * in a module layer.
      *
      * @throws ServiceConfigurationError
      *         If {@code svc} is not accessible to {@code caller} or the caller
      *         module does not use the service type.
      */
-    private ServiceLoader(Class<?> caller, Layer layer, Class<S> svc) {
+    private ServiceLoader(Class<?> caller, ModuleLayer layer, Class<S> svc) {
         Objects.requireNonNull(caller);
         Objects.requireNonNull(layer);
         Objects.requireNonNull(svc);
@@ -512,12 +507,15 @@ public final class ServiceLoader<S>
 
     /**
      * Checks that the given service type is accessible to types in the given
-     * module, and check that the module declare that it uses the service type. ??
+     * module, and check that the module declares that it uses the service type.
      */
     private static void checkCaller(Class<?> caller, Class<?> svc) {
-        Module callerModule = caller.getModule();
+        if (caller == null) {
+            fail(svc, "no caller to check if it declares `uses`");
+        }
 
         // Check access to the service type
+        Module callerModule = caller.getModule();
         int mods = svc.getModifiers();
         if (!Reflection.verifyMemberAccess(caller, svc, null, mods)) {
             fail(svc, "service type not accessible to " + callerModule);
@@ -826,13 +824,13 @@ public final class ServiceLoader<S>
 
     /**
      * Implements lazy service provider lookup of service providers that
-     * are provided by modules in a module Layer (or parent layers)
+     * are provided by modules in a module layer (or parent layers)
      */
     private final class LayerLookupIterator<T>
         implements Iterator<Provider<T>>
     {
-        Deque<Layer> stack = new ArrayDeque<>();
-        Set<Layer> visited = new HashSet<>();
+        Deque<ModuleLayer> stack = new ArrayDeque<>();
+        Set<ModuleLayer> visited = new HashSet<>();
         Iterator<ServiceProvider> iterator;
         ServiceProvider next;  // next provider to load
 
@@ -841,8 +839,8 @@ public final class ServiceLoader<S>
             stack.push(layer);
         }
 
-        private Iterator<ServiceProvider> providers(Layer layer) {
-            ServicesCatalog catalog = JLRM_ACCESS.getServicesCatalog(layer);
+        private Iterator<ServiceProvider> providers(ModuleLayer layer) {
+            ServicesCatalog catalog = LANG_ACCESS.getServicesCatalog(layer);
             return catalog.findServices(serviceName).iterator();
         }
 
@@ -864,10 +862,10 @@ public final class ServiceLoader<S>
                 if (stack.isEmpty())
                     return false;
 
-                Layer layer = stack.pop();
-                List<Layer> parents = layer.parents();
+                ModuleLayer layer = stack.pop();
+                List<ModuleLayer> parents = layer.parents();
                 for (int i = parents.size() - 1; i >= 0; i--) {
-                    Layer parent = parents.get(i);
+                    ModuleLayer parent = parents.get(i);
                     if (!visited.contains(parent)) {
                         visited.add(parent);
                         stack.push(parent);
@@ -915,8 +913,8 @@ public final class ServiceLoader<S>
          * Returns iterator to iterate over the implementations of {@code
          * service} in the given layer.
          */
-        private List<ServiceProvider> providers(Layer layer) {
-            ServicesCatalog catalog = JLRM_ACCESS.getServicesCatalog(layer);
+        private List<ServiceProvider> providers(ModuleLayer layer) {
+            ServicesCatalog catalog = LANG_ACCESS.getServicesCatalog(layer);
             return catalog.findServices(serviceName);
         }
 
@@ -946,10 +944,10 @@ public final class ServiceLoader<S>
                 return providers.iterator();
             } else {
                 List<ServiceProvider> allProviders = new ArrayList<>(providers);
-                Layer bootLayer = Layer.boot();
-                Iterator<Layer> iterator = JLRM_ACCESS.layers(loader).iterator();
+                ModuleLayer bootLayer = ModuleLayer.boot();
+                Iterator<ModuleLayer> iterator = LANG_ACCESS.layers(loader).iterator();
                 while (iterator.hasNext()) {
-                    Layer layer = iterator.next();
+                    ModuleLayer layer = iterator.next();
                     if (layer != bootLayer) {
                         allProviders.addAll(providers(layer));
                     }
@@ -1535,7 +1533,7 @@ public final class ServiceLoader<S>
 
     /**
      * Creates a new service loader for the given service type that loads
-     * service providers from modules in the given {@code Layer} and its
+     * service providers from modules in the given {@code ModuleLayer} and its
      * ancestors.
      *
      * @apiNote Unlike the other load methods defined here, the service type
@@ -1545,7 +1543,7 @@ public final class ServiceLoader<S>
      * @param  <S> the class of the service type
      *
      * @param  layer
-     *         The module Layer
+     *         The module layer
      *
      * @param  service
      *         The interface or abstract class representing the service
@@ -1561,7 +1559,7 @@ public final class ServiceLoader<S>
      * @spec JPMS
      */
     @CallerSensitive
-    public static <S> ServiceLoader<S> load(Layer layer, Class<S> service) {
+    public static <S> ServiceLoader<S> load(ModuleLayer layer, Class<S> service) {
         return new ServiceLoader<>(Reflection.getCallerClass(), layer, service);
     }
 
