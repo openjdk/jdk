@@ -28,13 +28,12 @@
  * @compile p2/c2.java
  * @compile p1/c1.java
  * @build sun.hotspot.WhiteBox
- * @compile/module=java.base java/lang/reflect/ModuleHelper.java
+ * @compile/module=java.base java/lang/ModuleHelper.java
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI AccessCheckExp
  */
 
-import java.lang.reflect.Module;
 import static jdk.test.lib.Asserts.*;
 
 public class AccessCheckExp {
@@ -44,10 +43,10 @@ public class AccessCheckExp {
     public static void main(String args[]) throws Throwable {
         Object m1x, m2x;
 
-        // Get the java.lang.reflect.Module object for module java.base.
+        // Get the java.lang.Module object for module java.base.
         Class jlObject = Class.forName("java.lang.Object");
-        Object jlObject_jlrM = jlObject.getModule();
-        assertNotNull(jlObject_jlrM, "jlrModule object of java.lang.Object should not be null");
+        Object jlObject_jlM = jlObject.getModule();
+        assertNotNull(jlObject_jlM, "jlModule object of java.lang.Object should not be null");
 
         // Get the class loader for AccessCheckExp and assume it's also used to
         // load classes p1.c1 and p2.c2.
@@ -57,13 +56,13 @@ public class AccessCheckExp {
         m1x = ModuleHelper.ModuleObject("module_one", this_cldr, new String[] { "p1" });
         assertNotNull(m1x, "Module should not be null");
         ModuleHelper.DefineModule(m1x, "9.0", "m1x/here", new String[] { "p1" });
-        ModuleHelper.AddReadsModule(m1x, jlObject_jlrM);
+        ModuleHelper.AddReadsModule(m1x, jlObject_jlM);
 
         // Define a module for p2.
         m2x = ModuleHelper.ModuleObject("module_two", this_cldr, new String[] { "p2" });
         assertNotNull(m2x, "Module should not be null");
         ModuleHelper.DefineModule(m2x, "9.0", "m2x/there", new String[] { "p2" });
-        ModuleHelper.AddReadsModule(m2x, jlObject_jlrM);
+        ModuleHelper.AddReadsModule(m2x, jlObject_jlM);
 
         // Make package p1 in m1x visible to everyone.
         ModuleHelper.AddModuleExportsToAll(m1x, "p1");
