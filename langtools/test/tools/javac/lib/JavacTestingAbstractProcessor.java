@@ -21,8 +21,6 @@
  * questions.
  */
 
-import java.lang.reflect.Layer;
-import java.lang.reflect.Module;
 import java.util.*;
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
@@ -102,7 +100,7 @@ public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
     protected void addExports(String moduleName, String... packageNames) {
         for (String packageName : packageNames) {
             try {
-                Layer layer = Layer.boot();
+                ModuleLayer layer = ModuleLayer.boot();
                 Optional<Module> m = layer.findModule(moduleName);
                 if (!m.isPresent())
                     throw new Error("module not found: " + moduleName);
