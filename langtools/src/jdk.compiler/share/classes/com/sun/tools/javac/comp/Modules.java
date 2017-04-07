@@ -1240,7 +1240,7 @@ public class Modules extends JCTree.Visitor {
                     case ALL_SYSTEM:
                         modules = new HashSet<>(syms.getAllModules())
                                 .stream()
-                                .filter(systemModulePred.and(observablePred).and(noIncubatorPred));
+                                .filter(systemModulePred.and(observablePred));
                         break;
                     case ALL_MODULE_PATH:
                         modules = new HashSet<>(syms.getAllModules())
@@ -1265,6 +1265,15 @@ public class Modules extends JCTree.Visitor {
 
         result.add(syms.unnamedModule);
 
+        boolean hasAutomatic = result.stream().anyMatch(IS_AUTOMATIC);
+
+        if (hasAutomatic) {
+            syms.getAllModules()
+                .stream()
+                .filter(IS_AUTOMATIC)
+                .forEach(result::add);
+        }
+
         String incubatingModules = result.stream()
                 .filter(msym -> msym.resolutionFlags.contains(ModuleResolutionFlags.WARN_INCUBATING))
                 .map(msym -> msym.name.toString())
@@ -1282,6 +1291,9 @@ public class Modules extends JCTree.Visitor {
             rootModules.forEach(m -> m.version = version);
         }
     }
+    //where:
+        private static final Predicate<ModuleSymbol> IS_AUTOMATIC =
+                m -> (m.flags_field & Flags.AUTOMATIC_MODULE) != 0;
 
     public boolean isInModuleGraph(ModuleSymbol msym) {
         return allModules == null || allModules.contains(msym);

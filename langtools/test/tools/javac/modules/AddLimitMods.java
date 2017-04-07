@@ -418,13 +418,13 @@ public class AddLimitMods extends ModuleTestBase {
                                       "    public static void main(String... args) throws Exception {\n");
 
                 for (Entry<String, String> e : MODULES_TO_CHECK_TO_SAMPLE_CLASS.entrySet()) {
-                    testClassNamed.append("        System.err.println(\"visible:" + e.getKey() + ":\" + java.lang.reflect.Layer.boot().findModule(\"" + e.getKey() + "\").isPresent());\n");
+                    testClassNamed.append("        System.err.println(\"visible:" + e.getKey() + ":\" + ModuleLayer.boot().findModule(\"" + e.getKey() + "\").isPresent());\n");
                 }
 
                 testClassNamed.append("        Class<?> cp = Class.forName(Test.class.getClassLoader().getUnnamedModule(), \"cp.CP\");\n");
                 testClassNamed.append("        cp.getDeclaredMethod(\"runMe\").invoke(null);\n");
 
-                testClassNamed.append("        Class<?> automatic = Class.forName(java.lang.reflect.Layer.boot().findModule(\"automatic\").get(), \"automatic.Automatic\");\n");
+                testClassNamed.append("        Class<?> automatic = Class.forName(ModuleLayer.boot().findModule(\"automatic\").get(), \"automatic.Automatic\");\n");
                 testClassNamed.append("        automatic.getDeclaredMethod(\"runMe\").invoke(null);\n");
 
                 testClassNamed.append("    }\n" +

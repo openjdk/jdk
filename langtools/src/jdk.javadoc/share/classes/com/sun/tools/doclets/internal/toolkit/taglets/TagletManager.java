@@ -292,7 +292,7 @@ public class TagletManager {
             Method getModuleMethod = Class.class.getDeclaredMethod("getModule");
             Object thisModule = getModuleMethod.invoke(getClass());
 
-            Class<?> moduleClass = Class.forName("java.lang.reflect.Module");
+            Class<?> moduleClass = Class.forName("java.lang.Module");
             Method addExportsMethod = moduleClass.getDeclaredMethod("addExports", String.class, moduleClass);
 
             Method getUnnamedModuleMethod = ClassLoader.class.getDeclaredMethod("getUnnamedModule");

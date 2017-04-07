@@ -33,8 +33,6 @@
  */
 
 import java.io.*;
-import java.lang.reflect.Layer;
-import java.lang.reflect.Module;
 import java.util.*;
 import javax.tools.*;
 import com.sun.tools.classfile.*;
@@ -265,7 +263,7 @@ public class CheckResourceKeys {
      * Get the set of keys from the javadoc resource bundles.
      */
     Set<String> getResourceKeys() {
-        Module jdk_javadoc = Layer.boot().findModule("jdk.javadoc").get();
+        Module jdk_javadoc = ModuleLayer.boot().findModule("jdk.javadoc").get();
         String[] names = {
                 "jdk.javadoc.internal.doclets.formats.html.resources.standard",
                 "jdk.javadoc.internal.doclets.toolkit.resources.doclets",
