@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
-import java.lang.reflect.Layer;
 import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -100,7 +99,7 @@ public class Main {
 
     private static void checkModule(String mn, String... packages) throws IOException {
         // verify ModuleDescriptor from the runtime module
-        ModuleDescriptor md = Layer.boot().findModule(mn).get()
+        ModuleDescriptor md = ModuleLayer.boot().findModule(mn).get()
                                    .getDescriptor();
         checkModuleDescriptor(md, packages);
 

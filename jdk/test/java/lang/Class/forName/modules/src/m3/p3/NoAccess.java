@@ -26,8 +26,6 @@ package p3;
 import java.io.FilePermission;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
-import java.lang.reflect.Layer;
-import java.lang.reflect.Module;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.AccessControlException;
@@ -47,7 +45,7 @@ public class NoAccess {
 
         ModuleFinder finder = ModuleFinder.of(Paths.get("mods1"), Paths.get("mods2"));
 
-        Layer bootLayer = Layer.boot();
+        ModuleLayer bootLayer = ModuleLayer.boot();
         Configuration parent = bootLayer.configuration();
 
         Configuration cf = parent.resolveAndBind(finder,
@@ -55,7 +53,7 @@ public class NoAccess {
                                                  Set.of("m1", "m2"));
 
         ClassLoader scl = ClassLoader.getSystemClassLoader();
-        Layer layer = bootLayer.defineModulesWithManyLoaders(cf, scl);
+        ModuleLayer layer = bootLayer.defineModulesWithManyLoaders(cf, scl);
 
         if (sm != null) {
             System.setSecurityManager(sm);

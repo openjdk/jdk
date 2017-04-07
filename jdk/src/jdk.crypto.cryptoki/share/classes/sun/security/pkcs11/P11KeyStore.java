@@ -1022,7 +1022,7 @@ final class P11KeyStore extends KeyStoreSpi {
                                     ("trusted certificates may only be set by " +
                                     "token initialization application"));
             }
-            Module module = token.provider.nssModule;
+            Secmod.Module module = token.provider.nssModule;
             if ((module.type != ModuleType.KEYSTORE) && (module.type != ModuleType.FIPS)) {
                 // XXX allow TRUSTANCHOR module
                 throw new KeyStoreException("Trusted certificates can only be "

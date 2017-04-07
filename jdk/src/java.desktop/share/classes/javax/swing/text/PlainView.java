@@ -31,7 +31,6 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Objects;
 import javax.swing.event.*;
-import java.lang.reflect.Module;
 import java.lang.ref.SoftReference;
 import java.util.HashMap;
 

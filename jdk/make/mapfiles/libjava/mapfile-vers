@@ -273,12 +273,12 @@ SUNWprivate_1.1 {
                 Java_jdk_internal_misc_VM_getRuntimeArguments;
                 Java_jdk_internal_misc_VM_initialize;
 
-                Java_java_lang_reflect_Module_defineModule0;
-                Java_java_lang_reflect_Module_addReads0;
-                Java_java_lang_reflect_Module_addExports0;
-                Java_java_lang_reflect_Module_addExportsToAll0;
-                Java_java_lang_reflect_Module_addExportsToAllUnnamed0;
-                Java_java_lang_reflect_Module_addPackage0;
+                Java_java_lang_Module_defineModule0;
+                Java_java_lang_Module_addReads0;
+                Java_java_lang_Module_addExports0;
+                Java_java_lang_Module_addExportsToAll0;
+                Java_java_lang_Module_addExportsToAllUnnamed0;
+                Java_java_lang_Module_addPackage0;
 
 		Java_jdk_internal_loader_BootLoader_getSystemPackageLocation;
 		Java_jdk_internal_loader_BootLoader_getSystemPackageNames;

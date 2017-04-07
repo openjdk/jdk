@@ -26,15 +26,13 @@
 package jdk.internal.module;
 
 import java.lang.module.ModuleDescriptor;
-import java.lang.reflect.Layer;
-import java.lang.reflect.Module;
 import java.net.URI;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.ClassLoaders;
-import jdk.internal.misc.JavaLangReflectModuleAccess;
+import jdk.internal.misc.JavaLangAccess;
 import jdk.internal.misc.SharedSecrets;
 
 /**
@@ -51,8 +49,7 @@ import jdk.internal.misc.SharedSecrets;
 public class Modules {
     private Modules() { }
 
-    private static final JavaLangReflectModuleAccess JLRMA
-        = SharedSecrets.getJavaLangReflectModuleAccess();
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     /**
      * Creates a new Module. The module has the given ModuleDescriptor and
@@ -67,7 +64,7 @@ public class Modules {
                                       ModuleDescriptor descriptor,
                                       URI uri)
     {
-        return JLRMA.defineModule(loader, descriptor, uri);
+        return JLA.defineModule(loader, descriptor, uri);
     }
 
     /**
@@ -75,23 +72,14 @@ public class Modules {
      * Same as m1.addReads(m2) but without a caller check.
      */
     public static void addReads(Module m1, Module m2) {
-        JLRMA.addReads(m1, m2);
+        JLA.addReads(m1, m2);
     }
 
     /**
      * Update module m to read all unnamed modules.
      */
     public static void addReadsAllUnnamed(Module m) {
-        JLRMA.addReadsAllUnnamed(m);
-    }
-
-    /**
-     * Update module m to export a package to all modules.
-     *
-     * This method is for intended for use by tests only.
-     */
-    public static void addExports(Module m, String pn) {
-        JLRMA.addExports(m, pn);
+        JLA.addReadsAllUnnamed(m);
     }
 
     /**
@@ -99,23 +87,14 @@ public class Modules {
      * Same as m1.addExports(pn, m2) but without a caller check
      */
     public static void addExports(Module m1, String pn, Module m2) {
-        JLRMA.addExports(m1, pn, m2);
+        JLA.addExports(m1, pn, m2);
     }
 
     /**
      * Updates module m to export a package to all unnamed modules.
      */
     public static void addExportsToAllUnnamed(Module m, String pn) {
-        JLRMA.addExportsToAllUnnamed(m, pn);
-    }
-
-    /**
-     * Update module m to open a package to all modules.
-     *
-     * This method is for intended for use by tests only.
-     */
-    public static void addOpens(Module m, String pn) {
-        JLRMA.addOpens(m, pn);
+        JLA.addExportsToAllUnnamed(m, pn);
     }
 
     /**
@@ -123,14 +102,14 @@ public class Modules {
      * Same as m1.addOpens(pn, m2) but without a caller check.
      */
     public static void addOpens(Module m1, String pn, Module m2) {
-        JLRMA.addOpens(m1, pn, m2);
+        JLA.addOpens(m1, pn, m2);
     }
 
     /**
      * Updates module m to open a package to all unnamed modules.
      */
     public static void addOpensToAllUnnamed(Module m, String pn) {
-        JLRMA.addOpensToAllUnnamed(m, pn);
+        JLA.addOpensToAllUnnamed(m, pn);
     }
 
     /**
@@ -138,16 +117,16 @@ public class Modules {
      * Same as m2.addUses(service) but without a caller check.
      */
     public static void addUses(Module m, Class<?> service) {
-        JLRMA.addUses(m, service);
+        JLA.addUses(m, service);
     }
 
     /**
      * Updates module m to provide a service
      */
     public static void addProvides(Module m, Class<?> service, Class<?> impl) {
-        Layer layer = m.getLayer();
+        ModuleLayer layer = m.getLayer();
 
-        if (layer == null || layer == Layer.boot()) {
+        if (layer == null || layer == ModuleLayer.boot()) {
             // update ClassLoader catalog
             PrivilegedAction<ClassLoader> pa = m::getClassLoader;
             ClassLoader loader = AccessController.doPrivileged(pa);
@@ -162,9 +141,7 @@ public class Modules {
 
         if (layer != null) {
             // update Layer catalog
-            SharedSecrets.getJavaLangReflectModuleAccess()
-                    .getServicesCatalog(layer)
-                    .addProvider(m, service, impl);
+            JLA.getServicesCatalog(layer).addProvider(m, service, impl);
         }
     }
 

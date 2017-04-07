@@ -28,7 +28,6 @@ package javax.management.remote;
 import com.sun.jmx.mbeanserver.Util;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.lang.reflect.Module;
 import java.net.MalformedURLException;
 import java.util.Collections;
 import java.util.HashMap;
