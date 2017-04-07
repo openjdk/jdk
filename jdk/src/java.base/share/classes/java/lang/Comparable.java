@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,7 +124,7 @@ public interface Comparable<T> {
      * {@code sgn(}<i>expression</i>{@code )} designates the mathematical
      * <i>signum</i> function, which is defined to return one of {@code -1},
      * {@code 0}, or {@code 1} according to whether the value of
-     * <i>expression</i> is negative, zero or positive.
+     * <i>expression</i> is negative, zero, or positive, respectively.
      *
      * @param   o the object to be compared.
      * @return  a negative integer, zero, or a positive integer as this object
