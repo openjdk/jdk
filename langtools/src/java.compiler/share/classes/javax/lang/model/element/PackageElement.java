@@ -93,6 +93,9 @@ public interface PackageElement extends Element, QualifiedNameable {
      * source version} without modules.
      *
      * @return the enclosing module or {@code null} if no such module exists
+     *
+     * @revised 9
+     * @spec JPMS
      */
     @Override
     Element getEnclosingElement();

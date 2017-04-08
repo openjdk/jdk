@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,7 +127,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
         div.addStyle(HtmlStyle.header);
         if (configuration.showModules) {
             ModuleElement mdle = configuration.docEnv.getElementUtils().getModuleOf(packageElement);
-            Content classModuleLabel = HtmlTree.SPAN(HtmlStyle.moduleLabelInClass, contents.moduleLabel);
+            Content classModuleLabel = HtmlTree.SPAN(HtmlStyle.moduleLabelInPackage, contents.moduleLabel);
             Content moduleNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, classModuleLabel);
             moduleNameDiv.addContent(Contents.SPACE);
             moduleNameDiv.addContent(getModuleLink(mdle,

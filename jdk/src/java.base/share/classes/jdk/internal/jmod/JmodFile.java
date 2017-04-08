@@ -78,7 +78,7 @@ public class JmodFile implements AutoCloseable {
         HEADER_FILES("include"),
         LEGAL_NOTICES("legal"),
         MAN_PAGES("man"),
-        NATIVE_LIBS("native"),
+        NATIVE_LIBS("lib"),
         NATIVE_CMDS("bin");
 
         private final String jmodDir;
@@ -186,7 +186,7 @@ public class JmodFile implements AutoCloseable {
     public Entry getEntry(Section section, String name) {
         String entry = section.jmodDir() + "/" + name;
         ZipEntry ze = zipfile.getEntry(entry);
-        return (ze != null) ? new Entry(ze) : null;
+        return (ze == null || ze.isDirectory()) ? null : new Entry(ze);
     }
 
     /**
@@ -201,7 +201,7 @@ public class JmodFile implements AutoCloseable {
     {
         String entry = section.jmodDir() + "/" + name;
         ZipEntry e = zipfile.getEntry(entry);
-        if (e == null) {
+        if (e == null || e.isDirectory()) {
             throw new IOException(name + " not found: " + file);
         }
         return zipfile.getInputStream(e);

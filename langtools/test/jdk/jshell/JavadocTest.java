@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8131019 8169561
+ * @bug 8131019 8169561 8174245
  * @summary Test Javadoc
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -105,6 +105,53 @@ public class JavadocTest extends KullaTesting {
             throw new IllegalStateException(ex);
         }
         addToClasspath(compiler.getClassDir());
+    }
+
+    public void testCollectionsMin() {
+        prepareJavaUtilZip();
+        assertJavadoc("java.util.Collections.min(|",
+                      "T java.util.Collections.<T>min(java.util.Collection<? extends T> coll, java.util.Comparator<? super T> comp)\n" +
+                       " min comparator\n",
+                       "T java.util.Collections.<T extends Object & Comparable<? super T>>min(java.util.Collection<? extends T> coll)\n" +
+                       " min comparable\n");
+    }
+
+    private void prepareJavaUtilZip() {
+        String clazz =
+                "package java.util;\n" +
+                "/**Top level." +
+                " */\n" +
+                "public class Collections {\n" +
+                "    /**\n" +
+                "     * min comparable\n" +
+                "     */\n" +
+                "    public static <T extends Object & Comparable<? super T>> T min(Collection<? extends T> coll) {" +
+                "        return null;\n" +
+                "    }\n" +
+                "    /**\n" +
+                "     * min comparator\n" +
+                "     */\n" +
+                "        public static <T> T min(Collection<? extends T> coll, Comparator<? super T> comp) {\n" +
+                "        return null;\n" +
+                "    }\n" +
+                "}\n";
+
+        Path srcZip = Paths.get("src.zip");
+
+        try (JarOutputStream out = new JarOutputStream(Files.newOutputStream(srcZip))) {
+            out.putNextEntry(new JarEntry("java/util/Collections.java"));
+            out.write(clazz.getBytes());
+        } catch (IOException ex) {
+            throw new IllegalStateException(ex);
+        }
+
+        try {
+            Field availableSources = getAnalysis().getClass().getDeclaredField("availableSources");
+            availableSources.setAccessible(true);
+            availableSources.set(getAnalysis(), Arrays.asList(srcZip));
+        } catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException ex) {
+            throw new IllegalStateException(ex);
+        }
     }
 
 }

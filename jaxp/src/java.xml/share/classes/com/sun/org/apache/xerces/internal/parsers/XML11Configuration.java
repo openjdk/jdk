@@ -415,8 +415,14 @@ public class XML11Configuration extends ParserConfigurationSettings
     /** Current DTD scanner. */
     protected XMLDTDScanner fCurrentDTDScanner;
 
-    /** Flag indiciating whether XML11 components have been initialized. */
+    /** Flag indicating whether XML11 components have been initialized. */
     private boolean f11Initialized = false;
+
+    /** Flag indicating whether the symbol table instance was specified during construction **/
+    private boolean fSymbolTableProvided = false;
+
+    /** Flag indicating if the symbol table was initialized and never used before that **/
+    private boolean fSymbolTableJustInitialized = true;
 
     //
     // Constructors
@@ -566,15 +572,18 @@ public class XML11Configuration extends ParserConfigurationSettings
         };
         addRecognizedProperties(recognizedProperties);
 
-        if (symbolTable == null) {
-                symbolTable = new SymbolTable();
+        // Remember if symbolTable was provided from outside
+        fSymbolTableProvided = symbolTable != null;
+        if (!fSymbolTableProvided) {
+            fSymbolTable = new SymbolTable();
+        } else {
+            fSymbolTable = symbolTable;
         }
-        fSymbolTable = symbolTable;
         fProperties.put(SYMBOL_TABLE, fSymbolTable);
 
         fGrammarPool = grammarPool;
         if (fGrammarPool != null) {
-                        fProperties.put(XMLGRAMMAR_POOL, fGrammarPool);
+            fProperties.put(XMLGRAMMAR_POOL, fGrammarPool);
         }
 
         fEntityManager = new XMLEntityManager();
@@ -840,6 +849,7 @@ public class XML11Configuration extends ParserConfigurationSettings
                 fValidationManager.reset();
                 fVersionDetector.reset(this);
                 fConfigUpdated = true;
+                resetSymbolTable();
                 resetCommon();
 
                 short version = fVersionDetector.determineDocVersion(fInputSource);
@@ -858,15 +868,7 @@ public class XML11Configuration extends ParserConfigurationSettings
                 // resets and sets the pipeline.
                 fVersionDetector.startDocumentParsing((XMLEntityHandler) fCurrentScanner, version);
                 fInputSource = null;
-            } catch (XNIException ex) {
-                if (PRINT_EXCEPTION_STACK_TRACE)
-                    ex.printStackTrace();
-                throw ex;
-            } catch (IOException ex) {
-                if (PRINT_EXCEPTION_STACK_TRACE)
-                    ex.printStackTrace();
-                throw ex;
-            } catch (RuntimeException ex) {
+            } catch (IOException | RuntimeException ex) {
                 if (PRINT_EXCEPTION_STACK_TRACE)
                     ex.printStackTrace();
                 throw ex;
@@ -879,15 +881,7 @@ public class XML11Configuration extends ParserConfigurationSettings
 
         try {
             return fCurrentScanner.scanDocument(complete);
-        } catch (XNIException ex) {
-            if (PRINT_EXCEPTION_STACK_TRACE)
-                ex.printStackTrace();
-            throw ex;
-        } catch (IOException ex) {
-            if (PRINT_EXCEPTION_STACK_TRACE)
-                ex.printStackTrace();
-            throw ex;
-        } catch (RuntimeException ex) {
+        } catch (IOException | RuntimeException ex) {
             if (PRINT_EXCEPTION_STACK_TRACE)
                 ex.printStackTrace();
             throw ex;
@@ -1586,6 +1580,23 @@ public class XML11Configuration extends ParserConfigurationSettings
             addXML11Component(fXML11NSDTDValidator);
 
             f11Initialized = true;
+        }
+    }
+
+
+    /**
+     * Reset the symbol table if it wasn't provided during construction
+     * and its not the first time when parse is called after initialization
+     */
+    private void resetSymbolTable() {
+        if (!fSymbolTableProvided) {
+            if (fSymbolTableJustInitialized) {
+                // Skip symbol table reallocation for the first parsing process
+                fSymbolTableJustInitialized = false;
+            } else {
+                fSymbolTable = new SymbolTable();
+                fProperties.put(SYMBOL_TABLE, fSymbolTable);
+            }
         }
     }
 
