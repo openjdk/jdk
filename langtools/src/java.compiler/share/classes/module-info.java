@@ -29,6 +29,8 @@
   * These APIs model declarations and types of the Java programming language,
   * and define interfaces for tools such as compilers which can be invoked
   * from a program.
+  *
+  * @since 9
   */
 module java.compiler {
     exports javax.annotation.processing;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,11 +107,13 @@ public class EfficientStreamingTransformer
         }
     }
 
+    @Override
     public void clearParameters() {
         if (m_realTransformer != null)
             m_realTransformer.clearParameters();
     }
 
+    @Override
     public javax.xml.transform.ErrorListener getErrorListener() {
         try {
             materialize();
@@ -122,6 +124,7 @@ public class EfficientStreamingTransformer
         return null;
     }
 
+    @Override
     public java.util.Properties getOutputProperties() {
         try {
             materialize();
@@ -132,6 +135,7 @@ public class EfficientStreamingTransformer
         return null;
     }
 
+    @Override
     public String getOutputProperty(String str)
         throws java.lang.IllegalArgumentException {
         try {
@@ -143,6 +147,7 @@ public class EfficientStreamingTransformer
         return null;
     }
 
+    @Override
     public Object getParameter(String str) {
         try {
             materialize();
@@ -153,6 +158,7 @@ public class EfficientStreamingTransformer
         return null;
     }
 
+    @Override
     public javax.xml.transform.URIResolver getURIResolver() {
         try {
             materialize();
@@ -163,6 +169,7 @@ public class EfficientStreamingTransformer
         return null;
     }
 
+    @Override
     public void setErrorListener(
         javax.xml.transform.ErrorListener errorListener)
         throws java.lang.IllegalArgumentException {
@@ -174,6 +181,7 @@ public class EfficientStreamingTransformer
         }
     }
 
+    @Override
     public void setOutputProperties(java.util.Properties properties)
         throws java.lang.IllegalArgumentException {
         try {
@@ -184,6 +192,7 @@ public class EfficientStreamingTransformer
         }
     }
 
+    @Override
     public void setOutputProperty(String str, String str1)
         throws java.lang.IllegalArgumentException {
         try {
@@ -194,6 +203,7 @@ public class EfficientStreamingTransformer
         }
     }
 
+    @Override
     public void setParameter(String str, Object obj) {
         try {
             materialize();
@@ -203,6 +213,7 @@ public class EfficientStreamingTransformer
         }
     }
 
+    @Override
     public void setURIResolver(javax.xml.transform.URIResolver uRIResolver) {
         try {
             materialize();
@@ -272,6 +283,7 @@ public class EfficientStreamingTransformer
 
     //------------------------------------------------------------------------
 
+    @Override
     public void transform(
         javax.xml.transform.Source source,
         javax.xml.transform.Result result)
@@ -409,6 +421,8 @@ public class EfficientStreamingTransformer
      * Return Transformer instance for this thread, allocating a new one if
      * necessary. Note that this method does not clear global parameters,
      * properties or any other data set on a previously used transformer.
+     *
+     * @return Transformer instance
      */
     public static Transformer newTransformer() {
         //CR : 6813167

@@ -720,8 +720,9 @@ public final class Collectors {
      * the result is 0.
      *
      * @param <T> the type of the input elements
-     * @param mapper a function extracting the property to be summed
-     * @return a {@code Collector} that produces the sum of a derived property
+     * @param mapper a function extracting the property to be averaged
+     * @return a {@code Collector} that produces the arithmetic mean of a
+     * derived property
      */
     public static <T> Collector<T, ?, Double>
     averagingInt(ToIntFunction<? super T> mapper) {
@@ -738,8 +739,9 @@ public final class Collectors {
      * the result is 0.
      *
      * @param <T> the type of the input elements
-     * @param mapper a function extracting the property to be summed
-     * @return a {@code Collector} that produces the sum of a derived property
+     * @param mapper a function extracting the property to be averaged
+     * @return a {@code Collector} that produces the arithmetic mean of a
+     * derived property
      */
     public static <T> Collector<T, ?, Double>
     averagingLong(ToLongFunction<? super T> mapper) {
@@ -769,8 +771,9 @@ public final class Collectors {
      * 2<sup>53</sup>, leading to additional numerical errors.
      *
      * @param <T> the type of the input elements
-     * @param mapper a function extracting the property to be summed
-     * @return a {@code Collector} that produces the sum of a derived property
+     * @param mapper a function extracting the property to be averaged
+     * @return a {@code Collector} that produces the arithmetic mean of a
+     * derived property
      */
     public static <T> Collector<T, ?, Double>
     averagingDouble(ToDoubleFunction<? super T> mapper) {
