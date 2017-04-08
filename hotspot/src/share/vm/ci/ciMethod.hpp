@@ -353,6 +353,8 @@ class ciMethod : public ciMetadata {
   void print_name(outputStream* st = tty);
   void print_short_name(outputStream* st = tty);
 
+  static bool is_consistent_info(ciMethod* declared_method, ciMethod* resolved_method);
+
 #if INCLUDE_TRACE
   TraceStructCalleeMethod to_trace_struct() const;
 #endif
