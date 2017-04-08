@@ -118,11 +118,13 @@ public class Queue<T> implements ExceptionallyCloseable  {
     public synchronized void closeExceptionally(Throwable t) {
         if (exception == null) exception = t;
         else if (t != null && t != exception) {
-            Stream.of(exception.getSuppressed())
+            if (!Stream.of(exception.getSuppressed())
                 .filter(x -> x == t)
                 .findFirst()
-                .ifPresentOrElse((x) -> {},
-                                 () -> exception.addSuppressed(t));
+                .isPresent())
+            {
+                exception.addSuppressed(t);
+            }
         }
         close();
     }

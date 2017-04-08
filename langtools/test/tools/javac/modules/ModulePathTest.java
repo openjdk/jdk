@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8142968 8174104
  * @summary tests for --module-path
  * @library /tools/lib
  * @modules
@@ -57,7 +58,7 @@ public class ModulePathTest extends ModuleTestBase {
     }
 
     @Test
-    public void testNotExistsOnPath(Path base) throws Exception {
+    public void testNotExistsOnPath_noWarn(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "class C { }");
 
@@ -65,11 +66,29 @@ public class ModulePathTest extends ModuleTestBase {
                 .options("-XDrawDiagnostics",
                         "--module-path", "doesNotExist")
                 .files(findJavaFiles(src))
-                .run(Task.Expect.FAIL)
+                .run(Task.Expect.SUCCESS)
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
 
-        if (!log.contains("- compiler.err.illegal.argument.for.option: --module-path, doesNotExist"))
+        if (!log.isEmpty())
+            throw new Exception("unexpected output");
+    }
+
+    @Test
+    public void testNotExistsOnPath_warn(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, "class C { }");
+
+        String log = new JavacTask(tb, Task.Mode.CMDLINE)
+                .options("-XDrawDiagnostics",
+                        "-Xlint:path",
+                        "--module-path", "doesNotExist")
+                .files(findJavaFiles(src))
+                .run(Task.Expect.SUCCESS)
+                .writeAll()
+                .getOutput(Task.OutputKind.DIRECT);
+
+        if (!log.contains("- compiler.warn.path.element.not.found: doesNotExist"))
             throw new Exception("expected output not found");
     }
 

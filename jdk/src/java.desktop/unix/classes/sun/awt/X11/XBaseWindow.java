@@ -528,12 +528,12 @@ public class XBaseWindow {
                     if (maxBounds.width != Integer.MAX_VALUE) {
                         hints.set_max_width(scaleUp(maxBounds.width));
                     } else {
-                        hints.set_max_width(XToolkit.getDefaultScreenWidth());
+                        hints.set_max_width(XToolkit.getMaxWindowWidthInPixels());
                     }
                     if (maxBounds.height != Integer.MAX_VALUE) {
                         hints.set_max_height(scaleUp(maxBounds.height));
                     } else {
-                        hints.set_max_height(XToolkit.getDefaultScreenHeight());
+                        hints.set_max_height(XToolkit.getMaxWindowHeightInPixels());
                     }
                 } else {
                     hints.set_max_width(scaleUp(width));
@@ -545,12 +545,12 @@ public class XBaseWindow {
                     if (maxBounds.width != Integer.MAX_VALUE) {
                         hints.set_max_width(scaleUp(maxBounds.width));
                     } else {
-                        hints.set_max_width(scaleUp(XToolkit.getDefaultScreenWidth()));
+                        hints.set_max_width(XToolkit.getMaxWindowWidthInPixels());
                     }
                     if (maxBounds.height != Integer.MAX_VALUE) {
                         hints.set_max_height(scaleUp(maxBounds.height));
                     } else {
-                        hints.set_max_height(scaleUp(XToolkit.getDefaultScreenHeight()));
+                        hints.set_max_height(XToolkit.getMaxWindowHeightInPixels());
                     }
                 } else {
                     // Leave intact
