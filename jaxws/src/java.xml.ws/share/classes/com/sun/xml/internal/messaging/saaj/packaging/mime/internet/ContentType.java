@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,6 +136,7 @@ public final class ContentType {
     /**
      * Return the specified parameter value. Returns <code>null</code>
      * if this parameter is absent.
+     * @param name parameter name
      * @return  parameter value
      */
     public String getParameter(String name) {
@@ -200,6 +201,7 @@ public final class ContentType {
      *
      * @return  RFC2045 style string
      */
+    @Override
     public String toString() {
         if (primaryType == null || subType == null) // need both
             return null;
@@ -218,7 +220,7 @@ public final class ContentType {
     /**
      * Match with the specified ContentType object. This method
      * compares <strong>only the <code>primaryType</code> and
-     * <code>subType</code> </strong>. The parameters of both operands
+     * <code>primaryType</code> </strong>. The parameters of both operands
      * are ignored. <p>
      *
      * For example, this method will return <code>true</code> when
@@ -232,6 +234,8 @@ public final class ContentType {
      * and <strong>"text/*" </strong>
      *
      * @param   cType to compare this against
+     * @return true if <code>primaryType</code> and <code>subType</code>
+     * match specified content type.
      */
     public boolean match(ContentType cType) {
         // Match primaryType
@@ -266,6 +270,10 @@ public final class ContentType {
      * For example, this method will return <code>true</code> when
      * comparing the ContentType for <strong>"text/plain"</strong>
      * with <strong>"text/*" </strong>
+     *
+     * @param s content type
+     * @return true if <code>primaryType</code> and <code>subType</code>
+     * match specified content type.
      */
     public boolean match(String s) {
         try {

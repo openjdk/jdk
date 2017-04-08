@@ -25,17 +25,11 @@ package sampleapi.generator;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.io.InputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.ParserConfigurationException;
-import org.xml.sax.SAXException;
-import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -56,18 +50,19 @@ import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.TypeTag;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symtab;
+import java.nio.file.Path;
 
 import sampleapi.util.*;
-import sampleapi.SampleApi.Fault;
 
 public class PackageGenerator {
 
-    String packageName;
+    public String packageName;
     String packageDirName;
+    public String id;
 
     ArrayList<JCCompilationUnit> topLevels;
     Map<String, Integer> nameIndex;
-    Map<String, JCClassDecl> idBases;
+    public Map<String, JCClassDecl> idBases;
     Map<String, JCAnnotation> idAnnos;
 
     TreeMaker make;
@@ -92,48 +87,43 @@ public class PackageGenerator {
 
     boolean isDataSetProcessed = false;
 
-    public void processDataSet(File dsFile) throws Fault {
-        isDataSetProcessed = true;
-        topLevels = new ArrayList<>();
-        nameIndex = new HashMap<>();
-        idBases =  new HashMap<>();
-        idAnnos =  new HashMap<>();
-        fx = false;
+    public static PackageGenerator processDataSet(Element rootElement) {
+        PackageGenerator result = new PackageGenerator();
+        result.isDataSetProcessed = true;
+        result.topLevels = new ArrayList<>();
+        result.nameIndex = new HashMap<>();
+        result.idBases = new HashMap<>();
+        result.idAnnos = new HashMap<>();
+        result.fx = false;
 
-        try {
-            InputStream is = new FileInputStream(dsFile);
-
-            DocumentBuilder builder = factory.newDocumentBuilder();
-            Document document = builder.parse(is);
-
-            Element rootElement = document.getDocumentElement();
-            if (!rootElement.getTagName().equals("package"))
-                throw new IllegalStateException("Unexpected tag name: "
-                        + rootElement.getTagName());
-            packageName = rootElement.getAttribute("name");
-            fx = "fx".equals(rootElement.getAttribute("style"));
-            packageDirName = packageName.replace('.', '/');
-
-            // process nodes (toplevels)
-            NodeList nodeList = rootElement.getChildNodes();
-            for (int i = 0; i < nodeList.getLength(); i++) {
-                Node node = nodeList.item(i);
-
-                if (!(node instanceof Element))
-                    continue;
-                processTopLevel((Element) node);
-            }
-        } catch (ParserConfigurationException | SAXException | IOException e) {
-            throw new Fault("Error parsing dataset " + dsFile, e);
+        if (!rootElement.getTagName().equals("package")) {
+            throw new IllegalStateException("Unexpected tag name: "
+                    + rootElement.getTagName());
         }
+        result.packageName = rootElement.getAttribute("name");
+        result.id = rootElement.getAttribute("id");
+        result.fx = "fx".equals(rootElement.getAttribute("style"));
+        result.packageDirName = result.packageName.replace('.', '/');
+
+        // process nodes (toplevels)
+        NodeList nodeList = rootElement.getChildNodes();
+        for (int i = 0; i < nodeList.getLength(); i++) {
+            Node node = nodeList.item(i);
+
+            if (!(node instanceof Element)) {
+                continue;
+            }
+            result.processTopLevel((Element) node);
+        }
+        return result;
     }
 
-    public void generate(File outDir) throws Fault {
+    public void generate(Path outDir) {
         if (!isDataSetProcessed)
-            throw new Fault("No Data Set processed");
+            throw new RuntimeException("No Data Set processed");
 
         try {
-            File pkgDir = new File(outDir, packageDirName);
+            File pkgDir = new File(outDir.toFile(), packageDirName);
             pkgDir.mkdirs();
 
             for (JCCompilationUnit decl : topLevels) {
@@ -168,7 +158,7 @@ public class PackageGenerator {
             writer.flush();
             writer.close();
         } catch (IOException e) {
-            throw new Fault("Error writing output");
+            throw new RuntimeException("Error writing output");
         }
     }
 
@@ -211,6 +201,7 @@ public class PackageGenerator {
         String baseName = baseTag.getAttribute("basename");
         String typeParam = baseTag.getAttribute("tparam");
         String baseId = baseTag.getAttribute("id");
+        System.out.println("Found class id: " + baseId);
 
         long kindFlag = 0;
         switch (kind) {

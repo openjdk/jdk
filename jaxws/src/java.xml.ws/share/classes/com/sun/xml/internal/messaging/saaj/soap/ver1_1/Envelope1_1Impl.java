@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import javax.xml.soap.SOAPException;
 import com.sun.xml.internal.messaging.saaj.soap.SOAPDocumentImpl;
 import com.sun.xml.internal.messaging.saaj.soap.impl.EnvelopeImpl;
 import com.sun.xml.internal.messaging.saaj.soap.name.NameImpl;
+import org.w3c.dom.Element;
 
 public class Envelope1_1Impl extends EnvelopeImpl {
 
@@ -52,6 +53,11 @@ public class Envelope1_1Impl extends EnvelopeImpl {
             createHeader,
             createBody);
     }
+
+    public Envelope1_1Impl(SOAPDocumentImpl ownerDoc, Element domElement) {
+        super(ownerDoc, domElement);
+    }
+
     protected NameImpl getBodyName(String prefix) {
         return NameImpl.createBody1_1Name(prefix);
     }

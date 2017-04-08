@@ -22,8 +22,9 @@
  */
 
 /* @test
-   @bug 4117820
-   @summary Verify that SJIS.Decoder works properly for values between 0xA000 and 0xA0FC
+ * @bug 4117820
+ * @summary Verify that SJIS.Decoder works properly for values between 0xA000 and 0xA0FC
+ * @modules jdk.charsets
  */
 
 import java.nio.charset.*;

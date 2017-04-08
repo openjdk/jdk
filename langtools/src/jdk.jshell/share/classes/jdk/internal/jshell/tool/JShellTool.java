@@ -36,12 +36,9 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.Reader;
 import java.io.StringReader;
-import java.net.URL;
 import java.nio.charset.Charset;
-import java.nio.file.AccessDeniedException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
@@ -190,7 +187,7 @@ public class JShellTool implements MessageHandler {
     private Options options;
 
     SourceCodeAnalysis analysis;
-    JShell state = null;
+    private JShell state = null;
     Subscription shutdownSubscription = null;
 
     static final EditorSetting BUILT_IN_EDITOR = new EditorSetting(null, false);
@@ -198,6 +195,7 @@ public class JShellTool implements MessageHandler {
     private boolean debug = false;
     public boolean testPrompt = false;
     private Startup startup = null;
+    private boolean isCurrentlyRunningStartup = false;
     private String executionControlSpec = null;
     private EditorSetting editor = BUILT_IN_EDITOR;
 
@@ -352,9 +350,56 @@ public class JShellTool implements MessageHandler {
             }
         }
 
+        // check that the supplied string represent valid class/module paths
+        // converting any ~/ to user home
+        private Collection<String> validPaths(Collection<String> vals, String context, boolean isModulePath) {
+            Stream<String> result = vals.stream()
+                    .map(s -> Arrays.stream(s.split(File.pathSeparator))
+                        .map(sp -> toPathResolvingUserHome(sp))
+                        .filter(p -> checkValidPathEntry(p, context, isModulePath))
+                        .map(p -> p.toString())
+                        .collect(Collectors.joining(File.pathSeparator)));
+            if (failed) {
+                return Collections.emptyList();
+            } else {
+                return result.collect(toList());
+            }
+        }
+
+        // Adapted from compiler method Locations.checkValidModulePathEntry
+        private boolean checkValidPathEntry(Path p, String context, boolean isModulePath) {
+            if (!Files.exists(p)) {
+                msg("jshell.err.file.not.found", context, p);
+                failed = true;
+                return false;
+            }
+            if (Files.isDirectory(p)) {
+                // if module-path, either an exploded module or a directory of modules
+                return true;
+            }
+
+            String name = p.getFileName().toString();
+            int lastDot = name.lastIndexOf(".");
+            if (lastDot > 0) {
+                switch (name.substring(lastDot)) {
+                    case ".jar":
+                        return true;
+                    case ".jmod":
+                        if (isModulePath) {
+                            return true;
+                        }
+                }
+            }
+            msg("jshell.err.arg", context, p);
+            failed = true;
+            return false;
+        }
+
         Options parse(OptionSet options) {
-            addOptions(OptionKind.CLASS_PATH, options.valuesOf(argClassPath));
-            addOptions(OptionKind.MODULE_PATH, options.valuesOf(argModulePath));
+            addOptions(OptionKind.CLASS_PATH,
+                    validPaths(options.valuesOf(argClassPath), "--class-path", false));
+            addOptions(OptionKind.MODULE_PATH,
+                    validPaths(options.valuesOf(argModulePath), "--module-path", true));
             addOptions(OptionKind.ADD_MODULES, options.valuesOf(argAddModules));
             addOptions(OptionKind.ADD_EXPORTS, options.valuesOf(argAddExports).stream()
                     .map(mp -> mp.contains("=") ? mp : mp + "=ALL-UNNAMED")
@@ -812,6 +857,12 @@ public class JShellTool implements MessageHandler {
         }
     }
 
+    /**
+     * The entry point into the JShell tool.
+     *
+     * @param args the command-line arguments
+     * @throws Exception catastrophic fatal exception
+     */
     public void start(String[] args) throws Exception {
         OptionParserCommandLine commandLineArgs = new OptionParserCommandLine();
         options = commandLineArgs.parse(args);
@@ -842,30 +893,33 @@ public class JShellTool implements MessageHandler {
                 hardmsg("jshell.msg.welcome", version());
             }
             // Be sure history is always saved so that user code isn't lost
-            Runtime.getRuntime().addShutdownHook(new Thread() {
+            Thread shutdownHook = new Thread() {
                 @Override
                 public void run() {
                     replayableHistory.storeHistory(prefs);
                 }
-            });
+            };
+            Runtime.getRuntime().addShutdownHook(shutdownHook);
             // execute from user input
             try (IOContext in = new ConsoleIOContext(this, cmdin, console)) {
-                start(in);
-            }
-        }
-    }
-
-    private void start(IOContext in) {
-        try {
-            while (regenerateOnDeath) {
-                if (!live) {
-                    resetState();
+                while (regenerateOnDeath) {
+                    if (!live) {
+                        resetState();
+                    }
+                    run(in);
                 }
-                run(in);
+            } finally {
+                replayableHistory.storeHistory(prefs);
+                closeState();
+                try {
+                    Runtime.getRuntime().removeShutdownHook(shutdownHook);
+                } catch (Exception ex) {
+                    // ignore, this probably caused by VM aready being shutdown
+                    // and this is the last act anyhow
+                }
             }
-        } finally {
-            closeState();
         }
+        closeState();
     }
 
     private EditorSetting configEditor() {
@@ -966,7 +1020,19 @@ public class JShellTool implements MessageHandler {
         analysis = state.sourceCodeAnalysis();
         live = true;
 
-        startUpRun(startup.toString());
+        // Run the start-up script.
+        // Avoid an infinite loop running start-up while running start-up.
+        // This could, otherwise, occur when /env /reset or /reload commands are
+        // in the start-up script.
+        if (!isCurrentlyRunningStartup) {
+            try {
+                isCurrentlyRunningStartup = true;
+                startUpRun(startup.toString());
+            } finally {
+                isCurrentlyRunningStartup = false;
+            }
+        }
+        // Record subsequent snippets in the main namespace.
         currentNameSpace = mainNamespace;
     }
 
@@ -1019,6 +1085,8 @@ public class JShellTool implements MessageHandler {
         live = false;
         JShell oldState = state;
         if (oldState != null) {
+            state = null;
+            analysis = null;
             oldState.unsubscribe(shutdownSubscription); // No notification
             oldState.close();
         }
@@ -1636,6 +1704,11 @@ public class JShellTool implements MessageHandler {
         return null;
     }
 
+    // Attempt to stop currently running evaluation
+    void stop() {
+        state.stop();
+    }
+
     // --- Command implementations ---
 
     private static final String[] SET_SUBCOMMANDS = new String[]{
@@ -2006,7 +2079,6 @@ public class JShellTool implements MessageHandler {
     private boolean cmdExit() {
         regenerateOnDeath = false;
         live = false;
-        replayableHistory.storeHistory(prefs);
         fluffmsg("jshell.msg.goodbye");
         return true;
     }
@@ -2614,9 +2686,16 @@ public class JShellTool implements MessageHandler {
         if (stream == null) {
             return false;
         }
-        stream.forEachOrdered(mk
-                -> hard("  %s %s", mk.name(), mk.signature())
-        );
+        stream.forEachOrdered(meth -> {
+            String sig = meth.signature();
+            int i = sig.lastIndexOf(")") + 1;
+            if (i <= 0) {
+                hard("  %s", meth.name());
+            } else {
+                hard("  %s %s%s", sig.substring(i), meth.name(), sig.substring(0, i));
+            }
+            printSnippetStatus(meth, true);
+        });
         return true;
     }
 
@@ -2648,6 +2727,7 @@ public class JShellTool implements MessageHandler {
                     break;
             }
             hard("  %s %s", kind, ck.name());
+            printSnippetStatus(ck, true);
         });
         return true;
     }
@@ -2782,7 +2862,7 @@ public class JShellTool implements MessageHandler {
         }
     }
     //where
-    private boolean processCompleteSource(String source) throws IllegalStateException {
+    boolean processCompleteSource(String source) throws IllegalStateException {
         debug("Compiling: %s", source);
         boolean failed = false;
         boolean isActive = false;
@@ -2837,7 +2917,8 @@ public class JShellTool implements MessageHandler {
                         return true;
                     }
                 } else {
-                    new DisplayEvent(ste, false, ste.value(), diagnostics).displayDeclarationAndValue();
+                    new DisplayEvent(ste, FormatWhen.PRIMARY, ste.value(), diagnostics)
+                            .displayDeclarationAndValue();
                 }
             } else {
                 if (diagnostics.isEmpty()) {
@@ -2851,7 +2932,8 @@ public class JShellTool implements MessageHandler {
                 List<Diag> other = errorsOnly(diagnostics);
 
                 // display update information
-                new DisplayEvent(ste, true, ste.value(), other).displayDeclarationAndValue();
+                new DisplayEvent(ste, FormatWhen.UPDATE, ste.value(), other)
+                        .displayDeclarationAndValue();
             }
         }
         return false;
@@ -2889,10 +2971,7 @@ public class JShellTool implements MessageHandler {
     }
     //where
     void printUnresolvedException(UnresolvedReferenceException ex) {
-        DeclarationSnippet corralled =  ex.getSnippet();
-        List<Diag> otherErrors = errorsOnly(state.diagnostics(corralled).collect(toList()));
-        new DisplayEvent(corralled, state.status(corralled), FormatAction.USED, true, null, otherErrors)
-                .displayDeclarationAndValue();
+        printSnippetStatus(ex.getSnippet(), false);
     }
     //where
     void printEvalException(EvalException ex) {
@@ -2934,29 +3013,50 @@ public class JShellTool implements MessageHandler {
         return act;
     }
 
+    void printSnippetStatus(DeclarationSnippet sn, boolean resolve) {
+        List<Diag> otherErrors = errorsOnly(state.diagnostics(sn).collect(toList()));
+        new DisplayEvent(sn, state.status(sn), resolve, otherErrors)
+                .displayDeclarationAndValue();
+    }
+
     class DisplayEvent {
         private final Snippet sn;
         private final FormatAction action;
-        private final boolean update;
+        private final FormatWhen update;
         private final String value;
         private final List<String> errorLines;
         private final FormatResolve resolution;
         private final String unresolved;
         private final FormatUnresolved unrcnt;
         private final FormatErrors errcnt;
+        private final boolean resolve;
 
-        DisplayEvent(SnippetEvent ste, boolean update, String value, List<Diag> errors) {
-            this(ste.snippet(), ste.status(), toAction(ste.status(), ste.previousStatus(), ste.isSignatureChange()), update, value, errors);
+        DisplayEvent(SnippetEvent ste, FormatWhen update, String value, List<Diag> errors) {
+            this(ste.snippet(), ste.status(), false,
+                    toAction(ste.status(), ste.previousStatus(), ste.isSignatureChange()),
+                    update, value, errors);
         }
 
-        DisplayEvent(Snippet sn, Status status, FormatAction action, boolean update, String value, List<Diag> errors) {
+        DisplayEvent(Snippet sn, Status status, boolean resolve, List<Diag> errors) {
+            this(sn, status, resolve, FormatAction.USED, FormatWhen.UPDATE, null, errors);
+        }
+
+        private DisplayEvent(Snippet sn, Status status, boolean resolve,
+                FormatAction action, FormatWhen update, String value, List<Diag> errors) {
             this.sn = sn;
+            this.resolve =resolve;
             this.action = action;
             this.update = update;
             this.value = value;
             this.errorLines = new ArrayList<>();
             for (Diag d : errors) {
                 displayDiagnostics(sn.source(), d, errorLines);
+            }
+            if (resolve) {
+                // resolve needs error lines indented
+                for (int i = 0; i < errorLines.size(); ++i) {
+                    errorLines.set(i, "    " + errorLines.get(i));
+                }
             }
             long unresolvedCount;
             if (sn instanceof DeclarationSnippet && (status == Status.RECOVERABLE_DEFINED || status == Status.RECOVERABLE_NOT_DEFINED)) {
@@ -3012,10 +3112,17 @@ public class JShellTool implements MessageHandler {
         }
 
         private void custom(FormatCase fcase, String name, String type) {
-            String display = feedback.format(fcase, action, (update ? FormatWhen.UPDATE : FormatWhen.PRIMARY),
-                    resolution, unrcnt, errcnt,
-                    name, type, value, unresolved, errorLines);
-            if (interactive()) {
+            if (resolve) {
+                String resolutionErrors = feedback.format("resolve", fcase, action, update,
+                        resolution, unrcnt, errcnt,
+                        name, type, value, unresolved, errorLines);
+                if (!resolutionErrors.trim().isEmpty()) {
+                    hard("    %s", resolutionErrors);
+                }
+            } else if (interactive()) {
+                String display = feedback.format(fcase, action, update,
+                        resolution, unrcnt, errcnt,
+                        name, type, value, unresolved, errorLines);
                 cmdout.print(display);
             }
         }

@@ -31,7 +31,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class ClassNameSourceProvider implements SourceProvider {
-    public final static String TYPE = "classname";
+    public final static String TYPE = "class";
     private final ClassLoader classLoader;
 
     public ClassNameSourceProvider(FileSupport fileSupport) {
@@ -47,6 +47,10 @@ public class ClassNameSourceProvider implements SourceProvider {
 
     @Override
     public ClassSource findSource(String name, SearchPath searchPath) {
+        Path path = Paths.get(name);
+        if (ClassSource.pathIsClassFile(path)) {
+            name = ClassSource.makeClassName(path);
+        }
         try {
             classLoader.loadClass(name);
             return new ClassNameSource(name, classLoader);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,9 @@ import java.util.Map;
 
 import javax.xml.namespace.QName;
 
+import com.sun.xml.internal.bind.Util;
 import com.sun.xml.internal.bind.api.AccessorException;
+import com.sun.xml.internal.bind.api.JAXBRIContext;
 import com.sun.xml.internal.bind.v2.WellKnownNamespace;
 import com.sun.xml.internal.bind.v2.runtime.ClassBeanInfoImpl;
 import com.sun.xml.internal.bind.v2.runtime.JAXBContextImpl;
@@ -231,11 +233,26 @@ public final class StructureLoader extends Loader {
     @Override
     public void childElement(UnmarshallingContext.State state, TagName arg) throws SAXException {
         ChildLoader child = childUnmarshallers.get(arg.uri,arg.local);
-        if (child == null) {
-            child = catchAll;
-            if (child==null) {
-                super.childElement(state,arg);
-                return;
+        if(child == null) {
+            Boolean backupWithParentNamespace = ((JAXBContextImpl) state.getContext().getJAXBContext()).backupWithParentNamespace;
+                        backupWithParentNamespace = backupWithParentNamespace != null
+                                        ? backupWithParentNamespace
+                                        : Boolean.parseBoolean(Util.getSystemProperty(JAXBRIContext.BACKUP_WITH_PARENT_NAMESPACE));
+            if ((beanInfo != null) && (beanInfo.getTypeNames() != null) && backupWithParentNamespace) {
+                Iterator<?> typeNamesIt = beanInfo.getTypeNames().iterator();
+                QName parentQName = null;
+                if ((typeNamesIt != null) && (typeNamesIt.hasNext()) && (catchAll == null)) {
+                    parentQName = (QName) typeNamesIt.next();
+                    String parentUri = parentQName.getNamespaceURI();
+                    child = childUnmarshallers.get(parentUri, arg.local);
+                }
+            }
+            if (child == null) {
+                child = catchAll;
+                if(child==null) {
+                    super.childElement(state,arg);
+                    return;
+                }
             }
         }
 
