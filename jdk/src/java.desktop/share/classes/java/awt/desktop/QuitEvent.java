@@ -28,7 +28,7 @@ package java.awt.desktop;
 /**
  * Event sent when the application is asked to quit.
  *
- * @see QuitHandler#handleQuitRequestWith(AppEvent.QuitEvent, QuitResponse)
+ * @see QuitHandler#handleQuitRequestWith(QuitEvent, QuitResponse)
  *
  * @since 9
  */

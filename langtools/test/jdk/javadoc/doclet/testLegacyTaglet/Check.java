@@ -26,12 +26,11 @@ import java.util.List;
 import java.util.Set;
 
 import com.sun.source.doctree.DocTree;
-import jdk.javadoc.doclet.taglet.Taglet;
+import jdk.javadoc.doclet.Taglet;
 
 public class Check implements Taglet {
 
     private static final String TAG_NAME = "check";
-    private static final String TAG_HEADER = "Check:";
 
     private final EnumSet<Location> allowedSet = EnumSet.allOf(Location.class);
 
@@ -45,6 +44,7 @@ public class Check implements Taglet {
      *
      * @return false since the tag is not an inline tag.
      */
+    @Override
     public boolean isInlineTag() {
         return false;
     }
@@ -54,28 +54,19 @@ public class Check implements Taglet {
      *
      * @return the name of this tag.
      */
+    @Override
     public String getName() {
         return TAG_NAME;
     }
 
     /**
-     * Given the DocTree representation of this custom tag, return its string
-     * representation.
-     *
-     * @param tag the DocTree representing this custom tag.
-     */
-    public String toString(DocTree tag) {
-        return "<dt><span class=\"simpleTagLabel\">" + TAG_HEADER + ":</span></dt><dd>" +
-                tag.toString() + "</dd>\n";
-    }
-
-    /**
-     * Given an array of DocTrees representing this custom tag, return its string
+     * Given a list of DocTrees representing this custom tag, return its string
      * representation.
      *
      * @param tags the array of tags representing this custom tag.
      * @return null to test if the javadoc throws an exception or not.
      */
+    @Override
     public String toString(List<? extends DocTree> tags) {
         return null;
     }

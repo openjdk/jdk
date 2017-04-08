@@ -1486,6 +1486,10 @@ jvmtiEnv *jvmti;
       <description>
         Get the current thread.  
         The current thread is the Java programming language thread which has called the function.
+        The function may return <code>NULL</code> in the start phase if the
+        <internallink id="jvmtiCapabilities.can_generate_early_vmstart">
+        <code>can_generate_early_vmstart</code></internallink> capability is enabled
+        and the <code>java.lang.Thread</code> class has not been initialized yet.
         <p/>
         Note that most <jvmti/> functions that take a thread 
         as an argument will accept <code>NULL</code> to mean 
@@ -1498,7 +1502,7 @@ jvmtiEnv *jvmti;
         <param id="thread_ptr">
 	  <outptr><jthread/></outptr>
 	  <description>
-	     On return, points to the current thread.
+	     On return, points to the current thread, or <code>NULL</code>.
 	  </description>
 	</param>
       </parameters>
@@ -14734,6 +14738,11 @@ typedef void (JNICALL *jvmtiEventVMInit)
           - AddModuleReads, AddModuleExports, AddModuleOpens, AddModuleUses, AddModuleProvides
       Clarified can_redefine_any_classes, can_retransform_any_classes and IsModifiableClass API to
       disallow some implementation defined classes.
+  </change>
+  <change date="12 February 2017" version="9.0.0">
+      Minor update for GetCurrentThread function:
+       - The function may return NULL in the start phase if the
+         can_generate_early_vmstart capability is enabled.
   </change>
 </changehistory>
 

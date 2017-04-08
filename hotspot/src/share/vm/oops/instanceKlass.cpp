@@ -2806,7 +2806,7 @@ nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_le
   return NULL;
 }
 
-bool InstanceKlass::add_member_name(Handle mem_name) {
+oop InstanceKlass::add_member_name(Handle mem_name, bool intern) {
   jweak mem_name_wref = JNIHandles::make_weak_global(mem_name);
   MutexLocker ml(MemberNameTable_lock);
   DEBUG_ONLY(NoSafepointVerifier nsv);
@@ -2816,7 +2816,7 @@ bool InstanceKlass::add_member_name(Handle mem_name) {
   // is called!
   Method* method = (Method*)java_lang_invoke_MemberName::vmtarget(mem_name());
   if (method->is_obsolete()) {
-    return false;
+    return NULL;
   } else if (method->is_old()) {
     // Replace method with redefined version
     java_lang_invoke_MemberName::set_vmtarget(mem_name(), method_with_idnum(method->method_idnum()));
@@ -2825,8 +2825,11 @@ bool InstanceKlass::add_member_name(Handle mem_name) {
   if (_member_names == NULL) {
     _member_names = new (ResourceObj::C_HEAP, mtClass) MemberNameTable(idnum_allocated_count());
   }
-  _member_names->add_member_name(mem_name_wref);
-  return true;
+  if (intern) {
+    return _member_names->find_or_add_member_name(mem_name_wref);
+  } else {
+    return _member_names->add_member_name(mem_name_wref);
+  }
 }
 
 // -----------------------------------------------------------------------------------------------------

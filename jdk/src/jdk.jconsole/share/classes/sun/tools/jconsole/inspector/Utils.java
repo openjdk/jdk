@@ -438,7 +438,7 @@ public class Utils {
         public void keyPressed(KeyEvent e) {
             // Accept "copy" key strokes
             KeyStroke ks = KeyStroke.getKeyStroke(
-                    e.getKeyCode(), e.getModifiers());
+                    e.getKeyCode(), e.getModifiersEx());
             JComponent comp = (JComponent) e.getSource();
             for (int i = 0; i < 3; i++) {
                 InputMap im = comp.getInputMap(i);

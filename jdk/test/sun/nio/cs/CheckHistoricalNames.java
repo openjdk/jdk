@@ -22,8 +22,9 @@
  */
 
 /* @test
-   @bug 4513767 4961027 6217210
-   @summary Checks canonical names match between old and (NIO) core charsets
+ * @bug 4513767 4961027 6217210
+ * @summary Checks canonical names match between old and (NIO) core charsets
+ * @modules jdk.charsets
  */
 import java.io.InputStreamReader;
 import java.io.IOException;
