@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@ import java.lang.module.ModuleDescriptor.Exports;
 import java.lang.module.ResolvedModule;
 import java.lang.reflect.Layer;
 import java.lang.reflect.Module;
+import java.nio.file.spi.FileSystemProvider;  // service type in java.base
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+import javax.print.PrintServiceLookup;        // service type in java.desktop
 
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
@@ -170,6 +172,14 @@ public class BasicModuleTest {
 
         // canRead
         assertTrue(base.canRead(base));
+        assertFalse(base.canRead(thisModule));
+
+        // addReads
+        try {
+            base.addReads(thisModule);
+            assertTrue(false);
+        } catch (IllegalCallerException expected) { }
+        assertFalse(base.canRead(thisModule));
 
         // isExported
         assertTrue(base.isExported("java.lang"));
@@ -182,6 +192,18 @@ public class BasicModuleTest {
         assertFalse(base.isExported("java.wombat", thisModule));
         assertFalse(base.isExported("java.wombat", base));
 
+        // addExports
+        try {
+            base.addExports("java.lang", thisModule);
+            assertTrue(false);
+        } catch (IllegalCallerException expected) { }
+        try {
+            base.addExports("jdk.internal.misc", thisModule);
+            assertTrue(false);
+        } catch (IllegalCallerException expected) { }
+        assertFalse(base.isExported("jdk.internal.misc"));
+        assertFalse(base.isExported("jdk.internal.misc", thisModule));
+
         // isOpen
         assertFalse(base.isOpen("java.lang"));
         assertFalse(base.isOpen("java.lang", thisModule));
@@ -192,6 +214,29 @@ public class BasicModuleTest {
         assertFalse(base.isOpen("java.wombat"));
         assertFalse(base.isOpen("java.wombat", thisModule));
         assertFalse(base.isOpen("java.wombat", base));
+
+        // addOpens
+        try {
+            base.addOpens("jdk.internal.misc", thisModule);
+            assertTrue(false);
+        } catch (IllegalCallerException expected) { }
+        assertFalse(base.isOpen("jdk.internal.misc"));
+        assertFalse(base.isOpen("jdk.internal.misc", thisModule));
+
+        // canUse
+        assertTrue(base.canUse(FileSystemProvider.class));
+        assertFalse(base.canUse(Thread.class));
+
+        // addUses
+        try {
+            base.addUses(FileSystemProvider.class);
+            assertTrue(false);
+        } catch (IllegalCallerException expected) { }
+        try {
+            base.addUses(Thread.class);
+            assertTrue(false);
+        } catch (IllegalCallerException expected) { }
+        assertFalse(base.canUse(Thread.class));
     }
 
 
@@ -226,26 +271,68 @@ public class BasicModuleTest {
         assertTrue(desktop.canRead(base));
         assertTrue(desktop.canRead(xml));
 
+        // addReads
+        try {
+            desktop.addReads(thisModule);
+            assertTrue(false);
+        } catch (IllegalCallerException expected) { }
+        assertFalse(desktop.canRead(thisModule));
+
         // isExported
         assertTrue(desktop.isExported("java.awt"));
         assertTrue(desktop.isExported("java.awt", thisModule));
+        assertFalse(desktop.isExported("sun.awt"));
+        assertFalse(desktop.isExported("sun.awt", thisModule));
+        assertTrue(desktop.isExported("sun.awt", desktop));
         assertFalse(desktop.isExported("java.wombat"));
         assertFalse(desktop.isExported("java.wombat", thisModule));
+        assertFalse(desktop.isExported("java.wombat", base));
+
+        // addExports
+        try {
+            desktop.addExports("java.awt", thisModule);
+            assertTrue(false);
+        } catch (IllegalCallerException expected) { }
+        try {
+            desktop.addExports("sun.awt", thisModule);
+            assertTrue(false);
+        } catch (IllegalCallerException expected) { }
+        assertFalse(desktop.isExported("sun.awt"));
+        assertFalse(desktop.isExported("sun.awt", thisModule));
+
+        // isOpen
+        assertFalse(desktop.isOpen("java.awt"));
+        assertFalse(desktop.isOpen("java.awt", thisModule));
+        assertTrue(desktop.isOpen("java.awt", desktop));
+        assertFalse(desktop.isOpen("sun.awt"));
+        assertFalse(desktop.isOpen("sun.awt", thisModule));
+        assertTrue(desktop.isOpen("sun.awt", desktop));
+        assertFalse(desktop.isOpen("java.wombat"));
+        assertFalse(desktop.isOpen("java.wombat", thisModule));
+        assertFalse(desktop.isOpen("java.wombat", desktop));
+
+        // addOpens
+        try {
+            base.addOpens("sun.awt", thisModule);
+            assertTrue(false);
+        } catch (IllegalCallerException expected) { }
+        assertFalse(desktop.isOpen("sun.awt"));
+        assertFalse(desktop.isOpen("sun.awt", thisModule));
+
+        // canUse
+        assertTrue(base.canUse(FileSystemProvider.class));
+        assertFalse(base.canUse(Thread.class));
+
+        // addUses
+        try {
+            desktop.addUses(PrintServiceLookup.class);
+            assertTrue(false);
+        } catch (IllegalCallerException expected) { }
+        try {
+            desktop.addUses(Thread.class);
+            assertTrue(false);
+        } catch (IllegalCallerException expected) { }
+        assertFalse(desktop.canUse(Thread.class));
     }
-
-
-    @Test(expectedExceptions = { NullPointerException.class })
-    public void testIsExportedNull() {
-        Module thisModule = this.getClass().getModule();
-        thisModule.isExported(null, thisModule);
-    }
-
-
-    @Test(expectedExceptions = { NullPointerException.class })
-    public void testIsExportedToNull() {
-        Module thisModule = this.getClass().getModule();
-        thisModule.isExported("", null);
-    }
-
 
 }

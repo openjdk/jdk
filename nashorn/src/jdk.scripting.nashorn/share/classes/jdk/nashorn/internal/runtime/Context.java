@@ -1372,7 +1372,7 @@ public final class Context {
         };
 
         final Configuration cf = parent.configuration()
-                .resolveRequires(finder, ModuleFinder.of(), Set.of(mn));
+                .resolve(finder, ModuleFinder.of(), Set.of(mn));
 
         final PrivilegedAction<Layer> pa = () -> parent.defineModules(cf, name -> loader);
         final Layer layer = AccessController.doPrivileged(pa, GET_LOADER_ACC_CTXT);
@@ -1798,7 +1798,7 @@ public final class Context {
 
         final Layer boot = Layer.boot();
         final Configuration conf = boot.configuration().
-            resolveRequires(mf, ModuleFinder.of(), rootMods);
+            resolve(mf, ModuleFinder.of(), rootMods);
         final String firstMod = rootMods.iterator().next();
         return boot.defineModulesWithOneLoader(conf, cl).findLoader(firstMod);
     }

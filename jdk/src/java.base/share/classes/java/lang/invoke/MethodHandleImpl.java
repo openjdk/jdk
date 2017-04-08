@@ -399,7 +399,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             assert(RETURN_CONV == names.length-1);
         }
 
-        LambdaForm form = new LambdaForm("convert", lambdaType.parameterCount(), names, RESULT);
+        LambdaForm form = new LambdaForm(lambdaType.parameterCount(), names, RESULT, Kind.CONVERT);
         return SimpleMethodHandle.make(srcType, form);
     }
 
@@ -608,7 +608,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         }
         names[names.length - 1] = new Name(target, (Object[]) targetArgs);
 
-        LambdaForm form = new LambdaForm("spread", lambdaType.parameterCount(), names);
+        LambdaForm form = new LambdaForm(lambdaType.parameterCount(), names, Kind.SPREAD);
         return SimpleMethodHandle.make(srcType, form);
     }
 
@@ -676,7 +676,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         assert(inputArgPos + chunk == collectNamePos);  // use of rest of input args also
         names[targetNamePos] = new Name(target, (Object[]) targetArgs);
 
-        LambdaForm form = new LambdaForm("collect", lambdaType.parameterCount(), names);
+        LambdaForm form = new LambdaForm(lambdaType.parameterCount(), names, Kind.COLLECT);
         return SimpleMethodHandle.make(srcType, form);
     }
 
@@ -774,7 +774,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             @Override
             public LambdaForm apply(MethodHandle target) {
                 return DelegatingMethodHandle.makeReinvokerForm(target,
-                                   MethodTypeForm.LF_DELEGATE_BLOCK_INLINING, CountingWrapper.class, "reinvoker.dontInline", false,
+                                   MethodTypeForm.LF_DELEGATE_BLOCK_INLINING, CountingWrapper.class, false,
                                    DelegatingMethodHandle.NF_getTarget, CountingWrapper.NF_maybeStopCounting);
             }
         };
@@ -943,7 +943,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         invokeArgs[0] = names[SELECT_ALT];
         names[CALL_TARGET] = new Name(basicType, invokeArgs);
 
-        lform = new LambdaForm("guard", lambdaType.parameterCount(), names, /*forceInline=*/true);
+        lform = new LambdaForm(lambdaType.parameterCount(), names, /*forceInline=*/true, Kind.GUARD);
 
         return basicType.form().setCachedLambdaForm(MethodTypeForm.LF_GWT, lform);
     }
@@ -1019,7 +1019,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         Object[] unboxArgs  = new Object[] {names[GET_UNBOX_RESULT], names[TRY_CATCH]};
         names[UNBOX_RESULT] = new Name(invokeBasicUnbox, unboxArgs);
 
-        lform = new LambdaForm("guardWithCatch", lambdaType.parameterCount(), names);
+        lform = new LambdaForm(lambdaType.parameterCount(), names, Kind.GUARD_WITH_CATCH);
 
         return basicType.form().setCachedLambdaForm(MethodTypeForm.LF_GWC, lform);
     }
@@ -1886,7 +1886,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             names[UNBOX_RESULT] = new Name(invokeBasicUnbox, unboxArgs);
 
             lform = basicType.form().setCachedLambdaForm(MethodTypeForm.LF_LOOP,
-                    new LambdaForm("loop", lambdaType.parameterCount(), names));
+                    new LambdaForm(lambdaType.parameterCount(), names, Kind.LOOP));
         }
 
         // BOXED_ARGS is the index into the names array where the loop idiom starts
@@ -2120,7 +2120,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         Object[] unboxArgs  = new Object[] {names[GET_UNBOX_RESULT], names[TRY_FINALLY]};
         names[UNBOX_RESULT] = new Name(invokeBasicUnbox, unboxArgs);
 
-        lform = new LambdaForm("tryFinally", lambdaType.parameterCount(), names);
+        lform = new LambdaForm(lambdaType.parameterCount(), names, Kind.TRY_FINALLY);
 
         return basicType.form().setCachedLambdaForm(MethodTypeForm.LF_TF, lform);
     }

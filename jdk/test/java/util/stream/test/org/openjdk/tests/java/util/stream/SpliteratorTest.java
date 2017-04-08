@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.Spliterator;
+import java.util.SpliteratorTestHelper;
 import java.util.stream.*;
 
 import static org.testng.Assert.*;

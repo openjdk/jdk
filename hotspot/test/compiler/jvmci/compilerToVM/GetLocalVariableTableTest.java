@@ -30,13 +30,13 @@
  * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.org.objectweb.asm.tree
- *          jdk.vm.ci/jdk.vm.ci.hotspot
- *          jdk.vm.ci/jdk.vm.ci.code
+ *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
+ *          jdk.internal.vm.ci/jdk.vm.ci.code
  * @clean compiler.jvmci.compilerToVM.*
  * @compile -g DummyInterface.java
  * @compile -g DummyAbstractClass.java
  * @compile -g DummyClass.java
- * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
+ * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *                   compiler.jvmci.compilerToVM.GetLocalVariableTableTest
  * @clean compiler.jvmci.compilerToVM.*
