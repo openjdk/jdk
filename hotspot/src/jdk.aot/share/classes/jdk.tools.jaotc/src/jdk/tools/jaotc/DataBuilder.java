@@ -70,8 +70,8 @@ class DataBuilder {
      */
     private void fillVMAddresses(HotSpotVMConfigStore config) {
         for (VMField vmField : config.getFields().values()) {
-            if (vmField.value != null) {
-                final long address = vmField.value;
+            if (vmField.value != null && vmField.value instanceof Long) {
+                final long address = (Long) vmField.value;
                 String value = vmField.name;
                 /*
                  * Some fields don't contain addresses but integer values. At least don't add zero

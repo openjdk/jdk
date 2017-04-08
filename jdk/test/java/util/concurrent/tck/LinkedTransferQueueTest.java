@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
@@ -766,9 +767,11 @@ public class LinkedTransferQueueTest extends JSR166TestCase {
             }});
 
         threadStarted.await();
-        waitForThreadToEnterWaitState(t);
-        assertEquals(1, q.getWaitingConsumerCount());
-        assertTrue(q.hasWaitingConsumer());
+        Callable<Boolean> oneConsumer
+            = new Callable<Boolean>() { public Boolean call() {
+                return q.hasWaitingConsumer()
+                && q.getWaitingConsumerCount() == 1; }};
+        waitForThreadToEnterWaitState(t, oneConsumer);
 
         assertTrue(q.offer(one));
         assertEquals(0, q.getWaitingConsumerCount());
@@ -790,7 +793,7 @@ public class LinkedTransferQueueTest extends JSR166TestCase {
 
     /**
      * transfer waits until a poll occurs. The transfered element
-     * is returned by this associated poll.
+     * is returned by the associated poll.
      */
     public void testTransfer2() throws InterruptedException {
         final LinkedTransferQueue<Integer> q = new LinkedTransferQueue<>();
@@ -804,8 +807,11 @@ public class LinkedTransferQueueTest extends JSR166TestCase {
             }});
 
         threadStarted.await();
-        waitForThreadToEnterWaitState(t);
-        assertEquals(1, q.size());
+        Callable<Boolean> oneElement
+            = new Callable<Boolean>() { public Boolean call() {
+                return !q.isEmpty() && q.size() == 1; }};
+        waitForThreadToEnterWaitState(t, oneElement);
+
         assertSame(five, q.poll());
         checkEmpty(q);
         awaitTermination(t);
@@ -868,7 +874,7 @@ public class LinkedTransferQueueTest extends JSR166TestCase {
 
     /**
      * transfer waits until a take occurs. The transfered element
-     * is returned by this associated take.
+     * is returned by the associated take.
      */
     public void testTransfer5() throws InterruptedException {
         final LinkedTransferQueue<Integer> q = new LinkedTransferQueue<>();

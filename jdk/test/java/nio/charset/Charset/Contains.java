@@ -24,6 +24,7 @@
 /* @test
  * @summary Unit test for charset containment
  * @bug 6798572
+ * @modules jdk.charsets
  */
 
 import java.nio.charset.*;

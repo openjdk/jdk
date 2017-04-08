@@ -25,6 +25,8 @@
 
 /**
  * Defines an API for XML cryptography.
+ *
+ * @since 9
  */
 module java.xml.crypto {
     requires transitive java.xml;

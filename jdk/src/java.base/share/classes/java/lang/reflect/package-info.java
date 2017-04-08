@@ -45,5 +45,7 @@
  * members declared by a given class.
  *
  * @since 1.1
+ * @revised 9
+ * @spec JPMS
  */
 package java.lang.reflect;
