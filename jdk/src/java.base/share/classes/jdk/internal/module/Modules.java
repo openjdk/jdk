@@ -82,8 +82,8 @@ public class Modules {
                                       String name,
                                       Set<String> packages)
     {
-        ModuleDescriptor descriptor = ModuleDescriptor.module(name)
-                .contains(packages)
+        ModuleDescriptor descriptor = ModuleDescriptor.newModule(name)
+                .packages(packages)
                 .build();
 
         return JLRMA.defineModule(loader, descriptor, null);
@@ -185,7 +185,8 @@ public class Modules {
     /**
      * Adds a package to a module's content.
      *
-     * This method is a no-op if the module already contains the package.
+     * This method is a no-op if the module already contains the package or the
+     * module is an unnamed module.
      */
     public static void addPackage(Module m, String pn) {
         JLRMA.addPackage(m, pn);

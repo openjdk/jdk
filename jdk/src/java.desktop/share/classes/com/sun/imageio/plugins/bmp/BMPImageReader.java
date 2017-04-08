@@ -1439,51 +1439,72 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
         decodeRLE8(imSize, padding, values, bdata);
     }
 
+    private boolean copyRLE8ScanlineToDst(int lineNo,
+                                          byte[] val,
+                                          byte[] bdata) {
+        // Return value
+        boolean isSuccess = false;
+
+        // Reusing the code to copy 1 row of pixels or scanline to required
+        // destination buffer.
+        if (lineNo >= sourceRegion.y &&
+            lineNo < sourceRegion.y + sourceRegion.height) {
+            if (noTransform) {
+                int pos = lineNo * width;
+                for(int i = 0; i < width; i++)
+                    bdata[pos++] = val[i];
+                processImageUpdate(bi, 0, lineNo,
+                                   destinationRegion.width, 1, 1, 1,
+                                   new int[]{0});
+                isSuccess = true;
+            } else if ((lineNo - sourceRegion.y) % scaleY == 0) {
+                int lineStride =
+                    ((ComponentSampleModel)sampleModel).getScanlineStride();
+                int currentLine = (lineNo - sourceRegion.y) / scaleY +
+                    destinationRegion.y;
+                int pos = currentLine * lineStride;
+                pos += destinationRegion.x;
+                for (int i = sourceRegion.x;
+                     i < sourceRegion.x + sourceRegion.width;
+                     i += scaleX)
+                    bdata[pos++] = val[i];
+                processImageUpdate(bi, 0, currentLine,
+                                   destinationRegion.width, 1, 1, 1,
+                                   new int[]{0});
+                isSuccess = true;
+            }
+            // Ensure to reset the scanline buffer once the copy is complete.
+            for(int scIndex = 0; scIndex < width; scIndex++) {
+                val[scIndex] = 0;
+            }
+        }
+
+        return isSuccess;
+    }
+
     private void decodeRLE8(int imSize,
                             int padding,
                             byte[] values,
                             byte[] bdata) throws IOException {
 
-        byte val[] = new byte[width * height];
+        byte val[] = new byte[width];
         int count = 0, l = 0;
         int value;
         boolean flag = false;
         int lineNo = isBottomUp ? height - 1 : 0;
-        int lineStride =
-            ((ComponentSampleModel)sampleModel).getScanlineStride();
         int finished = 0;
 
-        while (count != imSize) {
+        // Ensure image source has sufficient data to decode
+        while ((count + 1) < imSize) {
             value = values[count++] & 0xff;
             if (value == 0) {
                 switch(values[count++] & 0xff) {
 
                 case 0:
                     // End-of-scanline marker
-                    if (lineNo >= sourceRegion.y &&
-                        lineNo < sourceRegion.y + sourceRegion.height) {
-                        if (noTransform) {
-                            int pos = lineNo * width;
-                            for(int i = 0; i < width; i++)
-                                bdata[pos++] = val[i];
-                            processImageUpdate(bi, 0, lineNo,
-                                               destinationRegion.width, 1, 1, 1,
-                                               new int[]{0});
-                            finished++;
-                        } else if ((lineNo - sourceRegion.y) % scaleY == 0) {
-                            int currentLine = (lineNo - sourceRegion.y) / scaleY +
-                                destinationRegion.y;
-                            int pos = currentLine * lineStride;
-                            pos += destinationRegion.x;
-                            for (int i = sourceRegion.x;
-                                 i < sourceRegion.x + sourceRegion.width;
-                                 i += scaleX)
-                                bdata[pos++] = val[i];
-                            processImageUpdate(bi, 0, currentLine,
-                                               destinationRegion.width, 1, 1, 1,
-                                               new int[]{0});
-                            finished++;
-                        }
+                    // Copy the decoded scanline to destination
+                    if (copyRLE8ScanlineToDst(lineNo, val, bdata)) {
+                        finished++;
                     }
                     processImageProgress(100.0F * finished / destinationRegion.height);
                     lineNo += isBottomUp ? -1 : 1;
@@ -1492,26 +1513,62 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
                     if (abortRequested()) {
                         flag = true;
                     }
-
                     break;
 
                 case 1:
                     // End-of-RLE marker
                     flag = true;
+
+                    // Check if the last decoded scanline was copied to
+                    // destination bitmap
+                    if (l != 0) {
+                        // Copy the decoded scanline to destination
+                        if (copyRLE8ScanlineToDst(lineNo, val, bdata)) {
+                            finished++;
+                        }
+                        processImageProgress(100.0F * finished / destinationRegion.height);
+                        lineNo += isBottomUp ? -1 : 1;
+                        l = 0;
+                    }
                     break;
 
                 case 2:
                     // delta or vector marker
-                    int xoff = values[count++] & 0xff;
-                    int yoff = values[count] & 0xff;
-                    // Move to the position xoff, yoff down
-                    l += xoff + yoff*width;
+                    if ((count+1) < imSize) {
+                        int xoff = values[count++] & 0xff;
+                        int yoff = values[count++] & 0xff;
+
+                        // Check if the yOffset shifts the decoding to another
+                        // row. In such cases, the decoded pixels in scanline
+                        // buffer-val must be copied to the destination image.
+                        if (yoff != 0) {
+                            // Copy the decoded scanline to destination
+                            if (copyRLE8ScanlineToDst(lineNo, val, bdata)) {
+                                finished++;
+                            }
+                            processImageProgress(100.0F * finished
+                                                 / destinationRegion.height);
+                            lineNo += isBottomUp ? -yoff : yoff;
+                        }
+
+                        // Move to the position xoff, yoff down
+                        l += xoff + yoff*width;
+                        l %= width;
+                    }
                     break;
 
                 default:
                     int end = values[count-1] & 0xff;
-                    for (int i=0; i<end; i++) {
-                        val[l++] = (byte)(values[count++] & 0xff);
+                    byte readByte = 0;
+                    // Ensure to check if the source index-count, does not
+                    // exceed the source image size
+                    for (int i=0; (i < end) && (count < imSize); i++) {
+                        readByte = (byte)(values[count++] & 0xff);
+                        // Ensure to check if scanline index-l, does not
+                        // exceed the scanline buffer size (width of image)
+                        if (l < width) {
+                            val[l++] = readByte;
+                        }
                     }
 
                     // Whenever end pixels can fit into odd number of bytes,
@@ -1519,10 +1576,16 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
                     if ((end & 1) == 1) {
                         count++;
                     }
+                    break;
                 }
             } else {
-                for (int i=0; i<value; i++) {
-                    val[l++] = (byte)(values[count] & 0xff);
+                // Encoded mode
+                // Ensure to check if the source index-count, does not
+                // exceed the source image size
+                if (count < imSize) {
+                    for (int i=0; (i < value) && (l < width); i++) {
+                        val[l++] = (byte)(values[count] & 0xff);
+                    }
                 }
 
                 count++;
