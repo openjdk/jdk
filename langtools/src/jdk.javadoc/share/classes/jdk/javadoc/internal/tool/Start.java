@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@ public class Start extends ToolOption.Helper {
             com.sun.tools.doclets.standard.Standard.class;
 
     private static final Class<?> StdDoclet =
-            jdk.javadoc.doclets.StandardDoclet.class;
+            jdk.javadoc.doclet.StandardDoclet.class;
     /** Context for this invocation. */
     private final Context context;
 
@@ -421,9 +421,7 @@ public class Start extends ToolOption.Helper {
 
         Result result = OK;
         try {
-            result = parseAndExecute(options, fileObjects)
-                    ? OK
-                    : ERROR;
+            result = parseAndExecute(options, fileObjects);
         } catch (com.sun.tools.javac.main.Option.InvalidValueException e) {
             messager.printError(e.getMessage());
             Throwable t = e.getCause();
@@ -501,7 +499,7 @@ public class Start extends ToolOption.Helper {
      * Main program - internal
      */
     @SuppressWarnings("unchecked")
-    private boolean parseAndExecute(List<String> argList, Iterable<? extends JavaFileObject> fileObjects)
+    private Result parseAndExecute(List<String> argList, Iterable<? extends JavaFileObject> fileObjects)
             throws ToolException, OptionException, com.sun.tools.javac.main.Option.InvalidValueException {
         long tm = System.currentTimeMillis();
 
@@ -521,7 +519,14 @@ public class Start extends ToolOption.Helper {
         Arguments arguments = Arguments.instance(context);
         arguments.init(ProgramName);
         arguments.allowEmpty();
-        arguments.validate();
+        if (!arguments.validate()) {
+            // Arguments does not always increase the error count in the
+            // case of errors, so increment the error count only if it has
+            // not been updated previously, preventing complaints by callers
+            if (!messager.hasErrors() && !messager.hasWarnings())
+                messager.nerrors++;
+            return CMDERR;
+        }
 
         if (fileManager instanceof BaseFileManager) {
             ((BaseFileManager) fileManager).handleOptions(fileManagerOpts);
@@ -586,7 +591,7 @@ public class Start extends ToolOption.Helper {
         }
 
         JavadocTool comp = JavadocTool.make0(context);
-        if (comp == null) return false;
+        if (comp == null) return ABNORMAL;
 
         DocletEnvironment docEnv = comp.getEnvironment(jdtoolOpts,
                 javaNames,
@@ -600,8 +605,9 @@ public class Start extends ToolOption.Helper {
             trees.setBreakIterator(BreakIterator.getSentenceInstance(locale));
         }
         // pass off control to the doclet
-        boolean ok = docEnv != null;
-        if (ok) ok = doclet.run(docEnv);
+        Result returnStatus = docEnv != null && doclet.run(docEnv)
+                ? OK
+                : ERROR;
 
         // We're done.
         if (compOpts.get("-verbose") != null) {
@@ -609,7 +615,7 @@ public class Start extends ToolOption.Helper {
             messager.notice("main.done_in", Long.toString(tm));
         }
 
-        return ok;
+        return returnStatus;
     }
 
     boolean matches(List<String> names, String arg) {

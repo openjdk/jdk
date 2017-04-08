@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4131628 4664607 7025314 8023700 7198273 8025633 8026567 8081854 8150188
+ * @bug      4131628 4664607 7025314 8023700 7198273 8025633 8026567 8081854 8150188 8151743
  * @summary  Make sure the Next/Prev Class links iterate through all types.
  *           Make sure the navagation is 2 columns, not 3.
  * @author   jamieh
@@ -77,12 +77,20 @@ public class TestNavigation extends JavadocTester {
                 "<!-- ========= END OF TOP NAVBAR ========= -->\n"
                 + "</div>\n"
                 + "<div class=\"navPadding\">&nbsp;</div>\n"
+                + "<script type=\"text/javascript\"><!--\n"
+                + "$('.navPadding').css('padding-top', $('.fixedNav').css(\"height\"));\n"
+                + "//-->\n"
+                + "</script>\n"
                 + "<!-- ======== START OF CLASS DATA ======== -->");
 
         checkOutput("pkg/package-summary.html", true,
                 "<!-- ========= END OF TOP NAVBAR ========= -->\n"
                 + "</div>\n"
                 + "<div class=\"navPadding\">&nbsp;</div>\n"
+                + "<script type=\"text/javascript\"><!--\n"
+                + "$('.navPadding').css('padding-top', $('.fixedNav').css(\"height\"));\n"
+                + "//-->\n"
+                + "</script>\n"
                 + "<div class=\"header\">");
     }
 
@@ -98,6 +106,10 @@ public class TestNavigation extends JavadocTester {
                 "<!-- ========= END OF TOP NAVBAR ========= -->\n"
                 + "</div>\n"
                 + "<div class=\"navPadding\">&nbsp;</div>\n"
+                + "<script type=\"text/javascript\"><!--\n"
+                + "$('.navPadding').css('padding-top', $('.fixedNav').css(\"height\"));\n"
+                + "//-->\n"
+                + "</script>\n"
                 + "</nav>\n"
                 + "</header>\n"
                 + "<!-- ======== START OF CLASS DATA ======== -->");
@@ -106,6 +118,10 @@ public class TestNavigation extends JavadocTester {
                 "<!-- ========= END OF TOP NAVBAR ========= -->\n"
                 + "</div>\n"
                 + "<div class=\"navPadding\">&nbsp;</div>\n"
+                + "<script type=\"text/javascript\"><!--\n"
+                + "$('.navPadding').css('padding-top', $('.fixedNav').css(\"height\"));\n"
+                + "//-->\n"
+                + "</script>\n"
                 + "</nav>");
     }
 
@@ -121,12 +137,20 @@ public class TestNavigation extends JavadocTester {
                 "<!-- ========= END OF TOP NAVBAR ========= -->\n"
                 + "</div>\n"
                 + "<div class=\"navPadding\">&nbsp;</div>\n"
+                + "<script type=\"text/javascript\"><!--\n"
+                + "$('.navPadding').css('padding-top', $('.fixedNav').css(\"height\"));\n"
+                + "//-->\n"
+                + "</script>\n"
                 + "<!-- ======== START OF CLASS DATA ======== -->");
 
         checkOutput("pkg/package-summary.html", false,
                 "<!-- ========= END OF TOP NAVBAR ========= -->\n"
                 + "</div>\n"
                 + "<div class=\"navPadding\">&nbsp;</div>\n"
+                + "<script type=\"text/javascript\"><!--\n"
+                + "$('.navPadding').css('padding-top', $('.fixedNav').css(\"height\"));\n"
+                + "//-->\n"
+                + "</script>\n"
                 + "<div class=\"header\">");
     }
 
@@ -142,6 +166,10 @@ public class TestNavigation extends JavadocTester {
                 "<!-- ========= END OF TOP NAVBAR ========= -->\n"
                 + "</div>\n"
                 + "<div class=\"navPadding\">&nbsp;</div>\n"
+                + "<script type=\"text/javascript\"><!--\n"
+                + "$('.navPadding').css('padding-top', $('.fixedNav').css(\"height\"));\n"
+                + "//-->\n"
+                + "</script>\n"
                 + "</nav>\n"
                 + "</header>\n"
                 + "<!-- ======== START OF CLASS DATA ======== -->");
@@ -150,6 +178,10 @@ public class TestNavigation extends JavadocTester {
                 "<!-- ========= END OF TOP NAVBAR ========= -->\n"
                 + "</div>\n"
                 + "<div class=\"navPadding\">&nbsp;</div>\n"
+                + "<script type=\"text/javascript\"><!--\n"
+                + "$('.navPadding').css('padding-top', $('.fixedNav').css(\"height\"));\n"
+                + "//-->\n"
+                + "</script>\n"
                 + "</nav>");
     }
 }
