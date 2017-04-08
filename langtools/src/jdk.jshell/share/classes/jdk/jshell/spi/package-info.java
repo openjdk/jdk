@@ -66,6 +66,7 @@
  *   <li>failover:1(jdi),2(jdi:launch(true),timeout(3000)),3(local)</li>
  * </ul>
  *
+ * @since 9
  * @see jdk.jshell.execution for execution implementation support
  */
 package jdk.jshell.spi;

@@ -27,10 +27,11 @@
  * @requires vm.jvmci
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
- * @modules jdk.vm.ci/jdk.vm.ci.hotspot
- *          jdk.vm.ci/jdk.vm.ci.code
- *          jdk.vm.ci/jdk.vm.ci.meta
- *          jdk.vm.ci/jdk.vm.ci.runtime
+ * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot
+ *          jdk.internal.vm.ci/jdk.vm.ci.code
+ *          jdk.internal.vm.ci/jdk.vm.ci.meta
+ *          jdk.internal.vm.ci/jdk.vm.ci.runtime
+ *          jdk.internal.vm.ci/jdk.vm.ci.services
  *
  * @build compiler.jvmci.common.JVMCIHelpers
  *        compiler.jvmci.events.JvmciShutdownEventListener

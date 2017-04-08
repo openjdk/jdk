@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -492,18 +492,6 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
         if (verificationResult == false) {
             throw new SignatureException("Signature does not match.");
         }
-    }
-
-     /**
-     * This static method is the default implementation of the
-     * verify(PublicKey key, Provider sigProvider) method in X509Certificate.
-     * Called from java.security.cert.X509Certificate.verify(PublicKey key,
-     * Provider sigProvider)
-     */
-    public static void verify(X509Certificate cert, PublicKey key,
-            Provider sigProvider) throws CertificateException,
-            NoSuchAlgorithmException, InvalidKeyException, SignatureException {
-        cert.verify(key, sigProvider);
     }
 
     /**
