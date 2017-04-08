@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,6 +211,10 @@ public final class CFont extends PhysicalFont implements FontSubstitution {
         ArrayList<String> listOfString = new ArrayList<String>();
         getCascadeList(nativeFontPtr, listOfString);
 
+        // add JRE "Lucida Sans Regular" to the cascade list to enable fallback
+        // to happen to this JRE font in case the intended glyph is missing in
+        // fonts provided in the CoreText provided cascaded list
+        listOfString.add("Lucida Sans Regular");
         FontManager fm = FontManagerFactory.getInstance();
         int numFonts = 1 + listOfString.size();
         PhysicalFont[] fonts = new PhysicalFont[numFonts];

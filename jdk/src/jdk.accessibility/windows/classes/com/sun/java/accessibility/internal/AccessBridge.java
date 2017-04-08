@@ -4527,6 +4527,10 @@ final public class AccessBridge {
     private void _getVisibleChildrenCount(final AccessibleContext ac) {
         if (ac == null)
             return;
+        if(ac instanceof AccessibleExtendedTable) {
+            _getVisibleChildrenCount((AccessibleExtendedTable)ac);
+            return;
+        }
         int numChildren = InvocationUtils.invokeAndWait(new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
@@ -4568,6 +4572,83 @@ final public class AccessBridge {
         }
     }
 
+    /*
+    * Recursively descends AccessibleContext and gets the number
+    * of visible children. Stops search if get to invisible part of table.
+    */
+    private void _getVisibleChildrenCount(final AccessibleExtendedTable acTable) {
+        if (acTable == null)
+            return;
+        int lastVisibleRow = -1;
+        int lastVisibleColumn = -1;
+        boolean foundVisible = false;
+        int rowCount = InvocationUtils.invokeAndWait(new Callable<Integer>() {
+            @Override
+            public Integer call() throws Exception {
+                return acTable.getAccessibleRowCount();
+            }
+        }, acTable);
+        int columnCount = InvocationUtils.invokeAndWait(new Callable<Integer>() {
+            @Override
+            public Integer call() throws Exception {
+                return acTable.getAccessibleColumnCount();
+            }
+        }, acTable);
+        for (int rowIdx = 0; rowIdx < rowCount; rowIdx++) {
+            for (int columnIdx = 0; columnIdx < columnCount; columnIdx++) {
+                if (lastVisibleRow != -1 && rowIdx > lastVisibleRow) {
+                    continue;
+                }
+                if (lastVisibleColumn != -1 && columnIdx > lastVisibleColumn) {
+                    continue;
+                }
+                int finalRowIdx = rowIdx;
+                int finalColumnIdx = columnIdx;
+                final AccessibleContext ac2 = InvocationUtils.invokeAndWait(new Callable<AccessibleContext>() {
+                    @Override
+                    public AccessibleContext call() throws Exception {
+                        Accessible a = acTable.getAccessibleAt(finalRowIdx, finalColumnIdx);
+                        if (a == null)
+                            return null;
+                        else
+                            return a.getAccessibleContext();
+                    }
+                }, acTable);
+                if (ac2 == null ||
+                        (!InvocationUtils.invokeAndWait(new Callable<Boolean>() {
+                            @Override
+                            public Boolean call() throws Exception {
+                                return ac2.getAccessibleStateSet().contains(AccessibleState.SHOWING);
+                            }
+                        }, acTable))
+                        ) {
+                    if (foundVisible) {
+                        if (columnIdx != 0 && lastVisibleColumn == -1) {
+                            //the same row, so we found the last visible column
+                            lastVisibleColumn = columnIdx - 1;
+                        } else if (columnIdx == 0 && lastVisibleRow == -1) {
+                            lastVisibleRow = rowIdx - 1;
+                        }
+                    }
+                    continue;
+                }
+
+                foundVisible = true;
+
+                _visibleChildrenCount++;
+
+                if (InvocationUtils.invokeAndWait(new Callable<Integer>() {
+                    @Override
+                    public Integer call() throws Exception {
+                        return ac2.getAccessibleChildrenCount();
+                    }
+                }, acTable) > 0) {
+                    _getVisibleChildrenCount(ac2);
+                }
+            }
+        }
+    }
+
     /**
      * Gets the visible child of an AccessibleContext at the
      * specified index
@@ -4604,7 +4685,10 @@ final public class AccessBridge {
         if (_visibleChild != null) {
             return;
         }
-
+        if(ac instanceof AccessibleExtendedTable) {
+            _getVisibleChild((AccessibleExtendedTable)ac, index);
+            return;
+        }
         int numChildren = InvocationUtils.invokeAndWait(new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
@@ -4613,7 +4697,7 @@ final public class AccessBridge {
         }, ac);
         for (int i = 0; i < numChildren; i++) {
             final int idx=i;
-            final AccessibleContext ac2=InvocationUtils.invokeAndWait(new Callable<AccessibleContext>() {
+            final AccessibleContext ac2 = InvocationUtils.invokeAndWait(new Callable<AccessibleContext>() {
                 @Override
                 public AccessibleContext call() throws Exception {
                     Accessible a = ac.getAccessibleChild(idx);
@@ -4650,6 +4734,82 @@ final public class AccessBridge {
         }
     }
 
+    private void _getVisibleChild(final AccessibleExtendedTable acTable, final int index) {
+        if (_visibleChild != null) {
+            return;
+        }
+        int lastVisibleRow = -1;
+        int lastVisibleColumn = -1;
+        boolean foundVisible = false;
+        int rowCount = InvocationUtils.invokeAndWait(new Callable<Integer>() {
+            @Override
+            public Integer call() throws Exception {
+                return acTable.getAccessibleRowCount();
+            }
+        }, acTable);
+        int columnCount = InvocationUtils.invokeAndWait(new Callable<Integer>() {
+            @Override
+            public Integer call() throws Exception {
+                return acTable.getAccessibleColumnCount();
+            }
+        }, acTable);
+        for (int rowIdx = 0; rowIdx < rowCount; rowIdx++) {
+            for (int columnIdx = 0; columnIdx < columnCount; columnIdx++) {
+                if (lastVisibleRow != -1 && rowIdx > lastVisibleRow) {
+                    continue;
+                }
+                if (lastVisibleColumn != -1 && columnIdx > lastVisibleColumn) {
+                    continue;
+                }
+                int finalRowIdx = rowIdx;
+                int finalColumnIdx = columnIdx;
+                final AccessibleContext ac2 = InvocationUtils.invokeAndWait(new Callable<AccessibleContext>() {
+                    @Override
+                    public AccessibleContext call() throws Exception {
+                        Accessible a = acTable.getAccessibleAt(finalRowIdx, finalColumnIdx);
+                        if (a == null)
+                            return null;
+                        else
+                            return a.getAccessibleContext();
+                    }
+                }, acTable);
+                if (ac2 == null ||
+                        (!InvocationUtils.invokeAndWait(new Callable<Boolean>() {
+                            @Override
+                            public Boolean call() throws Exception {
+                                return ac2.getAccessibleStateSet().contains(AccessibleState.SHOWING);
+                            }
+                        }, acTable))) {
+                    if (foundVisible) {
+                        if (columnIdx != 0 && lastVisibleColumn == -1) {
+                            //the same row, so we found the last visible column
+                            lastVisibleColumn = columnIdx - 1;
+                        } else if (columnIdx == 0 && lastVisibleRow == -1) {
+                            lastVisibleRow = rowIdx - 1;
+                        }
+                    }
+                    continue;
+                }
+                foundVisible = true;
+
+                if (!_foundVisibleChild && _currentVisibleIndex == index) {
+                    _visibleChild = ac2;
+                    _foundVisibleChild = true;
+                    return;
+                }
+                _currentVisibleIndex++;
+
+                if (InvocationUtils.invokeAndWait(new Callable<Integer>() {
+                    @Override
+                    public Integer call() throws Exception {
+                        return ac2.getAccessibleChildrenCount();
+                    }
+                }, acTable) > 0) {
+                    _getVisibleChild(ac2, index);
+                }
+            }
+        }
+    }
 
     /* ===== Java object memory management code ===== */
 
@@ -7013,6 +7173,25 @@ final public class AccessBridge {
      * for the provided {@code AccessibleContext}.
      */
     private static class InvocationUtils {
+
+        /**
+         * Invokes a {@code Callable} in the {@code AppContext} of the given {@code Accessible}
+         * and waits for it to finish blocking the caller thread.
+         *
+         * @param callable   the {@code Callable} to invoke
+         * @param accessibleTable the {@code AccessibleExtendedTable} which would be used to find the right context
+         *                   for the task execution
+         * @param <T> type parameter for the result value
+         *
+         * @return the result of the {@code Callable} execution
+         */
+        public static <T> T invokeAndWait(final Callable<T> callable,
+                                          final AccessibleExtendedTable accessibleTable) {
+            if (accessibleTable instanceof AccessibleContext) {
+                return invokeAndWait(callable, (AccessibleContext)accessibleTable);
+            }
+            throw new RuntimeException("Unmapped AccessibleContext used to dispatch event: " + accessibleTable);
+        }
 
         /**
          * Invokes a {@code Callable} in the {@code AppContext} of the given {@code Accessible}
