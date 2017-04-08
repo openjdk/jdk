@@ -34,6 +34,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.function.BiPredicate;
+import java.util.function.Function;
 import java.util.stream.Collector;
 
 import javax.tools.JavaFileObject;
@@ -2095,7 +2096,7 @@ public class Types {
         }
         }
     // where
-        private TypeMapping<Boolean> erasure = new TypeMapping<Boolean>() {
+        private TypeMapping<Boolean> erasure = new StructuralTypeMapping<Boolean>() {
             private Type combineMetadata(final Type s,
                                          final Type t) {
                 if (t.getMetadata() != TypeMetadata.EMPTY) {
@@ -3019,7 +3020,7 @@ public class Types {
         return t.map(new Subst(from, to));
     }
 
-    private class Subst extends TypeMapping<Void> {
+    private class Subst extends StructuralTypeMapping<Void> {
         List<Type> from;
         List<Type> to;
 
@@ -4706,6 +4707,25 @@ public class Types {
     public static class MapVisitor<S> extends DefaultTypeVisitor<Type,S> {
         final public Type visit(Type t) { return t.accept(this, null); }
         public Type visitType(Type t, S s) { return t; }
+    }
+
+    /**
+     * An abstract class for mappings from types to types (see {@link Type#map(TypeMapping)}.
+     * This class implements the functional interface {@code Function}, that allows it to be used
+     * fluently in stream-like processing.
+     */
+    public static class TypeMapping<S> extends MapVisitor<S> implements Function<Type, Type> {
+        @Override
+        public Type apply(Type type) { return visit(type); }
+
+        List<Type> visit(List<Type> ts, S s) {
+            return ts.map(t -> visit(t, s));
+        }
+
+        @Override
+        public Type visitCapturedType(CapturedType t, S s) {
+            return visitTypeVar(t, s);
+        }
     }
     // </editor-fold>
 
