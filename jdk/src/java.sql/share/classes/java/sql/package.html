@@ -2,7 +2,7 @@
 <html>
 <head>
 <!--
- Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -32,32 +32,32 @@ questions.
 
 <body bgcolor="white">
 
-Provides the API for accessing and processing data stored in a 
-data source (usually a relational database) using the 
-Java&trade; programming language. 
+Provides the API for accessing and processing data stored in a
+data source (usually a relational database) using the
+Java&trade; programming language.
 This API includes a framework whereby different
 drivers can be installed dynamically to access different data sources.
-Although the JDBC&trade; API is mainly geared 
+Although the JDBC&trade; API is mainly geared
 to passing SQL statements to a database, it provides for reading and
 writing data from any data source with a tabular format.
-The reader/writer facility, available through the 
+The reader/writer facility, available through the
 <code>javax.sql.RowSet</code> group of interfaces, can be customized to
-use and update data from a spread sheet, flat file, or any other tabular 
+use and update data from a spread sheet, flat file, or any other tabular
 data source.
 
-<h2>What the JDBC&trade; 4.2 API Includes</h2>
-The JDBC&trade; 4.2 API includes both
+<h2>What the JDBC&trade; 4.3 API Includes</h2>
+The JDBC&trade; 4.3 API includes both
 the <code>java.sql</code> package, referred to as the JDBC core API,
 and the <code>javax.sql</code> package, referred to as the JDBC Optional
 Package API. This complete JDBC API
 is included in the Java&trade; Standard Edition (Java SE&trade;), version 7.
-The <code>javax.sql</code> package extends the functionality of the JDBC API 
+The <code>javax.sql</code> package extends the functionality of the JDBC API
 from a client-side API to a server-side API, and it is an essential part
 of the Java&trade;  Enterprise Edition
-(Java EE&trade;) technology. 
+(Java EE&trade;) technology.
 
 <h2>Versions</h2>
-The JDBC 4.2 API incorporates all of the previous JDBC API versions:
+The JDBC 4.3 API incorporates all of the previous JDBC API versions:
 <UL>
     <LI> The JDBC 4.1 API</li>
     <LI> The JDBC 4.0 API</li>
@@ -70,33 +70,35 @@ The JDBC 4.2 API incorporates all of the previous JDBC API versions:
  <LI> The JDBC 1.0 API</li>
 </UL>
 <P>
-Classes, interfaces, methods, fields, constructors, and exceptions 
-have the following "since" tags that indicate when they were introduced 
+Classes, interfaces, methods, fields, constructors, and exceptions
+have the following "since" tags that indicate when they were introduced
 into the Java platform. When these "since" tags are used in
 Javadoc&trade; comments for the JDBC API,
 they indicate the following:
 <UL>
-    <LI>Since 1.8 -- new in the JDBC 4.2 API and part of the Java SE platform,
+    <LI>Since 9 -- new in the JDBC 4.3 API and part of the Java SE platform,
+        version 9</li>
+     <LI>Since 1.8 -- new in the JDBC 4.2 API and part of the Java SE platform,
         version 8</li>
  <LI>Since 1.7 -- new in the JDBC 4.1 API and part of the Java SE platform,
      version 7</li>
 <LI>Since 1.6 -- new in the JDBC 4.0 API and part of the Java SE platform,
     version 6</li>
- <LI>Since 1.4 -- new in the JDBC 3.0 API and part of the J2SE platform, 
+ <LI>Since 1.4 -- new in the JDBC 3.0 API and part of the J2SE platform,
      version 1.4</li>
- <LI>Since 1.2 -- new in the JDBC 2.0 API and part of the J2SE platform, 
+ <LI>Since 1.2 -- new in the JDBC 2.0 API and part of the J2SE platform,
      version 1.2</li>
  <LI>Since 1.1 or no "since" tag -- in the original JDBC 1.0 API and part of
      the JDK&trade;, version 1.1</li>
 </UL>
 <P>
-<b>NOTE:</b> Many of the new features are optional; consequently, there is 
-some variation in drivers and the features they support. Always 
+<b>NOTE:</b> Many of the new features are optional; consequently, there is
+some variation in drivers and the features they support. Always
 check your driver's documentation to see whether it supports a feature before
 you try to use it.
 <P>
 <b>NOTE:</b> The class <code>SQLPermission</code> was added in the
-Java&trade; 2 SDK, Standard Edition, 
+Java&trade; 2 SDK, Standard Edition,
 version 1.3 release. This class is used to prevent unauthorized
 access to the logging stream associated with the <code>DriverManager</code>,
 which may contain information such as table names, column data, and so on.
@@ -112,7 +114,7 @@ The <code>java.sql</code> package contains API for the following:
                   attempts to set up a logging stream through the
                   <code>DriverManager</code>
 	 <LI><code>Driver</code> interface -- provides the API for registering
-             and connecting drivers based on JDBC technology ("JDBC drivers"); 
+             and connecting drivers based on JDBC technology ("JDBC drivers");
              generally used only by the <code>DriverManager</code> class
 	 <LI><code>DriverPropertyInfo</code> class -- provides properties for a
              JDBC driver; not used by the general user
@@ -120,9 +122,9 @@ The <code>java.sql</code> package contains API for the following:
   <LI>Sending SQL statements to a database
   <UL>
 	 <LI><code>Statement</code> --  used to send basic SQL statements
-	 <LI><code>PreparedStatement</code> --  used to send prepared statements or 
+	 <LI><code>PreparedStatement</code> --  used to send prepared statements or
               basic SQL statements (derived from <code>Statement</code>)
-	 <LI><code>CallableStatement</code> --  used to call database stored 
+	 <LI><code>CallableStatement</code> --  used to call database stored
               procedures (derived from <code>PreparedStatement</code>)
 	 <LI><code>Connection</code> interface --  provides methods for creating
              statements and managing connections and their properties
@@ -133,20 +135,20 @@ The <code>java.sql</code> package contains API for the following:
   <UL>
 	 <LI><code>ResultSet</code> interface
   </UL>
-  <LI>Standard mappings for SQL types to classes and interfaces in the 
+  <LI>Standard mappings for SQL types to classes and interfaces in the
       Java programming language
   <UL>
-	 <LI><code>Array</code> interface -- mapping for SQL <code>ARRAY</code> 
-	 <LI><code>Blob</code> interface -- mapping for SQL <code>BLOB</code> 
+	 <LI><code>Array</code> interface -- mapping for SQL <code>ARRAY</code>
+	 <LI><code>Blob</code> interface -- mapping for SQL <code>BLOB</code>
 	 <LI><code>Clob</code> interface -- mapping for SQL <code>CLOB</code>
-	 <LI><code>Date</code> class -- mapping for SQL <code>DATE</code> 
+	 <LI><code>Date</code> class -- mapping for SQL <code>DATE</code>
 	  <LI><code>NClob</code> interface -- mapping for SQL <code>NCLOB</code>
-	 <LI><code>Ref</code> interface -- mapping for SQL <code>REF</code> 
+	 <LI><code>Ref</code> interface -- mapping for SQL <code>REF</code>
 	  <LI><code>RowId</code> interface -- mapping for SQL <code>ROWID</code>
-	 <LI><code>Struct</code> interface -- mapping for SQL <code>STRUCT</code> 
+	 <LI><code>Struct</code> interface -- mapping for SQL <code>STRUCT</code>
 	  <LI><code>SQLXML</code> interface -- mapping for SQL <code>XML</code>
-	 <LI><code>Time</code> class -- mapping for SQL <code>TIME</code> 
-	 <LI><code>Timestamp</code> class -- mapping for SQL <code>TIMESTAMP</code> 
+	 <LI><code>Time</code> class -- mapping for SQL <code>TIME</code>
+	 <LI><code>Timestamp</code> class -- mapping for SQL <code>TIMESTAMP</code>
 	 <LI><code>Types</code> class -- provides constants for SQL types
   </UL>
   <LI>Custom mapping an SQL user-defined type (UDT) to a class in the
@@ -180,10 +182,26 @@ The <code>java.sql</code> package contains API for the following:
 	</UL>
 </UL>
 
+    <h3><code>java.sql</code> and <code>javax.sql</code> Features Introduced in the JDBC 4.3 API</h3>
+<UL>
+    <LI>Added <code>Sharding</code> support</LI>
+    <LI>Enhanced <code>Connection</code> to be able to provide hints
+        to the driver that a request, an independent unit of work,
+        is beginning or ending</LI>
+    <LI>Enhanced <code>DatabaseMetaData</code> to determine if Sharding is
+    supported</LI>
+    <LI>Added the method <code>drivers</code> to <code>DriverManager</code> 
+            to return a Stream of the currently loaded and
+            available JDBC drivers</LI>
+    <LI>Added support to <code>Statement</code> for enquoting literals
+    and simple identifiers</LI>
+    <LI>Clarified the Java SE version that methods were deprecated</LI>
+</UL>
+
     <h3><code>java.sql</code> and <code>javax.sql</code> Features Introduced in the JDBC 4.2 API</h3>
 <UL>
     <LI>Added <code>JDBCType</code>  enum and <code>SQLType</code> interface</li>
-    <LI>Support for <code>REF CURSORS</code> in <code>CallableStatement</code> 
+    <LI>Support for <code>REF CURSORS</code> in <code>CallableStatement</code>
     </LI>
     <LI><code>DatabaseMetaData</code> methods to return maximum Logical LOB size
         and if Ref Cursors are supported</LI>
@@ -196,7 +214,7 @@ The <code>java.sql</code> package contains API for the following:
     <LI>Allow <code>Connection</code>,
         <code>ResultSet</code> and <code>Statement</code> objects to be
         used with the try-with-resources statement</LI>
-    <LI>Supported added to <code>CallableStatement</code> and
+    <LI>Support added to <code>CallableStatement</code> and
         <code>ResultSet</code> to specify the Java type to convert to via the
         <code>getObject</code> method</LI>
     <LI><code>DatabaseMetaData</code> methods to return PseudoColumns and if a
@@ -212,7 +230,7 @@ The <code>java.sql</code> package contains API for the following:
 </UL>
 <h3><code>java.sql</code> and <code>javax.sql</code> Features Introduced in the JDBC 4.0 API</h3>
 <UL>
-  <LI>auto java.sql.Driver discovery -- no longer need to load a 
+  <LI>auto java.sql.Driver discovery -- no longer need to load a
 <code>java.sql.Driver</code> class via <code>Class.forName</code>
  <LI>National Character Set support added
  <li>Support added for the SQL:2003 XML data type
@@ -222,18 +240,18 @@ The <code>java.sql</code> package contains API for the following:
  as well as additional methods added to improve accessibility
  <li>Support added for accessing a SQL ROWID
  <li>Support added to allow a JDBC application to access an instance of a JDBC resource
- that has been wrapped by a vendor, usually in an application server or connection 
+ that has been wrapped by a vendor, usually in an application server or connection
  pooling environment.
  <li>Availability to be notified when a <code>PreparedStatement</code> that is associated
  with a <code>PooledConnection</code> has been closed or the driver determines is invalid
- 
- 
+
+
 </UL>
 
 
 <h3><code>java.sql</code> and <code>javax.sql</code> Features Introduced in the JDBC 3.0 API</h3>
 <UL>
-  <LI>Pooled statements -- reuse of statements associated with a pooled 
+  <LI>Pooled statements -- reuse of statements associated with a pooled
        connection
   <LI>Savepoints -- allow a transaction to be rolled back to a designated
       savepoint
@@ -241,7 +259,7 @@ The <code>java.sql</code> package contains API for the following:
       how connections are to be pooled
   <LI>Metadata for parameters of a <code>PreparedStatement</code> object
   <LI>Ability to retrieve values from automatically generated columns
-  <LI>Ability to have multiple <code>ResultSet</code> objects 
+  <LI>Ability to have multiple <code>ResultSet</code> objects
        returned from <code>CallableStatement</code> objects open at the
       same time
   <LI>Ability to identify parameters to <code>CallableStatement</code>
@@ -252,7 +270,7 @@ The <code>java.sql</code> package contains API for the following:
       <code>Ref</code> object references
   <LI>Ability to programmatically update <code>BLOB</code>,
       <code>CLOB</code>, <code>ARRAY</code>, and <code>REF</code> values.
-  <LI>Addition of the <code>java.sql.Types.DATALINK</code> data type -- 
+  <LI>Addition of the <code>java.sql.Types.DATALINK</code> data type --
       allows JDBC drivers access to objects stored outside a data source
   <LI>Addition of metadata for retrieving SQL type hierarchies
 </UL>
@@ -269,7 +287,7 @@ The <code>java.sql</code> package contains API for the following:
   <LI>Miscellaneous features, including performance hints, the use of character
 	  streams, full precision for <code>java.math.BigDecimal</code> values,
 	  additional security, and
-	  support for time zones in date, time, and timestamp values. 
+	  support for time zones in date, time, and timestamp values.
 </UL>
 
 <h3><code>javax.sql</code> Features Introduced in the JDBC 2.0 Optional
@@ -277,7 +295,7 @@ Package API</h3>
 <UL>
   <LI>The <code>DataSource</code> interface as a means of making a connection.  The
       Java Naming and Directory Interface&trade;
-      (JNDI) is used for registering a <code>DataSource</code> object with a 
+      (JNDI) is used for registering a <code>DataSource</code> object with a
       naming service and also for  retrieving it.
   <LI>Pooled connections -- allowing connections to be used and reused
   <LI>Distributed transactions -- allowing a transaction to span diverse
@@ -301,13 +319,13 @@ steps set up a custom mapping:
       that contains two things:
    <ul>
        <li>the fully-qualified SQL name of the UDT
-       <li>the <code>Class</code> object for the class that implements the 
+       <li>the <code>Class</code> object for the class that implements the
            <code>SQLData</code> interface
    </ul>
 </ol>
 <p>
 When these are in place for a UDT, calling the methods
-<code>ResultSet.getObject</code> or <code>CallableStatement.getObject</code> 
+<code>ResultSet.getObject</code> or <code>CallableStatement.getObject</code>
 on that UDT will automatically retrieve the custom mapping for it. Also, the
 <code>PreparedStatement.setObject</code> method will automatically map the
 object back to its SQL type to store it in the data source.
@@ -315,7 +333,7 @@ object back to its SQL type to store it in the data source.
 <h2>Package Specification</h2>
 
 <ul>
-  <li><a href="https://jcp.org/en/jsr/detail?id=221">JDBC 4.2 Specification</a>
+  <li><a href="https://jcp.org/en/jsr/detail?id=221">JDBC 4.3 Specification</a>
 </ul>
 
 <h2>Related Documentation</h2>

@@ -121,6 +121,12 @@ class TMSchema {
 
         LBP_LISTBOX(Control.LISTBOX, 0),
 
+        LBCP_BORDER_HSCROLL  (Control.LISTBOX, 1),
+        LBCP_BORDER_HVSCROLL (Control.LISTBOX, 2),
+        LBCP_BORDER_NOSCROLL (Control.LISTBOX, 3),
+        LBCP_BORDER_VSCROLL  (Control.LISTBOX, 4),
+        LBCP_ITEM            (Control.LISTBOX, 5),
+
         LVP_LISTVIEW(Control.LISTVIEW, 0),
 
         PP_PROGRESS (Control.PROGRESS, 0),
@@ -342,6 +348,12 @@ class TMSchema {
 
             stateMap.put(Part.HP_HEADERSORTARROW,
                          new State[] {SORTEDDOWN, SORTEDUP});
+
+            State[] listBoxStates = new State[] { NORMAL, PRESSED, HOT, DISABLED};
+            stateMap.put(Part.LBCP_BORDER_HSCROLL, listBoxStates);
+            stateMap.put(Part.LBCP_BORDER_HVSCROLL, listBoxStates);
+            stateMap.put(Part.LBCP_BORDER_NOSCROLL, listBoxStates);
+            stateMap.put(Part.LBCP_BORDER_VSCROLL, listBoxStates);
 
             State[] scrollBarStates = new State[] { NORMAL, HOT, PRESSED, DISABLED, HOVER };
             stateMap.put(Part.SBP_SCROLLBAR,    scrollBarStates);
