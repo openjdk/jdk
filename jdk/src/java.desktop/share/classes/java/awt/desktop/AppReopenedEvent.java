@@ -29,7 +29,7 @@ package java.awt.desktop;
 /**
  * Event sent when the application is asked to re-open itself.
  *
- * @see AppReopenedListener#appReopened(AppEvent.AppReopenedEvent)
+ * @see AppReopenedListener#appReopened(AppReopenedEvent)
  *
  * @since 9
  */

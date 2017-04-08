@@ -25,6 +25,8 @@
 
 /**
  * Defines the JDBC RowSet API.
+ *
+ * @since 9
  */
 module java.sql.rowset {
     requires transitive java.logging;

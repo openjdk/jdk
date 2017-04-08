@@ -1,25 +1,20 @@
 <root>
-    
-     t
+         t
     <![CDATA[ ]]>
-    
-t   
+    t   
     
     <child1/>
-    
-    t
+        t
     <!-- test comment -->
     <child2/>
     <child5>
-        
-        t
+                t
         <?target1 test?>
         <child51>
             <child511>t</child511>
         </child51>
         <?target1 test?>
-        
-        t
+                t
     
     </child5>
 </root>

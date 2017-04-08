@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6402006 7030573 8011136
+ * @key intermittent
  * @summary Test if available returns correct value when reading
  *          a large file.
  */
@@ -71,6 +72,9 @@ public class LargeFileAvailable {
         } finally {
             file.delete();
         }
+
+        System.out.println("Test succeeded.");
+        System.out.flush();
     }
 
     // Skip toSkip number of bytes and expect that the available() method

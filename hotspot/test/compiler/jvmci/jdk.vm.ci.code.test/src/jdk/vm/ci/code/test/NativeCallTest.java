@@ -25,14 +25,14 @@
  * @test
  * @requires vm.jvmci & (vm.simpleArch == "x64" | vm.simpleArch == "sparcv9")
  * @library /test/lib /
- * @modules jdk.vm.ci/jdk.vm.ci.hotspot
- *          jdk.vm.ci/jdk.vm.ci.code
- *          jdk.vm.ci/jdk.vm.ci.code.site
- *          jdk.vm.ci/jdk.vm.ci.meta
- *          jdk.vm.ci/jdk.vm.ci.runtime
- *          jdk.vm.ci/jdk.vm.ci.common
- *          jdk.vm.ci/jdk.vm.ci.amd64
- *          jdk.vm.ci/jdk.vm.ci.sparc
+ * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot
+ *          jdk.internal.vm.ci/jdk.vm.ci.code
+ *          jdk.internal.vm.ci/jdk.vm.ci.code.site
+ *          jdk.internal.vm.ci/jdk.vm.ci.meta
+ *          jdk.internal.vm.ci/jdk.vm.ci.runtime
+ *          jdk.internal.vm.ci/jdk.vm.ci.common
+ *          jdk.internal.vm.ci/jdk.vm.ci.amd64
+ *          jdk.internal.vm.ci/jdk.vm.ci.sparc
  * @compile CodeInstallationTest.java TestHotSpotVMConfig.java NativeCallTest.java TestAssembler.java sparc/SPARCTestAssembler.java amd64/AMD64TestAssembler.java
  * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI  -Xbootclasspath/a:. jdk.vm.ci.code.test.NativeCallTest
  */
