@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -297,13 +297,13 @@ class vframeStreamCommon : StackObj {
   void fill_from_compiled_frame(int decode_offset);
   void fill_from_compiled_native_frame();
 
-  void found_bad_method_frame();
-
   void fill_from_interpreter_frame();
   bool fill_from_frame();
 
   // Helper routine for security_get_caller_frame
   void skip_prefixed_method_and_wrappers();
+
+  DEBUG_ONLY(void found_bad_method_frame() const;)
 
  public:
   // Constructor
@@ -407,9 +407,9 @@ inline void vframeStreamCommon::fill_from_compiled_frame(int decode_offset) {
       nm()->print_code();
       nm()->print_pcs();
     }
+    found_bad_method_frame();
 #endif
     // Provide a cheap fallback in product mode.  (See comment above.)
-    found_bad_method_frame();
     fill_from_compiled_native_frame();
     return;
   }
@@ -523,7 +523,7 @@ inline void vframeStreamCommon::fill_from_interpreter_frame() {
   // In this scenario, pretend that the interpreter is at the point
   // of entering the method.
   if (bci < 0) {
-    found_bad_method_frame();
+    DEBUG_ONLY(found_bad_method_frame();)
     bci = 0;
   }
   _mode   = interpreted_mode;

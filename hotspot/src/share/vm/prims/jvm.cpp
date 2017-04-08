@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -684,7 +684,7 @@ JVM_ENTRY(jobject, JVM_Clone(JNIEnv* env, jobject handle))
       // This can safepoint and redefine method, so need both new_obj and method
       // in a handle, for two different reasons.  new_obj can move, method can be
       // deleted if nothing is using it on the stack.
-      m->method_holder()->add_member_name(new_obj());
+      m->method_holder()->add_member_name(new_obj(), false);
     }
   }
 
@@ -2967,14 +2967,7 @@ JVM_ENTRY(void, JVM_Yield(JNIEnv *env, jclass threadClass))
   JVMWrapper("JVM_Yield");
   if (os::dont_yield()) return;
   HOTSPOT_THREAD_YIELD();
-
-  // When ConvertYieldToSleep is off (default), this matches the classic VM use of yield.
-  // Critical for similar threading behaviour
-  if (ConvertYieldToSleep) {
-    os::sleep(thread, MinSleepInterval, false);
-  } else {
-    os::naked_yield();
-  }
+  os::naked_yield();
 JVM_END
 
 
@@ -2998,18 +2991,7 @@ JVM_ENTRY(void, JVM_Sleep(JNIEnv* env, jclass threadClass, jlong millis))
   EventThreadSleep event;
 
   if (millis == 0) {
-    // When ConvertSleepToYield is on, this matches the classic VM implementation of
-    // JVM_Sleep. Critical for similar threading behaviour (Win32)
-    // It appears that in certain GUI contexts, it may be beneficial to do a short sleep
-    // for SOLARIS
-    if (ConvertSleepToYield) {
-      os::naked_yield();
-    } else {
-      ThreadState old_state = thread->osthread()->get_state();
-      thread->osthread()->set_state(SLEEPING);
-      os::sleep(thread, MinSleepInterval, false);
-      thread->osthread()->set_state(old_state);
-    }
+    os::naked_yield();
   } else {
     ThreadState old_state = thread->osthread()->get_state();
     thread->osthread()->set_state(SLEEPING);

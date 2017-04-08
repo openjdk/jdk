@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.awt.image;
 
 import java.awt.color.ColorSpace;
 import java.awt.color.ICC_ColorSpace;
+import java.util.Arrays;
 
 /**
  * A {@code ColorModel} class that works with pixel values that
@@ -200,6 +201,7 @@ public class ComponentColorModel extends ColorModel {
     private float[] diffMinMax;
     private float[] compOffset;
     private float[] compScale;
+    private volatile int hashCode;
 
     /**
      * Constructs a {@code ComponentColorModel} from the specified
@@ -2927,22 +2929,59 @@ public class ComponentColorModel extends ColorModel {
     }
 
     /**
-     * Compares this color model with another for equality.
-     *
-     * @param obj The object to compare with this color model.
-     * @return {@code true} if the color model objects are equal,
-     * {@code false} if they are not.
+     * Tests if the specified {@code Object} is an instance
+     * of {@code ComponentColorModel} and equals this
+     * {@code ComponentColorModel}.
+     * @param obj the {@code Object} to test for equality
+     * @return {@code true} if the specified {@code Object}
+     * is an instance of {@code ComponentColorModel} and equals this
+     * {@code ComponentColorModel}; {@code false} otherwise.
      */
+    @Override
     public boolean equals(Object obj) {
-        if (!super.equals(obj)) {
+        if (!(obj instanceof ComponentColorModel)) {
             return false;
         }
 
-        if (obj.getClass() !=  getClass()) {
+        ComponentColorModel cm = (ComponentColorModel) obj;
+        if (supportsAlpha != cm.hasAlpha() ||
+            isAlphaPremultiplied != cm.isAlphaPremultiplied() ||
+            pixel_bits != cm.getPixelSize() ||
+            transparency != cm.getTransparency() ||
+            numComponents != cm.getNumComponents() ||
+            (!(colorSpace.equals(cm.colorSpace))) ||
+            transferType != cm.transferType)
+        {
+            return false;
+        }
+
+        if (!(Arrays.equals(nBits, cm.getComponentSize()))) {
             return false;
         }
 
         return true;
     }
 
+    /**
+     * Returns the hash code for this ComponentColorModel.
+     *
+     * @return    a hash code for this ComponentColorModel.
+     */
+    @Override
+    public int hashCode() {
+        int result = hashCode;
+        if (result == 0) {
+            result = 7;
+            result = 89 * result + this.pixel_bits;
+            result = 89 * result + Arrays.hashCode(this.nBits);
+            result = 89 * result + this.transparency;
+            result = 89 * result + (this.supportsAlpha ? 1 : 0);
+            result = 89 * result + (this.isAlphaPremultiplied ? 1 : 0);
+            result = 89 * result + this.numComponents;
+            result = 89 * result + this.colorSpace.hashCode();
+            result = 89 * result + this.transferType;
+            hashCode = result;
+        }
+        return result;
+    }
 }
