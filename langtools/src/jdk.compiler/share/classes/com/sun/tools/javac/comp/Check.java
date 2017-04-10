@@ -3908,4 +3908,16 @@ public class Check {
         }
     }
 
+    void checkModuleRequires(final DiagnosticPosition pos, final RequiresDirective rd) {
+        if ((rd.module.flags() & Flags.AUTOMATIC_MODULE) != 0) {
+            deferredLintHandler.report(() -> {
+                if (rd.isTransitive() && lint.isEnabled(LintCategory.REQUIRES_TRANSITIVE_AUTOMATIC)) {
+                    log.warning(pos, Warnings.RequiresTransitiveAutomatic);
+                } else if (lint.isEnabled(LintCategory.REQUIRES_AUTOMATIC)) {
+                    log.warning(pos, Warnings.RequiresAutomatic);
+                }
+            });
+        }
+    }
+
 }
