@@ -24,7 +24,7 @@
  /*
  * @test
  * @key headful
- * @bug 4302718 6753165
+ * @bug 4302718 6753165 8177386
  * @summary verifies that undo does not work in a disabled TextField on windows
  * @requires (os.family == "windows")
  * @run main/manual DisabledUndoTest
@@ -42,12 +42,12 @@ public class DisabledUndoTest {
 
     private static void init() throws Exception {
         String[] instructions
-                = {
-                    "1.Type a few symbols in the textfield.",
-                    "2.Then click the button Disable textfield to disable the textfield.",
-                    "3.Right-click on the textfield to invoke context menu and select \"Undo\".",
-                    "4.Verify that the symbols you typed are NOT undone.",
-                    "5.If they are not, press Pass, else press Fail."
+            = {
+                "1.Type a few symbols in the textfield.",
+                "2.Right-click on the textfield to invoke context menu and select \"Undo\". Make sure the typed symbol is undone.",
+                "3.Then click the button Disable textfield to disable the textfield.",
+                "4.Right-click on the textfield to invoke context menu.Verify that Undo option is disabled in context menu and you can't undo the text",
+                "5.If they are not, press Pass, else press Fail."
                 };
 
         Sysout.createDialog();
