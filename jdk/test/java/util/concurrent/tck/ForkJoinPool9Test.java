@@ -32,8 +32,6 @@
  * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.concurrent.CountDownLatch;
@@ -93,7 +91,7 @@ public class ForkJoinPool9Test extends JSR166TestCase {
         Future<?> f = ForkJoinPool.commonPool().submit(runInCommonPool);
         // Ensure runInCommonPool is truly running in the common pool,
         // by giving this thread no opportunity to "help" on get().
-        assertTrue(taskStarted.await(LONG_DELAY_MS, MILLISECONDS));
+        await(taskStarted);
         assertNull(f.get());
     }
 

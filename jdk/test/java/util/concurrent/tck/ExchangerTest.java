@@ -160,12 +160,12 @@ public class ExchangerTest extends JSR166TestCase {
             public void realRun() throws InterruptedException {
                 assertSame(one, e.exchange(two));
                 exchanged.countDown();
-                interrupted.await();
+                await(interrupted);
                 assertSame(three, e.exchange(one));
             }});
         Thread t3 = newStartedThread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
-                interrupted.await();
+                await(interrupted);
                 assertSame(one, e.exchange(three));
             }});
 
