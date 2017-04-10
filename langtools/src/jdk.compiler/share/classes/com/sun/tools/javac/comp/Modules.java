@@ -1084,6 +1084,7 @@ public class Modules extends JCTree.Visitor {
         public void visitRequires(JCRequires tree) {
             if (tree.directive != null && allModules().contains(tree.directive.module)) {
                 chk.checkDeprecated(tree.moduleName.pos(), msym, tree.directive.module);
+                chk.checkModuleRequires(tree.moduleName.pos(), tree.directive);
                 msym.directives = msym.directives.prepend(tree.directive);
             }
         }
