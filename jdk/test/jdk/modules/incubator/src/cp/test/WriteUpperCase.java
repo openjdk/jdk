@@ -23,13 +23,11 @@
 
 package test;
 
-import java.lang.reflect.Layer;
-import java.lang.reflect.Module;
 import static java.util.stream.Collectors.joining;
 
 public class WriteUpperCase {
     public static void main(String[] args) {
-        System.out.println(Layer.boot()
+        System.out.println(ModuleLayer.boot()
                                 .modules()
                                 .stream()
                                 .map(Module::getName)

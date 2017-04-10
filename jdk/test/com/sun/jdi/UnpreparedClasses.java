@@ -22,18 +22,17 @@
  */
 
 /**
- *  @test
- *  @bug 4368402
- *  @summary UnpreparedClasses verifies that all the classes in the
- *  loaded class list are prepared classes.
- *  @author Robert Field
+ * @test
+ * @bug 4368402
+ * @summary UnpreparedClasses verifies that all the classes in the
+ * loaded class list are prepared classes.
+ * @author Robert Field
  *
- *  @modules jdk.jdi
- *  @run build JDIScaffold VMConnection
- *  @run compile -g InnerTarg.java
- *  @run build UnpreparedClasses
+ * @run build JDIScaffold VMConnection
+ * @run compile -g InnerTarg.java
+ * @run build UnpreparedClasses
  *
- *  @run driver UnpreparedClasses InnerTarg
+ * @run driver UnpreparedClasses InnerTarg
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

@@ -28,7 +28,6 @@
  *          - ThreadMXBean.findMonitorDeadlockedThreads()
  * @author  Mandy Chung
  *
- * @modules java.management
  * @build MonitorDeadlock
  * @build ThreadDump
  * @run main/othervm FindMonitorDeadlock

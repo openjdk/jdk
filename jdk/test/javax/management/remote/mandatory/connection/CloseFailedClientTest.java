@@ -26,7 +26,7 @@
  * @bug 4921888
  * @summary Tests that we do not get a NullPointException.
  * @author Shanliang JIANG
- * @modules java.management
+ *
  * @run clean CloseFailedClientTest
  * @run build CloseFailedClientTest
  * @run main CloseFailedClientTest

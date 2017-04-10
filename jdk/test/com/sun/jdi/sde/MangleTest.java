@@ -1,17 +1,16 @@
 /**
- *  @test
- *  @bug 4390869
- *  @bug 4460328
- *  @summary Test the new SourceDebugExtension facility
+ * @test
+ * @bug 4390869
+ * @bug 4460328
+ * @summary Test the new SourceDebugExtension facility
+ * @author Robert Field
  *
- *  @author Robert Field
+ * @library ..
  *
- *  @library ..
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter InstallSDE
- *  @run compile MangleTest.java
- *  @run compile -g onion/pickle/Mangle.java
- *  @run driver MangleTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter InstallSDE
+ * @run compile MangleTest.java
+ * @run compile -g onion/pickle/Mangle.java
+ * @run driver MangleTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

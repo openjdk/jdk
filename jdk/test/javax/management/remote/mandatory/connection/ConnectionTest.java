@@ -26,7 +26,7 @@
  * @bug 4865397
  * @summary Tests remote JMX connections
  * @author Eamonn McManus
- * @modules java.management.rmi
+ *
  * @run clean ConnectionTest
  * @run build ConnectionTest
  * @run main ConnectionTest

@@ -34,15 +34,14 @@ import jdk.testlibrary.JcmdBase;
 import jdk.testlibrary.OutputAnalyzer;
 import jdk.testlibrary.Utils;
 
-/**
- * Unit test for jcmd utility. Tests jcmd options which do not send
- * requests to a specific JVM process.
- */
 /*
  * @test
  * @bug 7104647
+ * @summary Unit test for jcmd utility. Tests jcmd options which do not send
+ * requests to a specific JVM process.
+ *
  * @library /lib/testlibrary
- * @modules java.management
+ *
  * @build jdk.testlibrary.*
  * @run main TestJcmdDefaults
  */

@@ -27,7 +27,7 @@
  * @summary Test that the jmx.monitor.error.runtime monitor notification
  *          is emitted when getAttribute throws RuntimeException.
  * @author Luis-Miguel Alventosa
- * @modules java.management
+ *
  * @run clean RuntimeExceptionTest MBeanServerBuilderImpl
  *            MBeanServerForwarderInvocationHandler
  * @run build RuntimeExceptionTest MBeanServerBuilderImpl

@@ -435,6 +435,7 @@ public abstract class TIFFBaseJPEGCompressor extends TIFFCompressor {
         return compDataLength;
     }
 
+    @SuppressWarnings("deprecation")
     protected void finalize() throws Throwable {
         super.finalize();
         if(JPEGWriter != null) {

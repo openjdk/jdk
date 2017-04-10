@@ -27,7 +27,7 @@
  * @summary Basic unit test of ThreadInfo.getBlockedCount()
  * @author  Alexei Guibadoulline and Mandy Chung
  * @author  Jaroslav Bachorik
- * @modules java.management
+ *
  * @run main ThreadBlockedCount
  */
 

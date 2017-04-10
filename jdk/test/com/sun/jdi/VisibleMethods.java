@@ -22,16 +22,14 @@
  */
 
 /**
- *  @test
- *  @summary Test ReferenceType.visibleMethods
- *  @bug 8028430
+ * @test
+ * @summary Test ReferenceType.visibleMethods
+ * @bug 8028430
+ * @author Staffan Larsen
  *
- *  @author Staffan Larsen
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g VisibleMethods.java
- *  @run driver VisibleMethods
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g VisibleMethods.java
+ * @run driver VisibleMethods
  */
 import com.sun.jdi.Method;
 import com.sun.jdi.ReferenceType;

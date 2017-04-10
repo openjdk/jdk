@@ -25,7 +25,6 @@
 
 package java.lang.instrument;
 
-import java.lang.reflect.Module;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
