@@ -26,8 +26,9 @@
 # @bug     4530538
 # @summary Run MemoryManagement test with concurrent mark sweep GC
 # @author  Mandy Chung
+#
 # @requires vm.gc=="ConcMarkSweep" | vm.gc=="null"
-# @modules java.management
+#
 # @run build MemoryManagement
 # @run shell/timeout=600 MemoryManagementConcMarkSweepGC.sh
 #
@@ -42,7 +43,7 @@ else
 fi
 
 runOne()
-{ 
+{
    echo "runOne $@"
    $TESTJAVA/bin/java ${TESTVMOPTS} -classpath $TESTCLASSES $@ || exit 2
 }

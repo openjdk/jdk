@@ -22,16 +22,14 @@
  */
 
 /**
- *  @test
- *  @bug 8021897
- *  @summary Test getting the value for an uninitialized String object
+ * @test
+ * @bug 8021897
+ * @summary Test getting the value for an uninitialized String object
+ * @author Staffan Larsen
  *
- *  @author Staffan Larsen
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g GetUninitializedStringValue.java
- *  @run driver GetUninitializedStringValue
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g GetUninitializedStringValue.java
+ * @run driver GetUninitializedStringValue
  */
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.StackFrame;

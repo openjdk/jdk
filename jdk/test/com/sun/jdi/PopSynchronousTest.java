@@ -22,17 +22,15 @@
  */
 
 /**
- *  @test
- *  @bug 4467564
- *  @summary Test the popping of frames in synchronous context
- *           (that is, when stopped at an event)
+ * @test
+ * @bug 4467564
+ * @summary Test the popping of frames in synchronous context
+ *          (that is, when stopped at an event)
+ * @author Robert Field
  *
- *  @author Robert Field
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g PopSynchronousTest.java
- *  @run driver PopSynchronousTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g PopSynchronousTest.java
+ * @run driver PopSynchronousTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

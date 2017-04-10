@@ -23,6 +23,12 @@
  * questions.
  */
 
+/**
+ * DNS Java Naming provider.
+ *
+ * @moduleGraph
+ * @since 9
+ */
 module jdk.naming.dns {
     requires java.naming;
 

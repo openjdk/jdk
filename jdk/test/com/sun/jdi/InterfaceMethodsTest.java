@@ -22,16 +22,15 @@
  */
 
 /**
- *  @test
- *  @bug 8031195
- *  @bug 8071657
- *  @bug 8165827
- *  @summary  JDI: Add support for static, private and default methods in interfaces
+ * @test
+ * @bug 8031195
+ * @bug 8071657
+ * @bug 8165827
+ * @summary  JDI: Add support for static, private and default methods in interfaces
  *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run build InterfaceMethodsTest
- *  @run driver InterfaceMethodsTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run build InterfaceMethodsTest
+ * @run driver InterfaceMethodsTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

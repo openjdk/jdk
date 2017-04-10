@@ -26,7 +26,6 @@
  * @bug 6434298
  * @summary Test IAE is thrown when typeName or description parameter is null for TabularType and CompositeType constructors
  * @author Joel FERAUD
- * @modules java.management
  */
 
 import javax.management.openmbean.*;

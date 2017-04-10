@@ -70,7 +70,7 @@
  * } </pre>
  *
  * <p> If module {@code m1} is resolved with the configuration for the {@link
- * java.lang.reflect.Layer#boot() boot} layer as the parent then the resulting
+ * java.lang.ModuleLayer#boot() boot} layer as the parent then the resulting
  * configuration contains two modules ({@code m1}, {@code m2}). The edges in
  * its readability graph are:
  * <pre> {@code
@@ -92,10 +92,10 @@
  *
  * <p> {@link java.lang.module.ModuleDescriptor#isAutomatic() Automatic} modules
  * receive special treatment during resolution. Each automatic module is resolved
- * so that it reads all other modules in the configuration and all parent
- * configurations. Each automatic module is also resolved as if it
- * "{@code requires transitive}" all other automatic modules in the configuration
- * (and all automatic modules in parent configurations). </p>
+ * as if it "{@code requires transitive}" all observable automatic modules and
+ * all automatic modules in the parent configurations. Each automatic module is
+ * resolved so that it reads all other modules in the resulting configuration and
+ * all modules in parent configurations. </p>
  *
  * <h2><a name="servicebinding">Service binding</a></h2>
  *

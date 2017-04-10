@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,12 +112,6 @@ public interface Comparator<T> {
      * zero, or a positive integer as the first argument is less than, equal
      * to, or greater than the second.<p>
      *
-     * In the foregoing description, the notation
-     * {@code sgn(}<i>expression</i>{@code )} designates the mathematical
-     * <i>signum</i> function, which is defined to return one of {@code -1},
-     * {@code 0}, or {@code 1} according to whether the value of
-     * <i>expression</i> is negative, zero or positive.<p>
-     *
      * The implementor must ensure that {@code sgn(compare(x, y)) ==
      * -sgn(compare(y, x))} for all {@code x} and {@code y}.  (This
      * implies that {@code compare(x, y)} must throw an exception if and only
@@ -135,7 +129,13 @@ public interface Comparator<T> {
      * {@code (compare(x, y)==0) == (x.equals(y))}.  Generally speaking,
      * any comparator that violates this condition should clearly indicate
      * this fact.  The recommended language is "Note: this comparator
-     * imposes orderings that are inconsistent with equals."
+     * imposes orderings that are inconsistent with equals."<p>
+     *
+     * In the foregoing description, the notation
+     * {@code sgn(}<i>expression</i>{@code )} designates the mathematical
+     * <i>signum</i> function, which is defined to return one of {@code -1},
+     * {@code 0}, or {@code 1} according to whether the value of
+     * <i>expression</i> is negative, zero, or positive, respectively.
      *
      * @param o1 the first object to be compared.
      * @param o2 the second object to be compared.

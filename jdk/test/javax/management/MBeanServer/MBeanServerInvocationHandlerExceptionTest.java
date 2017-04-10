@@ -26,7 +26,7 @@
  * @bug 5092515
  * @summary Test how to unwrap a user specific exception
  * @author Shanliang JIANG
- * @modules java.management
+ *
  * @run clean MBeanServerInvocationHandlerExceptionTest
  * @run build MBeanServerInvocationHandlerExceptionTest
  * @run main MBeanServerInvocationHandlerExceptionTest

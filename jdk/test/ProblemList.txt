@@ -180,8 +180,6 @@ java/nio/channels/Selector/Wakeup.java                          6963118 windows-
 
 java/nio/channels/DatagramChannel/ChangingAddress.java          7141822 macosx-all
 
-java/nio/channels/Selector/OutOfBand.java                       7132677 macosx-all
-
 java/nio/file/WatchService/Basic.java                           7158947 solaris-all Solaris 11
 java/nio/file/WatchService/MayFlies.java                        7158947 solaris-all Solaris 11
 java/nio/file/WatchService/LotsOfEvents.java                    7158947 solaris-all Solaris 11
@@ -285,7 +283,6 @@ com/sun/jdi/sde/SourceDebugExtensionTest.java                   8158066 windows-
 # jdk_util
 
 java/util/BitSet/BitSetStreamTest.java                          8079538 generic-all
-
 
 ############################################################################
 

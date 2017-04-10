@@ -27,7 +27,7 @@
  * @summary Test that  ModelMBeanInfoSupport.getDescriptors(null) also
  *          returns the MBean's descriptor.
  * @author Eamonn McManus, Daniel Fuchs
- * @modules java.management
+ *
  * @run clean GetAllDescriptorsTest
  * @run build GetAllDescriptorsTest
  * @run main/othervm/java.security.policy=policy  GetAllDescriptorsTest

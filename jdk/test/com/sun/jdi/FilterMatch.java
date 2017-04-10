@@ -22,16 +22,14 @@
  */
 
 /**
- *  @test
- *  @bug 4331522
- *  @summary addClassFilter("Foo") acts like "Foo*"
+ * @test
+ * @bug 4331522
+ * @summary addClassFilter("Foo") acts like "Foo*"
+ * @author Robert Field/Jim Holmlund
  *
- *  @author Robert Field/Jim Holmlund
- *
- *  @modules jdk.jdi
- *  @run build JDIScaffold VMConnection
- *  @run compile -g HelloWorld.java
- *  @run driver FilterMatch
+ * @run build JDIScaffold VMConnection
+ * @run compile -g HelloWorld.java
+ * @run driver FilterMatch
  */
 
 /* Look at patternMatch in JDK file:

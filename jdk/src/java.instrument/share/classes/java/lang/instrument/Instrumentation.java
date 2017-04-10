@@ -25,7 +25,6 @@
 
 package java.lang.instrument;
 
-import java.lang.reflect.Module;
 import java.security.ProtectionDomain;
 import java.util.List;
 import java.util.Map;
@@ -346,7 +345,7 @@ public interface Instrumentation {
 
 
     /**
-     * Determines whether a class is modifiable by
+     * Tests whether a class is modifiable by
      * {@linkplain #retransformClasses retransformation}
      * or {@linkplain #redefineClasses redefinition}.
      * If a class is modifiable then this method returns <code>true</code>.
@@ -711,8 +710,11 @@ public interface Instrumentation {
      *         {@code extraProvides} map contains a service provider type that
      *         is not a member of the module or an implementation of the service;
      *         or {@code extraProvides} maps a key to an empty list
+     * @throws UnmodifiableModuleException if the module cannot be modified
      * @throws NullPointerException if any of the arguments are {@code null} or
      *         any of the Sets or Maps contains a {@code null} key or value
+     *
+     * @see #isModifiableModule(Module)
      * @since 9
      * @spec JPMS
      */
@@ -722,4 +724,19 @@ public interface Instrumentation {
                         Map<String, Set<Module>> extraOpens,
                         Set<Class<?>> extraUses,
                         Map<Class<?>, List<Class<?>>> extraProvides);
+
+    /**
+     * Tests whether a module can be modified with {@link #redefineModule
+     * redefineModule}. If a module is modifiable then this method returns
+     * {@code true}. If a module is not modifiable then this method returns
+     * {@code false}.
+     *
+     * @param module the module to test if it can be modified
+     * @return {@code true} if the module is modifiable, otherwise {@code false}
+     * @throws NullPointerException if the module is {@code null}
+     *
+     * @since 9
+     * @spec JPMS
+     */
+    boolean isModifiableModule(Module module);
 }

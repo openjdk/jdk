@@ -547,7 +547,6 @@ public class ModulePath implements ModuleFinder {
      */
     private static class Patterns {
         static final Pattern DASH_VERSION = Pattern.compile("-(\\d+(\\.|$))");
-        static final Pattern TRAILING_VERSION = Pattern.compile("(\\.|\\d)*$");
         static final Pattern NON_ALPHANUM = Pattern.compile("[^A-Za-z0-9]");
         static final Pattern REPEATING_DOTS = Pattern.compile("(\\.)(\\1)+");
         static final Pattern LEADING_DOTS = Pattern.compile("^\\.");
@@ -558,9 +557,6 @@ public class ModulePath implements ModuleFinder {
      * Clean up candidate module name derived from a JAR file name.
      */
     private static String cleanModuleName(String mn) {
-        // drop trailing version from name
-        mn = Patterns.TRAILING_VERSION.matcher(mn).replaceAll("");
-
         // replace non-alphanumeric
         mn = Patterns.NON_ALPHANUM.matcher(mn).replaceAll(".");
 
@@ -630,7 +626,7 @@ public class ModulePath implements ModuleFinder {
     private Set<String> explodedPackages(Path dir) {
         try {
             return Files.find(dir, Integer.MAX_VALUE,
-                              ((path, attrs) -> attrs.isRegularFile()))
+                    ((path, attrs) -> attrs.isRegularFile() && !isHidden(path)))
                     .map(path -> dir.relativize(path))
                     .map(this::toPackageName)
                     .flatMap(Optional::stream)
@@ -723,6 +719,17 @@ public class ModulePath implements ModuleFinder {
         } else {
             // not a valid package name
             return Optional.empty();
+        }
+    }
+
+    /**
+     * Returns true if the given file exists and is a hidden file
+     */
+    private boolean isHidden(Path file) {
+        try {
+            return Files.isHidden(file);
+        } catch (IOException ioe) {
+            return false;
         }
     }
 

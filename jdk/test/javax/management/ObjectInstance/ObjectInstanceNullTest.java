@@ -26,7 +26,7 @@
  * @bug 5015663
  * @summary Test ObjectInstance(name,null).hashCode() and .equals()
  * @author Daniel Fuchs
- * @modules java.management
+ *
  * @run clean ObjectInstanceNullTest
  * @run build ObjectInstanceNullTest
  * @run main ObjectInstanceNullTest
