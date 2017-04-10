@@ -27,10 +27,11 @@ import org.graalvm.compiler.debug.DebugCounter;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeFlood;
 import org.graalvm.compiler.nodes.AbstractEndNode;
+import org.graalvm.compiler.nodes.GuardNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionType;
-import org.graalvm.compiler.options.OptionValue;
+import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.phases.Phase;
 
 public class DeadCodeEliminationPhase extends Phase {
@@ -39,7 +40,7 @@ public class DeadCodeEliminationPhase extends Phase {
 
         // @formatter:off
         @Option(help = "Disable optional dead code eliminations", type = OptionType.Debug)
-        public static final OptionValue<Boolean> ReduceDCE = new OptionValue<>(true);
+        public static final OptionKey<Boolean> ReduceDCE = new OptionKey<>(true);
         // @formatter:on
     }
 
@@ -70,7 +71,7 @@ public class DeadCodeEliminationPhase extends Phase {
 
     @Override
     public void run(StructuredGraph graph) {
-        if (optional && Options.ReduceDCE.getValue()) {
+        if (optional && Options.ReduceDCE.getValue(graph.getOptions())) {
             return;
         }
 
@@ -78,6 +79,16 @@ public class DeadCodeEliminationPhase extends Phase {
         int totalNodeCount = graph.getNodeCount();
         flood.add(graph.start());
         iterateSuccessorsAndInputs(flood);
+        boolean changed = false;
+        for (GuardNode guard : graph.getNodes(GuardNode.TYPE)) {
+            if (flood.isMarked(guard.getAnchor().asNode())) {
+                flood.add(guard);
+                changed = true;
+            }
+        }
+        if (changed) {
+            iterateSuccessorsAndInputs(flood);
+        }
         int totalMarkedCount = flood.getTotalMarkedCount();
         if (totalNodeCount == totalMarkedCount) {
             // All nodes are live => nothing more to do.
@@ -99,6 +110,7 @@ public class DeadCodeEliminationPhase extends Phase {
                 return succOrInput;
             }
         };
+
         for (Node current : flood) {
             if (current instanceof AbstractEndNode) {
                 AbstractEndNode end = (AbstractEndNode) current;

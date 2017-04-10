@@ -40,7 +40,6 @@ import org.graalvm.compiler.hotspot.nodes.type.MethodPointerStamp;
 import org.graalvm.compiler.hotspot.word.HotSpotOperation;
 import org.graalvm.compiler.hotspot.word.HotSpotOperation.HotspotOpcode;
 import org.graalvm.compiler.hotspot.word.PointerCastNode;
-import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.ConditionalNode;
@@ -110,7 +109,7 @@ class HotSpotWordOperationPlugin extends WordOperationPlugin {
                 PointerEqualsNode comparison = b.add(new PointerEqualsNode(left, right));
                 ValueNode eqValue = b.add(forBoolean(opcode == POINTER_EQ));
                 ValueNode neValue = b.add(forBoolean(opcode == POINTER_NE));
-                b.addPush(returnKind, new ConditionalNode(comparison, eqValue, neValue));
+                b.addPush(returnKind, ConditionalNode.create(comparison, eqValue, neValue));
                 break;
 
             case IS_NULL:
@@ -119,7 +118,7 @@ class HotSpotWordOperationPlugin extends WordOperationPlugin {
                 assert pointer.stamp() instanceof MetaspacePointerStamp;
 
                 LogicNode isNull = b.add(IsNullNode.create(pointer));
-                b.addPush(returnKind, new ConditionalNode(isNull, b.add(forBoolean(true)), b.add(forBoolean(false))));
+                b.addPush(returnKind, ConditionalNode.create(isNull, b.add(forBoolean(true)), b.add(forBoolean(false))));
                 break;
 
             case FROM_POINTER:
@@ -149,11 +148,6 @@ class HotSpotWordOperationPlugin extends WordOperationPlugin {
                     location = snippetReflection.asObject(LocationIdentity.class, args[2].asJavaConstant());
                 }
                 ReadNode read = b.add(new ReadNode(address, location, readStamp, BarrierType.NONE));
-                /*
-                 * The read must not float outside its block otherwise it may float above an
-                 * explicit zero check on its base address.
-                 */
-                read.setGuard(AbstractBeginNode.prevBegin(read));
                 b.push(returnKind, read);
                 break;
 

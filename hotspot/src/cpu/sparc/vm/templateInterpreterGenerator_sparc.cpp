@@ -374,6 +374,10 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   __ and3(flags, ConstantPoolCacheEntry::parameter_size_mask, parameter_size);  // argument size in words
   __ sll(parameter_size, Interpreter::logStackElementSize, parameter_size);     // each argument size in bytes
   __ add(Lesp, parameter_size, Lesp);                                           // pop arguments
+
+  __ check_and_handle_popframe(Gtemp);
+  __ check_and_handle_earlyret(Gtemp);
+
   __ dispatch_next(state, step);
 
   return entry;
@@ -465,12 +469,6 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(TosState state, 
   return entry;
 }
 
-
-address TemplateInterpreterGenerator::generate_continuation_for(TosState state) {
-  address entry = __ pc();
-  __ dispatch_next(state);
-  return entry;
-}
 
 //
 // Helpers for commoning out cases in the various type of method entries.

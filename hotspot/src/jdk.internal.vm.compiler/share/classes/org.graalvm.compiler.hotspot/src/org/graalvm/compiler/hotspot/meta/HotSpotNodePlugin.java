@@ -23,7 +23,6 @@
 package org.graalvm.compiler.hotspot.meta;
 
 import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
-import static org.graalvm.compiler.hotspot.meta.HotSpotGraalConstantFieldProvider.FieldReadEnabledInImmutableCode;
 
 import org.graalvm.compiler.core.common.type.StampPair;
 import org.graalvm.compiler.nodes.ConstantNode;
@@ -90,7 +89,7 @@ public final class HotSpotNodePlugin implements NodePlugin, TypePlugin {
 
     @Override
     public boolean handleLoadField(GraphBuilderContext b, ValueNode object, ResolvedJavaField field) {
-        if (!ImmutableCode.getValue() || b.parsingIntrinsic()) {
+        if (!ImmutableCode.getValue(b.getOptions()) || b.parsingIntrinsic()) {
             if (object.isConstant()) {
                 JavaConstant asJavaConstant = object.asJavaConstant();
                 if (tryReadField(b, field, asJavaConstant)) {
@@ -106,7 +105,7 @@ public final class HotSpotNodePlugin implements NodePlugin, TypePlugin {
 
     @Override
     public boolean handleLoadStaticField(GraphBuilderContext b, ResolvedJavaField field) {
-        if (!ImmutableCode.getValue() || b.parsingIntrinsic()) {
+        if (!ImmutableCode.getValue(b.getOptions()) || b.parsingIntrinsic()) {
             if (tryReadField(b, field, null)) {
                 return true;
             }
@@ -118,21 +117,11 @@ public final class HotSpotNodePlugin implements NodePlugin, TypePlugin {
     }
 
     private static boolean tryReadField(GraphBuilderContext b, ResolvedJavaField field, JavaConstant object) {
-        // FieldReadEnabledInImmutableCode is non null only if assertions are enabled
-        if (FieldReadEnabledInImmutableCode != null && ImmutableCode.getValue()) {
-            FieldReadEnabledInImmutableCode.set(Boolean.TRUE);
-            try {
-                return tryConstantFold(b, field, object);
-            } finally {
-                FieldReadEnabledInImmutableCode.set(null);
-            }
-        } else {
-            return tryConstantFold(b, field, object);
-        }
+        return tryConstantFold(b, field, object);
     }
 
     private static boolean tryConstantFold(GraphBuilderContext b, ResolvedJavaField field, JavaConstant object) {
-        ConstantNode result = ConstantFoldUtil.tryConstantFold(b.getConstantFieldProvider(), b.getConstantReflection(), b.getMetaAccess(), field, object);
+        ConstantNode result = ConstantFoldUtil.tryConstantFold(b.getConstantFieldProvider(), b.getConstantReflection(), b.getMetaAccess(), field, object, b.getOptions());
         if (result != null) {
             result = b.getGraph().unique(result);
             b.push(field.getJavaKind(), result);

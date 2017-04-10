@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,12 @@
 #include "oops/markOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #if INCLUDE_ALL_GCS
-#include "gc/g1/g1MarkSweep.hpp"
+#include "gc/g1/g1Allocator.inline.hpp"
 #endif // INCLUDE_ALL_GCS
 
 inline bool MarkSweep::is_archive_object(oop object) {
 #if INCLUDE_ALL_GCS
-  return (G1MarkSweep::archive_check_enabled() &&
-          G1MarkSweep::in_archive_range(object));
+  return G1ArchiveAllocator::is_archive_object(object);
 #else
   return false;
 #endif

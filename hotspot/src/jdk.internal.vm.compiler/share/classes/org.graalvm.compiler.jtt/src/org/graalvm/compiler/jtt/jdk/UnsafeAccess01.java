@@ -24,30 +24,25 @@ package org.graalvm.compiler.jtt.jdk;
 
 import java.lang.reflect.Field;
 
-import org.junit.Test;
-
-import sun.misc.Unsafe;
-
 import org.graalvm.compiler.jtt.JTTTest;
+import org.junit.Test;
 
 /*
  */
 public class UnsafeAccess01 extends JTTTest {
 
     private static int randomValue = 100;
-    private static final Unsafe unsafe;
     private static final long offset;
     private static Object staticObject = new TestClass();
 
     static {
-        unsafe = getUnsafe();
         Field field = null;
         try {
             field = TestClass.class.getDeclaredField("field");
         } catch (NoSuchFieldException e) {
         } catch (SecurityException e) {
         }
-        offset = unsafe.objectFieldOffset(field);
+        offset = UNSAFE.objectFieldOffset(field);
     }
 
     private static class TestClass {
@@ -56,18 +51,8 @@ public class UnsafeAccess01 extends JTTTest {
 
     public static int test() {
         final TestClass object = new TestClass();
-        final int value = unsafe.getInt(object, offset);
+        final int value = UNSAFE.getInt(object, offset);
         return value;
-    }
-
-    static Unsafe getUnsafe() {
-        try {
-            final Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
-            unsafeField.setAccessible(true);
-            return (Unsafe) unsafeField.get(null);
-        } catch (Exception e) {
-            throw new Error(e);
-        }
     }
 
     @Test
@@ -86,11 +71,11 @@ public class UnsafeAccess01 extends JTTTest {
         final int oldValue = ((TestClass) object).field;
 
         if (randomValue == 100) {
-            unsafe.putInt(object, offset, 41);
+            UNSAFE.putInt(object, offset, 41);
         } else {
-            unsafe.putInt(object, offset, 40);
+            UNSAFE.putInt(object, offset, 40);
         }
-        unsafe.putInt(object, offset, 42);
+        UNSAFE.putInt(object, offset, 42);
         return oldValue;
     }
 }

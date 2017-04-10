@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,55 +22,46 @@
  */
 package org.graalvm.compiler.nodes.calc;
 
+import static org.graalvm.compiler.core.common.calc.Condition.LT;
+
+import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.type.FloatStamp;
 import org.graalvm.compiler.core.common.type.IntegerStamp;
-import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.debug.GraalError;
-import org.graalvm.compiler.graph.IterableNodeType;
 import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.LogicConstantNode;
+import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.LogicNegationNode;
 import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.util.GraphUtil;
 
 import jdk.vm.ci.code.CodeUtil;
 import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.ConstantReflectionProvider;
+import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PrimitiveConstant;
-import jdk.vm.ci.meta.TriState;
 
 @NodeInfo(shortName = "<")
-public final class IntegerLessThanNode extends CompareNode implements IterableNodeType {
+public final class IntegerLessThanNode extends IntegerLowerThanNode {
     public static final NodeClass<IntegerLessThanNode> TYPE = NodeClass.create(IntegerLessThanNode.class);
+    public static final LessThanOp OP = new LessThanOp();
 
     public IntegerLessThanNode(ValueNode x, ValueNode y) {
-        super(TYPE, Condition.LT, false, x, y);
+        super(TYPE, x, y, OP);
         assert !x.getStackKind().isNumericFloat() && x.getStackKind() != JavaKind.Object;
         assert !y.getStackKind().isNumericFloat() && y.getStackKind() != JavaKind.Object;
     }
 
-    public static LogicNode create(ValueNode x, ValueNode y, ConstantReflectionProvider constantReflection) {
-        LogicNode result = CompareNode.tryConstantFold(Condition.LT, x, y, constantReflection, false);
-        if (result != null) {
-            return result;
-        } else {
-            result = findSynonym(x, y);
-            if (result != null) {
-                return result;
-            }
-            return new IntegerLessThanNode(x, y);
-        }
+    public static LogicNode create(ValueNode x, ValueNode y) {
+        return OP.create(x, y);
     }
 
     @Override
     protected ValueNode optimizeNormalizeCmp(Constant constant, NormalizeCompareNode normalizeNode, boolean mirrored) {
         PrimitiveConstant primitive = (PrimitiveConstant) constant;
-        assert condition() == Condition.LT;
+        assert condition() == LT;
         if (primitive.getJavaKind() == JavaKind.Int && primitive.asInt() == 0) {
             ValueNode a = mirrored ? normalizeNode.getY() : normalizeNode.getX();
             ValueNode b = mirrored ? normalizeNode.getX() : normalizeNode.getY();
@@ -99,51 +90,6 @@ public final class IntegerLessThanNode extends CompareNode implements IterableNo
     }
 
     @Override
-    public ValueNode canonical(CanonicalizerTool tool, ValueNode forX, ValueNode forY) {
-        ValueNode result = super.canonical(tool, forX, forY);
-        if (result != this) {
-            return result;
-        }
-        ValueNode synonym = findSynonym(forX, forY);
-        if (synonym != null) {
-            return synonym;
-        }
-        if (forX.stamp() instanceof IntegerStamp && forY.stamp() instanceof IntegerStamp) {
-            if (IntegerStamp.sameSign((IntegerStamp) forX.stamp(), (IntegerStamp) forY.stamp())) {
-                return new IntegerBelowNode(forX, forY);
-            }
-        }
-        if (forY.isConstant() && forY.asConstant().isDefaultForKind() && forX instanceof SubNode) {
-            // (x - y) < 0 when x - y is known not to underflow == x < y
-            SubNode sub = (SubNode) forX;
-            IntegerStamp xStamp = (IntegerStamp) sub.getX().stamp();
-            IntegerStamp yStamp = (IntegerStamp) sub.getY().stamp();
-            long minValue = CodeUtil.minValue(xStamp.getBits());
-            long maxValue = CodeUtil.maxValue(xStamp.getBits());
-
-            if (!subtractMayUnderflow(xStamp.lowerBound(), yStamp.upperBound(), minValue) && !subtractMayOverflow(xStamp.upperBound(), yStamp.lowerBound(), maxValue)) {
-                return new IntegerLessThanNode(sub.getX(), sub.getY());
-            }
-        }
-        return this;
-    }
-
-    private static LogicNode findSynonym(ValueNode forX, ValueNode forY) {
-        if (GraphUtil.unproxify(forX) == GraphUtil.unproxify(forY)) {
-            return LogicConstantNode.contradiction();
-        } else if (forX.stamp() instanceof IntegerStamp && forY.stamp() instanceof IntegerStamp) {
-            IntegerStamp xStamp = (IntegerStamp) forX.stamp();
-            IntegerStamp yStamp = (IntegerStamp) forY.stamp();
-            if (xStamp.upperBound() < yStamp.lowerBound()) {
-                return LogicConstantNode.tautology();
-            } else if (xStamp.lowerBound() >= yStamp.upperBound()) {
-                return LogicConstantNode.contradiction();
-            }
-        }
-        return null;
-    }
-
-    @Override
     protected CompareNode duplicateModified(ValueNode newX, ValueNode newY) {
         if (newX.stamp() instanceof FloatStamp && newY.stamp() instanceof FloatStamp) {
             return new FloatLessThanNode(newX, newY, true);
@@ -153,84 +99,153 @@ public final class IntegerLessThanNode extends CompareNode implements IterableNo
         throw GraalError.shouldNotReachHere();
     }
 
-    @Override
-    public Stamp getSucceedingStampForX(boolean negated) {
-        Stamp xStampGeneric = getX().stamp();
-        Stamp yStampGeneric = getY().stamp();
-        if (xStampGeneric instanceof IntegerStamp) {
-            IntegerStamp xStamp = (IntegerStamp) xStampGeneric;
-            int bits = xStamp.getBits();
-            if (yStampGeneric instanceof IntegerStamp) {
-                IntegerStamp yStamp = (IntegerStamp) yStampGeneric;
-                assert yStamp.getBits() == bits;
-                if (negated) {
-                    // x >= y
-                    long xLowerBound = xStamp.lowerBound();
-                    long yLowerBound = yStamp.lowerBound();
-                    if (yLowerBound > xLowerBound) {
-                        return StampFactory.forIntegerWithMask(bits, yLowerBound, xStamp.upperBound(), xStamp);
-                    }
-                } else {
-                    // x < y
-                    long xUpperBound = xStamp.upperBound();
-                    long yUpperBound = yStamp.upperBound();
-                    if (yUpperBound == CodeUtil.minValue(bits)) {
-                        return null;
-                    } else if (yUpperBound <= xUpperBound) {
-                        assert yUpperBound != CodeUtil.minValue(bits);
-                        return StampFactory.forIntegerWithMask(bits, xStamp.lowerBound(), yUpperBound - 1, xStamp);
+    public static class LessThanOp extends LowerOp {
+
+        @Override
+        protected LogicNode findSynonym(ValueNode forX, ValueNode forY) {
+            LogicNode result = super.findSynonym(forX, forY);
+            if (result != null) {
+                return result;
+            }
+            if (forX.stamp() instanceof IntegerStamp && forY.stamp() instanceof IntegerStamp) {
+                if (IntegerStamp.sameSign((IntegerStamp) forX.stamp(), (IntegerStamp) forY.stamp())) {
+                    return new IntegerBelowNode(forX, forY);
+                }
+            }
+            if (forY.isConstant() && forX instanceof SubNode) {
+                SubNode sub = (SubNode) forX;
+                ValueNode xx = null;
+                ValueNode yy = null;
+                boolean negate = false;
+                if (forY.asConstant().isDefaultForKind()) {
+                    // (x - y) < 0 when x - y is known not to underflow <=> x < y
+                    xx = sub.getX();
+                    yy = sub.getY();
+                } else if (forY.isJavaConstant() && forY.asJavaConstant().asLong() == 1) {
+                    // (x - y) < 1 when x - y is known not to underflow <=> !(y < x)
+                    xx = sub.getY();
+                    yy = sub.getX();
+                    negate = true;
+                }
+                if (xx != null) {
+                    assert yy != null;
+                    IntegerStamp xStamp = (IntegerStamp) sub.getX().stamp();
+                    IntegerStamp yStamp = (IntegerStamp) sub.getY().stamp();
+                    long minValue = CodeUtil.minValue(xStamp.getBits());
+                    long maxValue = CodeUtil.maxValue(xStamp.getBits());
+
+                    if (!subtractMayUnderflow(xStamp.lowerBound(), yStamp.upperBound(), minValue) && !subtractMayOverflow(xStamp.upperBound(), yStamp.lowerBound(), maxValue)) {
+                        LogicNode logic = new IntegerLessThanNode(xx, yy);
+                        if (negate) {
+                            logic = LogicNegationNode.create(logic);
+                        }
+                        return logic;
                     }
                 }
             }
-        }
-        return null;
-    }
 
-    @Override
-    public Stamp getSucceedingStampForY(boolean negated) {
-        Stamp xStampGeneric = getX().stamp();
-        Stamp yStampGeneric = getY().stamp();
-        if (xStampGeneric instanceof IntegerStamp) {
-            IntegerStamp xStamp = (IntegerStamp) xStampGeneric;
-            int bits = xStamp.getBits();
-            if (yStampGeneric instanceof IntegerStamp) {
-                IntegerStamp yStamp = (IntegerStamp) yStampGeneric;
-                assert yStamp.getBits() == bits;
-                if (negated) {
-                    // y <= x
-                    long xUpperBound = xStamp.upperBound();
-                    long yUpperBound = yStamp.upperBound();
-                    if (xUpperBound < yUpperBound) {
-                        return StampFactory.forIntegerWithMask(bits, yStamp.lowerBound(), xUpperBound, yStamp);
+            int bits = ((IntegerStamp) forX.stamp()).getBits();
+            assert ((IntegerStamp) forY.stamp()).getBits() == bits;
+            long min = OP.minValue(bits);
+            long xResidue = 0;
+            ValueNode left = null;
+            JavaConstant leftCst = null;
+            if (forX instanceof AddNode) {
+                AddNode xAdd = (AddNode) forX;
+                if (xAdd.getY().isJavaConstant()) {
+                    long xCst = xAdd.getY().asJavaConstant().asLong();
+                    xResidue = xCst - min;
+                    left = xAdd.getX();
+                }
+            } else if (forX.isJavaConstant()) {
+                leftCst = forX.asJavaConstant();
+            }
+            if (left != null || leftCst != null) {
+                long yResidue = 0;
+                ValueNode right = null;
+                JavaConstant rightCst = null;
+                if (forY instanceof AddNode) {
+                    AddNode yAdd = (AddNode) forY;
+                    if (yAdd.getY().isJavaConstant()) {
+                        long yCst = yAdd.getY().asJavaConstant().asLong();
+                        yResidue = yCst - min;
+                        right = yAdd.getX();
                     }
-                } else {
-                    // y > x
-                    long xLowerBound = xStamp.lowerBound();
-                    long yLowerBound = yStamp.lowerBound();
-                    if (xLowerBound == CodeUtil.maxValue(bits)) {
-                        return null;
-                    } else if (xLowerBound >= yLowerBound) {
-                        assert xLowerBound != CodeUtil.maxValue(bits);
-                        return StampFactory.forIntegerWithMask(bits, xLowerBound + 1, yStamp.upperBound(), yStamp);
+                } else if (forY.isJavaConstant()) {
+                    rightCst = forY.asJavaConstant();
+                }
+                if (right != null || rightCst != null) {
+                    if ((xResidue == 0 && left != null) || (yResidue == 0 && right != null)) {
+                        if (left == null) {
+                            left = ConstantNode.forIntegerBits(bits, leftCst.asLong() - min);
+                        } else if (xResidue != 0) {
+                            left = AddNode.create(left, ConstantNode.forIntegerBits(bits, xResidue));
+                        }
+                        if (right == null) {
+                            right = ConstantNode.forIntegerBits(bits, rightCst.asLong() - min);
+                        } else if (yResidue != 0) {
+                            right = AddNode.create(right, ConstantNode.forIntegerBits(bits, yResidue));
+                        }
+                        return new IntegerBelowNode(left, right);
                     }
                 }
             }
+            return null;
         }
-        return null;
-    }
 
-    @Override
-    public TriState tryFold(Stamp xStampGeneric, Stamp yStampGeneric) {
-        if (xStampGeneric instanceof IntegerStamp && yStampGeneric instanceof IntegerStamp) {
-            IntegerStamp xStamp = (IntegerStamp) xStampGeneric;
-            IntegerStamp yStamp = (IntegerStamp) yStampGeneric;
-            if (xStamp.upperBound() < yStamp.lowerBound()) {
-                return TriState.TRUE;
-            }
-            if (xStamp.lowerBound() >= yStamp.upperBound()) {
-                return TriState.FALSE;
-            }
+        @Override
+        protected Condition getCondition() {
+            return LT;
         }
-        return TriState.UNKNOWN;
+
+        @Override
+        protected IntegerLowerThanNode createNode(ValueNode x, ValueNode y) {
+            return new IntegerLessThanNode(x, y);
+        }
+
+        @Override
+        protected long upperBound(IntegerStamp stamp) {
+            return stamp.upperBound();
+        }
+
+        @Override
+        protected long lowerBound(IntegerStamp stamp) {
+            return stamp.lowerBound();
+        }
+
+        @Override
+        protected int compare(long a, long b) {
+            return Long.compare(a, b);
+        }
+
+        @Override
+        protected long min(long a, long b) {
+            return Math.min(a, b);
+        }
+
+        @Override
+        protected long max(long a, long b) {
+            return Math.max(a, b);
+        }
+
+        @Override
+        protected long cast(long a, int bits) {
+            return CodeUtil.signExtend(a, bits);
+        }
+
+        @Override
+        protected long minValue(int bits) {
+            return NumUtil.minValue(bits);
+        }
+
+        @Override
+        protected long maxValue(int bits) {
+            return NumUtil.maxValue(bits);
+        }
+
+        @Override
+        protected IntegerStamp forInteger(int bits, long min, long max) {
+            return StampFactory.forInteger(bits, cast(min, bits), cast(max, bits));
+        }
     }
 }

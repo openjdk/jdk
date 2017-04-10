@@ -46,6 +46,11 @@ public final class VoidStamp extends Stamp {
     }
 
     @Override
+    public boolean isUnrestricted() {
+        return true;
+    }
+
+    @Override
     public JavaKind getStackKind() {
         return JavaKind.Void;
     }

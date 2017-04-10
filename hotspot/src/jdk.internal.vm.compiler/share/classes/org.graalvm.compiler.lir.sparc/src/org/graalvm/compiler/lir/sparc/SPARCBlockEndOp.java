@@ -23,11 +23,12 @@
 package org.graalvm.compiler.lir.sparc;
 
 import org.graalvm.compiler.asm.sparc.SPARCMacroAssembler;
+import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstructionClass;
-import org.graalvm.compiler.lir.StandardOp.AbstractBlockEndOp;
+import org.graalvm.compiler.lir.StandardOp.BlockEndOp;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 
-public abstract class SPARCBlockEndOp extends AbstractBlockEndOp implements SPARCLIRInstructionMixin {
+public abstract class SPARCBlockEndOp extends LIRInstruction implements BlockEndOp, SPARCLIRInstructionMixin {
     public static final LIRInstructionClass<SPARCBlockEndOp> TYPE = LIRInstructionClass.create(SPARCBlockEndOp.class);
     private final SPARCLIRInstructionMixinStore store;
 

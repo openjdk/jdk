@@ -22,6 +22,7 @@
  */
 package org.graalvm.compiler.core.test;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -29,6 +30,7 @@ import org.junit.Test;
  * {@link org.graalvm.compiler.phases.common.DominatorConditionalEliminationPhase} including those
  * that triggered bugs in this phase.
  */
+@Ignore
 public class ConditionalEliminationTest7 extends ConditionalEliminationTestBase {
 
     @SuppressWarnings("all")

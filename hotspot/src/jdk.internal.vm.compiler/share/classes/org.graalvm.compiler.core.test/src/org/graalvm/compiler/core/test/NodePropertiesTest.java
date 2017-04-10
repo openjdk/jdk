@@ -58,9 +58,11 @@ public class NodePropertiesTest extends GraalCompilerTest {
             x = 2;
             sideEffect = null;
         }
+        int b = 4;
         sideEffect = null;
+        int c = b % 5;
         // can shift
-        return a * x * 4;
+        return a * x * c;
     }
 
     public static int test2Snippet(int a) {
@@ -74,7 +76,7 @@ public class NodePropertiesTest extends GraalCompilerTest {
         }
         sideEffect = null;
         // cannot shift
-        return a * x * 3;
+        return a * x * 41;
     }
 
     public static final int ITERATIONS_LOOP_1 = 128;
@@ -249,7 +251,7 @@ public class NodePropertiesTest extends GraalCompilerTest {
         gc2.apply(g2, htc);
         Debug.log("Test Graph Cost --> 1.Graph cost:%f vs. 2.Graph cost:%f\n", gc1.finalCycles, gc2.finalCycles);
         Assert.assertTrue(gc2.finalCycles > gc1.finalCycles);
-        Assert.assertTrue(gc2.finalSize == gc1.finalSize + 1/* mul has 3 const input */);
+        Assert.assertTrue(gc2.finalSize == gc1.finalSize);
     }
 
     @Test
@@ -298,7 +300,7 @@ public class NodePropertiesTest extends GraalCompilerTest {
         new CanonicalizerPhase().apply(g1, htc);
         GraphCostPhase gc1 = new GraphCostPhase();
         gc1.apply(g1, htc);
-        Assert.assertEquals(120, gc1.finalCycles, 25);
+        Assert.assertEquals(40, gc1.finalCycles, 25);
     }
 
     static class ImprovementSavingCanonicalizer extends CustomCanonicalizer {

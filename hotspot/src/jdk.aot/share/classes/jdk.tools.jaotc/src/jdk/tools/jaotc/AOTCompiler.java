@@ -31,11 +31,15 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.graalvm.compiler.options.OptionValues;
+
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 public class AOTCompiler {
 
     private final Main main;
+
+    private final OptionValues graalOptions;
 
     private CompileQueue compileQueue;
 
@@ -102,11 +106,13 @@ public class AOTCompiler {
 
     /**
      * @param main
+     * @param graalOptions
      * @param aotBackend
      * @param threads number of compilation threads
      */
-    public AOTCompiler(Main main, AOTBackend aotBackend, final int threads) {
+    public AOTCompiler(Main main, OptionValues graalOptions, AOTBackend aotBackend, final int threads) {
         this.main = main;
+        this.graalOptions = graalOptions;
         this.compileQueue = new CompileQueue(threads);
         this.backend = aotBackend;
     }
@@ -146,7 +152,7 @@ public class AOTCompiler {
      * @param method method to be enqueued
      */
     private void enqueueMethod(AOTCompiledClass aotClass, ResolvedJavaMethod method) {
-        AOTCompilationTask task = new AOTCompilationTask(main, aotClass, method, backend);
+        AOTCompilationTask task = new AOTCompilationTask(main, graalOptions, aotClass, method, backend);
         try {
             compileQueue.execute(task);
         } catch (RejectedExecutionException e) {

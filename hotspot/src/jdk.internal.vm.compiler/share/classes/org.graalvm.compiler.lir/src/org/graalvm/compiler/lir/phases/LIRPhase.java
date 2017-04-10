@@ -32,8 +32,8 @@ import org.graalvm.compiler.debug.DebugTimer;
 import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.options.Option;
+import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
-import org.graalvm.compiler.options.OptionValue;
 
 import jdk.vm.ci.code.TargetDescription;
 
@@ -46,7 +46,7 @@ public abstract class LIRPhase<C> {
     public static class Options {
         // @formatter:off
         @Option(help = "Enable LIR level optimiztations.", type = OptionType.Debug)
-        public static final OptionValue<Boolean> LIROptimization = new OptionValue<>(true);
+        public static final OptionKey<Boolean> LIROptimization = new OptionKey<>(true);
         // @formatter:on
     }
 
@@ -71,7 +71,7 @@ public abstract class LIRPhase<C> {
          */
         public final DebugMemUseTracker memUseTracker;
 
-        private LIRPhaseStatistics(Class<?> clazz) {
+        public LIRPhaseStatistics(Class<?> clazz) {
             timer = Debug.timer("LIRPhaseTime_%s", clazz);
             memUseTracker = Debug.memUseTracker("LIRPhaseMemUse_%s", clazz);
         }
@@ -84,6 +84,10 @@ public abstract class LIRPhase<C> {
         }
     };
 
+    public static LIRPhaseStatistics getLIRPhaseStatistics(Class<?> c) {
+        return statisticsClassValue.get(c);
+    }
+
     /** Lazy initialization to create pattern only when assertions are enabled. */
     static class NamePatternHolder {
         static final Pattern NAME_PATTERN = Pattern.compile("[A-Z][A-Za-z0-9]+");
@@ -95,7 +99,7 @@ public abstract class LIRPhase<C> {
     }
 
     public LIRPhase() {
-        LIRPhaseStatistics statistics = statisticsClassValue.get(getClass());
+        LIRPhaseStatistics statistics = getLIRPhaseStatistics(getClass());
         timer = statistics.timer;
         memUseTracker = statistics.memUseTracker;
     }
@@ -109,8 +113,8 @@ public abstract class LIRPhase<C> {
         try (Scope s = Debug.scope(getName(), this)) {
             try (DebugCloseable a = timer.start(); DebugCloseable c = memUseTracker.start()) {
                 run(target, lirGenRes, context);
-                if (dumpLIR && Debug.isDumpEnabled(Debug.BASIC_LOG_LEVEL)) {
-                    Debug.dump(Debug.BASIC_LOG_LEVEL, lirGenRes.getLIR(), "%s", getName());
+                if (dumpLIR && Debug.isDumpEnabled(Debug.BASIC_LEVEL)) {
+                    Debug.dump(Debug.BASIC_LEVEL, lirGenRes.getLIR(), "%s", getName());
                 }
             }
         } catch (Throwable e) {

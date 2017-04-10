@@ -105,7 +105,7 @@ public final class FrameState extends VirtualState implements IterableNodeType {
      */
     @OptionalInput NodeInputList<ValueNode> values;
 
-    @OptionalInput(Association) NodeInputList<MonitorIdNode> monitorIds;
+    @Input(Association) NodeInputList<MonitorIdNode> monitorIds;
 
     @OptionalInput(State) NodeInputList<EscapeObjectState> virtualObjectMappings;
 
@@ -593,7 +593,7 @@ public final class FrameState extends VirtualState implements IterableNodeType {
          * The outermost FrameState should have a method that matches StructuredGraph.method except
          * when it's a substitution or it's null.
          */
-        assertTrue(outerFrameState != null || graph() == null || graph().method() == null || code == null || Objects.equals(code.getMethod(), graph().method()) ||
+        assertTrue(outerFrameState != null || graph() == null || graph().method() == null || code == null || Objects.equals(graph().method(), code.getMethod()) ||
                         graph().method().getAnnotation(MethodSubstitution.class) != null, "wrong outerFrameState %s != %s", code == null ? "null" : code.getMethod(), graph().method());
         if (monitorIds() != null && monitorIds().size() > 0) {
             int depth = outerLockDepth();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,31 +195,6 @@ void ClassLoadingService::reset_trace_class_unloading() {
   bool value = MemoryService::get_verbose() || ClassLoadingService::get_verbose();
   LogLevelType level = value ? LogLevel::Info : LogLevel::Off;
   LogConfiguration::configure_stdout(level, false, LOG_TAGS(class, unload));
-}
-
-GrowableArray<KlassHandle>* LoadedClassesEnumerator::_loaded_classes = NULL;
-Thread* LoadedClassesEnumerator::_current_thread = NULL;
-
-LoadedClassesEnumerator::LoadedClassesEnumerator(Thread* cur_thread) {
-  assert(cur_thread == Thread::current(), "Check current thread");
-
-  int init_size = ClassLoadingService::loaded_class_count();
-  _klass_handle_array = new GrowableArray<KlassHandle>(init_size);
-
-  // For consistency of the loaded classes, grab the SystemDictionary lock
-  MutexLocker sd_mutex(SystemDictionary_lock);
-
-  // Set _loaded_classes and _current_thread and begin enumerating all classes.
-  // Only one thread will do the enumeration at a time.
-  // These static variables are needed and they are used by the static method
-  // add_loaded_class called from classes_do().
-  _loaded_classes = _klass_handle_array;
-  _current_thread = cur_thread;
-
-  SystemDictionary::classes_do(&add_loaded_class);
-
-  // FIXME: Exclude array klasses for now
-  // Universe::basic_type_classes_do(&add_loaded_class);
 }
 
 #endif // INCLUDE_MANAGEMENT

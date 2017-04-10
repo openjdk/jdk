@@ -266,7 +266,7 @@ public class WriteBarrierAdditionTest extends HotSpotGraalCompilerTest {
             new GuardLoweringPhase().apply(graph, midContext);
             new LoweringPhase(new CanonicalizerPhase(), LoweringTool.StandardLoweringStage.MID_TIER).apply(graph, midContext);
             new WriteBarrierAdditionPhase(config).apply(graph);
-            Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "After Write Barrier Addition");
+            Debug.dump(Debug.BASIC_LEVEL, graph, "After Write Barrier Addition");
 
             int barriers = 0;
             if (config.useG1GC) {

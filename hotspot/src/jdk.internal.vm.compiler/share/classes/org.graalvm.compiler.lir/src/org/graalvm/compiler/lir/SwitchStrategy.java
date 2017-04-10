@@ -46,7 +46,7 @@ public abstract class SwitchStrategy {
     private interface SwitchClosure {
         /**
          * Generates a conditional or unconditional jump. The jump will be unconditional if
-         * condition is null. If defaultTarget is true, then the jump will go the the default.
+         * condition is null. If defaultTarget is true, then the jump will go the default.
          *
          * @param index Index of the value and the jump target (only used if defaultTarget == false)
          * @param condition The condition on which to jump (can be null)

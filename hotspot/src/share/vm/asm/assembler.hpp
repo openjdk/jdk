@@ -93,6 +93,10 @@ class Label VALUE_OBJ_CLASS_SPEC {
   GrowableArray<int>* _patch_overflow;
 
   Label(const Label&) { ShouldNotReachHere(); }
+ protected:
+
+  // The label will be bound to a location near its users.
+  bool _is_near;
 
  public:
 
@@ -126,6 +130,10 @@ class Label VALUE_OBJ_CLASS_SPEC {
   bool is_unbound() const  { return _loc == -1 && _patch_index > 0; }
   bool is_unused() const   { return _loc == -1 && _patch_index == 0; }
 
+  // The label will be bound to a location near its users. Users can
+  // optimize on this information, e.g. generate short branches.
+  bool is_near()           { return _is_near; }
+
   /**
    * Adds a reference to an unresolved displacement instruction to
    * this unbound label
@@ -145,11 +153,19 @@ class Label VALUE_OBJ_CLASS_SPEC {
     _loc = -1;
     _patch_index = 0;
     _patch_overflow = NULL;
+    _is_near = false;
   }
 
   Label() {
     init();
   }
+};
+
+// A NearLabel must be bound to a location near its users. Users can
+// optimize on this information, e.g. generate short branches.
+class NearLabel : public Label {
+ public:
+  NearLabel() : Label() { _is_near = true; }
 };
 
 // A union type for code which has to assemble both constant and

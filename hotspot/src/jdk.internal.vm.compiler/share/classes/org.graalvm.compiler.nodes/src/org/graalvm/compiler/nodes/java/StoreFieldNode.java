@@ -26,6 +26,7 @@ import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FrameState;
 import org.graalvm.compiler.nodes.StateSplit;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -34,6 +35,7 @@ import org.graalvm.compiler.nodes.spi.VirtualizerTool;
 import org.graalvm.compiler.nodes.virtual.VirtualInstanceNode;
 import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
 
+import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.ResolvedJavaField;
 
 /**
@@ -85,8 +87,15 @@ public final class StoreFieldNode extends AccessFieldNode implements StateSplit,
             VirtualInstanceNode virtual = (VirtualInstanceNode) alias;
             int fieldIndex = virtual.fieldIndex(field());
             if (fieldIndex != -1) {
-                tool.setVirtualEntry(virtual, fieldIndex, value(), false);
-                tool.delete();
+                ValueNode existing = tool.getEntry((VirtualObjectNode) alias, fieldIndex);
+                if (existing.stamp().isCompatible(value().stamp())) {
+                    tool.setVirtualEntry(virtual, fieldIndex, value(), false);
+                    tool.delete();
+                } else {
+                    // stamp of the value is not compatible with the value in the virtualizer
+                    // can only happen with unsafe two slot writes on one slot fields
+                    assert existing instanceof ConstantNode && ((ConstantNode) existing).asConstant().equals(JavaConstant.forIllegal()) : value.stamp() + " vs " + existing.stamp();
+                }
             }
         }
     }

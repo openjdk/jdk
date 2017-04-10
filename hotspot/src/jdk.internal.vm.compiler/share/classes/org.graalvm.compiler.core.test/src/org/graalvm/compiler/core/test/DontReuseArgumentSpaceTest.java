@@ -30,8 +30,7 @@ import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.phases.HighTier;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
-import org.graalvm.compiler.options.OptionValue;
-import org.graalvm.compiler.options.OptionValue.OverrideScope;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.tiers.Suites;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -40,10 +39,8 @@ public final class DontReuseArgumentSpaceTest extends GraalCompilerTest {
 
     @Override
     @SuppressWarnings("try")
-    protected Suites createSuites() {
-        try (OverrideScope scope = OptionValue.override(HighTier.Options.Inline, false)) {
-            return super.createSuites();
-        }
+    protected Suites createSuites(OptionValues options) {
+        return super.createSuites(new OptionValues(options, HighTier.Options.Inline, false));
     }
 
     @BytecodeParserNeverInline
