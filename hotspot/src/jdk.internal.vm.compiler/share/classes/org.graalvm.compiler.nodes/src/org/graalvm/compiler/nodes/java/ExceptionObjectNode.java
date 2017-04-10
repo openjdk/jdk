@@ -68,7 +68,7 @@ public final class ExceptionObjectNode extends BeginStateSplitNode implements Lo
              * deopts can float in between the begin node and the load exception node.
              */
             LocationIdentity locationsKilledByInvoke = ((InvokeWithExceptionNode) predecessor()).getLocationIdentity();
-            AbstractBeginNode entry = graph().add(new KillingBeginNode(locationsKilledByInvoke));
+            AbstractBeginNode entry = graph().add(KillingBeginNode.create(locationsKilledByInvoke));
             LoadExceptionObjectNode loadException = graph().add(new LoadExceptionObjectNode(stamp()));
 
             loadException.setStateAfter(stateAfter());

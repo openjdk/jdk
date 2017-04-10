@@ -204,10 +204,7 @@ public class BasicArrayCopyNode extends AbstractMemoryCheckpoint implements Virt
                         return;
                     }
                     VirtualArrayNode srcVirtual = (VirtualArrayNode) srcAlias;
-                    if (destVirtual.componentType().getJavaKind() != JavaKind.Object) {
-                        return;
-                    }
-                    if (srcVirtual.componentType().getJavaKind() != JavaKind.Object) {
+                    if (destVirtual.componentType().getJavaKind() != srcVirtual.componentType().getJavaKind()) {
                         return;
                     }
                     if (!checkBounds(srcPosInt, len, srcVirtual)) {

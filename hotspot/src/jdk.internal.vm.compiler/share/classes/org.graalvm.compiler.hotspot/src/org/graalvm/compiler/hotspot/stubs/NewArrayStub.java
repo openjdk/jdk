@@ -31,7 +31,7 @@ import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.layoutHelperHeaderSizeShift;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.layoutHelperLog2ElementSizeMask;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.layoutHelperLog2ElementSizeShift;
-import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.loadKlassLayoutHelperIntrinsic;
+import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.readLayoutHelper;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.registerAsWord;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.wordSize;
 import static org.graalvm.compiler.hotspot.replacements.NewObjectSnippets.MAX_ARRAY_FAST_PATH_ALLOCATION_LENGTH;
@@ -57,6 +57,7 @@ import org.graalvm.compiler.hotspot.nodes.type.KlassPointerStamp;
 import org.graalvm.compiler.hotspot.replacements.NewObjectSnippets;
 import org.graalvm.compiler.hotspot.word.KlassPointer;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.word.Word;
 
 import jdk.vm.ci.code.Register;
@@ -70,8 +71,8 @@ import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
  */
 public class NewArrayStub extends SnippetStub {
 
-    public NewArrayStub(HotSpotProviders providers, HotSpotForeignCallLinkage linkage) {
-        super("newArray", providers, linkage);
+    public NewArrayStub(OptionValues options, HotSpotProviders providers, HotSpotForeignCallLinkage linkage) {
+        super("newArray", options, providers, linkage);
     }
 
     @Override
@@ -81,14 +82,16 @@ public class NewArrayStub extends SnippetStub {
         Object[] args = new Object[count];
         assert checkConstArg(3, "intArrayHub");
         assert checkConstArg(4, "threadRegister");
+        assert checkConstArg(5, "options");
         args[3] = ConstantNode.forConstant(KlassPointerStamp.klassNonNull(), intArrayType.klass(), null);
         args[4] = providers.getRegisters().getThreadRegister();
+        args[5] = options;
         return args;
     }
 
     @Fold
-    static boolean logging() {
-        return StubOptions.TraceNewArrayStub.getValue();
+    static boolean logging(OptionValues options) {
+        return StubOptions.TraceNewArrayStub.getValue(options);
     }
 
     /**
@@ -101,13 +104,14 @@ public class NewArrayStub extends SnippetStub {
      * @param intArrayHub the hub for {@code int[].class}
      */
     @Snippet
-    private static Object newArray(KlassPointer hub, int length, boolean fillContents, @ConstantParameter KlassPointer intArrayHub, @ConstantParameter Register threadRegister) {
-        int layoutHelper = loadKlassLayoutHelperIntrinsic(hub);
+    private static Object newArray(KlassPointer hub, int length, boolean fillContents, @ConstantParameter KlassPointer intArrayHub, @ConstantParameter Register threadRegister,
+                    @ConstantParameter OptionValues options) {
+        int layoutHelper = readLayoutHelper(hub);
         int log2ElementSize = (layoutHelper >> layoutHelperLog2ElementSizeShift(INJECTED_VMCONFIG)) & layoutHelperLog2ElementSizeMask(INJECTED_VMCONFIG);
         int headerSize = (layoutHelper >> layoutHelperHeaderSizeShift(INJECTED_VMCONFIG)) & layoutHelperHeaderSizeMask(INJECTED_VMCONFIG);
         int elementKind = (layoutHelper >> layoutHelperElementTypeShift(INJECTED_VMCONFIG)) & layoutHelperElementTypeMask(INJECTED_VMCONFIG);
         int sizeInBytes = computeArrayAllocationSize(length, wordSize(), headerSize, log2ElementSize);
-        if (logging()) {
+        if (logging(options)) {
             printf("newArray: element kind %d\n", elementKind);
             printf("newArray: array length %d\n", length);
             printf("newArray: array size %d\n", sizeInBytes);
@@ -118,16 +122,16 @@ public class NewArrayStub extends SnippetStub {
         Word thread = registerAsWord(threadRegister);
         boolean inlineContiguousAllocationSupported = GraalHotSpotVMConfigNode.inlineContiguousAllocationSupported();
         if (inlineContiguousAllocationSupported && length >= 0 && length <= MAX_ARRAY_FAST_PATH_ALLOCATION_LENGTH) {
-            Word memory = refillAllocate(thread, intArrayHub, sizeInBytes, logging());
+            Word memory = refillAllocate(thread, intArrayHub, sizeInBytes, logging(options));
             if (memory.notEqual(0)) {
-                if (logging()) {
+                if (logging(options)) {
                     printf("newArray: allocated new array at %p\n", memory.rawValue());
                 }
                 return verifyObject(
-                                formatArray(hub, sizeInBytes, length, headerSize, memory, Word.unsigned(arrayPrototypeMarkWord(INJECTED_VMCONFIG)), fillContents, false, false));
+                                formatArray(hub, sizeInBytes, length, headerSize, memory, Word.unsigned(arrayPrototypeMarkWord(INJECTED_VMCONFIG)), fillContents, false, null));
             }
         }
-        if (logging()) {
+        if (logging(options)) {
             printf("newArray: calling new_array_c\n");
         }
 

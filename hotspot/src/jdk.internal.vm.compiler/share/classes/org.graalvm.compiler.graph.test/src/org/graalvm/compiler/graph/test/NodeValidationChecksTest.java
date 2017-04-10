@@ -33,7 +33,7 @@ import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 
-public class NodeValidationChecksTest {
+public class NodeValidationChecksTest extends GraphTest {
 
     @NodeInfo(cycles = CYCLES_UNKNOWN, size = SIZE_UNKNOWN)
     static final class TestNode extends Node {
@@ -51,7 +51,7 @@ public class NodeValidationChecksTest {
 
     @Test
     public void testInputNotAlive() {
-        Graph graph = new Graph();
+        Graph graph = new Graph(getOptions());
         TestNode node = new TestNode(null, null);
         try {
             graph.add(new TestNode(node, null));
@@ -64,7 +64,7 @@ public class NodeValidationChecksTest {
 
     @Test
     public void testSuccessorNotAlive() {
-        Graph graph = new Graph();
+        Graph graph = new Graph(getOptions());
         TestNode node = new TestNode(null, null);
         try {
             graph.add(new TestNode(null, node));

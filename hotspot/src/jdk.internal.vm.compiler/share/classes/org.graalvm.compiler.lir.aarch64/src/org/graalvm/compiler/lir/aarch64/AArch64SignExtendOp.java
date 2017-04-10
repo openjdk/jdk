@@ -54,6 +54,6 @@ public class AArch64SignExtendOp extends AArch64LIRInstruction {
     public void emitCode(CompilationResultBuilder crb, AArch64MacroAssembler masm) {
         Register result = asRegister(resultValue);
         Register input = asRegister(inputValue);
-        masm.sxt(toBits, fromBits, result, input);
+        masm.sxt(toBits <= 32 ? 32 : 64, fromBits, result, input);
     }
 }

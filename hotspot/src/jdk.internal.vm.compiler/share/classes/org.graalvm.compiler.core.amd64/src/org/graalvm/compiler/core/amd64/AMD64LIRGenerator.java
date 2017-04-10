@@ -23,6 +23,7 @@
 
 package org.graalvm.compiler.core.amd64;
 
+import static jdk.vm.ci.code.ValueUtil.isAllocatableValue;
 import static org.graalvm.compiler.asm.amd64.AMD64Assembler.AMD64BinaryArithmetic.CMP;
 import static org.graalvm.compiler.asm.amd64.AMD64Assembler.OperandSize.DWORD;
 import static org.graalvm.compiler.asm.amd64.AMD64Assembler.OperandSize.PD;
@@ -31,10 +32,10 @@ import static org.graalvm.compiler.asm.amd64.AMD64Assembler.OperandSize.QWORD;
 import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static org.graalvm.compiler.lir.LIRValueUtil.asConstantValue;
 import static org.graalvm.compiler.lir.LIRValueUtil.asJavaConstant;
+import static org.graalvm.compiler.lir.LIRValueUtil.isConstantValue;
 import static org.graalvm.compiler.lir.LIRValueUtil.isJavaConstant;
-import static jdk.vm.ci.code.ValueUtil.isAllocatableValue;
 
-import org.graalvm.compiler.asm.NumUtil;
+import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.AMD64MIOp;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.AMD64RMOp;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.ConditionFlag;
@@ -72,6 +73,7 @@ import org.graalvm.compiler.lir.amd64.AMD64Move.CompareAndSwapOp;
 import org.graalvm.compiler.lir.amd64.AMD64Move.MembarOp;
 import org.graalvm.compiler.lir.amd64.AMD64Move.StackLeaOp;
 import org.graalvm.compiler.lir.amd64.AMD64PauseOp;
+import org.graalvm.compiler.lir.amd64.AMD64StringIndexOfOp;
 import org.graalvm.compiler.lir.amd64.AMD64ZapRegistersOp;
 import org.graalvm.compiler.lir.amd64.AMD64ZapStackOp;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
@@ -112,10 +114,8 @@ public abstract class AMD64LIRGenerator extends LIRGenerator {
     protected static final boolean canStoreConstant(JavaConstant c) {
         // there is no immediate move of 64-bit constants on Intel
         switch (c.getJavaKind()) {
-            case Long: {
-                long l = c.asLong();
-                return (int) l == l;
-            }
+            case Long:
+                return NumUtil.isInt(c.asLong());
             case Double:
                 return false;
             case Object:
@@ -183,7 +183,7 @@ public abstract class AMD64LIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public Variable emitCompareAndSwap(Value address, Value expectedValue, Value newValue, Value trueValue, Value falseValue) {
+    public Variable emitLogicCompareAndSwap(Value address, Value expectedValue, Value newValue, Value trueValue, Value falseValue) {
         ValueKind<?> kind = newValue.getValueKind();
         assert kind.equals(expectedValue.getValueKind());
         AMD64Kind memKind = (AMD64Kind) kind.getPlatformKind();
@@ -197,6 +197,33 @@ public abstract class AMD64LIRGenerator extends LIRGenerator {
         Variable result = newVariable(trueValue.getValueKind());
         append(new CondMoveOp(result, Condition.EQ, asAllocatable(trueValue), falseValue));
         return result;
+    }
+
+    @Override
+    public Value emitValueCompareAndSwap(Value address, Value expectedValue, Value newValue) {
+        ValueKind<?> kind = newValue.getValueKind();
+        assert kind.equals(expectedValue.getValueKind());
+        AMD64Kind memKind = (AMD64Kind) kind.getPlatformKind();
+
+        AMD64AddressValue addressValue = asAddressValue(address);
+        RegisterValue raxRes = AMD64.rax.asValue(kind);
+        emitMove(raxRes, expectedValue);
+        append(new CompareAndSwapOp(memKind, raxRes, addressValue, raxRes, asAllocatable(newValue)));
+        Variable result = newVariable(kind);
+        emitMove(result, raxRes);
+        return result;
+    }
+
+    public void emitCompareAndSwapBranch(ValueKind<?> kind, AMD64AddressValue address, Value expectedValue, Value newValue, Condition condition, LabelRef trueLabel, LabelRef falseLabel,
+                    double trueLabelProbability) {
+        assert kind.equals(expectedValue.getValueKind());
+        assert kind.equals(newValue.getValueKind());
+        assert condition == Condition.EQ || condition == Condition.NE;
+        AMD64Kind memKind = (AMD64Kind) kind.getPlatformKind();
+        RegisterValue raxValue = AMD64.rax.asValue(kind);
+        emitMove(raxValue, expectedValue);
+        append(new CompareAndSwapOp(memKind, raxValue, address, raxValue, asAllocatable(newValue)));
+        append(new BranchOp(condition, trueLabel, falseLabel, trueLabelProbability));
     }
 
     @Override
@@ -329,7 +356,7 @@ public abstract class AMD64LIRGenerator extends LIRGenerator {
                 throw GraalError.shouldNotReachHere("unexpected kind: " + cmpKind);
         }
 
-        if (isJavaConstant(a)) {
+        if (isConstantValue(a)) {
             return emitCompareMemoryConOp(size, asConstantValue(a), b, state);
         } else {
             return emitCompareRegMemoryOp(size, asAllocatable(a), b, state);
@@ -399,7 +426,7 @@ public abstract class AMD64LIRGenerator extends LIRGenerator {
     @Override
     protected void emitForeignCallOp(ForeignCallLinkage linkage, Value result, Value[] arguments, Value[] temps, LIRFrameState info) {
         long maxOffset = linkage.getMaxCallTargetOffset();
-        if (maxOffset != (int) maxOffset && !GeneratePIC.getValue()) {
+        if (maxOffset != (int) maxOffset && !GeneratePIC.getValue(getResult().getLIR().getOptions())) {
             append(new AMD64Call.DirectFarForeignCallOp(linkage, result, arguments, temps, info));
         } else {
             append(new AMD64Call.DirectNearForeignCallOp(linkage, result, arguments, temps, info));
@@ -417,6 +444,24 @@ public abstract class AMD64LIRGenerator extends LIRGenerator {
     public Variable emitArrayEquals(JavaKind kind, Value array1, Value array2, Value length) {
         Variable result = newVariable(LIRKind.value(AMD64Kind.DWORD));
         append(new AMD64ArrayEqualsOp(this, kind, result, array1, array2, asAllocatable(length)));
+        return result;
+    }
+
+    /**
+     * Return a conservative estimate of the page size for use by the String.indexOf intrinsic.
+     */
+    protected int getVMPageSize() {
+        return 4096;
+    }
+
+    @Override
+    public Variable emitStringIndexOf(Value source, Value sourceCount, Value target, Value targetCount, int constantTargetCount) {
+        Variable result = newVariable(LIRKind.value(AMD64Kind.DWORD));
+        RegisterValue cnt1 = AMD64.rdx.asValue(sourceCount.getValueKind());
+        emitMove(cnt1, sourceCount);
+        RegisterValue cnt2 = AMD64.rax.asValue(targetCount.getValueKind());
+        emitMove(cnt2, targetCount);
+        append(new AMD64StringIndexOfOp(this, result, source, target, cnt1, cnt2, AMD64.rcx.asValue(), AMD64.xmm0.asValue(), constantTargetCount, getVMPageSize()));
         return result;
     }
 

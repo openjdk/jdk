@@ -83,6 +83,7 @@ public abstract class Word implements Signed, Unsigned, Pointer {
          WRITE_POINTER,
          WRITE_OBJECT,
          WRITE_BARRIERED,
+         CAS_POINTER,
          INITIALIZE,
          ZERO,
          FROM_UNSIGNED,
@@ -91,6 +92,7 @@ public abstract class Word implements Signed, Unsigned, Pointer {
          OBJECT_TO_TRACKED,
          OBJECT_TO_UNTRACKED,
          TO_OBJECT,
+         TO_OBJECT_NON_NULL,
          TO_RAW_VALUE,
     }
      // @formatter:on
@@ -217,6 +219,10 @@ public abstract class Word implements Signed, Unsigned, Pointer {
     @Override
     @Operation(opcode = Opcode.TO_OBJECT)
     public native Object toObject();
+
+    @Override
+    @Operation(opcode = Opcode.TO_OBJECT_NON_NULL)
+    public native Object toObjectNonNull();
 
     @Override
     @Operation(node = AddNode.class)
@@ -1058,6 +1064,44 @@ public abstract class Word implements Signed, Unsigned, Pointer {
     }
 
     @Override
+    @Operation(opcode = Opcode.CAS_POINTER)
+    public native int compareAndSwapInt(WordBase offset, int expectedValue, int newValue, LocationIdentity locationIdentity);
+
+    @Override
+    @Operation(opcode = Opcode.CAS_POINTER)
+    public native long compareAndSwapLong(WordBase offset, long expectedValue, long newValue, LocationIdentity locationIdentity);
+
+    @Override
+    @Operation(opcode = Opcode.CAS_POINTER)
+    public native Word compareAndSwapWord(WordBase offset, WordBase expectedValue, WordBase newValue, LocationIdentity locationIdentity);
+
+    @Override
+    @Operation(opcode = Opcode.CAS_POINTER)
+    public native Object compareAndSwapObject(WordBase offset, Object expectedValue, Object newValue, LocationIdentity locationIdentity);
+
+    @Override
+    @Operation(opcode = Opcode.CAS_POINTER)
+    public boolean logicCompareAndSwapInt(WordBase offset, int expectedValue, int newValue, LocationIdentity locationIdentity) {
+        return UNSAFE.compareAndSwapInt(this.toObject(), ((Word) offset).unbox(), expectedValue, newValue);
+    }
+
+    @Override
+    @Operation(opcode = Opcode.CAS_POINTER)
+    public boolean logicCompareAndSwapLong(WordBase offset, long expectedValue, long newValue, LocationIdentity locationIdentity) {
+        return UNSAFE.compareAndSwapLong(this.toObject(), ((Word) offset).unbox(), expectedValue, newValue);
+    }
+
+    @Override
+    @Operation(opcode = Opcode.CAS_POINTER)
+    public native boolean logicCompareAndSwapWord(WordBase offset, WordBase expectedValue, WordBase newValue, LocationIdentity locationIdentity);
+
+    @Override
+    @Operation(opcode = Opcode.CAS_POINTER)
+    public boolean logicCompareAndSwapObject(WordBase offset, Object expectedValue, Object newValue, LocationIdentity locationIdentity) {
+        return UNSAFE.compareAndSwapObject(this.toObject(), ((Word) offset).unbox(), expectedValue, newValue);
+    }
+
+    @Override
     @Operation(opcode = Opcode.WRITE_POINTER)
     public void writeWord(WordBase offset, WordBase val) {
         UNSAFE.putAddress(add((Word) offset).unbox(), ((Word) val).unbox());
@@ -1119,6 +1163,54 @@ public abstract class Word implements Signed, Unsigned, Pointer {
     @Operation(opcode = Opcode.WRITE_POINTER)
     public void writeObject(int offset, Object val) {
         writeObject(signed(offset), val);
+    }
+
+    @Override
+    @Operation(opcode = Opcode.CAS_POINTER)
+    public int compareAndSwapInt(int offset, int expectedValue, int newValue, LocationIdentity locationIdentity) {
+        return compareAndSwapInt(signed(offset), expectedValue, newValue, locationIdentity);
+    }
+
+    @Override
+    @Operation(opcode = Opcode.CAS_POINTER)
+    public long compareAndSwapLong(int offset, long expectedValue, long newValue, LocationIdentity locationIdentity) {
+        return compareAndSwapLong(signed(offset), expectedValue, newValue, locationIdentity);
+    }
+
+    @Override
+    @Operation(opcode = Opcode.CAS_POINTER)
+    public Word compareAndSwapWord(int offset, WordBase expectedValue, WordBase newValue, LocationIdentity locationIdentity) {
+        return compareAndSwapWord(signed(offset), expectedValue, newValue, locationIdentity);
+    }
+
+    @Override
+    @Operation(opcode = Opcode.CAS_POINTER)
+    public Object compareAndSwapObject(int offset, Object expectedValue, Object newValue, LocationIdentity locationIdentity) {
+        return compareAndSwapObject(signed(offset), expectedValue, newValue, locationIdentity);
+    }
+
+    @Override
+    @Operation(opcode = Opcode.CAS_POINTER)
+    public boolean logicCompareAndSwapInt(int offset, int expectedValue, int newValue, LocationIdentity locationIdentity) {
+        return logicCompareAndSwapInt(signed(offset), expectedValue, newValue, locationIdentity);
+    }
+
+    @Override
+    @Operation(opcode = Opcode.CAS_POINTER)
+    public boolean logicCompareAndSwapLong(int offset, long expectedValue, long newValue, LocationIdentity locationIdentity) {
+        return logicCompareAndSwapLong(signed(offset), expectedValue, newValue, locationIdentity);
+    }
+
+    @Override
+    @Operation(opcode = Opcode.CAS_POINTER)
+    public boolean logicCompareAndSwapWord(int offset, WordBase expectedValue, WordBase newValue, LocationIdentity locationIdentity) {
+        return logicCompareAndSwapWord(signed(offset), expectedValue, newValue, locationIdentity);
+    }
+
+    @Override
+    @Operation(opcode = Opcode.CAS_POINTER)
+    public boolean logicCompareAndSwapObject(int offset, Object expectedValue, Object newValue, LocationIdentity locationIdentity) {
+        return logicCompareAndSwapObject(signed(offset), expectedValue, newValue, locationIdentity);
     }
 
     @Override

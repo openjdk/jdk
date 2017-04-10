@@ -25,8 +25,9 @@ package org.graalvm.compiler.hotspot.meta;
 import org.graalvm.compiler.hotspot.FingerprintUtil;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.options.Option;
+import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
-import org.graalvm.compiler.options.OptionValue;
+import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -34,17 +35,17 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 public class HotSpotAOTProfilingPlugin extends HotSpotProfilingPlugin {
     public static class Options {
         @Option(help = "Do profiling and callbacks to tiered runtime", type = OptionType.User)//
-        public static final OptionValue<Boolean> TieredAOT = new OptionValue<>(false);
+        public static final OptionKey<Boolean> TieredAOT = new OptionKey<>(false);
         @Option(help = "Invocation notification frequency", type = OptionType.Expert)//
-        public static final OptionValue<Integer> TierAInvokeNotifyFreqLog = new OptionValue<>(13);
+        public static final OptionKey<Integer> TierAInvokeNotifyFreqLog = new OptionKey<>(13);
         @Option(help = "Inlinee invocation notification frequency (-1 means count, but do not notify)", type = OptionType.Expert)//
-        public static final OptionValue<Integer> TierAInvokeInlineeNotifyFreqLog = new OptionValue<>(-1);
+        public static final OptionKey<Integer> TierAInvokeInlineeNotifyFreqLog = new OptionKey<>(-1);
         @Option(help = "Invocation profile probability", type = OptionType.Expert)//
-        public static final OptionValue<Integer> TierAInvokeProfileProbabilityLog = new OptionValue<>(8);
+        public static final OptionKey<Integer> TierAInvokeProfileProbabilityLog = new OptionKey<>(8);
         @Option(help = "Backedge notification frequency", type = OptionType.Expert)//
-        public static final OptionValue<Integer> TierABackedgeNotifyFreqLog = new OptionValue<>(16);
+        public static final OptionKey<Integer> TierABackedgeNotifyFreqLog = new OptionKey<>(16);
         @Option(help = "Backedge profile probability", type = OptionType.Expert)//
-        public static final OptionValue<Integer> TierABackedgeProfileProbabilityLog = new OptionValue<>(12);
+        public static final OptionKey<Integer> TierABackedgeProfileProbabilityLog = new OptionKey<>(12);
     }
 
     @Override
@@ -53,27 +54,27 @@ public class HotSpotAOTProfilingPlugin extends HotSpotProfilingPlugin {
     }
 
     @Override
-    public int invokeNotifyFreqLog() {
-        return Options.TierAInvokeNotifyFreqLog.getValue();
+    public int invokeNotifyFreqLog(OptionValues options) {
+        return Options.TierAInvokeNotifyFreqLog.getValue(options);
     }
 
     @Override
-    public int invokeInlineeNotifyFreqLog() {
-        return Options.TierAInvokeInlineeNotifyFreqLog.getValue();
+    public int invokeInlineeNotifyFreqLog(OptionValues options) {
+        return Options.TierAInvokeInlineeNotifyFreqLog.getValue(options);
     }
 
     @Override
-    public int invokeProfilePobabilityLog() {
-        return Options.TierAInvokeProfileProbabilityLog.getValue();
+    public int invokeProfilePobabilityLog(OptionValues options) {
+        return Options.TierAInvokeProfileProbabilityLog.getValue(options);
     }
 
     @Override
-    public int backedgeNotifyFreqLog() {
-        return Options.TierABackedgeNotifyFreqLog.getValue();
+    public int backedgeNotifyFreqLog(OptionValues options) {
+        return Options.TierABackedgeNotifyFreqLog.getValue(options);
     }
 
     @Override
-    public int backedgeProfilePobabilityLog() {
-        return Options.TierABackedgeProfileProbabilityLog.getValue();
+    public int backedgeProfilePobabilityLog(OptionValues options) {
+        return Options.TierABackedgeProfileProbabilityLog.getValue(options);
     }
 }

@@ -25,8 +25,13 @@ package org.graalvm.compiler.test;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Formatter;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.graalvm.util.CollectionsUtil;
 
 /**
  * Utility methods for spawning a VM in a subprocess during unit tests.
@@ -54,6 +59,63 @@ public final class SubprocessUtil {
     }
 
     /**
+     * Pattern for a single shell command argument that does not need to quoted.
+     */
+    private static final Pattern SAFE_SHELL_ARG = Pattern.compile("[A-Za-z0-9@%_\\-\\+=:,\\./]+");
+
+    /**
+     * Reliably quote a string as a single shell command argument.
+     */
+    public static String quoteShellArg(String arg) {
+        if (arg.isEmpty()) {
+            return "\"\"";
+        }
+        Matcher m = SAFE_SHELL_ARG.matcher(arg);
+        if (m.matches()) {
+            return arg;
+        }
+        // See http://stackoverflow.com/a/1250279
+        return "'" + arg.replace("'", "'\"'\"'") + "'";
+    }
+
+    /**
+     * Formats an executed shell command followed by its output. The command is formatted such that
+     * it can be copy and pasted into a console for re-execution.
+     *
+     * @param command the list containing the program and its arguments
+     * @param outputLines the output of the command broken into lines
+     * @param header if non null, the returned string has a prefix of this value plus a newline
+     * @param trailer if non null, the returned string has a suffix of this value plus a newline
+     */
+    public static String formatExecutedCommand(List<String> command, List<String> outputLines, String header, String trailer) {
+        Formatter msg = new Formatter();
+        if (header != null) {
+            msg.format("%s%n", header);
+        }
+        msg.format("%s%n", CollectionsUtil.mapAndJoin(command, e -> quoteShellArg(String.valueOf(e)), " "));
+        for (String line : outputLines) {
+            msg.format("%s%n", line);
+        }
+        if (trailer != null) {
+            msg.format("%s%n", trailer);
+        }
+        return msg.toString();
+    }
+
+    /**
+     * Returns a new copy {@code args} with debugger arguments removed.
+     */
+    public static List<String> withoutDebuggerArguments(List<String> args) {
+        List<String> result = new ArrayList<>(args.size());
+        for (String arg : args) {
+            if (!(arg.equals("-Xdebug") || arg.startsWith("-Xrunjdwp:"))) {
+                result.add(arg);
+            }
+        }
+        return result;
+    }
+
+    /**
      * Gets the command line used to start the current Java VM, including all VM arguments, but not
      * including the main class or any Java arguments. This can be used to spawn an identical VM,
      * but running different Java code.
@@ -68,9 +130,28 @@ public final class SubprocessUtil {
         }
     }
 
-    public static final List<String> JVM_OPTIONS_WITH_ONE_ARG = System.getProperty("java.specification.version").compareTo("1.9") < 0 ? //
-                    Arrays.asList("-cp", "-classpath") : //
-                    Arrays.asList("-cp", "-classpath", "-mp", "-modulepath", "-upgrademodulepath", "-addmods", "-m", "-limitmods");
+    private static final boolean isJava8OrEarlier = System.getProperty("java.specification.version").compareTo("1.9") < 0;
+
+    private static boolean hasArg(String optionName) {
+        if (optionName.equals("-cp") || optionName.equals("-classpath")) {
+            return true;
+        }
+        if (!isJava8OrEarlier) {
+            if (optionName.equals("--version") ||
+                            optionName.equals("--show-version") ||
+                            optionName.equals("--dry-run") ||
+                            optionName.equals("--disable-@files") ||
+                            optionName.equals("--dry-run") ||
+                            optionName.equals("--help") ||
+                            optionName.equals("--help-extra")) {
+                return false;
+            }
+            if (optionName.startsWith("--")) {
+                return optionName.indexOf('=') == -1;
+            }
+        }
+        return false;
+    }
 
     private static int findMainClassIndex(List<String> commandLine) {
         int i = 1; // Skip the java executable
@@ -79,7 +160,7 @@ public final class SubprocessUtil {
             String s = commandLine.get(i);
             if (s.charAt(0) != '-') {
                 return i;
-            } else if (JVM_OPTIONS_WITH_ONE_ARG.contains(s)) {
+            } else if (hasArg(s)) {
                 i += 2;
             } else {
                 i++;

@@ -22,8 +22,6 @@
  */
 package org.graalvm.compiler.hotspot.nodes.profiling;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
@@ -34,14 +32,16 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.options.Option;
+import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
-import org.graalvm.compiler.options.OptionValue;
+
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 @NodeInfo
 public class ProfileNode extends DeoptimizingFixedWithNextNode implements Lowerable {
     public static class Options {
         @Option(help = "Control probabilistic profiling on AMD64", type = OptionType.Expert)//
-        public static final OptionValue<Boolean> ProbabilisticProfiling = new OptionValue<>(true);
+        public static final OptionKey<Boolean> ProbabilisticProfiling = new OptionKey<>(true);
     }
 
     public static final NodeClass<ProfileNode> TYPE = NodeClass.create(ProfileNode.class);

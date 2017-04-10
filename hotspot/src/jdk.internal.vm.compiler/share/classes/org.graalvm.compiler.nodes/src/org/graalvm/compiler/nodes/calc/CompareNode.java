@@ -44,13 +44,8 @@ import org.graalvm.compiler.nodes.ValueNode;
 
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
+import jdk.vm.ci.meta.PrimitiveConstant;
 
-/* TODO (thomaswue/gdub) For high-level optimization purpose the compare node should be a boolean *value* (it is currently only a helper node)
- * But in the back-end the comparison should not always be materialized (for example in x86 the comparison result will not be in a register but in a flag)
- *
- * Compare should probably be made a value (so that it can be canonicalized for example) and in later stages some Compare usage should be transformed
- * into variants that do not materialize the value (CompareIf, CompareGuard...)
- */
 @NodeInfo(cycles = CYCLES_1)
 public abstract class CompareNode extends BinaryOpLogicNode implements Canonicalizable.Binary<ValueNode> {
 
@@ -143,7 +138,7 @@ public abstract class CompareNode extends BinaryOpLogicNode implements Canonical
                 }
 
                 if (supported) {
-                    boolean multiUsage = (convertX.asNode().getUsageCount() > 1 || convertY.asNode().getUsageCount() > 1);
+                    boolean multiUsage = (convertX.asNode().hasMoreThanOneUsage() || convertY.asNode().hasMoreThanOneUsage());
                     if ((forX instanceof ZeroExtendNode || forX instanceof SignExtendNode) && multiUsage) {
                         // Do not perform for zero or sign extend if there are multiple usages of
                         // the value.
@@ -157,8 +152,15 @@ public abstract class CompareNode extends BinaryOpLogicNode implements Canonical
     }
 
     public static LogicNode tryConstantFold(Condition condition, ValueNode forX, ValueNode forY, ConstantReflectionProvider constantReflection, boolean unorderedIsTrue) {
-        if (forX.isConstant() && forY.isConstant() && constantReflection != null) {
+        if (forX.isConstant() && forY.isConstant() && (constantReflection != null || forX.asConstant() instanceof PrimitiveConstant)) {
             return LogicConstantNode.forBoolean(condition.foldCondition(forX.asConstant(), forY.asConstant(), constantReflection, unorderedIsTrue));
+        }
+        return null;
+    }
+
+    public static LogicNode tryConstantFoldPrimitive(Condition condition, ValueNode forX, ValueNode forY, boolean unorderedIsTrue) {
+        if (forX.asConstant() instanceof PrimitiveConstant && forY.asConstant() instanceof PrimitiveConstant) {
+            return LogicConstantNode.forBoolean(condition.foldCondition((PrimitiveConstant) forX.asConstant(), (PrimitiveConstant) forY.asConstant(), unorderedIsTrue));
         }
         return null;
     }
@@ -182,7 +184,7 @@ public abstract class CompareNode extends BinaryOpLogicNode implements Canonical
             return optimizeNormalizeCmp(constant, (NormalizeCompareNode) nonConstant, mirrored);
         } else if (nonConstant instanceof ConvertNode) {
             ConvertNode convert = (ConvertNode) nonConstant;
-            boolean multiUsage = (convert.asNode().getUsageCount() > 1 && convert.getValue().getUsageCount() == 1);
+            boolean multiUsage = (convert.asNode().hasMoreThanOneUsage() && convert.getValue().hasExactlyOneUsage());
             if ((convert instanceof ZeroExtendNode || convert instanceof SignExtendNode) && multiUsage) {
                 // Do not perform for zero or sign extend if it could introduce
                 // new live values.
@@ -206,6 +208,7 @@ public abstract class CompareNode extends BinaryOpLogicNode implements Canonical
                 }
             }
         }
+
         return this;
     }
 
@@ -214,7 +217,7 @@ public abstract class CompareNode extends BinaryOpLogicNode implements Canonical
         if (convert.preservesOrder(condition(), constant, constantReflection)) {
             Constant reverseConverted = convert.reverse(constant, constantReflection);
             if (reverseConverted != null && convert.convert(reverseConverted, constantReflection).equals(constant)) {
-                if (GeneratePIC.getValue()) {
+                if (GeneratePIC.getValue(tool.getOptions())) {
                     // We always want uncompressed constants
                     return null;
                 }
@@ -226,12 +229,12 @@ public abstract class CompareNode extends BinaryOpLogicNode implements Canonical
 
     public static LogicNode createCompareNode(StructuredGraph graph, Condition condition, ValueNode x, ValueNode y, ConstantReflectionProvider constantReflection) {
         LogicNode result = createCompareNode(condition, x, y, constantReflection);
-        return (result.graph() == null ? graph.unique(result) : result);
+        return (result.graph() == null ? graph.addOrUniqueWithInputs(result) : result);
     }
 
     public static LogicNode createCompareNode(Condition condition, ValueNode x, ValueNode y, ConstantReflectionProvider constantReflection) {
         assert x.getStackKind() == y.getStackKind();
-        assert condition.isCanonical() : "condition is not canonical: " + condition;
+        assert condition.isCanonical();
         assert !x.getStackKind().isNumericFloat();
 
         LogicNode comparison;
@@ -242,15 +245,15 @@ public abstract class CompareNode extends BinaryOpLogicNode implements Canonical
                 comparison = PointerEqualsNode.create(x, y);
             } else {
                 assert x.getStackKind().isNumericInteger();
-                comparison = IntegerEqualsNode.create(x, y, constantReflection);
+                comparison = IntegerEqualsNode.create(x, y);
             }
         } else if (condition == Condition.LT) {
             assert x.getStackKind().isNumericInteger();
-            comparison = IntegerLessThanNode.create(x, y, constantReflection);
+            comparison = IntegerLessThanNode.create(x, y);
         } else {
             assert condition == Condition.BT;
             assert x.getStackKind().isNumericInteger();
-            comparison = IntegerBelowNode.create(x, y, constantReflection);
+            comparison = IntegerBelowNode.create(x, y);
         }
 
         return comparison;

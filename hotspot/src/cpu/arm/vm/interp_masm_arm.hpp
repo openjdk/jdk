@@ -53,15 +53,15 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // Template interpreter specific version of call_VM_helper
   virtual void call_VM_helper(Register oop_result, address entry_point, int number_of_arguments, bool check_exceptions);
 
-  virtual void check_and_handle_popframe();
-  virtual void check_and_handle_earlyret();
-
   // base routine for all dispatches
   typedef enum { DispatchDefault, DispatchNormal } DispatchTableMode;
   void dispatch_base(TosState state, DispatchTableMode table_mode, bool verifyoop = true);
 
  public:
   InterpreterMacroAssembler(CodeBuffer* code);
+
+  virtual void check_and_handle_popframe();
+  virtual void check_and_handle_earlyret();
 
   // Interpreter-specific registers
 #if defined(AARCH64) && defined(ASSERT)
@@ -328,7 +328,13 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void trace_state(const char* msg) PRODUCT_RETURN;
 
-  void get_method_counters(Register method, Register Rcounters, Label& skip);
+void get_method_counters(Register method,
+                         Register Rcounters,
+                         Label& skip,
+                         bool saveRegs = false,
+                         Register reg1 = noreg,
+                         Register reg2 = noreg,
+                         Register reg3 = noreg);
 };
 
 #endif // CPU_ARM_VM_INTERP_MASM_ARM_HPP

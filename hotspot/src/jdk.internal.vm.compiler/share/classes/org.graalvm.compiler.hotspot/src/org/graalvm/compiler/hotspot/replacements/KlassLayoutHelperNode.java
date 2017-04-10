@@ -25,6 +25,9 @@ package org.graalvm.compiler.hotspot.replacements;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_4;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
 
+import jdk.vm.ci.meta.ConstantReflectionProvider;
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -35,10 +38,10 @@ import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.FloatingGuardedNode;
 import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.extended.GuardingNode;
+import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.extended.LoadHubNode;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 
@@ -52,20 +55,28 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  * information in {@code klass}.
  */
 @NodeInfo(cycles = CYCLES_4, size = SIZE_1)
-public final class KlassLayoutHelperNode extends FloatingGuardedNode implements Canonicalizable, Lowerable {
+public final class KlassLayoutHelperNode extends FloatingNode implements Canonicalizable, Lowerable {
 
     public static final NodeClass<KlassLayoutHelperNode> TYPE = NodeClass.create(KlassLayoutHelperNode.class);
     @Input protected ValueNode klass;
     protected final GraalHotSpotVMConfig config;
 
     public KlassLayoutHelperNode(@InjectedNodeParameter GraalHotSpotVMConfig config, ValueNode klass) {
-        this(config, klass, null);
+        super(TYPE, StampFactory.forKind(JavaKind.Int));
+        this.config = config;
+        this.klass = klass;
     }
 
-    public KlassLayoutHelperNode(@InjectedNodeParameter GraalHotSpotVMConfig config, ValueNode klass, ValueNode guard) {
-        super(TYPE, StampFactory.forKind(JavaKind.Int), (GuardingNode) guard);
-        this.klass = klass;
-        this.config = config;
+    public static ValueNode create(GraalHotSpotVMConfig config, ValueNode klass, ConstantReflectionProvider constantReflection, MetaAccessProvider metaAccess) {
+        Stamp stamp = StampFactory.forKind(JavaKind.Int);
+        return canonical(null, config, klass, stamp, constantReflection, metaAccess);
+    }
+
+    @SuppressWarnings("unused")
+    public static boolean intrinsify(GraphBuilderContext b, ResolvedJavaMethod method, @InjectedNodeParameter GraalHotSpotVMConfig config, ValueNode klass) {
+        ValueNode valueNode = create(config, klass, b.getConstantReflection(), b.getMetaAccess());
+        b.push(JavaKind.Int, b.recursiveAppend(valueNode));
+        return true;
     }
 
     @Override
@@ -97,27 +108,36 @@ public final class KlassLayoutHelperNode extends FloatingGuardedNode implements 
         if (tool.allUsagesAvailable() && hasNoUsages()) {
             return null;
         } else {
-            if (klass.isConstant()) {
-                if (!klass.asConstant().isDefaultForKind()) {
-                    Constant constant = stamp().readConstant(tool.getConstantReflection().getMemoryAccessProvider(), klass.asConstant(), config.klassLayoutHelperOffset);
-                    return ConstantNode.forConstant(stamp(), constant, tool.getMetaAccess());
-                }
-            }
-            if (klass instanceof LoadHubNode) {
-                LoadHubNode hub = (LoadHubNode) klass;
-                Stamp hubStamp = hub.getValue().stamp();
-                if (hubStamp instanceof ObjectStamp) {
-                    ObjectStamp ostamp = (ObjectStamp) hubStamp;
-                    HotSpotResolvedObjectType type = (HotSpotResolvedObjectType) ostamp.type();
-                    if (type != null && type.isArray() && !type.getComponentType().isPrimitive()) {
-                        // The layout for all object arrays is the same.
-                        Constant constant = stamp().readConstant(tool.getConstantReflection().getMemoryAccessProvider(), type.klass(), config.klassLayoutHelperOffset);
-                        return ConstantNode.forConstant(stamp(), constant, tool.getMetaAccess());
-                    }
-                }
-            }
-            return this;
+            return canonical(this, config, klass, stamp(), tool.getConstantReflection(), tool.getMetaAccess());
         }
+    }
+
+    private static ValueNode canonical(KlassLayoutHelperNode klassLayoutHelperNode, GraalHotSpotVMConfig config, ValueNode klass, Stamp stamp, ConstantReflectionProvider constantReflection,
+                    MetaAccessProvider metaAccess) {
+        KlassLayoutHelperNode self = klassLayoutHelperNode;
+        if (klass.isConstant()) {
+            if (!klass.asConstant().isDefaultForKind()) {
+                Constant constant = stamp.readConstant(constantReflection.getMemoryAccessProvider(), klass.asConstant(), config.klassLayoutHelperOffset);
+                return ConstantNode.forConstant(stamp, constant, metaAccess);
+            }
+        }
+        if (klass instanceof LoadHubNode) {
+            LoadHubNode hub = (LoadHubNode) klass;
+            Stamp hubStamp = hub.getValue().stamp();
+            if (hubStamp instanceof ObjectStamp) {
+                ObjectStamp ostamp = (ObjectStamp) hubStamp;
+                HotSpotResolvedObjectType type = (HotSpotResolvedObjectType) ostamp.type();
+                if (type != null && type.isArray() && !type.getComponentType().isPrimitive()) {
+                    // The layout for all object arrays is the same.
+                    Constant constant = stamp.readConstant(constantReflection.getMemoryAccessProvider(), type.klass(), config.klassLayoutHelperOffset);
+                    return ConstantNode.forConstant(stamp, constant, metaAccess);
+                }
+            }
+        }
+        if (self == null) {
+            self = new KlassLayoutHelperNode(config, klass);
+        }
+        return self;
     }
 
     @Override

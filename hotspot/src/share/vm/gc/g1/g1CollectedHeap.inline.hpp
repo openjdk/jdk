@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,16 +142,8 @@ inline bool G1CollectedHeap::isMarkedNext(oop obj) const {
   return _cm->nextMarkBitMap()->isMarked((HeapWord *)obj);
 }
 
-// This is a fast test on whether a reference points into the
-// collection set or not. Assume that the reference
-// points into the heap.
 inline bool G1CollectedHeap::is_in_cset(oop obj) {
-  bool ret = _in_cset_fast_test.is_in_cset((HeapWord*)obj);
-  // let's make sure the result is consistent with what the slower
-  // test returns
-  assert( ret || !obj_in_cs(obj), "sanity");
-  assert(!ret ||  obj_in_cs(obj), "sanity");
-  return ret;
+  return _in_cset_fast_test.is_in_cset((HeapWord*)obj);
 }
 
 bool G1CollectedHeap::is_in_cset(const HeapRegion* hr) {

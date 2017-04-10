@@ -28,9 +28,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-import jdk.vm.ci.hotspot.HotSpotMetaspaceConstant;
-import jdk.vm.ci.meta.JavaConstant;
-
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.hotspot.nodes.aot.InitializeKlassNode;
@@ -42,6 +39,9 @@ import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
+
+import jdk.vm.ci.hotspot.HotSpotMetaspaceConstant;
+import jdk.vm.ci.meta.Constant;
 
 public class EliminateRedundantInitializationPhase extends BasePhase<PhaseContext> {
     /**
@@ -142,7 +142,8 @@ public class EliminateRedundantInitializationPhase extends BasePhase<PhaseContex
             ArrayList<Node> nodesInCurrent = e.getValue();
             if (nodesInCurrent != null) { // if the list is null, the initializer has already been
                                           // eliminated.
-                for (Block d : currentBlock.getDominated()) {
+                Block d = currentBlock.getFirstDominated();
+                while (d != null) {
                     ArrayList<Node> nodesInDominated = blockToInits.get(d);
                     if (nodesInDominated != null) { // if the list is null, the initializer has
                                                     // already been eliminated.
@@ -151,6 +152,7 @@ public class EliminateRedundantInitializationPhase extends BasePhase<PhaseContex
                         result.add(n);
                         blockToInits.put(d, null);
                     }
+                    d = d.getDominatedSibling();
                 }
             }
         }
@@ -202,7 +204,7 @@ public class EliminateRedundantInitializationPhase extends BasePhase<PhaseContex
         ControlFlowGraph cfg = ControlFlowGraph.compute(graph, true, false, true, false);
         ArrayList<Node> redundantInits = new ArrayList<>();
         for (ConstantNode node : getConstantNodes(graph)) {
-            JavaConstant constant = node.asJavaConstant();
+            Constant constant = node.asConstant();
             if (constant instanceof HotSpotMetaspaceConstant) {
                 redundantInits.addAll(processConstantNode(cfg, node));
             }

@@ -45,8 +45,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
 #define thread_(field_name) in_bytes(JavaThread::field_name ## _offset()), R16_thread
 #define method_(field_name) in_bytes(Method::field_name ## _offset()), R19_method
 
-  virtual void check_and_handle_popframe(Register java_thread);
-  virtual void check_and_handle_earlyret(Register java_thread);
+  virtual void check_and_handle_popframe(Register scratch_reg);
+  virtual void check_and_handle_earlyret(Register scratch_reg);
 
   // Base routine for all dispatches.
   void dispatch_base(TosState state, address* table);

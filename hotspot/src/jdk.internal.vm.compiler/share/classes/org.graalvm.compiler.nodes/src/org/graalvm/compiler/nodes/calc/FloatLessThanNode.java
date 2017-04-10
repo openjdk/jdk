@@ -36,7 +36,6 @@ import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 
-import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.TriState;
 
 @NodeInfo(shortName = "<", cycles = NodeCycles.CYCLES_3)
@@ -49,8 +48,8 @@ public final class FloatLessThanNode extends CompareNode {
         assert x.stamp().isCompatible(y.stamp());
     }
 
-    public static LogicNode create(ValueNode x, ValueNode y, boolean unorderedIsTrue, ConstantReflectionProvider constantReflection) {
-        LogicNode result = CompareNode.tryConstantFold(Condition.LT, x, y, constantReflection, unorderedIsTrue);
+    public static LogicNode create(ValueNode x, ValueNode y, boolean unorderedIsTrue) {
+        LogicNode result = CompareNode.tryConstantFoldPrimitive(Condition.LT, x, y, unorderedIsTrue);
         if (result != null) {
             return result;
         } else {
@@ -81,12 +80,12 @@ public final class FloatLessThanNode extends CompareNode {
     }
 
     @Override
-    public Stamp getSucceedingStampForX(boolean negated) {
+    public Stamp getSucceedingStampForX(boolean negated, Stamp xStamp, Stamp yStamp) {
         return null;
     }
 
     @Override
-    public Stamp getSucceedingStampForY(boolean negated) {
+    public Stamp getSucceedingStampForY(boolean negated, Stamp xStamp, Stamp yStamp) {
         return null;
     }
 

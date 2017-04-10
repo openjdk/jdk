@@ -22,6 +22,7 @@
  */
 package org.graalvm.compiler.hotspot.nodes.aot;
 
+import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
@@ -44,8 +45,8 @@ public final class EncodedSymbolNode extends FloatingNode implements Canonicaliz
 
     @OptionalInput protected ValueNode value;
 
-    public EncodedSymbolNode(ValueNode value) {
-        super(TYPE, null);
+    public EncodedSymbolNode(@InjectedNodeParameter Stamp stamp, ValueNode value) {
+        super(TYPE, stamp);
         assert value != null;
         this.value = value;
     }
@@ -61,6 +62,6 @@ public final class EncodedSymbolNode extends FloatingNode implements Canonicaliz
         return this;
     }
 
-    @NodeIntrinsic(setStampFromReturnType = true)
+    @NodeIntrinsic
     public static native Word encode(Object constant);
 }

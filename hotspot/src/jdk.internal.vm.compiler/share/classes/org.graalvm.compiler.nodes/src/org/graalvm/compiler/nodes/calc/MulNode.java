@@ -60,9 +60,8 @@ public class MulNode extends BinaryArithmeticNode<Mul> implements NarrowableArit
         ConstantNode tryConstantFold = tryConstantFold(op, x, y, stamp);
         if (tryConstantFold != null) {
             return tryConstantFold;
-        } else {
-            return new MulNode(x, y).maybeCommuteInputs();
         }
+        return canonical(null, op, stamp, x, y);
     }
 
     @Override
@@ -81,8 +80,12 @@ public class MulNode extends BinaryArithmeticNode<Mul> implements NarrowableArit
             // if this fails we only swap
             return new MulNode(forY, forX);
         }
+        BinaryOp<Mul> op = getOp(forX, forY);
+        return canonical(this, op, stamp(), forX, forY);
+    }
+
+    private static ValueNode canonical(MulNode self, BinaryOp<Mul> op, Stamp stamp, ValueNode forX, ValueNode forY) {
         if (forY.isConstant()) {
-            BinaryOp<Mul> op = getOp(forX, forY);
             Constant c = forY.asConstant();
             if (op.isNeutral(c)) {
                 return forX;
@@ -90,20 +93,34 @@ public class MulNode extends BinaryArithmeticNode<Mul> implements NarrowableArit
 
             if (c instanceof PrimitiveConstant && ((PrimitiveConstant) c).getJavaKind().isNumericInteger()) {
                 long i = ((PrimitiveConstant) c).asLong();
-                if (i > 0 && CodeUtil.isPowerOf2(i)) {
-                    return new LeftShiftNode(forX, ConstantNode.forInt(CodeUtil.log2(i)));
-                }
+
                 if (i == 0) {
                     return ConstantNode.forIntegerStamp(stamp, 0);
+                } else if (i == 1) {
+                    return forX;
+                } else if (i == -1) {
+                    return NegateNode.create(forX);
+                } else if (i > 0) {
+                    if (CodeUtil.isPowerOf2(i)) {
+                        return new LeftShiftNode(forX, ConstantNode.forInt(CodeUtil.log2(i)));
+                    } else if (CodeUtil.isPowerOf2(i - 1)) {
+                        return AddNode.create(new LeftShiftNode(forX, ConstantNode.forInt(CodeUtil.log2(i - 1))), forX);
+                    } else if (CodeUtil.isPowerOf2(i + 1)) {
+                        return SubNode.create(new LeftShiftNode(forX, ConstantNode.forInt(CodeUtil.log2(i + 1))), forX);
+                    }
+                } else if (i < 0) {
+                    if (CodeUtil.isPowerOf2(-i)) {
+                        return NegateNode.create(LeftShiftNode.create(forX, ConstantNode.forInt(CodeUtil.log2(-i))));
+                    }
                 }
             }
 
             if (op.isAssociative()) {
                 // canonicalize expressions like "(a * 1) * 2"
-                return reassociate(this, ValueNode.isConstantPredicate(), forX, forY);
+                return reassociate(self != null ? self : (MulNode) new MulNode(forX, forY).maybeCommuteInputs(), ValueNode.isConstantPredicate(), forX, forY);
             }
         }
-        return this;
+        return self != null ? self : new MulNode(forX, forY).maybeCommuteInputs();
     }
 
     @Override

@@ -22,12 +22,12 @@
  */
 package org.graalvm.compiler.lir.alloc.lsra.ssa;
 
+import static jdk.vm.ci.code.ValueUtil.isRegister;
 import static org.graalvm.compiler.lir.LIRValueUtil.asConstant;
 import static org.graalvm.compiler.lir.LIRValueUtil.isConstantValue;
 import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
-import static jdk.vm.ci.code.ValueUtil.isRegister;
 
-import java.util.List;
+import java.util.ArrayList;
 
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.debug.Debug;
@@ -60,7 +60,7 @@ class SSALinearScanResolveDataFlowPhase extends LinearScanResolveDataFlowPhase {
             int fromBlockLastInstructionId = allocator.getLastLirInstructionId(fromBlock) + 1;
 
             AbstractBlockBase<?> phiOutBlock = midBlock != null ? midBlock : fromBlock;
-            List<LIRInstruction> instructions = allocator.getLIR().getLIRforBlock(phiOutBlock);
+            ArrayList<LIRInstruction> instructions = allocator.getLIR().getLIRforBlock(phiOutBlock);
             int phiOutIdx = SSAUtil.phiOutIndex(allocator.getLIR(), phiOutBlock);
             int phiOutId = midBlock != null ? fromBlockLastInstructionId : instructions.get(phiOutIdx).id();
             assert phiOutId >= 0;

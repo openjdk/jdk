@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
 
   // Used to send class being redefined/retransformed and kind of transform
   // info to the class file load hook event handler.
-  KlassHandle           *_class_being_redefined;
+  Klass*                _class_being_redefined;
   JvmtiClassLoadKind    _class_load_kind;
 
   // This is only valid when is_interp_only_mode() returns true
@@ -220,8 +220,8 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   // when class file load hook event is posted.
   // It is set while loading redefined class and cleared before the
   // class file load hook event is posted.
-  inline void set_class_being_redefined(KlassHandle *h_class, JvmtiClassLoadKind kind) {
-    _class_being_redefined = h_class;
+  inline void set_class_being_redefined(Klass* k, JvmtiClassLoadKind kind) {
+    _class_being_redefined = k;
     _class_load_kind = kind;
   }
 
@@ -230,7 +230,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
     _class_load_kind = jvmti_class_load_kind_load;
   }
 
-  inline KlassHandle *get_class_being_redefined() {
+  inline Klass* get_class_being_redefined() {
     return _class_being_redefined;
   }
 
@@ -271,12 +271,12 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   //   used by the verifier, so there is no extra performance issue with it.
 
  private:
-  KlassHandle *_the_class_for_redefinition_verification;
-  KlassHandle *_scratch_class_for_redefinition_verification;
+  Klass* _the_class_for_redefinition_verification;
+  Klass* _scratch_class_for_redefinition_verification;
 
  public:
-  inline void set_class_versions_map(KlassHandle *the_class,
-                                     KlassHandle *scratch_class) {
+  inline void set_class_versions_map(Klass* the_class,
+                                     Klass* scratch_class) {
     _the_class_for_redefinition_verification = the_class;
     _scratch_class_for_redefinition_verification = scratch_class;
   }
@@ -288,8 +288,8 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
                                                     JavaThread *thread) {
     JvmtiThreadState *state = thread->jvmti_thread_state();
     if (state != NULL && state->_the_class_for_redefinition_verification != NULL) {
-      if ((*(state->_the_class_for_redefinition_verification))() == klass) {
-        klass = (*(state->_scratch_class_for_redefinition_verification))();
+      if (state->_the_class_for_redefinition_verification == klass) {
+        klass = state->_scratch_class_for_redefinition_verification;
       }
     }
     return klass;
@@ -409,17 +409,17 @@ public:
 
 class RedefineVerifyMark : public StackObj {
  private:
-  JvmtiThreadState *_state;
-  KlassHandle       _scratch_class;
+  JvmtiThreadState* _state;
+  Klass*            _scratch_class;
   Handle            _scratch_mirror;
 
  public:
-  RedefineVerifyMark(KlassHandle *the_class, KlassHandle *scratch_class,
-                     JvmtiThreadState *state) : _state(state), _scratch_class(*scratch_class)
+  RedefineVerifyMark(Klass* the_class, Klass* scratch_class,
+                     JvmtiThreadState *state) : _state(state), _scratch_class(scratch_class)
   {
     _state->set_class_versions_map(the_class, scratch_class);
-    _scratch_mirror = Handle(_scratch_class->java_mirror());
-    (*scratch_class)->set_java_mirror((*the_class)->java_mirror());
+    _scratch_mirror = Handle(Thread::current(), _scratch_class->java_mirror());
+    _scratch_class->set_java_mirror(the_class->java_mirror());
   }
 
   ~RedefineVerifyMark() {

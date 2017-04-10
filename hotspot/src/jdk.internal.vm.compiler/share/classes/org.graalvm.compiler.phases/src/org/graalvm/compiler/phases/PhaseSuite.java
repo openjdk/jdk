@@ -148,6 +148,31 @@ public class PhaseSuite<C> extends BasePhase<C> {
         return false;
     }
 
+    /**
+     * Removes the first instance of the given phase class, looking recursively into inner phase
+     * suites.
+     */
+    public boolean replacePhase(Class<? extends BasePhase<? super C>> phaseClass, BasePhase<? super C> newPhase) {
+        ListIterator<BasePhase<? super C>> it = phases.listIterator();
+        while (it.hasNext()) {
+            BasePhase<? super C> phase = it.next();
+            if (phaseClass.isInstance(phase)) {
+                it.set(newPhase);
+                return true;
+            } else if (phase instanceof PhaseSuite) {
+                @SuppressWarnings("unchecked")
+                PhaseSuite<C> innerSuite = (PhaseSuite<C>) phase;
+                if (innerSuite.removePhase(phaseClass)) {
+                    if (innerSuite.phases.isEmpty()) {
+                        it.set(newPhase);
+                    }
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     @Override
     protected void run(StructuredGraph graph, C context) {
         for (BasePhase<? super C> phase : phases) {

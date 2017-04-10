@@ -22,16 +22,17 @@
  */
 package org.graalvm.compiler.hotspot.aarch64;
 
+import static jdk.vm.ci.aarch64.AArch64.zr;
+import static jdk.vm.ci.code.ValueUtil.asRegister;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.HINT;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.ILLEGAL;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.REG;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.STACK;
-import static jdk.vm.ci.code.ValueUtil.asRegister;
 
+import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.asm.aarch64.AArch64Assembler;
 import org.graalvm.compiler.asm.aarch64.AArch64MacroAssembler;
-import org.graalvm.compiler.debug.GraalError;
-import org.graalvm.compiler.hotspot.CompressEncoding;
+import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.StandardOp.LoadConstantOp;
 import org.graalvm.compiler.lir.aarch64.AArch64LIRInstruction;
@@ -61,7 +62,7 @@ public class AArch64HotSpotMove {
             crb.recordInlineDataInCode(constant);
             if (constant.isCompressed()) {
                 // masm.forceMov(asRegister(result), 0);
-                throw GraalError.unimplemented();
+                masm.movNarrowAddress(asRegister(result), 0);
             } else {
                 masm.movNativeAddress(asRegister(result), 0);
             }
@@ -106,27 +107,24 @@ public class AArch64HotSpotMove {
             Register ptr = asRegister(input);
             Register base = asRegister(baseRegister);
             // result = (ptr - base) >> shift
-            if (encoding.base == 0) {
-                if (encoding.shift == 0) {
-                    masm.movx(resultRegister, ptr);
+            if (!encoding.hasBase()) {
+                if (encoding.hasShift()) {
+                    masm.lshr(64, resultRegister, ptr, encoding.getShift());
                 } else {
-                    assert encoding.alignment == encoding.shift : "Encode algorithm is wrong";
-                    masm.lshr(64, resultRegister, ptr, encoding.shift);
+                    masm.movx(resultRegister, ptr);
                 }
             } else if (nonNull) {
                 masm.sub(64, resultRegister, ptr, base);
-                if (encoding.shift != 0) {
-                    assert encoding.alignment == encoding.shift : "Encode algorithm is wrong";
-                    masm.shl(64, resultRegister, resultRegister, encoding.shift);
+                if (encoding.hasShift()) {
+                    masm.shl(64, resultRegister, resultRegister, encoding.getShift());
                 }
             } else {
                 // if ptr is null it still has to be null after compression
                 masm.cmp(64, ptr, 0);
                 masm.cmov(64, resultRegister, ptr, base, AArch64Assembler.ConditionFlag.NE);
                 masm.sub(64, resultRegister, resultRegister, base);
-                if (encoding.shift != 0) {
-                    assert encoding.alignment == encoding.shift : "Encode algorithm is wrong";
-                    masm.lshr(64, resultRegister, resultRegister, encoding.shift);
+                if (encoding.hasShift()) {
+                    masm.lshr(64, resultRegister, resultRegister, encoding.getShift());
                 }
             }
         }
@@ -161,14 +159,19 @@ public class AArch64HotSpotMove {
             Register base = asRegister(baseRegister);
             // result = base + (ptr << shift)
             if (nonNull) {
-                assert encoding.shift == encoding.alignment;
-                masm.add(64, resultRegister, base, ptr, AArch64Assembler.ShiftType.ASR, encoding.shift);
+                masm.add(64, resultRegister, base, ptr, AArch64Assembler.ShiftType.LSL, encoding.getShift());
+            } else if (!encoding.hasBase()) {
+                masm.add(64, resultRegister, zr, ptr, AArch64Assembler.ShiftType.LSL, encoding.getShift());
             } else {
                 // if ptr is null it has to be null after decompression
-                // masm.cmp(64, );
-                throw GraalError.unimplemented();
+                Label done = new Label();
+                if (!resultRegister.equals(ptr)) {
+                    masm.mov(32, resultRegister, ptr);
+                }
+                masm.cbz(32, resultRegister, done);
+                masm.add(64, resultRegister, base, resultRegister, AArch64Assembler.ShiftType.LSL, encoding.getShift());
+                masm.bind(done);
             }
-
         }
     }
 
@@ -188,10 +191,8 @@ public class AArch64HotSpotMove {
 
     public static void decodeKlassPointer(AArch64MacroAssembler masm, Register result, Register ptr, Register klassBase, CompressEncoding encoding) {
         // result = klassBase + ptr << shift
-        if (encoding.shift != 0 || encoding.base != 0) {
-            // (shift != 0 -> shift == alignment)
-            assert (encoding.shift == 0 || encoding.shift == encoding.alignment) : "Decode algorithm is wrong: " + encoding;
-            masm.add(64, result, klassBase, ptr, AArch64Assembler.ExtendType.UXTX, encoding.shift);
+        if (encoding.hasShift() || encoding.hasBase()) {
+            masm.add(64, result, klassBase, ptr, AArch64Assembler.ExtendType.UXTX, encoding.getShift());
         }
     }
 

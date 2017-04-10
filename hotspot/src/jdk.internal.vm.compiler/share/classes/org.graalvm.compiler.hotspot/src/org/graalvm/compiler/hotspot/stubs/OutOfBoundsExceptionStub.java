@@ -28,6 +28,7 @@ import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.hotspot.nodes.AllocaNode;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.word.Word;
 
 import jdk.vm.ci.code.Register;
@@ -37,8 +38,8 @@ import jdk.vm.ci.code.Register;
  */
 public class OutOfBoundsExceptionStub extends CreateExceptionStub {
 
-    public OutOfBoundsExceptionStub(HotSpotProviders providers, HotSpotForeignCallLinkage linkage) {
-        super("createOutOfBoundsException", providers, linkage);
+    public OutOfBoundsExceptionStub(OptionValues options, HotSpotProviders providers, HotSpotForeignCallLinkage linkage) {
+        super("createOutOfBoundsException", options, providers, linkage);
     }
 
     private static final int MAX_INT_STRING_SIZE = Integer.toString(Integer.MIN_VALUE).length();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -527,25 +527,16 @@ void G1RemSet::scrub(uint worker_num, HeapRegionClaimer *hrclaimer) {
   _g1->heap_region_par_iterate(&scrub_cl, worker_num, hrclaimer);
 }
 
-G1TriggerClosure::G1TriggerClosure() :
-  _triggered(false) { }
-
-G1InvokeIfNotTriggeredClosure::G1InvokeIfNotTriggeredClosure(G1TriggerClosure* t_cl,
-                                                             OopClosure* oop_cl)  :
-  _trigger_cl(t_cl), _oop_cl(oop_cl) { }
-
-G1Mux2Closure::G1Mux2Closure(OopClosure *c1, OopClosure *c2) :
-  _c1(c1), _c2(c2) { }
-
-G1UpdateRSOrPushRefOopClosure::
-G1UpdateRSOrPushRefOopClosure(G1CollectedHeap* g1h,
-                              G1RemSet* rs,
-                              G1ParPushHeapRSClosure* push_ref_cl,
-                              bool record_refs_into_cset,
-                              uint worker_i) :
-  _g1(g1h), _g1_rem_set(rs), _from(NULL),
+G1UpdateRSOrPushRefOopClosure::G1UpdateRSOrPushRefOopClosure(G1CollectedHeap* g1h,
+                                                             G1ParPushHeapRSClosure* push_ref_cl,
+                                                             bool record_refs_into_cset,
+                                                             uint worker_i) :
+  _g1(g1h),
+  _from(NULL),
   _record_refs_into_cset(record_refs_into_cset),
-  _push_ref_cl(push_ref_cl), _worker_i(worker_i) { }
+  _has_refs_into_cset(false),
+  _push_ref_cl(push_ref_cl),
+  _worker_i(worker_i) { }
 
 // Returns true if the given card contains references that point
 // into the collection set, if we're checking for such references;
@@ -690,25 +681,14 @@ bool G1RemSet::refine_card(jbyte* card_ptr,
   assert(!dirty_region.is_empty(), "sanity");
 
   G1UpdateRSOrPushRefOopClosure update_rs_oop_cl(_g1,
-                                                 _g1->g1_rem_set(),
                                                  oops_in_heap_closure,
                                                  check_for_refs_into_cset,
                                                  worker_i);
   update_rs_oop_cl.set_from(r);
 
-  G1TriggerClosure trigger_cl;
-  FilterIntoCSClosure into_cs_cl(_g1, &trigger_cl);
-  G1InvokeIfNotTriggeredClosure invoke_cl(&trigger_cl, &into_cs_cl);
-  G1Mux2Closure mux(&invoke_cl, &update_rs_oop_cl);
-
-  FilterOutOfRegionClosure filter_then_update_rs_oop_cl(r,
-                        (check_for_refs_into_cset ?
-                                (OopClosure*)&mux :
-                                (OopClosure*)&update_rs_oop_cl));
-
   bool card_processed =
     r->oops_on_card_seq_iterate_careful(dirty_region,
-                                        &filter_then_update_rs_oop_cl);
+                                        &update_rs_oop_cl);
 
   // If unable to process the card then we encountered an unparsable
   // part of the heap (e.g. a partially allocated object) while
@@ -731,15 +711,15 @@ bool G1RemSet::refine_card(jbyte* card_ptr,
     _conc_refine_cards++;
   }
 
-  // This gets set to true if the card being refined has
-  // references that point into the collection set.
-  bool has_refs_into_cset = trigger_cl.triggered();
+  // This gets set to true if the card being refined has references that point
+  // into the collection set.
+  bool has_refs_into_cset = update_rs_oop_cl.has_refs_into_cset();
 
   // We should only be detecting that the card contains references
   // that point into the collection set if the current thread is
   // a GC worker thread.
   assert(!has_refs_into_cset || SafepointSynchronize::is_at_safepoint(),
-           "invalid result at non safepoint");
+         "invalid result at non safepoint");
 
   return has_refs_into_cset;
 }

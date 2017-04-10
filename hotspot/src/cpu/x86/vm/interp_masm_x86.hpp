@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,9 +48,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
                             int number_of_arguments,
                             bool check_exceptions);
 
-  virtual void check_and_handle_popframe(Register java_thread);
-  virtual void check_and_handle_earlyret(Register java_thread);
-
   // base routine for all dispatches
   void dispatch_base(TosState state, address* table, bool verifyoop = true);
 
@@ -60,6 +57,9 @@ class InterpreterMacroAssembler: public MacroAssembler {
     _bcp_register(LP64_ONLY(r13) NOT_LP64(rsi)) {}
 
   void jump_to_entry(address entry);
+
+ virtual void check_and_handle_popframe(Register java_thread);
+ virtual void check_and_handle_earlyret(Register java_thread);
 
   void load_earlyret_value(TosState state);
 
