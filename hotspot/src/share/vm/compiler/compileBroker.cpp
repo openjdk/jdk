@@ -1052,8 +1052,8 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
 
   // lock, make sure that the compilation
   // isn't prohibited in a straightforward way.
-  AbstractCompiler *comp = CompileBroker::compiler(comp_level);
-  if (!comp->can_compile_method(method) ||
+  AbstractCompiler* comp = CompileBroker::compiler(comp_level);
+  if (comp == NULL || !comp->can_compile_method(method) ||
       compilation_is_prohibited(method, osr_bci, comp_level, directive->ExcludeOption)) {
     return NULL;
   }
