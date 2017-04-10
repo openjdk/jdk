@@ -596,7 +596,7 @@ public class SynchronousQueueTest extends JSR166TestCase {
                 fail("timed out");
             Thread.yield();
         }
-        assertTrue(l.size() == 1);
+        assertEquals(1, l.size());
         assertSame(one, l.get(0));
         awaitTermination(t);
     }
