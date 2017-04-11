@@ -270,21 +270,21 @@ class LambdaForm {
         GENERIC("invoke"),
         ZERO("zero"),
         IDENTITY("identity"),
-        BOUND_REINVOKER("BMH.reinvoke"),
-        REINVOKER("MH.reinvoke"),
-        DELEGATE("MH.delegate"),
-        EXACT_LINKER("MH.invokeExact_MT"),
-        EXACT_INVOKER("MH.exactInvoker"),
-        GENERIC_LINKER("MH.invoke_MT"),
-        GENERIC_INVOKER("MH.invoker"),
+        BOUND_REINVOKER("BMH.reinvoke", "reinvoke"),
+        REINVOKER("MH.reinvoke", "reinvoke"),
+        DELEGATE("MH.delegate", "delegate"),
+        EXACT_LINKER("MH.invokeExact_MT", "invokeExact_MT"),
+        EXACT_INVOKER("MH.exactInvoker", "exactInvoker"),
+        GENERIC_LINKER("MH.invoke_MT", "invoke_MT"),
+        GENERIC_INVOKER("MH.invoker", "invoker"),
         LINK_TO_TARGET_METHOD("linkToTargetMethod"),
         LINK_TO_CALL_SITE("linkToCallSite"),
-        DIRECT_INVOKE_VIRTUAL("DMH.invokeVirtual"),
-        DIRECT_INVOKE_SPECIAL("DMH.invokeSpecial"),
-        DIRECT_INVOKE_STATIC("DMH.invokeStatic"),
-        DIRECT_NEW_INVOKE_SPECIAL("DMH.newInvokeSpecial"),
-        DIRECT_INVOKE_INTERFACE("DMH.invokeInterface"),
-        DIRECT_INVOKE_STATIC_INIT("DMH.invokeStaticInit"),
+        DIRECT_INVOKE_VIRTUAL("DMH.invokeVirtual", "invokeVirtual"),
+        DIRECT_INVOKE_SPECIAL("DMH.invokeSpecial", "invokeSpecial"),
+        DIRECT_INVOKE_STATIC("DMH.invokeStatic", "invokeStatic"),
+        DIRECT_NEW_INVOKE_SPECIAL("DMH.newInvokeSpecial", "newInvokeSpecial"),
+        DIRECT_INVOKE_INTERFACE("DMH.invokeInterface", "invokeInterface"),
+        DIRECT_INVOKE_STATIC_INIT("DMH.invokeStaticInit", "invokeStaticInit"),
         GET_OBJECT("getObject"),
         PUT_OBJECT("putObject"),
         GET_OBJECT_VOLATILE("getObjectVolatile"),
@@ -330,20 +330,19 @@ class LambdaForm {
         GUARD("guard"),
         GUARD_WITH_CATCH("guardWithCatch"),
         VARHANDLE_EXACT_INVOKER("VH.exactInvoker"),
-        VARHANDLE_INVOKER("VH.invoker"),
-        VARHANDLE_LINKER("VH.invoke_MT");
+        VARHANDLE_INVOKER("VH.invoker", "invoker"),
+        VARHANDLE_LINKER("VH.invoke_MT", "invoke_MT");
 
         final String defaultLambdaName;
         final String methodName;
 
         private Kind(String defaultLambdaName) {
+            this(defaultLambdaName, defaultLambdaName);
+        }
+
+        private Kind(String defaultLambdaName, String methodName) {
             this.defaultLambdaName = defaultLambdaName;
-            int p = defaultLambdaName.indexOf('.');
-            if (p > -1) {
-                this.methodName = defaultLambdaName.substring(p + 1);
-            } else {
-                this.methodName = defaultLambdaName;
-            }
+            this.methodName = methodName;
         }
     }
 

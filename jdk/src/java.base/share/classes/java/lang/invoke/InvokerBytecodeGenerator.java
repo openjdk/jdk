@@ -908,7 +908,7 @@ class InvokerBytecodeGenerator {
         //MethodHandle.class already covered
     };
 
-    static boolean isStaticallyInvocable(NamedFunction[] functions) {
+    static boolean isStaticallyInvocable(NamedFunction ... functions) {
         for (NamedFunction nf : functions) {
             if (!isStaticallyInvocable(nf.member())) {
                 return false;
