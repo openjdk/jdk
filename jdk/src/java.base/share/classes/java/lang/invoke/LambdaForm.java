@@ -847,9 +847,14 @@ class LambdaForm {
         if (vmentry != null && isCompiled) {
             return;  // already compiled somehow
         }
-        assert(vmentry == null || vmentry.getMethodType().basicType().equals(methodType()));
+
+        // Obtain the invoker MethodType outside of the following try block.
+        // This ensures that an IllegalArgumentException is directly thrown if the
+        // type would have 256 or more parameters
+        MethodType invokerType = methodType();
+        assert(vmentry == null || vmentry.getMethodType().basicType().equals(invokerType));
         try {
-            vmentry = InvokerBytecodeGenerator.generateCustomizedCode(this);
+            vmentry = InvokerBytecodeGenerator.generateCustomizedCode(this, invokerType);
             if (TRACE_INTERPRETER)
                 traceInterpreter("compileToBytecode", this);
             isCompiled = true;
