@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,6 +209,10 @@ public final class FilePermission extends Permission implements Serializable {
     private static final Path here = builtInFS.getPath(
             GetPropertyAction.privilegedGetProperty("user.dir"));
 
+    private static final Path EMPTY_PATH = builtInFS.getPath("");
+    private static final Path DASH_PATH = builtInFS.getPath("-");
+    private static final Path DOTDOT_PATH = builtInFS.getPath("..");
+
     /**
      * A private constructor that clones some and updates some,
      * always with a different name.
@@ -341,7 +345,7 @@ public final class FilePermission extends Permission implements Serializable {
                         .normalize();
                 // lastName should always be non-null now
                 Path lastName = npath.getFileName();
-                if (lastName != null && lastName.toString().equals("-")) {
+                if (lastName != null && lastName.equals(DASH_PATH)) {
                     directory = true;
                     recursive = !rememberStar;
                     npath = npath.getParent();
@@ -679,23 +683,76 @@ public final class FilePermission extends Permission implements Serializable {
      * @return the depth in between
      */
     private static int containsPath(Path p1, Path p2) {
-        Path p;
-        try {
-            p = p2.relativize(p1).normalize();
-            if (p.getName(0).toString().isEmpty()) {
-                return 0;
-            } else {
-                for (Path item: p) {
-                    String s = item.toString();
-                    if (!s.equals("..")) {
-                        return -1;
-                    }
-                }
-                return p.getNameCount();
-            }
-        } catch (IllegalArgumentException iae) {
+
+        // Two paths must have the same root. For example,
+        // there is no contains relation between any two of
+        // "/x", "x", "C:/x", "C:x", and "//host/share/x".
+        if (!Objects.equals(p1.getRoot(), p2.getRoot())) {
             return -1;
         }
+
+        // Empty path (i.e. "." or "") is a strange beast,
+        // because its getNameCount()==1 but getName(0) is null.
+        // It's better to deal with it separately.
+        if (p1.equals(EMPTY_PATH)) {
+            if (p2.equals(EMPTY_PATH)) {
+                return 0;
+            } else if (p2.getName(0).equals(DOTDOT_PATH)) {
+                // "." contains p2 iif p2 has no "..". Since a
+                // a normalized path can only have 0 or more
+                // ".." at the beginning. We only need to look
+                // at the head.
+                return -1;
+            } else {
+                // and the distance is p2's name count. i.e.
+                // 3 between "." and "a/b/c".
+                return p2.getNameCount();
+            }
+        } else if (p2.equals(EMPTY_PATH)) {
+            int c1 = p1.getNameCount();
+            if (!p1.getName(c1 - 1).equals(DOTDOT_PATH)) {
+                // "." is inside p1 iif p1 is 1 or more "..".
+                // For the same reason above, we only need to
+                // look at the tail.
+                return -1;
+            }
+            // and the distance is the count of ".."
+            return c1;
+        }
+
+        // Good. No more empty paths.
+
+        // Common heads are removed
+
+        int c1 = p1.getNameCount();
+        int c2 = p2.getNameCount();
+
+        int n = Math.min(c1, c2);
+        int i = 0;
+        while (i < n) {
+            if (!p1.getName(i).equals(p2.getName(i)))
+                break;
+            i++;
+        }
+
+        // for p1 containing p2, p1 must be 0-or-more "..",
+        // and p2 cannot have "..". For the same reason, we only
+        // check tail of p1 and head of p2.
+        if (i < c1 && !p1.getName(c1 - 1).equals(DOTDOT_PATH)) {
+            return -1;
+        }
+
+        if (i < c2 && p2.getName(i).equals(DOTDOT_PATH)) {
+            return -1;
+        }
+
+        // and the distance is the name counts added (after removing
+        // the common heads).
+
+        // For example: p1 = "../../..", p2 = "../a".
+        // After removing the common heads, they become "../.." and "a",
+        // and the distance is (3-1)+(2-1) = 3.
+        return c1 - i + c2 - i;
     }
 
     /**
