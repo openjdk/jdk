@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ public class Zombies {
             ! new File("/bin/ps").canExecute())
             return;
         System.out.println("Looks like a Unix system.");
-        long mypid = ProcessHandle.current().getPid();
+        long mypid = ProcessHandle.current().pid();
         System.out.printf("mypid: %d%n", mypid);
 
         final Runtime rt = Runtime.getRuntime();
@@ -65,7 +65,7 @@ public class Zombies {
 
         Process p = rt.exec(TrueCommand);
         ProcessHandle pp = p.toHandle().parent().orElse(null);
-        System.out.printf("%s pid: %d, parent: %s%n", TrueCommand, p.getPid(), pp);
+        System.out.printf("%s pid: %d, parent: %s%n", TrueCommand, p.pid(), pp);
         p.waitFor();
 
         // Count all the zombies that are children of this Java process

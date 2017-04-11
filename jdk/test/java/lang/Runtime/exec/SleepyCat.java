@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,10 +80,10 @@ public class SleepyCat {
             for (Process p : pids) {
                 if (p == null)
                     continue;
-                String[] pfiles = {"pfiles", Long.toString(p.getPid())};
+                String[] pfiles = {"pfiles", Long.toString(p.pid())};
                 fds = new ProcessBuilder(pfiles).inheritIO().start();
                 fds.waitFor();
-                String[] pstack = {"pstack", Long.toString(p.getPid())};
+                String[] pstack = {"pstack", Long.toString(p.pid())};
                 fds = new ProcessBuilder(pstack).inheritIO().start();
                 fds.waitFor();
             }
