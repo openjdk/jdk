@@ -38,19 +38,18 @@ import static jdk.incubator.http.HttpResponse.BodyHandler.discard;
 
 /**
  * @test
- * @key intermittent
- * @summary Ensures that timeouts of multiple requests are handled in correct order
- * @run main/othervm TimeoutOrdering
+ * @bug 8178147
+ * @summary Ensures that small timeouts do not cause hangs due to race conditions
+ * @run main/othervm SmallTimeout
  */
 
-// To enable logging use
-// @run main/othervm -Djdk.httpclient.HttpClient.log=all,frames:all TimeoutOrdering
+// To enable logging use. Not enabled by default as it changes the dynamics
+// of the test.
+// @run main/othervm -Djdk.httpclient.HttpClient.log=all,frames:all SmallTimeout
 
-public class TimeoutOrdering {
+public class SmallTimeout {
 
-    // The assumption is that 5 secs is sufficiently large enough, without being
-    // too large, to ensure the correct receive order of HttpTimeoutExceptions.
-    static int[] TIMEOUTS = {10, 5, 15, 10, 10, 5};
+    static int[] TIMEOUTS = {2, 1, 3, 2, 100, 1};
 
     // A queue for placing timed out requests so that their order can be checked.
     static LinkedBlockingQueue<HttpRequest> queue = new LinkedBlockingQueue<>();
@@ -69,7 +68,7 @@ public class TimeoutOrdering {
             out.println("--- TESTING Async");
             for (int i = 0; i < TIMEOUTS.length; i++) {
                 requests[i] = HttpRequest.newBuilder(uri)
-                                         .timeout(Duration.ofSeconds(TIMEOUTS[i]))
+                                         .timeout(Duration.ofMillis(TIMEOUTS[i]))
                                          .GET()
                                          .build();
 
@@ -91,12 +90,16 @@ public class TimeoutOrdering {
                                 out.println("Caught expected timeout: " + t.getCause());
                             }
                         }
+                        if (t == null && r == null) {
+                            out.println("Both response and throwable are null!");
+                            error = true;
+                        }
                         queue.add(req);
                     });
             }
             System.out.println("All requests submitted. Waiting ...");
 
-            checkReturnOrder(requests);
+            checkReturn(requests);
 
             if (error)
                 throw new RuntimeException("Failed. Check output");
@@ -109,7 +112,7 @@ public class TimeoutOrdering {
 
             for (int i = 0; i < TIMEOUTS.length; i++) {
                 requests[i] = HttpRequest.newBuilder(uri)
-                                         .timeout(Duration.ofSeconds(TIMEOUTS[i]))
+                                         .timeout(Duration.ofMillis(TIMEOUTS[i]))
                                          .GET()
                                          .build();
 
@@ -129,7 +132,7 @@ public class TimeoutOrdering {
             }
             System.out.println("All requests submitted. Waiting ...");
 
-            checkReturnOrder(requests);
+            checkReturn(requests);
 
             executor.shutdownNow();
 
@@ -141,38 +144,13 @@ public class TimeoutOrdering {
         }
     }
 
-    static void checkReturnOrder(HttpRequest[] requests) throws InterruptedException {
+    static void checkReturn(HttpRequest[] requests) throws InterruptedException {
         // wait for exceptions and check order
         for (int j = 0; j < TIMEOUTS.length; j++) {
             HttpRequest req = queue.take();
             out.println("Got request from queue " + req + ", order: " + getRequest(req, requests));
-            switch (j) {
-                case 0:
-                case 1:  // Expect shortest timeouts, 5sec, first.
-                    if (!(req == requests[1] || req == requests[5])) {
-                        String s = "Expected r1 or r5. Got: " + getRequest(req, requests);
-                        throw new RuntimeException(s);
-                    }
-                    break;
-                case 2:
-                case 3:
-                case 4: // Expect medium timeouts, 10sec, next.
-                    if (!(req == requests[0] || req == requests[3] || req == requests[4])) {
-                        String s = "Expected r1, r4 or r5. Got: " + getRequest(req, requests);
-                        throw new RuntimeException(s);
-                    }
-                    break;
-                case 5:  // Expect largest timeout, 15sec, last.
-                    if (req != requests[2]) {
-                        String s= "Expected r3. Got: " + getRequest(req, requests);
-                        throw new RuntimeException(s);
-                    }
-                    break;
-                default:
-                    throw new AssertionError("Unknown index: " + j);
-            }
         }
-        out.println("Return order ok");
+        out.println("Return ok");
     }
 
     /** Returns the index of the request in the array. */
