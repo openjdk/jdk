@@ -149,7 +149,7 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
                 Object[] typeInfo = (Object[]) type;
                 Class<?>[] ptypes = (Class<?>[]) typeInfo[1];
                 Class<?> rtype = (Class<?>) typeInfo[0];
-                MethodType res = MethodType.methodType(rtype, ptypes);
+                MethodType res = MethodType.makeImpl(rtype, ptypes, true);
                 type = res;
             }
             // Make sure type is a MethodType for racing threads.

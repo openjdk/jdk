@@ -518,12 +518,6 @@ public enum Wrapper {
      * If the target type is a primitive, change it to a wrapper.
      */
     static <T> Class<T> forceType(Class<?> type, Class<T> exampleType) {
-        boolean z = (type == exampleType ||
-               type.isPrimitive() && forPrimitiveType(type) == findWrapperType(exampleType) ||
-               exampleType.isPrimitive() && forPrimitiveType(exampleType) == findWrapperType(type) ||
-               type == Object.class && !exampleType.isPrimitive());
-        if (!z)
-            System.out.println(type+" <= "+exampleType);
         assert(type == exampleType ||
                type.isPrimitive() && forPrimitiveType(type) == findWrapperType(exampleType) ||
                exampleType.isPrimitive() && forPrimitiveType(exampleType) == findWrapperType(type) ||

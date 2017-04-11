@@ -827,15 +827,27 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
         private static String makeSignature(String types, boolean ctor) {
             StringBuilder buf = new StringBuilder(SIG_INCIPIT);
-            for (char c : types.toCharArray()) {
-                buf.append(typeSig(c));
+            int len = types.length();
+            for (int i = 0; i < len; i++) {
+                buf.append(typeSig(types.charAt(i)));
             }
             return buf.append(')').append(ctor ? "V" : BMH_SIG).toString();
         }
 
+        private static MethodType makeConstructorType(String types) {
+            int length = types.length();
+            Class<?> ptypes[] = new Class<?>[length + 2];
+            ptypes[0] = MethodType.class;
+            ptypes[1] = LambdaForm.class;
+            for (int i = 0; i < length; i++) {
+                ptypes[i + 2] = BasicType.basicType(types.charAt(i)).basicTypeClass();
+            }
+            return MethodType.makeImpl(BoundMethodHandle.class, ptypes, true);
+        }
+
         static MethodHandle makeCbmhCtor(Class<? extends BoundMethodHandle> cbmh, String types) {
             try {
-                return LOOKUP.findStatic(cbmh, "make", MethodType.fromDescriptor(makeSignature(types, false), null));
+                return LOOKUP.findStatic(cbmh, "make", makeConstructorType(types));
             } catch (NoSuchMethodException | IllegalAccessException | IllegalArgumentException | TypeNotPresentException e) {
                 throw newInternalError(e);
             }
