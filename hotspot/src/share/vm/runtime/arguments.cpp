@@ -644,10 +644,9 @@ bool Arguments::atojulong(const char *s, julong* result) {
   }
 }
 
-Arguments::ArgsRange Arguments::check_memory_size(julong size, julong min_size) {
+Arguments::ArgsRange Arguments::check_memory_size(julong size, julong min_size, julong max_size) {
   if (size < min_size) return arg_too_small;
-  // Check that size will fit in a size_t (only relevant on 32-bit)
-  if (size > max_uintx) return arg_too_big;
+  if (size > max_size) return arg_too_big;
   return arg_in_range;
 }
 
@@ -2617,9 +2616,10 @@ bool Arguments::create_numbered_property(const char* prop_base_name, const char*
 
 Arguments::ArgsRange Arguments::parse_memory_size(const char* s,
                                                   julong* long_arg,
-                                                  julong min_size) {
+                                                  julong min_size,
+                                                  julong max_size) {
   if (!atojulong(s, long_arg)) return arg_unreadable;
-  return check_memory_size(*long_arg, min_size);
+  return check_memory_size(*long_arg, min_size, max_size);
 }
 
 // Parse JavaVMInitArgs structure
@@ -2747,6 +2747,55 @@ int Arguments::process_patch_mod_option(const char* patch_mod_tail, bool* patch_
       return JNI_ENOMEM;
     }
   }
+  return JNI_OK;
+}
+
+// Parse -Xss memory string parameter and convert to ThreadStackSize in K.
+jint Arguments::parse_xss(const JavaVMOption* option, const char* tail, intx* out_ThreadStackSize) {
+  // The min and max sizes match the values in globals.hpp, but scaled
+  // with K. The values have been chosen so that alignment with page
+  // size doesn't change the max value, which makes the conversions
+  // back and forth between Xss value and ThreadStackSize value easier.
+  // The values have also been chosen to fit inside a 32-bit signed type.
+  const julong min_ThreadStackSize = 0;
+  const julong max_ThreadStackSize = 1 * M;
+
+  const julong min_size = min_ThreadStackSize * K;
+  const julong max_size = max_ThreadStackSize * K;
+
+  assert(is_size_aligned_(max_size, (size_t)os::vm_page_size()), "Implementation assumption");
+
+  julong size = 0;
+  ArgsRange errcode = parse_memory_size(tail, &size, min_size, max_size);
+  if (errcode != arg_in_range) {
+    bool silent = (option == NULL); // Allow testing to silence error messages
+    if (!silent) {
+      jio_fprintf(defaultStream::error_stream(),
+                  "Invalid thread stack size: %s\n", option->optionString);
+      describe_range_error(errcode);
+    }
+    return JNI_EINVAL;
+  }
+
+  // Internally track ThreadStackSize in units of 1024 bytes.
+  const julong size_aligned = align_size_up_(size, K);
+  assert(size <= size_aligned,
+         "Overflow: " JULONG_FORMAT " " JULONG_FORMAT,
+         size, size_aligned);
+
+  const julong size_in_K = size_aligned / K;
+  assert(size_in_K < (julong)max_intx,
+         "size_in_K doesn't fit in the type of ThreadStackSize: " JULONG_FORMAT,
+         size_in_K);
+
+  // Check that code expanding ThreadStackSize to a page aligned number of bytes won't overflow.
+  const julong max_expanded = align_size_up_(size_in_K * K, (size_t)os::vm_page_size());
+  assert(max_expanded < max_uintx && max_expanded >= size_in_K,
+         "Expansion overflowed: " JULONG_FORMAT " " JULONG_FORMAT,
+         max_expanded, size_in_K);
+
+  *out_ThreadStackSize = (intx)size_in_K;
+
   return JNI_OK;
 }
 
@@ -3013,17 +3062,12 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       }
     // -Xss
     } else if (match_option(option, "-Xss", &tail)) {
-      julong long_ThreadStackSize = 0;
-      ArgsRange errcode = parse_memory_size(tail, &long_ThreadStackSize, 1000);
-      if (errcode != arg_in_range) {
-        jio_fprintf(defaultStream::error_stream(),
-                    "Invalid thread stack size: %s\n", option->optionString);
-        describe_range_error(errcode);
-        return JNI_EINVAL;
+      intx value = 0;
+      jint err = parse_xss(option, tail, &value);
+      if (err != JNI_OK) {
+        return err;
       }
-      // Internally track ThreadStackSize in units of 1024 bytes.
-      if (FLAG_SET_CMDLINE(intx, ThreadStackSize,
-                       round_to((int)long_ThreadStackSize, K) / K) != Flag::SUCCESS) {
+      if (FLAG_SET_CMDLINE(intx, ThreadStackSize, value) != Flag::SUCCESS) {
         return JNI_EINVAL;
       }
     // -Xoss, -Xsqnopause, -Xoptimize, -Xboundthreads, -Xusealtsigs

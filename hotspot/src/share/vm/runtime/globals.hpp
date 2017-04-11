@@ -3295,7 +3295,7 @@ public:
                                                                             \
   product_pd(intx, ThreadStackSize,                                         \
           "Thread Stack Size (in Kbytes)")                                  \
-          range(0, (max_intx-os::vm_page_size())/(1 * K))                   \
+          range(0, 1 * M)                                                   \
                                                                             \
   product_pd(intx, VMThreadStackSize,                                       \
           "Non-Java Thread Stack Size (in Kbytes)")                         \

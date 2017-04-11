@@ -322,6 +322,7 @@ class Arguments : AllStatic {
   friend class VMStructs;
   friend class JvmtiExport;
   friend class CodeCacheExtensions;
+  friend class ArgumentsTest;
  public:
   // Operation modi
   enum Mode {
@@ -514,6 +515,7 @@ class Arguments : AllStatic {
   static jint parse_java_options_environment_variable(ScopedVMInitArgs* vm_args);
   static jint parse_vm_options_file(const char* file_name, ScopedVMInitArgs* vm_args);
   static jint parse_options_buffer(const char* name, char* buffer, const size_t buf_len, ScopedVMInitArgs* vm_args);
+  static jint parse_xss(const JavaVMOption* option, const char* tail, intx* out_ThreadStackSize);
   static jint insert_vm_options_file(const JavaVMInitArgs* args,
                                      const char* vm_options_file,
                                      const int vm_options_file_pos,
@@ -542,9 +544,9 @@ class Arguments : AllStatic {
   }
 
   static void describe_range_error(ArgsRange errcode);
-  static ArgsRange check_memory_size(julong size, julong min_size);
+  static ArgsRange check_memory_size(julong size, julong min_size, julong max_size);
   static ArgsRange parse_memory_size(const char* s, julong* long_arg,
-                                     julong min_size);
+                                     julong min_size, julong max_size = max_uintx);
   // Parse a string for a unsigned integer.  Returns true if value
   // is an unsigned integer greater than or equal to the minimum
   // parameter passed and returns the value in uintx_arg.  Returns
