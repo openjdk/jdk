@@ -556,6 +556,10 @@ inline bool is_object_aligned(intptr_t addr) {
   return addr == align_object_size(addr);
 }
 
+inline bool is_ptr_object_aligned(const void* addr) {
+  return is_ptr_aligned(addr, MinObjAlignmentInBytes);
+}
+
 // Pad out certain offsets to jlong alignment, in HeapWord units.
 
 inline intptr_t align_object_offset(intptr_t offset) {
