@@ -55,6 +55,7 @@ tools/javac/annotations/typeAnnotations/referenceinfos/NestedTypes.java         
 tools/javac/warnings/suppress/TypeAnnotations.java                              8057683    generic-all    improve ordering of errors with type annotations
 tools/javac/modules/T8159439/NPEForModuleInfoWithNonZeroSuperClassTest.java     8160396    generic-all    current version of jtreg needs a new promotion to include lastes version of ASM
 tools/javac/platform/PlatformProviderTest.java                                  8176801    generic-all    fails due to warnings printed to stderr
+tools/javac/lambda/speculative/T8177933.java                                    8178437    generic-all    intermittently fails due to stack randomization
 
 ###########################################################################
 #
