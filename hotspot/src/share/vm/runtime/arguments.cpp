@@ -734,6 +734,9 @@ static bool set_numeric_flag(const char* name, char* value, Flag::Flags origin) 
   } else if (result->is_size_t()) {
     size_t size_t_v = (size_t) v;
     return CommandLineFlags::size_tAtPut(result, &size_t_v, origin) == Flag::SUCCESS;
+  } else if (result->is_double()) {
+    double double_v = (double) v;
+    return CommandLineFlags::doubleAtPut(result, &double_v, origin) == Flag::SUCCESS;
   } else {
     return false;
   }
