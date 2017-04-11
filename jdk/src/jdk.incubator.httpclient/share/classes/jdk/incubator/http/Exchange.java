@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package jdk.incubator.http;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.ProxySelector;
 import java.net.SocketPermission;
@@ -64,6 +65,9 @@ final class Exchange<T> {
     final HttpRequestImpl request;
     final HttpClientImpl client;
     volatile ExchangeImpl<T> exchImpl;
+    // used to record possible cancellation raised before the exchImpl
+    // has been established.
+    private volatile IOException failed;
     final List<SocketPermission> permissions = new LinkedList<>();
     final AccessControlContext acc;
     final MultiExchange<?,T> multi;
@@ -143,14 +147,80 @@ final class Exchange<T> {
     }
 
     public void cancel() {
+        // cancel can be called concurrently before or at the same time
+        // that the exchange impl is being established.
+        // In that case we won't be able to propagate the cancellation
+        // right away
         if (exchImpl != null) {
             exchImpl.cancel();
+        } else {
+            // no impl - can't cancel impl yet.
+            // call cancel(IOException) instead which takes care
+            // of race conditions between impl/cancel.
+            cancel(new IOException("Request cancelled"));
         }
     }
 
     public void cancel(IOException cause) {
-        if (exchImpl != null) {
-            exchImpl.cancel(cause);
+        // If the impl is non null, propagate the exception right away.
+        // Otherwise record it so that it can be propagated once the
+        // exchange impl has been established.
+        ExchangeImpl<?> impl = exchImpl;
+        if (impl != null) {
+            // propagate the exception to the impl
+            impl.cancel(cause);
+        } else {
+            try {
+                // no impl yet. record the exception
+                failed = cause;
+                // now call checkCancelled to recheck the impl.
+                // if the failed state is set and the impl is not null, reset
+                // the failed state and propagate the exception to the impl.
+                checkCancelled(false);
+            } catch (IOException x) {
+                // should not happen - we passed 'false' above
+                throw new UncheckedIOException(x);
+            }
+        }
+    }
+
+    // This method will raise an exception if one was reported and if
+    // it is possible to do so. If the exception can be raised, then
+    // the failed state will be reset. Otherwise, the failed state
+    // will persist until the exception can be raised and the failed state
+    // can be cleared.
+    // Takes care of possible race conditions.
+    private void checkCancelled(boolean throwIfNoImpl) throws IOException {
+        ExchangeImpl<?> impl = null;
+        IOException cause = null;
+        if (failed != null) {
+            synchronized(this) {
+                cause = failed;
+                impl = exchImpl;
+                if (throwIfNoImpl || impl != null) {
+                    // The exception will be raised by one of the two methods
+                    // below: reset the failed state.
+                    failed = null;
+                }
+            }
+        }
+        if (cause == null) return;
+        if (impl != null) {
+            // The exception is raised by propagating it to the impl.
+            impl.cancel(cause);
+        } else if (throwIfNoImpl) {
+            // The exception is raised by throwing it immediately
+            throw cause;
+        } else {
+            Log.logTrace("Exchange: request [{0}/timeout={1}ms] no impl is set."
+                         + "\n\tCan''t cancel yet with {2}",
+                         request.uri(),
+                         request.duration() == null ? -1 :
+                         // calling duration.toMillis() can throw an exception.
+                         // this is just debugging, we don't care if it overflows.
+                         (request.duration().getSeconds() * 1000
+                          + request.duration().getNano() / 1000000),
+                         cause);
         }
     }
 
@@ -191,10 +261,26 @@ final class Exchange<T> {
         }
     }
 
+    // get/set the exchange impl, solving race condition issues with
+    // potential concurrent calls to cancel() or cancel(IOException)
+    private void establishExchange(HttpConnection connection)
+        throws IOException, InterruptedException
+    {
+        // check if we have been cancelled first.
+        checkCancelled(true);
+        // not yet cancelled: create/get a new impl
+        exchImpl = ExchangeImpl.get(this, connection);
+        // recheck for cancelled, in case of race conditions
+        checkCancelled(true);
+        // now we're good to go. because exchImpl is no longer null
+        // cancel() will be able to propagate directly to the impl
+        // after this point.
+    }
+
     private Response responseImpl0(HttpConnection connection)
         throws IOException, InterruptedException
     {
-        exchImpl = ExchangeImpl.get(this, connection);
+        establishExchange(connection);
         exchImpl.setClientForRequest(requestProcessor);
         if (request.expectContinue()) {
             Log.logTrace("Sending Expect: 100-Continue");
@@ -257,7 +343,7 @@ final class Exchange<T> {
 
     CompletableFuture<Response> responseAsyncImpl0(HttpConnection connection) {
         try {
-            exchImpl = ExchangeImpl.get(this, connection);
+            establishExchange(connection);
         } catch (IOException | InterruptedException e) {
             return MinimalFuture.failedFuture(e);
         }
