@@ -335,7 +335,7 @@ public final class ProcessTools {
      * Create ProcessBuilder using the java launcher from the jdk to be tested and
      * with any platform specific arguments prepended
      */
-    public static ProcessBuilder createJavaProcessBuilder(String... command) throws Exception {
+    public static ProcessBuilder createJavaProcessBuilder(String... command) {
         return createJavaProcessBuilder(false, command);
     }
 
@@ -348,7 +348,7 @@ public final class ProcessTools {
      * @param command Arguments to pass to the java command.
      * @return The ProcessBuilder instance representing the java command.
      */
-    public static ProcessBuilder createJavaProcessBuilder(boolean addTestVmAndJavaOptions, String... command) throws Exception {
+    public static ProcessBuilder createJavaProcessBuilder(boolean addTestVmAndJavaOptions, String... command) {
         String javapath = JDKToolFinder.getJDKTool("java");
 
         ArrayList<String> args = new ArrayList<>();
