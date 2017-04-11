@@ -95,7 +95,7 @@ class MethodType implements java.io.Serializable {
     private static final long serialVersionUID = 292L;  // {rtype, {ptype...}}
 
     // The rtype and ptypes fields define the structural identity of the method type:
-    private final Class<?>   rtype;
+    private final @Stable Class<?>   rtype;
     private final @Stable Class<?>[] ptypes;
 
     // The remaining fields are caches of various sorts:
@@ -117,7 +117,8 @@ class MethodType implements java.io.Serializable {
 
     /**
      * Construct a temporary unchecked instance of MethodType for use only as a key to the intern table.
-     * Does not check the given parameters for validity, and must be discarded after it is used as a searching key.
+     * Does not check the given parameters for validity, and must discarded (if untrusted) or checked
+     * (if trusted) after it has been used as a searching key.
      * The parameters are reversed for this constructor, so that it is not accidentally used.
      */
     private MethodType(Class<?>[] ptypes, Class<?> rtype) {
@@ -181,6 +182,7 @@ class MethodType implements java.io.Serializable {
         checkSlotCount(ptypes.length + slots);
         return slots;
     }
+
     static {
         // MAX_JVM_ARITY must be power of 2 minus 1 for following code trick to work:
         assert((MAX_JVM_ARITY & (MAX_JVM_ARITY+1)) == 0);
@@ -303,18 +305,26 @@ class MethodType implements java.io.Serializable {
      */
     /*trusted*/ static
     MethodType makeImpl(Class<?> rtype, Class<?>[] ptypes, boolean trusted) {
-        MethodType mt = internTable.get(new MethodType(ptypes, rtype));
-        if (mt != null)
-            return mt;
         if (ptypes.length == 0) {
             ptypes = NO_PTYPES; trusted = true;
         }
-        mt = new MethodType(rtype, ptypes, trusted);
+        MethodType primordialMT = new MethodType(ptypes, rtype);
+        MethodType mt = internTable.get(primordialMT);
+        if (mt != null)
+            return mt;
+
         // promote the object to the Real Thing, and reprobe
+        if (trusted) {
+            MethodType.checkRtype(rtype);
+            MethodType.checkPtypes(ptypes);
+            mt = primordialMT;
+        } else {
+            mt = new MethodType(rtype, ptypes, false);
+        }
         mt.form = MethodTypeForm.findForm(mt);
         return internTable.add(mt);
     }
-    private static final MethodType[] objectOnlyTypes = new MethodType[20];
+    private static final @Stable MethodType[] objectOnlyTypes = new MethodType[20];
 
     /**
      * Finds or creates a method type whose components are {@code Object} with an optional trailing {@code Object[]} array.
@@ -398,9 +408,14 @@ class MethodType implements java.io.Serializable {
         checkSlotCount(parameterSlotCount() + ptypesToInsert.length + ins);
         int ilen = ptypesToInsert.length;
         if (ilen == 0)  return this;
-        Class<?>[] nptypes = Arrays.copyOfRange(ptypes, 0, len+ilen);
-        System.arraycopy(nptypes, num, nptypes, num+ilen, len-num);
+        Class<?>[] nptypes = new Class<?>[len + ilen];
+        if (num > 0) {
+            System.arraycopy(ptypes, 0, nptypes, 0, num);
+        }
         System.arraycopy(ptypesToInsert, 0, nptypes, num, ilen);
+        if (num < len) {
+            System.arraycopy(ptypes, num, nptypes, num+ilen, len-num);
+        }
         return makeImpl(rtype, nptypes, true);
     }
 
@@ -636,11 +651,14 @@ class MethodType implements java.io.Serializable {
         return form.basicType();
     }
 
+    private static final @Stable Class<?>[] METHOD_HANDLE_ARRAY
+            = new Class<?>[] { MethodHandle.class };
+
     /**
      * @return a version of the original type with MethodHandle prepended as the first argument
      */
     /*non-public*/ MethodType invokerType() {
-        return insertParameterTypes(0, MethodHandle.class);
+        return insertParameterTypes(0, METHOD_HANDLE_ARRAY);
     }
 
     /**
