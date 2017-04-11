@@ -1674,6 +1674,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
     // Local constant functions:
 
+    /* non-public */
     static final byte NF_checkSpreadArgument = 0,
             NF_guardWithCatch = 1,
             NF_throwException = 2,
@@ -1682,7 +1683,6 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             NF_profileBoolean = 5,
             NF_LIMIT = 6;
 
-    /*non-public*/
     private static final @Stable NamedFunction[] NFS = new NamedFunction[NF_LIMIT];
 
     static NamedFunction getFunction(byte func) {

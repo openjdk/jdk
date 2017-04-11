@@ -641,7 +641,7 @@ class LambdaForm {
         for (int i = 0; i < arity; ++i) {
             ptypes[i] = parameterType(i).btClass;
         }
-        return MethodType.methodType(returnType().btClass, ptypes);
+        return MethodType.makeImpl(returnType().btClass, ptypes, true);
     }
 
     /** Return ABC_Z, where the ABC are parameter type characters, and Z is the return type character. */
@@ -677,7 +677,7 @@ class LambdaForm {
         for (int i = 0; i < ptypes.length; i++)
             ptypes[i] = basicType(sig.charAt(i)).btClass;
         Class<?> rtype = signatureReturn(sig).btClass;
-        return MethodType.methodType(rtype, ptypes);
+        return MethodType.makeImpl(rtype, ptypes, true);
     }
 
     /**
@@ -847,10 +847,9 @@ class LambdaForm {
         if (vmentry != null && isCompiled) {
             return;  // already compiled somehow
         }
-        MethodType invokerType = methodType();
-        assert(vmentry == null || vmentry.getMethodType().basicType().equals(invokerType));
+        assert(vmentry == null || vmentry.getMethodType().basicType().equals(methodType()));
         try {
-            vmentry = InvokerBytecodeGenerator.generateCustomizedCode(this, invokerType);
+            vmentry = InvokerBytecodeGenerator.generateCustomizedCode(this);
             if (TRACE_INTERPRETER)
                 traceInterpreter("compileToBytecode", this);
             isCompiled = true;
@@ -900,10 +899,6 @@ class LambdaForm {
         default:  assert(false);
         }
         return true;
-    }
-    private static boolean returnTypesMatch(String sig, Object[] av, Object res) {
-        MethodHandle mh = (MethodHandle) av[0];
-        return valueMatches(signatureReturn(sig), mh.type().returnType(), res);
     }
     private static boolean checkInt(Class<?> type, Object x) {
         assert(x instanceof Integer);
@@ -1179,7 +1174,6 @@ class LambdaForm {
             // If we have a cached invoker, call it right away.
             // NOTE: The invoker always returns a reference value.
             if (TRACE_INTERPRETER)  return invokeWithArgumentsTracing(arguments);
-            assert(checkArgumentTypes(arguments, methodType()));
             return invoker().invokeBasic(resolvedHandle(), arguments);
         }
 
@@ -1197,7 +1191,6 @@ class LambdaForm {
                     traceInterpreter("| resolve", this);
                     resolvedHandle();
                 }
-                assert(checkArgumentTypes(arguments, methodType()));
                 rval = invoker().invokeBasic(resolvedHandle(), arguments);
             } catch (Throwable ex) {
                 traceInterpreter("] throw =>", ex);
@@ -1211,23 +1204,6 @@ class LambdaForm {
             if (invoker != null)  return invoker;
             // Get an invoker and cache it.
             return invoker = computeInvoker(methodType().form());
-        }
-
-        private static boolean checkArgumentTypes(Object[] arguments, MethodType methodType) {
-            if (true)  return true;  // FIXME
-            MethodType dstType = methodType.form().erasedType();
-            MethodType srcType = dstType.basicType().wrap();
-            Class<?>[] ptypes = new Class<?>[arguments.length];
-            for (int i = 0; i < arguments.length; i++) {
-                Object arg = arguments[i];
-                Class<?> ptype = arg == null ? Object.class : arg.getClass();
-                // If the dest. type is a primitive we keep the
-                // argument type.
-                ptypes[i] = dstType.parameterType(i).isPrimitive() ? ptype : Object.class;
-            }
-            MethodType argType = MethodType.methodType(srcType.returnType(), ptypes).wrap();
-            assert(argType.isConvertibleTo(srcType)) : "wrong argument types: cannot convert " + argType + " to " + srcType;
-            return true;
         }
 
         MethodType methodType() {
@@ -1725,7 +1701,7 @@ class LambdaForm {
         boolean isVoid = (type == V_TYPE);
         Class<?> btClass = type.btClass;
         MethodType zeType = MethodType.methodType(btClass);
-        MethodType idType = (isVoid) ? zeType : zeType.appendParameterTypes(btClass);
+        MethodType idType = (isVoid) ? zeType : MethodType.methodType(btClass, btClass);
 
         // Look up symbolic names.  It might not be necessary to have these,
         // but if we need to emit direct references to bytecodes, it helps.
