@@ -104,7 +104,7 @@ public class OnExitTest extends ProcessUtil {
 
             JavaChild proc = JavaChild.spawnJavaChild("stdin");
             procHandle = proc.toHandle();
-            printf(" spawned: %d%n", proc.getPid());
+            printf(" spawned: %d%n", proc.pid());
 
             proc.forEachOutputLine((s) -> {
                 String[] split = s.trim().split(" ");
@@ -235,7 +235,7 @@ public class OnExitTest extends ProcessUtil {
                 } while (!"pid".equals(split[1]));
 
                 // Tell B to wait for A's pid
-                B.sendAction("waitpid", A.getPid());
+                B.sendAction("waitpid", A.pid());
 
                 // Wait a bit to see if B will prematurely report the termination of A
                 try {

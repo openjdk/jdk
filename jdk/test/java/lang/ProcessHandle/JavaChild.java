@@ -159,7 +159,7 @@ private static volatile int commandSeq = 0;         // Command sequence number
      */
     CompletableFuture<String> forEachOutputLine(Consumer<String> consumer) {
         final CompletableFuture<String> future = new CompletableFuture<>();
-        String name = "OutputLineReader-" + getPid();
+        String name = "OutputLineReader-" + pid();
         Thread t = new Thread(() -> {
             try (BufferedReader reader = outputReader()) {
                 String line;
@@ -167,7 +167,7 @@ private static volatile int commandSeq = 0;         // Command sequence number
                     consumer.accept(line);
                 }
             } catch (IOException | RuntimeException ex) {
-                consumer.accept("IOE (" + getPid() + "):" + ex.getMessage());
+                consumer.accept("IOE (" + pid() + "):" + ex.getMessage());
                 future.completeExceptionally(ex);
             }
             future.complete("success");
@@ -327,7 +327,7 @@ private static volatile int commandSeq = 0;         // Command sequence number
                                 try {
                                     p.getOutputStream().close();
                                 } catch (IOException ie) {
-                                    sendResult("stdin_closing", p.getPid(),
+                                    sendResult("stdin_closing", p.pid(),
                                             "exception", ie.getMessage());
                                 }
                             }
@@ -352,9 +352,9 @@ private static volatile int commandSeq = 0;         // Command sequence number
                                             "children to terminate%n");
                                     children.removeAll(completedChildren);
                                     for (JavaChild c : children) {
-                                        sendResult("stdin_noterm", c.getPid());
+                                        sendResult("stdin_noterm", c.pid());
                                         System.err.printf("  Process not terminated: " +
-                                                "pid: %d%n", c.getPid());
+                                                "pid: %d%n", c.pid());
                                     }
                                     System.exit(2);
                                 }
@@ -386,11 +386,11 @@ private static volatile int commandSeq = 0;         // Command sequence number
                         System.arraycopy(args, nextArg, subargs, 0, subargs.length);
                         for (int i = 0; i < ncount; i++) {
                             JavaChild p = spawnJavaChild(subargs);
-                            sendResult(action, p.getPid());
+                            sendResult(action, p.pid());
                             p.forEachOutputLine(JavaChild::sendRaw);
                             p.onJavaChildExit().thenAccept((p1) -> {
                                 int excode = p1.exitValue();
-                                sendResult("child_exit", p1.getPid(), excode);
+                                sendResult("child_exit", p1.pid(), excode);
                                 completedChildren.add(p1);
                             });
                             children.add(p);        // Add child to spawned list
@@ -410,7 +410,7 @@ private static volatile int commandSeq = 0;         // Command sequence number
                             if (p.isAlive()) {
                                 sentCount++;
                                 // overwrite with current pid
-                                result[0] = Long.toString(p.getPid());
+                                result[0] = Long.toString(p.pid());
                                 sendResult(action, result);
                                 p.sendAction(args[nextArg], subargs);
                             }
@@ -426,7 +426,7 @@ private static volatile int commandSeq = 0;         // Command sequence number
                         // ignoring those that are not alive
                         for (JavaChild p : children) {
                             if (p.isAlive()) {
-                                sendResult(action, p.getPid());
+                                sendResult(action, p.pid());
                                 p.getOutputStream().close();
                             }
                         }
@@ -505,7 +505,7 @@ private static volatile int commandSeq = 0;         // Command sequence number
         String command;
         Object[] results;
         Event(String command, Object... results) {
-            this(self.getPid(), ++commandSeq, command, results);
+            this(self.pid(), ++commandSeq, command, results);
         }
         Event(long pid, int seq, String command, Object... results) {
             this.pid = pid;

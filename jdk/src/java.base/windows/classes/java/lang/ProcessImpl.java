@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -523,7 +523,7 @@ final class ProcessImpl extends Process {
 
     @Override
     public CompletableFuture<Process> onExit() {
-        return ProcessHandleImpl.completion(getPid(), false)
+        return ProcessHandleImpl.completion(pid(), false)
                 .handleAsync((exitStatus, unusedThrowable) -> this);
     }
 
@@ -550,8 +550,8 @@ final class ProcessImpl extends Process {
     private static native void terminateProcess(long handle);
 
     @Override
-    public long getPid() {
-        return processHandle.getPid();
+    public long pid() {
+        return processHandle.pid();
     }
 
     private static native int getProcessId0(long handle);
@@ -572,7 +572,7 @@ final class ProcessImpl extends Process {
     @Override
     public String toString() {
         int exitCode = getExitCodeProcess(handle);
-        return new StringBuilder("Process[pid=").append(getPid())
+        return new StringBuilder("Process[pid=").append(pid())
                 .append(", exitValue=").append(exitCode == STILL_ACTIVE ? "\"not exited\"" : exitCode)
                 .append("]").toString();
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,11 +36,8 @@
 import jdk.testlibrary.ProcessTools;
 import jdk.testlibrary.JDKToolLauncher;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class JStatInterval {
     private static final String READY = "READY";
@@ -88,7 +85,7 @@ public class JStatInterval {
             throw new Error("Unable to start the monitored application.");
         }
 
-        String pidStr = String.valueOf(app.getPid());
+        String pidStr = String.valueOf(app.pid());
         JDKToolLauncher l = JDKToolLauncher.createUsingTestJDK("jstat");
         l.addToolArg("-compiler");
         l.addToolArg(pidStr);
