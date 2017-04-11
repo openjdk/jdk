@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package java.util;
 
 import java.util.function.DoubleConsumer;
 import java.util.stream.Collector;
+import java.util.stream.DoubleStream;
 
 /**
  * A state object for collecting statistics such as count, min, max, sum, and
@@ -69,11 +70,64 @@ public class DoubleSummaryStatistics implements DoubleConsumer {
     private double max = Double.NEGATIVE_INFINITY;
 
     /**
-     * Construct an empty instance with zero count, zero sum,
+     * Constructs an empty instance with zero count, zero sum,
      * {@code Double.POSITIVE_INFINITY} min, {@code Double.NEGATIVE_INFINITY}
      * max and zero average.
      */
     public DoubleSummaryStatistics() { }
+
+    /**
+     * Constructs a non-empty instance with the specified {@code count},
+     * {@code min}, {@code max}, and {@code sum}.
+     *
+     * <p>If {@code count} is zero then the remaining arguments are ignored and
+     * an empty instance is constructed.
+     *
+     * <p>If the arguments are inconsistent then an {@code IllegalArgumentException}
+     * is thrown.  The necessary consistent argument conditions are:
+     * <ul>
+     *   <li>{@code count >= 0}</li>
+     *   <li>{@code (min <= max && !isNaN(sum)) || (isNaN(min) && isNaN(max) && isNaN(sum))}</li>
+     * </ul>
+     * @apiNote
+     * The enforcement of argument correctness means that the retrieved set of
+     * recorded values obtained from a {@code DoubleSummaryStatistics} source
+     * instance may not be a legal set of arguments for this constructor due to
+     * arithmetic overflow of the source's recorded count of values.
+     * The consistent argument conditions are not sufficient to prevent the
+     * creation of an internally inconsistent instance.  An example of such a
+     * state would be an instance with: {@code count} = 2, {@code min} = 1,
+     * {@code max} = 2, and {@code sum} = 0.
+     *
+     * @param count the count of values
+     * @param min the minimum value
+     * @param max the maximum value
+     * @param sum the sum of all values
+     * @throws IllegalArgumentException if the arguments are inconsistent
+     * @since 10
+     */
+    public DoubleSummaryStatistics(long count, double min, double max, double sum)
+            throws IllegalArgumentException {
+        if (count < 0L) {
+            throw new IllegalArgumentException("Negative count value");
+        } else if (count > 0L) {
+            if (min > max)
+                throw new IllegalArgumentException("Minimum greater than maximum");
+
+            // All NaN or non NaN
+            var ncount = DoubleStream.of(min, max, sum).filter(Double::isNaN).count();
+            if (ncount > 0 && ncount < 3)
+                throw new IllegalArgumentException("Some, not all, of the minimum, maximum, or sum is NaN");
+
+            this.count = count;
+            this.sum = sum;
+            this.simpleSum = sum;
+            this.sumCompensation = 0.0d;
+            this.min = min;
+            this.max = max;
+        }
+        // Use default field values if count == 0
+    }
 
     /**
      * Records another value into the summary information.
