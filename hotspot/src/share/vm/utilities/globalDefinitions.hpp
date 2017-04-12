@@ -505,7 +505,18 @@ const bool support_IRIW_for_not_multiple_copy_atomic_cpu = false;
 // for use in places like enum definitions that require compile-time constant
 // expressions and a function for all other places so as to get type checking.
 
-#define align_size_up_(size, alignment) (((size) + ((alignment) - 1)) & ~((alignment) - 1))
+// Using '(what) & ~align_mask(alignment)' to align 'what' down is broken when
+// 'alignment' is an unsigned int and 'what' is a wider type. The & operation
+// will widen the inverted mask, and not sign extend it, leading to a mask with
+// zeros in the most significant bits. The use of align_mask_widened() solves
+// this problem.
+#define align_mask(alignment) ((alignment) - 1)
+#define widen_to_type_of(what, type_carrier) (true ? (what) : (type_carrier))
+#define align_mask_widened(alignment, type_carrier) widen_to_type_of(align_mask(alignment), (type_carrier))
+
+#define align_size_down_(size, alignment) ((size) & ~align_mask_widened((alignment), (size)))
+
+#define align_size_up_(size, alignment) (align_size_down_((size) + align_mask(alignment), (alignment)))
 
 inline bool is_size_aligned(size_t size, size_t alignment) {
   return align_size_up_(size, alignment) == size;
@@ -518,8 +529,6 @@ inline bool is_ptr_aligned(const void* ptr, size_t alignment) {
 inline intptr_t align_size_up(intptr_t size, intptr_t alignment) {
   return align_size_up_(size, alignment);
 }
-
-#define align_size_down_(size, alignment) ((size) & ~((alignment) - 1))
 
 inline intptr_t align_size_down(intptr_t size, intptr_t alignment) {
   return align_size_down_(size, alignment);
