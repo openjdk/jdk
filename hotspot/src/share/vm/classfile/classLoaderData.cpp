@@ -247,7 +247,7 @@ void ClassLoaderData::classes_do(void f(Klass * const)) {
 void ClassLoaderData::methods_do(void f(Method*)) {
   // Lock-free access requires load_ptr_acquire
   for (Klass* k = load_ptr_acquire(&_klasses); k != NULL; k = k->next_link()) {
-    if (k->is_instance_klass()) {
+    if (k->is_instance_klass() && InstanceKlass::cast(k)->is_loaded()) {
       InstanceKlass::cast(k)->methods_do(f);
     }
   }

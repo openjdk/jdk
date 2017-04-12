@@ -98,12 +98,6 @@ public:
                        Symbol* name, ClassLoaderData* loader_data,
                        classloadAction action, Thread* thread);
 
-  // GC support.
-  void classes_do(KlassClosure* f);
-
-  // JVMTI support
-  void entries_do(void f(Symbol*));
-
 #ifndef PRODUCT
   void print();
 #endif
@@ -328,10 +322,6 @@ class PlaceholderEntry : public HashtableEntry<Symbol*, mtClass> {
     }
     return (actionToQueue(action) == NULL);
   }
-
-  // GC support
-  // Applies "f->do_oop" to all root oops in the placeholder table.
-  void classes_do(KlassClosure* closure);
 
   // Print method doesn't append a cr
   void print() const  PRODUCT_RETURN;

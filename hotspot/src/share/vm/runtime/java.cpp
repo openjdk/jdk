@@ -112,7 +112,7 @@ void print_method_profiling_data() {
     ResourceMark rm;
     HandleMark hm;
     collected_profiled_methods = new GrowableArray<Method*>(1024);
-    ClassLoaderDataGraph::methods_do(collect_profiled_methods);
+    SystemDictionary::methods_do(collect_profiled_methods);
     collected_profiled_methods->sort(&compare_methods);
 
     int count = collected_profiled_methods->length();
@@ -163,7 +163,7 @@ void print_method_invocation_histogram() {
   collected_invoked_methods->sort(&compare_methods);
   //
   tty->cr();
-  tty->print_cr("Histogram Over MethodOop Invocation Counters (cutoff = " INTX_FORMAT "):", MethodHistogramCutoff);
+  tty->print_cr("Histogram Over Method Invocation Counters (cutoff = " INTX_FORMAT "):", MethodHistogramCutoff);
   tty->cr();
   tty->print_cr("____Count_(I+C)____Method________________________Module_________________");
   unsigned total = 0, int_total = 0, comp_total = 0, static_total = 0, final_total = 0,

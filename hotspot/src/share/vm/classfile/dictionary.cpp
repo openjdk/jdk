@@ -266,23 +266,6 @@ void Dictionary::always_strong_oops_do(OopClosure* blk) {
   _pd_cache_table->always_strong_oops_do(blk);
 }
 
-
-void Dictionary::always_strong_classes_do(KlassClosure* closure) {
-  // Follow all system classes and temporary placeholders in dictionary
-  for (int index = 0; index < table_size(); index++) {
-    for (DictionaryEntry* probe = bucket(index);
-                          probe != NULL;
-                          probe = probe->next()) {
-      Klass* e = probe->klass();
-      ClassLoaderData* loader_data = probe->loader_data();
-      if (is_strongly_reachable(loader_data, e)) {
-        closure->do_klass(e);
-      }
-    }
-  }
-}
-
-
 //   Just the classes from defining class loaders
 void Dictionary::classes_do(void f(Klass*)) {
   for (int index = 0; index < table_size(); index++) {
@@ -329,20 +312,6 @@ void Dictionary::oops_do(OopClosure* f) {
   // Only the protection domain oops contain references into the heap. Iterate
   // over all of them.
   _pd_cache_table->oops_do(f);
-}
-
-void Dictionary::methods_do(void f(Method*)) {
-  for (int index = 0; index < table_size(); index++) {
-    for (DictionaryEntry* probe = bucket(index);
-                          probe != NULL;
-                          probe = probe->next()) {
-      Klass* k = probe->klass();
-      if (probe->loader_data() == k->class_loader_data()) {
-        // only take klass is we have the entry with the defining class loader
-        InstanceKlass::cast(k)->methods_do(f);
-      }
-    }
-  }
 }
 
 void Dictionary::unlink(BoolObjectClosure* is_alive) {
@@ -651,25 +620,6 @@ ProtectionDomainCacheEntry* ProtectionDomainCacheTable::add_entry(int index, uns
   return p;
 }
 
-void ProtectionDomainCacheTable::free(ProtectionDomainCacheEntry* to_delete) {
-  unsigned int hash = compute_hash(Handle(Thread::current(), to_delete->protection_domain()));
-  int index = hash_to_index(hash);
-
-  ProtectionDomainCacheEntry** p = bucket_addr(index);
-  ProtectionDomainCacheEntry* entry = bucket(index);
-  while (true) {
-    assert(entry != NULL, "sanity");
-
-    if (entry == to_delete) {
-      *p = entry->next();
-      Hashtable<oop, mtClass>::free_entry(entry);
-      break;
-    } else {
-      p = entry->next_addr();
-      entry = *p;
-    }
-  }
-}
 
 SymbolPropertyTable::SymbolPropertyTable(int table_size)
   : Hashtable<Symbol*, mtSymbol>(table_size, sizeof(SymbolPropertyEntry))

@@ -196,12 +196,6 @@ class FilteredFieldsMap : AllStatic {
     }
     return nflds;
   }
-  // Enhance Class Redefinition Support
-  static void classes_do(KlassClosure* f) {
-    for (int i = 0; i < _filtered_fields->length(); i++) {
-      f->do_klass(_filtered_fields->at(i)->klass());
-    }
-  }
 };
 
 

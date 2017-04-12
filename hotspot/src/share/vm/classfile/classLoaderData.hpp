@@ -94,6 +94,10 @@ class ClassLoaderDataGraph : public AllStatic {
   static void keep_alive_cld_do(CLDClosure* cl);
   static void always_strong_cld_do(CLDClosure* cl);
   // klass do
+  // Walking classes through the ClassLoaderDataGraph include array classes.  It also includes
+  // classes that are allocated but not loaded, classes that have errors, and scratch classes
+  // for redefinition.  These classes are removed during the next class unloading.
+  // Walking the ClassLoaderDataGraph also includes anonymous classes.
   static void classes_do(KlassClosure* klass_closure);
   static void classes_do(void f(Klass* const));
   static void methods_do(void f(Method*));

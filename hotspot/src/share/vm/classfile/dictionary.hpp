@@ -75,8 +75,6 @@ public:
 
   DictionaryEntry* new_entry(unsigned int hash, InstanceKlass* klass, ClassLoaderData* loader_data);
 
-  DictionaryEntry* new_entry();
-
   void free_entry(DictionaryEntry* entry);
 
   void add_klass(Symbol* class_name, ClassLoaderData* loader_data, InstanceKlass* obj);
@@ -94,13 +92,9 @@ public:
   void always_strong_oops_do(OopClosure* blk);
   void roots_oops_do(OopClosure* strong, OopClosure* weak);
 
-  void always_strong_classes_do(KlassClosure* closure);
-
   void classes_do(void f(Klass*));
   void classes_do(void f(Klass*, TRAPS), TRAPS);
   void classes_do(void f(Klass*, ClassLoaderData*));
-
-  void methods_do(void f(Method*));
 
   void unlink(BoolObjectClosure* is_alive);
   void remove_classes_in_error_state();
@@ -211,7 +205,6 @@ public:
   ProtectionDomainCacheTable(int table_size);
 
   ProtectionDomainCacheEntry* get(Handle protection_domain);
-  void free(ProtectionDomainCacheEntry* entry);
 
   void unlink(BoolObjectClosure* cl);
 
@@ -278,7 +271,6 @@ class DictionaryEntry : public HashtableEntry<InstanceKlass*, mtClass> {
   void add_protection_domain(Dictionary* dict, Handle protection_domain);
 
   InstanceKlass* klass() const { return (InstanceKlass*)literal(); }
-  InstanceKlass** klass_addr() { return (InstanceKlass**)literal_addr(); }
 
   DictionaryEntry* next() const {
     return (DictionaryEntry*)HashtableEntry<InstanceKlass*, mtClass>::next();
@@ -293,8 +285,6 @@ class DictionaryEntry : public HashtableEntry<InstanceKlass*, mtClass> {
 
   ProtectionDomainEntry* pd_set() const { return _pd_set; }
   void set_pd_set(ProtectionDomainEntry* pd_set) { _pd_set = pd_set; }
-
-  bool has_protection_domain() { return _pd_set != NULL; }
 
   // Tells whether the initiating class' protection can access the this _klass
   bool is_valid_protection_domain(Handle protection_domain) {

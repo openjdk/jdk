@@ -57,19 +57,6 @@ void LoaderConstraintTable::free_entry(LoaderConstraintEntry *entry) {
   Hashtable<InstanceKlass*, mtClass>::free_entry(entry);
 }
 
-// Enhanced Class Redefinition support
-void LoaderConstraintTable::classes_do(KlassClosure* f) {
-  for (int index = 0; index < table_size(); index++) {
-    for (LoaderConstraintEntry* probe = bucket(index);
-                                probe != NULL;
-                                probe = probe->next()) {
-      if (probe->klass() != NULL) {
-        f->do_klass(probe->klass());
-      }
-        }
-      }
-    }
-
 // The loaderConstraintTable must always be accessed with the
 // SystemDictionary lock held. This is true even for readers as
 // entries in the table could be being dynamically resized.

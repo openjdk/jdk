@@ -347,16 +347,14 @@ public:
                                                            TRAPS);
 
   // Iterate over all klasses in dictionary
-  //   Just the classes from defining class loaders
+  // Just the classes from defining class loaders
   static void classes_do(void f(Klass*));
   // Added for initialize_itable_for_klass to handle exceptions
   static void classes_do(void f(Klass*, TRAPS), TRAPS);
-  //   All classes, and their class loaders
+  // All classes, and their class loaders, including initiating class loaders
   static void classes_do(void f(Klass*, ClassLoaderData*));
 
-  static void placeholders_do(void f(Symbol*));
-
-  // Iterate over all methods in all klasses in dictionary
+  // Iterate over all methods in all klasses
   static void methods_do(void f(Method*));
 
   // Garbage collection support
@@ -364,7 +362,6 @@ public:
   // This method applies "blk->do_oop" to all the pointers to "system"
   // classes and loaders.
   static void always_strong_oops_do(OopClosure* blk);
-  static void always_strong_classes_do(KlassClosure* closure);
 
   // Unload (that is, break root links to) all unmarked classes and
   // loaders.  Returns "true" iff something was unloaded.
@@ -383,10 +380,6 @@ public:
   // System loader lock
   static oop system_loader_lock()           { return _system_loader_lock_obj; }
 
-protected:
-  // Extended Redefine classes support (tbi)
-  static void preloaded_classes_do(KlassClosure* f);
-  static void lazily_loaded_classes_do(KlassClosure* f);
 public:
   // Sharing support.
   static void reorder_dictionary();
