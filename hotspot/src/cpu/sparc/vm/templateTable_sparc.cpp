@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,12 +248,7 @@ void TemplateTable::iconst(int value) {
 void TemplateTable::lconst(int value) {
   transition(vtos, ltos);
   assert(value >= 0, "check this code");
-#ifdef _LP64
   __ set(value, Otos_l);
-#else
-  __ set(value, Otos_l2);
-  __ clr( Otos_l1);
-#endif
 }
 
 
@@ -406,24 +401,12 @@ void TemplateTable::ldc2_w() {
   // Check out Conversions.java for an example.
   // Also ConstantPool::header_size() is 20, which makes it very difficult
   // to double-align double on the constant pool.  SG, 11/7/97
-#ifdef _LP64
   __ ldf(FloatRegisterImpl::D, G3_scratch, base_offset, Ftos_d);
-#else
-  FloatRegister f = Ftos_d;
-  __ ldf(FloatRegisterImpl::S, G3_scratch, base_offset, f);
-  __ ldf(FloatRegisterImpl::S, G3_scratch, base_offset + sizeof(jdouble)/2,
-         f->successor());
-#endif
   __ push(dtos);
   __ ba_short(exit);
 
   __ bind(Long);
-#ifdef _LP64
   __ ldx(G3_scratch, base_offset, Otos_l);
-#else
-  __ ld(G3_scratch, base_offset, Otos_l);
-  __ ld(G3_scratch, base_offset + sizeof(jlong)/2, Otos_l->successor());
-#endif
   __ push(ltos);
 
   __ bind(exit);
@@ -1128,19 +1111,11 @@ void TemplateTable::lop2(Operation op) {
   transition(ltos, ltos);
   __ pop_l(O2);
   switch (op) {
-#ifdef _LP64
    case  add:  __  add(O2, Otos_l, Otos_l);  break;
    case  sub:  __  sub(O2, Otos_l, Otos_l);  break;
    case _and:  __ and3(O2, Otos_l, Otos_l);  break;
    case  _or:  __  or3(O2, Otos_l, Otos_l);  break;
    case _xor:  __ xor3(O2, Otos_l, Otos_l);  break;
-#else
-   case  add:  __ addcc(O3, Otos_l2, Otos_l2);  __ addc(O2, Otos_l1, Otos_l1);  break;
-   case  sub:  __ subcc(O3, Otos_l2, Otos_l2);  __ subc(O2, Otos_l1, Otos_l1);  break;
-   case _and:  __  and3(O3, Otos_l2, Otos_l2);  __ and3(O2, Otos_l1, Otos_l1);  break;
-   case  _or:  __   or3(O3, Otos_l2, Otos_l2);  __  or3(O2, Otos_l1, Otos_l1);  break;
-   case _xor:  __  xor3(O3, Otos_l2, Otos_l2);  __ xor3(O2, Otos_l1, Otos_l1);  break;
-#endif
    default: ShouldNotReachHere();
   }
 }
@@ -1171,14 +1146,10 @@ void TemplateTable::idiv() {
   Label regular;
   __ cmp(Otos_i, -1);
   __ br(Assembler::notEqual, false, Assembler::pt, regular);
-#ifdef _LP64
   // Don't put set in delay slot
   // Set will turn into multiple instructions in 64 bit mode
   __ delayed()->nop();
   __ set(min_int, G4_scratch);
-#else
-  __ delayed()->set(min_int, G4_scratch);
-#endif
   Label done;
   __ cmp(O1, G4_scratch);
   __ br(Assembler::equal, true, Assembler::pt, done);
@@ -1202,11 +1173,7 @@ void TemplateTable::irem() {
 void TemplateTable::lmul() {
   transition(ltos, ltos);
   __ pop_l(O2);
-#ifdef _LP64
   __ mulx(Otos_l, O2, Otos_l);
-#else
-  __ call_VM_leaf(Lscratch, CAST_FROM_FN_PTR(address, SharedRuntime::lmul));
-#endif
 
 }
 
@@ -1216,15 +1183,9 @@ void TemplateTable::ldiv() {
 
   // check for zero
   __ pop_l(O2);
-#ifdef _LP64
   __ tst(Otos_l);
   __ throw_if_not_xcc( Assembler::notZero, Interpreter::_throw_ArithmeticException_entry, G3_scratch);
   __ sdivx(O2, Otos_l, Otos_l);
-#else
-  __ orcc(Otos_l1, Otos_l2, G0);
-  __ throw_if_not_icc( Assembler::notZero, Interpreter::_throw_ArithmeticException_entry, G3_scratch);
-  __ call_VM_leaf(Lscratch, CAST_FROM_FN_PTR(address, SharedRuntime::ldiv));
-#endif
 }
 
 
@@ -1233,17 +1194,11 @@ void TemplateTable::lrem() {
 
   // check for zero
   __ pop_l(O2);
-#ifdef _LP64
   __ tst(Otos_l);
   __ throw_if_not_xcc( Assembler::notZero, Interpreter::_throw_ArithmeticException_entry, G3_scratch);
   __ sdivx(O2, Otos_l, Otos_l2);
   __ mulx (Otos_l2, Otos_l, Otos_l2);
   __ sub  (O2, Otos_l2, Otos_l);
-#else
-  __ orcc(Otos_l1, Otos_l2, G0);
-  __ throw_if_not_icc(Assembler::notZero, Interpreter::_throw_ArithmeticException_entry, G3_scratch);
-  __ call_VM_leaf(Lscratch, CAST_FROM_FN_PTR(address, SharedRuntime::lrem));
-#endif
 }
 
 
@@ -1251,11 +1206,7 @@ void TemplateTable::lshl() {
   transition(itos, ltos); // %%%% could optimize, fill delay slot or opt for ultra
 
   __ pop_l(O2);                          // shift value in O2, O3
-#ifdef _LP64
   __ sllx(O2, Otos_i, Otos_l);
-#else
-  __ lshl(O2, O3, Otos_i, Otos_l1, Otos_l2, O4);
-#endif
 }
 
 
@@ -1263,11 +1214,7 @@ void TemplateTable::lshr() {
   transition(itos, ltos); // %%%% see lshl comment
 
   __ pop_l(O2);                          // shift value in O2, O3
-#ifdef _LP64
   __ srax(O2, Otos_i, Otos_l);
-#else
-  __ lshr(O2, O3, Otos_i, Otos_l1, Otos_l2, O4);
-#endif
 }
 
 
@@ -1276,11 +1223,7 @@ void TemplateTable::lushr() {
   transition(itos, ltos); // %%%% see lshl comment
 
   __ pop_l(O2);                          // shift value in O2, O3
-#ifdef _LP64
   __ srlx(O2, Otos_i, Otos_l);
-#else
-  __ lushr(O2, O3, Otos_i, Otos_l1, Otos_l2, O4);
-#endif
 }
 
 
@@ -1293,15 +1236,9 @@ void TemplateTable::fop2(Operation op) {
    case  div:  __  pop_f(F4); __ fdiv(FloatRegisterImpl::S, F4, Ftos_f, Ftos_f);  break;
    case  rem:
      assert(Ftos_f == F0, "just checking");
-#ifdef _LP64
      // LP64 calling conventions use F1, F3 for passing 2 floats
      __ pop_f(F1);
      __ fmov(FloatRegisterImpl::S, Ftos_f, F3);
-#else
-     __ pop_i(O0);
-     __ stf(FloatRegisterImpl::S, Ftos_f, __ d_tmp);
-     __ ld( __ d_tmp, O1 );
-#endif
      __ call_VM_leaf(Lscratch, CAST_FROM_FN_PTR(address, SharedRuntime::frem));
      assert( Ftos_f == F0, "fix this code" );
      break;
@@ -1319,18 +1256,9 @@ void TemplateTable::dop2(Operation op) {
    case  mul:  __  pop_d(F4); __ fmul(FloatRegisterImpl::D, F4, Ftos_d, Ftos_d);  break;
    case  div:  __  pop_d(F4); __ fdiv(FloatRegisterImpl::D, F4, Ftos_d, Ftos_d);  break;
    case  rem:
-#ifdef _LP64
      // Pass arguments in D0, D2
      __ fmov(FloatRegisterImpl::D, Ftos_f, F2 );
      __ pop_d( F0 );
-#else
-     // Pass arguments in O0O1, O2O3
-     __ stf(FloatRegisterImpl::D, Ftos_f, __ d_tmp);
-     __ ldd( __ d_tmp, O2 );
-     __ pop_d(Ftos_f);
-     __ stf(FloatRegisterImpl::D, Ftos_f, __ d_tmp);
-     __ ldd( __ d_tmp, O0 );
-#endif
      __ call_VM_leaf(Lscratch, CAST_FROM_FN_PTR(address, SharedRuntime::drem));
      assert( Ftos_d == F0, "fix this code" );
      break;
@@ -1348,11 +1276,7 @@ void TemplateTable::ineg() {
 
 void TemplateTable::lneg() {
   transition(ltos, ltos);
-#ifdef _LP64
   __ sub(G0, Otos_l, Otos_l);
-#else
-  __ lneg(Otos_l1, Otos_l2);
-#endif
 }
 
 
@@ -1437,15 +1361,8 @@ void TemplateTable::convert() {
   Label done;
   switch (bytecode()) {
    case Bytecodes::_i2l:
-#ifdef _LP64
     // Sign extend the 32 bits
     __ sra ( Otos_i, 0, Otos_l );
-#else
-    __ addcc(Otos_i, 0, Otos_l2);
-    __ br(Assembler::greaterEqual, true, Assembler::pt, done);
-    __ delayed()->clr(Otos_l1);
-    __ set(~0, Otos_l1);
-#endif
     break;
 
    case Bytecodes::_i2f:
@@ -1476,12 +1393,8 @@ void TemplateTable::convert() {
     break;
 
    case Bytecodes::_l2i:
-#ifndef _LP64
-    __ mov(Otos_l2, Otos_i);
-#else
     // Sign-extend into the high 32 bits
     __ sra(Otos_l, 0, Otos_i);
-#endif
     break;
 
    case Bytecodes::_l2f:
@@ -1512,11 +1425,7 @@ void TemplateTable::convert() {
    case Bytecodes::_f2l:
     // must uncache tos
     __ push_f();
-#ifdef _LP64
     __ pop_f(F1);
-#else
-    __ pop_i(O0);
-#endif
     __ call_VM_leaf(Lscratch, CAST_FROM_FN_PTR(address, SharedRuntime::f2l));
     break;
 
@@ -1528,13 +1437,8 @@ void TemplateTable::convert() {
    case Bytecodes::_d2l:
     // must uncache tos
     __ push_d();
-#ifdef _LP64
     // LP64 calling conventions pass first double arg in D0
     __ pop_d( Ftos_d );
-#else
-    __ pop_i( O0 );
-    __ pop_i( O1 );
-#endif
     __ call_VM_leaf(Lscratch,
         bytecode() == Bytecodes::_d2i
           ? CAST_FROM_FN_PTR(address, SharedRuntime::d2i)
@@ -1554,13 +1458,8 @@ void TemplateTable::convert() {
 void TemplateTable::lcmp() {
   transition(ltos, itos);
 
-#ifdef _LP64
   __ pop_l(O1); // pop off value 1, value 2 is in O0
   __ lcmp( O1, Otos_l, Otos_i );
-#else
-  __ pop_l(O2); // cmp O2,3 to O0,1
-  __ lcmp( O2, O3, Otos_l1, Otos_l2, Otos_i );
-#endif
 }
 
 
@@ -1756,7 +1655,6 @@ void TemplateTable::ret() {
   __ access_local_returnAddress(G3_scratch, Otos_i);
   // Otos_i contains the bci, compute the bcp from that
 
-#ifdef _LP64
 #ifdef ASSERT
   // jsr result was labeled as an 'itos' not an 'atos' because we cannot GC
   // the result.  The return address (really a BCI) was stored with an
@@ -1771,7 +1669,6 @@ void TemplateTable::ret() {
      __ stop("BCI is in the wrong register half?");
      __ bind (zzz) ;
   }
-#endif
 #endif
 
   __ profile_ret(vtos, Otos_i, G4_scratch);
@@ -1808,10 +1705,8 @@ void TemplateTable::tableswitch() {
   // load lo, hi
   __ ld(O1, 1 * BytesPerInt, O2);       // Low Byte
   __ ld(O1, 2 * BytesPerInt, O3);       // High Byte
-#ifdef _LP64
   // Sign extend the 32 bits
   __ sra ( Otos_i, 0, Otos_i );
-#endif /* _LP64 */
 
   // check against lo & hi
   __ cmp( Otos_i, O2);
@@ -3400,11 +3295,7 @@ void TemplateTable::_new() {
       // Check if tlab should be discarded (refill_waste_limit >= free)
       __ ld_ptr(G2_thread, in_bytes(JavaThread::tlab_refill_waste_limit_offset()), RtlabWasteLimitValue);
       __ sub(RendValue, RoldTopValue, RfreeValue);
-#ifdef _LP64
       __ srlx(RfreeValue, LogHeapWordSize, RfreeValue);
-#else
-      __ srl(RfreeValue, LogHeapWordSize, RfreeValue);
-#endif
       __ cmp_and_brx_short(RtlabWasteLimitValue, RfreeValue, Assembler::greaterEqualUnsigned, Assembler::pt, slow_case); // tlab waste is small
 
       // increment waste limit to prevent getting stuck on this slow path

@@ -47,13 +47,9 @@ void CodeInstaller::pd_patch_OopConstant(int pc_offset, Handle constant, TRAPS) 
   Handle obj(THREAD, HotSpotObjectConstantImpl::object(constant));
   jobject value = JNIHandles::make_local(obj());
   if (HotSpotObjectConstantImpl::compressed(constant)) {
-#ifdef _LP64
     int oop_index = _oop_recorder->find_index(value);
     RelocationHolder rspec = oop_Relocation::spec(oop_index);
     _instructions->relocate(pc, rspec, 1);
-#else
-    JVMCI_ERROR("compressed oop on 32bit");
-#endif
   } else {
     NativeMovConstReg* move = nativeMovConstReg_at(pc);
     move->set_data((intptr_t) value);
@@ -69,14 +65,10 @@ void CodeInstaller::pd_patch_OopConstant(int pc_offset, Handle constant, TRAPS) 
 void CodeInstaller::pd_patch_MetaspaceConstant(int pc_offset, Handle constant, TRAPS) {
   address pc = _instructions->start() + pc_offset;
   if (HotSpotMetaspaceConstantImpl::compressed(constant)) {
-#ifdef _LP64
     NativeMovConstReg32* move = nativeMovConstReg32_at(pc);
     narrowKlass narrowOop = record_narrow_metadata_reference(_instructions, pc, constant, CHECK);
     move->set_data((intptr_t)narrowOop);
     TRACE_jvmci_3("relocating (narrow metaspace constant) at " PTR_FORMAT "/0x%x", p2i(pc), narrowOop);
-#else
-    JVMCI_ERROR("compressed Klass* on 32bit");
-#endif
   } else {
     NativeMovConstReg* move = nativeMovConstReg_at(pc);
     void* reference = record_metadata_reference(_instructions, pc, constant, CHECK);

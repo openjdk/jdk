@@ -57,13 +57,9 @@
 // if too small.
 // Run with +PrintInterpreter to get the VM to print out the size.
 // Max size with JVMTI
-#ifdef _LP64
-  // The sethi() instruction generates lots more instructions when shell
-  // stack limit is unlimited, so that's why this is much bigger.
+// The sethi() instruction generates lots more instructions when shell
+// stack limit is unlimited, so that's why this is much bigger.
 int TemplateInterpreter::InterpreterCodeSize = 260 * K;
-#else
-int TemplateInterpreter::InterpreterCodeSize = 230 * K;
-#endif
 
 // Generation of Interpreter
 //
@@ -75,41 +71,6 @@ int TemplateInterpreter::InterpreterCodeSize = 230 * K;
 
 //----------------------------------------------------------------------------------------------------
 
-#ifndef _LP64
-address TemplateInterpreterGenerator::generate_slow_signature_handler() {
-  address entry = __ pc();
-  Argument argv(0, true);
-
-  // We are in the jni transition frame. Save the last_java_frame corresponding to the
-  // outer interpreter frame
-  //
-  __ set_last_Java_frame(FP, noreg);
-  // make sure the interpreter frame we've pushed has a valid return pc
-  __ mov(O7, I7);
-  __ mov(Lmethod, G3_scratch);
-  __ mov(Llocals, G4_scratch);
-  __ save_frame(0);
-  __ mov(G2_thread, L7_thread_cache);
-  __ add(argv.address_in_frame(), O3);
-  __ mov(G2_thread, O0);
-  __ mov(G3_scratch, O1);
-  __ call(CAST_FROM_FN_PTR(address, InterpreterRuntime::slow_signature_handler), relocInfo::runtime_call_type);
-  __ delayed()->mov(G4_scratch, O2);
-  __ mov(L7_thread_cache, G2_thread);
-  __ reset_last_Java_frame();
-
-  // load the register arguments (the C code packed them as varargs)
-  for (Argument ldarg = argv.successor(); ldarg.is_register(); ldarg = ldarg.successor()) {
-      __ ld_ptr(ldarg.address_in_frame(), ldarg.as_register());
-  }
-  __ ret();
-  __ delayed()->
-     restore(O0, 0, Lscratch);  // caller's Lscratch gets the result handler
-  return entry;
-}
-
-
-#else
 // LP64 passes floating point arguments in F1, F3, F5, etc. instead of
 // O0, O1, O2 etc..
 // Doubles are passed in D0, D2, D4
@@ -206,7 +167,6 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
      restore(O0, 0, Lscratch);  // caller's Lscratch gets the result handler
   return entry;
 }
-#endif
 
 void TemplateInterpreterGenerator::generate_counter_overflow(Label& Lcontinue) {
 
@@ -253,11 +213,7 @@ void TemplateInterpreterGenerator::save_native_result(void) {
 
   // save and restore any potential method result value around the unlocking operation
   __ stf(FloatRegisterImpl::D, F0, d_tmp);
-#ifdef _LP64
   __ stx(O0, l_tmp);
-#else
-  __ std(O0, l_tmp);
-#endif
 }
 
 void TemplateInterpreterGenerator::restore_native_result(void) {
@@ -266,11 +222,7 @@ void TemplateInterpreterGenerator::restore_native_result(void) {
 
   // Restore any method result value
   __ ldf(FloatRegisterImpl::D, d_tmp, F0);
-#ifdef _LP64
   __ ldx(l_tmp, O0);
-#else
-  __ ldd(l_tmp, O0);
-#endif
 }
 
 address TemplateInterpreterGenerator::generate_exception_handler_common(const char* name, const char* message, bool pass_oop) {
@@ -339,22 +291,6 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   if (state == atos) {
     __ profile_return_type(O0, G3_scratch, G1_scratch);
   }
-
-#if !defined(_LP64) && defined(COMPILER2)
-  // All return values are where we want them, except for Longs.  C2 returns
-  // longs in G1 in the 32-bit build whereas the interpreter wants them in O0/O1.
-  // Since the interpreter will return longs in G1 and O0/O1 in the 32bit
-  // build even if we are returning from interpreted we just do a little
-  // stupid shuffing.
-  // Note: I tried to make c2 return longs in O0/O1 and G1 so we wouldn't have to
-  // do this here. Unfortunately if we did a rethrow we'd see an machepilog node
-  // first which would move g1 -> O0/O1 and destroy the exception we were throwing.
-
-  if (state == ltos) {
-    __ srl (G1,  0, O1);
-    __ srlx(G1, 32, O0);
-  }
-#endif // !_LP64 && COMPILER2
 
   // The callee returns with the stack possibly adjusted by adapter transition
   // We remove that possible adjustment here.
@@ -442,9 +378,6 @@ address TemplateInterpreterGenerator::generate_result_handler_for(BasicType type
     case T_BYTE   : __ sll(O0, 24, O0); __ sra(O0, 24, Itos_i);   break;
     case T_SHORT  : __ sll(O0, 16, O0); __ sra(O0, 16, Itos_i);   break;
     case T_LONG   :
-#ifndef _LP64
-                    __ mov(O1, Itos_l2);  // move other half of long
-#endif              // ifdef or no ifdef, fall through to the T_INT case
     case T_INT    : __ mov(O0, Itos_i);                         break;
     case T_VOID   : /* nothing to do */                         break;
     case T_FLOAT  : assert(F0 == Ftos_f, "fix this code" );     break;
@@ -884,9 +817,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ st_ptr(mirror, FP, (frame::interpreter_frame_mirror_offset * wordSize) + STACK_BIAS);
   __ get_constant_pool_cache( LcpoolCache );   // set LcpoolCache
   __ sub(FP, rounded_vm_local_words * BytesPerWord, Lmonitors ); // set Lmonitors
-#ifdef _LP64
   __ add( Lmonitors, STACK_BIAS, Lmonitors );   // Account for 64 bit stack bias
-#endif
   __ sub(Lmonitors, BytesPerWord, Lesp);       // set Lesp
 
   // setup interpreter activation registers
@@ -1481,12 +1412,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // Move the result handler address
   __ mov(Lscratch, G3_scratch);
   // return possible result to the outer frame
-#ifndef __LP64
-  __ mov(O0, I0);
-  __ restore(O1, G0, O1);
-#else
   __ restore(O0, G0, O0);
-#endif /* __LP64 */
 
   // Move result handler to expected register
   __ mov(G3_scratch, Lscratch);
@@ -1565,17 +1491,6 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
     restore_native_result();
   }
-
-#if defined(COMPILER2) && !defined(_LP64)
-
-  // C2 expects long results in G1 we can't tell if we're returning to interpreted
-  // or compiled so just be safe.
-
-  __ sllx(O0, 32, G1);          // Shift bits into high G1
-  __ srl (O1, 0, O1);           // Zero extend O1
-  __ or3 (O1, G1, G1);          // OR 64 bits into G1
-
-#endif /* COMPILER2 && !_LP64 */
 
   // dispose of return address and remove activation
 #ifdef ASSERT

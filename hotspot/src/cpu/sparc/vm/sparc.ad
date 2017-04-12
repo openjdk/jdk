@@ -311,7 +311,6 @@ reg_class o7_regI(R_O7);
 // ----------------------------
 // Pointer Register Classes
 // ----------------------------
-#ifdef _LP64
 // 64-bit build means 64-bit pointers means hi/lo pairs
 reg_class ptr_reg(            R_G1H,R_G1,             R_G3H,R_G3, R_G4H,R_G4, R_G5H,R_G5,
                   R_O0H,R_O0, R_O1H,R_O1, R_O2H,R_O2, R_O3H,R_O3, R_O4H,R_O4, R_O5H,R_O5,
@@ -344,40 +343,6 @@ reg_class o1_regP(R_O1H,R_O1);
 reg_class o2_regP(R_O2H,R_O2);
 reg_class o7_regP(R_O7H,R_O7);
 
-#else // _LP64
-// 32-bit build means 32-bit pointers means 1 register.
-reg_class ptr_reg(     R_G1,     R_G3,R_G4,R_G5,
-                  R_O0,R_O1,R_O2,R_O3,R_O4,R_O5,
-                  R_L0,R_L1,R_L2,R_L3,R_L4,R_L5,R_L6,R_L7,
-                  R_I0,R_I1,R_I2,R_I3,R_I4,R_I5);
-// Lock encodings use G3 and G4 internally
-reg_class lock_ptr_reg(R_G1,               R_G5,
-                  R_O0,R_O1,R_O2,R_O3,R_O4,R_O5,
-                  R_L0,R_L1,R_L2,R_L3,R_L4,R_L5,R_L6,R_L7,
-                  R_I0,R_I1,R_I2,R_I3,R_I4,R_I5);
-// Special class for storeP instructions, which can store SP or RPC to TLS.
-// It is also used for memory addressing, allowing direct TLS addressing.
-reg_class sp_ptr_reg(  R_G1,R_G2,R_G3,R_G4,R_G5,
-                  R_O0,R_O1,R_O2,R_O3,R_O4,R_O5,R_SP,
-                  R_L0,R_L1,R_L2,R_L3,R_L4,R_L5,R_L6,R_L7,
-                  R_I0,R_I1,R_I2,R_I3,R_I4,R_I5,R_FP);
-// R_L7 is the lowest-priority callee-save (i.e., NS) register
-// We use it to save R_G2 across calls out of Java.
-reg_class l7_regP(R_L7);
-
-// Other special pointer regs
-reg_class g1_regP(R_G1);
-reg_class g2_regP(R_G2);
-reg_class g3_regP(R_G3);
-reg_class g4_regP(R_G4);
-reg_class g5_regP(R_G5);
-reg_class i0_regP(R_I0);
-reg_class o0_regP(R_O0);
-reg_class o1_regP(R_O1);
-reg_class o2_regP(R_O2);
-reg_class o7_regP(R_O7);
-#endif // _LP64
-
 
 // ----------------------------
 // Long Register Classes
@@ -386,12 +351,10 @@ reg_class o7_regP(R_O7);
 // Note:  O7 is never in this class; it is sometimes used as an encoding temp.
 reg_class long_reg(             R_G1H,R_G1,             R_G3H,R_G3, R_G4H,R_G4, R_G5H,R_G5
                    ,R_O0H,R_O0, R_O1H,R_O1, R_O2H,R_O2, R_O3H,R_O3, R_O4H,R_O4, R_O5H,R_O5
-#ifdef _LP64
 // 64-bit, longs in 1 register: use all 64-bit integer registers
 // 32-bit, longs in 1 register: cannot use I's and L's.  Restrict to O's and G's.
                    ,R_L0H,R_L0, R_L1H,R_L1, R_L2H,R_L2, R_L3H,R_L3, R_L4H,R_L4, R_L5H,R_L5, R_L6H,R_L6, R_L7H,R_L7
                    ,R_I0H,R_I0, R_I1H,R_I1, R_I2H,R_I2, R_I3H,R_I3, R_I4H,R_I4, R_I5H,R_I5
-#endif // _LP64
                   );
 
 reg_class g1_regL(R_G1H,R_G1);
@@ -533,10 +496,8 @@ static Register reg_to_register_object(int register_encoding);
 // instructions which either zero-fill or sign-fill).
 bool can_branch_register( Node *bol, Node *cmp ) {
   if( !BranchOnRegister ) return false;
-#ifdef _LP64
   if( cmp->Opcode() == Op_CmpP )
     return true;  // No problems with pointer compares
-#endif
   if( cmp->Opcode() == Op_CmpL )
     return true;  // No problems with long compares
 
@@ -617,15 +578,11 @@ int MachCallDynamicJavaNode::ret_addr_offset() {
 }
 
 int MachCallRuntimeNode::ret_addr_offset() {
-#ifdef _LP64
   if (MacroAssembler::is_far_target(entry_point())) {
     return NativeFarCall::instruction_size;
   } else {
     return NativeCall::instruction_size;
   }
-#else
-  return NativeCall::instruction_size;  // call; delay slot
-#endif
 }
 
 // Indicate if the safepoint node needs the polling page as an input.
@@ -1024,7 +981,6 @@ void emit_call_reloc(CodeBuffer &cbuf, intptr_t entry_point, RelocationHolder co
 
 #ifdef ASSERT
   if (preserve_g2 && (VerifyCompiledCode || VerifyOops)) {
-#ifdef _LP64
     // Trash argument dump slots.
     __ set(0xb0b8ac0db0b8ac0d, G1);
     __ mov(G1, G5);
@@ -1034,22 +990,6 @@ void emit_call_reloc(CodeBuffer &cbuf, intptr_t entry_point, RelocationHolder co
     __ stx(G1, SP, STACK_BIAS + 0x98);
     __ stx(G1, SP, STACK_BIAS + 0xA0);
     __ stx(G1, SP, STACK_BIAS + 0xA8);
-#else // _LP64
-    // this is also a native call, so smash the first 7 stack locations,
-    // and the various registers
-
-    // Note:  [SP+0x40] is sp[callee_aggregate_return_pointer_sp_offset],
-    // while [SP+0x44..0x58] are the argument dump slots.
-    __ set((intptr_t)0xbaadf00d, G1);
-    __ mov(G1, G5);
-    __ sllx(G1, 32, G1);
-    __ or3(G1, G5, G1);
-    __ mov(G1, G5);
-    __ stx(G1, SP, 0x40);
-    __ stx(G1, SP, 0x48);
-    __ stx(G1, SP, 0x50);
-    __ stw(G1, SP, 0x58); // Do not trash [SP+0x5C] which is a usable spill slot
-#endif // _LP64
   }
 #endif /*ASSERT*/
 }
@@ -1262,11 +1202,7 @@ void MachEpilogNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
 
   if(do_polling() && ra_->C->is_method_compilation()) {
     st->print("SETHI  #PollAddr,L0\t! Load Polling address\n\t");
-#ifdef _LP64
     st->print("LDX    [L0],G0\t!Poll for Safepointing\n\t");
-#else
-    st->print("LDUW   [L0],G0\t!Poll for Safepointing\n\t");
-#endif
   }
 
   if(do_polling()) {
@@ -1472,75 +1408,10 @@ static void mach_spill_copy_implementation_helper(const MachNode* mach,
   // hardware does the flop for me.  Doubles are always aligned, so no problem
   // there.  Misaligned sources only come from native-long-returns (handled
   // special below).
-#ifndef _LP64
-  if (src_first_rc == rc_int &&     // source is already big-endian
-      src_second_rc != rc_bad &&    // 64-bit move
-      ((dst_first & 1) != 0 || dst_second != dst_first + 1)) { // misaligned dst
-    assert((src_first & 1) == 0 && src_second == src_first + 1, "source must be aligned");
-    // Do the big-endian flop.
-    OptoReg::Name tmp    = dst_first   ; dst_first    = dst_second   ; dst_second    = tmp   ;
-    enum RC       tmp_rc = dst_first_rc; dst_first_rc = dst_second_rc; dst_second_rc = tmp_rc;
-  }
-#endif
 
   // --------------------------------------
   // Check for integer reg-reg copy
   if (src_first_rc == rc_int && dst_first_rc == rc_int) {
-#ifndef _LP64
-    if (src_first == R_O0_num && src_second == R_O1_num) {  // Check for the evil O0/O1 native long-return case
-      // Note: The _first and _second suffixes refer to the addresses of the the 2 halves of the 64-bit value
-      //       as stored in memory.  On a big-endian machine like SPARC, this means that the _second
-      //       operand contains the least significant word of the 64-bit value and vice versa.
-      OptoReg::Name tmp = OptoReg::Name(R_O7_num);
-      assert((dst_first & 1) == 0 && dst_second == dst_first + 1, "return a native O0/O1 long to an aligned-adjacent 64-bit reg" );
-      // Shift O0 left in-place, zero-extend O1, then OR them into the dst
-      if ( cbuf ) {
-        emit3_simm13(*cbuf, Assembler::arith_op, Matcher::_regEncode[tmp], Assembler::sllx_op3, Matcher::_regEncode[src_first], 0x1020);
-        emit3_simm13(*cbuf, Assembler::arith_op, Matcher::_regEncode[src_second], Assembler::srl_op3, Matcher::_regEncode[src_second], 0x0000);
-        emit3       (*cbuf, Assembler::arith_op, Matcher::_regEncode[dst_first], Assembler:: or_op3, Matcher::_regEncode[tmp], 0, Matcher::_regEncode[src_second]);
-#ifndef PRODUCT
-      } else {
-        print_helper(st, "SLLX   R_%s,32,R_%s\t! Move O0-first to O7-high\n\t", OptoReg::regname(src_first), OptoReg::regname(tmp));
-        print_helper(st, "SRL    R_%s, 0,R_%s\t! Zero-extend O1\n\t", OptoReg::regname(src_second), OptoReg::regname(src_second));
-        print_helper(st, "OR     R_%s,R_%s,R_%s\t! spill",OptoReg::regname(tmp), OptoReg::regname(src_second), OptoReg::regname(dst_first));
-#endif
-      }
-      return;
-    } else if (dst_first == R_I0_num && dst_second == R_I1_num) {
-      // returning a long value in I0/I1
-      // a SpillCopy must be able to target a return instruction's reg_class
-      // Note: The _first and _second suffixes refer to the addresses of the the 2 halves of the 64-bit value
-      //       as stored in memory.  On a big-endian machine like SPARC, this means that the _second
-      //       operand contains the least significant word of the 64-bit value and vice versa.
-      OptoReg::Name tdest = dst_first;
-
-      if (src_first == dst_first) {
-        tdest = OptoReg::Name(R_O7_num);
-      }
-
-      if (cbuf) {
-        assert((src_first & 1) == 0 && (src_first + 1) == src_second, "return value was in an aligned-adjacent 64-bit reg");
-        // Shift value in upper 32-bits of src to lower 32-bits of I0; move lower 32-bits to I1
-        // ShrL_reg_imm6
-        emit3_simm13(*cbuf, Assembler::arith_op, Matcher::_regEncode[tdest], Assembler::srlx_op3, Matcher::_regEncode[src_second], 32 | 0x1000);
-        // ShrR_reg_imm6  src, 0, dst
-        emit3_simm13(*cbuf, Assembler::arith_op, Matcher::_regEncode[dst_second], Assembler::srl_op3, Matcher::_regEncode[src_first], 0x0000);
-        if (tdest != dst_first) {
-          emit3     (*cbuf, Assembler::arith_op, Matcher::_regEncode[dst_first], Assembler::or_op3, 0/*G0*/, 0/*op2*/, Matcher::_regEncode[tdest]);
-        }
-      }
-#ifndef PRODUCT
-      else {
-        print_helper(st, "SRLX   R_%s,32,R_%s\t! Extract MSW\n\t",OptoReg::regname(src_second),OptoReg::regname(tdest));
-        print_helper(st, "SRL    R_%s, 0,R_%s\t! Extract LSW\n\t",OptoReg::regname(src_first),OptoReg::regname(dst_second));
-        if (tdest != dst_first) {
-          print_helper(st, "MOV    R_%s,R_%s\t! spill\n\t", OptoReg::regname(tdest), OptoReg::regname(dst_first));
-        }
-      }
-#endif // PRODUCT
-      return size+8;
-    }
-#endif // !_LP64
     // Else normal reg-reg copy
     assert(src_second != dst_first, "smashed second before evacuating it");
     impl_mov_helper(cbuf, src_first, dst_first, Assembler::or_op3, 0, "MOV  ", st);
@@ -1613,58 +1484,6 @@ static void mach_spill_copy_implementation_helper(const MachNode* mach,
     return; // Self copy; no move
   }
   assert(src_second_rc != rc_bad && dst_second_rc != rc_bad, "src_second & dst_second cannot be Bad");
-
-#ifndef _LP64
-  // In the LP64 build, all registers can be moved as aligned/adjacent
-  // pairs, so there's never any need to move the high bits separately.
-  // The 32-bit builds have to deal with the 32-bit ABI which can force
-  // all sorts of silly alignment problems.
-
-  // Check for integer reg-reg copy.  Hi bits are stuck up in the top
-  // 32-bits of a 64-bit register, but are needed in low bits of another
-  // register (else it's a hi-bits-to-hi-bits copy which should have
-  // happened already as part of a 64-bit move)
-  if (src_second_rc == rc_int && dst_second_rc == rc_int) {
-    assert((src_second & 1) == 1, "its the evil O0/O1 native return case");
-    assert((dst_second & 1) == 0, "should have moved with 1 64-bit move");
-    // Shift src_second down to dst_second's low bits.
-    if (cbuf) {
-      emit3_simm13(*cbuf, Assembler::arith_op, Matcher::_regEncode[dst_second], Assembler::srlx_op3, Matcher::_regEncode[src_second-1], 0x1020);
-#ifndef PRODUCT
-    } else  {
-      print_helper(st, "SRLX   R_%s,32,R_%s\t! spill: Move high bits down low", OptoReg::regname(src_second - 1), OptoReg::regname(dst_second));
-#endif
-    }
-    return;
-  }
-
-  // Check for high word integer store.  Must down-shift the hi bits
-  // into a temp register, then fall into the case of storing int bits.
-  if (src_second_rc == rc_int && dst_second_rc == rc_stack && (src_second & 1) == 1) {
-    // Shift src_second down to dst_second's low bits.
-    if (cbuf) {
-      emit3_simm13(*cbuf, Assembler::arith_op, Matcher::_regEncode[R_O7_num], Assembler::srlx_op3, Matcher::_regEncode[src_second-1], 0x1020);
-#ifndef PRODUCT
-    } else {
-      print_helper(st, "SRLX   R_%s,32,R_%s\t! spill: Move high bits down low", OptoReg::regname(src_second-1), OptoReg::regname(R_O7_num));
-#endif
-    }
-    src_second = OptoReg::Name(R_O7_num); // Not R_O7H_num!
-  }
-
-  // Check for high word integer load
-  if (dst_second_rc == rc_int && src_second_rc == rc_stack)
-    return impl_helper(this, cbuf, ra_, true, ra_->reg2offset(src_second), dst_second, Assembler::lduw_op3, "LDUW", size, st);
-
-  // Check for high word integer store
-  if (src_second_rc == rc_int && dst_second_rc == rc_stack)
-    return impl_helper(this, cbuf, ra_, false, ra_->reg2offset(dst_second), src_second, Assembler::stw_op3, "STW ", size, st);
-
-  // Check for high word float store
-  if (src_second_rc == rc_float && dst_second_rc == rc_stack)
-    return impl_helper(this, cbuf, ra_, false, ra_->reg2offset(dst_second), src_second, Assembler::stf_op3, "STF ", size, st);
-
-#endif // !_LP64
 
   Unimplemented();
 }
@@ -1743,7 +1562,6 @@ uint BoxLockNode::size(PhaseRegAlloc *ra_) const {
 #ifndef PRODUCT
 void MachUEPNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   st->print_cr("\nUEP:");
-#ifdef    _LP64
   if (UseCompressedClassPointers) {
     assert(Universe::heap() != NULL, "java heap should be initialized");
     st->print_cr("\tLDUW   [R_O0 + oopDesc::klass_offset_in_bytes],R_G5\t! Inline cache check - compressed klass");
@@ -1762,11 +1580,6 @@ void MachUEPNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   }
   st->print_cr("\tCMP    R_G5,R_G3" );
   st->print   ("\tTne    xcc,R_G0+ST_RESERVED_FOR_USER_0+2");
-#else  // _LP64
-  st->print_cr("\tLDUW   [R_O0 + oopDesc::klass_offset_in_bytes],R_G5\t! Inline cache check");
-  st->print_cr("\tCMP    R_G5,R_G3" );
-  st->print   ("\tTne    icc,R_G0+ST_RESERVED_FOR_USER_0+2");
-#endif // _LP64
 }
 #endif
 
@@ -1874,9 +1687,7 @@ const bool Matcher::match_rule_supported(int opcode) {
     if (!UsePopCountInstruction)
       return false;
   case Op_CompareAndSwapL:
-#ifdef _LP64
   case Op_CompareAndSwapP:
-#endif
     if (!VM_Version::supports_cx8())
       return false;
     break;
@@ -1992,13 +1803,11 @@ const bool Matcher::require_postalloc_expand = false;
 const bool Matcher::need_masked_shift_count = false;
 
 bool Matcher::narrow_oop_use_complex_address() {
-  NOT_LP64(ShouldNotCallThis());
   assert(UseCompressedOops, "only for compressed oops code");
   return false;
 }
 
 bool Matcher::narrow_klass_use_complex_address() {
-  NOT_LP64(ShouldNotCallThis());
   assert(UseCompressedClassPointers, "only for compressed klass code");
   return false;
 }
@@ -2027,11 +1836,7 @@ const bool Matcher::rematerialize_float_constants = false;
 // needed.  Else we split the double into 2 integer pieces and move it
 // piece-by-piece.  Only happens when passing doubles into C code as the
 // Java calling convention forces doubles to be aligned.
-#ifdef _LP64
 const bool Matcher::misaligned_doubles_ok = true;
-#else
-const bool Matcher::misaligned_doubles_ok = false;
-#endif
 
 // No-op on SPARC.
 void Matcher::pd_implicit_null_fixup(MachNode *node, uint idx) {
@@ -2050,11 +1855,7 @@ bool Matcher::float_in_double() { return false; }
 // The relevant question is how the int is callee-saved.  In _LP64
 // the whole long is written but de-opt'ing will have to extract
 // the relevant 32 bits, in not-_LP64 only the low 32 bits is written.
-#ifdef _LP64
 const bool Matcher::int_in_long = true;
-#else
-const bool Matcher::int_in_long = false;
-#endif
 
 // Return whether or not this register is ever used as an argument.  This
 // function is used on startup to build the trampoline stubs in generateOptoStub.
@@ -2068,7 +1869,6 @@ bool Matcher::can_be_java_arg( int reg ) {
       reg == R_I3_num ||
       reg == R_I4_num ||
       reg == R_I5_num ) return true;
-#ifdef _LP64
   // 64-bit builds can pass 64-bit pointers and longs in
   // the high I registers
   if( reg == R_I0H_num ||
@@ -2082,14 +1882,6 @@ bool Matcher::can_be_java_arg( int reg ) {
     return true;
   }
 
-#else
-  // 32-bit builds with longs-in-one-entry pass longs in G1 & G4.
-  // Longs cannot be passed in O regs, because O regs become I regs
-  // after a 'save' and I regs get their high bits chopped off on
-  // interrupt.
-  if( reg == R_G1H_num || reg == R_G1_num ) return true;
-  if( reg == R_G4H_num || reg == R_G4_num ) return true;
-#endif
   // A few float args in registers
   if( reg >= R_F0_num && reg <= R_F7_num ) return true;
 
@@ -2152,19 +1944,11 @@ void Compile::reshape_address(AddPNode* addp) {
 
 // The intptr_t operand types, defined by textual substitution.
 // (Cf. opto/type.hpp.  This lets us avoid many, many other ifdefs.)
-#ifdef _LP64
 #define immX      immL
 #define immX13    immL13
 #define immX13m7  immL13m7
 #define iRegX     iRegL
 #define g1RegX    g1RegL
-#else
-#define immX      immI
-#define immX13    immI13
-#define immX13m7  immI13m7
-#define iRegX     iRegI
-#define g1RegX    g1RegI
-#endif
 
 //----------ENCODING BLOCK-----------------------------------------------------
 // This block specifies the encoding classes used by the compiler to output
@@ -2326,7 +2110,6 @@ encode %{
     emit3_simm13( cbuf, Assembler::arith_op, R_O1_enc, Assembler::add_op3, R_O7_enc, frame::pc_return_offset );
   %}
 
-#ifdef _LP64
   /* %%% merge with enc_to_bool */
   enc_class enc_convP2B( iRegI dst, iRegP src ) %{
     MacroAssembler _masm(&cbuf);
@@ -2335,7 +2118,6 @@ encode %{
     Register   dst_reg = reg_to_register_object($dst$$reg);
     __ movr(Assembler::rc_nz, src_reg, 1, dst_reg);
   %}
-#endif
 
   enc_class enc_cadd_cmpLTMask( iRegI p, iRegI q, iRegI y, iRegI tmp ) %{
     // (Set p (AddI (AndI (CmpLTMask p q) y) (SubI p q)))
@@ -2626,16 +2408,6 @@ encode %{
   // to G1 so the register allocator will not have to deal with the misaligned register
   // pair.
   enc_class adjust_long_from_native_call %{
-#ifndef _LP64
-    if (returns_long()) {
-      //    sllx  O0,32,O0
-      emit3_simm13( cbuf, Assembler::arith_op, R_O0_enc, Assembler::sllx_op3, R_O0_enc, 0x1020 );
-      //    srl   O1,0,O1
-      emit3_simm13( cbuf, Assembler::arith_op, R_O1_enc, Assembler::srl_op3, R_O1_enc, 0x0000 );
-      //    or    O0,O1,G1
-      emit3       ( cbuf, Assembler::arith_op, R_G1_enc, Assembler:: or_op3, R_O0_enc, 0, R_O1_enc );
-    }
-#endif
   %}
 
   enc_class Java_To_Runtime (method meth) %{    // CALL Java_To_Runtime
@@ -3102,11 +2874,7 @@ frame %{
   cisc_spilling_operand_name(indOffset);
 
   // Number of stack slots consumed by a Monitor enter
-#ifdef _LP64
   sync_stack_slots(2);
-#else
-  sync_stack_slots(1);
-#endif
 
   // Compiled code's Frame Pointer
   frame_pointer(R_SP);
@@ -3124,13 +2892,8 @@ frame %{
   // Number of outgoing stack slots killed above the out_preserve_stack_slots
   // for calls to C.  Supports the var-args backing area for register parms.
   // ADLC doesn't support parsing expressions, so I folded the math by hand.
-#ifdef _LP64
   // (callee_register_argument_save_area_words (6) + callee_aggregate_return_pointer_words (0)) * 2-stack-slots-per-word
   varargs_C_out_slots_killed(12);
-#else
-  // (callee_register_argument_save_area_words (6) + callee_aggregate_return_pointer_words (1)) * 1-stack-slots-per-word
-  varargs_C_out_slots_killed( 7);
-#endif
 
   // The after-PROLOG location of the return address.  Location of
   // return address specifies a type (REG or STACK) and a number
@@ -3161,17 +2924,10 @@ frame %{
   // opcodes.  This simplifies the register allocator.
   c_return_value %{
     assert( ideal_reg >= Op_RegI && ideal_reg <= Op_RegL, "only return normal values" );
-#ifdef     _LP64
     static int lo_out[Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, R_O0_num,     R_O0_num,     R_O0_num,     R_F0_num,     R_F0_num, R_O0_num };
     static int hi_out[Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, R_O0H_num,    OptoReg::Bad, R_F1_num, R_O0H_num};
     static int lo_in [Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, R_I0_num,     R_I0_num,     R_I0_num,     R_F0_num,     R_F0_num, R_I0_num };
     static int hi_in [Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, R_I0H_num,    OptoReg::Bad, R_F1_num, R_I0H_num};
-#else  // !_LP64
-    static int lo_out[Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, R_O0_num,     R_O0_num,     R_O0_num,     R_F0_num,     R_F0_num, R_G1_num };
-    static int hi_out[Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, R_F1_num, R_G1H_num };
-    static int lo_in [Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, R_I0_num,     R_I0_num,     R_I0_num,     R_F0_num,     R_F0_num, R_G1_num };
-    static int hi_in [Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, R_F1_num, R_G1H_num };
-#endif
     return OptoRegPair( (is_outgoing?hi_out:hi_in)[ideal_reg],
                         (is_outgoing?lo_out:lo_in)[ideal_reg] );
   %}
@@ -3179,17 +2935,10 @@ frame %{
   // Location of compiled Java return values.  Same as C
   return_value %{
     assert( ideal_reg >= Op_RegI && ideal_reg <= Op_RegL, "only return normal values" );
-#ifdef     _LP64
     static int lo_out[Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, R_O0_num,     R_O0_num,     R_O0_num,     R_F0_num,     R_F0_num, R_O0_num };
     static int hi_out[Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, R_O0H_num,    OptoReg::Bad, R_F1_num, R_O0H_num};
     static int lo_in [Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, R_I0_num,     R_I0_num,     R_I0_num,     R_F0_num,     R_F0_num, R_I0_num };
     static int hi_in [Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, R_I0H_num,    OptoReg::Bad, R_F1_num, R_I0H_num};
-#else  // !_LP64
-    static int lo_out[Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, R_O0_num,     R_O0_num,     R_O0_num,     R_F0_num,     R_F0_num, R_G1_num };
-    static int hi_out[Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, R_F1_num, R_G1H_num};
-    static int lo_in [Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, R_I0_num,     R_I0_num,     R_I0_num,     R_F0_num,     R_F0_num, R_G1_num };
-    static int hi_in [Op_RegL+1] = { OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, R_F1_num, R_G1H_num};
-#endif
     return OptoRegPair( (is_outgoing?hi_out:hi_in)[ideal_reg],
                         (is_outgoing?lo_out:lo_in)[ideal_reg] );
   %}
@@ -3444,7 +3193,6 @@ operand immP() %{
   interface(CONST_INTER);
 %}
 
-#ifdef _LP64
 // Pointer Immediate: 64-bit
 operand immP_set() %{
   predicate(!VM_Version::is_niagara_plus());
@@ -3478,7 +3226,6 @@ operand immP_no_oop_cheap() %{
   format %{ %}
   interface(CONST_INTER);
 %}
-#endif
 
 operand immP13() %{
   predicate((-4096 < n->get_ptr()) && (n->get_ptr() <= 4095));
@@ -3919,11 +3666,7 @@ operand flagsRegP() %{
   constraint(ALLOC_IN_RC(int_flags));
   match(RegFlags);
 
-#ifdef _LP64
   format %{ "xcc_P" %}
-#else
-  format %{ "icc_P" %}
-#endif
   interface(REG_INTER);
 %}
 
@@ -4500,7 +4243,6 @@ pipe_class ialu_reg_flags( iRegI op2_out, iRegI op2_in, iRegI op1, flagsReg cr )
     MS      : R(2);
 %}
 
-#ifdef _LP64
 pipe_class ialu_clr_and_mover( iRegI dst, iRegP src ) %{
     instruction_count(1); multiple_bundles;
     dst     : C(write)+1;
@@ -4509,7 +4251,6 @@ pipe_class ialu_clr_and_mover( iRegI dst, iRegP src ) %{
     BR      : E(2);
     MS      : E(2);
 %}
-#endif
 
 // Integer ALU reg operation
 pipe_class ialu_move_reg_L_to_I(iRegI dst, iRegL src) %{
@@ -4614,13 +4355,8 @@ pipe_class loadConP( iRegP dst, immP src ) %{
 
 // Polling Address
 pipe_class loadConP_poll( iRegP dst, immP_poll src ) %{
-#ifdef _LP64
     instruction_count(0); multiple_bundles;
     fixed_latency(6);
-#else
-    dst   : E(write);
-    IALU  : R;
-#endif
 %}
 
 // Long Constant small
@@ -5361,7 +5097,6 @@ instruct regL_to_stkL(stackSlotL dst, iRegL src) %{
   ins_pipe(istore_mem_reg);
 %}
 
-#ifdef _LP64
 // Load pointer from stack slot, 64-bit encoding
 instruct stkP_to_regP( iRegP dst, stackSlotP src ) %{
   match(Set dst src);
@@ -5381,27 +5116,6 @@ instruct regP_to_stkP(stackSlotP dst, iRegP src) %{
   ins_encode(simple_form3_mem_reg( dst, src ) );
   ins_pipe(istore_mem_reg);
 %}
-#else // _LP64
-// Load pointer from stack slot, 32-bit encoding
-instruct stkP_to_regP( iRegP dst, stackSlotP src ) %{
-  match(Set dst src);
-  ins_cost(MEMORY_REF_COST);
-  format %{ "LDUW   $src,$dst\t!ptr" %}
-  opcode(Assembler::lduw_op3, Assembler::ldst_op);
-  ins_encode(simple_form3_mem_reg( src, dst ) );
-  ins_pipe(iload_mem);
-%}
-
-// Store pointer to stack slot
-instruct regP_to_stkP(stackSlotP dst, iRegP src) %{
-  match(Set dst src);
-  ins_cost(MEMORY_REF_COST);
-  format %{ "STW    $src,$dst\t!ptr" %}
-  opcode(Assembler::stw_op3, Assembler::ldst_op);
-  ins_encode(simple_form3_mem_reg( dst, src ) );
-  ins_pipe(istore_mem_reg);
-%}
-#endif // _LP64
 
 //------------Special Nop instructions for bundling - no match rules-----------
 // Nop using the A0 functional unit
@@ -5858,17 +5572,10 @@ instruct loadP(iRegP dst, memory mem) %{
   ins_cost(MEMORY_REF_COST);
   size(4);
 
-#ifndef _LP64
-  format %{ "LDUW   $mem,$dst\t! ptr" %}
-  ins_encode %{
-    __ lduw($mem$$Address, $dst$$Register);
-  %}
-#else
   format %{ "LDX    $mem,$dst\t! ptr" %}
   ins_encode %{
     __ ldx($mem$$Address, $dst$$Register);
   %}
-#endif
   ins_pipe(iload_mem);
 %}
 
@@ -5891,17 +5598,10 @@ instruct loadKlass(iRegP dst, memory mem) %{
   ins_cost(MEMORY_REF_COST);
   size(4);
 
-#ifndef _LP64
-  format %{ "LDUW   $mem,$dst\t! klass ptr" %}
-  ins_encode %{
-    __ lduw($mem$$Address, $dst$$Register);
-  %}
-#else
   format %{ "LDX    $mem,$dst\t! klass ptr" %}
   ins_encode %{
     __ ldx($mem$$Address, $dst$$Register);
   %}
-#endif
   ins_pipe(iload_mem);
 %}
 
@@ -5969,26 +5669,6 @@ instruct loadConI13( iRegI dst, immI13 src ) %{
   ins_pipe(ialu_imm);
 %}
 
-#ifndef _LP64
-instruct loadConP(iRegP dst, immP con) %{
-  match(Set dst con);
-  ins_cost(DEFAULT_COST * 3/2);
-  format %{ "SET    $con,$dst\t!ptr" %}
-  ins_encode %{
-    relocInfo::relocType constant_reloc = _opnds[1]->constant_reloc();
-      intptr_t val = $con$$constant;
-    if (constant_reloc == relocInfo::oop_type) {
-      __ set_oop_constant((jobject) val, $dst$$Register);
-    } else if (constant_reloc == relocInfo::metadata_type) {
-      __ set_metadata_constant((Metadata*)val, $dst$$Register);
-    } else {          // non-oop pointers, e.g. card mark base, heap top
-      assert(constant_reloc == relocInfo::none, "unexpected reloc type");
-      __ set(val, $dst$$Register);
-    }
-  %}
-  ins_pipe(loadConP);
-%}
-#else
 instruct loadConP_set(iRegP dst, immP_set con) %{
   match(Set dst con);
   ins_cost(DEFAULT_COST * 3/2);
@@ -6032,7 +5712,6 @@ instruct loadConP_no_oop_cheap(iRegP dst, immP_no_oop_cheap con) %{
   %}
   ins_pipe(loadConP);
 %}
-#endif // _LP64
 
 instruct loadConP0(iRegP dst, immP0 src) %{
   match(Set dst src);
@@ -6186,19 +5865,6 @@ instruct prefetchAlloc_bis( iRegP dst ) %{
 %}
 
 // Next code is used for finding next cache line address to prefetch.
-#ifndef _LP64
-instruct cacheLineAdr( iRegP dst, iRegP src, immI13 mask ) %{
-  match(Set dst (CastX2P (AndI (CastP2X src) mask)));
-  ins_cost(DEFAULT_COST);
-  size(4);
-
-  format %{ "AND    $src,$mask,$dst\t! next cache line address" %}
-  ins_encode %{
-    __ and3($src$$Register, $mask$$constant, $dst$$Register);
-  %}
-  ins_pipe(ialu_reg_imm);
-%}
-#else
 instruct cacheLineAdr( iRegP dst, iRegP src, immL13 mask ) %{
   match(Set dst (CastX2P (AndL (CastP2X src) mask)));
   ins_cost(DEFAULT_COST);
@@ -6210,7 +5876,6 @@ instruct cacheLineAdr( iRegP dst, iRegP src, immL13 mask ) %{
   %}
   ins_pipe(ialu_reg_imm);
 %}
-#endif
 
 //----------Store Instructions-------------------------------------------------
 // Store Byte
@@ -6322,13 +5987,8 @@ instruct storeP(memory dst, sp_ptr_RegP src) %{
   match(Set dst (StoreP dst src));
   ins_cost(MEMORY_REF_COST);
 
-#ifndef _LP64
-  format %{ "STW    $src,$dst\t! ptr" %}
-  opcode(Assembler::stw_op3, 0, REGP_OP);
-#else
   format %{ "STX    $src,$dst\t! ptr" %}
   opcode(Assembler::stx_op3, 0, REGP_OP);
-#endif
   ins_encode( form3_mem_reg( dst, src ) );
   ins_pipe(istore_mem_spORreg);
 %}
@@ -6337,13 +5997,8 @@ instruct storeP0(memory dst, immP0 src) %{
   match(Set dst (StoreP dst src));
   ins_cost(MEMORY_REF_COST);
 
-#ifndef _LP64
-  format %{ "STW    $src,$dst\t! ptr" %}
-  opcode(Assembler::stw_op3, 0, REGP_OP);
-#else
   format %{ "STX    $src,$dst\t! ptr" %}
   opcode(Assembler::stx_op3, 0, REGP_OP);
-#endif
   ins_encode( form3_mem_reg( dst, R_G0 ) );
   ins_pipe(istore_mem_zero);
 %}
@@ -7094,13 +6749,8 @@ instruct loadPLocked(iRegP dst, memory mem) %{
   match(Set dst (LoadPLocked mem));
   ins_cost(MEMORY_REF_COST);
 
-#ifndef _LP64
-  format %{ "LDUW   $mem,$dst\t! ptr" %}
-  opcode(Assembler::lduw_op3, 0, REGP_OP);
-#else
   format %{ "LDX    $mem,$dst\t! ptr" %}
   opcode(Assembler::ldx_op3, 0, REGP_OP);
-#endif
   ins_encode( form3_mem_reg( mem, dst ) );
   ins_pipe(iload_mem);
 %}
@@ -7171,9 +6821,7 @@ instruct compareAndSwapI_bool(iRegP mem_ptr, iRegI oldval, iRegI newval, iRegI r
 %}
 
 instruct compareAndSwapP_bool(iRegP mem_ptr, iRegP oldval, iRegP newval, iRegI res, o7RegI tmp1, flagsReg ccr ) %{
-#ifdef _LP64
   predicate(VM_Version::supports_cx8());
-#endif
   match(Set res (CompareAndSwapP mem_ptr (Binary oldval newval)));
   match(Set res (WeakCompareAndSwapP mem_ptr (Binary oldval newval)));
   effect( USE mem_ptr, KILL ccr, KILL tmp1);
@@ -7184,13 +6832,8 @@ instruct compareAndSwapP_bool(iRegP mem_ptr, iRegP oldval, iRegP newval, iRegI r
             "MOV    1,$res\n\t"
             "MOVne  xcc,R_G0,$res"
   %}
-#ifdef _LP64
   ins_encode( enc_casx(mem_ptr, oldval, newval),
               enc_lflags_ne_to_boolean(res) );
-#else
-  ins_encode( enc_casi(mem_ptr, oldval, newval),
-              enc_iflags_ne_to_boolean(res) );
-#endif
   ins_pipe( long_memory_op );
 %}
 
@@ -7268,17 +6911,6 @@ instruct xchgI( memory mem, iRegI newval) %{
   ins_pipe( long_memory_op );
 %}
 
-#ifndef _LP64
-instruct xchgP( memory mem, iRegP newval) %{
-  match(Set newval (GetAndSetP mem newval));
-  format %{ "SWAP  [$mem],$newval" %}
-  size(4);
-  ins_encode %{
-    __ swap($mem$$Address, $newval$$Register);
-  %}
-  ins_pipe( long_memory_op );
-%}
-#endif
 
 instruct xchgN( memory mem, iRegN newval) %{
   match(Set newval (GetAndSetN mem newval));
@@ -7740,7 +7372,6 @@ instruct shrL_reg_imm6(iRegL dst, iRegL src1, immU6 src2) %{
 %}
 
 // Register Shift Right Immediate with a CastP2X
-#ifdef _LP64
 instruct shrP_reg_imm6(iRegL dst, iRegP src1, immU6 src2) %{
   match(Set dst (URShiftL (CastP2X src1) src2));
   size(4);
@@ -7749,16 +7380,6 @@ instruct shrP_reg_imm6(iRegL dst, iRegP src1, immU6 src2) %{
   ins_encode( form3_sd_rs1_imm6_rd( src1, src2, dst ) );
   ins_pipe(ialu_reg_imm);
 %}
-#else
-instruct shrP_reg_imm5(iRegI dst, iRegP src1, immU5 src2) %{
-  match(Set dst (URShiftI (CastP2X src1) src2));
-  size(4);
-  format %{ "SRL    $src1,$src2,$dst\t! Cast ptr $src1 to int and shift" %}
-  opcode(Assembler::srl_op3, Assembler::arith_op);
-  ins_encode( form3_rs1_imm5_rd( src1, src2, dst ) );
-  ins_pipe(ialu_reg_imm);
-%}
-#endif
 
 
 //----------Floating Point Arithmetic Instructions-----------------------------
@@ -8001,21 +7622,6 @@ instruct orL_reg_imm13(iRegL dst, iRegL src1, immL13 con) %{
   ins_pipe(ialu_reg_imm);
 %}
 
-#ifndef _LP64
-
-// Use sp_ptr_RegP to match G2 (TLS register) without spilling.
-instruct orI_reg_castP2X(iRegI dst, iRegI src1, sp_ptr_RegP src2) %{
-  match(Set dst (OrI src1 (CastP2X src2)));
-
-  size(4);
-  format %{ "OR     $src1,$src2,$dst" %}
-  opcode(Assembler::or_op3, Assembler::arith_op);
-  ins_encode( form3_rs1_rs2_rd( src1, src2, dst ) );
-  ins_pipe(ialu_reg_reg);
-%}
-
-#else
-
 instruct orL_reg_castP2X(iRegL dst, iRegL src1, sp_ptr_RegP src2) %{
   match(Set dst (OrL src1 (CastP2X src2)));
 
@@ -8026,8 +7632,6 @@ instruct orL_reg_castP2X(iRegL dst, iRegL src1, sp_ptr_RegP src2) %{
   ins_encode( form3_rs1_rs2_rd( src1, src2, dst ) );
   ins_pipe(ialu_reg_reg);
 %}
-
-#endif
 
 // Xor Instructions
 // Register Xor
@@ -8088,17 +7692,6 @@ instruct convI2B( iRegI dst, iRegI src, flagsReg ccr ) %{
   ins_pipe(ialu_reg_ialu);
 %}
 
-#ifndef _LP64
-instruct convP2B( iRegI dst, iRegP src, flagsReg ccr ) %{
-  match(Set dst (Conv2B src));
-  effect( KILL ccr );
-  ins_cost(DEFAULT_COST*2);
-  format %{ "CMP    R_G0,$src\n\t"
-            "ADDX   R_G0,0,$dst" %}
-  ins_encode( enc_to_bool( src, dst ) );
-  ins_pipe(ialu_reg_ialu);
-%}
-#else
 instruct convP2B( iRegI dst, iRegP src ) %{
   match(Set dst (Conv2B src));
   ins_cost(DEFAULT_COST*2);
@@ -8107,7 +7700,6 @@ instruct convP2B( iRegI dst, iRegP src ) %{
   ins_encode( form3_g0_rs2_rd_move( src, dst ), enc_convP2B( dst, src ) );
   ins_pipe(ialu_clr_and_mover);
 %}
-#endif
 
 instruct cmpLTMask0( iRegI dst, iRegI src, immI0 zero, flagsReg ccr ) %{
   match(Set dst (CmpLTMask src zero));
@@ -8750,16 +8342,10 @@ instruct convL2F_reg(regF dst, iRegL src) %{
 
 instruct convL2I_reg(iRegI dst, iRegL src) %{
   match(Set dst (ConvL2I src));
-#ifndef _LP64
-  format %{ "MOV    $src.lo,$dst\t! long->int" %}
-  ins_encode( form3_g0_rs2_rd_move_lo2( src, dst ) );
-  ins_pipe(ialu_move_reg_I_to_L);
-#else
   size(4);
   format %{ "SRA    $src,R_G0,$dst\t! long->int" %}
   ins_encode( form3_rs1_rd_signextend_lo1( src, dst ) );
   ins_pipe(ialu_reg);
-#endif
 %}
 
 // Register Shift Right Immediate
@@ -9528,11 +9114,7 @@ instruct cmpP_reg_branch_short(cmpOpP cmp, iRegP op1, iRegP op2, label labl, fla
 
   size(4);
   ins_cost(BRANCH_COST);
-#ifdef _LP64
   format %{ "CXB$cmp $op1,$op2,$labl\t! ptr" %}
-#else
-  format %{ "CWB$cmp $op1,$op2,$labl\t! ptr" %}
-#endif
   ins_encode %{
     Label* L = $labl$$label;
     assert(__ use_cbcond(*L), "back to back cbcond");
@@ -9550,11 +9132,7 @@ instruct cmpP_null_branch_short(cmpOpP cmp, iRegP op1, immP0 null, label labl, f
 
   size(4);
   ins_cost(BRANCH_COST);
-#ifdef _LP64
   format %{ "CXB$cmp $op1,0,$labl\t! ptr" %}
-#else
-  format %{ "CWB$cmp $op1,0,$labl\t! ptr" %}
-#endif
   ins_encode %{
     Label* L = $labl$$label;
     assert(__ use_cbcond(*L), "back to back cbcond");
@@ -9822,11 +9400,7 @@ instruct safePoint_poll(iRegP poll) %{
   effect(USE poll);
 
   size(4);
-#ifdef _LP64
   format %{ "LDX    [$poll],R_G0\t! Safepoint: poll for GC" %}
-#else
-  format %{ "LDUW   [$poll],R_G0\t! Safepoint: poll for GC" %}
-#endif
   ins_encode %{
     __ relocate(relocInfo::poll_type);
     __ ld_ptr($poll$$Register, 0, G0);
@@ -10259,15 +9833,15 @@ instruct array_equalsC(o0RegP ary1, o1RegP ary2, g3RegI tmp1, notemp_iRegI resul
 
 instruct has_negatives(o0RegP pAryR, g3RegI iSizeR, notemp_iRegI resultR,
                        iRegL tmp1L, iRegL tmp2L, iRegL tmp3L, iRegL tmp4L,
-                       flagsReg ccr) 
+                       flagsReg ccr)
 %{
   match(Set resultR (HasNegatives pAryR iSizeR));
   effect(TEMP resultR, TEMP tmp1L, TEMP tmp2L, TEMP tmp3L, TEMP tmp4L, USE pAryR, USE iSizeR, KILL ccr);
   format %{ "has negatives byte[] $pAryR,$iSizeR -> $resultR // KILL $tmp1L,$tmp2L,$tmp3L,$tmp4L" %}
   ins_encode %{
-    __ has_negatives($pAryR$$Register, $iSizeR$$Register, 
+    __ has_negatives($pAryR$$Register, $iSizeR$$Register,
                      $resultR$$Register,
-                     $tmp1L$$Register, $tmp2L$$Register, 
+                     $tmp1L$$Register, $tmp2L$$Register,
                      $tmp3L$$Register, $tmp4L$$Register);
   %}
   ins_pipe(long_memory_op);

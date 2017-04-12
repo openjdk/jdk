@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,7 @@ inline bool LinearScan::is_processed_reg_num(int reg_num) {
 inline int LinearScan::num_physical_regs(BasicType type) {
   // Sparc requires two cpu registers for long
   // and two cpu registers for double
-#ifdef _LP64
   if (type == T_DOUBLE) {
-#else
-  if (type == T_DOUBLE || type == T_LONG) {
-#endif
     return 2;
   }
   return 1;
@@ -44,11 +40,7 @@ inline int LinearScan::num_physical_regs(BasicType type) {
 
 
 inline bool LinearScan::requires_adjacent_regs(BasicType type) {
-#ifdef _LP64
   return type == T_DOUBLE;
-#else
-  return type == T_DOUBLE || type == T_LONG;
-#endif
 }
 
 inline bool LinearScan::is_caller_save(int assigned_reg) {
