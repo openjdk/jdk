@@ -996,8 +996,8 @@ uint PSAdaptiveSizePolicy::compute_survivor_space_size_and_threshold(
                                              size_t survivor_limit) {
   assert(survivor_limit >= _space_alignment,
          "survivor_limit too small");
-  assert((size_t)align_size_down(survivor_limit, _space_alignment)
-         == survivor_limit, "survivor_limit not aligned");
+  assert(is_size_aligned(survivor_limit, _space_alignment),
+         "survivor_limit not aligned");
 
   // This method is called even if the tenuring threshold and survivor
   // spaces are not adjusted so that the averages are sampled above.

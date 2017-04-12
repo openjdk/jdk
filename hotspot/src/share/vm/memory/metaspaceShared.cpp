@@ -84,7 +84,7 @@ char* SharedMiscRegion::alloc(size_t num_bytes) {
   assert(DumpSharedSpaces, "dump time only");
   size_t alignment = sizeof(char*);
   num_bytes = align_size_up(num_bytes, alignment);
-  _alloc_top = (char*)align_ptr_up(_alloc_top, alignment);
+  _alloc_top = align_ptr_up(_alloc_top, alignment);
   if (_alloc_top + num_bytes > _vs.high()) {
     report_out_of_shared_space(_space_type);
   }

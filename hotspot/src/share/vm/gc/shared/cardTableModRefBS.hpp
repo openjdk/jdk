@@ -290,7 +290,9 @@ public:
   // Mapping from card marking array entry to address of first word
   HeapWord* addr_for(const jbyte* p) const {
     assert(p >= _byte_map && p < _byte_map + _byte_map_size,
-           "out of bounds access to card marking array");
+           "out of bounds access to card marking array. p: " PTR_FORMAT
+           " _byte_map: " PTR_FORMAT " _byte_map + _byte_map_size: " PTR_FORMAT,
+           p2i(p), p2i(_byte_map), p2i(_byte_map + _byte_map_size));
     size_t delta = pointer_delta(p, byte_map_base, sizeof(jbyte));
     HeapWord* result = (HeapWord*) (delta << card_shift);
     assert(_whole_heap.contains(result),

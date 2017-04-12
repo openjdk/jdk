@@ -78,7 +78,7 @@ protected:
 
     int length = (int)elements;
 
-    assert((size_t)size(length) * BytesPerWord == bytes,
+    assert((size_t)size(length) * BytesPerWord == (size_t)bytes,
            "Expected: " SIZE_FORMAT " got: " SIZE_FORMAT,
            bytes, (size_t)size(length) * BytesPerWord);
 
@@ -122,7 +122,12 @@ protected:
   void release_at_put(int which, T contents) { OrderAccess::release_store(adr_at(which), contents); }
 
   static int size(int length) {
-    return align_size_up(byte_sizeof(length), BytesPerWord) / BytesPerWord;
+    size_t bytes = align_size_up(byte_sizeof(length), BytesPerWord);
+    size_t words = bytes / BytesPerWord;
+
+    assert(words <= INT_MAX, "Overflow: " SIZE_FORMAT, words);
+
+    return (int)words;
   }
 
   int size() {

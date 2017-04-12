@@ -45,8 +45,6 @@ static void test_alignments() {
       std::numeric_limits<T>::is_signed ? 's' : 'u', sizeof(T), (uint64_t)std::numeric_limits<T>::max(),
       std::numeric_limits<A>::is_signed ? 's' : 'u', sizeof(A), (uint64_t)std::numeric_limits<A>::max());
 
-  ASSERT_LE((uint64_t)std::numeric_limits<T>::max(), (uint64_t)std::numeric_limits<intptr_t>::max()) << "The test assumes that casting to intptr_t will not truncate bits";
-
   // Test all possible alignment values that fit in type A.
   for (A alignment = max_alignment<A>(); alignment > 0; alignment >>= 1) {
     log("=== Alignment: " UINT64_FORMAT " ===\n", (uint64_t)alignment);
@@ -62,11 +60,11 @@ static void test_alignments() {
         T value = T(values[i]);
 
         // Check against uint64_t version
-        ASSERT_EQ(align_size_up(value, alignment), (intptr_t)up);
+        ASSERT_EQ(align_size_up((uint64_t)value, alignment), up);
         // Check inline function vs macro
-        ASSERT_EQ(align_size_up(value, alignment), (intptr_t)align_size_up_(value, alignment));
+        ASSERT_EQ(align_size_up(value, alignment), align_size_up_(value, alignment));
         // Sanity check
-        ASSERT_GE(align_size_up(value, alignment), (intptr_t)value);
+        ASSERT_GE(align_size_up(value, alignment), value);
       }
 
       // Test align down
@@ -77,11 +75,11 @@ static void test_alignments() {
         T value = T(values[i]);
 
         // Check against uint64_t version
-        ASSERT_EQ(align_size_down(value, alignment), (intptr_t)down);
+        ASSERT_EQ((uint64_t)align_size_down(value, alignment), down);
         // Check inline function vs macro
-        ASSERT_EQ(align_size_down(value, alignment), (intptr_t)align_size_down_(value, alignment));
+        ASSERT_EQ(align_size_down(value, alignment), align_size_down_(value, alignment));
         // Sanity check
-        ASSERT_LE(align_size_down(value, alignment), (intptr_t)value);
+        ASSERT_LE(align_size_down(value, alignment), value);
       }
 
       // Test is aligned
@@ -103,10 +101,6 @@ static void test_alignments() {
 TEST(Align, functions_and_macros) {
   // Test the alignment functions with different type combinations.
 
-  // The current implementation of the alignment functions use intptr_t
-  // as return and input parameter type. Therefore, we restrict the tested
-  // types on 32-bit platforms.
-#ifdef _LP64
   test_alignments<int64_t, uint8_t>();
   test_alignments<int64_t, uint16_t>();
   test_alignments<int64_t, uint32_t>();
@@ -121,7 +115,6 @@ TEST(Align, functions_and_macros) {
   test_alignments<uint32_t, int8_t>();
   test_alignments<uint32_t, int16_t>();
   test_alignments<uint32_t, int32_t>();
-#endif
 
   test_alignments<int32_t, uint8_t>();
   test_alignments<int32_t, uint16_t>();

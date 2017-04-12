@@ -552,7 +552,7 @@ void Universe::reinitialize_itables(TRAPS) {
 
 
 bool Universe::on_page_boundary(void* addr) {
-  return ((uintptr_t) addr) % os::vm_page_size() == 0;
+  return is_ptr_aligned(addr, os::vm_page_size());
 }
 
 

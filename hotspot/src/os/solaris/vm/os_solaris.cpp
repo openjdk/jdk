@@ -235,7 +235,7 @@ size_t os::current_stack_size() {
   }
   // base may not be page aligned
   address base = current_stack_base();
-  address bottom = (address)align_size_up((intptr_t)(base - size), os::vm_page_size());;
+  address bottom = align_ptr_up(base - size, os::vm_page_size());;
   return (size_t)(base - bottom);
 }
 
@@ -1122,7 +1122,7 @@ void os::initialize_thread(Thread* thr) {
       if (current_size == 0) current_size = 2 * K * K;
       stack_size = current_size > (8 * K * K) ? (8 * K * K) : current_size;
     }
-    address bottom = (address)align_size_up((intptr_t)(base - stack_size), os::vm_page_size());;
+    address bottom = align_ptr_up(base - stack_size, os::vm_page_size());;
     stack_size = (size_t)(base - bottom);
 
     assert(stack_size > 0, "Stack size calculation problem");

@@ -497,7 +497,7 @@ VirtualSpaceNode::VirtualSpaceNode(size_t bytes) : _top(NULL), _next(NULL), _rs(
   // memory addresses don't conflict.
   if (DumpSharedSpaces) {
     bool large_pages = false; // No large pages when dumping the CDS archive.
-    char* shared_base = (char*)align_ptr_up((char*)SharedBaseAddress, Metaspace::reserve_alignment());
+    char* shared_base = align_ptr_up((char*)SharedBaseAddress, Metaspace::reserve_alignment());
 
     _rs = ReservedSpace(bytes, Metaspace::reserve_alignment(), large_pages, shared_base);
     if (_rs.is_reserved()) {
@@ -3130,7 +3130,7 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
     // Aix: Search for a place where we can find memory. If we need to load
     // the base, 4G alignment is helpful, too.
     size_t increment = AARCH64_ONLY(4*)G;
-    for (char *a = (char*)align_ptr_up(requested_addr, increment);
+    for (char *a = align_ptr_up(requested_addr, increment);
          a < (char*)(1024*G);
          a += increment) {
       if (a == (char *)(32*G)) {
@@ -3355,7 +3355,7 @@ void Metaspace::global_initialize() {
 #ifdef _LP64
         if (using_class_space()) {
           char* cds_end = (char*)(cds_address + cds_total);
-          cds_end = (char *)align_ptr_up(cds_end, _reserve_alignment);
+          cds_end = align_ptr_up(cds_end, _reserve_alignment);
           // If UseCompressedClassPointers is set then allocate the metaspace area
           // above the heap and above the CDS area (if it exists).
           allocate_metaspace_compressed_klass_ptrs(cds_end, cds_address);

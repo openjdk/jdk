@@ -158,7 +158,7 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment) {
   }
 
   // Do manual alignment
-  char* aligned_base = (char*) align_size_up((uintptr_t) extra_base, alignment);
+  char* aligned_base = align_ptr_up(extra_base, alignment);
 
   // [  |                                       |  ]
   // ^ extra_base

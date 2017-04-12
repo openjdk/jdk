@@ -667,7 +667,7 @@ class Method : public Metadata {
 
   // sizing
   static int header_size()                       {
-    return align_size_up(sizeof(Method), wordSize) / wordSize;
+    return align_size_up((int)sizeof(Method), wordSize) / wordSize;
   }
   static int size(bool is_native);
   int size() const                               { return method_size(); }

@@ -518,51 +518,63 @@ const bool support_IRIW_for_not_multiple_copy_atomic_cpu = false;
 
 #define align_size_up_(size, alignment) (align_size_down_((size) + align_mask(alignment), (alignment)))
 
-inline bool is_size_aligned(size_t size, size_t alignment) {
-  return align_size_up_(size, alignment) == size;
-}
+#define is_size_aligned_(size, alignment) ((size) == (align_size_up_(size, alignment)))
 
-inline bool is_ptr_aligned(const void* ptr, size_t alignment) {
-  return align_size_up_((intptr_t)ptr, (intptr_t)alignment) == (intptr_t)ptr;
-}
+// Helpers to align sizes and check for alignment
 
-inline intptr_t align_size_up(intptr_t size, intptr_t alignment) {
+template <typename T, typename A>
+inline T align_size_up(T size, A alignment) {
   return align_size_up_(size, alignment);
 }
 
-inline intptr_t align_size_down(intptr_t size, intptr_t alignment) {
+template <typename T, typename A>
+inline T align_size_down(T size, A alignment) {
   return align_size_down_(size, alignment);
 }
 
-#define is_size_aligned_(size, alignment) ((size) == (align_size_up_(size, alignment)))
-
-inline void* align_ptr_up(const void* ptr, size_t alignment) {
-  return (void*)align_size_up((intptr_t)ptr, (intptr_t)alignment);
+template <typename T, typename A>
+inline bool is_size_aligned(T size, A alignment) {
+  return is_size_aligned_(size, alignment);
 }
 
-inline void* align_ptr_down(void* ptr, size_t alignment) {
-  return (void*)align_size_down((intptr_t)ptr, (intptr_t)alignment);
+// Align down with a lower bound. If the aligning results in 0, return 'alignment'.
+template <typename T, typename A>
+inline T align_size_down_bounded(T size, A alignment) {
+  A aligned_size = align_size_down(size, alignment);
+  return aligned_size > 0 ? aligned_size : alignment;
 }
 
-inline volatile void* align_ptr_down(volatile void* ptr, size_t alignment) {
-  return (volatile void*)align_size_down((intptr_t)ptr, (intptr_t)alignment);
+// Helpers to align pointers and check for alignment.
+
+template <typename T, typename A>
+inline T* align_ptr_up(T* ptr, A alignment) {
+  return (T*)align_size_up((uintptr_t)ptr, alignment);
+}
+
+template <typename T, typename A>
+inline T* align_ptr_down(T* ptr, A alignment) {
+  return (T*)align_size_down((uintptr_t)ptr, alignment);
+}
+
+template <typename T, typename A>
+inline bool is_ptr_aligned(T* ptr, A alignment) {
+  return is_size_aligned((uintptr_t)ptr, alignment);
 }
 
 // Align metaspace objects by rounding up to natural word boundary
-
-inline intptr_t align_metadata_size(intptr_t size) {
+template <typename T>
+inline T align_metadata_size(T size) {
   return align_size_up(size, 1);
 }
 
 // Align objects in the Java Heap by rounding up their size, in HeapWord units.
-// Since the size is given in words this is somewhat of a nop, but
-// distinguishes it from align_object_size.
-inline intptr_t align_object_size(intptr_t size) {
-  return align_size_up(size, MinObjAlignment);
+template <typename T>
+inline T align_object_size(T word_size) {
+  return align_size_up(word_size, MinObjAlignment);
 }
 
-inline bool is_object_aligned(intptr_t addr) {
-  return addr == align_object_size(addr);
+inline bool is_object_aligned(size_t word_size) {
+  return is_size_aligned(word_size, MinObjAlignment);
 }
 
 inline bool is_ptr_object_aligned(const void* addr) {
@@ -570,32 +582,26 @@ inline bool is_ptr_object_aligned(const void* addr) {
 }
 
 // Pad out certain offsets to jlong alignment, in HeapWord units.
-
-inline intptr_t align_object_offset(intptr_t offset) {
+template <typename T>
+inline T align_object_offset(T offset) {
   return align_size_up(offset, HeapWordsPerLong);
-}
-
-// Align down with a lower bound. If the aligning results in 0, return 'alignment'.
-
-inline size_t align_size_down_bounded(size_t size, size_t alignment) {
-  size_t aligned_size = align_size_down_(size, alignment);
-  return aligned_size > 0 ? aligned_size : alignment;
 }
 
 // Clamp an address to be within a specific page
 // 1. If addr is on the page it is returned as is
 // 2. If addr is above the page_address the start of the *next* page will be returned
 // 3. Otherwise, if addr is below the page_address the start of the page will be returned
-inline address clamp_address_in_page(address addr, address page_address, intptr_t page_size) {
-  if (align_size_down(intptr_t(addr), page_size) == align_size_down(intptr_t(page_address), page_size)) {
+template <typename T>
+inline T* clamp_address_in_page(T* addr, T* page_address, size_t page_size) {
+  if (align_ptr_down(addr, page_size) == align_ptr_down(page_address, page_size)) {
     // address is in the specified page, just return it as is
     return addr;
   } else if (addr > page_address) {
     // address is above specified page, return start of next page
-    return (address)align_size_down(intptr_t(page_address), page_size) + page_size;
+    return align_ptr_down(page_address, page_size) + page_size;
   } else {
     // address is below specified page, return start of page
-    return (address)align_size_down(intptr_t(page_address), page_size);
+    return align_ptr_down(page_address, page_size);
   }
 }
 

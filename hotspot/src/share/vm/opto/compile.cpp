@@ -3903,7 +3903,7 @@ void Compile::ConstantTable::calculate_offsets_and_size() {
   // Align size up to the next section start (which is insts; see
   // CodeBuffer::align_at_start).
   assert(_size == -1, "already set?");
-  _size = align_size_up(offset, CodeEntryAlignment);
+  _size = align_size_up(offset, (int)CodeEntryAlignment);
 }
 
 void Compile::ConstantTable::emit(CodeBuffer& cb) {

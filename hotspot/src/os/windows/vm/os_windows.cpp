@@ -2398,8 +2398,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
             (UnguardOnExecutionViolation > 1 || os::address_is_in_vm(addr))) {
 
           // Set memory to RWX and retry
-          address page_start =
-            (address) align_size_down((intptr_t) addr, (intptr_t) page_size);
+          address page_start = align_ptr_down(addr, page_size);
           bool res = os::protect_memory((char*) page_start, page_size,
                                         os::MEM_PROT_RWX);
 
@@ -2833,7 +2832,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
   // we still need to round up to a page boundary (in case we are using large pages)
   // but not to a chunk boundary (in case InterleavingGranularity doesn't align with page size)
   // instead we handle this in the bytes_to_rq computation below
-  p_buf = (char *) align_size_up((size_t)p_buf, page_size);
+  p_buf = align_ptr_up(p_buf, page_size);
 
   // now go through and allocate one chunk at a time until all bytes are
   // allocated
@@ -2997,7 +2996,7 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment) {
       return NULL;
     }
     // Do manual alignment
-    aligned_base = (char*) align_size_up((uintptr_t) extra_base, alignment);
+    aligned_base = align_ptr_up(extra_base, alignment);
 
     os::release_memory(extra_base, extra_size);
 

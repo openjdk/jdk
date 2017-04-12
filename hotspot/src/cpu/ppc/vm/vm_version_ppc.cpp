@@ -697,7 +697,7 @@ void VM_Version::determine_features() {
   // Execute code. Illegal instructions will be replaced by 0 in the signal handler.
   VM_Version::_is_determine_features_test_running = true;
   // We must align the first argument to 16 bytes because of the lqarx check.
-  (*test)((address)align_size_up((intptr_t)mid_of_test_area, 16), (uint64_t)0);
+  (*test)(align_ptr_up(mid_of_test_area, 16), (uint64_t)0);
   VM_Version::_is_determine_features_test_running = false;
 
   // determine which instructions are legal.
