@@ -273,9 +273,9 @@ void DefNewGeneration::compute_space_boundaries(uintx minimum_eden_size,
   char *to_end     = to_start   + survivor_size;
 
   assert(to_end == _virtual_space.high(), "just checking");
-  assert(Space::is_aligned((HeapWord*)eden_start), "checking alignment");
-  assert(Space::is_aligned((HeapWord*)from_start), "checking alignment");
-  assert(Space::is_aligned((HeapWord*)to_start),   "checking alignment");
+  assert(Space::is_aligned(eden_start), "checking alignment");
+  assert(Space::is_aligned(from_start), "checking alignment");
+  assert(Space::is_aligned(to_start),   "checking alignment");
 
   MemRegion edenMR((HeapWord*)eden_start, (HeapWord*)from_start);
   MemRegion fromMR((HeapWord*)from_start, (HeapWord*)to_start);

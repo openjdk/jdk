@@ -492,8 +492,8 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
     if (aligned_heap_base_min_address + size <= (char *)UnscaledOopHeapMax) {
 
       // Calc address range within we try to attach (range of possible start addresses).
-      char* const highest_start = (char *)align_ptr_down((char *)UnscaledOopHeapMax - size, attach_point_alignment);
-      char* const lowest_start  = (char *)align_ptr_up(aligned_heap_base_min_address, attach_point_alignment);
+      char* const highest_start = align_ptr_down((char *)UnscaledOopHeapMax - size, attach_point_alignment);
+      char* const lowest_start  = align_ptr_up(aligned_heap_base_min_address, attach_point_alignment);
       try_reserve_range(highest_start, lowest_start, attach_point_alignment,
                         aligned_heap_base_min_address, (char *)UnscaledOopHeapMax, size, alignment, large);
     }
@@ -517,7 +517,7 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
          (_base + size > zerobased_max))) {        // Unscaled delivered an arbitrary address.
 
       // Calc address range within we try to attach (range of possible start addresses).
-      char *const highest_start = (char *)align_ptr_down(zerobased_max - size, attach_point_alignment);
+      char *const highest_start = align_ptr_down(zerobased_max - size, attach_point_alignment);
       // Need to be careful about size being guaranteed to be less
       // than UnscaledOopHeapMax due to type constraints.
       char *lowest_start = aligned_heap_base_min_address;
@@ -525,7 +525,7 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
       if (unscaled_end < UnscaledOopHeapMax) { // unscaled_end wrapped if size is large
         lowest_start = MAX2(lowest_start, (char*)unscaled_end);
       }
-      lowest_start  = (char *)align_ptr_up(lowest_start, attach_point_alignment);
+      lowest_start = align_ptr_up(lowest_start, attach_point_alignment);
       try_reserve_range(highest_start, lowest_start, attach_point_alignment,
                         aligned_heap_base_min_address, zerobased_max, size, alignment, large);
     }

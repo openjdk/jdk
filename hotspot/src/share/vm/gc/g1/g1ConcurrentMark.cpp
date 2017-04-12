@@ -71,8 +71,7 @@ G1CMBitMapRO::G1CMBitMapRO(int shifter) :
 HeapWord* G1CMBitMapRO::getNextMarkedWordAddress(const HeapWord* addr,
                                                  const HeapWord* limit) const {
   // First we must round addr *up* to a possible object boundary.
-  addr = (HeapWord*)align_size_up((intptr_t)addr,
-                                  HeapWordSize << _shifter);
+  addr = align_ptr_up(addr, HeapWordSize << _shifter);
   size_t addrOffset = heapWordToOffset(addr);
   assert(limit != NULL, "limit must not be NULL");
   size_t limitOffset = heapWordToOffset(limit);
@@ -171,8 +170,8 @@ bool G1CMMarkStack::initialize(size_t initial_capacity, size_t max_capacity) {
 
   size_t const TaskEntryChunkSizeInVoidStar = sizeof(TaskQueueEntryChunk) / sizeof(G1TaskQueueEntry);
 
-  _max_chunk_capacity = (size_t)align_size_up(max_capacity, capacity_alignment()) / TaskEntryChunkSizeInVoidStar;
-  size_t initial_chunk_capacity = (size_t)align_size_up(initial_capacity, capacity_alignment()) / TaskEntryChunkSizeInVoidStar;
+  _max_chunk_capacity = align_size_up(max_capacity, capacity_alignment()) / TaskEntryChunkSizeInVoidStar;
+  size_t initial_chunk_capacity = align_size_up(initial_capacity, capacity_alignment()) / TaskEntryChunkSizeInVoidStar;
 
   guarantee(initial_chunk_capacity <= _max_chunk_capacity,
             "Maximum chunk capacity " SIZE_FORMAT " smaller than initial capacity " SIZE_FORMAT,

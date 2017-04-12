@@ -1186,7 +1186,7 @@ ObjectMonitor* ObjectSynchronizer::omAlloc(Thread * Self) {
     void* real_malloc_addr = (void *)NEW_C_HEAP_ARRAY(char, aligned_size,
                                                       mtInternal);
     temp = (PaddedEnd<ObjectMonitor> *)
-             align_size_up((intptr_t)real_malloc_addr,
+             align_ptr_up(real_malloc_addr,
                            DEFAULT_CACHE_LINE_SIZE);
 
     // NOTE: (almost) no way to recover if allocation failed.

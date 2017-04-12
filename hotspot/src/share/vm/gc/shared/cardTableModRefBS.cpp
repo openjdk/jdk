@@ -212,10 +212,8 @@ void CardTableModRefBS::resize_covered_region(MemRegion new_region) {
     }
     // Align the end up to a page size (starts are already aligned).
     jbyte* const new_end = byte_after(new_region.last());
-    HeapWord* new_end_aligned =
-      (HeapWord*) align_size_up((uintptr_t)new_end, _page_size);
-    assert(new_end_aligned >= (HeapWord*) new_end,
-           "align up, but less");
+    HeapWord* new_end_aligned = (HeapWord*) align_ptr_up(new_end, _page_size);
+    assert((void*)new_end_aligned >= (void*) new_end, "align up, but less");
     // Check the other regions (excludes "ind") to ensure that
     // the new_end_aligned does not intrude onto the committed
     // space of another region.
@@ -370,8 +368,8 @@ void CardTableModRefBS::write_ref_field_work(void* field, oop newVal, bool relea
 
 
 void CardTableModRefBS::dirty_MemRegion(MemRegion mr) {
-  assert((HeapWord*)align_size_down((uintptr_t)mr.start(), HeapWordSize) == mr.start(), "Unaligned start");
-  assert((HeapWord*)align_size_up  ((uintptr_t)mr.end(),   HeapWordSize) == mr.end(),   "Unaligned end"  );
+  assert(align_ptr_down(mr.start(), HeapWordSize) == mr.start(), "Unaligned start");
+  assert(align_ptr_up  (mr.end(),   HeapWordSize) == mr.end(),   "Unaligned end"  );
   jbyte* cur  = byte_for(mr.start());
   jbyte* last = byte_after(mr.last());
   while (cur < last) {
@@ -381,8 +379,8 @@ void CardTableModRefBS::dirty_MemRegion(MemRegion mr) {
 }
 
 void CardTableModRefBS::invalidate(MemRegion mr) {
-  assert((HeapWord*)align_size_down((uintptr_t)mr.start(), HeapWordSize) == mr.start(), "Unaligned start");
-  assert((HeapWord*)align_size_up  ((uintptr_t)mr.end(),   HeapWordSize) == mr.end(),   "Unaligned end"  );
+  assert(align_ptr_down(mr.start(), HeapWordSize) == mr.start(), "Unaligned start");
+  assert(align_ptr_up  (mr.end(),   HeapWordSize) == mr.end(),   "Unaligned end"  );
   for (int i = 0; i < _cur_covered_regions; i++) {
     MemRegion mri = mr.intersection(_covered[i]);
     if (!mri.is_empty()) dirty_MemRegion(mri);

@@ -2110,7 +2110,7 @@ static char* reserve_mmaped_memory(size_t bytes, char* requested_addr, size_t al
   }
 
   // Handle alignment.
-  char* const addr_aligned = (char *)align_ptr_up(addr, alignment_hint);
+  char* const addr_aligned = align_ptr_up(addr, alignment_hint);
   const size_t waste_pre = addr_aligned - addr;
   char* const addr_aligned_end = addr_aligned + size;
   const size_t waste_post = extra_size - waste_pre - size;
@@ -2361,7 +2361,7 @@ bool os::pd_release_memory(char* addr, size_t size) {
 
   // Always round to os::vm_page_size(), which may be larger than 4K.
   size = align_size_up(size, os::vm_page_size());
-  addr = (char *)align_ptr_up(addr, os::vm_page_size());
+  addr = align_ptr_up(addr, os::vm_page_size());
 
   bool rc = false;
   bool remove_bookkeeping = false;

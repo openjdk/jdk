@@ -362,7 +362,7 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
 
   // Code generation support
   static WordSize size()                         {
-    return in_WordSize(align_size_up(sizeof(ConstantPoolCacheEntry), wordSize) / wordSize);
+    return in_WordSize(align_size_up((int)sizeof(ConstantPoolCacheEntry), wordSize) / wordSize);
   }
   static ByteSize size_in_bytes()                { return in_ByteSize(sizeof(ConstantPoolCacheEntry)); }
   static ByteSize indices_offset()               { return byte_offset_of(ConstantPoolCacheEntry, _indices); }

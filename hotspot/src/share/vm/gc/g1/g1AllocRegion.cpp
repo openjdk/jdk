@@ -287,7 +287,7 @@ HeapRegion* OldGCAllocRegion::release() {
     // Determine how far we are from the next card boundary. If it is smaller than
     // the minimum object size we can allocate into, expand into the next card.
     HeapWord* top = cur->top();
-    HeapWord* aligned_top = (HeapWord*)align_ptr_up(top, BOTConstants::N_bytes);
+    HeapWord* aligned_top = align_ptr_up(top, BOTConstants::N_bytes);
 
     size_t to_allocate_words = pointer_delta(aligned_top, top, HeapWordSize);
 

@@ -141,7 +141,7 @@ void G1PageBasedVirtualSpace::commit_preferred_pages(size_t start, size_t num_pa
 void G1PageBasedVirtualSpace::commit_tail() {
   vmassert(_tail_size > 0, "The size of the tail area must be > 0 when reaching here");
 
-  char* const aligned_end_address = (char*)align_ptr_down(_high_boundary, _page_size);
+  char* const aligned_end_address = align_ptr_down(_high_boundary, _page_size);
   os::commit_memory_or_exit(aligned_end_address, _tail_size, os::vm_page_size(), _executable,
                             err_msg("Failed to commit tail area from " PTR_FORMAT " to " PTR_FORMAT " of length " SIZE_FORMAT ".",
                             p2i(aligned_end_address), p2i(_high_boundary), _tail_size));

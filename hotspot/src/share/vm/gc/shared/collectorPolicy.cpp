@@ -311,7 +311,7 @@ void GenCollectorPolicy::initialize_flags() {
   // Now take the actual NewSize into account. We will silently increase NewSize
   // if the user specified a smaller or unaligned value.
   size_t bounded_new_size = bound_minus_alignment(NewSize, MaxHeapSize);
-  bounded_new_size = MAX2(smallest_new_size, (size_t)align_size_down(bounded_new_size, _gen_alignment));
+  bounded_new_size = MAX2(smallest_new_size, align_size_down(bounded_new_size, _gen_alignment));
   if (bounded_new_size != NewSize) {
     FLAG_SET_ERGO(size_t, NewSize, bounded_new_size);
   }

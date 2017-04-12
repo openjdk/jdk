@@ -756,7 +756,7 @@ class ConstantPool : public Metadata {
 
   // Sizing (in words)
   static int header_size()             {
-    return align_size_up(sizeof(ConstantPool), wordSize) / wordSize;
+    return align_size_up((int)sizeof(ConstantPool), wordSize) / wordSize;
   }
   static int size(int length)          { return align_metadata_size(header_size() + length); }
   int size() const                     { return size(length()); }

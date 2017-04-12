@@ -3170,7 +3170,7 @@ static char* anon_mmap_aligned(size_t bytes, size_t alignment, char* req_addr) {
         start = NULL;
       }
     } else {
-      char* const start_aligned = (char*) align_ptr_up(start, alignment);
+      char* const start_aligned = align_ptr_up(start, alignment);
       char* const end_aligned = start_aligned + bytes;
       char* const end = start + extra_size;
       if (start_aligned > start) {
@@ -3674,8 +3674,8 @@ char* os::Linux::reserve_memory_special_huge_tlbfs_mixed(size_t bytes,
   char* end = start + bytes;
 
   // Find the regions of the allocated chunk that can be promoted to large pages.
-  char* lp_start = (char*)align_ptr_up(start, large_page_size);
-  char* lp_end   = (char*)align_ptr_down(end, large_page_size);
+  char* lp_start = align_ptr_up(start, large_page_size);
+  char* lp_end   = align_ptr_down(end, large_page_size);
 
   size_t lp_bytes = lp_end - lp_start;
 
@@ -5986,7 +5986,7 @@ class TestReserveMemorySpecial : AllStatic {
     for (int i = 0; i < num_sizes; i++) {
       const size_t size = sizes[i];
       for (size_t alignment = ag; is_size_aligned(size, alignment); alignment *= 2) {
-        char* const req_addr = (char*) align_ptr_up(mapping1, alignment);
+        char* const req_addr = align_ptr_up(mapping1, alignment);
         char* p = os::Linux::reserve_memory_special_huge_tlbfs_mixed(size, alignment, req_addr, false);
         test_log(SIZE_FORMAT_HEX " " SIZE_FORMAT_HEX " " PTR_FORMAT " ->  " PTR_FORMAT " %s",
                  size, alignment, p2i(req_addr), p2i(p),
@@ -6006,7 +6006,7 @@ class TestReserveMemorySpecial : AllStatic {
     for (int i = 0; i < num_sizes; i++) {
       const size_t size = sizes[i];
       for (size_t alignment = ag; is_size_aligned(size, alignment); alignment *= 2) {
-        char* const req_addr = (char*) align_ptr_up(mapping2, alignment);
+        char* const req_addr = align_ptr_up(mapping2, alignment);
         char* p = os::Linux::reserve_memory_special_huge_tlbfs_mixed(size, alignment, req_addr, false);
         test_log(SIZE_FORMAT_HEX " " SIZE_FORMAT_HEX " " PTR_FORMAT " ->  " PTR_FORMAT " %s",
                  size, alignment, p2i(req_addr), p2i(p), ((p != NULL ? "" : "(failed)")));

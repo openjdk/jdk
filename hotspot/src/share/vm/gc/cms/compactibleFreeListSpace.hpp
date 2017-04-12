@@ -513,7 +513,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   // Adjust the chunk for the minimum size.  This version is called in
   // most cases in CompactibleFreeListSpace methods.
   inline static size_t adjustObjectSize(size_t size) {
-    return (size_t) align_object_size(MAX2(size, (size_t)MinChunkSize));
+    return align_object_size(MAX2(size, (size_t)MinChunkSize));
   }
   // This is a virtual version of adjustObjectSize() that is called
   // only occasionally when the compaction space changes and the type

@@ -607,7 +607,7 @@ Flag::Error GCPauseIntervalMillisConstraintFunc(uintx value, bool verbose) {
 }
 
 Flag::Error InitialBootClassLoaderMetaspaceSizeConstraintFunc(size_t value, bool verbose) {
-  size_t aligned_max = (size_t)align_size_down(max_uintx/2, Metaspace::reserve_alignment_words());
+  size_t aligned_max = align_size_down(max_uintx/2, Metaspace::reserve_alignment_words());
   if (value > aligned_max) {
     CommandLineError::print(verbose,
                             "InitialBootClassLoaderMetaspaceSize (" SIZE_FORMAT ") must be "

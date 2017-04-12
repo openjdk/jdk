@@ -153,7 +153,7 @@ inline jbyte Atomic::cmpxchg(jbyte exchange_value, volatile jbyte* dest,
                              jbyte compare_value, cmpxchg_memory_order order) {
   STATIC_ASSERT(sizeof(jbyte) == 1);
   volatile jint* dest_int =
-      static_cast<volatile jint*>(align_ptr_down(dest, sizeof(jint)));
+      reinterpret_cast<volatile jint*>(align_ptr_down(dest, sizeof(jint)));
   size_t offset = pointer_delta(dest, dest_int, 1);
   jint cur = *dest_int;
   jbyte* cur_as_bytes = reinterpret_cast<jbyte*>(&cur);

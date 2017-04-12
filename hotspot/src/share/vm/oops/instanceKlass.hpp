@@ -100,7 +100,7 @@ class OopMapBlock VALUE_OBJ_CLASS_SPEC {
 
   // sizeof(OopMapBlock) in words.
   static const int size_in_words() {
-    return align_size_up(int(sizeof(OopMapBlock)), wordSize) >>
+    return align_size_up((int)sizeof(OopMapBlock), wordSize) >>
       LogBytesPerWord;
   }
 

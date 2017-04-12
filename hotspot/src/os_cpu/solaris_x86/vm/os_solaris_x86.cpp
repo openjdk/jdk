@@ -647,8 +647,7 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
           (UnguardOnExecutionViolation > 1 || os::address_is_in_vm(addr))) {
 
         // Make memory rwx and retry
-        address page_start =
-          (address) align_size_down((intptr_t) addr, (intptr_t) page_size);
+        address page_start = align_ptr_down(addr, page_size);
         bool res = os::protect_memory((char*) page_start, page_size,
                                       os::MEM_PROT_RWX);
 
