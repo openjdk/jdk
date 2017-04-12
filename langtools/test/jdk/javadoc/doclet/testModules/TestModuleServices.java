@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8176901
+ * @bug 8178067
  * @summary tests the module's services, such as provides and uses
  * @modules jdk.javadoc/jdk.javadoc.internal.api
  *          jdk.javadoc/jdk.javadoc.internal.tool
