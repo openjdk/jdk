@@ -127,56 +127,10 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   // OopMap* map = new OopMap(*total_frame_words, 0);
   OopMap* map = new OopMap(frame_size_in_slots, 0);
 
-#if !defined(_LP64)
-
-  // Save 64-bit O registers; they will get their heads chopped off on a 'save'.
-  __ stx(O0, G2_thread, JavaThread::o_reg_temps_offset_in_bytes()+0*8);
-  __ stx(O1, G2_thread, JavaThread::o_reg_temps_offset_in_bytes()+1*8);
-  __ stx(O2, G2_thread, JavaThread::o_reg_temps_offset_in_bytes()+2*8);
-  __ stx(O3, G2_thread, JavaThread::o_reg_temps_offset_in_bytes()+3*8);
-  __ stx(O4, G2_thread, JavaThread::o_reg_temps_offset_in_bytes()+4*8);
-  __ stx(O5, G2_thread, JavaThread::o_reg_temps_offset_in_bytes()+5*8);
-#endif /* _LP64 */
-
   __ save(SP, -frame_size, SP);
 
-#ifndef _LP64
-  // Reload the 64 bit Oregs. Although they are now Iregs we load them
-  // to Oregs here to avoid interrupts cutting off their heads
 
-  __ ldx(G2_thread, JavaThread::o_reg_temps_offset_in_bytes()+0*8, O0);
-  __ ldx(G2_thread, JavaThread::o_reg_temps_offset_in_bytes()+1*8, O1);
-  __ ldx(G2_thread, JavaThread::o_reg_temps_offset_in_bytes()+2*8, O2);
-  __ ldx(G2_thread, JavaThread::o_reg_temps_offset_in_bytes()+3*8, O3);
-  __ ldx(G2_thread, JavaThread::o_reg_temps_offset_in_bytes()+4*8, O4);
-  __ ldx(G2_thread, JavaThread::o_reg_temps_offset_in_bytes()+5*8, O5);
-
-  __ stx(O0, SP, o0_offset+STACK_BIAS);
-  map->set_callee_saved(VMRegImpl::stack2reg((o0_offset + 4)>>2), O0->as_VMReg());
-
-  __ stx(O1, SP, o1_offset+STACK_BIAS);
-
-  map->set_callee_saved(VMRegImpl::stack2reg((o1_offset + 4)>>2), O1->as_VMReg());
-
-  __ stx(O2, SP, o2_offset+STACK_BIAS);
-  map->set_callee_saved(VMRegImpl::stack2reg((o2_offset + 4)>>2), O2->as_VMReg());
-
-  __ stx(O3, SP, o3_offset+STACK_BIAS);
-  map->set_callee_saved(VMRegImpl::stack2reg((o3_offset + 4)>>2), O3->as_VMReg());
-
-  __ stx(O4, SP, o4_offset+STACK_BIAS);
-  map->set_callee_saved(VMRegImpl::stack2reg((o4_offset + 4)>>2), O4->as_VMReg());
-
-  __ stx(O5, SP, o5_offset+STACK_BIAS);
-  map->set_callee_saved(VMRegImpl::stack2reg((o5_offset + 4)>>2), O5->as_VMReg());
-#endif /* _LP64 */
-
-
-#ifdef _LP64
   int debug_offset = 0;
-#else
-  int debug_offset = 4;
-#endif
   // Save the G's
   __ stx(G1, SP, g1_offset+STACK_BIAS);
   map->set_callee_saved(VMRegImpl::stack2reg((g1_offset + debug_offset)>>2), G1->as_VMReg());
@@ -192,18 +146,6 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
 
   // This is really a waste but we'll keep things as they were for now
   if (true) {
-#ifndef _LP64
-    map->set_callee_saved(VMRegImpl::stack2reg((o0_offset)>>2), O0->as_VMReg()->next());
-    map->set_callee_saved(VMRegImpl::stack2reg((o1_offset)>>2), O1->as_VMReg()->next());
-    map->set_callee_saved(VMRegImpl::stack2reg((o2_offset)>>2), O2->as_VMReg()->next());
-    map->set_callee_saved(VMRegImpl::stack2reg((o3_offset)>>2), O3->as_VMReg()->next());
-    map->set_callee_saved(VMRegImpl::stack2reg((o4_offset)>>2), O4->as_VMReg()->next());
-    map->set_callee_saved(VMRegImpl::stack2reg((o5_offset)>>2), O5->as_VMReg()->next());
-    map->set_callee_saved(VMRegImpl::stack2reg((g1_offset)>>2), G1->as_VMReg()->next());
-    map->set_callee_saved(VMRegImpl::stack2reg((g3_offset)>>2), G3->as_VMReg()->next());
-    map->set_callee_saved(VMRegImpl::stack2reg((g4_offset)>>2), G4->as_VMReg()->next());
-    map->set_callee_saved(VMRegImpl::stack2reg((g5_offset)>>2), G5->as_VMReg()->next());
-#endif /* _LP64 */
   }
 
 
@@ -250,41 +192,11 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm) {
   __ ldx(SP, g4_offset+STACK_BIAS, G4);
   __ ldx(SP, g5_offset+STACK_BIAS, G5);
 
-
-#if !defined(_LP64)
-  // Restore the 64-bit O's.
-  __ ldx(SP, o0_offset+STACK_BIAS, O0);
-  __ ldx(SP, o1_offset+STACK_BIAS, O1);
-  __ ldx(SP, o2_offset+STACK_BIAS, O2);
-  __ ldx(SP, o3_offset+STACK_BIAS, O3);
-  __ ldx(SP, o4_offset+STACK_BIAS, O4);
-  __ ldx(SP, o5_offset+STACK_BIAS, O5);
-
-  // And temporarily place them in TLS
-
-  __ stx(O0, G2_thread, JavaThread::o_reg_temps_offset_in_bytes()+0*8);
-  __ stx(O1, G2_thread, JavaThread::o_reg_temps_offset_in_bytes()+1*8);
-  __ stx(O2, G2_thread, JavaThread::o_reg_temps_offset_in_bytes()+2*8);
-  __ stx(O3, G2_thread, JavaThread::o_reg_temps_offset_in_bytes()+3*8);
-  __ stx(O4, G2_thread, JavaThread::o_reg_temps_offset_in_bytes()+4*8);
-  __ stx(O5, G2_thread, JavaThread::o_reg_temps_offset_in_bytes()+5*8);
-#endif /* _LP64 */
-
   // Restore flags
 
   __ ldxfsr(SP, fsr_offset+STACK_BIAS);
 
   __ restore();
-
-#if !defined(_LP64)
-  // Now reload the 64bit Oregs after we've restore the window.
-  __ ldx(G2_thread, JavaThread::o_reg_temps_offset_in_bytes()+0*8, O0);
-  __ ldx(G2_thread, JavaThread::o_reg_temps_offset_in_bytes()+1*8, O1);
-  __ ldx(G2_thread, JavaThread::o_reg_temps_offset_in_bytes()+2*8, O2);
-  __ ldx(G2_thread, JavaThread::o_reg_temps_offset_in_bytes()+3*8, O3);
-  __ ldx(G2_thread, JavaThread::o_reg_temps_offset_in_bytes()+4*8, O4);
-  __ ldx(G2_thread, JavaThread::o_reg_temps_offset_in_bytes()+5*8, O5);
-#endif /* _LP64 */
 
 }
 
@@ -292,27 +204,9 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm) {
 // a result.
 void RegisterSaver::restore_result_registers(MacroAssembler* masm) {
 
-#if !defined(_LP64)
-  // 32bit build returns longs in G1
-  __ ldx(SP, g1_offset+STACK_BIAS, G1);
-
-  // Retrieve the 64-bit O's.
-  __ ldx(SP, o0_offset+STACK_BIAS, O0);
-  __ ldx(SP, o1_offset+STACK_BIAS, O1);
-  // and save to TLS
-  __ stx(O0, G2_thread, JavaThread::o_reg_temps_offset_in_bytes()+0*8);
-  __ stx(O1, G2_thread, JavaThread::o_reg_temps_offset_in_bytes()+1*8);
-#endif /* _LP64 */
-
   __ ldf(FloatRegisterImpl::D, SP, d00_offset+STACK_BIAS, as_FloatRegister(0));
 
   __ restore();
-
-#if !defined(_LP64)
-  // Now reload the 64bit Oregs after we've restore the window.
-  __ ldx(G2_thread, JavaThread::o_reg_temps_offset_in_bytes()+0*8, O0);
-  __ ldx(G2_thread, JavaThread::o_reg_temps_offset_in_bytes()+1*8, O1);
-#endif /* _LP64 */
 
 }
 
@@ -410,11 +304,6 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
     case T_CHAR:
     case T_BYTE:
     case T_BOOLEAN:
-#ifndef _LP64
-    case T_OBJECT:
-    case T_ARRAY:
-    case T_ADDRESS: // Used, e.g., in slow-path locking for the lock's stack address
-#endif // _LP64
       if (int_reg < int_reg_max) {
         Register r = is_outgoing ? as_oRegister(int_reg++) : as_iRegister(int_reg++);
         regs[i].set1(r->as_VMReg());
@@ -423,7 +312,6 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
       }
       break;
 
-#ifdef _LP64
     case T_LONG:
       assert((i + 1) < total_args_passed && sig_bt[i+1] == T_VOID, "expecting VOID in other half");
       // fall-through
@@ -439,15 +327,6 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
         slot += 2;
       }
       break;
-#else
-    case T_LONG:
-      assert((i + 1) < total_args_passed && sig_bt[i+1] == T_VOID, "expecting VOID in other half");
-      // On 32-bit SPARC put longs always on the stack to keep the pressure off
-      // integer argument registers.  They should be used for oops.
-      slot = round_to(slot, 2);  // align
-      regs[i].set2(VMRegImpl::stack2reg(slot));
-      slot += 2;
-#endif
       break;
 
     case T_FLOAT:
@@ -554,7 +433,6 @@ void AdapterGenerator::patch_callers_callsite() {
 
   // The longs must go to the stack by hand since in the 32 bit build they can be trashed by window ops.
 
-#ifdef _LP64
   // mov(s,d)
   __ mov(G1, L1);
   __ mov(G4, L4);
@@ -571,20 +449,6 @@ void AdapterGenerator::patch_callers_callsite() {
   __ mov(L1, G1);
   __ mov(L4, G4);
   __ mov(L5, G5_method);
-#else
-  __ stx(G1, FP, -8 + STACK_BIAS);
-  __ stx(G4, FP, -16 + STACK_BIAS);
-  __ mov(G5_method, L5);
-  __ mov(G5_method, O0);         // VM needs target method
-  __ mov(I7, O1);                // VM needs caller's callsite
-  // Must be a leaf call...
-  __ call(CAST_FROM_FN_PTR(address, SharedRuntime::fixup_callers_callsite), relocInfo::runtime_call_type);
-  __ delayed()->mov(G2_thread, L7_thread_cache);
-  __ mov(L7_thread_cache, G2_thread);
-  __ ldx(FP, -8 + STACK_BIAS, G1);
-  __ ldx(FP, -16 + STACK_BIAS, G4);
-  __ mov(L5, G5_method);
-#endif /* _LP64 */
 
   __ restore();      // Restore args
   __ bind(L);
@@ -605,28 +469,9 @@ RegisterOrConstant AdapterGenerator::next_arg_slot(const int st_off) {
 // Stores long into offset pointed to by base
 void AdapterGenerator::store_c2i_long(Register r, Register base,
                                       const int st_off, bool is_stack) {
-#ifdef _LP64
   // In V9, longs are given 2 64-bit slots in the interpreter, but the
   // data is passed in only 1 slot.
   __ stx(r, base, next_arg_slot(st_off));
-#else
-#ifdef COMPILER2
-  // Misaligned store of 64-bit data
-  __ stw(r, base, arg_slot(st_off));    // lo bits
-  __ srlx(r, 32, r);
-  __ stw(r, base, next_arg_slot(st_off));  // hi bits
-#else
-  if (is_stack) {
-    // Misaligned store of 64-bit data
-    __ stw(r, base, arg_slot(st_off));    // lo bits
-    __ srlx(r, 32, r);
-    __ stw(r, base, next_arg_slot(st_off));  // hi bits
-  } else {
-    __ stw(r->successor(), base, arg_slot(st_off)     ); // lo bits
-    __ stw(r             , base, next_arg_slot(st_off)); // hi bits
-  }
-#endif // COMPILER2
-#endif // _LP64
 }
 
 void AdapterGenerator::store_c2i_object(Register r, Register base,
@@ -642,15 +487,9 @@ void AdapterGenerator::store_c2i_int(Register r, Register base,
 // Stores into offset pointed to by base
 void AdapterGenerator::store_c2i_double(VMReg r_2,
                       VMReg r_1, Register base, const int st_off) {
-#ifdef _LP64
   // In V9, doubles are given 2 64-bit slots in the interpreter, but the
   // data is passed in only 1 slot.
   __ stf(FloatRegisterImpl::D, r_1->as_FloatRegister(), base, next_arg_slot(st_off));
-#else
-  // Need to marshal 64-bit value from misaligned Lesp loads
-  __ stf(FloatRegisterImpl::S, r_1->as_FloatRegister(), base, next_arg_slot(st_off));
-  __ stf(FloatRegisterImpl::S, r_2->as_FloatRegister(), base, arg_slot(st_off) );
-#endif
 }
 
 void AdapterGenerator::store_c2i_float(FloatRegister f, Register base,
@@ -957,22 +796,17 @@ void AdapterGenerator::gen_i2c_adapter(int total_args_passed,
       if (!r_2->is_valid()) {
         __ ld(Gargs, arg_slot(ld_off), r);
       } else {
-#ifdef _LP64
         // In V9, longs are given 2 64-bit slots in the interpreter, but the
         // data is passed in only 1 slot.
         RegisterOrConstant slot = (sig_bt[i] == T_LONG) ?
               next_arg_slot(ld_off) : arg_slot(ld_off);
         __ ldx(Gargs, slot, r);
-#else
-        fatal("longs should be on stack");
-#endif
       }
     } else {
       assert(r_1->is_FloatRegister(), "");
       if (!r_2->is_valid()) {
         __ ldf(FloatRegisterImpl::S, Gargs,      arg_slot(ld_off), r_1->as_FloatRegister());
       } else {
-#ifdef _LP64
         // In V9, doubles are given 2 64-bit slots in the interpreter, but the
         // data is passed in only 1 slot.  This code also handles longs that
         // are passed on the stack, but need a stack-to-stack move through a
@@ -980,11 +814,6 @@ void AdapterGenerator::gen_i2c_adapter(int total_args_passed,
         RegisterOrConstant slot = (sig_bt[i] == T_LONG || sig_bt[i] == T_DOUBLE) ?
               next_arg_slot(ld_off) : arg_slot(ld_off);
         __ ldf(FloatRegisterImpl::D, Gargs,                  slot, r_1->as_FloatRegister());
-#else
-        // Need to marshal 64-bit value from misaligned Lesp loads
-        __ ldf(FloatRegisterImpl::S, Gargs, next_arg_slot(ld_off), r_1->as_FloatRegister());
-        __ ldf(FloatRegisterImpl::S, Gargs,      arg_slot(ld_off), r_2->as_FloatRegister());
-#endif
       }
     }
     // Was the argument really intended to be on the stack, but was loaded
@@ -1157,7 +986,6 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
     // See int_stk_helper for a further discussion.
     int max_stack_slots = (frame::varargs_offset * VMRegImpl::slots_per_word) - SharedRuntime::out_preserve_stack_slots();
 
-#ifdef _LP64
     // V9 convention: All things "as-if" on double-wide stack slots.
     // Hoist any int/ptr/long's in the first 6 to int regs.
     // Hoist any flt/dbl's in the first 16 dbl regs.
@@ -1241,44 +1069,6 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
         if (off > max_stack_slots) max_stack_slots = off;
       }
     }
-
-#else // _LP64
-    // V8 convention: first 6 things in O-regs, rest on stack.
-    // Alignment is willy-nilly.
-    for (int i = 0; i < total_args_passed; i++) {
-      switch (sig_bt[i]) {
-      case T_ADDRESS: // raw pointers, like current thread, for VM calls
-      case T_ARRAY:
-      case T_BOOLEAN:
-      case T_BYTE:
-      case T_CHAR:
-      case T_FLOAT:
-      case T_INT:
-      case T_OBJECT:
-      case T_METADATA:
-      case T_SHORT:
-        regs[i].set1(int_stk_helper(i));
-        break;
-      case T_DOUBLE:
-      case T_LONG:
-        assert((i + 1) < total_args_passed && sig_bt[i + 1] == T_VOID, "expecting half");
-        regs[i].set_pair(int_stk_helper(i + 1), int_stk_helper(i));
-        break;
-      case T_VOID: regs[i].set_bad(); break;
-      default:
-        ShouldNotReachHere();
-      }
-      if (regs[i].first()->is_stack()) {
-        int off = regs[i].first()->reg2stack();
-        if (off > max_stack_slots) max_stack_slots = off;
-      }
-      if (regs[i].second()->is_stack()) {
-        int off = regs[i].second()->reg2stack();
-        if (off > max_stack_slots) max_stack_slots = off;
-      }
-    }
-#endif // _LP64
-
   return round_to(max_stack_slots + 1, 2);
 
 }
@@ -1406,12 +1196,7 @@ static void object_move(MacroAssembler* masm,
     Register rHandle = dst.first()->is_stack() ? L5 : dst.first()->as_Register();
     __ add(FP, reg2offset(src.first()) + STACK_BIAS, rHandle);
     __ ld_ptr(rHandle, 0, L4);
-#ifdef _LP64
     __ movr( Assembler::rc_z, L4, G0, rHandle );
-#else
-    __ tst( L4 );
-    __ movcc( Assembler::zero, false, Assembler::icc, G0, rHandle );
-#endif
     if (dst.first()->is_stack()) {
       __ st_ptr(rHandle, SP, reg2offset(dst.first()) + STACK_BIAS);
     }
@@ -1432,12 +1217,7 @@ static void object_move(MacroAssembler* masm,
     }
     map->set_oop(VMRegImpl::stack2reg(oop_slot));
     __ add(SP, offset + STACK_BIAS, rHandle);
-#ifdef _LP64
     __ movr( Assembler::rc_z, rOop, G0, rHandle );
-#else
-    __ tst( rOop );
-    __ movcc( Assembler::zero, false, Assembler::icc, G0, rHandle );
-#endif
 
     if (dst.first()->is_stack()) {
       __ st_ptr(rHandle, SP, reg2offset(dst.first()) + STACK_BIAS);
@@ -2068,11 +1848,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ delayed()->or3(mask, markOopDesc::hash_mask & 0x3ff, mask);
 
     // Check for a valid (non-zero) hash code and get its value.
-#ifdef _LP64
     __ srlx(header, markOopDesc::hash_shift, hash);
-#else
-    __ srl(header, markOopDesc::hash_shift, hash);
-#endif
     __ andcc(hash, mask, hash);
     __ br(Assembler::equal, false, Assembler::pn, slowCase);
     __ delayed()->nop();
@@ -2408,7 +2184,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // We have all of the arguments setup at this point. We MUST NOT touch any Oregs
   // except O6/O7. So if we must call out we must push a new frame. We immediately
   // push a new frame and flush the windows.
-#ifdef _LP64
   intptr_t thepc = (intptr_t) __ pc();
   {
     address here = __ pc();
@@ -2416,9 +2191,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ call(here + 8, relocInfo::none);
     __ delayed()->nop();
   }
-#else
-  intptr_t thepc = __ load_pc_address(O7, 0);
-#endif /* _LP64 */
 
   // We use the same pc/oopMap repeatedly when we call out
   oop_maps->add_gc_map(thepc - start, map);
@@ -2553,13 +2325,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // Transition from _thread_in_Java to _thread_in_native.
   __ set(_thread_in_native, G3_scratch);
 
-#ifdef _LP64
   AddressLiteral dest(native_func);
   __ relocate(relocInfo::runtime_call_type);
   __ jumpl_to(dest, O7, O7);
-#else
-  __ call(native_func, relocInfo::runtime_call_type);
-#endif
   __ delayed()->st(G3_scratch, G2_thread, JavaThread::thread_state_offset());
 
   __ restore_thread(L7_thread_cache); // restore G2_thread
@@ -2574,9 +2342,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   case T_DOUBLE:  break;        // Got it where we want it (unless slow-path)
   // In 64 bits build result is in O0, in O0, O1 in 32bit build
   case T_LONG:
-#ifndef _LP64
-                  __ mov(O1, I1);
-#endif
                   // Fall thru
   case T_OBJECT:                // Really a handle
   case T_ARRAY:
@@ -2797,16 +2562,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // Return
 
-#ifndef _LP64
-  if (ret_type == T_LONG) {
-
-    // Must leave proper result in O0,O1 and G1 (c2/tiered only)
-    __ sllx(I0, 32, G1);          // Shift bits into high G1
-    __ srl (I1, 0, I1);           // Zero extend O1 (harmless?)
-    __ or3 (I1, G1, G1);          // OR 64 bits into G1
-  }
-#endif
-
   __ ret();
   __ delayed()->restore();
 
@@ -2868,10 +2623,6 @@ static void gen_new_frame(MacroAssembler* masm, bool deopt) {
 
   #ifdef ASSERT
   // make sure that the frames are aligned properly
-#ifndef _LP64
-  __ btst(wordSize*2-1, SP);
-  __ breakpoint_trap(Assembler::notZero, Assembler::ptr_cc);
-#endif
   #endif
 
   // Deopt needs to pass some extra live values from frame to frame
@@ -2989,13 +2740,7 @@ void SharedRuntime::generate_deopt_blob() {
     pad += 1000; // Increase the buffer size when compiling for JVMCI
   }
 #endif
-#ifdef _LP64
   CodeBuffer buffer("deopt_blob", 2100+pad, 512);
-#else
-  // Measured 8/7/03 at 1212 in 32bit debug build (no VerifyThread)
-  // Measured 8/7/03 at 1396 in 32bit debug build (VerifyThread)
-  CodeBuffer buffer("deopt_blob", 1600+pad, 512);
-#endif /* _LP64 */
   MacroAssembler* masm               = new MacroAssembler(&buffer);
   FloatRegister   Freturn0           = F0;
   Register        Greturn1           = G1;
@@ -3006,9 +2751,6 @@ void SharedRuntime::generate_deopt_blob() {
   Register        G4deopt_mode       = G4_scratch;
   int             frame_size_words;
   Address         saved_Freturn0_addr(FP, -sizeof(double) + STACK_BIAS);
-#if !defined(_LP64) && defined(COMPILER2)
-  Address         saved_Greturn1_addr(FP, -sizeof(double) -sizeof(jlong) + STACK_BIAS);
-#endif
   Label           cont;
 
   OopMapSet *oop_maps = new OopMapSet();
@@ -3220,30 +2962,13 @@ void SharedRuntime::generate_deopt_blob() {
   // to the interpreter entry point
   __ save(SP, -frame_size_words*wordSize, SP);
   __ stf(FloatRegisterImpl::D, Freturn0, saved_Freturn0_addr);
-#if !defined(_LP64)
-#if defined(COMPILER2)
-  // 32-bit 1-register longs return longs in G1
-  __ stx(Greturn1, saved_Greturn1_addr);
-#endif
-  __ set_last_Java_frame(SP, noreg);
-  __ call_VM_leaf(L7_thread_cache, CAST_FROM_FN_PTR(address, Deoptimization::unpack_frames), G2_thread, G4deopt_mode);
-#else
   // LP64 uses g4 in set_last_Java_frame
   __ mov(G4deopt_mode, O1);
   __ set_last_Java_frame(SP, G0);
   __ call_VM_leaf(L7_thread_cache, CAST_FROM_FN_PTR(address, Deoptimization::unpack_frames), G2_thread, O1);
-#endif
   __ reset_last_Java_frame();
   __ ldf(FloatRegisterImpl::D, saved_Freturn0_addr, Freturn0);
 
-#if !defined(_LP64) && defined(COMPILER2)
-  // In 32 bit, C2 returns longs in G1 so restore the saved G1 into
-  // I0/I1 if the return value is long.
-  Label not_long;
-  __ cmp_and_br_short(O0,T_LONG, Assembler::notEqual, Assembler::pt, not_long);
-  __ ldd(saved_Greturn1_addr,I0);
-  __ bind(not_long);
-#endif
   __ ret();
   __ delayed()->restore();
 
@@ -3273,13 +2998,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
     pad += (JavaThread::stack_shadow_zone_size() / os::vm_page_size())*16 + 32;
   }
 #endif
-#ifdef _LP64
   CodeBuffer buffer("uncommon_trap_blob", 2700+pad, 512);
-#else
-  // Measured 8/7/03 at 660 in 32bit debug build (no VerifyThread)
-  // Measured 8/7/03 at 1028 in 32bit debug build (VerifyThread)
-  CodeBuffer buffer("uncommon_trap_blob", 2000+pad, 512);
-#endif
   MacroAssembler* masm               = new MacroAssembler(&buffer);
   Register        O2UnrollBlock      = O2;
   Register        O2klass_index      = O2;

@@ -55,15 +55,9 @@
 
 // Linux/Sparc has rather obscure naming of registers in sigcontext
 // different between 32 and 64 bits
-#ifdef _LP64
 #define SIG_PC(x) ((x)->sigc_regs.tpc)
 #define SIG_NPC(x) ((x)->sigc_regs.tnpc)
 #define SIG_REGS(x) ((x)->sigc_regs)
-#else
-#define SIG_PC(x) ((x)->si_regs.pc)
-#define SIG_NPC(x) ((x)->si_regs.npc)
-#define SIG_REGS(x) ((x)->si_regs)
-#endif
 
 // those are to reference registers in sigcontext
 enum {
@@ -661,21 +655,7 @@ void os::Linux::set_fpu_control_word(int fpu) {
 }
 
 bool os::is_allocatable(size_t bytes) {
-#ifdef _LP64
   return true;
-#else
-  if (bytes < 2 * G) {
-    return true;
-  }
-
-  char* addr = reserve_memory(bytes, NULL);
-
-  if (addr != NULL) {
-    release_memory(addr, bytes);
-  }
-
-  return addr != NULL;
-#endif // _LP64
 }
 
 ///////////////////////////////////////////////////////////////////////////////

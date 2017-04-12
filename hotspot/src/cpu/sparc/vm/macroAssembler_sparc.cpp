@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -296,11 +296,6 @@ void MacroAssembler::verify_thread() {
     mov(G3, L3);                // avoid clobbering G3
     mov(G4, L4);                // avoid clobbering G4
     mov(G5_method, L5);         // avoid clobbering G5_method
-#if defined(COMPILER2) && !defined(_LP64)
-    // Save & restore possible 64-bit Long arguments in G-regs
-    srlx(G1,32,L0);
-    srlx(G4,32,L6);
-#endif
     call(CAST_FROM_FN_PTR(address,verify_thread_subroutine), relocInfo::runtime_call_type);
     delayed()->mov(G2_thread, O0);
 
@@ -309,15 +304,6 @@ void MacroAssembler::verify_thread() {
     mov(L3, G3);                // restore G3
     mov(L4, G4);                // restore G4
     mov(L5, G5_method);         // restore G5_method
-#if defined(COMPILER2) && !defined(_LP64)
-    // Save & restore possible 64-bit Long arguments in G-regs
-    sllx(L0,32,G2);             // Move old high G1 bits high in G2
-    srl(G1, 0,G1);              // Clear current high G1 bits
-    or3 (G1,G2,G1);             // Recover 64-bit G1
-    sllx(L6,32,G2);             // Move old high G4 bits high in G2
-    srl(G4, 0,G4);              // Clear current high G4 bits
-    or3 (G4,G2,G4);             // Recover 64-bit G4
-#endif
     restore(O0, 0, G2_thread);
   }
 }
@@ -387,7 +373,6 @@ void MacroAssembler::set_last_Java_frame(Register last_java_sp, Register last_Ja
     st_ptr(last_Java_pc, pc_addr);
   }
 
-#ifdef _LP64
 #ifdef ASSERT
   // Make sure that we have an odd stack
   Label StackOk;
@@ -400,9 +385,6 @@ void MacroAssembler::set_last_Java_frame(Register last_java_sp, Register last_Ja
   assert( last_java_sp != G4_scratch, "bad register usage in set_last_Java_frame");
   add( last_java_sp, STACK_BIAS, G4_scratch );
   st_ptr(G4_scratch, G2_thread, JavaThread::last_Java_sp_offset());
-#else
-  st_ptr(last_java_sp, G2_thread, JavaThread::last_Java_sp_offset());
-#endif // _LP64
 }
 
 void MacroAssembler::reset_last_Java_frame(void) {
@@ -658,11 +640,7 @@ void MacroAssembler::ic_call(address entry, bool emit_delay, jint method_index) 
 
 void MacroAssembler::card_table_write(jbyte* byte_map_base,
                                       Register tmp, Register obj) {
-#ifdef _LP64
   srlx(obj, CardTableModRefBS::card_shift, obj);
-#else
-  srl(obj, CardTableModRefBS::card_shift, obj);
-#endif
   assert(tmp != obj, "need separate temp reg");
   set((address) byte_map_base, tmp);
   stb(G0, tmp, obj);
@@ -672,7 +650,6 @@ void MacroAssembler::card_table_write(jbyte* byte_map_base,
 void MacroAssembler::internal_sethi(const AddressLiteral& addrlit, Register d, bool ForceRelocatable) {
   address save_pc;
   int shiftcnt;
-#ifdef _LP64
 # ifdef CHECK_DELAY
   assert_not_delayed((char*) "cannot put two instructions in delay slot");
 # endif
@@ -719,9 +696,6 @@ void MacroAssembler::internal_sethi(const AddressLiteral& addrlit, Register d, b
     while (pc() < (save_pc + (7 * BytesPerInstWord)))
       nop();
   }
-#else
-  Assembler::sethi(addrlit.value(), d, addrlit.rspec());
-#endif
 }
 
 
@@ -736,7 +710,6 @@ void MacroAssembler::patchable_sethi(const AddressLiteral& addrlit, Register d) 
 
 
 int MacroAssembler::insts_for_sethi(address a, bool worst_case) {
-#ifdef _LP64
   if (worst_case)  return 7;
   intptr_t iaddr = (intptr_t) a;
   int msb32 = (int) (iaddr >> 32);
@@ -756,9 +729,6 @@ int MacroAssembler::insts_for_sethi(address a, bool worst_case) {
     }
   }
   return count;
-#else
-  return 1;
-#endif
 }
 
 int MacroAssembler::worst_case_insts_for_set() {
@@ -1488,11 +1458,7 @@ void MacroAssembler::calc_mem_param_words(Register Rparam_words, Register Rresul
 
 
 void MacroAssembler::calc_frame_size(Register Rextra_words, Register Rresult) {
-#ifdef _LP64
   add(Rextra_words, frame::memory_parameter_word_sp_offset, Rresult);
-#else
-  add(Rextra_words, frame::memory_parameter_word_sp_offset + 1, Rresult);
-#endif
   bclr(1, Rresult);
   sll(Rresult, LogBytesPerWord, Rresult);  // Rresult has total frame bytes
 }
@@ -1531,22 +1497,12 @@ void MacroAssembler::cmp_zero_and_br(Condition c, Register s1, Label& L, bool a,
 // Does a test & branch on 32-bit systems and a register-branch on 64-bit.
 void MacroAssembler::br_null( Register s1, bool a, Predict p, Label& L ) {
   assert_not_delayed();
-#ifdef _LP64
   bpr( rc_z, a, p, s1, L );
-#else
-  tst(s1);
-  br ( zero, a, p, L );
-#endif
 }
 
 void MacroAssembler::br_notnull( Register s1, bool a, Predict p, Label& L ) {
   assert_not_delayed();
-#ifdef _LP64
   bpr( rc_nz, a, p, s1, L );
-#else
-  tst(s1);
-  br ( notZero, a, p, L );
-#endif
 }
 
 // Compare registers and branch with nop in delay slot or cbcond without delay slot.
@@ -1862,14 +1818,12 @@ void MacroAssembler::lushr( Register Rin_high,  Register Rin_low,
   bind( done );
 }
 
-#ifdef _LP64
 void MacroAssembler::lcmp( Register Ra, Register Rb, Register Rresult) {
   cmp(Ra, Rb);
   mov(-1, Rresult);
   movcc(equal,   false, xcc,  0, Rresult);
   movcc(greater, false, xcc,  1, Rresult);
 }
-#endif
 
 
 void MacroAssembler::load_sized_value(Address src, Register dst, size_t size_in_bytes, bool is_signed) {
@@ -2668,9 +2622,7 @@ void MacroAssembler::compiler_lock_object(Register Roop, Register Rmark,
      // if compare/exchange succeeded we found an unlocked object and we now have locked it
      // hence we are done
      cmp(Rmark, Rscratch);
-#ifdef _LP64
      sub(Rscratch, STACK_BIAS, Rscratch);
-#endif
      brx(Assembler::equal, false, Assembler::pt, done);
      delayed()->sub(Rscratch, SP, Rscratch);  //pull next instruction into delay slot
 
@@ -2716,9 +2668,7 @@ void MacroAssembler::compiler_lock_object(Register Roop, Register Rmark,
 
       // Stack-lock attempt failed - check for recursive stack-lock.
       // See the comments below about how we might remove this case.
-#ifdef _LP64
       sub(Rscratch, STACK_BIAS, Rscratch);
-#endif
       assert(os::vm_page_size() > 0xfff, "page size too small - change the constant");
       andcc(Rscratch, 0xfffff003, Rscratch);
       br(Assembler::always, false, Assembler::pt, done);
@@ -2800,9 +2750,7 @@ void MacroAssembler::compiler_lock_object(Register Roop, Register Rmark,
       // control to the "slow" operators in synchronizer.cpp.
 
       // RScratch contains the fetched obj->mark value from the failed CAS.
-#ifdef _LP64
       sub(Rscratch, STACK_BIAS, Rscratch);
-#endif
       sub(Rscratch, SP, Rscratch);
       assert(os::vm_page_size() > 0xfff, "page size too small - change the constant");
       andcc(Rscratch, 0xfffff003, Rscratch);
@@ -3720,11 +3668,7 @@ static void generate_dirty_card_log_enqueue(jbyte* byte_map_base) {
 
   Label not_already_dirty, restart, refill, young_card;
 
-#ifdef _LP64
   __ srlx(O0, CardTableModRefBS::card_shift, O0);
-#else
-  __ srl(O0, CardTableModRefBS::card_shift, O0);
-#endif
   AddressLiteral addrlit(byte_map_base);
   __ set(addrlit, O1); // O1 := <card table base>
   __ ldub(O0, O1, O2); // O2 := [O0 + O1]
@@ -3826,11 +3770,7 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr, Register new_val
 
   if (G1RSBarrierRegionFilter) {
     xor3(store_addr, new_val, tmp);
-#ifdef _LP64
     srlx(tmp, HeapRegion::LogOfHRGrainBytes, tmp);
-#else
-    srl(tmp, HeapRegion::LogOfHRGrainBytes, tmp);
-#endif
 
     // XXX Should I predict this taken or not?  Does it matter?
     cmp_and_brx_short(tmp, G0, Assembler::equal, Assembler::pt, filtered);

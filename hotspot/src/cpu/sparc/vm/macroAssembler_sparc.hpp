@@ -333,14 +333,12 @@ class AddressLiteral VALUE_OBJ_CLASS_SPEC {
       return external_word_Relocation::spec(addr);
     case relocInfo::internal_word_type:
       return internal_word_Relocation::spec(addr);
-#ifdef _LP64
     case relocInfo::opt_virtual_call_type:
       return opt_virtual_call_Relocation::spec();
     case relocInfo::static_call_type:
       return static_call_Relocation::spec();
     case relocInfo::runtime_call_type:
       return runtime_call_Relocation::spec();
-#endif
     case relocInfo::none:
       return RelocationHolder();
     default:
@@ -396,12 +394,10 @@ class AddressLiteral VALUE_OBJ_CLASS_SPEC {
     : _address((address) addr),
       _rspec(rspec_from_rtype(rtype, (address) addr)) {}
 
-#ifdef _LP64
   // 32-bit complains about a multiple declaration for int*.
   AddressLiteral(intptr_t* addr, relocInfo::relocType rtype = relocInfo::none)
     : _address((address) addr),
       _rspec(rspec_from_rtype(rtype, (address) addr)) {}
-#endif
 
   AddressLiteral(Metadata* addr, relocInfo::relocType rtype = relocInfo::none)
     : _address((address) addr),
@@ -464,16 +460,10 @@ class Argument VALUE_OBJ_CLASS_SPEC {
   bool _is_in;
 
  public:
-#ifdef _LP64
   enum {
     n_register_parameters = 6,          // only 6 registers may contain integer parameters
     n_float_register_parameters = 16    // Can have up to 16 floating registers
   };
-#else
-  enum {
-    n_register_parameters = 6           // only 6 registers may contain integer parameters
-  };
-#endif
 
   // creation
   Argument(int number, bool is_in) : _number(number), _is_in(is_in) {}
@@ -489,7 +479,6 @@ class Argument VALUE_OBJ_CLASS_SPEC {
   // locating register-based arguments:
   bool is_register() const { return _number < n_register_parameters; }
 
-#ifdef _LP64
   // locating Floating Point register-based arguments:
   bool is_float_register() const { return _number < n_float_register_parameters; }
 
@@ -501,7 +490,6 @@ class Argument VALUE_OBJ_CLASS_SPEC {
     assert(is_float_register(), "must be a register argument");
     return as_FloatRegister(( number() *2 ));
   }
-#endif
 
   Register as_register() const {
     assert(is_register(), "must be a register argument");
@@ -1217,9 +1205,7 @@ public:
   void lushr( Register Rin_high,  Register Rin_low,  Register Rcount,
               Register Rout_high, Register Rout_low, Register Rtemp );
 
-#ifdef _LP64
   void lcmp( Register Ra, Register Rb, Register Rresult);
-#endif
 
   // Load and store values by size and signed-ness
   void load_sized_value( Address src, Register dst, size_t size_in_bytes, bool is_signed);
