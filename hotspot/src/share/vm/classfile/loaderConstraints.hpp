@@ -61,9 +61,6 @@ public:
     return (LoaderConstraintEntry**)Hashtable<InstanceKlass*, mtClass>::bucket_addr(i);
   }
 
-  // Enhanced Class Redefinition support
-  void classes_do(KlassClosure* f);
-
   // Check class loader constraints
   bool add_entry(Symbol* name, InstanceKlass* klass1, Handle loader1,
                                     InstanceKlass* klass2, Handle loader2);

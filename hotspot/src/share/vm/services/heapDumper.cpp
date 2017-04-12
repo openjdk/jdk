@@ -1824,8 +1824,10 @@ void VM_HeapDumper::doit() {
   check_segment_length();
 
   // HPROF_GC_ROOT_STICKY_CLASS
+  // These should be classes in the NULL class loader data, and not all classes
+  // if !ClassUnloading
   StickyClassDumper class_dumper(writer());
-  SystemDictionary::always_strong_classes_do(&class_dumper);
+  ClassLoaderData::the_null_class_loader_data()->classes_do(&class_dumper);
 
   // fixes up the length of the dump record and writes the HPROF_HEAP_DUMP_END record.
   DumperSupport::end_of_dump(writer());

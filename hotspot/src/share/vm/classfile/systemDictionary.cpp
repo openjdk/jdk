@@ -1885,14 +1885,6 @@ void SystemDictionary::always_strong_oops_do(OopClosure* blk) {
   roots_oops_do(blk, NULL);
 }
 
-void SystemDictionary::always_strong_classes_do(KlassClosure* closure) {
-  // Follow all system classes and temporary placeholders in dictionary
-  dictionary()->always_strong_classes_do(closure);
-
-  // Placeholders. These represent classes we're actively loading.
-  placeholders()->classes_do(closure);
-}
-
 // Calculate a "good" systemdictionary size based
 // on predicted or current loaded classes count
 int SystemDictionary::calculate_systemdictionary_size(int classcount) {
@@ -1974,31 +1966,6 @@ void SystemDictionary::oops_do(OopClosure* f) {
   invoke_method_table()->oops_do(f);
 }
 
-// Extended Class redefinition support.
-// If one of these classes is replaced, we need to replace it in these places.
-// KlassClosure::do_klass should take the address of a class but we can
-// change that later.
-void SystemDictionary::preloaded_classes_do(KlassClosure* f) {
-  for (int k = (int)FIRST_WKID; k < (int)WKID_LIMIT; k++) {
-    f->do_klass(_well_known_klasses[k]);
-  }
-
-  {
-    for (int i = 0; i < T_VOID+1; i++) {
-      if (_box_klasses[i] != NULL) {
-        assert(i >= T_BOOLEAN, "checking");
-        f->do_klass(_box_klasses[i]);
-      }
-    }
-  }
-
-  FilteredFieldsMap::classes_do(f);
-}
-
-void SystemDictionary::lazily_loaded_classes_do(KlassClosure* f) {
-  f->do_klass(_abstract_ownable_synchronizer_klass);
-}
-
 // Just the classes from defining class loaders
 // Don't iterate over placeholders
 void SystemDictionary::classes_do(void f(Klass*)) {
@@ -2018,12 +1985,10 @@ void SystemDictionary::classes_do(void f(Klass*, ClassLoaderData*)) {
   dictionary()->classes_do(f);
 }
 
-void SystemDictionary::placeholders_do(void f(Symbol*)) {
-  placeholders()->entries_do(f);
-}
-
 void SystemDictionary::methods_do(void f(Method*)) {
-  dictionary()->methods_do(f);
+  // Walk methods in loaded classes
+  ClassLoaderDataGraph::methods_do(f);
+  // Walk method handle intrinsics
   invoke_method_table()->methods_do(f);
 }
 

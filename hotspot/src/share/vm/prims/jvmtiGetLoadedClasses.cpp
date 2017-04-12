@@ -213,14 +213,6 @@ class JvmtiGetLoadedClassesClosure : public StackObj {
     }
   }
 
-  static void prim_array_increment_with_loader(Klass* array, ClassLoaderData* loader_data) {
-    JvmtiGetLoadedClassesClosure* that = JvmtiGetLoadedClassesClosure::get_this();
-    oop class_loader = loader_data->class_loader();
-    if (class_loader == JNIHandles::resolve(that->get_initiatingLoader())) {
-      that->set_count(that->get_count() + 1);
-    }
-  }
-
   static void add_with_loader(Klass* k, ClassLoaderData* loader_data) {
     JvmtiGetLoadedClassesClosure* that = JvmtiGetLoadedClassesClosure::get_this();
     if (that->available()) {

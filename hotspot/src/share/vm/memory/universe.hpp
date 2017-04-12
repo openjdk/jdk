@@ -62,11 +62,6 @@ class LatestMethodCache : public CHeapObj<mtClass> {
 
   Method* get_method();
 
-  // Enhanced Class Redefinition support
-  void classes_do(void f(Klass*)) {
-    f(_klass);
-  }
-
   // CDS support.  Replace the klass in this with the archive version
   // could use this for Enhanced Class Redefinition also.
   void serialize(SerializeClosure* f) {
