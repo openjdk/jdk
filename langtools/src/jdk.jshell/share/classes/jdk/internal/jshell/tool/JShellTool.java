@@ -267,7 +267,17 @@ public class JShellTool implements MessageHandler {
     // compiler/runtime init option values
     private static class Options {
 
-        private Map<OptionKind, List<String>> optMap = new HashMap<>();
+        private final Map<OptionKind, List<String>> optMap;
+
+        // New blank Options
+        Options() {
+            optMap = new HashMap<>();
+        }
+
+        // Options as a copy
+        private Options(Options opts) {
+            optMap = new HashMap<>(opts.optMap);
+        }
 
         private String[] selectOptions(Predicate<Entry<OptionKind, List<String>>> pred) {
             return optMap.entrySet().stream()
@@ -293,17 +303,20 @@ public class JShellTool implements MessageHandler {
                     .addAll(vals);
         }
 
-        void override(Options newer) {
+        // return a new Options, with parameter options overriding receiver options
+        Options override(Options newer) {
+            Options result = new Options(this);
             newer.optMap.entrySet().stream()
                     .forEach(e -> {
                         if (e.getKey().onlyOne) {
                             // Only one allowed, override last
-                            optMap.put(e.getKey(), e.getValue());
+                            result.optMap.put(e.getKey(), e.getValue());
                         } else {
                             // Additive
-                            addAll(e.getKey(), e.getValue());
+                            result.addAll(e.getKey(), e.getValue());
                         }
                     });
+            return result;
         }
     }
 
@@ -874,7 +887,14 @@ public class JShellTool implements MessageHandler {
         // initialize editor settings
         configEditor();
         // initialize JShell instance
-        resetState();
+        try {
+            resetState();
+        } catch (IllegalStateException ex) {
+            // Display just the cause (not a exception backtrace)
+            cmderr.println(ex.getMessage());
+            //abort
+            return;
+        }
         // Read replay history from last jshell session into previous history
         replayableHistoryPrevious = ReplayableHistory.fromPrevious(prefs);
         // load snippet/command files given on command-line
@@ -2570,15 +2590,17 @@ public class JShellTool implements MessageHandler {
     }
 
     private boolean cmdReset(String rawargs) {
+        Options oldOptions = rawargs.trim().isEmpty()? null : options;
         if (!parseCommandLineLikeFlags(rawargs, new OptionParserBase())) {
             return false;
         }
         live = false;
         fluffmsg("jshell.msg.resetting.state");
-        return true;
+        return doReload(null, false, oldOptions);
     }
 
     private boolean cmdReload(String rawargs) {
+        Options oldOptions = rawargs.trim().isEmpty()? null : options;
         OptionParserReload ap = new OptionParserReload();
         if (!parseCommandLineLikeFlags(rawargs, ap)) {
             return false;
@@ -2595,7 +2617,7 @@ public class JShellTool implements MessageHandler {
             history = replayableHistory;
             fluffmsg("jshell.err.reload.restarting.state");
         }
-        boolean success = doReload(history, !ap.quiet());
+        boolean success = doReload(history, !ap.quiet(), oldOptions);
         if (success && ap.restore()) {
             // if we are restoring from previous, then if nothing was added
             // before time of exit, there is nothing to save
@@ -2622,17 +2644,32 @@ public class JShellTool implements MessageHandler {
             }
             return false;
         }
+        Options oldOptions = options;
         if (!parseCommandLineLikeFlags(rawargs, new OptionParserBase())) {
             return false;
         }
         fluffmsg("jshell.msg.set.restore");
-        return doReload(replayableHistory, false);
+        return doReload(replayableHistory, false, oldOptions);
     }
 
-    private boolean doReload(ReplayableHistory history, boolean echo) {
-        resetState();
-        run(new ReloadIOContext(history.iterable(),
-                echo ? cmdout : null));
+    private boolean doReload(ReplayableHistory history, boolean echo, Options oldOptions) {
+        if (oldOptions != null) {
+            try {
+                resetState();
+            } catch (IllegalStateException ex) {
+                currentNameSpace = mainNamespace; // back out of start-up (messages)
+                errormsg("jshell.err.restart.failed", ex.getMessage());
+                // attempt recovery to previous option settings
+                options = oldOptions;
+                resetState();
+            }
+        } else {
+            resetState();
+        }
+        if (history != null) {
+            run(new ReloadIOContext(history.iterable(),
+                    echo ? cmdout : null));
+        }
         return true;
     }
 
@@ -2648,7 +2685,7 @@ public class JShellTool implements MessageHandler {
             errormsg("jshell.err.unexpected.at.end", ap.nonOptions(), rawargs);
             return false;
         }
-        options.override(opts);
+        options = options.override(opts);
         return true;
     }
 
