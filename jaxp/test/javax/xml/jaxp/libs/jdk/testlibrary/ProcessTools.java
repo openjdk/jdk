@@ -260,23 +260,6 @@ public final class ProcessTools {
     }
 
     /**
-     * Get platform specific VM arguments (e.g. -d64 on 64bit Solaris)
-     *
-     * @return String[] with platform specific arguments, empty if there are
-     *         none
-     */
-    public static String[] getPlatformSpecificVMArgs() {
-        String osName = System.getProperty("os.name");
-        String dataModel = System.getProperty("sun.arch.data.model");
-
-        if (osName.equals("SunOS") && dataModel.equals("64")) {
-            return new String[] { "-d64" };
-        }
-
-        return new String[] {};
-    }
-
-    /**
      * Create ProcessBuilder using the java launcher from the jdk to be tested,
      * and with any platform specific arguments prepended.
      *
@@ -301,7 +284,6 @@ public final class ProcessTools {
 
         ArrayList<String> args = new ArrayList<>();
         args.add(javapath);
-        Collections.addAll(args, getPlatformSpecificVMArgs());
 
         if (addTestVmAndJavaOptions) {
             // -cp is needed to make sure the same classpath is used whether the test is
