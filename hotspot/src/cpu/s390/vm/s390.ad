@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2016 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -1562,7 +1562,7 @@ const int Matcher::vector_width_in_bytes(BasicType bt) {
 }
 
 // Vector ideal reg.
-const int Matcher::vector_ideal_reg(int size) {
+const uint Matcher::vector_ideal_reg(int size) {
   assert(MaxVectorSize == 8 && size == 8, "");
   return Op_RegL;
 }
@@ -1577,7 +1577,7 @@ const int Matcher::min_vector_size(const BasicType bt) {
   return max_vector_size(bt); // Same as max.
 }
 
-const int Matcher::vector_shift_count_ideal_reg(int size) {
+const uint Matcher::vector_shift_count_ideal_reg(int size) {
   fatal("vector shift is not supported");
   return Node::NotAMachineReg;
 }
