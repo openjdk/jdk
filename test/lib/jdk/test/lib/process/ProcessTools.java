@@ -45,7 +45,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import jdk.test.lib.JDKToolFinder;
-import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 
 public final class ProcessTools {
@@ -315,20 +314,6 @@ public final class ProcessTools {
         return args.toArray(new String[args.size()]);
     }
 
-    /**
-     * Get platform specific VM arguments (e.g. -d64 on 64bit Solaris)
-     *
-     * @return String[] with platform specific arguments, empty if there are
-     *         none
-     */
-    public static String[] getPlatformSpecificVMArgs() {
-
-    if (Platform.is64bit() && Platform.isSolaris()) {
-            return new String[] { "-d64" };
-        }
-
-        return new String[] {};
-    }
 
 
     /**
@@ -353,7 +338,6 @@ public final class ProcessTools {
 
         ArrayList<String> args = new ArrayList<>();
         args.add(javapath);
-        Collections.addAll(args, getPlatformSpecificVMArgs());
 
         args.add("-cp");
         args.add(System.getProperty("java.class.path"));
