@@ -589,7 +589,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                 // Spread the array.
                 MethodHandle aload = MethodHandles.arrayElementGetter(spreadArgType);
                 Name array = names[argIndex];
-                names[nameCursor++] = new Name(NF_checkSpreadArgument, array, spreadArgCount);
+                names[nameCursor++] = new Name(getFunction(NF_checkSpreadArgument), array, spreadArgCount);
                 for (int j = 0; j < spreadArgCount; i++, j++) {
                     indexes[i] = nameCursor;
                     names[nameCursor++] = new Name(aload, array, j);
@@ -934,7 +934,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
         // profile branch
         if (PROFILE != -1) {
-            names[PROFILE] = new Name(NF_profileBoolean, names[CALL_TEST], names[GET_COUNTERS]);
+            names[PROFILE] = new Name(getFunction(NF_profileBoolean), names[CALL_TEST], names[GET_COUNTERS]);
         }
         // call selectAlternative
         names[SELECT_ALT] = new Name(getConstantHandle(MH_selectAlternative), names[TEST], names[GET_TARGET], names[GET_FALLBACK]);
@@ -1012,7 +1012,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
         // t_{i+1}:L=MethodHandleImpl.guardWithCatch(target:L,exType:L,catcher:L,t_{i}:L);
         Object[] gwcArgs = new Object[] {names[GET_TARGET], names[GET_CLASS], names[GET_CATCHER], names[BOXED_ARGS]};
-        names[TRY_CATCH] = new Name(NF_guardWithCatch, gwcArgs);
+        names[TRY_CATCH] = new Name(getFunction(NF_guardWithCatch), gwcArgs);
 
         // t_{i+2}:I=MethodHandle.invokeBasic(unbox:L,t_{i+1}:L);
         MethodHandle invokeBasicUnbox = MethodHandles.basicInvoker(MethodType.methodType(basicType.rtype(), Object.class));
@@ -1085,7 +1085,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             mh = MethodHandles.dropArguments(mh, 1, Arrays.copyOfRange(type.parameterArray(), 1, arity));
             return mh;
         }
-        return makePairwiseConvert(NF_throwException.resolvedHandle(), type, false, true);
+        return makePairwiseConvert(getFunction(NF_throwException).resolvedHandle(), type, false, true);
     }
 
     static <T extends Throwable> Empty throwException(T t) throws T { throw t; }
@@ -1673,33 +1673,57 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
     }
 
     // Local constant functions:
-    /*non-public*/ static final NamedFunction
-        NF_checkSpreadArgument,
-        NF_guardWithCatch,
-        NF_throwException,
-        NF_tryFinally,
-        NF_loop,
-        NF_profileBoolean;
 
-    static {
+    /* non-public */
+    static final byte NF_checkSpreadArgument = 0,
+            NF_guardWithCatch = 1,
+            NF_throwException = 2,
+            NF_tryFinally = 3,
+            NF_loop = 4,
+            NF_profileBoolean = 5,
+            NF_LIMIT = 6;
+
+    private static final @Stable NamedFunction[] NFS = new NamedFunction[NF_LIMIT];
+
+    static NamedFunction getFunction(byte func) {
+        NamedFunction nf = NFS[func];
+        if (nf != null) {
+            return nf;
+        }
+        return NFS[func] = createFunction(func);
+    }
+
+    private static NamedFunction createFunction(byte func) {
         try {
-            NF_checkSpreadArgument = new NamedFunction(MethodHandleImpl.class
-                    .getDeclaredMethod("checkSpreadArgument", Object.class, int.class));
-            NF_guardWithCatch = new NamedFunction(MethodHandleImpl.class
-                    .getDeclaredMethod("guardWithCatch", MethodHandle.class, Class.class,
-                            MethodHandle.class, Object[].class));
-            NF_tryFinally = new NamedFunction(MethodHandleImpl.class
-                    .getDeclaredMethod("tryFinally", MethodHandle.class, MethodHandle.class, Object[].class));
-            NF_loop = new NamedFunction(MethodHandleImpl.class
-                    .getDeclaredMethod("loop", BasicType[].class, LoopClauses.class, Object[].class));
-            NF_throwException = new NamedFunction(MethodHandleImpl.class
-                    .getDeclaredMethod("throwException", Throwable.class));
-            NF_profileBoolean = new NamedFunction(MethodHandleImpl.class
-                    .getDeclaredMethod("profileBoolean", boolean.class, int[].class));
+            switch (func) {
+                case NF_checkSpreadArgument:
+                    return new NamedFunction(MethodHandleImpl.class
+                            .getDeclaredMethod("checkSpreadArgument", Object.class, int.class));
+                case NF_guardWithCatch:
+                    return new NamedFunction(MethodHandleImpl.class
+                            .getDeclaredMethod("guardWithCatch", MethodHandle.class, Class.class,
+                                    MethodHandle.class, Object[].class));
+                case NF_tryFinally:
+                    return new NamedFunction(MethodHandleImpl.class
+                            .getDeclaredMethod("tryFinally", MethodHandle.class, MethodHandle.class, Object[].class));
+                case NF_loop:
+                    return new NamedFunction(MethodHandleImpl.class
+                            .getDeclaredMethod("loop", BasicType[].class, LoopClauses.class, Object[].class));
+                case NF_throwException:
+                    return new NamedFunction(MethodHandleImpl.class
+                            .getDeclaredMethod("throwException", Throwable.class));
+                case NF_profileBoolean:
+                    return new NamedFunction(MethodHandleImpl.class
+                            .getDeclaredMethod("profileBoolean", boolean.class, int[].class));
+                default:
+                    throw new InternalError("Undefined function: " + func);
+            }
         } catch (ReflectiveOperationException ex) {
             throw newInternalError(ex);
         }
+    }
 
+    static {
         SharedSecrets.setJavaLangInvokeAccess(new JavaLangInvokeAccess() {
             @Override
             public Object newMemberName() {
@@ -1878,7 +1902,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             Object[] lArgs =
                     new Object[]{null, // placeholder for BasicType[] localTypes - will be added by LambdaFormEditor
                             names[GET_CLAUSE_DATA], names[BOXED_ARGS]};
-            names[LOOP] = new Name(NF_loop, lArgs);
+            names[LOOP] = new Name(getFunction(NF_loop), lArgs);
 
             // t_{i+2}:I=MethodHandle.invokeBasic(unbox:L,t_{i+1}:L);
             MethodHandle invokeBasicUnbox = MethodHandles.basicInvoker(MethodType.methodType(basicType.rtype(), Object.class));
@@ -2113,7 +2137,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
         // t_{i+1}:L=MethodHandleImpl.tryFinally(target:L,exType:L,catcher:L,t_{i}:L);
         Object[] tfArgs = new Object[] {names[GET_TARGET], names[GET_CLEANUP], names[BOXED_ARGS]};
-        names[TRY_FINALLY] = new Name(NF_tryFinally, tfArgs);
+        names[TRY_FINALLY] = new Name(getFunction(NF_tryFinally), tfArgs);
 
         // t_{i+2}:I=MethodHandle.invokeBasic(unbox:L,t_{i+1}:L);
         MethodHandle invokeBasicUnbox = MethodHandles.basicInvoker(MethodType.methodType(basicType.rtype(), Object.class));

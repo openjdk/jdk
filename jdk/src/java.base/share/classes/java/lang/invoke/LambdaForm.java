@@ -270,21 +270,21 @@ class LambdaForm {
         GENERIC("invoke"),
         ZERO("zero"),
         IDENTITY("identity"),
-        BOUND_REINVOKER("BMH.reinvoke"),
-        REINVOKER("MH.reinvoke"),
-        DELEGATE("MH.delegate"),
-        EXACT_LINKER("MH.invokeExact_MT"),
-        EXACT_INVOKER("MH.exactInvoker"),
-        GENERIC_LINKER("MH.invoke_MT"),
-        GENERIC_INVOKER("MH.invoker"),
+        BOUND_REINVOKER("BMH.reinvoke", "reinvoke"),
+        REINVOKER("MH.reinvoke", "reinvoke"),
+        DELEGATE("MH.delegate", "delegate"),
+        EXACT_LINKER("MH.invokeExact_MT", "invokeExact_MT"),
+        EXACT_INVOKER("MH.exactInvoker", "exactInvoker"),
+        GENERIC_LINKER("MH.invoke_MT", "invoke_MT"),
+        GENERIC_INVOKER("MH.invoker", "invoker"),
         LINK_TO_TARGET_METHOD("linkToTargetMethod"),
         LINK_TO_CALL_SITE("linkToCallSite"),
-        DIRECT_INVOKE_VIRTUAL("DMH.invokeVirtual"),
-        DIRECT_INVOKE_SPECIAL("DMH.invokeSpecial"),
-        DIRECT_INVOKE_STATIC("DMH.invokeStatic"),
-        DIRECT_NEW_INVOKE_SPECIAL("DMH.newInvokeSpecial"),
-        DIRECT_INVOKE_INTERFACE("DMH.invokeInterface"),
-        DIRECT_INVOKE_STATIC_INIT("DMH.invokeStaticInit"),
+        DIRECT_INVOKE_VIRTUAL("DMH.invokeVirtual", "invokeVirtual"),
+        DIRECT_INVOKE_SPECIAL("DMH.invokeSpecial", "invokeSpecial"),
+        DIRECT_INVOKE_STATIC("DMH.invokeStatic", "invokeStatic"),
+        DIRECT_NEW_INVOKE_SPECIAL("DMH.newInvokeSpecial", "newInvokeSpecial"),
+        DIRECT_INVOKE_INTERFACE("DMH.invokeInterface", "invokeInterface"),
+        DIRECT_INVOKE_STATIC_INIT("DMH.invokeStaticInit", "invokeStaticInit"),
         GET_OBJECT("getObject"),
         PUT_OBJECT("putObject"),
         GET_OBJECT_VOLATILE("getObjectVolatile"),
@@ -330,20 +330,19 @@ class LambdaForm {
         GUARD("guard"),
         GUARD_WITH_CATCH("guardWithCatch"),
         VARHANDLE_EXACT_INVOKER("VH.exactInvoker"),
-        VARHANDLE_INVOKER("VH.invoker"),
-        VARHANDLE_LINKER("VH.invoke_MT");
+        VARHANDLE_INVOKER("VH.invoker", "invoker"),
+        VARHANDLE_LINKER("VH.invoke_MT", "invoke_MT");
 
         final String defaultLambdaName;
         final String methodName;
 
         private Kind(String defaultLambdaName) {
+            this(defaultLambdaName, defaultLambdaName);
+        }
+
+        private Kind(String defaultLambdaName, String methodName) {
             this.defaultLambdaName = defaultLambdaName;
-            int p = defaultLambdaName.indexOf('.');
-            if (p > -1) {
-                this.methodName = defaultLambdaName.substring(p + 1);
-            } else {
-                this.methodName = defaultLambdaName;
-            }
+            this.methodName = methodName;
         }
     }
 
@@ -642,7 +641,7 @@ class LambdaForm {
         for (int i = 0; i < arity; ++i) {
             ptypes[i] = parameterType(i).btClass;
         }
-        return MethodType.methodType(returnType().btClass, ptypes);
+        return MethodType.makeImpl(returnType().btClass, ptypes, true);
     }
 
     /** Return ABC_Z, where the ABC are parameter type characters, and Z is the return type character. */
@@ -678,7 +677,7 @@ class LambdaForm {
         for (int i = 0; i < ptypes.length; i++)
             ptypes[i] = basicType(sig.charAt(i)).btClass;
         Class<?> rtype = signatureReturn(sig).btClass;
-        return MethodType.methodType(rtype, ptypes);
+        return MethodType.makeImpl(rtype, ptypes, true);
     }
 
     /**
@@ -848,6 +847,10 @@ class LambdaForm {
         if (vmentry != null && isCompiled) {
             return;  // already compiled somehow
         }
+
+        // Obtain the invoker MethodType outside of the following try block.
+        // This ensures that an IllegalArgumentException is directly thrown if the
+        // type would have 256 or more parameters
         MethodType invokerType = methodType();
         assert(vmentry == null || vmentry.getMethodType().basicType().equals(invokerType));
         try {
@@ -901,10 +904,6 @@ class LambdaForm {
         default:  assert(false);
         }
         return true;
-    }
-    private static boolean returnTypesMatch(String sig, Object[] av, Object res) {
-        MethodHandle mh = (MethodHandle) av[0];
-        return valueMatches(signatureReturn(sig), mh.type().returnType(), res);
     }
     private static boolean checkInt(Class<?> type, Object x) {
         assert(x instanceof Integer);
@@ -1180,7 +1179,6 @@ class LambdaForm {
             // If we have a cached invoker, call it right away.
             // NOTE: The invoker always returns a reference value.
             if (TRACE_INTERPRETER)  return invokeWithArgumentsTracing(arguments);
-            assert(checkArgumentTypes(arguments, methodType()));
             return invoker().invokeBasic(resolvedHandle(), arguments);
         }
 
@@ -1198,7 +1196,6 @@ class LambdaForm {
                     traceInterpreter("| resolve", this);
                     resolvedHandle();
                 }
-                assert(checkArgumentTypes(arguments, methodType()));
                 rval = invoker().invokeBasic(resolvedHandle(), arguments);
             } catch (Throwable ex) {
                 traceInterpreter("] throw =>", ex);
@@ -1212,23 +1209,6 @@ class LambdaForm {
             if (invoker != null)  return invoker;
             // Get an invoker and cache it.
             return invoker = computeInvoker(methodType().form());
-        }
-
-        private static boolean checkArgumentTypes(Object[] arguments, MethodType methodType) {
-            if (true)  return true;  // FIXME
-            MethodType dstType = methodType.form().erasedType();
-            MethodType srcType = dstType.basicType().wrap();
-            Class<?>[] ptypes = new Class<?>[arguments.length];
-            for (int i = 0; i < arguments.length; i++) {
-                Object arg = arguments[i];
-                Class<?> ptype = arg == null ? Object.class : arg.getClass();
-                // If the dest. type is a primitive we keep the
-                // argument type.
-                ptypes[i] = dstType.parameterType(i).isPrimitive() ? ptype : Object.class;
-            }
-            MethodType argType = MethodType.methodType(srcType.returnType(), ptypes).wrap();
-            assert(argType.isConvertibleTo(srcType)) : "wrong argument types: cannot convert " + argType + " to " + srcType;
-            return true;
         }
 
         MethodType methodType() {
@@ -1726,7 +1706,7 @@ class LambdaForm {
         boolean isVoid = (type == V_TYPE);
         Class<?> btClass = type.btClass;
         MethodType zeType = MethodType.methodType(btClass);
-        MethodType idType = (isVoid) ? zeType : zeType.appendParameterTypes(btClass);
+        MethodType idType = (isVoid) ? zeType : MethodType.methodType(btClass, btClass);
 
         // Look up symbolic names.  It might not be necessary to have these,
         // but if we need to emit direct references to bytecodes, it helps.
