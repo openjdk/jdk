@@ -60,6 +60,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 import jdk.internal.misc.SharedSecrets;
+import jdk.internal.module.Resources;
 
 
 /**
@@ -356,45 +357,52 @@ public final class Loader extends SecureClassLoader {
 
     @Override
     public URL findResource(String name) {
-        URL url = null;
-        String pn = ResourceHelper.getPackageName(name);
+        String pn = Resources.toPackageName(name);
         LoadedModule module = localPackageToModule.get(pn);
+
         if (module != null) {
-            if (name.endsWith(".class") || isOpen(module.mref(), pn)) {
-                try {
-                    url = findResource(module.name(), name);
-                } catch (IOException ioe) {
-                    // ignore
+            try {
+                URL url = findResource(module.name(), name);
+                if (url != null
+                    && (name.endsWith(".class")
+                        || url.toString().endsWith("/")
+                        || isOpen(module.mref(), pn))) {
+                    return url;
                 }
+            } catch (IOException ioe) {
+                // ignore
             }
+
         } else {
             for (ModuleReference mref : nameToModule.values()) {
                 try {
-                    url = findResource(mref.descriptor().name(), name);
-                    if (url != null)
-                        break;
+                    URL url = findResource(mref.descriptor().name(), name);
+                    if (url != null) return url;
                 } catch (IOException ioe) {
                     // ignore
                 }
             }
         }
-        return url;
+
+        return null;
     }
 
     @Override
     public Enumeration<URL> findResources(String name) throws IOException {
         List<URL> urls = new ArrayList<>();
-        String pn = ResourceHelper.getPackageName(name);
+        String pn = Resources.toPackageName(name);
         LoadedModule module = localPackageToModule.get(pn);
         if (module != null) {
-            if (name.endsWith(".class") || isOpen(module.mref(), pn)) {
-                try {
-                    URL url = findResource(module.name(), name);
-                    if (url != null)
-                        urls.add(url);
-                } catch (IOException ioe) {
-                    // ignore
+            try {
+                URL url = findResource(module.name(), name);
+                if (url != null
+                    && (name.endsWith(".class")
+                        || url.toString().endsWith("/")
+                        || isOpen(module.mref(), pn))) {
+                    urls.add(url);
                 }
+            } catch (IOException ioe) {
+                // ignore
             }
         } else {
             for (ModuleReference mref : nameToModule.values()) {
@@ -643,7 +651,7 @@ public final class Loader extends SecureClassLoader {
      */
     private boolean isOpen(ModuleReference mref, String pn) {
         ModuleDescriptor descriptor = mref.descriptor();
-        if (descriptor.isOpen())
+        if (descriptor.isOpen() || descriptor.isAutomatic())
             return true;
         for (ModuleDescriptor.Opens opens : descriptor.opens()) {
             String source = opens.source();

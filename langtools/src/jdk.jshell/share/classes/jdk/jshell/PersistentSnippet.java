@@ -34,6 +34,8 @@ package jdk.jshell;
  * <code>PersistentSnippet</code> is immutable: an access to
  * any of its methods will always return the same result.
  * and thus is thread-safe.
+ *
+ * @since 9
  */
 public abstract class PersistentSnippet extends Snippet {
 
