@@ -15501,7 +15501,7 @@ instruct string_compareLU(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 
 %}
 
 instruct string_indexofUU(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2, iRegI_R2 cnt2,
-       iRegI_R0 result, iRegI tmp1, iRegI tmp2, iRegI tmp3, iRegI tmp4, rFlagsReg cr)
+       iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, iRegINoSp tmp4, rFlagsReg cr)
 %{
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 cnt2)));
@@ -15520,7 +15520,7 @@ instruct string_indexofUU(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2, iRegI_R2 
 %}
 
 instruct string_indexofLL(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2, iRegI_R2 cnt2,
-       iRegI_R0 result, iRegI tmp1, iRegI tmp2, iRegI tmp3, iRegI tmp4, rFlagsReg cr)
+       iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, iRegINoSp tmp4, rFlagsReg cr)
 %{
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 cnt2)));
@@ -15539,7 +15539,7 @@ instruct string_indexofLL(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2, iRegI_R2 
 %}
 
 instruct string_indexofUL(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2, iRegI_R2 cnt2,
-       iRegI_R0 result, iRegI tmp1, iRegI tmp2, iRegI tmp3, iRegI tmp4, rFlagsReg cr)
+       iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, iRegINoSp tmp4, rFlagsReg cr)
 %{
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UL);
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 cnt2)));
@@ -15558,7 +15558,7 @@ instruct string_indexofUL(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2, iRegI_R2 
 %}
 
 instruct string_indexofLU(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2, iRegI_R2 cnt2,
-       iRegI_R0 result, iRegI tmp1, iRegI tmp2, iRegI tmp3, iRegI tmp4, rFlagsReg cr)
+       iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, iRegINoSp tmp4, rFlagsReg cr)
 %{
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::LU);
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 cnt2)));
@@ -15577,8 +15577,8 @@ instruct string_indexofLU(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2, iRegI_R2 
 %}
 
 instruct string_indexof_conUU(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2,
-                 immI_le_4 int_cnt2, iRegI_R0 result, iRegI tmp1, iRegI tmp2,
-                 iRegI tmp3, iRegI tmp4, rFlagsReg cr)
+                 immI_le_4 int_cnt2, iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2,
+                 iRegINoSp tmp3, iRegINoSp tmp4, rFlagsReg cr)
 %{
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 int_cnt2)));
@@ -15598,8 +15598,8 @@ instruct string_indexof_conUU(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2,
 %}
 
 instruct string_indexof_conLL(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2,
-                 immI_le_4 int_cnt2, iRegI_R0 result, iRegI tmp1, iRegI tmp2,
-                 iRegI tmp3, iRegI tmp4, rFlagsReg cr)
+                 immI_le_4 int_cnt2, iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2,
+                 iRegINoSp tmp3, iRegINoSp tmp4, rFlagsReg cr)
 %{
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 int_cnt2)));
@@ -15619,8 +15619,8 @@ instruct string_indexof_conLL(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2,
 %}
 
 instruct string_indexof_conUL(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2,
-                 immI_1 int_cnt2, iRegI_R0 result, iRegI tmp1, iRegI tmp2,
-                 iRegI tmp3, iRegI tmp4, rFlagsReg cr)
+                 immI_1 int_cnt2, iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2,
+                 iRegINoSp tmp3, iRegINoSp tmp4, rFlagsReg cr)
 %{
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UL);
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 int_cnt2)));
@@ -15640,8 +15640,8 @@ instruct string_indexof_conUL(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2,
 %}
 
 instruct string_indexof_conLU(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2,
-                 immI_1 int_cnt2, iRegI_R0 result, iRegI tmp1, iRegI tmp2,
-                 iRegI tmp3, iRegI tmp4, rFlagsReg cr)
+                 immI_1 int_cnt2, iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2,
+                 iRegINoSp tmp3, iRegINoSp tmp4, rFlagsReg cr)
 %{
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::LU);
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 int_cnt2)));
@@ -15661,8 +15661,8 @@ instruct string_indexof_conLU(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2,
 %}
 
 instruct string_indexofU_char(iRegP_R1 str1, iRegI_R2 cnt1, iRegI_R3 ch,
-                              iRegI_R0 result, iRegI tmp1, iRegI tmp2,
-                              iRegI tmp3, rFlagsReg cr)
+                              iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2,
+                              iRegINoSp tmp3, rFlagsReg cr)
 %{
   match(Set result (StrIndexOfChar (Binary str1 cnt1) ch));
   effect(USE_KILL str1, USE_KILL cnt1, USE_KILL ch,
@@ -16101,7 +16101,7 @@ instruct replicate2D(vecX dst, vRegD src)
 
 // ====================REDUCTION ARITHMETIC====================================
 
-instruct reduce_add2I(iRegINoSp dst, iRegIorL2I src1, vecD src2, iRegI tmp, iRegI tmp2)
+instruct reduce_add2I(iRegINoSp dst, iRegIorL2I src1, vecD src2, iRegINoSp tmp, iRegINoSp tmp2)
 %{
   match(Set dst (AddReductionVI src1 src2));
   ins_cost(INSN_COST);
@@ -16120,7 +16120,7 @@ instruct reduce_add2I(iRegINoSp dst, iRegIorL2I src1, vecD src2, iRegI tmp, iReg
   ins_pipe(pipe_class_default);
 %}
 
-instruct reduce_add4I(iRegINoSp dst, iRegIorL2I src1, vecX src2, vecX tmp, iRegI tmp2)
+instruct reduce_add4I(iRegINoSp dst, iRegIorL2I src1, vecX src2, vecX tmp, iRegINoSp tmp2)
 %{
   match(Set dst (AddReductionVI src1 src2));
   ins_cost(INSN_COST);
@@ -16138,7 +16138,7 @@ instruct reduce_add4I(iRegINoSp dst, iRegIorL2I src1, vecX src2, vecX tmp, iRegI
   ins_pipe(pipe_class_default);
 %}
 
-instruct reduce_mul2I(iRegINoSp dst, iRegIorL2I src1, vecD src2, iRegI tmp)
+instruct reduce_mul2I(iRegINoSp dst, iRegIorL2I src1, vecD src2, iRegINoSp tmp)
 %{
   match(Set dst (MulReductionVI src1 src2));
   ins_cost(INSN_COST);
@@ -16157,7 +16157,7 @@ instruct reduce_mul2I(iRegINoSp dst, iRegIorL2I src1, vecD src2, iRegI tmp)
   ins_pipe(pipe_class_default);
 %}
 
-instruct reduce_mul4I(iRegINoSp dst, iRegIorL2I src1, vecX src2, vecX tmp, iRegI tmp2)
+instruct reduce_mul4I(iRegINoSp dst, iRegIorL2I src1, vecX src2, vecX tmp, iRegINoSp tmp2)
 %{
   match(Set dst (MulReductionVI src1 src2));
   ins_cost(INSN_COST);

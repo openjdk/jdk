@@ -4103,6 +4103,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
             get(FOCUSED_COMPONENT);
     }
 
+    @SuppressWarnings("deprecation")
     private int getCurrentEventModifiers() {
         int modifiers = 0;
         AWTEvent currentEvent = EventQueue.getCurrentEvent();

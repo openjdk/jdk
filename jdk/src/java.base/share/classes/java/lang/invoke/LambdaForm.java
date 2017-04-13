@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,7 +126,6 @@ class LambdaForm {
     final boolean forceInline;
     final MethodHandle customized;
     @Stable final Name[] names;
-    final String debugName;
     final Kind kind;
     MemberName vmentry;   // low-level behavior, or null if not yet prepared
     private boolean isCompiled;
@@ -268,7 +267,7 @@ class LambdaForm {
     }
 
     enum Kind {
-        GENERIC(""),
+        GENERIC("invoke"),
         ZERO("zero"),
         IDENTITY("identity"),
         BOUND_REINVOKER("BMH.reinvoke"),
@@ -278,6 +277,8 @@ class LambdaForm {
         EXACT_INVOKER("MH.exactInvoker"),
         GENERIC_LINKER("MH.invoke_MT"),
         GENERIC_INVOKER("MH.invoker"),
+        LINK_TO_TARGET_METHOD("linkToTargetMethod"),
+        LINK_TO_CALL_SITE("linkToCallSite"),
         DIRECT_INVOKE_VIRTUAL("DMH.invokeVirtual"),
         DIRECT_INVOKE_SPECIAL("DMH.invokeSpecial"),
         DIRECT_INVOKE_STATIC("DMH.invokeStatic"),
@@ -319,7 +320,18 @@ class LambdaForm {
         GET_DOUBLE("getDouble"),
         PUT_DOUBLE("putDouble"),
         GET_DOUBLE_VOLATILE("getDoubleVolatile"),
-        PUT_DOUBLE_VOLATILE("putDoubleVolatile");
+        PUT_DOUBLE_VOLATILE("putDoubleVolatile"),
+        TRY_FINALLY("tryFinally"),
+        COLLECT("collect"),
+        CONVERT("convert"),
+        SPREAD("spread"),
+        LOOP("loop"),
+        FIELD("field"),
+        GUARD("guard"),
+        GUARD_WITH_CATCH("guardWithCatch"),
+        VARHANDLE_EXACT_INVOKER("VH.exactInvoker"),
+        VARHANDLE_INVOKER("VH.invoker"),
+        VARHANDLE_LINKER("VH.invoke_MT");
 
         final String defaultLambdaName;
         final String methodName;
@@ -335,25 +347,20 @@ class LambdaForm {
         }
     }
 
-    LambdaForm(String debugName,
-               int arity, Name[] names, int result) {
-        this(debugName, arity, names, result, /*forceInline=*/true, /*customized=*/null, Kind.GENERIC);
+    LambdaForm(int arity, Name[] names, int result) {
+        this(arity, names, result, /*forceInline=*/true, /*customized=*/null, Kind.GENERIC);
     }
-    LambdaForm(String debugName,
-               int arity, Name[] names, int result, Kind kind) {
-        this(debugName, arity, names, result, /*forceInline=*/true, /*customized=*/null, kind);
+    LambdaForm(int arity, Name[] names, int result, Kind kind) {
+        this(arity, names, result, /*forceInline=*/true, /*customized=*/null, kind);
     }
-    LambdaForm(String debugName,
-               int arity, Name[] names, int result, boolean forceInline, MethodHandle customized) {
-        this(debugName, arity, names, result, forceInline, customized, Kind.GENERIC);
+    LambdaForm(int arity, Name[] names, int result, boolean forceInline, MethodHandle customized) {
+        this(arity, names, result, forceInline, customized, Kind.GENERIC);
     }
-    LambdaForm(String debugName,
-               int arity, Name[] names, int result, boolean forceInline, MethodHandle customized, Kind kind) {
+    LambdaForm(int arity, Name[] names, int result, boolean forceInline, MethodHandle customized, Kind kind) {
         assert(namesOK(arity, names));
         this.arity = arity;
         this.result = fixResult(result, names);
         this.names = names.clone();
-        this.debugName = fixDebugName(debugName);
         this.forceInline = forceInline;
         this.customized = customized;
         this.kind = kind;
@@ -364,31 +371,23 @@ class LambdaForm {
             compileToBytecode();
         }
     }
-    LambdaForm(String debugName,
-               int arity, Name[] names) {
-        this(debugName, arity, names, LAST_RESULT, /*forceInline=*/true, /*customized=*/null, Kind.GENERIC);
+    LambdaForm(int arity, Name[] names) {
+        this(arity, names, LAST_RESULT, /*forceInline=*/true, /*customized=*/null, Kind.GENERIC);
     }
-    LambdaForm(String debugName,
-               int arity, Name[] names, Kind kind) {
-        this(debugName, arity, names, LAST_RESULT, /*forceInline=*/true, /*customized=*/null, kind);
+    LambdaForm(int arity, Name[] names, Kind kind) {
+        this(arity, names, LAST_RESULT, /*forceInline=*/true, /*customized=*/null, kind);
     }
-    LambdaForm(String debugName,
-               int arity, Name[] names, boolean forceInline) {
-        this(debugName, arity, names, LAST_RESULT, forceInline, /*customized=*/null, Kind.GENERIC);
+    LambdaForm(int arity, Name[] names, boolean forceInline) {
+        this(arity, names, LAST_RESULT, forceInline, /*customized=*/null, Kind.GENERIC);
     }
-    LambdaForm(String debugName,
-               int arity, Name[] names, boolean forceInline, Kind kind) {
-        this(debugName, arity, names, LAST_RESULT, forceInline, /*customized=*/null, kind);
+    LambdaForm(int arity, Name[] names, boolean forceInline, Kind kind) {
+        this(arity, names, LAST_RESULT, forceInline, /*customized=*/null, kind);
     }
-    LambdaForm(String debugName,
-               Name[] formals, Name[] temps, Name result) {
-        this(debugName,
-             formals.length, buildNames(formals, temps, result), LAST_RESULT, /*forceInline=*/true, /*customized=*/null);
+    LambdaForm(Name[] formals, Name[] temps, Name result) {
+        this(formals.length, buildNames(formals, temps, result), LAST_RESULT, /*forceInline=*/true, /*customized=*/null);
     }
-    LambdaForm(String debugName,
-               Name[] formals, Name[] temps, Name result, boolean forceInline) {
-        this(debugName,
-             formals.length, buildNames(formals, temps, result), LAST_RESULT, forceInline, /*customized=*/null);
+    LambdaForm(Name[] formals, Name[] temps, Name result, boolean forceInline) {
+        this(formals.length, buildNames(formals, temps, result), LAST_RESULT, forceInline, /*customized=*/null);
     }
 
     private static Name[] buildNames(Name[] formals, Name[] temps, Name result) {
@@ -408,10 +407,9 @@ class LambdaForm {
         this.arity = mt.parameterCount();
         this.result = (mt.returnType() == void.class || mt.returnType() == Void.class) ? -1 : arity;
         this.names = buildEmptyNames(arity, mt, result == -1);
-        this.debugName = "LF.zero";
         this.forceInline = true;
         this.customized = null;
-        this.kind = Kind.GENERIC;
+        this.kind = Kind.ZERO;
         assert(nameRefsAreLegal());
         assert(isEmpty());
         String sig = null;
@@ -436,36 +434,46 @@ class LambdaForm {
         return result;
     }
 
-    private static String fixDebugName(String debugName) {
-        if (DEBUG_NAME_COUNTERS != null) {
-            int under = debugName.indexOf('_');
-            int length = debugName.length();
-            if (under < 0)  under = length;
-            String debugNameStem = debugName.substring(0, under);
-            Integer ctr;
-            synchronized (DEBUG_NAME_COUNTERS) {
-                ctr = DEBUG_NAME_COUNTERS.get(debugNameStem);
-                if (ctr == null)  ctr = 0;
-                DEBUG_NAME_COUNTERS.put(debugNameStem, ctr+1);
-            }
-            StringBuilder buf = new StringBuilder(debugNameStem);
-            buf.append('_');
-            int leadingZero = buf.length();
-            buf.append((int) ctr);
-            for (int i = buf.length() - leadingZero; i < 3; i++)
-                buf.insert(leadingZero, '0');
-            if (under < length) {
-                ++under;    // skip "_"
-                while (under < length && Character.isDigit(debugName.charAt(under))) {
-                    ++under;
-                }
-                if (under < length && debugName.charAt(under) == '_')  ++under;
-                if (under < length)
-                    buf.append('_').append(debugName, under, length);
-            }
-            return buf.toString();
+    static boolean debugNames() {
+        return DEBUG_NAME_COUNTERS != null;
+    }
+
+    static void associateWithDebugName(LambdaForm form, String name) {
+        assert (debugNames());
+        synchronized (DEBUG_NAMES) {
+            DEBUG_NAMES.put(form, name);
         }
-        return debugName;
+    }
+
+    String lambdaName() {
+        if (DEBUG_NAMES != null) {
+            synchronized (DEBUG_NAMES) {
+                String name = DEBUG_NAMES.get(this);
+                if (name == null) {
+                    name = generateDebugName();
+                }
+                return name;
+            }
+        }
+        return kind.defaultLambdaName;
+    }
+
+    private String generateDebugName() {
+        assert (debugNames());
+        String debugNameStem = kind.defaultLambdaName;
+        Integer ctr = DEBUG_NAME_COUNTERS.getOrDefault(debugNameStem, 0);
+        DEBUG_NAME_COUNTERS.put(debugNameStem, ctr + 1);
+        StringBuilder buf = new StringBuilder(debugNameStem);
+        int leadingZero = buf.length();
+        buf.append((int) ctr);
+        for (int i = buf.length() - leadingZero; i < 3; i++) {
+            buf.insert(leadingZero, '0');
+        }
+        buf.append('_');
+        buf.append(basicTypeSignature());
+        String name = buf.toString();
+        associateWithDebugName(this, name);
+        return name;
     }
 
     private static boolean namesOK(int arity, Name[] names) {
@@ -482,7 +490,7 @@ class LambdaForm {
 
     /** Customize LambdaForm for a particular MethodHandle */
     LambdaForm customize(MethodHandle mh) {
-        LambdaForm customForm = new LambdaForm(debugName, arity, names, result, forceInline, mh, kind);
+        LambdaForm customForm = new LambdaForm(arity, names, result, forceInline, mh, kind);
         if (COMPILE_THRESHOLD >= 0 && isCompiled) {
             // If shared LambdaForm has been compiled, compile customized version as well.
             customForm.compileToBytecode();
@@ -1030,7 +1038,8 @@ class LambdaForm {
     }
 
     public String toString() {
-        StringBuilder buf = new StringBuilder(debugName+"=Lambda(");
+        String lambdaName = lambdaName();
+        StringBuilder buf = new StringBuilder(lambdaName + "=Lambda(");
         for (int i = 0; i < names.length; i++) {
             if (i == arity)  buf.append(")=>{");
             Name n = names[i];
@@ -1742,7 +1751,7 @@ class LambdaForm {
         // bootstrap dependency on this method in case we're interpreting LFs
         if (isVoid) {
             Name[] idNames = new Name[] { argument(0, L_TYPE) };
-            idForm = new LambdaForm(idMem.getName(), 1, idNames, VOID_RESULT, Kind.IDENTITY);
+            idForm = new LambdaForm(1, idNames, VOID_RESULT, Kind.IDENTITY);
             idForm.compileToBytecode();
             idFun = new NamedFunction(idMem, SimpleMethodHandle.make(idMem.getInvocationType(), idForm));
 
@@ -1750,14 +1759,14 @@ class LambdaForm {
             zeFun = idFun;
         } else {
             Name[] idNames = new Name[] { argument(0, L_TYPE), argument(1, type) };
-            idForm = new LambdaForm(idMem.getName(), 2, idNames, 1, Kind.IDENTITY);
+            idForm = new LambdaForm(2, idNames, 1, Kind.IDENTITY);
             idForm.compileToBytecode();
             idFun = new NamedFunction(idMem, MethodHandleImpl.makeIntrinsic(
                     idMem.getInvocationType(), idForm, MethodHandleImpl.Intrinsic.IDENTITY));
 
             Object zeValue = Wrapper.forBasicType(btChar).zero();
             Name[] zeNames = new Name[] { argument(0, L_TYPE), new Name(idFun, zeValue) };
-            zeForm = new LambdaForm(zeMem.getName(), 1, zeNames, 1, Kind.ZERO);
+            zeForm = new LambdaForm(1, zeNames, 1, Kind.ZERO);
             zeForm.compileToBytecode();
             zeFun = new NamedFunction(zeMem, MethodHandleImpl.makeIntrinsic(
                     zeMem.getInvocationType(), zeForm, MethodHandleImpl.Intrinsic.ZERO));
@@ -1805,11 +1814,15 @@ class LambdaForm {
     }
 
     private static final HashMap<String,Integer> DEBUG_NAME_COUNTERS;
+    private static final HashMap<LambdaForm,String> DEBUG_NAMES;
     static {
-        if (debugEnabled())
+        if (debugEnabled()) {
             DEBUG_NAME_COUNTERS = new HashMap<>();
-        else
+            DEBUG_NAMES = new HashMap<>();
+        } else {
             DEBUG_NAME_COUNTERS = null;
+            DEBUG_NAMES = null;
+        }
     }
 
     static {
