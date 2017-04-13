@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,6 +87,8 @@ public class CompileTheWorld {
                     Compiler.getMethodCount(),
                     System.currentTimeMillis() - start);
             passed = true;
+        } catch (Throwable t){
+            t.printStackTrace(ERR);
         } finally {
             // <clinit> might have started new threads
             System.exit(passed ? 0 : 1);
