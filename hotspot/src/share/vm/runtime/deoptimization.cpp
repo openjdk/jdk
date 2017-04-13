@@ -189,19 +189,6 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   assert(vf->is_compiled_frame(), "Wrong frame type");
   chunk->push(compiledVFrame::cast(vf));
 
-  ScopeDesc* trap_scope = chunk->at(0)->scope();
-  Handle exceptionObject;
-  if (trap_scope->rethrow_exception()) {
-    if (PrintDeoptimizationDetails) {
-      tty->print_cr("Exception to be rethrown in the interpreter for method %s::%s at bci %d", trap_scope->method()->method_holder()->name()->as_C_string(), trap_scope->method()->name()->as_C_string(), trap_scope->bci());
-    }
-    GrowableArray<ScopeValue*>* expressions = trap_scope->expressions();
-    guarantee(expressions != NULL && expressions->length() > 0, "must have exception to throw");
-    ScopeValue* topOfStack = expressions->top();
-    exceptionObject = StackValue::create_stack_value(&deoptee, &map, topOfStack)->get_obj();
-    assert(exceptionObject() != NULL, "exception oop can not be null");
-  }
-
   bool realloc_failures = false;
 
 #if defined(COMPILER2) || INCLUDE_JVMCI
@@ -295,6 +282,19 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   }
 #endif // INCLUDE_JVMCI
 #endif // COMPILER2 || INCLUDE_JVMCI
+
+  ScopeDesc* trap_scope = chunk->at(0)->scope();
+  Handle exceptionObject;
+  if (trap_scope->rethrow_exception()) {
+    if (PrintDeoptimizationDetails) {
+      tty->print_cr("Exception to be rethrown in the interpreter for method %s::%s at bci %d", trap_scope->method()->method_holder()->name()->as_C_string(), trap_scope->method()->name()->as_C_string(), trap_scope->bci());
+    }
+    GrowableArray<ScopeValue*>* expressions = trap_scope->expressions();
+    guarantee(expressions != NULL && expressions->length() > 0, "must have exception to throw");
+    ScopeValue* topOfStack = expressions->top();
+    exceptionObject = StackValue::create_stack_value(&deoptee, &map, topOfStack)->get_obj();
+    guarantee(exceptionObject() != NULL, "exception oop can not be null");
+  }
 
   // Ensure that no safepoint is taken after pointers have been stored
   // in fields of rematerialized objects.  If a safepoint occurs from here on
