@@ -43,6 +43,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Module;
 import java.net.URL;
 import java.security.AccessControlContext;
+import java.security.ProtectionDomain;
 import java.util.Properties;
 import java.util.PropertyPermission;
 import java.util.Map;
@@ -534,6 +535,8 @@ public final class System {
      * @param x object for which the hashCode is to be calculated
      * @return  the hashCode
      * @since   1.1
+     * @see Object#hashCode
+     * @see java.util.Objects#hashCode(Object)
      */
     @HotSpotIntrinsicCandidate
     public static native int identityHashCode(Object x);
@@ -1567,6 +1570,14 @@ public final class System {
      * obtained by calling {@link LoggerFinder#getLogger(java.lang.String,
      * java.lang.reflect.Module) LoggerFinder.getLogger(name, module)}, where
      * {@code module} is the caller's module.
+     * In cases where {@code System.getLogger} is called from a context where
+     * there is no caller frame on the stack (e.g when called directly
+     * from a JNI attached thread), {@code IllegalCallerException} is thrown.
+     * To obtain a logger in such a context, use an auxiliary class that will
+     * implicitly be identified as the caller, or use the system {@link
+     * LoggerFinder#getLoggerFinder() LoggerFinder} to obtain a logger instead.
+     * Note that doing the latter may eagerly initialize the underlying
+     * logging system.
      *
      * @apiNote
      * This method may defer calling the {@link
@@ -1579,6 +1590,8 @@ public final class System {
      * @return an instance of {@link Logger} that can be used by the calling
      *         class.
      * @throws NullPointerException if {@code name} is {@code null}.
+     * @throws IllegalCallerException if there is no Java caller frame on the
+     *         stack.
      *
      * @since 9
      */
@@ -1586,6 +1599,9 @@ public final class System {
     public static Logger getLogger(String name) {
         Objects.requireNonNull(name);
         final Class<?> caller = Reflection.getCallerClass();
+        if (caller == null) {
+            throw new IllegalCallerException("no caller frame");
+        }
         return LazyLoggers.getLogger(name, caller.getModule());
     }
 
@@ -1599,8 +1615,16 @@ public final class System {
      * The returned logger will perform message localization as specified
      * by {@link LoggerFinder#getLocalizedLogger(java.lang.String,
      * java.util.ResourceBundle, java.lang.reflect.Module)
-     * LoggerFinder.getLocalizedLogger(name, bundle, module}, where
+     * LoggerFinder.getLocalizedLogger(name, bundle, module)}, where
      * {@code module} is the caller's module.
+     * In cases where {@code System.getLogger} is called from a context where
+     * there is no caller frame on the stack (e.g when called directly
+     * from a JNI attached thread), {@code IllegalCallerException} is thrown.
+     * To obtain a logger in such a context, use an auxiliary class that
+     * will implicitly be identified as the caller, or use the system {@link
+     * LoggerFinder#getLoggerFinder() LoggerFinder} to obtain a logger instead.
+     * Note that doing the latter may eagerly initialize the underlying
+     * logging system.
      *
      * @apiNote
      * This method is intended to be used after the system is fully initialized.
@@ -1619,6 +1643,8 @@ public final class System {
      * resource bundle for message localization.
      * @throws NullPointerException if {@code name} is {@code null} or
      *         {@code bundle} is {@code null}.
+     * @throws IllegalCallerException if there is no Java caller frame on the
+     *         stack.
      *
      * @since 9
      */
@@ -1627,6 +1653,9 @@ public final class System {
         final ResourceBundle rb = Objects.requireNonNull(bundle);
         Objects.requireNonNull(name);
         final Class<?> caller = Reflection.getCallerClass();
+        if (caller == null) {
+            throw new IllegalCallerException("no caller frame");
+        }
         final SecurityManager sm = System.getSecurityManager();
         // We don't use LazyLoggers if a resource bundle is specified.
         // Bootstrap sensitive classes in the JDK do not use resource bundles
@@ -1845,6 +1874,39 @@ public final class System {
     }
 
     /**
+     * Logs an exception/error at initialization time to stdout or stderr.
+     *
+     * @param printToStderr to print to stderr rather than stdout
+     * @param printStackTrace to print the stack trace
+     * @param msg the message to print before the exception, can be {@code null}
+     * @param e the exception or error
+     */
+    private static void logInitException(boolean printToStderr,
+                                         boolean printStackTrace,
+                                         String msg,
+                                         Throwable e) {
+        if (VM.initLevel() < 1) {
+            throw new InternalError("system classes not initialized");
+        }
+        PrintStream log = (printToStderr) ? err : out;
+        if (msg != null) {
+            log.println(msg);
+        }
+        if (printStackTrace) {
+            e.printStackTrace(log);
+        } else {
+            log.println(e);
+            for (Throwable suppressed : e.getSuppressed()) {
+                log.println("Suppressed: " + suppressed);
+            }
+            Throwable cause = e.getCause();
+            if (cause != null) {
+                log.println("Caused by: " + cause);
+            }
+        }
+    }
+
+    /**
      * Initialize the system class.  Called after thread initialization.
      */
     private static void initPhase1() {
@@ -1922,13 +1984,25 @@ public final class System {
     /*
      * Invoked by VM.  Phase 2 module system initialization.
      * Only classes in java.base can be loaded in this phase.
+     *
+     * @param printToStderr print exceptions to stderr rather than stdout
+     * @param printStackTrace print stack trace when exception occurs
+     *
+     * @return JNI_OK for success, JNI_ERR for failure
      */
-    private static void initPhase2() {
-        // initialize the module system
-        System.bootLayer = ModuleBootstrap.boot();
+    private static int initPhase2(boolean printToStderr, boolean printStackTrace) {
+        try {
+            bootLayer = ModuleBootstrap.boot();
+        } catch (Exception | Error e) {
+            logInitException(printToStderr, printStackTrace,
+                             "Error occurred during initialization of boot layer", e);
+            return -1; // JNI_ERR
+        }
 
         // module system initialized
         VM.initLevel(2);
+
+        return 0; // JNI_OK
     }
 
     /*
@@ -1942,10 +2016,6 @@ public final class System {
      * the application classpath or modulepath.
      */
     private static void initPhase3() {
-        // Initialize publicLookup early, to avoid bootstrapping circularities
-        // with security manager using java.lang.invoke infrastructure.
-        java.lang.invoke.MethodHandles.publicLookup();
-
         // set security manager
         String cn = System.getProperty("java.security.manager");
         if (cn != null) {
@@ -2038,6 +2108,9 @@ public final class System {
             public ConcurrentHashMap<?, ?> createOrGetClassLoaderValueMap(ClassLoader cl) {
                 return cl.createOrGetClassLoaderValueMap();
             }
+            public Class<?> defineClass(ClassLoader loader, String name, byte[] b, ProtectionDomain pd, String source) {
+                return ClassLoader.defineClass1(loader, name, b, 0, b.length, pd, source);
+            }
             public Class<?> findBootstrapClassOrNull(ClassLoader cl, String name) {
                 return cl.findBootstrapClassOrNull(name);
             }
@@ -2052,6 +2125,9 @@ public final class System {
             }
             public String fastUUID(long lsb, long msb) {
                 return Long.fastUUID(lsb, msb);
+            }
+            public void invalidatePackageAccessCache() {
+                SecurityManager.invalidatePackageAccessCache();
             }
         });
     }

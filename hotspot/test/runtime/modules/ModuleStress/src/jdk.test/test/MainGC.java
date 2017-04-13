@@ -48,7 +48,7 @@ public class MainGC {
 
         Configuration cf = layerBoot
                 .configuration()
-                .resolveRequires(ModuleFinder.of(), finder, Set.of(MODULE_NAME));
+                .resolve(ModuleFinder.of(), finder, Set.of(MODULE_NAME));
 
         Module testModule = MainGC.class.getModule();
         ClassLoader scl = ClassLoader.getSystemClassLoader();

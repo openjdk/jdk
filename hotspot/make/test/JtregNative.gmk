@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,8 @@ BUILD_HOTSPOT_JTREG_NATIVE_SRC := \
     $(HOTSPOT_TOPDIR)/test/runtime/jni/PrivateInterfaceMethods \
     $(HOTSPOT_TOPDIR)/test/runtime/jni/ToStringInInterfaceTest \
     $(HOTSPOT_TOPDIR)/test/runtime/jni/CalleeSavedRegisters \
+    $(HOTSPOT_TOPDIR)/test/runtime/jni/CallWithJNIWeak \
+    $(HOTSPOT_TOPDIR)/test/runtime/jni/ReturnJNIWeak \
     $(HOTSPOT_TOPDIR)/test/runtime/modules/getModuleJNI \
     $(HOTSPOT_TOPDIR)/test/runtime/SameObject \
     $(HOTSPOT_TOPDIR)/test/runtime/BoolReturn \

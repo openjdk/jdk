@@ -24,13 +24,13 @@
 /*
  * @test
  * @bug 6809322
+ * @key randomness
  * @summary Test for missing notifications in a high concurrency environment
  * @author Jaroslav Bachorik
- * @modules java.management
+ *
  * @run clean MissingNotificationTest
  * @run build MissingNotificationTest
  * @run main MissingNotificationTest
- * @key randomness
  */
 
 import java.util.Date;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ import java.io.OutputStream;
 import java.io.InputStreamReader;
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.io.Reader;
 import java.io.PrintWriter;
 import java.lang.InterruptedException;
@@ -39,9 +38,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 
@@ -437,6 +438,11 @@ private static volatile int commandSeq = 0;         // Command sequence number
                     case "threaddump":
                         Thread.dumpStack();
                         break;
+                    case "waitpid":
+                        long pid = Long.parseLong(args[nextArg++]);
+                        Optional<String> s = ProcessHandle.of(pid).map(ph -> waitAlive(ph));
+                        sendResult(action, s.orElse("pid not valid: " + pid));
+                        break;
                     default:
                         throw new Error("JavaChild action unknown: " + action);
                 }
@@ -445,6 +451,17 @@ private static volatile int commandSeq = 0;         // Command sequence number
             t.printStackTrace(System.err);
             System.exit(1);
         }
+    }
+
+    private static String waitAlive(ProcessHandle ph) {
+        String status;
+        try {
+            boolean isAlive = ph.onExit().get().isAlive();
+            status = Boolean.toString(isAlive);
+        } catch (InterruptedException | ExecutionException ex ) {
+            status = "interrupted";
+        }
+        return status;
     }
 
     static synchronized void sendRaw(String s) {
@@ -476,6 +493,7 @@ private static volatile int commandSeq = 0;         // Command sequence number
         System.err.println("  spawn <n> command... - spawn n new children and send command");
         System.err.println("  child command... - send command to all live children");
         System.err.println("  child_eof - send eof to all live children");
+        System.err.println("  waitpid <pid> - wait for the pid to exit");
         System.err.println("  exit <exitcode>");
         System.err.println("  out arg...");
         System.err.println("  err arg...");
