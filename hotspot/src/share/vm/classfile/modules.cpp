@@ -325,7 +325,8 @@ void Modules::define_module(jobject module, jstring version,
     // Only modules defined to either the boot or platform class loader, can define a "java/" package.
     if (!h_loader.is_null() &&
         !SystemDictionary::is_platform_class_loader(h_loader) &&
-        strncmp(package_name, JAVAPKG, JAVAPKG_LEN) == 0) {
+        (strncmp(package_name, JAVAPKG, JAVAPKG_LEN) == 0 &&
+          (package_name[JAVAPKG_LEN] == '/' || package_name[JAVAPKG_LEN] == '\0'))) {
       const char* class_loader_name = SystemDictionary::loader_name(h_loader());
       size_t pkg_len = strlen(package_name);
       char* pkg_name = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, pkg_len);
@@ -748,7 +749,8 @@ void Modules::add_module_package(jobject module, const char* package_name, TRAPS
   // Only modules defined to either the boot or platform class loader, can define a "java/" package.
   if (!loader_data->is_the_null_class_loader_data() &&
       !loader_data->is_platform_class_loader_data() &&
-      strncmp(package_name, JAVAPKG, JAVAPKG_LEN) == 0) {
+      (strncmp(package_name, JAVAPKG, JAVAPKG_LEN) == 0 &&
+        (package_name[JAVAPKG_LEN] == '/' || package_name[JAVAPKG_LEN] == '\0'))) {
     const char* class_loader_name = SystemDictionary::loader_name(loader_data);
     size_t pkg_len = strlen(package_name);
     char* pkg_name = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, pkg_len);

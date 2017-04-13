@@ -26,7 +26,7 @@
  * @bug 5045358
  * @summary Test that Open MBeans support arrays of primitive types.
  * @author Luis-Miguel Alventosa
- * @modules java.management
+ *
  * @run clean ArrayTypeTest
  * @run build ArrayTypeTest
  * @run main ArrayTypeTest
