@@ -35,11 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -176,7 +172,7 @@ final class ProcessHandleImpl implements ProcessHandle {
             throw new IllegalStateException("onExit for current process not allowed");
         }
 
-        return ProcessHandleImpl.completion(getPid(), false)
+        return ProcessHandleImpl.completion(pid(), false)
                 .handleAsync((exitStatus, unusedThrowable) -> this);
     }
 
@@ -259,7 +255,7 @@ final class ProcessHandleImpl implements ProcessHandle {
      * @return the native process ID
      */
     @Override
-    public long getPid() {
+    public long pid() {
         return pid;
     }
 

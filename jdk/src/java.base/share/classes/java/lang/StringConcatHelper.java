@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -293,7 +293,7 @@ final class StringConcatHelper {
         if (coder == String.LATIN1) {
             return Integer.getChars(value, index, buf);
         } else {
-            return Integer.getCharsUTF16(value, index, buf);
+            return StringUTF16.getChars(value, index, buf);
         }
     }
 
@@ -311,7 +311,7 @@ final class StringConcatHelper {
         if (coder == String.LATIN1) {
             return Long.getChars(value, index, buf);
         } else {
-            return Long.getCharsUTF16(value, index, buf);
+            return StringUTF16.getChars(value, index, buf);
         }
     }
 
