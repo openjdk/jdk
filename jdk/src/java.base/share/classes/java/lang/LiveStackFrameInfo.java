@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,12 @@
  */
 package java.lang;
 
-import java.lang.StackWalker.Option;
-import java.util.EnumSet;
-import java.util.Set;
-
-import static java.lang.StackWalker.ExtendedOption.*;
-
 final class LiveStackFrameInfo extends StackFrameInfo implements LiveStackFrame {
     private static Object[] EMPTY_ARRAY = new Object[0];
+
+    // These flags must match the values maintained in the VM
+    private static final int MODE_INTERPRETED = 0x01;
+    private static final int MODE_COMPILED    = 0x02;
 
     LiveStackFrameInfo(StackWalker walker) {
         super(walker);
@@ -41,6 +39,7 @@ final class LiveStackFrameInfo extends StackFrameInfo implements LiveStackFrame 
     private Object[] monitors = EMPTY_ARRAY;
     private Object[] locals = EMPTY_ARRAY;
     private Object[] operands = EMPTY_ARRAY;
+    private int mode = 0;
 
     @Override
     public Object[] getMonitors() {
@@ -57,51 +56,44 @@ final class LiveStackFrameInfo extends StackFrameInfo implements LiveStackFrame 
         return operands;
     }
 
+    @Override
+    public String toString() {
+        StringBuilder retVal = new StringBuilder(super.toString());
+        if (mode != 0) {
+            retVal.append("(");
+            if ((mode & MODE_INTERPRETED) == MODE_INTERPRETED) {
+                retVal.append(" interpreted ");
+            }
+            if ((mode & MODE_COMPILED) == MODE_COMPILED) {
+                retVal.append(" compiled ");
+            }
+            retVal.append(")");
+        }
+        return retVal.toString();
+    }
+
     /*
-     * Convert primitive value to {@code Primitive} object to represent
+     * Convert primitive value to {@code PrimitiveSlot} object to represent
      * a local variable or an element on the operand stack of primitive type.
      */
-    static PrimitiveValue asPrimitive(boolean value) {
-        return new BooleanPrimitive(value);
+
+    static PrimitiveSlot asPrimitive(int value) {
+        return new PrimitiveSlot32(value);
     }
 
-    static PrimitiveValue asPrimitive(int value) {
-        return new IntPrimitive(value);
+    static PrimitiveSlot asPrimitive(long value) {
+        return new PrimitiveSlot64(value);
     }
 
-    static PrimitiveValue asPrimitive(short value) {
-        return new ShortPrimitive(value);
-    }
-
-    static PrimitiveValue asPrimitive(char value) {
-        return new CharPrimitive(value);
-    }
-
-    static PrimitiveValue asPrimitive(byte value) {
-        return new BytePrimitive(value);
-    }
-
-    static PrimitiveValue asPrimitive(long value) {
-        return new LongPrimitive(value);
-    }
-
-    static PrimitiveValue asPrimitive(float value) {
-        return new FloatPrimitive(value);
-    }
-
-    static PrimitiveValue asPrimitive(double value) {
-        return new DoublePrimitive(value);
-    }
-
-    private static class IntPrimitive extends PrimitiveValue {
+    private static class PrimitiveSlot32 extends PrimitiveSlot {
         final int value;
-        IntPrimitive(int value) {
+        PrimitiveSlot32(int value) {
             this.value = value;
         }
 
         @Override
-        public char type() {
-            return 'I';
+        public int size() {
+            return 4;
         }
 
         @Override
@@ -115,151 +107,19 @@ final class LiveStackFrameInfo extends StackFrameInfo implements LiveStackFrame 
         }
     }
 
-    private static class ShortPrimitive extends PrimitiveValue {
-        final short value;
-        ShortPrimitive(short value) {
-            this.value = value;
-        }
-
-        @Override
-        public char type() {
-            return 'S';
-        }
-
-        @Override
-        public short shortValue() {
-            return value;
-        }
-
-        @Override
-        public String toString() {
-            return String.valueOf(value);
-        }
-    }
-
-    private static class BooleanPrimitive extends PrimitiveValue {
-        final boolean value;
-        BooleanPrimitive(boolean value) {
-            this.value = value;
-        }
-
-        @Override
-        public char type() {
-            return 'Z';
-        }
-
-        @Override
-        public boolean booleanValue()  {
-            return value;
-        }
-
-        @Override
-        public String toString() {
-            return String.valueOf(value);
-        }
-    }
-
-    private static class CharPrimitive extends PrimitiveValue {
-        final char value;
-        CharPrimitive(char value) {
-            this.value = value;
-        }
-
-        @Override
-        public char type() {
-            return 'C';
-        }
-
-        @Override
-        public char charValue() {
-            return value;
-        }
-
-        @Override
-        public String toString() {
-            return String.valueOf(value);
-        }
-    }
-
-    private static class BytePrimitive extends PrimitiveValue {
-        final byte value;
-        BytePrimitive(byte value) {
-            this.value = value;
-        }
-
-        @Override
-        public char type() {
-            return 'B';
-        }
-
-        @Override
-        public byte byteValue() {
-            return value;
-        }
-
-        @Override
-        public String toString() {
-            return String.valueOf(value);
-        }
-    }
-
-    private static class LongPrimitive extends PrimitiveValue {
+    private static class PrimitiveSlot64 extends PrimitiveSlot {
         final long value;
-        LongPrimitive(long value) {
+        PrimitiveSlot64(long value) {
             this.value = value;
         }
 
         @Override
-        public char type() {
-            return 'J';
+        public int size() {
+            return 8;
         }
 
         @Override
         public long longValue() {
-            return value;
-        }
-
-        @Override
-        public String toString() {
-            return String.valueOf(value);
-        }
-    }
-
-    private static class FloatPrimitive extends PrimitiveValue {
-        final float value;
-        FloatPrimitive(float value) {
-            this.value = value;
-        }
-
-        @Override
-        public char type() {
-            return 'F';
-        }
-
-        @Override
-        public float floatValue() {
-            return value;
-        }
-
-        @Override
-        public String toString() {
-            return String.valueOf(value);
-        }
-    }
-
-    private static class DoublePrimitive extends PrimitiveValue {
-        final double value;
-        DoublePrimitive(double value) {
-            this.value = value;
-        }
-
-        @Override
-        public char type() {
-            return 'D';
-        }
-
-        @Override
-        public double doubleValue() {
             return value;
         }
 

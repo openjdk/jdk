@@ -137,15 +137,13 @@ public final class ReleaseInfoPlugin implements Plugin {
         javaBase.ifPresent(mod -> {
             // fill release information available from transformed "java.base" module!
             ModuleDescriptor desc = mod.descriptor();
-            desc.osName().ifPresent(s -> {
-                release.put("OS_NAME", quote(s));
-            });
-            desc.osVersion().ifPresent(s -> release.put("OS_VERSION", quote(s)));
-            desc.osArch().ifPresent(s -> release.put("OS_ARCH", quote(s)));
             desc.version().ifPresent(s -> release.put("JAVA_VERSION",
                     quote(parseVersion(s.toString()))));
             desc.version().ifPresent(s -> release.put("JAVA_FULL_VERSION",
                     quote(s.toString())));
+
+            release.put("OS_NAME", quote(mod.osName()));
+            release.put("OS_ARCH", quote(mod.osArch()));
         });
 
         // put topological sorted module names separated by space

@@ -898,6 +898,7 @@ public class MetalRootPaneUI extends BasicRootPaneUI
             w.setCursor(lastCursor);
         }
 
+        @SuppressWarnings("deprecation")
         public void mouseClicked(MouseEvent ev) {
             Window w = (Window)ev.getSource();
             Frame f = null;

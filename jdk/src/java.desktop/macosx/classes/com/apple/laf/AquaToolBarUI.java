@@ -35,7 +35,7 @@ import javax.swing.plaf.basic.BasicToolBarUI;
 import com.apple.laf.AquaUtils.*;
 
 public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants {
-    private static RecyclableSingleton<ToolBarBorder> toolBarBorder = new RecyclableSingletonFromDefaultConstructor<ToolBarBorder>(ToolBarBorder.class);
+    private static final RecyclableSingleton<ToolBarBorder> toolBarBorder = new RecyclableSingletonFromDefaultConstructor<ToolBarBorder>(ToolBarBorder.class);
     public static Border getToolBarBorder() {
         return toolBarBorder.get();
     }

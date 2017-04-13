@@ -26,11 +26,11 @@
  * @bug     4530538
  * @summary Basic unit test of ThreadInfo.getLockName()
  *          and ThreadInfo.getLockOwnerName()
- * @library /lib/testlibrary
  * @author  Mandy Chung
  * @author  Jaroslav Bachorik
  *
- * @modules java.management
+ * @library /lib/testlibrary
+ *
  * @build jdk.testlibrary.*
  * @run main/othervm Locks
  */

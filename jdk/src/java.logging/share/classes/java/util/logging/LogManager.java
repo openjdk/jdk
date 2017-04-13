@@ -1839,6 +1839,7 @@ public class LogManager {
      *          logging configuration file.
      *
      * @see #updateConfiguration(java.io.InputStream, java.util.function.Function)
+     * @since 9
      */
     public void updateConfiguration(Function<String, BiFunction<String,String,String>> mapper)
             throws IOException {
@@ -2035,6 +2036,7 @@ public class LogManager {
      * @throws  IOException if there are problems reading from the stream,
      *          or the given stream is not in the
      *          {@linkplain java.util.Properties properties file} format.
+     * @since 9
      */
     public void updateConfiguration(InputStream ins,
             Function<String, BiFunction<String,String,String>> mapper)

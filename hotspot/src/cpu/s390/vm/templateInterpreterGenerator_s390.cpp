@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1695,14 +1695,11 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // from the jni handle to z_ijava_state.oop_temp. This is
   // necessary, because we reset the jni handle block below.
   // NOTE: frame::interpreter_frame_result() depends on this, too.
-  { NearLabel no_oop_result, store_oop_result;
+  { NearLabel no_oop_result;
   __ load_absolute_address(Z_R1, AbstractInterpreter::result_handler(T_OBJECT));
   __ compareU64_and_branch(Z_R1, Rresult_handler, Assembler::bcondNotEqual, no_oop_result);
-  __ compareU64_and_branch(Rlresult, (intptr_t)0L, Assembler::bcondEqual, store_oop_result);
-  __ z_lg(Rlresult, 0, Rlresult);  // unbox
-  __ bind(store_oop_result);
+  __ resolve_jobject(Rlresult, /* tmp1 */ Rmethod, /* tmp2 */ Z_R1);
   __ z_stg(Rlresult, oop_tmp_offset, Z_fp);
-  __ verify_oop(Rlresult);
   __ bind(no_oop_result);
   }
 

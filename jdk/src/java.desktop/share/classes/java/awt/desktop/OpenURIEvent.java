@@ -31,7 +31,7 @@ import java.net.URI;
 /**
  * Event sent when the app is asked to open a {@code URI}.
  *
- * @see OpenURIHandler#openURI(AppEvent.OpenURIEvent)
+ * @see OpenURIHandler#openURI(OpenURIEvent)
  *
  * @since 9
  */

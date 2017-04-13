@@ -67,8 +67,8 @@ Zone Australia/Perth	 7:43:24 -	LMT	1895 Dec
 			 8:00	Aus	AW%sT	1943 Jul
 			 8:00	AW	AW%sT
 Zone Australia/Eucla	 8:35:28 -	LMT	1895 Dec
-			 8:45	Aus	ACW%sT	1943 Jul
-			 8:45	AW	ACW%sT
+			 8:45	Aus +0845/+0945	1943 Jul
+			 8:45	AW  +0845/+0945
 
 # Queensland
 #
@@ -235,7 +235,8 @@ Rule	LH	2008	max	-	Apr	Sun>=1	2:00	0	S
 Rule	LH	2008	max	-	Oct	Sun>=1	2:00	0:30	D
 Zone Australia/Lord_Howe 10:36:20 -	LMT	1895 Feb
 			10:00	-	AEST	1981 Mar
-			10:30	LH	LH%sT
+			10:30	LH	+1030/+1130 1985 Jul
+			10:30	LH	+1030/+11
 
 # Australian miscellany
 #
@@ -273,19 +274,19 @@ Zone Antarctica/Macquarie 0	-	-00	1899 Nov
 			0	-	-00	1948 Mar 25
 			10:00	Aus	AE%sT	1967
 			10:00	AT	AE%sT	2010 Apr  4  3:00
-			11:00	-	MIST	# Macquarie I Standard Time
+			11:00	-	+11
 
 # Christmas
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Indian/Christmas	7:02:52 -	LMT	1895 Feb
-			7:00	-	CXT	# Christmas Island Time
+			7:00	-	+07
 
 # Cocos (Keeling) Is
 # These islands were ruled by the Ross family from about 1830 to 1978.
 # We don't know when standard time was introduced; for now, we guess 1900.
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Indian/Cocos	6:27:40	-	LMT	1900
-			6:30	-	CCT	# Cocos Islands Time
+			6:30	-	+0630
 
 
 # Fiji
@@ -398,16 +399,16 @@ Rule	Fiji	2014	max	-	Nov	Sun>=1	2:00	1:00	S
 Rule	Fiji	2015	max	-	Jan	Sun>=15	3:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Fiji	11:55:44 -	LMT	1915 Oct 26 # Suva
-			12:00	Fiji	FJ%sT	# Fiji Time
+			12:00	Fiji	+12/+13
 
 # French Polynesia
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Gambier	 -8:59:48 -	LMT	1912 Oct # Rikitea
-			 -9:00	-	GAMT	# Gambier Time
+			 -9:00	-	-09
 Zone	Pacific/Marquesas -9:18:00 -	LMT	1912 Oct
-			 -9:30	-	MART	# Marquesas Time
+			 -9:30	-	-0930
 Zone	Pacific/Tahiti	 -9:58:16 -	LMT	1912 Oct # Papeete
-			-10:00	-	TAHT	# Tahiti Time
+			-10:00	-	-10
 # Clipperton (near North America) is administered from French Polynesia;
 # it is uninhabited.
 
@@ -422,15 +423,15 @@ Link Pacific/Guam Pacific/Saipan # N Mariana Is
 # Kiribati
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Tarawa	 11:32:04 -	LMT	1901 # Bairiki
-			 12:00	-	GILT	# Gilbert Is Time
+			 12:00	-	+12
 Zone Pacific/Enderbury	-11:24:20 -	LMT	1901
-			-12:00	-	PHOT	1979 Oct # Phoenix Is Time
-			-11:00	-	PHOT	1995
-			 13:00	-	PHOT
+			-12:00	-	-12	1979 Oct
+			-11:00	-	-11	1995
+			 13:00	-	+13
 Zone Pacific/Kiritimati	-10:29:20 -	LMT	1901
-			-10:40	-	LINT	1979 Oct # Line Is Time
-			-10:00	-	LINT	1995
-			 14:00	-	LINT
+			-10:40	-	-1040	1979 Oct
+			-10:00	-	-10	1995
+			 14:00	-	+14
 
 # N Mariana Is
 # See Pacific/Guam.
@@ -438,31 +439,31 @@ Zone Pacific/Kiritimati	-10:29:20 -	LMT	1901
 # Marshall Is
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Majuro	11:24:48 -	LMT	1901
-			11:00	-	MHT	1969 Oct # Marshall Islands Time
-			12:00	-	MHT
+			11:00	-	+11	1969 Oct
+			12:00	-	+12
 Zone Pacific/Kwajalein	11:09:20 -	LMT	1901
-			11:00	-	MHT	1969 Oct
-			-12:00	-	KWAT	1993 Aug 20 # Kwajalein Time
-			12:00	-	MHT
+			11:00	-	+11	1969 Oct
+			-12:00	-	-12	1993 Aug 20
+			12:00	-	+12
 
 # Micronesia
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Chuuk	10:07:08 -	LMT	1901
-			10:00	-	CHUT	# Chuuk Time
+			10:00	-	+10
 Zone Pacific/Pohnpei	10:32:52 -	LMT	1901 # Kolonia
-			11:00	-	PONT	# Pohnpei Time
+			11:00	-	+11
 Zone Pacific/Kosrae	10:51:56 -	LMT	1901
-			11:00	-	KOST	1969 Oct # Kosrae Time
-			12:00	-	KOST	1999
-			11:00	-	KOST
+			11:00	-	+11	1969 Oct
+			12:00	-	+12	1999
+			11:00	-	+11
 
 # Nauru
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Nauru	11:07:40 -	LMT	1921 Jan 15 # Uaobe
-			11:30	-	NRT	1942 Mar 15 # Nauru Time
-			9:00	-	JST	1944 Aug 15
-			11:30	-	NRT	1979 May
-			12:00	-	NRT
+			11:30	-	+1130	1942 Mar 15
+			9:00	-	+09	1944 Aug 15
+			11:30	-	+1130	1979 May
+			12:00	-	+12
 
 # New Caledonia
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
@@ -473,7 +474,7 @@ Rule	NC	1996	only	-	Dec	 1	2:00s	1:00	S
 Rule	NC	1997	only	-	Mar	 2	2:00s	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Noumea	11:05:48 -	LMT	1912 Jan 13 # Nouméa
-			11:00	NC	NC%sT
+			11:00	NC	+11/+12
 
 
 ###############################################################################
@@ -514,8 +515,8 @@ Zone Pacific/Auckland	11:39:04 -	LMT	1868 Nov  2
 			11:30	NZ	NZ%sT	1946 Jan  1
 			12:00	NZ	NZ%sT
 Zone Pacific/Chatham	12:13:48 -	LMT	1868 Nov  2
-			12:15	-	CHAST	1946 Jan  1
-			12:45	Chatham	CHA%sT
+			12:15	-	+1215	1946 Jan  1
+			12:45	Chatham	+1245/+1345
 
 Link Pacific/Auckland Antarctica/McMurdo
 
@@ -537,8 +538,8 @@ Rule	Cook	1979	1991	-	Mar	Sun>=1	0:00	0	-
 Rule	Cook	1979	1990	-	Oct	lastSun	0:00	0:30	HS
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Rarotonga	-10:39:04 -	LMT	1901        # Avarua
-			-10:30	-	CKT	1978 Nov 12 # Cook Is Time
-			-10:00	Cook	CK%sT
+			-10:30	-	-1030	1978 Nov 12
+			-10:00	Cook	-10/-0930
 
 ###############################################################################
 
@@ -546,29 +547,29 @@ Zone Pacific/Rarotonga	-10:39:04 -	LMT	1901        # Avarua
 # Niue
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Niue	-11:19:40 -	LMT	1901        # Alofi
-			-11:20	-	NUT	1951        # Niue Time
-			-11:30	-	NUT	1978 Oct  1
-			-11:00	-	NUT
+			-11:20	-	-1120	1951
+			-11:30	-	-1130	1978 Oct  1
+			-11:00	-	-11
 
 # Norfolk
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Norfolk	11:11:52 -	LMT	1901 # Kingston
-			11:12	-	NMT	1951 # Norfolk Mean Time
-			11:30	-	NFT	1974 Oct 27 02:00 # Norfolk T.
-			11:30	1:00	NFST	1975 Mar  2 02:00
-			11:30	-	NFT	2015 Oct  4 02:00
-			11:00	-	NFT
+			11:12	-	+1112	1951
+			11:30	-	+1130	1974 Oct 27 02:00
+			11:30	1:00	+1230	1975 Mar  2 02:00
+			11:30	-	+1130	2015 Oct  4 02:00
+			11:00	-	+11
 
 # Palau (Belau)
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Palau	8:57:56 -	LMT	1901 # Koror
-			9:00	-	PWT	# Palau Time
+			9:00	-	+09
 
 # Papua New Guinea
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Port_Moresby 9:48:40 -	LMT	1880
 			9:48:32	-	PMMT	1895 # Port Moresby Mean Time
-			10:00	-	PGT	# Papua New Guinea Time
+			10:00	-	+10
 #
 # From Paul Eggert (2014-10-13):
 # Base the Bougainville entry on the Arawa-Kieta region, which appears to have
@@ -583,28 +584,26 @@ Zone Pacific/Port_Moresby 9:48:40 -	LMT	1880
 # and seem to have controlled it until their 1945-08-21 surrender.
 #
 # The Autonomous Region of Bougainville switched from UT +10 to +11
-# on 2014-12-28 at 02:00.  They call +11 "Bougainville Standard Time";
-# abbreviate this as BST.  See:
+# on 2014-12-28 at 02:00.  They call +11 "Bougainville Standard Time".
+# See:
 # http://www.bougainville24.com/bougainville-issues/bougainville-gets-own-timezone/
 #
 Zone Pacific/Bougainville 10:22:16 -	LMT	1880
 			 9:48:32 -	PMMT	1895
-			10:00	-	PGT	1942 Jul
-			 9:00	-	JST	1945 Aug 21
-			10:00	-	PGT	2014 Dec 28  2:00
-			11:00	-	BST
+			10:00	-	+10	1942 Jul
+			 9:00	-	+09	1945 Aug 21
+			10:00	-	+10	2014 Dec 28  2:00
+			11:00	-	+11
 
 # Pitcairn
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Pitcairn	-8:40:20 -	LMT	1901        # Adamstown
-			-8:30	-	PNT	1998 Apr 27  0:00
-			-8:00	-	PST	# Pitcairn Standard Time
+			-8:30	-	-0830	1998 Apr 27  0:00
+			-8:00	-	-08
 
 # American Samoa
 Zone Pacific/Pago_Pago	 12:37:12 -	LMT	1879 Jul  5
 			-11:22:48 -	LMT	1911
-			-11:00	-	NST	1967 Apr    # N=Nome
-			-11:00	-	BST	1983 Nov 30 # B=Bering
 			-11:00	-	SST	            # S=Samoa
 Link Pacific/Pago_Pago Pacific/Midway # in US minor outlying islands
 
@@ -685,17 +684,17 @@ Rule	WS	2012	max	-	Sep	lastSun	3:00	1	D
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Apia	 12:33:04 -	LMT	1879 Jul  5
 			-11:26:56 -	LMT	1911
-			-11:30	-	WSST	1950
-			-11:00	WS	S%sT	2011 Dec 29 24:00 # S=Samoa
-			 13:00	WS	WS%sT
+			-11:30	-	-1130	1950
+			-11:00	WS	-11/-10	2011 Dec 29 24:00
+			 13:00	WS	+13/+14
 
 # Solomon Is
 # excludes Bougainville, for which see Papua New Guinea
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Guadalcanal 10:39:48 -	LMT	1912 Oct # Honiara
-			11:00	-	SBT	# Solomon Is Time
+			11:00	-	+11
 
-# Tokelau Is
+# Tokelau
 #
 # From Gwillim Law (2011-12-29)
 # A correspondent informed me that Tokelau, like Samoa, will be skipping
@@ -716,8 +715,8 @@ Zone Pacific/Guadalcanal 10:39:48 -	LMT	1912 Oct # Honiara
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Fakaofo	-11:24:56 -	LMT	1901
-			-11:00	-	TKT	2011 Dec 30 # Tokelau Time
-			13:00	-	TKT
+			-11:00	-	-11	2011 Dec 30
+			13:00	-	+13
 
 # Tonga
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
@@ -736,7 +735,7 @@ Zone Pacific/Tongatapu	12:19:20 -	LMT	1901
 # Tuvalu
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Funafuti	11:56:52 -	LMT	1901
-			12:00	-	TVT	# Tuvalu Time
+			12:00	-	+12
 
 
 # US minor outlying islands
@@ -760,10 +759,11 @@ Zone Pacific/Funafuti	11:56:52 -	LMT	1901
 
 # Johnston
 #
-# From Paul Eggert (2014-03-11):
+# From Paul Eggert (2017-02-10):
 # Sometimes Johnston kept Hawaii time, and sometimes it was an hour behind.
 # Details are uncertain.  We have no data for Johnston after 1970, so
-# treat it like Hawaii for now.
+# treat it like Hawaii for now.  Since Johnston is now uninhabited,
+# its link to Pacific/Honolulu is in the 'backward' file.
 #
 # In his memoirs of June 6th to October 4, 1945
 # <http://www.315bw.org/Herb_Bach.htm> (2005), Herbert C. Bach writes,
@@ -783,8 +783,6 @@ Zone Pacific/Funafuti	11:56:52 -	LMT	1901
 # See the table on page 4 where he lists GMT and local times for the tests; a
 # footnote for the JI tests reads that local time is "JI time = Hawaii Time
 # Minus One Hour".
-#
-# See 'northamerica' for Pacific/Johnston.
 
 # Kingman
 # uninhabited
@@ -798,7 +796,7 @@ Zone Pacific/Funafuti	11:56:52 -	LMT	1901
 # Wake
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Wake	11:06:28 -	LMT	1901
-			12:00	-	WAKT	# Wake Time
+			12:00	-	+12
 
 
 # Vanuatu
@@ -811,12 +809,12 @@ Rule	Vanuatu	1992	1993	-	Jan	Sun>=23	0:00	0	-
 Rule	Vanuatu	1992	only	-	Oct	Sun>=23	0:00	1:00	S
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Efate	11:13:16 -	LMT	1912 Jan 13 # Vila
-			11:00	Vanuatu	VU%sT	# Vanuatu Time
+			11:00	Vanuatu	+11/+12
 
 # Wallis and Futuna
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Wallis	12:15:20 -	LMT	1901
-			12:00	-	WFT	# Wallis & Futuna Time
+			12:00	-	+12
 
 ###############################################################################
 
@@ -827,15 +825,15 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # tz@iana.org for general use in the future).  For more, please see
 # the file CONTRIBUTING in the tz distribution.
 
-# From Paul Eggert (2014-10-31):
+# From Paul Eggert (2017-02-10):
 #
 # Unless otherwise specified, the source for data through 1990 is:
 # Thomas G. Shanks and Rique Pottenger, The International Atlas (6th edition),
 # San Diego: ACS Publications, Inc. (2003).
 # Unfortunately this book contains many errors and cites no sources.
 #
-# Gwillim Law writes that a good source
-# for recent time zone data is the International Air Transport
+# Many years ago Gwillim Law wrote that a good source
+# for time zone data was the International Air Transport
 # Association's Standard Schedules Information Manual (IATA SSIM),
 # published semiannually.  Law sent in several helpful summaries
 # of the IATA's data after 1990.  Except where otherwise noted,
@@ -852,28 +850,19 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # A reliable and entertaining source about time zones is
 # Derek Howse, Greenwich time and longitude, Philip Wilson Publishers (1997).
 #
-# I invented the abbreviations marked '*' in the following table;
-# the rest are from earlier versions of this file, or from other sources.
+# The following abbreviations are from other sources.
 # Corrections are welcome!
 #		std	dst
 #		LMT		Local Mean Time
 #	  8:00	AWST	AWDT	Western Australia
-#	  8:45	ACWST	ACWDT	Central Western Australia*
-#	  9:00	JST		Japan
 #	  9:30	ACST	ACDT	Central Australia
 #	 10:00	AEST	AEDT	Eastern Australia
+#	 10:00	GST		Guam through 2000
 #	 10:00	ChST		Chamorro
-#	 10:30	LHST	LHDT	Lord Howe*
-#	 11:00	BST		Bougainville*
 #	 11:30	NZMT	NZST	New Zealand through 1945
 #	 12:00	NZST	NZDT	New Zealand 1946-present
-#	 12:15	CHAST		Chatham through 1945*
-#	 12:45	CHAST	CHADT	Chatham 1946-present*
-#	 13:00	WSST	WSDT	(western) Samoa 2011-present*
-#	-11:30	WSST		Western Samoa through 1950*
 #	-11:00	SST		Samoa
 #	-10:00	HST		Hawaii
-#	- 8:00	PST		Pitcairn*
 #
 # See the 'northamerica' file for Hawaii.
 # See the 'southamerica' file for Easter I and the Galápagos Is.
