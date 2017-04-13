@@ -26,14 +26,8 @@ package jdk.test.lib.artifacts;
 import java.lang.annotation.*;
 
 @Target(ElementType.TYPE)
-@Repeatable(ArtifactContainer.class)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Artifact {
-    String organization();
-    String name();
-    String revision();
-    String extension();
-    String classifier() default "";
-    boolean unpack() default true;
+public @interface ArtifactContainer {
+    Artifact[] value();
 }
 
