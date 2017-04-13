@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,8 +44,10 @@ import java.util.ResourceBundle;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import javax.tools.StandardJavaFileManager;
 import jdk.internal.jshell.debug.InternalDebugControl;
 import jdk.jshell.Snippet.Status;
 import jdk.jshell.spi.ExecutionControl.EngineTerminationException;
@@ -77,7 +79,9 @@ import static jdk.jshell.Util.expunge;
  * <p>
  * This class is not thread safe, except as noted, all access should be through
  * a single thread.
+ *
  * @author Robert Field
+ * @since 9
  */
 public class JShell implements AutoCloseable {
 
@@ -92,6 +96,7 @@ public class JShell implements AutoCloseable {
     final BiFunction<Snippet, Integer, String> idGenerator;
     final List<String> extraRemoteVMOptions;
     final List<String> extraCompilerOptions;
+    final Function<StandardJavaFileManager, StandardJavaFileManager> fileManagerMapping;
 
     private int nextKeyIndex = 1;
 
@@ -115,6 +120,7 @@ public class JShell implements AutoCloseable {
         this.idGenerator = b.idGenerator;
         this.extraRemoteVMOptions = b.extraRemoteVMOptions;
         this.extraCompilerOptions = b.extraCompilerOptions;
+        this.fileManagerMapping = b.fileManagerMapping;
         try {
             if (b.executionControlProvider != null) {
                 executionControl = b.executionControlProvider.generate(new ExecutionEnvImpl(),
@@ -171,6 +177,7 @@ public class JShell implements AutoCloseable {
         ExecutionControlProvider executionControlProvider;
         Map<String,String> executionControlParameters;
         String executionControlSpec;
+        Function<StandardJavaFileManager, StandardJavaFileManager> fileManagerMapping;
 
         Builder() { }
 
@@ -365,6 +372,28 @@ public class JShell implements AutoCloseable {
         }
 
         /**
+         * Configure the {@code FileManager} to be used by compilation and
+         * source analysis.
+         * If not set or passed null, the compiler's standard file manager will
+         * be used (identity mapping).
+         * For use in special applications where the compiler's normal file
+         * handling needs to be overridden.  See the file manager APIs for more
+         * information.
+         * The file manager input enables forwarding file managers, if this
+         * is not needed, the incoming file manager can be ignored (constant
+         * function).
+         *
+         * @param mapping a function that given the compiler's standard file
+         * manager, returns a file manager to use
+         * @return the {@code Builder} instance (for use in chained
+         * initialization)
+         */
+        public Builder fileManager(Function<StandardJavaFileManager, StandardJavaFileManager> mapping) {
+            this.fileManagerMapping = mapping;
+            return this;
+        }
+
+        /**
          * Builds a JShell state engine. This is the entry-point to all JShell
          * functionality. This creates a remote process for execution. It is
          * thus important to close the returned instance.
@@ -501,6 +530,7 @@ public class JShell implements AutoCloseable {
      * @throws IllegalStateException if this {@code JShell} instance is closed.
      */
     public void addToClasspath(String path) {
+        checkIfAlive();
         // Compiler
         taskFactory.addToClasspath(path);
         // Runtime
@@ -543,17 +573,7 @@ public class JShell implements AutoCloseable {
      */
     @Override
     public void close() {
-        if (!closed) {
-            closeDown();
-            try {
-                executionControl().close();
-            } catch (Throwable ex) {
-                // don't care about exceptions on close
-            }
-            if (sourceCodeAnalysis != null) {
-                sourceCodeAnalysis.close();
-            }
-        }
+        closeDown();
     }
 
     /**
@@ -826,6 +846,15 @@ public class JShell implements AutoCloseable {
             } catch (Throwable thr) {
                 // Don't care about dying exceptions
             }
+            try {
+                executionControl().close();
+            } catch (Throwable ex) {
+                // don't care about exceptions on close
+            }
+            if (sourceCodeAnalysis != null) {
+                sourceCodeAnalysis.close();
+            }
+            InternalDebugControl.release(this);
         }
     }
 

@@ -26,9 +26,11 @@
 package jdk.nashorn.internal.runtime;
 
 import java.lang.module.ModuleDescriptor;
+import java.lang.module.ModuleDescriptor.Modifier;
 import java.lang.reflect.Module;
 import java.security.CodeSource;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Responsible for loading script generated classes.
@@ -69,12 +71,11 @@ final class ScriptLoader extends NashornLoader {
     private Module createModule(final String moduleName) {
         final Module structMod = context.getStructLoader().getModule();
         final ModuleDescriptor.Builder builder =
-            ModuleDescriptor.module(moduleName)
-                    .requires("java.base")
+            ModuleDescriptor.newModule(moduleName, Set.of(Modifier.SYNTHETIC))
                     .requires("java.logging")
                     .requires(NASHORN_MODULE.getName())
                     .requires(structMod.getName())
-                    .contains(SCRIPTS_PKG);
+                    .packages(Set.of(SCRIPTS_PKG));
 
         if (Context.javaSqlFound) {
             builder.requires("java.sql");

@@ -28,7 +28,7 @@
  * IllegalArgumentException when attribute names, operation names, and
  * Java type names do not strictly follow the expected Java syntax.
  * @author Daniel Fuchs
- * @modules java.management
+ *
  * @run clean MustBeValidCommand
  * @run build MustBeValidCommand
  * @run main MustBeValidCommand

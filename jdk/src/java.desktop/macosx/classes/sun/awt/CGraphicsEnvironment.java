@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,10 @@ public final class CGraphicsEnvironment extends SunGraphicsEnvironment {
 
     /** Available CoreGraphics displays. */
     private final Map<Integer, CGraphicsDevice> devices = new HashMap<>(5);
+    /**
+     * The key in the {@link #devices} for the main display.
+     */
+    private int mainDisplayID;
 
     /** Reference to the display reconfiguration callback context. */
     private final long displayReconfigContext;
@@ -136,15 +140,15 @@ public final class CGraphicsEnvironment extends SunGraphicsEnvironment {
             final Map<Integer, CGraphicsDevice> old = new HashMap<>(devices);
             devices.clear();
 
-            int mainID = getMainDisplayID();
+            mainDisplayID = getMainDisplayID();
 
             // initialization of the graphics device may change
             // list of displays on hybrid systems via an activation
             // of discrete video.
             // So, we initialize the main display first, and then
             // retrieve actual list of displays.
-            if (!old.containsKey(mainID)) {
-                old.put(mainID, new CGraphicsDevice(mainID));
+            if (!old.containsKey(mainDisplayID)) {
+                old.put(mainDisplayID, new CGraphicsDevice(mainDisplayID));
             }
 
             for (final int id : getDisplayIDs()) {
@@ -157,7 +161,6 @@ public final class CGraphicsEnvironment extends SunGraphicsEnvironment {
 
     @Override
     public synchronized GraphicsDevice getDefaultScreenDevice() throws HeadlessException {
-        final int mainDisplayID = getMainDisplayID();
         CGraphicsDevice d = devices.get(mainDisplayID);
         if (d == null) {
             // we do not expect that this may happen, the only response
