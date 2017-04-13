@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -356,10 +356,6 @@ class MultiExchange<U,T> {
         @Override
         public void handle() {
             cancel(new HttpTimeoutException("request timed out"));
-        }
-        @Override
-        public String toString() {
-            return "[deadline = " + deadline() + "]";
         }
     }
 }
