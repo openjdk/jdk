@@ -41,7 +41,7 @@
 
 class vtableEntry;
 
-class klassVtable : public ResourceObj {
+class klassVtable VALUE_OBJ_CLASS_SPEC {
   Klass*       _klass;            // my klass
   int          _tableOffset;      // offset of start of vtable data within klass
   int          _length;           // length of vtable (number of entries)
@@ -288,7 +288,7 @@ class itableMethodEntry VALUE_OBJ_CLASS_SPEC {
 //    -- vtable for interface 2 ---
 //    ...
 //
-class klassItable : public ResourceObj {
+class klassItable VALUE_OBJ_CLASS_SPEC {
  private:
   InstanceKlass*       _klass;             // my klass
   int                  _table_offset;      // offset of start of itable data within klass (in words)
@@ -309,9 +309,6 @@ class klassItable : public ResourceObj {
 
   // Initialization
   void initialize_itable(bool checkconstraints, TRAPS);
-
-  // Updates
-  void initialize_with_method(Method* m);
 
 #if INCLUDE_JVMTI
   // RedefineClasses() API support:

@@ -3272,7 +3272,7 @@ void VM_RedefineClasses::AdjustCpoolCacheAndVtable::do_klass(Klass* k) {
   // If the class being redefined is java.lang.Object, we need to fix all
   // array class vtables also
   if (k->is_array_klass() && _the_class == SystemDictionary::Object_klass()) {
-    k->vtable()->adjust_method_entries(the_class, &trace_name_printed);
+    k->vtable().adjust_method_entries(the_class, &trace_name_printed);
 
   } else if (k->is_instance_klass()) {
     HandleMark hm(_thread);
@@ -3315,7 +3315,7 @@ void VM_RedefineClasses::AdjustCpoolCacheAndVtable::do_klass(Klass* k) {
       // ik->vtable() creates a wrapper object; rm cleans it up
       ResourceMark rm(_thread);
 
-      ik->vtable()->adjust_method_entries(the_class, &trace_name_printed);
+      ik->vtable().adjust_method_entries(the_class, &trace_name_printed);
       ik->adjust_default_methods(the_class, &trace_name_printed);
     }
 
@@ -3329,10 +3329,8 @@ void VM_RedefineClasses::AdjustCpoolCacheAndVtable::do_klass(Klass* k) {
     if (ik->itable_length() > 0 && (_the_class->is_interface()
         || _the_class == SystemDictionary::internal_Unsafe_klass()
         || ik->is_subclass_of(_the_class))) {
-      // ik->itable() creates a wrapper object; rm cleans it up
       ResourceMark rm(_thread);
-
-      ik->itable()->adjust_method_entries(the_class, &trace_name_printed);
+      ik->itable().adjust_method_entries(the_class, &trace_name_printed);
     }
 
     // The constant pools in other classes (other_cp) can refer to
@@ -3957,8 +3955,8 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
     // compare_and_normalize_class_versions has already checked:
     //  - classloaders unchanged, signatures unchanged
     //  - all instanceKlasses for redefined classes reused & contents updated
-    the_class->vtable()->initialize_vtable(false, THREAD);
-    the_class->itable()->initialize_itable(false, THREAD);
+    the_class->vtable().initialize_vtable(false, THREAD);
+    the_class->itable().initialize_itable(false, THREAD);
     assert(!HAS_PENDING_EXCEPTION || (THREAD->pending_exception()->is_a(SystemDictionary::ThreadDeath_klass())), "redefine exception");
   }
 
@@ -4093,12 +4091,12 @@ void VM_RedefineClasses::CheckClass::do_klass(Klass* k) {
   // a vtable should never contain old or obsolete methods
   ResourceMark rm(_thread);
   if (k->vtable_length() > 0 &&
-      !k->vtable()->check_no_old_or_obsolete_entries()) {
+      !k->vtable().check_no_old_or_obsolete_entries()) {
     if (log_is_enabled(Trace, redefine, class, obsolete, metadata)) {
       log_trace(redefine, class, obsolete, metadata)
         ("klassVtable::check_no_old_or_obsolete_entries failure -- OLD or OBSOLETE method found -- class: %s",
          k->signature_name());
-      k->vtable()->dump_vtable();
+      k->vtable().dump_vtable();
     }
     no_old_methods = false;
   }
@@ -4109,12 +4107,12 @@ void VM_RedefineClasses::CheckClass::do_klass(Klass* k) {
 
     // an itable should never contain old or obsolete methods
     if (ik->itable_length() > 0 &&
-        !ik->itable()->check_no_old_or_obsolete_entries()) {
+        !ik->itable().check_no_old_or_obsolete_entries()) {
       if (log_is_enabled(Trace, redefine, class, obsolete, metadata)) {
         log_trace(redefine, class, obsolete, metadata)
           ("klassItable::check_no_old_or_obsolete_entries failure -- OLD or OBSOLETE method found -- class: %s",
            ik->signature_name());
-        ik->itable()->dump_itable();
+        ik->itable().dump_itable();
       }
       no_old_methods = false;
     }

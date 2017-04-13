@@ -99,7 +99,7 @@ ArrayKlass::ArrayKlass(Symbol* name) :
 void ArrayKlass::complete_create_array_klass(ArrayKlass* k, Klass* super_klass, ModuleEntry* module_entry, TRAPS) {
   ResourceMark rm(THREAD);
   k->initialize_supers(super_klass, CHECK);
-  k->vtable()->initialize_vtable(false, CHECK);
+  k->vtable().initialize_vtable(false, CHECK);
 
   // During bootstrapping, before java.base is defined, the module_entry may not be present yet.
   // These classes will be put on a fixup list and their module fields will be patched once
