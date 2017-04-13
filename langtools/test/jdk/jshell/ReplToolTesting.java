@@ -34,6 +34,8 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.prefs.AbstractPreferences;
 import java.util.prefs.BackingStoreException;
 import java.util.regex.Matcher;
@@ -265,6 +267,8 @@ public class ReplToolTesting {
     }
 
     protected JavaShellToolBuilder builder(Locale locale) {
+        // turn on logging of launch failures
+        Logger.getLogger("jdk.jshell.execution").setLevel(Level.ALL);
         return JavaShellToolBuilder
                     .builder()
                     .in(cmdin, userin)
