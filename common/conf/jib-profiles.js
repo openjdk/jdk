@@ -231,7 +231,8 @@ var getJibProfilesCommon = function (input, data) {
     // List of the main profile names used for iteration
     common.main_profile_names = [
         "linux-x64", "linux-x86", "macosx-x64", "solaris-x64",
-        "solaris-sparcv9", "windows-x64", "windows-x86"
+        "solaris-sparcv9", "windows-x64", "windows-x86",
+        "linux-arm64", "linux-arm-vfp-hflt", "linux-arm-vfp-hflt-dyn"
     ];
 
     // These are the base setttings for all the main build profiles.
@@ -391,7 +392,7 @@ var getJibProfilesCommon = function (input, data) {
     // on such hardware.
     if (input.build_cpu == "sparcv9") {
        var cpu_brand = $EXEC("bash -c \"kstat -m cpu_info | grep brand | head -n1 | awk '{ print \$2 }'\"");
-       if (cpu_brand.trim() == 'SPARC-M7') {
+       if (cpu_brand.trim().match('SPARC-.7')) {
            boot_jdk_revision = "8u20";
            boot_jdk_subdirpart = "1.8.0_20";
        }
@@ -471,8 +472,43 @@ var getJibProfilesProfiles = function (input, common, data) {
             build_cpu: "x64",
             dependencies: ["devkit", "freetype"],
             configure_args: concat(common.configure_args_32bit),
+        },
+
+        "linux-arm64": {
+            target_os: "linux",
+            target_cpu: "aarch64",
+            build_cpu: "x64",
+            dependencies: ["devkit", "build_devkit", "cups", "headless_stubs"],
+            configure_args: [
+                "--with-cpu-port=arm64",
+                "--with-jvm-variants=server",
+                "--openjdk-target=aarch64-linux-gnu",
+                "--enable-headless-only"
+            ],
+        },
+
+        "linux-arm-vfp-hflt": {
+            target_os: "linux",
+            target_cpu: "arm",
+            build_cpu: "x64",
+            dependencies: ["devkit", "build_devkit", "cups"],
+            configure_args: [
+                "--with-jvm-variants=minimal1,client",
+                "--with-x=" + input.get("devkit", "install_path") + "/arm-linux-gnueabihf/libc/usr/X11R6-PI",
+                "--openjdk-target=arm-linux-gnueabihf",
+                "--with-abi-profile=arm-vfp-hflt"
+            ],
+        },
+
+        // Special version of the SE profile adjusted to be testable on arm64 hardware.
+        "linux-arm-vfp-hflt-dyn": {
+            configure_args: "--with-stdc++lib=dynamic"
         }
     };
+    // Let linux-arm-vfp-hflt-dyn inherit everything from linux-arm-vfp-hflt
+    profiles["linux-arm-vfp-hflt-dyn"] = concatObjects(
+        profiles["linux-arm-vfp-hflt-dyn"], profiles["linux-arm-vfp-hflt"]);
+
     // Add the base settings to all the main profiles
     common.main_profile_names.forEach(function (name) {
         profiles[name] = concatObjects(common.main_profile_base, profiles[name]);
@@ -658,16 +694,28 @@ var getJibProfilesProfiles = function (input, common, data) {
         "windows-x86": {
             platform: "windows-x86",
             demo_ext: "zip"
+        },
+       "linux-arm64": {
+            platform: "linux-arm64-vfp-hflt",
+            demo_ext: "tar.gz"
+        },
+        "linux-arm-vfp-hflt": {
+            platform: "linux-arm32-vfp-hflt",
+            demo_ext: "tar.gz"
+        },
+        "linux-arm-vfp-hflt-dyn": {
+            platform: "linux-arm32-vfp-hflt-dyn",
+            demo_ext: "tar.gz"
         }
     }
     // Generate common artifacts for all main profiles
-    common.main_profile_names.forEach(function (name) {
+    Object.keys(artifactData).forEach(function (name) {
         profiles[name] = concatObjects(profiles[name],
             common.main_profile_artifacts(artifactData[name].platform, artifactData[name].demo_ext));
     });
 
     // Generate common artifacts for all debug profiles
-    common.main_profile_names.forEach(function (name) {
+    Object.keys(artifactData).forEach(function (name) {
         var debugName = name + common.debug_suffix;
         profiles[debugName] = concatObjects(profiles[debugName],
             common.debug_profile_artifacts(artifactData[name].platform));
@@ -839,7 +887,11 @@ var getJibProfilesDependencies = function (input, common) {
         macosx_x64: "Xcode6.3-MacOSX10.9+1.0",
         solaris_x64: "SS12u4-Solaris11u1+1.0",
         solaris_sparcv9: "SS12u4-Solaris11u1+1.0",
-        windows_x64: "VS2013SP4+1.0"
+        windows_x64: "VS2013SP4+1.0",
+        linux_aarch64: "gcc-linaro-aarch64-linux-gnu-4.8-2013.11_linux+1.0",
+        linux_arm: (input.profile != null && input.profile.indexOf("hflt") >= 0
+                    ? "gcc-linaro-arm-linux-gnueabihf-raspbian-2012.09-20120921_linux+1.0"
+                    : "arm-linaro-4.7+1.0")
     };
 
     var devkit_platform = (input.target_cpu == "x86"
