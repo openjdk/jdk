@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,22 +57,11 @@ class NetworkConfiguration {
         return ip6Interfaces.get(nif);
     }
 
-    // IPv6 not supported for Windows XP/Server 2003
-    static boolean isIPv6Supported() {
-        if (System.getProperty("os.name").startsWith("Windows")) {
-            String ver = System.getProperty("os.version");
-            int major = Integer.parseInt(ver.split("\\.")[0]);
-            return (major >= 6);
-        }
-        return true;
-    }
-
     static NetworkConfiguration probe() throws IOException {
         Map<NetworkInterface,List<InetAddress>> ip4Interfaces =
             new HashMap<NetworkInterface,List<InetAddress>>();
         Map<NetworkInterface,List<InetAddress>> ip6Interfaces =
             new HashMap<NetworkInterface,List<InetAddress>>();
-        boolean isIPv6Supported = isIPv6Supported();
 
         // find the interfaces that support IPv4 and IPv6
         List<NetworkInterface> nifs = Collections
@@ -92,7 +81,7 @@ class NetworkConfiguration {
                         }
                         list.add(addr);
                         ip4Interfaces.put(nif, list);
-                    } else if (isIPv6Supported && (addr instanceof Inet6Address)) {
+                    } else if (addr instanceof Inet6Address) {
                         List<InetAddress> list = ip6Interfaces.get(nif);
                         if (list == null) {
                             list = new LinkedList<InetAddress>();

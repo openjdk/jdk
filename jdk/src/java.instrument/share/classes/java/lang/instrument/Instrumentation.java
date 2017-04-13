@@ -714,6 +714,7 @@ public interface Instrumentation {
      * @throws NullPointerException if any of the arguments are {@code null} or
      *         any of the Sets or Maps contains a {@code null} key or value
      * @since 9
+     * @spec JPMS
      */
     void redefineModule(Module module,
                         Set<Module> extraReads,

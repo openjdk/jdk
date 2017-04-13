@@ -840,14 +840,6 @@ public class Resolve {
         }
     };
 
-    List<Type> dummyArgs(int length) {
-        ListBuffer<Type> buf = new ListBuffer<>();
-        for (int i = 0 ; i < length ; i++) {
-            buf.append(Type.noType);
-        }
-        return buf.toList();
-    }
-
     /**
      * Main method applicability routine. Given a list of actual types A,
      * a list of formal types F, determines whether the types in A are
@@ -4703,20 +4695,6 @@ public class Resolve {
                 this.sym = sym;
                 this.details = details;
                 this.mtype = mtype;
-            }
-
-            @Override
-            public boolean equals(Object o) {
-                if (o instanceof Candidate) {
-                    Symbol s1 = this.sym;
-                    Symbol s2 = ((Candidate)o).sym;
-                    if  ((s1 != s2 &&
-                            (s1.overrides(s2, s1.owner.type.tsym, types, false) ||
-                            (s2.overrides(s1, s2.owner.type.tsym, types, false)))) ||
-                            ((s1.isConstructor() || s2.isConstructor()) && s1.owner != s2.owner))
-                        return true;
-                }
-                return false;
             }
 
             boolean isApplicable() {

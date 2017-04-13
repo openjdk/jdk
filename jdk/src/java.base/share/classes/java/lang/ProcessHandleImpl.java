@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package java.lang;
 
+import java.lang.annotation.Native;
 import java.security.PrivilegedAction;
 import java.time.Duration;
 import java.time.Instant;
@@ -55,6 +56,12 @@ final class ProcessHandleImpl implements ProcessHandle {
      * Default size of stack for reaper processes.
      */
     private static long REAPER_DEFAULT_STACKSIZE = 128 * 1024;
+
+    /**
+     * Return value from waitForProcessExit0 indicating the process is not a child.
+     */
+    @Native
+    private static final int NOT_A_CHILD = -2;
 
     /**
      * Cache the ProcessHandle of this process.
@@ -131,6 +138,29 @@ final class ProcessHandleImpl implements ProcessHandle {
                 // spawn a thread to wait for and deliver the exit value
                 processReaperExecutor.execute(() -> {
                     int exitValue = waitForProcessExit0(pid, shouldReap);
+                    if (exitValue == NOT_A_CHILD) {
+                        // pid not alive or not a child of this process
+                        // If it is alive wait for it to terminate
+                        long sleep = 300;     // initial milliseconds to sleep
+                        int incr = 30;        // increment to the sleep time
+
+                        long startTime = isAlive0(pid);
+                        long origStart = startTime;
+                        while (startTime >= 0) {
+                            try {
+                                Thread.sleep(Math.min(sleep, 5000L)); // no more than 5 sec
+                                sleep += incr;
+                            } catch (InterruptedException ie) {
+                                // ignore and retry
+                            }
+                            startTime = isAlive0(pid);  // recheck if is alive
+                            if (origStart > 0 && startTime != origStart) {
+                                // start time changed, pid is not the same process
+                                break;
+                            }
+                        }
+                        exitValue = 0;
+                    }
                     newCompletion.complete(exitValue);
                     // remove from cache afterwards
                     completions.remove(pid, newCompletion);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,17 +48,17 @@ public class AccessCheckSuper {
         ClassLoader this_cldr = AccessCheckSuper.class.getClassLoader();
 
         // Define a module for p2.
-        Object m2 = ModuleHelper.ModuleObject("module2", this_cldr, new String[] { "p2" });
-        assertNotNull(m2, "Module should not be null");
-        ModuleHelper.DefineModule(m2, "9.0", "m2/there", new String[] { "p2" });
+        Object m2x = ModuleHelper.ModuleObject("module_two", this_cldr, new String[] { "p2" });
+        assertNotNull(m2x, "Module should not be null");
+        ModuleHelper.DefineModule(m2x, "9.0", "m2x/there", new String[] { "p2" });
 
         // Define a module for p3.
-        Object m3 = ModuleHelper.ModuleObject("module3", this_cldr, new String[] { "p3" });
-        assertNotNull(m3, "Module should not be null");
-        ModuleHelper.DefineModule(m3, "9.0", "m3/there", new String[] { "p3" });
+        Object m3x = ModuleHelper.ModuleObject("module_three", this_cldr, new String[] { "p3" });
+        assertNotNull(m3x, "Module should not be null");
+        ModuleHelper.DefineModule(m3x, "9.0", "m3x/there", new String[] { "p3" });
 
-        // Since a readability edge has not been established between module2
-        // and module3, p3.c3 cannot read its superclass p2.c2.
+        // Since a readability edge has not been established between module_two
+        // and module_three, p3.c3 cannot read its superclass p2.c2.
         try {
             Class p3_c3_class = Class.forName("p3.c3");
             throw new RuntimeException("Failed to get IAE (can't read superclass)");

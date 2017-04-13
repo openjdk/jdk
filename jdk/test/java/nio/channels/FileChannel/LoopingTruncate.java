@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,11 @@
 /**
  * @test
  * @bug 8137121 8137230
+ * @key intermittent
  * @summary (fc) Infinite loop FileChannel.truncate
  * @library /lib/testlibrary
  * @build jdk.testlibrary.Utils
- * @run main/othervm LoopingTruncate
+ * @run main/othervm/timeout=300 LoopingTruncate
  */
 
 import java.nio.ByteBuffer;
@@ -36,6 +37,7 @@ import java.nio.channels.ClosedByInterruptException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import static java.nio.file.StandardOpenOption.*;
+import java.util.concurrent.TimeUnit;
 import static jdk.testlibrary.Utils.adjustTimeout;
 
 public class LoopingTruncate {
@@ -50,11 +52,21 @@ public class LoopingTruncate {
         Path path = Files.createTempFile("LoopingTruncate.tmp", null);
         try (FileChannel fc = FileChannel.open(path, CREATE, WRITE)) {
             fc.position(FATEFUL_SIZE + 1L);
+            System.out.println("  Writing large file...");
+            long t0 = System.nanoTime();
             fc.write(ByteBuffer.wrap(new byte[] {0}));
+            long t1 = System.nanoTime();
+            System.out.printf("  Wrote large file in %d ns (%d ms) %n",
+                t1 - t0, TimeUnit.NANOSECONDS.toMillis(t1 - t0));
 
             Thread th = new Thread(() -> {
                 try {
+                    System.out.println("  Truncating large file...");
+                    long t2 = System.nanoTime();
                     fc.truncate(FATEFUL_SIZE);
+                    long t3 = System.nanoTime();
+                    System.out.printf("  Truncated large file in %d ns (%d ms) %n",
+                        t3 - t2, TimeUnit.NANOSECONDS.toMillis(t3 - t2));
                 } catch (ClosedByInterruptException ignore) {
                 } catch (Exception e) {
                     throw new RuntimeException(e);
@@ -76,5 +88,8 @@ public class LoopingTruncate {
         } finally {
             Files.deleteIfExists(path);
         }
+
+        System.out.println("Test succeeded.");
+        System.out.flush();
     }
 }

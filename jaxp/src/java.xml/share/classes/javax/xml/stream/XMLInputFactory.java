@@ -222,7 +222,7 @@ public abstract class XMLInputFactory {
    *   java.util.ServiceConfigurationError service configuration error} or if
    *   the implementation is not available or cannot be instantiated.
    */
-  @Deprecated(since="7")
+  @Deprecated(since="1.7")
   public static XMLInputFactory newFactory()
     throws FactoryConfigurationError
   {
@@ -244,7 +244,7 @@ public abstract class XMLInputFactory {
    *              #newFactory(java.lang.String, java.lang.ClassLoader)} method
    *              defines no changes in behavior.
    */
-  @Deprecated(since="7")
+  @Deprecated(since="1.7")
   public static XMLInputFactory newInstance(String factoryId,
           ClassLoader classLoader)
           throws FactoryConfigurationError {
