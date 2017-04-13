@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
  */
 public class Contents {
     public static final Content SPACE = RawHtml.nbsp;
+    public static final Content ZERO_WIDTH_SPACE = RawHtml.zws;
 
     public final Content allClassesLabel;
     public final Content allImplementedInterfacesLabel;

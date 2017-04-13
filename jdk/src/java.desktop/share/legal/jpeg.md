@@ -1,4 +1,4 @@
-## JPEG rb6
+## JPEG release 6b
 
 ### JPEG License
 <pre>

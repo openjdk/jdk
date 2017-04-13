@@ -151,16 +151,8 @@ public final class DefaultImageBuilder implements ImageBuilder {
     @Override
     public void storeFiles(ResourcePool files) {
         try {
-            // populate targetOsName field up-front because it's used elsewhere.
-            Optional<ResourcePoolModule> javaBase = files.moduleView().findModule("java.base");
-            javaBase.ifPresent(mod -> {
-                // fill release information available from transformed "java.base" module!
-                ModuleDescriptor desc = mod.descriptor();
-                desc.osName().ifPresent(s -> {
-                    this.targetOsName = s;
-                });
-            });
-
+            this.targetOsName = files.moduleView().
+                findModule("java.base").get().osName();
             if (this.targetOsName == null) {
                 throw new PluginException("ModuleTarget attribute is missing for java.base module");
             }
@@ -362,7 +354,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
         String module = "/" + entry.moduleName() + "/";
         String filename = entry.path().substring(module.length());
 
-        // Remove radical native|config|...
+        // Remove radical lib|config|...
         return filename.substring(filename.indexOf('/') + 1);
     }
 

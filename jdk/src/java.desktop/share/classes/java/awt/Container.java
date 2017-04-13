@@ -4728,6 +4728,7 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
      * Listen for drag events posted in other hw components so we can
      * track enter/exit regardless of where a drag originated
      */
+    @SuppressWarnings("deprecation")
     public void eventDispatched(AWTEvent e) {
         boolean isForeignDrag = (e instanceof MouseEvent) &&
                                 !(e instanceof SunDropTargetEvent) &&
@@ -4826,6 +4827,7 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
      * If the target has been removed, we don't bother to send the
      * message.
      */
+    @SuppressWarnings("deprecation")
     void retargetMouseEvent(Component target, int id, MouseEvent e) {
         if (target == null) {
             return; // mouse is over another hw component or target is disabled

@@ -27,6 +27,7 @@
  * @summary  Make sure the euro converters, which are derived from
  * existing converters, only differ from their parents at the expected
  * code point.
+ * @modules jdk.charsets
  */
 
 import java.text.*;

@@ -515,6 +515,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
     /**
      * Adds the specified mnemonic at the specified index.
      */
+    @SuppressWarnings("deprecation")
     private void addMnemonic(final int index, final int mnemonic) {
         if (mnemonicToIndexMap == null) {
             initMnemonics();

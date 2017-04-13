@@ -24,7 +24,7 @@
 /**
  * @test
  * @summary Basic test for redefineModule
- * @modules java.instrument
+ *
  * @build java.base/java.lang.TestProvider
  *        java.base/jdk.internal.test.TestProviderImpl1
  *        java.base/jdk.internal.test.TestProviderImpl2

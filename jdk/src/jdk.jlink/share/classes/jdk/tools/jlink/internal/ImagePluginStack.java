@@ -43,6 +43,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.internal.jimage.decompressor.Decompressor;
+import jdk.internal.module.ModuleInfo.Attributes;
+import jdk.internal.module.ModuleTarget;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.builder.ImageBuilder;
 import jdk.tools.jlink.plugin.PluginException;
@@ -298,6 +300,7 @@ public final class ImagePluginStack {
             final ResourcePoolModule module;
             // lazily initialized
             ModuleDescriptor descriptor;
+            ModuleTarget target;
 
             LastModule(ResourcePoolModule module) {
                 this.module = module;
@@ -316,10 +319,28 @@ public final class ImagePluginStack {
 
             @Override
             public ModuleDescriptor descriptor() {
-                if (descriptor == null) {
-                    descriptor = ResourcePoolManager.readModuleDescriptor(this);
-                }
+                initModuleAttributes();
                 return descriptor;
+            }
+
+            @Override
+            public String osName() {
+                initModuleAttributes();
+                return target != null? target.osName() : null;
+            }
+
+            @Override
+            public String osArch() {
+                initModuleAttributes();
+                return target != null? target.osArch() : null;
+            }
+
+            private void initModuleAttributes() {
+                if (this.descriptor == null) {
+                    Attributes attr = ResourcePoolManager.readModuleAttributes(this);
+                    this.descriptor = attr.descriptor();
+                    this.target = attr.target();
+                }
             }
 
             @Override

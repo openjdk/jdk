@@ -1,6 +1,6 @@
 ## Apache XML Resolver Library v1.2
 
-### Notice
+### Apache XML Resolver Notice
 <pre>
 
 Apache XML Commons Resolver
