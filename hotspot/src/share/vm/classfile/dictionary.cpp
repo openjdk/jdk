@@ -26,6 +26,7 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/sharedClassUtil.hpp"
 #include "classfile/dictionary.hpp"
+#include "classfile/protectionDomainCache.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "memory/iterator.hpp"
@@ -147,7 +148,6 @@ void Dictionary::do_unloading() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
 
   // Remove unloadable entries and classes from system dictionary
-  // The placeholder array has been handled in always_strong_oops_do.
   DictionaryEntry* probe = NULL;
   for (int index = 0; index < table_size(); index++) {
     for (DictionaryEntry** p = bucket_addr(index); *p != NULL; ) {
@@ -157,7 +157,7 @@ void Dictionary::do_unloading() {
 
       InstanceKlass* ik = InstanceKlass::cast(e);
 
-      // Non-unloadable classes were handled in always_strong_oops_do
+      // Only unload classes that are not strongly reachable
       if (!is_strongly_reachable(loader_data, e)) {
         // Entry was not visited in phase1 (negated test from phase1)
         assert(!loader_data->is_the_null_class_loader_data(), "unloading entry with null class loader");
@@ -202,25 +202,18 @@ void Dictionary::do_unloading() {
 }
 
 void Dictionary::roots_oops_do(OopClosure* strong, OopClosure* weak) {
-  // Skip the strong roots probe marking if the closures are the same.
-  if (strong == weak) {
-    oops_do(strong);
-    return;
+  // Do strong roots marking if the closures are the same.
+  if (strong == weak || !ClassUnloading) {
+    // Only the protection domain oops contain references into the heap. Iterate
+    // over all of them.
+    _pd_cache_table->oops_do(strong);
+  } else {
+   if (weak != NULL) {
+     _pd_cache_table->oops_do(weak);
+   }
   }
-
-  for (int index = 0; index < table_size(); index++) {
-    for (DictionaryEntry *probe = bucket(index);
-                          probe != NULL;
-                          probe = probe->next()) {
-      Klass* e = probe->klass();
-      ClassLoaderData* loader_data = probe->loader_data();
-      if (is_strongly_reachable(loader_data, e)) {
-        probe->set_strongly_reachable();
-      }
-    }
-  }
-  _pd_cache_table->roots_oops_do(strong, weak);
 }
+
 
 void Dictionary::remove_classes_in_error_state() {
   assert(DumpSharedSpaces, "supported only when dumping");
@@ -243,27 +236,6 @@ void Dictionary::remove_classes_in_error_state() {
       p = probe->next_addr();
     }
   }
-}
-
-void Dictionary::always_strong_oops_do(OopClosure* blk) {
-  // Follow all system classes and temporary placeholders in dictionary; only
-  // protection domain oops contain references into the heap. In a first
-  // pass over the system dictionary determine which need to be treated as
-  // strongly reachable and mark them as such.
-  for (int index = 0; index < table_size(); index++) {
-    for (DictionaryEntry *probe = bucket(index);
-                          probe != NULL;
-                          probe = probe->next()) {
-      Klass* e = probe->klass();
-      ClassLoaderData* loader_data = probe->loader_data();
-      if (is_strongly_reachable(loader_data, e)) {
-        probe->set_strongly_reachable();
-      }
-    }
-  }
-  // Then iterate over the protection domain cache to apply the closure on the
-  // previously marked ones.
-  _pd_cache_table->always_strong_oops_do(blk);
 }
 
 //   Just the classes from defining class loaders
@@ -471,153 +443,6 @@ void Dictionary::reorder_dictionary() {
     p->set_next(bucket(index));
     set_entry(index, p);
   }
-}
-
-
-unsigned int ProtectionDomainCacheTable::compute_hash(Handle protection_domain) {
-  // Identity hash can safepoint, so keep protection domain in a Handle.
-  return (unsigned int)(protection_domain->identity_hash());
-}
-
-int ProtectionDomainCacheTable::index_for(Handle protection_domain) {
-  return hash_to_index(compute_hash(protection_domain));
-}
-
-ProtectionDomainCacheTable::ProtectionDomainCacheTable(int table_size)
-  : Hashtable<oop, mtClass>(table_size, sizeof(ProtectionDomainCacheEntry))
-{
-}
-
-void ProtectionDomainCacheTable::unlink(BoolObjectClosure* is_alive) {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be");
-  for (int i = 0; i < table_size(); ++i) {
-    ProtectionDomainCacheEntry** p = bucket_addr(i);
-    ProtectionDomainCacheEntry* entry = bucket(i);
-    while (entry != NULL) {
-      if (is_alive->do_object_b(entry->literal())) {
-        p = entry->next_addr();
-      } else {
-        *p = entry->next();
-        free_entry(entry);
-      }
-      entry = *p;
-    }
-  }
-}
-
-void ProtectionDomainCacheTable::oops_do(OopClosure* f) {
-  for (int index = 0; index < table_size(); index++) {
-    for (ProtectionDomainCacheEntry* probe = bucket(index);
-                                     probe != NULL;
-                                     probe = probe->next()) {
-      probe->oops_do(f);
-    }
-  }
-}
-
-void ProtectionDomainCacheTable::roots_oops_do(OopClosure* strong, OopClosure* weak) {
-  for (int index = 0; index < table_size(); index++) {
-    for (ProtectionDomainCacheEntry* probe = bucket(index);
-                                     probe != NULL;
-                                     probe = probe->next()) {
-      if (probe->is_strongly_reachable()) {
-        probe->reset_strongly_reachable();
-        probe->oops_do(strong);
-      } else {
-        if (weak != NULL) {
-          probe->oops_do(weak);
-        }
-      }
-    }
-  }
-}
-
-uint ProtectionDomainCacheTable::bucket_size() {
-  return sizeof(ProtectionDomainCacheEntry);
-}
-
-#ifndef PRODUCT
-void ProtectionDomainCacheTable::print() {
-  tty->print_cr("Protection domain cache table (table_size=%d, classes=%d)",
-                table_size(), number_of_entries());
-  for (int index = 0; index < table_size(); index++) {
-    for (ProtectionDomainCacheEntry* probe = bucket(index);
-                                     probe != NULL;
-                                     probe = probe->next()) {
-      probe->print();
-    }
-  }
-}
-
-void ProtectionDomainCacheEntry::print() {
-  tty->print_cr("entry " PTR_FORMAT " value " PTR_FORMAT " strongly_reachable %d next " PTR_FORMAT,
-                p2i(this), p2i(literal()), _strongly_reachable, p2i(next()));
-}
-#endif
-
-void ProtectionDomainCacheTable::verify() {
-  int element_count = 0;
-  for (int index = 0; index < table_size(); index++) {
-    for (ProtectionDomainCacheEntry* probe = bucket(index);
-                                     probe != NULL;
-                                     probe = probe->next()) {
-      probe->verify();
-      element_count++;
-    }
-  }
-  guarantee(number_of_entries() == element_count,
-            "Verify of protection domain cache table failed");
-  DEBUG_ONLY(verify_lookup_length((double)number_of_entries() / table_size(), "Domain Cache Table"));
-}
-
-void ProtectionDomainCacheEntry::verify() {
-  guarantee(literal()->is_oop(), "must be an oop");
-}
-
-void ProtectionDomainCacheTable::always_strong_oops_do(OopClosure* f) {
-  // the caller marked the protection domain cache entries that we need to apply
-  // the closure on. Only process them.
-  for (int index = 0; index < table_size(); index++) {
-    for (ProtectionDomainCacheEntry* probe = bucket(index);
-                                     probe != NULL;
-                                     probe = probe->next()) {
-      if (probe->is_strongly_reachable()) {
-        probe->reset_strongly_reachable();
-        probe->oops_do(f);
-      }
-    }
-  }
-}
-
-ProtectionDomainCacheEntry* ProtectionDomainCacheTable::get(Handle protection_domain) {
-  unsigned int hash = compute_hash(protection_domain);
-  int index = hash_to_index(hash);
-
-  ProtectionDomainCacheEntry* entry = find_entry(index, protection_domain);
-  if (entry == NULL) {
-    entry = add_entry(index, hash, protection_domain);
-  }
-  return entry;
-}
-
-ProtectionDomainCacheEntry* ProtectionDomainCacheTable::find_entry(int index, Handle protection_domain) {
-  for (ProtectionDomainCacheEntry* e = bucket(index); e != NULL; e = e->next()) {
-    if (e->protection_domain() == protection_domain()) {
-      return e;
-    }
-  }
-
-  return NULL;
-}
-
-ProtectionDomainCacheEntry* ProtectionDomainCacheTable::add_entry(int index, unsigned int hash, Handle protection_domain) {
-  assert_locked_or_safepoint(SystemDictionary_lock);
-  assert(index == index_for(protection_domain), "incorrect index?");
-  assert(find_entry(index, protection_domain) == NULL, "no double entry");
-
-  ProtectionDomainCacheEntry* p = new_entry(hash, protection_domain);
-  Hashtable<oop, mtClass>::add_entry(index, p);
-  return p;
 }
 
 
