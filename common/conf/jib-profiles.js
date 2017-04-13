@@ -392,7 +392,7 @@ var getJibProfilesCommon = function (input, data) {
     // on such hardware.
     if (input.build_cpu == "sparcv9") {
        var cpu_brand = $EXEC("bash -c \"kstat -m cpu_info | grep brand | head -n1 | awk '{ print \$2 }'\"");
-       if (cpu_brand.trim() == 'SPARC-M7') {
+       if (cpu_brand.trim().match('SPARC-.7')) {
            boot_jdk_revision = "8u20";
            boot_jdk_subdirpart = "1.8.0_20";
        }
