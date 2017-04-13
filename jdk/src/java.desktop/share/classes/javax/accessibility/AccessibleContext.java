@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,6 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.beans.PropertyChangeEvent;
 import java.awt.IllegalComponentStateException;
-
-import javax.swing.SwingContainer;
 
 /**
  * AccessibleContext represents the minimum information all accessible objects
@@ -79,7 +77,6 @@ import javax.swing.SwingContainer;
  * @author      Lynn Monsanto
  */
 @JavaBean(description = "Minimal information that all accessible objects return")
-@SwingContainer(false)
 public abstract class AccessibleContext {
 
     /**

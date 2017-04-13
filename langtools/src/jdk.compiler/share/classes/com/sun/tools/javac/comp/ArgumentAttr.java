@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -260,8 +260,10 @@ public class ArgumentAttr extends JCTree.Visitor {
     public void visitReference(JCMemberReference tree) {
         //perform arity-based check
         Env<AttrContext> localEnv = env.dup(tree);
-        JCExpression exprTree = (JCExpression)deferredAttr.attribSpeculative(tree.getQualifierExpression(), localEnv,
-                attr.memberReferenceQualifierResult(tree));
+        JCExpression exprTree;
+        exprTree = (JCExpression)deferredAttr.attribSpeculative(tree.getQualifierExpression(), localEnv,
+                attr.memberReferenceQualifierResult(tree),
+                withLocalCacheContext());
         JCMemberReference mref2 = new TreeCopier<Void>(attr.make).copy(tree);
         mref2.expr = exprTree;
         Symbol lhsSym = TreeInfo.symbol(exprTree);
@@ -277,9 +279,9 @@ public class ArgumentAttr extends JCTree.Visitor {
                 (res.flags() & Flags.VARARGS) != 0 ||
                 (TreeInfo.isStaticSelector(exprTree, tree.name.table.names) &&
                 exprTree.type.isRaw() && !exprTree.type.hasTag(ARRAY))) {
-            tree.overloadKind = JCMemberReference.OverloadKind.OVERLOADED;
+            tree.setOverloadKind(JCMemberReference.OverloadKind.OVERLOADED);
         } else {
-            tree.overloadKind = JCMemberReference.OverloadKind.UNOVERLOADED;
+            tree.setOverloadKind(JCMemberReference.OverloadKind.UNOVERLOADED);
         }
         //return a plain old deferred type for this
         setResult(tree, deferredAttr.new DeferredType(tree, env));

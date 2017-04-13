@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,10 +79,10 @@ public class JVMGetModuleByPkgName {
         }
 
         MyClassLoader cl1 = new MyClassLoader();
-        Module module1 = (Module)ModuleHelper.ModuleObject("module1", cl1, new String[] { "mypackage" });
-        assertNotNull(module1, "Module should not be null");
-        ModuleHelper.DefineModule(module1, "9.0", "module1/here", new String[] { "mypackage" });
-        if (ModuleHelper.GetModuleByPackageName(cl1, "mypackage") != module1) {
+        Module module_one = (Module)ModuleHelper.ModuleObject("module_one", cl1, new String[] { "mypackage" });
+        assertNotNull(module_one, "Module should not be null");
+        ModuleHelper.DefineModule(module_one, "9.0", "module_one/here", new String[] { "mypackage" });
+        if (ModuleHelper.GetModuleByPackageName(cl1, "mypackage") != module_one) {
             throw new RuntimeException("Wrong module returned for cl1 mypackage");
         }
     }

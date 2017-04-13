@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -579,7 +579,7 @@ class RevocationChecker extends PKIXRevocationChecker {
                     approvedCRLs.addAll(DistributionPointFetcher.getCRLs(
                                         sel, signFlag, prevKey, prevCert,
                                         params.sigProvider(), certStores,
-                                        reasonsMask, anchors, null));
+                                        reasonsMask, anchors, null, params.variant()));
                 }
             } catch (CertStoreException e) {
                 if (e instanceof CertStoreTypeException) {
@@ -727,7 +727,7 @@ class RevocationChecker extends PKIXRevocationChecker {
                     }
                 }
                 response.verify(Collections.singletonList(certId), issuerInfo,
-                        responderCert, params.date(), nonce);
+                        responderCert, params.date(), nonce, params.variant());
 
             } else {
                 URI responderURI = (this.responderURI != null)
@@ -741,7 +741,7 @@ class RevocationChecker extends PKIXRevocationChecker {
 
                 response = OCSP.check(Collections.singletonList(certId),
                         responderURI, issuerInfo, responderCert, null,
-                        ocspExtensions);
+                        ocspExtensions, params.variant());
             }
         } catch (IOException e) {
             throw new CertPathValidatorException(
@@ -853,7 +853,7 @@ class RevocationChecker extends PKIXRevocationChecker {
                     if (DistributionPointFetcher.verifyCRL(
                             certImpl, point, crl, reasonsMask, signFlag,
                             prevKey, null, params.sigProvider(), anchors,
-                            certStores, params.date()))
+                            certStores, params.date(), params.variant()))
                     {
                         results.add(crl);
                     }
@@ -986,9 +986,7 @@ class RevocationChecker extends PKIXRevocationChecker {
         // any way to convey them back to the application.
         // That's the default, so no need to write code.
         builderParams.setDate(params.date());
-        // CertPathCheckers need to be cloned to start from fresh state
-        builderParams.setCertPathCheckers(
-            params.getPKIXParameters().getCertPathCheckers());
+        builderParams.setCertPathCheckers(params.certPathCheckers());
         builderParams.setSigProvider(params.sigProvider());
 
         // Skip revocation during this build to detect circular
@@ -1114,15 +1112,6 @@ class RevocationChecker extends PKIXRevocationChecker {
                      -1, BasicReason.UNDETERMINED_REVOCATION_STATUS);
             }
         }
-    }
-
-    @Override
-    public RevocationChecker clone() {
-        RevocationChecker copy = (RevocationChecker)super.clone();
-        // we don't deep-copy the exceptions, but that is ok because they
-        // are never modified after they are instantiated
-        copy.softFailExceptions = new LinkedList<>(softFailExceptions);
-        return copy;
     }
 
     /*

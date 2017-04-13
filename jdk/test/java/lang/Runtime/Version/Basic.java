@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Unit test for java.lang.Runtime.Version.
- * @bug 8072379 8144062 8161236
+ * @bug 8072379 8144062 8161236 8160956
  */
 
 import java.lang.reflect.InvocationTargetException;
@@ -129,6 +129,9 @@ public class Basic {
         testEHC("9",          "10",               false, false, -1,   -1);
         testEHC("9",          "8",                false, false,  1,    1);
 
+        testEHC("10.512.1",   "10.512.2",         false, false, -1,   -1);
+        testEHC("512.10.1",   "512.11.1",         false, false, -1,   -1);
+
         // $OPT comparison
         testEHC("9",          "9+-oink",          false, true,  -1,    0);
         testEHC("9+-ribbit",  "9+-moo",           false, true,   1,    0);
@@ -140,7 +143,7 @@ public class Basic {
         testEHC("9.1.1.2-2a", "9.1.1.2-12",       false, false,  1,    1);
         testEHC("9.1.1.2-12", "9.1.1.2-4",        false, false,  1,    1);
 
-        testEHC("27.16",      "27.16+120",        false, false,  1,    1);
+        testEHC("27.16",      "27.16+120",        false, false, -1,   -1);
         testEHC("10",         "10-ea",            false, false,  1,    1);
         testEHC("10.1+1",     "10.1-ea+1",        false, false,  1,    1);
         testEHC("10.0.1+22",  "10.0.1+21",        false, false,  1,    1);
@@ -152,7 +155,7 @@ public class Basic {
         testEHC("9-internal", "9",                false, false, -1,   -1);
         testEHC("9-ea+120",   "9+120",            false, false, -1,   -1);
         testEHC("9-ea+120",   "9+120",            false, false, -1,   -1);
-        testEHC("9+101",      "9",                false, false, -1,   -1);
+        testEHC("9+101",      "9",                false, false,  1,    1);
         testEHC("9+101",      "9+102",            false, false, -1,   -1);
         testEHC("1.9-ea",     "9-ea",             false, false, -1,   -1);
 

@@ -92,11 +92,16 @@ public:
 
 class LiveFrameStream : public BaseFrameStream {
 private:
+  enum {
+    MODE_INTERPRETED = 0x01,
+    MODE_COMPILED    = 0x02
+  };
+
   javaVFrame*           _jvf;
 
   void fill_live_stackframe(Handle stackFrame, const methodHandle& method, TRAPS);
-  static oop create_primitive_value_instance(StackValueCollection* values,
-                                             int i, TRAPS);
+  static oop create_primitive_slot_instance(StackValueCollection* values,
+                                            int i, BasicType type, TRAPS);
   static objArrayHandle monitors_to_object_array(GrowableArray<MonitorInfo*>* monitors,
                                                  TRAPS);
   static objArrayHandle values_to_object_array(StackValueCollection* values, TRAPS);

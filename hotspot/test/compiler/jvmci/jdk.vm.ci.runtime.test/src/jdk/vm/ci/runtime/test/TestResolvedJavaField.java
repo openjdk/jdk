@@ -25,8 +25,8 @@
  * @test
  * @requires vm.jvmci
  * @library ../../../../../
- * @modules jdk.vm.ci/jdk.vm.ci.meta
- *          jdk.vm.ci/jdk.vm.ci.runtime
+ * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
+ *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          java.base/jdk.internal.misc
  * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI jdk.vm.ci.runtime.test.TestResolvedJavaField
  */

@@ -222,7 +222,7 @@ public abstract class XMLOutputFactory {
    *              Use the new method {@link #newFactory(java.lang.String,
    *              java.lang.ClassLoader)} instead.
    */
-  @Deprecated(since="7")
+  @Deprecated(since="1.7")
   public static XMLInputFactory newInstance(String factoryId,
           ClassLoader classLoader)
           throws FactoryConfigurationError {
