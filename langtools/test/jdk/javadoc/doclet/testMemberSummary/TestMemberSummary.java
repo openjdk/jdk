@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4951228 6290760 8025633 8026567 8081854 8162363
+ * @bug      4951228 6290760 8025633 8026567 8081854 8162363 8175200
  * @summary  Test the case where the overriden method returns a different
  *           type than the method in the child class.  Make sure the
  *           documentation is inherited but the return type isn't.
@@ -52,10 +52,10 @@ public class TestMemberSummary extends JavadocTester {
                 // Check return type in member summary.
                 "<code><a href=\"../pkg/PublicChild.html\" title=\"class in pkg\">PublicChild</a></code></td>\n"
                 + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\"><a href=\"../pkg/PublicChild.html#returnTypeTest--\">"
-                + "returnTypeTest</a></span>()</code>",
+                + "returnTypeTest</a></span>&#8203;()</code>",
                 // Check return type in member detail.
                 "<pre>public&nbsp;<a href=\"../pkg/PublicChild.html\" title=\"class in pkg\">"
-                + "PublicChild</a>&nbsp;returnTypeTest()</pre>");
+                + "PublicChild</a>&nbsp;returnTypeTest&#8203;()</pre>");
 
         // Legacy anchor dimensions (6290760)
         checkOutput("pkg2/A.html", true,
