@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,7 @@ Mutex*   MarkStackFreeList_lock       = NULL;
 Mutex*   MarkStackChunkList_lock      = NULL;
 Mutex*   ParGCRareEvent_lock          = NULL;
 Mutex*   DerivedPointerTableGC_lock   = NULL;
+Monitor* CGCPhaseManager_lock         = NULL;
 Mutex*   Compile_lock                 = NULL;
 Monitor* MethodCompileQueue_lock      = NULL;
 Monitor* CompileThread_lock           = NULL;
@@ -203,6 +204,9 @@ void mutex_init() {
   }
   def(ParGCRareEvent_lock          , PaddedMutex  , leaf     ,   true,  Monitor::_safepoint_check_sometimes);
   def(DerivedPointerTableGC_lock   , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_never);
+#ifdef INCLUDE_ALL_GCS
+  def(CGCPhaseManager_lock         , PaddedMonitor, leaf,        false, Monitor::_safepoint_check_sometimes);
+#endif
   def(CodeCache_lock               , PaddedMutex  , special,     true,  Monitor::_safepoint_check_never);
   def(RawMonitor_lock              , PaddedMutex  , special,     true,  Monitor::_safepoint_check_never);
   def(OopMapCacheAlloc_lock        , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_always);     // used for oop_map_cache allocation.

@@ -1438,6 +1438,11 @@ public:
   // full GC.
   void verify(VerifyOption vo);
 
+  // WhiteBox testing support.
+  virtual bool supports_concurrent_phase_control() const;
+  virtual const char* const* concurrent_phases() const;
+  virtual bool request_concurrent_phase(const char* phase);
+
   // The methods below are here for convenience and dispatch the
   // appropriate method depending on value of the given VerifyOption
   // parameter. The values for that parameter, and their meanings,

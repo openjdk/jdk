@@ -579,6 +579,31 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // Heap verification
   virtual void verify(VerifyOption option) = 0;
 
+  // Return true if concurrent phase control (via
+  // request_concurrent_phase_control) is supported by this collector.
+  // The default implementation returns false.
+  virtual bool supports_concurrent_phase_control() const;
+
+  // Return a NULL terminated array of concurrent phase names provided
+  // by this collector.  Supports Whitebox testing.  These are the
+  // names recognized by request_concurrent_phase(). The default
+  // implementation returns an array of one NULL element.
+  virtual const char* const* concurrent_phases() const;
+
+  // Request the collector enter the indicated concurrent phase, and
+  // wait until it does so.  Supports WhiteBox testing.  Only one
+  // request may be active at a time.  Phases are designated by name;
+  // the set of names and their meaning is GC-specific.  Once the
+  // requested phase has been reached, the collector will attempt to
+  // avoid transitioning to a new phase until a new request is made.
+  // [Note: A collector might not be able to remain in a given phase.
+  // For example, a full collection might cancel an in-progress
+  // concurrent collection.]
+  //
+  // Returns true when the phase is reached.  Returns false for an
+  // unknown phase.  The default implementation returns false.
+  virtual bool request_concurrent_phase(const char* phase);
+
   // Non product verification and debugging.
 #ifndef PRODUCT
   // Support for PromotionFailureALot.  Return true if it's time to cause a

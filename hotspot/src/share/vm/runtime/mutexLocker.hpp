@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ extern Mutex*   MethodData_lock;                 // a lock on installation of me
 extern Mutex*   TouchedMethodLog_lock;           // a lock on allocation of LogExecutedMethods info
 extern Mutex*   RetData_lock;                    // a lock on installation of RetData inside method data
 extern Mutex*   DerivedPointerTableGC_lock;      // a lock to protect the derived pointer table
+extern Monitor* CGCPhaseManager_lock;            // a lock to protect a concurrent GC's phase management
 extern Monitor* VMOperationQueue_lock;           // a lock on queue of vm_operations waiting to execute
 extern Monitor* VMOperationRequest_lock;         // a lock on Threads waiting for a vm_operation to terminate
 extern Monitor* Safepoint_lock;                  // a lock used by the safepoint abstraction

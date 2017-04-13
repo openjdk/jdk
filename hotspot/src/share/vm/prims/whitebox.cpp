@@ -357,6 +357,43 @@ WB_ENTRY(jlong, WB_GetHeapAlignment(JNIEnv* env, jobject o))
   return (jlong)alignment;
 WB_END
 
+WB_ENTRY(jboolean, WB_SupportsConcurrentGCPhaseControl(JNIEnv* env, jobject o))
+  return Universe::heap()->supports_concurrent_phase_control();
+WB_END
+
+WB_ENTRY(jobjectArray, WB_GetConcurrentGCPhases(JNIEnv* env, jobject o))
+  const char* const* phases = Universe::heap()->concurrent_phases();
+  jint nphases = 0;
+  for ( ; phases[nphases] != NULL; ++nphases) ;
+
+  ResourceMark rm(thread);
+  ThreadToNativeFromVM ttn(thread);
+  jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
+  CHECK_JNI_EXCEPTION_(env, NULL);
+
+  jobjectArray result = env->NewObjectArray(nphases, clazz, NULL);
+  CHECK_JNI_EXCEPTION_(env, NULL);
+
+  // If push fails, return with pending exception.
+  if (env->PushLocalFrame(nphases) < 0) return NULL;
+  for (jint i = 0; i < nphases; ++i) {
+    jstring phase = env->NewStringUTF(phases[i]);
+    CHECK_JNI_EXCEPTION_(env, NULL);
+    env->SetObjectArrayElement(result, i, phase);
+    CHECK_JNI_EXCEPTION_(env, NULL);
+  }
+  env->PopLocalFrame(NULL);
+
+  return result;
+WB_END
+
+WB_ENTRY(jboolean, WB_RequestConcurrentGCPhase(JNIEnv* env, jobject o, jstring name))
+  Handle h_name(THREAD, JNIHandles::resolve(name));
+  ResourceMark rm;
+  const char* c_name = java_lang_String::as_utf8_string(h_name());
+  return Universe::heap()->request_concurrent_phase(c_name);
+WB_END
+
 #if INCLUDE_ALL_GCS
 WB_ENTRY(jboolean, WB_G1IsHumongous(JNIEnv* env, jobject o, jobject obj))
   if (UseG1GC) {
@@ -1969,6 +2006,11 @@ static JNINativeMethod methods[] = {
   {CC"currentGC",                 CC"()I",            (void*)&WB_CurrentGC},
   {CC"allSupportedGC",            CC"()I",            (void*)&WB_AllSupportedGC},
   {CC"gcSelectedByErgo",          CC"()Z",            (void*)&WB_GCSelectedByErgo},
+  {CC"supportsConcurrentGCPhaseControl", CC"()Z",     (void*)&WB_SupportsConcurrentGCPhaseControl},
+  {CC"getConcurrentGCPhases",     CC"()[Ljava/lang/String;",
+                                                      (void*)&WB_GetConcurrentGCPhases},
+  {CC"requestConcurrentGCPhase0", CC"(Ljava/lang/String;)Z",
+                                                      (void*)&WB_RequestConcurrentGCPhase},
 };
 
 #undef CC
