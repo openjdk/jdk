@@ -158,6 +158,22 @@ void CollectedHeap::trace_heap_after_gc(const GCTracer* gc_tracer) {
   trace_heap(GCWhen::AfterGC, gc_tracer);
 }
 
+// WhiteBox API support for concurrent collectors.  These are the
+// default implementations, for collectors which don't support this
+// feature.
+bool CollectedHeap::supports_concurrent_phase_control() const {
+  return false;
+}
+
+const char* const* CollectedHeap::concurrent_phases() const {
+  static const char* const result[] = { NULL };
+  return result;
+}
+
+bool CollectedHeap::request_concurrent_phase(const char* phase) {
+  return false;
+}
+
 // Memory state functions.
 
 

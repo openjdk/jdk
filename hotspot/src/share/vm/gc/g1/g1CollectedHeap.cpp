@@ -2487,6 +2487,18 @@ void G1CollectedHeap::verify(VerifyOption vo) {
   _verifier->verify(vo);
 }
 
+bool G1CollectedHeap::supports_concurrent_phase_control() const {
+  return true;
+}
+
+const char* const* G1CollectedHeap::concurrent_phases() const {
+  return _cmThread->concurrent_phases();
+}
+
+bool G1CollectedHeap::request_concurrent_phase(const char* phase) {
+  return _cmThread->request_concurrent_phase(phase);
+}
+
 class PrintRegionClosure: public HeapRegionClosure {
   outputStream* _st;
 public:
