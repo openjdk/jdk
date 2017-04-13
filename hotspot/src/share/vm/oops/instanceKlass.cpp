@@ -373,8 +373,8 @@ bool InstanceKlass::should_be_initialized() const {
   return !is_initialized();
 }
 
-klassItable* InstanceKlass::itable() const {
-  return new klassItable(const_cast<InstanceKlass*>(this));
+klassItable InstanceKlass::itable() const {
+  return klassItable(const_cast<InstanceKlass*>(this));
 }
 
 void InstanceKlass::eager_initialize(Thread *thread) {
@@ -621,15 +621,14 @@ bool InstanceKlass::link_class_impl(bool throw_verifyerror, TRAPS) {
       if (!(is_shared() &&
             loader_data->is_the_null_class_loader_data())) {
         ResourceMark rm(THREAD);
-        vtable()->initialize_vtable(true, CHECK_false);
-        itable()->initialize_itable(true, CHECK_false);
+        vtable().initialize_vtable(true, CHECK_false);
+        itable().initialize_itable(true, CHECK_false);
       }
 #ifdef ASSERT
       else {
-        ResourceMark rm(THREAD);
-        vtable()->verify(tty, true);
+        vtable().verify(tty, true);
         // In case itable verification is ever added.
-        // itable()->verify(tty, true);
+        // itable().verify(tty, true);
       }
 #endif
       set_init_state(linked);
@@ -807,8 +806,8 @@ void InstanceKlass::initialize_impl(TRAPS) {
   // Step 9
   if (!HAS_PENDING_EXCEPTION) {
     set_initialization_state_and_notify(fully_initialized, CHECK);
-    { ResourceMark rm(THREAD);
-      debug_only(vtable()->verify(tty, true);)
+    {
+      debug_only(vtable().verify(tty, true);)
     }
   }
   else {
@@ -2041,8 +2040,8 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
     // vtables in the shared system dictionary, only the main one.
     // It also redefines the itable too so fix that too.
     ResourceMark rm(THREAD);
-    vtable()->initialize_vtable(false, CHECK);
-    itable()->initialize_itable(false, CHECK);
+    vtable().initialize_vtable(false, CHECK);
+    itable().initialize_itable(false, CHECK);
   }
 
   // restore constant pool resolved references
@@ -3212,10 +3211,9 @@ void InstanceKlass::verify_on(outputStream* st) {
 
   // Verify vtables
   if (is_linked()) {
-    ResourceMark rm;
     // $$$ This used to be done only for m/s collections.  Doing it
     // always seemed a valid generalization.  (DLD -- 6/00)
-    vtable()->verify(st);
+    vtable().verify(st);
   }
 
   // Verify first subklass

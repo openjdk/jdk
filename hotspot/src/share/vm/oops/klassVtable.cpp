@@ -136,22 +136,22 @@ int klassVtable::initialize_from_super(Klass* super) {
     // methods from super class for shared class, as that was already done
     // during archiving time. However, if Jvmti has redefined a class,
     // copy super class's vtable in case the super class has changed.
-    return super->vtable()->length();
+    return super->vtable().length();
   } else {
     // copy methods from superKlass
-    klassVtable* superVtable = super->vtable();
-    assert(superVtable->length() <= _length, "vtable too short");
+    klassVtable superVtable = super->vtable();
+    assert(superVtable.length() <= _length, "vtable too short");
 #ifdef ASSERT
-    superVtable->verify(tty, true);
+    superVtable.verify(tty, true);
 #endif
-    superVtable->copy_vtable_to(table());
+    superVtable.copy_vtable_to(table());
     if (log_develop_is_enabled(Trace, vtables)) {
       ResourceMark rm;
       log_develop_trace(vtables)("copy vtable from %s to %s size %d",
                                  super->internal_name(), klass()->internal_name(),
                                  _length);
     }
-    return superVtable->length();
+    return superVtable.length();
   }
 }
 
@@ -290,9 +290,9 @@ InstanceKlass* klassVtable::find_transitive_override(InstanceKlass* initialsuper
   InstanceKlass* superk = initialsuper;
   while (superk != NULL && superk->super() != NULL) {
     InstanceKlass* supersuperklass = InstanceKlass::cast(superk->super());
-    klassVtable* ssVtable = supersuperklass->vtable();
-    if (vtable_index < ssVtable->length()) {
-      Method* super_method = ssVtable->method_at(vtable_index);
+    klassVtable ssVtable = supersuperklass->vtable();
+    if (vtable_index < ssVtable.length()) {
+      Method* super_method = ssVtable.method_at(vtable_index);
 #ifndef PRODUCT
       Symbol* name= target_method()->name();
       Symbol* signature = target_method()->signature();
@@ -445,8 +445,8 @@ bool klassVtable::update_inherited_vtable(InstanceKlass* klass, methodHandle tar
     if (is_preinitialized_vtable()) {
       // If this is a shared class, the vtable is already in the final state (fully
       // initialized). Need to look at the super's vtable.
-      klassVtable* superVtable = super->vtable();
-      super_method = superVtable->method_at(i);
+      klassVtable superVtable = super->vtable();
+      super_method = superVtable.method_at(i);
     } else {
       super_method = method_at(i);
     }
@@ -1249,17 +1249,6 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Klass
   }
 }
 
-// Update entry for specific Method*
-void klassItable::initialize_with_method(Method* m) {
-  itableMethodEntry* ime = method_entry(0);
-  for(int i = 0; i < _size_method_table; i++) {
-    if (ime->method() == m) {
-      ime->initialize(m);
-    }
-    ime++;
-  }
-}
-
 #if INCLUDE_JVMTI
 // search the itable for uses of either obsolete or EMCP methods
 void klassItable::adjust_method_entries(InstanceKlass* holder, bool * trace_name_printed) {
@@ -1488,9 +1477,9 @@ void klassVtable::verify(outputStream* st, bool forced) {
   Klass* super = _klass->super();
   if (super != NULL) {
     InstanceKlass* sk = InstanceKlass::cast(super);
-    klassVtable* vt = sk->vtable();
-    for (int i = 0; i < vt->length(); i++) {
-      verify_against(st, vt, i);
+    klassVtable vt = sk->vtable();
+    for (int i = 0; i < vt.length(); i++) {
+      verify_against(st, &vt, i);
     }
   }
 }
@@ -1557,8 +1546,7 @@ class VtableStats : AllStatic {
 
   static void do_class(Klass* k) {
     Klass* kl = k;
-    klassVtable* vt = kl->vtable();
-    if (vt == NULL) return;
+    klassVtable vt = kl->vtable();
     no_klasses++;
     if (kl->is_instance_klass()) {
       no_instance_klasses++;
@@ -1566,9 +1554,9 @@ class VtableStats : AllStatic {
     }
     if (kl->is_array_klass()) {
       no_array_klasses++;
-      sum_of_array_vtable_len += vt->length();
+      sum_of_array_vtable_len += vt.length();
     }
-    sum_of_vtable_len += vt->length();
+    sum_of_vtable_len += vt.length();
   }
 
   static void compute() {

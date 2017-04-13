@@ -696,8 +696,8 @@ void Klass::oop_verify_on(oop obj, outputStream* st) {
   guarantee(obj->klass()->is_klass(), "klass field is not a klass");
 }
 
-klassVtable* Klass::vtable() const {
-  return new klassVtable(const_cast<Klass*>(this), start_of_vtable(), vtable_length() / vtableEntry::size());
+klassVtable Klass::vtable() const {
+  return klassVtable(const_cast<Klass*>(this), start_of_vtable(), vtable_length() / vtableEntry::size());
 }
 
 vtableEntry* Klass::start_of_vtable() const {

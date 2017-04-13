@@ -1127,7 +1127,7 @@ public:
   }
 
   // Java itable
-  klassItable* itable() const;        // return new klassItable wrapper
+  klassItable itable() const;        // return klassItable wrapper
   Method* method_at_itable(Klass* holder, int index, TRAPS);
 
 #if INCLUDE_JVMTI
