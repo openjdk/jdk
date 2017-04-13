@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.lang.management.ManagementFactory;
-import java.lang.management.RuntimeMXBean;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -65,23 +62,23 @@ public final class ProcessTools {
     }
 
     /**
-    * Pumps stdout and stderr from running the process into a String.
-    *
-    * @param processHandler ProcessHandler to run.
-    * @return Output from process.
-    * @throws IOException If an I/O error occurs.
-    */
+     * Pumps stdout and stderr from running the process into a String.
+     *
+     * @param processHandler ProcessHandler to run.
+     * @return Output from process.
+     * @throws IOException If an I/O error occurs.
+     */
     public static OutputBuffer getOutput(ProcessBuilder processBuilder) throws IOException {
         return getOutput(processBuilder.start());
     }
 
     /**
-    * Pumps stdout and stderr the running process into a String.
-    *
-    * @param process Process to pump.
-    * @return Output from process.
-    * @throws IOException If an I/O error occurs.
-    */
+     * Pumps stdout and stderr the running process into a String.
+     *
+     * @param process Process to pump.
+     * @return Output from process.
+     * @throws IOException If an I/O error occurs.
+     */
     public static OutputBuffer getOutput(Process process) throws IOException {
         ByteArrayOutputStream stderrBuffer = new ByteArrayOutputStream();
         ByteArrayOutputStream stdoutBuffer = new ByteArrayOutputStream();
@@ -303,16 +300,6 @@ public final class ProcessTools {
     public static long getProcessId() throws Exception {
         return ProcessHandle.current().getPid();
     }
-    /**
-     * Gets the array of strings containing input arguments passed to the VM
-     *
-     * @return arguments
-     */
-    public static String[] getVmInputArgs() {
-        RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
-        List<String> args = runtime.getInputArguments();
-        return args.toArray(new String[args.size()]);
-    }
 
 
 
@@ -366,26 +353,6 @@ public final class ProcessTools {
             }
             System.out.println();
         }
-    }
-
-    /**
-     * Executes a test jvm process, waits for it to finish and returns the process output.
-     * The default jvm options from the test's run command, jtreg, test.vm.opts and test.java.opts, are added.
-     * The java from the test.jdk is used to execute the command.
-     *
-     * The command line will be like:
-     * {test.jdk}/bin/java {test.fromRun.opts} {test.vm.opts} {test.java.opts} cmds
-     *
-     * @param cmds User specifed arguments.
-     * @return The output from the process.
-     */
-    public static OutputAnalyzer executeTestJvmAllArgs(String... cmds) throws Throwable {
-        List<String> argsList = new ArrayList<>();
-        String[] testArgs = getVmInputArgs();
-        Collections.addAll(argsList, testArgs);
-        Collections.addAll(argsList, Utils.addTestJavaOpts(cmds));
-        ProcessBuilder pb = createJavaProcessBuilder(argsList.toArray(new String[argsList.size()]));
-        return executeProcess(pb);
     }
 
     /**
