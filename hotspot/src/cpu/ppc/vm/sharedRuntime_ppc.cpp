@@ -221,7 +221,7 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
   const int regstosave_num       = sizeof(RegisterSaver_LiveRegs) /
                                    sizeof(RegisterSaver::LiveRegType);
   const int register_save_size   = regstosave_num * reg_size;
-  const int frame_size_in_bytes  = round_to(register_save_size, frame::alignment_in_bytes)
+  const int frame_size_in_bytes  = align_up(register_save_size, frame::alignment_in_bytes)
                                    + frame::abi_reg_args_size;
   *out_frame_size_in_bytes       = frame_size_in_bytes;
   const int frame_size_in_slots  = frame_size_in_bytes / sizeof(jint);
@@ -658,7 +658,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
       ShouldNotReachHere();
     }
   }
-  return round_to(stk, 2);
+  return align_up(stk, 2);
 }
 
 #if defined(COMPILER1) || defined(COMPILER2)
@@ -845,7 +845,7 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
     }
   }
 
-  return round_to(stk, 2);
+  return align_up(stk, 2);
 }
 #endif // COMPILER2
 
@@ -873,7 +873,7 @@ static address gen_c2i_adapter(MacroAssembler *masm,
 
   // Adapter needs TOP_IJAVA_FRAME_ABI.
   const int adapter_size = frame::top_ijava_frame_abi_size +
-                           round_to(total_args_passed * wordSize, frame::alignment_in_bytes);
+      align_up(total_args_passed * wordSize, frame::alignment_in_bytes);
 
   // regular (verified) c2i entry point
   c2i_entrypoint = __ pc();
@@ -1022,9 +1022,9 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
     // number (all values in registers) or the maximum stack slot accessed.
 
     // Convert 4-byte c2 stack slots to words.
-    comp_words_on_stack = round_to(comp_args_on_stack*VMRegImpl::stack_slot_size, wordSize)>>LogBytesPerWord;
+    comp_words_on_stack = align_up(comp_args_on_stack*VMRegImpl::stack_slot_size, wordSize)>>LogBytesPerWord;
     // Round up to miminum stack alignment, in wordSize.
-    comp_words_on_stack = round_to(comp_words_on_stack, 2);
+    comp_words_on_stack = align_up(comp_words_on_stack, 2);
     __ resize_frame(-comp_words_on_stack * wordSize, R11_scratch1);
   }
 
@@ -1918,7 +1918,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
         }
       }
     }
-    total_save_slots = double_slots * 2 + round_to(single_slots, 2); // round to even
+    total_save_slots = double_slots * 2 + align_up(single_slots, 2); // round to even
   }
 
   int oop_handle_slot_offset = stack_slots;
@@ -1945,7 +1945,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
   // Now compute actual number of stack words we need.
   // Rounding to make stack properly aligned.
-  stack_slots = round_to(stack_slots,                                             // 7)
+  stack_slots = align_up(stack_slots,                                             // 7)
                          frame::alignment_in_bytes / VMRegImpl::stack_slot_size);
   int frame_size_in_bytes = stack_slots * VMRegImpl::stack_slot_size;
 
@@ -2204,7 +2204,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
     // Save argument registers and leave room for C-compatible ABI_REG_ARGS.
     int frame_size = frame::abi_reg_args_size +
-                     round_to(total_c_args * wordSize, frame::alignment_in_bytes);
+        align_up(total_c_args * wordSize, frame::alignment_in_bytes);
     __ mr(R11_scratch1, R1_SP);
     RegisterSaver::push_frame_and_save_argument_registers(masm, R12_scratch2, frame_size, total_c_args, out_regs, out_regs2);
 
@@ -2570,7 +2570,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 // This function returns the adjust size (in number of words) to a c2i adapter
 // activation for use during deoptimization.
 int Deoptimization::last_frame_adjust(int callee_parameters, int callee_locals) {
-  return round_to((callee_locals - callee_parameters) * Interpreter::stackElementWords, frame::alignment_in_bytes);
+  return align_up((callee_locals - callee_parameters) * Interpreter::stackElementWords, frame::alignment_in_bytes);
 }
 
 uint SharedRuntime::out_preserve_stack_slots() {

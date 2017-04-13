@@ -77,7 +77,7 @@ class RegisterSaver {
     call_args_area = frame::register_save_words_sp_offset +
                      frame::memory_parameter_word_sp_offset*wordSize,
     // Make sure save locations are always 8 byte aligned.
-    // can't use round_to because it doesn't produce compile time constant
+    // can't use align_up because it doesn't produce compile time constant
     start_of_extra_save_area = ((call_args_area + 7) & ~7),
     g1_offset = start_of_extra_save_area, // g-regs needing saving
     g3_offset = g1_offset+8,
@@ -119,7 +119,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   // (as the stub's I's) when the runtime routine called by the stub creates its frame.
   int i;
   // Always make the frame size 16 byte aligned.
-  int frame_size = round_to(additional_frame_words + register_save_size, 16);
+  int frame_size = align_up(additional_frame_words + register_save_size, 16);
   // OopMap frame size is in c2 stack slots (sizeof(jint)) not bytes or words
   int frame_size_in_slots = frame_size / sizeof(jint);
   // CodeBlob frame size is in words.
@@ -322,7 +322,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
         Register r = is_outgoing ? as_oRegister(int_reg++) : as_iRegister(int_reg++);
         regs[i].set2(r->as_VMReg());
       } else {
-        slot = round_to(slot, 2);  // align
+        slot = align_up(slot, 2);  // align
         regs[i].set2(VMRegImpl::stack2reg(slot));
         slot += 2;
       }
@@ -339,13 +339,13 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
 
     case T_DOUBLE:
       assert((i + 1) < total_args_passed && sig_bt[i+1] == T_VOID, "expecting half");
-      if (round_to(flt_reg, 2) + 1 < flt_reg_max) {
-        flt_reg = round_to(flt_reg, 2);  // align
+      if (align_up(flt_reg, 2) + 1 < flt_reg_max) {
+        flt_reg = align_up(flt_reg, 2);  // align
         FloatRegister r = as_FloatRegister(flt_reg);
         regs[i].set2(r->as_VMReg());
         flt_reg += 2;
       } else {
-        slot = round_to(slot, 2);  // align
+        slot = align_up(slot, 2);  // align
         regs[i].set2(VMRegImpl::stack2reg(slot));
         slot += 2;
       }
@@ -531,7 +531,7 @@ void AdapterGenerator::gen_c2i_adapter(
   const int arg_size = total_args_passed * Interpreter::stackElementSize;
   const int varargs_area =
                  (frame::varargs_offset - frame::register_save_words)*wordSize;
-  const int extraspace = round_to(arg_size + varargs_area, 2*wordSize);
+  const int extraspace = align_up(arg_size + varargs_area, 2*wordSize);
 
   const int bias = STACK_BIAS;
   const int interp_arg_offset = frame::varargs_offset*wordSize +
@@ -753,9 +753,9 @@ void AdapterGenerator::gen_i2c_adapter(int total_args_passed,
   // in registers, we will commonly have no stack args.
   if (comp_args_on_stack > 0) {
     // Convert VMReg stack slots to words.
-    int comp_words_on_stack = round_to(comp_args_on_stack*VMRegImpl::stack_slot_size, wordSize)>>LogBytesPerWord;
+    int comp_words_on_stack = align_up(comp_args_on_stack*VMRegImpl::stack_slot_size, wordSize)>>LogBytesPerWord;
     // Round up to miminum stack alignment, in wordSize
-    comp_words_on_stack = round_to(comp_words_on_stack, 2);
+    comp_words_on_stack = align_up(comp_words_on_stack, 2);
     // Now compute the distance from Lesp to SP.  This calculation does not
     // include the space for total_args_passed because Lesp has not yet popped
     // the arguments.
@@ -1068,7 +1068,7 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
         if (off > max_stack_slots) max_stack_slots = off;
       }
     }
-  return round_to(max_stack_slots + 1, 2);
+  return align_up(max_stack_slots + 1, 2);
 
 }
 
@@ -1989,7 +1989,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // Now the space for the inbound oop handle area
 
-  int oop_handle_offset = round_to(stack_slots, 2);
+  int oop_handle_offset = align_up(stack_slots, 2);
   stack_slots += total_save_slots;
 
   // Now any space we need for handlizing a klass if static method
@@ -2043,7 +2043,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // Now compute actual number of stack words we need rounding to make
   // stack properly aligned.
-  stack_slots = round_to(stack_slots, 2 * VMRegImpl::slots_per_word);
+  stack_slots = align_up(stack_slots, 2 * VMRegImpl::slots_per_word);
 
   int stack_size = stack_slots * VMRegImpl::stack_slot_size;
 
@@ -2591,7 +2591,7 @@ int Deoptimization::last_frame_adjust(int callee_parameters, int callee_locals) 
   if (callee_locals < callee_parameters)
     return 0;                   // No adjustment for negative locals
   int diff = (callee_locals - callee_parameters) * Interpreter::stackElementWords;
-  return round_to(diff, WordsPerLong);
+  return align_up(diff, WordsPerLong);
 }
 
 // "Top of Stack" slots that may be unused by the calling convention but must

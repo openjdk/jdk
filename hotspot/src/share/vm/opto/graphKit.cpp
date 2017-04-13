@@ -3562,8 +3562,8 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
 
   // --- Size Computation ---
   // array_size = round_to_heap(array_header + (length << elem_shift));
-  // where round_to_heap(x) == round_to(x, MinObjAlignmentInBytes)
-  // and round_to(x, y) == ((x + y-1) & ~(y-1))
+  // where round_to_heap(x) == align_to(x, MinObjAlignmentInBytes)
+  // and align_to(x, y) == ((x + y-1) & ~(y-1))
   // The rounding mask is strength-reduced, if possible.
   int round_mask = MinObjAlignmentInBytes - 1;
   Node* header_size = NULL;

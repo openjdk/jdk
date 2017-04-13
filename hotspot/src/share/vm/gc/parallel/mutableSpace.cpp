@@ -44,8 +44,8 @@ MutableSpace::~MutableSpace() {
 void MutableSpace::numa_setup_pages(MemRegion mr, bool clear_space) {
   if (!mr.is_empty()) {
     size_t page_size = UseLargePages ? alignment() : os::vm_page_size();
-    HeapWord *start = (HeapWord*)round_to((intptr_t) mr.start(), page_size);
-    HeapWord *end =  (HeapWord*)round_down((intptr_t) mr.end(), page_size);
+    HeapWord *start = align_up(mr.start(), page_size);
+    HeapWord *end =   align_down(mr.end(), page_size);
     if (end > start) {
       size_t size = pointer_delta(end, start, sizeof(char));
       if (clear_space) {

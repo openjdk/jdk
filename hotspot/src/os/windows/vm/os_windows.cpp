@@ -4048,7 +4048,7 @@ jint os::init_2(void) {
 
   // If stack_commit_size is 0, windows will reserve the default size,
   // but only commit a small portion of it.
-  size_t stack_commit_size = round_to(ThreadStackSize*K, os::vm_page_size());
+  size_t stack_commit_size = align_up(ThreadStackSize*K, os::vm_page_size());
   size_t default_reserve_size = os::win32::default_stack_size();
   size_t actual_reserve_size = stack_commit_size;
   if (stack_commit_size < default_reserve_size) {

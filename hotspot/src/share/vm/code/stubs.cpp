@@ -64,7 +64,7 @@
 
 StubQueue::StubQueue(StubInterface* stub_interface, int buffer_size,
                      Mutex* lock, const char* name) : _mutex(lock) {
-  intptr_t size = round_to(buffer_size, 2*BytesPerWord);
+  intptr_t size = align_up(buffer_size, 2*BytesPerWord);
   BufferBlob* blob = BufferBlob::create(name, size);
   if( blob == NULL) {
     vm_exit_out_of_memory(size, OOM_MALLOC_ERROR, "CodeCache: no room for %s", name);
@@ -111,7 +111,7 @@ Stub* StubQueue::request(int requested_code_size) {
   assert(requested_code_size > 0, "requested_code_size must be > 0");
   if (_mutex != NULL) _mutex->lock();
   Stub* s = current_stub();
-  int requested_size = round_to(stub_code_size_to_size(requested_code_size), CodeEntryAlignment);
+  int requested_size = align_up(stub_code_size_to_size(requested_code_size), CodeEntryAlignment);
   if (requested_size <= available_space()) {
     if (is_contiguous()) {
       // Queue: |...|XXXXXXX|.............|
@@ -149,7 +149,7 @@ Stub* StubQueue::request(int requested_code_size) {
 
 void StubQueue::commit(int committed_code_size, CodeStrings& strings) {
   assert(committed_code_size > 0, "committed_code_size must be > 0");
-  int committed_size = round_to(stub_code_size_to_size(committed_code_size), CodeEntryAlignment);
+  int committed_size = align_up(stub_code_size_to_size(committed_code_size), CodeEntryAlignment);
   Stub* s = current_stub();
   assert(committed_size <= stub_size(s), "committed size must not exceed requested size");
   stub_initialize(s, committed_size, strings);

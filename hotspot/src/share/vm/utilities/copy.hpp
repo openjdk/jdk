@@ -204,7 +204,7 @@ class Copy : AllStatic {
     assert_params_ok(from, to, LogHeapWordSize);
     assert_byte_count_ok(byte_count, HeapWordSize);
 
-    size_t count = (size_t)round_to(byte_count, HeapWordSize) >> LogHeapWordSize;
+    size_t count = align_up(byte_count, HeapWordSize) >> LogHeapWordSize;
     assert(to <= from || from + count <= to, "do not overwrite source data");
 
     while (count-- > 0) {
@@ -218,7 +218,7 @@ class Copy : AllStatic {
     assert_params_ok(from, to, LogHeapWordSize);
     assert_byte_count_ok(byte_count, HeapWordSize);
 
-    size_t count = (size_t)round_to(byte_count, HeapWordSize) >> LogHeapWordSize;
+    size_t count = align_up(byte_count, HeapWordSize) >> LogHeapWordSize;
     assert(from <= to || to + count <= from, "do not overwrite source data");
 
     from += count - 1;
@@ -353,7 +353,7 @@ class Copy : AllStatic {
 
   static void assert_byte_count_ok(size_t byte_count, size_t unit_size) {
 #ifdef ASSERT
-    if ((size_t)round_to(byte_count, unit_size) != byte_count) {
+    if (!is_aligned(byte_count, unit_size)) {
       basic_fatal("byte count must be aligned");
     }
 #endif

@@ -65,7 +65,7 @@ void InterpreterMacroAssembler::compute_extra_locals_size_in_bytes(Register args
   br(Assembler::negative, true, Assembler::pt, skip_move);
   delayed()->mov(G0, delta);
   bind(skip_move);
-  round_to(delta, WordsPerLong);       // make multiple of 2 (SP must be 2-word aligned)
+  align_up(delta, WordsPerLong);       // make multiple of 2 (SP must be 2-word aligned)
   sll(delta, LogBytesPerWord, delta);  // extra space for locals in bytes
 }
 
@@ -2309,7 +2309,7 @@ void InterpreterMacroAssembler::store_local_double( Register index, FloatRegiste
 
 int InterpreterMacroAssembler::top_most_monitor_byte_offset() {
   const jint delta = frame::interpreter_frame_monitor_size() * wordSize;
-  int rounded_vm_local_words = ::round_to(frame::interpreter_frame_vm_local_words, WordsPerLong);
+  int rounded_vm_local_words = align_up((int)frame::interpreter_frame_vm_local_words, WordsPerLong);
   return ((-rounded_vm_local_words * wordSize) - delta ) + STACK_BIAS;
 }
 

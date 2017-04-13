@@ -241,7 +241,7 @@ inline void frame::interpreter_frame_set_monitor_end(BasicObjectLock* monitors) 
 
 inline int frame::interpreter_frame_monitor_size() {
   // Number of stack slots for a monitor
-  return round_to(BasicObjectLock::size() /* number of stack slots */,
+  return align_up(BasicObjectLock::size() /* number of stack slots */,
                   WordsPerLong /* Number of stack slots for a Java long. */);
 }
 

@@ -290,7 +290,7 @@ void PatchingStub::align_patch_site(MacroAssembler* masm) {
   // very hard to make a guess about what code might be in the icache.
   // Force the instruction to be double word aligned so that it
   // doesn't span a cache line.
-  masm->align(round_to(NativeGeneralJump::instruction_size, wordSize));
+  masm->align(align_up((int)NativeGeneralJump::instruction_size, wordSize));
 }
 
 void PatchingStub::emit_code(LIR_Assembler* ce) {

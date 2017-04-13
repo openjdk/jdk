@@ -251,7 +251,7 @@ void Runtime1::initialize_pd() {
   // SP -> ---------------
   //
   int i;
-  int sp_offset = round_to(frame::register_save_words, 2); //  start doubleword aligned
+  int sp_offset = align_up((int)frame::register_save_words, 2); //  start doubleword aligned
 
   // only G int registers are saved explicitly; others are found in register windows
   for (i = 0; i < FrameMap::nof_cpu_regs; i++) {

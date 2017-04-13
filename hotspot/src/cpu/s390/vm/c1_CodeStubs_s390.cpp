@@ -284,7 +284,7 @@ void PatchingStub::align_patch_site(MacroAssembler* masm) {
   masm->block_comment(bc);
 #endif
 
-  masm->align(round_to(NativeGeneralJump::instruction_size, wordSize));
+  masm->align(align_up((int)NativeGeneralJump::instruction_size, wordSize));
 }
 
 void PatchingStub::emit_code(LIR_Assembler* ce) {

@@ -5218,7 +5218,7 @@ frame %{
   // ppc port uses 0 but we definitely need to allow for fixed_slots
   // which folds in the space used for monitors
   return_addr(STACK - 2 +
-              round_to((Compile::current()->in_preserve_stack_slots() +
+              align_up((Compile::current()->in_preserve_stack_slots() +
                         Compile::current()->fixed_slots()),
                        stack_alignment_in_slots()));
 

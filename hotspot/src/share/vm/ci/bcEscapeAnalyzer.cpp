@@ -218,7 +218,7 @@ bool BCEscapeAnalyzer::is_arg_modified(int arg, int offset, int size_in_bytes) {
   assert(arg >= 0 && arg < _arg_size, "must be an argument.");
   bool modified = false;
   int l = offset / HeapWordSize;
-  int h = round_to(offset + size_in_bytes, HeapWordSize) / HeapWordSize;
+  int h = align_up(offset + size_in_bytes, HeapWordSize) / HeapWordSize;
   if (l > ARG_OFFSET_MAX)
     l = ARG_OFFSET_MAX;
   if (h > ARG_OFFSET_MAX+1)
@@ -236,7 +236,7 @@ void BCEscapeAnalyzer::set_arg_modified(int arg, int offset, int size_in_bytes) 
   }
   assert(arg >= 0 && arg < _arg_size, "must be an argument.");
   int l = offset / HeapWordSize;
-  int h = round_to(offset + size_in_bytes, HeapWordSize) / HeapWordSize;
+  int h = align_up(offset + size_in_bytes, HeapWordSize) / HeapWordSize;
   if (l > ARG_OFFSET_MAX)
     l = ARG_OFFSET_MAX;
   if (h > ARG_OFFSET_MAX+1)

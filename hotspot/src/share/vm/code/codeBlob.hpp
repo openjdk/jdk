@@ -263,7 +263,7 @@ public:
     _code_offset(_content_offset),
     _data_offset(data_offset)
   {
-    assert(_relocation_size == round_to(_relocation_size, oopSize), "unaligned size");
+    assert(is_aligned(_relocation_size, oopSize), "unaligned size");
 
     _code_begin = (address) start + _code_offset;
     _code_end = (address) start + _data_offset;
@@ -279,12 +279,12 @@ public:
   CodeBlobLayout(const address start, int size, int header_size, const CodeBuffer* cb) :
     _size(size),
     _header_size(header_size),
-    _relocation_size(round_to(cb->total_relocation_size(), oopSize)),
+    _relocation_size(align_up(cb->total_relocation_size(), oopSize)),
     _content_offset(CodeBlob::align_code_offset(_header_size + _relocation_size)),
     _code_offset(_content_offset + cb->total_offset_of(cb->insts())),
-    _data_offset(_content_offset + round_to(cb->total_content_size(), oopSize))
+    _data_offset(_content_offset + align_up(cb->total_content_size(), oopSize))
   {
-    assert(_relocation_size == round_to(_relocation_size, oopSize), "unaligned size");
+    assert(is_aligned(_relocation_size, oopSize), "unaligned size");
 
     _code_begin = (address) start + _code_offset;
     _code_end = (address) start + _data_offset;

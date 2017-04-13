@@ -650,8 +650,8 @@ bool VirtualSpace::initialize_with_granularity(ReservedSpace rs, size_t committe
   _upper_alignment  = os::vm_page_size();
 
   // End of each region
-  _lower_high_boundary = (char*) round_to((intptr_t) low_boundary(), middle_alignment());
-  _middle_high_boundary = (char*) round_down((intptr_t) high_boundary(), middle_alignment());
+  _lower_high_boundary = align_up(low_boundary(), middle_alignment());
+  _middle_high_boundary = align_down(high_boundary(), middle_alignment());
   _upper_high_boundary = high_boundary();
 
   // High address of each region
@@ -812,9 +812,9 @@ bool VirtualSpace::expand_by(size_t bytes, bool pre_touch) {
   // alignment will always be default page size.  middle alignment will be
   // LargePageSizeInBytes if the actual size of the virtual space is in
   // fact larger than LargePageSizeInBytes.
-  char* aligned_lower_new_high =  (char*) round_to((intptr_t) unaligned_lower_new_high, lower_alignment());
-  char* aligned_middle_new_high = (char*) round_to((intptr_t) unaligned_middle_new_high, middle_alignment());
-  char* aligned_upper_new_high =  (char*) round_to((intptr_t) unaligned_upper_new_high, upper_alignment());
+  char* aligned_lower_new_high =  align_up(unaligned_lower_new_high, lower_alignment());
+  char* aligned_middle_new_high = align_up(unaligned_middle_new_high, middle_alignment());
+  char* aligned_upper_new_high =  align_up(unaligned_upper_new_high, upper_alignment());
 
   // Determine which regions need to grow in this expand_by call.
   // If you are growing in the lower region, high() must be in that
@@ -898,12 +898,9 @@ void VirtualSpace::shrink_by(size_t size) {
     MAX2(unaligned_new_high, low_boundary());
 
   // Align address to region's alignment
-  char* aligned_upper_new_high =
-    (char*) round_to((intptr_t) unaligned_upper_new_high, upper_alignment());
-  char* aligned_middle_new_high =
-    (char*) round_to((intptr_t) unaligned_middle_new_high, middle_alignment());
-  char* aligned_lower_new_high =
-    (char*) round_to((intptr_t) unaligned_lower_new_high, lower_alignment());
+  char* aligned_upper_new_high =  align_up(unaligned_upper_new_high, upper_alignment());
+  char* aligned_middle_new_high = align_up(unaligned_middle_new_high, middle_alignment());
+  char* aligned_lower_new_high =  align_up(unaligned_lower_new_high, lower_alignment());
 
   // Determine which regions need to shrink
   size_t upper_needs = 0;

@@ -187,9 +187,9 @@ bool FrameMap::finalize_frame(int nof_slots) {
   assert(_num_spills == -1, "can only be set once");
   _num_spills = nof_slots;
   assert(_framesize == -1, "should only be calculated once");
-  _framesize =  round_to(in_bytes(sp_offset_for_monitor_base(0)) +
-                         _num_monitors * sizeof(BasicObjectLock) +
-                         sizeof(intptr_t) +                        // offset of deopt orig pc
+  _framesize =  align_up(in_bytes(sp_offset_for_monitor_base(0)) +
+                         _num_monitors * (int)sizeof(BasicObjectLock) +
+                         (int)sizeof(intptr_t) +                        // offset of deopt orig pc
                          frame_pad_in_bytes,
                          StackAlignmentInBytes) / 4;
   int java_index = 0;
@@ -270,15 +270,15 @@ ByteSize FrameMap::sp_offset_for_double_slot(const int index) const {
 
 ByteSize FrameMap::sp_offset_for_spill(const int index) const {
   assert(index >= 0 && index < _num_spills, "out of range");
-  int offset = round_to(first_available_sp_in_frame + _reserved_argument_area_size, sizeof(double)) +
+  int offset = align_up(first_available_sp_in_frame + _reserved_argument_area_size, (int)sizeof(double)) +
     index * spill_slot_size_in_bytes;
   return in_ByteSize(offset);
 }
 
 ByteSize FrameMap::sp_offset_for_monitor_base(const int index) const {
-  int end_of_spills = round_to(first_available_sp_in_frame + _reserved_argument_area_size, sizeof(double)) +
+  int end_of_spills = align_up(first_available_sp_in_frame + _reserved_argument_area_size, (int)sizeof(double)) +
     _num_spills * spill_slot_size_in_bytes;
-  int offset = (int) round_to(end_of_spills, HeapWordSize) + index * sizeof(BasicObjectLock);
+  int offset = align_up(end_of_spills, HeapWordSize) + index * (int)sizeof(BasicObjectLock);
   return in_ByteSize(offset);
 }
 

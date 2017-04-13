@@ -368,7 +368,7 @@ void PcDescCache::add_pc_desc(PcDesc* pc_desc) {
 // sizeof(PcDesc) (assumes that if sizeof(PcDesc) is not a multiple
 // of oopSize, then 2*sizeof(PcDesc) is)
 static int adjust_pcs_size(int pcs_size) {
-  int nsize = round_to(pcs_size,   oopSize);
+  int nsize = align_up(pcs_size,   oopSize);
   if ((nsize % sizeof(PcDesc)) != 0) {
     nsize = pcs_size + sizeof(PcDesc);
   }
@@ -487,10 +487,10 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
     int nmethod_size =
       CodeBlob::allocation_size(code_buffer, sizeof(nmethod))
       + adjust_pcs_size(debug_info->pcs_size())
-      + round_to(dependencies->size_in_bytes() , oopSize)
-      + round_to(handler_table->size_in_bytes(), oopSize)
-      + round_to(nul_chk_table->size_in_bytes(), oopSize)
-      + round_to(debug_info->data_size()       , oopSize);
+      + align_up((int)dependencies->size_in_bytes(), oopSize)
+      + align_up(handler_table->size_in_bytes()    , oopSize)
+      + align_up(nul_chk_table->size_in_bytes()    , oopSize)
+      + align_up(debug_info->data_size()           , oopSize);
 
     nm = new (nmethod_size, comp_level)
     nmethod(method(), compiler->type(), nmethod_size, compile_id, entry_bci, offsets,
@@ -575,8 +575,8 @@ nmethod::nmethod(
     _consts_offset           = data_offset();
     _stub_offset             = data_offset();
     _oops_offset             = data_offset();
-    _metadata_offset         = _oops_offset         + round_to(code_buffer->total_oop_size(), oopSize);
-    scopes_data_offset       = _metadata_offset     + round_to(code_buffer->total_metadata_size(), wordSize);
+    _metadata_offset         = _oops_offset         + align_up(code_buffer->total_oop_size(), oopSize);
+    scopes_data_offset       = _metadata_offset     + align_up(code_buffer->total_metadata_size(), wordSize);
     _scopes_pcs_offset       = scopes_data_offset;
     _dependencies_offset     = _scopes_pcs_offset;
     _handler_table_offset    = _dependencies_offset;
@@ -730,14 +730,14 @@ nmethod::nmethod(
     }
 
     _oops_offset             = data_offset();
-    _metadata_offset         = _oops_offset          + round_to(code_buffer->total_oop_size(), oopSize);
-    int scopes_data_offset   = _metadata_offset      + round_to(code_buffer->total_metadata_size(), wordSize);
+    _metadata_offset         = _oops_offset          + align_up(code_buffer->total_oop_size(), oopSize);
+    int scopes_data_offset   = _metadata_offset      + align_up(code_buffer->total_metadata_size(), wordSize);
 
-    _scopes_pcs_offset       = scopes_data_offset    + round_to(debug_info->data_size       (), oopSize);
+    _scopes_pcs_offset       = scopes_data_offset    + align_up(debug_info->data_size       (), oopSize);
     _dependencies_offset     = _scopes_pcs_offset    + adjust_pcs_size(debug_info->pcs_size());
-    _handler_table_offset    = _dependencies_offset  + round_to(dependencies->size_in_bytes (), oopSize);
-    _nul_chk_table_offset    = _handler_table_offset + round_to(handler_table->size_in_bytes(), oopSize);
-    _nmethod_end_offset      = _nul_chk_table_offset + round_to(nul_chk_table->size_in_bytes(), oopSize);
+    _handler_table_offset    = _dependencies_offset  + align_up((int)dependencies->size_in_bytes (), oopSize);
+    _nul_chk_table_offset    = _handler_table_offset + align_up(handler_table->size_in_bytes(), oopSize);
+    _nmethod_end_offset      = _nul_chk_table_offset + align_up(nul_chk_table->size_in_bytes(), oopSize);
     _entry_point             = code_begin()          + offsets->value(CodeOffsets::Entry);
     _verified_entry_point    = code_begin()          + offsets->value(CodeOffsets::Verified_Entry);
     _osr_entry_point         = code_begin()          + offsets->value(CodeOffsets::OSR_Entry);

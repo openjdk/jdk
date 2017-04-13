@@ -502,7 +502,7 @@ UNSAFE_ENTRY(jobject, Unsafe_AllocateInstance(JNIEnv *env, jobject unsafe, jclas
 UNSAFE_ENTRY(jlong, Unsafe_AllocateMemory0(JNIEnv *env, jobject unsafe, jlong size)) {
   size_t sz = (size_t)size;
 
-  sz = round_to(sz, HeapWordSize);
+  sz = align_up(sz, HeapWordSize);
   void* x = os::malloc(sz, mtInternal);
 
   return addr_to_java(x);
@@ -511,7 +511,7 @@ UNSAFE_ENTRY(jlong, Unsafe_AllocateMemory0(JNIEnv *env, jobject unsafe, jlong si
 UNSAFE_ENTRY(jlong, Unsafe_ReallocateMemory0(JNIEnv *env, jobject unsafe, jlong addr, jlong size)) {
   void* p = addr_from_java(addr);
   size_t sz = (size_t)size;
-  sz = round_to(sz, HeapWordSize);
+  sz = align_up(sz, HeapWordSize);
 
   void* x = os::realloc(p, sz, mtInternal);
 

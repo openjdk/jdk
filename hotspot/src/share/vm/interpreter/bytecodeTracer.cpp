@@ -50,7 +50,7 @@ class BytecodePrinter: public BytecodeClosure {
   Bytecodes::Code _code;
   address   _next_pc;                // current decoding position
 
-  void      align()                  { _next_pc = (address)round_to((intptr_t)_next_pc, sizeof(jint)); }
+  void      align()                  { _next_pc = align_up(_next_pc, sizeof(jint)); }
   int       get_byte()               { return *(jbyte*) _next_pc++; }  // signed
   short     get_short()              { short i=Bytes::get_Java_u2(_next_pc); _next_pc+=2; return i; }
   int       get_int()                { int i=Bytes::get_Java_u4(_next_pc); _next_pc+=4; return i; }

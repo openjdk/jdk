@@ -160,7 +160,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
 #endif
 
   // Always make the frame size 16-byte aligned, both vector and non vector stacks are always allocated
-  int frame_size_in_bytes = round_to(reg_save_size*BytesPerInt, num_xmm_regs);
+  int frame_size_in_bytes = align_up(reg_save_size*BytesPerInt, num_xmm_regs);
   // OopMap frame size is in compiler stack slots (jint's) not bytes or words
   int frame_size_in_slots = frame_size_in_bytes / BytesPerInt;
   // CodeBlob frame size is in words.
@@ -513,7 +513,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
     }
   }
 
-  return round_to(stk_args, 2);
+  return align_up(stk_args, 2);
 }
 
 // Patch the callers callsite with entry to compiled code if it exists.
@@ -582,7 +582,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
   int extraspace = (total_args_passed * Interpreter::stackElementSize) + wordSize;
 
   // stack is aligned, keep it that way
-  extraspace = round_to(extraspace, 2*wordSize);
+  extraspace = align_up(extraspace, 2*wordSize);
 
   // Get return address
   __ pop(rax);
@@ -782,9 +782,9 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
     // number (all values in registers) or the maximum stack slot accessed.
 
     // Convert 4-byte c2 stack slots to words.
-    comp_words_on_stack = round_to(comp_args_on_stack*VMRegImpl::stack_slot_size, wordSize)>>LogBytesPerWord;
+    comp_words_on_stack = align_up(comp_args_on_stack*VMRegImpl::stack_slot_size, wordSize)>>LogBytesPerWord;
     // Round up to miminum stack alignment, in wordSize
-    comp_words_on_stack = round_to(comp_words_on_stack, 2);
+    comp_words_on_stack = align_up(comp_words_on_stack, 2);
     __ subptr(rsp, comp_words_on_stack * wordSize);
   }
 
@@ -1982,7 +1982,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     total_save_slots = double_slots * 2 + single_slots;
     // align the save area
     if (double_slots != 0) {
-      stack_slots = round_to(stack_slots, 2);
+      stack_slots = align_up(stack_slots, 2);
     }
   }
 
@@ -2039,7 +2039,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // Now compute actual number of stack words we need rounding to make
   // stack properly aligned.
-  stack_slots = round_to(stack_slots, StackAlignmentInSlots);
+  stack_slots = align_up(stack_slots, StackAlignmentInSlots);
 
   int stack_size = stack_slots * VMRegImpl::stack_slot_size;
 

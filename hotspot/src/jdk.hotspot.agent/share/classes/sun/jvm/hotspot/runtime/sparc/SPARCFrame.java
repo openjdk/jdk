@@ -845,7 +845,7 @@ public class SPARCFrame extends Frame {
   // // Also begin is one past last monitor.
   //
   // inline BasicObjectLock* frame::interpreter_frame_monitor_begin()       const  {
-  //   int rounded_vm_local_words = round_to(frame::interpreter_frame_vm_local_words, WordsPerLong);
+  //   int rounded_vm_local_words = align_up(frame::interpreter_frame_vm_local_words, WordsPerLong);
   //   return (BasicObjectLock *)fp_addr_at(-rounded_vm_local_words);
   // }
   //
@@ -860,7 +860,7 @@ public class SPARCFrame extends Frame {
   //
   //
   // inline int frame::interpreter_frame_monitor_size() {
-  //   return round_to(BasicObjectLock::size(), WordsPerLong);
+  //   return align_up(BasicObjectLock::size(), WordsPerLong);
   // }
 
   public Address addressOfInterpreterFrameMethod() {

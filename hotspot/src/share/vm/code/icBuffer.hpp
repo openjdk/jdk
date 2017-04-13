@@ -55,14 +55,14 @@ class ICStub: public Stub {
 
   // General info
   int     size() const                           { return _size; }
-  static  int code_size_to_size(int code_size)   { return round_to(sizeof(ICStub), CodeEntryAlignment) + code_size; }
+  static  int code_size_to_size(int code_size)   { return align_up((int)sizeof(ICStub), CodeEntryAlignment) + code_size; }
 
  public:
   // Creation
   void set_stub(CompiledIC *ic, void* cached_value, address dest_addr);
 
   // Code info
-  address code_begin() const                     { return (address)this + round_to(sizeof(ICStub), CodeEntryAlignment); }
+  address code_begin() const                     { return (address)this + align_up(sizeof(ICStub), CodeEntryAlignment); }
   address code_end() const                       { return (address)this + size(); }
 
   // Call site info
@@ -84,7 +84,7 @@ class ICStub: public Stub {
 
 // ICStub Creation
 inline ICStub* ICStub_from_destination_address(address destination_address) {
-  ICStub* stub = (ICStub*) (destination_address - round_to(sizeof(ICStub), CodeEntryAlignment));
+  ICStub* stub = (ICStub*) (destination_address - align_up(sizeof(ICStub), CodeEntryAlignment));
   #ifdef ASSERT
   stub->verify();
   #endif

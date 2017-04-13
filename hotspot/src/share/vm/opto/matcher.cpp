@@ -139,7 +139,7 @@ OptoReg::Name Matcher::warp_incoming_stk_arg( VMReg reg ) {
 OptoReg::Name Compile::compute_old_SP() {
   int fixed    = fixed_slots();
   int preserve = in_preserve_stack_slots();
-  return OptoReg::stack2reg(round_to(fixed + preserve, Matcher::stack_alignment_in_slots()));
+  return OptoReg::stack2reg(align_up(fixed + preserve, (int)Matcher::stack_alignment_in_slots()));
 }
 
 
@@ -286,7 +286,7 @@ void Matcher::match( ) {
   // particular, in the spill area) which look aligned will in fact be
   // aligned relative to the stack pointer in the target machine.  Double
   // stack slots will always be allocated aligned.
-  _new_SP = OptoReg::Name(round_to(_in_arg_limit, RegMask::SlotsPerLong));
+  _new_SP = OptoReg::Name(align_up(_in_arg_limit, (int)RegMask::SlotsPerLong));
 
   // Compute highest outgoing stack argument as
   //   _new_SP + out_preserve_stack_slots + max(outgoing argument size).

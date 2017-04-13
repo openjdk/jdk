@@ -106,13 +106,13 @@ void MutableNUMASpace::ensure_parsability() {
             }
 #endif
             MemRegion invalid;
-            HeapWord *crossing_start = (HeapWord*)round_to(cur_top, os::vm_page_size());
-            HeapWord *crossing_end = (HeapWord*)round_to(cur_top + touched_words, os::vm_page_size());
+            HeapWord *crossing_start = align_up((HeapWord*)cur_top, os::vm_page_size());
+            HeapWord *crossing_end = align_down((HeapWord*)(cur_top + touched_words), os::vm_page_size());
             if (crossing_start != crossing_end) {
               // If object header crossed a small page boundary we mark the area
               // as invalid rounding it to a page_size().
-              HeapWord *start = MAX2((HeapWord*)round_down(cur_top, page_size()), s->bottom());
-              HeapWord *end = MIN2((HeapWord*)round_to(cur_top + touched_words, page_size()), s->end());
+              HeapWord *start = MAX2(align_down((HeapWord*)cur_top, page_size()), s->bottom());
+              HeapWord *end = MIN2(align_up((HeapWord*)(cur_top + touched_words), page_size()), s->end());
               invalid = MemRegion(start, end);
             }
 
@@ -297,8 +297,8 @@ bool MutableNUMASpace::update_layout(bool force) {
 
 // Bias region towards the first-touching lgrp. Set the right page sizes.
 void MutableNUMASpace::bias_region(MemRegion mr, int lgrp_id) {
-  HeapWord *start = (HeapWord*)round_to((intptr_t)mr.start(), page_size());
-  HeapWord *end = (HeapWord*)round_down((intptr_t)mr.end(), page_size());
+  HeapWord *start = align_up(mr.start(), page_size());
+  HeapWord *end = align_down(mr.end(), page_size());
   if (end > start) {
     MemRegion aligned_region(start, end);
     assert((intptr_t)aligned_region.start()     % page_size() == 0 &&
@@ -316,8 +316,8 @@ void MutableNUMASpace::bias_region(MemRegion mr, int lgrp_id) {
 
 // Free all pages in the region.
 void MutableNUMASpace::free_region(MemRegion mr) {
-  HeapWord *start = (HeapWord*)round_to((intptr_t)mr.start(), page_size());
-  HeapWord *end = (HeapWord*)round_down((intptr_t)mr.end(), page_size());
+  HeapWord *start = align_up(mr.start(), page_size());
+  HeapWord *end = align_down(mr.end(), page_size());
   if (end > start) {
     MemRegion aligned_region(start, end);
     assert((intptr_t)aligned_region.start()     % page_size() == 0 &&
@@ -437,7 +437,7 @@ size_t MutableNUMASpace::default_chunk_size() {
 size_t MutableNUMASpace::adaptive_chunk_size(int i, size_t limit) {
   size_t pages_available = base_space_size();
   for (int j = 0; j < i; j++) {
-    pages_available -= round_down(current_chunk_size(j), page_size()) / page_size();
+    pages_available -= align_down(current_chunk_size(j), page_size()) / page_size();
   }
   pages_available -= lgrp_spaces()->length() - i - 1;
   assert(pages_available > 0, "No pages left");
@@ -453,7 +453,7 @@ size_t MutableNUMASpace::adaptive_chunk_size(int i, size_t limit) {
   chunk_size = MAX2(chunk_size, page_size());
 
   if (limit > 0) {
-    limit = round_down(limit, page_size());
+    limit = align_down(limit, page_size());
     if (chunk_size > current_chunk_size(i)) {
       size_t upper_bound = pages_available * page_size();
       if (upper_bound > limit &&
@@ -485,7 +485,7 @@ void MutableNUMASpace::select_tails(MemRegion new_region, MemRegion intersection
   if (new_region.start() < intersection.start()) { // Yes
     // Try to coalesce small pages into a large one.
     if (UseLargePages && page_size() >= alignment()) {
-      HeapWord* p = (HeapWord*)round_to((intptr_t) intersection.start(), alignment());
+      HeapWord* p = align_up(intersection.start(), alignment());
       if (new_region.contains(p)
           && pointer_delta(p, new_region.start(), sizeof(char)) >= alignment()) {
         if (intersection.contains(p)) {
@@ -504,7 +504,7 @@ void MutableNUMASpace::select_tails(MemRegion new_region, MemRegion intersection
   if (intersection.end() < new_region.end()) { // Yes
     // Try to coalesce small pages into a large one.
     if (UseLargePages && page_size() >= alignment()) {
-      HeapWord* p = (HeapWord*)round_down((intptr_t) intersection.end(), alignment());
+      HeapWord* p = align_down(intersection.end(), alignment());
       if (new_region.contains(p)
           && pointer_delta(new_region.end(), p, sizeof(char)) >= alignment()) {
         if (intersection.contains(p)) {
@@ -546,11 +546,11 @@ void MutableNUMASpace::merge_regions(MemRegion new_region, MemRegion* intersecti
             HeapWord* start = invalid_region->start();
             HeapWord* end = invalid_region->end();
             if (UseLargePages && page_size() >= alignment()) {
-              HeapWord *p = (HeapWord*)round_down((intptr_t) start, alignment());
+              HeapWord *p = align_down(start, alignment());
               if (new_region.contains(p)) {
                 start = p;
               }
-              p = (HeapWord*)round_to((intptr_t) end, alignment());
+              p = align_up(end, alignment());
               if (new_region.contains(end)) {
                 end = p;
               }
@@ -581,8 +581,8 @@ void MutableNUMASpace::initialize(MemRegion mr,
   // Compute chunk sizes
   size_t prev_page_size = page_size();
   set_page_size(UseLargePages ? alignment() : os::vm_page_size());
-  HeapWord* rounded_bottom = (HeapWord*)round_to((intptr_t) bottom(), page_size());
-  HeapWord* rounded_end = (HeapWord*)round_down((intptr_t) end(), page_size());
+  HeapWord* rounded_bottom = align_up(bottom(), page_size());
+  HeapWord* rounded_end = align_down(end(), page_size());
   size_t base_space_size_pages = pointer_delta(rounded_end, rounded_bottom, sizeof(char)) / page_size();
 
   // Try small pages if the chunk size is too small
@@ -593,8 +593,8 @@ void MutableNUMASpace::initialize(MemRegion mr,
       vm_exit_during_initialization("Failed initializing NUMA with large pages. Too small heap size");
     }
     set_page_size(os::vm_page_size());
-    rounded_bottom = (HeapWord*)round_to((intptr_t) bottom(), page_size());
-    rounded_end = (HeapWord*)round_down((intptr_t) end(), page_size());
+    rounded_bottom = align_up(bottom(), page_size());
+    rounded_end = align_down(end(), page_size());
     base_space_size_pages = pointer_delta(rounded_end, rounded_bottom, sizeof(char)) / page_size();
   }
   guarantee(base_space_size_pages / lgrp_spaces()->length() > 0, "Space too small");
@@ -725,7 +725,7 @@ void MutableNUMASpace::set_top(HeapWord* value) {
   for (int i = 0; i < lgrp_spaces()->length();) {
     LGRPSpace *ls = lgrp_spaces()->at(i);
     MutableSpace *s = ls->space();
-    HeapWord *top = MAX2((HeapWord*)round_down((intptr_t)s->top(), page_size()), s->bottom());
+    HeapWord *top = MAX2(align_down(s->top(), page_size()), s->bottom());
 
     if (s->contains(value)) {
       // Check if setting the chunk's top to a given value would create a hole less than
@@ -926,8 +926,8 @@ void MutableNUMASpace::verify() {
 // Scan pages and gather stats about page placement and size.
 void MutableNUMASpace::LGRPSpace::accumulate_statistics(size_t page_size) {
   clear_space_stats();
-  char *start = (char*)round_to((intptr_t) space()->bottom(), page_size);
-  char* end = (char*)round_down((intptr_t) space()->end(), page_size);
+  char *start = (char*)align_up(space()->bottom(), page_size);
+  char* end = (char*)align_down(space()->end(), page_size);
   if (start < end) {
     for (char *p = start; p < end;) {
       os::page_info info;
@@ -963,8 +963,8 @@ void MutableNUMASpace::LGRPSpace::accumulate_statistics(size_t page_size) {
 // will be more successful.
 void MutableNUMASpace::LGRPSpace::scan_pages(size_t page_size, size_t page_count)
 {
-  char* range_start = (char*)round_to((intptr_t) space()->bottom(), page_size);
-  char* range_end = (char*)round_down((intptr_t) space()->end(), page_size);
+  char* range_start = (char*)align_up(space()->bottom(), page_size);
+  char* range_end = (char*)align_down(space()->end(), page_size);
 
   if (range_start > last_page_scanned() || last_page_scanned() >= range_end) {
     set_last_page_scanned(range_start);

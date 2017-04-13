@@ -99,7 +99,7 @@ void AbstractICache::invalidate_range(address start, int nbytes) {
     start -= line_offset;
     nbytes += line_offset;
   }
-  call_flush_stub(start, round_to(nbytes, ICache::line_size) >>
+  call_flush_stub(start, align_up(nbytes, (int)ICache::line_size) >>
                          ICache::log2_line_size);
 }
 

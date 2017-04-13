@@ -238,10 +238,8 @@ int oopDesc::size_given_klass(Klass* klass)  {
 
       // This code could be simplified, but by keeping array_header_in_bytes
       // in units of bytes and doing it this way we can round up just once,
-      // skipping the intermediate round to HeapWordSize.  Cast the result
-      // of round_to to size_t to guarantee unsigned division == right shift.
-      s = (int)((size_t)round_to(size_in_bytes, MinObjAlignmentInBytes) /
-        HeapWordSize);
+      // skipping the intermediate round to HeapWordSize.
+      s = (int)(align_up(size_in_bytes, MinObjAlignmentInBytes) / HeapWordSize);
 
       // ParNew (used by CMS), UseParallelGC and UseG1GC can change the length field
       // of an "old copy" of an object array in the young gen so it indicates
