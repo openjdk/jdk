@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public class JVMDefineModule {
 /* Invalid test, won't compile.
         // Invalid classloader argument, expect an IAE
         try {
-            m = ModuleHelper.ModuleObject("mymodule1", new Object(), new String[] { "mypackage1" });
+            m = ModuleHelper.ModuleObject("mymodule_one", new Object(), new String[] { "mypackage1" });
             ModuleHelper.DefineModule(m,  "9.0", "mymodule/here", new String[] { "mypackage1" });
             throw new RuntimeException("Failed to get expected IAE for bad loader");
         } catch(IllegalArgumentException e) {

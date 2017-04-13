@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,10 @@ import java.io.IOException;
 import java.lang.module.Configuration;
 import java.lang.module.FindException;
 import java.lang.module.ModuleDescriptor;
-import java.lang.module.ModuleDescriptor.Exports;
 import java.lang.module.ModuleDescriptor.Requires.Modifier;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
+import java.lang.module.ResolutionException;
 import java.lang.module.ResolvedModule;
 import java.lang.reflect.Layer;
 import java.lang.reflect.Module;
@@ -137,6 +137,7 @@ public class AutomaticModulesTest {
         assertTrue(mref.isPresent(), mn + " not found");
 
         ModuleDescriptor descriptor = mref.get().descriptor();
+        assertTrue(descriptor.isAutomatic());
         assertEquals(descriptor.name(), mn);
         if (vs == null) {
             assertFalse(descriptor.version().isPresent());
@@ -175,17 +176,14 @@ public class AutomaticModulesTest {
         assertTrue(mref.isPresent(), "m not found");
 
         ModuleDescriptor descriptor = mref.get().descriptor();
+        assertTrue(descriptor.isAutomatic());
 
         assertTrue(descriptor.packages().size() == 2);
         assertTrue(descriptor.packages().contains("p"));
         assertTrue(descriptor.packages().contains("q"));
 
-        Set<String> exports = descriptor.exports().stream()
-                .map(Exports::source)
-                .collect(Collectors.toSet());
-        assertTrue(exports.size() == 2);
-        assertTrue(exports.contains("p"));
-        assertTrue(exports.contains("q"));
+        assertTrue(descriptor.exports().isEmpty());
+        assertTrue(descriptor.opens().isEmpty());
     }
 
     /**
@@ -201,15 +199,13 @@ public class AutomaticModulesTest {
         assertTrue(mref.isPresent(), "m not found");
 
         ModuleDescriptor descriptor = mref.get().descriptor();
+        assertTrue(descriptor.isAutomatic());
 
         assertTrue(descriptor.packages().size() == 1);
         assertTrue(descriptor.packages().contains("p"));
 
-        Set<String> exports = descriptor.exports().stream()
-                .map(Exports::source)
-                .collect(Collectors.toSet());
-        assertTrue(exports.size() == 1);
-        assertTrue(exports.contains("p"));
+        assertTrue(descriptor.exports().isEmpty());
+        assertTrue(descriptor.opens().isEmpty());
     }
 
     /**
@@ -229,10 +225,10 @@ public class AutomaticModulesTest {
         assertTrue(mref.isPresent(), "m not found");
 
         ModuleDescriptor descriptor = mref.get().descriptor();
+        assertTrue(descriptor.isAutomatic());
 
-        assertTrue(descriptor.packages().size() == 2);
+        assertTrue(descriptor.packages().size() == 1);
         assertTrue(descriptor.packages().contains("p"));
-        assertTrue(descriptor.packages().contains("p.resources"));
     }
 
     /**
@@ -254,9 +250,17 @@ public class AutomaticModulesTest {
         String provider = "p.S1";
 
         Path tmpdir = Files.createTempDirectory(USER_DIR, "tmp");
+
+        // provider class
+        Path providerClass = tmpdir.resolve(provider.replace('.', '/') + ".class");
+        Files.createDirectories(providerClass.getParent());
+        Files.createFile(providerClass);
+
+        // services configuration file
         Path services = tmpdir.resolve("META-INF").resolve("services");
         Files.createDirectories(services);
         Files.write(services.resolve(service), Set.of(provider));
+
         Path dir = Files.createTempDirectory(USER_DIR, "mods");
         JarUtils.createJarFile(dir.resolve("m.jar"), tmpdir);
 
@@ -314,7 +318,7 @@ public class AutomaticModulesTest {
 
                 // service type         provider type
                 { "p.S",                "-" },
-                { "p.S",                ".S1" },
+                { "p.S",                "p..S1" },
                 { "p.S",                "S1." },
         };
     }
@@ -324,13 +328,41 @@ public class AutomaticModulesTest {
      * values or names.
      */
     @Test(dataProvider = "badproviders", expectedExceptions = FindException.class)
-    public void testBadProvideNames(String service, String provider)
+    public void testBadProviderNames(String service, String provider)
         throws IOException
     {
         Path tmpdir = Files.createTempDirectory(USER_DIR, "tmp");
+
+        // provider class
+        Path providerClass = tmpdir.resolve(provider.replace('.', '/') + ".class");
+        Files.createDirectories(providerClass.getParent());
+        Files.createFile(providerClass);
+
+        // services configuration file
         Path services = tmpdir.resolve("META-INF").resolve("services");
         Files.createDirectories(services);
         Files.write(services.resolve(service), Set.of(provider));
+
+        Path dir = Files.createTempDirectory(USER_DIR, "mods");
+        JarUtils.createJarFile(dir.resolve("m.jar"), tmpdir);
+
+        // should throw FindException
+        ModuleFinder.of(dir).findAll();
+    }
+
+    /**
+     * Test JAR file with META-INF/services configuration file listing a
+     * provider that is not in the module.
+     */
+    @Test(expectedExceptions = FindException.class)
+    public void testMissingProviderPackage() throws IOException {
+        Path tmpdir = Files.createTempDirectory(USER_DIR, "tmp");
+
+        // services configuration file
+        Path services = tmpdir.resolve("META-INF").resolve("services");
+        Files.createDirectories(services);
+        Files.write(services.resolve("p.S"), Set.of("q.P"));
+
         Path dir = Files.createTempDirectory(USER_DIR, "mods");
         JarUtils.createJarFile(dir.resolve("m.jar"), tmpdir);
 
@@ -352,7 +384,8 @@ public class AutomaticModulesTest {
         attrs.put(Attributes.Name.MAIN_CLASS, mainClass);
 
         Path dir = Files.createTempDirectory(USER_DIR, "mods");
-        createDummyJarFile(dir.resolve("m.jar"), man);
+        String entry = mainClass.replace('.', '/') + ".class";
+        createDummyJarFile(dir.resolve("m.jar"), man, entry);
 
         ModuleFinder finder = ModuleFinder.of(dir);
 
@@ -366,20 +399,21 @@ public class AutomaticModulesTest {
     }
 
 
-    // Main-Class files that do not map to a legal Java identifier
+    // Main-Class files that do not map to a legal qualified type name
     @DataProvider(name = "badmainclass")
     public Object[][] createBadMainClass() {
         return new Object[][]{
 
+            { "Main",        null },
+            { "p..Main",     null },
             { "p-.Main",     null },
-            { ".Main",       null }
 
         };
     }
 
     /**
-     * Test that a JAR file with a Main-Class attribute that is not a valid
-     * Java identifier
+     * Test that a JAR file with a Main-Class attribute that is not a qualified
+     * type name.
      */
     @Test(dataProvider = "badmainclass", expectedExceptions = FindException.class)
     public void testBadMainClass(String mainClass, String ignore) throws IOException {
@@ -387,6 +421,24 @@ public class AutomaticModulesTest {
         Attributes attrs = man.getMainAttributes();
         attrs.put(Attributes.Name.MANIFEST_VERSION, "1.0.0");
         attrs.put(Attributes.Name.MAIN_CLASS, mainClass);
+
+        Path dir = Files.createTempDirectory(USER_DIR, "mods");
+        String entry = mainClass.replace('.', '/') + ".class";
+        createDummyJarFile(dir.resolve("m.jar"), man, entry);
+
+        // should throw FindException
+        ModuleFinder.of(dir).findAll();
+    }
+
+    /**
+     * Test that a JAR file with a Main-Class attribute that is not in the module
+     */
+    @Test(expectedExceptions = FindException.class)
+    public void testMissingMainClassPackage() throws IOException {
+        Manifest man = new Manifest();
+        Attributes attrs = man.getMainAttributes();
+        attrs.put(Attributes.Name.MANIFEST_VERSION, "1.0.0");
+        attrs.put(Attributes.Name.MAIN_CLASS, "p.Main");
 
         Path dir = Files.createTempDirectory(USER_DIR, "mods");
         createDummyJarFile(dir.resolve("m.jar"), man);
@@ -405,7 +457,7 @@ public class AutomaticModulesTest {
      */
     public void testConfiguration1() throws Exception {
         ModuleDescriptor descriptor1
-            = ModuleDescriptor.module("a")
+            = ModuleDescriptor.newModule("a")
                 .requires("b")
                 .requires("c")
                 .requires("java.base")
@@ -465,13 +517,13 @@ public class AutomaticModulesTest {
      */
     public void testInConfiguration2() throws IOException {
         ModuleDescriptor descriptor1
-            = ModuleDescriptor.module("a")
+            = ModuleDescriptor.newModule("a")
                 .requires("b")
                 .requires("java.base")
                 .build();
 
         ModuleDescriptor descriptor2
-            = ModuleDescriptor.module("b")
+            = ModuleDescriptor.newModule("b")
                 .requires("c")
                 .requires("java.base")
                 .build();
@@ -538,13 +590,13 @@ public class AutomaticModulesTest {
      */
     public void testInConfiguration3() throws IOException {
         ModuleDescriptor descriptor1
-            = ModuleDescriptor.module("a")
+            = ModuleDescriptor.newModule("a")
                 .requires("b")
                 .requires("java.base")
                 .build();
 
         ModuleDescriptor descriptor2
-            = ModuleDescriptor.module("b")
+            = ModuleDescriptor.newModule("b")
                 .requires(Set.of(Modifier.TRANSITIVE), "c")
                 .requires("java.base")
                 .build();
@@ -609,11 +661,67 @@ public class AutomaticModulesTest {
 
 
     /**
+     * Basic test of a configuration created with automatic modules
+     *   a requires b* and c*
+     *   b* contains p
+     *   c* contains p
+     */
+    @Test(expectedExceptions = { ResolutionException.class })
+    public void testDuplicateSuppliers1() throws IOException {
+        ModuleDescriptor descriptor
+            = ModuleDescriptor.newModule("a")
+                .requires("b")
+                .requires("c")
+                .build();
+
+        // c and d are automatic modules with the same package
+        Path dir = Files.createTempDirectory(USER_DIR, "mods");
+        createDummyJarFile(dir.resolve("b.jar"), "p/T.class");
+        createDummyJarFile(dir.resolve("c.jar"), "p/T.class");
+
+        // module finder locates 'a' and the modules in the directory
+        ModuleFinder finder
+            = ModuleFinder.compose(ModuleUtils.finderOf(descriptor),
+                                   ModuleFinder.of(dir));
+
+        Configuration parent = Layer.boot().configuration();
+        resolve(parent, finder, "a");
+    }
+
+
+    /**
+     * Basic test of a configuration created with automatic modules
+     *   a contains p, requires b*
+     *   b* contains p
+     */
+    @Test(expectedExceptions = { ResolutionException.class })
+    public void testDuplicateSuppliers2() throws IOException {
+        ModuleDescriptor descriptor
+            = ModuleDescriptor.newModule("a")
+                .packages(Set.of("p"))
+                .requires("b")
+                .build();
+
+        // c and d are automatic modules with the same package
+        Path dir = Files.createTempDirectory(USER_DIR, "mods");
+        createDummyJarFile(dir.resolve("b.jar"), "p/T.class");
+
+        // module finder locates 'a' and the modules in the directory
+        ModuleFinder finder
+            = ModuleFinder.compose(ModuleUtils.finderOf(descriptor),
+                                   ModuleFinder.of(dir));
+
+        Configuration parent = Layer.boot().configuration();
+        resolve(parent, finder, "a");
+    }
+
+
+    /**
      * Basic test of Layer containing automatic modules
      */
     public void testInLayer() throws IOException {
         ModuleDescriptor descriptor
-            = ModuleDescriptor.module("a")
+            = ModuleDescriptor.newModule("a")
                 .requires("b")
                 .requires("c")
                 .build();
@@ -664,20 +772,17 @@ public class AutomaticModulesTest {
 
         // test miscellaneous methods
         assertTrue(m.isAutomatic());
-        assertFalse(m.isSynthetic());
-        assertFalse(m.osName().isPresent());
-        assertFalse(m.osArch().isPresent());
-        assertFalse(m.osVersion().isPresent());
+        assertFalse(m.modifiers().contains(ModuleDescriptor.Modifier.SYNTHETIC));
     }
 
 
     /**
-     * Invokes parent.resolveRequires to resolve the given root modules.
+     * Invokes parent.resolve to resolve the given root modules.
      */
     static Configuration resolve(Configuration parent,
                                  ModuleFinder finder,
                                  String... roots) {
-        return parent.resolveRequires(finder, ModuleFinder.of(), Set.of(roots));
+        return parent.resolve(finder, ModuleFinder.of(), Set.of(roots));
     }
 
     /**

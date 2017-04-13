@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ public class SharedSecrets {
     private static JavaNetHttpCookieAccess javaNetHttpCookieAccess;
     private static JavaNetSocketAccess javaNetSocketAccess;
     private static JavaNetUriAccess javaNetUriAccess;
+    private static JavaNetURLAccess javaNetURLAccess;
     private static JavaNetURLClassLoaderAccess javaNetURLClassLoaderAccess;
     private static JavaNioAccess javaNioAccess;
     private static JavaIOFileDescriptorAccess javaIOFileDescriptorAccess;
@@ -144,6 +145,16 @@ public class SharedSecrets {
         if (javaNetUriAccess == null)
             unsafe.ensureClassInitialized(java.net.URI.class);
         return javaNetUriAccess;
+    }
+
+    public static void setJavaNetURLAccess(JavaNetURLAccess jnua) {
+        javaNetURLAccess = jnua;
+    }
+
+    public static JavaNetURLAccess getJavaNetURLAccess() {
+        if (javaNetURLAccess == null)
+            unsafe.ensureClassInitialized(java.net.URL.class);
+        return javaNetURLAccess;
     }
 
     public static void setJavaNetURLClassLoaderAccess(JavaNetURLClassLoaderAccess jnua) {

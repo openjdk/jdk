@@ -26,7 +26,7 @@
  * @bug 4909536
  * @summary Ensure that the Introspector does not retain refs to classes
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean ClassLeakTest
  * @run build ClassLeakTest
  * @run main ClassLeakTest

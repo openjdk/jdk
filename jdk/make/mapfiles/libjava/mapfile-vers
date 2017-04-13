@@ -128,7 +128,6 @@ SUNWprivate_1.1 {
 		Java_java_lang_Class_isInstance;
 		Java_java_lang_Class_registerNatives;
 		Java_java_lang_ClassLoader_findBootstrapClass;
-		Java_java_lang_ClassLoader_defineClass0;
 		Java_java_lang_ClassLoader_defineClass1;
 		Java_java_lang_ClassLoader_defineClass2;
 		Java_java_lang_ClassLoader_findBuiltinLib;

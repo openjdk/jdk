@@ -45,10 +45,14 @@ import java.util.stream.Stream;
  * module. A module reader is also intended to be used by {@code ClassLoader}
  * implementations that load classes and resources from modules. </p>
  *
- * <p> A resource in a module is identified by a name that is a
+ * <p> A resource in a module is identified by an abstract name that is a
  * '{@code /}'-separated path string. For example, module {@code java.base} may
  * have a resource "{@code java/lang/Object.class}" that, by convention, is the
- * class file for {@code java.lang.Object}. </p>
+ * class file for {@code java.lang.Object}. A module reader may treat
+ * directories in the module content as resources (whether it does or not is
+ * module reader specific). Where the module content contains a directory
+ * that can be located as a resource then its name ends with a slash ('/'). The
+ * directory can also be located with a name that drops the trailing slash. </p>
  *
  * <p> A {@code ModuleReader} is {@linkplain ModuleReference#open open} upon
  * creation and is closed by invoking the {@link #close close} method.  Failure
@@ -61,14 +65,27 @@ import java.util.stream.Stream;
  * open}, {@link #read read}, and {@link #list list} methods may throw {@code
  * SecurityException} if access is denied by the security manager. </p>
  *
+ * @implSpec Implementations of {@code ModuleReader} should take great care
+ * when translating an abstract resource name to the location of a resource in
+ * a packaged module or on the file system. Implementations are advised to
+ * treat resource names with elements such as '{@code .},  '{@code ..}',
+ * elements containing file separators, or empty elements as "not found". More
+ * generally, if the resource name is not in the stream of elements that the
+ * {@code list} method returns then the resource should be treated as "not
+ * found" to avoid inconsistencies.
+ *
  * @see ModuleReference
  * @since 9
+ * @spec JPMS
  */
 
 public interface ModuleReader extends Closeable {
 
     /**
      * Finds a resource, returning a URI to the resource in the module.
+     *
+     * <p> If the module reader can determine that the name locates a directory
+     * then the resulting URI will end with a slash ('/'). </p>
      *
      * @param  name
      *         The name of the resource to open for reading
@@ -130,7 +147,7 @@ public interface ModuleReader extends Closeable {
      *
      * @apiNote This method is intended for high-performance class loading. It
      * is not capable (or intended) to read arbitrary large resources that
-     * could potentially be 2GB or larger. The rational for using this method
+     * could potentially be 2GB or larger. The rationale for using this method
      * in conjunction with the {@code release} method is to allow module reader
      * implementations manage buffers in an efficient manner.
      *
@@ -148,6 +165,9 @@ public interface ModuleReader extends Closeable {
      *         If an I/O error occurs or the module reader is closed
      * @throws SecurityException
      *         If denied by the security manager
+     * @throws OutOfMemoryError
+     *         If the resource is larger than {@code Integer.MAX_VALUE},
+     *         the maximum capacity of a byte buffer
      *
      * @see ClassLoader#defineClass(String, ByteBuffer, java.security.ProtectionDomain)
      */
@@ -182,7 +202,9 @@ public interface ModuleReader extends Closeable {
 
     /**
      * Lists the contents of the module, returning a stream of elements that
-     * are the names of all resources in the module.
+     * are the names of all resources in the module. Whether the stream of
+     * elements includes names corresponding to directories in the module is
+     * module reader specific.
      *
      * <p> In lazy implementations then an {@code IOException} may be thrown
      * when using the stream to list the module contents. If this occurs then

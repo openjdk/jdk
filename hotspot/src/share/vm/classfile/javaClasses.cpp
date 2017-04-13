@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2269,6 +2269,7 @@ void java_lang_LiveStackFrameInfo::compute_offsets() {
   compute_offset(_monitors_offset,   k, vmSymbols::monitors_name(),    vmSymbols::object_array_signature());
   compute_offset(_locals_offset,     k, vmSymbols::locals_name(),      vmSymbols::object_array_signature());
   compute_offset(_operands_offset,   k, vmSymbols::operands_name(),    vmSymbols::object_array_signature());
+  compute_offset(_mode_offset,       k, vmSymbols::mode_name(),        vmSymbols::int_signature());
 }
 
 void java_lang_reflect_AccessibleObject::compute_offsets() {
@@ -3246,6 +3247,15 @@ void java_lang_invoke_MemberName::set_vmindex(oop mname, intptr_t index) {
   mname->address_field_put(_vmindex_offset, (address) index);
 }
 
+bool java_lang_invoke_MemberName::equals(oop mn1, oop mn2) {
+  if (mn1 == mn2) {
+     return true;
+  }
+  return (vmtarget(mn1) == vmtarget(mn2) && flags(mn1) == flags(mn2) &&
+          vmindex(mn1) == vmindex(mn2) &&
+          clazz(mn1) == clazz(mn2));
+}
+
 oop java_lang_invoke_LambdaForm::vmentry(oop lform) {
   assert(is_instance(lform), "wrong type");
   return lform->obj_field(_vmentry_offset);
@@ -3658,6 +3668,7 @@ int java_lang_StackFrameInfo::_version_offset;
 int java_lang_LiveStackFrameInfo::_monitors_offset;
 int java_lang_LiveStackFrameInfo::_locals_offset;
 int java_lang_LiveStackFrameInfo::_operands_offset;
+int java_lang_LiveStackFrameInfo::_mode_offset;
 int java_lang_AssertionStatusDirectives::classes_offset;
 int java_lang_AssertionStatusDirectives::classEnabled_offset;
 int java_lang_AssertionStatusDirectives::packages_offset;
@@ -3726,6 +3737,10 @@ void java_lang_LiveStackFrameInfo::set_locals(oop element, oop value) {
 
 void java_lang_LiveStackFrameInfo::set_operands(oop element, oop value) {
   element->obj_field_put(_operands_offset, value);
+}
+
+void java_lang_LiveStackFrameInfo::set_mode(oop element, int value) {
+  element->int_field_put(_mode_offset, value);
 }
 
 // Support for java Assertions - java_lang_AssertionStatusDirectives.

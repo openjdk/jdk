@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,10 @@
 /*
  * @test
  * @bug 6402006 7030573 8011136
+ * @key intermittent
  * @summary Test if available returns correct value when reading
  *          a large file.
+ * @run main/timeout=300 LargeFileAvailable
  */
 
 import java.io.*;
@@ -33,6 +35,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.file.Files;
 import static java.nio.file.StandardOpenOption.*;
+import java.util.concurrent.TimeUnit;
 
 public class LargeFileAvailable {
     public static void main(String args[]) throws Exception {
@@ -71,6 +74,9 @@ public class LargeFileAvailable {
         } finally {
             file.delete();
         }
+
+        System.out.println("Test succeeded.");
+        System.out.flush();
     }
 
     // Skip toSkip number of bytes and expect that the available() method
@@ -106,7 +112,12 @@ public class LargeFileAvailable {
                               CREATE_NEW, WRITE, SPARSE)) {
             ByteBuffer bb = ByteBuffer.allocate(1).put((byte)1);
             bb.rewind();
+            System.out.println("  Writing large file...");
+            long t0 = System.nanoTime();
             int rc = fc.write(bb, filesize - 1);
+            long t1 = System.nanoTime();
+            System.out.printf("  Wrote large file in %d ns (%d ms) %n",
+                t1 - t0, TimeUnit.NANOSECONDS.toMillis(t1 - t0));
 
             if (rc != 1) {
                 throw new RuntimeException("Failed to write 1 byte"
