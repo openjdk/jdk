@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,12 @@ import p2.c2;
 
 public class c1ReadEdge {
     public c1ReadEdge() {
-        // Establish read edge from module m1, where c1ReadEdge is defined,
+        // Establish read edge from module m1x, where c1ReadEdge is defined,
         // to the unnamed module, where p2.c2 will be defined.
-        Module m1 = c1ReadEdge.class.getModule();
+        Module m1x = c1ReadEdge.class.getModule();
         ClassLoader loader = c1ReadEdge.class.getClassLoader();
         Module unnamed_module = loader.getUnnamedModule();
-        m1.addReads(unnamed_module);
+        m1x.addReads(unnamed_module);
 
         // Attempt access - access should succeed
         p2.c2 c2_obj = new p2.c2();

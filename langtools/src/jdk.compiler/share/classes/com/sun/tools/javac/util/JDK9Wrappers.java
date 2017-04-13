@@ -272,12 +272,12 @@ public class JDK9Wrappers {
             init();
         }
 
-        public Configuration resolveRequiresAndUses(
+        public Configuration resolveAndBind(
                 ModuleFinder beforeFinder,
                 ModuleFinder afterFinder,
                 Collection<String> roots) {
             try {
-                Object result = resolveRequiresAndUsesMethod.invoke(theRealConfiguration,
+                Object result = resolveAndBindMethod.invoke(theRealConfiguration,
                                     beforeFinder.theRealModuleFinder,
                                     afterFinder.theRealModuleFinder,
                                     roots
@@ -293,7 +293,7 @@ public class JDK9Wrappers {
         // -----------------------------------------------------------------------------------------
 
         private static Class<?> configurationClass = null;
-        private static Method resolveRequiresAndUsesMethod;
+        private static Method resolveAndBindMethod;
 
         static final Class<?> getConfigurationClass() {
             init();
@@ -305,7 +305,7 @@ public class JDK9Wrappers {
                 try {
                     configurationClass = Class.forName("java.lang.module.Configuration", false, null);
                     Class<?> moduleFinderInterface = ModuleFinder.getModuleFinderClass();
-                    resolveRequiresAndUsesMethod = configurationClass.getDeclaredMethod("resolveRequiresAndUses",
+                    resolveAndBindMethod = configurationClass.getDeclaredMethod("resolveAndBind",
                                 moduleFinderInterface,
                                 moduleFinderInterface,
                                 Collection.class
