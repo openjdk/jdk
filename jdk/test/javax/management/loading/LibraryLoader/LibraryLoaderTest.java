@@ -27,7 +27,7 @@
  * @summary Test that the same native library coming from the same jar file can
  * be loaded twice by two different MLets on the same JVM without conflict.
  * @author Luis-Miguel Alventosa
- * @modules java.management
+ *
  * @run clean LibraryLoaderTest
  * @run build LibraryLoaderTest
  * @run main/othervm LibraryLoaderTest

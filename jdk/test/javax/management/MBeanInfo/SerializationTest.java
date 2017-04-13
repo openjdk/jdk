@@ -26,7 +26,7 @@
  * @bug 6288100
  * @summary Test the new serialization/deserialization methods.
  * @author Shanliang JIANG
- * @modules java.management
+ *
  * @run clean SerializationTest
  * @run build SerializationTest
  * @run main SerializationTest

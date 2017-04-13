@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4494033 7028815 7052425 8007338 8023608 8008164 8016549 8072461 8154261 8162363 8160196
+ * @bug      4494033 7028815 7052425 8007338 8023608 8008164 8016549 8072461 8154261 8162363 8160196 8151743
  * @summary  Run tests on doclet stylesheet.
  * @author   jamieh
  * @library  ../lib
@@ -159,7 +159,10 @@ public class TestStylesheet extends JavadocTester {
                 + "    float:none;\n"
                 + "    display:inline;\n"
                 + "}",
-                "@import url('resources/fonts/dejavu.css');");
+                "@import url('resources/fonts/dejavu.css');",
+                ".navPadding {\n"
+                + "    padding-top: 107px;\n"
+                + "}");
 
         // Test whether a link to the stylesheet file is inserted properly
         // in the class documentation.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,25 +40,25 @@ public class JVMAddModulePackage {
     public static void main(String args[]) throws Throwable {
         MyClassLoader cl1 = new MyClassLoader();
         MyClassLoader cl3 = new MyClassLoader();
-        Object module1, module2, module3;
+        Object module_one, module_two, module_three;
         boolean result;
 
-        module1 = ModuleHelper.ModuleObject("module1", cl1, new String[] { "mypackage" });
-        assertNotNull(module1, "Module should not be null");
-        ModuleHelper.DefineModule(module1, "9.0", "module1/here", new String[] { "mypackage" });
-        module2 = ModuleHelper.ModuleObject("module2", cl1, new String[] { "yourpackage" });
-        assertNotNull(module2, "Module should not be null");
-        ModuleHelper.DefineModule(module2, "9.0", "module2/here", new String[] { "yourpackage" });
-        module3 = ModuleHelper.ModuleObject("module3", cl3, new String[] { "package/num3" });
-        assertNotNull(module3, "Module should not be null");
-        ModuleHelper.DefineModule(module3, "9.0", "module3/here", new String[] { "package/num3" });
+        module_one = ModuleHelper.ModuleObject("module_one", cl1, new String[] { "mypackage" });
+        assertNotNull(module_one, "Module should not be null");
+        ModuleHelper.DefineModule(module_one, "9.0", "module_one/here", new String[] { "mypackage" });
+        module_two = ModuleHelper.ModuleObject("module_two", cl1, new String[] { "yourpackage" });
+        assertNotNull(module_two, "Module should not be null");
+        ModuleHelper.DefineModule(module_two, "9.0", "module_two/here", new String[] { "yourpackage" });
+        module_three = ModuleHelper.ModuleObject("module_three", cl3, new String[] { "package/num3" });
+        assertNotNull(module_three, "Module should not be null");
+        ModuleHelper.DefineModule(module_three, "9.0", "module_three/here", new String[] { "package/num3" });
 
         // Simple call
-        ModuleHelper.AddModulePackage(module1, "new_package");
+        ModuleHelper.AddModulePackage(module_one, "new_package");
 
         // Add a package and export it
-        ModuleHelper.AddModulePackage(module1, "package/num3");
-        ModuleHelper.AddModuleExportsToAll(module1, "package/num3");
+        ModuleHelper.AddModulePackage(module_one, "package/num3");
+        ModuleHelper.AddModuleExportsToAll(module_one, "package/num3");
 
         // Null module argument, expect an NPE
         try {
@@ -78,7 +78,7 @@ public class JVMAddModulePackage {
 
         // Null package argument, expect an NPE
         try {
-            ModuleHelper.AddModulePackage(module1, null);
+            ModuleHelper.AddModulePackage(module_one, null);
             throw new RuntimeException("Failed to get the expected NPE");
         } catch(NullPointerException e) {
             // Expected
@@ -86,7 +86,7 @@ public class JVMAddModulePackage {
 
         // Existing package, expect an ISE
         try {
-            ModuleHelper.AddModulePackage(module1, "yourpackage");
+            ModuleHelper.AddModulePackage(module_one, "yourpackage");
             throw new RuntimeException("Failed to get the expected ISE");
         } catch(IllegalStateException e) {
             // Expected
@@ -94,7 +94,7 @@ public class JVMAddModulePackage {
 
         // Invalid package name, expect an IAE
         try {
-            ModuleHelper.AddModulePackage(module1, "your.package");
+            ModuleHelper.AddModulePackage(module_one, "your.package");
             throw new RuntimeException("Failed to get the expected IAE");
         } catch(IllegalArgumentException e) {
             // Expected
@@ -102,7 +102,7 @@ public class JVMAddModulePackage {
 
         // Invalid package name, expect an IAE
         try {
-            ModuleHelper.AddModulePackage(module1, ";your/package");
+            ModuleHelper.AddModulePackage(module_one, ";your/package");
             throw new RuntimeException("Failed to get the expected IAE");
         } catch(IllegalArgumentException e) {
             // Expected
@@ -110,7 +110,7 @@ public class JVMAddModulePackage {
 
         // Invalid package name, expect an IAE
         try {
-            ModuleHelper.AddModulePackage(module1, "7[743");
+            ModuleHelper.AddModulePackage(module_one, "7[743");
             throw new RuntimeException("Failed to get the expected IAE");
         } catch(IllegalArgumentException e) {
             // Expected
@@ -118,7 +118,7 @@ public class JVMAddModulePackage {
 
         // Empty package name, expect an IAE
         try {
-            ModuleHelper.AddModulePackage(module1, "");
+            ModuleHelper.AddModulePackage(module_one, "");
             throw new RuntimeException("Failed to get the expected IAE");
         } catch(IllegalArgumentException e) {
             // Expected
@@ -126,8 +126,8 @@ public class JVMAddModulePackage {
 
         // Add package named "java" to an module defined to a class loader other than the boot or platform loader.
         try {
-            // module1 is defined to a MyClassLoader class loader.
-            ModuleHelper.AddModulePackage(module1, "java/foo");
+            // module_one is defined to a MyClassLoader class loader.
+            ModuleHelper.AddModulePackage(module_one, "java/foo");
             throw new RuntimeException("Failed to get the expected IAE");
         } catch(IllegalArgumentException e) {
             if (!e.getMessage().contains("prohibited package name")) {
@@ -136,10 +136,10 @@ public class JVMAddModulePackage {
         }
 
         // Package "javabar" should be ok
-        ModuleHelper.AddModulePackage(module1, "javabar");
+        ModuleHelper.AddModulePackage(module_one, "javabar");
 
         // Package named "java" defined to the boot class loader, should be ok
-        Object module_javabase = module1.getClass().getModule();
+        Object module_javabase = module_one.getClass().getModule();
         ModuleHelper.AddModulePackage(module_javabase, "java/foo");
 
         // Package named "java" defined to the platform class loader, should be ok
