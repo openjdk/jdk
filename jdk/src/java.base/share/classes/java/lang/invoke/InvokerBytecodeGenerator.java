@@ -130,7 +130,7 @@ class InvokerBytecodeGenerator {
 
     /** For generating customized code for a single LambdaForm. */
     private InvokerBytecodeGenerator(String className, LambdaForm form, MethodType invokerType) {
-        this(className, form.debugName, form, invokerType);
+        this(className, form.lambdaName(), form, invokerType);
     }
 
     /** For generating customized code for a single LambdaForm. */

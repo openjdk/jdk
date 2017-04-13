@@ -31,6 +31,7 @@ package java.lang.reflect;
  * @see Layer
  *
  * @since 9
+ * @spec JPMS
  */
 public class LayerInstantiationException extends RuntimeException {
     private static final long serialVersionUID = -906239691613568347L;

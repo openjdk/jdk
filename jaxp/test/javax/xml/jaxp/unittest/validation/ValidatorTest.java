@@ -23,6 +23,7 @@
 
 package validation;
 
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
 import static jaxp.library.JAXPTestUtilities.runWithTmpPermission;
 
 import java.io.File;
@@ -61,7 +62,7 @@ public class ValidatorTest {
 
         File resultFile = null;
         try {
-            resultFile = new File("stax.result");
+            resultFile = new File(USER_DIR + "stax.result");
             if (resultFile.exists()) {
                 resultFile.delete();
             }
@@ -88,7 +89,7 @@ public class ValidatorTest {
 
         File resultFile = null;
         try {
-            resultFile = new File("stax.result");
+            resultFile = new File(USER_DIR + "stax.result");
             if (resultFile.exists()) {
                 resultFile.delete();
             }
@@ -117,7 +118,7 @@ public class ValidatorTest {
         // test valid gMonths
         File resultFile = null;
         try {
-            resultFile = new File("gMonths.result.xml");
+            resultFile = new File(USER_DIR + "gMonths.result.xml");
             if (resultFile.exists()) {
                 resultFile.delete();
             }
@@ -144,7 +145,7 @@ public class ValidatorTest {
         // test invalid gMonths
         File invalidResultFile = null;
         try {
-            invalidResultFile = new File("gMonths-invalid.result.xml");
+            invalidResultFile = new File(USER_DIR + "gMonths-invalid.result.xml");
             if (invalidResultFile.exists()) {
                 invalidResultFile.delete();
             }

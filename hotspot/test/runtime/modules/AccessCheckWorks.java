@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,11 +39,11 @@ import static jdk.test.lib.Asserts.*;
 
 public class AccessCheckWorks {
 
-    // Check that a class in a package in module1 can successfully access a
-    // class in module2 when module1 can read module2 and the class's package
+    // Check that a class in a package in module_one can successfully access a
+    // class in module_two when module_one can read module_two and the class's package
     // has been exported.
     public static void main(String args[]) throws Throwable {
-        Object m1, m2;
+        Object m1x, m2x;
 
         // Get the java.lang.reflect.Module object for module java.base.
         Class jlObject = Class.forName("java.lang.Object");
@@ -55,24 +55,24 @@ public class AccessCheckWorks {
         ClassLoader this_cldr = AccessCheckWorks.class.getClassLoader();
 
         // Define a module for p1.
-        m1 = ModuleHelper.ModuleObject("module1", this_cldr, new String[] { "p1" });
-        assertNotNull(m1, "Module should not be null");
-        ModuleHelper.DefineModule(m1, "9.0", "m1/here", new String[] { "p1" });
-        ModuleHelper.AddReadsModule(m1, jlObject_jlrM);
+        m1x = ModuleHelper.ModuleObject("module_one", this_cldr, new String[] { "p1" });
+        assertNotNull(m1x, "Module should not be null");
+        ModuleHelper.DefineModule(m1x, "9.0", "m1x/here", new String[] { "p1" });
+        ModuleHelper.AddReadsModule(m1x, jlObject_jlrM);
 
         // Define a module for p2.
-        m2 = ModuleHelper.ModuleObject("module2", this_cldr, new String[] { "p2" });
-        assertNotNull(m2, "Module should not be null");
-        ModuleHelper.DefineModule(m2, "9.0", "m2/there", new String[] { "p2" });
-        ModuleHelper.AddReadsModule(m2, jlObject_jlrM);
+        m2x = ModuleHelper.ModuleObject("module_two", this_cldr, new String[] { "p2" });
+        assertNotNull(m2x, "Module should not be null");
+        ModuleHelper.DefineModule(m2x, "9.0", "m2x/there", new String[] { "p2" });
+        ModuleHelper.AddReadsModule(m2x, jlObject_jlrM);
 
-        // Make package p1 in m1 visible to everyone.
-        ModuleHelper.AddModuleExportsToAll(m1, "p1");
+        // Make package p1 in m1x visible to everyone.
+        ModuleHelper.AddModuleExportsToAll(m1x, "p1");
 
         // p1.c1's ctor tries to call a method in p2.c2.  This should work because
         // p1's module can read p2's module and p2 is exported to p1's module.
-        ModuleHelper.AddReadsModule(m1, m2);
-        ModuleHelper.AddModuleExports(m2, "p2", m1);
+        ModuleHelper.AddReadsModule(m1x, m2x);
+        ModuleHelper.AddModuleExports(m2x, "p2", m1x);
         Class p1_c1_class = Class.forName("p1.c1");
         p1_c1_class.newInstance();
     }

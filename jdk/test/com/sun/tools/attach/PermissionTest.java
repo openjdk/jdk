@@ -31,17 +31,15 @@ import jdk.testlibrary.ProcessThread;
 /*
  * @test
  * @bug 6173612 6273707 6277253 6335921 6348630 6342019 6381757
- * @summary Basic unit tests for the VM attach mechanism.
- * @modules jdk.jartool/sun.tools.jar
+ * @summary Basic unit tests for the VM attach mechanism. Unit test for Attach
+ * API - this checks that a SecurityException is thrown as expected.
+ *
  * @library /lib/testlibrary
- * @modules java.management
- *          jdk.attach
+ * @modules jdk.attach
  *          jdk.jartool/sun.tools.jar
+ *
  * @run build jdk.testlibrary.* Application
  * @run main PermissionTest
- *
- * Unit test for Attach API -
- * this checks that a SecurityException is thrown as expected.
  */
 public class PermissionTest {
 

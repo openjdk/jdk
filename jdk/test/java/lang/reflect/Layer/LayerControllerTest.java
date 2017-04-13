@@ -50,22 +50,22 @@ public class LayerControllerTest {
      */
     private Layer.Controller createTestLayer() {
         ModuleDescriptor descriptor1
-            = ModuleDescriptor.module("m1")
-                .contains("p1")
+            = ModuleDescriptor.newModule("m1")
+                .packages(Set.of("p1"))
                 .requires("java.base")
                 .build();
 
         ModuleDescriptor descriptor2
-            = ModuleDescriptor.module("m2")
+            = ModuleDescriptor.newModule("m2")
                 .requires("java.base")
-                .contains("p2")
+                .packages(Set.of("p2"))
                 .build();
 
         ModuleFinder finder = ModuleUtils.finderOf(descriptor1, descriptor2);
         Layer bootLayer = Layer.boot();
 
         Configuration cf = bootLayer.configuration()
-                .resolveRequires(finder, ModuleFinder.of(), Set.of("m1", "m2"));
+                .resolve(finder, ModuleFinder.of(), Set.of("m1", "m2"));
 
         ClassLoader scl = ClassLoader.getSystemClassLoader();
 

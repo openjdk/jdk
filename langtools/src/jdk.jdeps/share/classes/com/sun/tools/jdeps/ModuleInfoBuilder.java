@@ -43,10 +43,12 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import static java.util.stream.Collectors.*;
 
@@ -60,8 +62,8 @@ public class ModuleInfoBuilder {
     final Analyzer analyzer;
 
     // an input JAR file (loaded as an automatic module for analysis)
-    // maps to an explicit module to generate module-info.java
-    final Map<Module, Module> automaticToExplicitModule;
+    // maps to a normal module to generate module-info.java
+    final Map<Module, Module> automaticToNormalModule;
     public ModuleInfoBuilder(JdepsConfiguration configuration,
                              List<String> args,
                              Path outputdir,
@@ -78,20 +80,20 @@ public class ModuleInfoBuilder {
             .map(fn -> Paths.get(fn))
             .collect(toList());
 
-        // automatic module to convert to explicit module
-        this.automaticToExplicitModule = ModuleFinder.of(paths.toArray(new Path[0]))
+        // automatic module to convert to normal module
+        this.automaticToNormalModule = ModuleFinder.of(paths.toArray(new Path[0]))
                 .findAll().stream()
                 .map(configuration::toModule)
                 .collect(toMap(Function.identity(), Function.identity()));
 
-        Optional<Module> om = automaticToExplicitModule.keySet().stream()
+        Optional<Module> om = automaticToNormalModule.keySet().stream()
                                     .filter(m -> !m.descriptor().isAutomatic())
                                     .findAny();
         if (om.isPresent()) {
             throw new UncheckedBadArgs(new BadArgs("err.genmoduleinfo.not.jarfile",
                                                    om.get().getPathName()));
         }
-        if (automaticToExplicitModule.isEmpty()) {
+        if (automaticToNormalModule.isEmpty()) {
             throw new UncheckedBadArgs(new BadArgs("err.invalid.path", args));
         }
     }
@@ -115,13 +117,13 @@ public class ModuleInfoBuilder {
                 Path file = outputdir.resolve(m.name()).resolve("module-info.java");
 
                 // computes requires and requires transitive
-                Module explicitModule = toExplicitModule(m, apiDeps);
-                if (explicitModule != null) {
-                    automaticToExplicitModule.put(m, explicitModule);
+                Module normalModule = toNormalModule(m, apiDeps);
+                if (normalModule != null) {
+                    automaticToNormalModule.put(m, normalModule);
 
                     // generate module-info.java
                     System.out.format("writing to %s%n", file);
-                    writeModuleInfo(file,  explicitModule.descriptor());
+                    writeModuleInfo(file,  normalModule.descriptor());
                 } else {
                     // find missing dependences
                     System.out.format("Missing dependence: %s not generated%n", file);
@@ -139,7 +141,7 @@ public class ModuleInfoBuilder {
         return m == NOT_FOUND || m == REMOVED_JDK_INTERNALS;
     }
 
-    private Module toExplicitModule(Module module, Set<Archive> requiresTransitive)
+    private Module toNormalModule(Module module, Set<Archive> requiresTransitive)
         throws IOException
     {
         // done analysis
@@ -159,21 +161,21 @@ public class ModuleInfoBuilder {
             .map(Archive::getModule)
             .forEach(d -> requires.putIfAbsent(d.name(), Boolean.FALSE));
 
-        return module.toStrictModule(requires);
+        return module.toNormalModule(requires);
     }
 
     /**
      * Returns the stream of resulting modules
      */
     Stream<Module> modules() {
-        return automaticToExplicitModule.values().stream();
+        return automaticToNormalModule.values().stream();
     }
 
     /**
      * Returns the stream of resulting ModuleDescriptors
      */
     public Stream<ModuleDescriptor> descriptors() {
-        return automaticToExplicitModule.entrySet().stream()
+        return automaticToNormalModule.entrySet().stream()
                     .map(Map.Entry::getValue)
                     .map(Module::descriptor);
     }
@@ -205,13 +207,14 @@ public class ModuleInfoBuilder {
         md.requires().stream()
           .filter(req -> !req.name().equals("java.base"))   // implicit requires
           .sorted(Comparator.comparing(Requires::name))
-          .forEach(req -> writer.format("    requires %s;%n", req));
+          .forEach(req -> writer.format("    requires %s;%n",
+                                        toString(req.modifiers(), req.name())));
 
         if (!open) {
             md.exports().stream()
               .peek(exp -> {
-                 if (exp.targets().size() > 0)
-                    throw new InternalError(md.name() + " qualified exports: " + exp);
+                  if (exp.isQualified())
+                      throw new InternalError(md.name() + " qualified exports: " + exp);
               })
               .sorted(Comparator.comparing(Exports::source))
               .forEach(exp -> writer.format("    exports %s;%n", exp.source()));
@@ -231,7 +234,16 @@ public class ModuleInfoBuilder {
     }
 
     private Set<Module> automaticModules() {
-        return automaticToExplicitModule.keySet();
+        return automaticToNormalModule.keySet();
+    }
+
+    /**
+     * Returns a string containing the given set of modifiers and label.
+     */
+    private static <M> String toString(Set<M> mods, String what) {
+        return (Stream.concat(mods.stream().map(e -> e.toString().toLowerCase(Locale.US)),
+                              Stream.of(what)))
+                      .collect(Collectors.joining(" "));
     }
 
     /**

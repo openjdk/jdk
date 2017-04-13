@@ -144,7 +144,7 @@ Navigation bar styles
     margin:0;
 }
 .navPadding {
-    padding-top: 100px;
+    padding-top: 107px;
 }
 .fixedNav {
     position:fixed;
@@ -647,7 +647,7 @@ h1.hidden {
     color:#474747;
 }
 .deprecatedLabel, .descfrmTypeLabel, .implementationLabel, .memberNameLabel, .memberNameLink,
-.moduleLabelInClass, .overrideSpecifyLabel, .packageLabelInClass,
+.moduleLabelInPackage, .moduleLabelInType, .overrideSpecifyLabel, .packageLabelInType,
 .packageHierarchyLabel, .paramLabel, .returnLabel, .seeLabel, .simpleTagLabel,
 .throwsLabel, .typeNameLabel, .typeNameLink, .searchTagLink {
     font-weight:bold;
@@ -787,3 +787,15 @@ ul.ui-autocomplete  li {
     font-style:italic;
     font-size:12px;
 }
+
+.moduleGraph span {
+    display:none;
+    position:absolute;
+}
+.moduleGraph:hover span {
+    display:block;
+    margin: -100px 0 0 100px;
+    z-index: 1;
+}
+
+
