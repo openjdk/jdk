@@ -93,7 +93,7 @@ int Bytecodes::special_length_at(Bytecodes::Code code, address bcp, address end)
     }
     return wide_length_for(cast(*(bcp + 1)));
   case _tableswitch:
-    { address aligned_bcp = (address)round_to((intptr_t)bcp + 1, jintSize);
+    { address aligned_bcp = align_up(bcp + 1, jintSize);
       if (end != NULL && aligned_bcp + 3*jintSize >= end) {
         return -1; // don't read past end of code buffer
       }
@@ -108,7 +108,7 @@ int Bytecodes::special_length_at(Bytecodes::Code code, address bcp, address end)
   case _lookupswitch:      // fall through
   case _fast_binaryswitch: // fall through
   case _fast_linearswitch:
-    { address aligned_bcp = (address)round_to((intptr_t)bcp + 1, jintSize);
+    { address aligned_bcp = align_up(bcp + 1, jintSize);
       if (end != NULL && aligned_bcp + 2*jintSize >= end) {
         return -1; // don't read past end of code buffer
       }

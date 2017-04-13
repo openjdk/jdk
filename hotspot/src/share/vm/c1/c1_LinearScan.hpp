@@ -171,7 +171,7 @@ class LinearScan : public CompilationResourceObj {
 
   int           num_virtual_regs() const         { return _num_virtual_regs; }
   // size of live_in and live_out sets of BasicBlocks (BitMap needs rounded size for iteration)
-  int           live_set_size() const            { return round_to(_num_virtual_regs, BitsPerWord); }
+  int           live_set_size() const            { return align_up(_num_virtual_regs, BitsPerWord); }
   bool          has_fpu_registers() const        { return _has_fpu_registers; }
   int           num_loops() const                { return ir()->num_loops(); }
   bool          is_interval_in_loop(int interval, int loop) const { return _interval_in_loop.at(interval, loop); }

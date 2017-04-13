@@ -44,7 +44,7 @@ class Bytecode: public StackObj {
   // Address computation
   address addr_at            (int offset)        const     { return (address)_bcp + offset; }
   u_char byte_at(int offset) const               { return *addr_at(offset); }
-  address aligned_addr_at    (int offset)        const     { return (address)round_to((intptr_t)addr_at(offset), jintSize); }
+  address aligned_addr_at    (int offset)        const     { return align_up(addr_at(offset), jintSize); }
 
   // Word access:
   int     get_Java_u2_at     (int offset)        const     { return Bytes::get_Java_u2(addr_at(offset)); }

@@ -711,7 +711,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   // (gri - 2/25/2000)
 
 
-  int rounded_vm_local_words = round_to( frame::interpreter_frame_vm_local_words, WordsPerLong );
+  int rounded_vm_local_words = align_up((int)frame::interpreter_frame_vm_local_words, WordsPerLong );
 
   const int extra_space =
     rounded_vm_local_words +                   // frame local scratch space

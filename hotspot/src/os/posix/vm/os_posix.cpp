@@ -1197,7 +1197,7 @@ jint os::Posix::set_minimum_stack_sizes() {
 
   // Make the stack size a multiple of the page size so that
   // the yellow/red zones can be guarded.
-  JavaThread::set_stack_size_at_create(round_to(stack_size_in_bytes, vm_page_size()));
+  JavaThread::set_stack_size_at_create(align_up(stack_size_in_bytes, vm_page_size()));
 
   // Reminder: a compiler thread is a Java thread.
   _compiler_thread_min_stack_allowed = _compiler_thread_min_stack_allowed +

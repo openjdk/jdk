@@ -108,7 +108,7 @@ int AbstractInterpreter::size_activation(int max_stack,
          tempcount*Interpreter::stackElementWords + extra_args;
 
 #ifdef AARCH64
-  size = round_to(size, StackAlignmentInBytes/BytesPerWord);
+  size = align_up(size, StackAlignmentInBytes/BytesPerWord);
 #endif // AARCH64
 
   return size;
@@ -189,7 +189,7 @@ void AbstractInterpreter::layout_activation(Method* method,
   }
   if (caller->is_interpreted_frame()) {
     intptr_t* locals_base = (locals - method->max_locals()*Interpreter::stackElementWords + 1);
-    locals_base = (intptr_t*)round_down((intptr_t)locals_base, StackAlignmentInBytes);
+    locals_base = align_down(locals_base, StackAlignmentInBytes);
     assert(interpreter_frame->sender_sp() <= locals_base, "interpreter-to-interpreter frame chaining");
 
   } else if (caller->is_compiled_frame()) {
@@ -227,7 +227,7 @@ void AbstractInterpreter::layout_activation(Method* method,
   intptr_t* extended_sp = (intptr_t*) monbot  -
     (max_stack * Interpreter::stackElementWords) -
     popframe_extra_args;
-  extended_sp = (intptr_t*)round_down((intptr_t)extended_sp, StackAlignmentInBytes);
+  extended_sp = align_down(extended_sp, StackAlignmentInBytes);
   interpreter_frame->interpreter_frame_set_extended_sp(extended_sp);
 #else
   interpreter_frame->interpreter_frame_set_last_sp(stack_top);
@@ -239,7 +239,7 @@ void AbstractInterpreter::layout_activation(Method* method,
 
 #ifdef AARCH64
   if (caller->is_interpreted_frame()) {
-    intptr_t* sender_sp = (intptr_t*)round_down((intptr_t)caller->interpreter_frame_tos_address(), StackAlignmentInBytes);
+    intptr_t* sender_sp = align_down(caller->interpreter_frame_tos_address(), StackAlignmentInBytes);
     interpreter_frame->set_interpreter_frame_sender_sp(sender_sp);
 
   } else {

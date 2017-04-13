@@ -100,7 +100,7 @@ int AbstractInterpreter::size_activation(int max_stack,
 
   // On AArch64 we always keep the stack pointer 16-aligned, so we
   // must round up here.
-  size = round_to(size, 2);
+  size = align_up(size, 2);
 
   return size;
 }

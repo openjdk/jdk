@@ -2105,7 +2105,7 @@ void ClassVerifier::verify_switch(
     StackMapFrame* current_frame, StackMapTable* stackmap_table, TRAPS) {
   int bci = bcs->bci();
   address bcp = bcs->bcp();
-  address aligned_bcp = (address) round_to((intptr_t)(bcp + 1), jintSize);
+  address aligned_bcp = align_up(bcp + 1, jintSize);
 
   if (_klass->major_version() < NONZERO_PADDING_BYTES_IN_SWITCH_MAJOR_VERSION) {
     // 4639449 & 4647081: padding bytes must be 0
@@ -2162,7 +2162,7 @@ void ClassVerifier::verify_switch(
   for (int i = 0; i < keys; i++) {
     // Because check_jump_target() may safepoint, the bytecode could have
     // moved, which means 'aligned_bcp' is no good and needs to be recalculated.
-    aligned_bcp = (address)round_to((intptr_t)(bcs->bcp() + 1), jintSize);
+    aligned_bcp = align_up(bcs->bcp() + 1, jintSize);
     target = bci + (jint)Bytes::get_Java_u4(aligned_bcp+(3+i*delta)*jintSize);
     stackmap_table->check_jump_target(
       current_frame, target, CHECK_VERIFY(this));
@@ -2449,7 +2449,7 @@ bool ClassVerifier::ends_in_athrow(u4 start_bc_offset) {
       case Bytecodes::_lookupswitch:
       case Bytecodes::_tableswitch:
         {
-          address aligned_bcp = (address) round_to((intptr_t)(bcs.bcp() + 1), jintSize);
+          address aligned_bcp = align_up(bcs.bcp() + 1, jintSize);
           u4 default_offset = Bytes::get_Java_u4(aligned_bcp) + bci;
           int keys, delta;
           if (opcode == Bytecodes::_tableswitch) {

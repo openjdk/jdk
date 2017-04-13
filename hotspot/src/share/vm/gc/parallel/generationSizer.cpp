@@ -57,7 +57,7 @@ void GenerationSizer::initialize_size_info() {
 
   // Can a page size be something else than a power of two?
   assert(is_power_of_2((intptr_t)page_sz), "must be a power of 2");
-  size_t new_alignment = round_to(page_sz, _gen_alignment);
+  size_t new_alignment = align_up(page_sz, _gen_alignment);
   if (new_alignment != _gen_alignment) {
     _gen_alignment = new_alignment;
     _space_alignment = new_alignment;

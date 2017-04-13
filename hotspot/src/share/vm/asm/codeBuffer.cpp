@@ -748,7 +748,7 @@ void CodeBuffer::copy_code_to(CodeBlob* dest_blob) {
   dest_blob->set_strings(_code_strings);
 
   // Done moving code bytes; were they the right size?
-  assert(round_to(dest.total_content_size(), oopSize) == dest_blob->content_size(), "sanity");
+  assert((int)align_up(dest.total_content_size(), oopSize) == dest_blob->content_size(), "sanity");
 
   // Flush generated code
   ICache::invalidate_range(dest_blob->code_begin(), dest_blob->code_size());

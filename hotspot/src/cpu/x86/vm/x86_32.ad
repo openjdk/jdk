@@ -329,7 +329,7 @@ bool SafePointNode::needs_polling_address_input() {
 int CallStaticJavaDirectNode::compute_padding(int current_offset) const {
   current_offset += pre_call_resets_size();  // skip fldcw, if any
   current_offset += 1;      // skip call opcode byte
-  return round_to(current_offset, alignment_required()) - current_offset;
+  return align_up(current_offset, alignment_required()) - current_offset;
 }
 
 // The address of the call instruction needs to be 4-byte aligned to
@@ -338,7 +338,7 @@ int CallDynamicJavaDirectNode::compute_padding(int current_offset) const {
   current_offset += pre_call_resets_size();  // skip fldcw, if any
   current_offset += 5;      // skip MOV instruction
   current_offset += 1;      // skip call opcode byte
-  return round_to(current_offset, alignment_required()) - current_offset;
+  return align_up(current_offset, alignment_required()) - current_offset;
 }
 
 // EMIT_RM()
@@ -3275,7 +3275,7 @@ frame %{
   // Ret Addr is on stack in slot 0 if no locks or verification or alignment.
   // Otherwise, it is above the locks and verification slot and alignment word
   return_addr(STACK - 1 +
-              round_to((Compile::current()->in_preserve_stack_slots() +
+              align_up((Compile::current()->in_preserve_stack_slots() +
                         Compile::current()->fixed_slots()),
                        stack_alignment_in_slots()));
 

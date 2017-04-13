@@ -744,7 +744,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
         ShouldNotReachHere();
     }
   }
-  return round_to(stk, 2);
+  return align_up(stk, 2);
 }
 
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
@@ -840,7 +840,7 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
         ShouldNotReachHere();
     }
   }
-  return round_to(stk, 2);
+  return align_up(stk, 2);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1734,7 +1734,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
         }
       }
     }  // for
-    total_save_slots = double_slots * 2 + round_to(single_slots, 2); // Round to even.
+    total_save_slots = double_slots * 2 + align_up(single_slots, 2); // Round to even.
   }
 
   int oop_handle_slot_offset = stack_slots;
@@ -1761,7 +1761,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
   // Now compute actual number of stack words we need.
   // Round to align stack properly.
-  stack_slots = round_to(stack_slots,                                     // 7)
+  stack_slots = align_up(stack_slots,                                     // 7)
                          frame::alignment_in_bytes / VMRegImpl::stack_slot_size);
   int frame_size_in_bytes = stack_slots * VMRegImpl::stack_slot_size;
 
@@ -2395,7 +2395,7 @@ static address gen_c2i_adapter(MacroAssembler  *masm,
   // it has already been allocated.
 
   const int abi_scratch = frame::z_top_ijava_frame_abi_size;
-  int       extraspace  = round_to(total_args_passed, 2)*wordSize + abi_scratch;
+  int       extraspace  = align_up(total_args_passed, 2)*wordSize + abi_scratch;
   Register  sender_SP   = Z_R10;
   Register  value       = Z_R12;
 
@@ -2525,9 +2525,9 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
     // registers are below. By subtracting stack0, we either get a negative
     // number (all values in registers) or the maximum stack slot accessed.
     // Convert VMRegImpl (4 byte) stack slots to words.
-    int comp_words_on_stack = round_to(comp_args_on_stack*VMRegImpl::stack_slot_size, wordSize)>>LogBytesPerWord;
+    int comp_words_on_stack = align_up(comp_args_on_stack*VMRegImpl::stack_slot_size, wordSize)>>LogBytesPerWord;
     // Round up to miminum stack alignment, in wordSize
-    comp_words_on_stack = round_to(comp_words_on_stack, 2);
+    comp_words_on_stack = align_up(comp_words_on_stack, 2);
 
     __ resize_frame(-comp_words_on_stack*wordSize, Z_R0_scratch);
   }

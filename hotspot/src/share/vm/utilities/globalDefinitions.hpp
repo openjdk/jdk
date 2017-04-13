@@ -520,20 +520,38 @@ const bool support_IRIW_for_not_multiple_copy_atomic_cpu = false;
 
 #define is_aligned_(size, alignment) ((size) == (align_up_(size, alignment)))
 
+// Temporary declaration until this file has been restructured.
+template <typename T>
+bool is_power_of_2_t(T x) {
+  return (x != T(0)) && ((x & (x - 1)) == T(0));
+}
+
 // Helpers to align sizes and check for alignment
 
 template <typename T, typename A>
 inline T align_up(T size, A alignment) {
-  return align_up_(size, alignment);
+  assert(is_power_of_2_t(alignment), "must be a power of 2: " UINT64_FORMAT, (uint64_t)alignment);
+
+  T ret = align_up_(size, alignment);
+  assert(is_aligned_(ret, alignment), "must be aligned: " UINT64_FORMAT, (uint64_t)ret);
+
+  return ret;
 }
 
 template <typename T, typename A>
 inline T align_down(T size, A alignment) {
-  return align_down_(size, alignment);
+  assert(is_power_of_2_t(alignment), "must be a power of 2: " UINT64_FORMAT, (uint64_t)alignment);
+
+  T ret = align_down_(size, alignment);
+  assert(is_aligned_(ret, alignment), "must be aligned: " UINT64_FORMAT, (uint64_t)ret);
+
+  return ret;
 }
 
 template <typename T, typename A>
 inline bool is_aligned(T size, A alignment) {
+  assert(is_power_of_2_t(alignment), "must be a power of 2: " UINT64_FORMAT, (uint64_t)alignment);
+
   return is_aligned_(size, alignment);
 }
 
@@ -1204,22 +1222,6 @@ inline int exact_log2_long(jlong x) {
   assert(is_power_of_2_long(x), "x must be a power of 2: " JLONG_FORMAT, x);
   return log2_long(x);
 }
-
-
-// returns integer round-up to the nearest multiple of s (s must be a power of two)
-inline intptr_t round_to(intptr_t x, uintx s) {
-  assert(is_power_of_2(s), "s must be a power of 2: " UINTX_FORMAT, s);
-  const uintx m = s - 1;
-  return mask_bits(x + m, ~m);
-}
-
-// returns integer round-down to the nearest multiple of s (s must be a power of two)
-inline intptr_t round_down(intptr_t x, uintx s) {
-  assert(is_power_of_2(s), "s must be a power of 2: " UINTX_FORMAT, s);
-  const uintx m = s - 1;
-  return mask_bits(x, ~m);
-}
-
 
 inline bool is_odd (intx x) { return x & 1;      }
 inline bool is_even(intx x) { return !is_odd(x); }

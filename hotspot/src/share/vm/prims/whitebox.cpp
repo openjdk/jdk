@@ -1340,7 +1340,7 @@ CodeBlob* WhiteBox::allocate_code_blob(int size, int blob_type) {
   BufferBlob* blob;
   int full_size = CodeBlob::align_code_offset(sizeof(BufferBlob));
   if (full_size < size) {
-    full_size += round_to(size - full_size, oopSize);
+    full_size += align_up(size - full_size, oopSize);
   }
   {
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);

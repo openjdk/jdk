@@ -1881,7 +1881,7 @@ frame %{
   // Ret Addr is on stack in slot 0 if no locks or verification or alignment.
   // Otherwise, it is above the locks and verification slot and alignment word
   return_addr(STACK - 1*VMRegImpl::slots_per_word +
-              round_to((Compile::current()->in_preserve_stack_slots() +
+              align_up((Compile::current()->in_preserve_stack_slots() +
                         Compile::current()->fixed_slots()),
                        stack_alignment_in_slots()));
 

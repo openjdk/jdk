@@ -66,12 +66,12 @@ static int size_activation_helper(int callee_extra_locals, int max_stack, int mo
   // the caller so we must ensure that it is properly aligned for our callee.
   //
   const int rounded_vm_local_words =
-       round_to(frame::interpreter_frame_vm_local_words,WordsPerLong);
+      align_up((int)frame::interpreter_frame_vm_local_words,WordsPerLong);
   // callee_locals and max_stack are counts, not the size in frame.
   const int locals_size =
-       round_to(callee_extra_locals * Interpreter::stackElementWords, WordsPerLong);
+      align_up(callee_extra_locals * Interpreter::stackElementWords, WordsPerLong);
   const int max_stack_words = max_stack * Interpreter::stackElementWords;
-  return (round_to((max_stack_words
+  return (align_up((max_stack_words
                    + rounded_vm_local_words
                    + frame::memory_parameter_word_sp_offset), WordsPerLong)
                    // already rounded
@@ -82,7 +82,7 @@ static int size_activation_helper(int callee_extra_locals, int max_stack, int mo
 int AbstractInterpreter::size_top_interpreter_activation(Method* method) {
 
   // See call_stub code
-  int call_stub_size  = round_to(7 + frame::memory_parameter_word_sp_offset,
+  int call_stub_size  = align_up(7 + frame::memory_parameter_word_sp_offset,
                                  WordsPerLong);    // 7 + register save area
 
   // Save space for one monitor to get into the interpreted method in case
@@ -105,7 +105,7 @@ int AbstractInterpreter::size_activation(int max_stack,
 
   int monitor_size           = monitors * frame::interpreter_frame_monitor_size();
 
-  assert(monitor_size == round_to(monitor_size, WordsPerLong), "must align");
+  assert(is_aligned(monitor_size, WordsPerLong), "must align");
 
   //
   // Note: if you look closely this appears to be doing something much different
@@ -131,8 +131,8 @@ int AbstractInterpreter::size_activation(int max_stack,
   // there is no sense in messing working code.
   //
 
-  int rounded_cls = round_to((callee_locals - callee_params), WordsPerLong);
-  assert(rounded_cls == round_to(rounded_cls, WordsPerLong), "must align");
+  int rounded_cls = align_up((callee_locals - callee_params), WordsPerLong);
+  assert(is_aligned(rounded_cls, WordsPerLong), "must align");
 
   int raw_frame_size = size_activation_helper(rounded_cls, max_stack, monitor_size);
 
@@ -166,9 +166,9 @@ void AbstractInterpreter::layout_activation(Method* method,
   // even if not fully filled out.
   assert(interpreter_frame->is_interpreted_frame(), "Must be interpreted frame");
 
-  int rounded_vm_local_words = round_to(frame::interpreter_frame_vm_local_words,WordsPerLong);
+  int rounded_vm_local_words = align_up((int)frame::interpreter_frame_vm_local_words,WordsPerLong);
   int monitor_size           = moncount * frame::interpreter_frame_monitor_size();
-  assert(monitor_size == round_to(monitor_size, WordsPerLong), "must align");
+  assert(is_aligned(monitor_size, WordsPerLong), "must align");
 
   intptr_t* fp = interpreter_frame->fp();
 
@@ -198,7 +198,7 @@ void AbstractInterpreter::layout_activation(Method* method,
     int parm_words  = caller_actual_parameters * Interpreter::stackElementWords;
     locals = Lesp_ptr + parm_words;
     int delta = local_words - parm_words;
-    int computed_sp_adjustment = (delta > 0) ? round_to(delta, WordsPerLong) : 0;
+    int computed_sp_adjustment = (delta > 0) ? align_up(delta, WordsPerLong) : 0;
     *interpreter_frame->register_addr(I5_savedSP)    = (intptr_t) (fp + computed_sp_adjustment) - STACK_BIAS;
     if (!is_bottom_frame) {
       // Llast_SP is set below for the current frame to SP (with the

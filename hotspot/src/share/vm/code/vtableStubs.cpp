@@ -51,7 +51,7 @@ VMReg   VtableStub::_receiver_location = VMRegImpl::Bad();
 void* VtableStub::operator new(size_t size, int code_size) throw() {
   assert(size == sizeof(VtableStub), "mismatched size");
   // compute real VtableStub size (rounded to nearest word)
-  const int real_size = round_to(code_size + sizeof(VtableStub), wordSize);
+  const int real_size = align_up(code_size + (int)sizeof(VtableStub), wordSize);
   // malloc them in chunks to minimize header overhead
   const int chunk_factor = 32;
   if (_chunk == NULL || _chunk + real_size > _chunk_end) {

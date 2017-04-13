@@ -1088,7 +1088,7 @@ void RegistersForDebugging::print(outputStream* s) {
 }
 
 void RegistersForDebugging::save_registers(MacroAssembler* a) {
-  a->sub(FP, round_to(sizeof(RegistersForDebugging), sizeof(jdouble)) - STACK_BIAS, O0);
+  a->sub(FP, align_up(sizeof(RegistersForDebugging), sizeof(jdouble)) - STACK_BIAS, O0);
   a->flushw();
   int i;
   for (i = 0; i < 8; ++i) {
@@ -1310,7 +1310,7 @@ void MacroAssembler::verify_oop_subroutine() {
 
   wrccr( O5_save_flags ); // Restore CCR's
 
-  save_frame(::round_to(sizeof(RegistersForDebugging) / BytesPerWord, 2));
+  save_frame(align_up(sizeof(RegistersForDebugging) / BytesPerWord, 2));
 
   // stop_subroutine expects message pointer in I1.
   mov(I1, O1);
@@ -1339,7 +1339,7 @@ void MacroAssembler::stop(const char* msg) {
   // add one word to size in case struct is odd number of words long
   // It must be doubleword-aligned for storing doubles into it.
 
-    save_frame(::round_to(sizeof(RegistersForDebugging) / BytesPerWord, 2));
+    save_frame(align_up(sizeof(RegistersForDebugging) / BytesPerWord, 2));
 
     // stop_subroutine expects message pointer in I1.
     // Size of set() should stay the same
@@ -1362,7 +1362,7 @@ void MacroAssembler::stop(const char* msg) {
 
 
 void MacroAssembler::warn(const char* msg) {
-  save_frame(::round_to(sizeof(RegistersForDebugging) / BytesPerWord, 2));
+  save_frame(align_up(sizeof(RegistersForDebugging) / BytesPerWord, 2));
   RegistersForDebugging::save_registers(this);
   mov(O0, L0);
   // Size of set() should stay the same

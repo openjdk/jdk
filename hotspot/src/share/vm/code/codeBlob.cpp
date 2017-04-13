@@ -60,12 +60,12 @@ unsigned int CodeBlob::align_code_offset(int offset) {
 // This must be consistent with the CodeBlob constructor's layout actions.
 unsigned int CodeBlob::allocation_size(CodeBuffer* cb, int header_size) {
   unsigned int size = header_size;
-  size += round_to(cb->total_relocation_size(), oopSize);
+  size += align_up(cb->total_relocation_size(), oopSize);
   // align the size to CodeEntryAlignment
   size = align_code_offset(size);
-  size += round_to(cb->total_content_size(), oopSize);
-  size += round_to(cb->total_oop_size(), oopSize);
-  size += round_to(cb->total_metadata_size(), oopSize);
+  size += align_up(cb->total_content_size(), oopSize);
+  size += align_up(cb->total_oop_size(), oopSize);
+  size += align_up(cb->total_metadata_size(), oopSize);
   return size;
 }
 
@@ -87,9 +87,9 @@ CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& la
   _content_begin(layout.content_begin()),
   _type(type)
 {
-  assert(layout.size()        == round_to(layout.size(),        oopSize), "unaligned size");
-  assert(layout.header_size() == round_to(layout.header_size(), oopSize), "unaligned size");
-  assert(layout.relocation_size() == round_to(layout.relocation_size(), oopSize), "unaligned size");
+  assert(is_aligned(layout.size(),            oopSize), "unaligned size");
+  assert(is_aligned(layout.header_size(),     oopSize), "unaligned size");
+  assert(is_aligned(layout.relocation_size(), oopSize), "unaligned size");
   assert(layout.code_end() == layout.content_end(), "must be the same - see code_end()");
 #ifdef COMPILER1
   // probably wrong for tiered
@@ -114,8 +114,8 @@ CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& la
   _content_begin(layout.content_begin()),
   _type(type)
 {
-  assert(_size        == round_to(_size,        oopSize), "unaligned size");
-  assert(_header_size == round_to(_header_size, oopSize), "unaligned size");
+  assert(is_aligned(_size,        oopSize), "unaligned size");
+  assert(is_aligned(_header_size, oopSize), "unaligned size");
   assert(_data_offset <= _size, "codeBlob is too small");
   assert(layout.code_end() == layout.content_end(), "must be the same - see code_end()");
 
@@ -131,7 +131,7 @@ CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& la
 RuntimeBlob::RuntimeBlob(const char* name, int header_size, int size, int frame_complete, int locs_size)
   : CodeBlob(name, compiler_none, CodeBlobLayout((address) this, size, header_size, locs_size, size), frame_complete, 0, NULL, false /* caller_must_gc_arguments */)
 {
-  assert(locs_size   == round_to(locs_size,   oopSize), "unaligned size");
+  assert(is_aligned(locs_size, oopSize), "unaligned size");
 }
 
 
@@ -221,7 +221,7 @@ BufferBlob* BufferBlob::create(const char* name, int buffer_size) {
   unsigned int size = sizeof(BufferBlob);
   // align the size to CodeEntryAlignment
   size = CodeBlob::align_code_offset(size);
-  size += round_to(buffer_size, oopSize);
+  size += align_up(buffer_size, oopSize);
   assert(name != NULL, "must provide a name");
   {
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
@@ -304,7 +304,7 @@ MethodHandlesAdapterBlob* MethodHandlesAdapterBlob::create(int buffer_size) {
   unsigned int size = sizeof(MethodHandlesAdapterBlob);
   // align the size to CodeEntryAlignment
   size = CodeBlob::align_code_offset(size);
-  size += round_to(buffer_size, oopSize);
+  size += align_up(buffer_size, oopSize);
   {
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     blob = new (size) MethodHandlesAdapterBlob(size);

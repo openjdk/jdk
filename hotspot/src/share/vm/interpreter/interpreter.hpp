@@ -59,10 +59,10 @@ class InterpreterCodelet: public Stub {
 
   // General info/converters
   int     size() const                           { return _size; }
-  static  int code_size_to_size(int code_size)   { return round_to(sizeof(InterpreterCodelet), CodeEntryAlignment) + code_size; }
+  static  int code_size_to_size(int code_size)   { return align_up((int)sizeof(InterpreterCodelet), CodeEntryAlignment) + code_size; }
 
   // Code info
-  address code_begin() const                     { return (address)this + round_to(sizeof(InterpreterCodelet), CodeEntryAlignment); }
+  address code_begin() const                     { return (address)this + align_up(sizeof(InterpreterCodelet), CodeEntryAlignment); }
   address code_end() const                       { return (address)this + size(); }
 
   // Debugging

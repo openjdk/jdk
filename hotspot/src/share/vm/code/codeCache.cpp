@@ -406,7 +406,7 @@ void CodeCache::add_heap(ReservedSpace rs, const char* name, int code_blob_type)
 
   // Reserve Space
   size_t size_initial = MIN2(InitialCodeCacheSize, rs.size());
-  size_initial = round_to(size_initial, os::vm_page_size());
+  size_initial = align_up(size_initial, os::vm_page_size());
   if (!heap->reserve(rs, size_initial, CodeCacheSegmentSize)) {
     vm_exit_during_initialization("Could not reserve enough space for code cache");
   }
@@ -1041,7 +1041,7 @@ void CodeCache::initialize() {
   // This was originally just a check of the alignment, causing failure, instead, round
   // the code cache to the page size.  In particular, Solaris is moving to a larger
   // default page size.
-  CodeCacheExpansionSize = round_to(CodeCacheExpansionSize, os::vm_page_size());
+  CodeCacheExpansionSize = align_up(CodeCacheExpansionSize, os::vm_page_size());
 
   if (SegmentedCodeCache) {
     // Use multiple code heaps

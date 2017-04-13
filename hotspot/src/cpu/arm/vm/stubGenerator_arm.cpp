@@ -2876,7 +2876,7 @@ class StubGenerator: public StubCodeGenerator {
       BLOCK_COMMENT("PreBarrier");
 
 #ifdef AARCH64
-      callee_saved_regs = round_to(callee_saved_regs, 2);
+      callee_saved_regs = align_up(callee_saved_regs, 2);
       for (int i = 0; i < callee_saved_regs; i += 2) {
         __ raw_push(as_Register(i), as_Register(i+1));
       }

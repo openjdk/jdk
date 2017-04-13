@@ -216,8 +216,8 @@ static void test_arraycopy_func(address func, int alignment) {
   }
   // C++ does not guarantee jlong[] array alignment to 8 bytes.
   // Use middle of array to check that memory before it is not modified.
-  address buffer  = (address) round_to((intptr_t)&lbuffer[4], BytesPerLong);
-  address buffer2 = (address) round_to((intptr_t)&lbuffer2[4], BytesPerLong);
+  address buffer  = align_up((address)&lbuffer[4], BytesPerLong);
+  address buffer2 = align_up((address)&lbuffer2[4], BytesPerLong);
   // do an aligned copy
   ((arraycopy_fn)func)(buffer, buffer2, 0);
   for (i = 0; i < sizeof(lbuffer); i++) {
