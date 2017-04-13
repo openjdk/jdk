@@ -26,7 +26,6 @@
  * @bug 6701459
  * @summary Test sequence numbers in RelationService notifications.
  * @author Eamonn McManus
- * @modules java.management
  */
 
 /*

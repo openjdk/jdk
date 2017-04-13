@@ -50,9 +50,9 @@ public class NoAccess {
         Layer bootLayer = Layer.boot();
         Configuration parent = bootLayer.configuration();
 
-        Configuration cf = parent.resolveRequiresAndUses(finder,
-                                                         ModuleFinder.of(),
-                                                         Set.of("m1", "m2"));
+        Configuration cf = parent.resolveAndBind(finder,
+                                                 ModuleFinder.of(),
+                                                 Set.of("m1", "m2"));
 
         ClassLoader scl = ClassLoader.getSystemClassLoader();
         Layer layer = bootLayer.defineModulesWithManyLoaders(cf, scl);

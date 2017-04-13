@@ -30,6 +30,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.VirtualMachineDescriptor;
@@ -145,4 +146,17 @@ public class ProcessArgumentMatcher {
         return this.getVirtualMachineDescriptors(null);
     }
 
+    public Collection<String> getVirtualMachinePids(Class<?> excludeClass) {
+        if (singlePid != null) {
+            // There is a bug in AttachProvider, when VM is debuggee-suspended it's not listed by the AttachProvider.
+            // If we are talking about a specific pid, just return it.
+            return List.of(singlePid);
+        } else {
+            return getVMDs(excludeClass, matchClass).stream().map(x -> {return x.id();}).collect(Collectors.toList());
+        }
+    }
+
+    public Collection<String> getVirtualMachinePids() {
+        return this.getVirtualMachinePids(null);
+    }
 }

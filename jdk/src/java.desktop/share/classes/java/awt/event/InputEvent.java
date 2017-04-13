@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,51 +62,76 @@ public abstract class InputEvent extends ComponentEvent {
 
     /**
      * The Shift key modifier constant.
-     * It is recommended that SHIFT_DOWN_MASK be used instead.
+     *
+     * @deprecated It is recommended that SHIFT_DOWN_MASK and
+     *             {@link #getModifiersEx()} be used instead
      */
+    @Deprecated(since = "9")
     public static final int SHIFT_MASK = Event.SHIFT_MASK;
 
     /**
      * The Control key modifier constant.
-     * It is recommended that CTRL_DOWN_MASK be used instead.
+     *
+     * @deprecated It is recommended that CTRL_DOWN_MASK and
+     *             {@link #getModifiersEx()} be used instead
      */
+    @Deprecated(since = "9")
     public static final int CTRL_MASK = Event.CTRL_MASK;
 
     /**
      * The Meta key modifier constant.
-     * It is recommended that META_DOWN_MASK be used instead.
+     *
+     * @deprecated It is recommended that META_DOWN_MASK and
+     *             {@link #getModifiersEx()} be used instead
      */
+    @Deprecated(since = "9")
     public static final int META_MASK = Event.META_MASK;
 
     /**
      * The Alt key modifier constant.
-     * It is recommended that ALT_DOWN_MASK be used instead.
+     *
+     * @deprecated It is recommended that ALT_DOWN_MASK and
+     *             {@link #getModifiersEx()} be used instead
      */
+    @Deprecated(since = "9")
     public static final int ALT_MASK = Event.ALT_MASK;
 
     /**
      * The AltGraph key modifier constant.
+     *
+     * @deprecated It is recommended that ALT_GRAPH_DOWN_MASK and
+     *             {@link #getModifiersEx()} be used instead
      */
+    @Deprecated(since = "9")
     public static final int ALT_GRAPH_MASK = 1 << 5;
 
     /**
      * The Mouse Button1 modifier constant.
-     * It is recommended that BUTTON1_DOWN_MASK be used instead.
+     *
+     * @deprecated It is recommended that BUTTON1_DOWN_MASK and
+     *             {@link #getModifiersEx()} be used instead
      */
+    @Deprecated(since = "9")
     public static final int BUTTON1_MASK = 1 << 4;
 
     /**
      * The Mouse Button2 modifier constant.
-     * It is recommended that BUTTON2_DOWN_MASK be used instead.
-     * Note that BUTTON2_MASK has the same value as ALT_MASK.
+     *
+     * @deprecated It is recommended that BUTTON2_DOWN_MASK and
+     *             {@link #getModifiersEx()} be used instead. Note that
+     *             BUTTON2_MASK has the same value as ALT_MASK.
      */
+    @Deprecated(since = "9")
     public static final int BUTTON2_MASK = Event.ALT_MASK;
 
     /**
      * The Mouse Button3 modifier constant.
-     * It is recommended that BUTTON3_DOWN_MASK be used instead.
-     * Note that BUTTON3_MASK has the same value as META_MASK.
+     *
+     * @deprecated It is recommended that BUTTON3_DOWN_MASK and
+     *             {@link #getModifiersEx()} be used instead. Note that
+     *             BUTTON3_MASK has the same value as META_MASK.
      */
+    @Deprecated(since = "9")
     public static final int BUTTON3_MASK = Event.META_MASK;
 
     /**
@@ -159,7 +184,7 @@ public abstract class InputEvent extends ComponentEvent {
 
     /**
      * An array of extended modifiers for additional buttons.
-     * @see getButtonDownMasks
+     * @see #getButtonDownMasks()
      * There are twenty buttons fit into 4byte space.
      * one more bit is reserved for FIRST_HIGH_BIT.
      * @since 1.7
@@ -382,7 +407,7 @@ public abstract class InputEvent extends ComponentEvent {
      * @return whether or not the Shift modifier is down on this event
      */
     public boolean isShiftDown() {
-        return (modifiers & SHIFT_MASK) != 0;
+        return (modifiers & SHIFT_DOWN_MASK) != 0;
     }
 
     /**
@@ -390,7 +415,7 @@ public abstract class InputEvent extends ComponentEvent {
      * @return whether or not the Control modifier is down on this event
      */
     public boolean isControlDown() {
-        return (modifiers & CTRL_MASK) != 0;
+        return (modifiers & CTRL_DOWN_MASK) != 0;
     }
 
     /**
@@ -398,7 +423,7 @@ public abstract class InputEvent extends ComponentEvent {
      * @return whether or not the Meta modifier is down on this event
      */
     public boolean isMetaDown() {
-        return (modifiers & META_MASK) != 0;
+        return (modifiers & META_DOWN_MASK) != 0;
     }
 
     /**
@@ -406,7 +431,7 @@ public abstract class InputEvent extends ComponentEvent {
      * @return whether or not the Alt modifier is down on this event
      */
     public boolean isAltDown() {
-        return (modifiers & ALT_MASK) != 0;
+        return (modifiers & ALT_DOWN_MASK) != 0;
     }
 
     /**
@@ -414,7 +439,7 @@ public abstract class InputEvent extends ComponentEvent {
      * @return whether or not the AltGraph modifier is down on this event
      */
     public boolean isAltGraphDown() {
-        return (modifiers & ALT_GRAPH_MASK) != 0;
+        return (modifiers & ALT_GRAPH_DOWN_MASK) != 0;
     }
 
     /**
@@ -428,8 +453,12 @@ public abstract class InputEvent extends ComponentEvent {
 
     /**
      * Returns the modifier mask for this event.
+     *
      * @return the modifier mask for this event
+     * @deprecated It is recommended that extended modifier keys and
+     *             {@link #getModifiersEx()} be used instead
      */
+    @Deprecated(since = "9")
     public int getModifiers() {
         return modifiers & (JDK_1_3_MODIFIERS | HIGH_MODIFIERS);
     }
