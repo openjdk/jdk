@@ -591,10 +591,6 @@ public class TestModules extends JavadocTester {
                 + "<th class=\"colFirst\" scope=\"row\"><a href=\"testpkgmdlB/TestClassInModuleB.html\" title=\"class in testpkgmdlB\">TestClassInModuleB</a></th>\n"
                 + "<td class=\"colLast\">With a test description for uses.&nbsp;</td>\n"
                 + "</tr>",
-                "<tr class=\"altColor\">\n"
-                + "<th class=\"colFirst\" scope=\"row\"><a href=\"testpkg2mdlB/TestInterface2InModuleB.html\" title=\"interface in testpkg2mdlB\">TestInterface2InModuleB</a></th>\n"
-                + "<td class=\"colLast\">&nbsp;</td>\n"
-                + "</tr>",
                 "<caption><span>Opens</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Package</th>\n"

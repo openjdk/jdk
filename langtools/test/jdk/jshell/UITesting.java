@@ -29,6 +29,8 @@ import java.io.PrintStream;
 import java.io.Writer;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,6 +39,9 @@ import jdk.jshell.tool.JavaShellToolBuilder;
 public class UITesting {
 
     protected void doRunTest(Test test) throws Exception {
+        // turn on logging of launch failures
+        Logger.getLogger("jdk.jshell.execution").setLevel(Level.ALL);
+
         PipeInputStream input = new PipeInputStream();
         StringBuilder out = new StringBuilder();
         PrintStream outS = new PrintStream(new OutputStream() {
