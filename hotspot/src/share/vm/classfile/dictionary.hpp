@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_CLASSFILE_DICTIONARY_HPP
 #define SHARE_VM_CLASSFILE_DICTIONARY_HPP
 
+#include "classfile/protectionDomainCache.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.hpp"
@@ -32,9 +33,6 @@
 #include "utilities/ostream.hpp"
 
 class DictionaryEntry;
-class PSPromotionManager;
-class ProtectionDomainCacheTable;
-class ProtectionDomainCacheEntry;
 class BoolObjectClosure;
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -89,7 +87,6 @@ public:
 
   // GC support
   void oops_do(OopClosure* f);
-  void always_strong_oops_do(OopClosure* blk);
   void roots_oops_do(OopClosure* strong, OopClosure* weak);
 
   void classes_do(void f(Klass*));
@@ -129,110 +126,6 @@ public:
   void printPerformanceInfoDetails();
 #endif // ASSERT
   void verify();
-};
-
-// The following classes can be in dictionary.cpp, but we need these
-// to be in header file so that SA's vmStructs can access them.
-class ProtectionDomainCacheEntry : public HashtableEntry<oop, mtClass> {
-  friend class VMStructs;
- private:
-  // Flag indicating whether this protection domain entry is strongly reachable.
-  // Used during iterating over the system dictionary to remember oops that need
-  // to be updated.
-  bool _strongly_reachable;
- public:
-  oop protection_domain() { return literal(); }
-
-  void init() {
-    _strongly_reachable = false;
-  }
-
-  ProtectionDomainCacheEntry* next() {
-    return (ProtectionDomainCacheEntry*)HashtableEntry<oop, mtClass>::next();
-  }
-
-  ProtectionDomainCacheEntry** next_addr() {
-    return (ProtectionDomainCacheEntry**)HashtableEntry<oop, mtClass>::next_addr();
-  }
-
-  void oops_do(OopClosure* f) {
-    f->do_oop(literal_addr());
-  }
-
-  void set_strongly_reachable()   { _strongly_reachable = true; }
-  bool is_strongly_reachable()    { return _strongly_reachable; }
-  void reset_strongly_reachable() { _strongly_reachable = false; }
-
-  void print() PRODUCT_RETURN;
-  void verify();
-};
-
-// The ProtectionDomainCacheTable contains all protection domain oops. The system
-// dictionary entries reference its entries instead of having references to oops
-// directly.
-// This is used to speed up system dictionary iteration: the oops in the
-// protection domain are the only ones referring the Java heap. So when there is
-// need to update these, instead of going over every entry of the system dictionary,
-// we only need to iterate over this set.
-// The amount of different protection domains used is typically magnitudes smaller
-// than the number of system dictionary entries (loaded classes).
-class ProtectionDomainCacheTable : public Hashtable<oop, mtClass> {
-  friend class VMStructs;
-private:
-  ProtectionDomainCacheEntry* bucket(int i) {
-    return (ProtectionDomainCacheEntry*) Hashtable<oop, mtClass>::bucket(i);
-  }
-
-  // The following method is not MT-safe and must be done under lock.
-  ProtectionDomainCacheEntry** bucket_addr(int i) {
-    return (ProtectionDomainCacheEntry**) Hashtable<oop, mtClass>::bucket_addr(i);
-  }
-
-  ProtectionDomainCacheEntry* new_entry(unsigned int hash, Handle protection_domain) {
-    ProtectionDomainCacheEntry* entry = (ProtectionDomainCacheEntry*) Hashtable<oop, mtClass>::new_entry(hash, protection_domain());
-    entry->init();
-    return entry;
-  }
-
-  static unsigned int compute_hash(Handle protection_domain);
-
-  int index_for(Handle protection_domain);
-  ProtectionDomainCacheEntry* add_entry(int index, unsigned int hash, Handle protection_domain);
-  ProtectionDomainCacheEntry* find_entry(int index, Handle protection_domain);
-
-public:
-
-  ProtectionDomainCacheTable(int table_size);
-
-  ProtectionDomainCacheEntry* get(Handle protection_domain);
-
-  void unlink(BoolObjectClosure* cl);
-
-  // GC support
-  void oops_do(OopClosure* f);
-  void always_strong_oops_do(OopClosure* f);
-  void roots_oops_do(OopClosure* strong, OopClosure* weak);
-
-  static uint bucket_size();
-
-  void print() PRODUCT_RETURN;
-  void verify();
-};
-
-
-class ProtectionDomainEntry :public CHeapObj<mtClass> {
-  friend class VMStructs;
- public:
-  ProtectionDomainEntry* _next;
-  ProtectionDomainCacheEntry* _pd_cache;
-
-  ProtectionDomainEntry(ProtectionDomainCacheEntry* pd_cache, ProtectionDomainEntry* next) {
-    _pd_cache = pd_cache;
-    _next     = next;
-  }
-
-  ProtectionDomainEntry* next() { return _next; }
-  oop protection_domain() { return _pd_cache->protection_domain(); }
 };
 
 // An entry in the system dictionary, this describes a class as
@@ -294,14 +187,6 @@ class DictionaryEntry : public HashtableEntry<InstanceKlass*, mtClass> {
     return protection_domain() == NULL
          ? true
          : contains_protection_domain(protection_domain());
-  }
-
-  void set_strongly_reachable() {
-    for (ProtectionDomainEntry* current = _pd_set;
-                                current != NULL;
-                                current = current->_next) {
-      current->_pd_cache->set_strongly_reachable();
-    }
   }
 
   void verify_protection_domain_set() {
