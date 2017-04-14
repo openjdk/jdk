@@ -255,9 +255,6 @@ tools/jimage/JImageExtractTest.java                             8170120 generic-
 tools/jimage/JImageListTest.java                                8170120 generic-all
 tools/jimage/JImageVerifyTest.java                              8170120 generic-all
 
-
-tools/jlink/multireleasejar/JLinkMultiReleaseJarTest.java       8169971 windows-x64
-
 ############################################################################
 
 # jdk_jdi
