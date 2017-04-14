@@ -25,6 +25,7 @@ package sun.hotspot.tools.ctw;
 
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.util.Pair;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -120,20 +121,21 @@ public class CtwRunner {
                 System.out.printf("%s %dms END : exit code = %d%n",
                         phase, TimeUnit.NANOSECONDS.toMillis(System.nanoTime()),
                         exitCode);
-                long lastClassIndex = getLastClassIndex(out);
+                Pair<String, Long> lastClass = getLastClass(out);
                 if (exitCode == 0) {
                     done = true;
                 } else {
-                    if (lastClassIndex == 0) {
+                    if (lastClass == null) {
                         errors.add(new Error(phase + ": failed during preload"
                                 + " with classStart = " + classStart));
                         // skip one class
                         ++classStart;
                     } else {
                         errors.add(new Error(phase + ": failed during"
-                                + " compilation of class #" + lastClassIndex));
+                                + " compilation of class #" + lastClass.second
+                                + " : " + lastClass.first));
                         // continue with the next class
-                        classStart = lastClassIndex + 1;
+                        classStart = lastClass.second + 1;
                     }
                 }
             } catch (Exception e) {
@@ -142,8 +144,7 @@ public class CtwRunner {
         }
     }
 
-    private long getLastClassIndex(Path errFile) {
-        long result = 0;
+    private Pair<String, Long> getLastClass(Path errFile) {
         try {
             String line = Files.newBufferedReader(errFile)
                     .lines()
@@ -152,13 +153,15 @@ public class CtwRunner {
             if (line != null) {
                 int open = line.indexOf('[') + 1;
                 int close = line.indexOf(']');
-                result = Long.parseLong(line.substring(open, close));
+                long index = Long.parseLong(line.substring(open, close));
+                String name = line.substring(close + 1).trim().replace('.', '/');
+                return new Pair<>(name, index);
             }
         } catch (IOException ioe) {
             throw new Error("can not read " + errFile + " : "
                     + ioe.getMessage(), ioe);
         }
-        return result;
+        return null;
     }
 
     private String[] cmd(long classStart) {
@@ -178,9 +181,10 @@ public class CtwRunner {
                 "--add-exports", "java.base/jdk.internal.reflect=ALL-UNNAMED",
                 // enable diagnostic logging
                 "-XX:+LogCompilation",
-                // use phase specific log and hs_err file
+                // use phase specific log, hs_err and ciReplay files
                 String.format("-XX:LogFile=hotspot_%s_%%p.log", phase),
                 String.format("-XX:ErrorFile=hs_err_%s_%%p.log", phase),
+                String.format("-XX:ReplayDataFile=replay_%s_%%p.log", phase),
                 // MethodHandle MUST NOT be compiled
                 "-XX:CompileCommand=exclude,java/lang/invoke/MethodHandle.*",
                 // CTW entry point
