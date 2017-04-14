@@ -563,6 +563,8 @@ protected:
   void set_has_vanilla_constructor()    { _access_flags.set_has_vanilla_constructor(); }
   bool has_miranda_methods () const     { return access_flags().has_miranda_methods(); }
   void set_has_miranda_methods()        { _access_flags.set_has_miranda_methods(); }
+  bool is_shared() const                { return access_flags().is_shared_class(); } // shadows MetaspaceObj::is_shared)()
+  void set_is_shared()                  { _access_flags.set_is_shared_class(); }
 
   bool is_cloneable() const;
   void set_is_cloneable();
