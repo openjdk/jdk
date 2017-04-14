@@ -1014,15 +1014,16 @@ bool klassVtable::is_initialized() {
 void itableMethodEntry::initialize(Method* m) {
   if (m == NULL) return;
 
+#ifdef ASSERT
   if (MetaspaceShared::is_in_shared_space((void*)&_method) &&
      !MetaspaceShared::remapped_readwrite()) {
     // At runtime initialize_itable is rerun as part of link_class_impl()
     // for a shared class loaded by the non-boot loader.
     // The dumptime itable method entry should be the same as the runtime entry.
     assert(_method == m, "sanity");
-  } else {
-    _method = m;
   }
+#endif
+  _method = m;
 }
 
 klassItable::klassItable(InstanceKlass* klass) {
