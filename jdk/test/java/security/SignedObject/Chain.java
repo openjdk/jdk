@@ -33,7 +33,6 @@ import java.util.Arrays;
 /*
  * @test
  * @bug 8050374
- * @key intermittent
  * @summary Verify a chain of signed objects
  */
 public class Chain {
