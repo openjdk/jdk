@@ -290,7 +290,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
 
         // Get all packages for the module and put it in the concealed packages set.
         utils.getModulePackageMap().getOrDefault(mdle, Collections.emptySet()).forEach((pkg) -> {
-            if (shouldDocument(pkg)) {
+            if (shouldDocument(pkg) && moduleMode == ModuleMode.ALL) {
                 concealedPackages.add(pkg);
             }
         });
@@ -309,7 +309,9 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 if (moduleMode == ModuleMode.ALL || mdleList.isEmpty()) {
                     exportedPackages.put(p, mdleList);
                 }
-                concealedPackages.remove(p);
+                if (moduleMode == ModuleMode.ALL) {
+                    concealedPackages.remove(p);
+                }
             }
         });
         // Get all opened packages for the module using the opens directive for the module.
@@ -326,12 +328,11 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 if (moduleMode == ModuleMode.ALL || mdleList.isEmpty()) {
                     openedPackages.put(p, mdleList);
                 }
-                concealedPackages.remove(p);
+                if (moduleMode == ModuleMode.ALL) {
+                    concealedPackages.remove(p);
+                }
             }
         });
-        // Remove all the exported and opened packages so we have just the concealed packages now.
-        concealedPackages.removeAll(exportedPackages.keySet());
-        concealedPackages.removeAll(openedPackages.keySet());
         // Get all the exported and opened packages, for the transitive closure of the module, to be displayed in
         // the indirect packages tables.
         dependentModules.forEach((module, mod) -> {
