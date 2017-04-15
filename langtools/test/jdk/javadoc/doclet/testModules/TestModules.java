@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8154119 8154262 8156077 8157987 8154261 8154817 8135291 8155995 8162363
- *      8168766 8168688 8162674 8160196 8175799 8174974 8176778 8177562 8175218
+ *      8168766 8168688 8162674 8160196 8175799 8174974 8176778 8177562 8175218 8175823
  * @summary Test modules support in javadoc.
  * @author bpatel
  * @library ../lib
@@ -268,6 +268,32 @@ public class TestModules extends JavadocTester {
         checkModuleModeCommon();
         checkModuleModeApi(false);
         checkModuleModeAll(true);
+    }
+
+    /**
+     * Test generated module summary page of a module with no exported package.
+     */
+    @Test
+    void testModuleSummaryNoExportedPkgAll() {
+        javadoc("-d", "out-ModuleSummaryNoExportedPkgAll", "-use", "--show-module-contents=all",
+                "-sourcepath", testSrc + "/moduleNoExport",
+                "--module", "moduleNoExport",
+                "testpkgmdlNoExport");
+        checkExit(Exit.OK);
+        checkModuleSummaryNoExported(true);
+    }
+
+    /**
+     * Test generated module summary page of a module with no exported package.
+     */
+    @Test
+    void testModuleSummaryNoExportedPkgApi() {
+        javadoc("-d", "out-ModuleSummaryNoExportedPkgApi", "-use",
+                "-sourcepath", testSrc + "/moduleNoExport",
+                "--module", "moduleNoExport",
+                "testpkgmdlNoExport");
+        checkExit(Exit.OK);
+        checkModuleSummaryNoExported(false);
     }
 
     void checkDescription(boolean found) {
@@ -900,5 +926,14 @@ public class TestModules extends JavadocTester {
                 "<iframe src=\"overview-frame.html\" name=\"packageListFrame\" title=\"All Packages\"></iframe>");
         checkOutput("index.html", found,
                 "<iframe src=\"module-overview-frame.html\" name=\"packageListFrame\" title=\"All Modules\"></iframe>");
+    }
+
+    void checkModuleSummaryNoExported(boolean found) {
+        checkOutput("moduleNoExport-summary.html", found,
+                "<!-- ============ PACKAGES SUMMARY =========== -->\n"
+                + "<a name=\"packages.summary\">\n"
+                + "<!--   -->\n"
+                + "</a>",
+                "<caption><span>Concealed</span><span class=\"tabEnd\">&nbsp;</span></caption>");
     }
 }
