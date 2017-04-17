@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 1998, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,26 +23,13 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 4091811 4148753
- * @summary Test java.net.MulticastSocket joinGroup and leaveGroup
- *
- */
+package pkg.b.p;
 
-import java.io.*;
-import java.net.*;
+import pkg.b.l.LoggerB;
 
-
-public class JoinGroup {
-
-    public static void main(String args[]) throws Exception  {
-        MulticastSocket soc = null;
-        InetAddress sin = null;
-
-        soc = new MulticastSocket();
-        sin = InetAddress.getByName("224.80.80.80");
-        soc.joinGroup(sin);
-        soc.leaveGroup(sin);
+public class LoggerFinderB extends System.LoggerFinder {
+    @Override
+    public System.Logger getLogger(String name, Module module) {
+        return LoggerB.getLogger(name);
     }
 }
