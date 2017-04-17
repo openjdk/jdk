@@ -68,7 +68,7 @@ import java.util.function.Predicate;
  * methods of the {@link Collection} and {@link Iterator} interfaces.
  *
  * <p>This class is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
+ * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
  * @since 1.6
