@@ -124,6 +124,7 @@ java/beans/Introspector/8132566/OverrideUserDefPropertyInfoTest.java 8132565 gen
 # jdk_lang
 
 java/lang/StringCoding/CheckEncodings.sh                        7008363 generic-all
+java/lang/Class/getDeclaredField/FieldSetAccessibleTest.java    8178776 generic-all
 
 jdk/internal/misc/JavaLangAccess/NewUnsafeString.java           8176188 generic-all
 
@@ -254,6 +255,8 @@ tools/launcher/FXLauncherTest.java                              8068049 linux-al
 tools/jimage/JImageExtractTest.java                             8170120 generic-all
 tools/jimage/JImageListTest.java                                8170120 generic-all
 tools/jimage/JImageVerifyTest.java                              8170120 generic-all
+
+tools/jimage/VerifyJimage.java                                  8178776 generic-all
 
 ############################################################################
 
