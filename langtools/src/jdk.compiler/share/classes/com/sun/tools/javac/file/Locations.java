@@ -1349,6 +1349,7 @@ public class Locations {
 
     private class ModuleSourcePathLocationHandler extends BasicLocationHandler {
         private ModuleTable moduleTable;
+        private List<Path> paths;
 
         ModuleSourcePathLocationHandler() {
             super(StandardLocation.MODULE_SOURCE_PATH,
@@ -1368,11 +1369,15 @@ public class Locations {
             }
 
             Map<String, List<Path>> map = new LinkedHashMap<>();
+            List<Path> noSuffixPaths = new ArrayList<>();
+            boolean anySuffix = false;
             final String MARKER = "*";
             for (String seg: segments) {
                 int markStart = seg.indexOf(MARKER);
                 if (markStart == -1) {
-                    add(map, getPath(seg), null);
+                    Path p = getPath(seg);
+                    add(map, p, null);
+                    noSuffixPaths.add(p);
                 } else {
                     if (markStart == 0 || !isSeparator(seg.charAt(markStart - 1))) {
                         throw new IllegalArgumentException("illegal use of " + MARKER + " in " + seg);
@@ -1387,11 +1392,20 @@ public class Locations {
                         throw new IllegalArgumentException("illegal use of " + MARKER + " in " + seg);
                     } else {
                         suffix = getPath(seg.substring(markEnd + 1));
+                        anySuffix = true;
                     }
                     add(map, prefix, suffix);
+                    if (suffix == null) {
+                        noSuffixPaths.add(prefix);
+                    }
                 }
             }
 
+            initModuleTable(map);
+            paths = anySuffix ? null : noSuffixPaths;
+        }
+
+        private void initModuleTable(Map<String, List<Path>> map) {
             moduleTable = new ModuleTable();
             map.forEach((modName, modPath) -> {
                 boolean hasModuleInfo = modPath.stream().anyMatch(checkModuleInfo);
@@ -1509,12 +1523,25 @@ public class Locations {
 
         @Override
         Collection<Path> getPaths() {
-            throw new UnsupportedOperationException();
+            if (paths == null) {
+                // This may occur for a complex setting with --module-source-path option
+                // i.e. one that cannot be represented by a simple series of paths.
+                throw new IllegalStateException("paths not available");
+            }
+            return paths;
         }
 
         @Override
         void setPaths(Iterable<? extends Path> files) throws IOException {
-            throw new UnsupportedOperationException();
+            Map<String, List<Path>> map = new LinkedHashMap<>();
+            List<Path> newPaths = new ArrayList<>();
+            for (Path file : files) {
+                add(map, file, null);
+                newPaths.add(file);
+            }
+
+            initModuleTable(map);
+            paths = Collections.unmodifiableList(newPaths);
         }
 
         @Override
