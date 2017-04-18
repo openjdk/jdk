@@ -1,2 +1,0 @@
-Main-Class: com.sun.sample.scriptpad.Main
-
