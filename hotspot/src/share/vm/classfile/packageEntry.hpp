@@ -211,7 +211,7 @@ class PackageEntryTable : public Hashtable<Symbol*, mtModule> {
   friend class VMStructs;
 public:
   enum Constants {
-    _packagetable_entry_size = 1009  // number of entries in package entry table
+    _packagetable_entry_size = 109  // number of entries in package entry table
   };
 
 private:

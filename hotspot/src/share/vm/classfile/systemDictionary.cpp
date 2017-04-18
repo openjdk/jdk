@@ -1292,7 +1292,7 @@ bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
           pkg_entry == NULL ||
           pkg_entry->in_unnamed_module()) {
         assert(mod_entry == NULL ||
-               mod_entry == loader_data->modules()->unnamed_module(),
+               mod_entry == loader_data->unnamed_module(),
                "the unnamed module is not defined in the classloader");
         return true;
       }

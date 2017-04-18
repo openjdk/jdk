@@ -2257,9 +2257,9 @@ ModuleEntry* InstanceKlass::module() const {
   }
   const Klass* host = host_klass();
   if (host == NULL) {
-    return class_loader_data()->modules()->unnamed_module();
+    return class_loader_data()->unnamed_module();
   }
-  return host->class_loader_data()->modules()->unnamed_module();
+  return host->class_loader_data()->unnamed_module();
 }
 
 void InstanceKlass::set_package(ClassLoaderData* loader_data, TRAPS) {
@@ -2289,9 +2289,9 @@ void InstanceKlass::set_package(ClassLoaderData* loader_data, TRAPS) {
         assert(ModuleEntryTable::javabase_moduleEntry() != NULL, JAVA_BASE_NAME " module is NULL");
         _package_entry = loader_data->packages()->lookup(pkg_name, ModuleEntryTable::javabase_moduleEntry());
       } else {
-        assert(loader_data->modules()->unnamed_module() != NULL, "unnamed module is NULL");
+        assert(loader_data->unnamed_module() != NULL, "unnamed module is NULL");
         _package_entry = loader_data->packages()->lookup(pkg_name,
-                                                         loader_data->modules()->unnamed_module());
+                                                         loader_data->unnamed_module());
       }
 
       // A package should have been successfully created
