@@ -85,7 +85,7 @@ import java.util.function.Predicate;
  * the {@code ConcurrentLinkedDeque} in another thread.
  *
  * <p>This class is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
+ * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
  * @since 1.7
