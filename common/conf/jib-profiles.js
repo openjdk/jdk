@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,7 +236,7 @@ var getJibProfilesCommon = function (input, data) {
 
     // These are the base setttings for all the main build profiles.
     common.main_profile_base = {
-        dependencies: ["boot_jdk", "gnumake", "jtreg"],
+        dependencies: ["boot_jdk", "gnumake", "jtreg", "jib"],
         default_make_targets: ["product-bundles", "test-bundles"],
         configure_args: [
             "--with-version-opt=" + common.build_id,
@@ -557,7 +557,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "run-test-jprt": {
             target_os: input.build_os,
             target_cpu: input.build_cpu,
-            dependencies: [ "jtreg", "gnumake", "boot_jdk" ],
+            dependencies: [ "jtreg", "gnumake", "boot_jdk", "devkit", "jib" ],
             labels: "test",
             environment: {
                 "JT_JAVA": common.boot_jdk_home
@@ -567,7 +567,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "run-test": {
             target_os: input.build_os,
             target_cpu: input.build_cpu,
-            dependencies: [ "jtreg", "gnumake", "boot_jdk" ],
+            dependencies: [ "jtreg", "gnumake", "boot_jdk", "devkit", "jib" ],
             labels: "test",
             environment: {
                 "JT_JAVA": common.boot_jdk_home
@@ -584,7 +584,7 @@ var getJibProfilesProfiles = function (input, common, data) {
     var testOnlyProfilesPrebuilt = {
         "run-test-prebuilt": {
             src: "src.conf",
-            dependencies: [ "jtreg", "gnumake", testedProfile + ".jdk",
+            dependencies: [ "jtreg", "gnumake", "jib", testedProfile + ".jdk",
                 testedProfile + ".test", "src.full"
             ],
             work_dir: input.get("src.full", "install_path") + "/test",
@@ -912,8 +912,27 @@ var getJibProfilesDependencies = function (input, common) {
             ext: "tar.gz",
             revision: "2.7.1-v120+1.0",
             module: "freetype-" + input.target_platform
-        }
+        },
+
+        // This adds java jib as a dependency for the test artifacts resolver
+        jib: {
+            organization: "com.oracle.java.jib",
+            ext: "zip",
+            classifier: "distribution",
+            revision: "3.0-SNAPSHOT",
+            environment_name: "JIB_JAR",
+            environment_value: input.get("jib", "install_path")
+                + "/jib-3.0-SNAPSHOT-distribution/lib/jib-3.0-SNAPSHOT.jar"
+       }
     };
+
+    // Need to add a value for the Visual Studio tools variable to make
+    // jaot be able to pick up the Visual Studio linker in testing.
+    if (input.target_os == "windows") {
+        dependencies.devkit.environment = {
+            VS120COMNTOOLS: input.get("devkit", "install_path") + "/Common7/Tools"
+        };
+    }
 
     return dependencies;
 };
