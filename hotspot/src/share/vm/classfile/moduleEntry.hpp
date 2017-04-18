@@ -108,7 +108,7 @@ public:
   bool             is_non_jdk_module();
 
   bool             can_read(ModuleEntry* m) const;
-  bool             has_reads() const;
+  bool             has_reads_list() const;
   void             add_read(ModuleEntry* m);
   void             set_read_walk_required(ClassLoaderData* m_loader_data);
 
@@ -158,6 +158,12 @@ public:
   void purge_reads();
   void delete_reads();
 
+  // Special handling for unnamed module, one per class loader
+  static ModuleEntry* create_unnamed_module(ClassLoaderData* cld);
+  static ModuleEntry* create_boot_unnamed_module(ClassLoaderData* cld);
+  static ModuleEntry* new_unnamed_module_entry(Handle module_handle, ClassLoaderData* cld);
+  void delete_unnamed_module();
+
   void print(outputStream* st = tty);
   void verify();
 };
@@ -191,7 +197,6 @@ public:
 
 private:
   static ModuleEntry* _javabase_module;
-  ModuleEntry* _unnamed_module;
 
   ModuleEntry* new_entry(unsigned int hash, Handle module_handle, Symbol* name, Symbol* version,
                          Symbol* location, ClassLoaderData* loader_data);
@@ -227,10 +232,6 @@ public:
 
   // purge dead weak references out of reads list
   void purge_all_module_reads();
-
-  // Special handling for unnamed module, one per class loader's ModuleEntryTable
-  void create_unnamed_module(ClassLoaderData* loader_data);
-  ModuleEntry* unnamed_module()                                { return _unnamed_module; }
 
   // Special handling for java.base
   static ModuleEntry* javabase_moduleEntry()                   { return _javabase_module; }

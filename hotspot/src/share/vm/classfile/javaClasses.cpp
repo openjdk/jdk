@@ -2863,7 +2863,7 @@ ModuleEntry* java_lang_reflect_Module::module_entry(oop module, TRAPS) {
     oop loader = java_lang_reflect_Module::loader(module);
     Handle h_loader = Handle(THREAD, loader);
     ClassLoaderData* loader_cld = SystemDictionary::register_loader(h_loader, CHECK_NULL);
-    return loader_cld->modules()->unnamed_module();
+    return loader_cld->unnamed_module();
   }
   return module_entry;
 }

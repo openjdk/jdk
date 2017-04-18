@@ -97,6 +97,21 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool is_anonymous, Depen
   _next(NULL), _dependencies(dependencies),
   _metaspace_lock(new Mutex(Monitor::leaf+1, "Metaspace allocation lock", true,
                             Monitor::_safepoint_check_never)) {
+
+  // A ClassLoaderData created solely for an anonymous class should never have a
+  // ModuleEntryTable or PackageEntryTable created for it. The defining package
+  // and module for an anonymous class will be found in its host class.
+  if (!is_anonymous) {
+    if (h_class_loader.is_null()) {
+      // Create unnamed module for boot loader
+      _unnamed_module = ModuleEntry::create_boot_unnamed_module(this);
+    } else {
+      // Create unnamed module for all other loaders
+      _unnamed_module = ModuleEntry::create_unnamed_module(this);
+    }
+  } else {
+    _unnamed_module = NULL;
+  }
   TRACE_INIT_ID(this);
 }
 
@@ -276,6 +291,9 @@ void ClassLoaderData::classes_do(void f(InstanceKlass*)) {
 
 void ClassLoaderData::modules_do(void f(ModuleEntry*)) {
   assert_locked_or_safepoint(Module_lock);
+  if (_unnamed_module != NULL) {
+    f(_unnamed_module);
+  }
   if (_modules != NULL) {
     for (int i = 0; i < _modules->table_size(); i++) {
       for (ModuleEntry* entry = _modules->bucket(i);
@@ -501,10 +519,6 @@ ModuleEntryTable* ClassLoaderData::modules() {
     // Check if _modules got allocated while we were waiting for this lock.
     if ((modules = _modules) == NULL) {
       modules = new ModuleEntryTable(ModuleEntryTable::_moduletable_entry_size);
-      // Each loader has one unnamed module entry. Create it before
-      // any classes, loaded by this loader, are defined in case
-      // they end up being defined in loader's unnamed module.
-      modules->create_unnamed_module(this);
 
       {
         MutexLockerEx m1(metaspace_lock(), Mutex::_no_safepoint_check_flag);
@@ -529,7 +543,6 @@ bool ClassLoaderData::is_alive(BoolObjectClosure* is_alive_closure) const {
   return alive;
 }
 
-
 ClassLoaderData::~ClassLoaderData() {
   // Release C heap structures for all the classes.
   classes_do(InstanceKlass::release_C_heap_structures);
@@ -546,6 +559,11 @@ ClassLoaderData::~ClassLoaderData() {
     // Destroy the table itself
     delete _modules;
     _modules = NULL;
+  }
+
+  if (_unnamed_module != NULL) {
+    _unnamed_module->delete_unnamed_module();
+    _unnamed_module = NULL;
   }
 
   // release the metaspace

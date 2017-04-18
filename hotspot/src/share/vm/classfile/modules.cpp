@@ -478,13 +478,11 @@ void Modules::set_bootloader_unnamed_module(jobject module, TRAPS) {
 
   log_debug(modules)("set_bootloader_unnamed_module(): recording unnamed module for boot loader");
 
-  // Ensure the boot loader's PackageEntryTable has been created
-  ModuleEntryTable* module_table = get_module_entry_table(h_loader, CHECK);
-
-  // Set java.lang.reflect.Module for the boot loader's unnamed module
-  ModuleEntry* unnamed_module = module_table->unnamed_module();
+  // Set java.lang.Module for the boot loader's unnamed module
+  ClassLoaderData* boot_loader_data = ClassLoaderData::the_null_class_loader_data();
+  ModuleEntry* unnamed_module = boot_loader_data->unnamed_module();
   assert(unnamed_module != NULL, "boot loader's unnamed ModuleEntry not defined");
-  unnamed_module->set_module(ClassLoaderData::the_null_class_loader_data()->add_handle(module_handle));
+  unnamed_module->set_module(boot_loader_data->add_handle(module_handle));
   // Store pointer to the ModuleEntry in the unnamed module's java.lang.reflect.Module object.
   java_lang_reflect_Module::set_module_entry(module_handle(), unnamed_module);
 }

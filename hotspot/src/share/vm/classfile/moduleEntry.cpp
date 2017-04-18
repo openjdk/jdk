@@ -120,7 +120,7 @@ bool ModuleEntry::can_read(ModuleEntry* m) const {
       return true; // default read edge
     }
   }
-  if (!has_reads()) {
+  if (!has_reads_list()) {
     return false;
   } else {
     return _reads->contains(m);
@@ -129,6 +129,11 @@ bool ModuleEntry::can_read(ModuleEntry* m) const {
 
 // Add a new module to this module's reads list
 void ModuleEntry::add_read(ModuleEntry* m) {
+  // Unnamed module is special cased and can read all modules
+  if (!is_named()) {
+    return;
+  }
+
   MutexLocker m1(Module_lock);
   if (m == NULL) {
     set_can_read_all_unnamed();
@@ -153,6 +158,7 @@ void ModuleEntry::add_read(ModuleEntry* m) {
 // safepoint. Modules have the same life cycle as their defining class
 // loaders and should be removed if dead.
 void ModuleEntry::set_read_walk_required(ClassLoaderData* m_loader_data) {
+  assert(is_named(), "Cannot call set_read_walk_required on unnamed module");
   assert_locked_or_safepoint(Module_lock);
   if (!_must_walk_reads &&
       loader_data() != m_loader_data &&
@@ -166,7 +172,9 @@ void ModuleEntry::set_read_walk_required(ClassLoaderData* m_loader_data) {
   }
 }
 
-bool ModuleEntry::has_reads() const {
+// Returns true if the module has a non-empty reads list. As such, the unnamed
+// module will return false.
+bool ModuleEntry::has_reads_list() const {
   assert_locked_or_safepoint(Module_lock);
   return ((_reads != NULL) && !_reads->is_empty());
 }
@@ -175,7 +183,7 @@ bool ModuleEntry::has_reads() const {
 void ModuleEntry::purge_reads() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
 
-  if (_must_walk_reads && has_reads()) {
+  if (_must_walk_reads && has_reads_list()) {
     // This module's _must_walk_reads flag will be reset based
     // on the remaining live modules on the reads list.
     _must_walk_reads = false;
@@ -205,7 +213,7 @@ void ModuleEntry::module_reads_do(ModuleClosure* const f) {
   assert_locked_or_safepoint(Module_lock);
   assert(f != NULL, "invariant");
 
-  if (has_reads()) {
+  if (has_reads_list()) {
     int reads_len = _reads->length();
     for (int i = 0; i < reads_len; ++i) {
       f->do_module(_reads->at(i));
@@ -219,8 +227,63 @@ void ModuleEntry::delete_reads() {
   _reads = NULL;
 }
 
+ModuleEntry* ModuleEntry::create_unnamed_module(ClassLoaderData* cld) {
+  // The java.lang.Module for this loader's
+  // corresponding unnamed module can be found in the java.lang.ClassLoader object.
+  oop module = java_lang_ClassLoader::unnamedModule(cld->class_loader());
+  ModuleEntry* unnamed_module = new_unnamed_module_entry(Handle(Thread::current(), module), cld);
+
+  // Store pointer to the ModuleEntry in the unnamed module's java.lang.Module
+  // object.
+  java_lang_reflect_Module::set_module_entry(module, unnamed_module);
+
+  return unnamed_module;
+}
+
+ModuleEntry* ModuleEntry::create_boot_unnamed_module(ClassLoaderData* cld) {
+  // For the boot loader, the java.lang.Module for the unnamed module
+  // is not known until a call to JVM_SetBootLoaderUnnamedModule is made. At
+  // this point initially create the ModuleEntry for the unnamed module.
+  ModuleEntry* unnamed_module = new_unnamed_module_entry(Handle(), cld);
+  assert(unnamed_module != NULL, "boot loader unnamed module should not be null");
+  return unnamed_module;
+}
+
+// When creating an unnamed module, this is called without holding the Module_lock.
+// This is okay because the unnamed module gets created before the ClassLoaderData
+// is available to other threads.
+ModuleEntry* ModuleEntry::new_unnamed_module_entry(Handle module_handle, ClassLoaderData* cld) {
+  ModuleEntry* entry = (ModuleEntry*) NEW_C_HEAP_ARRAY(char, sizeof(ModuleEntry), mtModule);
+
+  // Initialize everything BasicHashtable would
+  entry->set_next(NULL);
+  entry->set_hash(0);
+  entry->set_literal(NULL);
+
+  // Initialize fields specific to a ModuleEntry
+  entry->init();
+
+  // Unnamed modules can read all other unnamed modules.
+  entry->set_can_read_all_unnamed();
+
+  if (!module_handle.is_null()) {
+    entry->set_module(cld->add_handle(module_handle));
+  }
+
+  entry->set_loader_data(cld);
+
+  TRACE_INIT_ID(entry);
+
+  return entry;
+}
+
+void ModuleEntry::delete_unnamed_module() {
+  // Do not need unlink_entry() since the unnamed module is not in the hashtable
+  FREE_C_HEAP_ARRAY(char, this);
+}
+
 ModuleEntryTable::ModuleEntryTable(int table_size)
-  : Hashtable<Symbol*, mtModule>(table_size, sizeof(ModuleEntry)), _unnamed_module(NULL)
+  : Hashtable<Symbol*, mtModule>(table_size, sizeof(ModuleEntry))
 {
 }
 
@@ -259,30 +322,6 @@ ModuleEntryTable::~ModuleEntryTable() {
   assert(number_of_entries() == 0, "should have removed all entries");
   assert(new_entry_free_list() == NULL, "entry present on ModuleEntryTable's free list");
   free_buckets();
-}
-
-void ModuleEntryTable::create_unnamed_module(ClassLoaderData* loader_data) {
-  assert(Module_lock->owned_by_self(), "should have the Module_lock");
-
-  // Each ModuleEntryTable has exactly one unnamed module
-  if (loader_data->is_the_null_class_loader_data()) {
-    // For the boot loader, the java.lang.reflect.Module for the unnamed module
-    // is not known until a call to JVM_SetBootLoaderUnnamedModule is made. At
-    // this point initially create the ModuleEntry for the unnamed module.
-    _unnamed_module = new_entry(0, Handle(), NULL, NULL, NULL, loader_data);
-  } else {
-    // For all other class loaders the java.lang.reflect.Module for their
-    // corresponding unnamed module can be found in the java.lang.ClassLoader object.
-    oop module = java_lang_ClassLoader::unnamedModule(loader_data->class_loader());
-    _unnamed_module = new_entry(0, Handle(Thread::current(), module), NULL, NULL, NULL, loader_data);
-
-    // Store pointer to the ModuleEntry in the unnamed module's java.lang.reflect.Module
-    // object.
-    java_lang_reflect_Module::set_module_entry(module, _unnamed_module);
-  }
-
-  // Add to bucket 0, no name to hash on
-  add_entry(0, _unnamed_module);
 }
 
 ModuleEntry* ModuleEntryTable::new_entry(unsigned int hash, Handle module_handle, Symbol* name,
@@ -351,10 +390,7 @@ ModuleEntry* ModuleEntryTable::locked_create_entry_or_null(Handle module_handle,
 
 // lookup_only by Symbol* to find a ModuleEntry.
 ModuleEntry* ModuleEntryTable::lookup_only(Symbol* name) {
-  if (name == NULL) {
-    // Return this table's unnamed module
-    return unnamed_module();
-  }
+  assert(name != NULL, "name cannot be NULL");
   int index = index_for(name);
   for (ModuleEntry* m = bucket(index); m != NULL; m = m->next()) {
     if (m->name()->fast_compare(name) == 0) {

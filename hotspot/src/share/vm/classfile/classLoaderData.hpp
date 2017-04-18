@@ -221,6 +221,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
   Klass* volatile _klasses;              // The classes defined by the class loader.
   PackageEntryTable* volatile _packages; // The packages defined by the class loader.
+  ModuleEntry* _unnamed_module;          // This class loader's unnamed module.
   ModuleEntryTable* volatile _modules;   // The modules defined by the class loader.
 
   // These method IDs are created for the class loader and set to NULL when the
@@ -348,6 +349,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   void init_dependencies(TRAPS);
   PackageEntryTable* packages();
   bool packages_defined() { return (_packages != NULL); }
+  ModuleEntry* unnamed_module() { return _unnamed_module; }
   ModuleEntryTable* modules();
   bool modules_defined() { return (_modules != NULL); }
 
