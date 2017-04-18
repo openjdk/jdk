@@ -272,15 +272,12 @@ ALL_TARGETS += $(HOTSPOT_VARIANT_TARGETS) $(HOTSPOT_VARIANT_GENSRC_TARGETS) \
     $(HOTSPOT_VARIANT_LIBS_TARGETS) hotspot-jsig hotspot-ide-project
 
 ################################################################################
-# Build demos and samples targets
+# Build demos targets
 
 demos-jdk:
 	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileDemos.gmk)
 
-samples-jdk:
-	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CopySamples.gmk)
-
-ALL_TARGETS += demos-jdk samples-jdk
+ALL_TARGETS += demos-jdk
 
 ################################################################################
 # Jigsaw specific data and analysis targets.
@@ -759,7 +756,7 @@ else
 
   release-file: create-source-revision-tracker
 
-  jdk-image: jmods zip-source demos samples release-file
+  jdk-image: jmods zip-source demos release-file
   jre-image: jmods release-file
   symbols-image: $(LIBS_TARGETS) $(LAUNCHER_TARGETS)
 
@@ -890,8 +887,6 @@ java.base: hotspot
 
 demos: demos-jdk
 
-samples: samples-jdk
-
 # The "exploded image" is a locally runnable JDK in $(BUILD_OUTPUT)/jdk.
 exploded-image-base: $(ALL_MODULES)
 exploded-image: exploded-image-base release-file
@@ -948,7 +943,7 @@ all-bundles: product-bundles test-bundles docs-bundles
 
 ALL_TARGETS += buildtools hotspot hotspot-libs hotspot-gensrc gensrc gendata \
     copy java rmic libs launchers jmods \
-    jdk.jdwp.agent-gensrc $(ALL_MODULES) demos samples \
+    jdk.jdwp.agent-gensrc $(ALL_MODULES) demos \
     exploded-image-base exploded-image \
     create-buildjdk mac-bundles product-images \
     profiles profiles-images \
