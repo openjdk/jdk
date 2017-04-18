@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1440,7 +1440,7 @@ public class JShellTool implements MessageHandler {
                                 : c.command) + " ")
                         .toArray(String[]::new))
                         .completionSuggestions(code, cursor, anchor);
-            } else if (code.startsWith("/se")) {
+            } else if (code.startsWith("/se") || code.startsWith("se")) {
                 result = new FixedCompletionProvider(SET_SUBCOMMANDS)
                         .completionSuggestions(code.substring(pastSpace), cursor - pastSpace, anchor);
             } else {

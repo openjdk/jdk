@@ -39,7 +39,6 @@
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Layer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -88,7 +87,7 @@ public class JLink2Test {
 
     private static void testOptions() throws Exception {
         List<Plugin> builtInPlugins = new ArrayList<>();
-        builtInPlugins.addAll(PluginRepository.getPlugins(Layer.boot()));
+        builtInPlugins.addAll(PluginRepository.getPlugins(ModuleLayer.boot()));
         if(builtInPlugins.isEmpty()) {
             throw new Exception("No builtin plugins");
         }

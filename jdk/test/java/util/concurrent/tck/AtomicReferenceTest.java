@@ -153,7 +153,7 @@ public class AtomicReferenceTest extends JSR166TestCase {
         AtomicReference z = serialClone(x);
         assertNotSame(y, z);
         assertEquals(one, x.get());
-        assertEquals(null, y.get());
+        assertNull(y.get());
         assertEquals(one, z.get());
     }
 

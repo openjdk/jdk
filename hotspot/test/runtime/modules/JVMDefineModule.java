@@ -26,7 +26,7 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib ..
  * @build sun.hotspot.WhiteBox
- * @compile/module=java.base java/lang/reflect/ModuleHelper.java
+ * @compile/module=java.base java/lang/ModuleHelper.java
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI JVMDefineModule
@@ -78,7 +78,7 @@ public class JVMDefineModule {
             ModuleHelper.DefineModule(new Object(),  "9.0", "mymodule/here", new String[] { "mypackage1" });
             throw new RuntimeException("Failed to get expected IAE or NPE for bad module");
         } catch(IllegalArgumentException e) {
-            if (!e.getMessage().contains("module is not an instance of type java.lang.reflect.Module")) {
+            if (!e.getMessage().contains("module is not an instance of type java.lang.Module")) {
               throw new RuntimeException("Failed to get expected IAE message for bad module: " + e.getMessage());
             }
         }

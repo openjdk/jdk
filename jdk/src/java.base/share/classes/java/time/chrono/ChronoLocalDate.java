@@ -66,6 +66,7 @@ import static java.time.temporal.ChronoField.ERA;
 import static java.time.temporal.ChronoField.YEAR;
 import static java.time.temporal.ChronoUnit.DAYS;
 
+import java.io.Serializable;
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -256,7 +257,9 @@ public interface ChronoLocalDate
      * @see #isEqual
      */
     static Comparator<ChronoLocalDate> timeLineOrder() {
-        return AbstractChronology.DATE_ORDER;
+        return (Comparator<ChronoLocalDate> & Serializable) (date1, date2) -> {
+            return Long.compare(date1.toEpochDay(), date2.toEpochDay());
+        };
     }
 
     //-----------------------------------------------------------------------

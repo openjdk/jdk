@@ -169,11 +169,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
      */
     @Override
     public void setSummaryColumnStyleAndScope(HtmlTree thTree) {
-        if (foundNonPubConstructor) {
-            thTree.addStyle(HtmlStyle.colSecond);
-        } else {
-            thTree.addStyle(HtmlStyle.colFirst);
-        }
+        thTree.addStyle(HtmlStyle.colConstructorName);
         thTree.addAttr(HtmlAttr.SCOPE, "row");
     }
 

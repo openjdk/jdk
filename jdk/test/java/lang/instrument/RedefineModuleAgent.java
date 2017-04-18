@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 
 import java.lang.instrument.Instrumentation;
-import java.lang.reflect.Module;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -46,5 +45,9 @@ public class RedefineModuleAgent {
                                Set<Class<?>> extraUses,
                                Map<Class<?>, List<Class<?>>> extraProvides) {
         inst.redefineModule(module, extraReads, extraExports, extraOpens, extraUses, extraProvides);
+    }
+
+    static boolean isModifiableModule(Module module) {
+        return inst.isModifiableModule(module);
     }
 }

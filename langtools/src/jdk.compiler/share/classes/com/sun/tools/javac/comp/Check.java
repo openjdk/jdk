@@ -2107,10 +2107,32 @@ public class Check {
         Name moduleName = tree.sym.name;
         Assert.checkNonNull(moduleName);
         if (lint.isEnabled(LintCategory.MODULE)) {
-            String moduleNameString = moduleName.toString();
-            int nameLength = moduleNameString.length();
-            if (nameLength > 0 && Character.isDigit(moduleNameString.charAt(nameLength - 1))) {
-                log.warning(Lint.LintCategory.MODULE, tree.qualId.pos(), Warnings.PoorChoiceForModuleName(moduleName));
+            JCExpression qualId = tree.qualId;
+            while (qualId != null) {
+                Name componentName;
+                DiagnosticPosition pos;
+                switch (qualId.getTag()) {
+                    case SELECT:
+                        JCFieldAccess selectNode = ((JCFieldAccess) qualId);
+                        componentName = selectNode.name;
+                        pos = selectNode.pos();
+                        qualId = selectNode.selected;
+                        break;
+                    case IDENT:
+                        componentName = ((JCIdent) qualId).name;
+                        pos = qualId.pos();
+                        qualId = null;
+                        break;
+                    default:
+                        throw new AssertionError("Unexpected qualified identifier: " + qualId.toString());
+                }
+                if (componentName != null) {
+                    String moduleNameComponentString = componentName.toString();
+                    int nameLength = moduleNameComponentString.length();
+                    if (nameLength > 0 && Character.isDigit(moduleNameComponentString.charAt(nameLength - 1))) {
+                        log.warning(Lint.LintCategory.MODULE, pos, Warnings.PoorChoiceForModuleName(componentName));
+                    }
+                }
             }
         }
     }
@@ -3882,6 +3904,18 @@ public class Check {
             deferredLintHandler.report(() -> {
                 if (lint.isEnabled(LintCategory.OPENS))
                     log.warning(pos, Warnings.PackageEmptyOrNotFound(packge));
+            });
+        }
+    }
+
+    void checkModuleRequires(final DiagnosticPosition pos, final RequiresDirective rd) {
+        if ((rd.module.flags() & Flags.AUTOMATIC_MODULE) != 0) {
+            deferredLintHandler.report(() -> {
+                if (rd.isTransitive() && lint.isEnabled(LintCategory.REQUIRES_TRANSITIVE_AUTOMATIC)) {
+                    log.warning(pos, Warnings.RequiresTransitiveAutomatic);
+                } else if (lint.isEnabled(LintCategory.REQUIRES_AUTOMATIC)) {
+                    log.warning(pos, Warnings.RequiresAutomatic);
+                }
             });
         }
     }

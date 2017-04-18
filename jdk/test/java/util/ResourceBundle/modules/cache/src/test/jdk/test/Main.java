@@ -23,7 +23,6 @@
 
 package jdk.test;
 
-import java.lang.reflect.Module;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 

@@ -122,14 +122,11 @@ public class IncubatingTest extends ModuleTestBase {
                          "-XDrawDiagnostics")
                 .outdir(testClasses)
                 .files(findJavaFiles(testSrc))
-                .run(Expect.FAIL)
+                .run(Expect.SUCCESS)
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
 
-        expected = Arrays.asList(
-                "T.java:1:11: compiler.err.package.not.visible: api, (compiler.misc.not.def.access.does.not.read.from.unnamed: api, jdk.i)",
-                "1 error"
-        );
+        expected = Arrays.asList("");
 
         if (!expected.equals(log)) {
             throw new AssertionError("Unexpected output: " + log);

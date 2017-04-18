@@ -33,7 +33,6 @@
 
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
-import java.lang.reflect.Layer;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -82,7 +81,7 @@ public class CheckPackageAccess {
 
         void test() {
             final boolean isModulePresent =
-                        Layer.boot().findModule(moduleName).isPresent();
+                        ModuleLayer.boot().findModule(moduleName).isPresent();
             System.out.format("Testing module: %1$s. Module is%2$s present.\n",
                         moduleName, isModulePresent ? "" : " NOT");
 

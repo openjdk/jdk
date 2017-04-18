@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -54,12 +54,12 @@ public:
                             jstring location, const char* const* packages,
                             jsize num_packages, TRAPS);
 
-  // Provides the java.lang.reflect.Module for the unnamed module defined
+  // Provides the java.lang.Module for the unnamed module defined
   // to the boot loader.
   //
   //  IllegalArgumentExceptions are thrown for the following :
   //  * Module has a name
-  //  * Module is not a subclass of java.lang.reflect.Module
+  //  * Module is not a subclass of java.lang.Module
   //  * Module's class loader is not the boot loader
   //  NullPointerExceptions are thrown if module is null.
   static void set_bootloader_unnamed_module(jobject module, TRAPS);
@@ -95,10 +95,10 @@ public:
   // module does not exist.
   static void add_reads_module(jobject from_module, jobject to_module, TRAPS);
 
-  // Return the java.lang.reflect.Module object for this class object.
+  // Return the java.lang.Module object for this class object.
   static jobject get_module(jclass clazz, TRAPS);
 
-  // Return the java.lang.reflect.Module object for this class loader and package.
+  // Return the java.lang.Module object for this class loader and package.
   // Returns NULL if the class loader has not loaded any classes in the package.
   // The package should contain /'s, not .'s, as in java/lang, not java.lang.
   // NullPointerException is thrown if package is null.
@@ -107,7 +107,7 @@ public:
   static jobject get_named_module(Handle h_loader, const char* package, TRAPS);
 
   // If package is defined by loader, return the
-  // java.lang.reflect.Module object for the module in which the package is defined.
+  // java.lang.Module object for the module in which the package is defined.
   // Returns NULL if package is invalid or not defined by loader.
   static jobject get_module(Symbol* package_name, Handle h_loader, TRAPS);
 

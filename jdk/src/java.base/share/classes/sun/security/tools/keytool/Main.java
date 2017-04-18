@@ -485,7 +485,9 @@ public final class Main {
 
             if (c != null) {
                 command = c;
-            } else if (collator.compare(flags, "-help") == 0) {
+            } else if (collator.compare(flags, "-help") == 0 ||
+                    collator.compare(flags, "-h") == 0 ||
+                    collator.compare(flags, "-?") == 0) {
                 help = true;
             } else if (collator.compare(flags, "-conf") == 0) {
                 i++;

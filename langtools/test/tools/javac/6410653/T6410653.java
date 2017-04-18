@@ -31,7 +31,6 @@
  */
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Module;
 import java.io.File;
 import java.io.ByteArrayOutputStream;
 import javax.tools.*;

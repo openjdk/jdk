@@ -34,7 +34,6 @@ import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.lang.reflect.Module;
 import java.security.AccessController;
 import java.security.CodeSource;
 import java.security.Permission;

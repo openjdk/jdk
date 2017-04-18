@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8160181
+ * @bug 8160181 8176572
  * @summary Add lint warning for digits in module names
  * @library /tools/lib
  * @modules
@@ -63,6 +63,22 @@ public class PoorChoiceForModuleNameTest extends ModuleTestBase {
         Path src_m3 = src.resolve("mango100");
         tb.writeJavaFiles(src_m3, "@SuppressWarnings(\"module\") module mango100 { }");
 
+        // Check that there is no warning at use site.
+        Path src_m4 = src.resolve("mangouser");
+        tb.writeJavaFiles(src_m4, "module mangouser { requires mango19; }");
+
+        // Check that we warn about component names ending in digit also
+        Path src_m5 = src.resolve("mango1000.mangofruit.mangomodule");
+        tb.writeJavaFiles(src_m5, "module mango1000.mangofruit.mangomodule { }");
+
+        // Check that we warn about component names ending in digit also
+        Path src_m6 = src.resolve("mangofruit.mango1000.mangomodule");
+        tb.writeJavaFiles(src_m6, "module mangofruit.mango1000.mangomodule { }");
+
+        // Check that we warn about component names ending in digit also
+        Path src_m7 = src.resolve("mangomodule.mangofruit.mango1000");
+        tb.writeJavaFiles(src_m7, "module mangomodule.mangofruit.mango1000 { }");
+
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
@@ -78,9 +94,12 @@ public class PoorChoiceForModuleNameTest extends ModuleTestBase {
                 .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("module-info.java:1:8: compiler.warn.poor.choice.for.module.name: mango19") ||
+            !log.contains("module-info.java:1:8: compiler.warn.poor.choice.for.module.name: mango1000") ||
+            !log.contains("module-info.java:1:18: compiler.warn.poor.choice.for.module.name: mango1000") ||
+            !log.contains("module-info.java:1:30: compiler.warn.poor.choice.for.module.name: mango1000") ||
             !log.contains("- compiler.err.warnings.and.werror") ||
             !log.contains("1 error") ||
-            !log.contains("1 warning"))
+            !log.contains("4 warning"))
             throw new Exception("expected output not found: " + log);
     }
 }

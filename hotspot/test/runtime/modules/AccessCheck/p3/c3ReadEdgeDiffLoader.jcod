@@ -23,7 +23,6 @@
 
 /* 
  * package p3;
- * import java.lang.reflect.*;
  * import myloaders.MyDiffClassLoader;
  *
  * public class c3ReadEdgeDiffLoader {
@@ -100,14 +99,14 @@ class p3/c3ReadEdgeDiffLoader {
     Utf8 "java/lang/Object"; // #31     at 0xDD
     Utf8 "java/lang/Class"; // #32     at 0xF0
     Utf8 "getModule"; // #33     at 0x0102
-    Utf8 "()Ljava/lang/reflect/Module;"; // #34     at 0x010E
+    Utf8 "()Ljava/lang/Module;"; // #34     at 0x010E
     Utf8 "java/lang/ClassLoader"; // #35     at 0x012D
     Utf8 "getSystemClassLoader"; // #36     at 0x0145
     Utf8 "()Ljava/lang/ClassLoader;"; // #37     at 0x015C
     Utf8 "getUnnamedModule"; // #38     at 0x0178
-    Utf8 "java/lang/reflect/Module"; // #39     at 0x018B
+    Utf8 "java/lang/Module"; // #39     at 0x018B
     Utf8 "addReads"; // #40     at 0x01A6
-    Utf8 "(Ljava/lang/reflect/Module;)Ljava/lang/reflect/Module;"; // #41     at 0x01B1
+    Utf8 "(Ljava/lang/Module;)Ljava/lang/Module;"; // #41     at 0x01B1
     Utf8 "myloaders/MyDiffClassLoader"; // #42     at 0x01EA
     Utf8 "loader2"; // #43     at 0x0208
     Utf8 "Lmyloaders/MyDiffClassLoader;"; // #44     at 0x0212
