@@ -21,8 +21,9 @@
  * questions.
  */
 
-module m3 {
-    requires m2;
-    provides p2.T with p3.Impl;
-    provides p3.S with p3.MyProvider;
+package p3;
+
+public class MyProvider implements S {
+    public void run() {
+    }
 }
