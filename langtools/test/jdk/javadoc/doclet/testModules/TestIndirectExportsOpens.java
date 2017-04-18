@@ -158,15 +158,13 @@ public class TestIndirectExportsOpens extends JavadocTester {
         // check for minimal expected strings.
         checkOutput("a-summary.html", true,
                 "Indirect Exports table",
-                "<tr class=\"rowColor\">\n"
-                + "<th class=\"colFirst\" scope=\"row\"><a href=\"m-summary.html\">m</a></th>\n"
+                "<th class=\"colFirst\" scope=\"row\"><a href=\"m-summary.html\">m</a></th>\n"
                 + "<td class=\"colLast\"><a href=\"exportsto/package-summary.html\">exportsto</a></td>\n"
                 + "</tr>\n");
 
         checkOutput("a-summary.html", true,
                 "Indirect Opens table",
-                "<tr class=\"altColor\">\n"
-                + "<th class=\"colFirst\" scope=\"row\"><a href=\"m-summary.html\">m</a></th>\n"
+                "<th class=\"colFirst\" scope=\"row\"><a href=\"m-summary.html\">m</a></th>\n"
                 + "<td class=\"colLast\">opensto</td>\n"
                 + "</tr>\n");
     }
