@@ -67,11 +67,11 @@ public interface ActivationInstantiator extends Remote {
     *
     * <ul><li>The class to be activated and the special activation constructor are both public,
     * and the class resides in a package that is
-    * {@linkplain java.lang.reflect.Module#isExported(String,java.lang.reflect.Module) exported}
+    * {@linkplain Module#isExported(String,Module) exported}
     * to at least the {@code java.rmi} module; or
     *
     * <li>The class to be activated resides in a package that is
-    * {@linkplain java.lang.reflect.Module#isOpen(String,java.lang.reflect.Module) open}
+    * {@linkplain Module#isOpen(String,Module) open}
     * to at least the {@code java.rmi} module.
     * </ul>
     *

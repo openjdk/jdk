@@ -155,12 +155,10 @@ public abstract class SDDocumentSource {
             }
 
             private InputStream inputStream() throws IOException {
-                java.lang.reflect.Module module = resolvingClass.getModule();
-                if (module != null) {
-                    InputStream stream = module.getResourceAsStream(path);
-                    if (stream != null) {
-                        return stream;
-                    }
+                java.lang.Module module = resolvingClass.getModule();
+                InputStream stream = module.getResourceAsStream(path);
+                if (stream != null) {
+                    return stream;
                 }
                 throw new ServerRtException("cannot.load.wsdl", path);
             }

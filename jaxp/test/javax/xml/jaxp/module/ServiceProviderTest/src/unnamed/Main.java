@@ -24,8 +24,6 @@
 import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
 
 import java.lang.module.ModuleDescriptor.Provides;
-import java.lang.reflect.Layer;
-import java.lang.reflect.Module;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -38,7 +36,7 @@ public class Main {
      * @param args, the names of provider modules, which have been loaded
      */
     public static void main(String[] args) throws Exception {
-        Module xml = Layer.boot().findModule("java.xml").get();
+        Module xml = ModuleLayer.boot().findModule("java.xml").get();
 
         Set<String> allServices = new HashSet<>(Arrays.asList(expectedAllServices));
         if (!allServices.equals(xml.getDescriptor().uses()))
@@ -46,7 +44,7 @@ public class Main {
                     + xml.getDescriptor().uses());
 
         long violationCount = Stream.of(args)
-                .map(xmlProviderName -> Layer.boot().findModule(xmlProviderName).get())
+                .map(xmlProviderName -> ModuleLayer.boot().findModule(xmlProviderName).get())
                 .mapToLong(
                         // services provided by the implementation in provider module
                         provider -> provider.getDescriptor().provides().stream()

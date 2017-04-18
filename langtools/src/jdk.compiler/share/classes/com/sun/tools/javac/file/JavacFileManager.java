@@ -473,10 +473,14 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
                     }
                 } else {
                     if (isValidFile(fname, fileKinds)) {
-                        RelativeFile file = new RelativeFile(subdirectory, fname);
-                        JavaFileObject fe = PathFileObject.forDirectoryPath(JavacFileManager.this,
-                                file.resolveAgainst(directory), userPath, file);
-                        resultList.append(fe);
+                        try {
+                            RelativeFile file = new RelativeFile(subdirectory, fname);
+                            JavaFileObject fe = PathFileObject.forDirectoryPath(JavacFileManager.this,
+                                    file.resolveAgainst(directory), userPath, file);
+                            resultList.append(fe);
+                        } catch (InvalidPathException e) {
+                            throw new IOException("error accessing directory " + directory + e);
+                        }
                     }
                 }
             }

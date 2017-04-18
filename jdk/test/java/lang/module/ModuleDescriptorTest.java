@@ -41,7 +41,6 @@ import java.lang.module.ModuleDescriptor.Requires;
 import java.lang.module.ModuleDescriptor.Provides;
 import java.lang.module.ModuleDescriptor.Requires.Modifier;
 import java.lang.module.ModuleDescriptor.Version;
-import java.lang.reflect.Module;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;

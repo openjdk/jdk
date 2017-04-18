@@ -69,7 +69,7 @@ public class TreeSetTest extends JSR166TestCase {
      * Returns a new set of given size containing consecutive
      * Integers 0 ... n - 1.
      */
-    private TreeSet<Integer> populatedSet(int n) {
+    private static TreeSet<Integer> populatedSet(int n) {
         TreeSet<Integer> q = new TreeSet<>();
         assertTrue(q.isEmpty());
         for (int i = n - 1; i >= 0; i -= 2)
@@ -84,7 +84,7 @@ public class TreeSetTest extends JSR166TestCase {
     /**
      * Returns a new set of first 5 ints.
      */
-    private TreeSet set5() {
+    private static TreeSet set5() {
         TreeSet q = new TreeSet();
         assertTrue(q.isEmpty());
         q.add(one);

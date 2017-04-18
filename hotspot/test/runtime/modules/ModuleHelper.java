@@ -23,7 +23,6 @@
 
 import java.net.URI;
 import java.lang.module.ModuleDescriptor;
-import java.lang.reflect.Module;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -41,31 +40,31 @@ public class ModuleHelper {
     public static void AddModuleExports(Object from, String pkg, Object to) throws Throwable {
         WhiteBox wb = WhiteBox.getWhiteBox();
         wb.AddModuleExports(from, pkg, to);
-        java.lang.reflect.ModuleHelper.addExportsNoSync((Module)from, pkg, (Module)to);
+        java.lang.ModuleHelper.addExportsNoSync((Module)from, pkg, (Module)to);
     }
 
     public static void AddReadsModule(Object from, Object to) throws Throwable {
         WhiteBox wb = WhiteBox.getWhiteBox();
         wb.AddReadsModule(from, to);
-        java.lang.reflect.ModuleHelper.addReadsNoSync((Module)from, (Module)to);
+        java.lang.ModuleHelper.addReadsNoSync((Module)from, (Module)to);
     }
 
     public static void AddModulePackage(Object m, String pkg) throws Throwable {
         WhiteBox wb = WhiteBox.getWhiteBox();
         wb.AddModulePackage(m, pkg);
-        java.lang.reflect.ModuleHelper.addPackageNoSync((Module)m, pkg);
+        java.lang.ModuleHelper.addPackageNoSync((Module)m, pkg);
     }
 
     public static void AddModuleExportsToAllUnnamed(Object m, String pkg) throws Throwable {
         WhiteBox wb = WhiteBox.getWhiteBox();
         wb.AddModuleExportsToAllUnnamed(m, pkg);
-        //java.lang.reflect.ModuleHelper.addExportsToAllUnnamedNoSync((Module)m, pkg);
+        //java.lang.ModuleHelper.addExportsToAllUnnamedNoSync((Module)m, pkg);
     }
 
     public static void AddModuleExportsToAll(Object m, String pkg) throws Throwable {
         WhiteBox wb = WhiteBox.getWhiteBox();
         wb.AddModuleExportsToAll(m, pkg);
-        java.lang.reflect.ModuleHelper.addExportsNoSync((Module)m, pkg, (Module)null);
+        java.lang.ModuleHelper.addExportsNoSync((Module)m, pkg, (Module)null);
     }
 
     public static Module ModuleObject(String name, ClassLoader loader, String[] pkgs) throws Throwable {
@@ -82,7 +81,7 @@ public class ModuleHelper {
             ModuleDescriptor.newModule(name).packages(pkg_set).build();
         URI uri = URI.create("module:/" + name);
 
-        return java.lang.reflect.ModuleHelper.newModule(loader, descriptor);
+        return java.lang.ModuleHelper.newModule(loader, descriptor);
     }
 
 }

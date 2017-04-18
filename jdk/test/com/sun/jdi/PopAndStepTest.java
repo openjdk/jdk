@@ -1,17 +1,39 @@
-/* /nodynamiccopyright/ */  // DO NOT DELETE ANY LINES!!!!
+/*
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
 //    THIS TEST IS LINE NUMBER SENSITIVE
+
 /**
- *  @test
- *  @bug 4530424
- *  @summary Hin says that doing a step over after a popframe acts like a resume.
+ * @test
+ * @bug 4530424
+ * @summary Hin says that doing a step over after a popframe acts like a resume.
+ * @author jjh
  *
- *  @author jjh
+ * @library ..
  *
- *  @library ..
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g PopAndStepTest.java
- *  @run driver PopAndStepTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g PopAndStepTest.java
+ * @run driver PopAndStepTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;
@@ -19,25 +41,23 @@ import com.sun.jdi.request.*;
 
 import java.util.*;
 
-    /********** LINE NUMBER SENSITIVE! *****************************************************************/
-
 class PopAndStepTarg {
     public void B() {
-        System.out.println("debuggee: in B");
-        System.out.println("debuggee: in B, back to A");   // add line breakpoint here line 27 !!!
+        System.out.println("debuggee: in B");             // B_LINE_1
+        System.out.println("debuggee: in B, back to A");  // B_LINE_2
     }
 
     public void A() {
-        System.out.println("debuggee: in A, about to call B");  // line 31
-        B();
-        System.out.println("debuggee: in A, back from B");      // line 33
-        throw new RuntimeException("debuggee: Got to line 34");
+        System.out.println("debuggee: in A, about to call B");  // A_LINE_1
+        B();                                                    // A_LINE_2
+        System.out.println("debuggee: in A, back from B");      // A_LINE_3
+        throw new RuntimeException("debuggee: Got to line A_LINE_4:" + PopAndStepTest.A_LINE_4); // A_LINE_4
     }
 
     public static void main(String[] args) {
-        System.out.println("debuggee: Howdy!");      // line 38
-        PopAndStepTarg xxx = new PopAndStepTarg();   // line 40
-        xxx.A();                                     // line 41
+        System.out.println("debuggee: Howdy!");      // MAIN_LINE_1
+        PopAndStepTarg xxx = new PopAndStepTarg();   // MAIN_LINE_2
+        xxx.A();                                     // MAIN_LINE_3
         System.out.println("debugee: Goodbye from PopAndStepTarg!");
     }
 }
@@ -46,6 +66,18 @@ class PopAndStepTarg {
     /********** test program **********/
 
 public class PopAndStepTest extends TestScaffold {
+    static final int B_LINE_1 = 46;
+    static final int B_LINE_2 = B_LINE_1 + 1;
+
+    static final int A_LINE_1 = 51;
+    static final int A_LINE_2 = A_LINE_1 + 1;
+    static final int A_LINE_3 = A_LINE_1 + 2;
+    static final int A_LINE_4 = A_LINE_1 + 3;
+
+    static final int MAIN_LINE_1 = 58;
+    static final int MAIN_LINE_2 = MAIN_LINE_1 + 1;
+    static final int MAIN_LINE_3 = MAIN_LINE_1 + 2;
+
     ReferenceType targetClass;
     ThreadReference mainThread;
 
@@ -116,10 +148,10 @@ public class PopAndStepTest extends TestScaffold {
         BreakpointEvent bpe = startToMain("PopAndStepTarg");
         targetClass = bpe.location().declaringType();
         mainThread = bpe.thread();
-        getDebuggeeLineNum(38);
+        getDebuggeeLineNum(MAIN_LINE_1);
 
-        println("Resuming to line 27");
-        bpe = resumeTo("PopAndStepTarg", 27); getDebuggeeLineNum(27);
+        println("Resuming to line B_LINE_2 : " + B_LINE_2);
+        bpe = resumeTo("PopAndStepTarg", B_LINE_2); getDebuggeeLineNum(B_LINE_2);
 
         // The failure is this:
         //   create step request
@@ -141,21 +173,21 @@ public class PopAndStepTest extends TestScaffold {
         srInto.enable(); // This fails
         mainThread.popFrames(frameFor("A"));
         //srInto.enable();   // if the enable is moved here, it passes
-        println("Popped back to line 41 in main, the call to A()");
-        println("Stepping into line 31");
-        waitForRequestedEvent(srInto);   // println
+        println("Popped back to line MAIN_LINE_3(" + MAIN_LINE_3 + ") in main, the call to A()");
+        println("Stepping into line A_LINE_1:" + A_LINE_1);
+        waitForRequestedEvent(srInto);  // println
         srInto.disable();
 
-        getDebuggeeLineNum(31);
+        getDebuggeeLineNum(A_LINE_1);
 
         // The failure occurs here.
-        println("Stepping over to line 32");
-        stepOverLine(mainThread);   // println
-        getDebuggeeLineNum(32);
+        println("Stepping over to line A_LINE_2:" + A_LINE_2);
+        stepOverLine(mainThread);       // println
+        getDebuggeeLineNum(A_LINE_2);
 
-        println("Stepping over to line 33");
-        stepOverLine(mainThread);        // call to B()
-        getDebuggeeLineNum(33);
+        println("Stepping over to line A_LINE_3:" + A_LINE_3);
+        stepOverLine(mainThread);       // call to B()
+        getDebuggeeLineNum(A_LINE_3);
 
         vm().exit(0);
 

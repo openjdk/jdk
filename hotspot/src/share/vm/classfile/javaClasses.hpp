@@ -749,9 +749,9 @@ class java_lang_reflect_Parameter {
 };
 
 #define MODULE_INJECTED_FIELDS(macro)                            \
-  macro(java_lang_reflect_Module, module_entry, intptr_signature, false)
+  macro(java_lang_Module, module_entry, intptr_signature, false)
 
-class java_lang_reflect_Module {
+class java_lang_Module {
   private:
     static int loader_offset;
     static int name_offset;

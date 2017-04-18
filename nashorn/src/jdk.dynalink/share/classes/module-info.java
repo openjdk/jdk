@@ -217,6 +217,7 @@
  * from B will get a chance to link the call site in A when it encounters the
  * object from B.
  *
+ * @moduleGraph
  * @since 9
  */
 module jdk.dynalink {

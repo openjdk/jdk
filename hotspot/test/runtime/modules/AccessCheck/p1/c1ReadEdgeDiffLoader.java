@@ -22,7 +22,6 @@
  */
 package p1;
 
-import java.lang.reflect.*;
 import myloaders.MyDiffClassLoader;
 import p2.c2;
 

@@ -42,15 +42,14 @@ a[name]:hover {
     text-decoration:none;
     color:#353833;
 }
-a[name]:before, a[name]:target {
+a[name]:before, a[name]:target, a[id]:before, a[id]:target {
     content:"";
-    display:block;
-    height:120px;
-    margin:-120px 0 0;
-}
-a[id]:before, a[id]:target {
+    display:inline-block;
+    position:relative;
     padding-top:129px;
     margin-top:-129px;
+}
+.searchTagResult:before, .searchTagResult:target {
     color:red;
 }
 pre {
@@ -540,14 +539,14 @@ Table styles
     text-align:left;
     padding:0px 0px 12px 10px;
 }
-th.colFirst, th.colSecond, th.colLast, .useSummary th, .constantsSummary th, .packagesSummary th,
+th.colFirst, th.colSecond, th.colLast, th.colConstructorName, .useSummary th, .constantsSummary th, .packagesSummary th,
 td.colFirst, td.colSecond, td.colLast, .useSummary td, .constantsSummary td {
     vertical-align:top;
     padding-right:0px;
     padding-top:8px;
     padding-bottom:3px;
 }
-th.colFirst, th.colSecond, th.colLast, .constantsSummary th, .packagesSummary th {
+th.colFirst, th.colSecond, th.colLast, th.colConstructorName, .constantsSummary th, .packagesSummary th {
     background:#dee3e9;
     text-align:left;
     padding:8px 3px 3px 7px;
@@ -556,7 +555,7 @@ td.colFirst, th.colFirst {
     white-space:nowrap;
     font-size:13px;
 }
-td.colSecond, th.colSecond, td.colLast, th.colLast {
+td.colSecond, th.colSecond, td.colLast, th.colConstructorName, th.colLast {
     font-size:13px;
 }
 .constantsSummary th, .packagesSummary th {
@@ -573,8 +572,8 @@ td.colSecond, th.colSecond, td.colLast, th.colLast {
 .usesSummary td.colFirst, .usesSummary th.colFirst,
 .providesSummary td.colFirst, .providesSummary th.colFirst,
 .memberSummary td.colFirst, .memberSummary th.colFirst,
-.memberSummary td.colSecond, .memberSummary th.colSecond,
-.typeSummary td.colFirst{
+.memberSummary td.colSecond, .memberSummary th.colSecond, .memberSummary th.colConstructorName,
+.typeSummary td.colFirst {
     vertical-align:top;
 }
 .packagesSummary th.colLast, .packagesSummary td.colLast {
@@ -584,6 +583,8 @@ td.colFirst a:link, td.colFirst a:active, td.colFirst a:visited, td.colFirst a:h
 td.colSecond a:link, td.colSecond a:active, td.colSecond a:visited, td.colSecond a:hover,
 th.colFirst a:link, th.colFirst a:active, th.colFirst a:visited, th.colFirst a:hover,
 th.colSecond a:link, th.colSecond a:active, th.colSecond a:visited, th.colSecond a:hover,
+th.colConstructorName a:link, th.colConstructorName a:active, th.colConstructorName a:visited,
+th.colConstructorName a:hover,
 td.colLast a:link, td.colLast a:active, td.colLast a:visited, td.colLast a:hover,
 .constantValuesContainer td a:link, .constantValuesContainer td a:active,
 .constantValuesContainer td a:visited, .constantValuesContainer td a:hover {

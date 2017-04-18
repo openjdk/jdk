@@ -23,9 +23,7 @@
 
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
-import java.lang.reflect.Layer;
 import java.lang.reflect.Method;
-import java.lang.reflect.Module;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
@@ -45,13 +43,13 @@ public class TestLayer {
 
         ModuleFinder finder = ModuleFinder.of(MODS_DIR);
 
-        Configuration parent = Layer.boot().configuration();
+        Configuration parent = ModuleLayer.boot().configuration();
         Configuration cf = parent.resolveAndBind(ModuleFinder.of(),
                                                  finder,
                                                  modules);
 
         ClassLoader scl = ClassLoader.getSystemClassLoader();
-        Layer layer = Layer.boot().defineModulesWithManyLoaders(cf, scl);
+        ModuleLayer layer = ModuleLayer.boot().defineModulesWithManyLoaders(cf, scl);
 
         Module m1 = layer.findModule("m1").get();
         Module m2 = layer.findModule("m2").get();
