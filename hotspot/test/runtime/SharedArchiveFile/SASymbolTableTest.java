@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 
 import java.util.Arrays;
 import java.util.List;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.JDKToolFinder;
@@ -55,26 +56,18 @@ public class SASymbolTableTest {
     static String jsaName = "./SASymbolTableTest.jsa";
     private static LingeredApp theApp = null;
 
+
     public static void main(String[] args) throws Exception {
         if (!Platform.shouldSAAttach()) {
             System.out.println("SA attach not expected to work - test skipped.");
             return;
         }
-        createArchive();
+
+        CDSTestUtils.createArchiveAndCheck();
         run(true);
         run(false);
     }
 
-    private static void createArchive()  throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:SharedArchiveFile=" + jsaName,
-            "-Xshare:dump");
-
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Loading classes to share");
-        output.shouldHaveExitValue(0);
-    }
 
     private static void run(boolean useArchive) throws Exception {
         String flag = useArchive ? "auto" : "off";

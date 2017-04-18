@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,8 @@
  * @run main SharedBaseAddress
  */
 
-import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.cds.CDSTestUtils;
+import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class SharedBaseAddress {
@@ -48,30 +49,12 @@ public class SharedBaseAddress {
         for (String testEntry : testTable) {
             String filename = "SharedBaseAddress" + testEntry + ".jsa";
             System.out.println("sharedBaseAddress = " + testEntry);
+            CDSOptions opts = (new CDSOptions())
+                .setArchiveName(filename)
+                .addPrefix("-XX:SharedBaseAddress=" + testEntry);
 
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-               "-XX:+UnlockDiagnosticVMOptions",
-               "-XX:SharedArchiveFile=" + filename,
-               "-XX:SharedBaseAddress=" + testEntry,
-               "-Xshare:dump");
-
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
-
-            output.shouldContain("Loading classes to share");
-
-            try {
-                pb = ProcessTools.createJavaProcessBuilder(
-                    "-XX:+UnlockDiagnosticVMOptions",
-                    "-XX:SharedArchiveFile=" + filename,
-                    "-Xshare:on",
-                    "-version");
-                output = new OutputAnalyzer(pb.start());
-                output.shouldContain("sharing");
-                output.shouldHaveExitValue(0);
-            } catch (RuntimeException e) {
-                output.shouldContain("Unable to use shared archive");
-                output.shouldHaveExitValue(1);
-            }
+            CDSTestUtils.createArchiveAndCheck(opts);
+            CDSTestUtils.runWithArchiveAndCheck(opts);
         }
     }
 }

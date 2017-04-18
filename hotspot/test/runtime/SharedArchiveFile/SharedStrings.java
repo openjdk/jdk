@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,12 +36,17 @@
  * @run main ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
  * @run main SharedStrings
  */
+
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class SharedStrings {
     public static void main(String[] args) throws Exception {
-        boolean test_runtime = true;
+        // Note: This is a basic sanity test for Shared Strings feature.
+        // This also serves as a reference on how to use this feature,
+        // hence the command lines are spelled out instead of using the
+        // test utils methods.
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:SharedArchiveFile=./SharedStrings.jsa",
@@ -52,22 +57,11 @@ public class SharedStrings {
             "-Xbootclasspath/a:" + ClassFileInstaller.getJarPath("whitebox.jar"),
             "-Xshare:dump");
 
-        OutputAnalyzer dumpOutput = new OutputAnalyzer(pb.start());
-        try {
-            dumpOutput.shouldContain("Loading classes to share");
-            dumpOutput.shouldContain("Shared string table stats");
-            dumpOutput.shouldHaveExitValue(0);
-        } catch (RuntimeException e) {
-            if (dumpOutput.getOutput().indexOf("Shared strings are excluded") != -1 ||
-                dumpOutput.getOutput().indexOf("Cannot dump shared archive") != -1) {
-                test_runtime = false;
-            } else {
-                throw new RuntimeException("Unexpected failure");
-            }
-        }
+        OutputAnalyzer out = CDSTestUtils.executeAndLog(pb, "dump");
+        CDSTestUtils.checkDump(out, "Shared string table stats");
 
-        if (test_runtime) {
-            pb = ProcessTools.createJavaProcessBuilder(
+
+        pb = ProcessTools.createJavaProcessBuilder(
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:SharedArchiveFile=./SharedStrings.jsa",
                 // these are required modes for shared strings
@@ -77,15 +71,7 @@ public class SharedStrings {
                 "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
                 "-Xshare:on", "-showversion", "SharedStringsWb");
 
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
-
-            try {
-                output.shouldContain("sharing");
-                output.shouldHaveExitValue(0);
-            } catch (RuntimeException e) {
-                output.shouldContain("Unable to use shared archive");
-                output.shouldHaveExitValue(1);
-            }
-        }
+        out = CDSTestUtils.executeAndLog(pb, "exec");
+        CDSTestUtils.checkExec(out);
     }
 }
