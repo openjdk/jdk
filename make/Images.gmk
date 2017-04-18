@@ -349,17 +349,6 @@ ifneq ($(filter jdk, $(MAKECMDGOALS)), )
 endif
 
 ################################################################################
-# /sample dir
-
-$(eval $(call SetupCopyFiles, COPY_SAMPLES, \
-    SRC := $(SUPPORT_OUTPUTDIR)/sample/image, \
-    DEST := $(JDK_IMAGE_DIR)/sample, \
-    FILES := $(if $(wildcard $(SUPPORT_OUTPUTDIR)/sample/image), \
-        $(call CacheFind,$(SUPPORT_OUTPUTDIR)/sample/image))))
-
-JDK_TARGETS += $(COPY_SAMPLES)
-
-################################################################################
 # Code coverage data files
 
 ifeq ($(GCOV_ENABLED), true)
