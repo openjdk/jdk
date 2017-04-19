@@ -59,3 +59,6 @@ external.lib.roots = ../../
 
 # Use new module options
 useNewOptions=true
+
+# Use --patch-module instead of -Xmodule:
+useNewPatchModule=true
