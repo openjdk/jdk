@@ -366,6 +366,9 @@ docs-module-graphs:
 docs-javadoc:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-javadoc)
 
+docs-reference:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-reference)
+
 docs-copy:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-copy)
 
@@ -375,7 +378,8 @@ docs-zip:
 update-build-docs:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f UpdateBuildDocs.gmk)
 
-ALL_TARGETS += docs-module-graphs docs-javadoc docs-copy docs-zip update-build-docs
+ALL_TARGETS += docs-module-graphs docs-javadoc docs-reference docs-copy \
+    docs-zip update-build-docs
 
 ################################################################################
 # Cross compilation support
@@ -772,9 +776,11 @@ else
 
   bootcycle-images: jdk-image
 
-  docs-module-graphs: exploded-image buildtools-modules 
+  docs-module-graphs: exploded-image buildtools-modules
 
   docs-javadoc: $(GENSRC_TARGETS) rmic
+
+  docs-reference: $(GENSRC_TARGETS) rmic
 
   # The gensrc step for jdk.jdi creates an html file that is used by docs-copy.
   docs-copy: hotspot-$(JVM_VARIANT_MAIN)-gensrc jdk.jdi-gensrc
