@@ -25,7 +25,7 @@
  * @bug 4268317 8132306 8175797
  * @summary Test if Reference.enqueue() works properly with GC
  * @run main ReferenceEnqueue
- * @run main/othervm -Djdk.lang.ref.disableClearAndEnqueue=true ReferenceEnqueue
+ * @run main/othervm -Djdk.lang.ref.disableClearBeforeEnqueue=true ReferenceEnqueue
  */
 
 import java.lang.ref.*;
@@ -87,13 +87,13 @@ public class ReferenceEnqueue {
         final ReferenceQueue<Object> queue = new ReferenceQueue<>();
         final List<Reference<Object>> refs = new ArrayList<>();
         final int iterations = 1000;
-        final boolean disableClearAndEnqueue =
-            Boolean.parseBoolean("jdk.lang.ref.disableClearAndEnqueue");
+        final boolean disableClearBeforeEnqueue =
+            Boolean.getBoolean("jdk.lang.ref.disableClearBeforeEnqueue");
 
         ExplicitEnqueue() {
             this.refs.add(new SoftReference<>(new Object(), queue));
             this.refs.add(new WeakReference<>(new Object(), queue));
-            this.refs.add(new PhantomReference<>(new Object(), queue));
+            // Can't test PhantomReference because get() always returns null.
         }
 
         void run() throws InterruptedException {
@@ -101,10 +101,10 @@ public class ReferenceEnqueue {
                 if (ref.enqueue() == false) {
                     throw new RuntimeException("Error: enqueue failed");
                 }
-                if (disableClearAndEnqueue && ref.get() == null) {
+                if (disableClearBeforeEnqueue && ref.get() == null) {
                     throw new RuntimeException("Error: clearing should be disabled");
                 }
-                if (!disableClearAndEnqueue && ref.get() != null) {
+                if (!disableClearBeforeEnqueue && ref.get() != null) {
                     throw new RuntimeException("Error: referent must be cleared");
                 }
             }
