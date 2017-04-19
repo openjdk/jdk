@@ -32,8 +32,8 @@
  * @library /tools/lib
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @build Compiler UITesting
- * @build MergedTabShiftTabTest
- * @run testng MergedTabShiftTabTest
+ * @build MergedTabShiftTabExpressionTest
+ * @run testng/timeout=300 MergedTabShiftTabExpressionTest
  */
 
 import java.io.IOException;
@@ -41,97 +41,15 @@ import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.MessageFormat;
 import java.util.Arrays;
-import java.util.Locale;
-import java.util.ResourceBundle;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.regex.Pattern;
 
-import jdk.jshell.JShell;
 import org.testng.annotations.Test;
 
 @Test
-public class MergedTabShiftTabTest extends UITesting {
-
-    public void testCommand() throws Exception {
-        doRunTest((inputSink, out) -> {
-            inputSink.write("1\n");
-            waitOutput(out, "\u0005");
-            inputSink.write("/\011");
-            waitOutput(out, ".*/edit.*/list.*\n\n" + Pattern.quote(getResource("jshell.console.see.synopsis")) + "\n\r\u0005/");
-            inputSink.write("\011");
-            waitOutput(out,   ".*\n/edit\n" + Pattern.quote(getResource("help.edit.summary")) +
-                            "\n.*\n/list\n" + Pattern.quote(getResource("help.list.summary")) +
-                            ".*\n\n" + Pattern.quote(getResource("jshell.console.see.full.documentation")) + "\n\r\u0005/");
-            inputSink.write("\011");
-            waitOutput(out,  "/!\n" +
-                            Pattern.quote(getResource("help.bang")) + "\n" +
-                            "\n" +
-                            Pattern.quote(getResource("jshell.console.see.next.command.doc")) + "\n" +
-                            "\r\u0005/");
-            inputSink.write("\011");
-            waitOutput(out,  "/-<n>\n" +
-                            Pattern.quote(getResource("help.previous")) + "\n" +
-                            "\n" +
-                            Pattern.quote(getResource("jshell.console.see.next.command.doc")) + "\n" +
-                            "\r\u0005/");
-
-            inputSink.write("lis\011");
-            waitOutput(out, "list $");
-
-            inputSink.write("\011");
-            waitOutput(out, ".*-all.*" +
-                            "\n\n" + Pattern.quote(getResource("jshell.console.see.synopsis")) + "\n\r\u0005/");
-            inputSink.write("\011");
-            waitOutput(out, Pattern.quote(getResource("help.list.summary")) + "\n\n" +
-                            Pattern.quote(getResource("jshell.console.see.full.documentation")) + "\n\r\u0005/list ");
-            inputSink.write("\011");
-            waitOutput(out, Pattern.quote(getResource("help.list").replaceAll("\t", "    ")));
-
-            inputSink.write("\u0003/env \011");
-            waitOutput(out, "\u0005/env -\n" +
-                            "-add-exports    -add-modules    -class-path     -module-path    \n" +
-                            "\r\u0005/env -");
-
-            inputSink.write("\011");
-            waitOutput(out, "-add-exports    -add-modules    -class-path     -module-path    \n" +
-                            "\n" +
-                            Pattern.quote(getResource("jshell.console.see.synopsis")) + "\n" +
-                            "\r\u0005/env -");
-
-            inputSink.write("\011");
-            waitOutput(out, Pattern.quote(getResource("help.env.summary")) + "\n\n" +
-                            Pattern.quote(getResource("jshell.console.see.full.documentation")) + "\n" +
-                            "\r\u0005/env -");
-
-            inputSink.write("\011");
-            waitOutput(out, Pattern.quote(getResource("help.env").replaceAll("\t", "    ")) + "\n" +
-                            "\r\u0005/env -");
-
-            inputSink.write("\011");
-            waitOutput(out, "-add-exports    -add-modules    -class-path     -module-path    \n" +
-                            "\n" +
-                            Pattern.quote(getResource("jshell.console.see.synopsis")) + "\n" +
-                            "\r\u0005/env -");
-
-            inputSink.write("\u0003/exit \011");
-            waitOutput(out, Pattern.quote(getResource("help.exit.summary")) + "\n\n" +
-                            Pattern.quote(getResource("jshell.console.see.full.documentation")) + "\n\r\u0005/exit ");
-            inputSink.write("\011");
-            waitOutput(out, Pattern.quote(getResource("help.exit")) + "\n" +
-                            "\r\u0005/exit ");
-            inputSink.write("\011");
-            waitOutput(out, Pattern.quote(getResource("help.exit.summary")) + "\n\n" +
-                            Pattern.quote(getResource("jshell.console.see.full.documentation")) + "\n\r\u0005/exit ");
-            inputSink.write("\u0003/doesnotexist\011");
-            waitOutput(out, "\u0005/doesnotexist\n" +
-                            Pattern.quote(getResource("jshell.console.no.such.command")) + "\n" +
-                            "\n" +
-                            "\r\u0005/doesnotexist");
-        });
-    }
+public class MergedTabShiftTabExpressionTest extends UITesting {
 
     public void testExpression() throws Exception {
         Path classes = prepareZip();
@@ -328,18 +246,5 @@ public class MergedTabShiftTabTest extends UITesting {
     }
     //where:
         private final Compiler compiler = new Compiler();
-
-    private final ResourceBundle resources;
-    {
-        resources = ResourceBundle.getBundle("jdk.internal.jshell.tool.resources.l10n", Locale.US, JShell.class.getModule());
-    }
-
-    private String getResource(String key) {
-        return resources.getString(key);
-    }
-
-    private String getMessage(String key, Object... args) {
-        return MessageFormat.format(resources.getString(key), args);
-    }
 
 }

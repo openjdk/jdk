@@ -27,13 +27,16 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.Writer;
+import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jdk.jshell.JShell;
 import jdk.jshell.tool.JavaShellToolBuilder;
 
 public class UITesting {
@@ -168,6 +171,18 @@ public class UITesting {
         return result.toString();
     }
 
+    private final ResourceBundle resources;
+    {
+        resources = ResourceBundle.getBundle("jdk.internal.jshell.tool.resources.l10n", Locale.US, JShell.class.getModule());
+    }
+
+    protected String getResource(String key) {
+        return resources.getString(key);
+    }
+
+    protected String getMessage(String key, Object... args) {
+        return MessageFormat.format(resources.getString(key), args);
+    }
     private static class PipeInputStream extends InputStream {
 
         private static final int INITIAL_SIZE = 128;
