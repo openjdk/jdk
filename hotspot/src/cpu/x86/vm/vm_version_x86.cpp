@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -763,12 +763,11 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
   }
 
-  if (supports_sse4_2()) {
+  if (supports_sse4_2() && supports_clmul()) {
     if (FLAG_IS_DEFAULT(UseCRC32CIntrinsics)) {
       UseCRC32CIntrinsics = true;
     }
-  }
-  else if (UseCRC32CIntrinsics) {
+  } else if (UseCRC32CIntrinsics) {
     if (!FLAG_IS_DEFAULT(UseCRC32CIntrinsics)) {
       warning("CRC32C intrinsics are not available on this CPU");
     }
