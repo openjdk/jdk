@@ -22,8 +22,8 @@
  */
 package org.graalvm.compiler.replacements.nodes;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_1;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_0;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_0;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.Stamp;
@@ -42,7 +42,7 @@ import jdk.vm.ci.meta.Value;
 /**
  * Access the value of a specific register.
  */
-@NodeInfo(nameTemplate = "ReadRegister %{p#register}", cycles = CYCLES_1, size = SIZE_1)
+@NodeInfo(nameTemplate = "ReadRegister %{p#register}", cycles = CYCLES_0, size = SIZE_0)
 public final class ReadRegisterNode extends FixedWithNextNode implements LIRLowerable {
 
     public static final NodeClass<ReadRegisterNode> TYPE = NodeClass.create(ReadRegisterNode.class);

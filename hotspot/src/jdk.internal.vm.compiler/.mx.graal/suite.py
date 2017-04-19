@@ -199,6 +199,7 @@ suite = {
       "dependencies" : [
         "org.graalvm.compiler.api.runtime",
         "org.graalvm.compiler.replacements",
+        "org.graalvm.compiler.printer",
         "org.graalvm.compiler.runtime",
       ],
       "imports" : [
@@ -929,6 +930,7 @@ suite = {
       "subDir" : "share/classes",
       "sourceDirs" : ["src"],
       "dependencies" : [
+        "org.graalvm.util",
         "mx:JUNIT",
       ],
       "checkstyle" : "org.graalvm.compiler.graph",

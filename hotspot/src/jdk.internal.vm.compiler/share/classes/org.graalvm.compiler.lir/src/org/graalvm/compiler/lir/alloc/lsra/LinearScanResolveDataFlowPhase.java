@@ -31,7 +31,7 @@ import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.StandardOp;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
-import org.graalvm.compiler.lir.phases.AllocationPhase;
+import org.graalvm.compiler.lir.phases.AllocationPhase.AllocationContext;
 
 import jdk.vm.ci.code.TargetDescription;
 
@@ -40,7 +40,7 @@ import jdk.vm.ci.code.TargetDescription;
  *
  * Insert moves at edges between blocks if intervals have been split.
  */
-public class LinearScanResolveDataFlowPhase extends AllocationPhase {
+public class LinearScanResolveDataFlowPhase extends LinearScanAllocationPhase {
 
     protected final LinearScan allocator;
 

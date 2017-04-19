@@ -25,6 +25,7 @@ package org.graalvm.compiler.nodes.calc;
 import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_1;
 
+import jdk.vm.ci.meta.MetaAccessProvider;
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.type.AbstractObjectStamp;
 import org.graalvm.compiler.core.common.type.AbstractPointerStamp;
@@ -32,7 +33,6 @@ import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.Canonicalizable;
-import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.BinaryOpLogicNode;
 import org.graalvm.compiler.nodes.ConstantNode;
@@ -45,6 +45,7 @@ import org.graalvm.compiler.nodes.ValueNode;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.PrimitiveConstant;
+import org.graalvm.compiler.options.OptionValues;
 
 @NodeInfo(cycles = CYCLES_1)
 public abstract class CompareNode extends BinaryOpLogicNode implements Canonicalizable.Binary<ValueNode> {
@@ -83,74 +84,6 @@ public abstract class CompareNode extends BinaryOpLogicNode implements Canonical
         return this.unorderedIsTrue;
     }
 
-    private ValueNode optimizeConditional(Constant constant, ConditionalNode conditionalNode, ConstantReflectionProvider constantReflection, Condition cond) {
-        Constant trueConstant = conditionalNode.trueValue().asConstant();
-        Constant falseConstant = conditionalNode.falseValue().asConstant();
-
-        if (falseConstant != null && trueConstant != null && constantReflection != null) {
-            boolean trueResult = cond.foldCondition(trueConstant, constant, constantReflection, unorderedIsTrue());
-            boolean falseResult = cond.foldCondition(falseConstant, constant, constantReflection, unorderedIsTrue());
-
-            if (trueResult == falseResult) {
-                return LogicConstantNode.forBoolean(trueResult);
-            } else {
-                if (trueResult) {
-                    assert falseResult == false;
-                    return conditionalNode.condition();
-                } else {
-                    assert falseResult == true;
-                    return LogicNegationNode.create(conditionalNode.condition());
-
-                }
-            }
-        }
-        return this;
-    }
-
-    protected ValueNode optimizeNormalizeCmp(Constant constant, NormalizeCompareNode normalizeNode, boolean mirrored) {
-        throw new GraalError("NormalizeCompareNode connected to %s (%s %s %s)", this, constant, normalizeNode, mirrored);
-    }
-
-    @Override
-    public ValueNode canonical(CanonicalizerTool tool, ValueNode forX, ValueNode forY) {
-        ConstantReflectionProvider constantReflection = tool.getConstantReflection();
-        LogicNode constantCondition = tryConstantFold(condition(), forX, forY, constantReflection, unorderedIsTrue());
-        if (constantCondition != null) {
-            return constantCondition;
-        }
-        ValueNode result;
-        if (forX.isConstant()) {
-            if ((result = canonicalizeSymmetricConstant(tool, forX.asConstant(), forY, true)) != this) {
-                return result;
-            }
-        } else if (forY.isConstant()) {
-            if ((result = canonicalizeSymmetricConstant(tool, forY.asConstant(), forX, false)) != this) {
-                return result;
-            }
-        } else if (forX instanceof ConvertNode && forY instanceof ConvertNode) {
-            ConvertNode convertX = (ConvertNode) forX;
-            ConvertNode convertY = (ConvertNode) forY;
-            if (convertX.preservesOrder(condition()) && convertY.preservesOrder(condition()) && convertX.getValue().stamp().isCompatible(convertY.getValue().stamp())) {
-                boolean supported = true;
-                if (convertX.getValue().stamp() instanceof IntegerStamp) {
-                    IntegerStamp intStamp = (IntegerStamp) convertX.getValue().stamp();
-                    supported = tool.supportSubwordCompare(intStamp.getBits());
-                }
-
-                if (supported) {
-                    boolean multiUsage = (convertX.asNode().hasMoreThanOneUsage() || convertY.asNode().hasMoreThanOneUsage());
-                    if ((forX instanceof ZeroExtendNode || forX instanceof SignExtendNode) && multiUsage) {
-                        // Do not perform for zero or sign extend if there are multiple usages of
-                        // the value.
-                        return this;
-                    }
-                    return duplicateModified(convertX.getValue(), convertY.getValue());
-                }
-            }
-        }
-        return this;
-    }
-
     public static LogicNode tryConstantFold(Condition condition, ValueNode forX, ValueNode forY, ConstantReflectionProvider constantReflection, boolean unorderedIsTrue) {
         if (forX.isConstant() && forY.isConstant() && (constantReflection != null || forX.asConstant() instanceof PrimitiveConstant)) {
             return LogicConstantNode.forBoolean(condition.foldCondition(forX.asConstant(), forY.asConstant(), constantReflection, unorderedIsTrue));
@@ -175,56 +108,129 @@ public abstract class CompareNode extends BinaryOpLogicNode implements Canonical
         return condition == Condition.EQ;
     }
 
-    protected abstract LogicNode duplicateModified(ValueNode newX, ValueNode newY);
-
-    protected ValueNode canonicalizeSymmetricConstant(CanonicalizerTool tool, Constant constant, ValueNode nonConstant, boolean mirrored) {
-        if (nonConstant instanceof ConditionalNode) {
-            return optimizeConditional(constant, (ConditionalNode) nonConstant, tool.getConstantReflection(), mirrored ? condition().mirror() : condition());
-        } else if (nonConstant instanceof NormalizeCompareNode) {
-            return optimizeNormalizeCmp(constant, (NormalizeCompareNode) nonConstant, mirrored);
-        } else if (nonConstant instanceof ConvertNode) {
-            ConvertNode convert = (ConvertNode) nonConstant;
-            boolean multiUsage = (convert.asNode().hasMoreThanOneUsage() && convert.getValue().hasExactlyOneUsage());
-            if ((convert instanceof ZeroExtendNode || convert instanceof SignExtendNode) && multiUsage) {
-                // Do not perform for zero or sign extend if it could introduce
-                // new live values.
-                return this;
+    public abstract static class CompareOp {
+        public LogicNode canonical(ConstantReflectionProvider constantReflection, MetaAccessProvider metaAccess, OptionValues options, Integer smallestCompareWidth, Condition condition,
+                        boolean unorderedIsTrue, ValueNode forX, ValueNode forY) {
+            LogicNode constantCondition = tryConstantFold(condition, forX, forY, constantReflection, unorderedIsTrue);
+            if (constantCondition != null) {
+                return constantCondition;
             }
+            LogicNode result;
+            if (forX.isConstant()) {
+                if ((result = canonicalizeSymmetricConstant(constantReflection, metaAccess, options, smallestCompareWidth, condition, forX.asConstant(), forY, true, unorderedIsTrue)) != null) {
+                    return result;
+                }
+            } else if (forY.isConstant()) {
+                if ((result = canonicalizeSymmetricConstant(constantReflection, metaAccess, options, smallestCompareWidth, condition, forY.asConstant(), forX, false, unorderedIsTrue)) != null) {
+                    return result;
+                }
+            } else if (forX instanceof ConvertNode && forY instanceof ConvertNode) {
+                ConvertNode convertX = (ConvertNode) forX;
+                ConvertNode convertY = (ConvertNode) forY;
+                if (convertX.preservesOrder(condition) && convertY.preservesOrder(condition) && convertX.getValue().stamp().isCompatible(convertY.getValue().stamp())) {
+                    boolean supported = true;
+                    if (convertX.getValue().stamp() instanceof IntegerStamp) {
+                        IntegerStamp intStamp = (IntegerStamp) convertX.getValue().stamp();
+                        supported = smallestCompareWidth != null && intStamp.getBits() >= smallestCompareWidth;
+                    }
 
-            boolean supported = true;
-            if (convert.getValue().stamp() instanceof IntegerStamp) {
-                IntegerStamp intStamp = (IntegerStamp) convert.getValue().stamp();
-                supported = tool.supportSubwordCompare(intStamp.getBits());
-            }
-
-            if (supported) {
-                ConstantNode newConstant = canonicalConvertConstant(tool, convert, constant);
-                if (newConstant != null) {
-                    if (mirrored) {
-                        return duplicateModified(newConstant, convert.getValue());
-                    } else {
-                        return duplicateModified(convert.getValue(), newConstant);
+                    if (supported) {
+                        boolean multiUsage = (convertX.asNode().hasMoreThanOneUsage() || convertY.asNode().hasMoreThanOneUsage());
+                        if ((forX instanceof ZeroExtendNode || forX instanceof SignExtendNode) && multiUsage) {
+                            // Do not perform for zero or sign extend if there are multiple usages
+                            // of the value.
+                            return null;
+                        }
+                        return duplicateModified(convertX.getValue(), convertY.getValue(), unorderedIsTrue);
                     }
                 }
             }
+            return null;
         }
 
-        return this;
-    }
-
-    private ConstantNode canonicalConvertConstant(CanonicalizerTool tool, ConvertNode convert, Constant constant) {
-        ConstantReflectionProvider constantReflection = tool.getConstantReflection();
-        if (convert.preservesOrder(condition(), constant, constantReflection)) {
-            Constant reverseConverted = convert.reverse(constant, constantReflection);
-            if (reverseConverted != null && convert.convert(reverseConverted, constantReflection).equals(constant)) {
-                if (GeneratePIC.getValue(tool.getOptions())) {
-                    // We always want uncompressed constants
+        protected LogicNode canonicalizeSymmetricConstant(ConstantReflectionProvider constantReflection, MetaAccessProvider metaAccess, OptionValues options, Integer smallestCompareWidth,
+                        Condition condition, Constant constant, ValueNode nonConstant, boolean mirrored, boolean unorderedIsTrue) {
+            if (nonConstant instanceof ConditionalNode) {
+                return optimizeConditional(constant, (ConditionalNode) nonConstant, constantReflection, mirrored ? condition.mirror() : condition, unorderedIsTrue);
+            } else if (nonConstant instanceof NormalizeCompareNode) {
+                return optimizeNormalizeCompare(constantReflection, metaAccess, options, smallestCompareWidth, constant, (NormalizeCompareNode) nonConstant, mirrored);
+            } else if (nonConstant instanceof ConvertNode) {
+                ConvertNode convert = (ConvertNode) nonConstant;
+                boolean multiUsage = (convert.asNode().hasMoreThanOneUsage() && convert.getValue().hasExactlyOneUsage());
+                if ((convert instanceof ZeroExtendNode || convert instanceof SignExtendNode) && multiUsage) {
+                    // Do not perform for zero or sign extend if it could introduce
+                    // new live values.
                     return null;
                 }
-                return ConstantNode.forConstant(convert.getValue().stamp(), reverseConverted, tool.getMetaAccess());
+
+                boolean supported = true;
+                if (convert.getValue().stamp() instanceof IntegerStamp) {
+                    IntegerStamp intStamp = (IntegerStamp) convert.getValue().stamp();
+                    supported = smallestCompareWidth != null && intStamp.getBits() > smallestCompareWidth;
+                }
+
+                if (supported) {
+                    ConstantNode newConstant = canonicalConvertConstant(constantReflection, metaAccess, options, condition, convert, constant);
+                    if (newConstant != null) {
+                        if (mirrored) {
+                            return duplicateModified(newConstant, convert.getValue(), unorderedIsTrue);
+                        } else {
+                            return duplicateModified(convert.getValue(), newConstant, unorderedIsTrue);
+                        }
+                    }
+                }
             }
+
+            return null;
         }
-        return null;
+
+        private static ConstantNode canonicalConvertConstant(ConstantReflectionProvider constantReflection, MetaAccessProvider metaAccess, OptionValues options, Condition condition,
+                        ConvertNode convert, Constant constant) {
+            if (convert.preservesOrder(condition, constant, constantReflection)) {
+                Constant reverseConverted = convert.reverse(constant, constantReflection);
+                if (reverseConverted != null && convert.convert(reverseConverted, constantReflection).equals(constant)) {
+                    if (GeneratePIC.getValue(options)) {
+                        // We always want uncompressed constants
+                        return null;
+                    }
+                    return ConstantNode.forConstant(convert.getValue().stamp(), reverseConverted, metaAccess);
+                }
+            }
+            return null;
+        }
+
+        @SuppressWarnings("unused")
+        protected LogicNode optimizeNormalizeCompare(ConstantReflectionProvider constantReflection, MetaAccessProvider metaAccess, OptionValues options, Integer smallestCompareWidth,
+                        Constant constant, NormalizeCompareNode normalizeNode, boolean mirrored) {
+            throw new GraalError("NormalizeCompareNode connected to %s (%s %s %s)", this, constant, normalizeNode, mirrored);
+        }
+
+        private static LogicNode optimizeConditional(Constant constant, ConditionalNode conditionalNode, ConstantReflectionProvider constantReflection, Condition cond, boolean unorderedIsTrue) {
+            Constant trueConstant = conditionalNode.trueValue().asConstant();
+            Constant falseConstant = conditionalNode.falseValue().asConstant();
+
+            if (falseConstant != null && trueConstant != null && constantReflection != null) {
+                boolean trueResult = cond.foldCondition(trueConstant, constant, constantReflection, unorderedIsTrue);
+                boolean falseResult = cond.foldCondition(falseConstant, constant, constantReflection, unorderedIsTrue);
+
+                if (trueResult == falseResult) {
+                    return LogicConstantNode.forBoolean(trueResult);
+                } else {
+                    if (trueResult) {
+                        assert falseResult == false;
+                        return conditionalNode.condition();
+                    } else {
+                        assert falseResult == true;
+                        return LogicNegationNode.create(conditionalNode.condition());
+
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        protected abstract LogicNode duplicateModified(ValueNode newW, ValueNode newY, boolean unorderedIsTrue);
     }
 
     public static LogicNode createCompareNode(StructuredGraph graph, Condition condition, ValueNode x, ValueNode y, ConstantReflectionProvider constantReflection) {
@@ -254,6 +260,41 @@ public abstract class CompareNode extends BinaryOpLogicNode implements Canonical
             assert condition == Condition.BT;
             assert x.getStackKind().isNumericInteger();
             comparison = IntegerBelowNode.create(x, y);
+        }
+
+        return comparison;
+    }
+
+    public static LogicNode createCompareNode(StructuredGraph graph, ConstantReflectionProvider constantReflection, MetaAccessProvider metaAccess, OptionValues options, Integer smallestCompareWidth,
+                    Condition condition, ValueNode x, ValueNode y) {
+        LogicNode result = createCompareNode(constantReflection, metaAccess, options, smallestCompareWidth, condition, x, y);
+        return (result.graph() == null ? graph.addOrUniqueWithInputs(result) : result);
+    }
+
+    public static LogicNode createCompareNode(ConstantReflectionProvider constantReflection, MetaAccessProvider metaAccess, OptionValues options, Integer smallestCompareWidth,
+                    Condition condition, ValueNode x, ValueNode y) {
+        assert x.getStackKind() == y.getStackKind();
+        assert condition.isCanonical();
+        assert !x.getStackKind().isNumericFloat();
+
+        LogicNode comparison;
+        if (condition == Condition.EQ) {
+            if (x.stamp() instanceof AbstractObjectStamp) {
+                assert smallestCompareWidth == null;
+                comparison = ObjectEqualsNode.create(constantReflection, metaAccess, options, x, y);
+            } else if (x.stamp() instanceof AbstractPointerStamp) {
+                comparison = PointerEqualsNode.create(x, y);
+            } else {
+                assert x.getStackKind().isNumericInteger();
+                comparison = IntegerEqualsNode.create(constantReflection, metaAccess, options, smallestCompareWidth, x, y);
+            }
+        } else if (condition == Condition.LT) {
+            assert x.getStackKind().isNumericInteger();
+            comparison = IntegerLessThanNode.create(constantReflection, metaAccess, options, smallestCompareWidth, x, y);
+        } else {
+            assert condition == Condition.BT;
+            assert x.getStackKind().isNumericInteger();
+            comparison = IntegerBelowNode.create(constantReflection, metaAccess, options, smallestCompareWidth, x, y);
         }
 
         return comparison;

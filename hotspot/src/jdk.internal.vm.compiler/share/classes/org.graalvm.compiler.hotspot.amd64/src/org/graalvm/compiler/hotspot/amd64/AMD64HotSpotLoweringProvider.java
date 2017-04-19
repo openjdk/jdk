@@ -120,7 +120,7 @@ public class AMD64HotSpotLoweringProvider extends DefaultHotSpotLoweringProvider
     }
 
     @Override
-    public boolean supportSubwordCompare(int bits) {
-        return true;
+    public Integer smallestCompareWidth() {
+        return 8;
     }
 }

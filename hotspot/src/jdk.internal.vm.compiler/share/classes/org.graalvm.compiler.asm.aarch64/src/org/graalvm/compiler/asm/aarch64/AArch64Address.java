@@ -286,7 +286,7 @@ public final class AArch64Address extends AbstractAddress {
                 return immediate & NumUtil.getNbitNumberInt(9);
             case IMMEDIATE_SCALED:
                 // Unsigned value can be returned as-is.
-                assert NumUtil.isUnsignedNbit(9, immediate);
+                assert NumUtil.isUnsignedNbit(12, immediate);
                 return immediate;
             case PC_LITERAL:
                 // 21-bit signed value, but lower 2 bits are always 0 and are shifted out.

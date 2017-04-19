@@ -36,8 +36,8 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.EnumSet;
 
-import org.graalvm.compiler.core.common.PermanentBailoutException;
 import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.PermanentBailoutException;
 import org.graalvm.compiler.core.common.alloc.ComputeBlockOrder;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.core.common.util.BitMap2D;
@@ -56,7 +56,7 @@ import org.graalvm.compiler.lir.alloc.lsra.Interval.RegisterPriority;
 import org.graalvm.compiler.lir.alloc.lsra.Interval.SpillState;
 import org.graalvm.compiler.lir.alloc.lsra.LinearScan.BlockData;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
-import org.graalvm.compiler.lir.phases.AllocationPhase;
+import org.graalvm.compiler.lir.phases.AllocationPhase.AllocationContext;
 import org.graalvm.util.EconomicSet;
 import org.graalvm.util.Equivalence;
 
@@ -70,7 +70,7 @@ import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.meta.ValueKind;
 
-public class LinearScanLifetimeAnalysisPhase extends AllocationPhase {
+public class LinearScanLifetimeAnalysisPhase extends LinearScanAllocationPhase {
 
     protected final LinearScan allocator;
 
@@ -84,7 +84,7 @@ public class LinearScanLifetimeAnalysisPhase extends AllocationPhase {
     @Override
     protected void run(TargetDescription target, LIRGenerationResult lirGenRes, AllocationContext context) {
         numberInstructions();
-        allocator.printLir("Before register allocation", true);
+        Debug.dump(Debug.VERBOSE_LEVEL, lirGenRes.getLIR(), "Before register allocation");
         computeLocalLiveSets();
         computeGlobalLiveSets();
         buildIntervals(DetailedAsserts.getValue(allocator.getOptions()));

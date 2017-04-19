@@ -73,7 +73,7 @@ public class MethodHandlePlugin implements NodePlugin {
                 CallTargetNode callTarget = invoke.callTarget();
                 NodeInputList<ValueNode> argumentsList = callTarget.arguments();
                 for (int i = 0; i < argumentsList.size(); ++i) {
-                    argumentsList.initialize(i, b.recursiveAppend(argumentsList.get(i)));
+                    argumentsList.initialize(i, b.append(argumentsList.get(i)));
                 }
 
                 boolean inlineEverything = false;

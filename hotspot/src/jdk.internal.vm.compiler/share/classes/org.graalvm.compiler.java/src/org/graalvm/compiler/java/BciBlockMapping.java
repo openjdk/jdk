@@ -437,8 +437,6 @@ public final class BciBlockMapping {
     private static final int LOOP_HEADER_INITIAL_CAPACITY = 4;
 
     private int blocksNotYetAssignedId;
-    public int returnCount;
-    private int returnBci;
 
     /**
      * Creates a new BlockMap instance from {@code code}.
@@ -450,10 +448,6 @@ public final class BciBlockMapping {
 
     public BciBlock[] getBlocks() {
         return this.blocks;
-    }
-
-    public int getReturnCount() {
-        return this.returnCount;
     }
 
     /**
@@ -533,9 +527,7 @@ public final class BciBlockMapping {
                 case DRETURN: // fall through
                 case ARETURN: // fall through
                 case RETURN: {
-                    returnCount++;
                     current = null;
-                    returnBci = bci;
                     break;
                 }
                 case ATHROW: {
@@ -832,7 +824,7 @@ public final class BciBlockMapping {
 
         // Purge null entries for unreached blocks and sort blocks such that loop bodies are always
         // consecutively in the array.
-        int blockCount = maxBlocks - blocksNotYetAssignedId + 2;
+        int blockCount = maxBlocks - blocksNotYetAssignedId + 1;
         BciBlock[] newBlocks = new BciBlock[blockCount];
         int next = 0;
         for (int i = 0; i < blocks.length; ++i) {
@@ -845,13 +837,7 @@ public final class BciBlockMapping {
                 }
             }
         }
-
-        // Add return block.
-        BciBlock returnBlock = new BciBlock();
-        returnBlock.startBci = returnBci;
-        returnBlock.endBci = returnBci;
-        returnBlock.setId(newBlocks.length - 2);
-        newBlocks[newBlocks.length - 2] = returnBlock;
+        assert next == newBlocks.length - 1;
 
         // Add unwind block.
         ExceptionDispatchBlock unwindBlock = new ExceptionDispatchBlock();
@@ -1064,10 +1050,6 @@ public final class BciBlockMapping {
 
     public BciBlock getStartBlock() {
         return startBlock;
-    }
-
-    public BciBlock getReturnBlock() {
-        return blocks[blocks.length - 2];
     }
 
     public ExceptionDispatchBlock getUnwindBlock() {

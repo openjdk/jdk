@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.replacements.aarch64;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_3;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_2;
 
 import org.graalvm.compiler.core.common.type.IntegerStamp;
@@ -45,7 +45,7 @@ import jdk.vm.ci.meta.JavaKind;
 /**
  * Count the number of trailing zeros using the {@code rbit; clz} instructions.
  */
-@NodeInfo(cycles = CYCLES_3, size = SIZE_2)
+@NodeInfo(cycles = CYCLES_2, size = SIZE_2)
 public final class AArch64CountTrailingZerosNode extends UnaryNode implements ArithmeticLIRLowerable {
     public static final NodeClass<AArch64CountTrailingZerosNode> TYPE = NodeClass.create(AArch64CountTrailingZerosNode.class);
 

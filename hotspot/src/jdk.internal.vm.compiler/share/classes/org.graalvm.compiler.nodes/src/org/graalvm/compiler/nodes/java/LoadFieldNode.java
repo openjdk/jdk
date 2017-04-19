@@ -23,6 +23,7 @@
 package org.graalvm.compiler.nodes.java;
 
 import static org.graalvm.compiler.graph.iterators.NodePredicates.isNotA;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
 
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
@@ -32,6 +33,7 @@ import org.graalvm.compiler.core.common.type.StampPair;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.Canonicalizable;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
+import org.graalvm.compiler.nodeinfo.NodeCycles;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.DeoptimizeNode;
@@ -194,5 +196,13 @@ public final class LoadFieldNode extends AccessFieldNode implements Canonicaliza
     public void setObject(ValueNode newObject) {
         this.updateUsages(object, newObject);
         this.object = newObject;
+    }
+
+    @Override
+    public NodeCycles estimatedNodeCycles() {
+        if (field.isVolatile()) {
+            return CYCLES_2;
+        }
+        return super.estimatedNodeCycles();
     }
 }

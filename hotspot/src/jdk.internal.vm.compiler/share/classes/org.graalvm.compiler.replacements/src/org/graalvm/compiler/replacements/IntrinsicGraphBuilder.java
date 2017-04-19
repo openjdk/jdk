@@ -145,18 +145,6 @@ public class IntrinsicGraphBuilder implements GraphBuilderContext, Receiver {
         if (v.graph() != null) {
             return v;
         }
-        T added = graph.addOrUnique(v);
-        if (added == v) {
-            updateLastInstruction(v);
-        }
-        return added;
-    }
-
-    @Override
-    public <T extends ValueNode> T recursiveAppend(T v) {
-        if (v.graph() != null) {
-            return v;
-        }
         T added = graph.addOrUniqueWithInputs(v);
         if (added == v) {
             updateLastInstruction(v);

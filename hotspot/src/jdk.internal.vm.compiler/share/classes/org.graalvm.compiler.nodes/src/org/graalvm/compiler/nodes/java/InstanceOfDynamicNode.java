@@ -22,8 +22,8 @@
  */
 package org.graalvm.compiler.nodes.java;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_30;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_30;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_32;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_32;
 
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.TypeReference;
@@ -50,7 +50,7 @@ import jdk.vm.ci.meta.TriState;
  * known at compile time. This is used, for instance, to intrinsify {@link Class#isInstance(Object)}
  * .
  */
-@NodeInfo(cycles = CYCLES_30, size = SIZE_30)
+@NodeInfo(cycles = CYCLES_32, size = SIZE_32)
 public class InstanceOfDynamicNode extends BinaryOpLogicNode implements Canonicalizable.Binary<ValueNode>, Lowerable {
     public static final NodeClass<InstanceOfDynamicNode> TYPE = NodeClass.create(InstanceOfDynamicNode.class);
 

@@ -22,8 +22,8 @@
  */
 package org.graalvm.compiler.hotspot.nodes.aot;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_3;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_3;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_4;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
 
 import org.graalvm.compiler.core.common.PermanentBailoutException;
 import org.graalvm.compiler.graph.Node;
@@ -45,7 +45,7 @@ import jdk.vm.ci.hotspot.HotSpotObjectConstant;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.Value;
 
-@NodeInfo(cycles = CYCLES_3, size = SIZE_3)
+@NodeInfo(cycles = CYCLES_4, size = SIZE_1)
 public class LoadConstantIndirectlyNode extends FloatingNode implements Canonicalizable, LIRLowerable {
 
     public static final NodeClass<LoadConstantIndirectlyNode> TYPE = NodeClass.create(LoadConstantIndirectlyNode.class);

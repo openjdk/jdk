@@ -22,26 +22,31 @@
  */
 package org.graalvm.compiler.nodes.calc;
 
+import jdk.vm.ci.meta.ConstantReflectionProvider;
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.TriState;
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.type.FloatStamp;
 import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.debug.GraalError;
+import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.Canonicalizable.BinaryCommutative;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
-import org.graalvm.compiler.nodeinfo.NodeCycles;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.LogicConstantNode;
 import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
+import org.graalvm.compiler.options.OptionValues;
 
-import jdk.vm.ci.meta.TriState;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
 
-@NodeInfo(shortName = "==", cycles = NodeCycles.CYCLES_3)
+@NodeInfo(shortName = "==", cycles = CYCLES_2)
 public final class FloatEqualsNode extends CompareNode implements BinaryCommutative<ValueNode> {
     public static final NodeClass<FloatEqualsNode> TYPE = NodeClass.create(FloatEqualsNode.class);
+    private static final FloatEqualsOp OP = new FloatEqualsOp();
 
     public FloatEqualsNode(ValueNode x, ValueNode y) {
         super(TYPE, Condition.EQ, false, x, y);
@@ -58,6 +63,15 @@ public final class FloatEqualsNode extends CompareNode implements BinaryCommutat
         }
     }
 
+    public static LogicNode create(ConstantReflectionProvider constantReflection, MetaAccessProvider metaAccess, OptionValues options, Integer smallestCompareWidth,
+                    ValueNode x, ValueNode y) {
+        LogicNode value = OP.canonical(constantReflection, metaAccess, options, smallestCompareWidth, Condition.EQ, false, x, y);
+        if (value != null) {
+            return value;
+        }
+        return create(x, y);
+    }
+
     @Override
     public boolean isIdentityComparison() {
         FloatStamp xStamp = (FloatStamp) x.stamp();
@@ -72,33 +86,46 @@ public final class FloatEqualsNode extends CompareNode implements BinaryCommutat
     }
 
     @Override
-    public ValueNode canonical(CanonicalizerTool tool, ValueNode forX, ValueNode forY) {
-        ValueNode result = super.canonical(tool, forX, forY);
-        if (result != this) {
-            return result;
-        }
-        Stamp xStampGeneric = forX.stamp();
-        Stamp yStampGeneric = forY.stamp();
-        if (xStampGeneric instanceof FloatStamp && yStampGeneric instanceof FloatStamp) {
-            FloatStamp xStamp = (FloatStamp) xStampGeneric;
-            FloatStamp yStamp = (FloatStamp) yStampGeneric;
-            if (GraphUtil.unproxify(forX) == GraphUtil.unproxify(forY) && xStamp.isNonNaN() && yStamp.isNonNaN()) {
-                return LogicConstantNode.tautology();
-            } else if (xStamp.alwaysDistinct(yStamp)) {
-                return LogicConstantNode.contradiction();
-            }
+    public Node canonical(CanonicalizerTool tool, ValueNode forX, ValueNode forY) {
+        ValueNode value = OP.canonical(tool.getConstantReflection(), tool.getMetaAccess(), tool.getOptions(), tool.smallestCompareWidth(), Condition.EQ, unorderedIsTrue, forX, forY);
+        if (value != null) {
+            return value;
         }
         return this;
     }
 
-    @Override
-    protected CompareNode duplicateModified(ValueNode newX, ValueNode newY) {
-        if (newX.stamp() instanceof FloatStamp && newY.stamp() instanceof FloatStamp) {
-            return new FloatEqualsNode(newX, newY);
-        } else if (newX.stamp() instanceof IntegerStamp && newY.stamp() instanceof IntegerStamp) {
-            return new IntegerEqualsNode(newX, newY);
+    public static class FloatEqualsOp extends CompareOp {
+
+        @Override
+        public LogicNode canonical(ConstantReflectionProvider constantReflection, MetaAccessProvider metaAccess, OptionValues options, Integer smallestCompareWidth, Condition condition,
+                        boolean unorderedIsTrue, ValueNode forX, ValueNode forY) {
+            LogicNode result = super.canonical(constantReflection, metaAccess, options, smallestCompareWidth, condition, unorderedIsTrue, forX, forY);
+            if (result != null) {
+                return result;
+            }
+            Stamp xStampGeneric = forX.stamp();
+            Stamp yStampGeneric = forY.stamp();
+            if (xStampGeneric instanceof FloatStamp && yStampGeneric instanceof FloatStamp) {
+                FloatStamp xStamp = (FloatStamp) xStampGeneric;
+                FloatStamp yStamp = (FloatStamp) yStampGeneric;
+                if (GraphUtil.unproxify(forX) == GraphUtil.unproxify(forY) && xStamp.isNonNaN() && yStamp.isNonNaN()) {
+                    return LogicConstantNode.tautology();
+                } else if (xStamp.alwaysDistinct(yStamp)) {
+                    return LogicConstantNode.contradiction();
+                }
+            }
+            return null;
         }
-        throw GraalError.shouldNotReachHere();
+
+        @Override
+        protected CompareNode duplicateModified(ValueNode newX, ValueNode newY, boolean unorderedIsTrue) {
+            if (newX.stamp() instanceof FloatStamp && newY.stamp() instanceof FloatStamp) {
+                return new FloatEqualsNode(newX, newY);
+            } else if (newX.stamp() instanceof IntegerStamp && newY.stamp() instanceof IntegerStamp) {
+                return new IntegerEqualsNode(newX, newY);
+            }
+            throw GraalError.shouldNotReachHere();
+        }
     }
 
     @Override

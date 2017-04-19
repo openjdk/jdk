@@ -38,19 +38,12 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 public interface GraphBuilderTool {
 
     /**
-     * Raw operation for adding a node to the graph.
-     *
-     * @return either the node added or an equivalent node
-     */
-    <T extends ValueNode> T append(T value);
-
-    /**
      * Adds the given node to the graph and also adds recursively all referenced inputs.
      *
      * @param value the node to be added to the graph
      * @return either the node added or an equivalent node
      */
-    <T extends ValueNode> T recursiveAppend(T value);
+    <T extends ValueNode> T append(T value);
 
     StampProvider getStampProvider();
 

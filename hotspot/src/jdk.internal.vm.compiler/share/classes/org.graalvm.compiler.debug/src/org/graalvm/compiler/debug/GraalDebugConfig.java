@@ -117,6 +117,7 @@ public class GraalDebugConfig implements DebugConfig {
         public static final OptionKey<Integer> PrintBinaryGraphPort = new OptionKey<>(4445);
         @Option(help = "Schedule graphs as they are dumped.", type = OptionType.Debug)
         public static final OptionKey<Boolean> PrintGraphWithSchedule = new OptionKey<>(false);
+
         @Option(help = "Enable dumping Truffle ASTs to the IdealGraphVisualizer.", type = OptionType.Debug)
         public static final OptionKey<Boolean> PrintTruffleTrees = new OptionKey<>(true);
 

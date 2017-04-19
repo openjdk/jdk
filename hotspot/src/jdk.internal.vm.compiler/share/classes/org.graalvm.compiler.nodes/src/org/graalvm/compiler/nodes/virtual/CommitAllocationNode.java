@@ -38,11 +38,15 @@ import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.NodeInputList;
 import org.graalvm.compiler.graph.spi.Simplifiable;
 import org.graalvm.compiler.graph.spi.SimplifierTool;
+import org.graalvm.compiler.nodeinfo.NodeCycles;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodeinfo.NodeSize;
 import org.graalvm.compiler.nodeinfo.Verbosity;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.java.AbstractNewObjectNode;
 import org.graalvm.compiler.nodes.java.MonitorIdNode;
+import org.graalvm.compiler.nodes.memory.WriteNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.nodes.spi.VirtualizableAllocation;
@@ -226,5 +230,29 @@ public final class CommitAllocationNode extends FixedWithNextNode implements Vir
             lockIndexes = newLockIndexes;
             ensureVirtual = newEnsureVirtual;
         }
+    }
+
+    @Override
+    public NodeCycles estimatedNodeCycles() {
+        List<VirtualObjectNode> v = getVirtualObjects();
+        int fieldWriteCount = 0;
+        for (int i = 0; i < v.size(); i++) {
+            fieldWriteCount += v.get(i).entryCount();
+        }
+        int rawValueWrites = NodeCycles.compute(WriteNode.TYPE.cycles(), fieldWriteCount).value;
+        int rawValuesTlabBumps = AbstractNewObjectNode.TYPE.cycles().value;
+        return NodeCycles.compute(rawValueWrites + rawValuesTlabBumps);
+    }
+
+    @Override
+    public NodeSize estimatedNodeSize() {
+        List<VirtualObjectNode> v = getVirtualObjects();
+        int fieldWriteCount = 0;
+        for (int i = 0; i < v.size(); i++) {
+            fieldWriteCount += v.get(i).entryCount();
+        }
+        int rawValueWrites = NodeSize.compute(WriteNode.TYPE.size(), fieldWriteCount).value;
+        int rawValuesTlabBumps = AbstractNewObjectNode.TYPE.size().value;
+        return NodeSize.compute(rawValueWrites + rawValuesTlabBumps);
     }
 }

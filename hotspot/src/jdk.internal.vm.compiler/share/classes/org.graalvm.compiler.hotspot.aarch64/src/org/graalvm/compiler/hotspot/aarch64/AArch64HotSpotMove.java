@@ -24,6 +24,7 @@ package org.graalvm.compiler.hotspot.aarch64;
 
 import static jdk.vm.ci.aarch64.AArch64.zr;
 import static jdk.vm.ci.code.ValueUtil.asRegister;
+import static jdk.vm.ci.code.ValueUtil.isRegister;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.HINT;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.ILLEGAL;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.REG;
@@ -105,7 +106,7 @@ public class AArch64HotSpotMove {
         public void emitCode(CompilationResultBuilder crb, AArch64MacroAssembler masm) {
             Register resultRegister = asRegister(result);
             Register ptr = asRegister(input);
-            Register base = asRegister(baseRegister);
+            Register base = (isRegister(baseRegister) ? asRegister(baseRegister) : zr);
             // result = (ptr - base) >> shift
             if (!encoding.hasBase()) {
                 if (encoding.hasShift()) {
@@ -156,7 +157,7 @@ public class AArch64HotSpotMove {
         public void emitCode(CompilationResultBuilder crb, AArch64MacroAssembler masm) {
             Register ptr = asRegister(input);
             Register resultRegister = asRegister(result);
-            Register base = asRegister(baseRegister);
+            Register base = (isRegister(baseRegister) ? asRegister(baseRegister) : zr);
             // result = base + (ptr << shift)
             if (nonNull) {
                 masm.add(64, resultRegister, base, ptr, AArch64Assembler.ShiftType.LSL, encoding.getShift());

@@ -24,7 +24,6 @@ package org.graalvm.compiler.phases.tiers;
 
 import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
 import org.graalvm.compiler.nodes.spi.LoweringProvider;
-import org.graalvm.compiler.nodes.spi.NodeCostProvider;
 import org.graalvm.compiler.nodes.spi.Replacements;
 import org.graalvm.compiler.nodes.spi.StampProvider;
 import org.graalvm.compiler.phases.util.Providers;
@@ -40,22 +39,19 @@ public class PhaseContext {
     private final LoweringProvider lowerer;
     private final Replacements replacements;
     private final StampProvider stampProvider;
-    private final NodeCostProvider nodeCostProvider;
 
     public PhaseContext(MetaAccessProvider metaAccess, ConstantReflectionProvider constantReflection, ConstantFieldProvider constantFieldProvider, LoweringProvider lowerer, Replacements replacements,
-                    StampProvider stampProvider, NodeCostProvider nodeCostProvider) {
+                    StampProvider stampProvider) {
         this.metaAccess = metaAccess;
         this.constantReflection = constantReflection;
         this.constantFieldProvider = constantFieldProvider;
         this.lowerer = lowerer;
         this.replacements = replacements;
         this.stampProvider = stampProvider;
-        this.nodeCostProvider = nodeCostProvider;
     }
 
     public PhaseContext(Providers providers) {
-        this(providers.getMetaAccess(), providers.getConstantReflection(), providers.getConstantFieldProvider(), providers.getLowerer(), providers.getReplacements(), providers.getStampProvider(),
-                        providers.getNodeCostProvider());
+        this(providers.getMetaAccess(), providers.getConstantReflection(), providers.getConstantFieldProvider(), providers.getLowerer(), providers.getReplacements(), providers.getStampProvider());
     }
 
     public MetaAccessProvider getMetaAccess() {
@@ -82,7 +78,4 @@ public class PhaseContext {
         return stampProvider;
     }
 
-    public NodeCostProvider getNodeCostProvider() {
-        return nodeCostProvider;
-    }
 }

@@ -22,6 +22,9 @@
  */
 package org.graalvm.compiler.replacements.nodes;
 
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_8;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_8;
+
 import java.util.Collections;
 
 import org.graalvm.compiler.core.common.type.ObjectStamp;
@@ -46,7 +49,7 @@ import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
-@NodeInfo
+@NodeInfo(cycles = CYCLES_8, size = SIZE_8)
 public abstract class BasicObjectCloneNode extends MacroStateSplitNode implements VirtualizableAllocation, ArrayLengthProvider {
 
     public static final NodeClass<BasicObjectCloneNode> TYPE = NodeClass.create(BasicObjectCloneNode.class);

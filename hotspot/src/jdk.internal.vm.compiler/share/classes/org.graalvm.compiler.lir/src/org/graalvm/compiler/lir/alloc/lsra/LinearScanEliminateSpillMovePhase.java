@@ -41,7 +41,7 @@ import org.graalvm.compiler.lir.StandardOp.ValueMoveOp;
 import org.graalvm.compiler.lir.alloc.lsra.Interval.SpillState;
 import org.graalvm.compiler.lir.alloc.lsra.LinearScan.IntervalPredicate;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
-import org.graalvm.compiler.lir.phases.AllocationPhase;
+import org.graalvm.compiler.lir.phases.AllocationPhase.AllocationContext;
 import org.graalvm.compiler.options.NestedBooleanOptionKey;
 import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionKey;
@@ -50,7 +50,7 @@ import org.graalvm.compiler.options.OptionType;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.AllocatableValue;
 
-public class LinearScanEliminateSpillMovePhase extends AllocationPhase {
+public class LinearScanEliminateSpillMovePhase extends LinearScanAllocationPhase {
 
     public static class Options {
         // @formatter:off
