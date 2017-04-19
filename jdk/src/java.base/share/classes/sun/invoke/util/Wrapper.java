@@ -26,20 +26,20 @@
 package sun.invoke.util;
 
 public enum Wrapper {
-    //        wrapperType    primitiveType  char     emptyArray          format
-    BOOLEAN(  Boolean.class, boolean.class, 'Z', new boolean[0], Format.unsigned( 1)),
+    //        wrapperType      simple     primitiveType  simple     char  emptyArray     format
+    BOOLEAN(  Boolean.class,   "Boolean", boolean.class, "boolean", 'Z', new boolean[0], Format.unsigned( 1)),
     // These must be in the order defined for widening primitive conversions in JLS 5.1.2
     // Avoid boxing integral types here to defer initialization of internal caches
-    BYTE   (     Byte.class,    byte.class, 'B', new    byte[0], Format.signed(   8)),
-    SHORT  (    Short.class,   short.class, 'S', new   short[0], Format.signed(  16)),
-    CHAR   (Character.class,    char.class, 'C', new    char[0], Format.unsigned(16)),
-    INT    (  Integer.class,     int.class, 'I', new     int[0], Format.signed(  32)),
-    LONG   (     Long.class,    long.class, 'J', new    long[0], Format.signed(  64)),
-    FLOAT  (    Float.class,   float.class, 'F', new   float[0], Format.floating(32)),
-    DOUBLE (   Double.class,  double.class, 'D', new  double[0], Format.floating(64)),
-    OBJECT (   Object.class,  Object.class, 'L', new  Object[0], Format.other(    1)),
+    BYTE   (     Byte.class,      "Byte",    byte.class,    "byte", 'B', new    byte[0], Format.signed(   8)),
+    SHORT  (    Short.class,     "Short",   short.class,   "short", 'S', new   short[0], Format.signed(  16)),
+    CHAR   (Character.class, "Character",    char.class,    "char", 'C', new    char[0], Format.unsigned(16)),
+    INT    (  Integer.class,   "Integer",     int.class,     "int", 'I', new     int[0], Format.signed(  32)),
+    LONG   (     Long.class,      "Long",    long.class,    "long", 'J', new    long[0], Format.signed(  64)),
+    FLOAT  (    Float.class,     "Float",   float.class,   "float", 'F', new   float[0], Format.floating(32)),
+    DOUBLE (   Double.class,    "Double",  double.class,  "double", 'D', new  double[0], Format.floating(64)),
+    OBJECT (   Object.class,    "Object",  Object.class,  "Object", 'L', new  Object[0], Format.other(    1)),
     // VOID must be the last type, since it is "assignable" from any other type:
-    VOID   (     Void.class,    void.class, 'V',           null, Format.other(    0)),
+    VOID   (     Void.class,      "Void",    void.class,    "void", 'V',           null, Format.other(    0)),
     ;
 
     public static final int COUNT = 10;
@@ -52,14 +52,14 @@ public enum Wrapper {
     private final String   wrapperSimpleName;
     private final String   primitiveSimpleName;
 
-    private Wrapper(Class<?> wtype, Class<?> ptype, char tchar, Object emptyArray, int format) {
+    private Wrapper(Class<?> wtype, String wtypeName, Class<?> ptype, String ptypeName, char tchar, Object emptyArray, int format) {
         this.wrapperType = wtype;
         this.primitiveType = ptype;
         this.basicTypeChar = tchar;
         this.emptyArray = emptyArray;
         this.format = format;
-        this.wrapperSimpleName = wtype.getSimpleName();
-        this.primitiveSimpleName = ptype.getSimpleName();
+        this.wrapperSimpleName = wtypeName;
+        this.primitiveSimpleName = ptypeName;
     }
 
     /** For debugging, give the details of this wrapper. */
@@ -518,12 +518,6 @@ public enum Wrapper {
      * If the target type is a primitive, change it to a wrapper.
      */
     static <T> Class<T> forceType(Class<?> type, Class<T> exampleType) {
-        boolean z = (type == exampleType ||
-               type.isPrimitive() && forPrimitiveType(type) == findWrapperType(exampleType) ||
-               exampleType.isPrimitive() && forPrimitiveType(exampleType) == findWrapperType(type) ||
-               type == Object.class && !exampleType.isPrimitive());
-        if (!z)
-            System.out.println(type+" <= "+exampleType);
         assert(type == exampleType ||
                type.isPrimitive() && forPrimitiveType(type) == findWrapperType(exampleType) ||
                exampleType.isPrimitive() && forPrimitiveType(exampleType) == findWrapperType(type) ||

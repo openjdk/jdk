@@ -30,7 +30,6 @@ import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
-import java.lang.reflect.Layer;
 import java.nio.file.Paths;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -211,11 +210,11 @@ public class KullaTesting {
 
     public ClassLoader createAndRunFromModule(String moduleName, Path modPath) {
         ModuleFinder finder = ModuleFinder.of(modPath);
-        Layer parent = Layer.boot();
+        ModuleLayer parent = ModuleLayer.boot();
         Configuration cf = parent.configuration()
                 .resolve(finder, ModuleFinder.of(), Set.of(moduleName));
         ClassLoader scl = ClassLoader.getSystemClassLoader();
-        Layer layer = parent.defineModulesWithOneLoader(cf, scl);
+        ModuleLayer layer = parent.defineModulesWithOneLoader(cf, scl);
         ClassLoader loader = layer.findLoader(moduleName);
         ClassLoader ccl = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(loader);

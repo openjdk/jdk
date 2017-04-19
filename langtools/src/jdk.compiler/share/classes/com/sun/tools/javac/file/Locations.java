@@ -1282,8 +1282,7 @@ public class Locations {
                     }
 
                     // finally clean up the module name
-                    mn =  mn.replaceAll("(\\.|\\d)*$", "")    // remove trailing version
-                            .replaceAll("[^A-Za-z0-9]", ".")  // replace non-alphanumeric
+                    mn =  mn.replaceAll("[^A-Za-z0-9]", ".")  // replace non-alphanumeric
                             .replaceAll("(\\.)(\\1)+", ".")   // collapse repeating dots
                             .replaceAll("^\\.", "")           // drop leading dots
                             .replaceAll("\\.$", "");          // drop trailing dots

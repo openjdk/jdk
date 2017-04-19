@@ -26,6 +26,7 @@
 /**
  * Defines JDK utility classes used by implementors of Assistive Technologies.
  *
+ * @moduleGraph
  * @since 9
  */
 module jdk.accessibility {

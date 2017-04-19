@@ -31,7 +31,6 @@ import jdk.internal.misc.SharedSecrets;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.lang.reflect.Module;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Locale;

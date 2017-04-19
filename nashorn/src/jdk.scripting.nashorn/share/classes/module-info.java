@@ -90,6 +90,7 @@ arrays and back, and so on.
 In addition to {@code Java}, Nashorn also exposes some other non-standard built-in objects:
 {@code JSAdapter}, {@code JavaImporter}, {@code Packages}
 
+@moduleGraph
 @since 9
  */
 module jdk.scripting.nashorn {

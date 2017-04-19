@@ -40,7 +40,6 @@ import java.lang.module.ModuleDescriptor.Requires;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ResolutionException;
 import java.lang.module.ResolvedModule;
-import java.lang.reflect.Layer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -1708,7 +1707,7 @@ public class ConfigurationTest {
 
         ModuleFinder finder = ModuleUtils.finderOf(descriptor);
 
-        Configuration bootConfiguration = Layer.boot().configuration();
+        Configuration bootConfiguration = ModuleLayer.boot().configuration();
 
         // m1 contains package java.lang, java.base exports package java.lang to m1
         resolve(bootConfiguration, finder, "m1");
@@ -1989,14 +1988,14 @@ public class ConfigurationTest {
 
     @Test(expectedExceptions = { NullPointerException.class })
     public void testResolveRequiresWithNull5() {
-        Configuration cf = Layer.boot().configuration();
+        Configuration cf = ModuleLayer.boot().configuration();
         Configuration.resolve(ModuleFinder.of(), List.of(cf), null, Set.of());
     }
 
     @Test(expectedExceptions = { NullPointerException.class })
     public void testResolveRequiresWithNull6() {
         ModuleFinder empty = ModuleFinder.of();
-        Configuration cf = Layer.boot().configuration();
+        Configuration cf = ModuleLayer.boot().configuration();
         Configuration.resolve(empty, List.of(cf), empty, null);
     }
 
@@ -2024,14 +2023,14 @@ public class ConfigurationTest {
 
     @Test(expectedExceptions = { NullPointerException.class })
     public void testResolveRequiresAndUsesWithNull5() {
-        Configuration cf = Layer.boot().configuration();
+        Configuration cf = ModuleLayer.boot().configuration();
         Configuration.resolveAndBind(ModuleFinder.of(), List.of(cf), null, Set.of());
     }
 
     @Test(expectedExceptions = { NullPointerException.class })
     public void testResolveRequiresAndUsesWithNull6() {
         ModuleFinder empty = ModuleFinder.of();
-        Configuration cf = Layer.boot().configuration();
+        Configuration cf = ModuleLayer.boot().configuration();
         Configuration.resolveAndBind(empty, List.of(cf), empty, null);
     }
 
@@ -2044,14 +2043,14 @@ public class ConfigurationTest {
 
     @Test(expectedExceptions = { UnsupportedOperationException.class })
     public void testImmutableSet1() {
-        Configuration cf = Layer.boot().configuration();
+        Configuration cf = ModuleLayer.boot().configuration();
         ResolvedModule base = cf.findModule("java.base").get();
         cf.modules().add(base);
     }
 
     @Test(expectedExceptions = { UnsupportedOperationException.class })
     public void testImmutableSet2() {
-        Configuration cf = Layer.boot().configuration();
+        Configuration cf = ModuleLayer.boot().configuration();
         ResolvedModule base = cf.findModule("java.base").get();
         base.reads().add(base);
     }
