@@ -54,8 +54,7 @@ public class ClassPathJarEntry extends PathHandler {
         if (!Files.exists(root)) {
             return;
         }
-        try {
-            JarFile jarFile = new JarFile(root.toFile());
+        try (JarFile jarFile = new JarFile(root.toFile())) {
             JarEntry entry;
             for (Enumeration<JarEntry> e = jarFile.entries();
                     e.hasMoreElements(); ) {

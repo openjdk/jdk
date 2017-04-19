@@ -27,6 +27,7 @@ import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.Pair;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -145,11 +146,11 @@ public class CtwRunner {
     }
 
     private Pair<String, Long> getLastClass(Path errFile) {
-        try {
-            String line = Files.newBufferedReader(errFile)
-                    .lines()
+        try (BufferedReader reader = Files.newBufferedReader(errFile)) {
+            String line = reader.lines()
                     .filter(IS_CLASS_LINE)
-                    .reduce((a, b) -> b).orElse(null);
+                    .reduce((a, b) -> b)
+                    .orElse(null);
             if (line != null) {
                 int open = line.indexOf('[') + 1;
                 int close = line.indexOf(']');

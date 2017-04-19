@@ -90,6 +90,10 @@ public class CompileTheWorld {
         } catch (Throwable t){
             t.printStackTrace(ERR);
         } finally {
+            try {
+                OUT.close();
+            } catch (Throwable ignore) {
+            }
             // <clinit> might have started new threads
             System.exit(passed ? 0 : 1);
         }
