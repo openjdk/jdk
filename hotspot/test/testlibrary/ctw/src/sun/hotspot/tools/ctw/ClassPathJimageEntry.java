@@ -64,4 +64,18 @@ public class ClassPathJimageEntry extends PathHandler {
             ioe.printStackTrace();
         }
     }
+
+    @Override
+    public long classCount() {
+        try (ImageReader reader = ImageReader.open(root)) {
+            return Arrays.stream(reader.getEntryNames())
+                    .filter(name -> name.endsWith(".class"))
+                    .filter(name -> !name.endsWith("module-info.class"))
+                    .map(Utils::fileNameToClassName)
+                    .count();
+        } catch (IOException e) {
+            throw new Error("can not open jimage file " + root + " : "
+                    + e.getMessage() , e);
+        }
+    }
 }

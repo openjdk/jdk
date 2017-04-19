@@ -23,6 +23,7 @@
 
 package sun.hotspot.tools.ctw;
 
+import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.Pair;
@@ -34,6 +35,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -98,7 +101,10 @@ public class CtwRunner {
 
 
     private void startCtwforAllClasses() {
-        long classStart = 0;
+        long classStart = 0L;
+        long classCount = classCount();
+        Asserts.assertGreaterThan(classCount, 0L,
+                targetPath + " does not have any classes");
         boolean done = false;
         while (!done) {
             String[] cmd = cmd(classStart);
@@ -124,6 +130,16 @@ public class CtwRunner {
                         exitCode);
                 Pair<String, Long> lastClass = getLastClass(out);
                 if (exitCode == 0) {
+                    long lastIndex = lastClass == null ? -1 : lastClass.second;
+                    if (lastIndex != classCount) {
+                        errors.add(new Error(phase + ": Unexpected zero exit code"
+                                + "before finishing all compilations."
+                                + " lastClass[" + lastIndex
+                                + "] != classCount[" + classCount + "]"));
+                    } else {
+                        System.out.println("Executed CTW for all " + classCount
+                                + " classes in " + targetPath);
+                    }
                     done = true;
                 } else {
                     if (lastClass == null) {
@@ -143,6 +159,11 @@ public class CtwRunner {
                 throw new Error("failed to run from " + classStart, e);
             }
         }
+    }
+
+    private long classCount() {
+        return PathHandler.create(targetPath.toString(), Runnable::run)
+                .classCount();
     }
 
     private Pair<String, Long> getLastClass(Path errFile) {
@@ -167,7 +188,7 @@ public class CtwRunner {
 
     private String[] cmd(long classStart) {
         String phase = phaseName(classStart);
-        return new String[]{
+        return new String[] {
                 "-Xbatch",
                 "-XX:-UseCounterDecay",
                 "-XX:-ShowMessageBoxOnError",

@@ -33,6 +33,6 @@
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run driver/timeout=0 sun.hotspot.tools.ctw.CtwRunner modules
+ * @run main/timeout=0 sun.hotspot.tools.ctw.CtwRunner modules
  */
 
