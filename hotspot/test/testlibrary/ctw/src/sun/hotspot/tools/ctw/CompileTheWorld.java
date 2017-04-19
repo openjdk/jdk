@@ -83,7 +83,7 @@ public class CompileTheWorld {
                 await(executor);
             }
             CompileTheWorld.OUT.printf("Done (%d classes, %d methods, %d ms)%n",
-                    PathHandler.getClassCount(),
+                    PathHandler.getProcessedClassCount(),
                     Compiler.getMethodCount(),
                     System.currentTimeMillis() - start);
             passed = true;

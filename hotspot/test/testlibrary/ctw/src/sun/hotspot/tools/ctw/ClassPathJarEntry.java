@@ -69,7 +69,20 @@ public class ClassPathJarEntry extends PathHandler {
         }
     }
 
-     private void processJarEntry(JarEntry entry) {
+    @Override
+    public long classCount() {
+        try (JarFile jarFile = new JarFile(root.toFile())) {
+            return jarFile.stream()
+                    .map(JarEntry::getName)
+                    .filter(Utils::isClassFile)
+                    .count();
+        } catch (IOException e) {
+            throw new Error("can not open jar file " + root + " : "
+                    + e.getMessage() , e);
+        }
+    }
+
+    private void processJarEntry(JarEntry entry) {
         String filename = entry.getName();
         if (Utils.isClassFile(filename)) {
             processClass(Utils.fileNameToClassName(filename));
