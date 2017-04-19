@@ -54,8 +54,7 @@ public class ClassPathJimageEntry extends PathHandler {
         if (!Files.exists(root)) {
             return;
         }
-        try {
-            ImageReader reader = ImageReader.open(root);
+        try (ImageReader reader = ImageReader.open(root)) {
             Arrays.stream(reader.getEntryNames())
                     .filter(name -> name.endsWith(".class"))
                     .filter(name -> !name.endsWith("module-info.class"))
