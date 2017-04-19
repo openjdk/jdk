@@ -53,7 +53,7 @@ TEST_VM(FlagGuard, uint_flag) {
 }
 
 TEST_VM(FlagGuard, uintx_flag) {
-  TEST_FLAG(GCTaskTimeStampEntries, uintx, 1337);
+  TEST_FLAG(GCTaskTimeStampEntries, uint, 1337);
 }
 
 TEST_VM(FlagGuard, size_t_flag) {

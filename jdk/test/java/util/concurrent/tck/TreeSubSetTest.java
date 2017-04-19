@@ -60,7 +60,7 @@ public class TreeSubSetTest extends JSR166TestCase {
      * Returns a new set of given size containing consecutive
      * Integers 0 ... n - 1.
      */
-    private NavigableSet<Integer> populatedSet(int n) {
+    private static NavigableSet<Integer> populatedSet(int n) {
         TreeSet<Integer> q = new TreeSet<>();
         assertTrue(q.isEmpty());
 
@@ -79,7 +79,7 @@ public class TreeSubSetTest extends JSR166TestCase {
     /**
      * Returns a new set of first 5 ints.
      */
-    private NavigableSet set5() {
+    private static NavigableSet set5() {
         TreeSet q = new TreeSet();
         assertTrue(q.isEmpty());
         q.add(one);
@@ -94,7 +94,7 @@ public class TreeSubSetTest extends JSR166TestCase {
         return s;
     }
 
-    private NavigableSet dset5() {
+    private static NavigableSet dset5() {
         TreeSet q = new TreeSet();
         assertTrue(q.isEmpty());
         q.add(m1);

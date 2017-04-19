@@ -36,7 +36,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.Spliterator;
 
 import junit.framework.Test;
-import junit.framework.TestSuite;
 
 public class LinkedBlockingQueue8Test extends JSR166TestCase {
     public static void main(String[] args) {

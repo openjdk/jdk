@@ -27,8 +27,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
-import java.lang.reflect.Layer;
-import java.lang.reflect.Module;
 
 import static java.lang.invoke.MethodHandles.Lookup.*;
 
@@ -64,14 +62,14 @@ public class Main {
         }
 
         // check setup
-        Module m1 = Layer.boot().findModule("m1").orElse(null);
+        Module m1 = ModuleLayer.boot().findModule("m1").orElse(null);
         assertNotNull(m1);
         assertTrue(p1_Type1.getModule() == m1);
         assertTrue(p2_Type2.getModule() == m1);
         assertTrue(m1.isExported("p1"));
         assertFalse(m1.isExported("p2"));
 
-        Module m2 = Layer.boot().findModule("m2").orElse(null);
+        Module m2 = ModuleLayer.boot().findModule("m2").orElse(null);
         assertNotNull(m2);
         assertTrue(q1_Type1.getModule() == m2);
         assertTrue(q2_Type2.getModule() == m2);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
  * @run main LargeSharedSpace
  */
 
-import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
 
@@ -46,10 +46,8 @@ public class LargeSharedSpace {
        //
        // The archive should be dumped successfully. It might fail to reserve memory
        // for shared space under low memory condition. The dumping process should not crash.
-       pb = ProcessTools.createJavaProcessBuilder(
-                "-XX:SharedMiscCodeSize=1066924031", "-XX:+UnlockDiagnosticVMOptions",
-                "-XX:SharedArchiveFile=./LargeSharedSpace.jsa", "-Xshare:dump");
-       output = new OutputAnalyzer(pb.start());
+       output = CDSTestUtils.createArchive("-XX:SharedMiscCodeSize=1066924031",
+                                           "-XX:+UnlockDiagnosticVMOptions");
        try {
            output.shouldContain("Loading classes to share");
        } catch (RuntimeException e1) {
@@ -64,12 +62,10 @@ public class LargeSharedSpace {
        //
        // The dumping process should not crash.
        if (Platform.is64bit()) {
-           pb = ProcessTools.createJavaProcessBuilder(
-                    "-XX:+UseCompressedClassPointers", "-XX:CompressedClassSpaceSize=3G",
-                    "-XX:SharedMiscCodeSize=1600386047", "-XX:+UnlockDiagnosticVMOptions",
-                    "-XX:SharedArchiveFile=./LargeSharedSpace.jsa", "-Xshare:dump");
-           output = new OutputAnalyzer(pb.start());
-           output.shouldContain("larger than compressed klass limit");
+           CDSTestUtils.createArchive(
+               "-XX:+UseCompressedClassPointers", "-XX:CompressedClassSpaceSize=3G",
+               "-XX:SharedMiscCodeSize=1600386047")
+               .shouldContain("larger than compressed klass limit");
         }
 
         // Test case 3: -XX:SharedMiscCodeSize=1600386047
@@ -79,15 +75,12 @@ public class LargeSharedSpace {
         //
         // The dumping process should not crash.
         if (Platform.is32bit()) {
-           pb = ProcessTools.createJavaProcessBuilder(
-                    "-XX:SharedMiscCodeSize=1600386047", "-XX:+UnlockDiagnosticVMOptions",
-                    "-XX:SharedArchiveFile=./LargeSharedSpace.jsa", "-Xshare:dump");
-           output = new OutputAnalyzer(pb.start());
-           try {
-               output.shouldContain("Loading classes to share");
-           } catch (RuntimeException e3) {
-               output.shouldContain("Unable to allocate memory for shared space");
-           }
+            output = CDSTestUtils.createArchive("-XX:SharedMiscCodeSize=1600386047");
+            try {
+                output.shouldContain("Loading classes to share");
+            } catch (RuntimeException e3) {
+                output.shouldContain("Unable to allocate memory for shared space");
+            }
         }
     }
 }

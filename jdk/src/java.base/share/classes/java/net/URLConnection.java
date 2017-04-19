@@ -876,7 +876,7 @@ public abstract class URLConnection {
      * Sets the value of the {@code doInput} field for this
      * {@code URLConnection} to the specified value.
      * <p>
-     * A URL connection can be used for input and/or output.  Set the DoInput
+     * A URL connection can be used for input and/or output.  Set the doInput
      * flag to true if you intend to use the URL connection for input,
      * false if not.  The default is true.
      *
@@ -906,7 +906,7 @@ public abstract class URLConnection {
      * Sets the value of the {@code doOutput} field for this
      * {@code URLConnection} to the specified value.
      * <p>
-     * A URL connection can be used for input and/or output.  Set the DoOutput
+     * A URL connection can be used for input and/or output.  Set the doOutput
      * flag to true if you intend to use the URL connection for output,
      * false if not.  The default is false.
      *
@@ -972,7 +972,7 @@ public abstract class URLConnection {
      * Returns the default value of the {@code allowUserInteraction}
      * field.
      * <p>
-     * Ths default is "sticky", being a part of the static state of all
+     * This default is "sticky", being a part of the static state of all
      * URLConnections.  This flag applies to the next, and all following
      * URLConnections that are created.
      *
@@ -993,7 +993,7 @@ public abstract class URLConnection {
      * "reload" button in a browser).  If the UseCaches flag on a connection
      * is true, the connection is allowed to use whatever caches it can.
      *  If false, caches are to be ignored.
-     *  The default value comes from DefaultUseCaches, which defaults to
+     *  The default value comes from defaultUseCaches, which defaults to
      * true. A default value can also be set per-protocol using
      * {@link #setDefaultUseCaches(String,boolean)}.
      *
@@ -1252,7 +1252,7 @@ public abstract class URLConnection {
      * application. It can be called at most once by an application.
      * <p>
      * The {@code ContentHandlerFactory} instance is used to
-     * construct a content handler from a content type
+     * construct a content handler from a content type.
      * <p>
      * If there is a security manager, this method first calls
      * the security manager's {@code checkSetFactory} method

@@ -33,11 +33,9 @@
  */
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import junit.framework.Test;
-import junit.framework.TestSuite;
 
 public class ArrayListTest extends JSR166TestCase {
     public static void main(String[] args) {

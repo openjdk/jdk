@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
-import java.lang.reflect.Layer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -211,7 +210,7 @@ public final class TaskHelper {
 
     private final class PluginsHelper {
 
-        private Layer pluginsLayer = Layer.boot();
+        private ModuleLayer pluginsLayer = ModuleLayer.boot();
         private final List<Plugin> plugins;
         private String lastSorter;
         private boolean listPlugins;
@@ -655,7 +654,7 @@ public final class TaskHelper {
             return defaults;
         }
 
-        public Layer getPluginsLayer() {
+        public ModuleLayer getPluginsLayer() {
             return pluginOptions.pluginsLayer;
         }
     }
@@ -725,18 +724,18 @@ public final class TaskHelper {
         return System.getProperty("java.version");
     }
 
-    static Layer createPluginsLayer(List<Path> paths) {
+    static ModuleLayer createPluginsLayer(List<Path> paths) {
 
         Path[] dirs = paths.toArray(new Path[0]);
         ModuleFinder finder = ModulePath.of(Runtime.version(), true, dirs);
-        Configuration bootConfiguration = Layer.boot().configuration();
+        Configuration bootConfiguration = ModuleLayer.boot().configuration();
         try {
             Configuration cf = bootConfiguration
                 .resolveAndBind(ModuleFinder.of(),
                                 finder,
                                 Collections.emptySet());
             ClassLoader scl = ClassLoader.getSystemClassLoader();
-            return Layer.boot().defineModulesWithOneLoader(cf, scl);
+            return ModuleLayer.boot().defineModulesWithOneLoader(cf, scl);
         } catch (Exception ex) {
             // Malformed plugin modules (e.g.: same package in multiple modules).
             throw new PluginException("Invalid modules in the plugins path: " + ex);

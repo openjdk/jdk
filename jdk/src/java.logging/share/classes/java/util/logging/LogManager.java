@@ -23,7 +23,6 @@
  * questions.
  */
 
-
 package java.util.logging;
 
 import java.io.*;
@@ -43,7 +42,6 @@ import java.util.stream.Stream;
 import jdk.internal.misc.JavaAWTAccess;
 import jdk.internal.misc.SharedSecrets;
 import sun.util.logging.internal.LoggingProviderImpl;
-import java.lang.reflect.Module;
 import static jdk.internal.logger.DefaultLoggerFinder.isSystem;
 
 /**

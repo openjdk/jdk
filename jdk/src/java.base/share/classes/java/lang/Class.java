@@ -43,7 +43,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Module;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -2561,21 +2560,16 @@ public final class Class<T> implements java.io.Serializable,
     public InputStream getResourceAsStream(String name) {
         name = resolveName(name);
 
-        Module module = getModule();
-        if (module.isNamed()) {
-            if (Resources.canEncapsulate(name)) {
-                Module caller = Reflection.getCallerClass().getModule();
-                if (caller != module) {
-                    Set<String> packages = module.getDescriptor().packages();
-                    String pn = Resources.toPackageName(name);
-                    if (packages.contains(pn) && !module.isOpen(pn, caller)) {
-                        // resource is in package not open to caller
-                        return null;
-                    }
-                }
+        Module thisModule = getModule();
+        if (thisModule.isNamed()) {
+            // check if resource can be located by caller
+            if (Resources.canEncapsulate(name)
+                && !isOpenToCaller(name, Reflection.getCallerClass())) {
+                return null;
             }
 
-            String mn = module.getName();
+            // resource not encapsulated or in package open to caller
+            String mn = thisModule.getName();
             ClassLoader cl = getClassLoader0();
             try {
 
@@ -2663,20 +2657,16 @@ public final class Class<T> implements java.io.Serializable,
     public URL getResource(String name) {
         name = resolveName(name);
 
-        Module module = getModule();
-        if (module.isNamed()) {
-            if (Resources.canEncapsulate(name)) {
-                Module caller = Reflection.getCallerClass().getModule();
-                if (caller != module) {
-                    Set<String> packages = module.getDescriptor().packages();
-                    String pn = Resources.toPackageName(name);
-                    if (packages.contains(pn) && !module.isOpen(pn, caller)) {
-                        // resource is in package not open to caller
-                        return null;
-                    }
-                }
+        Module thisModule = getModule();
+        if (thisModule.isNamed()) {
+            // check if resource can be located by caller
+            if (Resources.canEncapsulate(name)
+                && !isOpenToCaller(name, Reflection.getCallerClass())) {
+                return null;
             }
-            String mn = getModule().getName();
+
+            // resource not encapsulated or in package open to caller
+            String mn = thisModule.getName();
             ClassLoader cl = getClassLoader0();
             try {
                 if (cl == null) {
@@ -2698,9 +2688,35 @@ public final class Class<T> implements java.io.Serializable,
         }
     }
 
+    /**
+     * Returns true if a resource with the given name can be located by the
+     * given caller. All resources in a module can be located by code in
+     * the module. For other callers, then the package needs to be open to
+     * the caller.
+     */
+    private boolean isOpenToCaller(String name, Class<?> caller) {
+        // assert getModule().isNamed();
+        Module thisModule = getModule();
+        Module callerModule = (caller != null) ? caller.getModule() : null;
+        if (callerModule != thisModule) {
+            String pn = Resources.toPackageName(name);
+            if (thisModule.getDescriptor().packages().contains(pn)) {
+                if (callerModule == null && !thisModule.isOpen(pn)) {
+                    // no caller, package not open
+                    return false;
+                }
+                if (!thisModule.isOpen(pn, callerModule)) {
+                    // package not open to caller
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+
     /** protection domain returned when the internal domain is null */
     private static java.security.ProtectionDomain allPermDomain;
-
 
     /**
      * Returns the {@code ProtectionDomain} of this class.  If there is a

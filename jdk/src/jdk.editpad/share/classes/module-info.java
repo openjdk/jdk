@@ -26,6 +26,7 @@
 /**
  * Implementation of the edit pad service.
  *
+ * @moduleGraph
  * @since 9
  */
 module jdk.editpad {

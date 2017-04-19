@@ -77,7 +77,7 @@ public final class SunPKCS11 extends AuthProvider {
 
     final boolean removable;
 
-    final Module nssModule;
+    final Secmod.Module nssModule;
 
     final boolean nssUseSecmodTrust;
 
@@ -148,7 +148,7 @@ public final class SunPKCS11 extends AuthProvider {
 
         boolean useSecmod = config.getNssUseSecmod();
         boolean nssUseSecmodTrust = config.getNssUseSecmodTrust();
-        Module nssModule = null;
+        Secmod.Module nssModule = null;
 
         //
         // Initialization via Secmod. The way this works is as follows:
@@ -217,7 +217,7 @@ public final class SunPKCS11 extends AuthProvider {
                 // XXX which exception to throw
                 throw new ProviderException("Could not initialize NSS", e);
             }
-            List<Module> modules = secmod.getModules();
+            List<Secmod.Module> modules = secmod.getModules();
             if (config.getShowInfo()) {
                 System.out.println("NSS modules: " + modules);
             }
@@ -258,7 +258,7 @@ public final class SunPKCS11 extends AuthProvider {
                             ("Invalid external module: " + moduleName);
                 }
                 int k = 0;
-                for (Module module : modules) {
+                for (Secmod.Module module : modules) {
                     if (module.getType() == ModuleType.EXTERNAL) {
                         if (++k == moduleIndex) {
                             nssModule = module;

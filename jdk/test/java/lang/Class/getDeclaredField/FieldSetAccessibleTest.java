@@ -26,10 +26,8 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
-import java.lang.reflect.Module;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.InaccessibleObjectException;
-import java.lang.reflect.Layer;
 import java.lang.reflect.ReflectPermission;
 import java.net.URI;
 import java.nio.file.FileSystem;
@@ -269,7 +267,7 @@ public class FieldSetAccessibleTest {
             try {
                 return Files.walk(root)
                         .filter(p -> p.getNameCount() > 2)
-                        .filter(p -> Layer.boot().findModule(p.getName(1).toString()).isPresent())
+                        .filter(p -> ModuleLayer.boot().findModule(p.getName(1).toString()).isPresent())
                         .map(p -> p.subpath(2, p.getNameCount()))
                         .map(p -> p.toString())
                         .filter(s -> s.endsWith(".class") && !s.endsWith("module-info.class"))
