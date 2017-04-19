@@ -245,6 +245,8 @@ USE_PRECOMPILED_HEADER := @USE_PRECOMPILED_HEADER@
 # Only build headless support or not
 ENABLE_HEADLESS_ONLY := @ENABLE_HEADLESS_ONLY@
 
+ENABLE_FULL_DOCS := @ENABLE_FULL_DOCS@
+
 # JDK_OUTPUTDIR specifies where a working jvm is built.
 # You can run $(JDK_OUTPUTDIR)/bin/java
 # Though the layout of the contents of $(JDK_OUTPUTDIR) is not
@@ -678,6 +680,7 @@ OTOOL:=@OTOOL@
 READELF:=@READELF@
 EXPR:=@EXPR@
 FILE:=@FILE@
+DOT:=@DOT@
 HG:=@HG@
 OBJCOPY:=@OBJCOPY@
 SETFILE:=@SETFILE@
