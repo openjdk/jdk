@@ -360,14 +360,19 @@ ALL_TARGETS += store-source-revision create-source-revision-tracker bootcycle-im
 ################################################################################
 # Docs targets
 
-docs-module-graphs:
-	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-module-graphs)
+# If building full docs, to complete docs-*-api we need both the javadoc and
+# modulegraph targets.
+docs-jdk-api-javadoc:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-jdk-api-javadoc)
 
-docs-javadoc:
-	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-javadoc)
+docs-jdk-api-modulegraph:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-jdk-api-modulegraph)
 
-docs-reference:
-	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-reference)
+docs-javase-api-javadoc:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-javase-api-javadoc)
+
+docs-javase-api-modulegraph:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-javase-api-modulegraph)
 
 docs-copy:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-copy)
@@ -378,8 +383,9 @@ docs-zip:
 update-build-docs:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f UpdateBuildDocs.gmk)
 
-ALL_TARGETS += docs-module-graphs docs-javadoc docs-reference docs-copy \
-    docs-zip update-build-docs
+ALL_TARGETS += docs-jdk-api-javadoc docs-jdk-api-modulegraph \
+    docs-javase-api-javadoc docs-javase-api-modulegraph docs-copy docs-zip \
+    update-build-docs
 
 ################################################################################
 # Cross compilation support
@@ -776,16 +782,18 @@ else
 
   bootcycle-images: jdk-image
 
-  docs-module-graphs: exploded-image buildtools-modules
+  docs-jdk-api-javadoc: $(GENSRC_TARGETS) rmic
 
-  docs-javadoc: $(GENSRC_TARGETS) rmic
+  docs-javase-api-javadoc: $(GENSRC_TARGETS) rmic
 
-  docs-reference: $(GENSRC_TARGETS) rmic
+  docs-jdk-api-modulegraph: exploded-image buildtools-modules
+
+  docs-javase-api-modulegraph: exploded-image buildtools-modules
 
   # The gensrc step for jdk.jdi creates an html file that is used by docs-copy.
   docs-copy: hotspot-$(JVM_VARIANT_MAIN)-gensrc jdk.jdi-gensrc
 
-  docs-zip: docs-javadoc docs-copy
+  docs-zip: docs-jdk docs-copy
 
   test: jdk-image test-image
 
@@ -904,6 +912,22 @@ endif
 
 create-buildjdk: create-buildjdk-copy create-buildjdk-interim-image
 
+docs-jdk-api: docs-jdk-api-javadoc
+docs-javase-api: docs-javase-api-javadoc
+
+# If we're building full docs, we must also generate the module graphs to
+# get non-broken api documentation.
+ifeq ($(ENABLE_FULL_DOCS), true)
+  docs-jdk-api: docs-jdk-api-modulegraph
+  docs-javase-api: docs-javase-api-modulegraph
+endif
+
+docs-jdk: docs-jdk-api
+docs-javase: docs-javase-api
+
+# alias for backwards compatibility
+docs-javadoc: docs-jdk-api
+
 mac-bundles: mac-bundles-jdk
 
 # The $(BUILD_OUTPUT)/images directory contain the resulting deliverables,
@@ -935,7 +959,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 endif
 
 # This target builds the documentation image
-docs-image: docs-module-graphs docs-javadoc docs-copy
+docs-image: docs-jdk docs-copy
 
 # This target builds the test image
 test-image: prepare-test-image test-image-hotspot-jtreg-native \
@@ -951,7 +975,8 @@ ALL_TARGETS += buildtools hotspot hotspot-libs hotspot-gensrc gensrc gendata \
     copy java rmic libs launchers jmods \
     jdk.jdwp.agent-gensrc $(ALL_MODULES) demos \
     exploded-image-base exploded-image \
-    create-buildjdk mac-bundles product-images \
+    create-buildjdk docs-jdk-api docs-javase-api docs-jdk docs-javase \
+    docs-javadoc mac-bundles product-images \
     profiles profiles-images \
     docs-image test-image all-images \
     all-bundles
