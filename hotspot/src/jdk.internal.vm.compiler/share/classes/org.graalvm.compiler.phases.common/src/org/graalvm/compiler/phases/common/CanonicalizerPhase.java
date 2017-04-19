@@ -180,6 +180,11 @@ public class CanonicalizerPhase extends BasePhase<PhaseContext> {
         }
 
         @Override
+        public boolean checkContract() {
+            return false;
+        }
+
+        @Override
         protected void run(StructuredGraph graph) {
             boolean wholeGraph = newNodesMark == null || newNodesMark.isStart();
             if (initWorkingSet == null) {
@@ -497,8 +502,8 @@ public class CanonicalizerPhase extends BasePhase<PhaseContext> {
             }
 
             @Override
-            public boolean supportSubwordCompare(int bits) {
-                return context.getLowerer().supportSubwordCompare(bits);
+            public Integer smallestCompareWidth() {
+                return context.getLowerer().smallestCompareWidth();
             }
 
             @Override

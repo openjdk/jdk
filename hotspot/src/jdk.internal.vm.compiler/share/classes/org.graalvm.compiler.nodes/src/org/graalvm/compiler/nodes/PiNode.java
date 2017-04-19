@@ -128,7 +128,7 @@ public class PiNode extends FloatingGuardedNode implements LIRLowerable, Virtual
         if (value == null) {
             value = new PiNode(object, stamp, anchor);
         }
-        b.push(JavaKind.Object, b.recursiveAppend(value));
+        b.push(JavaKind.Object, b.append(value));
         return true;
     }
 
@@ -139,7 +139,7 @@ public class PiNode extends FloatingGuardedNode implements LIRLowerable, Virtual
         if (value == null) {
             value = new PiNode(object, stamp);
         }
-        b.push(JavaKind.Object, b.recursiveAppend(value));
+        b.push(JavaKind.Object, b.append(value));
         return true;
     }
 

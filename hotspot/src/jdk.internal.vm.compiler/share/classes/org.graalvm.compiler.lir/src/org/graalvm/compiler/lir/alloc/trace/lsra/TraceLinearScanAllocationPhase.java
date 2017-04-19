@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,41 @@
 package org.graalvm.compiler.lir.alloc.trace.lsra;
 
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
+import org.graalvm.compiler.core.common.alloc.Trace;
 import org.graalvm.compiler.core.common.alloc.TraceBuilderResult;
-import org.graalvm.compiler.lir.alloc.trace.TraceAllocationPhase;
+import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.lir.alloc.trace.lsra.TraceLinearScanPhase.TraceLinearScan;
+import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool.MoveFactory;
+import org.graalvm.compiler.lir.phases.LIRPhase;
 
-abstract class TraceLinearScanAllocationPhase extends TraceAllocationPhase<TraceLinearScanAllocationPhase.TraceLinearScanAllocationContext> {
+import jdk.vm.ci.code.TargetDescription;
 
-    static final class TraceLinearScanAllocationContext extends TraceAllocationPhase.TraceAllocationContext {
-        public final TraceLinearScan allocator;
+abstract class TraceLinearScanAllocationPhase {
 
-        TraceLinearScanAllocationContext(MoveFactory spillMoveFactory, RegisterAllocationConfig registerAllocationConfig, TraceBuilderResult traceBuilderResult, TraceLinearScan allocator) {
-            super(spillMoveFactory, registerAllocationConfig, traceBuilderResult, allocator.getGlobalLivenessInfo());
-            this.allocator = allocator;
+    final CharSequence getName() {
+        return LIRPhase.createName(getClass());
+    }
+
+    @Override
+    public final String toString() {
+        return getName().toString();
+    }
+
+    final void apply(TargetDescription target, LIRGenerationResult lirGenRes, Trace trace, MoveFactory spillMoveFactory, RegisterAllocationConfig registerAllocationConfig,
+                    TraceBuilderResult traceBuilderResult, TraceLinearScan allocator) {
+        apply(target, lirGenRes, trace, spillMoveFactory, registerAllocationConfig, traceBuilderResult, allocator, true);
+    }
+
+    final void apply(TargetDescription target, LIRGenerationResult lirGenRes, Trace trace, MoveFactory spillMoveFactory, RegisterAllocationConfig registerAllocationConfig,
+                    TraceBuilderResult traceBuilderResult, TraceLinearScan allocator, boolean dumpLIR) {
+        run(target, lirGenRes, trace, spillMoveFactory, registerAllocationConfig, traceBuilderResult, allocator);
+        if (dumpLIR && Debug.isDumpEnabled(Debug.DETAILED_LEVEL)) {
+            Debug.dump(Debug.DETAILED_LEVEL, trace, "After %s (Trace%s)", getName(), trace.getId());
         }
     }
+
+    abstract void run(TargetDescription target, LIRGenerationResult lirGenRes, Trace trace, MoveFactory spillMoveFactory, RegisterAllocationConfig registerAllocationConfig,
+                    TraceBuilderResult traceBuilderResult, TraceLinearScan allocator);
+
 }

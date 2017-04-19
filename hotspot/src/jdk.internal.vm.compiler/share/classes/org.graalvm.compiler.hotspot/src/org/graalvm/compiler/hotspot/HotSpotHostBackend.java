@@ -22,9 +22,11 @@
  */
 package org.graalvm.compiler.hotspot;
 
+import static jdk.vm.ci.code.CodeUtil.K;
 import static jdk.vm.ci.code.CodeUtil.getCallingConvention;
 import static jdk.vm.ci.common.InitTimer.timer;
 
+import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
 import org.graalvm.compiler.hotspot.meta.HotSpotHostForeignCallsProvider;
 import org.graalvm.compiler.hotspot.meta.HotSpotLoweringProvider;
@@ -109,7 +111,7 @@ public abstract class HotSpotHostBackend extends HotSpotBackend {
             // is greater than a page.
 
             int pageSize = config.vmPageSize;
-            int bangEnd = config.stackShadowPages * pageSize;
+            int bangEnd = NumUtil.roundUp(config.stackShadowPages * 4 * K, pageSize);
 
             // This is how far the previous frame's stack banging extended.
             int bangEndSafe = bangEnd;

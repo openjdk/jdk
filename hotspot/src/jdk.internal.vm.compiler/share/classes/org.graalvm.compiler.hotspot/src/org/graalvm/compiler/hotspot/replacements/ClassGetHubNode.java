@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.hotspot.replacements;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_4;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_1;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
 
 import jdk.vm.ci.meta.JavaKind;
@@ -63,7 +63,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  * handled by
  * {@link ReadNode#canonicalizeRead(ValueNode, AddressNode, LocationIdentity, CanonicalizerTool)}.
  */
-@NodeInfo(cycles = CYCLES_4, size = SIZE_1)
+@NodeInfo(cycles = CYCLES_1, size = SIZE_1)
 public final class ClassGetHubNode extends FloatingNode implements Lowerable, Canonicalizable, ConvertNode {
     public static final NodeClass<ClassGetHubNode> TYPE = NodeClass.create(ClassGetHubNode.class);
     @Input protected ValueNode clazz;
@@ -80,7 +80,7 @@ public final class ClassGetHubNode extends FloatingNode implements Lowerable, Ca
     @SuppressWarnings("unused")
     public static boolean intrinsify(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode clazz) {
         ValueNode clazzValue = create(clazz, b.getMetaAccess(), b.getConstantReflection(), false);
-        b.push(JavaKind.Object, b.recursiveAppend(clazzValue));
+        b.push(JavaKind.Object, b.append(clazzValue));
         return true;
     }
 

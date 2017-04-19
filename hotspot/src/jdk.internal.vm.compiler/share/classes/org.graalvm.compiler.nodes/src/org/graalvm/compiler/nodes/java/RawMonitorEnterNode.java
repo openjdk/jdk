@@ -22,8 +22,8 @@
  */
 package org.graalvm.compiler.nodes.java;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_80;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_80;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_64;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_64;
 
 import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
@@ -44,9 +44,9 @@ import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
  * already be non-null and the hub is an additional parameter to the node.
  */
 // @formatter:off
-@NodeInfo(cycles = CYCLES_80,
+@NodeInfo(cycles = CYCLES_64,
           cyclesRationale = "Rough estimation of the enter operation",
-          size = SIZE_80)
+          size = SIZE_64)
 // @formatter:on
 public final class RawMonitorEnterNode extends AccessMonitorNode implements Virtualizable, Lowerable, IterableNodeType, MonitorEnter, MemoryCheckpoint.Single {
 

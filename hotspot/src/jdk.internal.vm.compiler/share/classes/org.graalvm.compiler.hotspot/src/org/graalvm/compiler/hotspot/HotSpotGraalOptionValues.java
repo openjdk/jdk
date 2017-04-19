@@ -39,7 +39,6 @@ import org.graalvm.compiler.options.OptionValuesAccess;
 import org.graalvm.compiler.options.OptionsParser;
 import org.graalvm.compiler.serviceprovider.ServiceProvider;
 import org.graalvm.util.EconomicMap;
-import org.graalvm.util.MapCursor;
 
 import jdk.vm.ci.common.InitTimer;
 
@@ -117,9 +116,8 @@ public class HotSpotGraalOptionValues implements OptionValuesAccess {
                         Properties props = new Properties();
                         props.load(fr);
                         EconomicMap<String, String> optionSettings = EconomicMap.create();
-                        MapCursor<String, String> cursor = optionSettings.getEntries();
-                        while (cursor.advance()) {
-                            optionSettings.put(cursor.getKey(), cursor.getValue());
+                        for (Map.Entry<Object, Object> e : props.entrySet()) {
+                            optionSettings.put((String) e.getKey(), (String) e.getValue());
                         }
                         try {
                             OptionsParser.parseOptions(optionSettings, values, loader);

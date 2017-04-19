@@ -39,7 +39,6 @@ import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.DebugConfigScope;
 import org.graalvm.compiler.debug.DebugEnvironment;
 import org.graalvm.compiler.debug.GraalDebugConfig;
-import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.debug.TopLevelDebugConfig;
 import org.graalvm.compiler.debug.internal.method.MethodMetricsRootScopeInfo;
 import org.graalvm.compiler.hotspot.CompilationCounters.Options;
@@ -63,7 +62,6 @@ import org.graalvm.compiler.phases.tiers.Suites;
 
 import jdk.vm.ci.code.CompilationRequest;
 import jdk.vm.ci.code.CompilationRequestResult;
-import jdk.vm.ci.hotspot.HotSpotCodeCacheProvider;
 import jdk.vm.ci.hotspot.HotSpotCompilationRequest;
 import jdk.vm.ci.hotspot.HotSpotCompilationRequestResult;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider;
@@ -133,19 +131,6 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
             assert r != null;
             return r;
         }
-    }
-
-    public void compileTheWorld() throws Throwable {
-        HotSpotCodeCacheProvider codeCache = (HotSpotCodeCacheProvider) jvmciRuntime.getHostJVMCIBackend().getCodeCache();
-        int iterations = CompileTheWorldOptions.CompileTheWorldIterations.getValue(graalRuntime.getOptions());
-        for (int i = 0; i < iterations; i++) {
-            codeCache.resetCompilationStatistics();
-            TTY.println("CompileTheWorld : iteration " + i);
-            this.graalRuntime.getVMConfig();
-            CompileTheWorld ctw = new CompileTheWorld(jvmciRuntime, this, graalRuntime.getOptions());
-            ctw.compile();
-        }
-        System.exit(0);
     }
 
     public CompilationResult compile(ResolvedJavaMethod method, int entryBCI, boolean useProfilingInfo, CompilationIdentifier compilationId, OptionValues options) {

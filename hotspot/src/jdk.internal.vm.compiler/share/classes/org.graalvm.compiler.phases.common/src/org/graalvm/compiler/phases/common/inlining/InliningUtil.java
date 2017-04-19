@@ -29,7 +29,6 @@ import static org.graalvm.compiler.core.common.GraalOptions.HotSpotPrintInlining
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
 import org.graalvm.compiler.core.common.GraalOptions;
@@ -58,9 +57,7 @@ import org.graalvm.compiler.nodes.AbstractMergeNode;
 import org.graalvm.compiler.nodes.BeginNode;
 import org.graalvm.compiler.nodes.CallTargetNode;
 import org.graalvm.compiler.nodes.CallTargetNode.InvokeKind;
-import org.graalvm.compiler.nodes.ControlSinkNode;
 import org.graalvm.compiler.nodes.DeoptimizeNode;
-import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.FixedGuardNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
@@ -72,7 +69,6 @@ import org.graalvm.compiler.nodes.KillingBeginNode;
 import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.MergeNode;
 import org.graalvm.compiler.nodes.ParameterNode;
-import org.graalvm.compiler.nodes.PhiNode;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StartNode;
@@ -80,7 +76,6 @@ import org.graalvm.compiler.nodes.StateSplit;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.UnwindNode;
 import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.ValuePhiNode;
 import org.graalvm.compiler.nodes.calc.IsNullNode;
 import org.graalvm.compiler.nodes.extended.ForeignCallNode;
 import org.graalvm.compiler.nodes.extended.GuardingNode;
@@ -93,6 +88,7 @@ import org.graalvm.compiler.nodes.type.StampTool;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.common.inlining.info.InlineInfo;
 import org.graalvm.compiler.phases.common.util.HashSetNodeEventListener;
+import org.graalvm.compiler.phases.util.ValueMergeUtil;
 import org.graalvm.util.EconomicMap;
 import org.graalvm.util.EconomicSet;
 import org.graalvm.util.Equivalence;
@@ -108,7 +104,7 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
-public class InliningUtil {
+public class InliningUtil extends ValueMergeUtil {
 
     private static final String inliningDecisionsScopeString = "InliningDecisions";
 
@@ -684,48 +680,6 @@ public class InliningUtil {
             }
         }
         return nonReplaceableFrameState;
-    }
-
-    public static ValueNode mergeReturns(AbstractMergeNode merge, List<? extends ReturnNode> returnNodes) {
-        return mergeValueProducers(merge, returnNodes, returnNode -> returnNode.result());
-    }
-
-    public static <T extends ControlSinkNode> ValueNode mergeValueProducers(AbstractMergeNode merge, List<? extends T> valueProducers, Function<T, ValueNode> valueFunction) {
-        ValueNode singleResult = null;
-        PhiNode phiResult = null;
-        for (T valueProducer : valueProducers) {
-            ValueNode result = valueFunction.apply(valueProducer);
-            if (result != null) {
-                if (phiResult == null && (singleResult == null || singleResult == result)) {
-                    /* Only one result value, so no need yet for a phi node. */
-                    singleResult = result;
-                } else if (phiResult == null) {
-                    /* Found a second result value, so create phi node. */
-                    phiResult = merge.graph().addWithoutUnique(new ValuePhiNode(result.stamp().unrestricted(), merge));
-                    for (int i = 0; i < merge.forwardEndCount(); i++) {
-                        phiResult.addInput(singleResult);
-                    }
-                    phiResult.addInput(result);
-
-                } else {
-                    /* Multiple return values, just add to existing phi node. */
-                    phiResult.addInput(result);
-                }
-            }
-
-            // create and wire up a new EndNode
-            EndNode endNode = merge.graph().add(new EndNode());
-            merge.addForwardEnd(endNode);
-            valueProducer.replaceAndDelete(endNode);
-        }
-
-        if (phiResult != null) {
-            assert phiResult.verify();
-            phiResult.inferStamp();
-            return phiResult;
-        } else {
-            return singleResult;
-        }
     }
 
     /**

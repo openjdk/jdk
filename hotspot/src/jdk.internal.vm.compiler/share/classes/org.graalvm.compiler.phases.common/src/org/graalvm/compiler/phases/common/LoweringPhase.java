@@ -66,7 +66,6 @@ import org.graalvm.compiler.nodes.extended.GuardingNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringProvider;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
-import org.graalvm.compiler.nodes.spi.NodeCostProvider;
 import org.graalvm.compiler.nodes.spi.Replacements;
 import org.graalvm.compiler.nodes.spi.StampProvider;
 import org.graalvm.compiler.options.OptionValues;
@@ -207,11 +206,6 @@ public class LoweringPhase extends BasePhase<PhaseContext> {
         @Override
         public FixedWithNextNode lastFixedNode() {
             return lastFixedNode;
-        }
-
-        @Override
-        public NodeCostProvider getNodeCostProvider() {
-            return context.getNodeCostProvider();
         }
 
         private void setLastFixedNode(FixedWithNextNode n) {

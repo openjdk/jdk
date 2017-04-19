@@ -427,8 +427,8 @@ public class GraphEncoder {
             GraphComparison.verifyGraphsEqual(originalGraph, decodedGraph);
         } catch (Throwable ex) {
             try (Debug.Scope scope = Debug.scope("GraphEncoder")) {
-                Debug.forceDump(originalGraph, "Original Graph");
-                Debug.forceDump(decodedGraph, "Decoded Graph");
+                Debug.dump(Debug.VERBOSE_LEVEL, originalGraph, "Original Graph");
+                Debug.dump(Debug.VERBOSE_LEVEL, decodedGraph, "Decoded Graph");
             }
             throw ex;
         }

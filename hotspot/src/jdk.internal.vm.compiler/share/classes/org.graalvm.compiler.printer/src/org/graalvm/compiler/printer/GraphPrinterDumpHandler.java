@@ -49,6 +49,7 @@ import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.debug.internal.DebugScope;
 import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.phases.contract.NodeCostUtil;
 
 import jdk.vm.ci.meta.JavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -175,6 +176,12 @@ public class GraphPrinterDumpHandler implements DebugDumpHandler {
                 properties.put("scope", Debug.currentScope());
                 if (graph instanceof StructuredGraph) {
                     properties.put("compilationIdentifier", ((StructuredGraph) graph).compilationId());
+                    try {
+                        int size = NodeCostUtil.computeGraphSize((StructuredGraph) graph);
+                        properties.put("node-cost graph size", size);
+                    } catch (Throwable t) {
+                        properties.put("node-cost-exception", t.getMessage());
+                    }
                 }
                 addCFGFileName(properties);
                 printer.print(graph, nextDumpId() + ":" + message, properties);

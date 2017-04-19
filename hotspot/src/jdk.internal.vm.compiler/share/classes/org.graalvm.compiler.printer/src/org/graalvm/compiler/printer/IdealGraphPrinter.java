@@ -231,6 +231,13 @@ public class IdealGraphPrinter extends BasicIdealGraphPrinter implements GraphPr
                 printProperty("hasPredecessor", "true");
             }
 
+            try {
+                printProperty("NodeCost-Size", node.estimatedNodeSize().toString());
+                printProperty("NodeCost-Cycles", node.estimatedNodeCycles().toString());
+            } catch (Throwable t) {
+                props.put("node-cost-exception", t.getMessage());
+            }
+
             for (Entry<Object, Object> entry : props.entrySet()) {
                 String key = entry.getKey().toString();
                 Object value = entry.getValue();

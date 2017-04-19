@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.hotspot.replacements;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_4;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_1;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
 
 import org.graalvm.compiler.core.common.GraalOptions;
@@ -51,7 +51,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  * Read {@code Klass::_java_mirror} and incorporate non-null type information into stamp. This is
  * also used by {@link ClassGetHubNode} to eliminate chains of {@code klass._java_mirror._klass}.
  */
-@NodeInfo(cycles = CYCLES_4, size = SIZE_1)
+@NodeInfo(cycles = CYCLES_1, size = SIZE_1)
 public final class HubGetClassNode extends FloatingNode implements Lowerable, Canonicalizable, ConvertNode {
     public static final NodeClass<HubGetClassNode> TYPE = NodeClass.create(HubGetClassNode.class);
     @Input protected ValueNode hub;
