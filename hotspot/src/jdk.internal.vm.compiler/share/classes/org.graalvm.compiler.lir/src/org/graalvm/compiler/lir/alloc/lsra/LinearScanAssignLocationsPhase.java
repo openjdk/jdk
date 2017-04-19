@@ -46,7 +46,7 @@ import org.graalvm.compiler.lir.StandardOp.MoveOp;
 import org.graalvm.compiler.lir.StandardOp.ValueMoveOp;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
-import org.graalvm.compiler.lir.phases.AllocationPhase;
+import org.graalvm.compiler.lir.phases.AllocationPhase.AllocationContext;
 
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.AllocatableValue;
@@ -55,7 +55,7 @@ import jdk.vm.ci.meta.Value;
 /**
  * Phase 7: Assign register numbers back to LIR.
  */
-public class LinearScanAssignLocationsPhase extends AllocationPhase {
+public class LinearScanAssignLocationsPhase extends LinearScanAllocationPhase {
 
     protected final LinearScan allocator;
 

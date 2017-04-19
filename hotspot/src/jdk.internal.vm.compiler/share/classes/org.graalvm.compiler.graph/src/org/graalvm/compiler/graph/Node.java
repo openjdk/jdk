@@ -52,7 +52,9 @@ import org.graalvm.compiler.graph.iterators.NodePredicate;
 import org.graalvm.compiler.graph.spi.Simplifiable;
 import org.graalvm.compiler.graph.spi.SimplifierTool;
 import org.graalvm.compiler.nodeinfo.InputType;
+import org.graalvm.compiler.nodeinfo.NodeCycles;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodeinfo.NodeSize;
 import org.graalvm.compiler.nodeinfo.Verbosity;
 import org.graalvm.compiler.options.OptionValues;
 
@@ -606,10 +608,18 @@ public abstract class Node implements Cloneable, Formattable, NodeInterface {
     }
 
     private boolean checkReplaceWith(Node other) {
-        assert assertTrue(graph == null || !graph.isFrozen(), "cannot modify frozen graph");
-        assert assertFalse(other == this, "cannot replace a node with itself");
-        assert assertFalse(isDeleted(), "cannot replace deleted node");
-        assert assertTrue(other == null || !other.isDeleted(), "cannot replace with deleted node %s", other);
+        if (graph != null && graph.isFrozen()) {
+            fail("cannot modify frozen graph");
+        }
+        if (other == this) {
+            fail("cannot replace a node with itself");
+        }
+        if (isDeleted()) {
+            fail("cannot replace deleted node");
+        }
+        if (other != null && other.isDeleted()) {
+            fail("cannot replace with deleted node %s", other);
+        }
         return true;
     }
 
@@ -640,7 +650,7 @@ public abstract class Node implements Cloneable, Formattable, NodeInterface {
     }
 
     protected void replaceAtAllUsages(Node other, Node toBeDeleted) {
-        assert checkReplaceWith(other);
+        checkReplaceWith(other);
         if (usage0 == null) {
             return;
         }
@@ -679,12 +689,14 @@ public abstract class Node implements Cloneable, Formattable, NodeInterface {
     }
 
     private void replaceAtMatchingUsages(Node other, Predicate<Node> filter, Node toBeDeleted) {
-        assert filter != null;
-        assert checkReplaceWith(other);
+        if (filter == null) {
+            fail("filter cannot be null");
+        }
+        checkReplaceWith(other);
         int i = 0;
         while (i < this.getUsageCount()) {
             Node usage = this.getUsageAt(i);
-            if (filter == null || filter.test(usage)) {
+            if (filter.test(usage)) {
                 replaceAtUsage(other, toBeDeleted, usage);
                 this.movUsageFromEndTo(i);
             } else {
@@ -704,12 +716,12 @@ public abstract class Node implements Cloneable, Formattable, NodeInterface {
     }
 
     public void replaceAtMatchingUsages(Node other, NodePredicate usagePredicate) {
-        assert checkReplaceWith(other);
+        checkReplaceWith(other);
         replaceAtMatchingUsages(other, usagePredicate, null);
     }
 
     public void replaceAtUsages(InputType type, Node other) {
-        assert checkReplaceWith(other);
+        checkReplaceWith(other);
         for (Node usage : usages().snapshot()) {
             for (Position pos : usage.inputPositions()) {
                 if (pos.getInputType() == type && pos.get(usage) == this) {
@@ -746,17 +758,20 @@ public abstract class Node implements Cloneable, Formattable, NodeInterface {
     }
 
     public void replaceAtPredecessor(Node other) {
-        assert checkReplaceWith(other);
+        checkReplaceWith(other);
         if (predecessor != null) {
-            boolean result = predecessor.getNodeClass().replaceFirstSuccessor(predecessor, this, other);
-            assert assertTrue(result, "not found in successors, predecessor: %s", predecessor);
+            if (!predecessor.getNodeClass().replaceFirstSuccessor(predecessor, this, other)) {
+                fail("not found in successors, predecessor: %s", predecessor);
+            }
             predecessor.updatePredecessor(this, other);
         }
     }
 
     public void replaceAndDelete(Node other) {
-        assert checkReplaceWith(other);
-        assert other != null;
+        checkReplaceWith(other);
+        if (other == null) {
+            fail("cannot replace with null");
+        }
         if (this.hasUsages()) {
             replaceAtUsages(other);
         }
@@ -1173,4 +1188,13 @@ public abstract class Node implements Cloneable, Formattable, NodeInterface {
     public final void pushInputs(NodeStack stack) {
         getNodeClass().pushInputs(this, stack);
     }
+
+    public NodeSize estimatedNodeSize() {
+        return nodeClass.size();
+    }
+
+    public NodeCycles estimatedNodeCycles() {
+        return nodeClass.cycles();
+    }
+
 }

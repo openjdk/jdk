@@ -22,8 +22,8 @@
  */
 package org.graalvm.compiler.nodes.java;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_100;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_100;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_64;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_64;
 
 import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.graph.IterableNodeType;
@@ -41,7 +41,7 @@ import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
 /**
  * The {@code MonitorEnterNode} represents the acquisition of a monitor.
  */
-@NodeInfo(cycles = CYCLES_100, size = SIZE_100)
+@NodeInfo(cycles = CYCLES_64, size = SIZE_64)
 public class MonitorEnterNode extends AccessMonitorNode implements Virtualizable, Lowerable, IterableNodeType, MonitorEnter, MemoryCheckpoint.Single {
 
     public static final NodeClass<MonitorEnterNode> TYPE = NodeClass.create(MonitorEnterNode.class);

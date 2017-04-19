@@ -24,8 +24,8 @@ package org.graalvm.compiler.nodes.extended;
 
 import static org.graalvm.compiler.nodeinfo.InputType.Memory;
 import static org.graalvm.compiler.nodeinfo.InputType.State;
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_UNKNOWN;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_20;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_2;
 
 import java.util.List;
 
@@ -60,9 +60,10 @@ import jdk.vm.ci.meta.Value;
 // @formatter:off
 @NodeInfo(nameTemplate = "ForeignCall#{p#descriptor/s}",
           allowedUsageTypes = Memory,
-          cycles = CYCLES_UNKNOWN,
-          cyclesRationale = "A foreign call is a block box in terms of time spent in the callee.",
-          size = SIZE_20)
+          cycles = CYCLES_2,
+          cyclesRationale = "Rough estimation of the call operation itself.",
+          size = SIZE_2,
+          sizeRationale = "Rough estimation of the call operation itself.")
 // @formatter:on
 public class ForeignCallNode extends AbstractMemoryCheckpoint implements LIRLowerable, DeoptimizingNode.DeoptDuring, MemoryCheckpoint.Multi {
     public static final NodeClass<ForeignCallNode> TYPE = NodeClass.create(ForeignCallNode.class);

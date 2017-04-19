@@ -376,7 +376,7 @@ public final class RedundantMoveElimination extends PostAllocationOptimizationPh
         @SuppressWarnings("try")
         private int updateState(final int[] state, LIRInstruction op, int initValueNum) {
 
-            try (final Indent indent = Debug.logAndIndent("update state for op %s, initial value num = %d", op, initValueNum)) {
+            try (Indent indent = Debug.logAndIndent("update state for op %s, initial value num = %d", op, initValueNum)) {
                 if (isEligibleMove(op)) {
                     /*
                      * Handle the special case of a move instruction

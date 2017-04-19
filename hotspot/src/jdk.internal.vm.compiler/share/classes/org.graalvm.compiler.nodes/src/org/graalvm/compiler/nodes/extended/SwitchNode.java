@@ -22,7 +22,13 @@
  */
 package org.graalvm.compiler.nodes.extended;
 
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_64;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_8;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_UNKNOWN;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_2;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_64;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_8;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_UNKNOWN;
 
 import java.util.Arrays;
@@ -35,7 +41,9 @@ import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.NodeSuccessorList;
 import org.graalvm.compiler.graph.spi.SimplifierTool;
+import org.graalvm.compiler.nodeinfo.NodeCycles;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodeinfo.NodeSize;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.ControlSplitNode;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -242,4 +250,33 @@ public abstract class SwitchNode extends ControlSplitNode {
     }
 
     public abstract Stamp getValueStampForSuccessor(AbstractBeginNode beginNode);
+
+    @Override
+    public NodeCycles estimatedNodeCycles() {
+        if (keyCount() == 1) {
+            // if
+            return CYCLES_2;
+        } else if (isSorted()) {
+            // good heuristic
+            return CYCLES_8;
+        } else {
+            // not so good
+            return CYCLES_64;
+        }
+    }
+
+    @Override
+    public NodeSize estimatedNodeSize() {
+        if (keyCount() == 1) {
+            // if
+            return SIZE_2;
+        } else if (isSorted()) {
+            // good heuristic
+            return SIZE_8;
+        } else {
+            // not so good
+            return SIZE_64;
+        }
+    }
+
 }

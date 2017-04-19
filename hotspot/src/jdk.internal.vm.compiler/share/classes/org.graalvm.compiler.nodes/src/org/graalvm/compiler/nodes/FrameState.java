@@ -22,12 +22,14 @@
  */
 package org.graalvm.compiler.nodes;
 
+import static jdk.vm.ci.code.BytecodeFrame.getPlaceholderBciName;
+import static jdk.vm.ci.code.BytecodeFrame.isPlaceholderBci;
 import static org.graalvm.compiler.nodeinfo.InputType.Association;
 import static org.graalvm.compiler.nodeinfo.InputType.State;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_0;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_IGNORED;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
-import static jdk.vm.ci.code.BytecodeFrame.getPlaceholderBciName;
-import static jdk.vm.ci.code.BytecodeFrame.isPlaceholderBci;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_IGNORED;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -78,7 +80,7 @@ public final class FrameState extends VirtualState implements IterableNodeType {
      */
     public static final ValueNode TWO_SLOT_MARKER = new TwoSlotMarker();
 
-    @NodeInfo
+    @NodeInfo(cycles = CYCLES_IGNORED, size = SIZE_IGNORED)
     private static final class TwoSlotMarker extends ValueNode {
         public static final NodeClass<TwoSlotMarker> TYPE = NodeClass.create(TwoSlotMarker.class);
 

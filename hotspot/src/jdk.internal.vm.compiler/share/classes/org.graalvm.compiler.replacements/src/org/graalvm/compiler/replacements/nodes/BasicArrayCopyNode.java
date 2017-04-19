@@ -25,8 +25,8 @@ package org.graalvm.compiler.replacements.nodes;
 import static org.graalvm.compiler.core.common.LocationIdentity.any;
 import static org.graalvm.compiler.nodeinfo.InputType.Memory;
 import static org.graalvm.compiler.nodeinfo.InputType.State;
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_200;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_100;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_256;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_64;
 
 import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -55,7 +55,7 @@ import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
-@NodeInfo(cycles = CYCLES_200, size = SIZE_100)
+@NodeInfo(cycles = CYCLES_256, size = SIZE_64)
 public class BasicArrayCopyNode extends AbstractMemoryCheckpoint implements Virtualizable, MemoryCheckpoint.Single, MemoryAccess, Lowerable, DeoptimizingNode.DeoptDuring {
 
     public static final NodeClass<BasicArrayCopyNode> TYPE = NodeClass.create(BasicArrayCopyNode.class);

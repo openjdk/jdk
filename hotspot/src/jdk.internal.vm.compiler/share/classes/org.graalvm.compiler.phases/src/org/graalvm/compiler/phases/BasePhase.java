@@ -40,7 +40,6 @@ import org.graalvm.compiler.options.OptionType;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.contract.NodeCostUtil;
 import org.graalvm.compiler.phases.contract.PhaseSizeContract;
-import org.graalvm.compiler.phases.tiers.PhaseContext;
 
 /**
  * Base class for all compiler phases. Subclasses should be stateless. There will be one global
@@ -193,10 +192,8 @@ public abstract class BasePhase<C> implements PhaseSizeContract {
             OptionValues options = graph.getOptions();
             boolean verifySizeContract = PhaseOptions.VerifyGraalPhasesSize.getValue(options) && checkContract();
             if (verifySizeContract) {
-                if (context instanceof PhaseContext) {
-                    sizeBefore = NodeCostUtil.computeGraphSize(graph, ((PhaseContext) context).getNodeCostProvider());
-                    before = graph.getMark();
-                }
+                sizeBefore = NodeCostUtil.computeGraphSize(graph);
+                before = graph.getMark();
             }
             BasePhase<?> enclosingPhase = null;
             if (dumpGraph && Debug.isEnabled()) {
@@ -206,11 +203,9 @@ public abstract class BasePhase<C> implements PhaseSizeContract {
             this.run(graph, context);
             executionCount.increment();
             if (verifySizeContract) {
-                if (context instanceof PhaseContext) {
-                    if (!before.isCurrent()) {
-                        int sizeAfter = NodeCostUtil.computeGraphSize(graph, ((PhaseContext) context).getNodeCostProvider());
-                        NodeCostUtil.phaseFulfillsSizeContract(graph, sizeBefore, sizeAfter, this);
-                    }
+                if (!before.isCurrent()) {
+                    int sizeAfter = NodeCostUtil.computeGraphSize(graph);
+                    NodeCostUtil.phaseFulfillsSizeContract(graph, sizeBefore, sizeAfter, this);
                 }
             }
 

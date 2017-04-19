@@ -64,9 +64,6 @@ public class TraceBuilderPhase extends AllocationPhase {
         // @formatter:on
     }
 
-    private static final int TRACE_LOG_LEVEL = Debug.BASIC_LEVEL;
-    public static final int TRACE_DUMP_LEVEL = Debug.VERBOSE_LEVEL;
-
     @Override
     protected void run(TargetDescription target, LIRGenerationResult lirGenRes, AllocationContext context) {
         AbstractBlockBase<?>[] linearScanOrder = lirGenRes.getLIR().linearScanOrder();
@@ -76,15 +73,15 @@ public class TraceBuilderPhase extends AllocationPhase {
 
         final TraceBuilderResult traceBuilderResult = getTraceBuilderResult(lir, startBlock, linearScanOrder);
 
-        if (Debug.isLogEnabled(TRACE_LOG_LEVEL)) {
+        if (Debug.isLogEnabled(Debug.BASIC_LEVEL)) {
             ArrayList<Trace> traces = traceBuilderResult.getTraces();
             for (int i = 0; i < traces.size(); i++) {
                 Trace trace = traces.get(i);
-                Debug.log(TRACE_LOG_LEVEL, "Trace %5d: %s%s", i, trace, isTrivialTrace(lirGenRes.getLIR(), trace) ? " (trivial)" : "");
+                Debug.log(Debug.BASIC_LEVEL, "Trace %5d: %s%s", i, trace, isTrivialTrace(lirGenRes.getLIR(), trace) ? " (trivial)" : "");
             }
         }
         TraceStatisticsPrinter.printTraceStatistics(traceBuilderResult, lirGenRes.getCompilationUnitName());
-        Debug.dump(TRACE_DUMP_LEVEL, traceBuilderResult, "After TraceBuilding");
+        Debug.dump(Debug.VERBOSE_LEVEL, traceBuilderResult, "TraceBuilderResult");
         context.contextAdd(traceBuilderResult);
     }
 
@@ -93,7 +90,7 @@ public class TraceBuilderPhase extends AllocationPhase {
 
         OptionValues options = lir.getOptions();
         TraceBuilder selectedTraceBuilder = Options.TraceBuilding.getValue(options);
-        Debug.log(TRACE_LOG_LEVEL, "Building Traces using %s", selectedTraceBuilder);
+        Debug.log(Debug.BASIC_LEVEL, "Building Traces using %s", selectedTraceBuilder);
         switch (Options.TraceBuilding.getValue(options)) {
             case SingleBlock:
                 return SingleBlockTraceBuilder.computeTraces(startBlock, linearScanOrder, pred);

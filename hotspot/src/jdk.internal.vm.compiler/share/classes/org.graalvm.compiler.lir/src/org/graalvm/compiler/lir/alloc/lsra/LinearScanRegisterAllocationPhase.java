@@ -25,12 +25,12 @@ package org.graalvm.compiler.lir.alloc.lsra;
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
-import org.graalvm.compiler.lir.phases.AllocationPhase;
+import org.graalvm.compiler.lir.phases.AllocationPhase.AllocationContext;
 import org.graalvm.util.Pair;
 
 import jdk.vm.ci.code.TargetDescription;
 
-public final class LinearScanRegisterAllocationPhase extends AllocationPhase {
+public final class LinearScanRegisterAllocationPhase extends LinearScanAllocationPhase {
 
     private final LinearScan allocator;
 

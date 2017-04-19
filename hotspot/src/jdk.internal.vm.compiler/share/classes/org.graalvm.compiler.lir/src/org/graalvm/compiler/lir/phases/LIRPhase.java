@@ -113,12 +113,21 @@ public abstract class LIRPhase<C> {
         try (Scope s = Debug.scope(getName(), this)) {
             try (DebugCloseable a = timer.start(); DebugCloseable c = memUseTracker.start()) {
                 run(target, lirGenRes, context);
-                if (dumpLIR && Debug.isDumpEnabled(Debug.BASIC_LEVEL)) {
-                    Debug.dump(Debug.BASIC_LEVEL, lirGenRes.getLIR(), "%s", getName());
+                if (dumpLIR && Debug.isEnabled()) {
+                    dumpAfter(lirGenRes);
                 }
             }
         } catch (Throwable e) {
             throw Debug.handle(e);
+        }
+    }
+
+    private void dumpAfter(LIRGenerationResult lirGenRes) {
+        boolean isStage = this instanceof LIRPhaseSuite;
+        if (!isStage) {
+            if (Debug.isDumpEnabled(Debug.INFO_LEVEL)) {
+                Debug.dump(Debug.INFO_LEVEL, lirGenRes.getLIR(), "After %s", getName());
+            }
         }
     }
 

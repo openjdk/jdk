@@ -22,6 +22,8 @@
  */
 package org.graalvm.compiler.nodes.calc;
 
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_2;
+
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.type.FloatStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
@@ -30,7 +32,6 @@ import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.NodeCycles;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodeinfo.NodeSize;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.LogicConstantNode;
 import org.graalvm.compiler.nodes.LogicNode;
@@ -46,7 +47,7 @@ import jdk.vm.ci.meta.JavaKind;
  * of the inputs is NaN), the result is 1 if isUnorderedLess is false and -1 if isUnorderedLess is
  * true.
  */
-@NodeInfo(cycles = NodeCycles.CYCLES_2, size = NodeSize.SIZE_4)
+@NodeInfo(cycles = NodeCycles.CYCLES_2, size = SIZE_2)
 public final class NormalizeCompareNode extends BinaryNode implements Lowerable {
 
     public static final NodeClass<NormalizeCompareNode> TYPE = NodeClass.create(NormalizeCompareNode.class);

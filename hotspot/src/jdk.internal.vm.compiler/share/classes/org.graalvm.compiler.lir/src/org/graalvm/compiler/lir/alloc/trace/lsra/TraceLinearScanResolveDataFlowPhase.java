@@ -31,6 +31,7 @@ import static org.graalvm.compiler.lir.LIRValueUtil.isVirtualStackSlot;
 
 import java.util.ArrayList;
 
+import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.core.common.alloc.Trace;
 import org.graalvm.compiler.core.common.alloc.TraceBuilderResult;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
@@ -45,6 +46,7 @@ import org.graalvm.compiler.lir.StandardOp.LabelOp;
 import org.graalvm.compiler.lir.alloc.trace.GlobalLivenessInfo;
 import org.graalvm.compiler.lir.alloc.trace.lsra.TraceLinearScanPhase.TraceLinearScan;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
+import org.graalvm.compiler.lir.gen.LIRGeneratorTool.MoveFactory;
 import org.graalvm.compiler.lir.ssa.SSAUtil;
 
 import jdk.vm.ci.code.TargetDescription;
@@ -58,9 +60,8 @@ import jdk.vm.ci.meta.Value;
 final class TraceLinearScanResolveDataFlowPhase extends TraceLinearScanAllocationPhase {
 
     @Override
-    protected void run(TargetDescription target, LIRGenerationResult lirGenRes, Trace trace, TraceLinearScanAllocationContext context) {
-        TraceBuilderResult traceBuilderResult = context.resultTraces;
-        TraceLinearScan allocator = context.allocator;
+    protected void run(TargetDescription target, LIRGenerationResult lirGenRes, Trace trace, MoveFactory spillMoveFactory, RegisterAllocationConfig registerAllocationConfig,
+                    TraceBuilderResult traceBuilderResult, TraceLinearScan allocator) {
         new Resolver(allocator, traceBuilderResult).resolveDataFlow(trace, allocator.sortedBlocks());
     }
 

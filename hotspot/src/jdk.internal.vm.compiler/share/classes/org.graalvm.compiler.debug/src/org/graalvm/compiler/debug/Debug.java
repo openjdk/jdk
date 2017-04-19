@@ -127,6 +127,9 @@ public class Debug {
      *
      * For HIR dumping, only ~5 graphs per method: after parsing, after inlining, after high tier,
      * after mid tier, after low tier.
+     *
+     * LIR dumping: After LIR generation, after each pre-allocation, allocation and post allocation
+     * stage, and after code installation.
      */
     public static final int BASIC_LEVEL = 1;
 
@@ -134,6 +137,8 @@ public class Debug {
      * Informational debug level.
      *
      * HIR dumping: One graph after each applied top-level phase.
+     *
+     * LIR dumping: After each applied phase.
      */
     public static final int INFO_LEVEL = 2;
 
@@ -141,6 +146,8 @@ public class Debug {
      * Verbose debug level.
      *
      * HIR dumping: One graph after each phase (including sub phases).
+     *
+     * LIR dumping: After each phase including sub phases.
      */
     public static final int VERBOSE_LEVEL = 3;
 
@@ -148,6 +155,8 @@ public class Debug {
      * Detailed debug level.
      *
      * HIR dumping: Graphs within phases where interesting for a phase, max ~5 per phase.
+     *
+     * LIR dumping: Dump CFG within phases where interesting.
      */
     public static final int DETAILED_LEVEL = 4;
 
@@ -155,6 +164,8 @@ public class Debug {
      * Very detailed debug level.
      *
      * HIR dumping: Graphs per node granularity graph change (before/after change).
+     *
+     * LIR dumping: Intermediate CFGs of phases where interesting.
      */
     public static final int VERY_DETAILED_LEVEL = 5;
 

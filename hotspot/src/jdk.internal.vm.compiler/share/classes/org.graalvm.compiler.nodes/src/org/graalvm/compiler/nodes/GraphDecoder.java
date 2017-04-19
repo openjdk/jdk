@@ -573,7 +573,7 @@ public class GraphDecoder {
         return resultScope;
     }
 
-    private InvokeData readInvokeData(MethodScope methodScope, int invokeOrderId, Invoke invoke) {
+    protected InvokeData readInvokeData(MethodScope methodScope, int invokeOrderId, Invoke invoke) {
         ResolvedJavaType contextType = (ResolvedJavaType) readObject(methodScope);
         int callTargetOrderId = readOrderId(methodScope);
         int stateAfterOrderId = readOrderId(methodScope);

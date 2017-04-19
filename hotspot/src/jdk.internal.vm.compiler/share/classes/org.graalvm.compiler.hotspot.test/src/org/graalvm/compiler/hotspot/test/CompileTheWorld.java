@@ -20,19 +20,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.graalvm.compiler.hotspot;
+package org.graalvm.compiler.hotspot.test;
 
+import static java.util.Collections.singletonList;
 import static org.graalvm.compiler.core.GraalCompilerOptions.ExitVMOnException;
 import static org.graalvm.compiler.core.GraalCompilerOptions.PrintBailout;
 import static org.graalvm.compiler.core.GraalCompilerOptions.PrintStackTraceOnException;
 import static org.graalvm.compiler.core.common.util.Util.Java8OrEarlier;
-import static org.graalvm.compiler.hotspot.CompileTheWorldOptions.CompileTheWorldClasspath;
-import static org.graalvm.compiler.hotspot.CompileTheWorldOptions.CompileTheWorldConfig;
-import static org.graalvm.compiler.hotspot.CompileTheWorldOptions.CompileTheWorldExcludeMethodFilter;
-import static org.graalvm.compiler.hotspot.CompileTheWorldOptions.CompileTheWorldMethodFilter;
-import static org.graalvm.compiler.hotspot.CompileTheWorldOptions.CompileTheWorldStartAt;
-import static org.graalvm.compiler.hotspot.CompileTheWorldOptions.CompileTheWorldStopAt;
-import static org.graalvm.compiler.hotspot.CompileTheWorldOptions.CompileTheWorldVerbose;
+import static org.graalvm.compiler.core.test.ReflectionOptionDescriptors.extractEntries;
+import static org.graalvm.compiler.hotspot.test.CompileTheWorld.Options.DESCRIPTORS;
 
 import java.io.Closeable;
 import java.io.File;
@@ -41,21 +37,19 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.channels.FileChannel;
+import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
-import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
@@ -76,17 +70,24 @@ import org.graalvm.compiler.bytecode.Bytecodes;
 import org.graalvm.compiler.core.CompilerThreadFactory;
 import org.graalvm.compiler.core.CompilerThreadFactory.DebugConfigAccess;
 import org.graalvm.compiler.core.common.util.Util;
+import org.graalvm.compiler.core.test.ReflectionOptionDescriptors;
 import org.graalvm.compiler.debug.DebugEnvironment;
 import org.graalvm.compiler.debug.GraalDebugConfig;
+import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.MethodFilter;
 import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.debug.internal.MemUseTrackerImpl;
+import org.graalvm.compiler.hotspot.CompilationTask;
+import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
+import org.graalvm.compiler.hotspot.HotSpotGraalCompiler;
+import org.graalvm.compiler.hotspot.HotSpotGraalRuntimeProvider;
 import org.graalvm.compiler.options.OptionDescriptors;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.options.OptionsParser;
 import org.graalvm.util.EconomicMap;
 
+import jdk.vm.ci.hotspot.HotSpotCodeCacheProvider;
 import jdk.vm.ci.hotspot.HotSpotCompilationRequest;
 import jdk.vm.ci.hotspot.HotSpotInstalledCode;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
@@ -106,10 +107,16 @@ public final class CompileTheWorld {
 
     /**
      * Magic token to denote that JDK classes are to be compiled. If {@link Util#Java8OrEarlier},
-     * then the classes in {@code rt.jar} are compiled. Otherwise the classes in {@code
-     * <java.home>/lib/modules} are compiled.
+     * then the classes in {@code rt.jar} are compiled. Otherwise the classes in the Java runtime
+     * image are compiled.
      */
     public static final String SUN_BOOT_CLASS_PATH = "sun.boot.class.path";
+
+    /**
+     * Magic token to denote the classes in the Java runtime image (i.e. in the {@code jrt:/} file
+     * system).
+     */
+    public static final String JRT_CLASS_PATH_ENTRY = "<jrt>";
 
     /**
      * @param options a space separated set of option value settings with each option setting in a
@@ -137,21 +144,21 @@ public final class CompileTheWorld {
     /**
      * Class path denoting classes to compile.
      *
-     * @see CompileTheWorldOptions#CompileTheWorldClasspath
+     * @see Options#Classpath
      */
     private final String inputClassPath;
 
     /**
      * Class index to start compilation at.
      *
-     * @see CompileTheWorldOptions#CompileTheWorldStartAt
+     * @see Options#StartAt
      */
     private final int startAt;
 
     /**
      * Class index to stop compilation at.
      *
-     * @see CompileTheWorldOptions#CompileTheWorldStopAt
+     * @see Options#StopAt
      */
     private final int stopAt;
 
@@ -216,19 +223,19 @@ public final class CompileTheWorld {
     }
 
     public CompileTheWorld(HotSpotJVMCIRuntimeProvider jvmciRuntime, HotSpotGraalCompiler compiler, OptionValues options) {
-        this(jvmciRuntime, compiler, CompileTheWorldClasspath.getValue(options),
-                        CompileTheWorldStartAt.getValue(options),
-                        CompileTheWorldStopAt.getValue(options),
-                        CompileTheWorldMethodFilter.getValue(options),
-                        CompileTheWorldExcludeMethodFilter.getValue(options),
-                        CompileTheWorldVerbose.getValue(options),
+        this(jvmciRuntime, compiler, Options.Classpath.getValue(options),
+                        Options.StartAt.getValue(options),
+                        Options.StopAt.getValue(options),
+                        Options.MethodFilter.getValue(options),
+                        Options.ExcludeMethodFilter.getValue(options),
+                        Options.Verbose.getValue(options),
                         options,
-                        parseOptions(CompileTheWorldConfig.getValue(options)));
+                        parseOptions(Options.Config.getValue(options)));
     }
 
     /**
      * Compiles all methods in all classes in {@link #inputClassPath}. If {@link #inputClassPath}
-     * equals {@link #SUN_BOOT_CLASS_PATH} the boot class path is used.
+     * equals {@link #SUN_BOOT_CLASS_PATH} the boot classes are used.
      */
     public void compile() throws Throwable {
         if (SUN_BOOT_CLASS_PATH.equals(inputClassPath)) {
@@ -238,13 +245,15 @@ public final class CompileTheWorld {
                 for (int i = 0; i < entries.length && bcpEntry == null; i++) {
                     String entry = entries[i];
                     File entryFile = new File(entry);
-                    // We stop at rt.jar, unless it is the first boot class path entry.
                     if (entryFile.getName().endsWith("rt.jar") && entryFile.isFile()) {
                         bcpEntry = entry;
                     }
                 }
+                if (bcpEntry == null) {
+                    throw new GraalError("Could not find rt.jar on boot class path %s", System.getProperty(SUN_BOOT_CLASS_PATH));
+                }
             } else {
-                bcpEntry = System.getProperty("java.home") + "/lib/modules".replace('/', File.separatorChar);
+                bcpEntry = JRT_CLASS_PATH_ENTRY;
             }
             compile(bcpEntry);
         } else {
@@ -394,92 +403,70 @@ public final class CompileTheWorld {
     }
 
     /**
-     * Name of the property that limits the set of modules processed by CompileTheWorld.
+     * A class path entry representing the {@code jrt:/} file system.
      */
-    public static final String LIMITMODS_PROPERTY_NAME = "CompileTheWorld.limitmods";
+    static class JRTClassPathEntry extends ClassPathEntry {
 
-    /**
-     * A class path entry that is a jimage file.
-     */
-    static class ImageClassPathEntry extends ClassPathEntry {
+        private final String limitModules;
 
-        private final File jimage;
-
-        ImageClassPathEntry(String name) {
+        JRTClassPathEntry(String name, String limitModules) {
             super(name);
-            jimage = new File(name);
-            assert jimage.isFile();
+            this.limitModules = limitModules;
         }
 
         @Override
         public ClassLoader createClassLoader() throws IOException {
-            URL url = jimage.toURI().toURL();
+            URL url = URI.create("jrt:/").toURL();
             return new URLClassLoader(new URL[]{url});
         }
 
         @Override
         public List<String> getClassNames() throws IOException {
-            String prop = System.getProperty(LIMITMODS_PROPERTY_NAME);
-            Set<String> limitmods = prop == null ? null : new HashSet<>(Arrays.asList(prop.split(",")));
-            List<String> classNames = new ArrayList<>();
-            String[] entries = readJimageEntries();
-            for (String e : entries) {
-                if (e.endsWith(".class") && !e.endsWith("module-info.class")) {
-                    assert e.charAt(0) == '/' : e;
-                    int endModule = e.indexOf('/', 1);
-                    assert endModule != -1 : e;
-                    if (limitmods != null) {
-                        String module = e.substring(1, endModule);
-                        if (!limitmods.contains(module)) {
-                            continue;
-                        }
+            Set<String> negative = new HashSet<>();
+            Set<String> positive = new HashSet<>();
+            if (limitModules != null && !limitModules.isEmpty()) {
+                for (String s : limitModules.split(",")) {
+                    if (s.startsWith("~")) {
+                        negative.add(s.substring(1));
+                    } else {
+                        positive.add(s);
                     }
-                    // Strip the module prefix and convert to dotted form
-                    String className = e.substring(endModule + 1).replace('/', '.');
-                    // Strip ".class" suffix
-                    className = className.replace('/', '.').substring(0, className.length() - ".class".length());
-                    classNames.add(className);
                 }
             }
+            List<String> classNames = new ArrayList<>();
+            FileSystem fs = FileSystems.newFileSystem(URI.create("jrt:/"), Collections.emptyMap());
+            Path top = fs.getPath("/modules/");
+            Files.find(top, Integer.MAX_VALUE,
+                            (path, attrs) -> attrs.isRegularFile()).forEach(p -> {
+                                int nameCount = p.getNameCount();
+                                if (nameCount > 2) {
+                                    String base = p.getName(nameCount - 1).toString();
+                                    if (base.endsWith(".class") && !base.equals("module-info.class")) {
+                                        String module = p.getName(1).toString();
+                                        if (positive.isEmpty() || positive.contains(module)) {
+                                            if (negative.isEmpty() || !negative.contains(module)) {
+                                                // Strip module prefix and convert to dotted form
+                                                String className = p.subpath(2, nameCount).toString().replace('/', '.');
+                                                // Strip ".class" suffix
+                                                className = className.replace('/', '.').substring(0, className.length() - ".class".length());
+                                                classNames.add(className);
+                                            }
+                                        }
+                                    }
+                                }
+                            });
             return classNames;
-        }
-
-        private String[] readJimageEntries() {
-            try {
-                // Use reflection so this can be compiled on JDK8
-                Path path = FileSystems.getDefault().getPath(name);
-                Method open = Class.forName("jdk.internal.jimage.BasicImageReader").getDeclaredMethod("open", Path.class);
-                Object reader = open.invoke(null, path);
-                Method getEntryNames = reader.getClass().getDeclaredMethod("getEntryNames");
-                getEntryNames.setAccessible(true);
-                String[] entries = (String[]) getEntryNames.invoke(reader);
-                return entries;
-            } catch (Exception e) {
-                TTY.println("Error reading entries from " + name + ": " + e);
-                return new String[0];
-            }
         }
     }
 
-    /**
-     * Determines if a given path denotes a jimage file.
-     *
-     * @param path file path
-     * @return {@code true} if the 4 byte integer (in native endianness) at the start of
-     *         {@code path}'s contents is {@code 0xCAFEDADA}
-     */
-    static boolean isJImage(String path) {
-        try {
-            FileChannel channel = FileChannel.open(Paths.get(path), StandardOpenOption.READ);
-            ByteBuffer map = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
-            map.order(ByteOrder.nativeOrder()).asIntBuffer().get(0);
-            int magic = map.asIntBuffer().get(0);
-            if (magic == 0xCAFEDADA) {
-                return true;
-            }
-        } catch (IOException e) {
+    private boolean isClassIncluded(String className) {
+        if (methodFilters != null && !MethodFilter.matchesClassName(methodFilters, className)) {
+            return false;
         }
-        return false;
+        if (excludeMethodFilters != null && MethodFilter.matchesClassName(excludeMethodFilters, className)) {
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -512,8 +499,8 @@ public final class CompileTheWorld {
          * DebugValueThreadFilter to filter on the thread names.
          */
         int threadCount = 1;
-        if (CompileTheWorldOptions.CompileTheWorldMultiThreaded.getValue(currentOptions)) {
-            threadCount = CompileTheWorldOptions.CompileTheWorldThreads.getValue(currentOptions);
+        if (Options.MultiThreaded.getValue(currentOptions)) {
+            threadCount = Options.Threads.getValue(currentOptions);
             if (threadCount == 0) {
                 threadCount = Runtime.getRuntime().availableProcessors();
             }
@@ -538,9 +525,8 @@ public final class CompileTheWorld {
                 ClassPathEntry cpe;
                 if (entry.endsWith(".zip") || entry.endsWith(".jar")) {
                     cpe = new JarClassPathEntry(entry);
-                } else if (isJImage(entry)) {
-                    assert !Java8OrEarlier;
-                    cpe = new ImageClassPathEntry(entry);
+                } else if (entry.equals(JRT_CLASS_PATH_ENTRY)) {
+                    cpe = new JRTClassPathEntry(entry, Options.LimitModules.getValue(currentOptions));
                 } else {
                     if (!new File(entry).isDirectory()) {
                         println("CompileTheWorld : Skipped classes in " + entry);
@@ -590,17 +576,17 @@ public final class CompileTheWorld {
                             }
                         } catch (Throwable t) {
                             // If something went wrong during pre-loading we just ignore it.
-                            println("Preloading failed for (%d) %s: %s", classFileCounter, className, t);
+                            if (isClassIncluded(className)) {
+                                println("Preloading failed for (%d) %s: %s", classFileCounter, className, t);
+                            }
+                            continue;
                         }
 
                         /*
                          * Only check filters after class loading and resolution to mitigate impact
                          * on reproducibility.
                          */
-                        if (methodFilters != null && !MethodFilter.matchesClassName(methodFilters, className)) {
-                            continue;
-                        }
-                        if (excludeMethodFilters != null && MethodFilter.matchesClassName(excludeMethodFilters, className)) {
+                        if (!isClassIncluded(className)) {
                             continue;
                         }
 
@@ -630,8 +616,10 @@ public final class CompileTheWorld {
                             }
                         }
                     } catch (Throwable t) {
-                        println("CompileTheWorld (%d) : Skipping %s %s", classFileCounter, className, t.toString());
-                        printStackTrace(t);
+                        if (isClassIncluded(className)) {
+                            println("CompileTheWorld (%d) : Skipping %s %s", classFileCounter, className, t.toString());
+                            printStackTrace(t);
+                        }
                     }
                 }
                 cpe.close();
@@ -659,7 +647,7 @@ public final class CompileTheWorld {
         long elapsedTime = System.currentTimeMillis() - start;
 
         println();
-        if (CompileTheWorldOptions.CompileTheWorldMultiThreaded.getValue(currentOptions)) {
+        if (Options.MultiThreaded.getValue(currentOptions)) {
             TTY.println("CompileTheWorld : Done (%d classes, %d methods, %d ms elapsed, %d ms compile time, %d bytes of memory used)", classFileCounter, compiledMethodsCounter.get(), elapsedTime,
                             compileTime.get(), memoryUsed.get());
         } else {
@@ -769,9 +757,73 @@ public final class CompileTheWorld {
         return true;
     }
 
+    static class Options {
+        // @formatter:off
+        public static final OptionKey<Boolean> Help = new OptionKey<>(false);
+        public static final OptionKey<String> Classpath = new OptionKey<>(CompileTheWorld.SUN_BOOT_CLASS_PATH);
+        public static final OptionKey<Boolean> Verbose = new OptionKey<>(true);
+        /**
+         * Ignore Graal classes by default to avoid problems associated with compiling
+         * snippets and method substitutions.
+         */
+        public static final OptionKey<String> LimitModules = new OptionKey<>("~jdk.internal.vm.compiler");
+        public static final OptionKey<Integer> Iterations = new OptionKey<>(1);
+        public static final OptionKey<String> MethodFilter = new OptionKey<>(null);
+        public static final OptionKey<String> ExcludeMethodFilter = new OptionKey<>(null);
+        public static final OptionKey<Integer> StartAt = new OptionKey<>(1);
+        public static final OptionKey<Integer> StopAt = new OptionKey<>(Integer.MAX_VALUE);
+        public static final OptionKey<String> Config = new OptionKey<>(null);
+        public static final OptionKey<Boolean> MultiThreaded = new OptionKey<>(false);
+        public static final OptionKey<Integer> Threads = new OptionKey<>(0);
+
+        static final ReflectionOptionDescriptors DESCRIPTORS = new ReflectionOptionDescriptors(Options.class,
+                           "Help", "List options and their help messages and then exit.",
+                      "Classpath", "Class path denoting methods to compile. Default is to compile boot classes.",
+                        "Verbose", "Verbose operation.",
+                   "LimitModules", "Comma separated list of module names to which compilation should be limited. " +
+                                   "Module names can be prefixed with \"~\" to exclude the named module.",
+                     "Iterations", "The number of iterations to perform.",
+                   "MethodFilter", "Only compile methods matching this filter.",
+            "ExcludeMethodFilter", "Exclude methods matching this filter from compilation.",
+                        "StartAt", "First class to consider for compilation.",
+                         "StopAt", "Last class to consider for compilation.",
+                         "Config", "Option value overrides to use during compile the world. For example, " +
+                                   "to disable inlining and partial escape analysis specify 'PartialEscapeAnalysis=false Inline=false'. " +
+                                   "The format for each option is the same as on the command line just without the '-Dgraal.' prefix.",
+                  "MultiThreaded", "Run using multiple threads for compilation.",
+                        "Threads", "Number of threads to use for multithreaded execution. Defaults to Runtime.getRuntime().availableProcessors().");
+        // @formatter:on
+    }
+
+    public static OptionValues loadOptions(OptionValues initialValues) {
+        EconomicMap<OptionKey<?>, Object> values = OptionValues.newOptionMap();
+        List<OptionDescriptors> loader = singletonList(DESCRIPTORS);
+        OptionsParser.parseOptions(extractEntries(System.getProperties(), "CompileTheWorld.", true), values, loader);
+        OptionValues options = new OptionValues(initialValues, values);
+        if (Options.Help.getValue(options)) {
+            options.printHelp(loader, System.out, "CompileTheWorld.");
+            System.exit(0);
+        }
+        return options;
+    }
+
     public static void main(String[] args) throws Throwable {
         Services.exportJVMCITo(CompileTheWorld.class);
-        HotSpotGraalCompiler compiler = (HotSpotGraalCompiler) HotSpotJVMCIRuntime.runtime().getCompiler();
-        compiler.compileTheWorld();
+        HotSpotJVMCIRuntime jvmciRuntime = HotSpotJVMCIRuntime.runtime();
+        HotSpotGraalCompiler compiler = (HotSpotGraalCompiler) jvmciRuntime.getCompiler();
+        HotSpotGraalRuntimeProvider graalRuntime = compiler.getGraalRuntime();
+        HotSpotCodeCacheProvider codeCache = graalRuntime.getHostProviders().getCodeCache();
+        OptionValues options = loadOptions(graalRuntime.getOptions());
+
+        int iterations = Options.Iterations.getValue(options);
+        for (int i = 0; i < iterations; i++) {
+            codeCache.resetCompilationStatistics();
+            TTY.println("CompileTheWorld : iteration " + i);
+
+            CompileTheWorld ctw = new CompileTheWorld(jvmciRuntime, compiler, options);
+            ctw.compile();
+        }
+        // This is required as non-daemon threads can be started by class initializers
+        System.exit(0);
     }
 }

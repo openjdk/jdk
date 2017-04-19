@@ -510,6 +510,14 @@ public class BinaryGraphPrinter implements GraphPrinter {
                     props.put("probability-exception", t);
                 }
             }
+
+            try {
+                props.put("NodeCost-Size", node.estimatedNodeSize());
+                props.put("NodeCost-Cycles", node.estimatedNodeCycles());
+            } catch (Throwable t) {
+                props.put("node-cost-exception", t.getMessage());
+            }
+
             if (nodeToBlocks != null) {
                 Object block = getBlockForNode(node, nodeToBlocks);
                 if (block != null) {
