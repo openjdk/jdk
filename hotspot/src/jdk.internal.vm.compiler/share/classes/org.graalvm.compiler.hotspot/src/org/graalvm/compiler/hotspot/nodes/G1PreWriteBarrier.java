@@ -22,8 +22,8 @@
  */
 package org.graalvm.compiler.hotspot.nodes;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_50;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_50;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_64;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_64;
 
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.InputType;
@@ -33,7 +33,7 @@ import org.graalvm.compiler.nodes.FrameState;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 
-@NodeInfo(cycles = CYCLES_50, size = SIZE_50)
+@NodeInfo(cycles = CYCLES_64, size = SIZE_64)
 public final class G1PreWriteBarrier extends ObjectWriteBarrier implements DeoptimizingNode.DeoptBefore {
 
     public static final NodeClass<G1PreWriteBarrier> TYPE = NodeClass.create(G1PreWriteBarrier.class);

@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.nodes.extended;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_3;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
 
 import org.graalvm.compiler.core.common.type.Stamp;
@@ -49,7 +49,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 /**
  * Loads a method from the virtual method table of a given hub.
  */
-@NodeInfo(cycles = CYCLES_3, size = SIZE_1)
+@NodeInfo(cycles = CYCLES_2, size = SIZE_1)
 public final class LoadMethodNode extends FixedWithNextNode implements Lowerable, Canonicalizable {
 
     public static final NodeClass<LoadMethodNode> TYPE = NodeClass.create(LoadMethodNode.class);

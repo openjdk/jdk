@@ -22,6 +22,9 @@
  */
 package org.graalvm.compiler.hotspot.nodes.profiling;
 
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_IGNORED;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_IGNORED;
+
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
@@ -37,7 +40,7 @@ import org.graalvm.compiler.options.OptionType;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
-@NodeInfo
+@NodeInfo(cycles = CYCLES_IGNORED, cyclesRationale = "profiling should be ignored", size = SIZE_IGNORED, sizeRationale = "profiling should be ignored")
 public class ProfileNode extends DeoptimizingFixedWithNextNode implements Lowerable {
     public static class Options {
         @Option(help = "Control probabilistic profiling on AMD64", type = OptionType.Expert)//

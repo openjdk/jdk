@@ -22,10 +22,13 @@
  */
 package org.graalvm.compiler.nodes.calc;
 
+import jdk.vm.ci.meta.ConstantReflectionProvider;
+import jdk.vm.ci.meta.MetaAccessProvider;
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.type.AbstractPointerStamp;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
+import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.Canonicalizable.BinaryCommutative;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
@@ -41,11 +44,13 @@ import org.graalvm.compiler.nodes.util.GraphUtil;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.TriState;
+import org.graalvm.compiler.options.OptionValues;
 
 @NodeInfo(shortName = "==")
 public class PointerEqualsNode extends CompareNode implements BinaryCommutative<ValueNode> {
 
     public static final NodeClass<PointerEqualsNode> TYPE = NodeClass.create(PointerEqualsNode.class);
+    private static final PointerEqualsOp OP = new PointerEqualsOp();
 
     public PointerEqualsNode(ValueNode x, ValueNode y) {
         this(TYPE, x, y);
@@ -65,44 +70,62 @@ public class PointerEqualsNode extends CompareNode implements BinaryCommutative<
         assert y.stamp() instanceof AbstractPointerStamp;
     }
 
-    /**
-     * Determines if this is a comparison used to determine whether dispatching on a receiver could
-     * select a certain method and if so, returns {@code true} if the answer is guaranteed to be
-     * false. Otherwise, returns {@code false}.
-     */
-    private boolean isAlwaysFailingVirtualDispatchTest(ValueNode forX, ValueNode forY) {
-        if (forY.isConstant()) {
-            if (forX instanceof LoadMethodNode && condition == Condition.EQ) {
-                LoadMethodNode lm = ((LoadMethodNode) forX);
-                if (lm.getMethod().getEncoding().equals(forY.asConstant())) {
-                    if (lm.getHub() instanceof LoadHubNode) {
-                        ValueNode object = ((LoadHubNode) lm.getHub()).getValue();
-                        ResolvedJavaType type = StampTool.typeOrNull(object);
-                        ResolvedJavaType declaringClass = lm.getMethod().getDeclaringClass();
-                        if (type != null && !type.equals(declaringClass) && declaringClass.isAssignableFrom(type)) {
-                            ResolvedJavaMethod override = type.resolveMethod(lm.getMethod(), lm.getCallerType());
-                            if (override != null && !override.equals(lm.getMethod())) {
-                                assert declaringClass.isAssignableFrom(override.getDeclaringClass());
-                                return true;
+    @Override
+    public Node canonical(CanonicalizerTool tool, ValueNode forX, ValueNode forY) {
+        ValueNode value = OP.canonical(tool.getConstantReflection(), tool.getMetaAccess(), tool.getOptions(), tool.smallestCompareWidth(), Condition.EQ, false, forX, forY);
+        if (value != null) {
+            return value;
+        }
+        return this;
+    }
+
+    public static class PointerEqualsOp extends CompareOp {
+
+        /**
+         * Determines if this is a comparison used to determine whether dispatching on a receiver
+         * could select a certain method and if so, returns {@code true} if the answer is guaranteed
+         * to be false. Otherwise, returns {@code false}.
+         */
+        private static boolean isAlwaysFailingVirtualDispatchTest(Condition condition, ValueNode forX, ValueNode forY) {
+            if (forY.isConstant()) {
+                if (forX instanceof LoadMethodNode && condition == Condition.EQ) {
+                    LoadMethodNode lm = ((LoadMethodNode) forX);
+                    if (lm.getMethod().getEncoding().equals(forY.asConstant())) {
+                        if (lm.getHub() instanceof LoadHubNode) {
+                            ValueNode object = ((LoadHubNode) lm.getHub()).getValue();
+                            ResolvedJavaType type = StampTool.typeOrNull(object);
+                            ResolvedJavaType declaringClass = lm.getMethod().getDeclaringClass();
+                            if (type != null && !type.equals(declaringClass) && declaringClass.isAssignableFrom(type)) {
+                                ResolvedJavaMethod override = type.resolveMethod(lm.getMethod(), lm.getCallerType());
+                                if (override != null && !override.equals(lm.getMethod())) {
+                                    assert declaringClass.isAssignableFrom(override.getDeclaringClass());
+                                    return true;
+                                }
                             }
                         }
                     }
                 }
             }
+            return false;
         }
-        return false;
-    }
 
-    @Override
-    public ValueNode canonical(CanonicalizerTool tool, ValueNode forX, ValueNode forY) {
-        LogicNode result = findSynonym(forX, forY);
-        if (result != null) {
-            return result;
+        @Override
+        public LogicNode canonical(ConstantReflectionProvider constantReflection, MetaAccessProvider metaAccess, OptionValues options, Integer smallestCompareWidth, Condition condition,
+                        boolean unorderedIsTrue, ValueNode forX, ValueNode forY) {
+            LogicNode result = findSynonym(forX, forY);
+            if (result != null) {
+                return result;
+            }
+            if (isAlwaysFailingVirtualDispatchTest(condition, forX, forY)) {
+                return LogicConstantNode.contradiction();
+            }
+            return super.canonical(constantReflection, metaAccess, options, smallestCompareWidth, condition, unorderedIsTrue, forX, forY);
         }
-        if (isAlwaysFailingVirtualDispatchTest(forX, forY)) {
-            return LogicConstantNode.contradiction();
+
+        @Override
+        protected CompareNode duplicateModified(ValueNode newX, ValueNode newY, boolean unorderedIsTrue) {
+            return new PointerEqualsNode(newX, newY);
         }
-        return super.canonical(tool, forX, forY);
     }
 
     public static LogicNode findSynonym(ValueNode forX, ValueNode forY) {
@@ -117,11 +140,6 @@ public class PointerEqualsNode extends CompareNode implements BinaryCommutative<
         } else {
             return null;
         }
-    }
-
-    @Override
-    protected CompareNode duplicateModified(ValueNode newX, ValueNode newY) {
-        return new PointerEqualsNode(newX, newY);
     }
 
     @Override

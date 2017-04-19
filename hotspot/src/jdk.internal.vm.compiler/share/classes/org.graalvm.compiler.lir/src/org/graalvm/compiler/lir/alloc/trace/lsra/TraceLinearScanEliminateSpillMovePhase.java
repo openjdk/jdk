@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import static org.graalvm.compiler.lir.LIRValueUtil.isVariable;
 
 import java.util.ArrayList;
 
+import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.core.common.alloc.Trace;
 import org.graalvm.compiler.core.common.alloc.TraceBuilderResult;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
@@ -44,6 +45,7 @@ import org.graalvm.compiler.lir.alloc.trace.lsra.TraceInterval.SpillState;
 import org.graalvm.compiler.lir.alloc.trace.lsra.TraceLinearScanPhase.IntervalPredicate;
 import org.graalvm.compiler.lir.alloc.trace.lsra.TraceLinearScanPhase.TraceLinearScan;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
+import org.graalvm.compiler.lir.gen.LIRGeneratorTool.MoveFactory;
 
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.AllocatableValue;
@@ -59,9 +61,8 @@ final class TraceLinearScanEliminateSpillMovePhase extends TraceLinearScanAlloca
     };
 
     @Override
-    protected void run(TargetDescription target, LIRGenerationResult lirGenRes, Trace trace, TraceLinearScanAllocationContext context) {
-        TraceBuilderResult traceBuilderResult = context.resultTraces;
-        TraceLinearScan allocator = context.allocator;
+    protected void run(TargetDescription target, LIRGenerationResult lirGenRes, Trace trace, MoveFactory spillMoveFactory, RegisterAllocationConfig registerAllocationConfig,
+                    TraceBuilderResult traceBuilderResult, TraceLinearScan allocator) {
         boolean shouldEliminateSpillMoves = shouldEliminateSpillMoves(traceBuilderResult, allocator);
         eliminateSpillMoves(allocator, shouldEliminateSpillMoves, traceBuilderResult);
     }

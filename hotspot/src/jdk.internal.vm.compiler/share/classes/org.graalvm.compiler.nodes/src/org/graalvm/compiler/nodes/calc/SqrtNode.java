@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.nodes.calc;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_30;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_16;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
 
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
@@ -37,7 +37,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 /**
  * Square root.
  */
-@NodeInfo(cycles = CYCLES_30, size = SIZE_1)
+@NodeInfo(cycles = CYCLES_16, size = SIZE_1)
 public final class SqrtNode extends UnaryArithmeticNode<Sqrt> implements ArithmeticLIRLowerable {
 
     public static final NodeClass<SqrtNode> TYPE = NodeClass.create(SqrtNode.class);

@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.nodes.java;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_30;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_8;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_8;
 
 import org.graalvm.compiler.core.common.LocationIdentity;
@@ -37,7 +37,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
  * A special purpose store node that differs from {@link LogicCompareAndSwapNode} in that it returns
  * either the expected value or the compared against value instead of a boolean.
  */
-@NodeInfo(cycles = CYCLES_30, size = SIZE_8)
+@NodeInfo(cycles = CYCLES_8, size = SIZE_8)
 public final class ValueCompareAndSwapNode extends AbstractCompareAndSwapNode {
     public static final NodeClass<ValueCompareAndSwapNode> TYPE = NodeClass.create(ValueCompareAndSwapNode.class);
 

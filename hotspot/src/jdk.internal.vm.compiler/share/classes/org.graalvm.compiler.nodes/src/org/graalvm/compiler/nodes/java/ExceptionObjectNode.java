@@ -23,7 +23,7 @@
 package org.graalvm.compiler.nodes.java;
 
 import static org.graalvm.compiler.nodeinfo.InputType.Memory;
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_10;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_8;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_8;
 
 import org.graalvm.compiler.core.common.LocationIdentity;
@@ -47,7 +47,7 @@ import jdk.vm.ci.meta.MetaAccessProvider;
  * The entry to an exception handler with the exception coming from a call (as opposed to a local
  * throw instruction or implicit exception).
  */
-@NodeInfo(allowedUsageTypes = Memory, cycles = CYCLES_10, size = SIZE_8)
+@NodeInfo(allowedUsageTypes = Memory, cycles = CYCLES_8, size = SIZE_8)
 public final class ExceptionObjectNode extends BeginStateSplitNode implements Lowerable, MemoryCheckpoint.Single {
     public static final NodeClass<ExceptionObjectNode> TYPE = NodeClass.create(ExceptionObjectNode.class);
 

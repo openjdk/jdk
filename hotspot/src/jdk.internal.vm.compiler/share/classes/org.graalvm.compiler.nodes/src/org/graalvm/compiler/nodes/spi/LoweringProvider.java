@@ -46,11 +46,10 @@ public interface LoweringProvider {
     ValueNode reconstructArrayIndex(JavaKind elementKind, AddressNode address);
 
     /**
-     * Indicates whether the target platform supports comparison of integers of a particular bit
-     * width. This check is used by optimizations that might introduce subword compares.
+     * Indicates the smallest width for comparing an integer value on the target platform.
      */
-    default boolean supportSubwordCompare(int bits) {
+    default Integer smallestCompareWidth() {
         // most platforms only support 32 and 64 bit compares
-        return bits >= 32;
+        return 32;
     }
 }

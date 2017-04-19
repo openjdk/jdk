@@ -23,7 +23,7 @@
 package org.graalvm.compiler.hotspot.aarch64;
 
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_UNKNOWN;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_20;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_UNKNOWN;
 
 import org.graalvm.compiler.core.aarch64.AArch64NodeLIRBuilder;
 import org.graalvm.compiler.core.common.type.RawPointerStamp;
@@ -46,7 +46,7 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
 
-@NodeInfo(cycles = CYCLES_UNKNOWN, cyclesRationale = "Native call is a block hole", size = SIZE_20)
+@NodeInfo(cycles = CYCLES_UNKNOWN, cyclesRationale = "Native call is a block hole", size = SIZE_UNKNOWN)
 public final class AArch64RawNativeCallNode extends FixedWithNextNode implements LIRLowerable {
     public static final NodeClass<AArch64RawNativeCallNode> TYPE = NodeClass.create(AArch64RawNativeCallNode.class);
 

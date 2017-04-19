@@ -103,6 +103,7 @@ public final class LSStackSlotAllocator extends AllocationPhase {
     }
 
     private static final class Allocator {
+
         private final LIR lir;
         private final FrameMapBuilderTool frameMapBuilder;
         private final StackInterval[] stackSlotMap;
@@ -131,7 +132,7 @@ public final class LSStackSlotAllocator extends AllocationPhase {
 
         @SuppressWarnings("try")
         private void allocate() {
-            Debug.dump(Debug.INFO_LEVEL, lir, "After StackSlot numbering");
+            Debug.dump(Debug.VERBOSE_LEVEL, lir, "After StackSlot numbering");
 
             long currentFrameSize = StackSlotAllocatorUtil.allocatedFramesize.isEnabled() ? frameMapBuilder.getFrameMap().currentFrameSize() : 0;
             EconomicSet<LIRInstruction> usePos;
@@ -145,14 +146,14 @@ public final class LSStackSlotAllocator extends AllocationPhase {
                     assert verifyIntervals();
                 }
             }
-            if (Debug.isDumpEnabled(Debug.INFO_LEVEL)) {
+            if (Debug.isDumpEnabled(Debug.VERBOSE_LEVEL)) {
                 dumpIntervals("Before stack slot allocation");
             }
             // step 4: allocate stack slots
             try (DebugCloseable t = AllocateSlotsTimer.start()) {
                 allocateStackSlots();
             }
-            if (Debug.isDumpEnabled(Debug.INFO_LEVEL)) {
+            if (Debug.isDumpEnabled(Debug.VERBOSE_LEVEL)) {
                 dumpIntervals("After stack slot allocation");
             }
 
@@ -160,7 +161,6 @@ public final class LSStackSlotAllocator extends AllocationPhase {
             try (DebugCloseable t = AssignSlotsTimer.start()) {
                 assignStackSlots(usePos);
             }
-            Debug.dump(Debug.INFO_LEVEL, lir, "After StackSlot assignment");
             if (StackSlotAllocatorUtil.allocatedFramesize.isEnabled()) {
                 StackSlotAllocatorUtil.allocatedFramesize.add(frameMapBuilder.getFrameMap().currentFrameSize() - currentFrameSize);
             }
@@ -434,7 +434,7 @@ public final class LSStackSlotAllocator extends AllocationPhase {
         }
 
         private void dumpIntervals(String label) {
-            Debug.dump(Debug.INFO_LEVEL, new StackIntervalDumper(Arrays.copyOf(stackSlotMap, stackSlotMap.length)), label);
+            Debug.dump(Debug.VERBOSE_LEVEL, new StackIntervalDumper(Arrays.copyOf(stackSlotMap, stackSlotMap.length)), label);
         }
 
     }

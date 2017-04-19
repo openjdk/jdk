@@ -45,7 +45,6 @@ import org.graalvm.compiler.lir.StandardOp.LabelOp;
 import org.graalvm.compiler.lir.alloc.trace.TraceAllocationPhase.TraceAllocationContext;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool.MoveFactory;
-import org.graalvm.compiler.lir.phases.LIRPhase;
 import org.graalvm.compiler.lir.ssa.SSAUtil;
 
 import jdk.vm.ci.code.Architecture;
@@ -54,7 +53,10 @@ import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
 
-public final class TraceGlobalMoveResolutionPhase extends LIRPhase<TraceAllocationPhase.TraceAllocationContext> {
+public final class TraceGlobalMoveResolutionPhase {
+
+    private TraceGlobalMoveResolutionPhase() {
+    }
 
     /**
      * Abstract move resolver interface for testing.
@@ -63,8 +65,8 @@ public final class TraceGlobalMoveResolutionPhase extends LIRPhase<TraceAllocati
         public abstract void addMapping(Value src, AllocatableValue dst, Value fromStack);
     }
 
-    @Override
-    protected void run(TargetDescription target, LIRGenerationResult lirGenRes, TraceAllocationContext context) {
+    public static void resolve(TargetDescription target, LIRGenerationResult lirGenRes, TraceAllocationContext context) {
+        Debug.dump(Debug.VERBOSE_LEVEL, lirGenRes.getLIR(), "Before TraceGlobalMoveResultion");
         MoveFactory spillMoveFactory = context.spillMoveFactory;
         resolveGlobalDataFlow(context.resultTraces, lirGenRes, spillMoveFactory, target.arch, context.livenessInfo);
     }
@@ -191,4 +193,5 @@ public final class TraceGlobalMoveResolutionPhase extends LIRPhase<TraceAllocati
             moveResolver.addMapping(from, to, fromStack);
         }
     }
+
 }

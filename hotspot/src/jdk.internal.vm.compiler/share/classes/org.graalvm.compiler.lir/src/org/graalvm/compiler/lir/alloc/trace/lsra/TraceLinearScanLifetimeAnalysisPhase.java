@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 
 import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.core.common.alloc.Trace;
 import org.graalvm.compiler.core.common.alloc.TraceBuilderResult;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
@@ -78,14 +79,12 @@ import jdk.vm.ci.meta.Value;
 public final class TraceLinearScanLifetimeAnalysisPhase extends TraceLinearScanAllocationPhase {
 
     @Override
-    protected void run(TargetDescription target, LIRGenerationResult lirGenRes, Trace trace, TraceLinearScanAllocationContext context) {
-        TraceBuilderResult traceBuilderResult = context.resultTraces;
-        TraceLinearScan allocator = context.allocator;
+    protected void run(TargetDescription target, LIRGenerationResult lirGenRes, Trace trace, MoveFactory spillMoveFactory, RegisterAllocationConfig registerAllocationConfig,
+                    TraceBuilderResult traceBuilderResult, TraceLinearScan allocator) {
         new Analyser(allocator, traceBuilderResult).analyze();
     }
 
     public static final class Analyser {
-        private static final int DUMP_DURING_ANALYSIS_LEVEL = 4;
         private final TraceLinearScan allocator;
         private final TraceBuilderResult traceBuilderResult;
         private int numInstructions;
@@ -534,7 +533,7 @@ public final class TraceLinearScanLifetimeAnalysisPhase extends TraceLinearScanA
                         AbstractBlockBase<?> pred = blockId == 0 ? null : blocks[blockId - 1];
                         handleBlockBegin(block, pred);
                     }
-                    if (Debug.isDumpEnabled(DUMP_DURING_ANALYSIS_LEVEL)) {
+                    if (Debug.isDumpEnabled(Debug.VERY_DETAILED_LEVEL)) {
                         allocator.printIntervals("After Block " + block);
                     }
                 }   // end of block iteration

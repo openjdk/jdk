@@ -28,10 +28,9 @@ import org.graalvm.compiler.api.test.Graal;
 import org.graalvm.compiler.core.test.AllocSpy;
 import org.graalvm.compiler.debug.DebugEnvironment;
 import org.graalvm.compiler.hotspot.CompilationTask;
-import org.graalvm.compiler.hotspot.CompileTheWorld;
-import org.graalvm.compiler.hotspot.CompileTheWorldOptions;
 import org.graalvm.compiler.hotspot.HotSpotGraalCompiler;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
+import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.hotspot.HotSpotCompilationRequest;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
@@ -51,7 +50,7 @@ import jdk.vm.ci.runtime.JVMCICompiler;
  * Memory analysis for a {@link CompileTheWorld} execution can also be performed. For example:
  *
  * <pre>
- *     mx --vm server vm -XX:-UseJVMCIClassLoader -Dgraal.CompileTheWorldClasspath=$HOME/SPECjvm2008/SPECjvm2008.jar -cp @org.graalvm.compiler.hotspot.test org.graalvm.compiler.hotspot.test.MemoryUsageBenchmark
+ *     mx vm -XX:-UseJVMCIClassLoader -DCompileTheWorld.Classpath=$HOME/SPECjvm2008/SPECjvm2008.jar -cp @org.graalvm.compiler.hotspot.test org.graalvm.compiler.hotspot.test.MemoryUsageBenchmark
  * </pre>
  */
 public class MemoryUsageBenchmark extends HotSpotGraalCompilerTest {
@@ -181,9 +180,10 @@ public class MemoryUsageBenchmark extends HotSpotGraalCompilerTest {
     public void run() {
         compileAndTime("simple");
         compileAndTime("complex");
-        if (CompileTheWorldOptions.CompileTheWorldClasspath.getValue(getInitialOptions()) != CompileTheWorld.SUN_BOOT_CLASS_PATH) {
+        OptionValues options = CompileTheWorld.loadOptions(getInitialOptions());
+        if (CompileTheWorld.Options.Classpath.getValue(options) != CompileTheWorld.SUN_BOOT_CLASS_PATH) {
             HotSpotJVMCIRuntimeProvider runtime = HotSpotJVMCIRuntime.runtime();
-            CompileTheWorld ctw = new CompileTheWorld(runtime, (HotSpotGraalCompiler) runtime.getCompiler(), getInitialOptions());
+            CompileTheWorld ctw = new CompileTheWorld(runtime, (HotSpotGraalCompiler) runtime.getCompiler(), options);
             try {
                 ctw.compile();
             } catch (Throwable e) {

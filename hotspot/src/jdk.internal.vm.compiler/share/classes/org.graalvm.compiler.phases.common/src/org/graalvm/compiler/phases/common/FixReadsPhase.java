@@ -88,6 +88,11 @@ public class FixReadsPhase extends BasePhase<LowTierContext> {
     private boolean replaceInputsWithConstants;
     private Phase schedulePhase;
 
+    @Override
+    public float codeSizeIncrease() {
+        return 2.0f;
+    }
+
     private static class FixReadsClosure extends ScheduledNodeIterator {
 
         @Override

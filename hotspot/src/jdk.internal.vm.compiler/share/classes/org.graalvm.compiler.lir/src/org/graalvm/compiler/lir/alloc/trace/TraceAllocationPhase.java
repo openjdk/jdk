@@ -112,13 +112,13 @@ public abstract class TraceAllocationPhase<C extends TraceAllocationPhase.TraceA
     public final void apply(TargetDescription target, LIRGenerationResult lirGenRes, Trace trace, C context, boolean dumpTrace) {
         try (Scope s = Debug.scope(getName(), this)) {
             try (DebugCloseable a = timer.start(); DebugCloseable c = memUseTracker.start()) {
-                if (dumpTrace && Debug.isDumpEnabled(TraceBuilderPhase.TRACE_DUMP_LEVEL + 1)) {
-                    Debug.dump(TraceBuilderPhase.TRACE_DUMP_LEVEL + 1, trace, "%s before (Trace%s: %s)", getName(), trace.getId(), trace);
+                if (dumpTrace && Debug.isDumpEnabled(Debug.DETAILED_LEVEL)) {
+                    Debug.dump(Debug.DETAILED_LEVEL, trace, "Before %s (Trace%s: %s)", getName(), trace.getId(), trace);
                 }
                 run(target, lirGenRes, trace, context);
                 allocatedTraces.increment();
-                if (dumpTrace && Debug.isDumpEnabled(TraceBuilderPhase.TRACE_DUMP_LEVEL)) {
-                    Debug.dump(TraceBuilderPhase.TRACE_DUMP_LEVEL, trace, "%s (Trace%s: %s)", getName(), trace.getId(), trace);
+                if (dumpTrace && Debug.isDumpEnabled(Debug.VERBOSE_LEVEL)) {
+                    Debug.dump(Debug.VERBOSE_LEVEL, trace, "After %s (Trace%s: %s)", getName(), trace.getId(), trace);
                 }
             }
         } catch (Throwable e) {
