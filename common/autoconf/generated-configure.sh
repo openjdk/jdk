@@ -995,9 +995,8 @@ OPENJDK_TARGET_CPU_OSARCH
 OPENJDK_TARGET_CPU_ISADIR
 OPENJDK_TARGET_CPU_LEGACY_LIB
 OPENJDK_TARGET_CPU_LEGACY
-REQUIRED_OS_VERSION
-REQUIRED_OS_ARCH
-REQUIRED_OS_NAME
+OPENJDK_MODULE_TARGET_OS_ARCH
+OPENJDK_MODULE_TARGET_OS_NAME
 COMPILE_TYPE
 OPENJDK_TARGET_CPU_ENDIAN
 OPENJDK_TARGET_CPU_BITS
@@ -5180,7 +5179,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1492592126
+DATE_WHEN_GENERATED=1492700323
 
 ###############################################################################
 #
@@ -16028,32 +16027,17 @@ $as_echo_n "checking compilation type... " >&6; }
 $as_echo "$COMPILE_TYPE" >&6; }
 
 
-  if test "x$OPENJDK_TARGET_OS" = "xsolaris"; then
-    REQUIRED_OS_NAME=SunOS
-    REQUIRED_OS_VERSION=5.10
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    OPENJDK_MODULE_TARGET_OS_NAME="macos"
+  else
+    OPENJDK_MODULE_TARGET_OS_NAME="$OPENJDK_TARGET_OS"
   fi
-  if test "x$OPENJDK_TARGET_OS" = "xlinux"; then
-    REQUIRED_OS_NAME=Linux
-    REQUIRED_OS_VERSION=2.6
-  fi
-  if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
-    REQUIRED_OS_NAME=Windows
-    if test "x$OPENJDK_TARGET_CPU_BITS" = "x64"; then
-      REQUIRED_OS_VERSION=5.2
-    else
-      REQUIRED_OS_VERSION=5.1
-    fi
-  fi
-  if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
-    REQUIRED_OS_NAME="Mac OS X"
-    REQUIRED_OS_VERSION=11.2
-  fi
-  if test "x$OPENJDK_TARGET_OS" = "xaix"; then
-    REQUIRED_OS_NAME=AIX
-    REQUIRED_OS_VERSION=7.1
-  fi
-  REQUIRED_OS_ARCH=${OPENJDK_TARGET_CPU}
 
+  if test "x$OPENJDK_TARGET_CPU" = xx86_64; then
+    OPENJDK_MODULE_TARGET_OS_ARCH="amd64"
+  else
+    OPENJDK_MODULE_TARGET_OS_ARCH="$OPENJDK_TARGET_CPU"
+  fi
 
 
 
