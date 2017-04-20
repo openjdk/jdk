@@ -181,9 +181,9 @@ package java.util;
  * methods, but instead inherit the identity-based versions from class
  * {@code Object}.
  *
- * <p>This interface is a member of the <a
- * href="{@docRoot}/../technotes/guides/collections/index.html"> Java Collections
- * Framework</a>.
+ * <p>This interface is a member of the
+ * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">
+ * Java Collections Framework</a>.
  *
  * @author Doug Lea
  * @author Josh Bloch
