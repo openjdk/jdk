@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,31 +22,46 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.tools.jlink.internal;
+
+import jdk.tools.jlink.plugin.ResourcePoolModule;
+
+import java.util.Locale;
 
 /**
- * Contains the collections framework, legacy collection classes,
- * event model, date and time facilities, internationalization, and
- * miscellaneous utility classes (a string tokenizer, a random-number
- * generator, and a bit array).
- *
- * <h2><a name="CollectionsFramework"></a>{@index "Java Collections Framework"}</h2>
- * <ul>
- *   <li><a href="../../../technotes/guides/collections/overview.html"><b>Collections Framework Overview</b></a>
- *   <li><a href="../../../technotes/guides/collections/reference.html"><b>
- *        Collections Framework Annotated Outline</b></a>
- * </ul>
- *
- * <h2>Related Documentation</h2>
- * For overviews, tutorials, examples, guides, and tool documentation,
- * please see:
- * <ul>
- *     <li><a href="http://docs.oracle.com/javase/tutorial/collections/index.html">
- *        <b>Collections Framework Tutorial</b></a>
- *     <li><a
- *     href="../../../technotes/guides/collections/designfaq.html"><b>Collections
- *     Framework Design FAQ</b></a>
- * </ul>
- *
- * @since 1.0
+ * Supported platforms
  */
-package java.util;
+public enum Platform {
+    WINDOWS,
+    LINUX,
+    SOLARIS,
+    MACOS,
+    AIX,
+    UNKNOWN;
+
+    /**
+     * Returns the {@code Platform} of the given OS name specified
+     * in the {@code ModuleTarget} attribute.
+     *
+     * @param osName OS name in ModuleTarget attribute
+     */
+    public static Platform toPlatform(String osName) {
+        try {
+            return Platform.valueOf(osName.toUpperCase(Locale.ENGLISH));
+        } catch (IllegalArgumentException e) {
+            return Platform.UNKNOWN;
+        }
+    }
+
+    /**
+     * Returns the {@code Platform} to which the given module is target to.
+     */
+    public static Platform getTargetPlatform(ResourcePoolModule module) {
+        String osName = module.osName();
+        if (osName != null) {
+            return toPlatform(osName);
+        } else {
+            return Platform.UNKNOWN;
+        }
+    }
+}
