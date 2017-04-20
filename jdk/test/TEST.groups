@@ -269,7 +269,6 @@ jdk_other = \
     javax/transaction \
     javax/xml \
     -javax/xml/crypto \
-    jdk/asm \
     jdk/internal/jline \
     com/sun/jndi \
     com/sun/corba \
