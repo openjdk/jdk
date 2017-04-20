@@ -84,7 +84,7 @@ import java.util.*;
  *     {(x, y) such that x.equals(y)}. </pre><p>
  *
  * This interface is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
+ * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
  * @param <T> the type of objects that this object may be compared to
