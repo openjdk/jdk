@@ -153,16 +153,24 @@ DOCS_MODULES += \
     jdk.incubator.httpclient \
     jdk.jartool \
     jdk.javadoc \
+    jdk.jcmd \
     jdk.jconsole \
     jdk.jdeps \
     jdk.jdi \
+    jdk.jdwp.agent \
     jdk.jlink \
+    jdk.jsobject \
     jdk.jshell \
+    jdk.jstatd \
     jdk.localedata \
     jdk.management \
+    jdk.management.agent \
     jdk.naming.dns \
     jdk.naming.rmi \
     jdk.net \
+    jdk.pack \
+    jdk.policytool \
+    jdk.rmic \
     jdk.scripting.nashorn \
     jdk.sctp \
     jdk.security.auth \
