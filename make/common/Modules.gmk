@@ -40,6 +40,7 @@ PLATFORM_MODULES :=
 JRE_TOOL_MODULES :=
 UPGRADEABLE_MODULES :=
 AGGREGATOR_MODULES :=
+DOCS_MODULES :=
 
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, , common/Modules.gmk))
@@ -58,12 +59,12 @@ BOOT_MODULES += \
     java.security.sasl \
     java.xml \
     jdk.httpserver \
+    jdk.internal.vm.ci \
     jdk.management \
     jdk.management.agent \
     jdk.net \
     jdk.sctp \
     jdk.unsupported \
-    jdk.internal.vm.ci \
     #
 
 # to be deprivileged
@@ -96,7 +97,6 @@ PLATFORM_MODULES += \
 
 PLATFORM_MODULES += \
     java.compiler \
-    jdk.incubator.httpclient \
     java.scripting \
     java.security.jgss \
     java.smartcardio \
@@ -105,19 +105,28 @@ PLATFORM_MODULES += \
     java.xml.crypto \
     jdk.accessibility \
     jdk.charsets \
-    jdk.crypto.ec \
     jdk.crypto.cryptoki \
+    jdk.crypto.ec \
     jdk.dynalink \
+    jdk.incubator.httpclient \
+    jdk.internal.vm.compiler \
     jdk.jsobject \
     jdk.localedata \
     jdk.naming.dns \
     jdk.scripting.nashorn \
     jdk.security.auth \
     jdk.security.jgss \
-    jdk.internal.vm.compiler \
     jdk.xml.dom \
     jdk.zipfs \
     #
+
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  PLATFORM_MODULES += jdk.crypto.mscapi
+endif
+
+ifeq ($(OPENJDK_TARGET_OS), solaris)
+  PLATFORM_MODULES += jdk.crypto.ucrypto
+endif
 
 JRE_TOOL_MODULES += \
     jdk.jdwp.agent \
@@ -125,12 +134,50 @@ JRE_TOOL_MODULES += \
     jdk.scripting.nashorn.shell \
     #
 
-ifeq ($(OPENJDK_TARGET_OS), windows)
-  PLATFORM_MODULES += jdk.crypto.mscapi
-endif
-ifeq ($(OPENJDK_TARGET_OS), solaris)
-  PLATFORM_MODULES += jdk.crypto.ucrypto
-endif
+################################################################################
+
+# DOCS_MODULES defines the root modules for javadoc generation.
+# All of their `require transitive` modules directly and indirectly will be included.
+DOCS_MODULES += \
+    java.se.ee \
+    java.smartcardio \
+    jdk.accessibility \
+    jdk.attach \
+    jdk.charsets \
+    jdk.compiler \
+    jdk.crypto.cryptoki \
+    jdk.crypto.ec \
+    jdk.dynalink \
+    jdk.editpad \
+    jdk.httpserver \
+    jdk.incubator.httpclient \
+    jdk.jartool \
+    jdk.javadoc \
+    jdk.jcmd \
+    jdk.jconsole \
+    jdk.jdeps \
+    jdk.jdi \
+    jdk.jdwp.agent \
+    jdk.jlink \
+    jdk.jsobject \
+    jdk.jshell \
+    jdk.jstatd \
+    jdk.localedata \
+    jdk.management \
+    jdk.management.agent \
+    jdk.naming.dns \
+    jdk.naming.rmi \
+    jdk.net \
+    jdk.pack \
+    jdk.policytool \
+    jdk.rmic \
+    jdk.scripting.nashorn \
+    jdk.sctp \
+    jdk.security.auth \
+    jdk.security.jgss \
+    jdk.xml.dom \
+    jdk.zipfs \
+    #
 
 # These modules are included in the interim image which is used to run profiling
 # before building the real images.
@@ -255,15 +302,15 @@ $(MODULE_DEPS_MAKEFILE): $(MODULE_INFOS) \
 	    ( $(PRINTF) "DEPS_$(call GetModuleNameFromModuleInfo, $m) :=" && \
 	      $(NAWK) -v MODULE=$(call GetModuleNameFromModuleInfo, $m) '\
 	          BEGIN      { if (MODULE != "java.base") printf(" java.base"); } \
-	          /requires/ { sub(/;/, ""); \
-	                       sub(/requires/, ""); \
-	                       sub(/transitive/, ""); \
-	                       sub(/\/\/.*/, ""); \
-	                       sub(/\/\*.*\*\//, ""); \
-	                       gsub(/^ +\*.*/, ""); \
-	                       gsub(/ /, ""); \
-	                       printf(" %s", $$0) } \
-	          END        { printf("\n") }' $m \
+	          /^ *requires/ { sub(/;/, ""); \
+	                          sub(/requires/, ""); \
+	                          sub(/transitive/, ""); \
+	                          sub(/\/\/.*/, ""); \
+	                          sub(/\/\*.*\*\//, ""); \
+	                          gsub(/^ +\*.*/, ""); \
+	                          gsub(/ /, ""); \
+	                          printf(" %s", $$0) } \
+	          END           { printf("\n") }' $m \
 	    ) >> $@ $(NEWLINE))
 
 -include $(MODULE_DEPS_MAKEFILE)
@@ -280,6 +327,11 @@ FindTransitiveDepsForModule = \
             $(call FindDepsForModule, $m) \
             $(foreach n, $(call FindDepsForModule, $m), \
                  $(call FindDepsForModule, $n))))
+
+# Finds transitive dependencies in 3 levels for a set of modules.
+# Param 1: List of modules to find transitive deps for
+FindTransitiveDepsForModules = \
+    $(sort $(foreach m, $1, $(call FindTransitiveDepsForModule, $m)))
 
 # Upgradeable modules are those that are either defined as upgradeable or that
 # require an upradeable module.
@@ -329,6 +381,7 @@ define ReadSingleImportMetaData
       else ifeq ($$(classloader), ext)
         PLATFORM_MODULES += $1
       endif
+      DOCS_MODULES += $1
     else
       # Default to include in all
       JRE_MODULES += $1
