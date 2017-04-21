@@ -149,6 +149,23 @@ public class BindServices {
         testImage(dir, "m1", "m2", "m3");
     }
 
+    @Test
+    public void testVerboseAndNoBindServices() throws Throwable {
+        if (!hasJmods()) return;
+
+        Path dir = Paths.get("verboseNoBind");
+
+        List<String> output =
+            JLink.run("--output", dir.toString(),
+                      "--module-path", MODULE_PATH,
+                      "--verbose",
+                      "--add-modules", "m1").output();
+
+        assertTrue(output.contains("m1 provides p1.S used by m1"));
+
+        testImage(dir, "m1");
+    }
+
     /*
      * Tests the given ${java.home} to only contain the specified modules
      */
