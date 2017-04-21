@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@ import java.util.Map;
 import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import jdk.tools.jlink.internal.Platform;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
@@ -115,7 +117,7 @@ public final class ExcludeVMPlugin implements Plugin {
     @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         ResourcePoolModule javaBase = in.moduleView().findModule("java.base").get();
-        String[] jvmlibs = jvmlibs(javaBase.osName());
+        String[] jvmlibs = jvmlibs(javaBase);
         TreeSet<Jvm> existing = new TreeSet<>(new JvmComparator());
         TreeSet<Jvm> removed = new TreeSet<>(new JvmComparator());
         if (!keepAll) {
@@ -257,21 +259,15 @@ public final class ExcludeVMPlugin implements Plugin {
         return orig.copyWithContent(content);
     }
 
-    private static String[] jvmlibs(String osName) {
-        if (isWindows(osName)) {
-            return new String[] { "jvm.dll" };
-        } else if (isMac(osName)) {
-            return new String[] { "libjvm.dylib", "libjvm.a" };
-        } else {
-            return new String[] { "libjvm.so", "libjvm.a" };
+    private static String[] jvmlibs(ResourcePoolModule module) {
+        Platform platform = Platform.getTargetPlatform(module);
+        switch (platform) {
+            case WINDOWS:
+                return new String[] { "jvm.dll" };
+            case MACOS:
+                return new String[] { "libjvm.dylib", "libjvm.a" };
+            default:
+                return new String[] { "libjvm.so", "libjvm.a" };
         }
-    }
-
-    private static boolean isWindows(String osName) {
-        return osName.startsWith("Windows");
-    }
-
-    private static boolean isMac(String osName) {
-        return osName.startsWith("Mac OS") || osName.startsWith("Darwin");
     }
 }
