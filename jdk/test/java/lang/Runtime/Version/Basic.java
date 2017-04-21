@@ -23,19 +23,17 @@
 
 /*
  * @test
- * @summary Unit test for java.lang.Runtime.Version.
+ * @summary Unit test for java.lang.Runtime.Version
  * @bug 8072379 8144062 8161236 8160956
  */
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.lang.Runtime.Version;
 import java.math.BigInteger;
-import java.util.stream.Collectors;
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static java.lang.System.out;
 
@@ -46,7 +44,6 @@ public class Basic {
         = NullPointerException.class;
     private static final Class<? extends Throwable> NFE
         = NumberFormatException.class;
-    private static final Class<?> VERSION = Version.class;
 
     private static final BigInteger TOO_BIG
         = (BigInteger.valueOf(Integer.MAX_VALUE)).add(BigInteger.ONE);
@@ -232,7 +229,7 @@ public class Basic {
         String [] ver = jv[0].split("-");
         List<Integer> javaVerVNum
             = Arrays.stream(ver[0].split("\\."))
-            .map(v -> Integer.parseInt(v))
+            .map(Integer::parseInt)
             .collect(Collectors.toList());
         if (!javaVerVNum.equals(current.version())) {
             fail("Runtime.version()", javaVerVNum.toString(),
@@ -256,7 +253,7 @@ public class Basic {
     }
 
     private static void testVersion(List<Integer> vnum, String s) {
-        List<Integer> svnum = new ArrayList<Integer>();
+        List<Integer> svnum = new ArrayList<>();
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < s.length(); i++) {
             Character c = s.charAt(i);
@@ -297,21 +294,20 @@ public class Basic {
     }
 
     private static void testEqualsNO(Version v0, Version v1, boolean eq) {
-        if ((eq && !v0.equalsIgnoreOptional(v1))
-            || (!eq && v0.equalsIgnoreOptional(v1))) {
+        if (eq == v0.equalsIgnoreOptional(v1)) {
+            pass();
+        } else {
             fail("equalsIgnoreOptional() " + Boolean.toString(eq),
                  v0.toString(), v1.toString());
-        } else {
-            pass();
         }
     }
 
     private static void testEquals(Version v0, Version v1, boolean eq) {
-        if ((eq && !v0.equals(v1)) || (!eq && v0.equals(v1))) {
+        if (eq == v0.equals(v1)) {
+            pass();
+        } else {
             fail("equals() " + Boolean.toString(eq),
                  v0.toString(), v1.toString());
-        } else {
-            pass();
         }
     }
 
@@ -329,41 +325,24 @@ public class Basic {
         }
     }
 
-    private static void testCompareNO(Version v0, Version v1, int compare)
-    {
-        try {
-            Method m = VERSION.getMethod("compareToIgnoreOptional", VERSION);
-            int cmp = (int) m.invoke(v0, v1);
-            checkCompare(v0, v1, compare, cmp);
-        } catch (IllegalAccessException | InvocationTargetException |
-                 NoSuchMethodException ex) {
-            fail(String.format("compareToIgnoreOptional() invocation: %s",
-                               ex.getClass()),
-                 null);
-        }
+    private static void testCompareNO(Version v0, Version v1, int compare) {
+        int cmp = v0.compareToIgnoreOptional(v1);
+        checkCompare(v0, v1, compare, cmp);
     }
 
     private static void testCompare(Version v0, Version v1, int compare) {
-        try {
-            Method m = VERSION.getMethod("compareTo", VERSION);
-            int cmp = (int) m.invoke(v0, v1);
-            checkCompare(v0, v1, compare, cmp);
-        } catch (IllegalAccessException | InvocationTargetException |
-                 NoSuchMethodException ex) {
-            fail(String.format("compareTo() invocation: %s", ex.getClass()),
-                 null);
-        }
+        int cmp = v0.compareTo(v1);
+        checkCompare(v0, v1, compare, cmp);
     }
 
     private static void checkCompare(Version v0, Version v1,
-                                     int compare, int cmp)
+                                     int expected, int actual)
     {
-        if (((cmp == 0) && (compare == 0))
-            || (compare == (cmp / Math.abs(cmp == 0 ? 1 : cmp)))) {
+        if (Integer.signum(expected) == Integer.signum(actual)) {
             pass();
         } else {
-            fail(String.format("compare() (cmp = %s) (compare = %s)",
-                               cmp, compare),
+            fail(String.format("compare() (actual = %s) (expected = %s)",
+                               actual, expected),
                  v0.toString(), v1.toString());
         }
     }
