@@ -62,6 +62,8 @@ public class TestInterpreterMethodEntries {
     }
 
     private static void dumpAndUseSharedArchive(String dump, String use) throws Exception {
+        String unlock     = "-XX:+UnlockDiagnosticVMOptions";
+
         String dumpFMA    = "-XX:" + dump + "UseFMA";
         String dumpCRC32  = "-XX:" + dump + "UseCRC32Intrinsics";
         String dumpCRC32C = "-XX:" + dump + "UseCRC32CIntrinsics";
@@ -69,10 +71,10 @@ public class TestInterpreterMethodEntries {
         String useCRC32   = "-XX:" + use  + "UseCRC32Intrinsics";
         String useCRC32C  = "-XX:" + use  + "UseCRC32CIntrinsics";
 
-        CDSTestUtils.createArchiveAndCheck(dumpFMA, dumpCRC32, dumpCRC32C);
+        CDSTestUtils.createArchiveAndCheck(unlock, dumpFMA, dumpCRC32, dumpCRC32C);
 
         CDSOptions opts = (new CDSOptions())
-            .addPrefix(useFMA, useCRC32, useCRC32C, "-showversion")
+            .addPrefix(unlock, useFMA, useCRC32, useCRC32C, "-showversion")
             .addSuffix("TestInterpreterMethodEntries", "run")
             .setUseVersion(false);
         CDSTestUtils.runWithArchiveAndCheck(opts);
