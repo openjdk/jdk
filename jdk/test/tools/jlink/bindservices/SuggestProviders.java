@@ -247,6 +247,42 @@ public class SuggestProviders {
 
     }
 
+    @Test
+    public void suggestTypeNotRealProvider() throws Throwable {
+        if (!hasJmods()) return;
+
+        List<String> output =
+            JLink.run("--module-path", MODULE_PATH,
+                      "--add-modules", "m1",
+                      "--suggest-providers",
+                      "java.util.List").output();
+
+        System.out.println(output);
+        List<String> expected = List.of(
+            "No provider found for service specified to --suggest-providers: java.util.List"
+        );
+
+        assertTrue(output.containsAll(expected));
+    }
+
+    @Test
+    public void addNonObservableModule() throws Throwable {
+        if (!hasJmods()) return;
+
+        List<String> output =
+            JLink.run("--module-path", MODULE_PATH,
+                      "--add-modules", "nonExistentModule",
+                      "--suggest-providers",
+                      "java.nio.charset.spi.CharsetProvider").output();
+
+        System.out.println(output);
+        List<String> expected = List.of(
+            "jdk.charsets provides java.nio.charset.spi.CharsetProvider used by java.base"
+        );
+
+        assertTrue(output.containsAll(expected));
+    }
+
     static class JLink {
         static final ToolProvider JLINK_TOOL = ToolProvider.findFirst("jlink")
             .orElseThrow(() ->
