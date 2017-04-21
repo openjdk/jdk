@@ -752,14 +752,6 @@ public class TestModules extends JavadocTester {
         checkOutput("moduleA-summary.html", true,
                 "<li><a href=\"#module.description\">Description</a>&nbsp;|&nbsp;<a href=\"#modules.summary\">"
                 + "Modules</a>&nbsp;|&nbsp;<a href=\"#packages.summary\">Packages</a>&nbsp;|&nbsp;Services</li>",
-                "<table class=\"packagesSummary\" summary=\"Indirect Exports table, listing modules, and packages\">\n"
-                + "<caption><span>Indirect Exports</span><span class=\"tabEnd\">&nbsp;</span></caption>",
-                "<table class=\"packagesSummary\" summary=\"Indirect Opens table, listing modules, and packages\">\n"
-                + "<caption><span>Indirect Opens</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
-                + "<tr>\n"
-                + "<th class=\"colFirst\" scope=\"col\">From</th>\n"
-                + "<th class=\"colLast\" scope=\"col\">Packages</th>\n"
-                + "</tr>\n",
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"moduleB-summary.html\">moduleB</a></th>\n"
                 + "<td class=\"colLast\"><a href=\"testpkgmdlB/package-summary.html\">testpkgmdlB</a></td>\n");
         checkOutput("moduleB-summary.html", true,
