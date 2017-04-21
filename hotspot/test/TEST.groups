@@ -130,7 +130,10 @@ hotspot_tier1_gc_closed = \
   sanity/ExecuteInternalVMTests.java
 
 hotspot_tier1_gc_gcold = \
-  gc/stress/TestGCOld.java
+  gc/stress/gcold/TestGCOldWithG1.java
+  gc/stress/gcold/TestGCOldWithCMS.java
+  gc/stress/gcold/TestGCOldWithSerial.java
+  gc/stress/gcold/TestGCOldWithParallel.java
 
 hotspot_tier1_gc_gcbasher = \
   gc/stress/gcbasher/TestGCBasherWithG1.java \
