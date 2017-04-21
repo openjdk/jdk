@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,19 @@ include MakeBase.gmk
 include JavaCompilation.gmk
 include SetupJavaCompilers.gmk
 
+$(eval $(call IncludeCustomExtension, jdk, CompileTools.gmk))
+
 ################################################################################
+
+# Use += to be able to add to this from a custom extension
+BUILD_TOOLS_SRC_DIRS += \
+    $(JDK_TOPDIR)/make/src/classes \
+    $(BUILDTOOLS_OUTPUTDIR)/interim_cldrconverter_classes \
+    #
 
 $(eval $(call SetupJavaCompilation,BUILD_TOOLS_JDK, \
     SETUP := GENERATE_OLDBYTECODE, \
-    SRC := $(JDK_TOPDIR)/make/src/classes $(BUILDTOOLS_OUTPUTDIR)/interim_cldrconverter_classes, \
+    SRC := $(BUILD_TOOLS_SRC_DIRS), \
     EXCLUDES := build/tools/deps \
                 build/tools/jigsaw, \
     BIN := $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes))
