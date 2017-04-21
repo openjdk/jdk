@@ -296,7 +296,7 @@ public class CompletionSuggestionTest extends KullaTesting {
     }
 
     public void testImportStart() {
-        assertCompletion("import c|", "com");
+        assertCompletionIncludesExcludes("import c|", Set.of("com"), Set.of());
     }
 
     public void testBrokenClassFile() throws Exception {
