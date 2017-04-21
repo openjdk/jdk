@@ -36,6 +36,7 @@ jdk/javadoc/doclet/testIOException/TestIOException.java                         
 #
 # jshell
 
+jdk/jshell/MergedTabShiftTabExpressionTest.java                                 8179002    windows-i586
 jdk/jshell/UserJdiUserRemoteTest.java                                           8173079    linux-all
 jdk/jshell/UserInputTest.java                                                   8169536    generic-all   
 
