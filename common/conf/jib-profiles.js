@@ -584,7 +584,7 @@ var getJibProfilesProfiles = function (input, common, data) {
     var testOnlyProfilesPrebuilt = {
         "run-test-prebuilt": {
             src: "src.conf",
-            dependencies: [ "jtreg", "gnumake", testedProfile + ".jdk",
+            dependencies: [ "jtreg", "gnumake", "boot_jdk", testedProfile + ".jdk",
                 testedProfile + ".test", "src.full"
             ],
             work_dir: input.get("src.full", "install_path") + "/test",
