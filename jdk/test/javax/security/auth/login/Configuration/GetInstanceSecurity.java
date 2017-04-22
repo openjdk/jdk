@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6268315
+ * @modules jdk.security.auth
  * @summary Configuration should be provider-based
  * @build GetInstanceConfigSpi GetInstanceProvider
  * @run main/othervm/policy=GetInstanceSecurity.policy GetInstanceSecurity
@@ -31,8 +32,10 @@
 
 import java.io.File;
 import java.net.URI;
-import java.security.*;
-import javax.security.auth.login.*;
+import java.security.Policy;
+import java.security.Security;
+import java.security.URIParameter;
+import javax.security.auth.login.Configuration;
 
 public class GetInstanceSecurity {
 
