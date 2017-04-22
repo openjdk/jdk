@@ -1086,7 +1086,7 @@ void Parse::do_exits() {
         kit.make_dtrace_method_exit(method());
       }
       if (_replaced_nodes_for_exceptions) {
-        kit.map()->apply_replaced_nodes();
+        kit.map()->apply_replaced_nodes(_new_idx);
       }
       // Done with exception-path processing.
       ex_map = kit.make_exception_state(ex_oop);
@@ -1107,7 +1107,7 @@ void Parse::do_exits() {
       _exits.add_exception_state(ex_map);
     }
   }
-  _exits.map()->apply_replaced_nodes();
+  _exits.map()->apply_replaced_nodes(_new_idx);
 }
 
 //-----------------------------create_entry_map-------------------------------

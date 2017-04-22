@@ -307,6 +307,11 @@ public class Resolve {
         if (env.enclMethod != null && (env.enclMethod.mods.flags & ANONCONSTR) != 0)
             return true;
 
+        if (env.info.visitingServiceImplementation &&
+            env.toplevel.modle == c.packge().modle) {
+            return true;
+        }
+
         boolean isAccessible = false;
         switch ((short)(c.flags() & AccessFlags)) {
             case PRIVATE:
@@ -329,7 +334,10 @@ public class Resolve {
                     currModule.complete();
                     PackageSymbol p = c.packge();
                     isAccessible =
-                        (currModule == p.modle) || currModule.visiblePackages.get(p.fullname) == p || p == syms.rootPackage;
+                        currModule == p.modle ||
+                        currModule.visiblePackages.get(p.fullname) == p ||
+                        p == syms.rootPackage ||
+                        (p.modle == syms.unnamedModule && currModule.readModules.contains(p.modle));
                 } else {
                     isAccessible = true;
                 }
@@ -388,6 +396,11 @@ public class Resolve {
         */
         if (env.enclMethod != null && (env.enclMethod.mods.flags & ANONCONSTR) != 0)
             return true;
+
+        if (env.info.visitingServiceImplementation &&
+            env.toplevel.modle == sym.packge().modle) {
+            return true;
+        }
 
         switch ((short)(sym.flags() & AccessFlags)) {
         case PRIVATE:
@@ -826,14 +839,6 @@ public class Resolve {
             return "arityMethodCheck";
         }
     };
-
-    List<Type> dummyArgs(int length) {
-        ListBuffer<Type> buf = new ListBuffer<>();
-        for (int i = 0 ; i < length ; i++) {
-            buf.append(Type.noType);
-        }
-        return buf.toList();
-    }
 
     /**
      * Main method applicability routine. Given a list of actual types A,
@@ -2094,7 +2099,7 @@ public class Resolve {
 
         for (S sym : candidates) {
             if (validate.test(sym))
-                return new InvisibleSymbolError(env, suppressError, sym);
+                return createInvisibleSymbolError(env, suppressError, sym);
         }
 
         Set<ModuleSymbol> recoverableModules = new HashSet<>(syms.getAllModules());
@@ -2113,13 +2118,28 @@ public class Resolve {
                     S sym = load.apply(ms, name);
 
                     if (sym != null && validate.test(sym)) {
-                        return new InvisibleSymbolError(env, suppressError, sym);
+                        return createInvisibleSymbolError(env, suppressError, sym);
                     }
                 }
             }
         }
 
         return defaultResult;
+    }
+
+    private Symbol createInvisibleSymbolError(Env<AttrContext> env, boolean suppressError, Symbol sym) {
+        if (symbolPackageVisible(env, sym)) {
+            return new AccessError(env, null, sym);
+        } else {
+            return new InvisibleSymbolError(env, suppressError, sym);
+        }
+    }
+
+    private boolean symbolPackageVisible(Env<AttrContext> env, Symbol sym) {
+        ModuleSymbol envMod = env.toplevel.modle;
+        PackageSymbol symPack = sym.packge();
+        return envMod == symPack.modle ||
+               envMod.visiblePackages.containsKey(symPack.fullname);
     }
 
     /**
@@ -4094,8 +4114,7 @@ public class Resolve {
                             pos, "not.def.access.package.cant.access",
                         sym, sym.location(), inaccessiblePackageReason(env, sym.packge()));
                 } else if (   sym.packge() != syms.rootPackage
-                           && sym.packge().modle != env.toplevel.modle
-                           && !isAccessible(env, sym.outermostClass())) {
+                           && !symbolPackageVisible(env, sym)) {
                     return diags.create(dkind, log.currentSource(),
                             pos, "not.def.access.class.intf.cant.access.reason",
                             sym, sym.location(), sym.location().packge(),
@@ -4676,20 +4695,6 @@ public class Resolve {
                 this.sym = sym;
                 this.details = details;
                 this.mtype = mtype;
-            }
-
-            @Override
-            public boolean equals(Object o) {
-                if (o instanceof Candidate) {
-                    Symbol s1 = this.sym;
-                    Symbol s2 = ((Candidate)o).sym;
-                    if  ((s1 != s2 &&
-                            (s1.overrides(s2, s1.owner.type.tsym, types, false) ||
-                            (s2.overrides(s1, s2.owner.type.tsym, types, false)))) ||
-                            ((s1.isConstructor() || s2.isConstructor()) && s1.owner != s2.owner))
-                        return true;
-                }
-                return false;
             }
 
             boolean isApplicable() {

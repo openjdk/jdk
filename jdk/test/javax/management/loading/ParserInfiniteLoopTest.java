@@ -29,7 +29,7 @@
  * terminated with the corresponding '>' and an opening '<' for
  * the subsequent tag is encountered.
  * @author Luis-Miguel Alventosa
- * @modules java.management
+ *
  * @run clean ParserInfiniteLoopTest
  * @run build ParserInfiniteLoopTest
  * @run main/othervm/timeout=5 ParserInfiniteLoopTest mlet1.html
