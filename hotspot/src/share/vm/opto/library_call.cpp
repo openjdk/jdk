@@ -277,7 +277,8 @@ class LibraryCallKit : public GraphKit {
   AllocateArrayNode* tightly_coupled_allocation(Node* ptr,
                                                 RegionNode* slow_region);
   JVMState* arraycopy_restore_alloc_state(AllocateArrayNode* alloc, int& saved_reexecute_sp);
-  void arraycopy_move_allocation_here(AllocateArrayNode* alloc, Node* dest, JVMState* saved_jvms, int saved_reexecute_sp);
+  void arraycopy_move_allocation_here(AllocateArrayNode* alloc, Node* dest, JVMState* saved_jvms, int saved_reexecute_sp,
+                                      uint new_idx);
 
   typedef enum { LS_get_add, LS_get_set, LS_cmp_swap, LS_cmp_swap_weak, LS_cmp_exchange } LoadStoreKind;
   MemNode::MemOrd access_kind_to_memord_LS(AccessKind access_kind, bool is_store);
@@ -2371,10 +2372,10 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   // the barriers get omitted and the unsafe reference begins to "pollute"
   // the alias analysis of the rest of the graph, either Compile::can_alias
   // or Compile::must_alias will throw a diagnostic assert.)
-  bool need_mem_bar;
+  bool need_mem_bar = false;
   switch (kind) {
       case Relaxed:
-          need_mem_bar = mismatched || can_access_non_heap;
+          need_mem_bar = mismatched && !adr_type->isa_aryptr();
           break;
       case Opaque:
           // Opaque uses CPUOrder membars for protection against code movement.
@@ -3017,7 +3018,7 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
       load_store = _gvn.transform(new DecodeNNode(load_store, load_store->get_ptr_type()));
     }
 #endif
-    if (can_move_pre_barrier()) {
+    if (can_move_pre_barrier() && kind == LS_get_set) {
       // Don't need to load pre_val. The old value is returned by load_store.
       // The pre_barrier can execute after the xchg as long as no safepoint
       // gets inserted between them.
@@ -4882,7 +4883,8 @@ JVMState* LibraryCallKit::arraycopy_restore_alloc_state(AllocateArrayNode* alloc
 // deoptimize. This is possible because tightly_coupled_allocation()
 // guarantees there's no observer of the allocated array at this point
 // and the control flow is simple enough.
-void LibraryCallKit::arraycopy_move_allocation_here(AllocateArrayNode* alloc, Node* dest, JVMState* saved_jvms, int saved_reexecute_sp) {
+void LibraryCallKit::arraycopy_move_allocation_here(AllocateArrayNode* alloc, Node* dest, JVMState* saved_jvms,
+                                                    int saved_reexecute_sp, uint new_idx) {
   if (saved_jvms != NULL && !stopped()) {
     assert(alloc != NULL, "only with a tightly coupled allocation");
     // restore JVM state to the state at the arraycopy
@@ -4891,7 +4893,7 @@ void LibraryCallKit::arraycopy_move_allocation_here(AllocateArrayNode* alloc, No
     assert(saved_jvms->map()->i_o() == map()->i_o(), "IO state changed?");
     // If we've improved the types of some nodes (null check) while
     // emitting the guards, propagate them to the current state
-    map()->replaced_nodes().apply(saved_jvms->map());
+    map()->replaced_nodes().apply(saved_jvms->map(), new_idx);
     set_jvms(saved_jvms);
     _reexecute_sp = saved_reexecute_sp;
 
@@ -4949,6 +4951,7 @@ bool LibraryCallKit::inline_arraycopy() {
   Node* dest_offset = argument(3);  // type: int
   Node* length      = argument(4);  // type: int
 
+  uint new_idx = C->unique();
 
   // Check for allocation before we add nodes that would confuse
   // tightly_coupled_allocation()
@@ -5164,7 +5167,7 @@ bool LibraryCallKit::inline_arraycopy() {
     }
   }
 
-  arraycopy_move_allocation_here(alloc, dest, saved_jvms, saved_reexecute_sp);
+  arraycopy_move_allocation_here(alloc, dest, saved_jvms, saved_reexecute_sp, new_idx);
 
   if (stopped()) {
     return true;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,48 @@
  * @test
  * @bug 7152176 8164437
  * @summary More krb5 tests
+ * @library /test/lib
  * @compile -XDignore.symbol.file Basic.java
- * @run main/othervm
- *      Basic jdk.security.jgss
- * @run main/othervm --limit-modules java.security.jgss,jdk.security.auth
- *      Basic java.security.jgss
+ * @run main/othervm Basic
  */
 
+import jdk.test.lib.process.ProcessTools;
 import sun.security.jgss.GSSUtil;
 
-// The basic krb5 test skeleton you can copy from
+import java.util.List;
+import java.util.stream.Stream;
+
 public class Basic {
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Throwable {
+
+        if (args.length == 0) { // jtreg launched here
+
+            // With all modules
+            test("jdk.security.jgss");
+
+            // With limited modules
+            List<String> cmd = ProcessTools.createJavaProcessBuilder().command();
+            Stream.of(jdk.internal.misc.VM.getRuntimeArguments())
+                    .filter(arg -> arg.startsWith("--add-exports=") ||
+                            arg.startsWith("--add-opens="))
+                    .forEach(cmd::add);
+            cmd.addAll(List.of(
+                    "-Dtest.src=" + System.getProperty("test.src"),
+                    "--add-modules",
+                        "java.base,java.security.jgss,jdk.security.auth",
+                    "--limit-modules",
+                        "java.security.jgss,jdk.security.auth",
+                    "Basic",
+                    "launched-limited"));
+            ProcessTools.executeCommand(cmd.toArray(new String[cmd.size()]))
+                    .shouldHaveExitValue(0);
+        } else { // Launched by ProcessTools above, with limited modules.
+            test("java.security.jgss");
+        }
+    }
+
+    static void test(String expected) throws Exception {
 
         new OneKDC(null).writeJAASConf();
 
@@ -66,8 +95,8 @@ public class Basic {
 
         // Bonus test for 8164437.
         String moduleName = c.x().getClass().getModule().getName();
-        if (!moduleName.equals(args[0])) {
-            throw new Exception("Expected: " + args[0]
+        if (!moduleName.equals(expected)) {
+            throw new Exception("Expected: " + expected
                     + ". Actual: " + moduleName);
         }
     }

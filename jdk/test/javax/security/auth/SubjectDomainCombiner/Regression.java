@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,20 @@
 /*
  * @test
  * @bug 4390546
+ * @modules jdk.security.auth
  * @summary     performance regression and other bugs in
  *              SubjectDomainCombiner.combine
  *
  * @run main/othervm/policy=Regression.policy -Djava.security.auth.debug=combiner Regression
  */
 
-import javax.security.auth.*;
 import java.security.ProtectionDomain;
 import java.security.CodeSource;
 import java.net.URL;
 import java.util.Set;
 import java.util.HashSet;
+import javax.security.auth.Subject;
+import javax.security.auth.SubjectDomainCombiner;
 
 public class Regression {
 

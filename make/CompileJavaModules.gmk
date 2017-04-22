@@ -85,7 +85,7 @@ endif
 
 ################################################################################
 
-java.compiler_ADD_JAVAC_FLAGS := -Xdoclint:all/protected,-reference '-Xdoclint/package:java.*,javax.*'
+java.compiler_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
 
 ################################################################################
 
@@ -247,7 +247,7 @@ java.management_ADD_JAVAC_FLAGS := -Xdoclint:all/protected,-reference '-Xdoclint
 
 ################################################################################
 
-java.management.rmi_ADD_JAVAC_FLAGS := -Xdoclint:all/protected,-reference '-Xdoclint/package:javax.*'
+java.management.rmi_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:javax.*'
 
 ################################################################################
 
@@ -462,13 +462,13 @@ jdk.internal.jvmstat_COPY := aliasmap
 # JVMCI compilers make use of that information for various sanity checks.
 # Don't use Indy strings concatenation to have good JVMCI startup performance.
 
-jdk.vm.ci_ADD_JAVAC_FLAGS := -parameters -Xlint:-exports -XDstringConcat=inline
+jdk.internal.vm.ci_ADD_JAVAC_FLAGS := -parameters -Xlint:-exports -XDstringConcat=inline
 
 ################################################################################
 
-jdk.vm.compiler_ADD_JAVAC_FLAGS := -parameters -XDstringConcat=inline
+jdk.internal.vm.compiler_ADD_JAVAC_FLAGS := -parameters -XDstringConcat=inline
 
-jdk.vm.compiler_EXCLUDES += \
+jdk.internal.vm.compiler_EXCLUDES += \
     org.graalvm.compiler.core.match.processor \
     org.graalvm.compiler.nodeinfo.processor \
     org.graalvm.compiler.options.processor \
@@ -557,16 +557,16 @@ MODULESOURCEPATH := $(call GetModuleSrcPath)
 # Add imported modules to the modulepath
 MODULEPATH := $(call PathList, $(IMPORT_MODULES_CLASSES))
 
-ifeq ($(MODULE), jdk.vm.ci)
-  ## WORKAROUND jdk.vm.ci source structure issue
+ifeq ($(MODULE), jdk.internal.vm.ci)
+  ## WORKAROUND jdk.internal.vm.ci source structure issue
   JVMCI_MODULESOURCEPATH := $(MODULESOURCEPATH) \
       $(subst /$(MODULE)/,/*/, $(filter-out %processor/src, \
-          $(wildcard $(HOTSPOT_TOPDIR)/src/jdk.vm.ci/share/classes/*/src)))
+          $(wildcard $(HOTSPOT_TOPDIR)/src/$(MODULE)/share/classes/*/src)))
   MODULESOURCEPATH := $(call PathList, $(JVMCI_MODULESOURCEPATH))
 endif
 
-ifeq ($(MODULE), jdk.vm.compiler)
-  ## WORKAROUND jdk.vm.compiler source structure issue
+ifeq ($(MODULE), jdk.internal.vm.compiler)
+  ## WORKAROUND jdk.internal.vm.compiler source structure issue
   VM_COMPILER_MODULESOURCEPATH := $(MODULESOURCEPATH) \
       $(subst /$(MODULE)/,/*/, $(filter-out %processor/src %test/src %jtt/src %bench/src %microbenchmarks/src, \
           $(wildcard $(HOTSPOT_TOPDIR)/src/$(MODULE)/share/classes/*/src)))
