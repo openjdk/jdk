@@ -139,10 +139,11 @@ public class MotifGraphicsUtils implements SwingConstants
     }
 
   /**
-   * This method is not being used to paint menu item since
+   * @deprecated This method is not being used to paint menu item since
    * 6.0 This code left for compatibility only. Do not use or
    * override it, this will not cause any visible effect.
    */
+  @Deprecated(since = "9")
   public static void paintMenuItem(Graphics g, JComponent c,
                                    Icon checkIcon, Icon arrowIcon,
                                    Color background, Color foreground,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1158,13 +1158,6 @@ public:
   product_pd(bool, DontYieldALot,                                           \
           "Throw away obvious excess yield calls")                          \
                                                                             \
-  product(bool, ConvertSleepToYield, true,                                  \
-          "Convert sleep(0) to thread yield ")                              \
-                                                                            \
-  product(bool, ConvertYieldToSleep, false,                                 \
-          "Convert yield to a sleep of MinSleepInterval to simulate Win32 " \
-          "behavior")                                                       \
-                                                                            \
   develop(bool, UseDetachedThreads, true,                                   \
           "Use detached threads that are recycled upon termination "        \
           "(for Solaris only)")                                             \
@@ -1478,11 +1471,6 @@ public:
           "A System.gc() request invokes a concurrent collection; "         \
           "(effective only when using concurrent collectors)")              \
                                                                             \
-  product(bool, ExplicitGCInvokesConcurrentAndUnloadsClasses, false,        \
-          "A System.gc() request invokes a concurrent collection and "      \
-          "also unloads classes during such a concurrent gc cycle "         \
-          "(effective only when UseConcMarkSweepGC)")                       \
-                                                                            \
   product(bool, GCLockerInvokesConcurrent, false,                           \
           "The exit of a JNI critical section necessitating a scavenge, "   \
           "also kicks off a background concurrent collection")              \
@@ -1499,9 +1487,6 @@ public:
                                                                             \
   product(bool, UseCMSBestFit, true,                                        \
           "Use CMS best fit allocation strategy")                           \
-                                                                            \
-  product(bool, UseParNewGC, false,                                         \
-          "Use parallel threads in the new generation")                     \
                                                                             \
   product(uintx, ParallelGCBufferWastePct, 10,                              \
           "Wasted fraction of parallel allocation buffer")                  \
@@ -2057,13 +2042,6 @@ public:
   develop(uintx, MaxVirtMemFraction, 2,                                     \
           "Maximum fraction (1/n) of virtual memory used for ergonomically "\
           "determining maximum heap size")                                  \
-                                                                            \
-  product(bool, UseAutoGCSelectPolicy, false,                               \
-          "Use automatic collection selection policy")                      \
-                                                                            \
-  product(uintx, AutoGCSelectPauseMillis, 5000,                             \
-          "Automatic GC selection pause threshold in milliseconds")         \
-          range(0, max_uintx)                                               \
                                                                             \
   product(bool, UseAdaptiveSizePolicy, true,                                \
           "Use adaptive generation sizing policies")                        \
@@ -3001,10 +2979,6 @@ public:
                                                                             \
   develop(intx, DontYieldALotInterval,    10,                               \
           "Interval between which yields will be dropped (milliseconds)")   \
-                                                                            \
-  develop(intx, MinSleepInterval,     1,                                    \
-          "Minimum sleep() interval (milliseconds) when "                   \
-          "ConvertSleepToYield is off (used for Solaris)")                  \
                                                                             \
   develop(intx, ProfilerPCTickThreshold,    15,                             \
           "Number of ticks in a PC buckets to be a hotspot")                \

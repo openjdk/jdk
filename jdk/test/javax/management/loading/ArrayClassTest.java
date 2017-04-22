@@ -27,7 +27,7 @@
  * @summary Test that array classes can be found in signatures always
  * and can be deserialized by the deprecated MBeanServer.deserialize method
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean ArrayClassTest
  * @run build ArrayClassTest
  * @run main ArrayClassTest
