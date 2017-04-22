@@ -375,6 +375,7 @@ static SpecialFlag const special_jvm_flags[] = {
   // -------------- Deprecated Flags --------------
   // --- Non-alias flags - sorted by obsolete_in then expired_in:
   { "MaxGCMinorPauseMillis",        JDK_Version::jdk(8), JDK_Version::undefined(), JDK_Version::undefined() },
+  { "UseConcMarkSweepGC",           JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::undefined() },
   { "AutoGCSelectPauseMillis",      JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(10) },
   { "UseAutoGCSelectPolicy",        JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(10) },
   { "UseParNewGC",                  JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(10) },
