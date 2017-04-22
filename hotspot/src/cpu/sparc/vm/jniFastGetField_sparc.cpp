@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   __ andcc (G4, 1, G0);
   __ br (Assembler::notZero, false, Assembler::pn, label1);
   __ delayed()->srl (O2, 2, O4);
+  __ andn (O1, JNIHandles::weak_tag_mask, O1);
   __ ld_ptr (O1, 0, O5);
 
   assert(count < LIST_CAPACITY, "LIST_CAPACITY too small");
@@ -147,6 +148,7 @@ address JNI_FastGetField::generate_fast_get_long_field() {
   __ andcc (G4, 1, G0);
   __ br (Assembler::notZero, false, Assembler::pn, label1);
   __ delayed()->srl (O2, 2, O4);
+  __ andn (O1, JNIHandles::weak_tag_mask, O1);
   __ ld_ptr (O1, 0, O5);
   __ add (O5, O4, O5);
 
@@ -219,6 +221,7 @@ address JNI_FastGetField::generate_fast_get_float_field0(BasicType type) {
   __ andcc (G4, 1, G0);
   __ br (Assembler::notZero, false, Assembler::pn, label1);
   __ delayed()->srl (O2, 2, O4);
+  __ andn (O1, JNIHandles::weak_tag_mask, O1);
   __ ld_ptr (O1, 0, O5);
 
   assert(count < LIST_CAPACITY, "LIST_CAPACITY too small");

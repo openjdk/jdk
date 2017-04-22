@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,29 +25,56 @@
 
 package com.sun.xml.internal.messaging.saaj.soap;
 
-import java.io.*;
-import java.util.Iterator;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-
-import javax.activation.DataHandler;
-import javax.activation.DataSource;
-import javax.xml.soap.*;
-import javax.xml.transform.Source;
-import javax.xml.transform.stream.StreamSource;
-
-import org.w3c.dom.*;
-
-import com.sun.xml.internal.messaging.saaj.packaging.mime.internet.MimeBodyPart;
-
 import com.sun.xml.internal.messaging.saaj.SOAPExceptionImpl;
+import com.sun.xml.internal.messaging.saaj.packaging.mime.internet.MimeBodyPart;
 import com.sun.xml.internal.messaging.saaj.soap.impl.ElementImpl;
 import com.sun.xml.internal.messaging.saaj.soap.impl.EnvelopeImpl;
 import com.sun.xml.internal.messaging.saaj.soap.name.NameImpl;
-import com.sun.xml.internal.messaging.saaj.util.*;
+import com.sun.xml.internal.messaging.saaj.util.ByteInputStream;
+import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
+import com.sun.xml.internal.messaging.saaj.util.FastInfosetReflection;
+import com.sun.xml.internal.messaging.saaj.util.JAXMStreamSource;
+import com.sun.xml.internal.messaging.saaj.util.LogDomainConstants;
+import com.sun.xml.internal.messaging.saaj.util.MimeHeadersUtil;
+import com.sun.xml.internal.messaging.saaj.util.SAAJUtil;
+import com.sun.xml.internal.messaging.saaj.util.XMLDeclarationParser;
+import org.w3c.dom.Attr;
+import org.w3c.dom.CDATASection;
+import org.w3c.dom.Comment;
+import org.w3c.dom.DOMConfiguration;
+import org.w3c.dom.DOMException;
+import org.w3c.dom.DOMImplementation;
+import org.w3c.dom.Document;
+import org.w3c.dom.DocumentFragment;
+import org.w3c.dom.DocumentType;
+import org.w3c.dom.Element;
+import org.w3c.dom.EntityReference;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.ProcessingInstruction;
+import org.w3c.dom.UserDataHandler;
 
+import javax.activation.DataHandler;
+import javax.activation.DataSource;
+import javax.xml.soap.MimeHeaders;
+import javax.xml.soap.SOAPElement;
+import javax.xml.soap.SOAPEnvelope;
+import javax.xml.soap.SOAPException;
+import javax.xml.soap.SOAPPart;
+import javax.xml.transform.Source;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXSource;
+import javax.xml.transform.stream.StreamSource;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PushbackReader;
+import java.io.Reader;
+import java.io.UnsupportedEncodingException;
+import java.util.Iterator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * SOAPPartImpl is the first attachment. This contains the XML/SOAP document.
@@ -128,20 +155,21 @@ public abstract class SOAPPartImpl extends SOAPPart implements SOAPDocument {
             envelope = createEnvelopeFromSource();
         } else {
             envelope = createEmptyEnvelope(null);
-            document.insertBefore(envelope, null);
+            document.insertBefore(((EnvelopeImpl) envelope).getDomElement(), null);
         }
         return envelope;
     }
 
     protected void lookForEnvelope() throws SOAPException {
         Element envelopeChildElement = document.doGetDocumentElement();
-        if (envelopeChildElement == null || envelopeChildElement instanceof Envelope) {
-            envelope = (EnvelopeImpl) envelopeChildElement;
-        } else if (!(envelopeChildElement instanceof ElementImpl)) {
+        org.w3c.dom.Node soapEnvelope = document.findIfPresent(envelopeChildElement);
+        if (soapEnvelope == null || soapEnvelope instanceof Envelope) {
+            envelope = (EnvelopeImpl) soapEnvelope;
+        } else if (document.find(envelopeChildElement) == null) {
             log.severe("SAAJ0512.soap.incorrect.factory.used");
             throw new SOAPExceptionImpl("Unable to create envelope: incorrect factory used during tree construction");
         } else {
-            ElementImpl soapElement = (ElementImpl) envelopeChildElement;
+            ElementImpl soapElement = (ElementImpl) document.find(envelopeChildElement);
             if (soapElement.getLocalName().equalsIgnoreCase("Envelope")) {
                 String prefix = soapElement.getPrefix();
                 String uri = (prefix == null) ? soapElement.getNamespaceURI() : soapElement.getNamespaceURI(prefix);
@@ -498,7 +526,7 @@ public abstract class SOAPPartImpl extends SOAPPart implements SOAPDocument {
     }
 
     public NamedNodeMap getAttributes() {
-        return document.getAttributes();
+        return document.getDomDocument().getAttributes();
     }
 
     public NodeList getChildNodes() {
@@ -517,11 +545,11 @@ public abstract class SOAPPartImpl extends SOAPPart implements SOAPDocument {
     }
 
     public String getLocalName() {
-        return document.getLocalName();
+        return document.getDomDocument().getLocalName();
     }
 
     public String getNamespaceURI() {
-        return document.getNamespaceURI();
+        return document.getDomDocument().getNamespaceURI();
     }
 
     public org.w3c.dom.Node getNextSibling() {
@@ -530,11 +558,11 @@ public abstract class SOAPPartImpl extends SOAPPart implements SOAPDocument {
     }
 
     public String getNodeName() {
-        return document.getNodeName();
+        return document.getDomDocument().getNodeName();
     }
 
     public short getNodeType() {
-        return document.getNodeType();
+        return document.getDomDocument().getNodeType();
     }
 
     public String getNodeValue() throws DOMException {
@@ -542,23 +570,23 @@ public abstract class SOAPPartImpl extends SOAPPart implements SOAPDocument {
     }
 
     public Document getOwnerDocument() {
-        return document.getOwnerDocument();
+        return document.getDomDocument().getOwnerDocument();
     }
 
     public org.w3c.dom.Node getParentNode() {
-        return document.getParentNode();
+        return document.getDomDocument().getParentNode();
     }
 
     public String getPrefix() {
-        return document.getPrefix();
+        return document.getDomDocument().getPrefix();
     }
 
     public org.w3c.dom.Node getPreviousSibling() {
-        return document.getPreviousSibling();
+        return document.getDomDocument().getPreviousSibling();
     }
 
     public boolean hasAttributes() {
-        return document.hasAttributes();
+        return document.getDomDocument().hasAttributes();
     }
 
     public boolean hasChildNodes() {
@@ -575,7 +603,7 @@ public abstract class SOAPPartImpl extends SOAPPart implements SOAPDocument {
     }
 
     public boolean isSupported(String arg0, String arg1) {
-        return document.isSupported(arg0, arg1);
+        return document.getDomDocument().isSupported(arg0, arg1);
     }
 
     public void normalize() {
@@ -686,7 +714,7 @@ public abstract class SOAPPartImpl extends SOAPPart implements SOAPDocument {
     }
 
     public DOMConfiguration getDomConfig() {
-        return document.getDomConfig();
+        return document.getDomDocument().getDomConfig();
     }
 
     public org.w3c.dom.Node adoptNode(org.w3c.dom.Node source) throws DOMException {
@@ -699,7 +727,7 @@ public abstract class SOAPPartImpl extends SOAPPart implements SOAPDocument {
     }
 
     public String getDocumentURI() {
-        return document.getDocumentURI();
+        return document.getDomDocument().getDocumentURI();
     }
 
     public void  setStrictErrorChecking(boolean strictErrorChecking) {
@@ -707,15 +735,15 @@ public abstract class SOAPPartImpl extends SOAPPart implements SOAPDocument {
     }
 
     public String getInputEncoding() {
-        return document.getInputEncoding();
+        return document.getDomDocument().getInputEncoding();
     }
 
     public String getXmlEncoding() {
-        return document.getXmlEncoding();
+        return document.getDomDocument().getXmlEncoding();
     }
 
     public boolean getXmlStandalone() {
-        return document.getXmlStandalone();
+        return document.getDomDocument().getXmlStandalone();
     }
 
     public void setXmlStandalone(boolean xmlStandalone) throws DOMException {
@@ -723,7 +751,7 @@ public abstract class SOAPPartImpl extends SOAPPart implements SOAPDocument {
     }
 
     public String getXmlVersion() {
-        return document.getXmlVersion();
+        return document.getDomDocument().getXmlVersion();
     }
 
     public void setXmlVersion(String xmlVersion) throws DOMException {
@@ -731,12 +759,12 @@ public abstract class SOAPPartImpl extends SOAPPart implements SOAPDocument {
     }
 
     public boolean  getStrictErrorChecking() {
-        return document.getStrictErrorChecking();
+        return document.getDomDocument().getStrictErrorChecking();
     }
 
     // DOM L3 methods from org.w3c.dom.Node
     public String getBaseURI() {
-        return document.getBaseURI();
+        return document.getDomDocument().getBaseURI();
     }
 
     public short compareDocumentPosition(org.w3c.dom.Node other)
@@ -758,7 +786,7 @@ public abstract class SOAPPartImpl extends SOAPPart implements SOAPDocument {
     }
 
     public String lookupPrefix(String namespaceURI) {
-        return document.lookupPrefix(namespaceURI);
+        return document.getDomDocument().lookupPrefix(namespaceURI);
     }
 
     public boolean isDefaultNamespace(String namespaceURI) {
@@ -770,7 +798,7 @@ public abstract class SOAPPartImpl extends SOAPPart implements SOAPDocument {
     }
 
     public boolean isEqualNode(org.w3c.dom.Node arg) {
-        return document.isEqualNode(arg);
+        return document.getDomDocument().isEqualNode(arg);
     }
 
     public Object getFeature(String feature,
@@ -785,7 +813,7 @@ public abstract class SOAPPartImpl extends SOAPPart implements SOAPDocument {
     }
 
     public Object getUserData(String key) {
-        return document.getUserData(key);
+        return document.getDomDocument().getUserData(key);
     }
 
     public void recycleNode() {

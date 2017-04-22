@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,27 @@
 
 /*
  * @test
+ * @bug 8167975 8173596
  * @summary Test the --add-modules option
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
+ * @build toolbox.Assert toolbox.ToolBox toolbox.JavacTask ModuleTestBase
  * @run main AddModulesTest
  */
 
 
 import java.nio.file.Path;
+import java.util.Arrays;
 
+import javax.tools.JavaCompiler;
+import javax.tools.JavaCompiler.CompilationTask;
+import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.StandardLocation;
+import javax.tools.ToolProvider;
+
+import toolbox.Assert;
 import toolbox.JavacTask;
 import toolbox.Task;
 
@@ -226,6 +236,47 @@ public class AddModulesTest extends ModuleTestBase {
                 .files(findJavaFiles(src2))
                 .run()
                 .writeAll();
+    }
+
+    @Test
+    public void testAddModulesAPI(Path base) throws Exception {
+        Path src = base.resolve("src");
+
+        // setup some utility modules
+        Path src_m1 = src.resolve("m1x");
+        tb.writeJavaFiles(src_m1,
+                          "module m1x { exports p1; }",
+                          "package p1; public class C1 { }");
+        Path src_m2 = src.resolve("m2x");
+        tb.writeJavaFiles(src_m2,
+                          "module m2x { exports p2; }",
+                          "package p2; public class C2 { }");
+        Path modules = base.resolve("modules");
+        tb.createDirectories(modules);
+
+        new JavacTask(tb)
+                .options("--module-source-path", src.toString())
+                .outdir(modules)
+                .files(findJavaFiles(src))
+                .run()
+                .writeAll();
+
+        // now test access to the modules
+        Path src2 = base.resolve("src2");
+        tb.writeJavaFiles(src2,
+                          "class Dummy { p1.C1 c1; p2.C2 c2; }");
+        Path classes = base.resolve("classes");
+        tb.createDirectories(classes);
+
+        JavaCompiler c = ToolProvider.getSystemJavaCompiler();
+        try (StandardJavaFileManager fm = c.getStandardFileManager(null, null, null)) {
+            fm.setLocationFromPaths(StandardLocation.MODULE_PATH, Arrays.asList(modules));
+            fm.setLocationFromPaths(StandardLocation.CLASS_OUTPUT, Arrays.asList(classes));
+            Iterable<? extends JavaFileObject> files = fm.getJavaFileObjects(findJavaFiles(src2));
+            CompilationTask t = c.getTask(null, fm, null, null, null, files);
+            t.addModules(Arrays.asList("m1x", "m2x"));
+            Assert.check(t.call());
+        }
     }
 }
 

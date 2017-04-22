@@ -26,7 +26,7 @@
  * @bug 4897052
  * @summary Tests that opening and immediately closing a connector works
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean CloseUnconnectedTest
  * @run build CloseUnconnectedTest
  * @run main CloseUnconnectedTest

@@ -3867,8 +3867,10 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                     return next.match(matcher, i + 1, seq);
                 if (ch == 0x0D) {
                     i++;
-                    if (i < matcher.to && seq.charAt(i) == 0x0A)
-                        i++;
+                    if (i < matcher.to && seq.charAt(i) == 0x0A &&
+                        next.match(matcher, i + 1, seq)) {
+                        return true;
+                    }
                     return next.match(matcher, i, seq);
                 }
             } else {
