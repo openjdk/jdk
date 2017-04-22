@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,13 @@
 package sun.net.www.protocol.jrt;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FilePermission;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.AccessController;
 import java.security.Permission;
+import java.security.PrivilegedAction;
 
 import jdk.internal.jimage.ImageLocation;
 import jdk.internal.jimage.ImageReader;
@@ -42,7 +42,6 @@ import jdk.internal.loader.URLClassPath;
 import jdk.internal.loader.Resource;
 import sun.net.www.ParseUtil;
 import sun.net.www.URLConnection;
-import sun.security.action.GetPropertyAction;
 
 /**
  * URLConnection implementation that can be used to connect to resources
@@ -51,7 +50,11 @@ import sun.security.action.GetPropertyAction;
 public class JavaRuntimeURLConnection extends URLConnection {
 
     // ImageReader to access resources in jimage
-    private static final ImageReader reader = ImageReaderFactory.getImageReader();
+    private static final ImageReader reader;
+    static {
+        PrivilegedAction<ImageReader> pa = ImageReaderFactory::getImageReader;
+        reader = AccessController.doPrivileged(pa);
+    }
 
     // the module and resource name in the URL
     private final String module;
@@ -59,9 +62,6 @@ public class JavaRuntimeURLConnection extends URLConnection {
 
     // the Resource when connected
     private volatile Resource resource;
-
-    // the permission to access resources in the runtime image, created lazily
-    private static volatile Permission permission;
 
     JavaRuntimeURLConnection(URL url) throws IOException {
         super(url);
@@ -158,14 +158,8 @@ public class JavaRuntimeURLConnection extends URLConnection {
     }
 
     @Override
-    public Permission getPermission() throws IOException {
-        Permission p = permission;
-        if (p == null) {
-            String home = GetPropertyAction.privilegedGetProperty("java.home");
-            p = new FilePermission(home + File.separator + "-", "read");
-            permission = p;
-        }
-        return p;
+    public Permission getPermission() {
+        return new RuntimePermission("accessSystemModules");
     }
 
     /**

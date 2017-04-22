@@ -375,6 +375,7 @@ public class MenuBar extends MenuComponent implements MenuContainer, Accessible 
      * keydown).  Returns true if there is an associated
      * keyboard event.
      */
+    @SuppressWarnings("deprecation")
     boolean handleShortcut(KeyEvent e) {
         // Is it a key event?
         int id = e.getID();

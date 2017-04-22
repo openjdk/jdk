@@ -213,18 +213,9 @@ public class Modules extends JCTree.Visitor {
     }
 
     int depth = -1;
-    private void dprintln(String msg) {
-        for (int i = 0; i < depth; i++)
-            System.err.print("  ");
-        System.err.println(msg);
-    }
 
     public void addExtraAddModules(String... extras) {
         extraAddMods.addAll(Arrays.asList(extras));
-    }
-
-    public void addExtraLimitModules(String... extras) {
-        extraLimitMods.addAll(Arrays.asList(extras));
     }
 
     boolean inInitModules;

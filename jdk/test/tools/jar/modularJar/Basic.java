@@ -39,6 +39,7 @@ import java.util.stream.Stream;
 import jdk.testlibrary.FileUtils;
 import jdk.testlibrary.JDKToolFinder;
 import org.testng.annotations.BeforeTest;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static java.lang.String.format;
@@ -46,7 +47,7 @@ import static java.lang.System.out;
 
 /*
  * @test
- * @bug 8167328 8171830
+ * @bug 8167328 8171830 8165640 8174248 8176772
  * @library /lib/testlibrary
  * @modules jdk.compiler
  *          jdk.jartool
@@ -241,11 +242,6 @@ public class Basic {
 
         java(mp, FOO.moduleName + "/" + FOO.mainClass)
             .assertSuccess()
-.resultChecker(r -> {
-        System.out.println("===================================");
-        System.out.println(r.output);
-        System.out.println("===================================");
-})
             .resultChecker(r -> assertModuleData(r, FOO));
         try (InputStream fis = Files.newInputStream(modularJar);
              JarInputStream jis = new JarInputStream(fis)) {
@@ -338,7 +334,7 @@ public class Basic {
         // A "bad" main class in first create ( and no version )
         jar("--create",
             "--file=" + modularJar.toString(),
-            "--main-class=" + "IAmNotTheEntryPoint",
+            "--main-class=" + "jdk.test.foo.IAmNotTheEntryPoint",
             "--no-manifest",
             "-C", modClasses.toString(), ".")  // includes module-info.class
            .assertSuccess();
@@ -484,7 +480,7 @@ public class Basic {
             .resultChecker(r -> {
                 // Expect similar output: "bar, requires mandated foo, ...
                 // conceals jdk.test.foo, conceals jdk.test.foo.internal"
-                Pattern p = Pattern.compile("\\s+bar\\s+requires\\s++foo");
+                Pattern p = Pattern.compile("module bar \\(module-info.class\\)\\s+requires\\s++foo");
                 assertTrue(p.matcher(r.output).find(),
                            "Expecting to find \"bar, requires foo,...\"",
                            "in output, but did not: [" + r.output + "]");
@@ -740,6 +736,53 @@ public class Basic {
     }
 
     @Test
+    public void servicesCreateWithoutFailureNonRootMRMJAR() throws IOException {
+        // without a root module-info.class
+        Path mp = Paths.get("servicesCreateWithoutFailureNonRootMRMJAR");
+        createTestDir(mp);
+        Path modClasses = MODULE_CLASSES.resolve("baz");
+        Path mrjarDir = MRJAR_DIR.resolve("baz");
+        Path modularJar = mp.resolve("baz.jar");
+
+        jar("--create",
+            "--file=" + modularJar.toString(),
+            "--main-class=" + "jdk.test.baz.Baz",
+            "-m", mrjarDir.resolve("META-INF/MANIFEST.MF").toRealPath().toString(),
+            "-C", mrjarDir.toString(), "META-INF/versions/9/module-info.class",
+            "-C", modClasses.toString(), "jdk/test/baz/BazService.class",
+            "-C", modClasses.toString(), "jdk/test/baz/Baz.class",
+            "-C", modClasses.toString(), "jdk/test/baz/internal/BazServiceImpl.class")
+            .assertSuccess();
+
+
+        for (String option : new String[]  {"--describe-module", "-d" }) {
+
+            jar(option,
+                "--file=" + modularJar.toString())
+                .assertSuccess()
+                .resultChecker(r ->
+                    assertTrue(r.output.contains("main-class jdk.test.baz.Baz"),
+                              "Expected to find ", "main-class jdk.test.baz.Baz",
+                               " in [", r.output, "]"));
+
+            jarWithStdin(modularJar.toFile(),  option)
+                .assertSuccess()
+                .resultChecker(r ->
+                    assertTrue(r.output.contains("main-class jdk.test.baz.Baz"),
+                              "Expected to find ", "main-class jdk.test.baz.Baz",
+                               " in [", r.output, "]"));
+
+        }
+        // run module maain class
+        java(mp, "baz/jdk.test.baz.Baz")
+            .assertSuccess()
+            .resultChecker(r ->
+               assertTrue(r.output.contains("mainClass:jdk.test.baz.Baz"),
+                          "Expected to find ", "mainClass:jdk.test.baz.Baz",
+                          " in [", r.output, "]"));
+    }
+
+    @Test
     public void exportCreateWithMissingPkg() throws IOException {
 
         Path foobar = TEST_SRC.resolve("src").resolve("foobar");
@@ -759,8 +802,8 @@ public class Basic {
     }
 
     @Test
-    public void printModuleDescriptorFoo() throws IOException {
-        Path mp = Paths.get("printModuleDescriptorFoo");
+    public void describeModuleFoo() throws IOException {
+        Path mp = Paths.get("describeModuleFoo");
         createTestDir(mp);
         Path modClasses = MODULE_CLASSES.resolve(FOO.moduleName);
         Path modularJar = mp.resolve(FOO.moduleName + ".jar");
@@ -773,7 +816,7 @@ public class Basic {
             "-C", modClasses.toString(), ".")
             .assertSuccess();
 
-        for (String option : new String[]  {"--print-module-descriptor", "-d" }) {
+        for (String option : new String[]  {"--describe-module", "-d" }) {
             jar(option,
                 "--file=" + modularJar.toString())
                 .assertSuccess()
@@ -794,8 +837,8 @@ public class Basic {
     }
 
     @Test
-    public void printModuleDescriptorFooFromStdin() throws IOException {
-        Path mp = Paths.get("printModuleDescriptorFooFromStdin");
+    public void describeModuleFooFromStdin() throws IOException {
+        Path mp = Paths.get("describeModuleFooFromStdin");
         createTestDir(mp);
         Path modClasses = MODULE_CLASSES.resolve(FOO.moduleName);
         Path modularJar = mp.resolve(FOO.moduleName + ".jar");
@@ -808,7 +851,7 @@ public class Basic {
             "-C", modClasses.toString(), ".")
             .assertSuccess();
 
-        for (String option : new String[]  {"--print-module-descriptor", "-d" }) {
+        for (String option : new String[]  {"--describe-module", "-d" }) {
             jarWithStdin(modularJar.toFile(),
                          option)
                          .assertSuccess()
@@ -816,6 +859,50 @@ public class Basic {
                              assertTrue(r.output.contains(FOO.moduleName + "@" + FOO.version),
                                 "Expected to find ", FOO.moduleName + "@" + FOO.version,
                                 " in [", r.output, "]")
+                );
+        }
+    }
+
+
+    @DataProvider(name = "autoNames")
+    public Object[][] autoNames() {
+        return new Object[][] {
+            // JAR file name                module-name[@version]
+            { "foo.jar",                    "foo" },
+            { "foo1.jar",                   "foo1" },
+            { "foo4j.jar",                  "foo4j", },
+            { "foo-1.2.3.4.jar",            "foo@1.2.3.4" },
+            { "foo-bar.jar",                "foo.bar" },
+            { "foo-1.2-SNAPSHOT.jar",       "foo@1.2-SNAPSHOT" },
+        };
+    }
+
+    @Test(dataProvider = "autoNames")
+    public void describeAutomaticModule(String jarName, String mid)
+        throws IOException
+    {
+        Path mp = Paths.get("describeAutomaticModule");
+        createTestDir(mp);
+        Path regularJar = mp.resolve(jarName);
+        Path t = Paths.get("t");
+        if (Files.notExists(t))
+            Files.createFile(t);
+
+        jar("--create",
+            "--file=" + regularJar.toString(),
+            t.toString())
+            .assertSuccess();
+
+        for (String option : new String[]  {"--describe-module", "-d" }) {
+            jar(option,
+                "--file=" + regularJar.toString())
+                .assertSuccess()
+                .resultChecker(r -> {
+                    assertTrue(r.output.contains("No module descriptor found"));
+                    assertTrue(r.output.contains("Derived automatic module"));
+                    assertTrue(r.output.contains("module " + mid),
+                               "Expected [", "module " + mid,"] in [", r.output, "]");
+                    }
                 );
         }
     }
