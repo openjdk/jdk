@@ -37,7 +37,9 @@ import jdk.jshell.spi.ExecutionControl;
 import static java.util.stream.Collectors.toMap;
 
 /**
- * Abstract JDI implementation of {@link jdk.jshell.spi.ExecutionControl}
+ * Abstract JDI implementation of {@link jdk.jshell.spi.ExecutionControl}.
+ *
+ * @since 9
  */
 public abstract class JdiExecutionControl extends StreamingExecutionControl implements ExecutionControl {
 

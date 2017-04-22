@@ -31,7 +31,6 @@
  */
 
 import java.awt.Component;
-import java.lang.reflect.Module;
 
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
