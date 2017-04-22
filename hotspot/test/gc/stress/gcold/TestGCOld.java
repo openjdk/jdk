@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,21 +19,6 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-
-/*
- * @test TestGCOld
- * @key gc
- * @key stress
- * @requires vm.gc=="null"
- * @summary Stress the GC by trying to make old objects more likely to be garbage than young objects.
- * @run main/othervm -Xmx384M -XX:+UseSerialGC TestGCOld 50 1 20 10 10000
- * @run main/othervm -Xmx384M -XX:+UseParallelGC TestGCOld 50 1 20 10 10000
- * @run main/othervm -Xmx384M -XX:+UseParallelGC -XX:-UseParallelOldGC TestGCOld 50 1 20 10 10000
- * @run main/othervm -Xmx384M -XX:+UseConcMarkSweepGC TestGCOld 50 1 20 10 10000
- * @run main/othervm -Xmx384M -XX:+UseG1GC TestGCOld 50 1 20 10 10000
- * @run main/othervm -Xms64m -Xmx128m -XX:+UseG1GC -XX:+UseDynamicNumberOfGCThreads -Xlog:gc,gc+task=trace TestGCOld 50 5 20 1 5000
- * @run main/othervm -Xms64m -Xmx128m -XX:+UseG1GC -XX:+UseDynamicNumberOfGCThreads  -XX:+UnlockDiagnosticVMOptions -XX:+InjectGCWorkerCreationFailure -Xlog:gc,gc+task=trace TestGCOld 50 5 20 1 5000
  */
 
 import java.text.*;
