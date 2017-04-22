@@ -53,13 +53,17 @@ import jdk.internal.agent.ConnectorAddressLink;
 /**
  * @test
  * @bug 7110104
- * @library /lib/testlibrary
- * @modules jdk.management.agent/jdk.internal.agent
- * @build jdk.testlibrary.* JMXStartStopTest PortAllocator TestApp ManagementAgentJcmd
- * @run main/othervm/timeout=600 -XX:+UsePerfData JMXStartStopTest
+ * @key randomness intermittent
  * @summary Makes sure that enabling/disabling the management agent through JCMD
  *          achieves the desired results
- * @key randomness intermittent
+ *
+ * @library /lib/testlibrary
+ * @modules java.management
+ *          java.rmi
+ *          jdk.management.agent/jdk.internal.agent
+ *
+ * @build jdk.testlibrary.* JMXStartStopTest PortAllocator TestApp ManagementAgentJcmd
+ * @run main/othervm/timeout=600 -XX:+UsePerfData JMXStartStopTest
  */
 public class JMXStartStopTest {
     private static final String TEST_APP_NAME = "TestApp";

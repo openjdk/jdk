@@ -1,7 +1,7 @@
 ## Apache Xerces v2.11.0
 
-### Notice
-
+### Apache Xerces Notice
+<pre>
     =========================================================================
     == NOTICE file corresponding to section 4(d) of the Apache License, ==
     == Version 2.0, in this case for the Apache Xerces Java distribution. ==
@@ -17,6 +17,7 @@
     - voluntary contributions made by Paul Eng on behalf of the
     Apache Software Foundation that were originally developed at iClick, Inc.,
     software copyright (c) 1999.
+</pre>
 
 ### Apache 2.0 License
 <pre>

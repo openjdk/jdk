@@ -37,8 +37,10 @@ import javax.management.ObjectName;
  *          j.b.ConstructorProperties and j.m.ConstructorProperties annotations
  *          only j.m.ConstructorProperties annotation is considered.
  * @author Jaroslav Bachorik
- * @modules java.management
- *          java.desktop
+ *
+ * @modules java.desktop
+ *          java.management
+ *
  * @run main LegacyConstructorPropertiesTest
  */
 
