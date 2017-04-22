@@ -518,7 +518,7 @@ public class StampedLockTest extends JSR166TestCase {
                 lock.unlockWrite(s);
             }});
 
-        aboutToLock.await();
+        await(aboutToLock);
         waitForThreadToEnterWaitState(t);
         assertFalse(lock.isWriteLocked());
         assertTrue(lock.isReadLocked());
@@ -777,7 +777,7 @@ public class StampedLockTest extends JSR166TestCase {
                 lock.writeLockInterruptibly();
             }});
 
-        locked.await();
+        await(locked);
         assertFalse(lock.validate(p));
         assertEquals(0L, lock.tryOptimisticRead());
         waitForThreadToEnterWaitState(t);

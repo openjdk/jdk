@@ -26,16 +26,23 @@
  * @bug 8152341
  * @requires vm.jvmci
  * @library /test/lib /compiler/jvmci/jdk.vm.ci.hotspot.test/src
- * @modules jdk.vm.ci/jdk.vm.ci.meta
- *          jdk.vm.ci/jdk.vm.ci.common
- *          jdk.vm.ci/jdk.vm.ci.runtime
- *          jdk.vm.ci/jdk.vm.ci.hotspot
+ * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
+ *          jdk.internal.vm.ci/jdk.vm.ci.common
+ *          jdk.internal.vm.ci/jdk.vm.ci.runtime
+ *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          java.base/jdk.internal.misc
- * @run testng/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ * @build sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run testng/othervm -Xbootclasspath/a:.
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *      jdk.vm.ci.hotspot.test.MemoryAccessProviderTest
  */
 
 package jdk.vm.ci.hotspot.test;
+
+import sun.hotspot.WhiteBox;
 
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaKind;
@@ -59,7 +66,27 @@ public class MemoryAccessProviderTest {
 
     @Test(dataProvider = "negative", dataProviderClass = MemoryAccessProviderData.class, expectedExceptions = {IllegalArgumentException.class})
     public void testNegativeReadPrimitiveConstant(JavaKind kind, Constant base) {
-        PROVIDER.readPrimitiveConstant(kind, base, 0L, kind == null ? 0 : kind.getBitCount());
+        PROVIDER.readPrimitiveConstant(kind, base, 0L, kind == null ? 0 : kind.getByteCount() / 8);
+    }
+
+    @Test(dataProvider = "outOfBoundsInstanceFields", dataProviderClass = MemoryAccessProviderData.class)
+    public void testReadPrimitiveInstanceFieldOutOfBounds(JavaKind kind, Constant base, Long offset, boolean isOutOfBounds) {
+        try {
+            PROVIDER.readPrimitiveConstant(kind, base, offset, kind.getByteCount() * 8);
+            Assert.assertFalse(isOutOfBounds);
+        } catch (IllegalArgumentException iae) {
+            Assert.assertTrue(isOutOfBounds);
+        }
+    }
+
+    @Test(dataProvider = "outOfBoundsStaticFields", dataProviderClass = MemoryAccessProviderData.class)
+    public void testReadPrimitiveStaticFieldOutOFBounds(JavaKind kind, Constant base, Long offset, boolean isOutOfBounds) {
+        try {
+            PROVIDER.readPrimitiveConstant(kind, base, offset, kind.getByteCount() * 8);
+            Assert.assertFalse(isOutOfBounds);
+        } catch (IllegalArgumentException iae) {
+            Assert.assertTrue(isOutOfBounds);
+        }
     }
 
     @Test(dataProvider = "positiveObject", dataProviderClass = MemoryAccessProviderData.class, expectedExceptions = {IllegalArgumentException.class})
@@ -87,7 +114,7 @@ public class MemoryAccessProviderTest {
         Assert.assertNull(PROVIDER.readObjectConstant(base, offset + 1), "Expected null");
     }
 
-    @Test(dataProvider = "positivePrimitive", dataProviderClass = MemoryAccessProviderData.class)
+    @Test(dataProvider = "positivePrimitive", dataProviderClass = MemoryAccessProviderData.class, expectedExceptions = {IllegalArgumentException.class})
     public void testNegativeReadObjectConstantPrimitiveBase(JavaKind kind, Constant base, Long offset, Object expected, int bitsCount) {
         Assert.assertNull(PROVIDER.readObjectConstant(base, offset), "Expected null");
     }

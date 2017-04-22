@@ -25,7 +25,6 @@
 
 package jdk.nashorn.internal.scripts;
 
-import java.lang.reflect.Module;
 import jdk.nashorn.api.scripting.JSObject;
 
 /**

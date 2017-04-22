@@ -530,6 +530,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   BASIC_PATH_PROGS(DF, df)
   BASIC_PATH_PROGS(CPIO, [cpio bsdcpio])
   BASIC_PATH_PROGS(NICE, nice)
+  BASIC_PATH_PROGS(PANDOC, pandoc)
 ])
 
 # Setup basic configuration paths, and platform-specific stuff related to PATHs.
@@ -1097,6 +1098,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
   BASIC_PATH_PROGS(HG, hg)
   BASIC_PATH_PROGS(STAT, stat)
   BASIC_PATH_PROGS(TIME, time)
+  BASIC_PATH_PROGS(FLOCK, flock)
   # Dtrace is usually found in /usr/sbin on Solaris, but that directory may not
   # be in the user path.
   BASIC_PATH_PROGS(DTRACE, dtrace, $PATH:/usr/sbin)
@@ -1202,6 +1204,18 @@ AC_DEFUN_ONCE([BASIC_TEST_USABILITY_ISSUES],
 # Check for support for specific options in bash
 AC_DEFUN_ONCE([BASIC_CHECK_BASH_OPTIONS],
 [
+  # Check bash version
+  # Extra [ ] to stop m4 mangling
+  [ BASH_VER=`$BASH --version | $SED -n  -e 's/^.*bash.*ersion *\([0-9.]*\).*$/\1/ p'` ]
+  AC_MSG_CHECKING([bash version])
+  AC_MSG_RESULT([$BASH_VER])
+
+  BASH_MAJOR=`$ECHO $BASH_VER | $CUT -d . -f 1`
+  BASH_MINOR=`$ECHO $BASH_VER | $CUT -d . -f 2`
+  if test $BASH_MAJOR -lt 3 || (test $BASH_MAJOR -eq 3 && test $BASH_MINOR -lt 2); then
+    AC_MSG_ERROR([bash version 3.2 or better is required])
+  fi
+
   # Test if bash supports pipefail.
   AC_MSG_CHECKING([if bash supports pipefail])
   if ${BASH} -c 'set -o pipefail'; then
