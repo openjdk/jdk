@@ -22,17 +22,15 @@
  */
 
 /**
- *  @test
- *  @bug 6751643
- *  @summary  ThreadReference.ownedMonitors() can return null
+ * @test
+ * @bug 6751643
+ * @key intermittent
+ * @summary ThreadReference.ownedMonitors() can return null
+ * @author jjh
  *
- *  @author jjh
- *
- *  @key intermittent
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g SimulResumerTest.java
- *  @run driver SimulResumerTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g SimulResumerTest.java
+ * @run driver SimulResumerTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

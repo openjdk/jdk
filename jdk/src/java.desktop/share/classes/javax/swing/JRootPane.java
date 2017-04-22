@@ -663,8 +663,7 @@ public class JRootPane extends JComponent implements Accessible {
             throw new NullPointerException("glassPane cannot be set to null.");
         }
 
-        AWTAccessor.getComponentAccessor().setMixingCutoutShape(glass,
-                new Rectangle());
+        glass.setMixingCutoutShape(new Rectangle());
 
         boolean visible = false;
         if (glassPane != null && glassPane.getParent() == this) {

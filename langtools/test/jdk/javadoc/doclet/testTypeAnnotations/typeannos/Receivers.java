@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,11 +53,12 @@ class WithValue {
 }
 
 class WithFinal {
-    void plain(final @RcvrB("m") WithFinal this) { }
-    <T> void generic(final @RcvrB("m") WithFinal this) { }
-    void withException(final @RcvrB("m") WithFinal this) throws Exception { }
-    String nonVoid(final @RcvrB("m") WithFinal this) { return null; }
-    <T extends Runnable> void accept(final @RcvrB("m") WithFinal this, T r) throws Exception { }
+    WithFinal afield;
+    void plain(final @RcvrB("m") WithFinal afield) { }
+    <T> void generic(final @RcvrB("m") WithFinal afield) { }
+    void withException(final @RcvrB("m") WithFinal afield) throws Exception { }
+    String nonVoid(final @RcvrB("m") WithFinal afield) { return null; }
+    <T extends Runnable> void accept(final @RcvrB("m") WithFinal afield, T r) throws Exception { }
 }
 
 class WithBody {

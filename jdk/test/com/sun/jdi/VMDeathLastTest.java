@@ -22,17 +22,15 @@
  */
 
 /**
- *  @test
- *  @bug 4420844 4449394
- *  @summary Checks that no events are sent after VMDeath, and test vm.canBeModified
+ * @test
+ * @bug 4420844 4449394
+ * @summary Checks that no events are sent after VMDeath, and test vm.canBeModified
+ * @author Robert Field
  *
- *  @author Robert Field
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g HelloWorld.java
- *  @run build VMDeathLastTest
- *  @run driver VMDeathLastTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g HelloWorld.java
+ * @run build VMDeathLastTest
+ * @run driver VMDeathLastTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

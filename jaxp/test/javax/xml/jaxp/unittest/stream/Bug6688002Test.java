@@ -23,6 +23,8 @@
 
 package stream;
 
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
+
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -67,15 +69,15 @@ public class Bug6688002Test {
     }
 
     public class MyRunnable implements Runnable {
-        final int no;
+        final String no;
 
         MyRunnable(int no) {
-            this.no = no;
+            this.no = String.valueOf(no);
         }
 
         public void run() {
             try {
-                FileOutputStream fos = new FileOutputStream("" + no);
+                FileOutputStream fos = new FileOutputStream(USER_DIR + no);
                 XMLStreamWriter w = getWriter(fos);
                 // System.out.println("Writer="+w+" Thread="+Thread.currentThread());
                 w.writeStartDocument();
@@ -89,7 +91,7 @@ public class Bug6688002Test {
                 w.close();
                 fos.close();
 
-                FileInputStream fis = new FileInputStream("" + no);
+                FileInputStream fis = new FileInputStream(USER_DIR + no);
                 XMLStreamReader r = getReader(fis);
                 while (r.hasNext()) {
                     r.next();

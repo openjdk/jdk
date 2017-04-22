@@ -76,6 +76,7 @@ if [ \! -d $EXTD ]; then
       (cd $JARD; "$JAR" ${TESTTOOLVMOPTS} -cf ../p$n.jar *)
     done
 
+    cp p2.jar p2dup.jar
     mv p3.jar $EXTD
 
     cp $TESTCLASSES/Load.class $TESTD
@@ -116,6 +117,8 @@ T=Load
 go "$TESTD" "" FooProvider1
 
 go ".${SEP}p2.jar" "" FooProvider2
+
+go ".${SEP}p2.jar${SEP}p2dup.jar" "" FooProvider2
 
 go "${P3JAR}${SEP}p2.jar" "" FooProvider3 FooProvider2
 

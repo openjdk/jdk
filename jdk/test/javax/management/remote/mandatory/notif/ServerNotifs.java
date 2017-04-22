@@ -27,7 +27,7 @@
  * @summary Tests the reception of the notifications for opened and closed
  * connections
  * @author sjiang
- * @modules java.management.rmi
+ *
  * @run clean ServerNotifs
  * @run build ServerNotifs
  * @run main ServerNotifs
