@@ -22,17 +22,15 @@
  */
 
 /**
- *  @test
- *  @bug 4642611
- *  @summary Test that method.allLineLocations() should
- *           throw AbsentInformationException exception
+ * @test
+ * @bug 4642611
+ * @summary Test that method.allLineLocations() should
+ *          throw AbsentInformationException exception
+ * @author Serguei Spitsyn
  *
- *  @author Serguei Spitsyn
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g:none NoLocInfoTest.java
- *  @run driver NoLocInfoTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g:none NoLocInfoTest.java
+ * @run driver NoLocInfoTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

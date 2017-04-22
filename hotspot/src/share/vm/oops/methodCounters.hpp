@@ -116,7 +116,9 @@ class MethodCounters: public MetaspaceObj {
 
   AOT_ONLY(Method* method() const { return _method; })
 
-  static int size() { return sizeof(MethodCounters) / wordSize; }
+  static int size() {
+    return align_size_up(sizeof(MethodCounters), wordSize) / wordSize;
+  }
 
   bool is_klass() const { return false; }
 

@@ -27,7 +27,7 @@
  * @summary Tests whether a listener receives notifs emitted before the
  * listener is registered.
  * @author Shanliang JIANG
- * @modules java.management.rmi
+ *
  * @run clean UnexpectedNotifTest
  * @run build UnexpectedNotifTest
  * @run main UnexpectedNotifTest
