@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,6 +87,7 @@ class PKIX {
         private Set<TrustAnchor> anchors;
         private List<X509Certificate> certs;
         private Timestamp timestamp;
+        private String variant;
 
         ValidatorParams(CertPath cp, PKIXParameters params)
             throws InvalidAlgorithmParameterException
@@ -102,8 +103,9 @@ class PKIX {
         ValidatorParams(PKIXParameters params)
             throws InvalidAlgorithmParameterException
         {
-            if (params instanceof PKIXTimestampParameters) {
-                timestamp = ((PKIXTimestampParameters) params).getTimestamp();
+            if (params instanceof PKIXExtendedParameters) {
+                timestamp = ((PKIXExtendedParameters) params).getTimestamp();
+                variant = ((PKIXExtendedParameters) params).getVariant();
             }
 
             this.anchors = params.getTrustAnchors();
@@ -198,6 +200,10 @@ class PKIX {
 
         Timestamp timestamp() {
             return timestamp;
+        }
+
+        String variant() {
+            return variant;
         }
     }
 

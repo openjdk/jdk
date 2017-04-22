@@ -23,6 +23,12 @@
  * questions.
  */
 
+/**
+ * Zip file system provider.
+ *
+ * @moduleGraph
+ * @since 9
+ */
 module jdk.zipfs {
     provides java.nio.file.spi.FileSystemProvider with jdk.nio.zipfs.ZipFileSystemProvider;
 }

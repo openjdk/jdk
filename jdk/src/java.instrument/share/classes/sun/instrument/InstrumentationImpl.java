@@ -23,11 +23,10 @@
  * questions.
  */
 
-
 package sun.instrument;
 
+import java.lang.instrument.UnmodifiableModuleException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Module;
 import java.lang.reflect.AccessibleObject;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.ClassDefinition;
@@ -130,6 +129,13 @@ public class InstrumentationImpl implements Instrumentation {
                          "null passed as 'theClass' in isModifiableClass");
         }
         return isModifiableClass0(mNativeAgent, theClass);
+    }
+
+    public boolean isModifiableModule(Module module) {
+        if (module == null) {
+            throw new NullPointerException("'module' is null");
+        }
+        return true;
     }
 
     public boolean
@@ -243,6 +249,9 @@ public class InstrumentationImpl implements Instrumentation {
         if (!module.isNamed())
             return;
 
+        if (!isModifiableModule(module))
+            throw new UnmodifiableModuleException(module.getName());
+
         // copy and check reads
         extraReads = new HashSet<>(extraReads);
         if (extraReads.contains(null))
@@ -312,7 +321,7 @@ public class InstrumentationImpl implements Instrumentation {
             return Collections.emptyMap();
 
         Map<String, Set<Module>> result = new HashMap<>();
-        Set<String> packages = Set.of(module.getPackages());
+        Set<String> packages = module.getPackages();
         for (Map.Entry<String, Set<Module>> e : map.entrySet()) {
             String pkg = e.getKey();
             if (pkg == null)

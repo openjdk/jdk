@@ -23,6 +23,8 @@
 
 package stream.XMLStreamWriterTest;
 
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
+
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -84,7 +86,7 @@ public class WriterTest {
         System.out.println("Test StreamWriter with out any namespace functionality");
 
         try {
-            String outputFile = files[0] + ".out";
+            String outputFile = USER_DIR + files[0] + ".out";
             System.out.println("Writing output to " + outputFile);
 
             xtw = outputFactory.createXMLStreamWriter(new FileOutputStream(outputFile), ENCODING);
@@ -98,7 +100,7 @@ public class WriterTest {
             xtw.flush();
             xtw.close();
 
-            Assert.assertTrue(checkResults(files[0] + ".out", files[0] + ".org"));
+            Assert.assertTrue(checkResults(outputFile, files[0] + ".org"));
 
         } catch (Exception ex) {
             Assert.fail("testOne Failed " + ex);
@@ -113,7 +115,7 @@ public class WriterTest {
         System.out.println("Test StreamWriter's Namespace Context");
 
         try {
-            String outputFile = files[1] + ".out";
+            String outputFile = USER_DIR + files[1] + ".out";
             System.out.println("Writing output to " + outputFile);
 
             xtw = outputFactory.createXMLStreamWriter(System.out);
@@ -157,7 +159,7 @@ public class WriterTest {
         System.out.println("Test StreamWriter for proper element sequence.");
 
         try {
-            String outputFile = files[2] + ".out";
+            String outputFile = USER_DIR + files[2] + ".out";
             System.out.println("Writing output to " + outputFile);
 
             xtw = outputFactory.createXMLStreamWriter(new FileOutputStream(outputFile), ENCODING);
@@ -172,7 +174,7 @@ public class WriterTest {
             xtw.flush();
             xtw.close();
 
-            Assert.assertTrue(checkResults(files[2] + ".out", files[2] + ".org"));
+            Assert.assertTrue(checkResults(outputFile, files[2] + ".org"));
 
         } catch (Exception ex) {
             Assert.fail("testThree Failed " + ex);
@@ -188,7 +190,7 @@ public class WriterTest {
 
         try {
 
-            String outputFile = files[3] + ".out";
+            String outputFile = USER_DIR + files[3] + ".out";
             System.out.println("Writing output to " + outputFile);
 
             xtw = outputFactory.createXMLStreamWriter(new FileOutputStream(outputFile), ENCODING);
@@ -205,7 +207,7 @@ public class WriterTest {
             xtw.flush();
             xtw.close();
 
-            Assert.assertTrue(checkResults(files[3] + ".out", files[3] + ".org"));
+            Assert.assertTrue(checkResults(outputFile, files[3] + ".org"));
 
         } catch (Exception ex) {
             Assert.fail("testFour Failed " + ex);
@@ -221,7 +223,7 @@ public class WriterTest {
 
         try {
 
-            String outputFile = files[4] + ".out";
+            String outputFile = USER_DIR + files[4] + ".out";
             System.out.println("Writing output to " + outputFile);
 
             xtw = outputFactory.createXMLStreamWriter(System.out);
@@ -265,7 +267,7 @@ public class WriterTest {
             xtw.writeEndDocument();
             xtw.flush();
             xtw.close();
-            Assert.assertTrue(checkResults(files[4] + ".out", files[4] + ".org"));
+            Assert.assertTrue(checkResults(outputFile, files[4] + ".org"));
             System.out.println("Done");
         } catch (Exception ex) {
             Assert.fail("testFive Failed " + ex);
@@ -281,7 +283,7 @@ public class WriterTest {
 
         try {
 
-            String outputFile = files[5] + ".out";
+            String outputFile = USER_DIR + files[5] + ".out";
             System.out.println("Writing output to " + outputFile);
 
             xtw = outputFactory.createXMLStreamWriter(System.out);
@@ -325,7 +327,7 @@ public class WriterTest {
             xtw.writeEndDocument();
             xtw.flush();
             xtw.close();
-            Assert.assertTrue(checkResults(files[5] + ".out", files[5] + ".org"));
+            Assert.assertTrue(checkResults(outputFile, files[5] + ".org"));
             System.out.println("Done");
         } catch (Exception ex) {
             Assert.fail("testSix Failed " + ex);
@@ -341,7 +343,7 @@ public class WriterTest {
 
         try {
 
-            String outputFile = files[6] + ".out";
+            String outputFile = USER_DIR + files[6] + ".out";
             System.out.println("Writing output to " + outputFile);
 
             xtw = outputFactory.createXMLStreamWriter(new FileOutputStream(outputFile), ENCODING);
@@ -374,7 +376,7 @@ public class WriterTest {
             xtw.writeEndDocument();
             xtw.flush();
             xtw.close();
-            Assert.assertTrue(checkResults(files[6] + ".out", files[6] + ".org"));
+            Assert.assertTrue(checkResults(outputFile, files[6] + ".org"));
             System.out.println("Done");
         } catch (Exception ex) {
             Assert.fail("testSeven Failed " + ex);
@@ -390,7 +392,7 @@ public class WriterTest {
 
         try {
 
-            String outputFile = files[7] + ".out";
+            String outputFile = USER_DIR + files[7] + ".out";
             System.out.println("Writing output to " + outputFile);
             outputFactory.setProperty(XMLOutputFactory.IS_REPAIRING_NAMESPACES, new Boolean(true));
             xtw = outputFactory.createXMLStreamWriter(new FileOutputStream(outputFile), ENCODING);
@@ -424,7 +426,7 @@ public class WriterTest {
             xtw.flush();
             xtw.close();
             // check against testSeven.xml.org
-            Assert.assertTrue(checkResults(files[7] + ".out", files[7] + ".org"));
+            Assert.assertTrue(checkResults(outputFile, files[7] + ".org"));
             System.out.println("Done");
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -442,7 +444,7 @@ public class WriterTest {
 
         try {
 
-            String outputFile = files[8] + ".out";
+            String outputFile = USER_DIR + files[8] + ".out";
             System.out.println("Writing output to " + outputFile);
             outputFactory.setProperty(XMLOutputFactory.IS_REPAIRING_NAMESPACES, new Boolean(true));
             xtw = outputFactory.createXMLStreamWriter(new FileOutputStream(outputFile), ENCODING);
@@ -476,7 +478,7 @@ public class WriterTest {
             xtw.flush();
             xtw.close();
             // check against testSeven.xml.org
-            Assert.assertTrue(checkResults(files[8] + ".out", files[7] + ".org"));
+            Assert.assertTrue(checkResults(outputFile, files[7] + ".org"));
             System.out.println("Done");
         } catch (Exception ex) {
             Assert.fail("testNine Failed " + ex);
@@ -491,7 +493,7 @@ public class WriterTest {
         System.out.println("Test StreamWriter supplied with no namespace information and" + "isRepairingNamespace is set to true.");
         try {
 
-            String outputFile = files[9] + ".out";
+            String outputFile = USER_DIR + files[9] + ".out";
             System.out.println("Writing output to " + outputFile);
             outputFactory.setProperty(XMLOutputFactory.IS_REPAIRING_NAMESPACES, new Boolean(true));
             xtw = outputFactory.createXMLStreamWriter(new FileOutputStream(outputFile), ENCODING);
@@ -542,7 +544,7 @@ public class WriterTest {
         System.out.println("Test StreamWriter supplied with  namespace information passed through startElement and" + "isRepairingNamespace is set to true.");
         try {
 
-            String outputFile = files[10] + ".out";
+            String outputFile = USER_DIR + files[10] + ".out";
             System.out.println("Writing output to " + outputFile);
             outputFactory.setProperty(XMLOutputFactory.IS_REPAIRING_NAMESPACES, new Boolean(true));
             xtw = outputFactory.createXMLStreamWriter(new FileOutputStream(outputFile), ENCODING);
@@ -576,7 +578,7 @@ public class WriterTest {
             xtw.flush();
             xtw.close();
             // check against testSeven.xml.org
-            Assert.assertTrue(checkResults(files[10] + ".out", files[7] + ".org"));
+            Assert.assertTrue(checkResults(outputFile, files[7] + ".org"));
             System.out.println("Done");
         } catch (Exception ex) {
             Assert.fail("testEleven Failed " + ex);
@@ -592,7 +594,7 @@ public class WriterTest {
 
         try {
 
-            String outputFile = files[11] + ".out";
+            String outputFile = USER_DIR + files[11] + ".out";
             System.out.println("Writing output to " + outputFile);
             outputFactory.setProperty(XMLOutputFactory.IS_REPAIRING_NAMESPACES, new Boolean(true));
             xtw = outputFactory.createXMLStreamWriter(new FileOutputStream(outputFile), ENCODING);
@@ -643,7 +645,7 @@ public class WriterTest {
 
         try {
 
-            String outputFile = files[12] + ".out";
+            String outputFile = USER_DIR + files[12] + ".out";
             System.out.println("Writing output to " + outputFile);
             outputFactory.setProperty(XMLOutputFactory.IS_REPAIRING_NAMESPACES, new Boolean(true));
             xtw = outputFactory.createXMLStreamWriter(new FileOutputStream(outputFile), ENCODING);
@@ -695,7 +697,7 @@ public class WriterTest {
 
         try {
 
-            String outputFile = files[14] + ".out";
+            String outputFile = USER_DIR + files[14] + ".out";
             System.out.println("Writing output to " + outputFile);
             outputFactory.setProperty(XMLOutputFactory.IS_REPAIRING_NAMESPACES, new Boolean(true));
             xtw = outputFactory.createXMLStreamWriter(new FileOutputStream(outputFile), ENCODING);

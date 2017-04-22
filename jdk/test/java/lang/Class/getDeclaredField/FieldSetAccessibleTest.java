@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,8 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
-import java.lang.reflect.Module;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.InaccessibleObjectException;
-import java.lang.reflect.Layer;
 import java.lang.reflect.ReflectPermission;
 import java.net.URI;
 import java.nio.file.FileSystem;
@@ -269,7 +267,7 @@ public class FieldSetAccessibleTest {
             try {
                 return Files.walk(root)
                         .filter(p -> p.getNameCount() > 2)
-                        .filter(p -> Layer.boot().findModule(p.getName(1).toString()).isPresent())
+                        .filter(p -> ModuleLayer.boot().findModule(p.getName(1).toString()).isPresent())
                         .map(p -> p.subpath(2, p.getNameCount()))
                         .map(p -> p.toString())
                         .filter(s -> s.endsWith(".class") && !s.endsWith("module-info.class"))
@@ -380,6 +378,7 @@ public class FieldSetAccessibleTest {
             permissions.add(new RuntimePermission("closeClassLoader"));
             permissions.add(new RuntimePermission("getClassLoader"));
             permissions.add(new RuntimePermission("accessDeclaredMembers"));
+            permissions.add(new RuntimePermission("accessSystemModules"));
             permissions.add(new ReflectPermission("suppressAccessChecks"));
             permissions.add(new PropertyPermission("*", "read"));
             permissions.add(new FilePermission("<<ALL FILES>>", "read"));

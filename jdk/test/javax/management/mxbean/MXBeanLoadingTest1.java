@@ -26,8 +26,9 @@
  * @bug 8058865
  * @summary Checks correct collection of MXBean's class after unregistration
  * @author Olivier Lagneau
- * @modules java.management
+ *
  * @library /lib/testlibrary
+ *
  * @run main/othervm/timeout=300 MXBeanLoadingTest1
  */
 
