@@ -826,6 +826,9 @@ float Parse::dynamic_branch_prediction(float &cnt, BoolTest::mask btest, Node* t
     ciMethodData* methodData = method()->method_data();
     if (!methodData->is_mature())  return PROB_UNKNOWN;
     ciProfileData* data = methodData->bci_to_data(bci());
+    if (data == NULL) {
+      return PROB_UNKNOWN;
+    }
     if (!data->is_JumpData())  return PROB_UNKNOWN;
 
     // get taken and not taken values
@@ -917,8 +920,8 @@ float Parse::branch_prediction(float& cnt,
         // of the OSR-ed method, and we want to deopt to gather more stats.
         // If you have ANY counts, then this loop is simply 'cold' relative
         // to the OSR loop.
-        if (data->as_BranchData()->taken() +
-            data->as_BranchData()->not_taken() == 0 ) {
+        if (data == NULL ||
+            (data->as_BranchData()->taken() +  data->as_BranchData()->not_taken() == 0)) {
           // This is the only way to return PROB_UNKNOWN:
           return PROB_UNKNOWN;
         }

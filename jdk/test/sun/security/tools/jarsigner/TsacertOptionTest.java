@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,10 @@ import jdk.testlibrary.JarUtils;
 
 /**
  * @test
- * @bug 8024302 8026037
+ * @bug 8024302 8026037 8176320
  * @summary The test signs and verifies a jar file with -tsacert option
  * @library /lib/testlibrary warnings
+ * @library /test/lib
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.timestamp
  *          java.base/sun.security.tools.keytool

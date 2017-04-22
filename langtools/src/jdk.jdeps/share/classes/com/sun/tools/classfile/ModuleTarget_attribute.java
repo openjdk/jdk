@@ -40,7 +40,6 @@ public class ModuleTarget_attribute extends Attribute {
         super(name_index, length);
         os_name_index = cr.readUnsignedShort();
         os_arch_index = cr.readUnsignedShort();
-        os_version_index = cr.readUnsignedShort();
     }
 
     @Override
@@ -50,5 +49,4 @@ public class ModuleTarget_attribute extends Attribute {
 
     public final int os_name_index;
     public final int os_arch_index;
-    public final int os_version_index;
 }

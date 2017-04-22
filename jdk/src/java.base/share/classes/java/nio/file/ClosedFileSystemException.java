@@ -28,6 +28,8 @@ package java.nio.file;
 /**
  * Unchecked exception thrown when an attempt is made to invoke an operation on
  * a file and the file system is closed.
+ *
+ * @since 1.7
  */
 
 public class ClosedFileSystemException
