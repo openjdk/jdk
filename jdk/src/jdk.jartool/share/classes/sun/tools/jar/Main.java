@@ -27,6 +27,7 @@ package sun.tools.jar;
 
 import java.io.*;
 import java.lang.module.Configuration;
+import java.lang.module.FindException;
 import java.lang.module.InvalidModuleDescriptorException;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Exports;
@@ -63,6 +64,7 @@ import jdk.internal.module.ModuleHashesBuilder;
 import jdk.internal.module.ModuleInfo;
 import jdk.internal.module.ModuleInfoExtender;
 import jdk.internal.module.ModuleResolution;
+import jdk.internal.module.ModuleTarget;
 import jdk.internal.util.jar.JarIndex;
 
 import static jdk.internal.util.jar.JarIndex.INDEX_NAME;
@@ -158,7 +160,7 @@ public class Main {
     static final String MANIFEST_DIR = "META-INF/";
     static final String VERSIONS_DIR = MANIFEST_DIR + "versions/";
     static final String VERSION = "1.0";
-
+    static final int VERSIONS_DIR_LENGTH = VERSIONS_DIR.length();
     private static ResourceBundle rsrc;
 
     /**
@@ -237,6 +239,7 @@ public class Main {
         if (!parseArgs(args)) {
             return false;
         }
+        File tmpFile = null;
         try {
             if (cflag || uflag) {
                 if (fname != null) {
@@ -303,8 +306,8 @@ public class Main {
                         ? "tmpjar"
                         : fname.substring(fname.indexOf(File.separatorChar) + 1);
 
-                File tmpfile = createTemporaryFile(tmpbase, ".jar");
-                try (OutputStream out = new FileOutputStream(tmpfile)) {
+                tmpFile = createTemporaryFile(tmpbase, ".jar");
+                try (OutputStream out = new FileOutputStream(tmpFile)) {
                     create(new BufferedOutputStream(out, 4096), manifest);
                 }
                 if (nflag) {
@@ -313,16 +316,16 @@ public class Main {
                         Packer packer = Pack200.newPacker();
                         Map<String, String> p = packer.properties();
                         p.put(Packer.EFFORT, "1"); // Minimal effort to conserve CPU
-                        try (JarFile jarFile = new JarFile(tmpfile.getCanonicalPath());
+                        try (JarFile jarFile = new JarFile(tmpFile.getCanonicalPath());
                              OutputStream pack = new FileOutputStream(packFile))
                         {
                             packer.pack(jarFile, pack);
                         }
-                        if (tmpfile.exists()) {
-                            tmpfile.delete();
+                        if (tmpFile.exists()) {
+                            tmpFile.delete();
                         }
-                        tmpfile = createTemporaryFile(tmpbase, ".jar");
-                        try (OutputStream out = new FileOutputStream(tmpfile);
+                        tmpFile = createTemporaryFile(tmpbase, ".jar");
+                        try (OutputStream out = new FileOutputStream(tmpFile);
                              JarOutputStream jos = new JarOutputStream(out))
                         {
                             Unpacker unpacker = Pack200.newUnpacker();
@@ -332,9 +335,9 @@ public class Main {
                         Files.deleteIfExists(packFile.toPath());
                     }
                 }
-                validateAndClose(tmpfile);
+                validateAndClose(tmpFile);
             } else if (uflag) {
-                File inputFile = null, tmpFile = null;
+                File inputFile = null;
                 if (fname != null) {
                     inputFile = new File(fname);
                     tmpFile = createTempFileInSameDirectoryAs(inputFile);
@@ -406,11 +409,11 @@ public class Main {
                 boolean found;
                 if (fname != null) {
                     try (ZipFile zf = new ZipFile(fname)) {
-                        found = printModuleDescriptor(zf);
+                        found = describeModule(zf);
                     }
                 } else {
                     try (FileInputStream fin = new FileInputStream(FileDescriptor.in)) {
-                        found = printModuleDescriptor(fin);
+                        found = describeModule(fin);
                     }
                 }
                 if (!found)
@@ -425,6 +428,9 @@ public class Main {
         } catch (Throwable t) {
             t.printStackTrace();
             ok = false;
+        } finally {
+            if (tmpFile != null && tmpFile.exists())
+                tmpFile.delete();
         }
         out.flush();
         err.flush();
@@ -599,7 +605,7 @@ public class Main {
         int n = args.length - count;
         if (n > 0) {
             if (dflag) {
-                // "--print-module-descriptor/-d" does not require file argument(s)
+                // "--describe-module/-d" does not require file argument(s)
                 usageError(formatMsg("error.bad.dflag", args[count]));
                 return false;
             }
@@ -681,7 +687,7 @@ public class Main {
     void addPackageIfNamed(Set<String> packages, String name) {
         if (name.startsWith(VERSIONS_DIR)) {
             // trim the version dir prefix
-            int i0 = VERSIONS_DIR.length();
+            int i0 = VERSIONS_DIR_LENGTH;
             int i = name.indexOf('/', i0);
             if (i <= 0) {
                 warn(formatMsg("warn.release.unexpected.versioned.entry", name));
@@ -699,7 +705,7 @@ public class Main {
         }
         String pn = toPackageName(name);
         // add if this is a class or resource in a package
-        if (Checks.isJavaIdentifier(pn)) {
+        if (Checks.isPackageName(pn)) {
             packages.add(pn);
         }
     }
@@ -1724,34 +1730,64 @@ public class Main {
                            .collect(joining(", ", prefix, suffix));
     }
 
-    private boolean printModuleDescriptor(ZipFile zipFile)
-        throws IOException
-    {
-        ZipEntry entry = zipFile.getEntry(MODULE_INFO);
-        if (entry ==  null)
-            return false;
+    private boolean describeModule(ZipFile zipFile) throws IOException {
+        ZipEntry[] zes = zipFile.stream()
+            .filter(e -> isModuleInfoEntry(e.getName()))
+            .sorted(Validator.ENTRY_COMPARATOR)
+            .toArray(ZipEntry[]::new);
 
-        try (InputStream is = zipFile.getInputStream(entry)) {
-            printModuleDescriptor(is);
+        if (zes.length == 0) {
+            // No module descriptor found, derive the automatic module name
+            String fn = zipFile.getName();
+            ModuleFinder mf = ModuleFinder.of(Paths.get(fn));
+            try {
+                Set<ModuleReference> mref = mf.findAll();
+                if (mref.isEmpty()) {
+                    output(formatMsg("error.unable.derive.automodule", fn));
+                    return true;
+                }
+                ModuleDescriptor md = mref.iterator().next().descriptor();
+                output(getMsg("out.automodule"));
+                describeModule(md, null, null, "automatic");
+            } catch (FindException e) {
+                String msg = formatMsg("error.unable.derive.automodule", fn);
+                Throwable t = e.getCause();
+                if (t != null)
+                    msg = msg + "\n" + t.getMessage();
+                output(msg);
+            }
+        } else {
+            for (ZipEntry ze : zes) {
+                try (InputStream is = zipFile.getInputStream(ze)) {
+                    describeModule(is, ze.getName());
+                }
+            }
         }
         return true;
     }
 
-    private boolean printModuleDescriptor(FileInputStream fis)
+    private boolean describeModule(FileInputStream fis)
         throws IOException
     {
         try (BufferedInputStream bis = new BufferedInputStream(fis);
              ZipInputStream zis = new ZipInputStream(bis)) {
-
             ZipEntry e;
             while ((e = zis.getNextEntry()) != null) {
-                if (e.getName().equals(MODULE_INFO)) {
-                    printModuleDescriptor(zis);
-                    return true;
+                String ename = e.getName();
+                if (isModuleInfoEntry(ename)){
+                    moduleInfos.put(ename, zis.readAllBytes());
                 }
             }
         }
-        return false;
+        if (moduleInfos.size() == 0)
+            return false;
+        String[] names = moduleInfos.keySet().stream()
+            .sorted(Validator.ENTRYNAME_COMPARATOR)
+            .toArray(String[]::new);
+        for (String name : names) {
+            describeModule(new ByteArrayInputStream(moduleInfos.get(name)), name);
+        }
+        return true;
     }
 
     static <T> String toString(Collection<T> set) {
@@ -1760,18 +1796,30 @@ public class Main {
                   .collect(joining(" "));
     }
 
-    private void printModuleDescriptor(InputStream entryInputStream)
+    private void describeModule(InputStream entryInputStream, String ename)
         throws IOException
     {
         ModuleInfo.Attributes attrs = ModuleInfo.read(entryInputStream, null);
         ModuleDescriptor md = attrs.descriptor();
+        ModuleTarget target = attrs.target();
         ModuleHashes hashes = attrs.recordedHashes();
 
+        describeModule(md, target, hashes, ename);
+    }
+
+    private void describeModule(ModuleDescriptor md,
+                                ModuleTarget target,
+                                ModuleHashes hashes,
+                                String ename)
+        throws IOException
+    {
         StringBuilder sb = new StringBuilder();
-        sb.append("\n");
+        sb.append("\nmodule ")
+          .append(md.toNameAndVersion())
+          .append(" (").append(ename).append(")");
+
         if (md.isOpen())
-            sb.append("open ");
-        sb.append(md.toNameAndVersion());
+            sb.append("\n  open ");
 
         md.requires().stream()
             .sorted(Comparator.comparing(Requires::name))
@@ -1807,11 +1855,14 @@ public class Main {
 
         md.mainClass().ifPresent(v -> sb.append("\n  main-class " + v));
 
-        md.osName().ifPresent(v -> sb.append("\n  operating-system-name " + v));
-
-        md.osArch().ifPresent(v -> sb.append("\n  operating-system-architecture " + v));
-
-        md.osVersion().ifPresent(v -> sb.append("\n  operating-system-version " + v));
+        if (target != null) {
+            String osName = target.osName();
+            if (osName != null)
+                sb.append("\n  operating-system-name " + osName);
+            String osArch = target.osArch();
+            if (osArch != null)
+                sb.append("\n  operating-system-architecture " + osArch);
+       }
 
        if (hashes != null) {
            hashes.names().stream().sorted().forEach(
@@ -1879,7 +1930,7 @@ public class Main {
             if (end == 0)
                 return true;
             if (name.startsWith(VERSIONS_DIR)) {
-                int off = VERSIONS_DIR.length();
+                int off = VERSIONS_DIR_LENGTH;
                 if (off == end)      // meta-inf/versions/module-info.class
                     return false;
                 while (off < end - 1) {
@@ -1995,7 +2046,7 @@ public class Main {
             }
             // get a resolved module graph
             Configuration config =
-                Configuration.empty().resolveRequires(system, finder, roots);
+                Configuration.empty().resolve(system, finder, roots);
 
             // filter modules resolved from the system module finder
             this.modules = config.modules().stream()

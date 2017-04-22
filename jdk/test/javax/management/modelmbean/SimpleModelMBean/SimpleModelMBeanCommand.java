@@ -28,7 +28,7 @@
  * IllegalArgumentException when attribute names, operation names, and
  * Java type names do not strictly follow the expected Java syntax.
  * @author Eamonn McManus, Daniel Fuchs
- * @modules java.management
+ *
  * @run clean SimpleModelMBeanCommand
  * @run build SimpleModelMBeanCommand
  * @run main/othervm/java.security.policy=policy  SimpleModelMBeanCommand

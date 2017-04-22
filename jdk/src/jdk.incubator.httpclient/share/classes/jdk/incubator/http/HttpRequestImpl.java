@@ -81,6 +81,7 @@ class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         this.userHeaders = request.headers();
         if (request instanceof HttpRequestImpl) {
             this.systemHeaders = ((HttpRequestImpl) request).systemHeaders;
+            this.isWebSocket = ((HttpRequestImpl) request).isWebSocket;
         } else {
             this.systemHeaders = new HttpHeadersImpl();
         }
@@ -102,6 +103,7 @@ class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
                            HttpRequestImpl other) {
         this.method = method == null? "GET" : method;
         this.userHeaders = other.userHeaders;
+        this.isWebSocket = other.isWebSocket;
         this.systemHeaders = other.systemHeaders;
         this.uri = uri;
         this.expectContinue = other.expectContinue;
@@ -115,6 +117,9 @@ class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
     /* used for creating CONNECT requests  */
     HttpRequestImpl(String method, HttpClientImpl client,
                     InetSocketAddress authority) {
+        // TODO: isWebSocket flag is not specified, but the assumption is that
+        // such a request will never be made on a connection that will be returned
+        // to the connection pool (we might need to revisit this constructor later)
         this.method = method;
         this.systemHeaders = new HttpHeadersImpl();
         this.userHeaders = ImmutableHeaders.empty();

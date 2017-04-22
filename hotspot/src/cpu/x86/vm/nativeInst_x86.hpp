@@ -356,6 +356,7 @@ class NativeMovRegMem: public NativeInstruction {
 
     instruction_VEX_prefix_2bytes       = Assembler::VEX_2bytes,
     instruction_VEX_prefix_3bytes       = Assembler::VEX_3bytes,
+    instruction_EVEX_prefix_4bytes      = Assembler::EVEX_4bytes,
 
     instruction_size                    = 4,
     instruction_offset                  = 0,

@@ -525,7 +525,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
      * adding 'TAB' and 'SHIFT-TAB' to traversalKeysSet in case
      * editor is non editable
      */
-
+    @SuppressWarnings("deprecation")
     void updateFocusTraversalKeys() {
         /*
          * Fix for 4514331 Non-editable JTextArea and similar

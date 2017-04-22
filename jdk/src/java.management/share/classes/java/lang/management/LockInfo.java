@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,8 @@ import sun.management.LockInfoCompositeData;
  * a synchronizer that may be exclusively owned by a thread and uses
  * {@link AbstractOwnableSynchronizer AbstractOwnableSynchronizer}
  * (or its subclass) to implement its synchronization property.
- * {@link ReentrantLock ReentrantLock} and
- * {@link ReentrantReadWriteLock ReentrantReadWriteLock} are
+ * {@link ReentrantLock ReentrantLock} and the write-lock (but not
+ * the read-lock) of {@link ReentrantReadWriteLock ReentrantReadWriteLock} are
  * two examples of ownable synchronizers provided by the platform.
  *
  * <h3><a name="MappedType">MXBean Mapping</a></h3>
