@@ -156,11 +156,19 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
 
   # Should we build the complete docs, or just a lightweight version?
   AC_ARG_ENABLE([full-docs], [AS_HELP_STRING([--enable-full-docs],
-      [build complete documentation @<:@disabled@:>@])])
+      [build complete documentation @<:@enabled if all tools found@:>@])])
 
   # Verify dependencies
   AC_MSG_CHECKING([for graphviz dot])
   if test "x$DOT" != "x"; then
+    AC_MSG_RESULT([yes])
+  else
+    AC_MSG_RESULT([no, cannot generate full docs])
+    FULL_DOCS_DEP_MISSING=true
+  fi
+
+  AC_MSG_CHECKING([for pandoc])
+  if test "x$PANDOC" != "x"; then
     AC_MSG_RESULT([yes])
   else
     AC_MSG_RESULT([no, cannot generate full docs])
@@ -181,8 +189,14 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
     ENABLE_FULL_DOCS=false
     AC_MSG_RESULT([no, forced])
   elif test "x$enable_full_docs" = x; then
-    ENABLE_FULL_DOCS=false
-    AC_MSG_RESULT([no, default])
+    # Check for prerequisites
+    if test "x$FULL_DOCS_DEP_MISSING" = xtrue; then
+      ENABLE_FULL_DOCS=false
+      AC_MSG_RESULT([no, missing dependencies])
+    else
+      ENABLE_FULL_DOCS=true
+      AC_MSG_RESULT([yes, dependencies present])
+    fi
   else
     AC_MSG_ERROR([--enable-full-docs can only take yes or no])
   fi

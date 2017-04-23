@@ -363,6 +363,38 @@ $(foreach m, $(ALL_MODULES), \
   ) \
 )
 
+ifeq ($(ENABLE_FULL_DOCS), true)
+  # For all markdown files in $module/share/specs directories, convert them to
+  # html.
+  MARKDOWN_SPEC_FILTER := %.md
+
+  # Macro for SetupCopyFiles that converts from markdown to html using pandoc.
+  define markdown-to-html
+	$(call MakeDir, $(@D))
+	$(RM) $@
+	$(PANDOC) -t html -s -o $@ $<
+  endef
+
+  rename-md-to-html = \
+      $(patsubst %.md,%.html,$1)
+
+  $(foreach m, $(ALL_MODULES), \
+    $(eval SPECS_$m := $(call FindModuleSpecsDirs, $m)) \
+    $(if $(SPECS_$m), \
+      $(eval $(call SetupCopyFiles, CONVERT_MARKDOWN_$m, \
+          SRC := $(SPECS_$m), \
+          FILES := $(filter $(MARKDOWN_SPEC_FILTER), $(call CacheFind, $(SPECS_$m))), \
+          DEST := $(JAVADOC_OUTPUTDIR)/specs/, \
+          MACRO := markdown-to-html, \
+          NAME_MACRO := rename-md-to-html, \
+          LOG_ACTION := Converting from markdown, \
+      )) \
+      $(eval JDK_SPECS_TARGETS += $(CONVERT_MARKDOWN_$m)) \
+    ) \
+  )
+
+endif
+
 # Special treatment for generated documentation
 
 JDWP_PROTOCOL := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/jdwp-protocol.html

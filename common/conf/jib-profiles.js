@@ -422,7 +422,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "linux-x64": {
             target_os: "linux",
             target_cpu: "x64",
-            dependencies: ["devkit", "graphviz"],
+            dependencies: ["devkit", "graphviz", "pandoc"],
             configure_args: concat(common.configure_args_64bit,
                 "--enable-full-docs", "--with-zlib=system"),
             default_make_targets: ["docs-bundles"],
@@ -973,6 +973,14 @@ var getJibProfilesDependencies = function (input, common) {
             revision: "2.38.0-1+1.1",
             module: "graphviz-" + input.target_platform,
             configure_args: "DOT=" + input.get("graphviz", "install_path") + "/dot"
+        },
+
+        pandoc: {
+            organization: common.organization,
+            ext: "tar.gz",
+            revision: "1.17.2+1.0",
+            module: "pandoc-" + input.target_platform,
+            configure_args: "PANDOC=" + input.get("pandoc", "install_path") + "/pandoc/pandoc"
         },
     };
 
