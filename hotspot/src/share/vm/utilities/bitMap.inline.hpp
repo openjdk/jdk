@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,7 +146,7 @@ inline void BitMap::par_clear_range(idx_t beg, idx_t end, RangeSizeHint hint) {
 }
 
 inline BitMap::idx_t
-BitMap::get_next_one_offset_inline(idx_t l_offset, idx_t r_offset) const {
+BitMap::get_next_one_offset(idx_t l_offset, idx_t r_offset) const {
   assert(l_offset <= size(), "BitMap index out of bounds");
   assert(r_offset <= size(), "BitMap index out of bounds");
   assert(l_offset <= r_offset, "l_offset > r_offset ?");
@@ -209,7 +209,7 @@ BitMap::get_next_one_offset_inline(idx_t l_offset, idx_t r_offset) const {
 }
 
 inline BitMap::idx_t
-BitMap::get_next_zero_offset_inline(idx_t l_offset, idx_t r_offset) const {
+BitMap::get_next_zero_offset(idx_t l_offset, idx_t r_offset) const {
   assert(l_offset <= size(), "BitMap index out of bounds");
   assert(r_offset <= size(), "BitMap index out of bounds");
   assert(l_offset <= r_offset, "l_offset > r_offset ?");
@@ -251,8 +251,7 @@ BitMap::get_next_zero_offset_inline(idx_t l_offset, idx_t r_offset) const {
 }
 
 inline BitMap::idx_t
-BitMap::get_next_one_offset_inline_aligned_right(idx_t l_offset,
-                                                 idx_t r_offset) const
+BitMap::get_next_one_offset_aligned_right(idx_t l_offset, idx_t r_offset) const
 {
   verify_range(l_offset, r_offset);
   assert(bit_in_word(r_offset) == 0, "r_offset not word-aligned");
@@ -320,16 +319,6 @@ inline BitMap::idx_t BitMap::word_index_round_up(idx_t bit) const {
   idx_t bit_rounded_up = bit + (BitsPerWord - 1);
   // Check for integer arithmetic overflow.
   return bit_rounded_up > bit ? word_index(bit_rounded_up) : size_in_words();
-}
-
-inline BitMap::idx_t BitMap::get_next_one_offset(idx_t l_offset,
-                                          idx_t r_offset) const {
-  return get_next_one_offset_inline(l_offset, r_offset);
-}
-
-inline BitMap::idx_t BitMap::get_next_zero_offset(idx_t l_offset,
-                                           idx_t r_offset) const {
-  return get_next_zero_offset_inline(l_offset, r_offset);
 }
 
 inline bool BitMap2D::is_valid_index(idx_t slot_index, idx_t bit_within_slot_index) {
