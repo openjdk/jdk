@@ -343,27 +343,42 @@ $(eval $(call SetupApiDocsGeneration, JAVASE_API, \
 # JAVASE_API_MODULEGRAPH_TARGETS.
 
 ################################################################################
-# Copy targets
+# Copy JDK specs files
 
-JDWP_HTML := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/jdwp-protocol.html
+# For all html documentation in $module/share/specs directories, copy it
+# unmodified
 
-$(eval $(call SetupCopyFiles, COPY_JDWP_HTML, \
-    FILES := $(JDWP_HTML), \
-    DEST := $(JAVADOC_OUTPUTDIR)/platform/jpda/jdwp, \
+ALL_MODULES := $(call FindAllModules)
+COPY_SPEC_FILTER := %.html %.gif %.jpg %.mib
+
+$(foreach m, $(ALL_MODULES), \
+  $(eval SPECS_$m := $(call FindModuleSpecsDirs, $m)) \
+  $(if $(SPECS_$m), \
+    $(eval $(call SetupCopyFiles, COPY_$m, \
+        SRC := $(SPECS_$m), \
+        FILES := $(filter $(COPY_SPEC_FILTER), $(call CacheFind, $(SPECS_$m))), \
+        DEST := $(JAVADOC_OUTPUTDIR)/specs/, \
+    )) \
+    $(eval JDK_SPECS_TARGETS += $(COPY_$m)) \
+  ) \
+)
+
+# Special treatment for generated documentation
+
+JDWP_PROTOCOL := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/jdwp-protocol.html
+$(eval $(call SetupCopyFiles, COPY_JDWP_PROTOCOL, \
+    FILES := $(JDWP_PROTOCOL), \
+    DEST := $(JAVADOC_OUTPUTDIR)/specs/jdwp, \
 ))
+JDK_SPECS_TARGETS += $(COPY_JDWP_PROTOCOL)
 
-COPY_TARGETS += $(COPY_JDWP_HTML)
-
-# Pick jvmti.html from any jvm variant, they are all the same.
-JVMTI_HTML := $(firstword \
-    $(wildcard $(HOTSPOT_OUTPUTDIR)/variant-*/gensrc/jvmtifiles/jvmti.html))
-
+# Get jvmti.html from the main jvm variant (all variants' jvmti.html are identical).
+JVMTI_HTML := $(HOTSPOT_OUTPUTDIR)/variant-$(JVM_VARIANT_MAIN)/gensrc/jvmtifiles/jvmti.html
 $(eval $(call SetupCopyFiles, COPY_JVMTI_HTML, \
     FILES := $(JVMTI_HTML), \
-    DEST := $(JAVADOC_OUTPUTDIR)/platform/jvmti, \
+    DEST := $(JAVADOC_OUTPUTDIR)/specs, \
 ))
-
-COPY_TARGETS += $(COPY_JVMTI_HTML)
+JDK_SPECS_TARGETS += $(COPY_JVMTI_HTML)
 
 ################################################################################
 # Optional target which bundles all generated javadocs into a zip archive.
@@ -372,10 +387,10 @@ JAVADOC_ZIP_NAME := jdk-$(VERSION_STRING)-docs.zip
 JAVADOC_ZIP_FILE := $(OUTPUT_ROOT)/bundles/$(JAVADOC_ZIP_NAME)
 
 $(eval $(call SetupZipArchive, BUILD_JAVADOC_ZIP, \
-  SRC := $(JAVADOC_OUTPUTDIR), \
-  ZIP := $(JAVADOC_ZIP_FILE), \
-  EXTRA_DEPS := $(JDK_API_JAVADOC_TARGETS) $(JDK_API_MODULEGRAPH_TARGETS) \
-      $(COPY_TARGETS), \
+    SRC := $(JAVADOC_OUTPUTDIR), \
+    ZIP := $(JAVADOC_ZIP_FILE), \
+    EXTRA_DEPS := $(JDK_API_JAVADOC_TARGETS) $(JDK_API_MODULEGRAPH_TARGETS) \
+        $(JDK_SPECS_TARGETS), \
 ))
 
 ZIP_TARGETS += $(BUILD_JAVADOC_ZIP)
@@ -395,12 +410,12 @@ docs-javase-api-javadoc: $(JAVASE_API_JAVADOC_TARGETS)
 
 docs-javase-api-modulegraph: $(JAVASE_API_MODULEGRAPH_TARGETS)
 
-docs-copy: $(COPY_TARGETS)
+docs-jdk-specs: $(JDK_SPECS_TARGETS)
 
 docs-zip: $(ZIP_TARGETS)
 
 all: docs-jdk-api-javadoc docs-jdk-api-modulegraph docs-javase-api-javadoc \
-    docs-javase-api-modulegraph docs-copy docs-zip
+    docs-javase-api-modulegraph docs-jdk-specs docs-zip
 
 .PHONY: default all docs-jdk-api-javadoc docs-jdk-api-modulegraph \
-    docs-javase-api-javadoc docs-javase-api-modulegraph docs-copy docs-zip
+    docs-javase-api-javadoc docs-javase-api-modulegraph docs-jdk-specs docs-zip
