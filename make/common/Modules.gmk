@@ -229,6 +229,8 @@ ifneq ($(OPENJDK_TARGET_OS), $(OPENJDK_TARGET_OS_TYPE))
 endif
 SRC_SUBDIRS += share/classes
 
+SPEC_SUBDIRS += share/specs
+
 # Find all module-info.java files for the current build target platform and
 # configuration.
 # Param 1 - Module to find for, set to * for finding all
@@ -280,6 +282,12 @@ FindModuleSrcDirs = \
     $(strip $(wildcard \
         $(addsuffix /$(strip $1), $(GENERATED_SRC_DIRS) $(IMPORT_MODULES_SRC)) \
         $(foreach sub, $(SRC_SUBDIRS), $(addsuffix /$(strip $1)/$(sub), $(TOP_SRC_DIRS)))))
+
+# Find all specs dirs for a particular module
+# $1 - Module to find specs dirs for
+FindModuleSpecsDirs = \
+    $(strip $(wildcard \
+        $(foreach sub, $(SPEC_SUBDIRS), $(addsuffix /$(strip $1)/$(sub), $(TOP_SRC_DIRS)))))
 
 # Construct the complete module source path
 GetModuleSrcPath = \

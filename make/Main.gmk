@@ -374,8 +374,8 @@ docs-javase-api-javadoc:
 docs-javase-api-modulegraph:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-javase-api-modulegraph)
 
-docs-copy:
-	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-copy)
+docs-jdk-specs:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-jdk-specs)
 
 docs-zip:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-zip)
@@ -384,8 +384,8 @@ update-build-docs:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f UpdateBuildDocs.gmk)
 
 ALL_TARGETS += docs-jdk-api-javadoc docs-jdk-api-modulegraph \
-    docs-javase-api-javadoc docs-javase-api-modulegraph docs-copy docs-zip \
-    update-build-docs
+    docs-javase-api-javadoc docs-javase-api-modulegraph docs-jdk-specs \
+    docs-zip update-build-docs
 
 ################################################################################
 # Cross compilation support
@@ -790,10 +790,10 @@ else
 
   docs-javase-api-modulegraph: exploded-image buildtools-modules
 
-  # The gensrc step for jdk.jdi creates an html file that is used by docs-copy.
-  docs-copy: hotspot-$(JVM_VARIANT_MAIN)-gensrc jdk.jdi-gensrc
+  # The gensrc steps for hotspot and jdk.jdi create html spec files.
+  docs-jdk-specs: hotspot-$(JVM_VARIANT_MAIN)-gensrc jdk.jdi-gensrc
 
-  docs-zip: docs-jdk docs-copy
+  docs-zip: docs-jdk
 
   test: jdk-image test-image
 
@@ -922,7 +922,7 @@ ifeq ($(ENABLE_FULL_DOCS), true)
   docs-javase-api: docs-javase-api-modulegraph
 endif
 
-docs-jdk: docs-jdk-api
+docs-jdk: docs-jdk-api docs-jdk-specs
 docs-javase: docs-javase-api
 
 # alias for backwards compatibility
@@ -959,7 +959,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 endif
 
 # This target builds the documentation image
-docs-image: docs-jdk docs-copy
+docs-image: docs-jdk
 
 # This target builds the test image
 test-image: prepare-test-image test-image-hotspot-jtreg-native \
