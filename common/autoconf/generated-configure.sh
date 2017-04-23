@@ -1973,7 +1973,8 @@ Optional Features:
   --enable-debug          set the debug level to fastdebug (shorthand for
                           --with-debug-level=fastdebug) [disabled]
   --enable-headless-only  only build headless (no GUI) support [disabled]
-  --enable-full-docs      build complete documentation [disabled]
+  --enable-full-docs      build complete documentation [enabled if all tools
+                          found]
   --disable-unlimited-crypto
                           Disable unlimited crypto policy [enabled]
   --disable-keep-packaged-modules
@@ -5179,7 +5180,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1492700323
+DATE_WHEN_GENERATED=1492975963
 
 ###############################################################################
 #
@@ -24729,6 +24730,17 @@ $as_echo "no, cannot generate full docs" >&6; }
     FULL_DOCS_DEP_MISSING=true
   fi
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pandoc" >&5
+$as_echo_n "checking for pandoc... " >&6; }
+  if test "x$PANDOC" != "x"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+  else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, cannot generate full docs" >&5
+$as_echo "no, cannot generate full docs" >&6; }
+    FULL_DOCS_DEP_MISSING=true
+  fi
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking full docs" >&5
 $as_echo_n "checking full docs... " >&6; }
   if test "x$enable_full_docs" = xyes; then
@@ -24778,9 +24790,16 @@ $as_echo "yes, forced" >&6; }
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, forced" >&5
 $as_echo "no, forced" >&6; }
   elif test "x$enable_full_docs" = x; then
-    ENABLE_FULL_DOCS=false
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, default" >&5
-$as_echo "no, default" >&6; }
+    # Check for prerequisites
+    if test "x$FULL_DOCS_DEP_MISSING" = xtrue; then
+      ENABLE_FULL_DOCS=false
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, missing dependencies" >&5
+$as_echo "no, missing dependencies" >&6; }
+    else
+      ENABLE_FULL_DOCS=true
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, dependencies present" >&5
+$as_echo "yes, dependencies present" >&6; }
+    fi
   else
     as_fn_error $? "--enable-full-docs can only take yes or no" "$LINENO" 5
   fi

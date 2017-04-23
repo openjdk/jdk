@@ -24,39 +24,50 @@
 # questions.
 #
 # Create a bundle in the current directory, containing what's needed to run
-# the 'dot' program from the graphviz suite by the OpenJDK build.
+# the 'pandoc' program by the OpenJDK build.
 
-TMPDIR=`mktemp -d -t graphvizbundle-XXXX`
+TMPDIR=`mktemp -d -t pandocbundle-XXXX`
 trap "rm -rf \"$TMPDIR\"" EXIT
 
 ORIG_DIR=`pwd`
 cd "$TMPDIR"
-GRAPHVIZ_VERSION=2.38.0-1
-PACKAGE_VERSION=1.1
+PANDOC_VERSION=1.17.2
+FULL_PANDOC_VERSION=1.17.2-1
+PACKAGE_VERSION=1.0
 TARGET_PLATFORM=linux_x64
-BUNDLE_NAME=graphviz-$TARGET_PLATFORM-$GRAPHVIZ_VERSION+$PACKAGE_VERSION.tar.gz
-wget http://www.graphviz.org/pub/graphviz/stable/redhat/el6/x86_64/os/graphviz-$GRAPHVIZ_VERSION.el6.x86_64.rpm
-wget http://www.graphviz.org/pub/graphviz/stable/redhat/el6/x86_64/os/graphviz-libs-$GRAPHVIZ_VERSION.el6.x86_64.rpm
-wget http://www.graphviz.org/pub/graphviz/stable/redhat/el6/x86_64/os/graphviz-plugins-core-$GRAPHVIZ_VERSION.el6.x86_64.rpm
-wget http://www.graphviz.org/pub/graphviz/stable/redhat/el6/x86_64/os/graphviz-plugins-x-$GRAPHVIZ_VERSION.el6.x86_64.rpm
+BUNDLE_NAME=pandoc-$TARGET_PLATFORM-$PANDOC_VERSION+$PACKAGE_VERSION.tar.gz
 
-mkdir graphviz
-cd graphviz
-for rpm in ../*.rpm; do
-  rpm2cpio $rpm | cpio --extract --make-directories
-done
+wget https://github.com/jgm/pandoc/releases/download/$PANDOC_VERSION/pandoc-$FULL_PANDOC_VERSION-amd64.deb
 
-cat > dot << EOF
+mkdir pandoc
+cd pandoc
+ar p ../pandoc-$FULL_PANDOC_VERSION-amd64.deb data.tar.gz | tar xz
+cd ..
+
+# Pandoc depends on libgmp.so.10, which in turn depends on libc. No readily
+# available precompiled binaries exists which match the requirement of
+# support for older linuxes (glibc 2.12), so we'll compile it ourselves.
+
+LIBGMP_VERSION=6.1.2
+
+wget https://gmplib.org/download/gmp/gmp-$LIBGMP_VERSION.tar.xz
+mkdir gmp
+cd gmp
+tar xf ../gmp-$LIBGMP_VERSION.tar.xz
+cd gmp-$LIBGMP_VERSION
+./configure --prefix=$TMPDIR/pandoc/usr
+make
+make install
+cd ../..
+
+cat > pandoc/pandoc << EOF
 #!/bin/bash
 # Get an absolute path to this script
 this_script_dir=\`dirname \$0\`
 this_script_dir=\`cd \$this_script_dir > /dev/null && pwd\`
-export LD_LIBRARY_PATH="\$this_script_dir/usr/lib64:\$LD_LIBRARY_PATH"
-exec \$this_script_dir/usr/bin/dot "\$@"
+export LD_LIBRARY_PATH="\$this_script_dir/usr/lib:\$LD_LIBRARY_PATH"
+exec \$this_script_dir/usr/bin/pandoc "\$@"
 EOF
-chmod +x dot
-export LD_LIBRARY_PATH="$TMPDIR/graphviz/usr/lib64:$LD_LIBRARY_PATH"
-# create config file
-./dot -c
-tar -cvzf ../$BUNDLE_NAME *
+chmod +x pandoc/pandoc
+tar -cvzf ../$BUNDLE_NAME pandoc
 cp ../$BUNDLE_NAME "$ORIG_DIR"
