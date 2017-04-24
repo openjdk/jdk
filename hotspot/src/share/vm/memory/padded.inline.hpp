@@ -54,9 +54,9 @@ PaddedEnd<T>* PaddedArray<T, flags, alignment>::create_unfreeable(uint length) {
 template <class T, MEMFLAGS flags, size_t alignment>
 T** Padded2DArray<T, flags, alignment>::create_unfreeable(uint rows, uint columns, size_t* allocation_size) {
   // Calculate and align the size of the first dimension's table.
-  size_t table_size = align_up_(rows * sizeof(T*), alignment);
+  size_t table_size = align_up(rows * sizeof(T*), alignment);
   // The size of the separate rows.
-  size_t row_size = align_up_(columns * sizeof(T), alignment);
+  size_t row_size = align_up(columns * sizeof(T), alignment);
   // Total size consists of the indirection table plus the rows.
   size_t total_size = table_size + rows * row_size + alignment;
 
