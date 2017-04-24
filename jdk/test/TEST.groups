@@ -714,7 +714,7 @@ needs_compact2 = \
   java/security/BasicPermission/Wildcard.java \
   java/util/Arrays/ParallelPrefix.java  \
   java/util/Arrays/SetAllTest.java  \
-  java/util/BitSet/BitSetStreamTest.java  \
+  java/util/BitSet/stream/BitSetStreamTest.java  \
   java/util/Collection/CollectionDefaults.java  \
   java/util/Collections/CheckedIdentityMap.java  \
   java/util/Collections/CheckedMapBash.java  \
