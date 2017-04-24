@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
@@ -166,17 +167,15 @@ void PerfData::create_entry(BasicType dtype, size_t dsize, size_t vlen) {
   pdep->flags = (jbyte)flags();
   pdep->data_offset = (jint) data_start;
 
-  if (PerfTraceDataCreation) {
-    tty->print("name = %s, dtype = %d, variability = %d,"
-               " units = %d, dsize = " SIZE_FORMAT ", vlen = " SIZE_FORMAT ","
-               " pad_length = " SIZE_FORMAT ", size = " SIZE_FORMAT ", on_c_heap = %s,"
-               " address = " INTPTR_FORMAT ","
-               " data address = " INTPTR_FORMAT "\n",
-               cname, dtype, variability(),
-               units(), dsize, vlen,
-               pad_length, size, is_on_c_heap() ? "TRUE":"FALSE",
-               p2i(psmp), p2i(valuep));
-  }
+  log_debug(perf, datacreation)("name = %s, dtype = %d, variability = %d,"
+                                " units = %d, dsize = " SIZE_FORMAT ", vlen = " SIZE_FORMAT ","
+                                " pad_length = " SIZE_FORMAT ", size = " SIZE_FORMAT ", on_c_heap = %s,"
+                                " address = " INTPTR_FORMAT ","
+                                " data address = " INTPTR_FORMAT "\n",
+                                cname, dtype, variability(),
+                                units(), dsize, vlen,
+                                pad_length, size, is_on_c_heap() ? "TRUE":"FALSE",
+                                p2i(psmp), p2i(valuep));
 
   // record the start of the entry and the location of the data field.
   _pdep = pdep;
