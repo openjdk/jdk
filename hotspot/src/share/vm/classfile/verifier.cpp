@@ -54,6 +54,7 @@
 #define NOFAILOVER_MAJOR_VERSION                       51
 #define NONZERO_PADDING_BYTES_IN_SWITCH_MAJOR_VERSION  51
 #define STATIC_METHOD_IN_INTERFACE_MAJOR_VERSION       52
+#define MAX_ARRAY_DIMENSIONS 255
 
 // Access to external entry for VerifyClassCodes - old byte code verifier
 
@@ -2931,8 +2932,15 @@ void ClassVerifier::verify_anewarray(
   char* arr_sig_str;
   if (component_type.is_array()) {     // it's an array
     const char* component_name = component_type.name()->as_utf8();
+    // Check for more than MAX_ARRAY_DIMENSIONS
+    length = (int)strlen(component_name);
+    if (length > MAX_ARRAY_DIMENSIONS &&
+        component_name[MAX_ARRAY_DIMENSIONS - 1] == '[') {
+      verify_error(ErrorContext::bad_code(bci),
+        "Illegal anewarray instruction, array has more than 255 dimensions");
+    }
     // add one dimension to component
-    length = (int)strlen(component_name) + 1;
+    length++;
     arr_sig_str = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, length);
     arr_sig_str[0] = '[';
     strncpy(&arr_sig_str[1], component_name, length - 1);
