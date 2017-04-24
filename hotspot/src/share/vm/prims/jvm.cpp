@@ -1009,7 +1009,7 @@ JVM_END
 JVM_ENTRY(void, JVM_DefineModule(JNIEnv *env, jobject module, jboolean is_open, jstring version,
                                  jstring location, const char* const* packages, jsize num_packages))
   JVMWrapper("JVM_DefineModule");
-  Modules::define_module(module, version, location, packages, num_packages, CHECK);
+  Modules::define_module(module, is_open, version, location, packages, num_packages, CHECK);
 JVM_END
 
 JVM_ENTRY(void, JVM_SetBootLoaderUnnamedModule(JNIEnv *env, jobject module))

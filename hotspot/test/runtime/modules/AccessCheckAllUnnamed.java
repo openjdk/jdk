@@ -56,13 +56,13 @@ public class AccessCheckAllUnnamed {
         // Define a module for p3.
         m1x = ModuleHelper.ModuleObject("module_one", this_cldr, new String[] { "p3" });
         assertNotNull(m1x, "Module should not be null");
-        ModuleHelper.DefineModule(m1x, "9.0", "m1x/there", new String[] { "p3" });
+        ModuleHelper.DefineModule(m1x, false, "9.0", "m1x/there", new String[] { "p3" });
         ModuleHelper.AddReadsModule(m1x, jlM);
 
         // Define a module for p2.
         m2x = ModuleHelper.ModuleObject("module_two", this_cldr, new String[] { "p2" });
         assertNotNull(m2x, "Module should not be null");
-        ModuleHelper.DefineModule(m2x, "9.0", "m2x/there", new String[] { "p2" });
+        ModuleHelper.DefineModule(m2x, false, "9.0", "m2x/there", new String[] { "p2" });
         ModuleHelper.AddReadsModule(m2x, jlM);
 
         try {

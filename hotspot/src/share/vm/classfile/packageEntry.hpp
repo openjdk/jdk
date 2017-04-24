@@ -128,7 +128,9 @@ public:
   // package's export state
   bool is_exported() const { // qualifiedly or unqualifiedly exported
     assert_locked_or_safepoint(Module_lock);
-    return ((_export_flags & PKG_EXP_UNQUALIFIED_OR_ALL_UNAMED) != 0) || has_qual_exports_list();
+    return module()->is_open() ||
+            ((_export_flags & PKG_EXP_UNQUALIFIED_OR_ALL_UNAMED) != 0) ||
+            has_qual_exports_list();
   }
   // Returns true if the package has any explicit qualified exports or is exported to all unnamed
   bool is_qual_exported() const {
@@ -145,16 +147,20 @@ public:
   }
   bool is_exported_allUnnamed() const {
     assert_locked_or_safepoint(Module_lock);
-    return (_export_flags == PKG_EXP_ALLUNNAMED);
+    return (module()->is_open() || _export_flags == PKG_EXP_ALLUNNAMED);
   }
   bool is_unqual_exported() const {
     assert_locked_or_safepoint(Module_lock);
-    return (_export_flags == PKG_EXP_UNQUALIFIED);
+    return (module()->is_open() || _export_flags == PKG_EXP_UNQUALIFIED);
   }
 
   // Explicitly set _export_flags to PKG_EXP_UNQUALIFIED and clear
   // PKG_EXP_ALLUNNAMED, if it was set.
   void set_unqual_exported() {
+    if (module()->is_open()) {
+        // No-op for open modules since all packages are unqualifiedly exported
+        return;
+    }
     assert(Module_lock->owned_by_self(), "should have the Module_lock");
     _export_flags = PKG_EXP_UNQUALIFIED;
   }

@@ -464,8 +464,9 @@ static bool can_relax_access_check_for(const Klass* accessor,
  Caller S in package     If MS is loose: YES      If same classloader/package (PS == PT): YES
  PS, runtime module MS   If MS can read T's       If same runtime module: (MS == MT): YES
                          unnamed module: YES
-                                                  Else if (MS can read MT (Establish readability) &&
-                                                    MT exports PT to MS or to all modules): YES
+                                                  Else if (MS can read MT (establish readability) &&
+                                                    ((MT exports PT to MS or to all modules) ||
+                                                     (MT is open))): YES
 
  ------------------------------------------------------------------------------------------------
  Caller S in unnamed         YES                  Readability exists because unnamed module
@@ -511,7 +512,7 @@ Reflection::VerifyClassAccessResults Reflection::verify_class_access(
       return ACCESS_OK;
     }
 
-    // Acceptable access to a type in an unamed module.  Note that since
+    // Acceptable access to a type in an unnamed module. Note that since
     // unnamed modules can read all unnamed modules, this also handles the
     // case where module_from is also unnamed but in a different class loader.
     if (!module_to->is_named() &&
@@ -522,6 +523,11 @@ Reflection::VerifyClassAccessResults Reflection::verify_class_access(
     // Establish readability, check if module_from is allowed to read module_to.
     if (!module_from->can_read(module_to)) {
       return MODULE_NOT_READABLE;
+    }
+
+    // Access is allowed if module_to is open, i.e. all its packages are unqualifiedly exported
+    if (module_to->is_open()) {
+      return ACCESS_OK;
     }
 
     PackageEntry* package_to = new_class->package();

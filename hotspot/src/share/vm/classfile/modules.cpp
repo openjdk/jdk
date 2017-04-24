@@ -238,9 +238,11 @@ static void define_javabase_module(jobject module, jstring version,
                      pkg_list->length());
 
   // packages defined to java.base
-  for (int x = 0; x < pkg_list->length(); x++) {
-    log_trace(modules)("define_javabase_module(): creation of package %s for module " JAVA_BASE_NAME,
-                       (pkg_list->at(x))->as_C_string());
+  if (log_is_enabled(Trace, modules)) {
+    for (int x = 0; x < pkg_list->length(); x++) {
+      log_trace(modules)("define_javabase_module(): creation of package %s for module " JAVA_BASE_NAME,
+                         (pkg_list->at(x))->as_C_string());
+    }
   }
 }
 
@@ -258,7 +260,7 @@ void throw_dup_pkg_exception(const char* module_name, PackageEntry* package, TRA
   }
 }
 
-void Modules::define_module(jobject module, jstring version,
+void Modules::define_module(jobject module, jboolean is_open, jstring version,
                             jstring location, const char* const* packages,
                             jsize num_packages, TRAPS) {
   ResourceMark rm(THREAD);
@@ -291,6 +293,7 @@ void Modules::define_module(jobject module, jstring version,
 
   // Special handling of java.base definition
   if (strcmp(module_name, JAVA_BASE_NAME) == 0) {
+    assert(is_open == JNI_FALSE, "java.base module cannot be open");
     define_javabase_module(module, version, location, packages, num_packages, CHECK);
     return;
   }
@@ -394,7 +397,8 @@ void Modules::define_module(jobject module, jstring version,
     // Add the module and its packages.
     if (!dupl_modules && existing_pkg == NULL) {
       // Create the entry for this module in the class loader's module entry table.
-      ModuleEntry* module_entry = module_table->locked_create_entry_or_null(module_handle, module_symbol,
+      ModuleEntry* module_entry = module_table->locked_create_entry_or_null(module_handle,
+                                    (is_open == JNI_TRUE), module_symbol,
                                     version_symbol, location_symbol, loader_data);
 
       if (module_entry == NULL) {
@@ -502,8 +506,8 @@ void Modules::add_module_exports(jobject from_module, const char* package_name, 
               "from_module cannot be found");
   }
 
-  // All packages in unnamed are exported by default.
-  if (!from_module_entry->is_named()) return;
+  // All packages in unnamed and open modules are exported by default.
+  if (!from_module_entry->is_named() || from_module_entry->is_open()) return;
 
   ModuleEntry* to_module_entry;
   if (to_module == NULL) {

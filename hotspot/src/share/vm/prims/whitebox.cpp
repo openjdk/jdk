@@ -1467,8 +1467,8 @@ WB_ENTRY(void, WB_FreeMetaspace(JNIEnv* env, jobject wb, jobject class_loader, j
   MetadataFactory::free_array(cld, (Array<u1>*)(uintptr_t)addr);
 WB_END
 
-WB_ENTRY(void, WB_DefineModule(JNIEnv* env, jobject o, jobject module, jstring version, jstring location,
-                                jobjectArray packages))
+WB_ENTRY(void, WB_DefineModule(JNIEnv* env, jobject o, jobject module, jboolean is_open,
+                                jstring version, jstring location, jobjectArray packages))
   ResourceMark rm(THREAD);
 
   objArrayOop packages_oop = objArrayOop(JNIHandles::resolve(packages));
@@ -1487,7 +1487,7 @@ WB_ENTRY(void, WB_DefineModule(JNIEnv* env, jobject o, jobject module, jstring v
       pkgs[x] = java_lang_String::as_utf8_string(pkg_str);
     }
   }
-  Modules::define_module(module, version, location, (const char* const*)pkgs, num_packages, CHECK);
+  Modules::define_module(module, is_open, version, location, (const char* const*)pkgs, num_packages, CHECK);
 WB_END
 
 WB_ENTRY(void, WB_AddModuleExports(JNIEnv* env, jobject o, jobject from_module, jstring package, jobject to_module))
@@ -1959,7 +1959,7 @@ static JNINativeMethod methods[] = {
   {CC"getCodeBlob",        CC"(J)[Ljava/lang/Object;",(void*)&WB_GetCodeBlob        },
   {CC"getThreadStackSize", CC"()J",                   (void*)&WB_GetThreadStackSize },
   {CC"getThreadRemainingStackSize", CC"()J",          (void*)&WB_GetThreadRemainingStackSize },
-  {CC"DefineModule",       CC"(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/Object;)V",
+  {CC"DefineModule",       CC"(Ljava/lang/Object;ZLjava/lang/String;Ljava/lang/String;[Ljava/lang/Object;)V",
                                                       (void*)&WB_DefineModule },
   {CC"AddModuleExports",   CC"(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)V",
                                                       (void*)&WB_AddModuleExports },
