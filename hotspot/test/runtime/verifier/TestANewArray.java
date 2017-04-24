@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,20 +33,17 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 /*
  * @test
- * @summary Test that anewarray bytecode is valid only if it specifies 255 or fewer dimensions.
+ * @summary Test that anewarray bytecode is valid only if it specifies 254 or fewer dimensions.
+ *          255 is invalid because the anewarray would then create an array with 256 dimensions.
  * @library /test/lib
  * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.base/jdk.internal.misc
- *          java.management
  * @compile -XDignore.symbol.file TestANewArray.java
  * @run main/othervm TestANewArray 49
- * @run main/othervm TestANewArray 50
- * @run main/othervm TestANewArray 51
  * @run main/othervm TestANewArray 52
  */
 
 /*
- * Testing anewarray instruction with 254, 255 & 264 dimensions to verify JVMS 8,
+ * Testing anewarray instruction with 254, 255 & 264 dimensions to verify JVM Spec
  * Section 4.9.1, Static Constraints that states the following:
  *
  * "No anewarray instruction may be used to create an array of more than 255 dimensions."
@@ -83,17 +80,16 @@ public class TestANewArray {
         System.err.println("Running with cfv: " + cfv + ", test_Dimension_255");
         pb = ProcessTools.createJavaProcessBuilder(true, "-verify", "-cp", ".",  classCName);
         output = new OutputAnalyzer(pb.start());
+        // If anewarray has an operand with 255 array dimensions then VerifyError should
+        // be thrown because the resulting array would have 256 dimensions.
+        output.shouldContain("java.lang.VerifyError");
+        // VerifyError exception messages differ between verifiers.
         if (cfv == 49) {
-            // The type-inferencing verifier used for <=49.0 ClassFiles detects an anewarray instruction
-            // with exactly 255 dimensions and incorrectly issues the "Array with too many dimensions" VerifyError.
             output.shouldContain("Array with too many dimensions");
-            output.shouldHaveExitValue(1);
         } else {
-            // 255 dimensions should always pass, except for cfv 49
-            output.shouldNotContain("java.lang.VerifyError");
-            output.shouldNotContain("java.lang.ClassFormatError");
-            output.shouldHaveExitValue(0);
+            output.shouldContain("Illegal anewarray instruction, array has more than 255 dimensions");
         }
+        output.shouldHaveExitValue(1);
 
         // 264 array dimensions
         byte[] classFile_264 = dumpClassFile(cfv, test_Dimension_264, array_Dimension_264);
