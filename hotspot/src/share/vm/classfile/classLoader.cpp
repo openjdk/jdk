@@ -1720,7 +1720,8 @@ void ClassLoader::create_javabase() {
 
   {
     MutexLocker ml(Module_lock, THREAD);
-    ModuleEntry* jb_module = null_cld_modules->locked_create_entry_or_null(Handle(), vmSymbols::java_base(), NULL, NULL, null_cld);
+    ModuleEntry* jb_module = null_cld_modules->locked_create_entry_or_null(Handle(),
+                               false, vmSymbols::java_base(), NULL, NULL, null_cld);
     if (jb_module == NULL) {
       vm_exit_during_initialization("Unable to create ModuleEntry for " JAVA_BASE_NAME);
     }

@@ -44,13 +44,13 @@ public class JVMDefineModule {
         // NULL classloader argument, expect success
         m = ModuleHelper.ModuleObject("mymodule", null, new String[] { "mypackage" });
         assertNotNull(m, "Module should not be null");
-        ModuleHelper.DefineModule(m, "9.0", "mymodule/here", new String[] { "mypackage" });
+        ModuleHelper.DefineModule(m, false, "9.0", "mymodule/here", new String[] { "mypackage" });
 
 /* Invalid test, won't compile.
         // Invalid classloader argument, expect an IAE
         try {
             m = ModuleHelper.ModuleObject("mymodule_one", new Object(), new String[] { "mypackage1" });
-            ModuleHelper.DefineModule(m,  "9.0", "mymodule/here", new String[] { "mypackage1" });
+            ModuleHelper.DefineModule(m, false, "9.0", "mymodule/here", new String[] { "mypackage1" });
             throw new RuntimeException("Failed to get expected IAE for bad loader");
         } catch(IllegalArgumentException e) {
             // Expected
@@ -60,11 +60,11 @@ public class JVMDefineModule {
         // NULL package argument, should not throw an exception
         m = ModuleHelper.ModuleObject("mymoduleTwo", cl, new String[] { "nullpkg" });
         assertNotNull(m, "Module should not be null");
-        ModuleHelper.DefineModule(m, "9.0", "mymoduleTwo/here", null);
+        ModuleHelper.DefineModule(m, false, "9.0", "mymoduleTwo/here", null);
 
         // Null module argument, expect an NPE
         try {
-            ModuleHelper.DefineModule(null,  "9.0", "mymodule/here", new String[] { "mypackage1" });
+            ModuleHelper.DefineModule(null, false, "9.0", "mymodule/here", new String[] { "mypackage1" });
             throw new RuntimeException("Failed to get expected NPE for null module");
         } catch(NullPointerException e) {
             if (!e.getMessage().contains("Null module object")) {
@@ -75,7 +75,7 @@ public class JVMDefineModule {
 
         // Invalid module argument, expect an IAE
         try {
-            ModuleHelper.DefineModule(new Object(),  "9.0", "mymodule/here", new String[] { "mypackage1" });
+            ModuleHelper.DefineModule(new Object(), false, "9.0", "mymodule/here", new String[] { "mypackage1" });
             throw new RuntimeException("Failed to get expected IAE or NPE for bad module");
         } catch(IllegalArgumentException e) {
             if (!e.getMessage().contains("module is not an instance of type java.lang.Module")) {
@@ -86,7 +86,7 @@ public class JVMDefineModule {
         // NULL module name, expect an IAE or NPE
         try {
             m = ModuleHelper.ModuleObject(null, cl, new String[] { "mypackage2" });
-            ModuleHelper.DefineModule(m, "9.0", "mymodule/here", new String[] { "mypackage2" });
+            ModuleHelper.DefineModule(m, false, "9.0", "mymodule/here", new String[] { "mypackage2" });
             throw new RuntimeException("Failed to get expected NPE for NULL module");
         } catch(IllegalArgumentException e) {
             // Expected
@@ -97,7 +97,7 @@ public class JVMDefineModule {
         // module name is java.base, expect an IAE
         m = ModuleHelper.ModuleObject("java.base", cl, new String[] { "mypackage3" });
         try {
-            ModuleHelper.DefineModule(m, "9.0", "mymodule/here", new String[] { "mypackage3" });
+            ModuleHelper.DefineModule(m, false, "9.0", "mymodule/here", new String[] { "mypackage3" });
             throw new RuntimeException("Failed to get expected IAE for java.base, not defined with boot class loader");
         } catch(IllegalArgumentException e) {
             if (!e.getMessage().contains("Class loader must be the boot class loader")) {
@@ -108,7 +108,7 @@ public class JVMDefineModule {
         // Empty entry in package list, expect an IAE
         m = ModuleHelper.ModuleObject("module.y", cl, new String[] { "mypackageX", "mypackageY" });
         try {
-            ModuleHelper.DefineModule(m, "9.0", "mymodule/here", new String[] { "mypackageX", "", "mypackageY" });
+            ModuleHelper.DefineModule(m, false, "9.0", "mymodule/here", new String[] { "mypackageX", "", "mypackageY" });
             throw new RuntimeException("Failed to get IAE for empty package");
         } catch(IllegalArgumentException e) {
             if (!e.getMessage().contains("Invalid package name")) {
@@ -119,9 +119,9 @@ public class JVMDefineModule {
         // Duplicate module name, expect an ISE
         m = ModuleHelper.ModuleObject("Module_A", cl, new String[] { "mypackage6" });
         assertNotNull(m, "Module should not be null");
-        ModuleHelper.DefineModule(m, "9.0", "module.name/here", new String[] { "mypackage6" });
+        ModuleHelper.DefineModule(m, false, "9.0", "module.name/here", new String[] { "mypackage6" });
         try {
-            ModuleHelper.DefineModule(m, "9.0", "module.name/here", new String[] { "mypackage6a" });
+            ModuleHelper.DefineModule(m, false, "9.0", "module.name/here", new String[] { "mypackage6a" });
             throw new RuntimeException("Failed to get ISE for duplicate module");
         } catch(IllegalStateException e) {
             if (!e.getMessage().contains("Module Module_A is already defined")) {
@@ -132,7 +132,7 @@ public class JVMDefineModule {
         // Package is already defined for class loader, expect an ISE
         m = ModuleHelper.ModuleObject("dupl.pkg.module", cl, new String[] { "mypackage6b" });
         try {
-            ModuleHelper.DefineModule(m, "9.0", "module.name/here", new String[] { "mypackage6" });
+            ModuleHelper.DefineModule(m, false, "9.0", "module.name/here", new String[] { "mypackage6" });
             throw new RuntimeException("Failed to get ISE for existing package");
         } catch(IllegalStateException e) {
             if (!e.getMessage().contains("Package mypackage6 for module dupl.pkg.module is already in another module, Module_A, defined to the class loader")) {
@@ -143,7 +143,7 @@ public class JVMDefineModule {
         // Empty module name, expect an IAE
         try {
             m = ModuleHelper.ModuleObject("", cl, new String[] { "mypackage8" });
-            ModuleHelper.DefineModule(m, "9.0", "module.name/here", new String[] { "mypackage8" });
+            ModuleHelper.DefineModule(m, false, "9.0", "module.name/here", new String[] { "mypackage8" });
             throw new RuntimeException("Failed to get expected IAE for empty module name");
         } catch(IllegalArgumentException e) {
             // Expected
@@ -152,7 +152,7 @@ public class JVMDefineModule {
         // Module name with ';', not allowed in java source
         try {
             m = ModuleHelper.ModuleObject("bad;name", cl, new String[] { "mypackage9" });
-            ModuleHelper.DefineModule(m, "9.0", "module.name/here", new String[] { "mypackage9" });
+            ModuleHelper.DefineModule(m, false, "9.0", "module.name/here", new String[] { "mypackage9" });
             throw new RuntimeException("Failed to get expected IAE for bad;name");
         } catch(IllegalArgumentException e) {
             // Expected
@@ -161,7 +161,7 @@ public class JVMDefineModule {
         // Module name with leading dot, not allowed in java source
         try {
             m = ModuleHelper.ModuleObject(".leadingdot", cl, new String[] { "mypackage9a" });
-            ModuleHelper.DefineModule(m, "9.0", "module.name/here", new String[] { "mypackage9a" });
+            ModuleHelper.DefineModule(m, false, "9.0", "module.name/here", new String[] { "mypackage9a" });
             throw new RuntimeException("Failed to get expected IAE for .leadingdot");
         } catch(IllegalArgumentException e) {
             // Expected
@@ -170,7 +170,7 @@ public class JVMDefineModule {
         // Module name with trailing dot, not allowed in java source
         try {
             m = ModuleHelper.ModuleObject("trailingdot.", cl, new String[] { "mypackage9b" });
-            ModuleHelper.DefineModule(m, "9.0", "module.name/here", new String[] { "mypackage9b" });
+            ModuleHelper.DefineModule(m, false, "9.0", "module.name/here", new String[] { "mypackage9b" });
             throw new RuntimeException("Failed to get expected IAE for trailingdot.");
         } catch(IllegalArgumentException e) {
             // Expected
@@ -179,7 +179,7 @@ public class JVMDefineModule {
         // Module name with consecutive dots, not allowed in java source
         try {
             m = ModuleHelper.ModuleObject("trailingdot.", cl, new String[] { "mypackage9b" });
-            ModuleHelper.DefineModule(m, "9.0", "module.name/here", new String[] { "mypackage9b" });
+            ModuleHelper.DefineModule(m, false, "9.0", "module.name/here", new String[] { "mypackage9b" });
             throw new RuntimeException("Failed to get expected IAE for trailingdot.");
         } catch(IllegalArgumentException e) {
             // Expected
@@ -188,17 +188,17 @@ public class JVMDefineModule {
         // module name with multiple dots, should be okay
         m = ModuleHelper.ModuleObject("more.than.one.dat", cl, new String[] { "mypackage9d" });
         assertNotNull(m, "Module should not be null");
-        ModuleHelper.DefineModule(m, "9.0", "module.name/here", new String[] { "mypackage9d" });
+        ModuleHelper.DefineModule(m, false, "9.0", "module.name/here", new String[] { "mypackage9d" });
 
         // Zero length package list, should be okay
         m = ModuleHelper.ModuleObject("zero.packages", cl, new String[] { });
         assertNotNull(m, "Module should not be null");
-        ModuleHelper.DefineModule(m, "9.0", "module.name/here", new String[] { });
+        ModuleHelper.DefineModule(m, false, "9.0", "module.name/here", new String[] { });
 
         // Invalid package name, expect an IAE
         m = ModuleHelper.ModuleObject("moduleFive", cl, new String[] { "your.package" });
         try {
-            ModuleHelper.DefineModule(m, "9.0", "module.name/here", new String[] { "your.package" });
+            ModuleHelper.DefineModule(m, false, "9.0", "module.name/here", new String[] { "your.package" });
             throw new RuntimeException("Failed to get expected IAE for your.package");
         } catch(IllegalArgumentException e) {
             if (!e.getMessage().contains("Invalid package name")) {
@@ -209,7 +209,7 @@ public class JVMDefineModule {
         // Invalid package name, expect an IAE
         m = ModuleHelper.ModuleObject("moduleSix", cl, new String[] { "foo" }); // Name irrelevant
         try {
-            ModuleHelper.DefineModule(m, "9.0", "module.name/here", new String[] { ";your/package" });
+            ModuleHelper.DefineModule(m, false, "9.0", "module.name/here", new String[] { ";your/package" });
             throw new RuntimeException("Failed to get expected IAE for ;your.package");
         } catch(IllegalArgumentException e) {
             if (!e.getMessage().contains("Invalid package name")) {
@@ -220,7 +220,7 @@ public class JVMDefineModule {
         // Invalid package name, expect an IAE
         m = ModuleHelper.ModuleObject("moduleSeven", cl, new String[] { "foo" }); // Name irrelevant
         try {
-            ModuleHelper.DefineModule(m, "9.0", "module.name/here", new String[] { "7[743" });
+            ModuleHelper.DefineModule(m, false, "9.0", "module.name/here", new String[] { "7[743" });
             throw new RuntimeException("Failed to get expected IAE for package 7[743");
         } catch(IllegalArgumentException e) {
             if (!e.getMessage().contains("Invalid package name")) {
@@ -232,7 +232,7 @@ public class JVMDefineModule {
         m = ModuleHelper.ModuleObject("modulejavapkgOne", cl, new String[] { "java/foo" });
         try {
             // module m is defined to an instance of MyClassLoader class loader
-            ModuleHelper.DefineModule(m, "9.0", "modulejavapkgOne", new String[] { "java/foo" });
+            ModuleHelper.DefineModule(m, false, "9.0", "modulejavapkgOne", new String[] { "java/foo" });
             throw new RuntimeException("Failed to get expected IAE for package java/foo");
         } catch(IllegalArgumentException e) {
             if (!e.getMessage().contains("prohibited package name")) {
@@ -243,7 +243,7 @@ public class JVMDefineModule {
         // Package named "javabar" defined to a class loader other than the boot or platform class loader, should be ok
         m = ModuleHelper.ModuleObject("modulejavapkgTwo", cl, new String[] { "javabar" });
         assertNotNull(m, "Module should not be null");
-        ModuleHelper.DefineModule(m, "9.0", "modulejavapkgTwo", new String[] { "javabar" });
+        ModuleHelper.DefineModule(m, false, "9.0", "modulejavapkgTwo", new String[] { "javabar" });
 
         // Package named "java" defined to the boot class loader, should be ok
         //   m's type is a java.lang.Object, module is java.base
@@ -251,7 +251,7 @@ public class JVMDefineModule {
         ClassLoader boot_loader = m.getClass().getClassLoader();
         m = ModuleHelper.ModuleObject("modulejavapkgThree", boot_loader, new String[] { "java/foo" });
         assertNotNull(m, "Module should not be null");
-        ModuleHelper.DefineModule(m, "9.0", "modulejavapkgThree", new String[] { "java/foo" });
+        ModuleHelper.DefineModule(m, false, "9.0", "modulejavapkgThree", new String[] { "java/foo" });
 
         // Package named "java" defined to the platform class loader, should be ok
         //   java.sql module defined to the platform class loader.
@@ -259,27 +259,27 @@ public class JVMDefineModule {
         ClassLoader platform_loader = jst.getClass().getClassLoader();
         m = ModuleHelper.ModuleObject("modulejavapkgFour", platform_loader, new String[] { "java/foo" });
         assertNotNull(m, "Module should not be null");
-        ModuleHelper.DefineModule(m, "9.0", "modulejavapkgFour", new String[] { "java/foo" });
+        ModuleHelper.DefineModule(m, false, "9.0", "modulejavapkgFour", new String[] { "java/foo" });
 
         // module version that is null, should be okay
         m = ModuleHelper.ModuleObject("moduleEight", cl, new String[] { "a_package_8" });
         assertNotNull(m, "Module should not be null");
-        ModuleHelper.DefineModule(m, null, "moduleEight/here", new String[] { "a_package_8" });
+        ModuleHelper.DefineModule(m, false, null, "moduleEight/here", new String[] { "a_package_8" });
 
         // module version that is "", should be okay
         m = ModuleHelper.ModuleObject("moduleNine", cl, new String[] { "a_package_9" });
         assertNotNull(m, "Module should not be null");
-        ModuleHelper.DefineModule(m, "", "moduleNine/here", new String[] { "a_package_9" });
+        ModuleHelper.DefineModule(m, false, "", "moduleNine/here", new String[] { "a_package_9" });
 
         // module location that is null, should be okay
         m = ModuleHelper.ModuleObject("moduleTen", cl, new String[] { "a_package_10" });
         assertNotNull(m, "Module should not be null");
-        ModuleHelper.DefineModule(m, "9.0", null, new String[] { "a_package_10" });
+        ModuleHelper.DefineModule(m, false, "9.0", null, new String[] { "a_package_10" });
 
         // module location that is "", should be okay
         m = ModuleHelper.ModuleObject("moduleEleven", cl, new String[] { "a_package_11" });
         assertNotNull(m, "Module should not be null");
-        ModuleHelper.DefineModule(m, "9.0", "", new String[] { "a_package_11" });
+        ModuleHelper.DefineModule(m, false, "9.0", "", new String[] { "a_package_11" });
     }
 
     static class MyClassLoader extends ClassLoader { }

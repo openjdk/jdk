@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,6 @@
  * questions.
  */
 
-import static jdk.test.lib.Asserts.*;
-
 /*
  * @test
  * @modules java.base/jdk.internal.misc
@@ -33,43 +31,50 @@ import static jdk.test.lib.Asserts.*;
  * @compile/module=java.base java/lang/ModuleHelper.java
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI AccessCheckUnnamed
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI AccessCheckOpen
  */
 
-public class AccessCheckUnnamed {
+import java.lang.Module;
+import static jdk.test.lib.Asserts.*;
 
-    // Test that a class in the unnamed module can not access a package in a
-    // named module that has not been unqualifiedly exported.
+public class AccessCheckOpen {
+
+    // Test that if module1 can read module2 and module2 is open, then
+    // p1.c1 can read p2.c2
     public static void main(String args[]) throws Throwable {
-        Object m1x, m2x;
+        Object m1, m2;
 
-        // Get the java.lang.Module object for module java.base.
+        // Get the java.lang.Module object for module java.base
         Class jlObject = Class.forName("java.lang.Object");
         Object jlObject_jlM = jlObject.getModule();
         assertNotNull(jlObject_jlM, "jlModule object of java.lang.Object should not be null");
 
-        // Get the class loader for AccessCheckWorks and assume it's also used to
-        // load class p2.c2.
-        ClassLoader this_cldr = AccessCheckUnnamed.class.getClassLoader();
+        // Get the class loader for AccessCheckOpen, which is also used to
+        // load classes p1.c1 and p2.c2
+        ClassLoader this_cldr = AccessCheckOpen.class.getClassLoader();
 
-        // Define a module for p2.
-        m2x = ModuleHelper.ModuleObject("module_two", this_cldr, new String[] { "p2" });
-        assertNotNull(m2x, "Module should not be null");
-        ModuleHelper.DefineModule(m2x, false, "9.0", "m2x/there", new String[] { "p2" });
-        ModuleHelper.AddReadsModule(m2x, jlObject_jlM);
+        // Define a module for p1
+        m1 = ModuleHelper.ModuleObject("module1", this_cldr, new String[] { "p1" });
+        assertNotNull(m1, "Module should not be null");
+        ModuleHelper.DefineModule(m1, false, "9.0", "m1/here", new String[] { "p1" });
+        ModuleHelper.AddReadsModule(m1, jlObject_jlM);
 
-        // p1.c1's ctor tries to call a method in p2.c2.  This should fail because
-        // p1 is in the unnamed module and p2.c2 is not unqualifiedly exported.
+        // Define a module for p2
+        m2 = ModuleHelper.ModuleObject("module2", this_cldr, new String[] { "p2" });
+        assertNotNull(m2, "Module should not be null");
+        ModuleHelper.DefineModule(m2, true, "9.0", "m2/there", new String[] { "p2" });
+        ModuleHelper.AddReadsModule(m2, jlObject_jlM);
+
+        // Make package p1 in m1 visible to everyone so this test can run it
+        ModuleHelper.AddModuleExportsToAll(m1, "p1");
+
+        // Let m1 read m2
+        ModuleHelper.AddReadsModule(m1, m2);
+
+        // p1.c1's ctor calls a method in p2.c2, and m2 is open.
+        // So should not get IllegalAccessError
         Class p1_c1_class = Class.forName("p1.c1");
-        try {
-            Object c1_obj = p1_c1_class.newInstance();
-            throw new RuntimeException("Failed to get IAE (p2 in m2x is not exported to unnamed module)");
-        } catch (IllegalAccessError f) {
-            System.out.println(f.getMessage());
-            if (!f.getMessage().contains("does not export p2 to unnamed module")) {
-                throw new RuntimeException("Wrong message: " + f.getMessage());
-            }
-        }
+        p1_c1_class.newInstance();
     }
 }
 

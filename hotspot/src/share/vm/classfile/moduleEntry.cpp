@@ -172,6 +172,12 @@ void ModuleEntry::set_read_walk_required(ClassLoaderData* m_loader_data) {
   }
 }
 
+// Set whether the module is open, i.e. all its packages are unqualifiedly exported
+void ModuleEntry::set_is_open(bool is_open) {
+  assert_lock_strong(Module_lock);
+  _is_open = is_open;
+}
+
 // Returns true if the module has a non-empty reads list. As such, the unnamed
 // module will return false.
 bool ModuleEntry::has_reads_list() const {
@@ -271,6 +277,7 @@ ModuleEntry* ModuleEntry::new_unnamed_module_entry(Handle module_handle, ClassLo
   }
 
   entry->set_loader_data(cld);
+  entry->_is_open = true;
 
   TRACE_INIT_ID(entry);
 
@@ -324,7 +331,8 @@ ModuleEntryTable::~ModuleEntryTable() {
   free_buckets();
 }
 
-ModuleEntry* ModuleEntryTable::new_entry(unsigned int hash, Handle module_handle, Symbol* name,
+ModuleEntry* ModuleEntryTable::new_entry(unsigned int hash, Handle module_handle,
+                                         bool is_open, Symbol* name,
                                          Symbol* version, Symbol* location,
                                          ClassLoaderData* loader_data) {
   assert(Module_lock->owned_by_self(), "should have the Module_lock");
@@ -351,6 +359,7 @@ ModuleEntry* ModuleEntryTable::new_entry(unsigned int hash, Handle module_handle
   entry->set_loader_data(loader_data);
   entry->set_version(version);
   entry->set_location(location);
+  entry->set_is_open(is_open);
 
   if (ClassLoader::is_in_patch_mod_entries(name)) {
     entry->set_is_patched();
@@ -371,6 +380,7 @@ void ModuleEntryTable::add_entry(int index, ModuleEntry* new_entry) {
 }
 
 ModuleEntry* ModuleEntryTable::locked_create_entry_or_null(Handle module_handle,
+                                                           bool is_open,
                                                            Symbol* module_name,
                                                            Symbol* module_version,
                                                            Symbol* module_location,
@@ -381,7 +391,7 @@ ModuleEntry* ModuleEntryTable::locked_create_entry_or_null(Handle module_handle,
   if (lookup_only(module_name) != NULL) {
     return NULL;
   } else {
-    ModuleEntry* entry = new_entry(compute_hash(module_name), module_handle, module_name,
+    ModuleEntry* entry = new_entry(compute_hash(module_name), module_handle, is_open, module_name,
                                    module_version, module_location, loader_data);
     add_entry(index_for(module_name), entry);
     return entry;

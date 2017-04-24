@@ -50,7 +50,7 @@ public:
   // * num_packages is negative
   // * num_packages is non-zero when packages is null
   //  NullPointerExceptions are thrown if module is null.
-  static void define_module(jobject module, jstring version,
+  static void define_module(jobject module, jboolean is_open, jstring version,
                             jstring location, const char* const* packages,
                             jsize num_packages, TRAPS);
 
