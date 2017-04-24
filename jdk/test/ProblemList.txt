@@ -280,8 +280,6 @@ com/sun/jdi/sde/SourceDebugExtensionTest.java                   8158066 windows-
 
 # jdk_util
 
-java/util/BitSet/BitSetStreamTest.java                          8079538 generic-all
-
 ############################################################################
 
 # jdk_instrument

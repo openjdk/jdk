@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,17 +20,18 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package nontestng.java.time.chrono;
 
-/**
- * Defines the rmic compiler for generating stubs and skeletons using
- * the Java Remote Method Protocol (JRMP) and
- * stubs and tie class files (IIOP protocol) for remote objects.
- *
- * @moduleGraph
- * @since 9
+import java.time.chrono.HijrahChronology;
+
+/* @test
+ * @bug 8178823
+ * @build Bug8178823
+ * @run main/othervm/policy=bug8178823.policy -Djava.security.manager nontestng.java.time.chrono.Bug8178823
+ * @summary Test Hijrah calendar is initialized with the security manager.
  */
-module jdk.rmic {
-    requires java.corba;
-    requires jdk.compiler;
-    requires jdk.javadoc;
+public class Bug8178823 {
+    public static void main(String[] args) {
+        HijrahChronology.INSTANCE.isLeapYear(2017);
+    }
 }
