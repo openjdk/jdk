@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,8 @@
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkObjArrayProcessor.inline.hpp"
 
-oop G1CMObjArrayProcessor::encode_array_slice(HeapWord* addr) {
-  return oop((void*)((uintptr_t)addr | ArraySliceBit));
-}
-
-HeapWord* G1CMObjArrayProcessor::decode_array_slice(oop value) {
-  assert(is_array_slice(value), "Given value " PTR_FORMAT " is not an array slice", p2i(value));
-  return (HeapWord*)((uintptr_t)(void*)value & ~ArraySliceBit);
-}
-
 void G1CMObjArrayProcessor::push_array_slice(HeapWord* what) {
-  oop obj = encode_array_slice(what);
-  _task->push(obj);
+  _task->push(G1TaskQueueEntry::from_slice(what));
 }
 
 size_t G1CMObjArrayProcessor::process_array_slice(objArrayOop obj, HeapWord* start_from, size_t remaining) {
@@ -58,30 +48,29 @@ size_t G1CMObjArrayProcessor::process_obj(oop obj) {
   return process_array_slice(objArrayOop(obj), (HeapWord*)obj, (size_t)objArrayOop(obj)->size());
 }
 
-size_t G1CMObjArrayProcessor::process_slice(oop obj) {
-  HeapWord* const decoded_address = decode_array_slice(obj);
+size_t G1CMObjArrayProcessor::process_slice(HeapWord* slice) {
 
   // Find the start address of the objArrayOop.
   // Shortcut the BOT access if the given address is from a humongous object. The BOT
   // slide is fast enough for "smaller" objects in non-humongous regions, but is slower
   // than directly using heap region table.
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  HeapRegion* r = g1h->heap_region_containing(decoded_address);
+  HeapRegion* r = g1h->heap_region_containing(slice);
 
   HeapWord* const start_address = r->is_humongous() ?
                                   r->humongous_start_region()->bottom() :
-                                  g1h->block_start(decoded_address);
+                                  g1h->block_start(slice);
 
   assert(oop(start_address)->is_objArray(), "Address " PTR_FORMAT " does not refer to an object array ", p2i(start_address));
-  assert(start_address < decoded_address,
+  assert(start_address < slice,
          "Object start address " PTR_FORMAT " must be smaller than decoded address " PTR_FORMAT,
          p2i(start_address),
-         p2i(decoded_address));
+         p2i(slice));
 
   objArrayOop objArray = objArrayOop(start_address);
 
-  size_t already_scanned = decoded_address - start_address;
+  size_t already_scanned = slice - start_address;
   size_t remaining = objArray->size() - already_scanned;
 
-  return process_array_slice(objArray, decoded_address, remaining);
+  return process_array_slice(objArray, slice, remaining);
 }

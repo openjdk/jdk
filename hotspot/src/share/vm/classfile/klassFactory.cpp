@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -37,14 +37,14 @@
 #include "trace/traceMacros.hpp"
 
 // called during initial loading of a shared class
-instanceKlassHandle KlassFactory::check_shared_class_file_load_hook(
-                                          instanceKlassHandle ik,
+InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
+                                          InstanceKlass* ik,
                                           Symbol* class_name,
                                           Handle class_loader,
                                           Handle protection_domain, TRAPS) {
 #if INCLUDE_CDS && INCLUDE_JVMTI
-  assert(ik.not_null(), "sanity");
-  assert(ik()->is_shared(), "expecting a shared class");
+  assert(ik != NULL, "sanity");
+  assert(ik->is_shared(), "expecting a shared class");
 
   if (JvmtiExport::should_post_class_file_load_hook()) {
     assert(THREAD->is_Java_thread(), "must be JavaThread");
@@ -84,8 +84,8 @@ instanceKlassHandle KlassFactory::check_shared_class_file_load_hook(
                              NULL,
                              ClassFileParser::BROADCAST, // publicity level
                              CHECK_NULL);
-      instanceKlassHandle new_ik = parser.create_instance_klass(true /* changed_by_loadhook */,
-                                                                CHECK_NULL);
+      InstanceKlass* new_ik = parser.create_instance_klass(true /* changed_by_loadhook */,
+                                                           CHECK_NULL);
       if (cached_class_file != NULL) {
         new_ik->set_cached_class_file(cached_class_file);
       }
@@ -128,14 +128,11 @@ static ClassFileStream* check_class_file_load_hook(ClassFileStream* stream,
     JvmtiThreadState* state = jt->jvmti_thread_state();
 
     if (state != NULL) {
-      KlassHandle* h_class_being_redefined =
-        state->get_class_being_redefined();
+      Klass* k = state->get_class_being_redefined();
 
-      if (h_class_being_redefined != NULL) {
-        instanceKlassHandle ikh_class_being_redefined =
-          instanceKlassHandle(THREAD, (*h_class_being_redefined)());
-
-        *cached_class_file = ikh_class_being_redefined->get_cached_class_file();
+      if (k != NULL) {
+        InstanceKlass* class_being_redefined = InstanceKlass::cast(k);
+        *cached_class_file = class_being_redefined->get_cached_class_file();
       }
     }
 
@@ -163,13 +160,13 @@ static ClassFileStream* check_class_file_load_hook(ClassFileStream* stream,
 }
 
 
-instanceKlassHandle KlassFactory::create_from_stream(ClassFileStream* stream,
-                                                     Symbol* name,
-                                                     ClassLoaderData* loader_data,
-                                                     Handle protection_domain,
-                                                     const InstanceKlass* host_klass,
-                                                     GrowableArray<Handle>* cp_patches,
-                                                     TRAPS) {
+InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
+                                                Symbol* name,
+                                                ClassLoaderData* loader_data,
+                                                Handle protection_domain,
+                                                const InstanceKlass* host_klass,
+                                                GrowableArray<Handle>* cp_patches,
+                                                TRAPS) {
   assert(stream != NULL, "invariant");
   assert(loader_data != NULL, "invariant");
   assert(THREAD->is_Java_thread(), "must be a JavaThread");
@@ -200,10 +197,10 @@ instanceKlassHandle KlassFactory::create_from_stream(ClassFileStream* stream,
                          ClassFileParser::BROADCAST, // publicity level
                          CHECK_NULL);
 
-  instanceKlassHandle result = parser.create_instance_klass(old_stream != stream, CHECK_NULL);
+  InstanceKlass* result = parser.create_instance_klass(old_stream != stream, CHECK_NULL);
   assert(result == parser.create_instance_klass(old_stream != stream, THREAD), "invariant");
 
-  if (result.is_null()) {
+  if (result == NULL) {
     return NULL;
   }
 

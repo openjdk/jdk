@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3048,9 +3048,8 @@ void LIR_Assembler::emit_updatecrc32(LIR_OpUpdateCRC32* op) {
   assert_different_registers(val, crc, res);
 
   __ load_const_optimized(res, StubRoutines::crc_table_addr());
-  __ not_(crc, noreg, false); // ~crc
-  __ update_byte_crc32(crc, val, res);
-  __ not_(res, crc, false); // ~crc
+  __ kernel_crc32_singleByteReg(crc, val, res, true);
+  __ z_lgfr(res, crc);
 }
 
 #undef __

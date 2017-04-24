@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@ package jdk.tools.jaotc.binformat;
 
 import java.util.Objects;
 
-import jdk.tools.jaotc.jnilibelf.ELFSymbol;
+import jdk.tools.jaotc.binformat.NativeSymbol;
 
 public class Symbol {
 
@@ -51,7 +51,7 @@ public class Symbol {
     private final Kind kind;
 
     private ByteContainer section;
-    private ELFSymbol elfSymbol;
+    private NativeSymbol nativeSymbol;
 
     /**
      * Create symbol info.
@@ -77,12 +77,12 @@ public class Symbol {
         return name;
     }
 
-    public ELFSymbol getElfSymbol() {
-        return elfSymbol;
+    public NativeSymbol getNativeSymbol() {
+        return nativeSymbol;
     }
 
-    public void setElfSymbol(ELFSymbol elfSymbol) {
-        this.elfSymbol = elfSymbol;
+    public void setNativeSymbol(NativeSymbol nativeSym) {
+        this.nativeSymbol = nativeSym;
     }
 
     public Binding getBinding() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,9 +83,6 @@ void SharedPathsMiscInfo::print_path(int type, const char* path) {
   case NON_EXIST:
     out->print("Expecting that %s does not exist", path);
     break;
-  case REQUIRED:
-    out->print("Expecting that file %s must exist and is not altered", path);
-    break;
   default:
     ShouldNotReachHere();
   }
@@ -130,37 +127,13 @@ bool SharedPathsMiscInfo::check(jint type, const char* path) {
       return fail("[BOOT classpath mismatch, actual =", Arguments::get_sysclasspath());
     }
     break;
-  case NON_EXIST: // fall-through
-  case REQUIRED:
+  case NON_EXIST:
     {
       struct stat st;
-      if (os::stat(path, &st) != 0) {
-        // The file does not actually exist
-        if (type == REQUIRED) {
-          // but we require it to exist -> fail
-          return fail("Required file doesn't exist");
-        }
-      } else {
+      if (os::stat(path, &st) == 0) {
         // The file actually exists
-        if (type == NON_EXIST) {
-          // But we want it to not exist -> fail
-          return fail("File must not exist");
-        }
-        if ((st.st_mode & S_IFMT) != S_IFREG) {
-          return fail("Did not get a regular file as expected.");
-        }
-        time_t    timestamp;
-        long      filesize;
-
-        if (!read_time(&timestamp) || !read_long(&filesize)) {
-          return fail("Corrupted archive file header");
-        }
-        if (timestamp != st.st_mtime) {
-          return fail("Timestamp mismatch");
-        }
-        if (filesize != st.st_size) {
-          return fail("File size mismatch");
-        }
+        // But we want it to not exist -> fail
+        return fail("File must not exist");
       }
     }
     break;

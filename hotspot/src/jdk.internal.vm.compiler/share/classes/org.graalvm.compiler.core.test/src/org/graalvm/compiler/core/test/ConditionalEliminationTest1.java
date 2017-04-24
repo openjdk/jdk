@@ -22,9 +22,8 @@
  */
 package org.graalvm.compiler.core.test;
 
-import org.junit.Test;
-
 import org.graalvm.compiler.api.directives.GraalDirectives;
+import org.junit.Test;
 
 /**
  * Collection of tests for
@@ -32,15 +31,16 @@ import org.graalvm.compiler.api.directives.GraalDirectives;
  * that triggered bugs in this phase.
  */
 public class ConditionalEliminationTest1 extends ConditionalEliminationTestBase {
+    protected static int sink3;
 
     private static final String REFERENCE_SNIPPET = "referenceSnippet";
 
     @SuppressWarnings("all")
-    public static int referenceSnippet(int a) {
+    public static void referenceSnippet(int a) {
         if (a == 0) {
-            return 1;
+            sink1 = 1;
         }
-        return 0;
+        sink0 = 0;
     }
 
     @Test
@@ -49,21 +49,21 @@ public class ConditionalEliminationTest1 extends ConditionalEliminationTestBase 
     }
 
     @SuppressWarnings("all")
-    public static int test1Snippet(int a) {
+    public static void test1Snippet(int a) {
         if (a == 0) {
             if (a == 5) {
-                return 100;
+                sink2 = 100;
             }
             if (a > 100) {
                 if (a == 0) {
-                    return 200;
+                    sink3 = 200;
                 }
             }
             if (a != 2) {
-                return 1;
+                sink1 = 1;
             }
         }
-        return 0;
+        sink0 = 0;
     }
 
     @Test
@@ -72,18 +72,18 @@ public class ConditionalEliminationTest1 extends ConditionalEliminationTestBase 
     }
 
     @SuppressWarnings("all")
-    public static int test2Snippet(int a) {
+    public static void test2Snippet(int a) {
         if (a == 0) {
             if (a > 100) {
                 if (a == 0) {
-                    return 200;
+                    sink3 = 200;
                 }
             }
             if (a != 2) {
-                return 1;
+                sink1 = 1;
             }
         }
-        return 0;
+        sink0 = 0;
     }
 
     @Test
@@ -92,7 +92,7 @@ public class ConditionalEliminationTest1 extends ConditionalEliminationTestBase 
     }
 
     @SuppressWarnings("all")
-    public static int test3Snippet(int a) {
+    public static void test3Snippet(int a) {
         if (a == 0) {
             if (a < 1) {
                 if (a < 2) {
@@ -101,9 +101,9 @@ public class ConditionalEliminationTest1 extends ConditionalEliminationTestBase 
                             if (a > -2) {
                                 if (a > -3) {
                                     if (a == 1) {
-                                        return 42;
+                                        sink2 = 42;
                                     } else {
-                                        return 1;
+                                        sink1 = 1;
                                     }
                                 }
                             }
@@ -112,18 +112,18 @@ public class ConditionalEliminationTest1 extends ConditionalEliminationTestBase 
                 }
             }
         }
-        return 0;
+        sink0 = 0;
     }
 
     @SuppressWarnings("all")
-    public static int test4Snippet(int a, int b) {
+    public static void test4Snippet(int a, int b) {
         if (b < 1) {
             GraalDirectives.controlFlowAnchor();
             if (b < 0) {
-                return 1;
+                sink1 = 1;
             }
         }
-        return 0;
+        sink0 = 0;
     }
 
     @Test
@@ -132,21 +132,21 @@ public class ConditionalEliminationTest1 extends ConditionalEliminationTestBase 
     }
 
     @SuppressWarnings("all")
-    public static int test5Snippet(int a, int b) {
+    public static void test5Snippet(int a, int b) {
         if ((b & 3) == 0) {
             GraalDirectives.controlFlowAnchor();
             if ((b & 7) == 0) {
                 GraalDirectives.controlFlowAnchor();
-                return 1;
+                sink1 = 1;
             }
         } else {
             GraalDirectives.controlFlowAnchor();
             if ((b & 1) == 0) {
                 GraalDirectives.controlFlowAnchor();
-                return 2;
+                sink2 = 2;
             }
         }
-        return 0;
+        sink0 = 0;
     }
 
     @Test

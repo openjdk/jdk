@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,10 +54,6 @@ HeapRegionDCTOC::HeapRegionDCTOC(G1CollectedHeap* g1,
                                  CardTableModRefBS::PrecisionStyle precision) :
   DirtyCardToOopClosure(hr, cl, precision, NULL),
   _hr(hr), _rs_scan(cl), _g1(g1) { }
-
-FilterOutOfRegionClosure::FilterOutOfRegionClosure(HeapRegion* r,
-                                                   OopClosure* oc) :
-  _r_bottom(r->bottom()), _r_end(r->end()), _oc(oc) { }
 
 void HeapRegionDCTOC::walk_mem_region(MemRegion mr,
                                       HeapWord* bottom,
@@ -267,6 +263,8 @@ void HeapRegion::set_continues_humongous(HeapRegion* first_hr) {
   report_region_type_change(G1HeapRegionTraceType::ContinuesHumongous);
   _type.set_continues_humongous();
   _humongous_start_region = first_hr;
+
+  _bot_part.set_object_can_span(true);
 }
 
 void HeapRegion::clear_humongous() {
@@ -274,6 +272,8 @@ void HeapRegion::clear_humongous() {
 
   assert(capacity() == HeapRegion::GrainBytes, "pre-condition");
   _humongous_start_region = NULL;
+
+  _bot_part.set_object_can_span(false);
 }
 
 HeapRegion::HeapRegion(uint hrm_index,
@@ -290,8 +290,7 @@ HeapRegion::HeapRegion(uint hrm_index,
     _containing_set(NULL),
 #endif // ASSERT
      _young_index_in_cset(-1), _surv_rate_group(NULL), _age_index(-1),
-    _rem_set(NULL), _recorded_rs_length(0), _predicted_elapsed_time_ms(0),
-    _predicted_bytes_to_copy(0)
+    _rem_set(NULL), _recorded_rs_length(0), _predicted_elapsed_time_ms(0)
 {
   _rem_set = new HeapRegionRemSet(bot, this);
 
@@ -343,9 +342,7 @@ void HeapRegion::note_self_forwarding_removal_start(bool during_initial_mark,
   }
 }
 
-void HeapRegion::note_self_forwarding_removal_end(bool during_initial_mark,
-                                                  bool during_conc_mark,
-                                                  size_t marked_bytes) {
+void HeapRegion::note_self_forwarding_removal_end(size_t marked_bytes) {
   assert(marked_bytes <= used(),
          "marked: " SIZE_FORMAT " used: " SIZE_FORMAT, marked_bytes, used());
   _prev_top_at_mark_start = top();
@@ -356,7 +353,7 @@ void HeapRegion::note_self_forwarding_removal_end(bool during_initial_mark,
 // special handling for concurrent processing encountering an
 // in-progress allocation.
 static bool do_oops_on_card_in_humongous(MemRegion mr,
-                                         FilterOutOfRegionClosure* cl,
+                                         G1UpdateRSOrPushRefOopClosure* cl,
                                          HeapRegion* hr,
                                          G1CollectedHeap* g1h) {
   assert(hr->is_humongous(), "precondition");
@@ -397,7 +394,7 @@ static bool do_oops_on_card_in_humongous(MemRegion mr,
 }
 
 bool HeapRegion::oops_on_card_seq_iterate_careful(MemRegion mr,
-                                                  FilterOutOfRegionClosure* cl) {
+                                                  G1UpdateRSOrPushRefOopClosure* cl) {
   assert(MemRegion(bottom(), end()).contains(mr), "Card region not in heap region");
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
@@ -483,7 +480,6 @@ void HeapRegion::strong_code_roots_do(CodeBlobClosure* blk) const {
 
 class VerifyStrongCodeRootOopClosure: public OopClosure {
   const HeapRegion* _hr;
-  nmethod* _nm;
   bool _failures;
   bool _has_oops_in_region;
 
@@ -510,7 +506,7 @@ class VerifyStrongCodeRootOopClosure: public OopClosure {
   }
 
 public:
-  VerifyStrongCodeRootOopClosure(const HeapRegion* hr, nmethod* nm):
+  VerifyStrongCodeRootOopClosure(const HeapRegion* hr):
     _hr(hr), _failures(false), _has_oops_in_region(false) {}
 
   void do_oop(narrowOop* p) { do_oop_work(p); }
@@ -536,7 +532,7 @@ public:
                               p2i(_hr->bottom()), p2i(_hr->end()), p2i(nm));
         _failures = true;
       } else {
-        VerifyStrongCodeRootOopClosure oop_cl(_hr, nm);
+        VerifyStrongCodeRootOopClosure oop_cl(_hr);
         nm->oops_do(&oop_cl);
         if (!oop_cl.has_oops_in_region()) {
           log_error(gc, verify)("region [" PTR_FORMAT "," PTR_FORMAT "] has nmethod " PTR_FORMAT " in its strong code roots with no pointers into region",
@@ -728,7 +724,6 @@ public:
     Log(gc, verify) log;
     if (!oopDesc::is_null(heap_oop)) {
       oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
-      bool failed = false;
       HeapRegion* from = _g1h->heap_region_containing((HeapWord*)p);
       HeapRegion* to = _g1h->heap_region_containing(obj);
       if (from != NULL && to != NULL &&
@@ -763,11 +758,26 @@ public:
           log.error("Obj head CTE = %d, field CTE = %d.", cv_obj, cv_field);
           log.error("----------");
           _failures = true;
-          if (!failed) _n_failures++;
+          _n_failures++;
         }
       }
     }
   }
+};
+
+// Closure that applies the given two closures in sequence.
+class G1Mux2Closure : public OopClosure {
+  OopClosure* _c1;
+  OopClosure* _c2;
+public:
+  G1Mux2Closure(OopClosure *c1, OopClosure *c2) { _c1 = c1; _c2 = c2; }
+  template <class T> inline void do_oop_work(T* p) {
+    // Apply first closure; then apply the second.
+    _c1->do_oop(p);
+    _c2->do_oop(p);
+  }
+  virtual inline void do_oop(oop* p) { do_oop_work(p); }
+  virtual inline void do_oop(narrowOop* p) { do_oop_work(p); }
 };
 
 // This really ought to be commoned up into OffsetTableContigSpace somehow.

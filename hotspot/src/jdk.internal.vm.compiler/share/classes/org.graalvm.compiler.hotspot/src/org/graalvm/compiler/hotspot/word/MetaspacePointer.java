@@ -519,17 +519,6 @@ public abstract class MetaspacePointer {
     public abstract void writeWord(int offset, WordBase val, LocationIdentity locationIdentity);
 
     /**
-     * Initializes the memory at address {@code (this + offset)}. Both the base address and offset
-     * are in bytes. The memory must be uninitialized or zero prior to this operation.
-     *
-     * @param offset the signed offset for the memory access
-     * @param locationIdentity the identity of the write
-     * @param val the value to be written to memory
-     */
-    @Operation(opcode = Opcode.INITIALIZE)
-    public abstract void initializeLong(int offset, long val, LocationIdentity locationIdentity);
-
-    /**
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      *

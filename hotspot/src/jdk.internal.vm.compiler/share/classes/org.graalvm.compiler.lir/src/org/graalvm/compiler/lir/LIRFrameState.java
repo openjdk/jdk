@@ -50,6 +50,8 @@ import jdk.vm.ci.meta.Value;
  */
 public class LIRFrameState {
 
+    public static final LIRFrameState NO_STATE = new LIRFrameState(null, null, null);
+
     public final BytecodeFrame topFrame;
     private final VirtualObject[] virtualObjects;
     public final LabelRef exceptionEdge;

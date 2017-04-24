@@ -22,8 +22,8 @@
  */
 package org.graalvm.compiler.nodes.debug;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_20;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_10;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_IGNORED;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_IGNORED;
 
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.debug.GraalError;
@@ -47,7 +47,12 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
  * A unique counter will be created for each unique name passed to the constructor. Depending on the
  * value of withContext, the name of the root method is added to the counter's name.
  */
-@NodeInfo(size = SIZE_10, cycles = CYCLES_20)
+//@formatter:off
+@NodeInfo(size = SIZE_IGNORED,
+          sizeRationale = "Node is a debugging node that should not be used in production.",
+          cycles = CYCLES_IGNORED,
+          cyclesRationale = "Node is a debugging node that should not be used in production.")
+//@formatter:on
 public class DynamicCounterNode extends FixedWithNextNode implements LIRLowerable {
 
     public static final NodeClass<DynamicCounterNode> TYPE = NodeClass.create(DynamicCounterNode.class);

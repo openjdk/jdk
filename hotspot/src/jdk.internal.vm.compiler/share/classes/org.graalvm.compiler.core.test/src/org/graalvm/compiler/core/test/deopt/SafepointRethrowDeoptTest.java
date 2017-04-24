@@ -66,7 +66,7 @@ public final class SafepointRethrowDeoptTest extends GraalCompilerTest {
 
     @Test
     public void test() {
-        Assume.assumeTrue(GraalOptions.GenLoopSafepoints.getValue());
+        Assume.assumeTrue(GraalOptions.GenLoopSafepoints.getValue(getInitialOptions()));
         synchronized (SafepointRethrowDeoptTest.class) {
             // needs static fields
             terminate = 1;

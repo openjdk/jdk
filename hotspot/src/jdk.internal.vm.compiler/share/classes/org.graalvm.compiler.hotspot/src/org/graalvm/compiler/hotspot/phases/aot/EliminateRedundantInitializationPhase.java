@@ -142,7 +142,8 @@ public class EliminateRedundantInitializationPhase extends BasePhase<PhaseContex
             ArrayList<Node> nodesInCurrent = e.getValue();
             if (nodesInCurrent != null) { // if the list is null, the initializer has already been
                                           // eliminated.
-                for (Block d : currentBlock.getDominated()) {
+                Block d = currentBlock.getFirstDominated();
+                while (d != null) {
                     ArrayList<Node> nodesInDominated = blockToInits.get(d);
                     if (nodesInDominated != null) { // if the list is null, the initializer has
                                                     // already been eliminated.
@@ -151,6 +152,7 @@ public class EliminateRedundantInitializationPhase extends BasePhase<PhaseContex
                         result.add(n);
                         blockToInits.put(d, null);
                     }
+                    d = d.getDominatedSibling();
                 }
             }
         }

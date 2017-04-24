@@ -168,7 +168,7 @@ void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word
 
 // "Normal" instantiation is preceeded by a MetaspaceObj allocation
 // which zeros out memory - calloc equivalent.
-// The constructor is also used from init_self_patching_vtbl_list,
+// The constructor is also used from CppVtableCloner,
 // which doesn't zero out the memory before calling the constructor.
 // Need to set the _java_mirror field explicitly to not hit an assert that the field
 // should be NULL before setting it.
@@ -264,7 +264,6 @@ void Klass::initialize_supers(Klass* k, TRAPS) {
   }
 
   if (secondary_supers() == NULL) {
-    KlassHandle this_kh (THREAD, this);
 
     // Now compute the list of secondary supertypes.
     // Secondaries can occasionally be on the super chain,
@@ -286,7 +285,7 @@ void Klass::initialize_supers(Klass* k, TRAPS) {
 
     GrowableArray<Klass*>* primaries = new GrowableArray<Klass*>(extras);
 
-    for (p = this_kh->super(); !(p == NULL || p->can_be_primary_super()); p = p->super()) {
+    for (p = super(); !(p == NULL || p->can_be_primary_super()); p = p->super()) {
       int i;                    // Scan for overflow primaries being duplicates of 2nd'arys
 
       // This happens frequently for very deeply nested arrays: the
@@ -324,7 +323,7 @@ void Klass::initialize_supers(Klass* k, TRAPS) {
     }
   #endif
 
-    this_kh->set_secondary_supers(s2);
+    set_secondary_supers(s2);
   }
 }
 
@@ -501,6 +500,7 @@ void Klass::remove_unshareable_info() {
 }
 
 void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
+  assert(is_klass(), "ensure C++ vtable is restored");
   TRACE_RESTORE_ID(this);
 
   // If an exception happened during CDS restore, some of these fields may already be
@@ -519,7 +519,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   // Only recreate it if not present.  A previous attempt to restore may have
   // gotten an OOM later but keep the mirror if it was created.
   if (java_mirror() == NULL) {
-    Handle loader = loader_data->class_loader();
+    Handle loader(THREAD, loader_data->class_loader());
     ModuleEntry* module_entry = NULL;
     Klass* k = this;
     if (k->is_objArray_klass()) {
@@ -697,7 +697,7 @@ void Klass::oop_verify_on(oop obj, outputStream* st) {
 }
 
 klassVtable* Klass::vtable() const {
-  return new klassVtable(this, start_of_vtable(), vtable_length() / vtableEntry::size());
+  return new klassVtable(const_cast<Klass*>(this), start_of_vtable(), vtable_length() / vtableEntry::size());
 }
 
 vtableEntry* Klass::start_of_vtable() const {

@@ -22,18 +22,17 @@
  */
 package org.graalvm.compiler.lir.util;
 
-import java.util.Map;
-
-import org.graalvm.compiler.core.common.CollectionsFactory;
+import org.graalvm.util.Equivalence;
+import org.graalvm.util.EconomicMap;
 
 import jdk.vm.ci.meta.Value;
 
 public final class GenericValueMap<T> extends ValueMap<Value, T> {
 
-    private final Map<Value, T> data;
+    private final EconomicMap<Value, T> data;
 
     public GenericValueMap() {
-        data = CollectionsFactory.newMap();
+        data = EconomicMap.create(Equivalence.DEFAULT);
     }
 
     @Override
@@ -43,7 +42,7 @@ public final class GenericValueMap<T> extends ValueMap<Value, T> {
 
     @Override
     public void remove(Value value) {
-        data.remove(value);
+        data.removeKey(value);
     }
 
     @Override

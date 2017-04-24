@@ -25,20 +25,18 @@ package org.graalvm.compiler.hotspot.stubs;
 import static org.graalvm.compiler.core.GraalCompiler.emitBackEnd;
 import static org.graalvm.compiler.core.GraalCompiler.emitFrontEnd;
 import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
+import static org.graalvm.compiler.debug.GraalDebugConfig.Options.DebugStubsAndSnippets;
 import static org.graalvm.compiler.hotspot.HotSpotHostBackend.UNCOMMON_TRAP_HANDLER;
+import static org.graalvm.util.CollectionsUtil.allMatch;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 import java.util.ListIterator;
-import java.util.Set;
 
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.target.Backend;
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugConfig;
 import org.graalvm.compiler.debug.internal.DebugScope;
 import org.graalvm.compiler.hotspot.HotSpotCompiledCodeBuilder;
 import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage;
@@ -50,9 +48,11 @@ import org.graalvm.compiler.lir.phases.LIRSuites;
 import org.graalvm.compiler.lir.phases.PostAllocationOptimizationPhase.PostAllocationOptimizationContext;
 import org.graalvm.compiler.lir.profiling.MoveProfilingPhase;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.tiers.Suites;
+import org.graalvm.util.EconomicSet;
 
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.InstalledCode;
@@ -77,8 +77,6 @@ import jdk.vm.ci.meta.TriState;
  */
 public abstract class Stub {
 
-    private static final List<Stub> stubs = new ArrayList<>();
-
     /**
      * The linkage information for a call to this stub from compiled code.
      */
@@ -92,11 +90,21 @@ public abstract class Stub {
     /**
      * The registers destroyed by this stub (from the caller's perspective).
      */
-    private Set<Register> destroyedCallerRegisters;
+    private EconomicSet<Register> destroyedCallerRegisters;
 
-    public void initDestroyedCallerRegisters(Set<Register> registers) {
+    private static boolean checkRegisterSetEquivalency(EconomicSet<Register> a, EconomicSet<Register> b) {
+        if (a == b) {
+            return true;
+        }
+        if (a.size() != b.size()) {
+            return false;
+        }
+        return allMatch(a, e -> b.contains(e));
+    }
+
+    public void initDestroyedCallerRegisters(EconomicSet<Register> registers) {
         assert registers != null;
-        assert destroyedCallerRegisters == null || registers.equals(destroyedCallerRegisters) : "cannot redefine";
+        assert destroyedCallerRegisters == null || checkRegisterSetEquivalency(registers, destroyedCallerRegisters) : "cannot redefine";
         destroyedCallerRegisters = registers;
     }
 
@@ -104,7 +112,7 @@ public abstract class Stub {
      * Gets the registers destroyed by this stub from a caller's perspective. These are the
      * temporaries of this stub and must thus be caller saved by a callers of this stub.
      */
-    public Set<Register> getDestroyedCallerRegisters() {
+    public EconomicSet<Register> getDestroyedCallerRegisters() {
         assert destroyedCallerRegisters != null : "not yet initialized";
         return destroyedCallerRegisters;
     }
@@ -117,6 +125,7 @@ public abstract class Stub {
         return true;
     }
 
+    protected final OptionValues options;
     protected final HotSpotProviders providers;
 
     /**
@@ -124,17 +133,10 @@ public abstract class Stub {
      *
      * @param linkage linkage details for a call to the stub
      */
-    public Stub(HotSpotProviders providers, HotSpotForeignCallLinkage linkage) {
+    public Stub(OptionValues options, HotSpotProviders providers, HotSpotForeignCallLinkage linkage) {
         this.linkage = linkage;
+        this.options = options;
         this.providers = providers;
-        stubs.add(this);
-    }
-
-    /**
-     * Gets an immutable view of all stubs that have been created.
-     */
-    public static Collection<Stub> getStubs() {
-        return Collections.unmodifiableList(stubs);
     }
 
     /**
@@ -176,14 +178,16 @@ public abstract class Stub {
     @SuppressWarnings("try")
     public synchronized InstalledCode getCode(final Backend backend) {
         if (code == null) {
-            try (Scope d = Debug.sandbox("CompilingStub", DebugScope.getConfig(), providers.getCodeCache(), debugScopeContext())) {
+            DebugConfig config = DebugStubsAndSnippets.getValue(options) ? DebugScope.getConfig() : Debug.silentConfig();
+            try (Scope d = Debug.sandbox("CompilingStub", config, providers.getCodeCache(), debugScopeContext())) {
                 CodeCacheProvider codeCache = providers.getCodeCache();
+
                 CompilationResult compResult = buildCompilationResult(backend);
                 try (Scope s = Debug.scope("CodeInstall", compResult)) {
                     assert destroyedCallerRegisters != null;
                     // Add a GeneratePIC check here later, we don't want to install
                     // code if we don't have a corresponding VM global symbol.
-                    HotSpotCompiledCode compiledCode = HotSpotCompiledCodeBuilder.createCompiledCode(null, null, compResult);
+                    HotSpotCompiledCode compiledCode = HotSpotCompiledCodeBuilder.createCompiledCode(codeCache, null, null, compResult);
                     code = codeCache.installCode(null, compiledCode, null, null, false);
                 } catch (Throwable e) {
                     throw Debug.handle(e);
@@ -199,7 +203,7 @@ public abstract class Stub {
 
     @SuppressWarnings("try")
     private CompilationResult buildCompilationResult(final Backend backend) {
-        CompilationResult compResult = new CompilationResult(toString(), GeneratePIC.getValue());
+        CompilationResult compResult = new CompilationResult(toString(), GeneratePIC.getValue(options));
         final StructuredGraph graph = getGraph(getStubCompilationId());
 
         // Stubs cannot be recompiled so they cannot be compiled with assumptions
@@ -275,12 +279,12 @@ public abstract class Stub {
     }
 
     protected Suites createSuites() {
-        Suites defaultSuites = providers.getSuites().getDefaultSuites();
+        Suites defaultSuites = providers.getSuites().getDefaultSuites(options);
         return new Suites(new PhaseSuite<>(), defaultSuites.getMidTier(), defaultSuites.getLowTier());
     }
 
     protected LIRSuites createLIRSuites() {
-        LIRSuites lirSuites = new LIRSuites(providers.getSuites().getDefaultLIRSuites());
+        LIRSuites lirSuites = new LIRSuites(providers.getSuites().getDefaultLIRSuites(options));
         ListIterator<LIRPhase<PostAllocationOptimizationContext>> moveProfiling = lirSuites.getPostAllocationOptimizationStage().findPhase(MoveProfilingPhase.class);
         if (moveProfiling != null) {
             moveProfiling.remove();

@@ -22,8 +22,6 @@
  */
 package org.graalvm.compiler.phases.common.inlining.info;
 
-import java.util.Collection;
-
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.CallTargetNode.InvokeKind;
@@ -38,6 +36,7 @@ import org.graalvm.compiler.nodes.extended.LoadHubNode;
 import org.graalvm.compiler.phases.common.inlining.InliningUtil;
 import org.graalvm.compiler.phases.common.inlining.info.elem.Inlineable;
 import org.graalvm.compiler.phases.util.Providers;
+import org.graalvm.util.EconomicSet;
 
 import jdk.vm.ci.meta.DeoptimizationAction;
 import jdk.vm.ci.meta.DeoptimizationReason;
@@ -98,7 +97,7 @@ public class TypeGuardInlineInfo extends AbstractInlineInfo {
     }
 
     @Override
-    public Collection<Node> inline(Providers providers) {
+    public EconomicSet<Node> inline(Providers providers) {
         createGuard(graph(), providers);
         return inline(invoke, concrete, inlineableElement, false);
     }

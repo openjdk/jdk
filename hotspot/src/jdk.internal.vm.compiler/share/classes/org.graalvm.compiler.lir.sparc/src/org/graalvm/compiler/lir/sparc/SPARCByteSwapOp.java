@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,13 @@
  */
 package org.graalvm.compiler.lir.sparc;
 
+import static jdk.vm.ci.code.ValueUtil.asRegister;
+import static jdk.vm.ci.sparc.SPARCKind.WORD;
+import static jdk.vm.ci.sparc.SPARCKind.XWORD;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.HINT;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.REG;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.STACK;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.UNINITIALIZED;
-import static jdk.vm.ci.code.ValueUtil.asRegister;
-import static jdk.vm.ci.sparc.SPARCKind.WORD;
-import static jdk.vm.ci.sparc.SPARCKind.XWORD;
 
 import org.graalvm.compiler.asm.sparc.SPARCAddress;
 import org.graalvm.compiler.asm.sparc.SPARCAssembler.Asi;
@@ -43,19 +43,18 @@ import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.ValueUtil;
 import jdk.vm.ci.meta.AllocatableValue;
-import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.sparc.SPARCKind;
 
 @Opcode("BSWAP")
 public final class SPARCByteSwapOp extends SPARCLIRInstruction implements SPARCTailDelayedLIRInstruction {
     public static final LIRInstructionClass<SPARCByteSwapOp> TYPE = LIRInstructionClass.create(SPARCByteSwapOp.class);
     public static final SizeEstimate SIZE = SizeEstimate.create(3);
-    @Def({REG, HINT}) protected Value result;
-    @Use({REG}) protected Value input;
-    @Temp({REG}) protected Value tempIndex;
+    @Def({REG, HINT}) protected AllocatableValue result;
+    @Use({REG}) protected AllocatableValue input;
+    @Temp({REG}) protected AllocatableValue tempIndex;
     @Use({STACK, UNINITIALIZED}) protected AllocatableValue tmpSlot;
 
-    public SPARCByteSwapOp(LIRGeneratorTool tool, Value result, Value input) {
+    public SPARCByteSwapOp(LIRGeneratorTool tool, AllocatableValue result, AllocatableValue input) {
         super(TYPE, SIZE);
         this.result = result;
         this.input = input;

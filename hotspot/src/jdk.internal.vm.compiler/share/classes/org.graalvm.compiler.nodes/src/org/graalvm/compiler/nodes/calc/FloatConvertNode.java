@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.nodes.calc;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_5;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_8;
 
 import java.util.EnumMap;
 
@@ -46,7 +46,7 @@ import jdk.vm.ci.meta.ConstantReflectionProvider;
  * A {@code FloatConvert} converts between integers and floating point numbers according to Java
  * semantics.
  */
-@NodeInfo(cycles = CYCLES_5)
+@NodeInfo(cycles = CYCLES_8)
 public final class FloatConvertNode extends UnaryArithmeticNode<FloatConvertOp> implements ConvertNode, Lowerable, ArithmeticLIRLowerable {
     public static final NodeClass<FloatConvertNode> TYPE = NodeClass.create(FloatConvertNode.class);
 
@@ -123,5 +123,10 @@ public final class FloatConvertNode extends UnaryArithmeticNode<FloatConvertOp> 
     @Override
     public void generate(NodeLIRBuilderTool nodeValueMap, ArithmeticLIRGeneratorTool gen) {
         nodeValueMap.setResult(this, gen.emitFloatConvert(getFloatConvert(), nodeValueMap.operand(getValue())));
+    }
+
+    @Override
+    public boolean mayNullCheckSkipConversion() {
+        return false;
     }
 }

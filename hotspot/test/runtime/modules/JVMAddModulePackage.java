@@ -45,13 +45,13 @@ public class JVMAddModulePackage {
 
         module_one = ModuleHelper.ModuleObject("module_one", cl1, new String[] { "mypackage" });
         assertNotNull(module_one, "Module should not be null");
-        ModuleHelper.DefineModule(module_one, "9.0", "module_one/here", new String[] { "mypackage" });
+        ModuleHelper.DefineModule(module_one, false, "9.0", "module_one/here", new String[] { "mypackage" });
         module_two = ModuleHelper.ModuleObject("module_two", cl1, new String[] { "yourpackage" });
         assertNotNull(module_two, "Module should not be null");
-        ModuleHelper.DefineModule(module_two, "9.0", "module_two/here", new String[] { "yourpackage" });
+        ModuleHelper.DefineModule(module_two, false, "9.0", "module_two/here", new String[] { "yourpackage" });
         module_three = ModuleHelper.ModuleObject("module_three", cl3, new String[] { "package/num3" });
         assertNotNull(module_three, "Module should not be null");
-        ModuleHelper.DefineModule(module_three, "9.0", "module_three/here", new String[] { "package/num3" });
+        ModuleHelper.DefineModule(module_three, false, "9.0", "module_three/here", new String[] { "package/num3" });
 
         // Simple call
         ModuleHelper.AddModulePackage(module_one, "new_package");

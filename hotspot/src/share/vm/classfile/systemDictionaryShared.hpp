@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,10 @@ class ClassFileStream;
 class SystemDictionaryShared: public SystemDictionary {
 public:
   static void initialize(TRAPS) {}
-  static instanceKlassHandle find_or_load_shared_class(Symbol* class_name,
-                                                       Handle class_loader,
-                                                       TRAPS) {
-    return instanceKlassHandle();
+  static InstanceKlass* find_or_load_shared_class(Symbol* class_name,
+                                                  Handle class_loader,
+                                                  TRAPS) {
+    return NULL;
   }
   static void roots_oops_do(OopClosure* blk) {}
   static void oops_do(OopClosure* f) {}
@@ -45,7 +45,7 @@ public:
     return (class_loader == NULL);
   }
   static bool is_shared_class_visible_for_classloader(
-                                      instanceKlassHandle ik,
+                                      InstanceKlass* ik,
                                       Handle class_loader,
                                       const char* pkg_string,
                                       Symbol* pkg_name,
@@ -86,7 +86,7 @@ public:
                   Symbol* from_name, bool from_field_is_protected,
                   bool from_is_array, bool from_is_object) {return false;}
   static void finalize_verification_constraints() {}
-  static void check_verification_constraints(instanceKlassHandle klass,
+  static void check_verification_constraints(InstanceKlass* klass,
                                               TRAPS) {}
 };
 
