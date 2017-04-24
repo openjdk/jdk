@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@
   LOG_TAG(cpu) \
   LOG_TAG(cset) \
   LOG_TAG(data) \
+  LOG_TAG(datacreation) \
   LOG_TAG(defaultmethods) \
   LOG_TAG(dump) \
   LOG_TAG(ergo) \
@@ -82,6 +83,7 @@
   LOG_TAG(logging) \
   LOG_TAG(mark) \
   LOG_TAG(marking) \
+  LOG_TAG(memops) \
   LOG_TAG(methodcomparator) \
   LOG_TAG(metadata) \
   LOG_TAG(metaspace) \
@@ -98,6 +100,7 @@
   LOG_TAG(pagesize) \
   LOG_TAG(patch) \
   LOG_TAG(path) \
+  LOG_TAG(perf) \
   LOG_TAG(phases) \
   LOG_TAG(plab) \
   LOG_TAG(promotion) \

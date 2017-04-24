@@ -3811,12 +3811,6 @@ public:
           range(PeriodicTask::min_interval, max_jint)                       \
           constraint(PerfDataSamplingIntervalFunc, AfterErgo)               \
                                                                             \
-  develop(bool, PerfTraceDataCreation, false,                               \
-          "Trace creation of Performance Data Entries")                     \
-                                                                            \
-  develop(bool, PerfTraceMemOps, false,                                     \
-          "Trace PerfMemory create/attach/detach calls")                    \
-                                                                            \
   product(bool, PerfDisableSharedMem, false,                                \
           "Store performance data in standard memory")                      \
                                                                             \
