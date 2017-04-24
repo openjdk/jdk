@@ -126,7 +126,7 @@ public final class Module implements AnnotatedElement {
 
         // define module to VM
 
-        boolean isOpen = descriptor.isOpen();
+        boolean isOpen = descriptor.isOpen() || descriptor.isAutomatic();
         Version version = descriptor.version().orElse(null);
         String vs = Objects.toString(version, null);
         String loc = Objects.toString(uri, null);
@@ -1042,9 +1042,6 @@ public final class Module implements AnnotatedElement {
         if (syncVM) {
             // throws IllegalStateException if defined to another module
             addPackage0(this, pn);
-            if (descriptor.isOpen() || descriptor.isAutomatic()) {
-                addExportsToAll0(this, pn);
-            }
         }
         extraPackages.putIfAbsent(pn, Boolean.TRUE);
     }
@@ -1145,8 +1142,11 @@ public final class Module implements AnnotatedElement {
                 m.implAddReads(ALL_UNNAMED_MODULE, true);
             }
 
-            // exports and opens
-            initExportsAndOpens(m, nameToSource, nameToModule, layer.parents());
+            // export and open packages, skipped for open and automatic
+            // modules since they are treated as if all packages are open
+            if (!descriptor.isOpen() && !descriptor.isAutomatic()) {
+                initExportsAndOpens(m, nameToSource, nameToModule, layer.parents());
+            }
         }
 
         // register the modules in the boot layer
@@ -1207,21 +1207,11 @@ public final class Module implements AnnotatedElement {
                                             Map<String, Module> nameToSource,
                                             Map<String, Module> nameToModule,
                                             List<ModuleLayer> parents) {
-        // The VM doesn't special case open or automatic modules so need to
-        // export all packages
-        ModuleDescriptor descriptor = m.getDescriptor();
-        if (descriptor.isOpen() || descriptor.isAutomatic()) {
-            assert descriptor.opens().isEmpty();
-            for (String source : descriptor.packages()) {
-                addExportsToAll0(m, source);
-            }
-            return;
-        }
-
         Map<String, Set<Module>> openPackages = new HashMap<>();
         Map<String, Set<Module>> exportedPackages = new HashMap<>();
 
         // process the open packages first
+        ModuleDescriptor descriptor = m.getDescriptor();
         for (Opens opens : descriptor.opens()) {
             String source = opens.source();
 
