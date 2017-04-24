@@ -62,7 +62,7 @@ public class TestClientCodeWrapper extends JavacTestingAbstractProcessor {
             defaultFileManager = fm;
 
             for (Method m: getMethodsExcept(JavaFileManager.class,
-                        "close", "getJavaFileForInput", "getLocationForModule", "getServiceLoader")) {
+                        "close", "getJavaFileForInput", "getLocationForModule", "getServiceLoader", "contains")) {
                 test(m);
             }
 
@@ -422,6 +422,12 @@ public class TestClientCodeWrapper extends JavacTestingAbstractProcessor {
         public Iterable<Set<Location>> listLocationsForModules(Location location) throws IOException {
             throwUserExceptionIfNeeded(fileManagerMethod, "listLocationsForModules");
             return super.listLocationsForModules(location);
+        }
+
+        @Override
+        public boolean contains(Location location, FileObject fo) throws IOException {
+            throwUserExceptionIfNeeded(fileManagerMethod, "contains");
+            return super.contains(location, fo);
         }
 
         public FileObject wrap(FileObject fo) {

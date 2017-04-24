@@ -559,6 +559,11 @@ class MemoryFileManager implements JavaFileManager {
         return stdFileManager.listLocationsForModules(location);
     }
 
+    @Override
+    public boolean contains(Location location, FileObject file) throws IOException {
+        return stdFileManager.contains(location, file);
+    }
+
     /**
      * Flushes any resources opened for output by this file manager
      * directly or indirectly.  Flushing a closed file manager has no

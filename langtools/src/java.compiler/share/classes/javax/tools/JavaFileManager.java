@@ -566,4 +566,38 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * Determines whether or not a given file object is "contained in" a specified location.
+     *
+     * <p>For a package-oriented location, a file object is contained in the location if there exist
+     * values for <i>packageName</i> and <i>relativeName</i> such that either of the following
+     * calls would return the {@link #isSameFile same} file object:
+     * <pre>
+     *     getFileForInput(location, <i>packageName</i>, <i>relativeName</i>)
+     *     getFileForOutput(location, <i>packageName</i>, <i>relativeName</i>, null)
+     * </pre>
+     *
+     * <p>For a module-oriented location, a file object is contained in the location if there exists
+     * a module that may be obtained by the call:
+     * <pre>
+     *     getLocationForModule(location, <i>moduleName</i>)
+     * </pre>
+     * such that the file object is contained in the (package-oriented) location for that module.
+     *
+     * @implSpec This implementation throws {@code UnsupportedOperationException}.
+     *
+     * @param location the location
+     * @param fo the file object
+     * @return whether or not the file is contained in the location
+     *
+     * @throws IOException if there is a problem determining the result
+     * @throws UnsupportedOperationException if the method is not supported
+     *
+     * @since 9
+     */
+
+    default boolean contains(Location location, FileObject fo) throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
 }
