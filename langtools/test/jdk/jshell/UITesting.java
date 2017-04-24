@@ -55,6 +55,14 @@ public class UITesting {
                     out.notifyAll();
                 }
             }
+            @Override public void write(byte[] b, int off, int len) throws IOException {
+                synchronized (out) {
+                    String data = new String(b, off, len);
+                    System.out.print(data);
+                    out.append(data);
+                    out.notifyAll();
+                }
+            }
         });
         Thread runner = new Thread(() -> {
             try {
