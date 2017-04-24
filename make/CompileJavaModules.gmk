@@ -491,6 +491,7 @@ jdk.internal.vm.compiler_EXCLUDES += \
     org.graalvm.compiler.jtt \
     org.graalvm.compiler.lir.jtt \
     org.graalvm.compiler.lir.test \
+    org.graalvm.compiler.loop.test \
     org.graalvm.compiler.microbenchmarks \
     org.graalvm.compiler.nodes.test \
     org.graalvm.compiler.options.test \
@@ -498,6 +499,7 @@ jdk.internal.vm.compiler_EXCLUDES += \
     org.graalvm.compiler.replacements.test \
     org.graalvm.compiler.test \
     org.graalvm.compiler.virtual.bench \
+    org.graalvm.util.test \
     #
 
 ################################################################################
