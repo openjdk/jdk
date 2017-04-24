@@ -372,7 +372,7 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(uint first,
 
 size_t G1CollectedHeap::humongous_obj_size_in_regions(size_t word_size) {
   assert(is_humongous(word_size), "Object of size " SIZE_FORMAT " must be humongous here", word_size);
-  return align_up_(word_size, HeapRegion::GrainWords) / HeapRegion::GrainWords;
+  return align_up(word_size, HeapRegion::GrainWords) / HeapRegion::GrainWords;
 }
 
 // If could fit into free regions w/o expansion, try.

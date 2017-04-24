@@ -322,7 +322,7 @@ bool os::has_allocatable_memory_limit(julong* limit) {
     julong lower_limit = min_allocation_size;
     while ((upper_limit - lower_limit) > min_allocation_size) {
       julong temp_limit = ((upper_limit - lower_limit) / 2) + lower_limit;
-      temp_limit = align_down_(temp_limit, min_allocation_size);
+      temp_limit = align_down(temp_limit, min_allocation_size);
       if (is_allocatable(temp_limit)) {
         lower_limit = temp_limit;
       } else {
