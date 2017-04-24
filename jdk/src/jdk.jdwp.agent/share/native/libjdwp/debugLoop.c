@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,15 +125,13 @@ debugLoop_run(void)
             jboolean replyToSender = JNI_TRUE;
 
             /*
-             * For VirtualMachine commands we hold the vmDeathLock
+             * For all commands we hold the vmDeathLock
              * while executing and replying to the command. This ensures
-             * that a VM command after VM_DEATH will be allowed to complete
+             * that a command after VM_DEATH will be allowed to complete
              * before the thread posting the VM_DEATH continues VM
              * termination.
              */
-            if (cmd->cmdSet == JDWP_COMMAND_SET(VirtualMachine)){
-                debugMonitorEnter(vmDeathLock);
-            }
+            debugMonitorEnter(vmDeathLock);
 
             /* Initialize the input and output streams */
             inStream_init(&in, p);
@@ -172,9 +170,7 @@ debugLoop_run(void)
             /*
              * Release the vmDeathLock as the reply has been posted.
              */
-            if (cmd->cmdSet == JDWP_COMMAND_SET(VirtualMachine)){
-               debugMonitorExit(vmDeathLock);
-            }
+            debugMonitorExit(vmDeathLock);
 
             inStream_destroy(&in);
             outStream_destroy(&out);
