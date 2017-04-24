@@ -36,17 +36,17 @@ import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.InvokeNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.PhiNode;
-import org.graalvm.compiler.nodes.ValuePhiNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.ValuePhiNode;
 import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.MulNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.options.Option;
+import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
-import org.graalvm.compiler.options.OptionValue;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
 
@@ -57,13 +57,13 @@ public class FinalizeProfileNodesPhase extends BasePhase<PhaseContext> {
 
     public static class Options {
         @Option(help = "Profile simple methods", type = OptionType.Expert)//
-        public static final OptionValue<Boolean> ProfileSimpleMethods = new OptionValue<>(true);
+        public static final OptionKey<Boolean> ProfileSimpleMethods = new OptionKey<>(true);
         @Option(help = "Maximum number of nodes in a graph for a simple method", type = OptionType.Expert)//
-        public static final OptionValue<Integer> SimpleMethodGraphSize = new OptionValue<>(256);
+        public static final OptionKey<Integer> SimpleMethodGraphSize = new OptionKey<>(256);
         @Option(help = "Maximum number of calls in a simple method", type = OptionType.Expert)//
-        public static final OptionValue<Integer> SimpleMethodCalls = new OptionValue<>(1);
+        public static final OptionKey<Integer> SimpleMethodCalls = new OptionKey<>(1);
         @Option(help = "Maximum number of indirect calls in a simple moethod", type = OptionType.Expert)//
-        public static final OptionValue<Integer> SimpleMethodIndirectCalls = new OptionValue<>(0);
+        public static final OptionKey<Integer> SimpleMethodIndirectCalls = new OptionKey<>(0);
 
     }
 
@@ -88,12 +88,12 @@ public class FinalizeProfileNodesPhase extends BasePhase<PhaseContext> {
     // Hacky heuristic to determine whether we want any profiling in this method.
     // The heuristic is applied after the graph is fully formed and before the first lowering.
     private static boolean simpleMethodHeuristic(StructuredGraph graph) {
-        if (Options.ProfileSimpleMethods.getValue()) {
+        if (Options.ProfileSimpleMethods.getValue(graph.getOptions())) {
             return false;
         }
 
         // Check if the graph is smallish..
-        if (graph.getNodeCount() > Options.SimpleMethodGraphSize.getValue()) {
+        if (graph.getNodeCount() > Options.SimpleMethodGraphSize.getValue(graph.getOptions())) {
             return false;
         }
 
@@ -103,7 +103,7 @@ public class FinalizeProfileNodesPhase extends BasePhase<PhaseContext> {
         }
 
         // Check if method has calls
-        if (graph.getNodes().filter(InvokeNode.class).count() > Options.SimpleMethodCalls.getValue()) {
+        if (graph.getNodes().filter(InvokeNode.class).count() > Options.SimpleMethodCalls.getValue(graph.getOptions())) {
             return false;
         }
 
@@ -160,7 +160,7 @@ public class FinalizeProfileNodesPhase extends BasePhase<PhaseContext> {
         }
 
         assignInlineeInvokeFrequencies(graph);
-        if (ProfileNode.Options.ProbabilisticProfiling.getValue()) {
+        if (ProfileNode.Options.ProbabilisticProfiling.getValue(graph.getOptions())) {
             assignRandomSources(graph);
         }
     }

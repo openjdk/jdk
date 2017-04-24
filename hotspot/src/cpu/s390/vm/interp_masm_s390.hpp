@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -48,15 +48,15 @@ class InterpreterMacroAssembler: public MacroAssembler {
                             bool allow_relocation,
                             bool check_exceptions);
 
-  virtual void check_and_handle_popframe(Register java_thread);
-  virtual void check_and_handle_earlyret(Register java_thread);
-
   // Base routine for all dispatches.
   void dispatch_base(TosState state, address* table);
 
  public:
   InterpreterMacroAssembler(CodeBuffer* c)
     : MacroAssembler(c) {}
+
+  virtual void check_and_handle_popframe(Register java_thread);
+  virtual void check_and_handle_earlyret(Register java_thread);
 
   void jump_to_entry(address entry, Register Rscratch);
 

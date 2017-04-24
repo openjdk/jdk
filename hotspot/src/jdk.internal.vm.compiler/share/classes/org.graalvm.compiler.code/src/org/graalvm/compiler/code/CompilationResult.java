@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Objects;
 
 import org.graalvm.compiler.graph.NodeSourcePosition;
+import org.graalvm.util.EconomicSet;
 
 import jdk.vm.ci.code.DebugInfo;
 import jdk.vm.ci.code.StackSlot;
@@ -363,9 +364,10 @@ public class CompilationResult {
      *
      * @param accessedFields the collected set of fields accessed during compilation
      */
-    public void setFields(Collection<ResolvedJavaField> accessedFields) {
-        assert accessedFields != null;
-        fields = accessedFields.toArray(new ResolvedJavaField[accessedFields.size()]);
+    public void setFields(EconomicSet<ResolvedJavaField> accessedFields) {
+        if (accessedFields != null) {
+            fields = accessedFields.toArray(new ResolvedJavaField[accessedFields.size()]);
+        }
     }
 
     /**

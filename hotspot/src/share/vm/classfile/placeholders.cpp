@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,37 +174,6 @@ void PlaceholderTable::find_and_remove(int index, unsigned int hash,
 PlaceholderTable::PlaceholderTable(int table_size)
     : TwoOopHashtable<Symbol*, mtClass>(table_size, sizeof(PlaceholderEntry)) {
 }
-
-
-void PlaceholderTable::classes_do(KlassClosure* f) {
-  for (int index = 0; index < table_size(); index++) {
-    for (PlaceholderEntry* probe = bucket(index);
-                           probe != NULL;
-                           probe = probe->next()) {
-      probe->classes_do(f);
-    }
-  }
-}
-
-
-void PlaceholderEntry::classes_do(KlassClosure* closure) {
-  assert(klassname() != NULL, "should have a non-null klass");
-  if (_instanceKlass != NULL) {
-    closure->do_klass(instance_klass());
-  }
-}
-
-// do all entries in the placeholder table
-void PlaceholderTable::entries_do(void f(Symbol*)) {
-  for (int index = 0; index < table_size(); index++) {
-    for (PlaceholderEntry* probe = bucket(index);
-                           probe != NULL;
-                           probe = probe->next()) {
-      f(probe->klassname());
-    }
-  }
-}
-
 
 #ifndef PRODUCT
 // Note, doesn't append a cr

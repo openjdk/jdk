@@ -69,7 +69,7 @@ public class SchedulingTest2 extends GraphScheduleTest {
         BeginNode beginNode = graph.add(new BeginNode());
         returnNode.replaceAtPredecessor(beginNode);
         beginNode.setNext(returnNode);
-        Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "Graph");
+        Debug.dump(Debug.BASIC_LEVEL, graph, "Graph");
         SchedulePhase schedulePhase = new SchedulePhase(SchedulingStrategy.EARLIEST);
         schedulePhase.apply(graph);
         ScheduleResult schedule = graph.getLastSchedule();

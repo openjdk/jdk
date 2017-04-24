@@ -232,7 +232,7 @@ int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
                           MacroAssembler::instr_size_for_decode_klass_not_null() : 0);
       return basic + slop;
     } else {
-      const int basic = (28 LP64_ONLY(+ 6)) * BytesPerInstWord +
+      const int basic = 34 * BytesPerInstWord +
                         // shift;add for load_klass (only shift with zero heap based)
                         (UseCompressedClassPointers ?
                           MacroAssembler::instr_size_for_decode_klass_not_null() : 0);
@@ -257,7 +257,6 @@ int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
   //   ld  [ %g3 + 0xe8 ], %l2
   //   sll  %l2, 2, %l2
   //   add  %l2, 0x134, %l2
-  //   and  %l2, -8, %l2        ! NOT_LP64 only
   //   add  %g3, %l2, %l2
   //   add  %g3, 4, %g3
   //   ld  [ %l2 ], %l5

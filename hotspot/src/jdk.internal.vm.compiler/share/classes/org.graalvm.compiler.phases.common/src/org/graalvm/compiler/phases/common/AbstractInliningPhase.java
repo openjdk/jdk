@@ -29,4 +29,8 @@ import org.graalvm.compiler.phases.tiers.HighTierContext;
  * Common superclass for phases that perform inlining.
  */
 public abstract class AbstractInliningPhase extends BasePhase<HighTierContext> {
+    @Override
+    protected boolean isInliningPhase() {
+        return true;
+    }
 }

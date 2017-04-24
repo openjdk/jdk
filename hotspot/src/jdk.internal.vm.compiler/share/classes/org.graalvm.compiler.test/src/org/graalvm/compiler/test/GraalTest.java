@@ -37,6 +37,7 @@ import sun.misc.Unsafe;
 /**
  * Base class that contains common utility methods and classes useful in unit tests.
  */
+@AddExports("jdk.internal.vm.ci/jdk.vm.ci.services")
 public class GraalTest {
 
     public static final Unsafe UNSAFE;
@@ -123,8 +124,6 @@ public class GraalTest {
             Class<?> expectedClass = expected.getClass();
             Class<?> actualClass = actual.getClass();
             if (expectedClass.isArray()) {
-                Assert.assertTrue(message, expected != null);
-                Assert.assertTrue(message, actual != null);
                 Assert.assertEquals(message, expectedClass, actual.getClass());
                 if (expected instanceof int[]) {
                     Assert.assertArrayEquals(message, (int[]) expected, (int[]) actual);

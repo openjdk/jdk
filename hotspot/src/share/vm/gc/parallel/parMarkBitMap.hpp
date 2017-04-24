@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -305,7 +305,7 @@ ParMarkBitMap::obj_size(HeapWord* beg_addr, HeapWord* end_addr) const
 
 inline size_t ParMarkBitMap::obj_size(idx_t beg_bit) const
 {
-  const idx_t end_bit = _end_bits.get_next_one_offset_inline(beg_bit, size());
+  const idx_t end_bit = _end_bits.get_next_one_offset(beg_bit, size());
   assert(is_marked(beg_bit), "obj not marked");
   assert(end_bit < size(), "end bit missing");
   return obj_size(beg_bit, end_bit);
@@ -359,13 +359,13 @@ ParMarkBitMap::bit_to_addr(idx_t bit) const
 inline ParMarkBitMap::idx_t
 ParMarkBitMap::find_obj_beg(idx_t beg, idx_t end) const
 {
-  return _beg_bits.get_next_one_offset_inline_aligned_right(beg, end);
+  return _beg_bits.get_next_one_offset_aligned_right(beg, end);
 }
 
 inline ParMarkBitMap::idx_t
 ParMarkBitMap::find_obj_end(idx_t beg, idx_t end) const
 {
-  return _end_bits.get_next_one_offset_inline_aligned_right(beg, end);
+  return _end_bits.get_next_one_offset_aligned_right(beg, end);
 }
 
 inline HeapWord*

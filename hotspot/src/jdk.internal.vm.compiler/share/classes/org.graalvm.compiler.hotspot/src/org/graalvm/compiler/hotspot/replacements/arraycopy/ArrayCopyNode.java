@@ -22,8 +22,6 @@
  */
 package org.graalvm.compiler.hotspot.replacements.arraycopy;
 
-import jdk.vm.ci.meta.JavaKind;
-
 import static org.graalvm.compiler.core.common.LocationIdentity.any;
 
 import org.graalvm.compiler.core.common.LocationIdentity;
@@ -33,11 +31,12 @@ import org.graalvm.compiler.nodes.NamedLocationIdentity;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
-import org.graalvm.compiler.nodes.spi.Virtualizable;
 import org.graalvm.compiler.replacements.nodes.BasicArrayCopyNode;
 
+import jdk.vm.ci.meta.JavaKind;
+
 @NodeInfo
-public final class ArrayCopyNode extends BasicArrayCopyNode implements Virtualizable, Lowerable {
+public final class ArrayCopyNode extends BasicArrayCopyNode implements Lowerable {
 
     public static final NodeClass<ArrayCopyNode> TYPE = NodeClass.create(ArrayCopyNode.class);
 

@@ -22,8 +22,8 @@
  */
 package org.graalvm.compiler.nodes.java;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_10;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_4;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_8;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_2;
 
 import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -42,7 +42,7 @@ import sun.misc.Unsafe;
  * Represents an atomic read-and-write operation like {@link Unsafe#getAndSetInt(Object, long, int)}
  * .
  */
-@NodeInfo(cycles = CYCLES_10, size = SIZE_4)
+@NodeInfo(cycles = CYCLES_8, size = SIZE_2)
 public final class AtomicReadAndWriteNode extends AbstractMemoryCheckpoint implements Lowerable, MemoryCheckpoint.Single {
 
     public static final NodeClass<AtomicReadAndWriteNode> TYPE = NodeClass.create(AtomicReadAndWriteNode.class);

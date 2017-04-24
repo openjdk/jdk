@@ -33,28 +33,29 @@ import org.graalvm.compiler.nodes.calc.ConditionalNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.ProfilingPlugin;
 import org.graalvm.compiler.options.Option;
+import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
-import org.graalvm.compiler.options.OptionValue;
+import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 public abstract class HotSpotProfilingPlugin implements ProfilingPlugin {
     public static class Options {
         @Option(help = "Emit profiling of invokes", type = OptionType.Expert)//
-        public static final OptionValue<Boolean> ProfileInvokes = new OptionValue<>(true);
+        public static final OptionKey<Boolean> ProfileInvokes = new OptionKey<>(true);
         @Option(help = "Emit profiling of backedges", type = OptionType.Expert)//
-        public static final OptionValue<Boolean> ProfileBackedges = new OptionValue<>(true);
+        public static final OptionKey<Boolean> ProfileBackedges = new OptionKey<>(true);
     }
 
-    public abstract int invokeNotifyFreqLog();
+    public abstract int invokeNotifyFreqLog(OptionValues options);
 
-    public abstract int invokeInlineeNotifyFreqLog();
+    public abstract int invokeInlineeNotifyFreqLog(OptionValues options);
 
-    public abstract int invokeProfilePobabilityLog();
+    public abstract int invokeProfilePobabilityLog(OptionValues options);
 
-    public abstract int backedgeNotifyFreqLog();
+    public abstract int backedgeNotifyFreqLog(OptionValues options);
 
-    public abstract int backedgeProfilePobabilityLog();
+    public abstract int backedgeProfilePobabilityLog(OptionValues options);
 
     @Override
     public boolean shouldProfile(GraphBuilderContext builder, ResolvedJavaMethod method) {
@@ -64,8 +65,9 @@ public abstract class HotSpotProfilingPlugin implements ProfilingPlugin {
     @Override
     public void profileInvoke(GraphBuilderContext builder, ResolvedJavaMethod method, FrameState frameState) {
         assert shouldProfile(builder, method);
-        if (Options.ProfileInvokes.getValue() && !method.isClassInitializer()) {
-            ProfileNode p = builder.append(new ProfileInvokeNode(method, invokeNotifyFreqLog(), invokeProfilePobabilityLog()));
+        OptionValues options = builder.getOptions();
+        if (Options.ProfileInvokes.getValue(options) && !method.isClassInitializer()) {
+            ProfileNode p = builder.append(new ProfileInvokeNode(method, invokeNotifyFreqLog(options), invokeProfilePobabilityLog(options)));
             p.setStateBefore(frameState);
         }
     }
@@ -73,8 +75,9 @@ public abstract class HotSpotProfilingPlugin implements ProfilingPlugin {
     @Override
     public void profileGoto(GraphBuilderContext builder, ResolvedJavaMethod method, int bci, int targetBci, FrameState frameState) {
         assert shouldProfile(builder, method);
-        if (Options.ProfileBackedges.getValue() && targetBci <= bci) {
-            ProfileNode p = builder.append(new ProfileBranchNode(method, backedgeNotifyFreqLog(), backedgeProfilePobabilityLog(), bci, targetBci));
+        OptionValues options = builder.getOptions();
+        if (Options.ProfileBackedges.getValue(options) && targetBci <= bci) {
+            ProfileNode p = builder.append(new ProfileBranchNode(method, backedgeNotifyFreqLog(options), backedgeProfilePobabilityLog(options), bci, targetBci));
             p.setStateBefore(frameState);
         }
     }
@@ -82,7 +85,8 @@ public abstract class HotSpotProfilingPlugin implements ProfilingPlugin {
     @Override
     public void profileIf(GraphBuilderContext builder, ResolvedJavaMethod method, int bci, LogicNode condition, int trueBranchBci, int falseBranchBci, FrameState frameState) {
         assert shouldProfile(builder, method);
-        if (Options.ProfileBackedges.getValue() && (falseBranchBci <= bci || trueBranchBci <= bci)) {
+        OptionValues options = builder.getOptions();
+        if (Options.ProfileBackedges.getValue(options) && (falseBranchBci <= bci || trueBranchBci <= bci)) {
             boolean negate = false;
             int targetBci = trueBranchBci;
             if (falseBranchBci <= bci) {
@@ -95,7 +99,7 @@ public abstract class HotSpotProfilingPlugin implements ProfilingPlugin {
             ValueNode trueValue = builder.append(ConstantNode.forBoolean(!negate));
             ValueNode falseValue = builder.append(ConstantNode.forBoolean(negate));
             ConditionalNode branchCondition = builder.append(new ConditionalNode(condition, trueValue, falseValue));
-            ProfileNode p = builder.append(new ProfileBranchNode(method, backedgeNotifyFreqLog(), backedgeProfilePobabilityLog(), branchCondition, bci, targetBci));
+            ProfileNode p = builder.append(new ProfileBranchNode(method, backedgeNotifyFreqLog(options), backedgeProfilePobabilityLog(options), branchCondition, bci, targetBci));
             p.setStateBefore(frameState);
         }
     }

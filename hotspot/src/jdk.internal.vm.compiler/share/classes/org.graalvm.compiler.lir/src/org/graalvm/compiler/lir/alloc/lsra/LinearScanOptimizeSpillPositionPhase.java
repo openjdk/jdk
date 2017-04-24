@@ -27,6 +27,7 @@ import static org.graalvm.compiler.core.common.cfg.AbstractControlFlowGraph.domi
 import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
 
 import java.util.Iterator;
+
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.DebugCounter;
@@ -36,12 +37,12 @@ import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstruction.OperandMode;
 import org.graalvm.compiler.lir.alloc.lsra.Interval.SpillState;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
-import org.graalvm.compiler.lir.phases.AllocationPhase;
+import org.graalvm.compiler.lir.phases.AllocationPhase.AllocationContext;
 
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.AllocatableValue;
 
-public final class LinearScanOptimizeSpillPositionPhase extends AllocationPhase {
+public final class LinearScanOptimizeSpillPositionPhase extends LinearScanAllocationPhase {
 
     private static final DebugCounter betterSpillPos = Debug.counter("BetterSpillPosition");
     private static final DebugCounter betterSpillPosWithLowerProbability = Debug.counter("BetterSpillPositionWithLowerProbability");
@@ -110,12 +111,12 @@ public final class LinearScanOptimizeSpillPositionPhase extends AllocationPhase 
                 interval.setSpillState(SpillState.StoreAtDefinition);
                 return;
             }
-            Debug.log(Debug.VERBOSE_LOG_LEVEL, "Spill block candidate (initial): %s", spillBlock);
+            Debug.log(Debug.VERBOSE_LEVEL, "Spill block candidate (initial): %s", spillBlock);
             // move out of loops
             if (defBlock.getLoopDepth() < spillBlock.getLoopDepth()) {
                 spillBlock = moveSpillOutOfLoop(defBlock, spillBlock);
             }
-            Debug.log(Debug.VERBOSE_LOG_LEVEL, "Spill block candidate (after loop optimizaton): %s", spillBlock);
+            Debug.log(Debug.VERBOSE_LEVEL, "Spill block candidate (after loop optimizaton): %s", spillBlock);
 
             /*
              * The spill block is the begin of the first split child (aka the value is on the
@@ -134,7 +135,7 @@ public final class LinearScanOptimizeSpillPositionPhase extends AllocationPhase 
                 spillBlock = dom;
             }
             if (defBlock.equals(spillBlock)) {
-                Debug.log(Debug.VERBOSE_LOG_LEVEL, "Definition is the best choice: %s", defBlock);
+                Debug.log(Debug.VERBOSE_LEVEL, "Definition is the best choice: %s", defBlock);
                 // definition is the best choice
                 interval.setSpillState(SpillState.StoreAtDefinition);
                 return;
@@ -146,7 +147,7 @@ public final class LinearScanOptimizeSpillPositionPhase extends AllocationPhase 
             }
 
             if (defBlock.probability() <= spillBlock.probability()) {
-                Debug.log(Debug.VERBOSE_LOG_LEVEL, "Definition has lower probability %s (%f) is lower than spill block %s (%f)", defBlock, defBlock.probability(), spillBlock,
+                Debug.log(Debug.VERBOSE_LEVEL, "Definition has lower probability %s (%f) is lower than spill block %s (%f)", defBlock, defBlock.probability(), spillBlock,
                                 spillBlock.probability());
                 // better spill block has the same probability -> do nothing
                 interval.setSpillState(SpillState.StoreAtDefinition);
@@ -164,7 +165,7 @@ public final class LinearScanOptimizeSpillPositionPhase extends AllocationPhase 
             AllocatableValue fromLocation = interval.getSplitChildAtOpId(spillOpId, OperandMode.DEF, allocator).location();
             AllocatableValue toLocation = LinearScan.canonicalSpillOpr(interval);
             LIRInstruction move = allocator.getSpillMoveFactory().createMove(toLocation, fromLocation);
-            Debug.log(Debug.VERBOSE_LOG_LEVEL, "Insert spill move %s", move);
+            Debug.log(Debug.VERBOSE_LEVEL, "Insert spill move %s", move);
             move.setId(LinearScan.DOMINATOR_SPILL_MOVE_ID);
             /*
              * We can use the insertion buffer directly because we always insert at position 1.
@@ -197,7 +198,7 @@ public final class LinearScanOptimizeSpillPositionPhase extends AllocationPhase 
                 block = allocator.sortedBlocks()[nextBlockIndex];
                 if (range.to <= allocator.getFirstLirInstructionId(block)) {
                     range = range.next;
-                    if (range == Range.EndMarker) {
+                    if (range.isEndMarker()) {
                         block = null;
                     } else {
                         block = allocator.blockForId(range.from);

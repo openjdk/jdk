@@ -48,6 +48,7 @@ import java.nio.file.Paths;
 import java.nio.file.ProviderNotFoundException;
 import java.util.Set;
 
+import static jdk.tools.jaotc.test.collect.Utils.mkpath;
 import static jdk.tools.jaotc.test.collect.Utils.set;
 
 public class JarSourceProviderTest {
@@ -84,7 +85,7 @@ public class JarSourceProviderTest {
         ClassSource source = target.findSource("foobar", new FakeSearchPath("hello/foobar"));
 
         Assert.assertNull(source);
-        Assert.assertEquals(set("hello/foobar"), fileSupport.getCheckedDirectory());
+        Assert.assertEquals(set(mkpath("hello/foobar")), fileSupport.getCheckedDirectory());
     }
 
     @Test
@@ -92,7 +93,7 @@ public class JarSourceProviderTest {
         fileSupport.setJarFileSystemRoot(null);
         ClassSource result = target.findSource("foobar", new FakeSearchPath("foo/bar"));
 
-        Assert.assertEquals(set("foo/bar"), fileSupport.getCheckedJarFileSystemRoots());
+        Assert.assertEquals(set(mkpath("foo/bar")), fileSupport.getCheckedJarFileSystemRoots());
         Assert.assertNull(result);
     }
 
@@ -111,7 +112,7 @@ public class JarSourceProviderTest {
 
         ClassSource result = target.findSource("foobar", new FakeSearchPath("foo/bar"));
 
-        Assert.assertEquals(set("foo/bar"), fileSupport.getCheckedJarFileSystemRoots());
+        Assert.assertEquals(set(mkpath("foo/bar")), fileSupport.getCheckedJarFileSystemRoots());
         Assert.assertNull(result);
     }
 
@@ -120,7 +121,7 @@ public class JarSourceProviderTest {
         fileSupport.setJarFileSystemRoot(Paths.get("some/bar"));
         ClassSource result = target.findSource("foobar", new FakeSearchPath("this/bar"));
 
-        Assert.assertEquals(set("this/bar"), fileSupport.getClassloaderPaths());
-        Assert.assertEquals("jar:this/bar", result.toString());
+        Assert.assertEquals(set(mkpath("this/bar")), fileSupport.getClassloaderPaths());
+        Assert.assertEquals("jar:" + mkpath("this/bar"), result.toString());
     }
 }

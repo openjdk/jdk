@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -292,7 +292,7 @@ class VM_DeoptimizeFrame: public VM_Operation {
 #ifndef PRODUCT
 class VM_DeoptimizeAll: public VM_Operation {
  private:
-  KlassHandle _dependee;
+  Klass* _dependee;
  public:
   VM_DeoptimizeAll() {}
   VMOp_Type type() const                         { return VMOp_DeoptimizeAll; }

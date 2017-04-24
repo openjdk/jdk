@@ -134,7 +134,7 @@ public final class EdgeMoveOptimizer extends PostAllocationOptimizationPhase {
             for (AbstractBlockBase<?> pred : block.getPredecessors()) {
                 assert pred != null;
                 assert ir.getLIRforBlock(pred) != null;
-                List<LIRInstruction> predInstructions = ir.getLIRforBlock(pred);
+                ArrayList<LIRInstruction> predInstructions = ir.getLIRforBlock(pred);
 
                 if (pred.getSuccessorCount() != 1) {
                     // this can happen with switch-statements where multiple edges are between
@@ -191,7 +191,7 @@ public final class EdgeMoveOptimizer extends PostAllocationOptimizationPhase {
             edgeInstructionSeqences.clear();
             int numSux = block.getSuccessorCount();
 
-            List<LIRInstruction> instructions = ir.getLIRforBlock(block);
+            ArrayList<LIRInstruction> instructions = ir.getLIRforBlock(block);
 
             assert numSux == 2 : "method should not be called otherwise";
 
@@ -217,7 +217,7 @@ public final class EdgeMoveOptimizer extends PostAllocationOptimizationPhase {
 
             // setup a list with the lir-instructions of all successors
             for (AbstractBlockBase<?> sux : block.getSuccessors()) {
-                List<LIRInstruction> suxInstructions = ir.getLIRforBlock(sux);
+                ArrayList<LIRInstruction> suxInstructions = ir.getLIRforBlock(sux);
 
                 assert suxInstructions.get(0) instanceof StandardOp.LabelOp : "block must start with label";
 

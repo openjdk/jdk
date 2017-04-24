@@ -56,5 +56,18 @@ public class ClassPathJarInDirEntry extends PathHandler {
             ioe.printStackTrace();
         }
     }
+
+    @Override
+    public long classCount() {
+        try {
+            return Files.list(root)
+                    .filter(p -> p.getFileName().toString().endsWith(".jar"))
+                    .map(p -> new ClassPathJarEntry(p, executor))
+                    .mapToLong(ClassPathJarEntry::classCount).sum();
+        } catch (IOException e) {
+            throw new Error("can not walk dir " + root + " : "
+                    + e.getMessage(), e);
+        }
+    }
 }
 

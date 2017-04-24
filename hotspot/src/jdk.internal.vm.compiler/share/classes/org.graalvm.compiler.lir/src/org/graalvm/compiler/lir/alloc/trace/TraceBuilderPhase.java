@@ -24,7 +24,7 @@ package org.graalvm.compiler.lir.alloc.trace;
 
 import static org.graalvm.compiler.lir.alloc.trace.TraceUtil.isTrivialTrace;
 
-import java.util.List;
+import java.util.ArrayList;
 
 import org.graalvm.compiler.core.common.alloc.BiDirectionalTraceBuilder;
 import org.graalvm.compiler.core.common.alloc.SingleBlockTraceBuilder;
@@ -39,10 +39,11 @@ import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.phases.AllocationPhase;
-import org.graalvm.compiler.options.EnumOptionValue;
+import org.graalvm.compiler.options.EnumOptionKey;
 import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionType;
-import org.graalvm.compiler.options.OptionValue;
+import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.options.OptionKey;
 
 import jdk.vm.ci.code.TargetDescription;
 
@@ -57,14 +58,11 @@ public class TraceBuilderPhase extends AllocationPhase {
     public static class Options {
         // @formatter:off
         @Option(help = "Trace building algorithm.", type = OptionType.Debug)
-        public static final EnumOptionValue<TraceBuilder> TraceBuilding = new EnumOptionValue<>(TraceBuilder.UniDirectional);
+        public static final EnumOptionKey<TraceBuilder> TraceBuilding = new EnumOptionKey<>(TraceBuilder.UniDirectional);
         @Option(help = "Schedule trivial traces as early as possible.", type = OptionType.Debug)
-        public static final OptionValue<Boolean> TraceRAScheduleTrivialTracesEarly = new OptionValue<>(true);
+        public static final OptionKey<Boolean> TraceRAScheduleTrivialTracesEarly = new OptionKey<>(true);
         // @formatter:on
     }
-
-    private static final int TRACE_LOG_LEVEL = 1;
-    public static final int TRACE_DUMP_LEVEL = 3;
 
     @Override
     protected void run(TargetDescription target, LIRGenerationResult lirGenRes, AllocationContext context) {
@@ -75,24 +73,25 @@ public class TraceBuilderPhase extends AllocationPhase {
 
         final TraceBuilderResult traceBuilderResult = getTraceBuilderResult(lir, startBlock, linearScanOrder);
 
-        if (Debug.isLogEnabled(TRACE_LOG_LEVEL)) {
-            List<Trace> traces = traceBuilderResult.getTraces();
+        if (Debug.isLogEnabled(Debug.BASIC_LEVEL)) {
+            ArrayList<Trace> traces = traceBuilderResult.getTraces();
             for (int i = 0; i < traces.size(); i++) {
                 Trace trace = traces.get(i);
-                Debug.log(TRACE_LOG_LEVEL, "Trace %5d: %s%s", i, trace, isTrivialTrace(lirGenRes.getLIR(), trace) ? " (trivial)" : "");
+                Debug.log(Debug.BASIC_LEVEL, "Trace %5d: %s%s", i, trace, isTrivialTrace(lirGenRes.getLIR(), trace) ? " (trivial)" : "");
             }
         }
         TraceStatisticsPrinter.printTraceStatistics(traceBuilderResult, lirGenRes.getCompilationUnitName());
-        Debug.dump(TRACE_DUMP_LEVEL, traceBuilderResult, "After TraceBuilding");
+        Debug.dump(Debug.VERBOSE_LEVEL, traceBuilderResult, "TraceBuilderResult");
         context.contextAdd(traceBuilderResult);
     }
 
     private static TraceBuilderResult getTraceBuilderResult(LIR lir, AbstractBlockBase<?> startBlock, AbstractBlockBase<?>[] linearScanOrder) {
         TraceBuilderResult.TrivialTracePredicate pred = getTrivialTracePredicate(lir);
 
-        TraceBuilder selectedTraceBuilder = Options.TraceBuilding.getValue();
-        Debug.log(TRACE_LOG_LEVEL, "Building Traces using %s", selectedTraceBuilder);
-        switch (Options.TraceBuilding.getValue()) {
+        OptionValues options = lir.getOptions();
+        TraceBuilder selectedTraceBuilder = Options.TraceBuilding.getValue(options);
+        Debug.log(Debug.BASIC_LEVEL, "Building Traces using %s", selectedTraceBuilder);
+        switch (Options.TraceBuilding.getValue(options)) {
             case SingleBlock:
                 return SingleBlockTraceBuilder.computeTraces(startBlock, linearScanOrder, pred);
             case BiDirectional:
@@ -100,11 +99,11 @@ public class TraceBuilderPhase extends AllocationPhase {
             case UniDirectional:
                 return UniDirectionalTraceBuilder.computeTraces(startBlock, linearScanOrder, pred);
         }
-        throw GraalError.shouldNotReachHere("Unknown trace building algorithm: " + Options.TraceBuilding.getValue());
+        throw GraalError.shouldNotReachHere("Unknown trace building algorithm: " + Options.TraceBuilding.getValue(options));
     }
 
     public static TraceBuilderResult.TrivialTracePredicate getTrivialTracePredicate(LIR lir) {
-        if (!Options.TraceRAScheduleTrivialTracesEarly.getValue()) {
+        if (!Options.TraceRAScheduleTrivialTracesEarly.getValue(lir.getOptions())) {
             return null;
         }
         return new TrivialTracePredicate() {
