@@ -73,7 +73,7 @@ public class BootAppendTests {
         logTestCase("1");
         testBootAppendModuleClass();
 
-        log("TESTCASE: 2");
+        logTestCase("2");
         testBootAppendDuplicateModuleClass();
 
         logTestCase("3");
@@ -123,11 +123,11 @@ public class BootAppendTests {
         for (String mode : modes) {
             CDSOptions opts = (new CDSOptions())
                 .setXShareMode(mode).setUseVersion(false)
-                .addPrefix("-Xbootclasspath/a:" + bootAppendJar, "-cp", appJar)
+                .addPrefix("-Xbootclasspath/a:" + bootAppendJar, "-cp", appJar, "-showversion")
                 .addSuffix(APP_CLASS, BOOT_APPEND_MODULE_CLASS_NAME);
 
-            CDSTestUtils.runWithArchive(opts)
-                .shouldContain("java.lang.ClassNotFoundException: javax.sound.sampled.MyClass");
+            OutputAnalyzer out = CDSTestUtils.runWithArchive(opts);
+            CDSTestUtils.checkExec(out, opts, "java.lang.ClassNotFoundException: javax.sound.sampled.MyClass");
         }
     }
 
@@ -144,11 +144,13 @@ public class BootAppendTests {
         for (String mode : modes) {
             CDSOptions opts = (new CDSOptions())
                 .setXShareMode(mode).setUseVersion(false)
-                .addPrefix("-Xbootclasspath/a:" + bootAppendJar, "-cp", appJar)
-                .addSuffix(APP_CLASS, BOOT_APPEND_DUPLICATE_MODULE_CLASS_NAME);
+                .addPrefix("--add-modules", "java.corba", "-showversion",
+                           "-Xbootclasspath/a:" + bootAppendJar, "-cp", appJar)
+                .addSuffix("-Xlog:class+load=info",
+                           APP_CLASS, BOOT_APPEND_DUPLICATE_MODULE_CLASS_NAME);
 
-            CDSTestUtils.runWithArchive(opts)
-                .shouldContain("[class,load] org.omg.CORBA.Context source: jrt:/java.corba");
+            OutputAnalyzer out = CDSTestUtils.runWithArchive(opts);
+            CDSTestUtils.checkExec(out, opts, "[class,load] org.omg.CORBA.Context source: jrt:/java.corba");
         }
     }
 
@@ -164,17 +166,17 @@ public class BootAppendTests {
         for (String mode : modes) {
             CDSOptions opts = (new CDSOptions())
                 .setXShareMode(mode).setUseVersion(false)
-                .addPrefix("-Xbootclasspath/a:" + bootAppendJar,
+                .addPrefix("-Xbootclasspath/a:" + bootAppendJar, "-showversion",
                            "--limit-modules=java.base", "-cp", appJar)
                 .addSuffix("-Xlog:class+load=info",
                            APP_CLASS, BOOT_APPEND_MODULE_CLASS_NAME);
 
-            OutputAnalyzer out = CDSTestUtils.runWithArchive(opts)
-                .shouldContain("[class,load] javax.sound.sampled.MyClass");
+            OutputAnalyzer out = CDSTestUtils.runWithArchive(opts);
+            CDSTestUtils.checkExec(out, opts, "[class,load] javax.sound.sampled.MyClass");
 
             // When CDS is enabled, the shared class should be loaded from the archive.
             if (mode.equals("on")) {
-                out.shouldContain("[class,load] javax.sound.sampled.MyClass source: shared objects file");
+                CDSTestUtils.checkExec(out, opts, "[class,load] javax.sound.sampled.MyClass source: shared objects file");
             }
         }
     }
@@ -193,14 +195,16 @@ public class BootAppendTests {
         for (String mode : modes) {
             CDSOptions opts = (new CDSOptions())
                 .setXShareMode(mode).setUseVersion(false)
-                .addPrefix("-Xbootclasspath/a:" + bootAppendJar,
+                .addPrefix("-Xbootclasspath/a:" + bootAppendJar, "-showversion",
                            "--limit-modules=java.base", "-cp", appJar)
                 .addSuffix("-Xlog:class+load=info",
                            APP_CLASS, BOOT_APPEND_DUPLICATE_MODULE_CLASS_NAME);
 
-            CDSTestUtils.runWithArchive(opts)
-                .shouldContain("[class,load] org.omg.CORBA.Context")
-                .shouldMatch(".*\\[class,load\\] org.omg.CORBA.Context source:.*bootAppend.jar");
+            OutputAnalyzer out = CDSTestUtils.runWithArchive(opts);
+            CDSTestUtils.checkExec(out, opts, "[class,load] org.omg.CORBA.Context");
+            if (!CDSTestUtils.isUnableToMap(out)) {
+                out.shouldMatch(".*\\[class,load\\] org.omg.CORBA.Context source:.*bootAppend.jar");
+            }
         }
     }
 
@@ -215,18 +219,18 @@ public class BootAppendTests {
         for (String mode : modes) {
             CDSOptions opts = (new CDSOptions())
                 .setXShareMode(mode).setUseVersion(false)
-                .addPrefix("-Xbootclasspath/a:" + bootAppendJar,
+                .addPrefix("-Xbootclasspath/a:" + bootAppendJar, "-showversion",
                            "--limit-modules=java.base", "-cp", appJar)
                 .addSuffix("-Xlog:class+load=info",
                            APP_CLASS, BOOT_APPEND_CLASS_NAME);
 
-            OutputAnalyzer out = CDSTestUtils.runWithArchive(opts)
-                .shouldContain("[class,load] nonjdk.myPackage.MyClass");
+            OutputAnalyzer out = CDSTestUtils.runWithArchive(opts);
+            CDSTestUtils.checkExec(out, opts, "[class,load] nonjdk.myPackage.MyClass");
 
             // If CDS is enabled, the nonjdk.myPackage.MyClass should be loaded
             // from the shared archive.
             if (mode.equals("on")) {
-                out.shouldContain(
+                CDSTestUtils.checkExec(out, opts,
                     "[class,load] nonjdk.myPackage.MyClass source: shared objects file");
             }
         }
