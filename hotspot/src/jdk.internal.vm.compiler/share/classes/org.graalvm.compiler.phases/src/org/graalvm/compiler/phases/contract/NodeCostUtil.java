@@ -35,7 +35,6 @@ import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
-import org.graalvm.compiler.nodes.spi.NodeCostProvider;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -46,18 +45,18 @@ public class NodeCostUtil {
     private static final DebugCounter sizeVerificationCount = Debug.counter("GraphCostVerificationCount_Size");
 
     @SuppressWarnings("try")
-    public static int computeGraphSize(StructuredGraph graph, NodeCostProvider nodeCostProvider) {
+    public static int computeGraphSize(StructuredGraph graph) {
         sizeComputationCount.increment();
         int size = 0;
         for (Node n : graph.getNodes()) {
-            size += nodeCostProvider.getEstimatedCodeSize(n);
+            size += n.estimatedNodeSize().value;
         }
         assert size >= 0;
         return size;
     }
 
     @SuppressWarnings("try")
-    public static double computeGraphCycles(StructuredGraph graph, NodeCostProvider nodeCostProvider, boolean fullSchedule) {
+    public static double computeGraphCycles(StructuredGraph graph, boolean fullSchedule) {
         Function<Block, Iterable<? extends Node>> blockToNodes;
         ControlFlowGraph cfg;
         if (fullSchedule) {
@@ -81,12 +80,12 @@ public class NodeCostUtil {
         try (Debug.Scope s = Debug.scope("NodeCostSummary")) {
             for (Block block : cfg.getBlocks()) {
                 for (Node n : blockToNodes.apply(block)) {
-                    double probWeighted = nodeCostProvider.getEstimatedCPUCycles(n) * block.probability();
+                    double probWeighted = n.estimatedNodeCycles().value * block.probability();
                     assert Double.isFinite(probWeighted);
                     weightedCycles += probWeighted;
                     if (Debug.isLogEnabled()) {
-                        Debug.log("Node %s contributes cycles:%f size:%d to graph %s [block prob:%f]", n, nodeCostProvider.getEstimatedCPUCycles(n) * block.probability(),
-                                        nodeCostProvider.getEstimatedCodeSize(n), graph, block.probability());
+                        Debug.log("Node %s contributes cycles:%f size:%d to graph %s [block prob:%f]", n, n.estimatedNodeCycles().value * block.probability(),
+                                        n.estimatedNodeSize().value, graph, block.probability());
                     }
                 }
             }

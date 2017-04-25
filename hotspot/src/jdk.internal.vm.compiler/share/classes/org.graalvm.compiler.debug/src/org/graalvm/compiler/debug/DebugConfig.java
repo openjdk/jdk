@@ -25,7 +25,14 @@ package org.graalvm.compiler.debug;
 import java.io.PrintStream;
 import java.util.Collection;
 
+import org.graalvm.compiler.options.OptionValues;
+
 public interface DebugConfig {
+
+    /**
+     * Returns the option values that can be used to configure details of debug clients.
+     */
+    OptionValues getOptions();
 
     /**
      * Determines the current log level in the {@linkplain Debug#currentScope() current debug scope}

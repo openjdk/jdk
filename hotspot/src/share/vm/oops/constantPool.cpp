@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,6 +152,7 @@ void ConstantPool::initialize_resolved_references(ClassLoaderData* loader_data,
 
 // CDS support. Create a new resolved_references array.
 void ConstantPool::restore_unshareable_info(TRAPS) {
+  assert(is_constantPool(), "ensure C++ vtable is restored");
 
   // Only create the new resolved references array if it hasn't been attempted before
   if (resolved_references() != NULL) return;
@@ -192,7 +193,7 @@ void ConstantPool::string_at_put(int which, int obj_index, oop str) {
   resolved_references()->obj_at_put(obj_index, str);
 }
 
-void ConstantPool::trace_class_resolution(const constantPoolHandle& this_cp, KlassHandle k) {
+void ConstantPool::trace_class_resolution(const constantPoolHandle& this_cp, Klass* k) {
   ResourceMark rm;
   int line_number = -1;
   const char * source_file = NULL;
@@ -207,7 +208,7 @@ void ConstantPool::trace_class_resolution(const constantPoolHandle& this_cp, Kla
       }
     }
   }
-  if (k() != this_cp->pool_holder()) {
+  if (k != this_cp->pool_holder()) {
     // only print something if the classes are different
     if (source_file != NULL) {
       log_debug(class, resolve)("%s %s %s:%d",
@@ -253,11 +254,10 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
   Symbol* name = entry.get_symbol();
   Handle loader (THREAD, this_cp->pool_holder()->class_loader());
   Handle protection_domain (THREAD, this_cp->pool_holder()->protection_domain());
-  Klass* kk = SystemDictionary::resolve_or_fail(name, loader, protection_domain, true, THREAD);
-  KlassHandle k (THREAD, kk);
+  Klass* k = SystemDictionary::resolve_or_fail(name, loader, protection_domain, true, THREAD);
   if (!HAS_PENDING_EXCEPTION) {
     // preserve the resolved klass from unloading
-    mirror_handle = Handle(THREAD, kk->java_mirror());
+    mirror_handle = Handle(THREAD, k->java_mirror());
     // Do access check for klasses
     verify_constant_pool_resolve(this_cp, k, THREAD);
   }
@@ -281,13 +281,13 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
 
   // Make this class loader depend upon the class loader owning the class reference
   ClassLoaderData* this_key = this_cp->pool_holder()->class_loader_data();
-  this_key->record_dependency(k(), CHECK_NULL); // Can throw OOM
+  this_key->record_dependency(k, CHECK_NULL); // Can throw OOM
 
   // logging for class+resolve.
   if (log_is_enabled(Debug, class, resolve)){
     trace_class_resolution(this_cp, k);
   }
-  this_cp->klass_at_put(which, k());
+  this_cp->klass_at_put(which, k);
   entry = this_cp->resolved_klass_at(which);
   assert(entry.is_resolved() && entry.get_klass()->is_klass(), "must be resolved at this point");
   return entry.get_klass();
@@ -316,14 +316,13 @@ Klass* ConstantPool::klass_at_if_loaded(const constantPoolHandle& this_cp, int w
     if (k != NULL) {
       // Make sure that resolving is legal
       EXCEPTION_MARK;
-      KlassHandle klass(THREAD, k);
       // return NULL if verification fails
-      verify_constant_pool_resolve(this_cp, klass, THREAD);
+      verify_constant_pool_resolve(this_cp, k, THREAD);
       if (HAS_PENDING_EXCEPTION) {
         CLEAR_PENDING_EXCEPTION;
         return NULL;
       }
-      return klass();
+      return k;
     } else {
       return k;
     }
@@ -455,16 +454,15 @@ int ConstantPool::remap_instruction_operand_from_cache(int operand) {
 }
 
 
-void ConstantPool::verify_constant_pool_resolve(const constantPoolHandle& this_cp, KlassHandle k, TRAPS) {
+void ConstantPool::verify_constant_pool_resolve(const constantPoolHandle& this_cp, Klass* k, TRAPS) {
  if (k->is_instance_klass() || k->is_objArray_klass()) {
-    instanceKlassHandle holder (THREAD, this_cp->pool_holder());
-    Klass* elem = k->is_instance_klass() ? k() : ObjArrayKlass::cast(k())->bottom_klass();
-    KlassHandle element (THREAD, elem);
+    InstanceKlass* holder = this_cp->pool_holder();
+    Klass* elem = k->is_instance_klass() ? k : ObjArrayKlass::cast(k)->bottom_klass();
 
     // The element type could be a typeArray - we only need the access check if it is
     // an reference to another class
-    if (element->is_instance_klass()) {
-      LinkResolver::check_klass_accessability(holder, element, CHECK);
+    if (elem->is_instance_klass()) {
+      LinkResolver::check_klass_accessability(holder, elem, CHECK);
     }
   }
 }
@@ -692,8 +690,7 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp, in
                               callee_index, name->as_C_string(), signature->as_C_string());
       }
 
-      Klass* k = klass_at_impl(this_cp, callee_index, true, CHECK_NULL);
-      KlassHandle callee(THREAD, k);
+      Klass* callee = klass_at_impl(this_cp, callee_index, true, CHECK_NULL);
 
       // Check constant pool method consistency
       if ((callee->is_interface() && m_tag.is_method()) ||
@@ -709,7 +706,7 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp, in
         THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
       }
 
-      KlassHandle klass(THREAD, this_cp->pool_holder());
+      Klass* klass = this_cp->pool_holder();
       Handle value = SystemDictionary::link_method_handle_constant(klass, ref_kind,
                                                                    callee, name, signature,
                                                                    THREAD);
@@ -728,7 +725,7 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp, in
                               index, this_cp->method_type_index_at(index),
                               signature->as_C_string());
       }
-      KlassHandle klass(THREAD, this_cp->pool_holder());
+      Klass* klass = this_cp->pool_holder();
       Handle value = SystemDictionary::find_method_handle_type(signature, klass, THREAD);
       result_oop = value();
       if (HAS_PENDING_EXCEPTION) {
@@ -844,8 +841,7 @@ oop ConstantPool::string_at_impl(const constantPoolHandle& this_cp, int which, i
 }
 
 
-bool ConstantPool::klass_name_at_matches(instanceKlassHandle k,
-                                                int which) {
+bool ConstantPool::klass_name_at_matches(const InstanceKlass* k, int which) {
   // Names are interned, so we can compare Symbol*s directly
   Symbol* cp_name = klass_name_at(which);
   return (cp_name == k->name());

@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.lir.alloc.trace;
 
-import java.util.List;
+import java.util.ArrayList;
 
 import org.graalvm.compiler.core.common.alloc.Trace;
 import org.graalvm.compiler.core.common.alloc.TraceBuilderResult;
@@ -63,7 +63,7 @@ public class TraceUtil {
         if (trace.size() != 1) {
             return false;
         }
-        List<LIRInstruction> instructions = lir.getLIRforBlock(trace.getBlocks()[0]);
+        ArrayList<LIRInstruction> instructions = lir.getLIRforBlock(trace.getBlocks()[0]);
         if (instructions.size() != 2) {
             return false;
         }
@@ -85,5 +85,29 @@ public class TraceUtil {
          * stack-slot, register). For now we just check for JumpOp because we know that it doesn't.
          */
         return instructions.get(1) instanceof JumpOp;
+    }
+
+    public static boolean hasInterTracePredecessor(TraceBuilderResult result, Trace trace, AbstractBlockBase<?> block) {
+        assert result.getTraceForBlock(block).equals(trace);
+        if (block.getPredecessorCount() == 0) {
+            // start block
+            return false;
+        }
+        if (block.getPredecessorCount() == 1) {
+            return !result.getTraceForBlock(block.getPredecessors()[0]).equals(trace);
+        }
+        return true;
+    }
+
+    public static boolean hasInterTraceSuccessor(TraceBuilderResult result, Trace trace, AbstractBlockBase<?> block) {
+        assert result.getTraceForBlock(block).equals(trace);
+        if (block.getSuccessorCount() == 0) {
+            // method end block
+            return false;
+        }
+        if (block.getSuccessorCount() == 1) {
+            return !result.getTraceForBlock(block.getSuccessors()[0]).equals(trace);
+        }
+        return true;
     }
 }

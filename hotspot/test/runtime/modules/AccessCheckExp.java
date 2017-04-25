@@ -55,13 +55,13 @@ public class AccessCheckExp {
         // Define a module for p1.
         m1x = ModuleHelper.ModuleObject("module_one", this_cldr, new String[] { "p1" });
         assertNotNull(m1x, "Module should not be null");
-        ModuleHelper.DefineModule(m1x, "9.0", "m1x/here", new String[] { "p1" });
+        ModuleHelper.DefineModule(m1x, false, "9.0", "m1x/here", new String[] { "p1" });
         ModuleHelper.AddReadsModule(m1x, jlObject_jlM);
 
         // Define a module for p2.
         m2x = ModuleHelper.ModuleObject("module_two", this_cldr, new String[] { "p2" });
         assertNotNull(m2x, "Module should not be null");
-        ModuleHelper.DefineModule(m2x, "9.0", "m2x/there", new String[] { "p2" });
+        ModuleHelper.DefineModule(m2x, false, "9.0", "m2x/there", new String[] { "p2" });
         ModuleHelper.AddReadsModule(m2x, jlObject_jlM);
 
         // Make package p1 in m1x visible to everyone.
@@ -74,7 +74,7 @@ public class AccessCheckExp {
         Class p1_c1_class = Class.forName("p1.c1");
         try {
             p1_c1_class.newInstance();
-            throw new RuntimeException("Failed to get IAE (p2 in m2x is not exported");
+            throw new RuntimeException("Failed to get IAE (p2 in m2x is not exported)");
         } catch (IllegalAccessError f) {
             System.out.println(f.getMessage());
             if (!f.getMessage().contains("does not export")) {

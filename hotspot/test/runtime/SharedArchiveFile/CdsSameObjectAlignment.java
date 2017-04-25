@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,9 @@
  *          java.management
  */
 
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
+import jdk.test.lib.cds.CDSTestUtils;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class CdsSameObjectAlignment {
     public static void main(String[] args) throws Exception {
@@ -57,40 +57,7 @@ public class CdsSameObjectAlignment {
         System.out.println("dumpAndLoadSharedArchive(): objectAlignmentInBytes = "
             + objectAlignmentInBytes);
 
-        String filename = "./CdsSameObjectAlignment" + objectAlignmentInBytes + ".jsa";
-        // create shared archive
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:SharedArchiveFile=" + filename,
-            "-Xshare:dump",
-            objectAlignmentArg);
-
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Loading classes to share");
-        output.shouldHaveExitValue(0);
-
-
-        // run using the shared archive
-        pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:SharedArchiveFile=" + filename,
-            "-Xshare:on",
-            objectAlignmentArg,
-            "-version");
-
-        output = new OutputAnalyzer(pb.start());
-
-        try {
-            output.shouldContain("sharing");
-            output.shouldHaveExitValue(0);
-        } catch (RuntimeException e) {
-            // CDS uses absolute addresses for performance.
-            // It will try to reserve memory at a specific address;
-            // there is a chance such reservation will fail
-            // If it does, it is NOT considered a failure of the feature,
-            // rather a possible expected outcome, though not likely
-            output.shouldContain("Unable to use shared archive");
-            output.shouldHaveExitValue(1);
-        }
+        CDSTestUtils.createArchiveAndCheck(objectAlignmentArg);
+        CDSTestUtils.runWithArchiveAndCheck(objectAlignmentArg);
     }
 }

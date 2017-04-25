@@ -22,13 +22,15 @@
  */
 package org.graalvm.compiler.nodes.calc;
 
+import jdk.vm.ci.meta.ConstantReflectionProvider;
+import jdk.vm.ci.meta.MetaAccessProvider;
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.type.AbstractPointerStamp;
 import org.graalvm.compiler.core.common.type.FloatStamp;
 import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.debug.GraalError;
-import org.graalvm.compiler.graph.IterableNodeType;
+import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.Canonicalizable.BinaryCommutative;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
@@ -41,14 +43,15 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 
 import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.TriState;
+import org.graalvm.compiler.options.OptionValues;
 
 @NodeInfo(shortName = "==")
-public final class IntegerEqualsNode extends CompareNode implements BinaryCommutative<ValueNode>, IterableNodeType {
+public final class IntegerEqualsNode extends CompareNode implements BinaryCommutative<ValueNode> {
     public static final NodeClass<IntegerEqualsNode> TYPE = NodeClass.create(IntegerEqualsNode.class);
+    private static final IntegerEqualsOp OP = new IntegerEqualsOp();
 
     public IntegerEqualsNode(ValueNode x, ValueNode y) {
         super(TYPE, Condition.EQ, false, x, y);
@@ -56,145 +59,219 @@ public final class IntegerEqualsNode extends CompareNode implements BinaryCommut
         assert !y.getStackKind().isNumericFloat() && y.getStackKind() != JavaKind.Object;
     }
 
-    public static LogicNode create(ValueNode x, ValueNode y, ConstantReflectionProvider constantReflection) {
-        LogicNode result = CompareNode.tryConstantFold(Condition.EQ, x, y, constantReflection, false);
+    public static LogicNode create(ValueNode x, ValueNode y) {
+        LogicNode result = CompareNode.tryConstantFoldPrimitive(Condition.EQ, x, y, false);
         if (result != null) {
             return result;
-        } else {
-            if (x instanceof ConditionalNode) {
-                ConditionalNode conditionalNode = (ConditionalNode) x;
-                if (conditionalNode.trueValue() == y) {
-                    return conditionalNode.condition();
-                }
-                if (conditionalNode.falseValue() == y) {
-                    return LogicNegationNode.create(conditionalNode.condition());
-                }
-            } else if (y instanceof ConditionalNode) {
-                ConditionalNode conditionalNode = (ConditionalNode) y;
-                if (conditionalNode.trueValue() == x) {
-                    return conditionalNode.condition();
-                }
-                if (conditionalNode.falseValue() == x) {
-                    return LogicNegationNode.create(conditionalNode.condition());
-                }
-            }
-
-            return new IntegerEqualsNode(x, y).maybeCommuteInputs();
         }
+        if (x instanceof ConditionalNode) {
+            ConditionalNode conditionalNode = (ConditionalNode) x;
+            if (conditionalNode.trueValue() == y) {
+                return conditionalNode.condition();
+            }
+            if (conditionalNode.falseValue() == y) {
+                return LogicNegationNode.create(conditionalNode.condition());
+            }
+        } else if (y instanceof ConditionalNode) {
+            ConditionalNode conditionalNode = (ConditionalNode) y;
+            if (conditionalNode.trueValue() == x) {
+                return conditionalNode.condition();
+            }
+            if (conditionalNode.falseValue() == x) {
+                return LogicNegationNode.create(conditionalNode.condition());
+            }
+        }
+        return new IntegerEqualsNode(x, y).maybeCommuteInputs();
+    }
+
+    public static LogicNode create(ConstantReflectionProvider constantReflection, MetaAccessProvider metaAccess, OptionValues options, Integer smallestCompareWidth, ValueNode x, ValueNode y) {
+        LogicNode value = OP.canonical(constantReflection, metaAccess, options, smallestCompareWidth, Condition.EQ, false, x, y);
+        if (value != null) {
+            return value;
+        }
+        return create(x, y);
     }
 
     @Override
-    protected ValueNode optimizeNormalizeCmp(Constant constant, NormalizeCompareNode normalizeNode, boolean mirrored) {
-        PrimitiveConstant primitive = (PrimitiveConstant) constant;
-        if (primitive.getJavaKind() == JavaKind.Int && primitive.asInt() == 0) {
-            ValueNode a = mirrored ? normalizeNode.getY() : normalizeNode.getX();
-            ValueNode b = mirrored ? normalizeNode.getX() : normalizeNode.getY();
-
-            if (normalizeNode.getX().getStackKind() == JavaKind.Double || normalizeNode.getX().getStackKind() == JavaKind.Float) {
-                return new FloatEqualsNode(a, b);
-            } else {
-                return new IntegerEqualsNode(a, b);
-            }
+    public Node canonical(CanonicalizerTool tool, ValueNode forX, ValueNode forY) {
+        ValueNode value = OP.canonical(tool.getConstantReflection(), tool.getMetaAccess(), tool.getOptions(), tool.smallestCompareWidth(), Condition.EQ, false, forX, forY);
+        if (value != null) {
+            return value;
         }
         return this;
     }
 
-    @Override
-    protected CompareNode duplicateModified(ValueNode newX, ValueNode newY) {
-        if (newX.stamp() instanceof FloatStamp && newY.stamp() instanceof FloatStamp) {
-            return new FloatEqualsNode(newX, newY);
-        } else if (newX.stamp() instanceof IntegerStamp && newY.stamp() instanceof IntegerStamp) {
-            return new IntegerEqualsNode(newX, newY);
-        } else if (newX.stamp() instanceof AbstractPointerStamp && newY.stamp() instanceof AbstractPointerStamp) {
-            return new IntegerEqualsNode(newX, newY);
-        }
-        throw GraalError.shouldNotReachHere();
-    }
+    public static class IntegerEqualsOp extends CompareOp {
+        @Override
+        protected LogicNode optimizeNormalizeCompare(ConstantReflectionProvider constantReflection, MetaAccessProvider metaAccess, OptionValues options, Integer smallestCompareWidth,
+                        Constant constant, NormalizeCompareNode normalizeNode, boolean mirrored) {
+            PrimitiveConstant primitive = (PrimitiveConstant) constant;
+            ValueNode a = normalizeNode.getX();
+            ValueNode b = normalizeNode.getY();
+            long cst = primitive.asLong();
 
-    @Override
-    public ValueNode canonical(CanonicalizerTool tool, ValueNode forX, ValueNode forY) {
-        if (GraphUtil.unproxify(forX) == GraphUtil.unproxify(forY)) {
-            return LogicConstantNode.tautology();
-        } else if (forX.stamp().alwaysDistinct(forY.stamp())) {
-            return LogicConstantNode.contradiction();
+            if (cst == 0) {
+                if (normalizeNode.getX().getStackKind() == JavaKind.Double || normalizeNode.getX().getStackKind() == JavaKind.Float) {
+                    return FloatEqualsNode.create(constantReflection, metaAccess, options, smallestCompareWidth, a, b);
+                } else {
+                    return IntegerEqualsNode.create(constantReflection, metaAccess, options, smallestCompareWidth, a, b);
+                }
+            } else if (cst == 1) {
+                if (normalizeNode.getX().getStackKind() == JavaKind.Double || normalizeNode.getX().getStackKind() == JavaKind.Float) {
+                    return FloatLessThanNode.create(b, a, !normalizeNode.isUnorderedLess);
+                } else {
+                    return IntegerLessThanNode.create(constantReflection, metaAccess, options, smallestCompareWidth, b, a);
+                }
+            } else if (cst == -1) {
+                if (normalizeNode.getX().getStackKind() == JavaKind.Double || normalizeNode.getX().getStackKind() == JavaKind.Float) {
+                    return FloatLessThanNode.create(a, b, normalizeNode.isUnorderedLess);
+                } else {
+                    return IntegerLessThanNode.create(constantReflection, metaAccess, options, smallestCompareWidth, a, b);
+                }
+            } else {
+                return LogicConstantNode.contradiction();
+            }
         }
-        return super.canonical(tool, forX, forY);
-    }
 
-    @Override
-    protected ValueNode canonicalizeSymmetricConstant(CanonicalizerTool tool, Constant constant, ValueNode nonConstant, boolean mirrored) {
-        if (constant instanceof PrimitiveConstant && ((PrimitiveConstant) constant).asLong() == 0) {
-            if (nonConstant instanceof AndNode) {
-                AndNode andNode = (AndNode) nonConstant;
-                return new IntegerTestNode(andNode.getX(), andNode.getY());
-            } else if (nonConstant instanceof SubNode) {
-                SubNode subNode = (SubNode) nonConstant;
-                return IntegerEqualsNode.create(subNode.getX(), subNode.getY(), tool.getConstantReflection());
-            } else if (nonConstant instanceof ShiftNode && nonConstant.stamp() instanceof IntegerStamp) {
-                if (nonConstant instanceof LeftShiftNode) {
-                    LeftShiftNode shift = (LeftShiftNode) nonConstant;
-                    if (shift.getY().isConstant()) {
-                        int mask = shift.getShiftAmountMask();
-                        int amount = shift.getY().asJavaConstant().asInt() & mask;
-                        if (shift.getX().getStackKind() == JavaKind.Int) {
-                            return new IntegerTestNode(shift.getX(), ConstantNode.forInt(-1 >>> amount));
-                        } else {
-                            assert shift.getX().getStackKind() == JavaKind.Long;
-                            return new IntegerTestNode(shift.getX(), ConstantNode.forLong(-1L >>> amount));
-                        }
-                    }
-                } else if (nonConstant instanceof RightShiftNode) {
-                    RightShiftNode shift = (RightShiftNode) nonConstant;
-                    if (shift.getY().isConstant() && ((IntegerStamp) shift.getX().stamp()).isPositive()) {
-                        int mask = shift.getShiftAmountMask();
-                        int amount = shift.getY().asJavaConstant().asInt() & mask;
-                        if (shift.getX().getStackKind() == JavaKind.Int) {
-                            return new IntegerTestNode(shift.getX(), ConstantNode.forInt(-1 << amount));
-                        } else {
-                            assert shift.getX().getStackKind() == JavaKind.Long;
-                            return new IntegerTestNode(shift.getX(), ConstantNode.forLong(-1L << amount));
-                        }
-                    }
-                } else if (nonConstant instanceof UnsignedRightShiftNode) {
-                    UnsignedRightShiftNode shift = (UnsignedRightShiftNode) nonConstant;
-                    if (shift.getY().isConstant()) {
-                        int mask = shift.getShiftAmountMask();
-                        int amount = shift.getY().asJavaConstant().asInt() & mask;
-                        if (shift.getX().getStackKind() == JavaKind.Int) {
-                            return new IntegerTestNode(shift.getX(), ConstantNode.forInt(-1 << amount));
-                        } else {
-                            assert shift.getX().getStackKind() == JavaKind.Long;
-                            return new IntegerTestNode(shift.getX(), ConstantNode.forLong(-1L << amount));
+        @Override
+        protected CompareNode duplicateModified(ValueNode newX, ValueNode newY, boolean unorderedIsTrue) {
+            if (newX.stamp() instanceof FloatStamp && newY.stamp() instanceof FloatStamp) {
+                return new FloatEqualsNode(newX, newY);
+            } else if (newX.stamp() instanceof IntegerStamp && newY.stamp() instanceof IntegerStamp) {
+                return new IntegerEqualsNode(newX, newY);
+            } else if (newX.stamp() instanceof AbstractPointerStamp && newY.stamp() instanceof AbstractPointerStamp) {
+                return new IntegerEqualsNode(newX, newY);
+            }
+            throw GraalError.shouldNotReachHere();
+        }
+
+        @Override
+        public LogicNode canonical(ConstantReflectionProvider constantReflection, MetaAccessProvider metaAccess, OptionValues options, Integer smallestCompareWidth, Condition condition,
+                        boolean unorderedIsTrue, ValueNode forX, ValueNode forY) {
+            if (GraphUtil.unproxify(forX) == GraphUtil.unproxify(forY)) {
+                return LogicConstantNode.tautology();
+            } else if (forX.stamp().alwaysDistinct(forY.stamp())) {
+                return LogicConstantNode.contradiction();
+            }
+            if (forX instanceof AddNode && forY instanceof AddNode) {
+                AddNode addX = (AddNode) forX;
+                AddNode addY = (AddNode) forY;
+                ValueNode v1 = null;
+                ValueNode v2 = null;
+                if (addX.getX() == addY.getX()) {
+                    v1 = addX.getY();
+                    v2 = addY.getY();
+                } else if (addX.getX() == addY.getY()) {
+                    v1 = addX.getY();
+                    v2 = addY.getX();
+                } else if (addX.getY() == addY.getX()) {
+                    v1 = addX.getX();
+                    v2 = addY.getY();
+                } else if (addX.getY() == addY.getY()) {
+                    v1 = addX.getX();
+                    v2 = addY.getX();
+                }
+                if (v1 != null) {
+                    assert v2 != null;
+                    return create(v1, v2);
+                }
+            }
+            return super.canonical(constantReflection, metaAccess, options, smallestCompareWidth, condition, unorderedIsTrue, forX, forY);
+        }
+
+        @Override
+        protected LogicNode canonicalizeSymmetricConstant(ConstantReflectionProvider constantReflection, MetaAccessProvider metaAccess, OptionValues options, Integer smallestCompareWidth,
+                        Condition condition, Constant constant, ValueNode nonConstant, boolean mirrored, boolean unorderedIsTrue) {
+            if (constant instanceof PrimitiveConstant) {
+                PrimitiveConstant primitiveConstant = (PrimitiveConstant) constant;
+                IntegerStamp nonConstantStamp = ((IntegerStamp) nonConstant.stamp());
+                if ((primitiveConstant.asLong() == 1 && nonConstantStamp.upperBound() == 1 && nonConstantStamp.lowerBound() == 0) ||
+                                (primitiveConstant.asLong() == -1 && nonConstantStamp.upperBound() == 0 && nonConstantStamp.lowerBound() == -1)) {
+                    // nonConstant can only be 0 or 1 (respective -1), test against 0 instead of 1
+                    // (respective -1) for a more canonical graph and also to allow for faster
+                    // execution
+                    // on specific platforms.
+                    return LogicNegationNode.create(
+                                    IntegerEqualsNode.create(constantReflection, metaAccess, options, smallestCompareWidth, nonConstant, ConstantNode.forIntegerKind(nonConstant.getStackKind(), 0)));
+                } else if (primitiveConstant.asLong() == 0) {
+                    if (nonConstant instanceof AndNode) {
+                        AndNode andNode = (AndNode) nonConstant;
+                        return new IntegerTestNode(andNode.getX(), andNode.getY());
+                    } else if (nonConstant instanceof SubNode) {
+                        SubNode subNode = (SubNode) nonConstant;
+                        return IntegerEqualsNode.create(constantReflection, metaAccess, options, smallestCompareWidth, subNode.getX(), subNode.getY());
+                    } else if (nonConstant instanceof ShiftNode && nonConstant.stamp() instanceof IntegerStamp) {
+                        if (nonConstant instanceof LeftShiftNode) {
+                            LeftShiftNode shift = (LeftShiftNode) nonConstant;
+                            if (shift.getY().isConstant()) {
+                                int mask = shift.getShiftAmountMask();
+                                int amount = shift.getY().asJavaConstant().asInt() & mask;
+                                if (shift.getX().getStackKind() == JavaKind.Int) {
+                                    return new IntegerTestNode(shift.getX(), ConstantNode.forInt(-1 >>> amount));
+                                } else {
+                                    assert shift.getX().getStackKind() == JavaKind.Long;
+                                    return new IntegerTestNode(shift.getX(), ConstantNode.forLong(-1L >>> amount));
+                                }
+                            }
+                        } else if (nonConstant instanceof RightShiftNode) {
+                            RightShiftNode shift = (RightShiftNode) nonConstant;
+                            if (shift.getY().isConstant() && ((IntegerStamp) shift.getX().stamp()).isPositive()) {
+                                int mask = shift.getShiftAmountMask();
+                                int amount = shift.getY().asJavaConstant().asInt() & mask;
+                                if (shift.getX().getStackKind() == JavaKind.Int) {
+                                    return new IntegerTestNode(shift.getX(), ConstantNode.forInt(-1 << amount));
+                                } else {
+                                    assert shift.getX().getStackKind() == JavaKind.Long;
+                                    return new IntegerTestNode(shift.getX(), ConstantNode.forLong(-1L << amount));
+                                }
+                            }
+                        } else if (nonConstant instanceof UnsignedRightShiftNode) {
+                            UnsignedRightShiftNode shift = (UnsignedRightShiftNode) nonConstant;
+                            if (shift.getY().isConstant()) {
+                                int mask = shift.getShiftAmountMask();
+                                int amount = shift.getY().asJavaConstant().asInt() & mask;
+                                if (shift.getX().getStackKind() == JavaKind.Int) {
+                                    return new IntegerTestNode(shift.getX(), ConstantNode.forInt(-1 << amount));
+                                } else {
+                                    assert shift.getX().getStackKind() == JavaKind.Long;
+                                    return new IntegerTestNode(shift.getX(), ConstantNode.forLong(-1L << amount));
+                                }
+                            }
                         }
                     }
                 }
+                if (nonConstant instanceof AddNode) {
+                    AddNode addNode = (AddNode) nonConstant;
+                    if (addNode.getY().isJavaConstant()) {
+                        return new IntegerEqualsNode(addNode.getX(), ConstantNode.forIntegerStamp(nonConstantStamp, primitiveConstant.asLong() - addNode.getY().asJavaConstant().asLong()));
+                    }
+                }
+                if (nonConstant instanceof AndNode) {
+                    /*
+                     * a & c == c is the same as a & c != 0, if c is a single bit.
+                     */
+                    AndNode andNode = (AndNode) nonConstant;
+                    if (Long.bitCount(((PrimitiveConstant) constant).asLong()) == 1 && andNode.getY().isConstant() && andNode.getY().asJavaConstant().equals(constant)) {
+                        return new LogicNegationNode(new IntegerTestNode(andNode.getX(), andNode.getY()));
+                    }
+                }
             }
+            return super.canonicalizeSymmetricConstant(constantReflection, metaAccess, options, smallestCompareWidth, condition, constant, nonConstant, mirrored, unorderedIsTrue);
         }
-        if (nonConstant instanceof AndNode) {
-            /*
-             * a & c == c is the same as a & c != 0, if c is a single bit.
-             */
-            AndNode andNode = (AndNode) nonConstant;
-            if (constant instanceof PrimitiveConstant && Long.bitCount(((PrimitiveConstant) constant).asLong()) == 1 && andNode.getY().isConstant() &&
-                            andNode.getY().asJavaConstant().equals(constant)) {
-                return new LogicNegationNode(new IntegerTestNode(andNode.getX(), andNode.getY()));
-            }
-        }
-        return super.canonicalizeSymmetricConstant(tool, constant, nonConstant, mirrored);
     }
 
     @Override
-    public Stamp getSucceedingStampForX(boolean negated) {
+    public Stamp getSucceedingStampForX(boolean negated, Stamp xStamp, Stamp yStamp) {
         if (!negated) {
-            return getX().stamp().join(getY().stamp());
+            return xStamp.join(yStamp);
         }
         return null;
     }
 
     @Override
-    public Stamp getSucceedingStampForY(boolean negated) {
+    public Stamp getSucceedingStampForY(boolean negated, Stamp xStamp, Stamp yStamp) {
         if (!negated) {
-            return getX().stamp().join(getY().stamp());
+            return xStamp.join(yStamp);
         }
         return null;
     }

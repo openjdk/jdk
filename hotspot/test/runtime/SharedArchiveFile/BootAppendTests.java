@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,8 @@ import java.io.PrintStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import jdk.test.lib.cds.CDSOptions;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
@@ -67,45 +69,45 @@ public class BootAppendTests {
 
     public static void main(String... args) throws Exception {
         dumpArchive();
+
+        logTestCase("1");
         testBootAppendModuleClass();
+
+        log("TESTCASE: 2");
         testBootAppendDuplicateModuleClass();
+
+        logTestCase("3");
         testBootAppendExcludedModuleClass();
+
+        logTestCase("4");
         testBootAppendDuplicateExcludedModuleClass();
+
+        logTestCase("5");
         testBootAppendClass();
+    }
+
+    private static void logTestCase(String msg) {
+        System.out.println();
+        System.out.printf("TESTCASE: %s", msg);
+        System.out.println();
     }
 
     static void dumpArchive() throws Exception {
         // create the classlist
-        File classlist = new File(new File(System.getProperty("test.classes", ".")),
-                                  "BootAppendTest.classlist");
-        FileOutputStream fos = new FileOutputStream(classlist);
-        PrintStream ps = new PrintStream(fos);
-        for (String s : ARCHIVE_CLASSES) {
-            ps.println(s);
-        }
-        ps.close();
-        fos.close();
+        File classlist = CDSTestUtils.makeClassList(ARCHIVE_CLASSES);
 
         // build jar files
         appJar = ClassFileInstaller.writeJar("app.jar", APP_CLASS);
         bootAppendJar = ClassFileInstaller.writeJar("bootAppend.jar",
             BOOT_APPEND_MODULE_CLASS, BOOT_APPEND_DUPLICATE_MODULE_CLASS, BOOT_APPEND_CLASS);
 
-        // dump
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:SharedArchiveFile=./BootAppendTests.jsa",
-            "-XX:SharedClassListFile=" + classlist.getPath(),
-            "-XX:+PrintSharedSpaces",
-            "-Xbootclasspath/a:" + bootAppendJar,
-            "-Xshare:dump");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Loading classes to share")
-              .shouldHaveExitValue(0);
 
+        OutputAnalyzer out = CDSTestUtils.createArchiveAndCheck(
+                                 "-Xbootclasspath/a:" + bootAppendJar,
+                                 "-XX:SharedClassListFile=" + classlist.getPath());
         // Make sure all the classes were successfully archived.
         for (String archiveClass : ARCHIVE_CLASSES) {
-            output.shouldNotContain("Preload Warning: Cannot find " + archiveClass);
+            out.shouldNotContain("Preload Warning: Cannot find " + archiveClass);
         }
     }
 
@@ -119,16 +121,13 @@ public class BootAppendTests {
     //          should not be loaded at runtime.
     public static void testBootAppendModuleClass() throws Exception {
         for (String mode : modes) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                "-XX:+UnlockDiagnosticVMOptions",
-                "-XX:SharedArchiveFile=./BootAppendTests.jsa",
-                "-cp", appJar,
-                "-Xbootclasspath/a:" + bootAppendJar,
-                "-Xshare:" + mode,
-                APP_CLASS,
-                BOOT_APPEND_MODULE_CLASS_NAME);
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
-            output.shouldContain("java.lang.ClassNotFoundException: javax.sound.sampled.MyClass");
+            CDSOptions opts = (new CDSOptions())
+                .setXShareMode(mode).setUseVersion(false)
+                .addPrefix("-Xbootclasspath/a:" + bootAppendJar, "-cp", appJar)
+                .addSuffix(APP_CLASS, BOOT_APPEND_MODULE_CLASS_NAME);
+
+            CDSTestUtils.runWithArchive(opts)
+                .shouldContain("java.lang.ClassNotFoundException: javax.sound.sampled.MyClass");
         }
     }
 
@@ -143,17 +142,13 @@ public class BootAppendTests {
     //          The one from the boot modules should be loaded instead.
     public static void testBootAppendDuplicateModuleClass() throws Exception {
         for (String mode : modes) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                "-XX:+UnlockDiagnosticVMOptions",
-                "-XX:SharedArchiveFile=./BootAppendTests.jsa",
-                "-XX:+TraceClassLoading",
-                "-cp", appJar,
-                "-Xbootclasspath/a:" + bootAppendJar,
-                "-Xshare:" + mode,
-                APP_CLASS,
-                BOOT_APPEND_DUPLICATE_MODULE_CLASS_NAME);
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
-            output.shouldContain("[class,load] org.omg.CORBA.Context source: jrt:/java.corba");
+            CDSOptions opts = (new CDSOptions())
+                .setXShareMode(mode).setUseVersion(false)
+                .addPrefix("-Xbootclasspath/a:" + bootAppendJar, "-cp", appJar)
+                .addSuffix(APP_CLASS, BOOT_APPEND_DUPLICATE_MODULE_CLASS_NAME);
+
+            CDSTestUtils.runWithArchive(opts)
+                .shouldContain("[class,load] org.omg.CORBA.Context source: jrt:/java.corba");
         }
     }
 
@@ -167,22 +162,19 @@ public class BootAppendTests {
     //          loaded from the archive at runtime.
     public static void testBootAppendExcludedModuleClass() throws Exception {
         for (String mode : modes) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                "-XX:+UnlockDiagnosticVMOptions",
-                "-XX:SharedArchiveFile=./BootAppendTests.jsa",
-                "-XX:+TraceClassLoading",
-                "-cp", appJar,
-                "-Xbootclasspath/a:" + bootAppendJar,
-                "--limit-modules=java.base",
-                "-Xshare:" + mode,
-                APP_CLASS,
-                BOOT_APPEND_MODULE_CLASS_NAME);
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
-            output.shouldContain("[class,load] javax.sound.sampled.MyClass");
+            CDSOptions opts = (new CDSOptions())
+                .setXShareMode(mode).setUseVersion(false)
+                .addPrefix("-Xbootclasspath/a:" + bootAppendJar,
+                           "--limit-modules=java.base", "-cp", appJar)
+                .addSuffix("-Xlog:class+load=info",
+                           APP_CLASS, BOOT_APPEND_MODULE_CLASS_NAME);
+
+            OutputAnalyzer out = CDSTestUtils.runWithArchive(opts)
+                .shouldContain("[class,load] javax.sound.sampled.MyClass");
 
             // When CDS is enabled, the shared class should be loaded from the archive.
             if (mode.equals("on")) {
-                output.shouldContain("[class,load] javax.sound.sampled.MyClass source: shared objects file");
+                out.shouldContain("[class,load] javax.sound.sampled.MyClass source: shared objects file");
             }
         }
     }
@@ -199,19 +191,16 @@ public class BootAppendTests {
     //          java.corba is excluded.
     public static void testBootAppendDuplicateExcludedModuleClass() throws Exception {
         for (String mode : modes) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                "-XX:+UnlockDiagnosticVMOptions",
-                "-XX:SharedArchiveFile=./BootAppendTests.jsa",
-                "-XX:+TraceClassLoading",
-                "-cp", appJar,
-                "-Xbootclasspath/a:" + bootAppendJar,
-                "--limit-modules=java.base",
-                "-Xshare:" + mode,
-                APP_CLASS,
-                BOOT_APPEND_DUPLICATE_MODULE_CLASS_NAME);
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
-            output.shouldContain("[class,load] org.omg.CORBA.Context");
-            output.shouldMatch(".*\\[class,load\\] org.omg.CORBA.Context source:.*bootAppend.jar");
+            CDSOptions opts = (new CDSOptions())
+                .setXShareMode(mode).setUseVersion(false)
+                .addPrefix("-Xbootclasspath/a:" + bootAppendJar,
+                           "--limit-modules=java.base", "-cp", appJar)
+                .addSuffix("-Xlog:class+load=info",
+                           APP_CLASS, BOOT_APPEND_DUPLICATE_MODULE_CLASS_NAME);
+
+            CDSTestUtils.runWithArchive(opts)
+                .shouldContain("[class,load] org.omg.CORBA.Context")
+                .shouldMatch(".*\\[class,load\\] org.omg.CORBA.Context source:.*bootAppend.jar");
         }
     }
 
@@ -224,22 +213,20 @@ public class BootAppendTests {
     //          can be loaded at runtime when CDS is enabled.
     public static void testBootAppendClass() throws Exception {
         for (String mode : modes) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                "-XX:+UnlockDiagnosticVMOptions",
-                "-XX:SharedArchiveFile=./BootAppendTests.jsa",
-                "-XX:+TraceClassLoading",
-                "-cp", appJar,
-                "-Xbootclasspath/a:" + bootAppendJar,
-                "-Xshare:" + mode,
-                APP_CLASS,
-                BOOT_APPEND_CLASS_NAME);
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
-            output.shouldContain("[class,load] nonjdk.myPackage.MyClass");
+            CDSOptions opts = (new CDSOptions())
+                .setXShareMode(mode).setUseVersion(false)
+                .addPrefix("-Xbootclasspath/a:" + bootAppendJar,
+                           "--limit-modules=java.base", "-cp", appJar)
+                .addSuffix("-Xlog:class+load=info",
+                           APP_CLASS, BOOT_APPEND_CLASS_NAME);
+
+            OutputAnalyzer out = CDSTestUtils.runWithArchive(opts)
+                .shouldContain("[class,load] nonjdk.myPackage.MyClass");
 
             // If CDS is enabled, the nonjdk.myPackage.MyClass should be loaded
             // from the shared archive.
             if (mode.equals("on")) {
-                output.shouldContain(
+                out.shouldContain(
                     "[class,load] nonjdk.myPackage.MyClass source: shared objects file");
             }
         }

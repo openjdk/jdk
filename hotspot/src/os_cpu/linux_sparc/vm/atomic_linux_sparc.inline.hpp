@@ -70,7 +70,6 @@ inline jint     Atomic::add    (jint     add_value, volatile jint*     dest) {
 
 inline intptr_t Atomic::add_ptr(intptr_t add_value, volatile intptr_t* dest) {
   intptr_t rv;
-#ifdef _LP64
   __asm__ volatile(
     "1: \n\t"
     " ldx    [%2], %%o2\n\t"
@@ -83,20 +82,6 @@ inline intptr_t Atomic::add_ptr(intptr_t add_value, volatile intptr_t* dest) {
     : "=r" (rv)
     : "r" (add_value), "r" (dest)
     : "memory", "o2", "o3");
-#else
-  __asm__ volatile(
-    "1: \n\t"
-    " ld     [%2], %%o2\n\t"
-    " add    %1, %%o2, %%o3\n\t"
-    " cas    [%2], %%o2, %%o3\n\t"
-    " cmp    %%o2, %%o3\n\t"
-    " bne    1b\n\t"
-    "  nop\n\t"
-    " add    %1, %%o2, %0\n\t"
-    : "=r" (rv)
-    : "r" (add_value), "r" (dest)
-    : "memory", "o2", "o3");
-#endif // _LP64
   return rv;
 }
 
@@ -117,7 +102,6 @@ inline jint     Atomic::xchg    (jint     exchange_value, volatile jint*     des
 
 inline intptr_t Atomic::xchg_ptr(intptr_t exchange_value, volatile intptr_t* dest) {
   intptr_t rv = exchange_value;
-#ifdef _LP64
   __asm__ volatile(
     "1:\n\t"
     " mov    %1, %%o3\n\t"
@@ -130,13 +114,6 @@ inline intptr_t Atomic::xchg_ptr(intptr_t exchange_value, volatile intptr_t* des
     : "=r" (rv)
     : "r" (exchange_value), "r" (dest)
     : "memory", "o2", "o3");
-#else
-  __asm__ volatile(
-    "swap    [%2],%1\n\t"
-    : "=r" (rv)
-    : "0" (exchange_value) /* we use same register as for return value */, "r" (dest)
-    : "memory");
-#endif // _LP64
   return rv;
 }
 
@@ -156,7 +133,6 @@ inline jint     Atomic::cmpxchg    (jint     exchange_value, volatile jint*     
 }
 
 inline jlong    Atomic::cmpxchg    (jlong    exchange_value, volatile jlong*    dest, jlong    compare_value, cmpxchg_memory_order order) {
-#ifdef _LP64
   jlong rv;
   __asm__ volatile(
     " casx   [%2], %3, %0"
@@ -164,44 +140,15 @@ inline jlong    Atomic::cmpxchg    (jlong    exchange_value, volatile jlong*    
     : "0" (exchange_value), "r" (dest), "r" (compare_value)
     : "memory");
   return rv;
-#else
-  volatile jlong_accessor evl, cvl, rv;
-  evl.long_value = exchange_value;
-  cvl.long_value = compare_value;
-
-  __asm__ volatile(
-    " sllx   %2, 32, %2\n\t"
-    " srl    %3, 0,  %3\n\t"
-    " or     %2, %3, %2\n\t"
-    " sllx   %5, 32, %5\n\t"
-    " srl    %6, 0,  %6\n\t"
-    " or     %5, %6, %5\n\t"
-    " casx   [%4], %5, %2\n\t"
-    " srl    %2, 0, %1\n\t"
-    " srlx   %2, 32, %0\n\t"
-    : "=r" (rv.words[0]), "=r" (rv.words[1])
-    : "r"  (evl.words[0]), "r" (evl.words[1]), "r" (dest), "r" (cvl.words[0]), "r" (cvl.words[1])
-    : "memory");
-
-  return rv.long_value;
-#endif
 }
 
 inline intptr_t Atomic::cmpxchg_ptr(intptr_t exchange_value, volatile intptr_t* dest, intptr_t compare_value, cmpxchg_memory_order order) {
   intptr_t rv;
-#ifdef _LP64
   __asm__ volatile(
     " casx    [%2], %3, %0"
     : "=r" (rv)
     : "0" (exchange_value), "r" (dest), "r" (compare_value)
     : "memory");
-#else
-  __asm__ volatile(
-    " cas     [%2], %3, %0"
-    : "=r" (rv)
-    : "0" (exchange_value), "r" (dest), "r" (compare_value)
-    : "memory");
-#endif // _LP64
   return rv;
 }
 

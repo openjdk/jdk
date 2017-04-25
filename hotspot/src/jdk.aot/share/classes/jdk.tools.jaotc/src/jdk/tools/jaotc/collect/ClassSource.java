@@ -31,6 +31,20 @@ public interface ClassSource {
         return fileName.endsWith(".class") && !fileName.endsWith("module-info.class");
     }
 
+    static String stripRoot(Path path) {
+      if (path.getRoot() != null) {
+        String root = path.getRoot().toString();
+        String filename = path.toString().substring(root.length());
+        String separator = path.getFileSystem().getSeparator();
+        while (filename.startsWith(separator)) {
+          filename = filename.substring(separator.length());
+        }
+        return filename;
+      }
+
+      return path.toString();
+    }
+
     static String makeClassName(Path path) {
         String fileName = path.toString();
 
@@ -38,13 +52,10 @@ public interface ClassSource {
             throw new IllegalArgumentException("File doesn't end with .class: '" + fileName + "'");
         }
 
-        int start = 0;
-        if (fileName.startsWith("/")) {
-            start = 1;
-        }
+        fileName = stripRoot(path);
 
-        String className = fileName.substring(start, fileName.length() - ".class".length());
-        className = className.replace('/', '.');
+        String className = fileName.substring(0, fileName.length() - ".class".length());
+        className = className.replace(path.getFileSystem().getSeparator(), ".");
         return className;
     }
 

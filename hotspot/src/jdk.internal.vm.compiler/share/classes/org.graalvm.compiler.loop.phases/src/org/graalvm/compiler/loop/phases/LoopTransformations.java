@@ -29,7 +29,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.graalvm.compiler.graph.Graph.Mark;
-import org.graalvm.compiler.common.RetryableBailoutException;
+import org.graalvm.compiler.core.common.RetryableBailoutException;
 import org.graalvm.compiler.graph.Position;
 import org.graalvm.compiler.loop.LoopEx;
 import org.graalvm.compiler.loop.LoopFragmentWhole;
@@ -66,7 +66,7 @@ public abstract class LoopTransformations {
             peel(loop);
             canonicalizer.applyIncremental(graph, context, mark);
             loop.invalidateFragments();
-            if (graph.getNodeCount() > initialNodeCount + MaximumDesiredSize.getValue() * 2) {
+            if (graph.getNodeCount() > initialNodeCount + MaximumDesiredSize.getValue(graph.getOptions()) * 2) {
                 throw new RetryableBailoutException("FullUnroll : Graph seems to grow out of proportion");
             }
         }

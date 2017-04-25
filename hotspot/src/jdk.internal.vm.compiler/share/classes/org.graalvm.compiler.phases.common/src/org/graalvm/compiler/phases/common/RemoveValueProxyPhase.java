@@ -33,10 +33,10 @@ public class RemoveValueProxyPhase extends Phase {
 
     @Override
     protected void run(StructuredGraph graph) {
-        for (ProxyNode vpn : graph.getNodes(ProxyNode.TYPE)) {
-            vpn.replaceAtUsagesAndDelete(vpn.value());
-        }
         for (LoopExitNode exit : graph.getNodes(LoopExitNode.TYPE)) {
+            for (ProxyNode vpn : exit.proxies().snapshot()) {
+                vpn.replaceAtUsagesAndDelete(vpn.value());
+            }
             FrameState stateAfter = exit.stateAfter();
             if (stateAfter != null) {
                 exit.setStateAfter(null);

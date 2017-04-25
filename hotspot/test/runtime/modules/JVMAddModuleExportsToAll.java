@@ -56,13 +56,13 @@ public class JVMAddModuleExportsToAll {
         // Define a module for p3.
         m1x = ModuleHelper.ModuleObject("module_one", this_cldr, new String[] { "p3" });
         assertNotNull(m1x, "Module should not be null");
-        ModuleHelper.DefineModule(m1x, "9.0", "m1x/there", new String[] { "p3" });
+        ModuleHelper.DefineModule(m1x, false, "9.0", "m1x/there", new String[] { "p3" });
         ModuleHelper.AddReadsModule(m1x, jlObject_jlM);
 
         // Define a module for p2.
         m2x = ModuleHelper.ModuleObject("module_two", this_cldr, new String[] { "p2" });
         assertNotNull(m2x, "Module should not be null");
-        ModuleHelper.DefineModule(m2x, "9.0", "m2x/there", new String[] { "p2" });
+        ModuleHelper.DefineModule(m2x, false, "9.0", "m2x/there", new String[] { "p2" });
         ModuleHelper.AddReadsModule(m2x, jlObject_jlM);
 
         try {
@@ -104,7 +104,7 @@ public class JVMAddModuleExportsToAll {
         // of p2 in m2x to m3x.  This should not affect the unqualified export.
         m3x = ModuleHelper.ModuleObject("module_three", this_cldr, new String[] { "p4" });
         assertNotNull(m3x, "Module m3x should not be null");
-        ModuleHelper.DefineModule(m3x, "9.0", "m3x/there", new String[] { "p4" });
+        ModuleHelper.DefineModule(m3x, false, "9.0", "m3x/there", new String[] { "p4" });
         ModuleHelper.AddModuleExportsToAll(m2x, "p2");
         ModuleHelper.AddModuleExports(m2x, "p2", m3x);
 

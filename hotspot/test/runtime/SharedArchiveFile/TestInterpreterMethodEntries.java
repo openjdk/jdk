@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,8 @@
 import java.lang.Math;
 import java.util.zip.CRC32;
 import java.util.zip.CRC32C;
-import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.cds.CDSOptions;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class TestInterpreterMethodEntries {
@@ -61,6 +62,8 @@ public class TestInterpreterMethodEntries {
     }
 
     private static void dumpAndUseSharedArchive(String dump, String use) throws Exception {
+        String unlock     = "-XX:+UnlockDiagnosticVMOptions";
+
         String dumpFMA    = "-XX:" + dump + "UseFMA";
         String dumpCRC32  = "-XX:" + dump + "UseCRC32Intrinsics";
         String dumpCRC32C = "-XX:" + dump + "UseCRC32CIntrinsics";
@@ -68,29 +71,13 @@ public class TestInterpreterMethodEntries {
         String useCRC32   = "-XX:" + use  + "UseCRC32Intrinsics";
         String useCRC32C  = "-XX:" + use  + "UseCRC32CIntrinsics";
 
-        // Dump shared archive
-        String filename = "./TestInterpreterMethodEntries" + dump + ".jsa";
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:SharedArchiveFile=" + filename,
-            "-Xshare:dump",
-            dumpFMA, dumpCRC32, dumpCRC32C);
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        CDSTestUtils.checkDump(output);
+        CDSTestUtils.createArchiveAndCheck(unlock, dumpFMA, dumpCRC32, dumpCRC32C);
 
-        // Use shared archive
-        pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:SharedArchiveFile=" + filename,
-            "-Xshare:on",
-            useFMA, useCRC32, useCRC32C,
-            "TestInterpreterMethodEntries", "run");
-        output = new OutputAnalyzer(pb.start());
-        if (CDSTestUtils.isUnableToMap(output)) {
-          System.out.println("Unable to map shared archive: test did not complete; assumed PASS");
-          return;
-        }
-        output.shouldHaveExitValue(0);
+        CDSOptions opts = (new CDSOptions())
+            .addPrefix(unlock, useFMA, useCRC32, useCRC32C, "-showversion")
+            .addSuffix("TestInterpreterMethodEntries", "run")
+            .setUseVersion(false);
+        CDSTestUtils.runWithArchiveAndCheck(opts);
     }
 }
 

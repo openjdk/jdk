@@ -124,7 +124,7 @@ public final class ReinterpretNode extends UnaryNode implements ArithmeticLIRLow
 
         if (stamp.isNaN()) {
             // special case: in addition to the range, we know NaN has all exponent bits set
-            return new IntegerStamp(bits, negativeInfinity + 1, CodeUtil.maxValue(bits), exponentMask, CodeUtil.mask(bits));
+            return IntegerStamp.create(bits, negativeInfinity + 1, CodeUtil.maxValue(bits), exponentMask, CodeUtil.mask(bits));
         }
 
         long upperBound;
@@ -281,16 +281,4 @@ public final class ReinterpretNode extends UnaryNode implements ArithmeticLIRLow
     public static ValueNode reinterpret(JavaKind toKind, ValueNode value) {
         return value.graph().unique(new ReinterpretNode(toKind, value));
     }
-
-    @NodeIntrinsic
-    public static native float reinterpret(@ConstantNodeParameter JavaKind kind, int value);
-
-    @NodeIntrinsic
-    public static native int reinterpret(@ConstantNodeParameter JavaKind kind, float value);
-
-    @NodeIntrinsic
-    public static native double reinterpret(@ConstantNodeParameter JavaKind kind, long value);
-
-    @NodeIntrinsic
-    public static native long reinterpret(@ConstantNodeParameter JavaKind kind, double value);
 }

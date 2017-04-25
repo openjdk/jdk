@@ -22,8 +22,8 @@
  */
 package org.graalvm.compiler.nodes.java;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_50;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_50;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_8;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_8;
 
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.TypeReference;
@@ -42,7 +42,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 /**
  * The {@code NewMultiArrayNode} represents an allocation of a multi-dimensional object array.
  */
-@NodeInfo(cycles = CYCLES_50, size = SIZE_50)
+@NodeInfo(cycles = CYCLES_8, size = SIZE_8)
 public class NewMultiArrayNode extends DeoptimizingFixedWithNextNode implements Lowerable, ArrayLengthProvider {
 
     public static final NodeClass<NewMultiArrayNode> TYPE = NodeClass.create(NewMultiArrayNode.class);

@@ -22,8 +22,8 @@
  */
 package org.graalvm.compiler.hotspot.nodes.aot;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_3;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_20;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_4;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_16;
 
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.hotspot.meta.HotSpotConstantLoadAction;
@@ -33,7 +33,7 @@ import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 
-@NodeInfo(cycles = CYCLES_3, size = SIZE_20)
+@NodeInfo(cycles = CYCLES_4, size = SIZE_16)
 public class ResolveConstantNode extends FloatingNode implements Lowerable {
     public static final NodeClass<ResolveConstantNode> TYPE = NodeClass.create(ResolveConstantNode.class);
 

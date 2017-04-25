@@ -23,7 +23,7 @@
 package org.graalvm.compiler.hotspot.nodes.aot;
 
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_UNKNOWN;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_20;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_16;
 
 import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.graph.Node;
@@ -51,7 +51,7 @@ import jdk.vm.ci.meta.Value;
 /**
  * A call to the VM via a regular stub.
  */
-@NodeInfo(allowedUsageTypes = {InputType.Memory}, cycles = CYCLES_UNKNOWN, size = SIZE_20)
+@NodeInfo(allowedUsageTypes = {InputType.Memory}, cycles = CYCLES_UNKNOWN, size = SIZE_16)
 public class InitializeKlassStubCall extends AbstractMemoryCheckpoint implements LIRLowerable, Canonicalizable, DeoptimizingNode.DeoptBefore, MemoryCheckpoint.Single {
     public static final NodeClass<InitializeKlassStubCall> TYPE = NodeClass.create(InitializeKlassStubCall.class);
 

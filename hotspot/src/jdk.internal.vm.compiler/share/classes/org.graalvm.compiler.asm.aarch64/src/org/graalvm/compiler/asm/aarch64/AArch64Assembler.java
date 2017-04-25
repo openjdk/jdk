@@ -111,7 +111,7 @@ import static jdk.vm.ci.aarch64.AArch64.zr;
 import java.util.Arrays;
 
 import org.graalvm.compiler.asm.Assembler;
-import org.graalvm.compiler.asm.NumUtil;
+import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.asm.aarch64.AArch64Address.AddressingMode;
 import org.graalvm.compiler.debug.GraalError;
 
@@ -347,6 +347,11 @@ public abstract class AArch64Assembler extends Assembler {
         return reg.encoding << RnOffset;
     }
 
+    private static int maskField(int sizeInBits, int n) {
+        assert NumUtil.isSignedNbit(sizeInBits, n);
+        return n & NumUtil.getNbitNumberInt(sizeInBits);
+    }
+
     /**
      * Enumeration of all different instruction kinds: General32/64 are the general instructions
      * (integer, branch, etc.), for 32-, respectively 64-bit operands. FP32/64 is the encoding for
@@ -448,7 +453,7 @@ public abstract class AArch64Assembler extends Assembler {
     private static final int LoadStoreFpFlagOffset = 26;
     private static final int LoadLiteralImmeOffset = 5;
 
-    private static final int LoadStorePairOp = 0b101_0_010 << 23;
+    private static final int LoadStorePairOp = 0b101_0 << 26;
     @SuppressWarnings("unused") private static final int LoadStorePairPostIndexOp = 0b101_0_001 << 23;
     @SuppressWarnings("unused") private static final int LoadStorePairPreIndexOp = 0b101_0_011 << 23;
     private static final int LoadStorePairImm7Offset = 15;
@@ -978,7 +983,9 @@ public abstract class AArch64Assembler extends Assembler {
     }
 
     /**
-     *
+     * Load Pair of Registers calculates an address from a base register value and an immediate
+     * offset, and stores two 32-bit words or two 64-bit doublewords to the calculated address, from
+     * two registers.
      */
     public void ldp(int size, Register rt, Register rt2, AArch64Address address) {
         assert size == 32 || size == 64;
@@ -996,10 +1003,18 @@ public abstract class AArch64Assembler extends Assembler {
     }
 
     private void loadStorePairInstruction(Instruction instr, Register rt, Register rt2, AArch64Address address, InstructionType type) {
-        int memop = type.encoding | instr.encoding | address.getImmediate() << LoadStorePairImm7Offset | rt2(rt2) | rn(address.getBase()) | rt(rt);
+        int scaledOffset = maskField(7, address.getImmediateRaw());  // LDP/STP use a 7-bit scaled
+                                                                     // offset
+        int memop = type.encoding | instr.encoding | scaledOffset << LoadStorePairImm7Offset | rt2(rt2) | rn(address.getBase()) | rt(rt);
         switch (address.getAddressingMode()) {
-            case IMMEDIATE_UNSCALED:
-                emitInt(memop | LoadStorePairOp);
+            case IMMEDIATE_SCALED:
+                emitInt(memop | LoadStorePairOp | (0b010 << 23));
+                break;
+            case IMMEDIATE_POST_INDEXED:
+                emitInt(memop | LoadStorePairOp | (0b001 << 23));
+                break;
+            case IMMEDIATE_PRE_INDEXED:
+                emitInt(memop | LoadStorePairOp | (0b011 << 23));
                 break;
             default:
                 throw GraalError.shouldNotReachHere("Unhandled addressing mode: " + address.getAddressingMode());
@@ -1471,7 +1486,7 @@ public abstract class AArch64Assembler extends Assembler {
      * @param shiftType any type but ROR.
      * @param imm must be in range 0 to size - 1.
      */
-    protected void adds(int size, Register dst, Register src1, Register src2, ShiftType shiftType, int imm) {
+    public void adds(int size, Register dst, Register src1, Register src2, ShiftType shiftType, int imm) {
         addSubShiftedInstruction(ADDS, dst, src1, src2, shiftType, imm, generalFromSize(size));
     }
 
@@ -1499,7 +1514,7 @@ public abstract class AArch64Assembler extends Assembler {
      * @param shiftType any type but ROR.
      * @param imm must be in range 0 to size - 1.
      */
-    protected void subs(int size, Register dst, Register src1, Register src2, ShiftType shiftType, int imm) {
+    public void subs(int size, Register dst, Register src1, Register src2, ShiftType shiftType, int imm) {
         addSubShiftedInstruction(SUBS, dst, src1, src2, shiftType, imm, generalFromSize(size));
     }
 
@@ -1571,7 +1586,7 @@ public abstract class AArch64Assembler extends Assembler {
      * @param extendType defines how src2 is extended to the same size as src1.
      * @param shiftAmt must be in range 0 to 4.
      */
-    protected void subs(int size, Register dst, Register src1, Register src2, ExtendType extendType, int shiftAmt) {
+    public void subs(int size, Register dst, Register src1, Register src2, ExtendType extendType, int shiftAmt) {
         assert !dst.equals(sp);
         assert !src1.equals(zr);
         assert !src2.equals(sp);
@@ -1786,7 +1801,7 @@ public abstract class AArch64Assembler extends Assembler {
      * @param dst general purpose register. May not be null, zero-register or the stackpointer.
      * @param src source register. May not be null, zero-register or the stackpointer.
      */
-    protected void rbit(int size, Register dst, Register src) {
+    public void rbit(int size, Register dst, Register src) {
         dataProcessing1SourceOp(RBIT, dst, src, generalFromSize(size));
     }
 
@@ -1934,7 +1949,7 @@ public abstract class AArch64Assembler extends Assembler {
      * @param src2 general purpose register. May not be null or the stackpointer.
      * @param src3 general purpose register. May not be null or the stackpointer.
      */
-    protected void smaddl(Register dst, Register src1, Register src2, Register src3) {
+    public void smaddl(Register dst, Register src1, Register src2, Register src3) {
         assert !dst.equals(sp);
         assert !src1.equals(sp);
         assert !src2.equals(sp);

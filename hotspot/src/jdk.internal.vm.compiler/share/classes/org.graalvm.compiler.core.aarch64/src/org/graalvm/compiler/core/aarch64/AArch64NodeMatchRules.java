@@ -24,9 +24,14 @@
 package org.graalvm.compiler.core.aarch64;
 
 import org.graalvm.compiler.core.gen.NodeMatchRules;
+import org.graalvm.compiler.core.match.ComplexMatchResult;
+import org.graalvm.compiler.core.match.MatchRule;
 import org.graalvm.compiler.lir.LIRFrameState;
+import org.graalvm.compiler.lir.aarch64.AArch64AddressValue;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodes.DeoptimizingNode;
+import org.graalvm.compiler.nodes.calc.SignExtendNode;
+import org.graalvm.compiler.nodes.calc.ZeroExtendNode;
 import org.graalvm.compiler.nodes.memory.Access;
 
 import jdk.vm.ci.aarch64.AArch64Kind;
@@ -55,5 +60,19 @@ public class AArch64NodeMatchRules extends NodeMatchRules {
 
     protected AArch64ArithmeticLIRGenerator getArithmeticLIRGenerator() {
         return (AArch64ArithmeticLIRGenerator) getLIRGeneratorTool().getArithmetic();
+    }
+
+    @MatchRule("(ZeroExtend Read=access)")
+    @MatchRule("(ZeroExtend FloatingRead=access)")
+    public ComplexMatchResult zeroExtend(ZeroExtendNode root, Access access) {
+        AArch64Kind memoryKind = getMemoryKind(access);
+        return builder -> getArithmeticLIRGenerator().emitExtendMemory(false, memoryKind, root.getResultBits(), (AArch64AddressValue) operand(access.getAddress()), getState(access));
+    }
+
+    @MatchRule("(SignExtend Read=access)")
+    @MatchRule("(SignExtend FloatingRead=access)")
+    public ComplexMatchResult signExtend(SignExtendNode root, Access access) {
+        AArch64Kind memoryKind = getMemoryKind(access);
+        return builder -> getArithmeticLIRGenerator().emitExtendMemory(true, memoryKind, root.getResultBits(), (AArch64AddressValue) operand(access.getAddress()), getState(access));
     }
 }

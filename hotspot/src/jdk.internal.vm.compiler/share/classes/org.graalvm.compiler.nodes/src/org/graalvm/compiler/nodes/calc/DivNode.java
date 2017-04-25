@@ -22,6 +22,8 @@
  */
 package org.graalvm.compiler.nodes.calc;
 
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_32;
+
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.BinaryOp;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.BinaryOp.Div;
@@ -29,7 +31,6 @@ import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
-import org.graalvm.compiler.nodeinfo.NodeCycles;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -39,7 +40,7 @@ import jdk.vm.ci.code.CodeUtil;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.PrimitiveConstant;
 
-@NodeInfo(shortName = "/", cycles = NodeCycles.CYCLES_30)
+@NodeInfo(shortName = "/", cycles = CYCLES_32)
 public class DivNode extends BinaryArithmeticNode<Div> {
 
     public static final NodeClass<DivNode> TYPE = NodeClass.create(DivNode.class);
@@ -58,9 +59,8 @@ public class DivNode extends BinaryArithmeticNode<Div> {
         ConstantNode tryConstantFold = tryConstantFold(op, x, y, stamp);
         if (tryConstantFold != null) {
             return tryConstantFold;
-        } else {
-            return new DivNode(x, y);
         }
+        return canonical(null, op, x, y);
     }
 
     @Override
@@ -70,9 +70,13 @@ public class DivNode extends BinaryArithmeticNode<Div> {
             return ret;
         }
 
+        return canonical(this, getOp(forX, forY), forX, forY);
+    }
+
+    private static ValueNode canonical(DivNode self, BinaryOp<Div> op, ValueNode forX, ValueNode forY) {
         if (forY.isConstant()) {
             Constant c = forY.asConstant();
-            if (getOp(forX, forY).isNeutral(c)) {
+            if (op.isNeutral(c)) {
                 return forX;
             }
             if (c instanceof PrimitiveConstant && ((PrimitiveConstant) c).getJavaKind().isNumericInteger()) {
@@ -88,14 +92,14 @@ public class DivNode extends BinaryArithmeticNode<Div> {
                 }
                 if (divResult != null) {
                     if (signFlip) {
-                        return new NegateNode(divResult);
+                        return NegateNode.create(divResult);
                     } else {
                         return divResult;
                     }
                 }
             }
         }
-        return this;
+        return self != null ? self : new DivNode(forX, forY);
     }
 
     @Override

@@ -25,6 +25,8 @@ package org.graalvm.compiler.core.test.tutorial;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.regex.Pattern;
+
 import org.graalvm.compiler.bytecode.Bytecode;
 import org.graalvm.compiler.bytecode.BytecodeDisassembler;
 import org.graalvm.compiler.bytecode.ResolvedJavaMethodBytecode;
@@ -56,7 +58,11 @@ public class GraalTutorial extends InvokeGraal {
         byte[] bytecodes = bytecode.getCode();
         Assert.assertNotNull(bytecodes);
 
-        System.out.println(new BytecodeDisassembler().disassemble(bytecode));
+        Pattern disassemblyLineRE = Pattern.compile(" *\\d+: [a-z][\\w_]+");
+        String disassembly = new BytecodeDisassembler().disassemble(bytecode);
+        for (String line : disassembly.split("\\n")) {
+            Assert.assertTrue(line, disassemblyLineRE.matcher(line).find());
+        }
     }
 
     /*

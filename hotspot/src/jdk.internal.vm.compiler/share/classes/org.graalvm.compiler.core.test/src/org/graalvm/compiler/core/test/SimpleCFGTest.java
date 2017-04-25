@@ -22,8 +22,6 @@
  */
 package org.graalvm.compiler.core.test;
 
-import static org.graalvm.compiler.core.common.CompilationIdentifier.INVALID_COMPILATION_ID;
-
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -43,12 +41,12 @@ import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 public class SimpleCFGTest extends GraalCompilerTest {
 
     private static void dumpGraph(final StructuredGraph graph) {
-        Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "Graph");
+        Debug.dump(Debug.BASIC_LEVEL, graph, "Graph");
     }
 
     @Test
     public void testImplies() {
-        StructuredGraph graph = new StructuredGraph(AllowAssumptions.YES, INVALID_COMPILATION_ID);
+        StructuredGraph graph = new StructuredGraph.Builder(getInitialOptions(), AllowAssumptions.YES).build();
 
         EndNode trueEnd = graph.add(new EndNode());
         EndNode falseEnd = graph.add(new EndNode());
@@ -109,7 +107,13 @@ public class SimpleCFGTest extends GraalCompilerTest {
     }
 
     public static void assertDominatedSize(Block block, int size) {
-        Assert.assertEquals("number of dominated blocks of " + block, size, block.getDominated().size());
+        int count = 0;
+        Block domChild = block.getFirstDominated();
+        while (domChild != null) {
+            count++;
+            domChild = domChild.getDominatedSibling();
+        }
+        Assert.assertEquals("number of dominated blocks of " + block, size, count);
     }
 
     public static void assertPostdominator(Block block, Block expectedPostdominator) {
