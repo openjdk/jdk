@@ -122,7 +122,6 @@ gc/g1/humongousObjects/TestHeapCounters.java 8178918 generic-all
 runtime/CompressedOops/UseCompressedOops.java 8079353 generic-all
 # This test is disabled since it will stress NMT and timeout during normal testing
 runtime/NMT/MallocStressTest.java 8166548 generic-all
-runtime/SharedArchiveFile/BootAppendTests.java 8150683 generic-all
 runtime/SharedArchiveFile/DefaultUseWithClient.java 8154204 generic-all
 
 #############################################################################
