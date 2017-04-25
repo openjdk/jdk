@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,12 +70,10 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(OptoLoopAlignment)) {
       FLAG_SET_DEFAULT(OptoLoopAlignment, 4);
     }
-#ifdef _LP64
     // 32-bit oops don't make sense for the 64-bit VM on sparc
     // since the 32-bit VM has the same registers and smaller objects.
     Universe::set_narrow_oop_shift(LogMinObjAlignmentInBytes);
     Universe::set_narrow_klass_shift(LogKlassAlignmentInBytes);
-#endif // _LP64
 #ifdef COMPILER2
     // Indirect branch is the same cost as direct
     if (FLAG_IS_DEFAULT(UseJumpTables)) {

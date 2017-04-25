@@ -25,6 +25,7 @@ package org.graalvm.compiler.debug.internal.method;
 import org.graalvm.compiler.debug.GraalDebugConfig;
 import org.graalvm.compiler.debug.internal.DebugScope;
 import org.graalvm.compiler.debug.internal.DebugScope.ExtraInfo;
+import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
@@ -34,15 +35,15 @@ public class MethodMetricsInlineeScopeInfo extends MethodMetricsRootScopeInfo {
         super(rootMethod);
     }
 
-    public static MethodMetricsInlineeScopeInfo create(ResolvedJavaMethod rootMethod) {
-        if (GraalDebugConfig.isGlobalMetricsInterceptedByMethodMetricsEnabled()) {
+    public static MethodMetricsInlineeScopeInfo create(ResolvedJavaMethod rootMethod, OptionValues options) {
+        if (GraalDebugConfig.isGlobalMetricsInterceptedByMethodMetricsEnabled(options)) {
             return new MethodMetricsInlineeScopeInfo(rootMethod);
         }
         return null;
     }
 
-    public static MethodMetricsInlineeScopeInfo create() {
-        if (GraalDebugConfig.isGlobalMetricsInterceptedByMethodMetricsEnabled()) {
+    public static MethodMetricsInlineeScopeInfo create(OptionValues options) {
+        if (GraalDebugConfig.isGlobalMetricsInterceptedByMethodMetricsEnabled(options)) {
             ExtraInfo rootInfo = DebugScope.getInstance().getExtraInfo();
             if (rootInfo instanceof MethodMetricsRootScopeInfo) {
                 return new MethodMetricsInlineeScopeInfo(((MethodMetricsRootScopeInfo) rootInfo).getRootMethod());

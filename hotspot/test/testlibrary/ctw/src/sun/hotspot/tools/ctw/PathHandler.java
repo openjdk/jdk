@@ -62,7 +62,7 @@ public abstract class PathHandler {
         this.loader = ClassLoader.getSystemClassLoader();
     }
 
-   /**
+    /**
      * Factory method. Construct concrete handler in depends from {@code path}.
      *
      * @param path     the path to process
@@ -118,11 +118,16 @@ public abstract class PathHandler {
     }
 
     /**
-     * Processes all classes in specified path.
+     * Processes all classes in the specified path.
      */
     public abstract void process();
 
-   /**
+    /**
+     * @return count of all classes in the specified path.
+     */
+    public abstract long classCount();
+
+    /**
      * Sets class loader, that will be used to define class at
      * {@link #processClass(String)}.
      *
@@ -168,7 +173,7 @@ public abstract class PathHandler {
     /**
      * @return count of processed classes
      */
-    public static long getClassCount() {
+    public static long getProcessedClassCount() {
         long id = CLASS_COUNT.get();
         if (id < Utils.COMPILE_THE_WORLD_START_AT) {
             return 0;

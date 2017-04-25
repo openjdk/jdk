@@ -934,6 +934,9 @@ public:
   notproduct(bool, TestSafeFetchInErrorHandler, false,                      \
           "If true, tests SafeFetch inside error handler.")                 \
                                                                             \
+  notproduct(bool, TestUnresponsiveErrorHandler, false,                     \
+          "If true, simulates an unresponsive error handler.")              \
+                                                                            \
   develop(bool, Verbose, false,                                             \
           "Print additional debugging information from other modes")        \
                                                                             \
@@ -3807,12 +3810,6 @@ public:
           "Data sampling interval (in milliseconds)")                       \
           range(PeriodicTask::min_interval, max_jint)                       \
           constraint(PerfDataSamplingIntervalFunc, AfterErgo)               \
-                                                                            \
-  develop(bool, PerfTraceDataCreation, false,                               \
-          "Trace creation of Performance Data Entries")                     \
-                                                                            \
-  develop(bool, PerfTraceMemOps, false,                                     \
-          "Trace PerfMemory create/attach/detach calls")                    \
                                                                             \
   product(bool, PerfDisableSharedMem, false,                                \
           "Store performance data in standard memory")                      \

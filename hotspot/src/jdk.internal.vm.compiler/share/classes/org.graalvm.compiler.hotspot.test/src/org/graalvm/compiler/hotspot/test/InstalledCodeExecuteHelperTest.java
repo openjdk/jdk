@@ -24,15 +24,15 @@ package org.graalvm.compiler.hotspot.test;
 
 import static java.lang.reflect.Modifier.isStatic;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
+import org.graalvm.compiler.options.OptionValues;
+import org.junit.Assert;
+import org.junit.Test;
 
 import jdk.vm.ci.code.InvalidInstalledCodeException;
 import jdk.vm.ci.hotspot.HotSpotInstalledCode;
@@ -76,8 +76,8 @@ public class InstalledCodeExecuteHelperTest extends GraalCompilerTest {
     }
 
     @Override
-    protected StructuredGraph parseEager(ResolvedJavaMethod m, AllowAssumptions allowAssumptions, CompilationIdentifier compilationId) {
-        StructuredGraph graph = super.parseEager(m, allowAssumptions, compilationId);
+    protected StructuredGraph parseEager(ResolvedJavaMethod m, AllowAssumptions allowAssumptions, CompilationIdentifier compilationId, OptionValues options) {
+        StructuredGraph graph = super.parseEager(m, allowAssumptions, compilationId, options);
         if (argsToBind != null) {
             Object receiver = isStatic(m.getModifiers()) ? null : this;
             Object[] args = argsWithReceiver(receiver, argsToBind);

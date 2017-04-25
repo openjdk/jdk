@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -311,10 +311,6 @@ class HeapRegion: public G1ContiguousSpace {
   // for the collection set.
   double _predicted_elapsed_time_ms;
 
-  // The predicted number of bytes to copy that was added to
-  // the total value for the collection set.
-  size_t _predicted_bytes_to_copy;
-
  public:
   HeapRegion(uint hrm_index,
              G1BlockOffsetTable* bot,
@@ -554,9 +550,7 @@ class HeapRegion: public G1ContiguousSpace {
 
   // Notify the region that we have finished processing self-forwarded
   // objects during evac failure handling.
-  void note_self_forwarding_removal_end(bool during_initial_mark,
-                                        bool during_conc_mark,
-                                        size_t marked_bytes);
+  void note_self_forwarding_removal_end(size_t marked_bytes);
 
   // Returns "false" iff no object in the region was allocated when the
   // last mark phase ended.
@@ -667,11 +661,10 @@ class HeapRegion: public G1ContiguousSpace {
   // encountered; that only happens when invoked concurrently with the
   // mutator.
   bool oops_on_card_seq_iterate_careful(MemRegion mr,
-                                        FilterOutOfRegionClosure* cl);
+                                        G1UpdateRSOrPushRefOopClosure* cl);
 
   size_t recorded_rs_length() const        { return _recorded_rs_length; }
   double predicted_elapsed_time_ms() const { return _predicted_elapsed_time_ms; }
-  size_t predicted_bytes_to_copy() const   { return _predicted_bytes_to_copy; }
 
   void set_recorded_rs_length(size_t rs_length) {
     _recorded_rs_length = rs_length;
@@ -679,10 +672,6 @@ class HeapRegion: public G1ContiguousSpace {
 
   void set_predicted_elapsed_time_ms(double ms) {
     _predicted_elapsed_time_ms = ms;
-  }
-
-  void set_predicted_bytes_to_copy(size_t bytes) {
-    _predicted_bytes_to_copy = bytes;
   }
 
   virtual CompactibleSpace* next_compaction_space() const;

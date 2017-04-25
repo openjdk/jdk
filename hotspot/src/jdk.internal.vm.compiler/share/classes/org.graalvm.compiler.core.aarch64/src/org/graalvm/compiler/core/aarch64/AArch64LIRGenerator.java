@@ -42,11 +42,14 @@ import org.graalvm.compiler.lir.SwitchStrategy;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.aarch64.AArch64AddressValue;
 import org.graalvm.compiler.lir.aarch64.AArch64ArithmeticOp;
+import org.graalvm.compiler.lir.aarch64.AArch64ArrayEqualsOp;
+import org.graalvm.compiler.lir.aarch64.AArch64ByteSwapOp;
 import org.graalvm.compiler.lir.aarch64.AArch64Compare;
 import org.graalvm.compiler.lir.aarch64.AArch64ControlFlow;
 import org.graalvm.compiler.lir.aarch64.AArch64ControlFlow.BranchOp;
 import org.graalvm.compiler.lir.aarch64.AArch64ControlFlow.CondMoveOp;
 import org.graalvm.compiler.lir.aarch64.AArch64ControlFlow.StrategySwitchOp;
+import org.graalvm.compiler.lir.aarch64.AArch64ControlFlow.TableSwitchOp;
 import org.graalvm.compiler.lir.aarch64.AArch64Move;
 import org.graalvm.compiler.lir.aarch64.AArch64Move.CompareAndSwapOp;
 import org.graalvm.compiler.lir.aarch64.AArch64Move.MembarOp;
@@ -56,6 +59,7 @@ import org.graalvm.compiler.lir.gen.LIRGenerator;
 import org.graalvm.compiler.phases.util.Providers;
 
 import jdk.vm.ci.aarch64.AArch64Kind;
+import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.RegisterValue;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaConstant;
@@ -121,8 +125,19 @@ public abstract class AArch64LIRGenerator extends LIRGenerator {
     }
 
     @Override
-    public Variable emitCompareAndSwap(Value address, Value expectedValue, Value newValue, Value trueValue, Value falseValue) {
+    public Variable emitLogicCompareAndSwap(Value address, Value expectedValue, Value newValue, Value trueValue, Value falseValue) {
+        Variable prevValue = newVariable(expectedValue.getValueKind());
+        Variable scratch = newVariable(LIRKind.value(AArch64Kind.DWORD));
+        append(new CompareAndSwapOp(prevValue, loadReg(expectedValue), loadReg(newValue), asAllocatable(address), scratch));
+        assert trueValue.getValueKind().equals(falseValue.getValueKind());
         Variable result = newVariable(trueValue.getValueKind());
+        append(new CondMoveOp(result, ConditionFlag.EQ, asAllocatable(trueValue), asAllocatable(falseValue)));
+        return result;
+    }
+
+    @Override
+    public Variable emitValueCompareAndSwap(Value address, Value expectedValue, Value newValue) {
+        Variable result = newVariable(newValue.getValueKind());
         Variable scratch = newVariable(LIRKind.value(AArch64Kind.WORD));
         append(new CompareAndSwapOp(result, loadNonCompareConst(expectedValue), loadReg(newValue), asAllocatable(address), scratch));
         return result;
@@ -271,13 +286,25 @@ public abstract class AArch64LIRGenerator extends LIRGenerator {
         boolean mirrored;
         AArch64Kind kind = (AArch64Kind) cmpKind;
         if (kind.isInteger()) {
-            if (LIRValueUtil.isVariable(b)) {
-                left = load(b);
-                right = loadNonConst(a);
+            Value aExt = a;
+            Value bExt = b;
+
+            int compareBytes = cmpKind.getSizeInBytes();
+            // AArch64 compares 32 or 64 bits: sign extend a and b as required.
+            if (compareBytes < a.getPlatformKind().getSizeInBytes()) {
+                aExt = arithmeticLIRGen.emitSignExtend(a, compareBytes * 8, 64);
+            }
+            if (compareBytes < b.getPlatformKind().getSizeInBytes()) {
+                bExt = arithmeticLIRGen.emitSignExtend(b, compareBytes * 8, 64);
+            }
+
+            if (LIRValueUtil.isVariable(bExt)) {
+                left = load(bExt);
+                right = loadNonConst(aExt);
                 mirrored = true;
             } else {
-                left = load(a);
-                right = loadNonConst(b);
+                left = load(aExt);
+                right = loadNonConst(bExt);
                 mirrored = false;
             }
             append(new AArch64Compare.CompareOp(left, loadNonCompareConst(right)));
@@ -367,7 +394,7 @@ public abstract class AArch64LIRGenerator extends LIRGenerator {
     public Variable emitIntegerTestMove(Value left, Value right, Value trueValue, Value falseValue) {
         assert ((AArch64Kind) left.getPlatformKind()).isInteger() && ((AArch64Kind) right.getPlatformKind()).isInteger();
         assert ((AArch64Kind) trueValue.getPlatformKind()).isInteger() && ((AArch64Kind) falseValue.getPlatformKind()).isInteger();
-        ((AArch64ArithmeticLIRGenerator) getArithmetic()).emitBinary(trueValue.getValueKind(), AArch64ArithmeticOp.ANDS, true, left, right);
+        ((AArch64ArithmeticLIRGenerator) getArithmetic()).emitBinary(left.getValueKind(), AArch64ArithmeticOp.ANDS, true, left, right);
         Variable result = newVariable(trueValue.getValueKind());
         append(new CondMoveOp(result, ConditionFlag.EQ, load(trueValue), load(falseValue)));
         return result;
@@ -385,22 +412,21 @@ public abstract class AArch64LIRGenerator extends LIRGenerator {
 
     @Override
     protected void emitTableSwitch(int lowKey, LabelRef defaultTarget, LabelRef[] targets, Value key) {
-        // Make copy of key since the TableSwitch destroys its input.
-        Variable tmp = emitMove(key);
-        Variable scratch = newVariable(LIRKind.value(AArch64Kind.WORD));
-        append(new AArch64ControlFlow.TableSwitchOp(lowKey, defaultTarget, targets, tmp, scratch));
+        append(new TableSwitchOp(lowKey, defaultTarget, targets, key, newVariable(LIRKind.value(target().arch.getWordKind())), newVariable(key.getValueKind())));
     }
 
     @Override
-    public Variable emitByteSwap(Value operand) {
-        // TODO (das) Do not generate until we support vector instructions
-        throw GraalError.unimplemented("Do not generate until we support vector instructions");
+    public Variable emitByteSwap(Value input) {
+        Variable result = newVariable(LIRKind.combine(input));
+        append(new AArch64ByteSwapOp(result, input));
+        return result;
     }
 
     @Override
     public Variable emitArrayEquals(JavaKind kind, Value array1, Value array2, Value length) {
-        // TODO (das) Do not generate until we support vector instructions
-        throw GraalError.unimplemented("Do not generate until we support vector instructions");
+        Variable result = newVariable(LIRKind.value(AArch64Kind.DWORD));
+        append(new AArch64ArrayEqualsOp(this, kind, result, array1, array2, asAllocatable(length)));
+        return result;
     }
 
     @Override
@@ -443,4 +469,6 @@ public abstract class AArch64LIRGenerator extends LIRGenerator {
     public void emitPause() {
         append(new AArch64PauseOp());
     }
+
+    public abstract void emitCCall(long address, CallingConvention nativeCallingConvention, Value[] args);
 }

@@ -56,9 +56,8 @@ public final class OrNode extends BinaryArithmeticNode<Or> implements BinaryComm
         ConstantNode tryConstantFold = tryConstantFold(op, x, y, stamp);
         if (tryConstantFold != null) {
             return tryConstantFold;
-        } else {
-            return new OrNode(x, y).maybeCommuteInputs();
         }
+        return canonical(null, op, stamp, x, y);
     }
 
     @Override
@@ -68,6 +67,10 @@ public final class OrNode extends BinaryArithmeticNode<Or> implements BinaryComm
             return ret;
         }
 
+        return canonical(this, getOp(forX, forY), stamp(), forX, forY);
+    }
+
+    private static ValueNode canonical(OrNode self, BinaryOp<Or> op, Stamp stamp, ValueNode forX, ValueNode forY) {
         if (GraphUtil.unproxify(forX) == GraphUtil.unproxify(forY)) {
             return forX;
         }
@@ -76,20 +79,23 @@ public final class OrNode extends BinaryArithmeticNode<Or> implements BinaryComm
         }
         if (forY.isConstant()) {
             Constant c = forY.asConstant();
-            if (getOp(forX, forY).isNeutral(c)) {
+            if (op.isNeutral(c)) {
                 return forX;
             }
 
             if (c instanceof PrimitiveConstant && ((PrimitiveConstant) c).getJavaKind().isNumericInteger()) {
                 long rawY = ((PrimitiveConstant) c).asLong();
-                long mask = CodeUtil.mask(PrimitiveStamp.getBits(stamp()));
+                long mask = CodeUtil.mask(PrimitiveStamp.getBits(stamp));
                 if ((rawY & mask) == mask) {
-                    return ConstantNode.forIntegerStamp(stamp(), mask);
+                    return ConstantNode.forIntegerStamp(stamp, mask);
                 }
             }
-            return reassociate(this, ValueNode.isConstantPredicate(), forX, forY);
+            return reassociate(self != null ? self : (OrNode) new OrNode(forX, forY).maybeCommuteInputs(), ValueNode.isConstantPredicate(), forX, forY);
         }
-        return this;
+        if (forX instanceof NotNode && forY instanceof NotNode) {
+            return new NotNode(AndNode.create(((NotNode) forX).getValue(), ((NotNode) forY).getValue()));
+        }
+        return self != null ? self : new OrNode(forX, forY).maybeCommuteInputs();
     }
 
     @Override

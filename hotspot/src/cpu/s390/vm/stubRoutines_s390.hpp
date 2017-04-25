@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,12 +68,11 @@ class zarch {
   };
 
  private:
-  static address _handler_for_unsafe_access_entry;
-
   static int _atomic_memory_operation_lock;
 
   static address _partial_subtype_check;
   static juint   _crc_table[CRC32_TABLES][CRC32_COLUMN_SIZE];
+  static juint   _crc32c_table[CRC32_TABLES][CRC32_COLUMN_SIZE];
 
   // Comapct string intrinsics: Translate table for string inflate intrinsic. Used by trot instruction.
   static address _trot_table_addr;
@@ -91,11 +90,11 @@ class zarch {
   static int atomic_memory_operation_lock() { return _atomic_memory_operation_lock; }
   static void set_atomic_memory_operation_lock(int value) { _atomic_memory_operation_lock = value; }
 
-  static address handler_for_unsafe_access_entry()        { return _handler_for_unsafe_access_entry; }
-
   static address partial_subtype_check()                  { return _partial_subtype_check; }
 
+  static void generate_load_absolute_address(MacroAssembler* masm, Register table, address table_addr, uint64_t table_contents);
   static void generate_load_crc_table_addr(MacroAssembler* masm, Register table);
+  static void generate_load_crc32c_table_addr(MacroAssembler* masm, Register table);
 
   // Comapct string intrinsics: Translate table for string inflate intrinsic. Used by trot instruction.
   static void generate_load_trot_table_addr(MacroAssembler* masm, Register table);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
  *          java.management
  */
 
-import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
 
@@ -61,26 +61,6 @@ public class CdsDifferentObjectAlignment {
             createAlignment;
         String loadAlignmentArgument = "-XX:ObjectAlignmentInBytes=" +
             loadAlignment;
-        String filename = "./CdsDifferentObjectAlignment" + createAlignment + ".jsa";
-
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:SharedArchiveFile=" + filename,
-            "-Xshare:dump",
-            createAlignmentArgument);
-
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Loading classes to share");
-        output.shouldHaveExitValue(0);
-
-        pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:SharedArchiveFile=" + filename,
-            "-Xshare:on",
-            loadAlignmentArgument,
-            "-version");
-
-        output = new OutputAnalyzer(pb.start());
         String expectedErrorMsg =
             String.format(
             "The shared archive file's ObjectAlignmentInBytes of %d " +
@@ -88,11 +68,9 @@ public class CdsDifferentObjectAlignment {
             createAlignment,
             loadAlignment);
 
-        try {
-            output.shouldContain(expectedErrorMsg);
-        } catch (RuntimeException e) {
-            output.shouldContain("Unable to use shared archive");
-        }
-        output.shouldHaveExitValue(1);
+        CDSTestUtils.createArchiveAndCheck(createAlignmentArgument);
+
+        OutputAnalyzer out = CDSTestUtils.runWithArchive(loadAlignmentArgument);
+        CDSTestUtils.checkExecExpectError(out, 1, expectedErrorMsg);
     }
 }

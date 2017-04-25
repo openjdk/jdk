@@ -33,9 +33,11 @@ import java.util.List;
 
 import org.graalvm.compiler.debug.DebugMethodMetrics;
 import org.graalvm.compiler.debug.TTY;
+import org.graalvm.compiler.debug.internal.DebugScope;
 import org.graalvm.compiler.options.Option;
+import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
-import org.graalvm.compiler.options.OptionValue;
+import org.graalvm.compiler.options.OptionValues;
 
 /**
  * Interface for printing a collection of method metrics (e.g. during shutdown).
@@ -45,14 +47,14 @@ public interface MethodMetricsPrinter {
     class Options {
         // @formatter:off
         @Option(help = "Dump method metrics to stdout on shutdown.", type = OptionType.Debug)
-        public static final OptionValue<Boolean> MethodMeterPrintAscii = new OptionValue<>(false);
+        public static final OptionKey<Boolean> MethodMeterPrintAscii = new OptionKey<>(false);
         @Option(help = "Dump method metrics to the given file in CSV format on shutdown.", type = OptionType.Debug)
-        public static final OptionValue<String> MethodMeterFile = new OptionValue<>(null);
+        public static final OptionKey<String> MethodMeterFile = new OptionKey<>(null);
         // @formatter:on
     }
 
-    static boolean methodMetricsDumpingEnabled() {
-        return MethodMetricsPrinter.Options.MethodMeterPrintAscii.getValue() || MethodMetricsPrinter.Options.MethodMeterFile.getValue() != null;
+    static boolean methodMetricsDumpingEnabled(OptionValues options) {
+        return MethodMetricsPrinter.Options.MethodMeterPrintAscii.getValue(options) || MethodMetricsPrinter.Options.MethodMeterFile.getValue(options) != null;
     }
 
     /**
@@ -110,9 +112,9 @@ public interface MethodMetricsPrinter {
 
         public MethodMetricsCSVFilePrinter() {
             try {
-                fw = new FileOutputStream(new File(Options.MethodMeterFile.getValue()));
+                fw = new FileOutputStream(new File(Options.MethodMeterFile.getValue(DebugScope.getConfig().getOptions())));
             } catch (IOException e) {
-                TTY.println("Cannot create file %s for method metrics dumping:%s", Options.MethodMeterFile.getValue(), e);
+                TTY.println("Cannot create file %s for method metrics dumping:%s", Options.MethodMeterFile.getValue(DebugScope.getConfig().getOptions()), e);
                 throw new Error(e);
             }
         }

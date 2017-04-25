@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,17 +131,17 @@ public:
 
 private:
   typedef struct {
-    const TYPES                dual_type;
-    const BasicType            basic_type;
-    const char*                msg;
-    const bool                 isa_oop;
-    const int                  ideal_reg;
-    const relocInfo::relocType reloc;
+    TYPES                dual_type;
+    BasicType            basic_type;
+    const char*          msg;
+    bool                 isa_oop;
+    uint                 ideal_reg;
+    relocInfo::relocType reloc;
   } TypeInfo;
 
   // Dictionary of types shared among compilations.
   static Dict* _shared_type_dict;
-  static TypeInfo _type_info[];
+  static const TypeInfo _type_info[];
 
   static int uhash( const Type *const t );
   // Structural equality check.  Assumes that cmp() has already compared
@@ -410,7 +410,7 @@ public:
 
   // Mapping from compiler type to VM BasicType
   BasicType basic_type() const       { return _type_info[_base].basic_type; }
-  int ideal_reg() const              { return _type_info[_base].ideal_reg; }
+  uint ideal_reg() const             { return _type_info[_base].ideal_reg; }
   const char* msg() const            { return _type_info[_base].msg; }
   bool isa_oop_ptr() const           { return _type_info[_base].isa_oop; }
   relocInfo::relocType reloc() const { return _type_info[_base].reloc; }

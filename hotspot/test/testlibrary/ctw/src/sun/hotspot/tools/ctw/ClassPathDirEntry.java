@@ -66,6 +66,16 @@ public class ClassPathDirEntry extends PathHandler {
         }
     }
 
+    @Override
+    public long classCount() {
+        try {
+            return Files.walk(root, FileVisitOption.FOLLOW_LINKS).count();
+        } catch (IOException e) {
+            throw new Error("can not walk dir " + root + " : "
+                    + e.getMessage(), e);
+        }
+    }
+
     private void processFile(Path file) {
         if (Utils.isClassFile(file.toString())) {
             processClass(pathToClassName(file));

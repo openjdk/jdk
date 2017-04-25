@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,10 +51,6 @@ public:
 
   // Process queue entries and release resources.
   void flush() { flush_impl(); }
-
-  void **get_buf() { return _buf;}
-  size_t get_index() { return _index;}
-  void reinitialize() { _buf = 0; _sz = 0; _index = 0;}
 
   // Compiler support.
   static ByteSize byte_offset_of_index() {

@@ -22,15 +22,12 @@
  */
 package org.graalvm.compiler.hotspot.nodes.profiling;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_10;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_50;
-
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 
-@NodeInfo(cycles = CYCLES_10, size = SIZE_50)
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+
+@NodeInfo
 public class ProfileWithNotificationNode extends ProfileNode {
     public static final NodeClass<ProfileWithNotificationNode> TYPE = NodeClass.create(ProfileWithNotificationNode.class);
 

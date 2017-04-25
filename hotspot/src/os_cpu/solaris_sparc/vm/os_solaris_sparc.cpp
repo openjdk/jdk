@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,11 +85,7 @@
 // HotSpot guard pages is added later.
 size_t os::Posix::_compiler_thread_min_stack_allowed = 104 * K;
 size_t os::Posix::_java_thread_min_stack_allowed = 86 * K;
-#ifdef _LP64
 size_t os::Posix::_vm_internal_thread_min_stack_allowed = 128 * K;
-#else
-size_t os::Posix::_vm_internal_thread_min_stack_allowed = 96 * K;
-#endif
 
 int os::Solaris::max_register_window_saves_before_flushing() {
   // We should detect this at run time. For now, filling
@@ -320,11 +316,7 @@ frame os::current_frame() {
 }
 
 bool os::is_allocatable(size_t bytes) {
-#ifdef _LP64
    return true;
-#else
-   return (bytes <= (size_t)3835*M);
-#endif
 }
 
 extern "C" JNIEXPORT int
@@ -362,14 +354,14 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
     }
   }
 
-  if (sig == os::Solaris::SIGasync()) {
+  if (sig == ASYNC_SIGNAL) {
     if (thread || vmthread) {
       OSThread::SR_handler(t, uc);
       return true;
     } else if (os::Solaris::chained_handler(sig, info, ucVoid)) {
       return true;
     } else {
-      // If os::Solaris::SIGasync not chained, and this is a non-vm and
+      // If ASYNC_SIGNAL not chained, and this is a non-vm and
       // non-java thread
       return true;
     }
@@ -732,85 +724,6 @@ void os::print_register_info(outputStream *st, const void *context) {
 void os::Solaris::init_thread_fpu_state(void) {
     // Nothing needed on Sparc.
 }
-
-#if !defined(COMPILER2) && !defined(_LP64)
-
-// These routines are the initial value of atomic_xchg_entry(),
-// atomic_cmpxchg_entry(), atomic_add_entry() and fence_entry()
-// until initialization is complete.
-// TODO - remove when the VM drops support for V8.
-
-typedef jint  xchg_func_t        (jint,  volatile jint*);
-typedef jint  cmpxchg_func_t     (jint,  volatile jint*,  jint);
-typedef jlong cmpxchg_long_func_t(jlong, volatile jlong*, jlong);
-typedef jint  add_func_t         (jint,  volatile jint*);
-
-jint os::atomic_xchg_bootstrap(jint exchange_value, volatile jint* dest) {
-  // try to use the stub:
-  xchg_func_t* func = CAST_TO_FN_PTR(xchg_func_t*, StubRoutines::atomic_xchg_entry());
-
-  if (func != NULL) {
-    os::atomic_xchg_func = func;
-    return (*func)(exchange_value, dest);
-  }
-  assert(Threads::number_of_threads() == 0, "for bootstrap only");
-
-  jint old_value = *dest;
-  *dest = exchange_value;
-  return old_value;
-}
-
-jint os::atomic_cmpxchg_bootstrap(jint exchange_value, volatile jint* dest, jint compare_value) {
-  // try to use the stub:
-  cmpxchg_func_t* func = CAST_TO_FN_PTR(cmpxchg_func_t*, StubRoutines::atomic_cmpxchg_entry());
-
-  if (func != NULL) {
-    os::atomic_cmpxchg_func = func;
-    return (*func)(exchange_value, dest, compare_value);
-  }
-  assert(Threads::number_of_threads() == 0, "for bootstrap only");
-
-  jint old_value = *dest;
-  if (old_value == compare_value)
-    *dest = exchange_value;
-  return old_value;
-}
-
-jlong os::atomic_cmpxchg_long_bootstrap(jlong exchange_value, volatile jlong* dest, jlong compare_value) {
-  // try to use the stub:
-  cmpxchg_long_func_t* func = CAST_TO_FN_PTR(cmpxchg_long_func_t*, StubRoutines::atomic_cmpxchg_long_entry());
-
-  if (func != NULL) {
-    os::atomic_cmpxchg_long_func = func;
-    return (*func)(exchange_value, dest, compare_value);
-  }
-  assert(Threads::number_of_threads() == 0, "for bootstrap only");
-
-  jlong old_value = *dest;
-  if (old_value == compare_value)
-    *dest = exchange_value;
-  return old_value;
-}
-
-jint os::atomic_add_bootstrap(jint add_value, volatile jint* dest) {
-  // try to use the stub:
-  add_func_t* func = CAST_TO_FN_PTR(add_func_t*, StubRoutines::atomic_add_entry());
-
-  if (func != NULL) {
-    os::atomic_add_func = func;
-    return (*func)(add_value, dest);
-  }
-  assert(Threads::number_of_threads() == 0, "for bootstrap only");
-
-  return (*dest) += add_value;
-}
-
-xchg_func_t*         os::atomic_xchg_func         = os::atomic_xchg_bootstrap;
-cmpxchg_func_t*      os::atomic_cmpxchg_func      = os::atomic_cmpxchg_bootstrap;
-cmpxchg_long_func_t* os::atomic_cmpxchg_long_func = os::atomic_cmpxchg_long_bootstrap;
-add_func_t*          os::atomic_add_func          = os::atomic_add_bootstrap;
-
-#endif // !_LP64 && !COMPILER2
 
 #if defined(__sparc) && defined(COMPILER2) && defined(_GNU_SOURCE)
  // See file build/solaris/makefiles/$compiler.make

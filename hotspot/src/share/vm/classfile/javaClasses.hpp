@@ -155,7 +155,7 @@ class java_lang_String : AllStatic {
   static Handle internalize_classname(Handle java_string, TRAPS) { return char_converter(java_string, '.', '/', THREAD); }
 
   // Conversion
-  static Symbol* as_symbol(Handle java_string, TRAPS);
+  static Symbol* as_symbol(oop java_string, TRAPS);
   static Symbol* as_symbol_or_null(oop java_string);
 
   // Testers
@@ -209,29 +209,23 @@ class java_lang_Class : AllStatic {
   static void set_protection_domain(oop java_class, oop protection_domain);
   static void set_class_loader(oop java_class, oop class_loader);
   static void set_component_mirror(oop java_class, oop comp_mirror);
-  static void initialize_mirror_fields(KlassHandle k, Handle mirror, Handle protection_domain, TRAPS);
-  static void set_mirror_module_field(KlassHandle K, Handle mirror, Handle module, TRAPS);
+  static void initialize_mirror_fields(Klass* k, Handle mirror, Handle protection_domain, TRAPS);
+  static void set_mirror_module_field(Klass* K, Handle mirror, Handle module, TRAPS);
  public:
   static void compute_offsets();
 
   // Instance creation
-  static void create_mirror(KlassHandle k, Handle class_loader, Handle module,
+  static void create_mirror(Klass* k, Handle class_loader, Handle module,
                             Handle protection_domain, TRAPS);
-  static void fixup_mirror(KlassHandle k, TRAPS);
+  static void fixup_mirror(Klass* k, TRAPS);
   static oop  create_basic_type_mirror(const char* basic_type_name, BasicType type, TRAPS);
 
-  static void fixup_module_field(KlassHandle k, Handle module);
+  static void fixup_module_field(Klass* k, Handle module);
 
   // Conversion
   static Klass* as_Klass(oop java_class);
   static void set_klass(oop java_class, Klass* klass);
   static BasicType as_BasicType(oop java_class, Klass** reference_klass = NULL);
-  static BasicType as_BasicType(oop java_class, KlassHandle* reference_klass) {
-    Klass* refk_oop = NULL;
-    BasicType result = as_BasicType(java_class, &refk_oop);
-    (*reference_klass) = KlassHandle(refk_oop);
-    return result;
-  }
   static Symbol* as_signature(oop java_class, bool intern_if_not_found, TRAPS);
   static void print_signature(oop java_class, outputStream *st);
   static const char* as_external_name(oop java_class);
@@ -457,7 +451,7 @@ class java_lang_Throwable: AllStatic {
     trace_methods_offset = 0,
     trace_bcis_offset    = 1,
     trace_mirrors_offset = 2,
-    trace_cprefs_offset  = 3,
+    trace_names_offset   = 3,
     trace_next_offset    = 4,
     trace_size           = 5,
     trace_chunk_size     = 32
@@ -485,7 +479,7 @@ class java_lang_Throwable: AllStatic {
   static int get_backtrace_offset() { return backtrace_offset;}
   static int get_detailMessage_offset() { return detailMessage_offset;}
   // Message
-  static oop message(Handle throwable);
+  static oop message(oop throwable);
   static void set_message(oop throwable, oop value);
   static Symbol* detail_message(oop throwable);
   static void print_stack_element(outputStream *st, const methodHandle& method, int bci);
@@ -503,7 +497,7 @@ class java_lang_Throwable: AllStatic {
   // Programmatic access to stack trace
   static void get_stack_trace_elements(Handle throwable, objArrayHandle stack_trace, TRAPS);
   // Printing
-  static void print(Handle throwable, outputStream* st);
+  static void print(oop throwable, outputStream* st);
   static void print_stack_trace(Handle throwable, outputStream* st);
   static void java_printStackTrace(Handle throwable, TRAPS);
   // Debugging
@@ -1324,7 +1318,7 @@ class java_lang_StackTraceElement: AllStatic {
   static oop create(const methodHandle& method, int bci, TRAPS);
 
   static void fill_in(Handle element, InstanceKlass* holder, const methodHandle& method,
-                      int version, int bci, int cpref, TRAPS);
+                      int version, int bci, Symbol* name, TRAPS);
 
   // Debugging
   friend class JavaClasses;

@@ -24,6 +24,8 @@ package org.graalvm.compiler.hotspot;
 
 import org.graalvm.compiler.api.runtime.GraalRuntime;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
+import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.replacements.SnippetCounter.Group;
 import org.graalvm.compiler.runtime.RuntimeProvider;
 
 import jdk.vm.ci.code.TargetDescription;
@@ -33,7 +35,7 @@ import jdk.vm.ci.code.TargetDescription;
 /**
  * Configuration information for the HotSpot Graal runtime.
  */
-public interface HotSpotGraalRuntimeProvider extends GraalRuntime, RuntimeProvider {
+public interface HotSpotGraalRuntimeProvider extends GraalRuntime, RuntimeProvider, Group.Factory {
 
     default TargetDescription getTarget() {
         return getHostBackend().getTarget();
@@ -52,7 +54,27 @@ public interface HotSpotGraalRuntimeProvider extends GraalRuntime, RuntimeProvid
     GraalHotSpotVMConfig getVMConfig();
 
     /**
+     * Gets the option values associated with this runtime.
+     */
+    OptionValues getOptions();
+
+    /**
      * Determines if the VM is currently bootstrapping the JVMCI compiler.
      */
     boolean isBootstrapping();
+
+    /**
+     * This runtime has been requested to shutdown.
+     */
+    boolean isShutdown();
+
+    /**
+     * Gets a directory into which diagnostics such crash reports and dumps should be written. This
+     * method will create the directory if it doesn't exist so it should only be called if
+     * diagnostics are about to be generated.
+     *
+     * @return the directory into which diagnostics can be written or {@code null} if the directory
+     *         does not exist and could not be created
+     */
+    String getOutputDirectory();
 }

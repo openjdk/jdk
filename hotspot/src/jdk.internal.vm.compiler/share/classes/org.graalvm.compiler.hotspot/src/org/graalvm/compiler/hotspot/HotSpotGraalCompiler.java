@@ -23,7 +23,6 @@
 package org.graalvm.compiler.hotspot;
 
 import static org.graalvm.compiler.core.common.GraalOptions.OptAssumptions;
-import static org.graalvm.compiler.nodes.StructuredGraph.NO_PROFILING_INFO;
 import static org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext.CompilationContext.ROOT_COMPILATION;
 
 import java.io.ByteArrayOutputStream;
@@ -40,9 +39,7 @@ import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.DebugConfigScope;
 import org.graalvm.compiler.debug.DebugEnvironment;
 import org.graalvm.compiler.debug.GraalDebugConfig;
-import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.debug.TopLevelDebugConfig;
-import org.graalvm.compiler.debug.internal.DebugScope;
 import org.graalvm.compiler.debug.internal.method.MethodMetricsRootScopeInfo;
 import org.graalvm.compiler.hotspot.CompilationCounters.Options;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
@@ -56,6 +53,7 @@ import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext;
 import org.graalvm.compiler.nodes.spi.Replacements;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.OptimisticOptimizations.Optimization;
 import org.graalvm.compiler.phases.PhaseSuite;
@@ -64,7 +62,6 @@ import org.graalvm.compiler.phases.tiers.Suites;
 
 import jdk.vm.ci.code.CompilationRequest;
 import jdk.vm.ci.code.CompilationRequestResult;
-import jdk.vm.ci.hotspot.HotSpotCodeCacheProvider;
 import jdk.vm.ci.hotspot.HotSpotCompilationRequest;
 import jdk.vm.ci.hotspot.HotSpotCompilationRequestResult;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider;
@@ -87,8 +84,9 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
         this.jvmciRuntime = jvmciRuntime;
         this.graalRuntime = graalRuntime;
         // It is sufficient to have one compilation counter object per Graal compiler object.
-        this.compilationCounters = Options.CompilationCountLimit.getValue() > 0 ? new CompilationCounters() : null;
-        this.bootstrapWatchDog = graalRuntime.isBootstrapping() && !GraalDebugConfig.Options.BootstrapInitializeOnly.getValue() ? BootstrapWatchDog.maybeCreate(graalRuntime) : null;
+        OptionValues options = graalRuntime.getOptions();
+        this.compilationCounters = Options.CompilationCountLimit.getValue(options) > 0 ? new CompilationCounters(options) : null;
+        this.bootstrapWatchDog = graalRuntime.isBootstrapping() && !GraalDebugConfig.Options.BootstrapInitializeOnly.getValue(options) ? BootstrapWatchDog.maybeCreate(graalRuntime) : null;
     }
 
     @Override
@@ -99,28 +97,32 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
     @Override
     @SuppressWarnings("try")
     public CompilationRequestResult compileMethod(CompilationRequest request) {
-        if (graalRuntime.isBootstrapping() && GraalDebugConfig.Options.BootstrapInitializeOnly.getValue()) {
-            return HotSpotCompilationRequestResult.failure(String.format("Skip compilation because %s is enabled", GraalDebugConfig.Options.BootstrapInitializeOnly.getName()), true);
+        if (graalRuntime.isShutdown()) {
+            return HotSpotCompilationRequestResult.failure(String.format("Shutdown entered"), false);
         }
-        if (bootstrapWatchDog != null && graalRuntime.isBootstrapping()) {
-            if (bootstrapWatchDog.hitCriticalCompilationRateOrTimeout()) {
-                // Drain the compilation queue to expedite completion of the bootstrap
-                return HotSpotCompilationRequestResult.failure("hit critical bootstrap compilation rate or timeout", true);
+        OptionValues options = graalRuntime.getOptions();
+        if (graalRuntime.isBootstrapping()) {
+            if (GraalDebugConfig.Options.BootstrapInitializeOnly.getValue(options)) {
+                return HotSpotCompilationRequestResult.failure(String.format("Skip compilation because %s is enabled", GraalDebugConfig.Options.BootstrapInitializeOnly.getName()), true);
+            }
+            if (bootstrapWatchDog != null) {
+                if (bootstrapWatchDog.hitCriticalCompilationRateOrTimeout()) {
+                    // Drain the compilation queue to expedite completion of the bootstrap
+                    return HotSpotCompilationRequestResult.failure("hit critical bootstrap compilation rate or timeout", true);
+                }
             }
         }
         ResolvedJavaMethod method = request.getMethod();
         HotSpotCompilationRequest hsRequest = (HotSpotCompilationRequest) request;
-        try (CompilationWatchDog w1 = CompilationWatchDog.watch(method, hsRequest.getId());
+        try (CompilationWatchDog w1 = CompilationWatchDog.watch(method, hsRequest.getId(), options);
                         BootstrapWatchDog.Watch w2 = bootstrapWatchDog == null ? null : bootstrapWatchDog.watch(request);
-                        CompilationAlarm alarm = CompilationAlarm.trackCompilationPeriod();) {
+                        CompilationAlarm alarm = CompilationAlarm.trackCompilationPeriod(options);) {
             if (compilationCounters != null) {
                 compilationCounters.countCompilation(method);
             }
             // Ensure a debug configuration for this thread is initialized
-            if (Debug.isEnabled() && DebugScope.getConfig() == null) {
-                DebugEnvironment.initialize(TTY.out, graalRuntime.getHostProviders().getSnippetReflection());
-            }
-            CompilationTask task = new CompilationTask(jvmciRuntime, this, hsRequest, true, true);
+            DebugEnvironment.ensureInitialized(options, graalRuntime.getHostProviders().getSnippetReflection());
+            CompilationTask task = new CompilationTask(jvmciRuntime, this, hsRequest, true, true, options);
             CompilationRequestResult r = null;
             try (DebugConfigScope dcs = Debug.setConfig(new TopLevelDebugConfig());
                             Debug.Scope s = Debug.methodMetricsScope("HotSpotGraalCompiler", MethodMetricsRootScopeInfo.create(method), true, method)) {
@@ -131,39 +133,31 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
         }
     }
 
-    public void compileTheWorld() throws Throwable {
-        HotSpotCodeCacheProvider codeCache = (HotSpotCodeCacheProvider) jvmciRuntime.getHostJVMCIBackend().getCodeCache();
-        int iterations = CompileTheWorldOptions.CompileTheWorldIterations.getValue();
-        for (int i = 0; i < iterations; i++) {
-            codeCache.resetCompilationStatistics();
-            TTY.println("CompileTheWorld : iteration " + i);
-            CompileTheWorld ctw = new CompileTheWorld(jvmciRuntime, this);
-            ctw.compile();
-        }
-        System.exit(0);
-    }
-
-    public CompilationResult compile(ResolvedJavaMethod method, int entryBCI, boolean useProfilingInfo, CompilationIdentifier compilationId) {
+    public CompilationResult compile(ResolvedJavaMethod method, int entryBCI, boolean useProfilingInfo, CompilationIdentifier compilationId, OptionValues options) {
         HotSpotBackend backend = graalRuntime.getHostBackend();
         HotSpotProviders providers = backend.getProviders();
         final boolean isOSR = entryBCI != JVMCICompiler.INVOCATION_ENTRY_BCI;
-        StructuredGraph graph = method.isNative() || isOSR ? null : getIntrinsicGraph(method, providers, compilationId);
+        StructuredGraph graph = method.isNative() || isOSR ? null : getIntrinsicGraph(method, providers, compilationId, options);
 
         if (graph == null) {
             SpeculationLog speculationLog = method.getSpeculationLog();
             if (speculationLog != null) {
                 speculationLog.collectFailedSpeculations();
             }
-            graph = new StructuredGraph(method, entryBCI, AllowAssumptions.from(OptAssumptions.getValue()), speculationLog, useProfilingInfo, compilationId);
+            graph = new StructuredGraph.Builder(options, AllowAssumptions.ifTrue(OptAssumptions.getValue(options))).method(method).entryBCI(entryBCI).speculationLog(
+                            speculationLog).useProfilingInfo(useProfilingInfo).compilationId(compilationId).build();
         }
 
-        Suites suites = getSuites(providers);
-        LIRSuites lirSuites = getLIRSuites(providers);
+        Suites suites = getSuites(providers, options);
+        LIRSuites lirSuites = getLIRSuites(providers, options);
         ProfilingInfo profilingInfo = useProfilingInfo ? method.getProfilingInfo(!isOSR, isOSR) : DefaultProfilingInfo.get(TriState.FALSE);
-        OptimisticOptimizations optimisticOpts = getOptimisticOpts(profilingInfo);
-        if (isOSR) {
-            // In OSR compiles, we cannot rely on never executed code profiles, because
-            // all code after the OSR loop is never executed.
+        OptimisticOptimizations optimisticOpts = getOptimisticOpts(profilingInfo, options);
+
+        /*
+         * Cut off never executed code profiles if there is code, e.g. after the osr loop, that is
+         * never executed.
+         */
+        if (isOSR && !OnStackReplacementPhase.Options.DeoptAfterOSR.getValue(options)) {
             optimisticOpts.remove(Optimization.RemoveNeverExecutedCode);
         }
         CompilationResult result = new CompilationResult();
@@ -186,15 +180,16 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
      *
      * @param method
      * @param compilationId
+     * @param options
      * @return an intrinsic graph that can be compiled and installed for {@code method} or null
      */
     @SuppressWarnings("try")
-    public StructuredGraph getIntrinsicGraph(ResolvedJavaMethod method, HotSpotProviders providers, CompilationIdentifier compilationId) {
+    public StructuredGraph getIntrinsicGraph(ResolvedJavaMethod method, HotSpotProviders providers, CompilationIdentifier compilationId, OptionValues options) {
         Replacements replacements = providers.getReplacements();
         ResolvedJavaMethod substMethod = replacements.getSubstitutionMethod(method);
         if (substMethod != null) {
             assert !substMethod.equals(method);
-            StructuredGraph graph = new StructuredGraph(substMethod, AllowAssumptions.YES, NO_PROFILING_INFO, compilationId);
+            StructuredGraph graph = new StructuredGraph.Builder(options, AllowAssumptions.YES).method(substMethod).compilationId(compilationId).build();
             try (Debug.Scope scope = Debug.scope("GetIntrinsicGraph", graph)) {
                 Plugins plugins = new Plugins(providers.getGraphBuilderPlugins());
                 GraphBuilderConfiguration config = GraphBuilderConfiguration.getSnippetDefault(plugins);
@@ -210,16 +205,16 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
         return null;
     }
 
-    protected OptimisticOptimizations getOptimisticOpts(ProfilingInfo profilingInfo) {
-        return new OptimisticOptimizations(profilingInfo);
+    protected OptimisticOptimizations getOptimisticOpts(ProfilingInfo profilingInfo, OptionValues options) {
+        return new OptimisticOptimizations(profilingInfo, options);
     }
 
-    protected Suites getSuites(HotSpotProviders providers) {
-        return providers.getSuites().getDefaultSuites();
+    protected Suites getSuites(HotSpotProviders providers, OptionValues options) {
+        return providers.getSuites().getDefaultSuites(options);
     }
 
-    protected LIRSuites getLIRSuites(HotSpotProviders providers) {
-        return providers.getSuites().getDefaultLIRSuites();
+    protected LIRSuites getLIRSuites(HotSpotProviders providers, OptionValues options) {
+        return providers.getSuites().getDefaultLIRSuites(options);
     }
 
     /**
@@ -245,6 +240,11 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
                 newGbs.findPhase(GraphBuilderPhase.class).set(newGraphBuilderPhase);
             }
             if (isOSR) {
+                // We must not clear non liveness for OSR compilations.
+                GraphBuilderPhase graphBuilderPhase = (GraphBuilderPhase) newGbs.findPhase(GraphBuilderPhase.class).previous();
+                GraphBuilderConfiguration graphBuilderConfig = graphBuilderPhase.getGraphBuilderConfig();
+                GraphBuilderPhase newGraphBuilderPhase = new GraphBuilderPhase(graphBuilderConfig);
+                newGbs.findPhase(GraphBuilderPhase.class).set(newGraphBuilderPhase);
                 newGbs.appendPhase(new OnStackReplacementPhase());
             }
             return newGbs;

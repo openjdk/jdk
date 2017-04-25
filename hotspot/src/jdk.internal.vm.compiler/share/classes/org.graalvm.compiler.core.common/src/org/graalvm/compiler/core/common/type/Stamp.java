@@ -126,6 +126,13 @@ public abstract class Stamp {
     }
 
     /**
+     * Tests whether this stamp represents all values of this kind.
+     */
+    public boolean isUnrestricted() {
+        return this.equals(this.unrestricted());
+    }
+
+    /**
      * If this stamp represents a single value, the methods returns this single value. It returns
      * null otherwise.
      *

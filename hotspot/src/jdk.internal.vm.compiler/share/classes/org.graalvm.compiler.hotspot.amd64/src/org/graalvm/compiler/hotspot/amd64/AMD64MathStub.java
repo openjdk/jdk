@@ -35,6 +35,7 @@ import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
 import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.hotspot.stubs.SnippetStub;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.replacements.nodes.BinaryMathIntrinsicNode;
 import org.graalvm.compiler.replacements.nodes.BinaryMathIntrinsicNode.BinaryOperation;
 import org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode;
@@ -45,8 +46,8 @@ import org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.UnaryOpera
  */
 public class AMD64MathStub extends SnippetStub {
 
-    public AMD64MathStub(ForeignCallDescriptor descriptor, HotSpotProviders providers, HotSpotForeignCallLinkage linkage) {
-        super(snippetName(descriptor), providers, linkage);
+    public AMD64MathStub(ForeignCallDescriptor descriptor, OptionValues options, HotSpotProviders providers, HotSpotForeignCallLinkage linkage) {
+        super(snippetName(descriptor), options, providers, linkage);
     }
 
     private static String snippetName(ForeignCallDescriptor descriptor) {
