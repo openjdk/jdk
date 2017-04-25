@@ -113,6 +113,7 @@ compiler/aot/DeoptimizationTest.java 8175791 windows-all
 gc/g1/humongousObjects/objectGraphTest/TestObjectGraphAfterGC.java 8156755 generic-all
 gc/survivorAlignment/TestPromotionToSurvivor.java 8129886 generic-all
 gc/g1/logging/TestG1LoggingFailure.java 8169634 generic-all
+gc/g1/humongousObjects/TestHeapCounters.java 8178918 generic-all
 
 #############################################################################
 
