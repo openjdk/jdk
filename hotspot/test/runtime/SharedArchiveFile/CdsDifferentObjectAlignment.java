@@ -28,6 +28,7 @@
  *          This is a negative test; using  object alignment for loading that
  *          is different from object alignment for creating a CDS file
  *          should fail when loading.
+ * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
  * @library /test/lib
  * @bug 8025642
  * @modules java.base/jdk.internal.misc

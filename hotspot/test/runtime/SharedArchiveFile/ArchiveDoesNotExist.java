@@ -27,6 +27,7 @@
  *          attempting to use CDS archive. JVM should exit gracefully
  *          when sharing mode is ON, and continue w/o sharing if sharing
  *          mode is AUTO.
+ * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

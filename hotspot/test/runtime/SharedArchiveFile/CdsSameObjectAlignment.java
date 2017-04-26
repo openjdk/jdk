@@ -25,6 +25,7 @@
  * @test CdsSameObjectAlignment
  * @summary Testing CDS (class data sharing) using varying object alignment.
  *          Using same object alignment for each dump/load pair
+ * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

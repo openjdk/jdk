@@ -26,6 +26,7 @@
  * @bug 8169711
  * @summary Test interpreter method entries for intrinsics with CDS (class data sharing)
  *          and different settings of the intrinsic flag during dump/use of the archive.
+ * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
