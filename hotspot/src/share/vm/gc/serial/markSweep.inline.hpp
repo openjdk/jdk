@@ -42,7 +42,7 @@ inline bool MarkSweep::is_archive_object(oop object) {
 }
 
 inline int MarkSweep::adjust_pointers(oop obj) {
-  return obj->ms_adjust_pointers();
+  return obj->oop_iterate_size(&MarkSweep::adjust_pointer_closure);
 }
 
 template <class T> inline void MarkSweep::adjust_pointer(T* p) {

@@ -609,8 +609,6 @@ protected:
 
   // GC specific object visitors
   //
-  // Mark Sweep
-  virtual int  oop_ms_adjust_pointers(oop obj) = 0;
 #if INCLUDE_ALL_GCS
   // Parallel Scavenge
   virtual void oop_ps_push_contents(  oop obj, PSPromotionManager* pm)   = 0;
