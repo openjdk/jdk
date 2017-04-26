@@ -89,8 +89,6 @@ class InstanceMirrorKlass: public InstanceKlass {
 
   // GC specific object visitors
   //
-  // Mark Sweep
-  int  oop_ms_adjust_pointers(oop obj);
 #if INCLUDE_ALL_GCS
   // Parallel Scavenge
   void oop_ps_push_contents(  oop obj, PSPromotionManager* pm);
