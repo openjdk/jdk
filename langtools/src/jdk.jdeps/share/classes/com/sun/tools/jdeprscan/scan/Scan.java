@@ -34,7 +34,9 @@ import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
@@ -63,6 +65,7 @@ public class Scan {
     final boolean verbose;
 
     final ClassFinder finder;
+    final Set<String> classesNotFound = new HashSet<>();
     boolean errorOccurred = false;
 
     public Scan(PrintStream out,
@@ -229,7 +232,10 @@ public class Scan {
 
     void errorNoClass(String className) {
         errorOccurred = true;
-        err.println(Messages.get("scan.err.noclass", className));
+        if (classesNotFound.add(className)) {
+            // print message only first time the class can't be found
+            err.println(Messages.get("scan.err.noclass", className));
+        }
     }
 
     void errorNoFile(String fileName) {
