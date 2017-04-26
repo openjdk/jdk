@@ -48,7 +48,7 @@ package java.io;
  * may be thrown if the input stream has been
  * closed.
  *
- * <h3><a name="modified-utf-8">Modified UTF-8</a></h3>
+ * <h3><a id="modified-utf-8">Modified UTF-8</a></h3>
  * <p>
  * Implementations of the DataInput and DataOutput interfaces represent
  * Unicode strings in a format that is a slight modification of UTF-8.

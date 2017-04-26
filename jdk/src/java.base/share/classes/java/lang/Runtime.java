@@ -950,7 +950,7 @@ public class Runtime {
      * Java&nbsp;SE Platform.  A version string consists of a version number
      * optionally followed by pre-release and build information.
      *
-     * <h2><a name="verNum">Version numbers</a></h2>
+     * <h2><a id="verNum">Version numbers</a></h2>
      *
      * <p> A <em>version number</em>, {@code $VNUM}, is a non-empty sequence
      * of elements separated by period characters (U+002E).  An element is
@@ -971,7 +971,7 @@ public class Runtime {
      *
      * <ul>
      *
-     * <li><p> <a name="major">{@code $MAJOR}</a> --- The major version
+     * <li><p> <a id="major">{@code $MAJOR}</a> --- The major version
      * number, incremented for a major release that contains significant new
      * features as specified in a new edition of the Java&#160;SE Platform
      * Specification, <em>e.g.</em>, <a
@@ -983,7 +983,7 @@ public class Runtime {
      * number of JDK&#160;9 is {@code 9}.  When {@code $MAJOR} is incremented,
      * all subsequent elements are removed. </p></li>
      *
-     * <li><p> <a name="minor">{@code $MINOR}</a> --- The minor version
+     * <li><p> <a id="minor">{@code $MINOR}</a> --- The minor version
      * number, incremented for a minor update release that may contain
      * compatible bug fixes, revisions to standard APIs mandated by a
      * <a href="https://jcp.org/en/procedures/jcp2#5.3">Maintenance Release</a>
@@ -992,7 +992,7 @@ public class Runtime {
      * additional service providers, new garbage collectors, and ports to new
      * hardware architectures. </p></li>
      *
-     * <li><p> <a name="security">{@code $SECURITY}</a> --- The security
+     * <li><p> <a id="security">{@code $SECURITY}</a> --- The security
      * level, incremented for a security update release that contains critical
      * fixes including those necessary to improve security.  {@code $SECURITY}
      * is <strong>not</strong> reset when {@code $MINOR} is incremented.  A
@@ -1021,7 +1021,7 @@ public class Runtime {
      * sequence; <em>e.g.</em>, {@code 9.1.2} is less than {@code 9.1.2.1}.
      * </p>
      *
-     * <h2><a name="verStr">Version strings</a></h2>
+     * <h2><a id="verStr">Version strings</a></h2>
      *
      * <p> A <em>version string</em>, {@code $VSTR}, consists of a version
      * number {@code $VNUM}, as described above, optionally followed by
@@ -1038,17 +1038,17 @@ public class Runtime {
      *
      * <ul>
      *
-     * <li><p> <a name="pre">{@code $PRE}</a>, matching {@code ([a-zA-Z0-9]+)}
+     * <li><p> <a id="pre">{@code $PRE}</a>, matching {@code ([a-zA-Z0-9]+)}
      * --- A pre-release identifier.  Typically {@code ea}, for a
      * potentially unstable early-access release under active development,
      * or {@code internal}, for an internal developer build. </p></li>
      *
-     * <li><p> <a name="build">{@code $BUILD}</a>, matching {@code
+     * <li><p> <a id="build">{@code $BUILD}</a>, matching {@code
      * (0|[1-9][0-9]*)} --- The build number, incremented for each promoted
      * build.  {@code $BUILD} is reset to {@code 1} when any portion of {@code
      * $VNUM} is incremented. </p></li>
      *
-     * <li><p> <a name="opt">{@code $OPT}</a>, matching {@code
+     * <li><p> <a id="opt">{@code $OPT}</a>, matching {@code
      * ([-a-zA-Z0-9.]+)} --- Additional build information, if desired.  In
      * the case of an {@code internal} build this will often contain the date
      * and time of the build. </p></li>

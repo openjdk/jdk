@@ -132,7 +132,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * write to, the file specified by the {@link File} argument.  A new {@link
      * FileDescriptor} object is created to represent this file connection.
      *
-     * <p>The <a name="mode">{@code mode}</a> argument specifies the access mode
+     * <p>The <a id="mode">{@code mode}</a> argument specifies the access mode
      * in which the file is to be opened.  The permitted values and their
      * meanings are:
      *

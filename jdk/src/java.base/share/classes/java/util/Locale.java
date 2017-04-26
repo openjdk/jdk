@@ -83,7 +83,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * described below.
  *
  * <dl>
- *   <dt><a name="def_language"><b>language</b></a></dt>
+ *   <dt><a id="def_language"><b>language</b></a></dt>
  *
  *   <dd>ISO 639 alpha-2 or alpha-3 language code, or registered
  *   language subtags up to 8 alpha letters (for future enhancements).
@@ -101,7 +101,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  *
  *   <dd>Example: "en" (English), "ja" (Japanese), "kok" (Konkani)</dd>
  *
- *   <dt><a name="def_script"><b>script</b></a></dt>
+ *   <dt><a id="def_script"><b>script</b></a></dt>
  *
  *   <dd>ISO 15924 alpha-4 script code.  You can find a full list of
  *   valid script codes in the IANA Language Subtag Registry (search
@@ -115,7 +115,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  *
  *   <dd>Example: "Latn" (Latin), "Cyrl" (Cyrillic)</dd>
  *
- *   <dt><a name="def_region"><b>country (region)</b></a></dt>
+ *   <dt><a id="def_region"><b>country (region)</b></a></dt>
  *
  *   <dd>ISO 3166 alpha-2 country code or UN M.49 numeric-3 area code.
  *   You can find a full list of valid country and region codes in the
@@ -129,7 +129,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  *   <dd>Example: "US" (United States), "FR" (France), "029"
  *   (Caribbean)</dd>
  *
- *   <dt><a name="def_variant"><b>variant</b></a></dt>
+ *   <dt><a id="def_variant"><b>variant</b></a></dt>
  *
  *   <dd>Any arbitrary value used to indicate a variation of a
  *   <code>Locale</code>.  Where there are two or more variant values
@@ -160,7 +160,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  *
  *   <dd>Example: "polyton" (Polytonic Greek), "POSIX"</dd>
  *
- *   <dt><a name="def_extensions"><b>extensions</b></a></dt>
+ *   <dt><a id="def_extensions"><b>extensions</b></a></dt>
  *
  *   <dd>A map from single character keys to string values, indicating
  *   extensions apart from language identification.  The extensions in
@@ -188,7 +188,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * requirement (is well-formed), but does not validate the value
  * itself.  See {@link Builder} for details.
  *
- * <h3><a name="def_locale_extension">Unicode locale/language extension</a></h3>
+ * <h3><a id="def_locale_extension">Unicode locale/language extension</a></h3>
  *
  * <p>UTS#35, "Unicode Locale Data Markup Language" defines optional
  * attributes and keywords to override or refine the default behavior
@@ -269,7 +269,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * </pre>
  * </blockquote>
  *
- * <h4><a name="LocaleMatching">Locale Matching</a></h4>
+ * <h4><a id="LocaleMatching">Locale Matching</a></h4>
  *
  * <p>If an application or a system is internationalized and provides localized
  * resources for multiple locales, it sometimes needs to find one or more
@@ -408,7 +408,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * Clients desiring a string representation of the complete locale can
  * then always rely on <code>toLanguageTag</code> for this purpose.
  *
- * <h5><a name="special_cases_constructor">Special cases</a></h5>
+ * <h5><a id="special_cases_constructor">Special cases</a></h5>
  *
  * <p>For compatibility reasons, two
  * non-conforming locales are treated as special cases.  These are

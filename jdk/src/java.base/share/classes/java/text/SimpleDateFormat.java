@@ -218,18 +218,18 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  * Pattern letters are usually repeated, as their number determines the
  * exact presentation:
  * <ul>
- * <li><strong><a name="text">Text:</a></strong>
+ * <li><strong><a id="text">Text:</a></strong>
  *     For formatting, if the number of pattern letters is 4 or more,
  *     the full form is used; otherwise a short or abbreviated form
  *     is used if available.
  *     For parsing, both forms are accepted, independent of the number
  *     of pattern letters.<br><br></li>
- * <li><strong><a name="number">Number:</a></strong>
+ * <li><strong><a id="number">Number:</a></strong>
  *     For formatting, the number of pattern letters is the minimum
  *     number of digits, and shorter numbers are zero-padded to this amount.
  *     For parsing, the number of pattern letters is ignored unless
  *     it's needed to separate two adjacent fields.<br><br></li>
- * <li><strong><a name="year">Year:</a></strong>
+ * <li><strong><a id="year">Year:</a></strong>
  *     If the formatter's {@link #getCalendar() Calendar} is the Gregorian
  *     calendar, the following rules are applied.<br>
  *     <ul>
@@ -270,7 +270,7 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  *     DateFormat#getCalendar() getCalendar()}.{@link
  *     java.util.Calendar#isWeekDateSupported()
  *     isWeekDateSupported()}.<br><br></li>
- * <li><strong><a name="month">Month:</a></strong>
+ * <li><strong><a id="month">Month:</a></strong>
  *     If the number of pattern letters is 3 or more, the month is
  *     interpreted as <a href="#text">text</a>; otherwise,
  *     it is interpreted as a <a href="#number">number</a>.<br>
@@ -291,12 +291,12 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  *     <li>Letter <em>L</em> produces the standalone form of month names.</li>
  *     </ul>
  *     <br></li>
- * <li><strong><a name="timezone">General time zone:</a></strong>
+ * <li><strong><a id="timezone">General time zone:</a></strong>
  *     Time zones are interpreted as <a href="#text">text</a> if they have
  *     names. For time zones representing a GMT offset value, the
  *     following syntax is used:
  *     <pre>
- *     <a name="GMTOffsetTimeZone"><i>GMTOffsetTimeZone:</i></a>
+ *     <a id="GMTOffsetTimeZone"><i>GMTOffsetTimeZone:</i></a>
  *             <code>GMT</code> <i>Sign</i> <i>Hours</i> <code>:</code> <i>Minutes</i>
  *     <i>Sign:</i> one of
  *             <code>+ -</code>
@@ -312,7 +312,7 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  *     from the Basic Latin block of the Unicode standard.
  *     <p>For parsing, <a href="#rfc822timezone">RFC 822 time zones</a> are also
  *     accepted.<br><br></li>
- * <li><strong><a name="rfc822timezone">RFC 822 time zone:</a></strong>
+ * <li><strong><a id="rfc822timezone">RFC 822 time zone:</a></strong>
  *     For formatting, the RFC 822 4-digit time zone format is used:
  *
  *     <pre>
@@ -325,7 +325,7 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  *
  *     <p>For parsing, <a href="#timezone">general time zones</a> are also
  *     accepted.
- * <li><strong><a name="iso8601timezone">ISO 8601 Time zone:</a></strong>
+ * <li><strong><a id="iso8601timezone">ISO 8601 Time zone:</a></strong>
  *     The number of pattern letters designates the format for both formatting
  *     and parsing as follows:
  *     <pre>
@@ -410,7 +410,7 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  * </table>
  * </blockquote>
  *
- * <h4><a name="synchronization">Synchronization</a></h4>
+ * <h4><a id="synchronization">Synchronization</a></h4>
  *
  * <p>
  * Date formats are not synchronized.

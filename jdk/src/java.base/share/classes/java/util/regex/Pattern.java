@@ -77,7 +77,7 @@ import java.util.stream.StreamSupport;
  * such use.
  *
  *
- * <h3><a name="sum">Summary of regular-expression constructs</a></h3>
+ * <h3><a id="sum">Summary of regular-expression constructs</a></h3>
  *
  * <table border="0" cellpadding="1" cellspacing="0"
  *  summary="Regular expression constructs, and what they match">
@@ -388,7 +388,7 @@ import java.util.stream.StreamSupport;
  * <hr>
  *
  *
- * <h3><a name="bs">Backslashes, escapes, and quoting</a></h3>
+ * <h3><a id="bs">Backslashes, escapes, and quoting</a></h3>
  *
  * <p> The backslash character ({@code '\'}) serves to introduce escaped
  * constructs, as defined in the table above, as well as to quote characters
@@ -416,7 +416,7 @@ import java.util.stream.StreamSupport;
  * {@code (hello)} the string literal {@code "\\(hello\\)"}
  * must be used.
  *
- * <h3><a name="cc">Character Classes</a></h3>
+ * <h3><a id="cc">Character Classes</a></h3>
  *
  *    <p> Character classes may appear within other character classes, and
  *    may be composed by the union operator (implicit) and the intersection
@@ -454,7 +454,7 @@ import java.util.stream.StreamSupport;
  *    character class, while the expression {@code -} becomes a range
  *    forming metacharacter.
  *
- * <h3><a name="lt">Line terminators</a></h3>
+ * <h3><a id="lt">Line terminators</a></h3>
  *
  * <p> A <i>line terminator</i> is a one- or two-character sequence that marks
  * the end of a line of the input character sequence.  The following are
@@ -489,9 +489,9 @@ import java.util.stream.StreamSupport;
  * except at the end of input. When in {@link #MULTILINE} mode {@code $}
  * matches just before a line terminator or the end of the input sequence.
  *
- * <h3><a name="cg">Groups and capturing</a></h3>
+ * <h3><a id="cg">Groups and capturing</a></h3>
  *
- * <h4><a name="gnumber">Group number</a></h4>
+ * <h4><a id="gnumber">Group number</a></h4>
  * <p> Capturing groups are numbered by counting their opening parentheses from
  * left to right.  In the expression {@code ((A)(B(C)))}, for example, there
  * are four such groups: </p>
@@ -514,7 +514,7 @@ import java.util.stream.StreamSupport;
  * subsequence may be used later in the expression, via a back reference, and
  * may also be retrieved from the matcher once the match operation is complete.
  *
- * <h4><a name="groupname">Group name</a></h4>
+ * <h4><a id="groupname">Group name</a></h4>
  * <p>A capturing group can also be assigned a "name", a {@code named-capturing group},
  * and then be back-referenced later by the "name". Group names are composed of
  * the following characters. The first character must be a {@code letter}.
@@ -585,7 +585,7 @@ import java.util.stream.StreamSupport;
  * and outside of a character class.
  *
  * <p>
- * <b><a name="usc">Scripts</a></b> are specified either with the prefix {@code Is}, as in
+ * <b><a id="usc">Scripts</a></b> are specified either with the prefix {@code Is}, as in
  * {@code IsHiragana}, or by using  the {@code script} keyword (or its short
  * form {@code sc}) as in {@code script=Hiragana} or {@code sc=Hiragana}.
  * <p>
@@ -594,7 +594,7 @@ import java.util.stream.StreamSupport;
  * {@link java.lang.Character.UnicodeScript#forName(String) UnicodeScript.forName}.
  *
  * <p>
- * <b><a name="ubc">Blocks</a></b> are specified with the prefix {@code In}, as in
+ * <b><a id="ubc">Blocks</a></b> are specified with the prefix {@code In}, as in
  * {@code InMongolian}, or by using the keyword {@code block} (or its short
  * form {@code blk}) as in {@code block=Mongolian} or {@code blk=Mongolian}.
  * <p>
@@ -603,7 +603,7 @@ import java.util.stream.StreamSupport;
  * {@link java.lang.Character.UnicodeBlock#forName(String) UnicodeBlock.forName}.
  * <p>
  *
- * <b><a name="ucc">Categories</a></b> may be specified with the optional prefix {@code Is}:
+ * <b><a id="ucc">Categories</a></b> may be specified with the optional prefix {@code Is}:
  * Both {@code \p{L}} and {@code \p{IsL}} denote the category of Unicode
  * letters. Same as scripts and blocks, categories can also be specified
  * by using the keyword {@code general_category} (or its short form
@@ -616,7 +616,7 @@ import java.util.stream.StreamSupport;
  * defined in the Standard, both normative and informative.
  * <p>
  *
- * <b><a name="ubpc">Binary properties</a></b> are specified with the prefix {@code Is}, as in
+ * <b><a id="ubpc">Binary properties</a></b> are specified with the prefix {@code Is}, as in
  * {@code IsAlphabetic}. The supported binary properties by {@code Pattern}
  * are
  * <ul>
@@ -687,7 +687,7 @@ import java.util.stream.StreamSupport;
  *     <td>A non-word character: {@code [^\w]}</td></tr>
  * </table>
  * <p>
- * <a name="jcc">
+ * <a id="jcc">
  * Categories that behave like the java.lang.Character
  * boolean is<i>methodname</i> methods (except for the deprecated ones) are
  * available through the same <code>\p{</code><i>prop</i><code>}</code> syntax where
