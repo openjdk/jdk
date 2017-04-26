@@ -292,77 +292,77 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *
  * <table cellpadding=5 summary="genConv">
  *
- * <tr><th valign="bottom"> Conversion
- *     <th valign="bottom"> Argument Category
- *     <th valign="bottom"> Description
+ * <tr><th style="vertical-align:bottom"> Conversion
+ *     <th style="vertical-align:bottom"> Argument Category
+ *     <th style="vertical-align:bottom"> Description
  *
- * <tr><td valign="top"> {@code 'b'}, {@code 'B'}
- *     <td valign="top"> general
+ * <tr><td style="vertical-align:top"> {@code 'b'}, {@code 'B'}
+ *     <td style="vertical-align:top"> general
  *     <td> If the argument <i>arg</i> is {@code null}, then the result is
  *     "{@code false}".  If <i>arg</i> is a {@code boolean} or {@link
  *     Boolean}, then the result is the string returned by {@link
  *     String#valueOf(boolean) String.valueOf(arg)}.  Otherwise, the result is
  *     "true".
  *
- * <tr><td valign="top"> {@code 'h'}, {@code 'H'}
- *     <td valign="top"> general
+ * <tr><td style="vertical-align:top"> {@code 'h'}, {@code 'H'}
+ *     <td style="vertical-align:top"> general
  *     <td> The result is obtained by invoking
  *     {@code Integer.toHexString(arg.hashCode())}.
  *
- * <tr><td valign="top"> {@code 's'}, {@code 'S'}
- *     <td valign="top"> general
+ * <tr><td style="vertical-align:top"> {@code 's'}, {@code 'S'}
+ *     <td style="vertical-align:top"> general
  *     <td> If <i>arg</i> implements {@link Formattable}, then
  *     {@link Formattable#formatTo arg.formatTo} is invoked. Otherwise, the
  *     result is obtained by invoking {@code arg.toString()}.
  *
- * <tr><td valign="top">{@code 'c'}, {@code 'C'}
- *     <td valign="top"> character
+ * <tr><td style="vertical-align:top">{@code 'c'}, {@code 'C'}
+ *     <td style="vertical-align:top"> character
  *     <td> The result is a Unicode character
  *
- * <tr><td valign="top">{@code 'd'}
- *     <td valign="top"> integral
+ * <tr><td style="vertical-align:top">{@code 'd'}
+ *     <td style="vertical-align:top"> integral
  *     <td> The result is formatted as a decimal integer
  *
- * <tr><td valign="top">{@code 'o'}
- *     <td valign="top"> integral
+ * <tr><td style="vertical-align:top">{@code 'o'}
+ *     <td style="vertical-align:top"> integral
  *     <td> The result is formatted as an octal integer
  *
- * <tr><td valign="top">{@code 'x'}, {@code 'X'}
- *     <td valign="top"> integral
+ * <tr><td style="vertical-align:top">{@code 'x'}, {@code 'X'}
+ *     <td style="vertical-align:top"> integral
  *     <td> The result is formatted as a hexadecimal integer
  *
- * <tr><td valign="top">{@code 'e'}, {@code 'E'}
- *     <td valign="top"> floating point
+ * <tr><td style="vertical-align:top">{@code 'e'}, {@code 'E'}
+ *     <td style="vertical-align:top"> floating point
  *     <td> The result is formatted as a decimal number in computerized
  *     scientific notation
  *
- * <tr><td valign="top">{@code 'f'}
- *     <td valign="top"> floating point
+ * <tr><td style="vertical-align:top">{@code 'f'}
+ *     <td style="vertical-align:top"> floating point
  *     <td> The result is formatted as a decimal number
  *
- * <tr><td valign="top">{@code 'g'}, {@code 'G'}
- *     <td valign="top"> floating point
+ * <tr><td style="vertical-align:top">{@code 'g'}, {@code 'G'}
+ *     <td style="vertical-align:top"> floating point
  *     <td> The result is formatted using computerized scientific notation or
  *     decimal format, depending on the precision and the value after rounding.
  *
- * <tr><td valign="top">{@code 'a'}, {@code 'A'}
- *     <td valign="top"> floating point
+ * <tr><td style="vertical-align:top">{@code 'a'}, {@code 'A'}
+ *     <td style="vertical-align:top"> floating point
  *     <td> The result is formatted as a hexadecimal floating-point number with
  *     a significand and an exponent. This conversion is <b>not</b> supported
  *     for the {@code BigDecimal} type despite the latter's being in the
  *     <i>floating point</i> argument category.
  *
- * <tr><td valign="top">{@code 't'}, {@code 'T'}
- *     <td valign="top"> date/time
+ * <tr><td style="vertical-align:top">{@code 't'}, {@code 'T'}
+ *     <td style="vertical-align:top"> date/time
  *     <td> Prefix for date and time conversion characters.  See <a
  *     href="#dt">Date/Time Conversions</a>.
  *
- * <tr><td valign="top">{@code '%'}
- *     <td valign="top"> percent
+ * <tr><td style="vertical-align:top">{@code '%'}
+ *     <td style="vertical-align:top"> percent
  *     <td> The result is a literal {@code '%'} (<code>'&#92;u0025'</code>)
  *
- * <tr><td valign="top">{@code 'n'}
- *     <td valign="top"> line separator
+ * <tr><td style="vertical-align:top">{@code 'n'}
+ *     <td style="vertical-align:top"> line separator
  *     <td> The result is the platform-specific line separator
  *
  * </table>
@@ -383,44 +383,44 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *
  * <table cellpadding=5 summary="time">
  *
- * <tr><td valign="top"> {@code 'H'}
+ * <tr><td style="vertical-align:top"> {@code 'H'}
  *     <td> Hour of the day for the 24-hour clock, formatted as two digits with
  *     a leading zero as necessary i.e. {@code 00 - 23}.
  *
- * <tr><td valign="top">{@code 'I'}
+ * <tr><td style="vertical-align:top">{@code 'I'}
  *     <td> Hour for the 12-hour clock, formatted as two digits with a leading
  *     zero as necessary, i.e.  {@code 01 - 12}.
  *
- * <tr><td valign="top">{@code 'k'}
+ * <tr><td style="vertical-align:top">{@code 'k'}
  *     <td> Hour of the day for the 24-hour clock, i.e. {@code 0 - 23}.
  *
- * <tr><td valign="top">{@code 'l'}
+ * <tr><td style="vertical-align:top">{@code 'l'}
  *     <td> Hour for the 12-hour clock, i.e. {@code 1 - 12}.
  *
- * <tr><td valign="top">{@code 'M'}
+ * <tr><td style="vertical-align:top">{@code 'M'}
  *     <td> Minute within the hour formatted as two digits with a leading zero
  *     as necessary, i.e.  {@code 00 - 59}.
  *
- * <tr><td valign="top">{@code 'S'}
+ * <tr><td style="vertical-align:top">{@code 'S'}
  *     <td> Seconds within the minute, formatted as two digits with a leading
  *     zero as necessary, i.e. {@code 00 - 60} ("{@code 60}" is a special
  *     value required to support leap seconds).
  *
- * <tr><td valign="top">{@code 'L'}
+ * <tr><td style="vertical-align:top">{@code 'L'}
  *     <td> Millisecond within the second formatted as three digits with
  *     leading zeros as necessary, i.e. {@code 000 - 999}.
  *
- * <tr><td valign="top">{@code 'N'}
+ * <tr><td style="vertical-align:top">{@code 'N'}
  *     <td> Nanosecond within the second, formatted as nine digits with leading
  *     zeros as necessary, i.e. {@code 000000000 - 999999999}.
  *
- * <tr><td valign="top">{@code 'p'}
+ * <tr><td style="vertical-align:top">{@code 'p'}
  *     <td> Locale-specific {@linkplain
  *     java.text.DateFormatSymbols#getAmPmStrings morning or afternoon} marker
  *     in lower case, e.g."{@code am}" or "{@code pm}". Use of the conversion
  *     prefix {@code 'T'} forces this output to upper case.
  *
- * <tr><td valign="top">{@code 'z'}
+ * <tr><td style="vertical-align:top">{@code 'z'}
  *     <td> <a href="http://www.ietf.org/rfc/rfc0822.txt">RFC&nbsp;822</a>
  *     style numeric time zone offset from GMT, e.g. {@code -0800}.  This
  *     value will be adjusted as necessary for Daylight Saving Time.  For
@@ -428,7 +428,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     the {@linkplain TimeZone#getDefault() default time zone} for this
  *     instance of the Java virtual machine.
  *
- * <tr><td valign="top">{@code 'Z'}
+ * <tr><td style="vertical-align:top">{@code 'Z'}
  *     <td> A string representing the abbreviation for the time zone.  This
  *     value will be adjusted as necessary for Daylight Saving Time.  For
  *     {@code long}, {@link Long}, and {@link Date} the  time zone used is
@@ -436,12 +436,12 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     instance of the Java virtual machine.  The Formatter's locale will
  *     supersede the locale of the argument (if any).
  *
- * <tr><td valign="top">{@code 's'}
+ * <tr><td style="vertical-align:top">{@code 's'}
  *     <td> Seconds since the beginning of the epoch starting at 1 January 1970
  *     {@code 00:00:00} UTC, i.e. {@code Long.MIN_VALUE/1000} to
  *     {@code Long.MAX_VALUE/1000}.
  *
- * <tr><td valign="top">{@code 'Q'}
+ * <tr><td style="vertical-align:top">{@code 'Q'}
  *     <td> Milliseconds since the beginning of the epoch starting at 1 January
  *     1970 {@code 00:00:00} UTC, i.e. {@code Long.MIN_VALUE} to
  *     {@code Long.MAX_VALUE}.
@@ -452,54 +452,54 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *
  * <table cellpadding=5 summary="date">
  *
- * <tr><td valign="top">{@code 'B'}
+ * <tr><td style="vertical-align:top">{@code 'B'}
  *     <td> Locale-specific {@linkplain java.text.DateFormatSymbols#getMonths
  *     full month name}, e.g. {@code "January"}, {@code "February"}.
  *
- * <tr><td valign="top">{@code 'b'}
+ * <tr><td style="vertical-align:top">{@code 'b'}
  *     <td> Locale-specific {@linkplain
  *     java.text.DateFormatSymbols#getShortMonths abbreviated month name},
  *     e.g. {@code "Jan"}, {@code "Feb"}.
  *
- * <tr><td valign="top">{@code 'h'}
+ * <tr><td style="vertical-align:top">{@code 'h'}
  *     <td> Same as {@code 'b'}.
  *
- * <tr><td valign="top">{@code 'A'}
+ * <tr><td style="vertical-align:top">{@code 'A'}
  *     <td> Locale-specific full name of the {@linkplain
  *     java.text.DateFormatSymbols#getWeekdays day of the week},
  *     e.g. {@code "Sunday"}, {@code "Monday"}
  *
- * <tr><td valign="top">{@code 'a'}
+ * <tr><td style="vertical-align:top">{@code 'a'}
  *     <td> Locale-specific short name of the {@linkplain
  *     java.text.DateFormatSymbols#getShortWeekdays day of the week},
  *     e.g. {@code "Sun"}, {@code "Mon"}
  *
- * <tr><td valign="top">{@code 'C'}
+ * <tr><td style="vertical-align:top">{@code 'C'}
  *     <td> Four-digit year divided by {@code 100}, formatted as two digits
  *     with leading zero as necessary, i.e. {@code 00 - 99}
  *
- * <tr><td valign="top">{@code 'Y'}
+ * <tr><td style="vertical-align:top">{@code 'Y'}
  *     <td> Year, formatted as at least four digits with leading zeros as
  *     necessary, e.g. {@code 0092} equals {@code 92} CE for the Gregorian
  *     calendar.
  *
- * <tr><td valign="top">{@code 'y'}
+ * <tr><td style="vertical-align:top">{@code 'y'}
  *     <td> Last two digits of the year, formatted with leading zeros as
  *     necessary, i.e. {@code 00 - 99}.
  *
- * <tr><td valign="top">{@code 'j'}
+ * <tr><td style="vertical-align:top">{@code 'j'}
  *     <td> Day of year, formatted as three digits with leading zeros as
  *     necessary, e.g. {@code 001 - 366} for the Gregorian calendar.
  *
- * <tr><td valign="top">{@code 'm'}
+ * <tr><td style="vertical-align:top">{@code 'm'}
  *     <td> Month, formatted as two digits with leading zeros as necessary,
  *     i.e. {@code 01 - 13}.
  *
- * <tr><td valign="top">{@code 'd'}
+ * <tr><td style="vertical-align:top">{@code 'd'}
  *     <td> Day of month, formatted as two digits with leading zeros as
  *     necessary, i.e. {@code 01 - 31}
  *
- * <tr><td valign="top">{@code 'e'}
+ * <tr><td style="vertical-align:top">{@code 'e'}
  *     <td> Day of month, formatted as two digits, i.e. {@code 1 - 31}.
  *
  * </table>
@@ -509,25 +509,25 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *
  * <table cellpadding=5 summary="composites">
  *
- * <tr><td valign="top">{@code 'R'}
+ * <tr><td style="vertical-align:top">{@code 'R'}
  *     <td> Time formatted for the 24-hour clock as {@code "%tH:%tM"}
  *
- * <tr><td valign="top">{@code 'T'}
+ * <tr><td style="vertical-align:top">{@code 'T'}
  *     <td> Time formatted for the 24-hour clock as {@code "%tH:%tM:%tS"}.
  *
- * <tr><td valign="top">{@code 'r'}
+ * <tr><td style="vertical-align:top">{@code 'r'}
  *     <td> Time formatted for the 12-hour clock as {@code "%tI:%tM:%tS %Tp"}.
  *     The location of the morning or afternoon marker ({@code '%Tp'}) may be
  *     locale-dependent.
  *
- * <tr><td valign="top">{@code 'D'}
+ * <tr><td style="vertical-align:top">{@code 'D'}
  *     <td> Date formatted as {@code "%tm/%td/%ty"}.
  *
- * <tr><td valign="top">{@code 'F'}
+ * <tr><td style="vertical-align:top">{@code 'F'}
  *     <td> <a href="http://www.w3.org/TR/NOTE-datetime">ISO&nbsp;8601</a>
  *     complete date formatted as {@code "%tY-%tm-%td"}.
  *
- * <tr><td valign="top">{@code 'c'}
+ * <tr><td style="vertical-align:top">{@code 'c'}
  *     <td> Date and time formatted as {@code "%ta %tb %td %tT %tZ %tY"},
  *     e.g. {@code "Sun Jul 20 16:17:00 EDT 1969"}.
  *
@@ -543,60 +543,60 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *
  * <table cellpadding=5 summary="genConv">
  *
- * <tr><th valign="bottom"> Flag <th valign="bottom"> General
- *     <th valign="bottom"> Character <th valign="bottom"> Integral
- *     <th valign="bottom"> Floating Point
- *     <th valign="bottom"> Date/Time
- *     <th valign="bottom"> Description
+ * <tr><th style="vertical-align:bottom"> Flag <th style="vertical-align:bottom"> General
+ *     <th style="vertical-align:bottom"> Character <th style="vertical-align:bottom"> Integral
+ *     <th style="vertical-align:bottom"> Floating Point
+ *     <th style="vertical-align:bottom"> Date/Time
+ *     <th style="vertical-align:bottom"> Description
  *
- * <tr><td> '-' <td align="center" valign="top"> y
- *     <td align="center" valign="top"> y
- *     <td align="center" valign="top"> y
- *     <td align="center" valign="top"> y
- *     <td align="center" valign="top"> y
+ * <tr><td> '-' <td style="text-align:center; vertical-align:top"> y
+ *     <td style="text-align:center; vertical-align:top"> y
+ *     <td style="text-align:center; vertical-align:top"> y
+ *     <td style="text-align:center; vertical-align:top"> y
+ *     <td style="text-align:center; vertical-align:top"> y
  *     <td> The result will be left-justified.
  *
- * <tr><td> '#' <td align="center" valign="top"> y<sup>1</sup>
- *     <td align="center" valign="top"> -
- *     <td align="center" valign="top"> y<sup>3</sup>
- *     <td align="center" valign="top"> y
- *     <td align="center" valign="top"> -
+ * <tr><td> '#' <td style="text-align:center; vertical-align:top"> y<sup>1</sup>
+ *     <td style="text-align:center; vertical-align:top"> -
+ *     <td style="text-align:center; vertical-align:top"> y<sup>3</sup>
+ *     <td style="text-align:center; vertical-align:top"> y
+ *     <td style="text-align:center; vertical-align:top"> -
  *     <td> The result should use a conversion-dependent alternate form
  *
- * <tr><td> '+' <td align="center" valign="top"> -
- *     <td align="center" valign="top"> -
- *     <td align="center" valign="top"> y<sup>4</sup>
- *     <td align="center" valign="top"> y
- *     <td align="center" valign="top"> -
+ * <tr><td> '+' <td style="text-align:center; vertical-align:top"> -
+ *     <td style="text-align:center; vertical-align:top"> -
+ *     <td style="text-align:center; vertical-align:top"> y<sup>4</sup>
+ *     <td style="text-align:center; vertical-align:top"> y
+ *     <td style="text-align:center; vertical-align:top"> -
  *     <td> The result will always include a sign
  *
- * <tr><td> '&nbsp;&nbsp;' <td align="center" valign="top"> -
- *     <td align="center" valign="top"> -
- *     <td align="center" valign="top"> y<sup>4</sup>
- *     <td align="center" valign="top"> y
- *     <td align="center" valign="top"> -
+ * <tr><td> '&nbsp;&nbsp;' <td style="text-align:center; vertical-align:top"> -
+ *     <td style="text-align:center; vertical-align:top"> -
+ *     <td style="text-align:center; vertical-align:top"> y<sup>4</sup>
+ *     <td style="text-align:center; vertical-align:top"> y
+ *     <td style="text-align:center; vertical-align:top"> -
  *     <td> The result will include a leading space for positive values
  *
- * <tr><td> '0' <td align="center" valign="top"> -
- *     <td align="center" valign="top"> -
- *     <td align="center" valign="top"> y
- *     <td align="center" valign="top"> y
- *     <td align="center" valign="top"> -
+ * <tr><td> '0' <td style="text-align:center; vertical-align:top"> -
+ *     <td style="text-align:center; vertical-align:top"> -
+ *     <td style="text-align:center; vertical-align:top"> y
+ *     <td style="text-align:center; vertical-align:top"> y
+ *     <td style="text-align:center; vertical-align:top"> -
  *     <td> The result will be zero-padded
  *
- * <tr><td> ',' <td align="center" valign="top"> -
- *     <td align="center" valign="top"> -
- *     <td align="center" valign="top"> y<sup>2</sup>
- *     <td align="center" valign="top"> y<sup>5</sup>
- *     <td align="center" valign="top"> -
+ * <tr><td> ',' <td style="text-align:center; vertical-align:top"> -
+ *     <td style="text-align:center; vertical-align:top"> -
+ *     <td style="text-align:center; vertical-align:top"> y<sup>2</sup>
+ *     <td style="text-align:center; vertical-align:top"> y<sup>5</sup>
+ *     <td style="text-align:center; vertical-align:top"> -
  *     <td> The result will include locale-specific {@linkplain
  *     java.text.DecimalFormatSymbols#getGroupingSeparator grouping separators}
  *
- * <tr><td> '(' <td align="center" valign="top"> -
- *     <td align="center" valign="top"> -
- *     <td align="center" valign="top"> y<sup>4</sup>
- *     <td align="center" valign="top"> y<sup>5</sup>
- *     <td align="center"> -
+ * <tr><td> '(' <td style="text-align:center; vertical-align:top"> -
+ *     <td style="text-align:center; vertical-align:top"> -
+ *     <td style="text-align:center; vertical-align:top"> y<sup>4</sup>
+ *     <td style="text-align:center; vertical-align:top"> y<sup>5</sup>
+ *     <td style="text-align:center"> -
  *     <td> The result will enclose negative numbers in parentheses
  *
  * </table>
@@ -707,8 +707,8 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *
  * <table cellpadding=5 summary="dgConv">
  *
- * <tr><td valign="top"> {@code 'b'}
- *     <td valign="top"> <code>'&#92;u0062'</code>
+ * <tr><td style="vertical-align:top"> {@code 'b'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0062'</code>
  *     <td> Produces either "{@code true}" or "{@code false}" as returned by
  *     {@link Boolean#toString(boolean)}.
  *
@@ -721,12 +721,12 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     <p> If the {@code '#'} flag is given, then a {@link
  *     FormatFlagsConversionMismatchException} will be thrown.
  *
- * <tr><td valign="top"> {@code 'B'}
- *     <td valign="top"> <code>'&#92;u0042'</code>
+ * <tr><td style="vertical-align:top"> {@code 'B'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0042'</code>
  *     <td> The upper-case variant of {@code 'b'}.
  *
- * <tr><td valign="top"> {@code 'h'}
- *     <td valign="top"> <code>'&#92;u0068'</code>
+ * <tr><td style="vertical-align:top"> {@code 'h'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0068'</code>
  *     <td> Produces a string representing the hash code value of the object.
  *
  *     <p> The result is obtained by invoking
@@ -735,12 +735,12 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     <p> If the {@code '#'} flag is given, then a {@link
  *     FormatFlagsConversionMismatchException} will be thrown.
  *
- * <tr><td valign="top"> {@code 'H'}
- *     <td valign="top"> <code>'&#92;u0048'</code>
+ * <tr><td style="vertical-align:top"> {@code 'H'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0048'</code>
  *     <td> The upper-case variant of {@code 'h'}.
  *
- * <tr><td valign="top"> {@code 's'}
- *     <td valign="top"> <code>'&#92;u0073'</code>
+ * <tr><td style="vertical-align:top"> {@code 's'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0073'</code>
  *     <td> Produces a string.
  *
  *     <p> If the argument implements {@link Formattable}, then
@@ -752,8 +752,8 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     Formattable} , then a {@link FormatFlagsConversionMismatchException}
  *     will be thrown.
  *
- * <tr><td valign="top"> {@code 'S'}
- *     <td valign="top"> <code>'&#92;u0053'</code>
+ * <tr><td style="vertical-align:top"> {@code 'S'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0053'</code>
  *     <td> The upper-case variant of {@code 's'}.
  *
  * </table>
@@ -762,16 +762,16 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *
  * <table cellpadding=5 summary="dFlags">
  *
- * <tr><td valign="top"> {@code '-'}
- *     <td valign="top"> <code>'&#92;u002d'</code>
+ * <tr><td style="vertical-align:top"> {@code '-'}
+ *     <td style="vertical-align:top"> <code>'&#92;u002d'</code>
  *     <td> Left justifies the output.  Spaces (<code>'&#92;u0020'</code>) will be
  *     added at the end of the converted value as required to fill the minimum
  *     width of the field.  If the width is not provided, then a {@link
  *     MissingFormatWidthException} will be thrown.  If this flag is not given
  *     then the output will be right-justified.
  *
- * <tr><td valign="top"> {@code '#'}
- *     <td valign="top"> <code>'&#92;u0023'</code>
+ * <tr><td style="vertical-align:top"> {@code '#'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0023'</code>
  *     <td> Requires the output use an alternate form.  The definition of the
  *     form is specified by the conversion.
  *
@@ -803,8 +803,8 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *
  * <table cellpadding=5 summary="charConv">
  *
- * <tr><td valign="top"> {@code 'c'}
- *     <td valign="top"> <code>'&#92;u0063'</code>
+ * <tr><td style="vertical-align:top"> {@code 'c'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0063'</code>
  *     <td> Formats the argument as a Unicode character as described in <a
  *     href="../lang/Character.html#unicode">Unicode Character
  *     Representation</a>.  This may be more than one 16-bit {@code char} in
@@ -813,8 +813,8 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     <p> If the {@code '#'} flag is given, then a {@link
  *     FormatFlagsConversionMismatchException} will be thrown.
  *
- * <tr><td valign="top"> {@code 'C'}
- *     <td valign="top"> <code>'&#92;u0043'</code>
+ * <tr><td style="vertical-align:top"> {@code 'C'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0043'</code>
  *     <td> The upper-case variant of {@code 'c'}.
  *
  * </table>
@@ -904,8 +904,8 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *
  * <table cellpadding=5 summary="IntConv">
  *
- * <tr><td valign="top"> {@code 'd'}
- *     <td valign="top"> <code>'&#92;u0064'</code>
+ * <tr><td style="vertical-align:top"> {@code 'd'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0064'</code>
  *     <td> Formats the argument as a decimal integer. The <a
  *     href="#L10nAlgorithm">localization algorithm</a> is applied.
  *
@@ -915,8 +915,8 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     <p> If the {@code '#'} flag is given then a {@link
  *     FormatFlagsConversionMismatchException} will be thrown.
  *
- * <tr><td valign="top"> {@code 'o'}
- *     <td valign="top"> <code>'&#92;u006f'</code>
+ * <tr><td style="vertical-align:top"> {@code 'o'}
+ *     <td style="vertical-align:top"> <code>'&#92;u006f'</code>
  *     <td> Formats the argument as an integer in base eight.  No localization
  *     is applied.
  *
@@ -937,8 +937,8 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     are given then a {@link FormatFlagsConversionMismatchException} will be
  *     thrown.
  *
- * <tr><td valign="top"> {@code 'x'}
- *     <td valign="top"> <code>'&#92;u0078'</code>
+ * <tr><td style="vertical-align:top"> {@code 'x'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0078'</code>
  *     <td> Formats the argument as an integer in base sixteen. No
  *     localization is applied.
  *
@@ -960,8 +960,8 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     {@code ','} flags are given then a {@link
  *     FormatFlagsConversionMismatchException} will be thrown.
  *
- * <tr><td valign="top"> {@code 'X'}
- *     <td valign="top"> <code>'&#92;u0058'</code>
+ * <tr><td style="vertical-align:top"> {@code 'X'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0058'</code>
  *     <td> The upper-case variant of {@code 'x'}.  The entire string
  *     representing the number will be converted to {@linkplain
  *     String#toUpperCase upper case} including the {@code 'x'} (if any) and
@@ -984,8 +984,8 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *
  * <table cellpadding=5 summary="intFlags">
  *
- * <tr><td valign="top"> {@code '+'}
- *     <td valign="top"> <code>'&#92;u002b'</code>
+ * <tr><td style="vertical-align:top"> {@code '+'}
+ *     <td style="vertical-align:top"> <code>'&#92;u002b'</code>
  *     <td> Requires the output to include a positive sign for all positive
  *     numbers.  If this flag is not given then only negative values will
  *     include a sign.
@@ -993,16 +993,16 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     <p> If both the {@code '+'} and <code>'&nbsp;&nbsp;'</code> flags are given
  *     then an {@link IllegalFormatFlagsException} will be thrown.
  *
- * <tr><td valign="top"> <code>'&nbsp;&nbsp;'</code>
- *     <td valign="top"> <code>'&#92;u0020'</code>
+ * <tr><td style="vertical-align:top"> <code>'&nbsp;&nbsp;'</code>
+ *     <td style="vertical-align:top"> <code>'&#92;u0020'</code>
  *     <td> Requires the output to include a single extra space
  *     (<code>'&#92;u0020'</code>) for non-negative values.
  *
  *     <p> If both the {@code '+'} and <code>'&nbsp;&nbsp;'</code> flags are given
  *     then an {@link IllegalFormatFlagsException} will be thrown.
  *
- * <tr><td valign="top"> {@code '0'}
- *     <td valign="top"> <code>'&#92;u0030'</code>
+ * <tr><td style="vertical-align:top"> {@code '0'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0030'</code>
  *     <td> Requires the output to be padded with leading {@linkplain
  *     java.text.DecimalFormatSymbols#getZeroDigit zeros} to the minimum field
  *     width following any sign or radix indicator except when converting NaN
@@ -1012,15 +1012,15 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     <p> If both the {@code '-'} and {@code '0'} flags are given then an
  *     {@link IllegalFormatFlagsException} will be thrown.
  *
- * <tr><td valign="top"> {@code ','}
- *     <td valign="top"> <code>'&#92;u002c'</code>
+ * <tr><td style="vertical-align:top"> {@code ','}
+ *     <td style="vertical-align:top"> <code>'&#92;u002c'</code>
  *     <td> Requires the output to include the locale-specific {@linkplain
  *     java.text.DecimalFormatSymbols#getGroupingSeparator group separators} as
  *     described in the <a href="#L10nGroup">"group" section</a> of the
  *     localization algorithm.
  *
- * <tr><td valign="top"> {@code '('}
- *     <td valign="top"> <code>'&#92;u0028'</code>
+ * <tr><td style="vertical-align:top"> {@code '('}
+ *     <td style="vertical-align:top"> <code>'&#92;u0028'</code>
  *     <td> Requires the output to prepend a {@code '('}
  *     (<code>'&#92;u0028'</code>) and append a {@code ')'}
  *     (<code>'&#92;u0029'</code>) to negative values.
@@ -1062,16 +1062,16 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *
  * <table cellpadding=5 summary="BIntConv">
  *
- * <tr><td valign="top"> {@code 'd'}
- *     <td valign="top"> <code>'&#92;u0064'</code>
+ * <tr><td style="vertical-align:top"> {@code 'd'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0064'</code>
  *     <td> Requires the output to be formatted as a decimal integer. The <a
  *     href="#L10nAlgorithm">localization algorithm</a> is applied.
  *
  *     <p> If the {@code '#'} flag is given {@link
  *     FormatFlagsConversionMismatchException} will be thrown.
  *
- * <tr><td valign="top"> {@code 'o'}
- *     <td valign="top"> <code>'&#92;u006f'</code>
+ * <tr><td style="vertical-align:top"> {@code 'o'}
+ *     <td style="vertical-align:top"> <code>'&#92;u006f'</code>
  *     <td> Requires the output to be formatted as an integer in base eight.
  *     No localization is applied.
  *
@@ -1093,8 +1093,8 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     <p> If the {@code ','} flag is given then a {@link
  *     FormatFlagsConversionMismatchException} will be thrown.
  *
- * <tr><td valign="top"> {@code 'x'}
- *     <td valign="top"> <code>'&#92;u0078'</code>
+ * <tr><td style="vertical-align:top"> {@code 'x'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0078'</code>
  *     <td> Requires the output to be formatted as an integer in base
  *     sixteen.  No localization is applied.
  *
@@ -1117,8 +1117,8 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     <p> If the {@code ','} flag is given then a {@link
  *     FormatFlagsConversionMismatchException} will be thrown.
  *
- * <tr><td valign="top"> {@code 'X'}
- *     <td valign="top"> <code>'&#92;u0058'</code>
+ * <tr><td style="vertical-align:top"> {@code 'X'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0058'</code>
  *     <td> The upper-case variant of {@code 'x'}.  The entire string
  *     representing the number will be converted to {@linkplain
  *     String#toUpperCase upper case} including the {@code 'x'} (if any) and
@@ -1156,8 +1156,8 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *
  * <table cellpadding=5 summary="floatConv">
  *
- * <tr><td valign="top"> {@code 'e'}
- *     <td valign="top"> <code>'&#92;u0065'</code>
+ * <tr><td style="vertical-align:top"> {@code 'e'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0065'</code>
  *     <td> Requires the output to be formatted using <a
  *     name="scientific">computerized scientific notation</a>.  The <a
  *     href="#L10nAlgorithm">localization algorithm</a> is applied.
@@ -1204,13 +1204,13 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     <p>If the {@code ','} flag is given, then an {@link
  *     FormatFlagsConversionMismatchException} will be thrown.
  *
- * <tr><td valign="top"> {@code 'E'}
- *     <td valign="top"> <code>'&#92;u0045'</code>
+ * <tr><td style="vertical-align:top"> {@code 'E'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0045'</code>
  *     <td> The upper-case variant of {@code 'e'}.  The exponent symbol
  *     will be {@code 'E'} (<code>'&#92;u0045'</code>).
  *
- * <tr><td valign="top"> {@code 'g'}
- *     <td valign="top"> <code>'&#92;u0067'</code>
+ * <tr><td style="vertical-align:top"> {@code 'g'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0067'</code>
  *     <td> Requires the output to be formatted in general scientific notation
  *     as described below. The <a href="#L10nAlgorithm">localization
  *     algorithm</a> is applied.
@@ -1234,12 +1234,12 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     <p> If the {@code '#'} flag is given then an {@link
  *     FormatFlagsConversionMismatchException} will be thrown.
  *
- * <tr><td valign="top"> {@code 'G'}
- *     <td valign="top"> <code>'&#92;u0047'</code>
+ * <tr><td style="vertical-align:top"> {@code 'G'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0047'</code>
  *     <td> The upper-case variant of {@code 'g'}.
  *
- * <tr><td valign="top"> {@code 'f'}
- *     <td valign="top"> <code>'&#92;u0066'</code>
+ * <tr><td style="vertical-align:top"> {@code 'f'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0066'</code>
  *     <td> Requires the output to be formatted using <a id="decimal">decimal
  *     format</a>.  The <a href="#L10nAlgorithm">localization algorithm</a> is
  *     applied.
@@ -1270,8 +1270,8 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     Float#toString(float)} or {@link Double#toString(double)} as
  *     appropriate.
  *
- * <tr><td valign="top"> {@code 'a'}
- *     <td valign="top"> <code>'&#92;u0061'</code>
+ * <tr><td style="vertical-align:top"> {@code 'a'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0061'</code>
  *     <td> Requires the output to be formatted in hexadecimal exponential
  *     form.  No localization is applied.
  *
@@ -1323,8 +1323,8 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     <p> If the {@code '('} or {@code ','} flags are given, then a {@link
  *     FormatFlagsConversionMismatchException} will be thrown.
  *
- * <tr><td valign="top"> {@code 'A'}
- *     <td valign="top"> <code>'&#92;u0041'</code>
+ * <tr><td style="vertical-align:top"> {@code 'A'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0041'</code>
  *     <td> The upper-case variant of {@code 'a'}.  The entire string
  *     representing the number will be converted to upper case including the
  *     {@code 'x'} (<code>'&#92;u0078'</code>) and {@code 'p'}
@@ -1390,8 +1390,8 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *
  * <table cellpadding=5 summary="floatConv">
  *
- * <tr><td valign="top"> {@code 'e'}
- *     <td valign="top"> <code>'&#92;u0065'</code>
+ * <tr><td style="vertical-align:top"> {@code 'e'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0065'</code>
  *     <td> Requires the output to be formatted using <a
  *     name="bscientific">computerized scientific notation</a>.  The <a
  *     href="#L10nAlgorithm">localization algorithm</a> is applied.
@@ -1432,13 +1432,13 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     <p> If the {@code ','} flag is given, then an {@link
  *     FormatFlagsConversionMismatchException} will be thrown.
  *
- * <tr><td valign="top"> {@code 'E'}
- *     <td valign="top"> <code>'&#92;u0045'</code>
+ * <tr><td style="vertical-align:top"> {@code 'E'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0045'</code>
  *     <td> The upper-case variant of {@code 'e'}.  The exponent symbol
  *     will be {@code 'E'} (<code>'&#92;u0045'</code>).
  *
- * <tr><td valign="top"> {@code 'g'}
- *     <td valign="top"> <code>'&#92;u0067'</code>
+ * <tr><td style="vertical-align:top"> {@code 'g'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0067'</code>
  *     <td> Requires the output to be formatted in general scientific notation
  *     as described below. The <a href="#L10nAlgorithm">localization
  *     algorithm</a> is applied.
@@ -1462,12 +1462,12 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     <p> If the {@code '#'} flag is given then an {@link
  *     FormatFlagsConversionMismatchException} will be thrown.
  *
- * <tr><td valign="top"> {@code 'G'}
- *     <td valign="top"> <code>'&#92;u0047'</code>
+ * <tr><td style="vertical-align:top"> {@code 'G'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0047'</code>
  *     <td> The upper-case variant of {@code 'g'}.
  *
- * <tr><td valign="top"> {@code 'f'}
- *     <td valign="top"> <code>'&#92;u0066'</code>
+ * <tr><td style="vertical-align:top"> {@code 'f'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0066'</code>
  *     <td> Requires the output to be formatted using <a id="bdecimal">decimal
  *     format</a>.  The <a href="#L10nAlgorithm">localization algorithm</a> is
  *     applied.
@@ -1514,11 +1514,11 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *
  * <table cellpadding=5 summary="DTConv">
  *
- * <tr><td valign="top"> {@code 't'}
- *     <td valign="top"> <code>'&#92;u0074'</code>
+ * <tr><td style="vertical-align:top"> {@code 't'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0074'</code>
  *     <td> Prefix for date and time conversion characters.
- * <tr><td valign="top"> {@code 'T'}
- *     <td valign="top"> <code>'&#92;u0054'</code>
+ * <tr><td style="vertical-align:top"> {@code 'T'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0054'</code>
  *     <td> The upper-case variant of {@code 't'}.
  *
  * </table>
@@ -1534,53 +1534,53 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *
  * <table cellpadding=5 summary="time">
  *
- * <tr><td valign="top"> {@code 'H'}
- *     <td valign="top"> <code>'&#92;u0048'</code>
+ * <tr><td style="vertical-align:top"> {@code 'H'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0048'</code>
  *     <td> Hour of the day for the 24-hour clock, formatted as two digits with
  *     a leading zero as necessary i.e. {@code 00 - 23}. {@code 00}
  *     corresponds to midnight.
  *
- * <tr><td valign="top">{@code 'I'}
- *     <td valign="top"> <code>'&#92;u0049'</code>
+ * <tr><td style="vertical-align:top">{@code 'I'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0049'</code>
  *     <td> Hour for the 12-hour clock, formatted as two digits with a leading
  *     zero as necessary, i.e.  {@code 01 - 12}.  {@code 01} corresponds to
  *     one o'clock (either morning or afternoon).
  *
- * <tr><td valign="top">{@code 'k'}
- *     <td valign="top"> <code>'&#92;u006b'</code>
+ * <tr><td style="vertical-align:top">{@code 'k'}
+ *     <td style="vertical-align:top"> <code>'&#92;u006b'</code>
  *     <td> Hour of the day for the 24-hour clock, i.e. {@code 0 - 23}.
  *     {@code 0} corresponds to midnight.
  *
- * <tr><td valign="top">{@code 'l'}
- *     <td valign="top"> <code>'&#92;u006c'</code>
+ * <tr><td style="vertical-align:top">{@code 'l'}
+ *     <td style="vertical-align:top"> <code>'&#92;u006c'</code>
  *     <td> Hour for the 12-hour clock, i.e. {@code 1 - 12}.  {@code 1}
  *     corresponds to one o'clock (either morning or afternoon).
  *
- * <tr><td valign="top">{@code 'M'}
- *     <td valign="top"> <code>'&#92;u004d'</code>
+ * <tr><td style="vertical-align:top">{@code 'M'}
+ *     <td style="vertical-align:top"> <code>'&#92;u004d'</code>
  *     <td> Minute within the hour formatted as two digits with a leading zero
  *     as necessary, i.e.  {@code 00 - 59}.
  *
- * <tr><td valign="top">{@code 'S'}
- *     <td valign="top"> <code>'&#92;u0053'</code>
+ * <tr><td style="vertical-align:top">{@code 'S'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0053'</code>
  *     <td> Seconds within the minute, formatted as two digits with a leading
  *     zero as necessary, i.e. {@code 00 - 60} ("{@code 60}" is a special
  *     value required to support leap seconds).
  *
- * <tr><td valign="top">{@code 'L'}
- *     <td valign="top"> <code>'&#92;u004c'</code>
+ * <tr><td style="vertical-align:top">{@code 'L'}
+ *     <td style="vertical-align:top"> <code>'&#92;u004c'</code>
  *     <td> Millisecond within the second formatted as three digits with
  *     leading zeros as necessary, i.e. {@code 000 - 999}.
  *
- * <tr><td valign="top">{@code 'N'}
- *     <td valign="top"> <code>'&#92;u004e'</code>
+ * <tr><td style="vertical-align:top">{@code 'N'}
+ *     <td style="vertical-align:top"> <code>'&#92;u004e'</code>
  *     <td> Nanosecond within the second, formatted as nine digits with leading
  *     zeros as necessary, i.e. {@code 000000000 - 999999999}.  The precision
  *     of this value is limited by the resolution of the underlying operating
  *     system or hardware.
  *
- * <tr><td valign="top">{@code 'p'}
- *     <td valign="top"> <code>'&#92;u0070'</code>
+ * <tr><td style="vertical-align:top">{@code 'p'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0070'</code>
  *     <td> Locale-specific {@linkplain
  *     java.text.DateFormatSymbols#getAmPmStrings morning or afternoon} marker
  *     in lower case, e.g."{@code am}" or "{@code pm}".  Use of the
@@ -1589,8 +1589,8 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     GNU {@code date} and POSIX {@code strftime(3c)} which produce
  *     upper-case output.)
  *
- * <tr><td valign="top">{@code 'z'}
- *     <td valign="top"> <code>'&#92;u007a'</code>
+ * <tr><td style="vertical-align:top">{@code 'z'}
+ *     <td style="vertical-align:top"> <code>'&#92;u007a'</code>
  *     <td> <a href="http://www.ietf.org/rfc/rfc0822.txt">RFC&nbsp;822</a>
  *     style numeric time zone offset from GMT, e.g. {@code -0800}.  This
  *     value will be adjusted as necessary for Daylight Saving Time.  For
@@ -1598,8 +1598,8 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     the {@linkplain TimeZone#getDefault() default time zone} for this
  *     instance of the Java virtual machine.
  *
- * <tr><td valign="top">{@code 'Z'}
- *     <td valign="top"> <code>'&#92;u005a'</code>
+ * <tr><td style="vertical-align:top">{@code 'Z'}
+ *     <td style="vertical-align:top"> <code>'&#92;u005a'</code>
  *     <td> A string representing the abbreviation for the time zone.  This
  *     value will be adjusted as necessary for Daylight Saving Time.  For
  *     {@code long}, {@link Long}, and {@link Date} the time zone used is
@@ -1607,14 +1607,14 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     instance of the Java virtual machine.  The Formatter's locale will
  *     supersede the locale of the argument (if any).
  *
- * <tr><td valign="top">{@code 's'}
- *     <td valign="top"> <code>'&#92;u0073'</code>
+ * <tr><td style="vertical-align:top">{@code 's'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0073'</code>
  *     <td> Seconds since the beginning of the epoch starting at 1 January 1970
  *     {@code 00:00:00} UTC, i.e. {@code Long.MIN_VALUE/1000} to
  *     {@code Long.MAX_VALUE/1000}.
  *
- * <tr><td valign="top">{@code 'Q'}
- *     <td valign="top"> <code>'&#92;u004f'</code>
+ * <tr><td style="vertical-align:top">{@code 'Q'}
+ *     <td style="vertical-align:top"> <code>'&#92;u004f'</code>
  *     <td> Milliseconds since the beginning of the epoch starting at 1 January
  *     1970 {@code 00:00:00} UTC, i.e. {@code Long.MIN_VALUE} to
  *     {@code Long.MAX_VALUE}. The precision of this value is limited by
@@ -1626,69 +1626,69 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *
  * <table cellpadding=5 summary="date">
  *
- * <tr><td valign="top">{@code 'B'}
- *     <td valign="top"> <code>'&#92;u0042'</code>
+ * <tr><td style="vertical-align:top">{@code 'B'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0042'</code>
  *     <td> Locale-specific {@linkplain java.text.DateFormatSymbols#getMonths
  *     full month name}, e.g. {@code "January"}, {@code "February"}.
  *
- * <tr><td valign="top">{@code 'b'}
- *     <td valign="top"> <code>'&#92;u0062'</code>
+ * <tr><td style="vertical-align:top">{@code 'b'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0062'</code>
  *     <td> Locale-specific {@linkplain
  *     java.text.DateFormatSymbols#getShortMonths abbreviated month name},
  *     e.g. {@code "Jan"}, {@code "Feb"}.
  *
- * <tr><td valign="top">{@code 'h'}
- *     <td valign="top"> <code>'&#92;u0068'</code>
+ * <tr><td style="vertical-align:top">{@code 'h'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0068'</code>
  *     <td> Same as {@code 'b'}.
  *
- * <tr><td valign="top">{@code 'A'}
- *     <td valign="top"> <code>'&#92;u0041'</code>
+ * <tr><td style="vertical-align:top">{@code 'A'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0041'</code>
  *     <td> Locale-specific full name of the {@linkplain
  *     java.text.DateFormatSymbols#getWeekdays day of the week},
  *     e.g. {@code "Sunday"}, {@code "Monday"}
  *
- * <tr><td valign="top">{@code 'a'}
- *     <td valign="top"> <code>'&#92;u0061'</code>
+ * <tr><td style="vertical-align:top">{@code 'a'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0061'</code>
  *     <td> Locale-specific short name of the {@linkplain
  *     java.text.DateFormatSymbols#getShortWeekdays day of the week},
  *     e.g. {@code "Sun"}, {@code "Mon"}
  *
- * <tr><td valign="top">{@code 'C'}
- *     <td valign="top"> <code>'&#92;u0043'</code>
+ * <tr><td style="vertical-align:top">{@code 'C'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0043'</code>
  *     <td> Four-digit year divided by {@code 100}, formatted as two digits
  *     with leading zero as necessary, i.e. {@code 00 - 99}
  *
- * <tr><td valign="top">{@code 'Y'}
- *     <td valign="top"> <code>'&#92;u0059'</code> <td> Year, formatted to at least
+ * <tr><td style="vertical-align:top">{@code 'Y'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0059'</code> <td> Year, formatted to at least
  *     four digits with leading zeros as necessary, e.g. {@code 0092} equals
  *     {@code 92} CE for the Gregorian calendar.
  *
- * <tr><td valign="top">{@code 'y'}
- *     <td valign="top"> <code>'&#92;u0079'</code>
+ * <tr><td style="vertical-align:top">{@code 'y'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0079'</code>
  *     <td> Last two digits of the year, formatted with leading zeros as
  *     necessary, i.e. {@code 00 - 99}.
  *
- * <tr><td valign="top">{@code 'j'}
- *     <td valign="top"> <code>'&#92;u006a'</code>
+ * <tr><td style="vertical-align:top">{@code 'j'}
+ *     <td style="vertical-align:top"> <code>'&#92;u006a'</code>
  *     <td> Day of year, formatted as three digits with leading zeros as
  *     necessary, e.g. {@code 001 - 366} for the Gregorian calendar.
  *     {@code 001} corresponds to the first day of the year.
  *
- * <tr><td valign="top">{@code 'm'}
- *     <td valign="top"> <code>'&#92;u006d'</code>
+ * <tr><td style="vertical-align:top">{@code 'm'}
+ *     <td style="vertical-align:top"> <code>'&#92;u006d'</code>
  *     <td> Month, formatted as two digits with leading zeros as necessary,
  *     i.e. {@code 01 - 13}, where "{@code 01}" is the first month of the
  *     year and ("{@code 13}" is a special value required to support lunar
  *     calendars).
  *
- * <tr><td valign="top">{@code 'd'}
- *     <td valign="top"> <code>'&#92;u0064'</code>
+ * <tr><td style="vertical-align:top">{@code 'd'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0064'</code>
  *     <td> Day of month, formatted as two digits with leading zeros as
  *     necessary, i.e. {@code 01 - 31}, where "{@code 01}" is the first day
  *     of the month.
  *
- * <tr><td valign="top">{@code 'e'}
- *     <td valign="top"> <code>'&#92;u0065'</code>
+ * <tr><td style="vertical-align:top">{@code 'e'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0065'</code>
  *     <td> Day of month, formatted as two digits, i.e. {@code 1 - 31} where
  *     "{@code 1}" is the first day of the month.
  *
@@ -1699,31 +1699,31 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *
  * <table cellpadding=5 summary="composites">
  *
- * <tr><td valign="top">{@code 'R'}
- *     <td valign="top"> <code>'&#92;u0052'</code>
+ * <tr><td style="vertical-align:top">{@code 'R'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0052'</code>
  *     <td> Time formatted for the 24-hour clock as {@code "%tH:%tM"}
  *
- * <tr><td valign="top">{@code 'T'}
- *     <td valign="top"> <code>'&#92;u0054'</code>
+ * <tr><td style="vertical-align:top">{@code 'T'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0054'</code>
  *     <td> Time formatted for the 24-hour clock as {@code "%tH:%tM:%tS"}.
  *
- * <tr><td valign="top">{@code 'r'}
- *     <td valign="top"> <code>'&#92;u0072'</code>
+ * <tr><td style="vertical-align:top">{@code 'r'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0072'</code>
  *     <td> Time formatted for the 12-hour clock as {@code "%tI:%tM:%tS
  *     %Tp"}.  The location of the morning or afternoon marker
  *     ({@code '%Tp'}) may be locale-dependent.
  *
- * <tr><td valign="top">{@code 'D'}
- *     <td valign="top"> <code>'&#92;u0044'</code>
+ * <tr><td style="vertical-align:top">{@code 'D'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0044'</code>
  *     <td> Date formatted as {@code "%tm/%td/%ty"}.
  *
- * <tr><td valign="top">{@code 'F'}
- *     <td valign="top"> <code>'&#92;u0046'</code>
+ * <tr><td style="vertical-align:top">{@code 'F'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0046'</code>
  *     <td> <a href="http://www.w3.org/TR/NOTE-datetime">ISO&nbsp;8601</a>
  *     complete date formatted as {@code "%tY-%tm-%td"}.
  *
- * <tr><td valign="top">{@code 'c'}
- *     <td valign="top"> <code>'&#92;u0063'</code>
+ * <tr><td style="vertical-align:top">{@code 'c'}
+ *     <td style="vertical-align:top"> <code>'&#92;u0063'</code>
  *     <td> Date and time formatted as {@code "%ta %tb %td %tT %tZ %tY"},
  *     e.g. {@code "Sun Jul 20 16:17:00 EDT 1969"}.
  *
@@ -1750,7 +1750,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *
  * <table cellpadding=5 summary="DTConv">
  *
- * <tr><td valign="top">{@code '%'}
+ * <tr><td style="vertical-align:top">{@code '%'}
  *     <td> The result is a literal {@code '%'} (<code>'&#92;u0025'</code>)
  *
  * <p> The width is the minimum number of characters to
@@ -1775,7 +1775,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *
  * <table cellpadding=5 summary="DTConv">
  *
- * <tr><td valign="top">{@code 'n'}
+ * <tr><td style="vertical-align:top">{@code 'n'}
  *     <td> the platform-specific line separator as returned by {@link
  *     System#lineSeparator()}.
  *

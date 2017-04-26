@@ -94,10 +94,10 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  * <blockquote>
  * <table border=0 cellspacing=3 cellpadding=0 summary="Chart shows pattern letters, date/time component, presentation, and examples.">
  *     <tr style="background-color: rgb(204, 204, 255);">
- *         <th align=left>Letter
- *         <th align=left>Date or Time Component
- *         <th align=left>Presentation
- *         <th align=left>Examples
+ *         <th style="text-align:left">Letter
+ *         <th style="text-align:left">Date or Time Component
+ *         <th style="text-align:left">Presentation
+ *         <th style="text-align:left">Examples
  *     <tr>
  *         <td><code>G</code>
  *         <td>Era designator
@@ -372,8 +372,8 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  * <blockquote>
  * <table border=0 cellspacing=3 cellpadding=0 summary="Examples of date and time patterns interpreted in the U.S. locale">
  *     <tr style="background-color: rgb(204, 204, 255);">
- *         <th align=left>Date and Time Pattern
- *         <th align=left>Result
+ *         <th style="text-align:left">Date and Time Pattern
+ *         <th style="text-align:left">Result
  *     <tr>
  *         <td><code>"yyyy.MM.dd G 'at' HH:mm:ss z"</code>
  *         <td><code>2001.07.04 AD at 12:08:56 PDT</code>

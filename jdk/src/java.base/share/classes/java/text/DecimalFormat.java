@@ -175,11 +175,11 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * <table border=0 cellspacing=3 cellpadding=0 summary="Chart showing symbol,
  *  location, localized, and meaning.">
  *     <tr style="background-color: rgb(204, 204, 255);">
- *          <th align=left>Symbol
- *          <th align=left>Location
- *          <th align=left>Localized?
- *          <th align=left>Meaning
- *     <tr valign=top>
+ *          <th style="text-align:left">Symbol
+ *          <th style="text-align:left">Location
+ *          <th style="text-align:left">Localized?
+ *          <th style="text-align:left">Meaning
+ *     <tr style="vertical-align:top">
  *          <td><code>0</code>
  *          <td>Number
  *          <td>Yes
@@ -189,7 +189,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *          <td>Number
  *          <td>Yes
  *          <td>Digit, zero shows as absent
- *     <tr valign=top>
+ *     <tr style="vertical-align:top">
  *          <td><code>.</code>
  *          <td>Number
  *          <td>Yes
@@ -199,7 +199,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *          <td>Number
  *          <td>Yes
  *          <td>Minus sign
- *     <tr valign=top>
+ *     <tr style="vertical-align:top">
  *          <td><code>,</code>
  *          <td>Number
  *          <td>Yes
@@ -210,7 +210,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *          <td>Yes
  *          <td>Separates mantissa and exponent in scientific notation.
  *              <em>Need not be quoted in prefix or suffix.</em>
- *     <tr valign=top>
+ *     <tr style="vertical-align:top">
  *          <td><code>;</code>
  *          <td>Subpattern boundary
  *          <td>Yes
@@ -220,7 +220,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *          <td>Prefix or suffix
  *          <td>Yes
  *          <td>Multiply by 100 and show as percentage
- *     <tr valign=top>
+ *     <tr style="vertical-align:top">
  *          <td><code>&#92;u2030</code>
  *          <td>Prefix or suffix
  *          <td>Yes
@@ -233,7 +233,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *              doubled, replaced by international currency symbol.
  *              If present in a pattern, the monetary decimal separator
  *              is used instead of the decimal separator.
- *     <tr valign=top>
+ *     <tr style="vertical-align:top">
  *          <td><code>'</code>
  *          <td>Prefix or suffix
  *          <td>No
