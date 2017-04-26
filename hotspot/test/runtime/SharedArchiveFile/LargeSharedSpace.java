@@ -26,6 +26,7 @@
  * @bug 8168790 8169870
  * @summary Test CDS dumping using specific space size without crashing.
  * The space size used in the test might not be suitable on windows.
+ * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
  * @requires (os.family != "windows")
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

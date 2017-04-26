@@ -24,6 +24,7 @@
 /*
  * @test DefaultUseWithClient
  * @summary Test default behavior of sharing with -client
+ * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

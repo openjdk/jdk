@@ -23,6 +23,7 @@
 
 /* @test LimitSharedSizes
  * @summary Test handling of limits on shared space size
+ * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
  * @library /test/lib /runtime/CommandLine/OptionsValidation/common
  * @modules java.base/jdk.internal.misc
  *          java.management
