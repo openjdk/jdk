@@ -137,7 +137,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *   // -&gt; s == "Duke's Birthday: May 23, 1995"
  * </pre></blockquote>
  *
- * <h3><a name="org">Organization</a></h3>
+ * <h3><a id="org">Organization</a></h3>
  *
  * <p> This specification is divided into two sections.  The first section, <a
  * href="#summary">Summary</a>, covers the basic formatting concepts.  This
@@ -147,13 +147,13 @@ import jdk.internal.math.FormattedFloatingDecimal;
  * details.  It is intended for users who want more precise specification of
  * formatting behavior.
  *
- * <h3><a name="summary">Summary</a></h3>
+ * <h3><a id="summary">Summary</a></h3>
  *
  * <p> This section is intended to provide a brief overview of formatting
  * concepts.  For precise behavioral details, refer to the <a
  * href="#detail">Details</a> section.
  *
- * <h4><a name="syntax">Format String Syntax</a></h4>
+ * <h4><a id="syntax">Format String Syntax</a></h4>
  *
  * <p> Every method which produces formatted output requires a <i>format
  * string</i> and an <i>argument list</i>.  The format string is a {@link
@@ -370,7 +370,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  * <p> Any characters not explicitly defined as conversions are illegal and are
  * reserved for future extensions.
  *
- * <h4><a name="dt">Date/Time Conversions</a></h4>
+ * <h4><a id="dt">Date/Time Conversions</a></h4>
  *
  * <p> The following date and time conversion suffix characters are defined for
  * the {@code 't'} and {@code 'T'} conversions.  The types are similar to but
@@ -659,7 +659,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  * </pre></blockquote>
  *
  * <hr>
- * <h3><a name="detail">Details</a></h3>
+ * <h3><a id="detail">Details</a></h3>
  *
  * <p> This section is intended to provide behavioral details for formatting,
  * including conditions and exceptions, supported data types, localization, and
@@ -701,7 +701,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  * <pre>
  *    out.toUpperCase(Locale.getDefault(Locale.Category.FORMAT)) </pre>
  *
- * <h4><a name="dgen">General</a></h4>
+ * <h4><a id="dgen">General</a></h4>
  *
  * <p> The following general conversions may be applied to any argument type:
  *
@@ -758,7 +758,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *
  * </table>
  *
- * <p> The following <a name="dFlags">flags</a> apply to general conversions:
+ * <p> The following <a id="dFlags">flags</a> apply to general conversions:
  *
  * <table cellpadding=5 summary="dFlags">
  *
@@ -777,7 +777,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *
  * </table>
  *
- * <p> The <a name="genWidth">width</a> is the minimum number of characters to
+ * <p> The <a id="genWidth">width</a> is the minimum number of characters to
  * be written to the
  * output.  If the length of the converted value is less than the width then
  * the output will be padded by <code>'&nbsp;&nbsp;'</code> (<code>'&#92;u0020'</code>)
@@ -792,7 +792,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  * the precision.  If the precision is not specified then there is no explicit
  * limit on the number of characters.
  *
- * <h4><a name="dchar">Character</a></h4>
+ * <h4><a id="dchar">Character</a></h4>
  *
  * This conversion may be applied to {@code char} and {@link Character}.  It
  * may also be applied to the types {@code byte}, {@link Byte},
@@ -828,7 +828,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  * <p> The precision is not applicable.  If the precision is specified then an
  * {@link IllegalFormatPrecisionException} will be thrown.
  *
- * <h4><a name="dnum">Numeric</a></h4>
+ * <h4><a id="dnum">Numeric</a></h4>
  *
  * <p> Numeric conversions are divided into the following categories:
  *
@@ -846,7 +846,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *
  * <p> Numeric types will be formatted according to the following algorithm:
  *
- * <p><b><a name="L10nAlgorithm"> Number Localization Algorithm</a></b>
+ * <p><b><a id="L10nAlgorithm"> Number Localization Algorithm</a></b>
  *
  * <p> After digits are obtained for the integer part, fractional part, and
  * exponent (as appropriate for the data type), the following transformation
@@ -865,7 +865,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  * substituted.
  *
  * <li> If the {@code ','} (<code>'&#92;u002c'</code>)
- * <a name="L10nGroup">flag</a> is given, then the locale-specific {@linkplain
+ * <a id="L10nGroup">flag</a> is given, then the locale-specific {@linkplain
  * java.text.DecimalFormatSymbols#getGroupingSeparator grouping separator} is
  * inserted by scanning the integer part of the string from least significant
  * to most significant digits and inserting a separator at intervals defined by
@@ -896,7 +896,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  * then the output will be "(Infinity)" if the {@code '('} flag is given
  * otherwise the output will be "-Infinity".  These values are not localized.
  *
- * <p><a name="dnint"><b> Byte, Short, Integer, and Long </b></a>
+ * <p><a id="dnint"><b> Byte, Short, Integer, and Long </b></a>
  *
  * <p> The following conversions may be applied to {@code byte}, {@link Byte},
  * {@code short}, {@link Short}, {@code int} and {@link Integer},
@@ -979,7 +979,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  * <p> If the {@code '-'} flag is not given, then the space padding will occur
  * before the sign.
  *
- * <p> The following <a name="intFlags">flags</a> apply to numeric integral
+ * <p> The following <a id="intFlags">flags</a> apply to numeric integral
  * conversions:
  *
  * <table cellpadding=5 summary="intFlags">
@@ -1027,7 +1027,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *
  * </table>
  *
- * <p> If no <a name="intdFlags">flags</a> are given the default formatting is
+ * <p> If no <a id="intdFlags">flags</a> are given the default formatting is
  * as follows:
  *
  * <ul>
@@ -1043,7 +1043,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *
  * </ul>
  *
- * <p> The <a name="intWidth">width</a> is the minimum number of characters to
+ * <p> The <a id="intWidth">width</a> is the minimum number of characters to
  * be written to the output.  This includes any signs, digits, grouping
  * separators, radix indicator, and parentheses.  If the length of the
  * converted value is less than the width then the output will be padded by
@@ -1055,7 +1055,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  * <p> The precision is not applicable.  If precision is specified then an
  * {@link IllegalFormatPrecisionException} will be thrown.
  *
- * <p><a name="dnbint"><b> BigInteger </b></a>
+ * <p><a id="dnbint"><b> BigInteger </b></a>
  *
  * <p> The following conversions may be applied to {@link
  * java.math.BigInteger}.
@@ -1149,7 +1149,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  * <p> The precision is not applicable.  If precision is specified then an
  * {@link IllegalFormatPrecisionException} will be thrown.
  *
- * <p><a name="dndec"><b> Float and Double</b></a>
+ * <p><a id="dndec"><b> Float and Double</b></a>
  *
  * <p> The following conversions may be applied to {@code float}, {@link
  * Float}, {@code double} and {@link Double}.
@@ -1240,7 +1240,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *
  * <tr><td valign="top"> {@code 'f'}
  *     <td valign="top"> <code>'&#92;u0066'</code>
- *     <td> Requires the output to be formatted using <a name="decimal">decimal
+ *     <td> Requires the output to be formatted using <a id="decimal">decimal
  *     format</a>.  The <a href="#L10nAlgorithm">localization algorithm</a> is
  *     applied.
  *
@@ -1339,7 +1339,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  * <p> If the {@code '#'} flag is given, then the decimal separator will
  * always be present.
  *
- * <p> If no <a name="floatdFlags">flags</a> are given the default formatting
+ * <p> If no <a id="floatdFlags">flags</a> are given the default formatting
  * is as follows:
  *
  * <ul>
@@ -1357,7 +1357,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *
  * </ul>
  *
- * <p> The <a name="floatDWidth">width</a> is the minimum number of characters
+ * <p> The <a id="floatDWidth">width</a> is the minimum number of characters
  * to be written to the output.  This includes any signs, digits, grouping
  * separators, decimal separators, exponential symbol, radix indicator,
  * parentheses, and strings representing infinity and NaN as applicable.  If
@@ -1367,7 +1367,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  * {@code '-'} flag is given then the padding will be on the right.  If width
  * is not specified then there is no minimum.
  *
- * <p> If the <a name="floatDPrec">conversion</a> is {@code 'e'},
+ * <p> If the <a id="floatDPrec">conversion</a> is {@code 'e'},
  * {@code 'E'} or {@code 'f'}, then the precision is the number of digits
  * after the decimal separator.  If the precision is not specified, then it is
  * assumed to be {@code 6}.
@@ -1383,7 +1383,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  * precision is not provided, then all of the digits as returned by {@link
  * Double#toHexString(double)} will be output.
  *
- * <p><a name="dnbdec"><b> BigDecimal </b></a>
+ * <p><a id="dnbdec"><b> BigDecimal </b></a>
  *
  * <p> The following conversions may be applied {@link java.math.BigDecimal
  * BigDecimal}.
@@ -1468,7 +1468,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *
  * <tr><td valign="top"> {@code 'f'}
  *     <td valign="top"> <code>'&#92;u0066'</code>
- *     <td> Requires the output to be formatted using <a name="bdecimal">decimal
+ *     <td> Requires the output to be formatted using <a id="bdecimal">decimal
  *     format</a>.  The <a href="#L10nAlgorithm">localization algorithm</a> is
  *     applied.
  *
@@ -1507,7 +1507,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  * href="#floatDPrec">precision</a> is the same as defined for Float and
  * Double.
  *
- * <h4><a name="ddt">Date/Time</a></h4>
+ * <h4><a id="ddt">Date/Time</a></h4>
  *
  * <p> This conversion may be applied to {@code long}, {@link Long}, {@link
  * Calendar}, {@link Date} and {@link TemporalAccessor TemporalAccessor}
@@ -1744,7 +1744,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  * <p> The precision is not applicable.  If the precision is specified then an
  * {@link IllegalFormatPrecisionException} will be thrown.
  *
- * <h4><a name="dper">Percent</a></h4>
+ * <h4><a id="dper">Percent</a></h4>
  *
  * <p> The conversion does not correspond to any argument.
  *
@@ -1769,7 +1769,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *
  * </table>
  *
- * <h4><a name="dls">Line Separator</a></h4>
+ * <h4><a id="dls">Line Separator</a></h4>
  *
  * <p> The conversion does not correspond to any argument.
  *
@@ -1785,7 +1785,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  * {@link IllegalFormatFlagsException}, {@link IllegalFormatWidthException},
  * and {@link IllegalFormatPrecisionException}, respectively will be thrown.
  *
- * <h4><a name="dpos">Argument Index</a></h4>
+ * <h4><a id="dpos">Argument Index</a></h4>
  *
  * <p> Format specifiers can reference arguments in three ways:
  *

@@ -327,7 +327,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * and <code>isParseIntegerOnly()</code> are false.
  * </ul>
  *
- * <h4><a name="synchronization">Synchronization</a></h4>
+ * <h4><a id="synchronization">Synchronization</a></h4>
  *
  * <p>
  * Decimal formats are generally not synchronized.
