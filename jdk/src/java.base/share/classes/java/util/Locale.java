@@ -1588,7 +1588,7 @@ public final class Locale implements Cloneable, Serializable {
      * <p>Grandfathered tags with canonical replacements are as follows:
      *
      * <table summary="Grandfathered tags with canonical replacements">
-     * <tbody align="center">
+     * <tbody style="text-align:center">
      * <tr><th>grandfathered tag</th><th>&nbsp;</th><th>modern replacement</th></tr>
      * <tr><td>art-lojban</td><td>&nbsp;</td><td>jbo</td></tr>
      * <tr><td>i-ami</td><td>&nbsp;</td><td>ami</td></tr>
@@ -1617,7 +1617,7 @@ public final class Locale implements Cloneable, Serializable {
      * converted as follows:
      *
      * <table summary="Grandfathered tags with no modern replacement">
-     * <tbody align="center">
+     * <tbody style="text-align:center">
      * <tr><th>grandfathered tag</th><th>&nbsp;</th><th>converts to</th></tr>
      * <tr><td>cel-gaulish</td><td>&nbsp;</td><td>xtg-x-cel-gaulish</td></tr>
      * <tr><td>en-GB-oed</td><td>&nbsp;</td><td>en-GB-x-oed</td></tr>
@@ -2774,60 +2774,60 @@ public final class Locale implements Cloneable, Serializable {
      * <th>Language Priority List: {@code "de-*-DE"}</th>
      * </tr>
      * <tr>
-     * <td valign=top>
+     * <td style="vertical-align:top">
      * {@link FilteringMode#AUTOSELECT_FILTERING AUTOSELECT_FILTERING}
      * </td>
-     * <td valign=top>
+     * <td style="vertical-align:top">
      * Performs <em>basic</em> filtering and returns {@code "de-DE"} and
      * {@code "de-DE-1996"}.
      * </td>
-     * <td valign=top>
+     * <td style="vertical-align:top">
      * Performs <em>extended</em> filtering and returns {@code "de-DE"},
      * {@code "de-Deva-DE"}, {@code "de-DE-1996"}, {@code "de-Latn-DE"}, and
      * {@code "de-Latn-DE-1996"}.
      * </td>
      * </tr>
      * <tr>
-     * <td valign=top>
+     * <td style="vertical-align:top">
      * {@link FilteringMode#EXTENDED_FILTERING EXTENDED_FILTERING}
      * </td>
-     * <td valign=top>
+     * <td style="vertical-align:top">
      * Performs <em>extended</em> filtering and returns {@code "de-DE"},
      * {@code "de-Deva-DE"}, {@code "de-DE-1996"}, {@code "de-Latn-DE"}, and
      * {@code "de-Latn-DE-1996"}.
      * </td>
-     * <td valign=top>Same as above.</td>
+     * <td style="vertical-align:top">Same as above.</td>
      * </tr>
      * <tr>
-     * <td valign=top>
+     * <td style="vertical-align:top">
      * {@link FilteringMode#IGNORE_EXTENDED_RANGES IGNORE_EXTENDED_RANGES}
      * </td>
-     * <td valign=top>
+     * <td style="vertical-align:top">
      * Performs <em>basic</em> filtering and returns {@code "de-DE"} and
      * {@code "de-DE-1996"}.
      * </td>
-     * <td valign=top>
+     * <td style="vertical-align:top">
      * Performs <em>basic</em> filtering and returns {@code null} because
      * nothing matches.
      * </td>
      * </tr>
      * <tr>
-     * <td valign=top>
+     * <td style="vertical-align:top">
      * {@link FilteringMode#MAP_EXTENDED_RANGES MAP_EXTENDED_RANGES}
      * </td>
-     * <td valign=top>Same as above.</td>
-     * <td valign=top>
+     * <td style="vertical-align:top">Same as above.</td>
+     * <td style="vertical-align:top">
      * Performs <em>basic</em> filtering and returns {@code "de-DE"} and
      * {@code "de-DE-1996"} because {@code "de-*-DE"} is mapped to
      * {@code "de-DE"}.
      * </td>
      * </tr>
      * <tr>
-     * <td valign=top>
+     * <td style="vertical-align:top">
      * {@link FilteringMode#REJECT_EXTENDED_RANGES REJECT_EXTENDED_RANGES}
      * </td>
-     * <td valign=top>Same as above.</td>
-     * <td valign=top>
+     * <td style="vertical-align:top">Same as above.</td>
+     * <td style="vertical-align:top">
      * Throws {@link IllegalArgumentException} because {@code "de-*-DE"} is
      * not a valid basic language range.
      * </td>
