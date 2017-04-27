@@ -257,7 +257,7 @@ public class MethodHandles {
      * This includes all methods, constructors, and fields which are allowed to the lookup class,
      * even private ones.
      *
-     * <h1><a name="lookups"></a>Lookup Factory Methods</h1>
+     * <h1><a id="lookups"></a>Lookup Factory Methods</h1>
      * The factory methods on a {@code Lookup} object correspond to all major
      * use cases for methods, constructors, and fields.
      * Each method handle created by a factory method is the functional
@@ -267,7 +267,7 @@ public class MethodHandles {
      * the behavior of the resulting method handles:
      * <table border=1 cellpadding=5 summary="lookup method behaviors">
      * <tr>
-     *     <th><a name="equiv"></a>lookup expression</th>
+     *     <th><a id="equiv"></a>lookup expression</th>
      *     <th>member</th>
      *     <th>bytecode behavior</th>
      * </tr>
@@ -378,7 +378,7 @@ public class MethodHandles {
      * type having too many parameters.
      * </ul>
      *
-     * <h1><a name="access"></a>Access checking</h1>
+     * <h1><a id="access"></a>Access checking</h1>
      * Access checks are applied in the factory methods of {@code Lookup},
      * when a method handle is created.
      * This is a key difference from the Core Reflection API, since
@@ -483,7 +483,7 @@ public class MethodHandles {
      * with fewer access modes than the original lookup object.
      *
      * <p style="font-size:smaller;">
-     * <a name="privacc"></a>
+     * <a id="privacc"></a>
      * <em>Discussion of private access:</em>
      * We say that a lookup has <em>private access</em>
      * if its {@linkplain #lookupModes lookup modes}
@@ -506,7 +506,7 @@ public class MethodHandles {
      * whose <a href="MethodHandles.Lookup.html#equiv">bytecode behaviors</a> and Java language access permissions
      * can be reliably determined and emulated by method handles.
      *
-     * <h1><a name="secmgr"></a>Security manager interactions</h1>
+     * <h1><a id="secmgr"></a>Security manager interactions</h1>
      * Although bytecode instructions can only refer to classes in
      * a related class loader, this API can search for methods in any
      * class, as long as a reference to its {@code Class} object is
@@ -565,7 +565,7 @@ public class MethodHandles {
      * or else that is being accessed from a lookup class that has
      * rights to access the member or class.
      *
-     * <h1><a name="callsens"></a>Caller sensitive methods</h1>
+     * <h1><a id="callsens"></a>Caller sensitive methods</h1>
      * A small number of Java methods have a special property called caller sensitivity.
      * A <em>caller-sensitive</em> method can behave differently depending on the
      * identity of its immediate caller.
@@ -4497,7 +4497,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * The init functions can observe initial pre-loop state, in the form {@code (a...)}.
      * Most clause functions will not need all of this information, but they will be formally connected to it
      * as if by {@link #dropArguments}.
-     * <a name="astar"></a>
+     * <a id="astar"></a>
      * More specifically, we shall use the notation {@code (V*)} to express an arbitrary prefix of a full
      * sequence {@code (V...)} (and likewise for {@code (v*)}, {@code (A*)}, {@code (a*)}).
      * In that notation, the general form of an init function parameter list
@@ -4510,7 +4510,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * met by the inputs to the loop combinator.
      * <p>
      * <em>Effectively identical sequences:</em>
-     * <a name="effid"></a>
+     * <a id="effid"></a>
      * A parameter list {@code A} is defined to be <em>effectively identical</em> to another parameter list {@code B}
      * if {@code A} and {@code B} are identical, or if {@code A} is shorter and is identical with a proper prefix of {@code B}.
      * When speaking of an unordered set of parameter lists, we say they the set is "effectively identical"

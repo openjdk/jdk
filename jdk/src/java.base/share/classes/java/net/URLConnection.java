@@ -54,7 +54,7 @@ import sun.security.action.GetPropertyAction;
  * read from and to write to the resource referenced by the URL. In
  * general, creating a connection to a URL is a multistep process:
  *
- * <center><table border=2 summary="Describes the process of creating a connection to a URL: openConnection() and connect() over time.">
+ * <div style="text-align:center"><table style="margin:0 auto" border=2 summary="Describes the process of creating a connection to a URL: openConnection() and connect() over time.">
  * <tr><th>{@code openConnection()}</th>
  *     <th>{@code connect()}</th></tr>
  * <tr><td>Manipulate parameters that affect the connection to the remote
@@ -63,7 +63,7 @@ import sun.security.action.GetPropertyAction;
  *         contents.</td></tr>
  * </table>
  * ----------------------------&gt;
- * <br>time</center>
+ * <br>time</div>
  *
  * <ol>
  * <li>The connection object is created by invoking the

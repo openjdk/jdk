@@ -57,6 +57,9 @@ class NetworkConfiguration {
         return ip6Interfaces.get(nif);
     }
 
+    private static final boolean isMacOs =
+            System.getProperty("os.name").equals("Mac OS X");
+
     static NetworkConfiguration probe() throws IOException {
         Map<NetworkInterface,List<InetAddress>> ip4Interfaces =
             new HashMap<NetworkInterface,List<InetAddress>>();
@@ -68,7 +71,8 @@ class NetworkConfiguration {
             .list(NetworkInterface.getNetworkInterfaces());
         for (NetworkInterface nif: nifs) {
             // ignore intertaces that are down or don't support multicast
-            if (!nif.isUp() || !nif.supportsMulticast() || nif.isLoopback())
+            if (!nif.isUp() || !nif.supportsMulticast() || nif.isLoopback()
+                || (isMacOs && nif.getName().contains("awdl")))
                 continue;
 
             List<InetAddress> addrs = Collections.list(nif.getInetAddresses());

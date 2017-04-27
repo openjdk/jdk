@@ -290,7 +290,7 @@ class Properties extends Hashtable<Object,Object> {
      * specifies that the key is {@code "cheeses"} and the associated
      * element is the empty string {@code ""}.
      * <p>
-     * <a name="unicodeescapes"></a>
+     * <a id="unicodeescapes"></a>
      * Characters in keys and elements can be represented in escape
      * sequences similar to those used for character and string literals
      * (see sections 3.3 and 3.10.6 of
