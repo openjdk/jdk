@@ -195,15 +195,19 @@ public class VerifyJimage {
                     .replaceAll("\\.class$", "").replace('/', '.');
     }
 
-    private static Set<String> DEPLOY_MODULES =
-        Set.of("javafx.deploy", "jdk.deploy", "jdk.plugin", "jdk.javaws");
+    private static Set<String> EXCLUDED_MODULES =
+        Set.of("javafx.deploy", "jdk.deploy", "jdk.plugin", "jdk.javaws",
+            // All JVMCI packages other than jdk.vm.ci.services are dynamically
+            // exported to jdk.internal.vm.compiler and jdk.aot
+            "jdk.internal.vm.compiler", "jdk.aot"
+        );
 
     private boolean accept(String entry) {
         int index = entry.indexOf('/', 1);
         String mn = index > 1 ? entry.substring(1, index) : "";
         // filter deployment modules
 
-        if (mn.isEmpty() || DEPLOY_MODULES.contains(mn)) {
+        if (mn.isEmpty() || EXCLUDED_MODULES.contains(mn)) {
             return false;
         }
         return entry.endsWith(".class") && !entry.endsWith(MODULE_INFO);
