@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -293,8 +293,7 @@ void SensorInfo::process_pending_requests(TRAPS) {
 void SensorInfo::trigger(int count, TRAPS) {
   assert(count <= _pending_trigger_count, "just checking");
   if (_sensor_obj != NULL) {
-    Klass* k = Management::sun_management_Sensor_klass(CHECK);
-    instanceKlassHandle sensorKlass (THREAD, k);
+    InstanceKlass* sensorKlass = Management::sun_management_Sensor_klass(CHECK);
     Handle sensor_h(THREAD, _sensor_obj);
     Handle usage_h = MemoryService::create_MemoryUsage_obj(_usage, CHECK);
 
@@ -337,8 +336,7 @@ void SensorInfo::clear(int count, TRAPS) {
   }
 
   if (_sensor_obj != NULL) {
-    Klass* k = Management::sun_management_Sensor_klass(CHECK);
-    instanceKlassHandle sensorKlass (THREAD, k);
+    InstanceKlass* sensorKlass = Management::sun_management_Sensor_klass(CHECK);
     Handle sensor(THREAD, _sensor_obj);
 
     JavaValue result(T_VOID);

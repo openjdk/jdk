@@ -35,6 +35,6 @@ import java.io.IOException;
  */
 public class TestGCBasherWithSerial {
     public static void main(String[] args) throws IOException {
-        TestGCBasher.run(args);
+        TestGCBasher.main(args);
     }
 }

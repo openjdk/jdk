@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -273,13 +273,6 @@ void C1_MacroAssembler::initialize_object(
       add(obj, hdr_size_in_bytes, t1);               // compute address of first element
       sub(var_size_in_bytes, hdr_size_in_bytes, t2); // compute size of body
       initialize_body(t1, t2);
-#ifndef _LP64
-    } else if (con_size_in_bytes < threshold * 2) {
-      // on v9 we can do double word stores to fill twice as much space.
-      assert(hdr_size_in_bytes % 8 == 0, "double word aligned");
-      assert(con_size_in_bytes % 8 == 0, "double word aligned");
-      for (int i = hdr_size_in_bytes; i < con_size_in_bytes; i += 2 * HeapWordSize) stx(G0, obj, i);
-#endif
     } else if (con_size_in_bytes <= threshold) {
       // use explicit NULL stores
       for (int i = hdr_size_in_bytes; i < con_size_in_bytes; i += HeapWordSize)     st_ptr(G0, obj, i);

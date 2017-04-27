@@ -29,17 +29,27 @@ import static jdk.vm.ci.sparc.SPARCKind.WORD;
 import static jdk.vm.ci.sparc.SPARCKind.XWORD;
 
 import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.gen.NodeMatchRules;
 import org.graalvm.compiler.core.match.ComplexMatchResult;
 import org.graalvm.compiler.core.match.MatchRule;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.lir.LIRFrameState;
+import org.graalvm.compiler.lir.LabelRef;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
+import org.graalvm.compiler.lir.sparc.SPARCAddressValue;
 import org.graalvm.compiler.nodes.DeoptimizingNode;
+import org.graalvm.compiler.nodes.IfNode;
+import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.calc.CompareNode;
 import org.graalvm.compiler.nodes.calc.SignExtendNode;
 import org.graalvm.compiler.nodes.calc.ZeroExtendNode;
+import org.graalvm.compiler.nodes.java.LogicCompareAndSwapNode;
 import org.graalvm.compiler.nodes.memory.Access;
+import org.graalvm.compiler.nodes.memory.LIRLowerableAccess;
 
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.sparc.SPARCKind;
 
 /**
@@ -56,6 +66,10 @@ public class SPARCNodeMatchRules extends NodeMatchRules {
             return state((DeoptimizingNode) access);
         }
         return null;
+    }
+
+    protected LIRKind getLirKind(LIRLowerableAccess access) {
+        return gen.getLIRKind(access.getAccessStamp());
     }
 
     private ComplexMatchResult emitSignExtendMemory(Access access, int fromBits, int toBits) {
@@ -125,6 +139,41 @@ public class SPARCNodeMatchRules extends NodeMatchRules {
     @MatchRule("(ZeroExtend FloatingRead=access)")
     public ComplexMatchResult zeroExtend(ZeroExtendNode root, Access access) {
         return emitZeroExtendMemory(access, root.getInputBits(), root.getResultBits());
+    }
+
+    @MatchRule("(If (ObjectEquals=compare value LogicCompareAndSwap=cas))")
+    @MatchRule("(If (PointerEquals=compare value LogicCompareAndSwap=cas))")
+    @MatchRule("(If (FloatEquals=compare value LogicCompareAndSwap=cas))")
+    @MatchRule("(If (IntegerEquals=compare value LogicCompareAndSwap=cas))")
+    public ComplexMatchResult ifCompareLogicCas(IfNode root, CompareNode compare, ValueNode value, LogicCompareAndSwapNode cas) {
+        JavaConstant constant = value.asJavaConstant();
+        assert compare.condition() == Condition.EQ;
+        if (constant != null && cas.usages().count() == 1) {
+            long constantValue = constant.asLong();
+            boolean successIsTrue;
+            if (constantValue == 0) {
+                successIsTrue = false;
+            } else if (constantValue == 1) {
+                successIsTrue = true;
+            } else {
+                return null;
+            }
+            return builder -> {
+                LIRKind kind = getLirKind(cas);
+                LabelRef trueLabel = getLIRBlock(root.trueSuccessor());
+                LabelRef falseLabel = getLIRBlock(root.falseSuccessor());
+                double trueLabelProbability = root.probability(root.trueSuccessor());
+                Value expectedValue = operand(cas.getExpectedValue());
+                Value newValue = operand(cas.getNewValue());
+                SPARCAddressValue address = (SPARCAddressValue) operand(cas.getAddress());
+                Condition condition = successIsTrue ? Condition.EQ : Condition.NE;
+
+                Value result = getLIRGeneratorTool().emitValueCompareAndSwap(address, expectedValue, newValue);
+                getLIRGeneratorTool().emitCompareBranch(kind.getPlatformKind(), result, expectedValue, condition, false, trueLabel, falseLabel, trueLabelProbability);
+                return null;
+            };
+        }
+        return null;
     }
 
     @Override

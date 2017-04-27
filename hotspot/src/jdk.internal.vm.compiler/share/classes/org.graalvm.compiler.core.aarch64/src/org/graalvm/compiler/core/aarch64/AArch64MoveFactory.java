@@ -86,21 +86,25 @@ public class AArch64MoveFactory implements MoveFactory {
     }
 
     @Override
-    public boolean canInlineConstant(JavaConstant c) {
-        switch (c.getJavaKind()) {
-            case Boolean:
-            case Byte:
-            case Char:
-            case Short:
-            case Int:
-                return AArch64MacroAssembler.isMovableImmediate(c.asInt());
-            case Long:
-                return AArch64MacroAssembler.isMovableImmediate(c.asLong());
-            case Object:
-                return c.isNull();
-            default:
-                return false;
+    public boolean canInlineConstant(Constant con) {
+        if (con instanceof JavaConstant) {
+            JavaConstant c = (JavaConstant) con;
+            switch (c.getJavaKind()) {
+                case Boolean:
+                case Byte:
+                case Char:
+                case Short:
+                case Int:
+                    return AArch64MacroAssembler.isMovableImmediate(c.asInt());
+                case Long:
+                    return AArch64MacroAssembler.isMovableImmediate(c.asLong());
+                case Object:
+                    return c.isNull();
+                default:
+                    return false;
+            }
         }
+        return false;
     }
 
     @Override

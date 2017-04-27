@@ -32,10 +32,10 @@ import org.graalvm.compiler.lir.LIRInstruction;
 
 import jdk.vm.ci.hotspot.HotSpotCompressedNullConstant;
 import jdk.vm.ci.hotspot.HotSpotConstant;
+import jdk.vm.ci.hotspot.HotSpotMetaspaceConstant;
 import jdk.vm.ci.hotspot.HotSpotObjectConstant;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.JavaConstant;
 
 public class SPARCHotSpotMoveFactory extends SPARCMoveFactory {
 
@@ -44,10 +44,10 @@ public class SPARCHotSpotMoveFactory extends SPARCMoveFactory {
     }
 
     @Override
-    public boolean canInlineConstant(JavaConstant c) {
+    public boolean canInlineConstant(Constant c) {
         if (HotSpotCompressedNullConstant.COMPRESSED_NULL.equals(c)) {
             return true;
-        } else if (c instanceof HotSpotObjectConstant) {
+        } else if (c instanceof HotSpotObjectConstant || c instanceof HotSpotMetaspaceConstant) {
             return false;
         } else {
             return super.canInlineConstant(c);

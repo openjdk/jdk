@@ -26,6 +26,7 @@ import java.util.ListIterator;
 
 import org.graalvm.compiler.java.DefaultSuitesProvider;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.common.ExpandLogicPhase;
@@ -39,8 +40,8 @@ public class SPARCSuitesProvider extends DefaultSuitesProvider {
     }
 
     @Override
-    public Suites createSuites() {
-        Suites s = super.createSuites();
+    public Suites createSuites(OptionValues options) {
+        Suites s = super.createSuites(options);
         ListIterator<BasePhase<? super LowTierContext>> l = s.getLowTier().findPhase(ExpandLogicPhase.class);
         while (PhaseSuite.findNextPhase(l, ExpandLogicPhase.class)) {
             // Search for last occurrence of ExpandLogicPhase

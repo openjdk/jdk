@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,13 +55,16 @@ class ppc64 {
 
   // CRC32 Intrinsics.
   static juint _crc_table[CRC32_TABLES][CRC32_COLUMN_SIZE];
+  static juint _crc32c_table[CRC32_TABLES][CRC32_COLUMN_SIZE];
   static juint* _constants;
   static juint* _barret_constants;
 
  public:
 
   // CRC32 Intrinsics.
+  static void generate_load_table_addr(MacroAssembler* masm, Register table, address table_addr, uint64_t table_contents);
   static void generate_load_crc_table_addr(MacroAssembler* masm, Register table);
+  static void generate_load_crc32c_table_addr(MacroAssembler* masm, Register table);
   static void generate_load_crc_constants_addr(MacroAssembler* masm, Register table);
   static void generate_load_crc_barret_constants_addr(MacroAssembler* masm, Register table);
   static juint* generate_crc_constants();

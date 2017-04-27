@@ -48,16 +48,9 @@ LIR_Opr LIR_OprFact::double_fpu(int reg1, int reg2) {
 void LIR_Address::verify() const {
   assert(scale() == times_1, "Scaled addressing mode not available on SPARC and should not be used");
   assert(disp() == 0 || index()->is_illegal(), "can't have both");
-#ifdef _LP64
   assert(base()->is_cpu_register(), "wrong base operand");
   assert(index()->is_illegal() || index()->is_double_cpu(), "wrong index operand");
   assert(base()->type() == T_OBJECT || base()->type() == T_LONG || base()->type() == T_METADATA,
          "wrong type for addresses");
-#else
-  assert(base()->is_single_cpu(), "wrong base operand");
-  assert(index()->is_illegal() || index()->is_single_cpu(), "wrong index operand");
-  assert(base()->type() == T_OBJECT || base()->type() == T_INT || base()->type() == T_METADATA,
-         "wrong type for addresses");
-#endif
 }
 #endif // PRODUCT

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -270,9 +270,7 @@ void AbstractInterpreter::layout_activation(Method* method,
     assert(locals < interpreter_frame->sp() || locals > (interpreter_frame->sp() + 16), "locals in save area");
     assert(locals < interpreter_frame->fp() || locals >= (interpreter_frame->fp() + 16), "locals in save area");
   }
-#ifdef _LP64
   assert(*interpreter_frame->register_addr(I5_savedSP) & 1, "must be odd");
-#endif
 
   *interpreter_frame->register_addr(Lmethod)     = (intptr_t) method;
   *interpreter_frame->register_addr(Llocals)     = (intptr_t) locals;

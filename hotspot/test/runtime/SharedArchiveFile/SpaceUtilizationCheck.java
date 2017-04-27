@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,14 @@
 /*
  * @test SpaceUtilizationCheck
  * @summary Check if the space utilization for shared spaces is adequate
+ * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main SpaceUtilizationCheck
  */
 
-import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 
 import java.util.regex.Pattern;
@@ -49,12 +50,9 @@ public class SpaceUtilizationCheck {
     private static final int NUMBER_OF_CHECKED_SHARED_REGIONS = 2;
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-           "-XX:+UnlockDiagnosticVMOptions",
-           "-XX:SharedArchiveFile=./SpaceUtilizationCheck.jsa",
-           "-Xshare:dump");
+        OutputAnalyzer output = CDSTestUtils.createArchive();
+        CDSTestUtils.checkDump(output);
 
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
         String stdout = output.getStdout();
         ArrayList<String> utilization = findUtilization(stdout);
 

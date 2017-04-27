@@ -87,7 +87,7 @@ final class SSAVerifier {
                 doBlock(pred);
             }
         }
-        try (Indent indent = Debug.logAndIndent(Debug.INFO_LOG_LEVEL, "handle block %s", b)) {
+        try (Indent indent = Debug.logAndIndent(Debug.INFO_LEVEL, "handle block %s", b)) {
             assert verifyBlock(b);
         }
     }
@@ -116,7 +116,7 @@ final class SSAVerifier {
      */
     private void useConsumer(LIRInstruction inst, Value value, OperandMode mode, EnumSet<OperandFlag> flags) {
         if (shouldProcess(value)) {
-            assert defined.keySet().contains(value) || flags.contains(OperandFlag.UNINITIALIZED) : String.format("Value %s used at instruction %s in block %s but never defined", value, inst,
+            assert defined.containsKey(value) || flags.contains(OperandFlag.UNINITIALIZED) : String.format("Value %s used at instruction %s in block %s but never defined", value, inst,
                             currentBlock);
         }
     }
@@ -128,7 +128,7 @@ final class SSAVerifier {
      */
     private void defConsumer(LIRInstruction inst, Value value, OperandMode mode, EnumSet<OperandFlag> flags) {
         if (shouldProcess(value)) {
-            assert !defined.keySet().contains(value) : String.format("Value %s redefined at %s but never defined (previous definition %s in block %s)", value, inst, defined.get(value).inst,
+            assert !defined.containsKey(value) : String.format("Value %s redefined at %s but never defined (previous definition %s in block %s)", value, inst, defined.get(value).inst,
                             defined.get(value).block);
             defined.put(value, new Entry(inst, currentBlock));
         }

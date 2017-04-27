@@ -22,10 +22,8 @@
  */
 package org.graalvm.compiler.hotspot.nodes.aot;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_3;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_3;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_4;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_4;
 
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.NodeClass;
@@ -37,7 +35,9 @@ import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
-@NodeInfo(cycles = CYCLES_3, size = SIZE_3)
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+
+@NodeInfo(cycles = CYCLES_4, size = SIZE_4)
 public class LoadMethodCountersNode extends FloatingNode implements LIRLowerable {
     public static final NodeClass<LoadMethodCountersNode> TYPE = NodeClass.create(LoadMethodCountersNode.class);
 

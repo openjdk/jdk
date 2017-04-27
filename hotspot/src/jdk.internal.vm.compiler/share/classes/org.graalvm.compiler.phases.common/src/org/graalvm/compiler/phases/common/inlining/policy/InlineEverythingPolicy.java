@@ -24,7 +24,7 @@ package org.graalvm.compiler.phases.common.inlining.policy;
 
 import static org.graalvm.compiler.core.common.GraalOptions.MaximumDesiredSize;
 
-import org.graalvm.compiler.common.PermanentBailoutException;
+import org.graalvm.compiler.core.common.PermanentBailoutException;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.spi.Replacements;
 import org.graalvm.compiler.phases.common.inlining.InliningUtil;
@@ -34,7 +34,7 @@ public class InlineEverythingPolicy implements InliningPolicy {
 
     @Override
     public boolean continueInlining(StructuredGraph graph) {
-        if (InliningUtil.getNodeCount(graph) >= MaximumDesiredSize.getValue()) {
+        if (InliningUtil.getNodeCount(graph) >= MaximumDesiredSize.getValue(graph.getOptions())) {
             throw new PermanentBailoutException("Inline all calls failed. The resulting graph is too large.");
         }
         return true;

@@ -24,6 +24,7 @@ package org.graalvm.compiler.nodes.java;
 
 import java.lang.reflect.Modifier;
 
+import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
@@ -56,6 +57,7 @@ public class DynamicNewInstanceNode extends AbstractNewObjectNode implements Can
     protected DynamicNewInstanceNode(NodeClass<? extends DynamicNewInstanceNode> c, ValueNode clazz, boolean fillContents, FrameState stateBefore) {
         super(c, StampFactory.objectNonNull(), fillContents, stateBefore);
         this.clazz = clazz;
+        assert ((ObjectStamp) clazz.stamp()).nonNull();
     }
 
     public ValueNode getInstanceType() {

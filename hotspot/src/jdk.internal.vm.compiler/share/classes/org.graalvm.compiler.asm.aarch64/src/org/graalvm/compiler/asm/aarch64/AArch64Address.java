@@ -25,7 +25,7 @@ package org.graalvm.compiler.asm.aarch64;
 import static jdk.vm.ci.aarch64.AArch64.zr;
 
 import org.graalvm.compiler.asm.AbstractAddress;
-import org.graalvm.compiler.asm.NumUtil;
+import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.debug.GraalError;
 
 import jdk.vm.ci.aarch64.AArch64;
@@ -274,7 +274,7 @@ public final class AArch64Address extends AbstractAddress {
     /**
      * @return immediate in correct representation for the given addressing mode. For example in
      *         case of <code>addressingMode ==IMMEDIATE_UNSCALED </code> the value will be returned
-     *         as the 9bit signed representation.
+     *         as the 9-bit signed representation.
      */
     public int getImmediate() {
         switch (addressingMode) {
@@ -282,12 +282,15 @@ public final class AArch64Address extends AbstractAddress {
             case IMMEDIATE_POST_INDEXED:
             case IMMEDIATE_PRE_INDEXED:
                 // 9-bit signed value
+                assert NumUtil.isSignedNbit(9, immediate);
                 return immediate & NumUtil.getNbitNumberInt(9);
             case IMMEDIATE_SCALED:
                 // Unsigned value can be returned as-is.
+                assert NumUtil.isUnsignedNbit(12, immediate);
                 return immediate;
             case PC_LITERAL:
                 // 21-bit signed value, but lower 2 bits are always 0 and are shifted out.
+                assert NumUtil.isSignedNbit(19, immediate >> 2);
                 return (immediate >> 2) & NumUtil.getNbitNumberInt(19);
             default:
                 throw GraalError.shouldNotReachHere("Should only be called for addressing modes that use immediate values.");
@@ -356,4 +359,29 @@ public final class AArch64Address extends AbstractAddress {
         }
     }
 
+    /**
+     * Loads an address into Register r.
+     *
+     * @param masm the macro assembler.
+     * @param r general purpose register. May not be null.
+     */
+    public void lea(AArch64MacroAssembler masm, Register r) {
+        switch (addressingMode) {
+            case IMMEDIATE_UNSCALED:
+                if (immediate == 0 && base.equals(r)) { // it's a nop
+                    break;
+                }
+                masm.add(64, r, base, immediate);
+                break;
+            case REGISTER_OFFSET:
+                masm.add(64, r, base, offset);
+                break;
+            case PC_LITERAL: {
+                masm.mov(r, getImmediate());
+                break;
+            }
+            default:
+                throw GraalError.shouldNotReachHere();
+        }
+    }
 }

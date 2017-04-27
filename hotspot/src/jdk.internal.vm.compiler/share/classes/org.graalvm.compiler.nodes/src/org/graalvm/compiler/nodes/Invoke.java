@@ -24,7 +24,6 @@ package org.graalvm.compiler.nodes;
 
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.CallTargetNode.InvokeKind;
-import org.graalvm.compiler.nodes.extended.GuardedNode;
 import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.type.StampTool;
@@ -32,7 +31,7 @@ import org.graalvm.compiler.nodes.type.StampTool;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
-public interface Invoke extends StateSplit, Lowerable, DeoptimizingNode.DeoptDuring, GuardedNode, FixedNodeInterface {
+public interface Invoke extends StateSplit, Lowerable, DeoptimizingNode.DeoptDuring, FixedNodeInterface {
 
     FixedNode next();
 

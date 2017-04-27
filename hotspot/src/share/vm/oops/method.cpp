@@ -173,7 +173,7 @@ char* Method::name_and_sig_as_C_string(Klass* klass, Symbol* method_name, Symbol
   return buf;
 }
 
-int Method::fast_exception_handler_bci_for(methodHandle mh, KlassHandle ex_klass, int throw_bci, TRAPS) {
+int Method::fast_exception_handler_bci_for(methodHandle mh, Klass* ex_klass, int throw_bci, TRAPS) {
   // exception table holds quadruple entries of the form (beg_bci, end_bci, handler_bci, klass_index)
   // access exception table
   ExceptionTable table(mh());
@@ -192,16 +192,15 @@ int Method::fast_exception_handler_bci_for(methodHandle mh, KlassHandle ex_klass
       int klass_index = table.catch_type_index(i);
       if (klass_index == 0) {
         return handler_bci;
-      } else if (ex_klass.is_null()) {
+      } else if (ex_klass == NULL) {
         return handler_bci;
       } else {
         // we know the exception class => get the constraint class
         // this may require loading of the constraint class; if verification
         // fails or some other exception occurs, return handler_bci
         Klass* k = pool->klass_at(klass_index, CHECK_(handler_bci));
-        KlassHandle klass = KlassHandle(THREAD, k);
-        assert(klass.not_null(), "klass not loaded");
-        if (ex_klass->is_subtype_of(klass())) {
+        assert(k != NULL, "klass not loaded");
+        if (ex_klass->is_subtype_of(k)) {
           return handler_bci;
         }
       }
@@ -1101,12 +1100,11 @@ address Method::make_adapters(methodHandle mh, TRAPS) {
 }
 
 void Method::restore_unshareable_info(TRAPS) {
+  assert(is_method() && is_valid_method(), "ensure C++ vtable is restored");
+
   // Since restore_unshareable_info can be called more than once for a method, don't
   // redo any work.
   if (adapter() == NULL) {
-    // Restore Method's C++ vtable by calling a virtual function
-    restore_vtable();
-
     methodHandle mh(THREAD, this);
     link_method(mh, CHECK);
   }
@@ -1193,7 +1191,6 @@ bool Method::is_overridden_in(Klass* k) const {
   }
 
   assert(ik->is_subclass_of(method_holder()), "should be subklass");
-  assert(ik->vtable() != NULL, "vtable should exist");
   if (!has_vtable_index()) {
     return false;
   } else {
@@ -1272,7 +1269,7 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
   ResourceMark rm;
   methodHandle empty;
 
-  KlassHandle holder = SystemDictionary::MethodHandle_klass();
+  InstanceKlass* holder = SystemDictionary::MethodHandle_klass();
   Symbol* name = MethodHandles::signature_polymorphic_intrinsic_name(iid);
   assert(iid == MethodHandles::signature_polymorphic_name_id(name), "");
   if (TraceMethodHandles) {
@@ -1290,7 +1287,7 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
     ConstantPool* cp_oop = ConstantPool::allocate(loader_data, cp_length, CHECK_(empty));
     cp = constantPoolHandle(THREAD, cp_oop);
   }
-  cp->set_pool_holder(InstanceKlass::cast(holder()));
+  cp->set_pool_holder(holder);
   cp->symbol_at_put(_imcp_invoke_name,       name);
   cp->symbol_at_put(_imcp_invoke_signature,  signature);
   cp->set_has_preresolution();
@@ -2166,7 +2163,6 @@ void Method::clear_jmethod_ids(ClassLoaderData* loader_data) {
 bool Method::has_method_vptr(const void* ptr) {
   Method m;
   // This assumes that the vtbl pointer is the first word of a C++ object.
-  // This assumption is also in universe.cpp patch_klass_vtble
   return dereference_vptr(&m) == dereference_vptr(ptr);
 }
 
@@ -2177,10 +2173,12 @@ bool Method::is_valid_method() const {
   } else if ((intptr_t(this) & (wordSize-1)) != 0) {
     // Quick sanity check on pointer.
     return false;
-  } else if (!is_metaspace_object()) {
-    return false;
-  } else {
+  } else if (MetaspaceShared::is_in_shared_space(this)) {
+    return MetaspaceShared::is_valid_shared_method(this);
+  } else if (Metaspace::contains_non_shared(this)) {
     return has_method_vptr((const void*)this);
+  } else {
+    return false;
   }
 }
 

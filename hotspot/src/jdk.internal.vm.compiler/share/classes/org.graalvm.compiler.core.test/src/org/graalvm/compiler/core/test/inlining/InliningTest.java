@@ -244,10 +244,10 @@ public class InliningTest extends GraalCompilerTest {
                                 ? getCustomGraphBuilderSuite(GraphBuilderConfiguration.getDefault(getDefaultGraphBuilderPlugins()).withFullInfopoints(true))
                                 : getDefaultGraphBuilderSuite();
                 HighTierContext context = new HighTierContext(getProviders(), graphBuilderSuite, OptimisticOptimizations.ALL);
-                Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "Graph");
+                Debug.dump(Debug.BASIC_LEVEL, graph, "Graph");
                 new CanonicalizerPhase().apply(graph, context);
                 new InliningPhase(new CanonicalizerPhase()).apply(graph, context);
-                Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "Graph");
+                Debug.dump(Debug.BASIC_LEVEL, graph, "Graph");
                 new CanonicalizerPhase().apply(graph, context);
                 new DeadCodeEliminationPhase().apply(graph);
                 return graph;

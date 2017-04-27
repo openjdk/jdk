@@ -26,19 +26,18 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
-import org.junit.Test;
-
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.test.ExportingClassLoader;
+import org.junit.Test;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.Label;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
-public final class InterfaceMethodHandleTest extends GraalCompilerTest implements Opcodes {
+public final class InterfaceMethodHandleTest extends GraalCompilerTest {
     private static final MethodHandle INTERFACE_HANDLE_M;
     private static final MethodHandle INTERFACE_HANDLE_M2;
 
@@ -136,58 +135,65 @@ public final class InterfaceMethodHandleTest extends GraalCompilerTest implement
 
     private static final String BASENAME = InterfaceMethodHandleTest.class.getName();
     private static final String NAME = BASENAME + "_B";
-    private AsmLoader loader = new AsmLoader(UnbalancedMonitorsTest.class.getClassLoader());
+    private final AsmLoader loader;
 
-    /**
-     * Construct a type which claims to implement {@link I} but with incorrect access on {@link I#m}
-     * so that an exception must be thrown.
-     */
-    public static byte[] bytesForB() {
+    public InterfaceMethodHandleTest() {
+        exportPackage(JAVA_BASE, "jdk.internal.org.objectweb.asm");
+        loader = new AsmLoader(UnbalancedMonitorsTest.class.getClassLoader());
+    }
 
-        ClassWriter cw = new ClassWriter(0);
-        MethodVisitor mv;
-        String jvmName = NAME.replace('.', '/');
-        cw.visit(52, ACC_SUPER | ACC_PUBLIC, jvmName, null, "java/lang/Object", new String[]{BASENAME.replace('.', '/') + "$I"});
+    static class Gen implements Opcodes {
+        /**
+         * Construct a type which claims to implement {@link I} but with incorrect access on
+         * {@link I#m} so that an exception must be thrown.
+         */
+        public static byte[] bytesForB() {
 
-        mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-        mv.visitCode();
-        Label l0 = new Label();
-        mv.visitLabel(l0);
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
-        mv.visitInsn(RETURN);
-        Label l1 = new Label();
-        mv.visitLabel(l1);
-        mv.visitMaxs(1, 1);
-        mv.visitEnd();
+            ClassWriter cw = new ClassWriter(0);
+            MethodVisitor mv;
+            String jvmName = NAME.replace('.', '/');
+            cw.visit(52, ACC_SUPER | ACC_PUBLIC, jvmName, null, "java/lang/Object", new String[]{BASENAME.replace('.', '/') + "$I"});
 
-        mv = cw.visitMethod(ACC_PRIVATE, "m", "()I", null, null);
-        mv.visitCode();
-        l0 = new Label();
-        mv.visitLabel(l0);
-        mv.visitInsn(ICONST_0);
-        mv.visitInsn(IRETURN);
-        l1 = new Label();
-        mv.visitLabel(l1);
-        mv.visitMaxs(1, 1);
-        mv.visitEnd();
+            mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+            mv.visitCode();
+            Label l0 = new Label();
+            mv.visitLabel(l0);
+            mv.visitVarInsn(ALOAD, 0);
+            mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+            mv.visitInsn(RETURN);
+            Label l1 = new Label();
+            mv.visitLabel(l1);
+            mv.visitMaxs(1, 1);
+            mv.visitEnd();
 
-        cw.visitEnd();
+            mv = cw.visitMethod(ACC_PRIVATE, "m", "()I", null, null);
+            mv.visitCode();
+            l0 = new Label();
+            mv.visitLabel(l0);
+            mv.visitInsn(ICONST_0);
+            mv.visitInsn(IRETURN);
+            l1 = new Label();
+            mv.visitLabel(l1);
+            mv.visitMaxs(1, 1);
+            mv.visitEnd();
 
-        mv = cw.visitMethod(ACC_PRIVATE, "m2", "(IIIIIIIIII)I", null, null);
-        mv.visitCode();
-        l0 = new Label();
-        mv.visitLabel(l0);
-        mv.visitInsn(ICONST_0);
-        mv.visitInsn(IRETURN);
-        l1 = new Label();
-        mv.visitLabel(l1);
-        mv.visitMaxs(1, 11);
-        mv.visitEnd();
+            cw.visitEnd();
 
-        cw.visitEnd();
+            mv = cw.visitMethod(ACC_PRIVATE, "m2", "(IIIIIIIIII)I", null, null);
+            mv.visitCode();
+            l0 = new Label();
+            mv.visitLabel(l0);
+            mv.visitInsn(ICONST_0);
+            mv.visitInsn(IRETURN);
+            l1 = new Label();
+            mv.visitLabel(l1);
+            mv.visitMaxs(1, 11);
+            mv.visitEnd();
 
-        return cw.toByteArray();
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
     }
 
     public static class AsmLoader extends ExportingClassLoader {
@@ -203,7 +209,7 @@ public final class InterfaceMethodHandleTest extends GraalCompilerTest implement
                 if (loaded != null) {
                     return loaded;
                 }
-                byte[] bytes = bytesForB();
+                byte[] bytes = Gen.bytesForB();
                 return (loaded = defineClass(name, bytes, 0, bytes.length));
             } else {
                 return super.findClass(name);

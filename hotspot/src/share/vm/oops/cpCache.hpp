@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,7 +217,7 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
   void set_field(                                // sets entry to resolved field state
     Bytecodes::Code get_code,                    // the bytecode used for reading the field
     Bytecodes::Code put_code,                    // the bytecode used for writing the field
-    KlassHandle     field_holder,                // the object/klass holding the field
+    Klass*          field_holder,                // the object/klass holding the field
     int             orig_field_index,            // the original field index in the field holder
     int             field_offset,                // the field offset in words in the field holder
     TosState        field_type,                  // the (machine) field type

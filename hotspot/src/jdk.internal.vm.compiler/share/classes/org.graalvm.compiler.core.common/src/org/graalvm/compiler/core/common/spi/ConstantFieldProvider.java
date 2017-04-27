@@ -22,6 +22,8 @@
  */
 package org.graalvm.compiler.core.common.spi;
 
+import org.graalvm.compiler.options.OptionValues;
+
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.ResolvedJavaField;
 
@@ -31,6 +33,8 @@ import jdk.vm.ci.meta.ResolvedJavaField;
 public interface ConstantFieldProvider {
 
     public interface ConstantFieldTool<T> {
+
+        OptionValues getOptions();
 
         JavaConstant readValue();
 

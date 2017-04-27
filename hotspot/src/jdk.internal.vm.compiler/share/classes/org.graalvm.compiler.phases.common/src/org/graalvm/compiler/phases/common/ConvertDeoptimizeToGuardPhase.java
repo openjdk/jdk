@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Option
 import java.util.List;
 
 import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.spi.SimplifierTool;
 import org.graalvm.compiler.nodeinfo.InputType;
@@ -72,24 +73,29 @@ import jdk.vm.ci.meta.JavaConstant;
  *
  */
 public class ConvertDeoptimizeToGuardPhase extends BasePhase<PhaseContext> {
-    private static AbstractBeginNode findBeginNode(FixedNode startNode) {
-        return GraphUtil.predecessorIterable(startNode).filter(AbstractBeginNode.class).first();
-    }
-
     @Override
+    @SuppressWarnings("try")
     protected void run(final StructuredGraph graph, PhaseContext context) {
         assert graph.hasValueProxies() : "ConvertDeoptimizeToGuardPhase always creates proxies";
-        if (graph.getNodes(DeoptimizeNode.TYPE).isEmpty()) {
-            return;
-        }
+
         for (DeoptimizeNode d : graph.getNodes(DeoptimizeNode.TYPE)) {
             assert d.isAlive();
-            visitDeoptBegin(AbstractBeginNode.prevBegin(d), d.action(), d.reason(), d.getSpeculation(), graph, context != null ? context.getLowerer() : null);
+            // Can only aggressively move deoptimization point if their action implies that
+            // the deoptimization will not be triggered again. Example for such action is
+            // reprofiling or recompiling with less aggressive options.
+            if (d.action() != DeoptimizationAction.None) {
+                try (DebugCloseable closable = d.withNodeSourcePosition()) {
+                    visitDeoptBegin(AbstractBeginNode.prevBegin(d), d.action(), d.reason(), d.getSpeculation(), graph, context != null ? context.getLowerer() : null);
+                }
+            }
+
         }
 
         if (context != null) {
             for (FixedGuardNode fixedGuard : graph.getNodes(FixedGuardNode.TYPE)) {
-                trySplitFixedGuard(fixedGuard, context);
+                try (DebugCloseable closable = fixedGuard.withNodeSourcePosition()) {
+                    trySplitFixedGuard(fixedGuard, context);
+                }
             }
         }
 
@@ -169,16 +175,15 @@ public class ConvertDeoptimizeToGuardPhase extends BasePhase<PhaseContext> {
             FixedNode next = mergeNode.next();
             while (mergeNode.isAlive()) {
                 AbstractEndNode end = mergeNode.forwardEnds().first();
-                AbstractBeginNode newBeginNode = findBeginNode(end);
+                AbstractBeginNode newBeginNode = AbstractBeginNode.prevBegin(end);
                 visitDeoptBegin(newBeginNode, deoptAction, deoptReason, speculation, graph, loweringProvider);
             }
             assert next.isAlive();
-            AbstractBeginNode newBeginNode = findBeginNode(next);
+            AbstractBeginNode newBeginNode = AbstractBeginNode.prevBegin(next);
             visitDeoptBegin(newBeginNode, deoptAction, deoptReason, speculation, graph, loweringProvider);
             return;
         } else if (deoptBegin.predecessor() instanceof IfNode) {
             IfNode ifNode = (IfNode) deoptBegin.predecessor();
-            AbstractBeginNode otherBegin = ifNode.trueSuccessor();
             LogicNode conditionNode = ifNode.condition();
             FixedGuardNode guard = graph.add(new FixedGuardNode(conditionNode, deoptReason, deoptAction, speculation, deoptBegin == ifNode.trueSuccessor()));
             FixedWithNextNode pred = (FixedWithNextNode) ifNode.predecessor();
@@ -196,11 +201,11 @@ public class ConvertDeoptimizeToGuardPhase extends BasePhase<PhaseContext> {
             }
             survivingSuccessor.replaceAtUsages(InputType.Guard, newGuard);
 
-            Debug.log("Converting deopt on %-5s branch of %s to guard for remaining branch %s.", deoptBegin == ifNode.trueSuccessor() ? "true" : "false", ifNode, otherBegin);
+            Debug.log("Converting deopt on %-5s branch of %s to guard for remaining branch %s.", deoptBegin == ifNode.trueSuccessor() ? "true" : "false", ifNode, survivingSuccessor);
             FixedNode next = pred.next();
             pred.setNext(guard);
             guard.setNext(next);
-            SimplifierTool simplifierTool = GraphUtil.getDefaultSimplifier(null, null, null, false, graph.getAssumptions(), loweringProvider);
+            SimplifierTool simplifierTool = GraphUtil.getDefaultSimplifier(null, null, null, false, graph.getAssumptions(), graph.getOptions(), loweringProvider);
             survivingSuccessor.simplify(simplifierTool);
             return;
         }

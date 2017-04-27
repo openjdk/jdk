@@ -23,7 +23,7 @@
 package org.graalvm.compiler.hotspot;
 
 import static org.graalvm.compiler.hotspot.HotSpotGraalCompiler.fmt;
-import static org.graalvm.compiler.hotspot.HotSpotGraalCompilerFactory.GRAAL_OPTION_PROPERTY_PREFIX;
+import static org.graalvm.compiler.hotspot.HotSpotGraalOptionValues.GRAAL_OPTION_PROPERTY_PREFIX;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -32,8 +32,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.options.Option;
+import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
-import org.graalvm.compiler.options.OptionValue;
+import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.code.CompilationRequest;
 
@@ -58,9 +59,9 @@ final class BootstrapWatchDog extends Thread {
         // @formatter:off
         @Option(help = "Ratio of the maximum compilation rate below which the bootstrap compilation rate must not fall " +
                        "(0 or less disables monitoring).", type = OptionType.Debug)
-        public static final OptionValue<Double> BootstrapWatchDogCriticalRateRatio = new OptionValue<>(0.25D);
+        public static final OptionKey<Double> BootstrapWatchDogCriticalRateRatio = new OptionKey<>(0.25D);
         @Option(help = "Maximum time in minutes to spend bootstrapping (0 to disable this limit).", type = OptionType.Debug)
-        public static final OptionValue<Double> BootstrapTimeout = new OptionValue<>(15D);
+        public static final OptionKey<Double> BootstrapTimeout = new OptionKey<>(15D);
         // @formatter:on
     }
 
@@ -88,13 +89,18 @@ final class BootstrapWatchDog extends Thread {
      * {@code null}.
      */
     static BootstrapWatchDog maybeCreate(HotSpotGraalRuntimeProvider graalRuntime) {
-        return MAX_RATE_DECREASE <= 0.0D && TIMEOUT == 0 ? null : new BootstrapWatchDog(graalRuntime);
+        OptionValues options = graalRuntime.getOptions();
+        int timeout = (int) (Options.BootstrapTimeout.getValue(options) * 60);
+        double maxRateDecrease = Options.BootstrapWatchDogCriticalRateRatio.getValue(options);
+        return maxRateDecrease <= 0.0D && timeout == 0 ? null : new BootstrapWatchDog(graalRuntime, timeout, maxRateDecrease);
     }
 
-    private BootstrapWatchDog(HotSpotGraalRuntimeProvider graalRuntime) {
+    private BootstrapWatchDog(HotSpotGraalRuntimeProvider graalRuntime, int timeout, double maxRateDecrease) {
         this.setName(getClass().getSimpleName());
         this.start();
         this.graalRuntime = graalRuntime;
+        this.timeout = timeout;
+        this.maxRateDecrease = maxRateDecrease;
     }
 
     /**
@@ -115,13 +121,13 @@ final class BootstrapWatchDog extends Thread {
     /**
      * Time in seconds before stopping a bootstrap.
      */
-    private static final int TIMEOUT = (int) (Options.BootstrapTimeout.getValue() * 60);
+    private final int timeout;
 
     /**
      * The watch dog {@link #hitCriticalCompilationRateOrTimeout() hits} a critical compilation rate
      * if the current compilation rate falls below this ratio of the maximum compilation rate.
      */
-    private static final double MAX_RATE_DECREASE = Options.BootstrapWatchDogCriticalRateRatio.getValue();
+    private final double maxRateDecrease;
 
     @Override
     public void run() {
@@ -142,16 +148,16 @@ final class BootstrapWatchDog extends Thread {
                 }
                 if (rate > maxRate) {
                     maxRate = rate;
-                } else if (rate < (maxRate * MAX_RATE_DECREASE)) {
+                } else if (rate < (maxRate * maxRateDecrease)) {
                     TTY.printf("%nAfter %.2f seconds bootstrapping, compilation rate is %.2f compilations per second " +
-                                    "which is below %.2f times the max compilation rate of %.2f%n", seconds(elapsed), rate, MAX_RATE_DECREASE, maxRate);
+                                    "which is below %.2f times the max compilation rate of %.2f%n", seconds(elapsed), rate, maxRateDecrease, maxRate);
                     TTY.printf("To enable monitoring of long running individual compilations, re-run with -D%s%s=%.2f%n",
                                     GRAAL_OPTION_PROPERTY_PREFIX, CompilationWatchDog.Options.CompilationWatchDogStartDelay.getName(),
                                     seconds(elapsed) - 5);
                     hitCriticalRateOrTimeout = true;
                     return;
                 }
-                if (elapsed > TIMEOUT * 1000) {
+                if (elapsed > timeout * 1000) {
                     if (requestsAtTimeout == null) {
                         requestsAtTimeout = snapshotRequests();
                         stacksAtTimeout = new HashMap<>();
@@ -205,7 +211,7 @@ final class BootstrapWatchDog extends Thread {
     }
 
     /**
-     * Queries whether a critically low compilation rate or {@link #TIMEOUT} occurred.
+     * Queries whether a critically low compilation rate or {@link #timeout} occurred.
      */
     boolean hitCriticalCompilationRateOrTimeout() {
         return hitCriticalRateOrTimeout;

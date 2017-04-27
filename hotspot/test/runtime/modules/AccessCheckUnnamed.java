@@ -55,7 +55,7 @@ public class AccessCheckUnnamed {
         // Define a module for p2.
         m2x = ModuleHelper.ModuleObject("module_two", this_cldr, new String[] { "p2" });
         assertNotNull(m2x, "Module should not be null");
-        ModuleHelper.DefineModule(m2x, "9.0", "m2x/there", new String[] { "p2" });
+        ModuleHelper.DefineModule(m2x, false, "9.0", "m2x/there", new String[] { "p2" });
         ModuleHelper.AddReadsModule(m2x, jlObject_jlM);
 
         // p1.c1's ctor tries to call a method in p2.c2.  This should fail because

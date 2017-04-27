@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -55,18 +55,12 @@
       .end
 
   // Support for jint Atomic::add(jint inc, volatile jint* dest)
-  // An additional bool (os::is_MP()) is passed as the last argument.
       .inline _Atomic_add,3
       movl     0(%esp), %eax   // inc
       movl     4(%esp), %edx   // dest
       movl     %eax, %ecx
-      cmpl     $0, 8(%esp)     // MP test
-      jne      1f
-      xaddl    %eax, (%edx)
-      jmp      2f
-1:    lock
-      xaddl    %eax, (%edx)
-2:    addl     %ecx, %eax
+      lock xaddl %eax, (%edx)
+      addl     %ecx, %eax
       .end
 
   // Support for jint Atomic::xchg(jint exchange_value, volatile jint* dest).
@@ -79,41 +73,26 @@
   // Support for jbyte Atomic::cmpxchg(jbyte exchange_value,
   //                                   volatile jbyte *dest,
   //                                   jbyte compare_value)
-  // An additional bool (os::is_MP()) is passed as the last argument.
       .inline _Atomic_cmpxchg_byte,4
       movb     8(%esp), %al   // compare_value
       movb     0(%esp), %cl   // exchange_value
       movl     4(%esp), %edx   // dest
-      cmp      $0, 12(%esp)    // MP test
-      jne      1f
-      cmpxchgb %cl, (%edx)
-      jmp      2f
-1:    lock
-      cmpxchgb %cl, (%edx)
-2:
+      lock cmpxchgb %cl, (%edx)
       .end
 
   // Support for jint Atomic::cmpxchg(jint exchange_value,
   //                                  volatile jint *dest,
   //                                  jint compare_value)
-  // An additional bool (os::is_MP()) is passed as the last argument.
       .inline _Atomic_cmpxchg,4
       movl     8(%esp), %eax   // compare_value
       movl     0(%esp), %ecx   // exchange_value
       movl     4(%esp), %edx   // dest
-      cmp      $0, 12(%esp)    // MP test
-      jne      1f
-      cmpxchgl %ecx, (%edx)
-      jmp      2f
-1:    lock
-      cmpxchgl %ecx, (%edx)
-2:
+      lock cmpxchgl %ecx, (%edx)
       .end
 
   // Support for jlong Atomic::cmpxchg(jlong exchange_value,
   //                                   volatile jlong* dest,
   //                                   jlong compare_value)
-  // An additional bool (os::is_MP()) is passed as the last argument.
       .inline _Atomic_cmpxchg_long,6
       pushl    %ebx
       pushl    %edi
@@ -122,13 +101,8 @@
       movl     16(%esp), %edi  // dest
       movl     8(%esp), %ebx   // exchange_value (low)
       movl     12(%esp), %ecx  // exchange_high (high)
-      cmp      $0, 28(%esp)    // MP test
-      jne      1f
-      cmpxchg8b (%edi)
-      jmp      2f
-1:    lock
-      cmpxchg8b (%edi)
-2:    popl     %edi
+      lock cmpxchg8b (%edi)
+      popl     %edi
       popl     %ebx
       .end
 

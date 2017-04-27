@@ -53,6 +53,7 @@ import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.code.BytecodeFrame;
+import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.VirtualObject;
 import jdk.vm.ci.code.site.InfopointReason;
 import jdk.vm.ci.common.JVMCIError;
@@ -140,8 +141,9 @@ public class JVMCIInfopointErrorTest extends GraalCompilerTest {
         graph.addAfterFixed(graph.start(), test);
 
         CompilationResult compResult = compile(method, graph);
-        HotSpotCompiledCode compiledCode = HotSpotCompiledCodeBuilder.createCompiledCode(method, null, compResult);
-        getCodeCache().addCode(method, compiledCode, null, null);
+        CodeCacheProvider codeCache = getCodeCache();
+        HotSpotCompiledCode compiledCode = HotSpotCompiledCodeBuilder.createCompiledCode(codeCache, method, null, compResult);
+        codeCache.addCode(method, compiledCode, null, null);
     }
 
     @Test(expected = JVMCIError.class)
