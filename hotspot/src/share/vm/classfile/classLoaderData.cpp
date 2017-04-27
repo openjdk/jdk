@@ -102,6 +102,7 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool is_anonymous, Depen
   // ModuleEntryTable or PackageEntryTable created for it. The defining package
   // and module for an anonymous class will be found in its host class.
   if (!is_anonymous) {
+    _packages = new PackageEntryTable(PackageEntryTable::_packagetable_entry_size);
     if (h_class_loader.is_null()) {
       // Create unnamed module for boot loader
       _unnamed_module = ModuleEntry::create_boot_unnamed_module(this);
@@ -297,8 +298,8 @@ void ClassLoaderData::modules_do(void f(ModuleEntry*)) {
   if (_modules != NULL) {
     for (int i = 0; i < _modules->table_size(); i++) {
       for (ModuleEntry* entry = _modules->bucket(i);
-                              entry != NULL;
-                              entry = entry->next()) {
+           entry != NULL;
+           entry = entry->next()) {
         f(entry);
       }
     }
@@ -306,13 +307,12 @@ void ClassLoaderData::modules_do(void f(ModuleEntry*)) {
 }
 
 void ClassLoaderData::packages_do(void f(PackageEntry*)) {
-  // Lock-free access requires load_ptr_acquire
-  PackageEntryTable* packages = load_ptr_acquire(&_packages);
-  if (packages != NULL) {
-    for (int i = 0; i < packages->table_size(); i++) {
-      for (PackageEntry* entry = packages->bucket(i);
-                              entry != NULL;
-                              entry = entry->next()) {
+  assert_locked_or_safepoint(Module_lock);
+  if (_packages != NULL) {
+    for (int i = 0; i < _packages->table_size(); i++) {
+      for (PackageEntry* entry = _packages->bucket(i);
+           entry != NULL;
+           entry = entry->next()) {
         f(entry);
       }
     }
@@ -492,22 +492,6 @@ void ClassLoaderData::unload() {
   // In some rare cases items added to this list will not be freed elsewhere.
   // To keep it simple, just free everything in it here.
   free_deallocate_list();
-}
-
-PackageEntryTable* ClassLoaderData::packages() {
-  // Lazily create the package entry table at first request.
-  // Lock-free access requires load_ptr_acquire.
-  PackageEntryTable* packages = load_ptr_acquire(&_packages);
-  if (packages == NULL) {
-    MutexLockerEx m1(metaspace_lock(), Mutex::_no_safepoint_check_flag);
-    // Check if _packages got allocated while we were waiting for this lock.
-    if ((packages = _packages) == NULL) {
-      packages = new PackageEntryTable(PackageEntryTable::_packagetable_entry_size);
-      // Ensure _packages is stable, since it is examined without a lock
-      OrderAccess::release_store_ptr(&_packages, packages);
-    }
-  }
-  return packages;
 }
 
 ModuleEntryTable* ClassLoaderData::modules() {
@@ -1096,7 +1080,7 @@ bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive_closure,
     // occur after each class loader's aliveness is determined.
     data = _head;
     while (data != NULL) {
-      if (data->packages_defined()) {
+      if (data->packages() != NULL) {
         data->packages()->purge_all_package_exports();
       }
       if (data->modules_defined()) {
