@@ -125,13 +125,13 @@ import jdk.internal.reflect.Reflection;
  *
  * <p> A service provider that is packaged as a JAR file for the class path is
  * identified by placing a <i>provider-configuration file</i> in the resource
- * directory <tt>META-INF/services</tt>. The file's name is the fully-qualified
+ * directory {@code META-INF/services}. The file's name is the fully-qualified
  * <a href="../lang/ClassLoader.html#name">binary name</a> of the service's
  * type. The file contains a list of fully-qualified binary names of concrete
  * provider classes, one per line.  Space and tab characters surrounding each
  * name, as well as blank lines, are ignored.  The comment character is
- * <tt>'#'</tt> (<tt>'&#92;u0023'</tt>,
- * <font style="font-size:smaller;">NUMBER SIGN</font>); on
+ * {@code '#'} (<code>'&#92;u0023'</code>,
+ * <span style="font-size:smaller;">NUMBER SIGN</span>); on
  * each line all characters following the first comment character are ignored.
  * The file must be encoded in UTF-8.
  * If a particular concrete provider class is named in more than one
@@ -257,7 +257,7 @@ import jdk.internal.reflect.Reflection;
  * method in this class will cause a {@link NullPointerException} to be thrown.
  *
  * <h2> Example </h2>
- * <p> Suppose we have a service type <tt>com.example.CodecSet</tt> which is
+ * <p> Suppose we have a service type {@code com.example.CodecSet} which is
  * intended to represent sets of encoder/decoder pairs for some protocol.  In
  * this case it is an abstract class with two abstract methods:
  *
@@ -265,11 +265,11 @@ import jdk.internal.reflect.Reflection;
  * public abstract Encoder getEncoder(String encodingName);
  * public abstract Decoder getDecoder(String encodingName);</pre></blockquote>
  *
- * Each method returns an appropriate object or <tt>null</tt> if the provider
+ * Each method returns an appropriate object or {@code null} if the provider
  * does not support the given encoding.  Typical providers support more than
  * one encoding.
  *
- * <p> The <tt>CodecSet</tt> class creates and saves a single service instance
+ * <p> The {@code CodecSet} class creates and saves a single service instance
  * at initialization:
  *
  * <pre>{@code
@@ -1402,7 +1402,7 @@ public final class ServiceLoader<S>
      *
      * @param  loader
      *         The class loader to be used to load provider-configuration files
-     *         and provider classes, or <tt>null</tt> if the system class
+     *         and provider classes, or {@code null} if the system class
      *         loader (or, failing that, the bootstrap class loader) is to be
      *         used
      *

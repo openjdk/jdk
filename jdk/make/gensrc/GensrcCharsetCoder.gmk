@@ -54,7 +54,7 @@ $(GENSRC_CHARSETCODER_DST)/CharsetDecoder.java: $(GENSRC_CHARSETCODER_TEMPLATE)
 	    -DOtherCoder='Encoder' \
 	    -DreplTypeName='string' \
 	    -DdefaultRepl='"\\uFFFD"' \
-	    -DdefaultReplName='<tt>"\&#92;uFFFD"<\/tt>' \
+	    -DdefaultReplName='<code>"\&#92;uFFFD"<\/code>' \
 	    -DreplType='String' \
 	    -DreplFQType='java.lang.String' \
 	    -DreplLength='length()' \
@@ -89,7 +89,7 @@ $(GENSRC_CHARSETCODER_DST)/CharsetEncoder.java: $(GENSRC_CHARSETCODER_TEMPLATE)
 	    -DOtherCoder='Decoder' \
 	    -DreplTypeName='byte array' \
 	    -DdefaultRepl='new byte[] { (byte)'"'"\\?"'"' }' \
-	    -DdefaultReplName='<tt>{<\/tt>\&nbsp;<tt>(byte)'"'"\\?"'"'<\/tt>\&nbsp;<tt>}<\/tt>' \
+	    -DdefaultReplName='<code>{<\/code>\&nbsp;<code>(byte)'"'"\\?"'"'<\/code>\&nbsp;<code>}<\/code>' \
 	    -DreplType='byte[]' \
 	    -DreplFQType='byte[]' \
 	    -DreplLength='length' \
