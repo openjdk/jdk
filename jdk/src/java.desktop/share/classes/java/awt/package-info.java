@@ -54,6 +54,8 @@
  * <ul>
  *     <li><a href="doc-files/FocusSpec.html">The AWT Focus Subsystem</a>
  *     <li><a href="doc-files/Modality.html">The AWT Modality</a>
+ *     <li><a href="{@docRoot}/../specs/AWT_Native_Interface.html">
+ *                  The Java AWT Native Interface (JAWT)</a>
  * </ul>
  *
  * @since 1.0
