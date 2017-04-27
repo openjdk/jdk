@@ -174,8 +174,6 @@ PackageEntryTable::PackageEntryTable(int table_size)
 }
 
 PackageEntryTable::~PackageEntryTable() {
-  assert_locked_or_safepoint(Module_lock);
-
   // Walk through all buckets and all entries in each bucket,
   // freeing each entry.
   for (int i = 0; i < table_size(); ++i) {
@@ -271,6 +269,7 @@ PackageEntry* PackageEntryTable::lookup_only(Symbol* name) {
 // Called when a define module for java.base is being processed.
 // Verify the packages loaded thus far are in java.base's package list.
 void PackageEntryTable::verify_javabase_packages(GrowableArray<Symbol*> *pkg_list) {
+  assert_lock_strong(Module_lock);
   for (int i = 0; i < table_size(); i++) {
     for (PackageEntry* entry = bucket(i);
                        entry != NULL;

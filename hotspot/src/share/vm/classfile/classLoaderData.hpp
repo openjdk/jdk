@@ -347,8 +347,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   bool contains_klass(Klass* k);
   void record_dependency(const Klass* to, TRAPS);
   void init_dependencies(TRAPS);
-  PackageEntryTable* packages();
-  bool packages_defined() { return (_packages != NULL); }
+  PackageEntryTable* packages() { return _packages; }
   ModuleEntry* unnamed_module() { return _unnamed_module; }
   ModuleEntryTable* modules();
   bool modules_defined() { return (_modules != NULL); }
