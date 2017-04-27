@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,32 +25,34 @@
  * @test
  * @bug 8014138
  * @summary Testing new -XX:SharedArchiveFile=<file-name> option
+ * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  */
 
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
+
+// NOTE: This test serves as a sanity test and also as an example for simple
+// use of SharedArchiveFile argument. For this reason it DOES NOT use the utility
+// methods to form command line to create/use shared archive.
 public class SharedArchiveFile {
-  public static void main(String[] args) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-        "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./SharedArchiveFile.jsa", "-Xshare:dump");
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    try {
-      output.shouldContain("Loading classes to share");
-      output.shouldHaveExitValue(0);
+    public static void main(String[] args) throws Exception {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true,
+                                "-XX:+UnlockDiagnosticVMOptions",
+                                "-XX:SharedArchiveFile=./SharedArchiveFile.jsa",
+                                "-Xshare:dump");
+        OutputAnalyzer out = CDSTestUtils.executeAndLog(pb, "SharedArchiveFile");
+        CDSTestUtils.checkDump(out);
 
-      pb = ProcessTools.createJavaProcessBuilder(
-        "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./SharedArchiveFile.jsa", "-Xshare:on", "-version");
-      output = new OutputAnalyzer(pb.start());
-      output.shouldContain("sharing");
-      output.shouldHaveExitValue(0);
-
-    } catch (RuntimeException e) {
-      output.shouldContain("Unable to use shared archive");
-      output.shouldHaveExitValue(1);
+        pb = ProcessTools.createJavaProcessBuilder(true,
+                              "-XX:+UnlockDiagnosticVMOptions",
+                              "-XX:SharedArchiveFile=./SharedArchiveFile.jsa",
+                              "-Xshare:on", "-version");
+        out = CDSTestUtils.executeAndLog(pb, "SharedArchiveFile");
+        CDSTestUtils.checkExec(out);
     }
-  }
 }

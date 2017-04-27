@@ -230,11 +230,12 @@ public abstract class GeneratedPlugin {
                 case DOUBLE:
                     out.printf("                arg%d = args[%d].asJavaConstant().asDouble();\n", argIdx, nodeIdx);
                     break;
+                case ARRAY:
                 case DECLARED:
                     out.printf("                arg%d = %s.asObject(%s.class, args[%d].asJavaConstant());\n", argIdx, deps.use(WellKnownDependency.SNIPPET_REFLECTION), getErasedType(type), nodeIdx);
                     break;
                 default:
-                    throw new IllegalArgumentException();
+                    throw new IllegalArgumentException(type.toString());
             }
         }
         out.printf("            } else {\n");

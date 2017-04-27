@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,13 @@ public:
   // Helper function; describes pthread attributes as short string. String is written
   // to buf with len buflen; buf is returned.
   static char* describe_pthread_attr(char* buf, size_t buflen, const pthread_attr_t* attr);
+
+  // A safe implementation of realpath which will not cause a buffer overflow if the resolved path
+  //   is longer than PATH_MAX.
+  // On success, returns 'outbuf', which now contains the path.
+  // On error, it will return NULL and set errno. The content of 'outbuf' is undefined.
+  // On truncation error ('outbuf' too small), it will return NULL and set errno to ENAMETOOLONG.
+  static char* realpath(const char* filename, char* outbuf, size_t outbuflen);
 
 };
 

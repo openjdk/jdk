@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 #include "gc/g1/g1AllocRegion.inline.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1MarkSweep.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
 
@@ -333,11 +332,14 @@ void G1DefaultPLABAllocator::waste(size_t& wasted, size_t& undo_wasted) {
   }
 }
 
+bool G1ArchiveAllocator::_archive_check_enabled = false;
+G1ArchiveRegionMap G1ArchiveAllocator::_archive_region_map;
+
 G1ArchiveAllocator* G1ArchiveAllocator::create_allocator(G1CollectedHeap* g1h) {
   // Create the archive allocator, and also enable archive object checking
   // in mark-sweep, since we will be creating archive regions.
   G1ArchiveAllocator* result =  new G1ArchiveAllocator(g1h);
-  G1MarkSweep::enable_archive_object_check();
+  enable_archive_object_check();
   return result;
 }
 
@@ -362,7 +364,7 @@ bool G1ArchiveAllocator::alloc_new_region() {
   _max = _bottom + HeapRegion::min_region_size_in_words();
 
   // Tell mark-sweep that objects in this region are not to be marked.
-  G1MarkSweep::set_range_archive(MemRegion(_bottom, HeapRegion::GrainWords), true);
+  set_range_archive(MemRegion(_bottom, HeapRegion::GrainWords), true);
 
   // Since we've modified the old set, call update_sizes.
   _g1h->g1mm()->update_sizes();

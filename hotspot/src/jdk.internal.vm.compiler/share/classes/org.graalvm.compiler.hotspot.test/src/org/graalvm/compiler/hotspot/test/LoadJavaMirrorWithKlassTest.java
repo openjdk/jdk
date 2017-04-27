@@ -30,8 +30,7 @@ import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.options.OptionValue;
-import org.graalvm.compiler.options.OptionValue.OverrideScope;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.tiers.Suites;
 
 import jdk.vm.ci.meta.JavaKind;
@@ -58,10 +57,12 @@ public class LoadJavaMirrorWithKlassTest extends GraalCompilerTest {
 
     @Override
     @SuppressWarnings("try")
-    protected Suites createSuites() {
-        try (OverrideScope s = OptionValue.override(GraalOptions.ImmutableCode, true)) {
-            return super.createSuites();
-        }
+    protected Suites createSuites(OptionValues options) {
+        return super.createSuites(getOptions());
+    }
+
+    private static OptionValues getOptions() {
+        return new OptionValues(getInitialOptions(), GraalOptions.ImmutableCode, true);
     }
 
     @Override
@@ -80,7 +81,7 @@ public class LoadJavaMirrorWithKlassTest extends GraalCompilerTest {
 
     @Test
     public void testClassConstant() {
-        test("classConstant");
+        test(getOptions(), "classConstant");
     }
 
     public static Class<?> primitiveClassConstant() {
@@ -89,7 +90,7 @@ public class LoadJavaMirrorWithKlassTest extends GraalCompilerTest {
 
     @Test
     public void testPrimitiveClassConstant() {
-        test("primitiveClassConstant");
+        test(getOptions(), "primitiveClassConstant");
     }
 
     public static Wrapper compressedClassConstant(Wrapper w) {
@@ -100,7 +101,7 @@ public class LoadJavaMirrorWithKlassTest extends GraalCompilerTest {
     @Test
     public void testCompressedClassConstant() {
         ArgSupplier arg = () -> new Wrapper();
-        test("compressedClassConstant", arg);
+        test(getOptions(), "compressedClassConstant", arg);
     }
 
     public static Wrapper compressedPrimitiveClassConstant(Wrapper w) {
@@ -111,6 +112,6 @@ public class LoadJavaMirrorWithKlassTest extends GraalCompilerTest {
     @Test
     public void testCompressedPrimitiveClassConstant() {
         ArgSupplier arg = () -> new Wrapper();
-        test("compressedPrimitiveClassConstant", arg);
+        test(getOptions(), "compressedPrimitiveClassConstant", arg);
     }
 }

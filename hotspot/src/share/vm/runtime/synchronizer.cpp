@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1762,7 +1762,7 @@ class ReleaseJavaMonitorsClosure: public MonitorClosure {
     if (mid->owner() == THREAD) {
       if (ObjectMonitor::Knob_VerifyMatch != 0) {
         ResourceMark rm;
-        Handle obj((oop) mid->object());
+        Handle obj(THREAD, (oop) mid->object());
         tty->print("INFO: unexpected locked object:");
         javaVFrame::print_locked_object_class_name(tty, obj, "locked");
         fatal("exiting JavaThread=" INTPTR_FORMAT
@@ -1878,23 +1878,6 @@ void ObjectSynchronizer::sanity_checks(const bool verbose,
 }
 
 #ifndef PRODUCT
-
-// Verify all monitors in the monitor cache, the verification is weak.
-void ObjectSynchronizer::verify() {
-  PaddedEnd<ObjectMonitor> * block =
-    (PaddedEnd<ObjectMonitor> *)OrderAccess::load_ptr_acquire(&gBlockList);
-  while (block != NULL) {
-    assert(block->object() == CHAINMARKER, "must be a block header");
-    for (int i = 1; i < _BLOCKSIZE; i++) {
-      ObjectMonitor* mid = (ObjectMonitor *)(block + i);
-      oop object = (oop)mid->object();
-      if (object != NULL) {
-        mid->verify();
-      }
-    }
-    block = (PaddedEnd<ObjectMonitor> *)block->FreeNext;
-  }
-}
 
 // Check if monitor belongs to the monitor cache
 // The list is grow-only so it's *relatively* safe to traverse

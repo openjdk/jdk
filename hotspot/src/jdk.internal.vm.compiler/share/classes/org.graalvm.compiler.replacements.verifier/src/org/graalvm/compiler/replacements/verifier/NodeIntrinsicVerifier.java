@@ -25,7 +25,11 @@ package org.graalvm.compiler.replacements.verifier;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Formatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.AnnotationMirror;
@@ -55,6 +59,10 @@ public final class NodeIntrinsicVerifier extends AbstractVerifier {
 
     private TypeMirror nodeType() {
         return env.getElementUtils().getTypeElement("org.graalvm.compiler.graph.Node").asType();
+    }
+
+    private TypeMirror stampType() {
+        return env.getElementUtils().getTypeElement("org.graalvm.compiler.core.common.type.Stamp").asType();
     }
 
     private TypeMirror valueNodeType() {
@@ -118,32 +126,68 @@ public final class NodeIntrinsicVerifier extends AbstractVerifier {
             }
         }
 
-        if (intrinsicMethod.getReturnType() instanceof TypeVariable) {
+        TypeMirror returnType = intrinsicMethod.getReturnType();
+        if (returnType instanceof TypeVariable) {
             env.getMessager().printMessage(Kind.ERROR, "@NodeIntrinsic cannot have a generic return type.", element, annotation);
         }
 
-        TypeMirror[] constructorSignature = constructorSignature(intrinsicMethod);
-        ExecutableElement custom = findCustomIntrinsifyMethod(nodeClass, constructorSignature);
-        if (custom != null) {
-            generator.addPlugin(new GeneratedNodeIntrinsicPlugin.CustomFactoryPlugin(intrinsicMethod, custom, constructorSignature));
-        } else {
-            if (isNodeType(nodeClass)) {
-                if (nodeClass.getModifiers().contains(Modifier.ABSTRACT)) {
-                    env.getMessager().printMessage(Kind.ERROR, String.format("Cannot make @NodeIntrinsic for abstract node class %s.", nodeClass.getSimpleName()), element, annotation);
-                } else {
-                    TypeMirror ret = intrinsicMethod.getReturnType();
-                    if (env.getTypeUtils().isAssignable(ret, structuralInputType())) {
-                        checkInputType(nodeClass, ret, element, annotation);
-                    }
+        boolean injectedStampIsNonNull = intrinsicMethod.getAnnotation(NodeIntrinsic.class).injectedStampIsNonNull();
 
-                    ExecutableElement constructor = findConstructor(nodeClass, constructorSignature, intrinsicMethod, annotation);
-                    if (constructor != null) {
-                        generator.addPlugin(new GeneratedNodeIntrinsicPlugin.ConstructorPlugin(intrinsicMethod, constructor, constructorSignature));
-                    }
+        if (returnType.getKind() == TypeKind.VOID) {
+            for (VariableElement parameter : intrinsicMethod.getParameters()) {
+                if (parameter.getAnnotation(InjectedNodeParameter.class) != null) {
+                    env.getMessager().printMessage(Kind.ERROR, "@NodeIntrinsic with an injected Stamp parameter cannot have a void return type.", element, annotation);
+                    break;
                 }
-            } else {
-                env.getMessager().printMessage(Kind.ERROR, String.format("The class %s is not a Node subclass.", nodeClass.getSimpleName()), element, annotation);
             }
+        }
+
+        TypeMirror[] constructorSignature = constructorSignature(intrinsicMethod);
+        Map<ExecutableElement, String> nonMatches = new HashMap<>();
+        List<ExecutableElement> factories = findIntrinsifyFactoryMethod(nodeClass, constructorSignature, nonMatches, injectedStampIsNonNull);
+        List<ExecutableElement> constructors = Collections.emptyList();
+        if (nodeClass.getModifiers().contains(Modifier.ABSTRACT)) {
+            if (factories.isEmpty()) {
+                env.getMessager().printMessage(Kind.ERROR, String.format("Cannot make a node intrinsic for an abstract class %s.", nodeClass.getSimpleName()), element, annotation);
+            }
+        } else if (!isNodeType(nodeClass)) {
+            if (factories.isEmpty()) {
+                env.getMessager().printMessage(Kind.ERROR, String.format("%s is not a subclass of %s.", nodeClass.getSimpleName(), nodeType()), element, annotation);
+            }
+        } else {
+            TypeMirror ret = returnType;
+            if (env.getTypeUtils().isAssignable(ret, structuralInputType())) {
+                checkInputType(nodeClass, ret, element, annotation);
+            }
+
+            constructors = findConstructors(nodeClass, constructorSignature, nonMatches, injectedStampIsNonNull);
+        }
+        Formatter msg = new Formatter();
+        if (factories.size() > 1) {
+            msg.format("Found more than one factory in %s matching node intrinsic:", nodeClass);
+            for (ExecutableElement candidate : factories) {
+                msg.format("%n  %s", candidate);
+            }
+            env.getMessager().printMessage(Kind.ERROR, msg.toString(), intrinsicMethod, annotation);
+        } else if (constructors.size() > 1) {
+            msg.format("Found more than one constructor in %s matching node intrinsic:", nodeClass);
+            for (ExecutableElement candidate : constructors) {
+                msg.format("%n  %s", candidate);
+            }
+            env.getMessager().printMessage(Kind.ERROR, msg.toString(), intrinsicMethod, annotation);
+        } else if (factories.size() == 1) {
+            generator.addPlugin(new GeneratedNodeIntrinsicPlugin.CustomFactoryPlugin(intrinsicMethod, factories.get(0), constructorSignature));
+        } else if (constructors.size() == 1) {
+            generator.addPlugin(new GeneratedNodeIntrinsicPlugin.ConstructorPlugin(intrinsicMethod, constructors.get(0), constructorSignature));
+        } else {
+            msg.format("Could not find any factories or constructors in %s matching node intrinsic", nodeClass);
+            if (!nonMatches.isEmpty()) {
+                msg.format("%nFactories and constructors that failed to match:");
+                for (Map.Entry<ExecutableElement, String> e : nonMatches.entrySet()) {
+                    msg.format("%n  %s: %s", e.getKey(), e.getValue());
+                }
+            }
+            env.getMessager().printMessage(Kind.ERROR, msg.toString(), intrinsicMethod, annotation);
         }
     }
 
@@ -201,34 +245,20 @@ public final class NodeIntrinsicVerifier extends AbstractVerifier {
         return parameters;
     }
 
-    private ExecutableElement findConstructor(TypeElement nodeClass, TypeMirror[] signature, ExecutableElement intrinsicMethod, AnnotationMirror intrinsicAnnotation) {
+    private List<ExecutableElement> findConstructors(TypeElement nodeClass, TypeMirror[] signature, Map<ExecutableElement, String> nonMatches, boolean requiresInjectedStamp) {
         List<ExecutableElement> constructors = ElementFilter.constructorsIn(nodeClass.getEnclosedElements());
-        List<String> failureReasons = new ArrayList<>();
-
+        List<ExecutableElement> found = new ArrayList<>(constructors.size());
         for (ExecutableElement constructor : constructors) {
-            String failureReason = matchSignature(0, constructor, signature);
-            if (failureReason == null) {
-                // found
-                return constructor;
-            }
-
-            failureReasons.add(failureReason);
-        }
-
-        // not found
-        if (failureReasons.isEmpty()) {
-            env.getMessager().printMessage(Kind.ERROR, "Could not find matching constructor for node intrinsic.", intrinsicMethod, intrinsicAnnotation);
-        } else {
-            for (String reason : failureReasons) {
-                env.getMessager().printMessage(Kind.ERROR, reason, intrinsicMethod, intrinsicAnnotation);
+            if (matchSignature(0, constructor, signature, nonMatches, requiresInjectedStamp)) {
+                found.add(constructor);
             }
         }
-
-        return null;
+        return found;
     }
 
-    private ExecutableElement findCustomIntrinsifyMethod(TypeElement nodeClass, TypeMirror[] signature) {
+    private List<ExecutableElement> findIntrinsifyFactoryMethod(TypeElement nodeClass, TypeMirror[] signature, Map<ExecutableElement, String> nonMatches, boolean requiresInjectedStamp) {
         List<ExecutableElement> methods = ElementFilter.methodsIn(nodeClass.getEnclosedElements());
+        List<ExecutableElement> found = new ArrayList<>(methods.size());
         for (ExecutableElement method : methods) {
             if (!method.getSimpleName().toString().equals("intrinsify")) {
                 continue;
@@ -248,50 +278,64 @@ public final class NodeIntrinsicVerifier extends AbstractVerifier {
                 continue;
             }
 
-            String failureReason = matchSignature(2, method, signature);
-            if (failureReason == null) {
-                // found
-                return method;
-            }
-        }
-
-        return null;
-    }
-
-    private String matchSignature(int numSkippedParameters, ExecutableElement method, TypeMirror[] signature) {
-        int sIdx = 0;
-        int cIdx = numSkippedParameters;
-        while (cIdx < method.getParameters().size()) {
-            VariableElement parameter = method.getParameters().get(cIdx++);
-            if (parameter.getAnnotation(InjectedNodeParameter.class) != null) {
-                // skip injected parameters
+            if (method.getReturnType().getKind() != TypeKind.BOOLEAN) {
                 continue;
             }
 
+            if (matchSignature(2, method, signature, nonMatches, requiresInjectedStamp)) {
+                found.add(method);
+            }
+        }
+        return found;
+    }
+
+    private boolean matchSignature(int numSkippedParameters, ExecutableElement method, TypeMirror[] signature, Map<ExecutableElement, String> nonMatches, boolean requiresInjectedStamp) {
+        int sIdx = 0;
+        int cIdx = numSkippedParameters;
+        boolean missingStampArgument = requiresInjectedStamp;
+        while (cIdx < method.getParameters().size()) {
+            VariableElement parameter = method.getParameters().get(cIdx++);
             TypeMirror paramType = parameter.asType();
+            if (parameter.getAnnotation(InjectedNodeParameter.class) != null) {
+                if (missingStampArgument && env.getTypeUtils().isSameType(paramType, stampType())) {
+                    missingStampArgument = false;
+                }
+                // skip injected parameters
+                continue;
+            }
+            if (missingStampArgument) {
+                nonMatches.put(method, String.format("missing injected %s argument", stampType()));
+                return false;
+            }
+
             if (cIdx == method.getParameters().size() && paramType.getKind() == TypeKind.ARRAY) {
                 // last argument of constructor is varargs, match remaining intrinsic arguments
                 TypeMirror varargsType = ((ArrayType) paramType).getComponentType();
                 while (sIdx < signature.length) {
                     if (!isTypeCompatible(varargsType, signature[sIdx++])) {
-                        return String.format("%s failed because the types of argument %d are incompatible: %s != %s", method, sIdx, varargsType, signature[sIdx - 1]);
+                        nonMatches.put(method, String.format("the types of argument %d are incompatible: %s != %s", sIdx, varargsType, signature[sIdx - 1]));
+                        return false;
                     }
                 }
             } else if (sIdx >= signature.length) {
                 // too many arguments in intrinsic method
-                return String.format("Too many arguments for %s", method);
+                nonMatches.put(method, "too many arguments");
+                return false;
             } else if (!isTypeCompatible(paramType, signature[sIdx++])) {
-                return String.format("%s failed because the types of argument %d are incompatible: %s != %s", method, sIdx, paramType, signature[sIdx - 1]);
+                nonMatches.put(method, String.format("the type of argument %d is incompatible: %s != %s", sIdx, paramType, signature[sIdx - 1]));
+                return false;
             }
         }
-
-        if (sIdx == signature.length) {
-            // found
-            return null;
+        if (missingStampArgument) {
+            nonMatches.put(method, String.format("missing injected %s argument", stampType()));
+            return false;
         }
 
-        // too many arguments in constructor
-        return String.format("Not enough arguments for %s", method);
+        if (sIdx != signature.length) {
+            nonMatches.put(method, "not enough arguments");
+            return false;
+        }
+        return true;
     }
 
     private boolean isTypeCompatible(TypeMirror originalType, TypeMirror substitutionType) {

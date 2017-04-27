@@ -54,7 +54,7 @@ class LinearScanIntervalDumper implements IntervalDumper {
 
         // print ranges
         Range cur = interval.first();
-        while (cur != Range.EndMarker) {
+        while (!cur.isEndMarker()) {
             visitor.visitRange(cur.from, cur.to);
             cur = cur.next;
             assert cur != null : "range list not closed with range sentinel";

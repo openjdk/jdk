@@ -45,11 +45,22 @@ public class CFGVerifier {
 
             if (block.getDominator() != null) {
                 assert block.getDominator().getId() < block.getId();
-                assert block.getDominator().getDominated().contains(block);
+
+                AbstractBlockBase<?> domChild = block.getDominator().getFirstDominated();
+                while (domChild != null) {
+                    if (domChild == block) {
+                        break;
+                    }
+                    domChild = domChild.getDominatedSibling();
+                }
+                assert domChild != null : "dominators must contain block";
             }
-            for (T dominated : block.getDominated()) {
+
+            T dominated = block.getFirstDominated();
+            while (dominated != null) {
                 assert dominated.getId() > block.getId();
                 assert dominated.getDominator() == block;
+                dominated = dominated.getDominatedSibling();
             }
 
             T postDominatorBlock = block.getPostdominator();

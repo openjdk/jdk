@@ -55,6 +55,9 @@ public class IndirectCallTargetNode extends LoweredCallTargetNode {
 
     @Override
     public String targetName() {
+        if (targetMethod() == null) {
+            return "[unknown]";
+        }
         return targetMethod().format("Indirect#%h.%n");
     }
 }

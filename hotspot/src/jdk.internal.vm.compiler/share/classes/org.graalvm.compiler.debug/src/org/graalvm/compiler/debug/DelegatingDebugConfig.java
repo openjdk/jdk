@@ -28,6 +28,7 @@ import java.util.EnumMap;
 import java.util.Map;
 
 import org.graalvm.compiler.debug.internal.DebugScope;
+import org.graalvm.compiler.options.OptionValues;
 
 public class DelegatingDebugConfig implements DebugConfig {
 
@@ -129,6 +130,11 @@ public class DelegatingDebugConfig implements DebugConfig {
     public DelegatingDebugConfig delegate(Level level) {
         levelState.put(level, null);
         return this;
+    }
+
+    @Override
+    public OptionValues getOptions() {
+        return delegate.getOptions();
     }
 
     @Override

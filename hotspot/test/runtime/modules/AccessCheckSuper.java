@@ -49,12 +49,12 @@ public class AccessCheckSuper {
         // Define a module for p2.
         Object m2x = ModuleHelper.ModuleObject("module_two", this_cldr, new String[] { "p2" });
         assertNotNull(m2x, "Module should not be null");
-        ModuleHelper.DefineModule(m2x, "9.0", "m2x/there", new String[] { "p2" });
+        ModuleHelper.DefineModule(m2x, false, "9.0", "m2x/there", new String[] { "p2" });
 
         // Define a module for p3.
         Object m3x = ModuleHelper.ModuleObject("module_three", this_cldr, new String[] { "p3" });
         assertNotNull(m3x, "Module should not be null");
-        ModuleHelper.DefineModule(m3x, "9.0", "m3x/there", new String[] { "p3" });
+        ModuleHelper.DefineModule(m3x, false, "9.0", "m3x/there", new String[] { "p3" });
 
         // Since a readability edge has not been established between module_two
         // and module_three, p3.c3 cannot read its superclass p2.c2.

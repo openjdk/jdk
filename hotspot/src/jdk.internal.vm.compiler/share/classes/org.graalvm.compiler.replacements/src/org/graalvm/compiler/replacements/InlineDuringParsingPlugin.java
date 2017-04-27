@@ -26,6 +26,7 @@ import static org.graalvm.compiler.core.common.GraalOptions.TrivialInliningSize;
 import static org.graalvm.compiler.java.BytecodeParserOptions.InlineDuringParsingMaxDepth;
 import static org.graalvm.compiler.nodes.graphbuilderconf.InlineInvokePlugin.InlineInfo.createStandardInlineInfo;
 
+import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.InlineInvokePlugin;
@@ -47,8 +48,8 @@ public final class InlineDuringParsingPlugin implements InlineInvokePlugin {
             }
 
             if (!method.isSynchronized() &&
-                checkSize(method, args) &&
-                b.getDepth() < InlineDuringParsingMaxDepth.getValue()) {
+                checkSize(method, args, b.getGraph()) &&
+                b.getDepth() < InlineDuringParsingMaxDepth.getValue(b.getOptions())) {
                 return createStandardInlineInfo(method);
             }
         }
@@ -56,13 +57,13 @@ public final class InlineDuringParsingPlugin implements InlineInvokePlugin {
         return null;
     }
 
-    private static boolean checkSize(ResolvedJavaMethod method, ValueNode[] args) {
+    private static boolean checkSize(ResolvedJavaMethod method, ValueNode[] args, StructuredGraph graph) {
         int bonus = 1;
         for (ValueNode v : args) {
             if (v.isConstant()) {
                 bonus++;
             }
         }
-        return method.getCode().length <= TrivialInliningSize.getValue() * bonus;
+        return method.getCode().length <= TrivialInliningSize.getValue(graph.getOptions()) * bonus;
     }
 }

@@ -94,6 +94,10 @@ class ClassLoaderDataGraph : public AllStatic {
   static void keep_alive_cld_do(CLDClosure* cl);
   static void always_strong_cld_do(CLDClosure* cl);
   // klass do
+  // Walking classes through the ClassLoaderDataGraph include array classes.  It also includes
+  // classes that are allocated but not loaded, classes that have errors, and scratch classes
+  // for redefinition.  These classes are removed during the next class unloading.
+  // Walking the ClassLoaderDataGraph also includes anonymous classes.
   static void classes_do(KlassClosure* klass_closure);
   static void classes_do(void f(Klass* const));
   static void methods_do(void f(Method*));
@@ -217,6 +221,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
   Klass* volatile _klasses;              // The classes defined by the class loader.
   PackageEntryTable* volatile _packages; // The packages defined by the class loader.
+  ModuleEntry* _unnamed_module;          // This class loader's unnamed module.
   ModuleEntryTable* volatile _modules;   // The modules defined by the class loader.
 
   // These method IDs are created for the class loader and set to NULL when the
@@ -284,7 +289,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
     assert(ClassLoaderDataGraph::_head == NULL, "cannot initialize twice");
 
     // We explicitly initialize the Dependencies object at a later phase in the initialization
-    _the_null_class_loader_data = new ClassLoaderData((oop)NULL, false, Dependencies());
+    _the_null_class_loader_data = new ClassLoaderData(Handle(), false, Dependencies());
     ClassLoaderDataGraph::_head = _the_null_class_loader_data;
     assert(_the_null_class_loader_data->is_the_null_class_loader_data(), "Must be");
     if (DumpSharedSpaces) {
@@ -344,6 +349,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   void init_dependencies(TRAPS);
   PackageEntryTable* packages();
   bool packages_defined() { return (_packages != NULL); }
+  ModuleEntry* unnamed_module() { return _unnamed_module; }
   ModuleEntryTable* modules();
   bool modules_defined() { return (_modules != NULL); }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,13 +150,13 @@ class jfieldIDWorkaround: AllStatic {
     return result;
   }
 
-  static jfieldID to_jfieldID(instanceKlassHandle k, int offset, bool is_static) {
+  static jfieldID to_jfieldID(InstanceKlass* k, int offset, bool is_static) {
     if (is_static) {
       JNIid *id = k->jni_id_for(offset);
       debug_only(id->set_is_static_field_id());
       return jfieldIDWorkaround::to_static_jfieldID(id);
     } else {
-      return jfieldIDWorkaround::to_instance_jfieldID(k(), offset);
+      return jfieldIDWorkaround::to_instance_jfieldID(k, offset);
     }
   }
 };

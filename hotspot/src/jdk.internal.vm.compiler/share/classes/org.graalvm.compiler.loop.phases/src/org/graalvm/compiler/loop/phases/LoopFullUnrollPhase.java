@@ -54,7 +54,7 @@ public class LoopFullUnrollPhase extends LoopPhase<LoopPolicies> {
                         Debug.log("FullUnroll %s", loop);
                         LoopTransformations.fullUnroll(loop, context, canonicalizer);
                         FULLY_UNROLLED_LOOPS.increment();
-                        Debug.dump(Debug.INFO_LOG_LEVEL, graph, "FullUnroll %s", loop);
+                        Debug.dump(Debug.DETAILED_LEVEL, graph, "FullUnroll %s", loop);
                         peeled = true;
                         break;
                     }

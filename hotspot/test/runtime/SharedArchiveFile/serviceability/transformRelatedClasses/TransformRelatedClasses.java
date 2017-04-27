@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,10 +56,11 @@
 //     TransformerAgent - an agent that is used when JVM-under-test is executed
 //         to transform specific strings inside specified classes
 //     TransformerAgent.mf - accompanies transformer agent
-//     CDSTestUtils - Test Utilities common to all CDS tests
 
 import java.io.File;
 import java.util.ArrayList;
+import jdk.test.lib.cds.CDSOptions;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -143,18 +144,11 @@ public class TransformRelatedClasses {
                                            testClasses);
 
         // create an archive
-        File classList = CDSTestUtils.makeClassList("transform-" + parent,
-                                                    testNames);
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true,
-                                        "-Xbootclasspath/a:" + testJar,
-                                        "-XX:+UnlockDiagnosticVMOptions",
-                                        "-XX:ExtraSharedClassListFile=" +
-                                        classList.getPath(),
-                                        "-XX:SharedArchiveFile=" + archiveName,
-                                        "-XX:+PrintSharedSpaces",
-                                        "-Xshare:dump");
-        OutputAnalyzer out = new OutputAnalyzer(pb.start());
-        CDSTestUtils.checkDump(out);
+        String classList =
+            CDSTestUtils.makeClassList("transform-" + parent, testNames).getPath();
+
+        CDSTestUtils.createArchiveAndCheck("-Xbootclasspath/a:" + testJar,
+            "-XX:ExtraSharedClassListFile=" + classList);
     }
 
 
@@ -165,15 +159,12 @@ public class TransformRelatedClasses {
         String agentParam = "-javaagent:" + agentJar + "=" +
             TransformTestCommon.getAgentParams(entry, parent, child);
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true,
-                                        "-Xbootclasspath/a:" + testJar,
-                                        "-XX:+UnlockDiagnosticVMOptions",
-                                        "-XX:SharedArchiveFile=" + archiveName,
-                                        "-Xlog:class+load=info",
-                                        "-Xshare:on", "-showversion",
-                                        agentParam, child);
-        OutputAnalyzer out = new OutputAnalyzer(pb.start());
+        CDSOptions opts = new CDSOptions()
+            .addPrefix("-Xbootclasspath/a:" + testJar, "-Xlog:class+load=info")
+            .setUseVersion(false)
+            .addSuffix( "-showversion",agentParam, child);
 
+        OutputAnalyzer out = CDSTestUtils.runWithArchive(opts);
         TransformTestCommon.checkResults(entry, out, parent, child);
     }
 }

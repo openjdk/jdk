@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.lir;
 
-import java.util.List;
+import java.util.ArrayList;
 
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.lir.StandardOp.ImplicitNullCheck;
@@ -46,7 +46,7 @@ public final class NullCheckOptimizer extends PostAllocationOptimizationPhase {
             if (block == null) {
                 continue;
             }
-            List<LIRInstruction> list = ir.getLIRforBlock(block);
+            ArrayList<LIRInstruction> list = ir.getLIRforBlock(block);
 
             if (!list.isEmpty()) {
 

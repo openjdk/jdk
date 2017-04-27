@@ -22,16 +22,15 @@
  */
 package org.graalvm.compiler.lir.alloc.lsra;
 
-import static org.graalvm.compiler.core.common.GraalOptions.DetailedAsserts;
+import static jdk.vm.ci.code.ValueUtil.isIllegal;
 import static org.graalvm.compiler.lir.LIRValueUtil.isJavaConstant;
 import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
 import static org.graalvm.compiler.lir.LIRValueUtil.isVariable;
 import static org.graalvm.compiler.lir.LIRValueUtil.isVirtualStackSlot;
-import static jdk.vm.ci.code.ValueUtil.isIllegal;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.List;
 
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.debug.Debug;
@@ -47,7 +46,7 @@ import org.graalvm.compiler.lir.StandardOp.MoveOp;
 import org.graalvm.compiler.lir.StandardOp.ValueMoveOp;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
-import org.graalvm.compiler.lir.phases.AllocationPhase;
+import org.graalvm.compiler.lir.phases.AllocationPhase.AllocationContext;
 
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.AllocatableValue;
@@ -56,7 +55,7 @@ import jdk.vm.ci.meta.Value;
 /**
  * Phase 7: Assign register numbers back to LIR.
  */
-public class LinearScanAssignLocationsPhase extends AllocationPhase {
+public class LinearScanAssignLocationsPhase extends LinearScanAllocationPhase {
 
     protected final LinearScan allocator;
 
@@ -83,7 +82,7 @@ public class LinearScanAssignLocationsPhase extends AllocationPhase {
         assert interval != null : "interval must exist";
 
         if (opId != -1) {
-            if (DetailedAsserts.getValue()) {
+            if (allocator.detailedAsserts) {
                 AbstractBlockBase<?> block = allocator.blockForId(opId);
                 if (block.getSuccessorCount() <= 1 && opId == allocator.getLastLirInstructionId(block)) {
                     /*
@@ -162,7 +161,7 @@ public class LinearScanAssignLocationsPhase extends AllocationPhase {
         info.forEachState(op, this::debugInfoProcedure);
     }
 
-    private void assignLocations(List<LIRInstruction> instructions) {
+    private void assignLocations(ArrayList<LIRInstruction> instructions) {
         int numInst = instructions.size();
         boolean hasDead = false;
 

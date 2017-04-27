@@ -31,6 +31,7 @@ import java.nio.ByteBuffer;
 import java.util.Formatter;
 
 import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.core.common.spi.LIRKindTool;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.BinaryOp;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.FloatConvertOp;
@@ -54,41 +55,101 @@ import jdk.vm.ci.meta.SerializableConstant;
  * The description consists of (inclusive) lower and upper bounds and up (may be set) and down
  * (always set) bit-masks.
  */
-public class IntegerStamp extends PrimitiveStamp {
+public final class IntegerStamp extends PrimitiveStamp {
 
     private final long lowerBound;
     private final long upperBound;
     private final long downMask;
     private final long upMask;
 
-    public IntegerStamp(int bits, long lowerBound, long upperBound, long downMask, long upMask) {
+    private IntegerStamp(int bits, long lowerBound, long upperBound, long downMask, long upMask) {
         super(bits, OPS);
+
         this.lowerBound = lowerBound;
         this.upperBound = upperBound;
         this.downMask = downMask;
         this.upMask = upMask;
+
         assert lowerBound >= CodeUtil.minValue(bits) : this;
         assert upperBound <= CodeUtil.maxValue(bits) : this;
         assert (downMask & CodeUtil.mask(bits)) == downMask : this;
         assert (upMask & CodeUtil.mask(bits)) == upMask : this;
     }
 
-    public static IntegerStamp stampForMask(int bits, long downMask, long upMask) {
-        long lowerBound;
-        long upperBound;
-        if (((upMask >>> (bits - 1)) & 1) == 0) {
-            lowerBound = downMask;
-            upperBound = upMask;
-        } else if (((downMask >>> (bits - 1)) & 1) == 1) {
-            lowerBound = downMask;
-            upperBound = upMask;
+    public static IntegerStamp create(int bits, long lowerBoundInput, long upperBoundInput) {
+        return create(bits, lowerBoundInput, upperBoundInput, 0, CodeUtil.mask(bits));
+    }
+
+    public static IntegerStamp create(int bits, long lowerBoundInput, long upperBoundInput, long downMask, long upMask) {
+        assert (downMask & ~upMask) == 0 : String.format("\u21ca: %016x \u21c8: %016x", downMask, upMask);
+
+        // Set lower bound, use masks to make it more precise
+        long minValue = minValueForMasks(bits, downMask, upMask);
+        long lowerBoundTmp = Math.max(lowerBoundInput, minValue);
+
+        // Set upper bound, use masks to make it more precise
+        long maxValue = maxValueForMasks(bits, downMask, upMask);
+        long upperBoundTmp = Math.min(upperBoundInput, maxValue);
+
+        // Assign masks now with the bounds in mind.
+        final long boundedDownMask;
+        final long boundedUpMask;
+        long defaultMask = CodeUtil.mask(bits);
+        if (lowerBoundTmp == upperBoundTmp) {
+            boundedDownMask = lowerBoundTmp;
+            boundedUpMask = lowerBoundTmp;
+        } else if (lowerBoundTmp >= 0) {
+            int upperBoundLeadingZeros = Long.numberOfLeadingZeros(upperBoundTmp);
+            long differentBits = lowerBoundTmp ^ upperBoundTmp;
+            int sameBitCount = Long.numberOfLeadingZeros(differentBits << upperBoundLeadingZeros);
+
+            boundedUpMask = upperBoundTmp | -1L >>> (upperBoundLeadingZeros + sameBitCount);
+            boundedDownMask = upperBoundTmp & ~(-1L >>> (upperBoundLeadingZeros + sameBitCount));
         } else {
-            lowerBound = downMask | (-1L << (bits - 1));
-            upperBound = CodeUtil.maxValue(bits) & upMask;
+            if (upperBoundTmp >= 0) {
+                boundedUpMask = defaultMask;
+                boundedDownMask = 0;
+            } else {
+                int lowerBoundLeadingOnes = Long.numberOfLeadingZeros(~lowerBoundTmp);
+                long differentBits = lowerBoundTmp ^ upperBoundTmp;
+                int sameBitCount = Long.numberOfLeadingZeros(differentBits << lowerBoundLeadingOnes);
+
+                boundedUpMask = lowerBoundTmp | -1L >>> (lowerBoundLeadingOnes + sameBitCount) | ~(-1L >>> lowerBoundLeadingOnes);
+                boundedDownMask = lowerBoundTmp & ~(-1L >>> (lowerBoundLeadingOnes + sameBitCount)) | ~(-1L >>> lowerBoundLeadingOnes);
+            }
         }
-        lowerBound = CodeUtil.convert(lowerBound, bits, false);
-        upperBound = CodeUtil.convert(upperBound, bits, false);
-        return new IntegerStamp(bits, lowerBound, upperBound, downMask, upMask);
+
+        return new IntegerStamp(bits, lowerBoundTmp, upperBoundTmp, defaultMask & (downMask | boundedDownMask), defaultMask & upMask & boundedUpMask);
+    }
+
+    static long significantBit(long bits, long value) {
+        return (value >>> (bits - 1)) & 1;
+    }
+
+    static long minValueForMasks(int bits, long downMask, long upMask) {
+        if (significantBit(bits, upMask) == 0) {
+            // Value is always positive. Minimum value always positive.
+            assert significantBit(bits, downMask) == 0;
+            return downMask;
+        } else {
+            // Value can be positive or negative. Minimum value always negative.
+            return downMask | (-1L << (bits - 1));
+        }
+    }
+
+    static long maxValueForMasks(int bits, long downMask, long upMask) {
+        if (significantBit(bits, downMask) == 1) {
+            // Value is always negative. Maximum value always negative.
+            assert significantBit(bits, upMask) == 1;
+            return CodeUtil.signExtend(upMask, bits);
+        } else {
+            // Value can be positive or negative. Maximum value always positive.
+            return upMask & (CodeUtil.mask(bits) >>> 1);
+        }
+    }
+
+    public static IntegerStamp stampForMask(int bits, long downMask, long upMask) {
+        return new IntegerStamp(bits, minValueForMasks(bits, downMask, upMask), maxValueForMasks(bits, downMask, upMask), downMask, upMask);
     }
 
     @Override
@@ -97,7 +158,7 @@ public class IntegerStamp extends PrimitiveStamp {
     }
 
     @Override
-    public Stamp empty() {
+    public IntegerStamp empty() {
         return new IntegerStamp(getBits(), CodeUtil.maxValue(getBits()), CodeUtil.minValue(getBits()), CodeUtil.mask(getBits()), 0);
     }
 
@@ -193,6 +254,7 @@ public class IntegerStamp extends PrimitiveStamp {
         return upMask;
     }
 
+    @Override
     public boolean isUnrestricted() {
         return lowerBound == CodeUtil.minValue(getBits()) && upperBound == CodeUtil.maxValue(getBits()) && downMask == 0 && upMask == CodeUtil.mask(getBits());
     }
@@ -230,23 +292,27 @@ public class IntegerStamp extends PrimitiveStamp {
         StringBuilder str = new StringBuilder();
         str.append('i');
         str.append(getBits());
-        if (lowerBound == upperBound) {
-            str.append(" [").append(lowerBound).append(']');
-        } else if (lowerBound != CodeUtil.minValue(getBits()) || upperBound != CodeUtil.maxValue(getBits())) {
-            str.append(" [").append(lowerBound).append(" - ").append(upperBound).append(']');
-        }
-        if (downMask != 0) {
-            str.append(" \u21ca");
-            new Formatter(str).format("%016x", downMask);
-        }
-        if (upMask != CodeUtil.mask(getBits())) {
-            str.append(" \u21c8");
-            new Formatter(str).format("%016x", upMask);
+        if (hasValues()) {
+            if (lowerBound == upperBound) {
+                str.append(" [").append(lowerBound).append(']');
+            } else if (lowerBound != CodeUtil.minValue(getBits()) || upperBound != CodeUtil.maxValue(getBits())) {
+                str.append(" [").append(lowerBound).append(" - ").append(upperBound).append(']');
+            }
+            if (downMask != 0) {
+                str.append(" \u21ca");
+                new Formatter(str).format("%016x", downMask);
+            }
+            if (upMask != CodeUtil.mask(getBits())) {
+                str.append(" \u21c8");
+                new Formatter(str).format("%016x", upMask);
+            }
+        } else {
+            str.append("<empty>");
         }
         return str.toString();
     }
 
-    private Stamp createStamp(IntegerStamp other, long newUpperBound, long newLowerBound, long newDownMask, long newUpMask) {
+    private IntegerStamp createStamp(IntegerStamp other, long newUpperBound, long newLowerBound, long newDownMask, long newUpMask) {
         assert getBits() == other.getBits();
         if (newLowerBound > newUpperBound || (newDownMask & (~newUpMask)) != 0 || (newUpMask == 0 && (newLowerBound > 0 || newUpperBound < 0))) {
             return empty();
@@ -255,7 +321,7 @@ public class IntegerStamp extends PrimitiveStamp {
         } else if (newLowerBound == other.lowerBound && newUpperBound == other.upperBound && newDownMask == other.downMask && newUpMask == other.upMask) {
             return other;
         } else {
-            return new IntegerStamp(getBits(), newLowerBound, newUpperBound, newDownMask, newUpMask);
+            return IntegerStamp.create(getBits(), newLowerBound, newUpperBound, newDownMask, newUpMask);
         }
     }
 
@@ -269,17 +335,16 @@ public class IntegerStamp extends PrimitiveStamp {
     }
 
     @Override
-    public Stamp join(Stamp otherStamp) {
+    public IntegerStamp join(Stamp otherStamp) {
         if (otherStamp == this) {
             return this;
         }
         IntegerStamp other = (IntegerStamp) otherStamp;
         long newDownMask = downMask | other.downMask;
-        long newLowerBound = Math.max(lowerBound, other.lowerBound) | newDownMask;
+        long newLowerBound = Math.max(lowerBound, other.lowerBound);
         long newUpperBound = Math.min(upperBound, other.upperBound);
         long newUpMask = upMask & other.upMask;
-        IntegerStamp limit = StampFactory.forInteger(getBits(), newLowerBound, newUpperBound);
-        return createStamp(other, newUpperBound, newLowerBound, limit.downMask() | newDownMask, limit.upMask() & newUpMask);
+        return createStamp(other, newUpperBound, newLowerBound, newDownMask, newUpMask);
     }
 
     @Override
@@ -301,6 +366,24 @@ public class IntegerStamp extends PrimitiveStamp {
             return prim.getJavaKind().isNumericInteger();
         }
         return false;
+    }
+
+    public long unsignedUpperBound() {
+        if (sameSignBounds()) {
+            return CodeUtil.zeroExtend(upperBound(), getBits());
+        }
+        return NumUtil.maxValueUnsigned(getBits());
+    }
+
+    public long unsignedLowerBound() {
+        if (sameSignBounds()) {
+            return CodeUtil.zeroExtend(lowerBound(), getBits());
+        }
+        return 0;
+    }
+
+    private boolean sameSignBounds() {
+        return NumUtil.sameSign(lowerBound, upperBound);
     }
 
     @Override
@@ -369,6 +452,13 @@ public class IntegerStamp extends PrimitiveStamp {
         return null;
     }
 
+    public static boolean addCanOverflow(IntegerStamp a, IntegerStamp b) {
+        assert a.getBits() == b.getBits();
+        return addOverflowsPositively(a.upperBound(), b.upperBound(), a.getBits()) ||
+                        addOverflowsNegatively(a.lowerBound(), b.lowerBound(), a.getBits());
+
+    }
+
     public static boolean addOverflowsPositively(long x, long y, int bits) {
         long result = x + y;
         if (bits == 64) {
@@ -430,15 +520,59 @@ public class IntegerStamp extends PrimitiveStamp {
         }
     }
 
+    public static boolean multiplicationCanOverflow(IntegerStamp a, IntegerStamp b) {
+        // see IntegerStamp#foldStamp for details
+        assert a.getBits() == b.getBits();
+        if (a.upMask() == 0) {
+            return false;
+        } else if (b.upMask() == 0) {
+            return false;
+        }
+        if (a.isUnrestricted()) {
+            return true;
+        }
+        if (b.isUnrestricted()) {
+            return true;
+        }
+        int bits = a.getBits();
+        long minNegA = a.lowerBound();
+        long maxNegA = Math.min(0, a.upperBound());
+        long minPosA = Math.max(0, a.lowerBound());
+        long maxPosA = a.upperBound();
+
+        long minNegB = b.lowerBound();
+        long maxNegB = Math.min(0, b.upperBound());
+        long minPosB = Math.max(0, b.lowerBound());
+        long maxPosB = b.upperBound();
+
+        boolean mayOverflow = false;
+        if (a.canBePositive()) {
+            if (b.canBePositive()) {
+                mayOverflow |= IntegerStamp.multiplicationOverflows(maxPosA, maxPosB, bits);
+                mayOverflow |= IntegerStamp.multiplicationOverflows(minPosA, minPosB, bits);
+            }
+            if (b.canBeNegative()) {
+                mayOverflow |= IntegerStamp.multiplicationOverflows(minPosA, maxNegB, bits);
+                mayOverflow |= IntegerStamp.multiplicationOverflows(maxPosA, minNegB, bits);
+
+            }
+        }
+        if (a.canBeNegative()) {
+            if (b.canBePositive()) {
+                mayOverflow |= IntegerStamp.multiplicationOverflows(maxNegA, minPosB, bits);
+                mayOverflow |= IntegerStamp.multiplicationOverflows(minNegA, maxPosB, bits);
+            }
+            if (b.canBeNegative()) {
+                mayOverflow |= IntegerStamp.multiplicationOverflows(minNegA, minNegB, bits);
+                mayOverflow |= IntegerStamp.multiplicationOverflows(maxNegA, maxNegB, bits);
+            }
+        }
+        return mayOverflow;
+    }
+
     public static boolean subtractionCanOverflow(IntegerStamp x, IntegerStamp y) {
         assert x.getBits() == y.getBits();
-        // Checkstyle: stop
-        long x_l = x.lowerBound();
-        long x_h = x.upperBound();
-        long y_l = y.lowerBound();
-        long y_h = y.upperBound();
-        // Checkstyle: resume
-        return subtractionOverflows(x_l, y_h, x.getBits()) || subtractionOverflows(x_h, y_l, x.getBits());
+        return subtractionOverflows(x.lowerBound(), y.upperBound(), x.getBits()) || subtractionOverflows(x.upperBound(), y.lowerBound(), x.getBits());
     }
 
     public static boolean subtractionOverflows(long x, long y, int bits) {
@@ -618,7 +752,7 @@ public class IntegerStamp extends PrimitiveStamp {
                                  * upper bound after multiplication.
                                  *
                                  * For example if we consider two stamps a & b that both contain
-                                 * negative and positive values, the product of minN_a * minN_b
+                                 * negative and positive values, the product of minNegA * minNegB
                                  * (both the smallest negative value for each stamp) can only be the
                                  * highest positive number. The other candidates can be computed in
                                  * a similar fashion. Some of them can never be a new minimum or
@@ -627,87 +761,86 @@ public class IntegerStamp extends PrimitiveStamp {
                                  *
                                  * @formatter:off
                                  *
-                                 *          [x..........0..........y]
-                                 *          -------------------------
-                                 *          [minN   maxN minP   maxP]
-                                 *               where maxN = min(0,y) && minP = max(0,x)
+                                 *          [x................0................y]
+                                 *          -------------------------------------
+                                 *          [minNeg     maxNeg minPos     maxPos]
+                                 *
+                                 *          where maxNeg = min(0,y) && minPos = max(0,x)
                                  *
                                  *
-                                 *                |minN_a  maxN_a    minP_a  maxP_a
-                                 *         _______|________________________________
-                                 *         minN_b |MAX      /     :   /      MIN
-                                 *         maxN_b | /      MIN    :  MAX      /
-                                 *                |---------------+----------------
-                                 *         minP_b | /      MAX    :  MIN      /
-                                 *         maxP_b |MIN      /     :   /      MAX
+                                 *                 |minNegA  maxNegA    minPosA  maxPosA
+                                 *         _______ |____________________________________
+                                 *         minNegB | MAX        /     :     /      MIN
+                                 *         maxNegB |  /        MIN    :    MAX      /
+                                 *                 |------------------+-----------------
+                                 *         minPosB |  /        MAX    :    MIN      /
+                                 *         maxPosB | MIN        /     :     /      MAX
                                  *
                                  * @formatter:on
                                  */
                                 // We materialize all factors here. If they are needed, the signs of
                                 // the stamp will ensure the correct value is used.
-                                // Checkstyle: stop
-                                long minN_a = a.lowerBound();
-                                long maxN_a = Math.min(0, a.upperBound());
-                                long minP_a = Math.max(0, a.lowerBound());
-                                long maxP_a = a.upperBound();
+                                long minNegA = a.lowerBound();
+                                long maxNegA = Math.min(0, a.upperBound());
+                                long minPosA = Math.max(0, a.lowerBound());
+                                long maxPosA = a.upperBound();
 
-                                long minN_b = b.lowerBound();
-                                long maxN_b = Math.min(0, b.upperBound());
-                                long minP_b = Math.max(0, b.lowerBound());
-                                long maxP_b = b.upperBound();
-                                // Checkstyle: resume
+                                long minNegB = b.lowerBound();
+                                long maxNegB = Math.min(0, b.upperBound());
+                                long minPosB = Math.max(0, b.lowerBound());
+                                long maxPosB = b.upperBound();
 
                                 // multiplication has shift semantics
                                 long newUpMask = ~CodeUtil.mask(Long.numberOfTrailingZeros(a.upMask) + Long.numberOfTrailingZeros(b.upMask)) & CodeUtil.mask(bits);
 
                                 if (a.canBePositive()) {
                                     if (b.canBePositive()) {
-                                        if (multiplicationOverflows(maxP_a, maxP_b, bits)) {
+                                        if (multiplicationOverflows(maxPosA, maxPosB, bits)) {
                                             return a.unrestricted();
                                         }
-                                        long maxCandidate = maxP_a * maxP_b;
-                                        if (multiplicationOverflows(minP_a, minP_b, bits)) {
+                                        long maxCandidate = maxPosA * maxPosB;
+                                        if (multiplicationOverflows(minPosA, minPosB, bits)) {
                                             return a.unrestricted();
                                         }
-                                        long minCandidate = minP_a * minP_b;
+                                        long minCandidate = minPosA * minPosB;
                                         newLowerBound = Math.min(newLowerBound, minCandidate);
                                         newUpperBound = Math.max(newUpperBound, maxCandidate);
                                     }
                                     if (b.canBeNegative()) {
-                                        if (multiplicationOverflows(minP_a, maxN_b, bits)) {
+                                        if (multiplicationOverflows(minPosA, maxNegB, bits)) {
                                             return a.unrestricted();
                                         }
-                                        long maxCandidate = minP_a * maxN_b;
-                                        if (multiplicationOverflows(maxP_a, minN_b, bits)) {
+                                        long maxCandidate = minPosA * maxNegB;
+                                        if (multiplicationOverflows(maxPosA, minNegB, bits)) {
                                             return a.unrestricted();
                                         }
-                                        long minCandidate = maxP_a * minN_b;
+                                        long minCandidate = maxPosA * minNegB;
                                         newLowerBound = Math.min(newLowerBound, minCandidate);
                                         newUpperBound = Math.max(newUpperBound, maxCandidate);
                                     }
                                 }
                                 if (a.canBeNegative()) {
                                     if (b.canBePositive()) {
-                                        if (multiplicationOverflows(maxN_a, minP_b, bits)) {
+                                        if (multiplicationOverflows(maxNegA, minPosB, bits)) {
                                             return a.unrestricted();
                                         }
-                                        long maxCandidate = maxN_a * minP_b;
-                                        if (multiplicationOverflows(minN_a, maxP_b, bits)) {
+                                        long maxCandidate = maxNegA * minPosB;
+                                        if (multiplicationOverflows(minNegA, maxPosB, bits)) {
                                             return a.unrestricted();
                                         }
-                                        long minCandidate = minN_a * maxP_b;
+                                        long minCandidate = minNegA * maxPosB;
                                         newLowerBound = Math.min(newLowerBound, minCandidate);
                                         newUpperBound = Math.max(newUpperBound, maxCandidate);
                                     }
                                     if (b.canBeNegative()) {
-                                        if (multiplicationOverflows(minN_a, minN_b, bits)) {
+                                        if (multiplicationOverflows(minNegA, minNegB, bits)) {
                                             return a.unrestricted();
                                         }
-                                        long maxCandidate = minN_a * minN_b;
-                                        if (multiplicationOverflows(maxN_a, maxN_b, bits)) {
+                                        long maxCandidate = minNegA * minNegB;
+                                        if (multiplicationOverflows(maxNegA, maxNegB, bits)) {
                                             return a.unrestricted();
                                         }
-                                        long minCandidate = maxN_a * maxN_b;
+                                        long minCandidate = maxNegA * maxNegB;
                                         newLowerBound = Math.min(newLowerBound, minCandidate);
                                         newUpperBound = Math.max(newUpperBound, maxCandidate);
                                     }
@@ -1083,22 +1216,28 @@ public class IntegerStamp extends PrimitiveStamp {
                             assert inputBits == stamp.getBits();
                             assert inputBits <= resultBits;
 
-                            long downMask = CodeUtil.zeroExtend(stamp.downMask(), inputBits);
-                            long upMask = CodeUtil.zeroExtend(stamp.upMask(), inputBits);
-
-                            if (stamp.lowerBound() < 0 && stamp.upperBound() >= 0) {
-                                /* signed range including 0 and -1 */
-                                /*
-                                 * after sign extension, the whole range from 0 to MAX_INT is
-                                 * possible
-                                 */
-                                return IntegerStamp.stampForMask(resultBits, downMask, upMask);
+                            if (inputBits == resultBits) {
+                                return input;
                             }
 
-                            long lowerBound = CodeUtil.zeroExtend(stamp.lowerBound(), inputBits);
-                            long upperBound = CodeUtil.zeroExtend(stamp.upperBound(), inputBits);
+                            if (input.isEmpty()) {
+                                return StampFactory.forInteger(resultBits).empty();
+                            }
 
-                            return new IntegerStamp(resultBits, lowerBound, upperBound, downMask, upMask);
+                            long downMask = CodeUtil.zeroExtend(stamp.downMask(), inputBits);
+                            long upMask = CodeUtil.zeroExtend(stamp.upMask(), inputBits);
+                            long lowerBound = stamp.unsignedLowerBound();
+                            long upperBound = stamp.unsignedUpperBound();
+                            return IntegerStamp.create(resultBits, lowerBound, upperBound, downMask, upMask);
+                        }
+
+                        @Override
+                        public Stamp invertStamp(int inputBits, int resultBits, Stamp outStamp) {
+                            IntegerStamp stamp = (IntegerStamp) outStamp;
+                            if (stamp.isEmpty()) {
+                                return StampFactory.forInteger(inputBits).empty();
+                            }
+                            return StampFactory.forUnsignedInteger(inputBits, stamp.lowerBound(), stamp.upperBound(), stamp.downMask(), stamp.upMask());
                         }
                     },
 
@@ -1121,6 +1260,13 @@ public class IntegerStamp extends PrimitiveStamp {
                             long upMask = CodeUtil.signExtend(stamp.upMask(), inputBits) & defaultMask;
 
                             return new IntegerStamp(resultBits, stamp.lowerBound(), stamp.upperBound(), downMask, upMask);
+                        }
+
+                        @Override
+                        public Stamp invertStamp(int inputBits, int resultBits, Stamp outStamp) {
+                            IntegerStamp stamp = (IntegerStamp) outStamp;
+                            long mask = CodeUtil.mask(inputBits);
+                            return StampFactory.forIntegerWithMask(inputBits, stamp.lowerBound(), stamp.upperBound(), stamp.downMask() & mask, stamp.upMask() & mask);
                         }
                     },
 

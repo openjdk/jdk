@@ -29,6 +29,7 @@ import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_0;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
+import org.graalvm.compiler.nodes.extended.GuardingNode;
 import org.graalvm.compiler.nodes.spi.ValueProxy;
 
 /**
@@ -55,5 +56,10 @@ public final class EntryProxyNode extends FloatingNode implements ValueProxy {
     @Override
     public ValueNode getOriginalNode() {
         return value();
+    }
+
+    @Override
+    public GuardingNode getGuard() {
+        return proxyPoint;
     }
 }

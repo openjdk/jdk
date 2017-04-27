@@ -25,7 +25,6 @@ package org.graalvm.compiler.virtual.phases.ea;
 import static org.graalvm.compiler.core.common.GraalOptions.TraceEscapeAnalysis;
 
 import java.util.List;
-import java.util.Map;
 
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.GraalError;
@@ -35,6 +34,9 @@ import org.graalvm.compiler.graph.NodeFlood;
 import org.graalvm.compiler.nodes.AbstractEndNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.util.EconomicMap;
+import org.graalvm.util.Equivalence;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
@@ -45,10 +47,12 @@ public final class VirtualUtil {
     }
 
     public static boolean assertNonReachable(StructuredGraph graph, List<Node> obsoleteNodes) {
-        // helper code that determines the paths that keep obsolete nodes alive:
+        // Helper code that determines the paths that keep obsolete nodes alive.
+        // Nodes with support for GVN can be kept alive by GVN and are therefore not part of the
+        // assertion.
 
         NodeFlood flood = graph.createNodeFlood();
-        Map<Node, Node> path = Node.newIdentityMap();
+        EconomicMap<Node, Node> path = EconomicMap.create(Equivalence.IDENTITY);
         flood.add(graph.start());
         for (Node current : flood) {
             if (current instanceof AbstractEndNode) {
@@ -93,7 +97,7 @@ public final class VirtualUtil {
         }
         boolean success = true;
         for (Node node : obsoleteNodes) {
-            if (!node.isDeleted() && flood.isMarked(node)) {
+            if (!node.isDeleted() && flood.isMarked(node) && !node.getNodeClass().valueNumberable()) {
                 TTY.println("offending node path:");
                 Node current = node;
                 TTY.print(current.toString());
@@ -111,37 +115,37 @@ public final class VirtualUtil {
         }
         if (!success) {
             TTY.println();
-            Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "assertNonReachable");
+            Debug.forceDump(graph, "assertNonReachable");
         }
         return success;
     }
 
-    public static void trace(String format) {
-        if (Debug.isEnabled() && TraceEscapeAnalysis.getValue() && Debug.isLogEnabled()) {
-            Debug.logv(format);
+    public static void trace(OptionValues options, String msg) {
+        if (Debug.isEnabled() && TraceEscapeAnalysis.getValue(options) && Debug.isLogEnabled()) {
+            Debug.log(msg);
         }
     }
 
-    public static void trace(String format, Object obj) {
-        if (Debug.isEnabled() && TraceEscapeAnalysis.getValue() && Debug.isLogEnabled()) {
+    public static void trace(OptionValues options, String format, Object obj) {
+        if (Debug.isEnabled() && TraceEscapeAnalysis.getValue(options) && Debug.isLogEnabled()) {
             Debug.logv(format, obj);
         }
     }
 
-    public static void trace(String format, Object obj, Object obj2) {
-        if (Debug.isEnabled() && TraceEscapeAnalysis.getValue() && Debug.isLogEnabled()) {
+    public static void trace(OptionValues options, String format, Object obj, Object obj2) {
+        if (Debug.isEnabled() && TraceEscapeAnalysis.getValue(options) && Debug.isLogEnabled()) {
             Debug.logv(format, obj, obj2);
         }
     }
 
-    public static void trace(String format, Object obj, Object obj2, Object obj3) {
-        if (Debug.isEnabled() && TraceEscapeAnalysis.getValue() && Debug.isLogEnabled()) {
+    public static void trace(OptionValues options, String format, Object obj, Object obj2, Object obj3) {
+        if (Debug.isEnabled() && TraceEscapeAnalysis.getValue(options) && Debug.isLogEnabled()) {
             Debug.logv(format, obj, obj2, obj3);
         }
     }
 
-    public static void trace(String format, Object obj, Object obj2, Object obj3, Object obj4) {
-        if (Debug.isEnabled() && TraceEscapeAnalysis.getValue() && Debug.isLogEnabled()) {
+    public static void trace(OptionValues options, String format, Object obj, Object obj2, Object obj3, Object obj4) {
+        if (Debug.isEnabled() && TraceEscapeAnalysis.getValue(options) && Debug.isLogEnabled()) {
             Debug.logv(format, obj, obj2, obj3, obj4);
         }
     }

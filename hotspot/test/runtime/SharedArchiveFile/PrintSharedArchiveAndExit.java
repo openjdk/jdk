@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,46 +25,44 @@
  * @test
  * @bug 8066670
  * @summary Testing -XX:+PrintSharedArchiveAndExit option
+ * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  */
 
+import jdk.test.lib.cds.CDSOptions;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
+
 public class PrintSharedArchiveAndExit {
-  public static void main(String[] args) throws Exception {
-    String filename = "./PrintSharedArchiveAndExit.jsa";
+    public static void main(String[] args) throws Exception {
+        String archiveName = "PrintSharedArchiveAndExit.jsa";
+        CDSOptions opts = (new CDSOptions()).setArchiveName(archiveName);
+        OutputAnalyzer out = CDSTestUtils.createArchive(opts);
+        CDSTestUtils.checkDump(out);
 
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-        "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=" + filename, "-Xshare:dump");
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    try {
-      output.shouldContain("Loading classes to share");
-      output.shouldHaveExitValue(0);
+        // (1) With a valid archive
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./" + archiveName,
+                "-XX:+PrintSharedArchiveAndExit", "-version");
+        out = CDSTestUtils.executeAndLog(pb, "print-shared-archive-and-version");
+        if (!CDSTestUtils.isUnableToMap(out)) {
+            out.shouldContain("archive is valid")
+                .shouldNotContain("java version")     // Should not print JVM version
+                .shouldHaveExitValue(0);              // Should report success in error code.
+        }
 
-      // (1) With a valid archive
-      pb = ProcessTools.createJavaProcessBuilder(
-          "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=" + filename,
-          "-XX:+PrintSharedArchiveAndExit", "-version");
-      output = new OutputAnalyzer(pb.start());
-      output.shouldContain("archive is valid");
-      output.shouldNotContain("java version");     // Should not print JVM version
-      output.shouldHaveExitValue(0);               // Should report success in error code.
-
-      pb = ProcessTools.createJavaProcessBuilder(
-          "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=" + filename,
-          "-XX:+PrintSharedArchiveAndExit");
-      output = new OutputAnalyzer(pb.start());
-      output.shouldContain("archive is valid");
-      output.shouldNotContain("Usage:");           // Should not print JVM help message
-      output.shouldHaveExitValue(0);               // Should report success in error code.
-
-    } catch (RuntimeException e) {
-      e.printStackTrace();
-      output.shouldContain("Unable to use shared archive");
-      output.shouldHaveExitValue(1);
+        pb = ProcessTools.createJavaProcessBuilder(
+                "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./" + archiveName,
+                "-XX:+PrintSharedArchiveAndExit");
+        out = CDSTestUtils.executeAndLog(pb, "print-shared-archive");
+        if (!CDSTestUtils.isUnableToMap(out)) {
+            out.shouldContain("archive is valid")
+                .shouldNotContain("Usage:")           // Should not print JVM help message
+                .shouldHaveExitValue(0);               // Should report success in error code.
+        }
     }
-  }
 }

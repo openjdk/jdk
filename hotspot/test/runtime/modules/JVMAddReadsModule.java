@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,11 +43,11 @@ public class JVMAddReadsModule {
 
         from_module = ModuleHelper.ModuleObject("from_module", from_cl, new String[] { "mypackage" });
         assertNotNull(from_module, "Module should not be null");
-        ModuleHelper.DefineModule(from_module, "9.0", "from_module/here", new String[] { "mypackage" });
+        ModuleHelper.DefineModule(from_module, false, "9.0", "from_module/here", new String[] { "mypackage" });
 
         to_module = ModuleHelper.ModuleObject("to_module", to_cl, new String[] { "yourpackage" });
         assertNotNull(to_module, "Module should not be null");
-        ModuleHelper.DefineModule(to_module, "9.0", "to_module/here", new String[] { "yourpackage" });
+        ModuleHelper.DefineModule(to_module, false, "9.0", "to_module/here", new String[] { "yourpackage" });
 
         // Null from_module argument, expect NPE
         try {

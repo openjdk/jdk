@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -253,7 +253,7 @@ public:
   virtual void* next(void *p) const;
 
   AOTKlassData* find_klass(InstanceKlass* ik);
-  bool load_klass_data(instanceKlassHandle kh, Thread* thread);
+  bool load_klass_data(InstanceKlass* ik, Thread* thread);
   Klass* get_klass_from_got(const char* klass_name, int klass_len, const Method* method);
   void sweep_dependent_methods(AOTKlassData* klass_data);
   bool is_dependent_method(Klass* dependee, AOTCompiledMethod* aot);
@@ -289,13 +289,13 @@ public:
     return NULL;
   }
 
-  static Method* find_method(KlassHandle klass, Thread* thread, const char* method_name);
+  static Method* find_method(Klass* klass, Thread* thread, const char* method_name);
 
   void cleanup_inline_caches();
 
   DEBUG_ONLY( int verify_icholder_relocations(); )
 
-  void flush_evol_dependents_on(instanceKlassHandle dependee);
+  void flush_evol_dependents_on(InstanceKlass* dependee);
 
   void alive_methods_do(void f(CompiledMethod* nm));
 

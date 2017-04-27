@@ -22,9 +22,9 @@
  */
 package org.graalvm.compiler.core.common.util;
 
-import static org.graalvm.compiler.core.common.GraalOptions.HotSpotPrintInlining;
-
-import java.util.Collection;
+import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.Executable;
+import java.lang.reflect.Field;
 import java.util.List;
 
 import org.graalvm.compiler.debug.TTY;
@@ -72,29 +72,6 @@ public class Util {
     @SuppressWarnings("unchecked")
     public static <T> T uncheckedCast(Object object) {
         return (T) object;
-    }
-
-    public interface Stringify {
-        String apply(Object o);
-    }
-
-    public static String join(Collection<?> c, String sep) {
-        return join(c, sep, "", "", null);
-    }
-
-    public static String join(Collection<?> c, String sep, String prefix, String suffix, Stringify stringify) {
-        StringBuilder buf = new StringBuilder(prefix);
-        boolean first = true;
-        for (Object e : c) {
-            if (!first) {
-                buf.append(sep);
-            } else {
-                first = false;
-            }
-            buf.append(stringify != null ? stringify.apply(e) : String.valueOf(e));
-        }
-        buf.append(suffix);
-        return buf.toString();
     }
 
     /**
@@ -191,25 +168,45 @@ public class Util {
      * Print a HotSpot-style inlining message to the console.
      */
     public static void printInlining(final ResolvedJavaMethod method, final int bci, final int inliningDepth, final boolean success, final String msg, final Object... args) {
-        if (HotSpotPrintInlining.getValue()) {
-            StringBuilder sb = new StringBuilder();
-            // 1234567
-            sb.append("        ");     // print timestamp
-            // 1234
-            sb.append("     ");        // print compilation number
-            // % s ! b n
-            sb.append(String.format("%c%c%c%c%c ", ' ', method.isSynchronized() ? 's' : ' ', ' ', ' ', method.isNative() ? 'n' : ' '));
-            sb.append("     ");        // more indent
-            sb.append("    ");         // initial inlining indent
-            for (int i = 0; i < inliningDepth; i++) {
-                sb.append("  ");
-            }
-            sb.append(String.format("@ %d  %s   %s%s", bci, methodName(method), success ? "" : "not inlining ", String.format(msg, args)));
-            TTY.println(sb.toString());
+        StringBuilder sb = new StringBuilder();
+        // 1234567
+        sb.append("        ");     // print timestamp
+        // 1234
+        sb.append("     ");        // print compilation number
+        // % s ! b n
+        sb.append(String.format("%c%c%c%c%c ", ' ', method.isSynchronized() ? 's' : ' ', ' ', ' ', method.isNative() ? 'n' : ' '));
+        sb.append("     ");        // more indent
+        sb.append("    ");         // initial inlining indent
+        for (int i = 0; i < inliningDepth; i++) {
+            sb.append("  ");
         }
+        sb.append(String.format("@ %d  %s   %s%s", bci, methodName(method), success ? "" : "not inlining ", String.format(msg, args)));
+        TTY.println(sb.toString());
     }
 
     private static String methodName(ResolvedJavaMethod method) {
         return method.format("%H.%n(%p):%r") + " (" + method.getCodeSize() + " bytes)";
+    }
+
+    /**
+     * Calls {@link AccessibleObject#setAccessible(boolean)} on {@code field} with the value
+     * {@code flag}.
+     */
+    public static void setAccessible(Field field, boolean flag) {
+        if (!Java8OrEarlier) {
+            ModuleAPI.openForReflectionTo(field.getDeclaringClass(), Util.class);
+        }
+        field.setAccessible(flag);
+    }
+
+    /**
+     * Calls {@link AccessibleObject#setAccessible(boolean)} on {@code executable} with the value
+     * {@code flag}.
+     */
+    public static void setAccessible(Executable executable, boolean flag) {
+        if (!Java8OrEarlier) {
+            ModuleAPI.openForReflectionTo(executable.getDeclaringClass(), Util.class);
+        }
+        executable.setAccessible(flag);
     }
 }

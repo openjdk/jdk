@@ -27,6 +27,7 @@ import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
 
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.UnaryOp.Not;
+import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
@@ -34,12 +35,13 @@ import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.ArithmeticLIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import org.graalvm.compiler.nodes.spi.StampInverter;
 
 /**
  * Binary negation of long or integer values.
  */
 @NodeInfo(cycles = CYCLES_1, size = SIZE_1)
-public final class NotNode extends UnaryArithmeticNode<Not> implements ArithmeticLIRLowerable, NarrowableArithmeticNode {
+public final class NotNode extends UnaryArithmeticNode<Not> implements ArithmeticLIRLowerable, NarrowableArithmeticNode, StampInverter {
 
     public static final NodeClass<NotNode> TYPE = NodeClass.create(NotNode.class);
 
@@ -62,5 +64,10 @@ public final class NotNode extends UnaryArithmeticNode<Not> implements Arithmeti
     @Override
     public void generate(NodeLIRBuilderTool nodeValueMap, ArithmeticLIRGeneratorTool gen) {
         nodeValueMap.setResult(this, gen.emitNot(nodeValueMap.operand(getValue())));
+    }
+
+    @Override
+    public Stamp invertStamp(Stamp outStamp) {
+        return getArithmeticOp().foldStamp(outStamp);
     }
 }

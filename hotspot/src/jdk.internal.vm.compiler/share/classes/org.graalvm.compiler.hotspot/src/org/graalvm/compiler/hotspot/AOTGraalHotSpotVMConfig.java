@@ -22,6 +22,8 @@
  */
 package org.graalvm.compiler.hotspot;
 
+import org.graalvm.compiler.core.common.CompressEncoding;
+
 import jdk.vm.ci.hotspot.HotSpotVMConfigStore;
 
 public class AOTGraalHotSpotVMConfig extends GraalHotSpotVMConfig {
@@ -30,11 +32,15 @@ public class AOTGraalHotSpotVMConfig extends GraalHotSpotVMConfig {
 
     public AOTGraalHotSpotVMConfig(HotSpotVMConfigStore store) {
         super(store);
-        // In AOT, force the shift to be always equal to alignment therefore avoiding zero-shift.
+        // AOT captures VM settings during compilation. For compressed oops this
+        // presents a problem for the case when the VM selects a zero-shift mode
+        // (i.e., when the heap is less than 4G). Compiling an AOT binary with
+        // zero-shift limits its usability. As such we force the shift to be
+        // always equal to alignment to avoid emitting zero-shift AOT code.
         CompressEncoding vmOopEncoding = super.getOopEncoding();
-        aotOopEncoding = new CompressEncoding(vmOopEncoding.base, vmOopEncoding.alignment, vmOopEncoding.alignment);
+        aotOopEncoding = new CompressEncoding(vmOopEncoding.getBase(), logMinObjAlignment());
         CompressEncoding vmKlassEncoding = super.getKlassEncoding();
-        aotKlassEncoding = new CompressEncoding(vmKlassEncoding.base, vmKlassEncoding.alignment, vmKlassEncoding.alignment);
+        aotKlassEncoding = new CompressEncoding(vmKlassEncoding.getBase(), logKlassAlignment);
         assert check();
     }
 

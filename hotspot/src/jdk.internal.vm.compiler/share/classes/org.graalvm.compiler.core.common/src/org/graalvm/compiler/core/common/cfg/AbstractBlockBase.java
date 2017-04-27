@@ -22,9 +22,6 @@
  */
 package org.graalvm.compiler.core.common.cfg;
 
-import java.util.Collections;
-import java.util.List;
-
 public abstract class AbstractBlockBase<T extends AbstractBlockBase<T>> {
 
     protected int id;
@@ -34,7 +31,8 @@ public abstract class AbstractBlockBase<T extends AbstractBlockBase<T>> {
     protected T[] successors;
 
     private T dominator;
-    private List<T> dominated;
+    private T firstDominated;
+    private T dominatedSibling;
     private int domNumber;
     private int maxChildDomNumber;
 
@@ -97,19 +95,27 @@ public abstract class AbstractBlockBase<T extends AbstractBlockBase<T>> {
         this.domDepth = dominator.domDepth + 1;
     }
 
+    /**
+     * Level in the dominator tree starting with 0 for the start block.
+     */
     public int getDominatorDepth() {
         return domDepth;
     }
 
-    public List<T> getDominated() {
-        if (dominated == null) {
-            return Collections.emptyList();
-        }
-        return dominated;
+    public T getFirstDominated() {
+        return this.firstDominated;
     }
 
-    public void setDominated(List<T> blocks) {
-        dominated = blocks;
+    public void setFirstDominated(T block) {
+        this.firstDominated = block;
+    }
+
+    public T getDominatedSibling() {
+        return this.dominatedSibling;
+    }
+
+    public void setDominatedSibling(T block) {
+        this.dominatedSibling = block;
     }
 
     @Override
@@ -158,4 +164,9 @@ public abstract class AbstractBlockBase<T extends AbstractBlockBase<T>> {
     public abstract double probability();
 
     public abstract T getDominator(int distance);
+
+    @Override
+    public int hashCode() {
+        return id;
+    }
 }

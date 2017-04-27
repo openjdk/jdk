@@ -22,22 +22,19 @@
  */
 package org.graalvm.compiler.nodes.memory.address;
 
-import org.graalvm.compiler.core.common.type.ObjectStamp;
+import org.graalvm.compiler.core.common.type.IntegerStamp;
+import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.Canonicalizable;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.BinaryArithmeticNode;
-import org.graalvm.compiler.nodes.spi.PiPushable;
-import org.graalvm.compiler.nodes.type.StampTool;
 
 import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaField;
-import jdk.vm.ci.meta.ResolvedJavaType;
 
 /**
  * Represents an address that is composed of a base and an offset. The base can be either a
@@ -45,7 +42,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  * integer.
  */
 @NodeInfo(allowedUsageTypes = InputType.Association)
-public class OffsetAddressNode extends AddressNode implements Canonicalizable, PiPushable {
+public class OffsetAddressNode extends AddressNode implements Canonicalizable {
     public static final NodeClass<OffsetAddressNode> TYPE = NodeClass.create(OffsetAddressNode.class);
 
     @Input ValueNode base;
@@ -57,6 +54,7 @@ public class OffsetAddressNode extends AddressNode implements Canonicalizable, P
         this.offset = offset;
     }
 
+    @Override
     public ValueNode getBase() {
         return base;
     }
@@ -84,40 +82,32 @@ public class OffsetAddressNode extends AddressNode implements Canonicalizable, P
             // Rewrite (&base[offset1])[offset2] to base[offset1 + offset2].
             OffsetAddressNode b = (OffsetAddressNode) base;
             return new OffsetAddressNode(b.getBase(), BinaryArithmeticNode.add(b.getOffset(), this.getOffset()));
-        } else {
-            return this;
-        }
-    }
-
-    @Override
-    public boolean push(PiNode parent) {
-        if (!(offset.isConstant() && parent.stamp() instanceof ObjectStamp && parent.object().stamp() instanceof ObjectStamp)) {
-            return false;
-        }
-
-        ObjectStamp piStamp = (ObjectStamp) parent.stamp();
-        ResolvedJavaType receiverType = piStamp.type();
-        if (receiverType == null) {
-            return false;
-        }
-        ResolvedJavaField field = receiverType.findInstanceFieldWithOffset(offset.asJavaConstant().asLong(), JavaKind.Void);
-        if (field == null) {
-            // field was not declared by receiverType
-            return false;
-        }
-
-        ObjectStamp valueStamp = (ObjectStamp) parent.object().stamp();
-        ResolvedJavaType valueType = StampTool.typeOrNull(valueStamp);
-        if (valueType != null && field.getDeclaringClass().isAssignableFrom(valueType)) {
-            if (piStamp.nonNull() == valueStamp.nonNull() && piStamp.alwaysNull() == valueStamp.alwaysNull()) {
-                replaceFirstInput(parent, parent.object());
-                return true;
+        } else if (base instanceof AddNode) {
+            AddNode add = (AddNode) base;
+            if (add.getY().isConstant()) {
+                return new OffsetAddressNode(add.getX(), new AddNode(add.getY(), getOffset()));
             }
         }
-
-        return false;
+        return this;
     }
 
     @NodeIntrinsic
     public static native Address address(Object base, long offset);
+
+    @Override
+    public long getMaxConstantDisplacement() {
+        Stamp curStamp = offset.stamp();
+        if (curStamp instanceof IntegerStamp) {
+            IntegerStamp integerStamp = (IntegerStamp) curStamp;
+            if (integerStamp.lowerBound() >= 0) {
+                return integerStamp.upperBound();
+            }
+        }
+        return Long.MAX_VALUE;
+    }
+
+    @Override
+    public ValueNode getIndex() {
+        return null;
+    }
 }

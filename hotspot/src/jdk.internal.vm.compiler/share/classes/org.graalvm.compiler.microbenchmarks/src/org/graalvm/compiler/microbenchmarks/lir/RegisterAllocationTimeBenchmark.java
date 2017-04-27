@@ -26,13 +26,10 @@ import java.util.HashMap;
 
 import org.openjdk.jmh.annotations.Benchmark;
 
-import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.phases.LIRSuites;
 import org.graalvm.compiler.microbenchmarks.graal.GraalBenchmark;
 import org.graalvm.compiler.microbenchmarks.graal.util.MethodSpec;
-import org.graalvm.compiler.options.OptionValue;
-import org.graalvm.compiler.options.OptionValue.OverrideScope;
 
 public class RegisterAllocationTimeBenchmark extends GraalBenchmark {
 
@@ -41,9 +38,7 @@ public class RegisterAllocationTimeBenchmark extends GraalBenchmark {
         @SuppressWarnings("try")
         @Override
         protected LIRSuites createLIRSuites() {
-            try (OverrideScope os = OptionValue.override(GraalOptions.TraceRA, false)) {
-                return super.createLIRSuites();
-            }
+            return super.createLIRSuites();
         }
     }
 
@@ -69,9 +64,7 @@ public class RegisterAllocationTimeBenchmark extends GraalBenchmark {
         @SuppressWarnings("try")
         @Override
         protected LIRSuites createLIRSuites() {
-            try (OverrideScope os = OptionValue.override(GraalOptions.TraceRA, true)) {
-                return super.createLIRSuites();
-            }
+            return super.createLIRSuites();
         }
     }
 

@@ -22,7 +22,6 @@
  */
 package org.graalvm.compiler.phases.graph;
 
-import java.util.Map;
 import java.util.function.ToDoubleFunction;
 
 import org.graalvm.compiler.debug.Debug;
@@ -37,6 +36,8 @@ import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.StartNode;
+import org.graalvm.util.Equivalence;
+import org.graalvm.util.EconomicMap;
 
 /**
  * Compute probabilities for fixed nodes on the fly and cache them at {@link AbstractBeginNode}s.
@@ -45,7 +46,7 @@ public class FixedNodeProbabilityCache implements ToDoubleFunction<FixedNode> {
 
     private static final DebugCounter computeNodeProbabilityCounter = Debug.counter("ComputeNodeProbability");
 
-    private final Map<FixedNode, Double> cache = Node.newIdentityMap();
+    private final EconomicMap<FixedNode, Double> cache = EconomicMap.create(Equivalence.IDENTITY);
 
     /**
      * <p>

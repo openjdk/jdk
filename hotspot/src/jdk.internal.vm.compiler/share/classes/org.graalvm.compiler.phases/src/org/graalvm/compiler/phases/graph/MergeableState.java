@@ -40,7 +40,7 @@ public abstract class MergeableState<T> {
      * contains the states of the of the other branches in the order of the merge's end nodes.
      *
      * @param merge the merge node
-     * @param withStates the state at the the merge's end node except the first one.
+     * @param withStates the state at the merge's end node except the first one.
      */
     public abstract boolean merge(AbstractMergeNode merge, List<T> withStates);
 

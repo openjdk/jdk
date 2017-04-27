@@ -865,16 +865,15 @@ static Flag flagTable[] = {
 Flag* Flag::flags = flagTable;
 size_t Flag::numFlags = (sizeof(flagTable) / sizeof(Flag));
 
-inline bool str_equal(const char* s, const char* q, size_t len) {
-  // s is null terminated, q is not!
-  if (strlen(s) != (unsigned int) len) return false;
-  return strncmp(s, q, len) == 0;
+inline bool str_equal(const char* s, size_t s_len, const char* q, size_t q_len) {
+  if (s_len != q_len) return false;
+  return memcmp(s, q, q_len) == 0;
 }
 
 // Search the flag table for a named flag
 Flag* Flag::find_flag(const char* name, size_t length, bool allow_locked, bool return_flag) {
   for (Flag* current = &flagTable[0]; current->_name != NULL; current++) {
-    if (str_equal(current->_name, name, length)) {
+    if (str_equal(current->_name, current->get_name_length(), name, length)) {
       // Found a matching entry.
       // Don't report notproduct and develop flags in product builds.
       if (current->is_constant_in_binary()) {
@@ -893,6 +892,14 @@ Flag* Flag::find_flag(const char* name, size_t length, bool allow_locked, bool r
   }
   // Flag name is not in the flag table
   return NULL;
+}
+
+// Get or compute the flag name length
+size_t Flag::get_name_length() {
+  if (_name_len == 0) {
+    _name_len = strlen(_name);
+  }
+  return _name_len;
 }
 
 // Compute string similarity based on Dice's coefficient

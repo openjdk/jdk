@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.java;
 
-import org.graalvm.compiler.common.PermanentBailoutException;
+import org.graalvm.compiler.core.common.PermanentBailoutException;
 
 public class JsrNotSupportedBailout extends PermanentBailoutException {
 

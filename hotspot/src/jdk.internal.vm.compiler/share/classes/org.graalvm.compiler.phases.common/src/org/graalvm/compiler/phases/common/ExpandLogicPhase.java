@@ -46,6 +46,7 @@ public class ExpandLogicPhase extends Phase {
             processBinary(logic);
         }
         assert graph.getNodes(ShortCircuitOrNode.TYPE).isEmpty();
+        graph.setAllowShortCircuitOr(false);
     }
 
     private static void processBinary(ShortCircuitOrNode binary) {
@@ -90,6 +91,12 @@ public class ExpandLogicPhase extends Phase {
         trueTargetMerge.addForwardEnd(secondTrueEnd);
         AbstractBeginNode firstTrueTarget = BeginNode.begin(firstTrueEnd);
         AbstractBeginNode secondTrueTarget = BeginNode.begin(secondTrueEnd);
+        if (yNegated) {
+            secondIfProbability = 1.0 - secondIfProbability;
+        }
+        if (xNegated) {
+            firstIfProbability = 1.0 - firstIfProbability;
+        }
         AbstractBeginNode secondIf = BeginNode.begin(graph.add(new IfNode(y, yNegated ? falseTarget : secondTrueTarget, yNegated ? secondTrueTarget : falseTarget, secondIfProbability)));
         IfNode firstIf = graph.add(new IfNode(x, xNegated ? secondIf : firstTrueTarget, xNegated ? firstTrueTarget : secondIf, firstIfProbability));
         ifNode.replaceAtPredecessor(firstIf);

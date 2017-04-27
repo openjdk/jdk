@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,6 @@ void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
 
   case Assembler::branch_op:
     {
-#ifdef _LP64
     jint inst2;
     guarantee(Assembler::inv_op2(inst)==Assembler::sethi_op2, "must be sethi");
     if (format() != 0) {
@@ -121,17 +120,6 @@ void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
     } else {
       ip->set_data64_sethi( ip->addr_at(0), (intptr_t)x );
     }
-#else
-    guarantee(Assembler::inv_op2(inst)==Assembler::sethi_op2, "must be sethi");
-    inst &= ~Assembler::hi22(     -1);
-    inst |=  Assembler::hi22((intptr_t)x);
-    // (ignore offset; it doesn't play into the sethi)
-    if (verify_only) {
-      guarantee(ip->long_at(0) == inst, "instructions must match");
-    } else {
-      ip->set_long_at(0, inst);
-    }
-#endif
     }
     break;
 

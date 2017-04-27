@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@
 Dict* Type::_shared_type_dict = NULL;
 
 // Array which maps compiler types to Basic Types
-Type::TypeInfo Type::_type_info[Type::lastype] = {
+const Type::TypeInfo Type::_type_info[Type::lastype] = {
   { Bad,             T_ILLEGAL,    "bad",           false, Node::NotAMachineReg, relocInfo::none          },  // Bad
   { Control,         T_ILLEGAL,    "control",       false, 0,                    relocInfo::none          },  // Control
   { Bottom,          T_VOID,       "top",           false, 0,                    relocInfo::none          },  // Top

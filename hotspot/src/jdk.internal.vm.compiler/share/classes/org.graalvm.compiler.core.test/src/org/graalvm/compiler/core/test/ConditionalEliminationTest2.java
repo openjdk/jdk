@@ -103,7 +103,7 @@ public class ConditionalEliminationTest2 extends ConditionalEliminationTestBase 
         new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, context);
         canonicalizer.apply(graph, context);
         new FloatingReadPhase().apply(graph);
-        new DominatorConditionalEliminationPhase(true).apply(graph, context);
+        DominatorConditionalEliminationPhase.create(true).apply(graph, context);
         canonicalizer.apply(graph, context);
 
         assertDeepEquals(1, graph.getNodes().filter(GuardNode.class).count());
@@ -125,7 +125,7 @@ public class ConditionalEliminationTest2 extends ConditionalEliminationTestBase 
 
         new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, context);
         canonicalizer.apply(graph, context);
-        new DominatorConditionalEliminationPhase(true).apply(graph, context);
+        DominatorConditionalEliminationPhase.create(true).apply(graph, context);
         canonicalizer.apply(graph, context);
 
         assertDeepEquals(0, graph.getNodes().filter(GuardNode.class).count());

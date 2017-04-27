@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -218,11 +218,11 @@ extern "C" void bad_compiled_vtable_index(JavaThread* thread, oop receiver, int 
   HandleMark hm;
   Klass* klass = receiver->klass();
   InstanceKlass* ik = InstanceKlass::cast(klass);
-  klassVtable* vt = ik->vtable();
+  klassVtable vt = ik->vtable();
   ik->print();
   fatal("bad compiled vtable dispatch: receiver " INTPTR_FORMAT ", "
         "index %d (vtable length %d)",
-        p2i(receiver), index, vt->length());
+        p2i(receiver), index, vt.length());
 }
 
 #endif // PRODUCT

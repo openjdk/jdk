@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,8 +58,6 @@ class InstanceRefKlass: public InstanceKlass {
 
   // GC specific object visitors
   //
-  // Mark Sweep
-  int  oop_ms_adjust_pointers(oop obj);
 #if INCLUDE_ALL_GCS
   // Parallel Scavenge
   void oop_ps_push_contents(  oop obj, PSPromotionManager* pm);
@@ -107,6 +105,30 @@ private:
   template <bool nv, class OopClosureType>
   inline void oop_oop_iterate_ref_processing(oop obj, OopClosureType* closure);
 
+  // Building blocks for specialized handling.
+  template <bool nv, typename T, class OopClosureType, class Contains>
+  static void do_referent(oop obj, OopClosureType* closure, Contains& contains);
+
+  template <bool nv, typename T, class OopClosureType, class Contains>
+  static void do_next(oop obj, OopClosureType* closure, Contains& contains);
+
+  template <bool nv, typename T, class OopClosureType, class Contains>
+  static void do_discovered(oop obj, OopClosureType* closure, Contains& contains);
+
+  template <typename T, class OopClosureType>
+  static bool try_discover(oop obj, ReferenceType type, OopClosureType* closure);
+
+  // Do discovery while handling InstanceRefKlasses. Reference discovery
+  // is only done if the closure provides a ReferenceProcessor.
+  template <bool nv, typename T, class OopClosureType, class Contains>
+  static void oop_oop_iterate_discovery(oop obj, ReferenceType type, OopClosureType* closure, Contains& contains);
+
+  // Apply the closure to all fields. No reference discovery is done.
+  template <bool nv, typename T, class OopClosureType, class Contains>
+  static void oop_oop_iterate_fields(oop obj, OopClosureType* closure, Contains& contains);
+
+  template <typename T>
+  static void trace_reference_gc(const char *s, oop obj, T* referent_addr, T* next_addr, T* discovered_addr) NOT_DEBUG_RETURN;
 
  public:
 

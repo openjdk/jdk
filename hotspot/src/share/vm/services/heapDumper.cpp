@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -814,11 +814,11 @@ void DumperSupport::dump_field_value(DumpWriter* writer, char type, address addr
 // returns the size of the instance of the given class
 u4 DumperSupport::instance_size(Klass* k) {
   HandleMark hm;
-  instanceKlassHandle ikh = instanceKlassHandle(Thread::current(), k);
+  InstanceKlass* ik = InstanceKlass::cast(k);
 
   u4 size = 0;
 
-  for (FieldStream fld(ikh, false, false); !fld.eos(); fld.next()) {
+  for (FieldStream fld(ik, false, false); !fld.eos(); fld.next()) {
     if (!fld.access_flags().is_static()) {
       Symbol* sig = fld.signature();
       switch (sig->byte_at(0)) {
@@ -847,18 +847,18 @@ u4 DumperSupport::instance_size(Klass* k) {
 // dumps static fields of the given class
 void DumperSupport::dump_static_fields(DumpWriter* writer, Klass* k) {
   HandleMark hm;
-  instanceKlassHandle ikh = instanceKlassHandle(Thread::current(), k);
+  InstanceKlass* ik = InstanceKlass::cast(k);
 
   // pass 1 - count the static fields
   u2 field_count = 0;
-  for (FieldStream fldc(ikh, true, true); !fldc.eos(); fldc.next()) {
+  for (FieldStream fldc(ik, true, true); !fldc.eos(); fldc.next()) {
     if (fldc.access_flags().is_static()) field_count++;
   }
 
   writer->write_u2(field_count);
 
   // pass 2 - dump the field descriptors and raw values
-  for (FieldStream fld(ikh, true, true); !fld.eos(); fld.next()) {
+  for (FieldStream fld(ik, true, true); !fld.eos(); fld.next()) {
     if (fld.access_flags().is_static()) {
       Symbol* sig = fld.signature();
 
@@ -867,7 +867,7 @@ void DumperSupport::dump_static_fields(DumpWriter* writer, Klass* k) {
 
       // value
       int offset = fld.offset();
-      address addr = (address)ikh->java_mirror() + offset;
+      address addr = (address)ik->java_mirror() + offset;
 
       dump_field_value(writer, sig->byte_at(0), addr);
     }
@@ -877,9 +877,9 @@ void DumperSupport::dump_static_fields(DumpWriter* writer, Klass* k) {
 // dump the raw values of the instance fields of the given object
 void DumperSupport::dump_instance_fields(DumpWriter* writer, oop o) {
   HandleMark hm;
-  instanceKlassHandle ikh = instanceKlassHandle(Thread::current(), o->klass());
+  InstanceKlass* ik = InstanceKlass::cast(o->klass());
 
-  for (FieldStream fld(ikh, false, false); !fld.eos(); fld.next()) {
+  for (FieldStream fld(ik, false, false); !fld.eos(); fld.next()) {
     if (!fld.access_flags().is_static()) {
       Symbol* sig = fld.signature();
       address addr = (address)o + fld.offset();
@@ -892,18 +892,18 @@ void DumperSupport::dump_instance_fields(DumpWriter* writer, oop o) {
 // dumps the definition of the instance fields for a given class
 void DumperSupport::dump_instance_field_descriptors(DumpWriter* writer, Klass* k) {
   HandleMark hm;
-  instanceKlassHandle ikh = instanceKlassHandle(Thread::current(), k);
+  InstanceKlass* ik = InstanceKlass::cast(k);
 
   // pass 1 - count the instance fields
   u2 field_count = 0;
-  for (FieldStream fldc(ikh, true, true); !fldc.eos(); fldc.next()) {
+  for (FieldStream fldc(ik, true, true); !fldc.eos(); fldc.next()) {
     if (!fldc.access_flags().is_static()) field_count++;
   }
 
   writer->write_u2(field_count);
 
   // pass 2 - dump the field descriptors
-  for (FieldStream fld(ikh, true, true); !fld.eos(); fld.next()) {
+  for (FieldStream fld(ik, true, true); !fld.eos(); fld.next()) {
     if (!fld.access_flags().is_static()) {
       Symbol* sig = fld.signature();
 
@@ -1824,8 +1824,10 @@ void VM_HeapDumper::doit() {
   check_segment_length();
 
   // HPROF_GC_ROOT_STICKY_CLASS
+  // These should be classes in the NULL class loader data, and not all classes
+  // if !ClassUnloading
   StickyClassDumper class_dumper(writer());
-  SystemDictionary::always_strong_classes_do(&class_dumper);
+  ClassLoaderData::the_null_class_loader_data()->classes_do(&class_dumper);
 
   // fixes up the length of the dump record and writes the HPROF_HEAP_DUMP_END record.
   DumperSupport::end_of_dump(writer());
