@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,9 +73,9 @@ public class Settings extends TestHelper {
     }
 
     static void runTestOptionDefault() throws IOException {
-        String stackSize = "256"; // in kb
+        int stackSize = 256; // in kb
         if (getArch().equals("ppc64") || getArch().equals("ppc64le")) {
-            stackSize = "800";
+            stackSize = 800;
         }
         TestResult tr;
         tr = doExec(javaCmd, "-Xms64m", "-Xmx512m",
@@ -86,7 +86,7 @@ public class Settings extends TestHelper {
             throw new RuntimeException("test fails");
         }
         tr = doExec(javaCmd, "-Xms65536k", "-Xmx712m",
-                "-Xss" + stackSize + "000", "-XshowSettings", "-jar", testJar.getAbsolutePath());
+                "-Xss" + (stackSize * 1024), "-XshowSettings", "-jar", testJar.getAbsolutePath());
         containsAllOptions(tr);
         if (!tr.isOK()) {
             System.out.println(tr);
