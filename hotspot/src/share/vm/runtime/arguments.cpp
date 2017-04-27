@@ -2305,8 +2305,6 @@ jint Arguments::set_aggressive_heap_flags() {
   if (FLAG_SET_CMDLINE(bool, UseParallelGC, true) != Flag::SUCCESS) {
     return JNI_EINVAL;
   }
-  FLAG_SET_DEFAULT(ParallelGCThreads,
-          Abstract_VM_Version::parallel_worker_threads());
 
   // Encourage steady state memory management
   if (FLAG_SET_CMDLINE(uintx, ThresholdTolerance, 100) != Flag::SUCCESS) {
