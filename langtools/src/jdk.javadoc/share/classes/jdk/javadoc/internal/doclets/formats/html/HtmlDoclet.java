@@ -271,14 +271,14 @@ public class HtmlDoclet extends AbstractDoclet {
     @Override // defined by AbstractDoclet
     protected void generateModuleFiles() throws DocletException {
         if (configuration.showModules) {
-            if (configuration.frames) {
+            if (configuration.frames  && configuration.modules.size() > 1) {
                 ModuleIndexFrameWriter.generate(configuration);
             }
             ModuleElement prevModule = null, nextModule;
             List<ModuleElement> mdles = new ArrayList<>(configuration.modulePackages.keySet());
             int i = 0;
             for (ModuleElement mdle : mdles) {
-                if (configuration.frames) {
+                if (configuration.frames && configuration.modules.size() > 1) {
                     ModulePackageIndexFrameWriter.generate(configuration, mdle);
                     ModuleFrameWriter.generate(configuration, mdle);
                 }
