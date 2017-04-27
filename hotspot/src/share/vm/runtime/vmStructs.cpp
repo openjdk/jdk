@@ -199,6 +199,7 @@ typedef Hashtable<InstanceKlass*, mtClass>       KlassHashtable;
 typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
 typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
 typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
+typedef RehashableHashtable<Symbol*, mtSymbol>   RehashableSymbolHashtable;
 
 //--------------------------------------------------------------------------------
 // VM_STRUCTS
@@ -584,6 +585,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
                                                                                                                                      \
      static_field(SymbolTable,                 _the_table,                                    SymbolTable*)                          \
      static_field(SymbolTable,                 _shared_table,                                 SymbolCompactHashTable)                \
+     static_field(RehashableSymbolHashtable,   _seed,                                         juint)                                 \
                                                                                                                                      \
   /***************/                                                                                                                  \
   /* StringTable */                                                                                                                  \
@@ -1602,6 +1604,8 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
                                                                           \
   declare_toplevel_type(BasicHashtable<mtInternal>)                       \
     declare_type(IntptrHashtable, BasicHashtable<mtInternal>)             \
+  declare_toplevel_type(BasicHashtable<mtSymbol>)                         \
+    declare_type(RehashableSymbolHashtable, BasicHashtable<mtSymbol>)     \
   declare_type(SymbolTable, SymbolHashtable)                              \
   declare_type(StringTable, StringHashtable)                              \
     declare_type(LoaderConstraintTable, KlassHashtable)                   \
