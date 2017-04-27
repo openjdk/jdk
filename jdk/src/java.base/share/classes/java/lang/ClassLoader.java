@@ -114,7 +114,7 @@ import sun.security.util.SecurityConstants;
  * duration of the class loading process (see {@link #loadClass
  * loadClass} methods).
  *
- * <h3> <a name="builtinLoaders">Run-time Built-in Class Loaders</a></h3>
+ * <h3> <a id="builtinLoaders">Run-time Built-in Class Loaders</a></h3>
  *
  * The Java run-time has the following built-in class loaders:
  *
@@ -183,7 +183,7 @@ import sun.security.util.SecurityConstants;
  *     }
  * </pre></blockquote>
  *
- * <h3> <a name="name">Binary names</a> </h3>
+ * <h3> <a id="name">Binary names</a> </h3>
  *
  * <p> Any class name provided as a {@code String} parameter to methods in
  * {@code ClassLoader} must be a binary name as defined by

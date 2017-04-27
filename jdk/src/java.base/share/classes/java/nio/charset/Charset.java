@@ -67,7 +67,7 @@ import sun.security.action.GetPropertyAction;
  * concurrent threads.
  *
  *
- * <a name="names"></a><a name="charenc"></a>
+ * <a id="names"></a><a id="charenc"></a>
  * <h2>Charset names</h2>
  *
  * <p> Charsets are named by strings composed of the following characters:
@@ -113,14 +113,14 @@ import sun.security.action.GetPropertyAction;
  * The aliases of a charset are returned by the {@link #aliases() aliases}
  * method.
  *
- * <p><a name="hn">Some charsets have an <i>historical name</i> that is defined for
+ * <p><a id="hn">Some charsets have an <i>historical name</i> that is defined for
  * compatibility with previous versions of the Java platform.</a>  A charset's
  * historical name is either its canonical name or one of its aliases.  The
  * historical name is returned by the {@code getEncoding()} methods of the
  * {@link java.io.InputStreamReader#getEncoding InputStreamReader} and {@link
  * java.io.OutputStreamWriter#getEncoding OutputStreamWriter} classes.
  *
- * <p><a name="iana"> </a>If a charset listed in the <a
+ * <p><a id="iana"> </a>If a charset listed in the <a
  * href="http://www.iana.org/assignments/character-sets"><i>IANA Charset
  * Registry</i></a> is supported by an implementation of the Java platform then
  * its canonical name must be the name listed in the registry. Many charsets
@@ -142,27 +142,27 @@ import sun.security.action.GetPropertyAction;
  *
  *
  *
- * <p><a name="standard">Every implementation of the Java platform is required to support the
+ * <p><a id="standard">Every implementation of the Java platform is required to support the
  * following standard charsets.</a>  Consult the release documentation for your
  * implementation to see if any other charsets are supported.  The behavior
  * of such optional charsets may differ between implementations.
  *
  * <blockquote><table width="80%" summary="Description of standard charsets">
- * <tr><th align="left">Charset</th><th align="left">Description</th></tr>
- * <tr><td valign=top>{@code US-ASCII}</td>
+ * <tr><th style="text-align:left">Charset</th><th style="text-align:left">Description</th></tr>
+ * <tr><td style="vertical-align:top">{@code US-ASCII}</td>
  *     <td>Seven-bit ASCII, a.k.a. {@code ISO646-US},
  *         a.k.a. the Basic Latin block of the Unicode character set</td></tr>
- * <tr><td valign=top><code>ISO-8859-1&nbsp;&nbsp;</code></td>
+ * <tr><td style="vertical-align:top"><code>ISO-8859-1&nbsp;&nbsp;</code></td>
  *     <td>ISO Latin Alphabet No. 1, a.k.a. {@code ISO-LATIN-1}</td></tr>
- * <tr><td valign=top>{@code UTF-8}</td>
+ * <tr><td style="vertical-align:top">{@code UTF-8}</td>
  *     <td>Eight-bit UCS Transformation Format</td></tr>
- * <tr><td valign=top>{@code UTF-16BE}</td>
+ * <tr><td style="vertical-align:top">{@code UTF-16BE}</td>
  *     <td>Sixteen-bit UCS Transformation Format,
  *         big-endian byte&nbsp;order</td></tr>
- * <tr><td valign=top>{@code UTF-16LE}</td>
+ * <tr><td style="vertical-align:top">{@code UTF-16LE}</td>
  *     <td>Sixteen-bit UCS Transformation Format,
  *         little-endian byte&nbsp;order</td></tr>
- * <tr><td valign=top>{@code UTF-16}</td>
+ * <tr><td style="vertical-align:top">{@code UTF-16}</td>
  *     <td>Sixteen-bit UCS Transformation Format,
  *         byte&nbsp;order identified by an optional byte-order mark</td></tr>
  * </table></blockquote>

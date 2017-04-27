@@ -247,7 +247,7 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
  * except the null reference.
  *
  *
- * <h1><a name="invoke">Invocation of an access mode's method</a></h1>
+ * <h1><a id="invoke">Invocation of an access mode's method</a></h1>
  * The first time an {@code invokevirtual} instruction is executed it is linked
  * by symbolically resolving the names in the instruction and verifying that
  * the method call is statically legal.  This also holds for calls to access mode
