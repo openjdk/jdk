@@ -154,7 +154,7 @@ public interface ModuleElement extends Element, QualifiedNameable {
      * pattern.  Classes implementing this interface are used to operate
      * on a directive when the kind of directive is unknown at compile time.
      * When a visitor is passed to a directive's {@link Directive#accept
-     * accept} method, the <tt>visit<i>Xyz</i></tt> method applicable
+     * accept} method, the <code>visit<i>Xyz</i></code> method applicable
      * to that directive is invoked.
      *
      * <p> Classes implementing this interface may or may not throw a

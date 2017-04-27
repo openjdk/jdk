@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8154119 8154262 8156077 8157987 8154261 8154817 8135291 8155995 8162363
- *      8168766 8168688 8162674 8160196 8175799 8174974 8176778 8177562 8175218 8175823
+ *      8168766 8168688 8162674 8160196 8175799 8174974 8176778 8177562 8175218 8175823 8166306
  * @summary Test modules support in javadoc.
  * @author bpatel
  * @library ../lib
@@ -251,6 +251,8 @@ public class TestModules extends JavadocTester {
         checkModuleModeCommon();
         checkModuleModeApi(true);
         checkModuleModeAll(false);
+        checkModuleFrameFiles(true);
+        checkAllModulesLink(true);
     }
 
     /**
@@ -268,6 +270,8 @@ public class TestModules extends JavadocTester {
         checkModuleModeCommon();
         checkModuleModeApi(false);
         checkModuleModeAll(true);
+        checkModuleFrameFiles(true);
+        checkAllModulesLink(true);
     }
 
     /**
@@ -294,6 +298,32 @@ public class TestModules extends JavadocTester {
                 "testpkgmdlNoExport");
         checkExit(Exit.OK);
         checkModuleSummaryNoExported(false);
+    }
+
+    /**
+     * Test generated module pages for javadoc run for a single module having a single package.
+     */
+    @Test
+    void testSingleModuleSinglePkg() {
+        javadoc("-d", "out-singlemod",
+                "--module-source-path", testSrc,
+                "--module", "moduleC",
+                "testpkgmdlC");
+        checkExit(Exit.OK);
+        checkModuleFrameFiles(false);
+    }
+
+    /**
+     * Test generated module pages for javadoc run for a single module having multiple packages.
+     */
+    @Test
+    void testSingleModuleMultiplePkg() {
+        javadoc("-d", "out-singlemodmultiplepkg", "--show-module-contents=all",
+                "--module-source-path", testSrc,
+                "--module", "moduleB",
+                "testpkg2mdlB", "testpkgmdlB");
+        checkExit(Exit.OK);
+        checkAllModulesLink(false);
     }
 
     void checkDescription(boolean found) {
@@ -708,6 +738,22 @@ public class TestModules extends JavadocTester {
                 "moduleA-frame.html",
                 "moduleA-summary.html",
                 "module-overview-frame.html");
+    }
+
+    void checkModuleFrameFiles(boolean found) {
+        checkFiles(found,
+                "moduleC-frame.html",
+                "moduleC-type-frame.html",
+                "module-overview-frame.html");
+        checkFiles(true,
+                "moduleC-summary.html",
+                "allclasses-frame.html",
+                "allclasses-noframe.html");
+    }
+
+    void checkAllModulesLink(boolean found) {
+        checkOutput("overview-frame.html", found,
+                "<li><a href=\"module-overview-frame.html\" target=\"packageListFrame\">All&nbsp;Modules</a></li>");
     }
 
     void checkModulesInSearch(boolean found) {

@@ -70,7 +70,7 @@ import static javax.tools.JavaFileObject.Kind;
  * java.io.File#getCanonicalFile} or similar means.  If the system is
  * not case-aware, file objects must use other means to preserve case.
  *
- * <p><em><a name="relative_name">Relative names</a>:</em> some
+ * <p><em><a id="relative_name">Relative names</a>:</em> some
  * methods in this interface use relative names.  A relative name is a
  * non-null, non-empty sequence of path segments separated by '/'.
  * '.' or '..'  are invalid path segments.  A valid relative name must
