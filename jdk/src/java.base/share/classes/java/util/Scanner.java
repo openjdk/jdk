@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2846,6 +2846,7 @@ public final class Scanner implements Iterator<String>, Closeable {
     class FindSpliterator extends Spliterators.AbstractSpliterator<MatchResult> {
         final Pattern pattern;
         int expectedCount = -1;
+        private boolean advance = false; // true if we need to auto-advance
 
         FindSpliterator(Pattern pattern) {
             super(Long.MAX_VALUE,
@@ -2861,12 +2862,15 @@ public final class Scanner implements Iterator<String>, Closeable {
                     throw new ConcurrentModificationException();
                 }
             } else {
+                // init
+                matchValid = false;
+                matcher.usePattern(pattern);
                 expectedCount = modCount;
             }
 
             while (true) {
                 // assert expectedCount == modCount
-                if (findPatternInBuffer(pattern, 0)) { // doesn't increment modCount
+                if (nextInBuffer()) { // doesn't increment modCount
                     cons.accept(matcher.toMatchResult());
                     if (expectedCount != modCount) {
                         throw new ConcurrentModificationException();
@@ -2878,6 +2882,29 @@ public final class Scanner implements Iterator<String>, Closeable {
                 else
                     return false; // reached end of input
             }
+        }
+
+        // reimplementation of findPatternInBuffer with auto-advance on zero-length matches
+        private boolean nextInBuffer() {
+            if (advance) {
+                if (position + 1 > buf.limit()) {
+                    if (!sourceClosed)
+                        needInput = true;
+                    return false;
+                }
+                position++;
+                advance = false;
+            }
+            matcher.region(position, buf.limit());
+            if (matcher.find() && (!matcher.hitEnd() || sourceClosed)) {
+                 // Did not hit end, or hit real end
+                 position = matcher.end();
+                 advance = matcher.start() == position;
+                 return true;
+            }
+            if (!sourceClosed)
+                needInput = true;
+            return false;
         }
     }
 
