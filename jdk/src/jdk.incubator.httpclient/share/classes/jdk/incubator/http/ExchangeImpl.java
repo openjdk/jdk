@@ -81,7 +81,17 @@ abstract class ExchangeImpl<T> {
         } else {
             Http2ClientImpl c2 = exchange.client().client2(); // TODO: improve
             HttpRequestImpl request = exchange.request();
-            Http2Connection c = c2.getConnectionFor(request);
+            Http2Connection c;
+            try {
+                c = c2.getConnectionFor(request);
+            } catch (Http2Connection.ALPNException e) {
+                // failed to negotiate "h2"
+                AsyncSSLConnection as = e.getConnection();
+                as.stopAsyncReading();
+                SSLConnection sslc = new SSLConnection(as);
+                ExchangeImpl<U> ex = new Http1Exchange<>(exchange, sslc);
+                return ex;
+            }
             if (c == null) {
                 // no existing connection. Send request with HTTP 1 and then
                 // upgrade if successful
