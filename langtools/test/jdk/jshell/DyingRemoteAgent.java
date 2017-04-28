@@ -22,6 +22,8 @@
  */
 
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import jdk.jshell.JShell;
 import jdk.jshell.execution.JdiExecutionControlProvider;
 import jdk.jshell.execution.RemoteExecutionControl;
@@ -45,6 +47,8 @@ class DyingRemoteAgent extends RemoteExecutionControl {
         pm.put(JdiExecutionControlProvider.PARAM_REMOTE_AGENT, DyingRemoteAgent.class.getName());
         pm.put(JdiExecutionControlProvider.PARAM_HOST_NAME, host==null? "" : host);
         pm.put(JdiExecutionControlProvider.PARAM_LAUNCH, ""+isLaunch);
+        // turn on logging of launch failures
+        Logger.getLogger("jdk.jshell.execution").setLevel(Level.ALL);
         return JShell.builder()
                 .executionEngine(ecp, pm)
                 .build();

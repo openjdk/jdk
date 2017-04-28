@@ -298,7 +298,7 @@ public final class ProcessTools {
      * @return Process id
      */
     public static long getProcessId() throws Exception {
-        return ProcessHandle.current().getPid();
+        return ProcessHandle.current().pid();
     }
 
 
@@ -531,8 +531,8 @@ public final class ProcessTools {
         }
 
         @Override
-        public long getPid() {
-            return p.getPid();
+        public long pid() {
+            return p.pid();
         }
 
         @Override

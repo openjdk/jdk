@@ -85,7 +85,7 @@ public interface Taglet {
     /**
      * Returns the string representation of a series of instances of
      * this tag to be included in the generated output.
-     * If this taglet is for an {@link #isInlineTag inline} tag} it will
+     * If this taglet is for an {@link #isInlineTag inline} tag it will
      * be called once per instance of the tag, each time with a singleton list.
      * Otherwise, if this tag is a block tag, it will be called once per
      * comment, with a list of all the instances of the tag in a comment.

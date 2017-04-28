@@ -290,7 +290,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
 
         // Get all packages for the module and put it in the concealed packages set.
         utils.getModulePackageMap().getOrDefault(mdle, Collections.emptySet()).forEach((pkg) -> {
-            if (shouldDocument(pkg)) {
+            if (shouldDocument(pkg) && moduleMode == ModuleMode.ALL) {
                 concealedPackages.add(pkg);
             }
         });
@@ -309,7 +309,9 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 if (moduleMode == ModuleMode.ALL || mdleList.isEmpty()) {
                     exportedPackages.put(p, mdleList);
                 }
-                concealedPackages.remove(p);
+                if (moduleMode == ModuleMode.ALL) {
+                    concealedPackages.remove(p);
+                }
             }
         });
         // Get all opened packages for the module using the opens directive for the module.
@@ -326,12 +328,11 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 if (moduleMode == ModuleMode.ALL || mdleList.isEmpty()) {
                     openedPackages.put(p, mdleList);
                 }
-                concealedPackages.remove(p);
+                if (moduleMode == ModuleMode.ALL) {
+                    concealedPackages.remove(p);
+                }
             }
         });
-        // Remove all the exported and opened packages so we have just the concealed packages now.
-        concealedPackages.removeAll(exportedPackages.keySet());
-        concealedPackages.removeAll(openedPackages.keySet());
         // Get all the exported and opened packages, for the transitive closure of the module, to be displayed in
         // the indirect packages tables.
         dependentModules.forEach((module, mod) -> {
@@ -409,7 +410,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      * @param section set of elements
      * @return true if there are elements to be displayed
      */
-    public boolean display(SortedSet<? extends Element> section) {
+    public boolean display(Set<? extends Element> section) {
         return section != null && !section.isEmpty();
     }
 
@@ -421,6 +422,25 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      */
     public boolean display(Map<? extends Element, ?> section) {
         return section != null && !section.isEmpty();
+    }
+
+    /*
+     * Returns true, in API mode, if at least one type element in
+     * the typeElements set is referenced by a javadoc tag in tagsMap.
+     */
+    private boolean displayServices(Set<TypeElement> typeElements,
+                                    Map<TypeElement, Content> tagsMap) {
+        return typeElements != null &&
+                typeElements.stream().anyMatch((v) -> displayServiceDirective(v, tagsMap));
+    }
+
+    /*
+     * Returns true, in API mode, if the type element is referenced
+     * from a javadoc tag in tagsMap.
+     */
+    private boolean displayServiceDirective(TypeElement typeElement,
+                                            Map<TypeElement, Content> tagsMap) {
+        return moduleMode == ModuleMode.ALL || tagsMap.containsKey(typeElement);
     }
 
     /**
@@ -768,14 +788,18 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      * {@inheritDoc}
      */
     public void addServicesSummary(Content summaryContentTree) {
-        if (display(uses) || display(provides)) {
+
+        boolean haveUses = displayServices(uses, usesTrees);
+        boolean haveProvides = displayServices(provides.keySet(), providesTrees);
+
+        if (haveProvides || haveUses) {
             HtmlTree li = new HtmlTree(HtmlTag.LI);
             li.addStyle(HtmlStyle.blockList);
             addSummaryHeader(HtmlConstants.START_OF_SERVICES_SUMMARY, SectionName.SERVICES,
                     contents.navServices, li);
             String text;
             String tableSummary;
-            if (display(provides)) {
+            if (haveProvides) {
                 text = configuration.getText("doclet.Provides_Summary");
                 tableSummary = configuration.getText("doclet.Member_Table_Summary",
                         configuration.getText("doclet.Provides_Summary"),
@@ -788,7 +812,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                     li.addContent(table);
                 }
             }
-            if (display(uses)) {
+            if (haveUses){
                 text = configuration.getText("doclet.Uses_Summary");
                 tableSummary = configuration.getText("doclet.Member_Table_Summary",
                         configuration.getText("doclet.Uses_Summary"),
@@ -818,17 +842,13 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         HtmlTree tdSummary;
         Content description;
         for (TypeElement t : uses) {
-            // For each uses directive in the module declaration, if we are in the "api" mode and
-            // if there are service types listed using @uses javadoc tag, check if the service type in
-            // the uses directive is specified using the @uses tag. If not, we do not display the
-            // service type in the "api" mode.
-            if (moduleMode == ModuleMode.API && display(usesTrees) && !usesTrees.containsKey(t)) {
+            if (!displayServiceDirective(t, usesTrees)) {
                 continue;
             }
             typeLinkContent = getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.PACKAGE, t));
             thType = HtmlTree.TH_ROW_SCOPE(HtmlStyle.colFirst, typeLinkContent);
             tdSummary = new HtmlTree(HtmlTag.TD);
-        tdSummary.addStyle(HtmlStyle.colLast);
+            tdSummary.addStyle(HtmlStyle.colLast);
             if (display(usesTrees)) {
                 description = usesTrees.get(t);
                 if (description != null) {
@@ -837,9 +857,9 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
             }
             addSummaryComment(t, tdSummary);
             HtmlTree tr = HtmlTree.TR(thType);
-        tr.addContent(tdSummary);
-        tr.addStyle(altColor ? HtmlStyle.altColor : HtmlStyle.rowColor);
-        tbody.addContent(tr);
+            tr.addContent(tdSummary);
+            tr.addStyle(altColor ? HtmlStyle.altColor : HtmlStyle.rowColor);
+            tbody.addContent(tr);
             altColor = !altColor;
         }
     }
@@ -851,18 +871,13 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      */
     public void addProvidesList(Content tbody) {
         boolean altColor = true;
-        TypeElement srv;
         SortedSet<TypeElement> implSet;
         Content description;
         for (Map.Entry<TypeElement, SortedSet<TypeElement>> entry : provides.entrySet()) {
-            srv = entry.getKey();
-            // For each provides directive in the module declaration, if we are in the "api" mode and
-            // if there are service types listed using @provides javadoc tag, check if the service type in
-            // the provides directive is specified using the @provides tag. If not, we do not display the
-            // service type in the "api" mode.
-            if (moduleMode == ModuleMode.API && display(providesTrees) && !providesTrees.containsKey(srv)) {
+            TypeElement srv = entry.getKey();
+            if (!displayServiceDirective(srv, providesTrees)) {
                 continue;
-    }
+            }
             implSet = entry.getValue();
             Content srvLinkContent = getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.PACKAGE, srv));
             HtmlTree thType = HtmlTree.TH_ROW_SCOPE(HtmlStyle.colFirst, srvLinkContent);

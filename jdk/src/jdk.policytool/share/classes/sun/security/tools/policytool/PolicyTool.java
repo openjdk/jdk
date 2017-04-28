@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@ import javax.swing.border.EmptyBorder;
  */
 
 @Deprecated(since="9", forRemoval=true)
+@SuppressWarnings("removal")
 public class PolicyTool {
 
     // for i18n
@@ -879,7 +880,8 @@ public class PolicyTool {
  * The Permission contains the (Type, Name, Action) triplet.
  *
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation",
+                   "removal"}) // PolicyTool
 class PolicyEntry {
 
     private CodeSource codesource;
@@ -1019,7 +1021,8 @@ class PolicyEntry {
 /**
  * The main window for the PolicyTool
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation",
+                   "removal"}) // PolicyTool
 class ToolWindow extends JFrame {
     // use serialVersionUID from JDK 1.2.2 for interoperability
     private static final long serialVersionUID = 5682568601210376777L;
@@ -1553,7 +1556,8 @@ class ToolWindow extends JFrame {
 /**
  * General dialog window
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation",
+                   "removal"}) // PolicyTool
 class ToolDialog extends JDialog {
     // use serialVersionUID from JDK 1.2.2 for interoperability
     private static final long serialVersionUID = -372244357011301190L;
@@ -2917,7 +2921,8 @@ class ToolDialog extends JDialog {
 /**
  * Event handler for the PolicyTool window
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation",
+                   "removal"}) // PolicyTool
 class ToolWindowListener implements WindowListener {
 
     private PolicyTool tool;
@@ -2962,7 +2967,8 @@ class ToolWindowListener implements WindowListener {
 /**
  * Event handler for the Policy List
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation",
+                   "removal"}) // PolicyTool
 class PolicyListListener extends MouseAdapter implements ActionListener {
 
     private PolicyTool tool;
@@ -2992,7 +2998,8 @@ class PolicyListListener extends MouseAdapter implements ActionListener {
 /**
  * Event handler for the File Menu
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation",
+                   "removal"}) // PolicyTool
 class FileMenuListener implements ActionListener {
 
     private PolicyTool tool;
@@ -3091,7 +3098,8 @@ class FileMenuListener implements ActionListener {
 /**
  * Event handler for the main window buttons and Edit Menu
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation",
+                   "removal"}) // PolicyTool
 class MainWindowListener implements ActionListener {
 
     private PolicyTool tool;
@@ -3167,7 +3175,8 @@ class MainWindowListener implements ActionListener {
  *    if edit is FALSE, then we are ADDing a new PolicyEntry,
  *    so we only need to update the GUI listing.
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation",
+                   "removal"}) // PolicyTool
 class AddEntryDoneButtonListener implements ActionListener {
 
     private PolicyTool tool;
@@ -3234,7 +3243,8 @@ class AddEntryDoneButtonListener implements ActionListener {
 /**
  * Event handler for ChangeKeyStoreOKButton button
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation",
+                   "removal"}) // PolicyTool
 class ChangeKeyStoreOKButtonListener implements ActionListener {
 
     private PolicyTool tool;
@@ -3281,7 +3291,8 @@ class ChangeKeyStoreOKButtonListener implements ActionListener {
 /**
  * Event handler for AddPrinButton button
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation",
+                   "removal"}) // PolicyTool
 class AddPrinButtonListener implements ActionListener {
 
     private PolicyTool tool;
@@ -3307,7 +3318,8 @@ class AddPrinButtonListener implements ActionListener {
 /**
  * Event handler for AddPermButton button
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation",
+                   "removal"}) // PolicyTool
 class AddPermButtonListener implements ActionListener {
 
     private PolicyTool tool;
@@ -3333,7 +3345,8 @@ class AddPermButtonListener implements ActionListener {
 /**
  * Event handler for AddPrinOKButton button
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation",
+                   "removal"}) // PolicyTool
 class NewPolicyPrinOKButtonListener implements ActionListener {
 
     private PolicyTool tool;
@@ -3397,7 +3410,8 @@ class NewPolicyPrinOKButtonListener implements ActionListener {
 /**
  * Event handler for AddPermOKButton button
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation",
+                   "removal"}) // PolicyTool
 class NewPolicyPermOKButtonListener implements ActionListener {
 
     private PolicyTool tool;
@@ -3461,7 +3475,8 @@ class NewPolicyPermOKButtonListener implements ActionListener {
 /**
  * Event handler for RemovePrinButton button
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation",
+                   "removal"}) // PolicyTool
 class RemovePrinButtonListener implements ActionListener {
 
     private PolicyTool tool;
@@ -3497,7 +3512,8 @@ class RemovePrinButtonListener implements ActionListener {
 /**
  * Event handler for RemovePermButton button
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation",
+                   "removal"}) // PolicyTool
 class RemovePermButtonListener implements ActionListener {
 
     private PolicyTool tool;
@@ -3540,7 +3556,8 @@ class RemovePermButtonListener implements ActionListener {
  * GUI listing.  If the user is editing an existing PolicyEntry, we
  * update both the GUI listing and the actual PolicyEntry.
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation",
+                   "removal"}) // PolicyTool
 class EditPrinButtonListener extends MouseAdapter implements ActionListener {
 
     private PolicyTool tool;
@@ -3587,7 +3604,8 @@ class EditPrinButtonListener extends MouseAdapter implements ActionListener {
  * GUI listing.  If the user is editing an existing PolicyEntry, we
  * update both the GUI listing and the actual PolicyEntry.
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation",
+                   "removal"}) // PolicyTool
 class EditPermButtonListener extends MouseAdapter implements ActionListener {
 
     private PolicyTool tool;
@@ -3628,7 +3646,8 @@ class EditPermButtonListener extends MouseAdapter implements ActionListener {
 /**
  * Event handler for Principal Popup Menu
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation",
+                   "removal"}) // PolicyTool
 class PrincipalTypeMenuListener implements ItemListener {
 
     private ToolDialog td;
@@ -3680,7 +3699,8 @@ class PrincipalTypeMenuListener implements ItemListener {
 /**
  * Event handler for Permission Popup Menu
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation",
+                   "removal"}) // PolicyTool
 class PermissionMenuListener implements ItemListener {
 
     private ToolDialog td;
@@ -3755,7 +3775,8 @@ class PermissionMenuListener implements ItemListener {
 /**
  * Event handler for Permission Name Popup Menu
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation",
+                   "removal"}) // PolicyTool
 class PermissionNameMenuListener implements ItemListener {
 
     private ToolDialog td;
@@ -3909,7 +3930,8 @@ class StatusOKButtonListener implements ActionListener {
 /**
  * Event handler for UserSaveYes button
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation",
+                   "removal"}) // PolicyTool
 class UserSaveYesButtonListener implements ActionListener {
 
     private ToolDialog us;
@@ -3964,7 +3986,8 @@ class UserSaveYesButtonListener implements ActionListener {
 /**
  * Event handler for UserSaveNoButton
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation",
+                   "removal"}) // PolicyTool
 class UserSaveNoButtonListener implements ActionListener {
 
     private PolicyTool tool;
@@ -4013,7 +4036,8 @@ class UserSaveCancelButtonListener implements ActionListener {
 /**
  * Event handler for ConfirmRemovePolicyEntryOKButtonListener
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation",
+                   "removal"}) // PolicyTool
 class ConfirmRemovePolicyEntryOKButtonListener implements ActionListener {
 
     private PolicyTool tool;
@@ -4169,7 +4193,8 @@ class AudioPerm extends Perm {
     }
 }
 
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation",
+                   "removal"}) // PolicyTool
 class AuthPerm extends Perm {
     AuthPerm() {
         super(javax.security.auth.AuthPermission.class,
@@ -4242,7 +4267,8 @@ class FilePerm extends Perm {
     }
 }
 
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation",
+                   "removal"}) // PolicyTool
 class URLPerm extends Perm {
     URLPerm() {
         super(java.net.URLPermission.class,
@@ -4407,7 +4433,8 @@ class ReflectPerm extends Perm {
     }
 }
 
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation",
+                   "removal"}) // PolicyTool
 class RuntimePerm extends Perm {
     RuntimePerm() {
         super(java.lang.RuntimePermission.class,
@@ -4448,7 +4475,8 @@ class RuntimePerm extends Perm {
     }
 }
 
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation",
+                   "removal"}) // PolicyTool
 class SecurityPerm extends Perm {
     SecurityPerm() {
         super(java.security.SecurityPermission.class,
