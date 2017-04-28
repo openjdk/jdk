@@ -205,7 +205,7 @@ import javax.management.DynamicMBean;
  * Virtual Machine is modified, the {@code DiagnosticCommandMBean} emits
  * a {@link javax.management.Notification} with a
  * {@linkplain javax.management.Notification#getType() type} of
- * <a href="{@docRoot}/../../../../api/javax/management/MBeanInfo.html#info-changed">
+ * <a href="{@docRoot}/javax/management/MBeanInfo.html#info-changed">
  * {@code "jmx.mbean.info.changed"}</a> and a
  * {@linkplain javax.management.Notification#getUserData() userData} that
  * is the new {@code MBeanInfo}.
