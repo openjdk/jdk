@@ -1080,7 +1080,7 @@ public abstract class ResourceBundle {
      * <p><code>getBundle</code> uses the base name, the specified locale, and
      * the default locale (obtained from {@link java.util.Locale#getDefault()
      * Locale.getDefault}) to generate a sequence of <a
-     * name="candidates"><em>candidate bundle names</em></a>.  If the specified
+     * id="candidates"><em>candidate bundle names</em></a>.  If the specified
      * locale's language, script, country, and variant are all empty strings,
      * then the base name is the only candidate bundle name.  Otherwise, a list
      * of candidate locales is generated from the attribute values of the
