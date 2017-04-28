@@ -276,14 +276,15 @@ Flag::Error OptoLoopAlignmentConstraintFunc(intx value, bool verbose) {
     return Flag::VIOLATES_CONSTRAINT;
   }
 
-#ifdef SPARC
+  // Relevant on ppc, s390, sparc. Will be optimized where
+  // addr_unit() == 1.
   if (OptoLoopAlignment % relocInfo::addr_unit() != 0) {
     CommandLineError::print(verbose,
                             "OptoLoopAlignment (" INTX_FORMAT ") must be "
-                            "multiple of NOP size\n");
+                            "multiple of NOP size (%d)\n",
+                            value, relocInfo::addr_unit());
     return Flag::VIOLATES_CONSTRAINT;
   }
-#endif
 
   return Flag::SUCCESS;
 }
