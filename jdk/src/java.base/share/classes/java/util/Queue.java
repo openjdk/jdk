@@ -51,8 +51,8 @@ package java.util;
  * <caption>Summary of Queue methods</caption>
  *  <tr>
  *    <td></td>
- *    <td ALIGN=CENTER><em>Throws exception</em></td>
- *    <td ALIGN=CENTER><em>Returns special value</em></td>
+ *    <td style="text-align:center"><em>Throws exception</em></td>
+ *    <td style="text-align:center"><em>Returns special value</em></td>
  *  </tr>
  *  <tr>
  *    <td><b>Insert</b></td>

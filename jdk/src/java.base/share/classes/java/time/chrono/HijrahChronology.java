@@ -106,10 +106,10 @@ import sun.util.logging.PlatformLogger;
  * <table cellpadding="2" summary="Variants of Hijrah Calendars">
  * <thead>
  * <tr class="tableSubHeadingColor">
- * <th class="colFirst" align="left" >Chronology ID</th>
- * <th class="colFirst" align="left" >Calendar Type</th>
- * <th class="colFirst" align="left" >Locale extension, see {@link java.util.Locale}</th>
- * <th class="colLast" align="left" >Description</th>
+ * <th class="colFirst" style="text-align:left" >Chronology ID</th>
+ * <th class="colFirst" style="text-align:left" >Calendar Type</th>
+ * <th class="colFirst" style="text-align:left" >Locale extension, see {@link java.util.Locale}</th>
+ * <th class="colLast" style="text-align:left" >Description</th>
  * </tr>
  * </thead>
  * <tbody>
@@ -150,9 +150,9 @@ import sun.util.logging.PlatformLogger;
  * <table cellpadding="2" summary="Configuration of Hijrah Calendar">
  * <thead>
  * <tr class="tableSubHeadingColor">
- * <th class="colFirst" align="left" > Property Name</th>
- * <th class="colFirst" align="left" > Property value</th>
- * <th class="colLast" align="left" > Description </th>
+ * <th class="colFirst" style="text-align:left" > Property Name</th>
+ * <th class="colFirst" style="text-align:left" > Property value</th>
+ * <th class="colLast" style="text-align:left" > Description </th>
  * </tr>
  * </thead>
  * <tbody>
