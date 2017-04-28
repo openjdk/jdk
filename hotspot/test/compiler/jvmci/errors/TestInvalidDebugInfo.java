@@ -31,7 +31,8 @@
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.common
  * @compile CodeInstallerTest.java
- * @run junit/othervm -da:jdk.vm.ci... -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI compiler.jvmci.errors.TestInvalidDebugInfo
+ * @run junit/othervm -da:jdk.vm.ci... -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ *              -Djvmci.Compiler=null compiler.jvmci.errors.TestInvalidDebugInfo
  */
 
 package compiler.jvmci.errors;

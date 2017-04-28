@@ -2515,6 +2515,9 @@ bool Arguments::check_vm_args_consistency() {
   status = status && check_jvmci_args_consistency();
 
   if (EnableJVMCI) {
+    PropertyList_unique_add(&_system_properties, "jdk.internal.vm.ci.enabled", "true",
+        AddProperty, UnwriteableProperty, InternalProperty);
+
     if (!ScavengeRootsInCode) {
       warning("forcing ScavengeRootsInCode non-zero because JVMCI is enabled");
       ScavengeRootsInCode = 1;

@@ -29,8 +29,6 @@ import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.VERY_SLO
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.probability;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayBaseOffset;
 
-import java.lang.reflect.Field;
-
 import org.graalvm.compiler.api.replacements.ClassSubstitution;
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
 import org.graalvm.compiler.core.common.LocationIdentity;
@@ -61,7 +59,7 @@ public class AESCryptSubstitutions {
     static final long kOffset;
     static final long lastKeyOffset;
     static final Class<?> AESCryptClass;
-    static final int AES_BLOCK_SIZE;
+    static final int AES_BLOCK_SIZE_IN_BYTES;
 
     static {
         try {
@@ -72,9 +70,9 @@ public class AESCryptSubstitutions {
             AESCryptClass = Class.forName("com.sun.crypto.provider.AESCrypt", true, cl);
             kOffset = UnsafeAccess.UNSAFE.objectFieldOffset(AESCryptClass.getDeclaredField("K"));
             lastKeyOffset = UnsafeAccess.UNSAFE.objectFieldOffset(AESCryptClass.getDeclaredField("lastKey"));
-            Field aesBlockSizeField = Class.forName("com.sun.crypto.provider.AESConstants", true, cl).getDeclaredField("AES_BLOCK_SIZE");
-            aesBlockSizeField.setAccessible(true);
-            AES_BLOCK_SIZE = aesBlockSizeField.getInt(null);
+            // Thankfully the AES block size is a constant (128 bits) and so we don't need to
+            // reflect on com.sun.crypto.provider.AESConstants.AES_BLOCK_SIZE.
+            AES_BLOCK_SIZE_IN_BYTES = 16;
         } catch (Exception ex) {
             throw new GraalError(ex);
         }
@@ -141,7 +139,7 @@ public class AESCryptSubstitutions {
      * Perform null and array bounds checks for arguments to a cipher operation.
      */
     static void checkArgs(byte[] in, int inOffset, byte[] out, int outOffset) {
-        if (probability(VERY_SLOW_PATH_PROBABILITY, inOffset < 0 || in.length - AES_BLOCK_SIZE < inOffset || outOffset < 0 || out.length - AES_BLOCK_SIZE < outOffset)) {
+        if (probability(VERY_SLOW_PATH_PROBABILITY, inOffset < 0 || in.length - AES_BLOCK_SIZE_IN_BYTES < inOffset || outOffset < 0 || out.length - AES_BLOCK_SIZE_IN_BYTES < outOffset)) {
             DeoptimizeNode.deopt(DeoptimizationAction.None, DeoptimizationReason.RuntimeConstraint);
         }
     }
