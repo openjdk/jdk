@@ -39,6 +39,7 @@ wget http://www.graphviz.org/pub/graphviz/stable/redhat/el6/x86_64/os/graphviz-$
 wget http://www.graphviz.org/pub/graphviz/stable/redhat/el6/x86_64/os/graphviz-libs-$GRAPHVIZ_VERSION.el6.x86_64.rpm
 wget http://www.graphviz.org/pub/graphviz/stable/redhat/el6/x86_64/os/graphviz-plugins-core-$GRAPHVIZ_VERSION.el6.x86_64.rpm
 wget http://www.graphviz.org/pub/graphviz/stable/redhat/el6/x86_64/os/graphviz-plugins-x-$GRAPHVIZ_VERSION.el6.x86_64.rpm
+wget http://public-yum.oracle.com/repo/OracleLinux/OL6/latest/x86_64/getPackage/libtool-ltdl-2.2.6-15.5.el6.x86_64.rpm
 
 mkdir graphviz
 cd graphviz
