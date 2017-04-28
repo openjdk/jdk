@@ -1159,7 +1159,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  * <tr><td style="vertical-align:top"> {@code 'e'}
  *     <td style="vertical-align:top"> <code>'&#92;u0065'</code>
  *     <td> Requires the output to be formatted using <a
- *     name="scientific">computerized scientific notation</a>.  The <a
+ *     id="scientific">computerized scientific notation</a>.  The <a
  *     href="#L10nAlgorithm">localization algorithm</a> is applied.
  *
  *     <p> The formatting of the magnitude <i>m</i> depends upon its value.
@@ -1393,7 +1393,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  * <tr><td style="vertical-align:top"> {@code 'e'}
  *     <td style="vertical-align:top"> <code>'&#92;u0065'</code>
  *     <td> Requires the output to be formatted using <a
- *     name="bscientific">computerized scientific notation</a>.  The <a
+ *     id="bscientific">computerized scientific notation</a>.  The <a
  *     href="#L10nAlgorithm">localization algorithm</a> is applied.
  *
  *     <p> The formatting of the magnitude <i>m</i> depends upon its value.

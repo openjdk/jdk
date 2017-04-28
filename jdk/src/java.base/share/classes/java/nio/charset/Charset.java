@@ -147,7 +147,7 @@ import sun.security.action.GetPropertyAction;
  * implementation to see if any other charsets are supported.  The behavior
  * of such optional charsets may differ between implementations.
  *
- * <blockquote><table width="80%" summary="Description of standard charsets">
+ * <blockquote><table style="width:80%" summary="Description of standard charsets">
  * <tr><th style="text-align:left">Charset</th><th style="text-align:left">Description</th></tr>
  * <tr><td style="vertical-align:top">{@code US-ASCII}</td>
  *     <td>Seven-bit ASCII, a.k.a. {@code ISO646-US},

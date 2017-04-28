@@ -1277,7 +1277,7 @@ public final class Math {
     }
 
     /**
-     * Returns the floor modulus of the {@code long} and {@int} arguments.
+     * Returns the floor modulus of the {@code long} and {@code int} arguments.
      * <p>
      * The floor modulus is {@code x - (floorDiv(x, y) * y)},
      * has the same sign as the divisor {@code y}, and
