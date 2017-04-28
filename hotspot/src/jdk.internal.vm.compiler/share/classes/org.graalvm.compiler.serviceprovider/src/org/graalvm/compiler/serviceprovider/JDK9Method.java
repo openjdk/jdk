@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,57 +20,75 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.graalvm.compiler.core.common.util;
-
-import static org.graalvm.compiler.core.common.util.Util.JAVA_SPECIFICATION_VERSION;
+package org.graalvm.compiler.serviceprovider;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 /**
- * Reflection based access to the Module API introduced by JDK 9. This allows the API to be used in
- * code that must be compiled on a JDK prior to 9. Use of this class must be guarded by a test for
- * JDK 9 or later. For example:
- *
- * <pre>
- * if (Util.JAVA_SPECIFICATION_VERSION >= 9) {
- *     // Use of ModuleAPI
- * }
- * </pre>
+ * Reflection based access to API introduced by JDK 9. This allows the API to be used in code that
+ * must be compiled on a JDK prior to 9.
  */
-public final class ModuleAPI {
+public final class JDK9Method {
 
-    private ModuleAPI(Method method) {
-        this.method = method;
+    private static int getJavaSpecificationVersion() {
+        String value = System.getProperty("java.specification.version");
+        if (value.startsWith("1.")) {
+            value = value.substring(2);
+        }
+        return Integer.parseInt(value);
     }
 
-    private final Method method;
+    /**
+     * The integer value corresponding to the value of the {@code java.specification.version} system
+     * property after any leading {@code "1."} has been stripped.
+     */
+    public static final int JAVA_SPECIFICATION_VERSION = getJavaSpecificationVersion();
+
+    public JDK9Method(Class<?> declaringClass, String name, Class<?>... parameterTypes) {
+        try {
+            this.method = declaringClass.getMethod(name, parameterTypes);
+        } catch (Exception e) {
+            throw new InternalError(e);
+        }
+    }
+
+    /**
+     * Determines if the Java runtime is version 8 or earlier.
+     */
+    public static final boolean Java8OrEarlier = JAVA_SPECIFICATION_VERSION <= 8;
+
+    public final Method method;
+
+    public Class<?> getReturnType() {
+        return method.getReturnType();
+    }
 
     /**
      * {@code Class.getModule()}.
      */
-    public static final ModuleAPI getModule;
+    public static final JDK9Method getModule;
+
+    /**
+     * {@code java.lang.Module.getPackages()}.
+     */
+    public static final JDK9Method getPackages;
 
     /**
      * {@code java.lang.Module.getResourceAsStream(String)}.
      */
-    public static final ModuleAPI getResourceAsStream;
+    public static final JDK9Method getResourceAsStream;
 
     /**
-     * {@code java.lang.Module.canRead(Module)}.
+     * {@code java.lang.Module.addOpens(String, Module)}.
      */
-    public static final ModuleAPI canRead;
+    public static final JDK9Method addOpens;
 
     /**
-     * {@code java.lang.Module.isExported(String)}.
+     * {@code java.lang.Module.isOpen(String, Module)}.
      */
-    public static final ModuleAPI isExported;
-
-    /**
-     * {@code java.lang.Module.isExported(String, Module)}.
-     */
-    public static final ModuleAPI isExportedTo;
+    public static final JDK9Method isOpenTo;
 
     /**
      * Invokes the static Module API method represented by this object.
@@ -108,23 +126,23 @@ public final class ModuleAPI {
 
     static {
         if (JAVA_SPECIFICATION_VERSION >= 9) {
-            try {
-                getModule = new ModuleAPI(Class.class.getMethod("getModule"));
-                Class<?> moduleClass = getModule.method.getReturnType();
-                getResourceAsStream = new ModuleAPI(moduleClass.getMethod("getResourceAsStream", String.class));
-                canRead = new ModuleAPI(moduleClass.getMethod("canRead", moduleClass));
-                isExported = new ModuleAPI(moduleClass.getMethod("isExported", String.class));
-                isExportedTo = new ModuleAPI(moduleClass.getMethod("isExported", String.class, moduleClass));
-            } catch (NoSuchMethodException | SecurityException e) {
-                throw new InternalError(e);
-            }
+            getModule = new JDK9Method(Class.class, "getModule");
+            Class<?> moduleClass = getModule.getReturnType();
+            getPackages = new JDK9Method(moduleClass, "getPackages");
+            addOpens = new JDK9Method(moduleClass, "addOpens", String.class, moduleClass);
+            getResourceAsStream = new JDK9Method(moduleClass, "getResourceAsStream", String.class);
+            isOpenTo = new JDK9Method(moduleClass, "isOpen", String.class, moduleClass);
         } else {
-            ModuleAPI unavailable = new ModuleAPI(null);
+            JDK9Method unavailable = new JDK9Method();
             getModule = unavailable;
+            getPackages = unavailable;
+            addOpens = unavailable;
             getResourceAsStream = unavailable;
-            canRead = unavailable;
-            isExported = unavailable;
-            isExportedTo = unavailable;
+            isOpenTo = unavailable;
         }
+    }
+
+    private JDK9Method() {
+        method = null;
     }
 }

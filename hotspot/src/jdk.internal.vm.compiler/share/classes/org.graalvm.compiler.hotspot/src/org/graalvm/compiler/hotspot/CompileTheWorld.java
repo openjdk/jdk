@@ -102,7 +102,6 @@ import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.runtime.JVMCI;
 import jdk.vm.ci.runtime.JVMCICompiler;
-import jdk.vm.ci.services.Services;
 
 /**
  * This class implements compile-the-world functionality with JVMCI.
@@ -785,7 +784,6 @@ public final class CompileTheWorld {
     }
 
     public static void main(String[] args) throws Throwable {
-        Services.exportJVMCITo(CompileTheWorld.class);
         HotSpotGraalCompiler compiler = (HotSpotGraalCompiler) HotSpotJVMCIRuntime.runtime().getCompiler();
         compiler.compileTheWorld();
     }

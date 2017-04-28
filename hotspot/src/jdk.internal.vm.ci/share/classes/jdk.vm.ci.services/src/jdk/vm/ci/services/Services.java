@@ -22,167 +22,64 @@
  */
 package jdk.vm.ci.services;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Formatter;
-import java.util.Iterator;
-import java.util.ServiceConfigurationError;
-import java.util.ServiceLoader;
-import java.util.Set;
+import java.util.Map;
 
 /**
- * A mechanism for accessing service providers via JVMCI.
+ * Provides utilities needed by JVMCI clients.
  */
 public final class Services {
+
+    // This class must be compilable and executable on JDK 8 since it's used in annotation
+    // processors while building JDK 9 so use of API added in JDK 9 is made via reflection.
 
     private Services() {
     }
 
-    private static int getJavaSpecificationVersion() {
-        String value = System.getProperty("java.specification.version");
-        if (value.startsWith("1.")) {
-            value = value.substring(2);
-        }
-        return Integer.parseInt(value);
-    }
-
-    /**
-     * The integer value corresponding to the value of the {@code java.specification.version} system
-     * property after any leading {@code "1."} has been stripped.
-     */
-    public static final int JAVA_SPECIFICATION_VERSION = getJavaSpecificationVersion();
-
-    // Use reflection so that this compiles on Java 8
-    private static final Method getModule;
-    private static final Method getPackages;
-    private static final Method addUses;
-    private static final Method isExported;
-    private static final Method addExports;
-
-    static {
-        if (JAVA_SPECIFICATION_VERSION >= 9) {
-            try {
-                getModule = Class.class.getMethod("getModule");
-                Class<?> moduleClass = getModule.getReturnType();
-                getPackages = moduleClass.getMethod("getPackages");
-                addUses = moduleClass.getMethod("addUses", Class.class);
-                isExported = moduleClass.getMethod("isExported", String.class, moduleClass);
-                addExports = moduleClass.getMethod("addExports", String.class, moduleClass);
-            } catch (NoSuchMethodException | SecurityException e) {
-                throw new InternalError(e);
-            }
-        } else {
-            getModule = null;
-            getPackages = null;
-            addUses = null;
-            isExported = null;
-            addExports = null;
-        }
-    }
-
     @SuppressWarnings("unchecked")
-    static <T> T invoke(Method method, Object receiver, Object... args) {
+    private static Map<String, String> initSavedProperties() throws InternalError {
         try {
-            return (T) method.invoke(receiver, args);
-        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+            Class<?> vmClass = Class.forName("jdk.internal.misc.VM");
+            Method m = vmClass.getMethod("getSavedProperties");
+            return (Map<String, String>) m.invoke(null);
+        } catch (Exception e) {
             throw new InternalError(e);
         }
     }
 
+    static final Map<String, String> SAVED_PROPERTIES = initSavedProperties();
+    static final boolean JVMCI_ENABLED = Boolean.parseBoolean(SAVED_PROPERTIES.get("jdk.internal.vm.ci.enabled"));
+
     /**
-     * Performs any required security checks and dynamic reconfiguration to allow the module of a
-     * given class to access the classes in the JVMCI module.
-     *
-     * Note: This API uses {@link Class} instead of {@code Module} to provide backwards
-     * compatibility for JVMCI clients compiled against a JDK release earlier than 9.
-     *
-     * @param requestor a class requesting access to the JVMCI module for its module
-     * @throws SecurityException if a security manager is present and it denies
-     *             {@link JVMCIPermission}
+     * Checks that JVMCI is enabled in the VM and throws an error if it isn't.
      */
-    public static void exportJVMCITo(Class<?> requestor) {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new JVMCIPermission());
-        }
-        if (JAVA_SPECIFICATION_VERSION >= 9) {
-            Object jvmci = invoke(getModule, Services.class);
-            Object requestorModule = invoke(getModule, requestor);
-            if (jvmci != requestorModule) {
-                Set<String> packages = invoke(getPackages, jvmci);
-                for (String pkg : packages) {
-                    // Export all JVMCI packages dynamically instead
-                    // of requiring a long list of --add-exports
-                    // options on the JVM command line.
-                    boolean exported = invoke(isExported, jvmci, pkg, requestorModule);
-                    if (!exported) {
-                        invoke(addExports, jvmci, pkg, requestorModule);
-                    }
-                }
-            }
+    static void checkJVMCIEnabled() {
+        if (!JVMCI_ENABLED) {
+            throw new Error("The EnableJVMCI VM option must be true (i.e., -XX:+EnableJVMCI) to use JVMCI");
         }
     }
 
     /**
-     * Gets an {@link Iterable} of the JVMCI providers available for a given service.
-     *
-     * @throws SecurityException if a security manager is present and it denies
-     *             {@link JVMCIPermission}
+     * Gets an unmodifiable copy of the system properties saved when {@link System} is initialized.
      */
-    public static <S> Iterable<S> load(Class<S> service) {
+    public static Map<String, String> getSavedProperties() {
+        checkJVMCIEnabled();
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new JVMCIPermission());
         }
-        if (JAVA_SPECIFICATION_VERSION >= 9) {
-            Object jvmci = invoke(getModule, Services.class);
-            invoke(addUses, jvmci, service);
-        }
-
-        // Restrict JVMCI clients to be on the class path or module path
-        return ServiceLoader.load(service, ClassLoader.getSystemClassLoader());
+        return SAVED_PROPERTIES;
     }
 
     /**
-     * Gets the JVMCI provider for a given service for which at most one provider must be available.
-     *
-     * @param service the service whose provider is being requested
-     * @param required specifies if an {@link InternalError} should be thrown if no provider of
-     *            {@code service} is available
-     * @throws SecurityException if a security manager is present and it denies
-     *             {@link JVMCIPermission}
+     * Causes the JVMCI subsystem to be initialized if it isn't already initialized.
      */
-    public static <S> S loadSingle(Class<S> service, boolean required) {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new JVMCIPermission());
-        }
-        if (JAVA_SPECIFICATION_VERSION >= 9) {
-            Object jvmci = invoke(getModule, Services.class);
-            invoke(addUses, jvmci, service);
-        }
-        // Restrict JVMCI clients to be on the class path or module path
-        Iterable<S> providers = ServiceLoader.load(service, ClassLoader.getSystemClassLoader());
-        S singleProvider = null;
+    public static void initializeJVMCI() {
+        checkJVMCIEnabled();
         try {
-            for (Iterator<S> it = providers.iterator(); it.hasNext();) {
-                singleProvider = it.next();
-                if (it.hasNext()) {
-                    throw new InternalError(String.format("Multiple %s providers found", service.getName()));
-                }
-            }
-        } catch (ServiceConfigurationError e) {
-            // If the service is required we will bail out below.
+            Class.forName("jdk.vm.ci.runtime.JVMCI");
+        } catch (ClassNotFoundException e) {
+            throw new InternalError(e);
         }
-        if (singleProvider == null && required) {
-            String javaHome = System.getProperty("java.home");
-            String vmName = System.getProperty("java.vm.name");
-            Formatter errorMessage = new Formatter();
-            errorMessage.format("The VM does not expose required service %s.%n", service.getName());
-            errorMessage.format("Currently used Java home directory is %s.%n", javaHome);
-            errorMessage.format("Currently used VM configuration is: %s", vmName);
-            throw new UnsupportedOperationException(errorMessage.toString());
-        }
-        return singleProvider;
     }
 }
