@@ -1766,6 +1766,7 @@ public final class System {
      * @since   1.1
      */
     @Deprecated(since="1.2", forRemoval=true)
+    @SuppressWarnings("removal")
     public static void runFinalizersOnExit(boolean value) {
         Runtime.runFinalizersOnExit(value);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ import jdk.incubator.http.internal.common.Utils;
  */
 class PlainHttpConnection extends HttpConnection implements AsyncConnection {
 
-    protected SocketChannel chan;
+    protected final SocketChannel chan;
     private volatile boolean connected;
     private boolean closed;
 
@@ -100,6 +100,7 @@ class PlainHttpConnection extends HttpConnection implements AsyncConnection {
                 chan.finishConnect();
             } catch (IOException e) {
                 cf.completeExceptionally(e);
+                return;
             }
             connected = true;
             cf.complete(null);

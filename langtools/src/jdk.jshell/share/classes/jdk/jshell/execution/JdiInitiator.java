@@ -26,6 +26,8 @@ package jdk.jshell.execution;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -146,6 +148,9 @@ public class JdiInitiator {
      */
     private VirtualMachine listenTarget(int port, List<String> remoteVMOptions) {
         ListeningConnector listener = (ListeningConnector) connector;
+        // Files to collection to output of a start-up failure
+        File crashErrorFile = createTempFile("error");
+        File crashOutputFile = createTempFile("output");
         try {
             // Start listening, get the JDI connection address
             String addr = listener.startListening(connectorArgs);
@@ -163,23 +168,57 @@ public class JdiInitiator {
             args.add(remoteAgent);
             args.add("" + port);
             ProcessBuilder pb = new ProcessBuilder(args);
+            pb.redirectError(crashErrorFile);
+            pb.redirectOutput(crashOutputFile);
             process = pb.start();
 
             // Accept the connection from the remote agent
             vm = timedVirtualMachineCreation(() -> listener.accept(connectorArgs),
                     () -> process.waitFor());
-            return vm;
-        } catch (Throwable ex) {
-            if (process != null) {
-                process.destroyForcibly();
-            }
-            throw reportLaunchFail(ex, "listen");
-        } finally {
             try {
                 listener.stopListening(connectorArgs);
             } catch (IOException | IllegalConnectorArgumentsException ex) {
                 // ignore
             }
+            crashErrorFile.delete();
+            crashOutputFile.delete();
+            return vm;
+        } catch (Throwable ex) {
+            if (process != null) {
+                process.destroyForcibly();
+            }
+            try {
+                listener.stopListening(connectorArgs);
+            } catch (IOException | IllegalConnectorArgumentsException iex) {
+                // ignore
+            }
+            String text = readFile(crashErrorFile) + readFile(crashOutputFile);
+            crashErrorFile.delete();
+            crashOutputFile.delete();
+            if (text.isEmpty()) {
+                throw reportLaunchFail(ex, "listen");
+            } else {
+                throw new IllegalArgumentException(text);
+            }
+        }
+    }
+
+    private File createTempFile(String label) {
+        try {
+            File f = File.createTempFile("remote", label);
+            f.deleteOnExit();
+            return f;
+        } catch (IOException ex) {
+            throw new InternalError("Failed create temp ", ex);
+        }
+    }
+
+    private String readFile(File f) {
+        try {
+            return new String(Files.readAllBytes(f.toPath()),
+                    StandardCharsets.UTF_8);
+        } catch (IOException ex) {
+            return "error reading " + f + " : " + ex.toString();
         }
     }
 

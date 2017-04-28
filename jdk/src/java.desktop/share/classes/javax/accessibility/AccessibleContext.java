@@ -413,7 +413,7 @@ public abstract class AccessibleContext {
      *
      * @see #addPropertyChangeListener
      * @see #removePropertyChangeListener
-     * @see #firePropertyChangeListener
+     * @see #firePropertyChange
      */
     private PropertyChangeSupport accessibleChangeSupport = null;
 

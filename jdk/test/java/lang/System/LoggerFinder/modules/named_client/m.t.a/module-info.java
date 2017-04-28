@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,26 +23,7 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 4102731
- * @summary Test the java.net.multicastsocket.leave method
- *
- */
-
-import java.net.*;
-import java.io.*;
-
-public class Leave {
-
-    public static void main(String args[]) throws Exception {
-        MulticastSocket socket = null;
-        InetAddress mca = null;
-
-        mca = InetAddress.getByName("224.80.80.80");
-        socket = new MulticastSocket();
-        socket.joinGroup(mca);
-        socket.leaveGroup(mca);
-        socket.close();
-    }
+module m.t.a {
+    exports pkg.a.t;
+    uses System.LoggerFinder;
 }

@@ -364,7 +364,8 @@ public interface StandardJavaFileManager extends JavaFileManager {
      * @return a list of files or {@code null} if this location has no
      * associated search path
      * @throws IllegalStateException if any element of the search path
-     * cannot be converted to a {@linkplain File}.
+     * cannot be converted to a {@linkplain File}, or if the search path
+     * cannot be represented as a simple series of files.
      *
      * @see #setLocation
      * @see Path#toFile
@@ -382,6 +383,8 @@ public interface StandardJavaFileManager extends JavaFileManager {
      * @param location a location
      * @return a list of paths or {@code null} if this location has no
      * associated search path
+     * @throws IllegalStateException if the search path cannot be represented
+     * as a simple series of paths.
      *
      * @see #setLocationFromPaths
      * @since 9

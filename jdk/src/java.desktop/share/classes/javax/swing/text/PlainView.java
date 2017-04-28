@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -510,8 +510,8 @@ public class PlainView extends View implements TabExpander {
      * Provides a mapping from the view coordinate space to the logical
      * coordinate space of the model.
      *
-     * @param fx the X coordinate &gt;= 0
-     * @param fy the Y coordinate &gt;= 0
+     * @param x the X coordinate &gt;= 0
+     * @param y the Y coordinate &gt;= 0
      * @param a the allocated region to render into
      * @return the location within the model that best represents the
      *  given point in the view &gt;= 0
