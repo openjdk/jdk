@@ -30,6 +30,8 @@ include MakeBase.gmk
 include JavaCompilation.gmk
 include SetupJavaCompilers.gmk
 
+################################################################################
+
 $(eval $(call IncludeCustomExtension, jdk, CompileTools.gmk))
 
 ################################################################################

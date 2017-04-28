@@ -24,6 +24,7 @@
 import java.io.FilePermission;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.module.ModuleFinder;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -46,9 +47,11 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.PropertyPermission;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.internal.module.Modules;
@@ -257,9 +260,11 @@ public class FieldSetAccessibleTest {
 
         final FileSystem jrt;
         final Path root;
+        final Set<String> modules;
         ClassNameJrtStreamBuilder() {
-             jrt = FileSystems.getFileSystem(URI.create("jrt:/"));
-             root = jrt.getPath("/modules");
+            jrt = FileSystems.getFileSystem(URI.create("jrt:/"));
+            root = jrt.getPath("/modules");
+            modules = systemModules();
         }
 
         @Override
@@ -267,7 +272,7 @@ public class FieldSetAccessibleTest {
             try {
                 return Files.walk(root)
                         .filter(p -> p.getNameCount() > 2)
-                        .filter(p -> ModuleLayer.boot().findModule(p.getName(1).toString()).isPresent())
+                        .filter(p -> modules.contains(p.getName(1).toString()))
                         .map(p -> p.subpath(2, p.getNameCount()))
                         .map(p -> p.toString())
                         .filter(s -> s.endsWith(".class") && !s.endsWith("module-info.class"))
@@ -275,6 +280,17 @@ public class FieldSetAccessibleTest {
             } catch(IOException x) {
                 throw new UncheckedIOException("Unable to walk \"/modules\"", x);
             }
+        }
+
+        /*
+         * Filter deployment modules
+         */
+        static Set<String> systemModules() {
+            Set<String> mods = Set.of("javafx.deploy", "jdk.deploy", "jdk.plugin", "jdk.javaws");
+            return ModuleFinder.ofSystem().findAll().stream()
+                               .map(mref -> mref.descriptor().name())
+                               .filter(mn -> !mods.contains(mn))
+                               .collect(Collectors.toSet());
         }
     }
 

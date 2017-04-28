@@ -57,10 +57,10 @@ import java.util.Queue;
  * <caption>Summary of BlockingQueue methods</caption>
  *  <tr>
  *    <td></td>
- *    <td ALIGN=CENTER><em>Throws exception</em></td>
- *    <td ALIGN=CENTER><em>Special value</em></td>
- *    <td ALIGN=CENTER><em>Blocks</em></td>
- *    <td ALIGN=CENTER><em>Times out</em></td>
+ *    <td style="text-align:center"><em>Throws exception</em></td>
+ *    <td style="text-align:center"><em>Special value</em></td>
+ *    <td style="text-align:center"><em>Blocks</em></td>
+ *    <td style="text-align:center"><em>Times out</em></td>
  *  </tr>
  *  <tr>
  *    <td><b>Insert</b></td>

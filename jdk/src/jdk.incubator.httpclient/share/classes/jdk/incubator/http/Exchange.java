@@ -549,7 +549,7 @@ final class Exchange<T> {
     }
 
     HttpClient.Version version() {
-        return client.version();
+        return multi.version();
     }
 
     private static SocketPermission getSocketPermissionFor(URI url) {
