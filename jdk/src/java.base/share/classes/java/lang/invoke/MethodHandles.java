@@ -1691,7 +1691,13 @@ return mh1;
         public MethodHandle bind(Object receiver, String name, MethodType type) throws NoSuchMethodException, IllegalAccessException {
             Class<? extends Object> refc = receiver.getClass(); // may get NPE
             MemberName method = resolveOrFail(REF_invokeSpecial, refc, name, type);
-            MethodHandle mh = getDirectMethodNoRestrict(REF_invokeSpecial, refc, method, findBoundCallerClass(method));
+            MethodHandle mh = getDirectMethodNoRestrictInvokeSpecial(refc, method, findBoundCallerClass(method));
+            if (!mh.type().leadingReferenceParameter().isAssignableFrom(receiver.getClass())) {
+                throw new IllegalAccessException("The restricted defining class " +
+                                                 mh.type().leadingReferenceParameter().getName() +
+                                                 " is not assignable from receiver class " +
+                                                 receiver.getClass().getName());
+            }
             return mh.bindArgumentL(0, receiver).setVarargs(method);
         }
 
@@ -2240,7 +2246,7 @@ return mh1;
                 throw method.makeAccessException("caller class must be a subclass below the method", caller);
             }
             MethodType rawType = mh.type();
-            if (rawType.parameterType(0) == caller)  return mh;
+            if (caller.isAssignableFrom(rawType.parameterType(0))) return mh; // no need to restrict; already narrow
             MethodType narrowType = rawType.changeParameterType(0, caller);
             assert(!mh.isVarargsCollector());  // viewAsType will lose varargs-ness
             assert(mh.viewAsTypeChecks(narrowType, true));
@@ -2253,11 +2259,11 @@ return mh1;
             final boolean checkSecurity = true;
             return getDirectMethodCommon(refKind, refc, method, checkSecurity, doRestrict, callerClass);
         }
-        /** Check access and get the requested method, eliding receiver narrowing rules. */
-        private MethodHandle getDirectMethodNoRestrict(byte refKind, Class<?> refc, MemberName method, Class<?> callerClass) throws IllegalAccessException {
+        /** Check access and get the requested method, for invokespecial with no restriction on the application of narrowing rules. */
+        private MethodHandle getDirectMethodNoRestrictInvokeSpecial(Class<?> refc, MemberName method, Class<?> callerClass) throws IllegalAccessException {
             final boolean doRestrict    = false;
             final boolean checkSecurity = true;
-            return getDirectMethodCommon(refKind, refc, method, checkSecurity, doRestrict, callerClass);
+            return getDirectMethodCommon(REF_invokeSpecial, refc, method, checkSecurity, doRestrict, callerClass);
         }
         /** Check access and get the requested method, eliding security manager checks. */
         private MethodHandle getDirectMethodNoSecurityManager(byte refKind, Class<?> refc, MemberName method, Class<?> callerClass) throws IllegalAccessException {
@@ -2309,10 +2315,8 @@ return mh1;
             DirectMethodHandle dmh = DirectMethodHandle.make(refKind, refc, method);
             MethodHandle mh = dmh;
             // Optionally narrow the receiver argument to refc using restrictReceiver.
-            if (doRestrict &&
-                   (refKind == REF_invokeSpecial ||
-                       (MethodHandleNatives.refKindHasReceiver(refKind) &&
-                           restrictProtectedReceiver(method)))) {
+            if ((doRestrict && refKind == REF_invokeSpecial) ||
+                    (MethodHandleNatives.refKindHasReceiver(refKind) && restrictProtectedReceiver(method))) {
                 mh = restrictReceiver(method, dmh, lookupClass());
             }
             mh = maybeBindCaller(method, mh, callerClass);
