@@ -1447,9 +1447,10 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
         }
 
         /**
-         * Produces a VarHandle giving access to non-static fields of type
-         * {@code T} declared by a receiver class of type {@code R}, supporting
-         * shape {@code (R : T)}.
+         * Produces a VarHandle giving access to a non-static field {@code name}
+         * of type {@code type} declared in a class of type {@code recv}.
+         * The VarHandle's variable type is {@code type} and it has one
+         * coordinate type, {@code recv}.
          * <p>
          * Access checking is performed immediately on behalf of the lookup
          * class.
@@ -1472,7 +1473,7 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          * <p>
          * If the field is declared {@code volatile} then the returned VarHandle
          * will override access to the field (effectively ignore the
-         * {@code volatile} declaration) in accordance to it's specified
+         * {@code volatile} declaration) in accordance to its specified
          * access modes.
          * <p>
          * If the field type is {@code float} or {@code double} then numeric
@@ -1568,9 +1569,10 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
         }
 
         /**
-         * Produces a VarHandle giving access to a static field of type
-         * {@code T} declared by a given declaring class, supporting shape
-         * {@code ((empty) : T)}.
+         * Produces a VarHandle giving access to a static field {@code name} of
+         * type {@code type} declared in a class of type {@code decl}.
+         * The VarHandle's variable type is {@code type} and it has no
+         * coordinate types.
          * <p>
          * Access checking is performed immediately on behalf of the lookup
          * class.
@@ -1596,7 +1598,7 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          * <p>
          * If the field is declared {@code volatile} then the returned VarHandle
          * will override access to the field (effectively ignore the
-         * {@code volatile} declaration) in accordance to it's specified
+         * {@code volatile} declaration) in accordance to its specified
          * access modes.
          * <p>
          * If the field type is {@code float} or {@code double} then numeric
@@ -1883,11 +1885,12 @@ return mh1;
         }
 
         /**
-         * Produces a VarHandle that accesses fields of type {@code T} declared
-         * by a class of type {@code R}, as described by the given reflected
-         * field.
-         * If the field is non-static the VarHandle supports a shape of
-         * {@code (R : T)}, otherwise supports a shape of {@code ((empty) : T)}.
+         * Produces a VarHandle giving access to a reflected field {@code f}
+         * of type {@code T} declared in a class of type {@code R}.
+         * The VarHandle's variable type is {@code T}.
+         * If the field is non-static the VarHandle has one coordinate type,
+         * {@code R}.  Otherwise, the field is static, and the VarHandle has no
+         * coordinate types.
          * <p>
          * Access checking is performed immediately on behalf of the lookup
          * class, regardless of the value of the field's {@code accessible}
@@ -1915,7 +1918,7 @@ return mh1;
          * <p>
          * If the field is declared {@code volatile} then the returned VarHandle
          * will override access to the field (effectively ignore the
-         * {@code volatile} declaration) in accordance to it's specified
+         * {@code volatile} declaration) in accordance to its specified
          * access modes.
          * <p>
          * If the field type is {@code float} or {@code double} then numeric
@@ -2576,9 +2579,11 @@ return mh1;
     }
 
     /**
-     *
-     * Produces a VarHandle giving access to elements of an array type
-     * {@code T[]}, supporting shape {@code (T[], int : T)}.
+     * Produces a VarHandle giving access to elements of an array of type
+     * {@code arrayClass}.  The VarHandle's variable type is the component type
+     * of {@code arrayClass} and the list of coordinate types is
+     * {@code (arrayClass, int)}, where the {@code int} coordinate type
+     * corresponds to an argument that is an index into an array.
      * <p>
      * Certain access modes of the returned VarHandle are unsupported under
      * the following conditions:
@@ -2633,13 +2638,14 @@ return mh1;
     /**
      * Produces a VarHandle giving access to elements of a {@code byte[]} array
      * viewed as if it were a different primitive array type, such as
-     * {@code int[]} or {@code long[]}.  The shape of the resulting VarHandle is
-     * {@code (byte[], int : T)}, where the {@code int} coordinate type
-     * corresponds to an argument that is an index in a {@code byte[]} array,
-     * and {@code T} is the component type of the given view array class.  The
-     * returned VarHandle accesses bytes at an index in a {@code byte[]} array,
-     * composing bytes to or from a value of {@code T} according to the given
-     * endianness.
+     * {@code int[]} or {@code long[]}.
+     * The VarHandle's variable type is the component type of
+     * {@code viewArrayClass} and the list of coordinate types is
+     * {@code (byte[], int)}, where the {@code int} coordinate type
+     * corresponds to an argument that is an index into a {@code byte[]} array.
+     * The returned VarHandle accesses bytes at an index in a {@code byte[]}
+     * array, composing bytes to or from a value of the component type of
+     * {@code viewArrayClass} according to the given endianness.
      * <p>
      * The supported component types (variables types) are {@code short},
      * {@code char}, {@code int}, {@code long}, {@code float} and
@@ -2717,13 +2723,14 @@ return mh1;
      * Produces a VarHandle giving access to elements of a {@code ByteBuffer}
      * viewed as if it were an array of elements of a different primitive
      * component type to that of {@code byte}, such as {@code int[]} or
-     * {@code long[]}.  The shape of the resulting VarHandle is
-     * {@code (ByteBuffer, int : T)}, where the {@code int} coordinate type
-     * corresponds to an argument that is an index in a {@code ByteBuffer}, and
-     * {@code T} is the component type of the given view array class.  The
-     * returned VarHandle accesses bytes at an index in a {@code ByteBuffer},
-     * composing bytes to or from a value of {@code T} according to the given
-     * endianness.
+     * {@code long[]}.
+     * The VarHandle's variable type is the component type of
+     * {@code viewArrayClass} and the list of coordinate types is
+     * {@code (ByteBuffer, int)}, where the {@code int} coordinate type
+     * corresponds to an argument that is an index into a {@code byte[]} array.
+     * The returned VarHandle accesses bytes at an index in a
+     * {@code ByteBuffer}, composing bytes to or from a value of the component
+     * type of {@code viewArrayClass} according to the given endianness.
      * <p>
      * The supported component types (variables types) are {@code short},
      * {@code char}, {@code int}, {@code long}, {@code float} and
