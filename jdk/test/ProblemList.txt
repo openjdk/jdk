@@ -291,8 +291,6 @@ sun/tools/jstat/jstatClassloadOutput1.sh                        8173942 generic-
 
 sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java    8057732 generic-all
 
-demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java       8151899 generic-all
-
 ############################################################################
 
 # jdk_other
