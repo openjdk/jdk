@@ -90,6 +90,11 @@ public final class Utils {
      */
     public static final String TEST_JDK = System.getProperty("test.jdk");
 
+    /*
+     * Returns the value of 'compile.jdk' system property
+     */
+    public static final String COMPILE_JDK= System.getProperty("compile.jdk", TEST_JDK);
+
     /**
      * Returns the value of 'test.classes' system property
      */
