@@ -41,7 +41,7 @@ import static java.lang.invoke.MethodHandleStatics.UNSAFE;
 import static java.lang.invoke.MethodHandleStatics.newInternalError;
 
 /**
- * A VarHandle is a dynamically typed reference to a variable, or to a
+ * A VarHandle is a dynamically strongly typed reference to a variable, or to a
  * parametrically-defined family of variables, including static fields,
  * non-static fields, array elements, or components of an off-heap data
  * structure.  Access to such variables is supported under various
@@ -53,63 +53,62 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
  *
  * <p>A VarHandle has:
  * <ul>
- * <li>a {@link #varType variable type}, referred to as {@code T}, which is the
- * type of variable(s) referenced by this VarHandle;
- * <li>a list of {@link #coordinateTypes coordinate types}, referred to as
- * {@code CT}, where the types (primitive and reference) are represented by
- * {@link Class} objects).  A list of arguments corresponding to instances of
- * the coordinate types uniquely locates a variable referenced by this
- * VarHandle; and
- * <li>a <em>shape</em>, that combines the variable type and coordinate types,
- * and is declared with the notation {@code (CT : T)}.  An empty list of
- * coordinate types is declared as {@code (empty)}.
+ * <li>a {@link #varType variable type} T, the type of every variable referenced
+ * by this VarHandle; and
+ * <li>a list of {@link #coordinateTypes coordinate types}
+ * {@code CT1, CT2, ..., CTn}, the types of <em>coordinate expressions</em> that
+ * jointly locate a variable referenced by this VarHandle.
  * </ul>
+ * Variable and coordinate types may be primitive or reference, and are
+ * represented by {@code Class} objects.  The list of coordinate types may be
+ * empty.
  *
  * <p>Factory methods that produce or {@link java.lang.invoke.MethodHandles.Lookup
- * lookup} VarHandle instances document the supported variable type, coordinate
- * types, and shape.
+ * lookup} VarHandle instances document the supported variable type and the list
+ * of coordinate types.
  *
- * For example, a VarHandle referencing a non-static field will declare a shape
- * of {@code (R : T)}, where {@code R} is the receiver type and
- * {@code T} is the field type, and where the VarHandle and an instance of the
- * receiver type can be utilized to access the field variable.
- * A VarHandle referencing array elements will declare a shape of
- * {@code (T[], int : T)}, where {@code T[]} is the array type and {@code T}
- * its component type, and where the VarHandle, an instance of the array type,
- * and an {@code int} index can be utilized to access an array element variable.
+ * <p>Each access mode is associated with one <em>access mode method</em>, a
+ * <a href="MethodHandle.html#sigpoly">signature polymorphic</a> method named
+ * for the access mode.  When an access mode method is invoked on a VarHandle
+ * instance, the initial arguments to the invocation are coordinate expressions
+ * that indicate in precisely which object the variable is to be accessed.
+ * Trailing arguments to the invocation represent values of importance to the
+ * access mode.  For example, the various compare-and-set or compare-and-exchange
+ * access modes require two trailing arguments for the variable's expected value
+ * and new value.
  *
- * <p>Each access mode is associated with a
- * <a href="MethodHandle.html#sigpoly">signature polymorphic</a> method of the
- * same name, where the VarHandle shape and access mode uniquely determine the
- * canonical {@link #accessModeType(AccessMode) access mode type},
- * which in turn determines the matching constraints on a valid symbolic
- * type descriptor at the call site of an access mode's method
- * <a href="VarHandle.html#invoke">invocation</a>.
+ * <p>The arity and types of arguments to the invocation of an access mode
+ * method are not checked statically.  Instead, each access mode method
+ * specifies an {@link #accessModeType(AccessMode) access mode type},
+ * represented as an instance of {@link MethodType}, that serves as a kind of
+ * method signature against which the arguments are checked dynamically.  An
+ * access mode type gives formal parameter types in terms of the coordinate
+ * types of a VarHandle instance and the types for values of importance to the
+ * access mode.  An access mode type also gives a return type, often in terms of
+ * the variable type of a VarHandle instance.  When an access mode method is
+ * invoked on a VarHandle instance, the symbolic type descriptor at the
+ * call site, the run time types of arguments to the invocation, and the run
+ * time type of the return value, must <a href="#invoke">match</a> the types
+ * given in the access mode type.  A runtime exception will be thrown if the
+ * match fails.
  *
- * As such, VarHandles are dynamically and strongly typed.  Their arity,
- * argument types, and return type of an access mode method invocation are not
- * statically checked.  If they, and associated values, do not match the arity
- * and types of the access mode's type, an exception will be thrown.
- *
- * The parameter types of an access mode method type will consist of those that
- * are the VarHandles's coordinate types (in order), followed by access mode
- * parameter types specific to the access mode.
- *
- * <p>An access mode's method documents the form of its method signature, which
- * is derived from the access mode parameter types.  The form is declared with
- * the notation {@code (CT, P1 p1, P2 p2, ..., PN pn)R}, where {@code CT} is the
- * coordinate types (as documented by a VarHandle factory method), {@code P1},
- * {@code P2} and {@code PN} are the first, second and the n'th access mode
- * parameters named {@code p1}, {@code p2} and {@code pn} respectively, and
- * {@code R} is the return type.
- *
- * For example, for the generic shape of {@code (CT : T)} the
- * {@link #compareAndSet} access mode method documents that its method
- * signature is of the form {@code (CT, T expectedValue, T newValue)boolean},
- * where the parameter types named {@code extendedValue} and {@code newValue}
- * are the access mode parameter types.  If the VarHandle accesses array
- * elements with a shape of say {@code (T[], int : T)} then the access mode
- * method type is {@code (T[], int, T, T)boolean}.
+ * For example, the access mode method {@link #compareAndSet} specifies that if
+ * its receiver is a VarHandle instance with coordinate types
+ * {@code CT1, ..., CTn} and variable type {@code T}, then its access mode type
+ * is {@code (CT1 c1, ..., CTn cn, T expectedValue, T newValue)boolean}.
+ * Suppose that a VarHandle instance can access array elements, and that its
+ * coordinate types are {@code String[]} and {@code int} while its variable type
+ * is {@code String}.  The access mode type for {@code compareAndSet} on this
+ * VarHandle instance would be
+ * {@code (String[] c1, int c2, String expectedValue, String newValue)boolean}.
+ * Such a VarHandle instance may produced by the
+ * {@link MethodHandles#arrayElementVarHandle(Class) array factory method} and
+ * access array elements as follows:
+ * <pre> {@code
+ * String[] sa = ...
+ * VarHandle avh = MethodHandles.arrayElementVarHandle(String[].class);
+ * boolean r = avh.compareAndSet(sa, 10, "expected", "new");
+ * }</pre>
  *
  * <p>Access modes are grouped into the following categories:
  * <ul>
@@ -172,10 +171,10 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
  * lookup} VarHandle instances document the set of access modes that are
  * supported, which may also include documenting restrictions based on the
  * variable type and whether a variable is read-only.  If an access mode is not
- * supported then the corresponding signature-polymorphic method will on
- * invocation throw an {@code UnsupportedOperationException}.  Factory methods
- * should document any additional undeclared exceptions that may be thrown by
- * access mode methods.
+ * supported then the corresponding access mode method will on invocation throw
+ * an {@code UnsupportedOperationException}.  Factory methods should document
+ * any additional undeclared exceptions that may be thrown by access mode
+ * methods.
  * The {@link #get get} access mode is supported for all
  * VarHandle instances and the corresponding method never throws
  * {@code UnsupportedOperationException}.
@@ -215,7 +214,7 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
  * precise phrasing of the specification of access mode methods and memory fence
  * methods may accompany future updates of the Java Language Specification.
  *
- * <h1>Compilation of an access mode's method</h1>
+ * <h1>Compiling invocation of access mode methods</h1>
  * A Java method call expression naming an access mode method can invoke a
  * VarHandle from Java source code.  From the viewpoint of source code, these
  * methods can take any arguments and their polymorphic result (if expressed)
@@ -247,7 +246,7 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
  * except the null reference.
  *
  *
- * <h1><a id="invoke">Invocation of an access mode's method</a></h1>
+ * <h1><a id="invoke">Performing invocation of access mode methods</a></h1>
  * The first time an {@code invokevirtual} instruction is executed it is linked
  * by symbolically resolving the names in the instruction and verifying that
  * the method call is statically legal.  This also holds for calls to access mode
@@ -264,38 +263,31 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
  * invoking is not present on the individual VarHandle being invoked.
  *
  * <p>
- * Invocation of an access mode's signature-polymorphic method behaves as if an
- * invocation of {@link MethodHandle#invoke}, where the receiving method handle
- * is bound to a VarHandle instance and the access mode.  More specifically, the
- * following:
+ * Invocation of an access mode method behaves as if an invocation of
+ * {@link MethodHandle#invoke}, where the receiving method handle accepts the
+ * VarHandle instance as the leading argument.  More specifically, the
+ * following, where {@code {access-mode}} corresponds to the access mode method
+ * name:
  * <pre> {@code
  * VarHandle vh = ..
  * R r = (R) vh.{access-mode}(p1, p2, ..., pN);
  * }</pre>
- * behaves as if (modulo the access mode methods do not declare throwing of
- * {@code Throwable}):
+ * behaves as if:
  * <pre> {@code
  * VarHandle vh = ..
+ * VarHandle.AccessMode am = VarHandle.AccessMode.valueFromMethodName("{access-mode}");
  * MethodHandle mh = MethodHandles.varHandleExactInvoker(
- *                       VarHandle.AccessMode.{access-mode},
- *                       vh.accessModeType(VarHandle.AccessMode.{access-mode}));
+ *                       am,
+ *                       vh.accessModeType(am));
  *
- * mh = mh.bindTo(vh);
- * R r = (R) mh.invoke(p1, p2, ..., pN)
+ * R r = (R) mh.invoke(vh, p1, p2, ..., pN)
  * }</pre>
- * or, more concisely, behaves as if:
- * <pre> {@code
- * VarHandle vh = ..
- * MethodHandle mh = vh.toMethodHandle(VarHandle.AccessMode.{access-mode});
- *
- * R r = (R) mh.invoke(p1, p2, ..., pN)
- * }</pre>
- * In terms of equivalent {@code invokevirtual} bytecode behaviour an access
- * mode method invocation is equivalent to:
+ * (modulo access mode methods do not declare throwing of {@code Throwable}).
+ * This is equivalent to:
  * <pre> {@code
  * MethodHandle mh = MethodHandles.lookup().findVirtual(
  *                       VarHandle.class,
- *                       VarHandle.AccessMode.{access-mode}.methodName(),
+ *                       "{access-mode}",
  *                       MethodType.methodType(R, p1, p2, ..., pN));
  *
  * R r = (R) mh.invokeExact(vh, p1, p2, ..., pN)
@@ -305,6 +297,17 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
  * target, the handle will apply reference casts as necessary and box, unbox, or
  * widen primitive values, as if by {@link MethodHandle#asType asType} (see also
  * {@link MethodHandles#varHandleInvoker}).
+ *
+ * More concisely, such behaviour is equivalent to:
+ * <pre> {@code
+ * VarHandle vh = ..
+ * VarHandle.AccessMode am = VarHandle.AccessMode.valueFromMethodName("{access-mode}");
+ * MethodHandle mh = vh.toMethodHandle(am);
+ *
+ * R r = (R) mh.invoke(p1, p2, ..., pN)
+ * }</pre>
+ * Where, in this case, the method handle is bound to the VarHandle instance.
+ *
  *
  * <h1>Invocation checking</h1>
  * In typical programs, VarHandle access mode type matching will usually
@@ -439,7 +442,7 @@ public abstract class VarHandle {
      * if the variable was declared non-{@code volatile}.  Commonly referred to
      * as plain read access.
      *
-     * <p>The method signature is of the form {@code (CT)T}.
+     * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn)T}.
      *
      * <p>The symbolic type descriptor at the call site of {@code get}
      * must match the access mode type that is the result of calling
@@ -449,15 +452,15 @@ public abstract class VarHandle {
      * throws {@code UnsupportedOperationException}.
      *
      * @param args the signature-polymorphic parameter list of the form
-     * {@code (CT)}
+     * {@code (CT1 ct1, ..., CTn)}
      * , statically represented using varargs.
      * @return the signature-polymorphic result that is the value of the
      * variable
      * , statically represented using {@code Object}.
-     * @throws WrongMethodTypeException if the access mode type is not
-     * compatible with the caller's symbolic type descriptor.
-     * @throws ClassCastException if the access mode type is compatible with the
-     * caller's symbolic type descriptor, but a reference cast fails.
+     * @throws WrongMethodTypeException if the access mode type does not
+     * match the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type matches the caller's
+     * symbolic type descriptor, but a reference cast fails.
      */
     public final native
     @MethodHandle.PolymorphicSignature
@@ -469,21 +472,21 @@ public abstract class VarHandle {
      * semantics of setting as if the variable was declared non-{@code volatile}
      * and non-{@code final}.  Commonly referred to as plain write access.
      *
-     * <p>The method signature is of the form {@code (CT, T newValue)void}
+     * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn, T newValue)void}
      *
      * <p>The symbolic type descriptor at the call site of {@code set}
      * must match the access mode type that is the result of calling
      * {@code accessModeType(VarHandle.AccessMode.SET)} on this VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
-     * {@code (CT, T newValue)}
+     * {@code (CT1 ct1, ..., CTn ctn, T newValue)}
      * , statically represented using varargs.
      * @throws UnsupportedOperationException if the access mode is unsupported
      * for this VarHandle.
-     * @throws WrongMethodTypeException if the access mode type is not
-     * compatible with the caller's symbolic type descriptor.
-     * @throws ClassCastException if the access mode type is compatible with the
-     * caller's symbolic type descriptor, but a reference cast fails.
+     * @throws WrongMethodTypeException if the access mode type does not
+     * match the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type matches the caller's
+     * symbolic type descriptor, but a reference cast fails.
      */
     public final native
     @MethodHandle.PolymorphicSignature
@@ -497,7 +500,7 @@ public abstract class VarHandle {
      * Returns the value of a variable, with memory semantics of reading as if
      * the variable was declared {@code volatile}.
      *
-     * <p>The method signature is of the form {@code (CT)T}.
+     * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn)T}.
      *
      * <p>The symbolic type descriptor at the call site of {@code getVolatile}
      * must match the access mode type that is the result of calling
@@ -505,17 +508,17 @@ public abstract class VarHandle {
      * VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
-     * {@code (CT)}
+     * {@code (CT1 ct1, ..., CTn ctn)}
      * , statically represented using varargs.
      * @return the signature-polymorphic result that is the value of the
      * variable
      * , statically represented using {@code Object}.
      * @throws UnsupportedOperationException if the access mode is unsupported
      * for this VarHandle.
-     * @throws WrongMethodTypeException if the access mode type is not
-     * compatible with the caller's symbolic type descriptor.
-     * @throws ClassCastException if the access mode type is compatible with the
-     * caller's symbolic type descriptor, but a reference cast fails.
+     * @throws WrongMethodTypeException if the access mode type does not
+     * match the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type matches the caller's
+     * symbolic type descriptor, but a reference cast fails.
      */
     public final native
     @MethodHandle.PolymorphicSignature
@@ -526,7 +529,7 @@ public abstract class VarHandle {
      * Sets the value of a variable to the {@code newValue}, with memory
      * semantics of setting as if the variable was declared {@code volatile}.
      *
-     * <p>The method signature is of the form {@code (CT, T newValue)void}.
+     * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn, T newValue)void}.
      *
      * <p>The symbolic type descriptor at the call site of {@code setVolatile}
      * must match the access mode type that is the result of calling
@@ -538,14 +541,14 @@ public abstract class VarHandle {
      * memory ordering effects compatible with {@code memory_order_seq_cst}.
      *
      * @param args the signature-polymorphic parameter list of the form
-     * {@code (CT, T newValue)}
+     * {@code (CT1 ct1, ..., CTn ctn, T newValue)}
      * , statically represented using varargs.
      * @throws UnsupportedOperationException if the access mode is unsupported
      * for this VarHandle.
-     * @throws WrongMethodTypeException if the access mode type is not
-     * compatible with the caller's symbolic type descriptor.
-     * @throws ClassCastException if the access mode type is compatible with the
-     * caller's symbolic type descriptor, but a reference cast fails.
+     * @throws WrongMethodTypeException if the access mode type does not
+     * match the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type matches the caller's
+     * symbolic type descriptor, but a reference cast fails.
      */
     public final native
     @MethodHandle.PolymorphicSignature
@@ -557,7 +560,7 @@ public abstract class VarHandle {
      * Returns the value of a variable, accessed in program order, but with no
      * assurance of memory ordering effects with respect to other threads.
      *
-     * <p>The method signature is of the form {@code (CT)T}.
+     * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn)T}.
      *
      * <p>The symbolic type descriptor at the call site of {@code getOpaque}
      * must match the access mode type that is the result of calling
@@ -565,17 +568,17 @@ public abstract class VarHandle {
      * VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
-     * {@code (CT)}
+     * {@code (CT1 ct1, ..., CTn ctn)}
      * , statically represented using varargs.
      * @return the signature-polymorphic result that is the value of the
      * variable
      * , statically represented using {@code Object}.
      * @throws UnsupportedOperationException if the access mode is unsupported
      * for this VarHandle.
-     * @throws WrongMethodTypeException if the access mode type is not
-     * compatible with the caller's symbolic type descriptor.
-     * @throws ClassCastException if the access mode type is compatible with the
-     * caller's symbolic type descriptor, but a reference cast fails.
+     * @throws WrongMethodTypeException if the access mode type does not
+     * match the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type matches the caller's
+     * symbolic type descriptor, but a reference cast fails.
      */
     public final native
     @MethodHandle.PolymorphicSignature
@@ -587,7 +590,7 @@ public abstract class VarHandle {
      * but with no assurance of memory ordering effects with respect to other
      * threads.
      *
-     * <p>The method signature is of the form {@code (CT, T newValue)void}.
+     * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn, T newValue)void}.
      *
      * <p>The symbolic type descriptor at the call site of {@code setOpaque}
      * must match the access mode type that is the result of calling
@@ -595,14 +598,14 @@ public abstract class VarHandle {
      * VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
-     * {@code (CT, T newValue)}
+     * {@code (CT1 ct1, ..., CTn ctn, T newValue)}
      * , statically represented using varargs.
      * @throws UnsupportedOperationException if the access mode is unsupported
      * for this VarHandle.
-     * @throws WrongMethodTypeException if the access mode type is not
-     * compatible with the caller's symbolic type descriptor.
-     * @throws ClassCastException if the access mode type is compatible with the
-     * caller's symbolic type descriptor, but a reference cast fails.
+     * @throws WrongMethodTypeException if the access mode type does not
+     * match the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type matches the caller's
+     * symbolic type descriptor, but a reference cast fails.
      */
     public final native
     @MethodHandle.PolymorphicSignature
@@ -616,7 +619,7 @@ public abstract class VarHandle {
      * Returns the value of a variable, and ensures that subsequent loads and
      * stores are not reordered before this access.
      *
-     * <p>The method signature is of the form {@code (CT)T}.
+     * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn)T}.
      *
      * <p>The symbolic type descriptor at the call site of {@code getAcquire}
      * must match the access mode type that is the result of calling
@@ -629,17 +632,17 @@ public abstract class VarHandle {
      * ordering.
      *
      * @param args the signature-polymorphic parameter list of the form
-     * {@code (CT)}
+     * {@code (CT1 ct1, ..., CTn ctn)}
      * , statically represented using varargs.
      * @return the signature-polymorphic result that is the value of the
      * variable
      * , statically represented using {@code Object}.
      * @throws UnsupportedOperationException if the access mode is unsupported
      * for this VarHandle.
-     * @throws WrongMethodTypeException if the access mode type is not
-     * compatible with the caller's symbolic type descriptor.
-     * @throws ClassCastException if the access mode type is compatible with the
-     * caller's symbolic type descriptor, but a reference cast fails.
+     * @throws WrongMethodTypeException if the access mode type does not
+     * match the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type matches the caller's
+     * symbolic type descriptor, but a reference cast fails.
      */
     public final native
     @MethodHandle.PolymorphicSignature
@@ -650,7 +653,7 @@ public abstract class VarHandle {
      * Sets the value of a variable to the {@code newValue}, and ensures that
      * prior loads and stores are not reordered after this access.
      *
-     * <p>The method signature is of the form {@code (CT, T newValue)void}.
+     * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn, T newValue)void}.
      *
      * <p>The symbolic type descriptor at the call site of {@code setRelease}
      * must match the access mode type that is the result of calling
@@ -663,14 +666,14 @@ public abstract class VarHandle {
      * ordering.
      *
      * @param args the signature-polymorphic parameter list of the form
-     * {@code (CT, T newValue)}
+     * {@code (CT1 ct1, ..., CTn ctn, T newValue)}
      * , statically represented using varargs.
      * @throws UnsupportedOperationException if the access mode is unsupported
      * for this VarHandle.
-     * @throws WrongMethodTypeException if the access mode type is not
-     * compatible with the caller's symbolic type descriptor.
-     * @throws ClassCastException if the access mode type is compatible with the
-     * caller's symbolic type descriptor, but a reference cast fails.
+     * @throws WrongMethodTypeException if the access mode type does not
+     * match the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type matches the caller's
+     * symbolic type descriptor, but a reference cast fails.
      */
     public final native
     @MethodHandle.PolymorphicSignature
@@ -687,7 +690,7 @@ public abstract class VarHandle {
      * {@code expectedValue}, as accessed with the memory semantics of
      * {@link #getVolatile}.
      *
-     * <p>The method signature is of the form {@code (CT, T expectedValue, T newValue)boolean}.
+     * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn, T expectedValue, T newValue)boolean}.
      *
      * <p>The symbolic type descriptor at the call site of {@code
      * compareAndSet} must match the access mode type that is the result of
@@ -695,16 +698,16 @@ public abstract class VarHandle {
      * this VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
-     * {@code (CT, T expectedValue, T newValue)}
+     * {@code (CT1 ct1, ..., CTn ctn, T expectedValue, T newValue)}
      * , statically represented using varargs.
      * @return {@code true} if successful, otherwise {@code false} if the
      * witness value was not the same as the {@code expectedValue}.
      * @throws UnsupportedOperationException if the access mode is unsupported
      * for this VarHandle.
-     * @throws WrongMethodTypeException if the access mode type is not
-     * compatible with the caller's symbolic type descriptor.
-     * @throws ClassCastException if the access mode type is compatible with the
-     * caller's symbolic type descriptor, but a reference cast fails.
+     * @throws WrongMethodTypeException if the access mode type does not
+     * match the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type matches the caller's
+     * symbolic type descriptor, but a reference cast fails.
      * @see #setVolatile(Object...)
      * @see #getVolatile(Object...)
      */
@@ -720,7 +723,7 @@ public abstract class VarHandle {
      * {@code expectedValue}, as accessed with the memory semantics of
      * {@link #getVolatile}.
      *
-     * <p>The method signature is of the form {@code (CT, T expectedValue, T newValue)T}.
+     * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn, T expectedValue, T newValue)T}.
      *
      * <p>The symbolic type descriptor at the call site of {@code
      * compareAndExchange}
@@ -729,7 +732,7 @@ public abstract class VarHandle {
      * on this VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
-     * {@code (CT, T expectedValue, T newValue)}
+     * {@code (CT1 ct1, ..., CTn ctn, T expectedValue, T newValue)}
      * , statically represented using varargs.
      * @return the signature-polymorphic result that is the witness value, which
      * will be the same as the {@code expectedValue} if successful
@@ -755,7 +758,7 @@ public abstract class VarHandle {
      * {@code expectedValue}, as accessed with the memory semantics of
      * {@link #getAcquire}.
      *
-     * <p>The method signature is of the form {@code (CT, T expectedValue, T newValue)T}.
+     * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn, T expectedValue, T newValue)T}.
      *
      * <p>The symbolic type descriptor at the call site of {@code
      * compareAndExchangeAcquire}
@@ -764,17 +767,17 @@ public abstract class VarHandle {
      * this VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
-     * {@code (CT, T expectedValue, T newValue)}
+     * {@code (CT1 ct1, ..., CTn ctn, T expectedValue, T newValue)}
      * , statically represented using varargs.
      * @return the signature-polymorphic result that is the witness value, which
      * will be the same as the {@code expectedValue} if successful
      * , statically represented using {@code Object}.
      * @throws UnsupportedOperationException if the access mode is unsupported
      * for this VarHandle.
-     * @throws WrongMethodTypeException if the access mode type is not
-     * compatible with the caller's symbolic type descriptor.
-     * @throws ClassCastException if the access mode type is compatible with the
-     * caller's symbolic type descriptor, but a reference cast fails.
+     * @throws WrongMethodTypeException if the access mode type does not
+     * match the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type matches the caller's
+     * symbolic type descriptor, but a reference cast fails.
      * @see #set(Object...)
      * @see #getAcquire(Object...)
      */
@@ -790,7 +793,7 @@ public abstract class VarHandle {
      * {@code expectedValue}, as accessed with the memory semantics of
      * {@link #get}.
      *
-     * <p>The method signature is of the form {@code (CT, T expectedValue, T newValue)T}.
+     * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn, T expectedValue, T newValue)T}.
      *
      * <p>The symbolic type descriptor at the call site of {@code
      * compareAndExchangeRelease}
@@ -799,17 +802,17 @@ public abstract class VarHandle {
      * on this VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
-     * {@code (CT, T expectedValue, T newValue)}
+     * {@code (CT1 ct1, ..., CTn ctn, T expectedValue, T newValue)}
      * , statically represented using varargs.
      * @return the signature-polymorphic result that is the witness value, which
      * will be the same as the {@code expectedValue} if successful
      * , statically represented using {@code Object}.
      * @throws UnsupportedOperationException if the access mode is unsupported
      * for this VarHandle.
-     * @throws WrongMethodTypeException if the access mode type is not
-     * compatible with the caller's symbolic type descriptor.
-     * @throws ClassCastException if the access mode type is compatible with the
-     * caller's symbolic type descriptor, but a reference cast fails.
+     * @throws WrongMethodTypeException if the access mode type does not
+     * match the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type matches the caller's
+     * symbolic type descriptor, but a reference cast fails.
      * @see #setRelease(Object...)
      * @see #get(Object...)
      */
@@ -830,7 +833,7 @@ public abstract class VarHandle {
      * <p>This operation may fail spuriously (typically, due to memory
      * contention) even if the witness value does match the expected value.
      *
-     * <p>The method signature is of the form {@code (CT, T expectedValue, T newValue)boolean}.
+     * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn, T expectedValue, T newValue)boolean}.
      *
      * <p>The symbolic type descriptor at the call site of {@code
      * weakCompareAndSetPlain} must match the access mode type that is the result of
@@ -838,17 +841,17 @@ public abstract class VarHandle {
      * on this VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
-     * {@code (CT, T expectedValue, T newValue)}
+     * {@code (CT1 ct1, ..., CTn ctn, T expectedValue, T newValue)}
      * , statically represented using varargs.
      * @return {@code true} if successful, otherwise {@code false} if the
      * witness value was not the same as the {@code expectedValue} or if this
      * operation spuriously failed.
      * @throws UnsupportedOperationException if the access mode is unsupported
      * for this VarHandle.
-     * @throws WrongMethodTypeException if the access mode type is not
-     * compatible with the caller's symbolic type descriptor.
-     * @throws ClassCastException if the access mode type is compatible with the
-     * caller's symbolic type descriptor, but a reference cast fails.
+     * @throws WrongMethodTypeException if the access mode type does not
+     * match the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type matches the caller's
+     * symbolic type descriptor, but a reference cast fails.
      * @see #set(Object...)
      * @see #get(Object...)
      */
@@ -867,7 +870,7 @@ public abstract class VarHandle {
      * <p>This operation may fail spuriously (typically, due to memory
      * contention) even if the witness value does match the expected value.
      *
-     * <p>The method signature is of the form {@code (CT, T expectedValue, T newValue)boolean}.
+     * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn, T expectedValue, T newValue)boolean}.
      *
      * <p>The symbolic type descriptor at the call site of {@code
      * weakCompareAndSet} must match the access mode type that is the
@@ -875,17 +878,17 @@ public abstract class VarHandle {
      * on this VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
-     * {@code (CT, T expectedValue, T newValue)}
+     * {@code (CT1 ct1, ..., CTn ctn, T expectedValue, T newValue)}
      * , statically represented using varargs.
      * @return {@code true} if successful, otherwise {@code false} if the
      * witness value was not the same as the {@code expectedValue} or if this
      * operation spuriously failed.
      * @throws UnsupportedOperationException if the access mode is unsupported
      * for this VarHandle.
-     * @throws WrongMethodTypeException if the access mode type is not
-     * compatible with the caller's symbolic type descriptor.
-     * @throws ClassCastException if the access mode type is compatible with the
-     * caller's symbolic type descriptor, but a reference cast fails.
+     * @throws WrongMethodTypeException if the access mode type does not
+     * match the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type matches the caller's
+     * symbolic type descriptor, but a reference cast fails.
      * @see #setVolatile(Object...)
      * @see #getVolatile(Object...)
      */
@@ -904,7 +907,7 @@ public abstract class VarHandle {
      * <p>This operation may fail spuriously (typically, due to memory
      * contention) even if the witness value does match the expected value.
      *
-     * <p>The method signature is of the form {@code (CT, T expectedValue, T newValue)boolean}.
+     * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn, T expectedValue, T newValue)boolean}.
      *
      * <p>The symbolic type descriptor at the call site of {@code
      * weakCompareAndSetAcquire}
@@ -913,17 +916,17 @@ public abstract class VarHandle {
      * on this VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
-     * {@code (CT, T expectedValue, T newValue)}
+     * {@code (CT1 ct1, ..., CTn ctn, T expectedValue, T newValue)}
      * , statically represented using varargs.
      * @return {@code true} if successful, otherwise {@code false} if the
      * witness value was not the same as the {@code expectedValue} or if this
      * operation spuriously failed.
      * @throws UnsupportedOperationException if the access mode is unsupported
      * for this VarHandle.
-     * @throws WrongMethodTypeException if the access mode type is not
-     * compatible with the caller's symbolic type descriptor.
-     * @throws ClassCastException if the access mode type is compatible with the
-     * caller's symbolic type descriptor, but a reference cast fails.
+     * @throws WrongMethodTypeException if the access mode type does not
+     * match the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type matches the caller's
+     * symbolic type descriptor, but a reference cast fails.
      * @see #set(Object...)
      * @see #getAcquire(Object...)
      */
@@ -942,7 +945,7 @@ public abstract class VarHandle {
      * <p>This operation may fail spuriously (typically, due to memory
      * contention) even if the witness value does match the expected value.
      *
-     * <p>The method signature is of the form {@code (CT, T expectedValue, T newValue)boolean}.
+     * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn, T expectedValue, T newValue)boolean}.
      *
      * <p>The symbolic type descriptor at the call site of {@code
      * weakCompareAndSetRelease}
@@ -951,17 +954,17 @@ public abstract class VarHandle {
      * on this VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
-     * {@code (CT, T expectedValue, T newValue)}
+     * {@code (CT1 ct1, ..., CTn ctn, T expectedValue, T newValue)}
      * , statically represented using varargs.
      * @return {@code true} if successful, otherwise {@code false} if the
      * witness value was not the same as the {@code expectedValue} or if this
      * operation spuriously failed.
      * @throws UnsupportedOperationException if the access mode is unsupported
      * for this VarHandle.
-     * @throws WrongMethodTypeException if the access mode type is not
-     * compatible with the caller's symbolic type descriptor.
-     * @throws ClassCastException if the access mode type is compatible with the
-     * caller's symbolic type descriptor, but a reference cast fails.
+     * @throws WrongMethodTypeException if the access mode type does not
+     * match the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type matches the caller's
+     * symbolic type descriptor, but a reference cast fails.
      * @see #setRelease(Object...)
      * @see #get(Object...)
      */
@@ -976,7 +979,7 @@ public abstract class VarHandle {
      * previous value, as accessed with the memory semantics of
      * {@link #getVolatile}.
      *
-     * <p>The method signature is of the form {@code (CT, T newValue)T}.
+     * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn, T newValue)T}.
      *
      * <p>The symbolic type descriptor at the call site of {@code getAndSet}
      * must match the access mode type that is the result of calling
@@ -984,17 +987,17 @@ public abstract class VarHandle {
      * VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
-     * {@code (CT, T newValue)}
+     * {@code (CT1 ct1, ..., CTn ctn, T newValue)}
      * , statically represented using varargs.
      * @return the signature-polymorphic result that is the previous value of
      * the variable
      * , statically represented using {@code Object}.
      * @throws UnsupportedOperationException if the access mode is unsupported
      * for this VarHandle.
-     * @throws WrongMethodTypeException if the access mode type is not
-     * compatible with the caller's symbolic type descriptor.
-     * @throws ClassCastException if the access mode type is compatible with the
-     * caller's symbolic type descriptor, but a reference cast fails.
+     * @throws WrongMethodTypeException if the access mode type does not
+     * match the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type matches the caller's
+     * symbolic type descriptor, but a reference cast fails.
      * @see #setVolatile(Object...)
      * @see #getVolatile(Object...)
      */
@@ -1009,7 +1012,7 @@ public abstract class VarHandle {
      * previous value, as accessed with the memory semantics of
      * {@link #getAcquire}.
      *
-     * <p>The method signature is of the form {@code (CT, T newValue)T}.
+     * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn, T newValue)T}.
      *
      * <p>The symbolic type descriptor at the call site of {@code getAndSetAcquire}
      * must match the access mode type that is the result of calling
@@ -1017,17 +1020,17 @@ public abstract class VarHandle {
      * VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
-     * {@code (CT, T newValue)}
+     * {@code (CT1 ct1, ..., CTn ctn, T newValue)}
      * , statically represented using varargs.
      * @return the signature-polymorphic result that is the previous value of
      * the variable
      * , statically represented using {@code Object}.
      * @throws UnsupportedOperationException if the access mode is unsupported
      * for this VarHandle.
-     * @throws WrongMethodTypeException if the access mode type is not
-     * compatible with the caller's symbolic type descriptor.
-     * @throws ClassCastException if the access mode type is compatible with the
-     * caller's symbolic type descriptor, but a reference cast fails.
+     * @throws WrongMethodTypeException if the access mode type does not
+     * match the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type matches the caller's
+     * symbolic type descriptor, but a reference cast fails.
      * @see #setVolatile(Object...)
      * @see #getVolatile(Object...)
      */
@@ -1042,7 +1045,7 @@ public abstract class VarHandle {
      * previous value, as accessed with the memory semantics of
      * {@link #get}.
      *
-     * <p>The method signature is of the form {@code (CT, T newValue)T}.
+     * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn, T newValue)T}.
      *
      * <p>The symbolic type descriptor at the call site of {@code getAndSetRelease}
      * must match the access mode type that is the result of calling
@@ -1050,17 +1053,17 @@ public abstract class VarHandle {
      * VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
-     * {@code (CT, T newValue)}
+     * {@code (CT1 ct1, ..., CTn ctn, T newValue)}
      * , statically represented using varargs.
      * @return the signature-polymorphic result that is the previous value of
      * the variable
      * , statically represented using {@code Object}.
      * @throws UnsupportedOperationException if the access mode is unsupported
      * for this VarHandle.
-     * @throws WrongMethodTypeException if the access mode type is not
-     * compatible with the caller's symbolic type descriptor.
-     * @throws ClassCastException if the access mode type is compatible with the
-     * caller's symbolic type descriptor, but a reference cast fails.
+     * @throws WrongMethodTypeException if the access mode type does not
+     * match the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type matches the caller's
+     * symbolic type descriptor, but a reference cast fails.
      * @see #setVolatile(Object...)
      * @see #getVolatile(Object...)
      */
@@ -1078,7 +1081,7 @@ public abstract class VarHandle {
      * previous value, as accessed with the memory semantics of
      * {@link #getVolatile}.
      *
-     * <p>The method signature is of the form {@code (CT, T value)T}.
+     * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn, T value)T}.
      *
      * <p>The symbolic type descriptor at the call site of {@code getAndAdd}
      * must match the access mode type that is the result of calling
@@ -1086,17 +1089,17 @@ public abstract class VarHandle {
      * VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
-     * {@code (CT, T value)}
+     * {@code (CT1 ct1, ..., CTn ctn, T value)}
      * , statically represented using varargs.
      * @return the signature-polymorphic result that is the previous value of
      * the variable
      * , statically represented using {@code Object}.
      * @throws UnsupportedOperationException if the access mode is unsupported
      * for this VarHandle.
-     * @throws WrongMethodTypeException if the access mode type is not
-     * compatible with the caller's symbolic type descriptor.
-     * @throws ClassCastException if the access mode type is compatible with the
-     * caller's symbolic type descriptor, but a reference cast fails.
+     * @throws WrongMethodTypeException if the access mode type does not
+     * match the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type matches the caller's
+     * symbolic type descriptor, but a reference cast fails.
      * @see #setVolatile(Object...)
      * @see #getVolatile(Object...)
      */
@@ -1111,7 +1114,7 @@ public abstract class VarHandle {
      * previous value, as accessed with the memory semantics of
      * {@link #getAcquire}.
      *
-     * <p>The method signature is of the form {@code (CT, T value)T}.
+     * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn, T value)T}.
      *
      * <p>The symbolic type descriptor at the call site of {@code getAndAddAcquire}
      * must match the access mode type that is the result of calling
@@ -1119,17 +1122,17 @@ public abstract class VarHandle {
      * VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
-     * {@code (CT, T value)}
+     * {@code (CT1 ct1, ..., CTn ctn, T value)}
      * , statically represented using varargs.
      * @return the signature-polymorphic result that is the previous value of
      * the variable
      * , statically represented using {@code Object}.
      * @throws UnsupportedOperationException if the access mode is unsupported
      * for this VarHandle.
-     * @throws WrongMethodTypeException if the access mode type is not
-     * compatible with the caller's symbolic type descriptor.
-     * @throws ClassCastException if the access mode type is compatible with the
-     * caller's symbolic type descriptor, but a reference cast fails.
+     * @throws WrongMethodTypeException if the access mode type does not
+     * match the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type matches the caller's
+     * symbolic type descriptor, but a reference cast fails.
      * @see #setVolatile(Object...)
      * @see #getVolatile(Object...)
      */
@@ -1144,7 +1147,7 @@ public abstract class VarHandle {
      * previous value, as accessed with the memory semantics of
      * {@link #get}.
      *
-     * <p>The method signature is of the form {@code (CT, T value)T}.
+     * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn, T value)T}.
      *
      * <p>The symbolic type descriptor at the call site of {@code getAndAddRelease}
      * must match the access mode type that is the result of calling
@@ -1152,17 +1155,17 @@ public abstract class VarHandle {
      * VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
-     * {@code (CT, T value)}
+     * {@code (CT1 ct1, ..., CTn ctn, T value)}
      * , statically represented using varargs.
      * @return the signature-polymorphic result that is the previous value of
      * the variable
      * , statically represented using {@code Object}.
      * @throws UnsupportedOperationException if the access mode is unsupported
      * for this VarHandle.
-     * @throws WrongMethodTypeException if the access mode type is not
-     * compatible with the caller's symbolic type descriptor.
-     * @throws ClassCastException if the access mode type is compatible with the
-     * caller's symbolic type descriptor, but a reference cast fails.
+     * @throws WrongMethodTypeException if the access mode type does not
+     * match the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type matches the caller's
+     * symbolic type descriptor, but a reference cast fails.
      * @see #setVolatile(Object...)
      * @see #getVolatile(Object...)
      */
@@ -1185,7 +1188,7 @@ public abstract class VarHandle {
      * <p>If the variable type is the non-integral {@code boolean} type then a
      * logical OR is performed instead of a bitwise OR.
      *
-     * <p>The method signature is of the form {@code (CT, T mask)T}.
+     * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn, T mask)T}.
      *
      * <p>The symbolic type descriptor at the call site of {@code getAndBitwiseOr}
      * must match the access mode type that is the result of calling
@@ -1193,17 +1196,17 @@ public abstract class VarHandle {
      * VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
-     * {@code (CT, T mask)}
+     * {@code (CT1 ct1, ..., CTn ctn, T mask)}
      * , statically represented using varargs.
      * @return the signature-polymorphic result that is the previous value of
      * the variable
      * , statically represented using {@code Object}.
      * @throws UnsupportedOperationException if the access mode is unsupported
      * for this VarHandle.
-     * @throws WrongMethodTypeException if the access mode type is not
-     * compatible with the caller's symbolic type descriptor.
-     * @throws ClassCastException if the access mode type is compatible with the
-     * caller's symbolic type descriptor, but a reference cast fails.
+     * @throws WrongMethodTypeException if the access mode type does not
+     * match the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type matches the caller's
+     * symbolic type descriptor, but a reference cast fails.
      * @see #setVolatile(Object...)
      * @see #getVolatile(Object...)
      */
@@ -1222,7 +1225,7 @@ public abstract class VarHandle {
      * <p>If the variable type is the non-integral {@code boolean} type then a
      * logical OR is performed instead of a bitwise OR.
      *
-     * <p>The method signature is of the form {@code (CT, T mask)T}.
+     * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn, T mask)T}.
      *
      * <p>The symbolic type descriptor at the call site of {@code getAndBitwiseOrAcquire}
      * must match the access mode type that is the result of calling
@@ -1230,17 +1233,17 @@ public abstract class VarHandle {
      * VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
-     * {@code (CT, T mask)}
+     * {@code (CT1 ct1, ..., CTn ctn, T mask)}
      * , statically represented using varargs.
      * @return the signature-polymorphic result that is the previous value of
      * the variable
      * , statically represented using {@code Object}.
      * @throws UnsupportedOperationException if the access mode is unsupported
      * for this VarHandle.
-     * @throws WrongMethodTypeException if the access mode type is not
-     * compatible with the caller's symbolic type descriptor.
-     * @throws ClassCastException if the access mode type is compatible with the
-     * caller's symbolic type descriptor, but a reference cast fails.
+     * @throws WrongMethodTypeException if the access mode type does not
+     * match the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type matches the caller's
+     * symbolic type descriptor, but a reference cast fails.
      * @see #set(Object...)
      * @see #getAcquire(Object...)
      */
@@ -1259,7 +1262,7 @@ public abstract class VarHandle {
      * <p>If the variable type is the non-integral {@code boolean} type then a
      * logical OR is performed instead of a bitwise OR.
      *
-     * <p>The method signature is of the form {@code (CT, T mask)T}.
+     * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn, T mask)T}.
      *
      * <p>The symbolic type descriptor at the call site of {@code getAndBitwiseOrRelease}
      * must match the access mode type that is the result of calling
@@ -1267,17 +1270,17 @@ public abstract class VarHandle {
      * VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
-     * {@code (CT, T mask)}
+     * {@code (CT1 ct1, ..., CTn ctn, T mask)}
      * , statically represented using varargs.
      * @return the signature-polymorphic result that is the previous value of
      * the variable
      * , statically represented using {@code Object}.
      * @throws UnsupportedOperationException if the access mode is unsupported
      * for this VarHandle.
-     * @throws WrongMethodTypeException if the access mode type is not
-     * compatible with the caller's symbolic type descriptor.
-     * @throws ClassCastException if the access mode type is compatible with the
-     * caller's symbolic type descriptor, but a reference cast fails.
+     * @throws WrongMethodTypeException if the access mode type does not
+     * match the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type matches the caller's
+     * symbolic type descriptor, but a reference cast fails.
      * @see #setRelease(Object...)
      * @see #get(Object...)
      */
@@ -1296,7 +1299,7 @@ public abstract class VarHandle {
      * <p>If the variable type is the non-integral {@code boolean} type then a
      * logical AND is performed instead of a bitwise AND.
      *
-     * <p>The method signature is of the form {@code (CT, T mask)T}.
+     * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn, T mask)T}.
      *
      * <p>The symbolic type descriptor at the call site of {@code getAndBitwiseAnd}
      * must match the access mode type that is the result of calling
@@ -1304,17 +1307,17 @@ public abstract class VarHandle {
      * VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
-     * {@code (CT, T mask)}
+     * {@code (CT1 ct1, ..., CTn ctn, T mask)}
      * , statically represented using varargs.
      * @return the signature-polymorphic result that is the previous value of
      * the variable
      * , statically represented using {@code Object}.
      * @throws UnsupportedOperationException if the access mode is unsupported
      * for this VarHandle.
-     * @throws WrongMethodTypeException if the access mode type is not
-     * compatible with the caller's symbolic type descriptor.
-     * @throws ClassCastException if the access mode type is compatible with the
-     * caller's symbolic type descriptor, but a reference cast fails.
+     * @throws WrongMethodTypeException if the access mode type does not
+     * match the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type matches the caller's
+     * symbolic type descriptor, but a reference cast fails.
      * @see #setVolatile(Object...)
      * @see #getVolatile(Object...)
      */
@@ -1333,7 +1336,7 @@ public abstract class VarHandle {
      * <p>If the variable type is the non-integral {@code boolean} type then a
      * logical AND is performed instead of a bitwise AND.
      *
-     * <p>The method signature is of the form {@code (CT, T mask)T}.
+     * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn, T mask)T}.
      *
      * <p>The symbolic type descriptor at the call site of {@code getAndBitwiseAndAcquire}
      * must match the access mode type that is the result of calling
@@ -1341,17 +1344,17 @@ public abstract class VarHandle {
      * VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
-     * {@code (CT, T mask)}
+     * {@code (CT1 ct1, ..., CTn ctn, T mask)}
      * , statically represented using varargs.
      * @return the signature-polymorphic result that is the previous value of
      * the variable
      * , statically represented using {@code Object}.
      * @throws UnsupportedOperationException if the access mode is unsupported
      * for this VarHandle.
-     * @throws WrongMethodTypeException if the access mode type is not
-     * compatible with the caller's symbolic type descriptor.
-     * @throws ClassCastException if the access mode type is compatible with the
-     * caller's symbolic type descriptor, but a reference cast fails.
+     * @throws WrongMethodTypeException if the access mode type does not
+     * match the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type matches the caller's
+     * symbolic type descriptor, but a reference cast fails.
      * @see #set(Object...)
      * @see #getAcquire(Object...)
      */
@@ -1370,7 +1373,7 @@ public abstract class VarHandle {
      * <p>If the variable type is the non-integral {@code boolean} type then a
      * logical AND is performed instead of a bitwise AND.
      *
-     * <p>The method signature is of the form {@code (CT, T mask)T}.
+     * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn, T mask)T}.
      *
      * <p>The symbolic type descriptor at the call site of {@code getAndBitwiseAndRelease}
      * must match the access mode type that is the result of calling
@@ -1378,17 +1381,17 @@ public abstract class VarHandle {
      * VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
-     * {@code (CT, T mask)}
+     * {@code (CT1 ct1, ..., CTn ctn, T mask)}
      * , statically represented using varargs.
      * @return the signature-polymorphic result that is the previous value of
      * the variable
      * , statically represented using {@code Object}.
      * @throws UnsupportedOperationException if the access mode is unsupported
      * for this VarHandle.
-     * @throws WrongMethodTypeException if the access mode type is not
-     * compatible with the caller's symbolic type descriptor.
-     * @throws ClassCastException if the access mode type is compatible with the
-     * caller's symbolic type descriptor, but a reference cast fails.
+     * @throws WrongMethodTypeException if the access mode type does not
+     * match the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type matches the caller's
+     * symbolic type descriptor, but a reference cast fails.
      * @see #setRelease(Object...)
      * @see #get(Object...)
      */
@@ -1407,7 +1410,7 @@ public abstract class VarHandle {
      * <p>If the variable type is the non-integral {@code boolean} type then a
      * logical XOR is performed instead of a bitwise XOR.
      *
-     * <p>The method signature is of the form {@code (CT, T mask)T}.
+     * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn, T mask)T}.
      *
      * <p>The symbolic type descriptor at the call site of {@code getAndBitwiseXor}
      * must match the access mode type that is the result of calling
@@ -1415,17 +1418,17 @@ public abstract class VarHandle {
      * VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
-     * {@code (CT, T mask)}
+     * {@code (CT1 ct1, ..., CTn ctn, T mask)}
      * , statically represented using varargs.
      * @return the signature-polymorphic result that is the previous value of
      * the variable
      * , statically represented using {@code Object}.
      * @throws UnsupportedOperationException if the access mode is unsupported
      * for this VarHandle.
-     * @throws WrongMethodTypeException if the access mode type is not
-     * compatible with the caller's symbolic type descriptor.
-     * @throws ClassCastException if the access mode type is compatible with the
-     * caller's symbolic type descriptor, but a reference cast fails.
+     * @throws WrongMethodTypeException if the access mode type does not
+     * match the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type matches the caller's
+     * symbolic type descriptor, but a reference cast fails.
      * @see #setVolatile(Object...)
      * @see #getVolatile(Object...)
      */
@@ -1444,7 +1447,7 @@ public abstract class VarHandle {
      * <p>If the variable type is the non-integral {@code boolean} type then a
      * logical XOR is performed instead of a bitwise XOR.
      *
-     * <p>The method signature is of the form {@code (CT, T mask)T}.
+     * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn, T mask)T}.
      *
      * <p>The symbolic type descriptor at the call site of {@code getAndBitwiseXorAcquire}
      * must match the access mode type that is the result of calling
@@ -1452,17 +1455,17 @@ public abstract class VarHandle {
      * VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
-     * {@code (CT, T mask)}
+     * {@code (CT1 ct1, ..., CTn ctn, T mask)}
      * , statically represented using varargs.
      * @return the signature-polymorphic result that is the previous value of
      * the variable
      * , statically represented using {@code Object}.
      * @throws UnsupportedOperationException if the access mode is unsupported
      * for this VarHandle.
-     * @throws WrongMethodTypeException if the access mode type is not
-     * compatible with the caller's symbolic type descriptor.
-     * @throws ClassCastException if the access mode type is compatible with the
-     * caller's symbolic type descriptor, but a reference cast fails.
+     * @throws WrongMethodTypeException if the access mode type does not
+     * match the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type matches the caller's
+     * symbolic type descriptor, but a reference cast fails.
      * @see #set(Object...)
      * @see #getAcquire(Object...)
      */
@@ -1481,7 +1484,7 @@ public abstract class VarHandle {
      * <p>If the variable type is the non-integral {@code boolean} type then a
      * logical XOR is performed instead of a bitwise XOR.
      *
-     * <p>The method signature is of the form {@code (CT, T mask)T}.
+     * <p>The method signature is of the form {@code (CT1 ct1, ..., CTn ctn, T mask)T}.
      *
      * <p>The symbolic type descriptor at the call site of {@code getAndBitwiseXorRelease}
      * must match the access mode type that is the result of calling
@@ -1489,17 +1492,17 @@ public abstract class VarHandle {
      * VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
-     * {@code (CT, T mask)}
+     * {@code (CT1 ct1, ..., CTn ctn, T mask)}
      * , statically represented using varargs.
      * @return the signature-polymorphic result that is the previous value of
      * the variable
      * , statically represented using {@code Object}.
      * @throws UnsupportedOperationException if the access mode is unsupported
      * for this VarHandle.
-     * @throws WrongMethodTypeException if the access mode type is not
-     * compatible with the caller's symbolic type descriptor.
-     * @throws ClassCastException if the access mode type is compatible with the
-     * caller's symbolic type descriptor, but a reference cast fails.
+     * @throws WrongMethodTypeException if the access mode type does not
+     * match the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type matches the caller's
+     * symbolic type descriptor, but a reference cast fails.
      * @see #setRelease(Object...)
      * @see #get(Object...)
      */
@@ -1790,7 +1793,7 @@ public abstract class VarHandle {
 
         /**
          * Returns the {@code VarHandle} signature-polymorphic method name
-         * associated with this {@code AccessMode} value
+         * associated with this {@code AccessMode} value.
          *
          * @return the signature-polymorphic method name
          * @see #valueFromMethodName
@@ -1861,14 +1864,13 @@ public abstract class VarHandle {
     }
 
     /**
-     * Obtains the canonical access mode type for this VarHandle and a given
-     * access mode.
+     * Obtains the access mode type for this VarHandle and a given access mode.
      *
      * <p>The access mode type's parameter types will consist of a prefix that
      * is the coordinate types of this VarHandle followed by further
-     * types as defined by the access mode's method.
+     * types as defined by the access mode method.
      * The access mode type's return type is defined by the return type of the
-     * access mode's method.
+     * access mode method.
      *
      * @param accessMode the access mode, corresponding to the
      * signature-polymorphic method of the same name
@@ -1891,7 +1893,7 @@ public abstract class VarHandle {
      *
      * <p>The return of a {@code false} value for a given access mode indicates
      * that an {@code UnsupportedOperationException} is thrown on invocation
-     * of the corresponding access mode's signature-polymorphic method.
+     * of the corresponding access mode method.
      *
      * @param accessMode the access mode, corresponding to the
      * signature-polymorphic method of the same name
@@ -1908,7 +1910,7 @@ public abstract class VarHandle {
      *
      * @apiNote This method, for a VarHandle {@code vh} and access mode
      * {@code {access-mode}}, returns a method handle that is equivalent to
-     * method handle {@code bhm} in the following code (though it may be more
+     * method handle {@code bmh} in the following code (though it may be more
      * efficient):
      * <pre>{@code
      * MethodHandle mh = MethodHandles.varHandleExactInvoker(
