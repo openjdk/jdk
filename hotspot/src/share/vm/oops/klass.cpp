@@ -497,10 +497,12 @@ void Klass::remove_unshareable_info() {
 
   // Null out class_loader_data because we don't share that yet.
   set_class_loader_data(NULL);
+  set_is_shared();
 }
 
 void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
   assert(is_klass(), "ensure C++ vtable is restored");
+  assert(is_shared(), "must be set");
   TRACE_RESTORE_ID(this);
 
   // If an exception happened during CDS restore, some of these fields may already be
@@ -696,8 +698,8 @@ void Klass::oop_verify_on(oop obj, outputStream* st) {
   guarantee(obj->klass()->is_klass(), "klass field is not a klass");
 }
 
-klassVtable* Klass::vtable() const {
-  return new klassVtable(const_cast<Klass*>(this), start_of_vtable(), vtable_length() / vtableEntry::size());
+klassVtable Klass::vtable() const {
+  return klassVtable(const_cast<Klass*>(this), start_of_vtable(), vtable_length() / vtableEntry::size());
 }
 
 vtableEntry* Klass::start_of_vtable() const {

@@ -289,10 +289,10 @@ Flag::Error OptoLoopAlignmentConstraintFunc(intx value, bool verbose) {
 }
 
 Flag::Error ArraycopyDstPrefetchDistanceConstraintFunc(uintx value, bool verbose) {
-  if (value != 0) {
+  if (value >= 4032) {
     CommandLineError::print(verbose,
-                            "ArraycopyDstPrefetchDistance (" UINTX_FORMAT ") must be 0\n",
-                            value);
+                            "ArraycopyDstPrefetchDistance (" UINTX_FORMAT ") must be"
+                            "between 0 and 4031\n", value);
     return Flag::VIOLATES_CONSTRAINT;
   }
 
@@ -300,10 +300,10 @@ Flag::Error ArraycopyDstPrefetchDistanceConstraintFunc(uintx value, bool verbose
 }
 
 Flag::Error ArraycopySrcPrefetchDistanceConstraintFunc(uintx value, bool verbose) {
-  if (value != 0) {
+  if (value >= 4032) {
     CommandLineError::print(verbose,
-                            "ArraycopySrcPrefetchDistance (" UINTX_FORMAT ") must be 0\n",
-                            value);
+                            "ArraycopySrcPrefetchDistance (" UINTX_FORMAT ") must be"
+                            "between 0 and 4031\n", value);
     return Flag::VIOLATES_CONSTRAINT;
   }
 

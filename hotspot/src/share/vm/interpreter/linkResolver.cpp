@@ -150,8 +150,6 @@ CallInfo::CallInfo(Method* resolved_method, Klass* resolved_klass) {
     kind = CallInfo::vtable_call;
   } else if (!resolved_klass->is_interface()) {
     // A default or miranda method.  Compute the vtable index.
-    ResourceMark rm;
-    klassVtable* vt = resolved_klass->vtable();
     index = LinkResolver::vtable_index_of_interface_method(resolved_klass,
                            resolved_method);
     assert(index >= 0 , "we should have valid vtable index at this point");
@@ -163,7 +161,7 @@ CallInfo::CallInfo(Method* resolved_method, Klass* resolved_klass) {
 #ifdef ASSERT
     // Ensure that this is really the case.
     Klass* object_klass = SystemDictionary::Object_klass();
-    Method * object_resolved_method = object_klass->vtable()->method_at(index);
+    Method * object_resolved_method = object_klass->vtable().method_at(index);
     assert(object_resolved_method->name() == resolved_method->name(),
       "Object and interface method names should match at vtable index %d, %s != %s",
       index, object_resolved_method->name()->as_C_string(), resolved_method->name()->as_C_string());
@@ -400,9 +398,8 @@ int LinkResolver::vtable_index_of_interface_method(Klass* klass,
   }
   if (vtable_index == Method::invalid_vtable_index) {
     // get vtable_index for miranda methods
-    ResourceMark rm;
-    klassVtable *vt = ik->vtable();
-    vtable_index = vt->index_of_miranda(name, signature);
+    klassVtable vt = ik->vtable();
+    vtable_index = vt.index_of_miranda(name, signature);
   }
   return vtable_index;
 }

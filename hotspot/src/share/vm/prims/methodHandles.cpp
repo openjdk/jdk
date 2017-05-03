@@ -218,7 +218,7 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info, bool int
         m_klass_non_interface = SystemDictionary::Object_klass();
 #ifdef ASSERT
         { ResourceMark rm;
-          Method* m2 = m_klass_non_interface->vtable()->method_at(vmindex);
+          Method* m2 = m_klass_non_interface->vtable().method_at(vmindex);
           assert(m->name() == m2->name() && m->signature() == m2->signature(),
                  "at %d, %s != %s", vmindex,
                  m->name_and_sig_as_C_string(), m2->name_and_sig_as_C_string());

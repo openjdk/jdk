@@ -923,8 +923,6 @@ public:
 
           double end_vtime_sec = os::elapsedVTime();
           double elapsed_vtime_sec = end_vtime_sec - start_vtime_sec;
-          _cm->clear_has_overflown();
-
           _cm->do_yield_check();
 
           jlong sleep_time_ms;

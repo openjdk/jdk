@@ -113,6 +113,7 @@ compiler/aot/DeoptimizationTest.java 8175791 windows-all
 gc/g1/humongousObjects/objectGraphTest/TestObjectGraphAfterGC.java 8156755 generic-all
 gc/survivorAlignment/TestPromotionToSurvivor.java 8129886 generic-all
 gc/g1/logging/TestG1LoggingFailure.java 8169634 generic-all
+gc/g1/humongousObjects/TestHeapCounters.java 8178918 generic-all
 
 #############################################################################
 
@@ -121,7 +122,6 @@ gc/g1/logging/TestG1LoggingFailure.java 8169634 generic-all
 runtime/CompressedOops/UseCompressedOops.java 8079353 generic-all
 # This test is disabled since it will stress NMT and timeout during normal testing
 runtime/NMT/MallocStressTest.java 8166548 generic-all
-runtime/SharedArchiveFile/BootAppendTests.java 8150683 generic-all
 runtime/SharedArchiveFile/DefaultUseWithClient.java 8154204 generic-all
 
 #############################################################################

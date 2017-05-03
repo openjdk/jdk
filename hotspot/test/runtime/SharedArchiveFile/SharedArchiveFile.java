@@ -25,6 +25,7 @@
  * @test
  * @bug 8014138
  * @summary Testing new -XX:SharedArchiveFile=<file-name> option
+ * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -40,14 +41,14 @@ import jdk.test.lib.process.OutputAnalyzer;
 // methods to form command line to create/use shared archive.
 public class SharedArchiveFile {
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true,
                                 "-XX:+UnlockDiagnosticVMOptions",
                                 "-XX:SharedArchiveFile=./SharedArchiveFile.jsa",
                                 "-Xshare:dump");
         OutputAnalyzer out = CDSTestUtils.executeAndLog(pb, "SharedArchiveFile");
         CDSTestUtils.checkDump(out);
 
-        pb = ProcessTools.createJavaProcessBuilder(
+        pb = ProcessTools.createJavaProcessBuilder(true,
                               "-XX:+UnlockDiagnosticVMOptions",
                               "-XX:SharedArchiveFile=./SharedArchiveFile.jsa",
                               "-Xshare:on", "-version");

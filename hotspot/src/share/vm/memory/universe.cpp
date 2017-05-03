@@ -526,8 +526,7 @@ void Universe::run_finalizers_on_exit() {
 // In case those ever change we use handles for oops
 void Universe::reinitialize_vtable_of(Klass* ko, TRAPS) {
   // init vtable of k and all subclasses
-  klassVtable* vt = ko->vtable();
-  if (vt) vt->initialize_vtable(false, CHECK);
+  ko->vtable().initialize_vtable(false, CHECK);
   if (ko->is_instance_klass()) {
     for (Klass* sk = ko->subklass();
          sk != NULL;
@@ -539,7 +538,7 @@ void Universe::reinitialize_vtable_of(Klass* ko, TRAPS) {
 
 
 void initialize_itable_for_klass(Klass* k, TRAPS) {
-  InstanceKlass::cast(k)->itable()->initialize_itable(false, CHECK);
+  InstanceKlass::cast(k)->itable().initialize_itable(false, CHECK);
 }
 
 

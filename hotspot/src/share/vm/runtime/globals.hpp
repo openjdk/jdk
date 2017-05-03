@@ -186,6 +186,7 @@ struct Flag {
   void* _addr;
   NOT_PRODUCT(const char* _doc;)
   Flags _flags;
+  size_t _name_len;
 
   // points to all Flags static array
   static Flag* flags;
@@ -246,6 +247,8 @@ struct Flag {
 
   Flags get_origin();
   void set_origin(Flags origin);
+
+  size_t get_name_length();
 
   bool is_default();
   bool is_ergonomic();

@@ -968,10 +968,11 @@ class StubGenerator: public StubCodeGenerator {
         // than prefetch distance.
         __ set(prefetch_count, O4);
         __ cmp_and_brx_short(count, O4, Assembler::less, Assembler::pt, L_block_copy);
-        __ sub(count, prefetch_count, count);
+        __ sub(count, O4, count);
 
         (this->*copy_loop_func)(from, to, count, count_dec, L_block_copy_prefetch, true, true);
-        __ add(count, prefetch_count, count); // restore count
+        __ set(prefetch_count, O4);
+        __ add(count, O4, count);
 
       } // prefetch_count > 0
 
@@ -992,11 +993,12 @@ class StubGenerator: public StubCodeGenerator {
       // than prefetch distance.
       __ set(prefetch_count, O4);
       __ cmp_and_brx_short(count, O4, Assembler::lessUnsigned, Assembler::pt, L_copy);
-      __ sub(count, prefetch_count, count);
+      __ sub(count, O4, count);
 
       Label L_copy_prefetch;
       (this->*copy_loop_func)(from, to, count, count_dec, L_copy_prefetch, true, false);
-      __ add(count, prefetch_count, count); // restore count
+      __ set(prefetch_count, O4);
+      __ add(count, O4, count);
 
     } // prefetch_count > 0
 
