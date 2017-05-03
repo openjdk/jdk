@@ -27,6 +27,7 @@ default: all
 include $(SPEC)
 include MakeBase.gmk
 include Modules.gmk
+include ProcessMarkdown.gmk
 include ZipArchive.gmk
 include $(JDK_TOPDIR)/make/Tools.gmk
 include $(JDK_TOPDIR)/make/ModuleTools.gmk
@@ -356,7 +357,7 @@ $(eval $(call SetupApiDocsGeneration, JAVASE_API, \
 # unmodified
 
 ALL_MODULES := $(call FindAllModules)
-COPY_SPEC_FILTER := %.html %.gif %.jpg %.mib
+COPY_SPEC_FILTER := %.html %.gif %.jpg %.mib %.css
 
 $(foreach m, $(ALL_MODULES), \
   $(eval SPECS_$m := $(call FindModuleSpecsDirs, $m)) \
@@ -370,36 +371,35 @@ $(foreach m, $(ALL_MODULES), \
   ) \
 )
 
+# Copy the global resources
+GLOBAL_SPECS_RESOURCES_DIR := $(JDK_TOPDIR)/make/data/docs-resources/specs
+$(eval $(call SetupCopyFiles, COPY_GLOBAL_RESOURCES, \
+    SRC := $(GLOBAL_SPECS_RESOURCES_DIR), \
+    FILES := $(call CacheFind, $(GLOBAL_SPECS_RESOURCES_DIR)), \
+    DEST := $(JAVADOC_OUTPUTDIR)/specs/, \
+))
+JDK_SPECS_TARGETS += $(COPY_GLOBAL_RESOURCES)
+
 ifeq ($(ENABLE_FULL_DOCS), true)
   # For all markdown files in $module/share/specs directories, convert them to
   # html.
-  MARKDOWN_SPEC_FILTER := %.md
 
-  # Macro for SetupCopyFiles that converts from markdown to html using pandoc.
-  define markdown-to-html
-	$(call MakeDir, $(@D))
-	$(RM) $@
-	$(PANDOC) -t html -s -o $@ $<
-  endef
-
-  rename-md-to-html = \
-      $(patsubst %.md,%.html,$1)
+  GLOBAL_SPECS_DEFAULT_CSS_FILE := $(JAVADOC_OUTPUTDIR)/specs/resources/jdk-default.css
 
   $(foreach m, $(ALL_MODULES), \
     $(eval SPECS_$m := $(call FindModuleSpecsDirs, $m)) \
-    $(if $(SPECS_$m), \
-      $(eval $(call SetupCopyFiles, CONVERT_MARKDOWN_$m, \
-          SRC := $(SPECS_$m), \
-          FILES := $(filter $(MARKDOWN_SPEC_FILTER), $(call CacheFind, $(SPECS_$m))), \
-          DEST := $(JAVADOC_OUTPUTDIR)/specs/, \
-          MACRO := markdown-to-html, \
-          NAME_MACRO := rename-md-to-html, \
-          LOG_ACTION := Converting from markdown, \
-      )) \
-      $(eval JDK_SPECS_TARGETS += $(CONVERT_MARKDOWN_$m)) \
+    $(foreach d, $(SPECS_$m), \
+      $(if $(filter %.md, $(call CacheFind, $d)), \
+        $(eval $(call SetupProcessMarkdown, CONVERT_MARKDOWN_$m_$d, \
+            SRC := $d, \
+            FILES := $(filter %.md, $(call CacheFind, $d)), \
+            DEST := $(JAVADOC_OUTPUTDIR)/specs/, \
+            CSS := $(GLOBAL_SPECS_DEFAULT_CSS_FILE), \
+        )) \
+      ) \
+      $(eval JDK_SPECS_TARGETS += $(CONVERT_MARKDOWN_$m_$d)) \
     ) \
   )
-
 endif
 
 # Special treatment for generated documentation
