@@ -1191,7 +1191,6 @@ bool Method::is_overridden_in(Klass* k) const {
   }
 
   assert(ik->is_subclass_of(method_holder()), "should be subklass");
-  assert(ik->vtable() != NULL, "vtable should exist");
   if (!has_vtable_index()) {
     return false;
   } else {

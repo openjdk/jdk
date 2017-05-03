@@ -1127,7 +1127,7 @@ public:
   }
 
   // Java itable
-  klassItable* itable() const;        // return new klassItable wrapper
+  klassItable itable() const;        // return klassItable wrapper
   Method* method_at_itable(Klass* holder, int index, TRAPS);
 
 #if INCLUDE_JVMTI
@@ -1163,8 +1163,6 @@ public:
 
   // GC specific object visitors
   //
-  // Mark Sweep
-  int  oop_ms_adjust_pointers(oop obj);
 #if INCLUDE_ALL_GCS
   // Parallel Scavenge
   void oop_ps_push_contents(  oop obj, PSPromotionManager* pm);
