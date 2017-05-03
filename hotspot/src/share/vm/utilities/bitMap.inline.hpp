@@ -222,12 +222,12 @@ BitMap::get_next_zero_offset(idx_t l_offset, idx_t r_offset) const {
   idx_t res_offset = l_offset;
 
   // check bits including and to the _left_ of offset's position
-  idx_t pos = res_offset & (BitsPerWord - 1);
-  bm_word_t res = (map(index) >> pos) | left_n_bits((int)pos);
+  idx_t pos = bit_in_word(res_offset);
+  bm_word_t res = ~map(index) >> pos; // flip bits and shift for l_offset
 
-  if (res != ~(bm_word_t)0) {
-    // find the position of the 0-bit
-    for (; res & 1; res_offset++) {
+  if (res != 0) {
+    // find the position of the 1-bit
+    for (; !(res & 1); res_offset++) {
       res = res >> 1;
     }
     assert(res_offset >= l_offset, "just checking");
