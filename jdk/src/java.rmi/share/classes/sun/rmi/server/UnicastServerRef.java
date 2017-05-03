@@ -33,6 +33,7 @@ import java.io.ObjectOutput;
 import java.io.ObjectStreamClass;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.rmi.AccessException;
 import java.rmi.MarshalException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -288,20 +289,25 @@ public class UnicastServerRef extends UnicastRef
             try {
                 in = call.getInputStream();
                 num = in.readInt();
-                if (num >= 0) {
-                    if (skel != null) {
-                        oldDispatch(obj, call, num);
-                        return;
-                    } else {
-                        throw new UnmarshalException(
-                            "skeleton class not found but required " +
-                            "for client version");
-                    }
-                }
-                op = in.readLong();
             } catch (Exception readEx) {
                 throw new UnmarshalException("error unmarshalling call header",
                                              readEx);
+            }
+            if (num >= 0) {
+                if (skel != null) {
+                    oldDispatch(obj, call, num);
+                    return;
+                } else {
+                    throw new UnmarshalException(
+                        "skeleton class not found but required " +
+                        "for client version");
+                }
+            }
+            try {
+                op = in.readLong();
+            } catch (Exception readEx) {
+                throw new UnmarshalException("error unmarshalling call header",
+                        readEx);
             }
 
             /*
@@ -329,6 +335,11 @@ public class UnicastServerRef extends UnicastRef
             try {
                 unmarshalCustomCallData(in);
                 params = unmarshalParameters(obj, method, marshalStream);
+            } catch (AccessException aex) {
+                // For compatibility, AccessException is not wrapped in UnmarshalException
+                // disable saving any refs in the inputStream for GC
+                ((StreamRemoteCall) call).discardPendingRefs();
+                throw aex;
             } catch (java.io.IOException | ClassNotFoundException e) {
                 // disable saving any refs in the inputStream for GC
                 ((StreamRemoteCall) call).discardPendingRefs();
@@ -365,6 +376,7 @@ public class UnicastServerRef extends UnicastRef
                  */
             }
         } catch (Throwable e) {
+            Throwable origEx = e;
             logCallException(e);
 
             ObjectOutput out = call.getResultStream(false);
@@ -380,6 +392,12 @@ public class UnicastServerRef extends UnicastRef
                 clearStackTraces(e);
             }
             out.writeObject(e);
+
+            // AccessExceptions should cause Transport.serviceCall
+            // to flag the connection as unusable.
+            if (origEx instanceof AccessException) {
+                throw new IOException("Connection is not reusable", origEx);
+            }
         } finally {
             call.releaseInputStream(); // in case skeleton doesn't
             call.releaseOutputStream();
@@ -408,62 +426,41 @@ public class UnicastServerRef extends UnicastRef
      * Handle server-side dispatch using the RMI 1.1 stub/skeleton
      * protocol, given a non-negative operation number that has
      * already been read from the call stream.
+     * Exceptions are handled by the caller to be sent to the remote client.
      *
      * @param obj the target remote object for the call
      * @param call the "remote call" from which operation and
      * method arguments can be obtained.
      * @param op the operation number
-     * @exception IOException if unable to marshal return result or
+     * @throws Exception if unable to marshal return result or
      * release input or output streams
      */
-    public void oldDispatch(Remote obj, RemoteCall call, int op)
-        throws IOException
+    private void oldDispatch(Remote obj, RemoteCall call, int op)
+        throws Exception
     {
         long hash;              // hash for matching stub with skeleton
 
+        // read remote call header
+        ObjectInput in;
+        in = call.getInputStream();
         try {
-            // read remote call header
-            ObjectInput in;
-            try {
-                in = call.getInputStream();
-                try {
-                    Class<?> clazz = Class.forName("sun.rmi.transport.DGCImpl_Skel");
-                    if (clazz.isAssignableFrom(skel.getClass())) {
-                        ((MarshalInputStream)in).useCodebaseOnly();
-                    }
-                } catch (ClassNotFoundException ignore) { }
-                hash = in.readLong();
-            } catch (Exception readEx) {
-                throw new UnmarshalException("error unmarshalling call header",
-                                             readEx);
+            Class<?> clazz = Class.forName("sun.rmi.transport.DGCImpl_Skel");
+            if (clazz.isAssignableFrom(skel.getClass())) {
+                ((MarshalInputStream)in).useCodebaseOnly();
             }
+        } catch (ClassNotFoundException ignore) { }
 
-            // if calls are being logged, write out object id and operation
-            logCall(obj, skel.getOperations()[op]);
-            unmarshalCustomCallData(in);
-            // dispatch to skeleton for remote object
-            skel.dispatch(obj, call, op, hash);
-
-        } catch (Throwable e) {
-            logCallException(e);
-
-            ObjectOutput out = call.getResultStream(false);
-            if (e instanceof Error) {
-                e = new ServerError(
-                    "Error occurred in server thread", (Error) e);
-            } else if (e instanceof RemoteException) {
-                e = new ServerException(
-                    "RemoteException occurred in server thread",
-                    (Exception) e);
-            }
-            if (suppressStackTraces) {
-                clearStackTraces(e);
-            }
-            out.writeObject(e);
-        } finally {
-            call.releaseInputStream(); // in case skeleton doesn't
-            call.releaseOutputStream();
+        try {
+            hash = in.readLong();
+        } catch (Exception ioe) {
+            throw new UnmarshalException("error unmarshalling call header", ioe);
         }
+
+        // if calls are being logged, write out object id and operation
+        logCall(obj, skel.getOperations()[op]);
+        unmarshalCustomCallData(in);
+        // dispatch to skeleton for remote object
+        skel.dispatch(obj, call, op, hash);
     }
 
     /**

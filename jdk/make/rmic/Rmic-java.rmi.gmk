@@ -40,15 +40,9 @@ $(eval $(call SetupRMICompilation,RMI_12, \
     RUN_V12 := true))
 GENCLASSES += $(RMI_12)
 
-$(eval $(call SetupRMICompilation,RMI_11, \
-    CLASSES := sun.rmi.registry.RegistryImpl, \
-    CLASSES_DIR := $(CLASSES_DIR)/java.rmi, \
-    STUB_CLASSES_DIR := $(STUB_CLASSES_DIR)/java.rmi, \
-    RUN_V11 := true))
-GENCLASSES += $(RMI_11)
 
 ################################################################################
 
-all: $(RMI_11) $(RMI_12)
+all: $(RMI_12)
 
 .PHONY: all

@@ -75,6 +75,10 @@ import sun.rmi.transport.LiveRef;
  * registry.
  *
  * The LocateRegistry class is used to obtain registry for different hosts.
+ * <p>
+ * The default RegistryImpl exported restricts access to clients on the local host
+ * for the methods {@link #bind}, {@link #rebind}, {@link #unbind} by checking
+ * the client host in the skeleton.
  *
  * @see java.rmi.registry.LocateRegistry
  */
@@ -144,13 +148,27 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
                         RMIServerSocketFactory ssf)
         throws RemoteException
     {
+        this(port, csf, ssf, RegistryImpl::registryFilter);
+    }
+
+
+    /**
+     * Construct a new RegistryImpl on the specified port with the
+     * given custom socket factory pair and ObjectInputFilter.
+     */
+    public RegistryImpl(int port,
+                        RMIClientSocketFactory csf,
+                        RMIServerSocketFactory ssf,
+                        ObjectInputFilter serialFilter)
+        throws RemoteException
+    {
         if (port == Registry.REGISTRY_PORT && System.getSecurityManager() != null) {
             // grant permission for default port only.
             try {
                 AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
                     public Void run() throws RemoteException {
                         LiveRef lref = new LiveRef(id, port, csf, ssf);
-                        setup(new UnicastServerRef2(lref, RegistryImpl::registryFilter));
+                        setup(new UnicastServerRef2(lref, serialFilter));
                         return null;
                     }
                 }, null, new SocketPermission("localhost:"+port, "listen,accept"));
@@ -226,7 +244,8 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
     public void bind(String name, Remote obj)
         throws RemoteException, AlreadyBoundException, AccessException
     {
-        checkAccess("Registry.bind");
+        // The access check preventing remote access is done in the skeleton
+        // and is not applicable to local access.
         synchronized (bindings) {
             Remote curr = bindings.get(name);
             if (curr != null)
@@ -243,7 +262,8 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
     public void unbind(String name)
         throws RemoteException, NotBoundException, AccessException
     {
-        checkAccess("Registry.unbind");
+        // The access check preventing remote access is done in the skeleton
+        // and is not applicable to local access.
         synchronized (bindings) {
             Remote obj = bindings.get(name);
             if (obj == null)
@@ -259,7 +279,8 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
     public void rebind(String name, Remote obj)
         throws RemoteException, AccessException
     {
-        checkAccess("Registry.rebind");
+        // The access check preventing remote access is done in the skeleton
+        // and is not applicable to local access.
         bindings.put(name, obj);
     }
 
@@ -312,7 +333,7 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
 
                 if (clientHost.isAnyLocalAddress()) {
                     throw new AccessException(
-                        "Registry." + op + " disallowed; origin unknown");
+                        op + " disallowed; origin unknown");
                 }
 
                 try {
@@ -335,7 +356,7 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
                     // must have been an IOException
 
                     throw new AccessException(
-                        "Registry." + op + " disallowed; origin " +
+                        op + " disallowed; origin " +
                         clientHost + " is non-local host");
                 }
             }
@@ -344,8 +365,7 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
              * Local call from this VM: allow access.
              */
         } catch (java.net.UnknownHostException ex) {
-            throw new AccessException("Registry." + op +
-                                      " disallowed; origin is unknown host");
+            throw new AccessException(op + " disallowed; origin is unknown host");
         }
     }
 
