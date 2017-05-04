@@ -152,14 +152,14 @@ public final class DefaultImageBuilder implements ImageBuilder {
     @Override
     public void storeFiles(ResourcePool files) {
         try {
-            String targetOsName = files.moduleView()
-                                       .findModule("java.base")
-                                       .map(ResourcePoolModule::osName)
-                                       .orElse(null);
-            if (targetOsName == null) {
+            String value = files.moduleView()
+                                .findModule("java.base")
+                                .map(ResourcePoolModule::targetPlatform)
+                                .orElse(null);
+            if (value == null) {
                 throw new PluginException("ModuleTarget attribute is missing for java.base module");
             }
-            this.targetPlatform = Platform.toPlatform(targetOsName);
+            this.targetPlatform = Platform.toPlatform(value);
 
             checkResourcePool(files);
 

@@ -119,18 +119,24 @@ import sun.security.util.SecurityConstants;
  * The Java run-time has the following built-in class loaders:
  *
  * <ul>
- * <li>Bootstrap class loader.
+ * <li><p>Bootstrap class loader.
  *     It is the virtual machine's built-in class loader, typically represented
  *     as {@code null}, and does not have a parent.</li>
- * <li>{@linkplain #getPlatformClassLoader() Platform class loader}.
+ * <li><p>{@linkplain #getPlatformClassLoader() Platform class loader}.
  *     All <em>platform classes</em> are visible to the platform class loader
  *     that can be used as the parent of a {@code ClassLoader} instance.
  *     Platform classes include Java SE platform APIs, their implementation
  *     classes and JDK-specific run-time classes that are defined by the
- *     platform class loader or its ancestors.</li>
- * <li>{@linkplain #getSystemClassLoader() System class loader}.
- *     It is also known as <em>application class
- *     loader</em> and is distinct from the platform class loader.
+ *     platform class loader or its ancestors.
+ *     <p> To allow for upgrading/overriding of modules defined to the platform
+ *     class loader, and where classes in the upgraded version link to
+ *     classes in modules defined to the application class loader, the
+ *     platform class loader may delegate to the application class loader.
+ *     In other words, classes in named modules defined to the application
+ *     class loader may be visible to the platform class loader. </li>
+ * <li><p>{@linkplain #getSystemClassLoader() System class loader}.
+ *     It is also known as <em>application class loader</em> and is distinct
+ *     from the platform class loader.
  *     The system class loader is typically used to define classes on the
  *     application class path, module path, and JDK-specific tools.
  *     The platform class loader is a parent or an ancestor of the system class
@@ -368,6 +374,10 @@ public abstract class ClassLoader {
      * Creates a new class loader of the specified name and using the
      * specified parent class loader for delegation.
      *
+     * @apiNote If the parent is specified as {@code null} (for the
+     * bootstrap class loader) then there is no guarantee that all platform
+     * classes are visible.
+     *
      * @param  name   class loader name; or {@code null} if not named
      * @param  parent the parent class loader
      *
@@ -390,9 +400,12 @@ public abstract class ClassLoader {
      * delegation.
      *
      * <p> If there is a security manager, its {@link
-     * SecurityManager#checkCreateClassLoader()
-     * checkCreateClassLoader} method is invoked.  This may result in
-     * a security exception.  </p>
+     * SecurityManager#checkCreateClassLoader() checkCreateClassLoader} method
+     * is invoked.  This may result in a security exception.  </p>
+     *
+     * @apiNote If the parent is specified as {@code null} (for the
+     * bootstrap class loader) then there is no guarantee that all platform
+     * classes are visible.
      *
      * @param  parent
      *         The parent class loader
@@ -2206,6 +2219,12 @@ public abstract class ClassLoader {
      * this class loader are searched recursively (parent by parent)
      * for a {@code Package} of the given name.
      *
+     * @apiNote The {@link #getPlatformClassLoader() platform class loader}
+     * may delegate to the application class loader but the application class
+     * loader is not its ancestor.  When invoked on the platform class loader,
+     * this method  will not find packages defined to the application
+     * class loader.
+     *
      * @param  name
      *         The <a href="#name">package name</a>
      *
@@ -2250,6 +2269,14 @@ public abstract class ClassLoader {
      * and its ancestors.  The returned array may contain more than one
      * {@code Package} object of the same package name, each defined by
      * a different class loader in the class loader hierarchy.
+     *
+     * @apiNote The {@link #getPlatformClassLoader() platform class loader}
+     * may delegate to the application class loader. In other words,
+     * packages in modules defined to the application class loader may be
+     * visible to the platform class loader.  On the other hand,
+     * the application class loader is not its ancestor and hence
+     * when invoked on the platform class loader, this method will not
+     * return any packages defined to the application class loader.
      *
      * @return  The array of {@code Package} objects defined by this
      *          class loader and its ancestors
