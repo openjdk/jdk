@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -414,9 +414,10 @@ bool Flag::is_unlocked() const {
   return is_unlocked_ext();
 }
 
-void Flag::unlock_diagnostic() {
+void Flag::clear_diagnostic() {
   assert(is_diagnostic(), "sanity");
   _flags = Flags(_flags & ~KIND_DIAGNOSTIC);
+  assert(!is_diagnostic(), "sanity");
 }
 
 // Get custom message for this locked flag, or NULL if
