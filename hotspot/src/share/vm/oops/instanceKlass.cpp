@@ -522,7 +522,11 @@ bool InstanceKlass::link_class_impl(bool throw_verifyerror, TRAPS) {
     // if we are executing Java code. This is not a problem for CDS dumping phase since
     // it doesn't execute any Java code.
     ResourceMark rm(THREAD);
-    THROW_MSG_(vmSymbols::java_lang_NoClassDefFoundError(), external_name(), false);
+    Exceptions::fthrow(THREAD_AND_LOCATION,
+                       vmSymbols::java_lang_NoClassDefFoundError(),
+                       "Class %s, or one of its supertypes, failed class initialization",
+                       external_name());
+    return false;
   }
   // return if already verified
   if (is_linked()) {

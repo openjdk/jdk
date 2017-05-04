@@ -837,13 +837,22 @@ JVM_ENTRY(jclass, JVM_FindClassFromCaller(JNIEnv* env, const char* name,
   return result;
 JVM_END
 
+// Currently only called from the old verifier.
 JVM_ENTRY(jclass, JVM_FindClassFromClass(JNIEnv *env, const char *name,
                                          jboolean init, jclass from))
   JVMWrapper("JVM_FindClassFromClass");
-  if (name == NULL || (int)strlen(name) > Symbol::max_length()) {
+  if (name == NULL) {
+    THROW_MSG_0(vmSymbols::java_lang_NoClassDefFoundError(), "No class name given");
+  }
+  if ((int)strlen(name) > Symbol::max_length()) {
     // It's impossible to create this class;  the name cannot fit
     // into the constant pool.
-    THROW_MSG_0(vmSymbols::java_lang_NoClassDefFoundError(), name);
+    Exceptions::fthrow(THREAD_AND_LOCATION,
+                       vmSymbols::java_lang_NoClassDefFoundError(),
+                       "Class name exceeds maximum length of %d: %s",
+                       Symbol::max_length(),
+                       name);
+    return 0;
   }
   TempNewSymbol h_name = SymbolTable::new_symbol(name, CHECK_NULL);
   oop from_class_oop = JNIHandles::resolve(from);
@@ -919,7 +928,12 @@ static jclass jvm_define_class_common(JNIEnv *env, const char *name,
     if (str_len > Symbol::max_length()) {
       // It's impossible to create this class;  the name cannot fit
       // into the constant pool.
-      THROW_MSG_0(vmSymbols::java_lang_NoClassDefFoundError(), name);
+      Exceptions::fthrow(THREAD_AND_LOCATION,
+                         vmSymbols::java_lang_NoClassDefFoundError(),
+                         "Class name exceeds maximum length of %d: %s",
+                         Symbol::max_length(),
+                         name);
+      return 0;
     }
     class_name = SymbolTable::new_symbol(name, str_len, CHECK_NULL);
   }
