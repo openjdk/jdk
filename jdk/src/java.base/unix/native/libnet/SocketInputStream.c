@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "jvm.h"
 #include "net_util.h"
 
 #include "java_net_SocketInputStream.h"
@@ -49,10 +48,9 @@ Java_java_net_SocketInputStream_init(JNIEnv *env, jclass cls) {
 
 static int NET_ReadWithTimeout(JNIEnv *env, int fd, char *bufP, int len, long timeout) {
     int result = 0;
-    long prevNanoTime = JVM_NanoTime(env, 0);
-    long nanoTimeout = timeout * NET_NSEC_PER_MSEC;
-    while (nanoTimeout > NET_NSEC_PER_MSEC) {
-        result = NET_Timeout(env, fd, nanoTimeout / NET_NSEC_PER_MSEC, prevNanoTime);
+    long prevtime = NET_GetCurrentTime(), newtime;
+    while (timeout > 0) {
+        result = NET_TimeoutWithCurrentTime(fd, timeout, prevtime);
         if (result <= 0) {
             if (result == 0) {
                 JNU_ThrowByName(env, "java/net/SocketTimeoutException", "Read timed out");
@@ -70,10 +68,10 @@ static int NET_ReadWithTimeout(JNIEnv *env, int fd, char *bufP, int len, long ti
         }
         result = NET_NonBlockingRead(fd, bufP, len);
         if (result == -1 && ((errno == EAGAIN) || (errno == EWOULDBLOCK))) {
-            long newtNanoTime = JVM_NanoTime(env, 0);
-            nanoTimeout -= newtNanoTime - prevNanoTime;
-            if (nanoTimeout >= NET_NSEC_PER_MSEC) {
-                prevNanoTime = newtNanoTime;
+            newtime = NET_GetCurrentTime();
+            timeout -= newtime - prevtime;
+            if (timeout > 0) {
+                prevtime = newtime;
             }
         } else {
             break;

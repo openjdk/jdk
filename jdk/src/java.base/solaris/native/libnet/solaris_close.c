@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@
 #include <sys/socket.h>
 #include <stropts.h>
 #include <unistd.h>
-#include "jvm.h"
-#include "net_util.h"
 
 /* Support for restartable system calls on Solaris. */
 
@@ -92,22 +90,25 @@ int NET_Poll(struct pollfd *ufds, unsigned int nfds, int timeout) {
     RESTARTABLE_RETURN_INT(poll(ufds, nfds, timeout));
 }
 
-int NET_Timeout(JNIEnv *env, int s, long timeout, long nanoTimeStamp) {
+int NET_Timeout0(int s, long timeout, long currentTime) {
     int result;
-    long prevNanoTime = nanoTimeStamp;
-    long nanoTimeout = timeout * NET_NSEC_PER_MSEC;
+    struct timeval t;
+    long prevtime = currentTime, newtime;
     struct pollfd pfd;
     pfd.fd = s;
     pfd.events = POLLIN;
 
     for(;;) {
-        result = poll(&pfd, 1, nanoTimeout / NET_NSEC_PER_MSEC);
+        result = poll(&pfd, 1, timeout);
         if (result < 0 && errno == EINTR) {
-            long newNanoTime = JVM_NanoTime(env, 0);
-            nanoTimeout -= newNanoTime - prevNanoTime;
-            if (nanoTimeout < NET_NSEC_PER_MSEC)
-                return 0;
-            prevNanoTime = newNanoTime;
+            if (timeout > 0) {
+                gettimeofday(&t, NULL);
+                newtime = (t.tv_sec * 1000)  +  t.tv_usec /1000;
+                timeout -= newtime - prevtime;
+                if (timeout <= 0)
+                    return 0;
+                prevtime = newtime;
+            }
         } else {
             return result;
         }
