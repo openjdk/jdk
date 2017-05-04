@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,6 @@
 #include <sys/sysctl.h>
 #endif
 
-#include "jvm.h"
 #include "net_util.h"
 
 #include "java_net_SocketOptions.h"
@@ -1544,12 +1543,11 @@ NET_Bind(int fd, SOCKETADDRESS *sa, int len)
 jint
 NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout)
 {
-    jlong prevNanoTime = JVM_NanoTime(env, 0);
-    jlong nanoTimeout = timeout * NET_NSEC_PER_MSEC;
+    jlong prevTime = JVM_CurrentTimeMillis(env, 0);
     jint read_rv;
 
     while (1) {
-        jlong newNanoTime;
+        jlong newTime;
         struct pollfd pfd;
         pfd.fd = fd;
         pfd.events = 0;
@@ -1561,18 +1559,36 @@ NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout)
           pfd.events |= POLLOUT;
 
         errno = 0;
-        read_rv = NET_Poll(&pfd, 1, nanoTimeout / NET_NSEC_PER_MSEC);
+        read_rv = NET_Poll(&pfd, 1, timeout);
 
-        newNanoTime = JVM_NanoTime(env, 0);
-        nanoTimeout -= (newNanoTime - prevNanoTime);
-        if (nanoTimeout < NET_NSEC_PER_MSEC) {
+        newTime = JVM_CurrentTimeMillis(env, 0);
+        timeout -= (newTime - prevTime);
+        if (timeout <= 0) {
           return read_rv > 0 ? 0 : -1;
         }
-        prevNanoTime = newNanoTime;
+        prevTime = newTime;
 
         if (read_rv > 0) {
           break;
         }
+
+
       } /* while */
-    return (nanoTimeout / NET_NSEC_PER_MSEC);
+
+    return timeout;
+}
+
+long NET_GetCurrentTime() {
+    struct timeval time;
+    gettimeofday(&time, NULL);
+    return (time.tv_sec * 1000 + time.tv_usec / 1000);
+}
+
+int NET_TimeoutWithCurrentTime(int s, long timeout, long currentTime) {
+    return NET_Timeout0(s, timeout, currentTime);
+}
+
+int NET_Timeout(int s, long timeout) {
+    long currentTime = (timeout > 0) ? NET_GetCurrentTime() : 0;
+    return NET_Timeout0(s, timeout, currentTime);
 }
