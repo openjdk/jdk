@@ -385,7 +385,6 @@ public:
   static void reorder_dictionary();
   static void copy_buckets(char** top, char* end);
   static void copy_table(char** top, char* end);
-  static void reverse();
   static void set_shared_dictionary(HashtableBucket<mtClass>* t, int length,
                                     int number_of_entries);
   // Printing
