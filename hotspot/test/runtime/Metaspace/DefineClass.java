@@ -41,8 +41,8 @@
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions
                      -XX:-UnsyncloadClass -XX:-AllowParallelDefineClass
                      test.DefineClass defineClassParallel
- * @run main/othervm test.DefineClass redefineClass
- * @run main/othervm test.DefineClass redefineClassWithError
+ * @run main/othervm -Djdk.attach.allowAttachSelf test.DefineClass redefineClass
+ * @run main/othervm -Djdk.attach.allowAttachSelf test.DefineClass redefineClassWithError
  * @author volker.simonis@gmail.com
  */
 
