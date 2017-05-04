@@ -29,7 +29,8 @@
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.attach
  *          java.base/jdk.internal.misc
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI jdk.vm.ci.runtime.test.RedefineClassTest
+ * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -Djdk.attach.allowAttachSelf
+ *                   jdk.vm.ci.runtime.test.RedefineClassTest
  */
 
 package jdk.vm.ci.runtime.test;

@@ -6814,7 +6814,9 @@ class C2 extends C1 implements I2 {
         <functionlink id="AddModuleReads"/>, <functionlink id="AddModuleExports"/>,
         <functionlink id="AddModuleOpens"/>, <functionlink id="AddModuleUses"/>,
         and <functionlink id="AddModuleProvides"/>. If a module is not modifiable
-        then the module can not be updated with these functions.
+        then the module can not be updated with these functions. The result of
+        this function is always <code>JNI_TRUE</code> when called to determine
+        if an unnamed module is modifiable.
       </description>
       <origin>new</origin>
       <capabilities>
