@@ -156,24 +156,6 @@ template <MEMFLAGS F> void BasicHashtable<F>::free_buckets() {
 }
 
 
-// Reverse the order of elements in the hash buckets.
-
-template <MEMFLAGS F> void BasicHashtable<F>::reverse() {
-
-  for (int i = 0; i < _table_size; ++i) {
-    BasicHashtableEntry<F>* new_list = NULL;
-    BasicHashtableEntry<F>* p = bucket(i);
-    while (p != NULL) {
-      BasicHashtableEntry<F>* next = p->next();
-      p->set_next(new_list);
-      new_list = p;
-      p = next;
-    }
-    *bucket_addr(i) = new_list;
-  }
-}
-
-
 // Copy the table to the shared space.
 
 template <MEMFLAGS F> void BasicHashtable<F>::copy_table(char** top, char* end) {
@@ -206,39 +188,6 @@ template <MEMFLAGS F> void BasicHashtable<F>::copy_table(char** top, char* end) 
   }
 }
 
-
-
-// Reverse the order of elements in the hash buckets.
-
-template <class T, MEMFLAGS F> void Hashtable<T, F>::reverse(void* boundary) {
-
-  for (int i = 0; i < this->table_size(); ++i) {
-    HashtableEntry<T, F>* high_list = NULL;
-    HashtableEntry<T, F>* low_list = NULL;
-    HashtableEntry<T, F>* last_low_entry = NULL;
-    HashtableEntry<T, F>* p = bucket(i);
-    while (p != NULL) {
-      HashtableEntry<T, F>* next = p->next();
-      if ((void*)p->literal() >= boundary) {
-        p->set_next(high_list);
-        high_list = p;
-      } else {
-        p->set_next(low_list);
-        low_list = p;
-        if (last_low_entry == NULL) {
-          last_low_entry = p;
-        }
-      }
-      p = next;
-    }
-    if (low_list != NULL) {
-      *bucket_addr(i) = low_list;
-      last_low_entry->set_next(high_list);
-    } else {
-      *bucket_addr(i) = high_list;
-    }
-  }
-}
 
 template <class T, MEMFLAGS F> int RehashableHashtable<T, F>::literal_size(Symbol *symbol) {
   return symbol->size() * HeapWordSize;

@@ -2839,11 +2839,6 @@ void SystemDictionary::copy_table(char** top, char* end) {
   dictionary()->copy_table(top, end);
 }
 
-
-void SystemDictionary::reverse() {
-  dictionary()->reverse();
-}
-
 int SystemDictionary::number_of_classes() {
   return dictionary()->number_of_entries();
 }

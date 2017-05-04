@@ -795,7 +795,6 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   SystemDictionary::reorder_dictionary();
   NOT_PRODUCT(SystemDictionary::verify();)
-  SystemDictionary::reverse();
   SystemDictionary::copy_buckets(&md_top, md_end);
 
   SystemDictionary::copy_table(&md_top, md_end);
