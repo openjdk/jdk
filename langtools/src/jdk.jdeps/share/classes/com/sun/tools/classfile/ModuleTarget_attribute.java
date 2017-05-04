@@ -38,8 +38,7 @@ import java.io.IOException;
 public class ModuleTarget_attribute extends Attribute {
     ModuleTarget_attribute(ClassReader cr, int name_index, int length) throws IOException {
         super(name_index, length);
-        os_name_index = cr.readUnsignedShort();
-        os_arch_index = cr.readUnsignedShort();
+        target_platform_index = cr.readUnsignedShort();
     }
 
     @Override
@@ -47,6 +46,5 @@ public class ModuleTarget_attribute extends Attribute {
         return visitor.visitModuleTarget(this, data);
     }
 
-    public final int os_name_index;
-    public final int os_arch_index;
+    public final int target_platform_index;
 }
