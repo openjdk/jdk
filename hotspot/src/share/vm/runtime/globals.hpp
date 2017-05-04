@@ -3874,6 +3874,9 @@ public:
   product(bool, StartAttachListener, false,                                 \
           "Always start Attach Listener at VM startup")                     \
                                                                             \
+  product(bool, EnableDynamicAgentLoading, true,                            \
+          "Allow tools to load agents with the attach mechanism")           \
+                                                                            \
   manageable(bool, PrintConcurrentLocks, false,                             \
           "Print java.util.concurrent locks in thread dump")                \
                                                                             \

@@ -650,6 +650,8 @@
   template(addUses_signature,                          "(Ljava/lang/Module;Ljava/lang/Class;)V")                  \
   template(addProvides_name,                           "addProvides")                                             \
   template(addProvides_signature,                      "(Ljava/lang/Module;Ljava/lang/Class;Ljava/lang/Class;)V") \
+  template(loadModule_name,                            "loadModule")                                              \
+  template(loadModule_signature,                       "(Ljava/lang/String;)Ljava/lang/Module;")                  \
   template(transformedByAgent_name,                    "transformedByAgent")                                      \
   template(transformedByAgent_signature,               "(Ljava/lang/Module;)V")                                   \
   template(appendToClassPathForInstrumentation_name,   "appendToClassPathForInstrumentation")                     \
