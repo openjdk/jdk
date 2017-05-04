@@ -668,33 +668,19 @@ public class AttributeWriter extends BasicWriter
     public Void visitModuleTarget(ModuleTarget_attribute attr, Void ignore) {
         println("ModuleTarget:");
         indent(+1);
-        print("os_name: #" + attr.os_name_index);
-        if (attr.os_name_index != 0) {
+        print("target_platform: #" + attr.target_platform_index);
+        if (attr.target_platform_index != 0) {
             tab();
-            print("// " + getOSName(attr));
-        }
-        println();
-        print("os_arch: #" + attr.os_arch_index);
-        if (attr.os_arch_index != 0) {
-            tab();
-            print("// " + getOSArch(attr));
+            print("// " + getTargetPlatform(attr));
         }
         println();
         indent(-1);
         return null;
     }
 
-    private String getOSName(ModuleTarget_attribute attr) {
+    private String getTargetPlatform(ModuleTarget_attribute attr) {
         try {
-            return constant_pool.getUTF8Value(attr.os_name_index);
-        } catch (ConstantPoolException e) {
-            return report(e);
-        }
-    }
-
-    private String getOSArch(ModuleTarget_attribute attr) {
-        try {
-            return constant_pool.getUTF8Value(attr.os_arch_index);
+            return constant_pool.getUTF8Value(attr.target_platform_index);
         } catch (ConstantPoolException e) {
             return report(e);
         }
