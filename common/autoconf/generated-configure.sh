@@ -995,8 +995,9 @@ OPENJDK_TARGET_CPU_OSARCH
 OPENJDK_TARGET_CPU_ISADIR
 OPENJDK_TARGET_CPU_LEGACY_LIB
 OPENJDK_TARGET_CPU_LEGACY
-OPENJDK_MODULE_TARGET_OS_ARCH
-OPENJDK_MODULE_TARGET_OS_NAME
+RELEASE_FILE_OS_ARCH
+RELEASE_FILE_OS_NAME
+OPENJDK_MODULE_TARGET_PLATFORM
 COMPILE_TYPE
 OPENJDK_TARGET_CPU_ENDIAN
 OPENJDK_TARGET_CPU_BITS
@@ -4897,6 +4898,8 @@ VALID_JVM_VARIANTS="server client minimal core zero zeroshark custom"
 
 
 
+
+
 #%%% Build and target systems %%%
 
 
@@ -5180,7 +5183,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1492975963
+DATE_WHEN_GENERATED=1493884285
 
 ###############################################################################
 #
@@ -16039,6 +16042,27 @@ $as_echo "$COMPILE_TYPE" >&6; }
   else
     OPENJDK_MODULE_TARGET_OS_ARCH="$OPENJDK_TARGET_CPU"
   fi
+
+  OPENJDK_MODULE_TARGET_PLATFORM="${OPENJDK_MODULE_TARGET_OS_NAME}-${OPENJDK_MODULE_TARGET_OS_ARCH}"
+
+
+
+  if test "x$OPENJDK_TARGET_OS" = "xsolaris"; then
+    RELEASE_FILE_OS_NAME=SunOS
+  fi
+  if test "x$OPENJDK_TARGET_OS" = "xlinux"; then
+    RELEASE_FILE_OS_NAME=Linux
+  fi
+  if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
+    RELEASE_FILE_OS_NAME=Windows
+  fi
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    RELEASE_FILE_OS_NAME="Darwin"
+  fi
+  if test "x$OPENJDK_TARGET_OS" = "xaix"; then
+    RELEASE_FILE_OS_NAME="AIX"
+  fi
+  RELEASE_FILE_OS_ARCH=${OPENJDK_TARGET_CPU}
 
 
 
