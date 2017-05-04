@@ -876,9 +876,7 @@ public class MethodHandles {
          * accessible to the class. The {@code PACKAGE} lookup mode serves to authenticate
          * that the lookup object was created by a caller in the runtime package (or derived
          * from a lookup originally created by suitably privileged code to a target class in
-         * the runtime package). The lookup modes cannot include {@link #PRIVATE PRIVATE}
-         * access. A lookup with {@code PRIVATE} access can be downgraded to drop this lookup
-         * mode with the {@linkplain #dropLookupMode(int) dropLookupMode} method. </p>
+         * the runtime package). </p>
          *
          * <p> The {@code bytes} parameter is the class bytes of a valid class file (as defined
          * by the <em>The Java Virtual Machine Specification</em>) with a class name in the
@@ -896,7 +894,6 @@ public class MethodHandles {
          * @throws IllegalArgumentException the bytes are for a class in a different package
          * to the lookup class
          * @throws IllegalAccessException if this lookup does not have {@code PACKAGE} access
-         * @throws UnsupportedOperationException if the lookup class has {@code PRIVATE} access
          * @throws LinkageError if the class is malformed ({@code ClassFormatError}), cannot be
          * verified ({@code VerifyError}), is already defined, or another linkage error occurs
          * @throws SecurityException if denied by the security manager
@@ -911,8 +908,6 @@ public class MethodHandles {
             SecurityManager sm = System.getSecurityManager();
             if (sm != null)
                 sm.checkPermission(new RuntimePermission("defineClass"));
-            if (hasPrivateAccess())
-                throw new UnsupportedOperationException("PRIVATE access not supported");
             if ((lookupModes() & PACKAGE) == 0)
                 throw new IllegalAccessException("Lookup does not have PACKAGE access");
             assert (lookupModes() & (MODULE|PUBLIC)) != 0;

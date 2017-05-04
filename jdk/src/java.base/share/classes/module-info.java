@@ -161,6 +161,7 @@ module java.base {
         java.security.jgss,
         java.sql,
         java.xml,
+        jdk.attach,
         jdk.charsets,
         jdk.compiler,   // reflective dependency
         jdk.incubator.httpclient,

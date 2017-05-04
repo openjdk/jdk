@@ -172,12 +172,10 @@ public class BuiltinClassLoader
     }
 
     /**
-     * Register a module this this class loader. This has the effect of making
-     * the types in the module visible.
+     * Register a module this class loader. This has the effect of making the
+     * types in the module visible.
      */
     public void loadModule(ModuleReference mref) {
-        assert !VM.isModuleSystemInited();
-
         String mn = mref.descriptor().name();
         if (nameToModule.putIfAbsent(mn, mref) != null) {
             throw new InternalError(mn + " already defined to this loader");
@@ -190,6 +188,11 @@ public class BuiltinClassLoader
                 throw new InternalError(pn + " in modules " + mn + " and "
                                         + other.mref().descriptor().name());
             }
+        }
+
+        // clear resources cache if VM is already initialized
+        if (VM.isModuleSystemInited() && resourceCache != null) {
+            resourceCache = null;
         }
     }
 
@@ -355,7 +358,10 @@ public class BuiltinClassLoader
     private List<URL> findMiscResource(String name) throws IOException {
         SoftReference<Map<String, List<URL>>> ref = this.resourceCache;
         Map<String, List<URL>> map = (ref != null) ? ref.get() : null;
-        if (map != null) {
+        if (map == null) {
+            map = new ConcurrentHashMap<>();
+            this.resourceCache = new SoftReference<>(map);
+        } else {
             List<URL> urls = map.get(name);
             if (urls != null)
                 return urls;
@@ -381,23 +387,18 @@ public class BuiltinClassLoader
                                 }
                             }
                         }
-                        return result;
+                        return (result != null) ? result : Collections.emptyList();
                     }
                 });
         } catch (PrivilegedActionException pae) {
             throw (IOException) pae.getCause();
         }
 
-        // only cache resources after all modules have been defined
+        // only cache resources after VM is fully initialized
         if (VM.isModuleSystemInited()) {
-            if (map == null) {
-                map = new ConcurrentHashMap<>();
-                this.resourceCache = new SoftReference<>(map);
-            }
-            if (urls == null)
-                urls = Collections.emptyList();
             map.putIfAbsent(name, urls);
         }
+
         return urls;
     }
 

@@ -33,13 +33,13 @@ import java.lang.module.ModuleDescriptor;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import jdk.tools.jlink.internal.ModuleSorter;
 import jdk.tools.jlink.internal.Utils;
+import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
@@ -132,18 +132,16 @@ public final class ReleaseInfoPlugin implements Plugin {
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         in.transformAndCopy(Function.identity(), out);
 
-        Optional<ResourcePoolModule> javaBase = in.moduleView().findModule("java.base");
-        javaBase.ifPresent(mod -> {
-            // fill release information available from transformed "java.base" module!
-            ModuleDescriptor desc = mod.descriptor();
-            desc.version().ifPresent(s -> release.put("JAVA_VERSION",
-                    quote(parseVersion(s.toString()))));
-            desc.version().ifPresent(s -> release.put("JAVA_FULL_VERSION",
-                    quote(s.toString())));
+        ResourcePoolModule javaBase = in.moduleView().findModule("java.base")
+                                                     .orElse(null);
+        if (javaBase == null || javaBase.targetPlatform() == null) {
+            throw new PluginException("ModuleTarget attribute is missing for java.base module");
+        }
 
-            release.put("OS_NAME", quote(mod.osName()));
-            release.put("OS_ARCH", quote(mod.osArch()));
-        });
+        // fill release information available from transformed "java.base" module!
+        ModuleDescriptor desc = javaBase.descriptor();
+        desc.version().ifPresent(v -> release.put("JAVA_VERSION",
+                                                  quote(parseVersion(v))));
 
         // put topological sorted module names separated by space
         release.put("MODULES",  new ModuleSorter(in.moduleView())
@@ -152,14 +150,15 @@ public final class ReleaseInfoPlugin implements Plugin {
 
         // create a TOP level ResourcePoolEntry for "release" file.
         out.add(ResourcePoolEntry.create("/java.base/release",
-            ResourcePoolEntry.Type.TOP, releaseFileContent()));
+                                         ResourcePoolEntry.Type.TOP,
+                                         releaseFileContent()));
         return out.build();
     }
 
     // Parse version string and return a string that includes only version part
     // leaving "pre", "build" information. See also: java.lang.Runtime.Version.
-    private static String parseVersion(String str) {
-        return Runtime.Version.parse(str)
+    private static String parseVersion(ModuleDescriptor.Version v) {
+        return Runtime.Version.parse(v.toString())
                       .version()
                       .stream()
                       .map(Object::toString)
