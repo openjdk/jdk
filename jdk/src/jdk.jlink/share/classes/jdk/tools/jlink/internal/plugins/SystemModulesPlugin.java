@@ -211,8 +211,7 @@ public final class SystemModulesPlugin implements Plugin {
             // drop target attribute only if any OS property is present
             ModuleTarget target = attrs.target();
             if (dropModuleTarget && target != null) {
-                this.dropModuleTarget = (target.osName() != null)
-                                        || (target.osArch() != null);
+                this.dropModuleTarget = (target.targetPlatform() != null);
             } else {
                 this.dropModuleTarget = false;
             }
@@ -377,7 +376,7 @@ public final class SystemModulesPlugin implements Plugin {
             }
 
             void dropModuleTarget() {
-                extender.targetPlatform("", "");
+                extender.targetPlatform("");
             }
 
             byte[] getBytes() throws IOException {
@@ -527,8 +526,7 @@ public final class SystemModulesPlugin implements Plugin {
                 ModuleDescriptor md = moduleInfo.descriptor;
                 // drop ModuleTarget attribute if java.base has all OS properties
                 ModuleTarget target = moduleInfo.target();
-                if (dropModuleTarget
-                    && (target.osName() != null) && (target.osArch() != null)) {
+                if (dropModuleTarget && target.targetPlatform() != null) {
                     dropModuleTarget = true;
                 } else {
                     dropModuleTarget = false;
@@ -543,7 +541,7 @@ public final class SystemModulesPlugin implements Plugin {
             moduleInfo.validatePackages();
 
             // module-info.class may be overridden for optimization
-            // 1. update ModuleTarget attribute to drop osName, osArch, osVersion
+            // 1. update ModuleTarget attribute to drop targetPlartform
             // 2. add/update ModulePackages attribute
             if (moduleInfo.shouldRewrite()) {
                 entry = entry.copyWithContent(moduleInfo.getBytes());
@@ -655,10 +653,9 @@ public final class SystemModulesPlugin implements Plugin {
                     // new ModuleTarget(String, String)
                     mv.visitTypeInsn(NEW, MODULE_TARGET_CLASSNAME);
                     mv.visitInsn(DUP);
-                    mv.visitLdcInsn(minfo.target().osName());
-                    mv.visitLdcInsn(minfo.target().osArch());
+                    mv.visitLdcInsn(minfo.target().targetPlatform());
                     mv.visitMethodInsn(INVOKESPECIAL, MODULE_TARGET_CLASSNAME,
-                        "<init>", "(Ljava/lang/String;Ljava/lang/String;)V", false);
+                        "<init>", "(Ljava/lang/String;)V", false);
 
                     mv.visitInsn(AASTORE);
                 }
