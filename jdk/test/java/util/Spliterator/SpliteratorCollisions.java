@@ -212,16 +212,16 @@ public class SpliteratorCollisions extends SpliteratorTestHelper {
     void testNullPointerException(String description,
                                   Collection<HashableInteger> exp,
                                   Supplier<Spliterator<HashableInteger>> s) {
-        executeAndCatch(NullPointerException.class, () -> s.get().forEachRemaining(null));
-        executeAndCatch(NullPointerException.class, () -> s.get().tryAdvance(null));
+        assertThrowsNPE(() -> s.get().forEachRemaining(null));
+        assertThrowsNPE(() -> s.get().tryAdvance(null));
     }
 
     @Test(dataProvider = "HashableIntSpliteratorWithNull")
     void testNullPointerExceptionWithNull(String description,
                                           Collection<HashableInteger> exp,
                                           Supplier<Spliterator<HashableInteger>> s) {
-        executeAndCatch(NullPointerException.class, () -> s.get().forEachRemaining(null));
-        executeAndCatch(NullPointerException.class, () -> s.get().tryAdvance(null));
+        assertThrowsNPE(() -> s.get().forEachRemaining(null));
+        assertThrowsNPE(() -> s.get().tryAdvance(null));
     }
 
 
