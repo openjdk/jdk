@@ -41,7 +41,6 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URI;
-import java.net.URL;
 import java.security.AccessControlContext;
 import java.security.ProtectionDomain;
 import java.security.AccessController;
@@ -2111,9 +2110,6 @@ public final class System {
             public Class<?> findBootstrapClassOrNull(ClassLoader cl, String name) {
                 return cl.findBootstrapClassOrNull(name);
             }
-            public URL findResource(ClassLoader cl, String mn, String name) throws IOException {
-                return cl.findResource(mn, name);
-            }
             public Stream<Package> packages(ClassLoader cl) {
                 return cl.packages();
             }
@@ -2122,6 +2118,9 @@ public final class System {
             }
             public String fastUUID(long lsb, long msb) {
                 return Long.fastUUID(lsb, msb);
+            }
+            public void addNonExportedPackages(ModuleLayer layer) {
+                SecurityManager.addNonExportedPackages(layer);
             }
             public void invalidatePackageAccessCache() {
                 SecurityManager.invalidatePackageAccessCache();

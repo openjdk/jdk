@@ -25,22 +25,21 @@
 
 package jdk.internal.module;
 
+/**
+ * Represents the module target.
+ *
+ * For now, this is a single value for the target platform, e.g. "linux-x64".
+ */
 public final class ModuleTarget {
 
-    private final String osName;
-    private final String osArch;
+    private final String targetPlatform;
 
-    public ModuleTarget(String osName, String osArch) {
-        this.osName = osName;
-        this.osArch = osArch;
+    public ModuleTarget(String targetPlatform) {
+        this.targetPlatform = targetPlatform;
     }
 
-    public String osName() {
-        return osName;
-    }
-
-    public String osArch() {
-        return osArch;
+    public String targetPlatform() {
+        return targetPlatform;
     }
 
 }

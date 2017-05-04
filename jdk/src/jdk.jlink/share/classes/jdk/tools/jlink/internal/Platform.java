@@ -40,12 +40,17 @@ public enum Platform {
     UNKNOWN;
 
     /**
-     * Returns the {@code Platform} of the given OS name specified
+     * Returns the {@code Platform} derived from the target platform
      * in the {@code ModuleTarget} attribute.
-     *
-     * @param osName OS name in ModuleTarget attribute
      */
-    public static Platform toPlatform(String osName) {
+    public static Platform toPlatform(String targetPlatform) {
+        String osName;
+        int index = targetPlatform.indexOf("-");
+        if (index < 0) {
+            osName = targetPlatform;
+        } else {
+            osName = targetPlatform.substring(0, index);
+        }
         try {
             return Platform.valueOf(osName.toUpperCase(Locale.ENGLISH));
         } catch (IllegalArgumentException e) {
@@ -57,9 +62,9 @@ public enum Platform {
      * Returns the {@code Platform} to which the given module is target to.
      */
     public static Platform getTargetPlatform(ResourcePoolModule module) {
-        String osName = module.osName();
-        if (osName != null) {
-            return toPlatform(osName);
+        String targetPlatform = module.targetPlatform();
+        if (targetPlatform != null) {
+            return toPlatform(targetPlatform);
         } else {
             return Platform.UNKNOWN;
         }
