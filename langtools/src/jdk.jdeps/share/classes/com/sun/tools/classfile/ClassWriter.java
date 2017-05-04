@@ -616,8 +616,7 @@ public class ClassWriter {
 
         @Override
         public Void visitModuleTarget(ModuleTarget_attribute attr, ClassOutputStream out) {
-            out.writeShort(attr.os_name_index);
-            out.writeShort(attr.os_arch_index);
+            out.writeShort(attr.target_platform_index);
             return null;
         }
 
