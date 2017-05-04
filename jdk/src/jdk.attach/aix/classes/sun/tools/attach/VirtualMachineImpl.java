@@ -214,13 +214,14 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
             // Special-case the "load" command so that the right exception is
             // thrown.
             if (cmd.equals("load")) {
-                throw new AgentLoadException("Failed to load agent library");
+                String msg = "Failed to load agent library";
+                if (!message.isEmpty())
+                    msg += ": " + message;
+                throw new AgentLoadException(msg);
             } else {
-                if (message == null) {
-                    throw new AttachOperationFailedException("Command failed in target VM");
-                } else {
-                    throw new AttachOperationFailedException(message);
-                }
+                if (message.isEmpty())
+                    message = "Command failed in target VM";
+                throw new AttachOperationFailedException(message);
             }
         }
 

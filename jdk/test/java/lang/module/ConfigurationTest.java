@@ -1843,17 +1843,9 @@ public class ConfigurationTest {
     public Object[][] createPlatformMatches() {
         return new Object[][]{
 
-            { "linux-arm",     "*-*" },
-            { "linux-*",       "*-*" },
-            { "*-arm",         "*-*" },
-
-            { "linux-*",       "linux-*" },
-            { "linux-arm",     "linux-*" },
-
-            { "*-arm",         "*-arm" },
-            { "linux-arm",     "*-arm" },
-
-            { "linux-arm",   "linux-arm" },
+            { "",              "" },
+            { "linux-arm",     "" },
+            { "linux-arm",     "linux-arm" },
 
         };
 
@@ -1863,9 +1855,8 @@ public class ConfigurationTest {
     public Object[][] createBad() {
         return new Object[][] {
 
-            { "linux-*",        "solaris-*"     },
-            { "*-arm",          "*-sparc"       },
-            { "linux-x86",      "solaris-sparc" },
+            { "linux-x64",        "linux-arm" },
+            { "linux-x64",        "windows-x64" },
 
         };
     }
@@ -1877,7 +1868,7 @@ public class ConfigurationTest {
     public void testPlatformMatch(String s1, String s2) throws IOException {
 
         ModuleDescriptor base =  ModuleDescriptor.newModule("java.base").build();
-        Path system = writeModule(base, "*-*");
+        Path system = writeModule(base, null);
 
         ModuleDescriptor descriptor1 = ModuleDescriptor.newModule("m1")
                 .requires("m2")
@@ -1928,7 +1919,7 @@ public class ConfigurationTest {
         throws IOException
     {
         ModuleDescriptor base =  ModuleDescriptor.newModule("java.base").build();
-        Path system = writeModule(base, "*-*");
+        Path system = writeModule(base, null);
 
         ModuleDescriptor descriptor1 = ModuleDescriptor.newModule("m1").build();
         Path dir1 = writeModule(descriptor1, s1);
@@ -2113,17 +2104,18 @@ public class ConfigurationTest {
 
 
     /**
-     * Decodes the platform string and calls the builder osName/osArch/osVersion
-     * methods to set the platform constraints.
+     * Writes a module-info.class. If {@code targetPlatform} is not null then
+     * it includes the ModuleTarget class file attribute with the target platform.
      */
-    static Path writeModule(ModuleDescriptor descriptor, String platformString)
+    static Path writeModule(ModuleDescriptor descriptor, String targetPlatform)
         throws IOException
     {
-        String[] s = platformString.split("-");
-        String osName = !s[0].equals("*") ? s[0] : null;
-        String osArch = !s[1].equals("*") ? s[1] : null;
-        ModuleTarget target = new ModuleTarget(osName, osArch);
-
+        ModuleTarget target;
+        if (targetPlatform != null) {
+            target = new ModuleTarget(targetPlatform);
+        } else {
+            target = null;
+        }
         String name = descriptor.name();
         Path dir = Files.createTempDirectory(name);
         Path mi = dir.resolve("module-info.class");

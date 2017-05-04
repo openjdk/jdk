@@ -116,7 +116,7 @@ final class Validator {
             // version number strings need to be sorted numerically
             n = VERSIONS_DIR.length();   // skip the common prefix
             int i1 = s1.indexOf('/', n);
-            int i2 = s1.indexOf('/', n);
+            int i2 = s2.indexOf('/', n);
             if (i1 == -1) throw new InvalidJarException(s1);
             if (i2 == -1) throw new InvalidJarException(s2);
             // shorter version numbers go first
