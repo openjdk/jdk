@@ -56,6 +56,7 @@ BUILD_HOTSPOT_JTREG_NATIVE_SRC += \
     $(HOTSPOT_TOPDIR)/test/runtime/modules/getModuleJNI \
     $(HOTSPOT_TOPDIR)/test/runtime/SameObject \
     $(HOTSPOT_TOPDIR)/test/runtime/BoolReturn \
+    $(HOTSPOT_TOPDIR)/test/runtime/noClassDefFoundMsg \
     $(HOTSPOT_TOPDIR)/test/compiler/floatingpoint/ \
     $(HOTSPOT_TOPDIR)/test/compiler/calls \
     $(HOTSPOT_TOPDIR)/test/serviceability/jvmti/GetNamedModule \
