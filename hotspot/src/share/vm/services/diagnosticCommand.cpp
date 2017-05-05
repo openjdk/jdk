@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -324,7 +324,7 @@ void PrintSystemPropertiesDCmd::execute(DCmdSource source, TRAPS) {
   // load VMSupport
   Symbol* klass = vmSymbols::jdk_internal_vm_VMSupport();
   Klass* k = SystemDictionary::resolve_or_fail(klass, true, CHECK);
-  instanceKlassHandle ik (THREAD, k);
+  InstanceKlass* ik = InstanceKlass::cast(k);
   if (ik->should_be_initialized()) {
     ik->initialize(THREAD);
   }
@@ -405,9 +405,8 @@ void SystemGCDCmd::execute(DCmdSource source, TRAPS) {
 void RunFinalizationDCmd::execute(DCmdSource source, TRAPS) {
   Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_System(),
                                                  true, CHECK);
-  instanceKlassHandle klass(THREAD, k);
   JavaValue result(T_VOID);
-  JavaCalls::call_static(&result, klass,
+  JavaCalls::call_static(&result, k,
                          vmSymbols::run_finalization_name(),
                          vmSymbols::void_method_signature(), CHECK);
 }
@@ -420,18 +419,15 @@ void HeapInfoDCmd::execute(DCmdSource source, TRAPS) {
 void FinalizerInfoDCmd::execute(DCmdSource source, TRAPS) {
   ResourceMark rm;
 
+  Klass* k = SystemDictionary::resolve_or_fail(
+    vmSymbols::finalizer_histogram_klass(), true, CHECK);
 
-  Klass* k = SystemDictionary::resolve_or_null(
-    vmSymbols::finalizer_histogram_klass(), THREAD);
-  assert(k != NULL, "FinalizerHistogram class is not accessible");
-
-  instanceKlassHandle klass(THREAD, k);
   JavaValue result(T_ARRAY);
 
   // We are calling lang.ref.FinalizerHistogram.getFinalizerHistogram() method
   // and expect it to return array of FinalizerHistogramEntry as Object[]
 
-  JavaCalls::call_static(&result, klass,
+  JavaCalls::call_static(&result, k,
                          vmSymbols::get_finalizer_histogram_name(),
                          vmSymbols::void_finalizer_histogram_entry_array_signature(), CHECK);
 
@@ -755,7 +751,6 @@ void JMXStartRemoteDCmd::execute(DCmdSource source, TRAPS) {
 
     Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
     Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_agent_Agent(), loader, Handle(), true, CHECK);
-    instanceKlassHandle ik (THREAD, k);
 
     JavaValue result(T_VOID);
 
@@ -809,7 +804,7 @@ void JMXStartRemoteDCmd::execute(DCmdSource source, TRAPS) {
 #undef PUT_OPTION
 
     Handle str = java_lang_String::create_from_str(options.as_string(), CHECK);
-    JavaCalls::call_static(&result, ik, vmSymbols::startRemoteAgent_name(), vmSymbols::string_void_signature(), str, CHECK);
+    JavaCalls::call_static(&result, k, vmSymbols::startRemoteAgent_name(), vmSymbols::string_void_signature(), str, CHECK);
 }
 
 JMXStartLocalDCmd::JMXStartLocalDCmd(outputStream *output, bool heap_allocated) :
@@ -828,10 +823,9 @@ void JMXStartLocalDCmd::execute(DCmdSource source, TRAPS) {
 
     Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
     Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_agent_Agent(), loader, Handle(), true, CHECK);
-    instanceKlassHandle ik (THREAD, k);
 
     JavaValue result(T_VOID);
-    JavaCalls::call_static(&result, ik, vmSymbols::startLocalAgent_name(), vmSymbols::void_method_signature(), CHECK);
+    JavaCalls::call_static(&result, k, vmSymbols::startLocalAgent_name(), vmSymbols::void_method_signature(), CHECK);
 }
 
 void JMXStopRemoteDCmd::execute(DCmdSource source, TRAPS) {
@@ -845,10 +839,9 @@ void JMXStopRemoteDCmd::execute(DCmdSource source, TRAPS) {
 
     Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
     Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_agent_Agent(), loader, Handle(), true, CHECK);
-    instanceKlassHandle ik (THREAD, k);
 
     JavaValue result(T_VOID);
-    JavaCalls::call_static(&result, ik, vmSymbols::stopRemoteAgent_name(), vmSymbols::void_method_signature(), CHECK);
+    JavaCalls::call_static(&result, k, vmSymbols::stopRemoteAgent_name(), vmSymbols::void_method_signature(), CHECK);
 }
 
 JMXStatusDCmd::JMXStatusDCmd(outputStream *output, bool heap_allocated) :
@@ -866,10 +859,9 @@ void JMXStatusDCmd::execute(DCmdSource source, TRAPS) {
 
   Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
   Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_agent_Agent(), loader, Handle(), true, CHECK);
-  instanceKlassHandle ik (THREAD, k);
 
   JavaValue result(T_OBJECT);
-  JavaCalls::call_static(&result, ik, vmSymbols::getAgentStatus_name(), vmSymbols::void_string_signature(), CHECK);
+  JavaCalls::call_static(&result, k, vmSymbols::getAgentStatus_name(), vmSymbols::void_string_signature(), CHECK);
 
   jvalue* jv = (jvalue*) result.get_value_addr();
   oop str = (oop) jv->l;

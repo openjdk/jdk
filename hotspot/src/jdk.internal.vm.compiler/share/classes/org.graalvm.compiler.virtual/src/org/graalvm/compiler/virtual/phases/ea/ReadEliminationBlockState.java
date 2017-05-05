@@ -22,16 +22,19 @@
  */
 package org.graalvm.compiler.virtual.phases.ea;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Iterator;
 
-import org.graalvm.compiler.core.common.CollectionsFactory;
 import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.util.Equivalence;
+import org.graalvm.util.EconomicMap;
 
-public class ReadEliminationBlockState extends EffectsBlockState<ReadEliminationBlockState> {
+/**
+ * This class maintains a set of known values, identified by base object, locations and offset.
+ */
+public final class ReadEliminationBlockState extends EffectsBlockState<ReadEliminationBlockState> {
 
-    final HashMap<CacheEntry<?>, ValueNode> readCache;
+    final EconomicMap<CacheEntry<?>, ValueNode> readCache;
 
     abstract static class CacheEntry<T> {
 
@@ -70,7 +73,7 @@ public class ReadEliminationBlockState extends EffectsBlockState<ReadElimination
         public abstract LocationIdentity getIdentity();
     }
 
-    static class LoadCacheEntry extends CacheEntry<LocationIdentity> {
+    static final class LoadCacheEntry extends CacheEntry<LocationIdentity> {
 
         LoadCacheEntry(ValueNode object, LocationIdentity identity) {
             super(object, identity);
@@ -97,7 +100,7 @@ public class ReadEliminationBlockState extends EffectsBlockState<ReadElimination
      * identity are separate so both must be considered when looking for optimizable memory
      * accesses.
      */
-    static class UnsafeLoadCacheEntry extends CacheEntry<ValueNode> {
+    static final class UnsafeLoadCacheEntry extends CacheEntry<ValueNode> {
 
         private final LocationIdentity locationIdentity;
 
@@ -143,11 +146,11 @@ public class ReadEliminationBlockState extends EffectsBlockState<ReadElimination
     }
 
     public ReadEliminationBlockState() {
-        readCache = CollectionsFactory.newMap();
+        readCache = EconomicMap.create(Equivalence.DEFAULT);
     }
 
     public ReadEliminationBlockState(ReadEliminationBlockState other) {
-        readCache = CollectionsFactory.newMap(other.readCache);
+        readCache = EconomicMap.create(Equivalence.DEFAULT, other.readCache);
     }
 
     @Override
@@ -157,7 +160,7 @@ public class ReadEliminationBlockState extends EffectsBlockState<ReadElimination
 
     @Override
     public boolean equivalentTo(ReadEliminationBlockState other) {
-        return compareMapsNoSize(readCache, other.readCache);
+        return isSubMapOf(readCache, other.readCache);
     }
 
     public void addCacheEntry(CacheEntry<?> identifier, ValueNode value) {
@@ -173,10 +176,16 @@ public class ReadEliminationBlockState extends EffectsBlockState<ReadElimination
     }
 
     public void killReadCache(LocationIdentity identity) {
-        readCache.entrySet().removeIf(entry -> entry.getKey().conflicts(identity));
+        Iterator<CacheEntry<?>> iterator = readCache.getKeys().iterator();
+        while (iterator.hasNext()) {
+            CacheEntry<?> entry = iterator.next();
+            if (entry.conflicts(identity)) {
+                iterator.remove();
+            }
+        }
     }
 
-    public Map<CacheEntry<?>, ValueNode> getReadCache() {
+    public EconomicMap<CacheEntry<?>, ValueNode> getReadCache() {
         return readCache;
     }
 }

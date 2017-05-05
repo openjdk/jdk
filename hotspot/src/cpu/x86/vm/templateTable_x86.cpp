@@ -3846,7 +3846,7 @@ void TemplateTable::_new() {
   __ jcc(Assembler::notEqual, slow_case_no_pop);
 
   // get InstanceKlass
-  __ movptr(rcx, Address(rcx, rdx, Address::times_ptr, sizeof(ConstantPool)));
+  __ load_resolved_klass_at_index(rcx, rdx, rcx);
   __ push(rcx);  // save the contexts of klass for initializing the header
 
   // make sure klass is initialized & doesn't have finalizer
@@ -4061,8 +4061,7 @@ void TemplateTable::checkcast() {
   // Get superklass in rax and subklass in rbx
   __ bind(quicked);
   __ mov(rdx, rax); // Save object in rdx; rax needed for subtype check
-  __ movptr(rax, Address(rcx, rbx,
-                       Address::times_ptr, sizeof(ConstantPool)));
+  __ load_resolved_klass_at_index(rcx, rbx, rax);
 
   __ bind(resolved);
   __ load_klass(rbx, rdx);
@@ -4128,8 +4127,7 @@ void TemplateTable::instanceof() {
   // Get superklass in rax and subklass in rdx
   __ bind(quicked);
   __ load_klass(rdx, rax);
-  __ movptr(rax, Address(rcx, rbx,
-                         Address::times_ptr, sizeof(ConstantPool)));
+  __ load_resolved_klass_at_index(rcx, rbx, rax);
 
   __ bind(resolved);
 

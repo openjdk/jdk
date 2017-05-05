@@ -23,7 +23,6 @@
 package org.graalvm.compiler.nodes;
 
 import static org.graalvm.compiler.nodeinfo.InputType.Extension;
-import static org.graalvm.compiler.nodeinfo.InputType.Guard;
 import static org.graalvm.compiler.nodeinfo.InputType.Memory;
 import static org.graalvm.compiler.nodeinfo.InputType.State;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_UNKNOWN;
@@ -38,7 +37,6 @@ import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodeinfo.Verbosity;
 import org.graalvm.compiler.nodes.extended.ForeignCallNode;
-import org.graalvm.compiler.nodes.extended.GuardingNode;
 import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
 import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
@@ -61,7 +59,6 @@ public final class InvokeWithExceptionNode extends ControlSplitNode implements I
     @Input(Extension) CallTargetNode callTarget;
     @OptionalInput(State) FrameState stateDuring;
     @OptionalInput(State) FrameState stateAfter;
-    @OptionalInput(Guard) GuardingNode guard;
     protected final int bci;
     protected boolean polymorphic;
     protected boolean useForInlining;
@@ -254,17 +251,6 @@ public final class InvokeWithExceptionNode extends ControlSplitNode implements I
     }
 
     @Override
-    public GuardingNode getGuard() {
-        return guard;
-    }
-
-    @Override
-    public void setGuard(GuardingNode guard) {
-        updateUsagesInterface(this.guard, guard);
-        this.guard = guard;
-    }
-
-    @Override
     public AbstractBeginNode getPrimarySuccessor() {
         return this.next();
     }
@@ -283,5 +269,16 @@ public final class InvokeWithExceptionNode extends ControlSplitNode implements I
     @Override
     public ValueNode classInit() {
         return classInit;
+    }
+
+    @Override
+    public boolean setProbability(AbstractBeginNode successor, double value) {
+        // Cannot set probability for exception invokes.
+        return false;
+    }
+
+    @Override
+    public int getSuccessorCount() {
+        return 2;
     }
 }

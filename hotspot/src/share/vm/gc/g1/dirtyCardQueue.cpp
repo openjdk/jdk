@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -301,9 +301,7 @@ void DirtyCardQueueSet::abandon_logs() {
 
 void DirtyCardQueueSet::concatenate_log(DirtyCardQueue& dcq) {
   if (!dcq.is_empty()) {
-    enqueue_complete_buffer(
-      BufferNode::make_node_from_buffer(dcq.get_buf(), dcq.get_index()));
-    dcq.reinitialize();
+    dcq.flush();
   }
 }
 

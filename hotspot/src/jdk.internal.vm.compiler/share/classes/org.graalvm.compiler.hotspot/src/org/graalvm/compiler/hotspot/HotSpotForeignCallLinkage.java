@@ -96,6 +96,11 @@ public interface HotSpotForeignCallLinkage extends ForeignCallLinkage, InvokeTar
      */
     boolean isCompiledStub();
 
+    /**
+     * Gets the stub, if any, this foreign call links to.
+     */
+    Stub getStub();
+
     void finalizeAddress(Backend backend);
 
     long getAddress();

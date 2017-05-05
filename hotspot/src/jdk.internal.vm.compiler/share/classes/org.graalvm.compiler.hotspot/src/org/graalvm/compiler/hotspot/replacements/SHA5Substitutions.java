@@ -32,7 +32,7 @@ import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.hotspot.HotSpotBackend;
 import org.graalvm.compiler.hotspot.nodes.ComputeObjectAddressNode;
 import org.graalvm.compiler.nodes.PiNode;
-import org.graalvm.compiler.nodes.extended.UnsafeLoadNode;
+import org.graalvm.compiler.nodes.extended.RawLoadNode;
 import org.graalvm.compiler.word.Word;
 
 import jdk.vm.ci.meta.JavaKind;
@@ -62,7 +62,7 @@ public class SHA5Substitutions {
     @MethodSubstitution(isStatic = false)
     static void implCompress0(Object receiver, byte[] buf, int ofs) {
         Object realReceiver = PiNode.piCastNonNull(receiver, shaClass);
-        Object state = UnsafeLoadNode.load(realReceiver, stateOffset, JavaKind.Object, LocationIdentity.any());
+        Object state = RawLoadNode.load(realReceiver, stateOffset, JavaKind.Object, LocationIdentity.any());
         Word bufAddr = Word.unsigned(ComputeObjectAddressNode.get(buf, getArrayBaseOffset(JavaKind.Byte) + ofs));
         Word stateAddr = Word.unsigned(ComputeObjectAddressNode.get(state, getArrayBaseOffset(JavaKind.Int)));
         HotSpotBackend.sha5ImplCompressStub(bufAddr, stateAddr);

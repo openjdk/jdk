@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,14 @@
  */
 package org.graalvm.compiler.graph;
 
-import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.Map.Entry;
+import java.util.function.BiFunction;
 
-public class NodeMap<T> extends NodeIdAccessor {
+import org.graalvm.util.EconomicMap;
+import org.graalvm.util.MapCursor;
+
+public class NodeMap<T> extends NodeIdAccessor implements EconomicMap<Node, T> {
 
     private static final int MIN_REALLOC_SIZE = 16;
 
@@ -43,6 +45,7 @@ public class NodeMap<T> extends NodeIdAccessor {
         this.values = Arrays.copyOf(copyFrom.values, copyFrom.values.length);
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public T get(Node node) {
         assert check(node);
@@ -62,16 +65,15 @@ public class NodeMap<T> extends NodeIdAccessor {
         assert check(node);
     }
 
+    @Override
     public boolean isEmpty() {
-        return !entries().iterator().hasNext();
+        throw new UnsupportedOperationException("isEmpty() is not supported for performance reasons");
     }
 
-    public boolean containsKey(Object key) {
-        if (key instanceof Node) {
-            Node node = (Node) key;
-            if (node.graph() == graph()) {
-                return get(node) != null;
-            }
+    @Override
+    public boolean containsKey(Node node) {
+        if (node.graph() == graph()) {
+            return get(node) != null;
         }
         return false;
     }
@@ -96,7 +98,7 @@ public class NodeMap<T> extends NodeIdAccessor {
 
     public void setAndGrow(Node node, T value) {
         checkAndGrow(node);
-        values[getNodeId(node)] = value;
+        set(node, value);
     }
 
     /**
@@ -107,12 +109,17 @@ public class NodeMap<T> extends NodeIdAccessor {
         return graph.getNode(i);
     }
 
+    @Override
     public int size() {
+        throw new UnsupportedOperationException("size() is not supported for performance reasons");
+    }
+
+    public int capacity() {
         return values.length;
     }
 
     public boolean isNew(Node node) {
-        return getNodeId(node) >= size();
+        return getNodeId(node) >= capacity();
     }
 
     private boolean check(Node node) {
@@ -121,16 +128,92 @@ public class NodeMap<T> extends NodeIdAccessor {
         return true;
     }
 
+    @Override
     public void clear() {
         Arrays.fill(values, null);
     }
 
-    public Iterable<Entry<Node, T>> entries() {
-        return new Iterable<Entry<Node, T>>() {
+    @Override
+    public Iterable<Node> getKeys() {
+        return new Iterable<Node>() {
 
             @Override
-            public Iterator<Entry<Node, T>> iterator() {
-                return new Iterator<Entry<Node, T>>() {
+            public Iterator<Node> iterator() {
+                return new Iterator<Node>() {
+
+                    int i = 0;
+
+                    @Override
+                    public boolean hasNext() {
+                        forward();
+                        return i < NodeMap.this.values.length;
+                    }
+
+                    @Override
+                    public Node next() {
+                        final int pos = i;
+                        final Node key = NodeMap.this.getKey(pos);
+                        i++;
+                        forward();
+                        return key;
+                    }
+
+                    @Override
+                    public void remove() {
+                        throw new UnsupportedOperationException();
+                    }
+
+                    private void forward() {
+                        while (i < NodeMap.this.values.length && (NodeMap.this.getKey(i) == null || NodeMap.this.values[i] == null)) {
+                            i++;
+                        }
+                    }
+                };
+            }
+        };
+    }
+
+    @Override
+    public MapCursor<Node, T> getEntries() {
+        return new MapCursor<Node, T>() {
+
+            int current = -1;
+
+            @Override
+            public boolean advance() {
+                current++;
+                while (current < NodeMap.this.values.length && (NodeMap.this.values[current] == null || NodeMap.this.getKey(current) == null)) {
+                    current++;
+                }
+                return current < NodeMap.this.values.length;
+            }
+
+            @Override
+            public Node getKey() {
+                return NodeMap.this.getKey(current);
+            }
+
+            @SuppressWarnings("unchecked")
+            @Override
+            public T getValue() {
+                return (T) NodeMap.this.values[current];
+            }
+
+            @Override
+            public void remove() {
+                assert NodeMap.this.values[current] != null;
+                NodeMap.this.values[current] = null;
+            }
+        };
+    }
+
+    @Override
+    public Iterable<T> getValues() {
+        return new Iterable<T>() {
+
+            @Override
+            public Iterator<T> iterator() {
+                return new Iterator<T>() {
 
                     int i = 0;
 
@@ -142,23 +225,12 @@ public class NodeMap<T> extends NodeIdAccessor {
 
                     @SuppressWarnings("unchecked")
                     @Override
-                    public Entry<Node, T> next() {
+                    public T next() {
                         final int pos = i;
-                        Node key = NodeMap.this.getKey(pos);
-                        T value = (T) NodeMap.this.values[pos];
+                        final T value = (T) NodeMap.this.values[pos];
                         i++;
                         forward();
-                        return new SimpleEntry<Node, T>(key, value) {
-
-                            private static final long serialVersionUID = 7813842391085737738L;
-
-                            @Override
-                            public T setValue(T v) {
-                                T oldv = super.setValue(v);
-                                NodeMap.this.values[pos] = v;
-                                return oldv;
-                            }
-                        };
+                        return value;
                     }
 
                     @Override
@@ -178,24 +250,42 @@ public class NodeMap<T> extends NodeIdAccessor {
 
     @Override
     public String toString() {
-        Iterator<Entry<Node, T>> i = entries().iterator();
-        if (!i.hasNext()) {
+        MapCursor<Node, T> i = getEntries();
+        if (!i.advance()) {
             return "{}";
         }
 
         StringBuilder sb = new StringBuilder();
         sb.append('{');
         while (true) {
-            Entry<Node, T> e = i.next();
-            Node key = e.getKey();
-            T value = e.getValue();
+            Node key = i.getKey();
+            T value = i.getValue();
             sb.append(key);
             sb.append('=');
             sb.append(value);
-            if (!i.hasNext()) {
+            if (!i.advance()) {
                 return sb.append('}').toString();
             }
             sb.append(',').append(' ');
+        }
+    }
+
+    @Override
+    public T put(Node key, T value) {
+        T result = get(key);
+        set(key, value);
+        return result;
+    }
+
+    @Override
+    public T removeKey(Node key) {
+        return put(key, null);
+    }
+
+    @Override
+    public void replaceAll(BiFunction<? super Node, ? super T, ? extends T> function) {
+        for (Node n : getKeys()) {
+            put(n, function.apply(n, get(n)));
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,26 @@ TEST(ChunkManager, list_index) {
   // The ChunkManager is only available in metaspace.cpp,
   // so the test code is located in that file.
   ChunkManager_test_list_index();
+
 }
+
+extern void* setup_chunkmanager_returntests();
+extern void teardown_chunkmanager_returntests(void*);
+extern void run_chunkmanager_returntests(void* p, float phase_length_factor);
+
+class ChunkManagerReturnTest : public ::testing::Test {
+protected:
+  void* _test;
+  virtual void SetUp() {
+    _test = setup_chunkmanager_returntests();
+  }
+  virtual void TearDown() {
+    teardown_chunkmanager_returntests(_test);
+  }
+};
+
+TEST_VM_F(ChunkManagerReturnTest, test00) { run_chunkmanager_returntests(_test, 0.0f); }
+TEST_VM_F(ChunkManagerReturnTest, test05) { run_chunkmanager_returntests(_test, 0.5f); }
+TEST_VM_F(ChunkManagerReturnTest, test10) { run_chunkmanager_returntests(_test, 1.0f); }
 
 #endif // ASSERT

@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.hotspot.nodes;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_15;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_8;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_8;
 
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -40,7 +40,7 @@ import org.graalvm.compiler.word.Word;
  * Sets up the {@linkplain HotSpotBackend#EXCEPTION_HANDLER_IN_CALLER arguments} expected by an
  * exception handler in the caller's frame, removes the current frame and jumps to said handler.
  */
-@NodeInfo(cycles = CYCLES_15, size = SIZE_8)
+@NodeInfo(cycles = CYCLES_8, size = SIZE_8)
 public final class JumpToExceptionHandlerInCallerNode extends ControlSinkNode implements LIRLowerable {
 
     public static final NodeClass<JumpToExceptionHandlerInCallerNode> TYPE = NodeClass.create(JumpToExceptionHandlerInCallerNode.class);

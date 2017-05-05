@@ -32,7 +32,7 @@ import org.graalvm.compiler.nodes.ValueNode;
 import jdk.vm.ci.meta.JavaKind;
 
 @NodeInfo
-public class GuardedUnsafeLoadNode extends UnsafeLoadNode implements GuardedNode {
+public class GuardedUnsafeLoadNode extends RawLoadNode implements GuardedNode {
     public static final NodeClass<GuardedUnsafeLoadNode> TYPE = NodeClass.create(GuardedUnsafeLoadNode.class);
 
     @OptionalInput(Guard) protected GuardingNode guard;

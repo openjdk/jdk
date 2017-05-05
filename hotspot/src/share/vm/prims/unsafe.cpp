@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -845,7 +845,7 @@ UNSAFE_ENTRY(jclass, Unsafe_DefineClass0(JNIEnv *env, jobject unsafe, jstring na
 // not just a literal string.  For such ldc instructions, the verifier uses the
 // type Object instead of String, if the loaded constant is not in fact a String.
 
-static instanceKlassHandle
+static InstanceKlass*
 Unsafe_DefineAnonymousClass_impl(JNIEnv *env,
                                  jclass host_class, jbyteArray data, jobjectArray cp_patches_jh,
                                  u1** temp_alloc,
@@ -932,18 +932,17 @@ Unsafe_DefineAnonymousClass_impl(JNIEnv *env,
     return NULL;
   }
 
-  return instanceKlassHandle(THREAD, anonk);
+  return InstanceKlass::cast(anonk);
 }
 
 UNSAFE_ENTRY(jclass, Unsafe_DefineAnonymousClass0(JNIEnv *env, jobject unsafe, jclass host_class, jbyteArray data, jobjectArray cp_patches_jh)) {
   ResourceMark rm(THREAD);
 
-  instanceKlassHandle anon_klass;
   jobject res_jh = NULL;
   u1* temp_alloc = NULL;
 
-  anon_klass = Unsafe_DefineAnonymousClass_impl(env, host_class, data, cp_patches_jh, &temp_alloc, THREAD);
-  if (anon_klass() != NULL) {
+  InstanceKlass* anon_klass = Unsafe_DefineAnonymousClass_impl(env, host_class, data, cp_patches_jh, &temp_alloc, THREAD);
+  if (anon_klass != NULL) {
     res_jh = JNIHandles::make_local(env, anon_klass->java_mirror());
   }
 
@@ -955,7 +954,7 @@ UNSAFE_ENTRY(jclass, Unsafe_DefineAnonymousClass0(JNIEnv *env, jobject unsafe, j
   // The anonymous class loader data has been artificially been kept alive to
   // this point.   The mirror and any instances of this class have to keep
   // it alive afterwards.
-  if (anon_klass() != NULL) {
+  if (anon_klass != NULL) {
     anon_klass->class_loader_data()->dec_keep_alive();
   }
 

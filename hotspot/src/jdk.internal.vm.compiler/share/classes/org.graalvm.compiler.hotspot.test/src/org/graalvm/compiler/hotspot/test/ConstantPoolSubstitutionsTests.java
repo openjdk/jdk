@@ -38,13 +38,17 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
-public class ConstantPoolSubstitutionsTests extends GraalCompilerTest implements Opcodes {
+public class ConstantPoolSubstitutionsTests extends GraalCompilerTest {
+
+    public ConstantPoolSubstitutionsTests() {
+        exportPackage(JAVA_BASE, "jdk.internal.org.objectweb.asm");
+    }
 
     @SuppressWarnings("try")
     protected StructuredGraph test(final String snippet) {
@@ -53,7 +57,7 @@ public class ConstantPoolSubstitutionsTests extends GraalCompilerTest implements
             StructuredGraph graph = parseEager(snippet, AllowAssumptions.YES);
             compile(graph.method(), graph);
             assertNotInGraph(graph, Invoke.class);
-            Debug.dump(Debug.BASIC_LOG_LEVEL, graph, snippet);
+            Debug.dump(Debug.BASIC_LEVEL, graph, snippet);
             return graph;
         } catch (Throwable e) {
             throw Debug.handle(e);
@@ -113,57 +117,30 @@ public class ConstantPoolSubstitutionsTests extends GraalCompilerTest implements
         }
     }
 
-    /**
-     * Disables these tests until we know how to dynamically export the {@code jdk.internal.reflect}
-     * package from the {@code java.base} module to the unnamed module associated with
-     * {@link AsmLoader}. Without such an export, the test fails as follows:
-     *
-     * <pre>
-     * Caused by: java.lang.IllegalAccessError: class org.graalvm.compiler.hotspot.test.ConstantPoolTest
-     * (in unnamed module @0x57599b23) cannot access class jdk.internal.reflect.ConstantPool (in
-     * module java.base) because module java.base does not export jdk.internal.reflect to unnamed
-     * module @0x57599b23
-     * </pre>
-     */
-    private static void assumeJDK8() {
-        // Assume.assumeTrue(Java8OrEarlier);
-    }
-
     @Test
     public void testGetSize() {
-        assumeJDK8();
         Object cp = getConstantPoolForObject();
         test("getSize", cp);
     }
 
     @Test
     public void testGetIntAt() {
-        assumeJDK8();
         test("getIntAt");
     }
 
     @Test
     public void testGetLongAt() {
-        assumeJDK8();
         test("getLongAt");
     }
 
     @Test
     public void testGetFloatAt() {
-        assumeJDK8();
         test("getFloatAt");
     }
 
     @Test
     public void testGetDoubleAt() {
-        assumeJDK8();
         test("getDoubleAt");
-    }
-
-    // @Test
-    public void testGetUTF8At() {
-        assumeJDK8();
-        test("getUTF8At");
     }
 
     private static final String PACKAGE_NAME = ConstantPoolSubstitutionsTests.class.getPackage().getName();
@@ -186,7 +163,7 @@ public class ConstantPoolSubstitutionsTests extends GraalCompilerTest implements
                 if (loaded != null) {
                     return loaded;
                 }
-                byte[] bytes = generateClass();
+                byte[] bytes = Gen.generateClass();
                 return (loaded = defineClass(name, bytes, 0, bytes.length));
             } else {
                 return super.findClass(name);
@@ -194,131 +171,134 @@ public class ConstantPoolSubstitutionsTests extends GraalCompilerTest implements
         }
     }
 
-    // @formatter:off
-    /*
-    static class ConstantPoolTest {
-        public static int getSize(Object o) {
-            ConstantPool cp = (ConstantPool) o;
-            return cp.getSize();
+    static class Gen implements Opcodes {
+        // @formatter:off
+        /*
+        static class ConstantPoolTest {
+            public static int getSize(Object o) {
+                ConstantPool cp = (ConstantPool) o;
+                return cp.getSize();
+            }
+
+            public static int getIntAt(Object o) {
+                ConstantPool cp = (ConstantPool) o;
+                return cp.getIntAt(0);
+            }
+
+            public static long getLongAt(Object o) {
+                ConstantPool cp = (ConstantPool) o;
+                return cp.getLongAt(0);
+            }
+
+            public static float getFloatAt(Object o) {
+                ConstantPool cp = (ConstantPool) o;
+                return cp.getFloatAt(0);
+            }
+
+            public static double getDoubleAt(Object o) {
+                ConstantPool cp = (ConstantPool) o;
+                return cp.getDoubleAt(0);
+            }
+
+            public static String getUTF8At(Object o) {
+                ConstantPool cp = (ConstantPool) o;
+                return cp.getUTF8At(0);
+            }
         }
+        */
+        // @formatter:on
 
-        public static int getIntAt(Object o) {
-            ConstantPool cp = (ConstantPool) o;
-            return cp.getIntAt(0);
+        static byte[] generateClass() {
+
+            ClassWriter cw = new ClassWriter(0);
+            MethodVisitor mv;
+
+            cw.visit(52, ACC_SUPER, PACKAGE_NAME_INTERNAL + "/ConstantPoolTest", null, "java/lang/Object", null);
+            cw.visitInnerClass(PACKAGE_NAME_INTERNAL + "/ConstantPoolTest", PACKAGE_NAME_INTERNAL + "/ConstantPoolSubstitutionsTests", "ConstantPoolTest",
+                            ACC_STATIC);
+            String constantPool = Java8OrEarlier ? "sun/reflect/ConstantPool" : "jdk/internal/reflect/ConstantPool";
+
+            mv = cw.visitMethod(0, "<init>", "()V", null, null);
+            mv.visitCode();
+            mv.visitVarInsn(ALOAD, 0);
+            mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(1, 1);
+            mv.visitEnd();
+
+            mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "getSize", "(Ljava/lang/Object;)I", null, null);
+            mv.visitCode();
+            mv.visitVarInsn(ALOAD, 0);
+            mv.visitTypeInsn(CHECKCAST, constantPool);
+            mv.visitVarInsn(ASTORE, 1);
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitMethodInsn(INVOKEVIRTUAL, constantPool, "getSize", "()I", false);
+            mv.visitInsn(IRETURN);
+            mv.visitMaxs(1, 3);
+            mv.visitEnd();
+
+            mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "getIntAt", "(Ljava/lang/Object;)I", null, null);
+            mv.visitCode();
+            mv.visitVarInsn(ALOAD, 0);
+            mv.visitTypeInsn(CHECKCAST, constantPool);
+            mv.visitVarInsn(ASTORE, 1);
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitInsn(ICONST_0);
+            mv.visitMethodInsn(INVOKEVIRTUAL, constantPool, "getIntAt", "(I)I", false);
+            mv.visitInsn(IRETURN);
+            mv.visitMaxs(2, 3);
+            mv.visitEnd();
+
+            mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "getLongAt", "(Ljava/lang/Object;)J", null, null);
+            mv.visitCode();
+            mv.visitVarInsn(ALOAD, 0);
+            mv.visitTypeInsn(CHECKCAST, constantPool);
+            mv.visitVarInsn(ASTORE, 1);
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitInsn(ICONST_0);
+            mv.visitMethodInsn(INVOKEVIRTUAL, constantPool, "getLongAt", "(I)J", false);
+            mv.visitInsn(LRETURN);
+            mv.visitMaxs(2, 3);
+            mv.visitEnd();
+
+            mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "getFloatAt", "(Ljava/lang/Object;)F", null, null);
+            mv.visitCode();
+            mv.visitVarInsn(ALOAD, 0);
+            mv.visitTypeInsn(CHECKCAST, constantPool);
+            mv.visitVarInsn(ASTORE, 1);
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitInsn(ICONST_0);
+            mv.visitMethodInsn(INVOKEVIRTUAL, constantPool, "getFloatAt", "(I)F", false);
+            mv.visitInsn(FRETURN);
+            mv.visitMaxs(2, 3);
+            mv.visitEnd();
+
+            mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "getDoubleAt", "(Ljava/lang/Object;)D", null, null);
+            mv.visitCode();
+            mv.visitVarInsn(ALOAD, 0);
+            mv.visitTypeInsn(CHECKCAST, constantPool);
+            mv.visitVarInsn(ASTORE, 1);
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitInsn(ICONST_0);
+            mv.visitMethodInsn(INVOKEVIRTUAL, constantPool, "getDoubleAt", "(I)D", false);
+            mv.visitInsn(DRETURN);
+            mv.visitMaxs(2, 3);
+            mv.visitEnd();
+
+            mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "getUTF8At", "(Ljava/lang/Object;)Ljava/lang/String;", null, null);
+            mv.visitCode();
+            mv.visitVarInsn(ALOAD, 0);
+            mv.visitTypeInsn(CHECKCAST, constantPool);
+            mv.visitVarInsn(ASTORE, 1);
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitInsn(ICONST_0);
+            mv.visitMethodInsn(INVOKEVIRTUAL, constantPool, "getUTF8At", "(I)Ljava/lang/String;", false);
+            mv.visitInsn(ARETURN);
+            mv.visitMaxs(2, 3);
+            mv.visitEnd();
+            cw.visitEnd();
+
+            return cw.toByteArray();
         }
-
-        public static long getLongAt(Object o) {
-            ConstantPool cp = (ConstantPool) o;
-            return cp.getLongAt(0);
-        }
-
-        public static float getFloatAt(Object o) {
-            ConstantPool cp = (ConstantPool) o;
-            return cp.getFloatAt(0);
-        }
-
-        public static double getDoubleAt(Object o) {
-            ConstantPool cp = (ConstantPool) o;
-            return cp.getDoubleAt(0);
-        }
-
-        public static String getUTF8At(Object o) {
-            ConstantPool cp = (ConstantPool) o;
-            return cp.getUTF8At(0);
-        }
-    }
-    */
-    // @formatter:on
-    private static byte[] generateClass() {
-
-        ClassWriter cw = new ClassWriter(0);
-        MethodVisitor mv;
-
-        cw.visit(52, ACC_SUPER, PACKAGE_NAME_INTERNAL + "/ConstantPoolTest", null, "java/lang/Object", null);
-        cw.visitInnerClass(PACKAGE_NAME_INTERNAL + "/ConstantPoolTest", PACKAGE_NAME_INTERNAL + "/ConstantPoolSubstitutionsTests", "ConstantPoolTest",
-                        ACC_STATIC);
-        String constantPool = Java8OrEarlier ? "sun/reflect/ConstantPool" : "jdk/internal/reflect/ConstantPool";
-
-        mv = cw.visitMethod(0, "<init>", "()V", null, null);
-        mv.visitCode();
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
-        mv.visitInsn(RETURN);
-        mv.visitMaxs(1, 1);
-        mv.visitEnd();
-
-        mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "getSize", "(Ljava/lang/Object;)I", null, null);
-        mv.visitCode();
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitTypeInsn(CHECKCAST, constantPool);
-        mv.visitVarInsn(ASTORE, 1);
-        mv.visitVarInsn(ALOAD, 1);
-        mv.visitMethodInsn(INVOKEVIRTUAL, constantPool, "getSize", "()I", false);
-        mv.visitInsn(IRETURN);
-        mv.visitMaxs(1, 3);
-        mv.visitEnd();
-
-        mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "getIntAt", "(Ljava/lang/Object;)I", null, null);
-        mv.visitCode();
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitTypeInsn(CHECKCAST, constantPool);
-        mv.visitVarInsn(ASTORE, 1);
-        mv.visitVarInsn(ALOAD, 1);
-        mv.visitInsn(ICONST_0);
-        mv.visitMethodInsn(INVOKEVIRTUAL, constantPool, "getIntAt", "(I)I", false);
-        mv.visitInsn(IRETURN);
-        mv.visitMaxs(2, 3);
-        mv.visitEnd();
-
-        mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "getLongAt", "(Ljava/lang/Object;)J", null, null);
-        mv.visitCode();
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitTypeInsn(CHECKCAST, constantPool);
-        mv.visitVarInsn(ASTORE, 1);
-        mv.visitVarInsn(ALOAD, 1);
-        mv.visitInsn(ICONST_0);
-        mv.visitMethodInsn(INVOKEVIRTUAL, constantPool, "getLongAt", "(I)J", false);
-        mv.visitInsn(LRETURN);
-        mv.visitMaxs(2, 3);
-        mv.visitEnd();
-
-        mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "getFloatAt", "(Ljava/lang/Object;)F", null, null);
-        mv.visitCode();
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitTypeInsn(CHECKCAST, constantPool);
-        mv.visitVarInsn(ASTORE, 1);
-        mv.visitVarInsn(ALOAD, 1);
-        mv.visitInsn(ICONST_0);
-        mv.visitMethodInsn(INVOKEVIRTUAL, constantPool, "getFloatAt", "(I)F", false);
-        mv.visitInsn(FRETURN);
-        mv.visitMaxs(2, 3);
-        mv.visitEnd();
-
-        mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "getDoubleAt", "(Ljava/lang/Object;)D", null, null);
-        mv.visitCode();
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitTypeInsn(CHECKCAST, constantPool);
-        mv.visitVarInsn(ASTORE, 1);
-        mv.visitVarInsn(ALOAD, 1);
-        mv.visitInsn(ICONST_0);
-        mv.visitMethodInsn(INVOKEVIRTUAL, constantPool, "getDoubleAt", "(I)D", false);
-        mv.visitInsn(DRETURN);
-        mv.visitMaxs(2, 3);
-        mv.visitEnd();
-
-        mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "getUTF8At", "(Ljava/lang/Object;)Ljava/lang/String;", null, null);
-        mv.visitCode();
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitTypeInsn(CHECKCAST, constantPool);
-        mv.visitVarInsn(ASTORE, 1);
-        mv.visitVarInsn(ALOAD, 1);
-        mv.visitInsn(ICONST_0);
-        mv.visitMethodInsn(INVOKEVIRTUAL, constantPool, "getUTF8At", "(I)Ljava/lang/String;", false);
-        mv.visitInsn(ARETURN);
-        mv.visitMaxs(2, 3);
-        mv.visitEnd();
-        cw.visitEnd();
-
-        return cw.toByteArray();
     }
 }

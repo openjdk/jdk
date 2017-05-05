@@ -186,6 +186,7 @@ struct Flag {
   void* _addr;
   NOT_PRODUCT(const char* _doc;)
   Flags _flags;
+  size_t _name_len;
 
   // points to all Flags static array
   static Flag* flags;
@@ -247,6 +248,8 @@ struct Flag {
   Flags get_origin();
   void set_origin(Flags origin);
 
+  size_t get_name_length();
+
   bool is_default();
   bool is_ergonomic();
   bool is_command_line();
@@ -273,7 +276,7 @@ struct Flag {
   bool is_writeable_ext() const;
   bool is_external_ext() const;
 
-  void unlock_diagnostic();
+  void clear_diagnostic();
 
   Flag::MsgType get_locked_message(char*, int) const;
   void get_locked_message_ext(char*, int) const;
@@ -933,6 +936,9 @@ public:
                                                                             \
   notproduct(bool, TestSafeFetchInErrorHandler, false,                      \
           "If true, tests SafeFetch inside error handler.")                 \
+                                                                            \
+  notproduct(bool, TestUnresponsiveErrorHandler, false,                     \
+          "If true, simulates an unresponsive error handler.")              \
                                                                             \
   develop(bool, Verbose, false,                                             \
           "Print additional debugging information from other modes")        \
@@ -3807,12 +3813,6 @@ public:
           "Data sampling interval (in milliseconds)")                       \
           range(PeriodicTask::min_interval, max_jint)                       \
           constraint(PerfDataSamplingIntervalFunc, AfterErgo)               \
-                                                                            \
-  develop(bool, PerfTraceDataCreation, false,                               \
-          "Trace creation of Performance Data Entries")                     \
-                                                                            \
-  develop(bool, PerfTraceMemOps, false,                                     \
-          "Trace PerfMemory create/attach/detach calls")                    \
                                                                             \
   product(bool, PerfDisableSharedMem, false,                                \
           "Store performance data in standard memory")                      \

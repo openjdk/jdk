@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -282,7 +282,7 @@ void ClearNoncleanCardWrapper::do_MemRegion(MemRegion mr) {
 // cur-younger-gen                ==> cur_younger_gen
 // cur_youngergen_and_prev_nonclean_card ==> no change.
 void CardTableRS::write_ref_field_gc_par(void* field, oop new_val) {
-  jbyte* entry = _ct_bs->byte_for(field);
+  volatile jbyte* entry = _ct_bs->byte_for(field);
   do {
     jbyte entry_val = *entry;
     // We put this first because it's probably the most common case.

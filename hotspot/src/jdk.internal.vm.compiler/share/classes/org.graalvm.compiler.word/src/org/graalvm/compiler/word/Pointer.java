@@ -46,6 +46,15 @@ public interface Pointer extends Unsigned, PointerBase {
     Object toObject();
 
     /**
+     * Unsafe conversion of this Pointer to a Java language object. No correctness checks or type
+     * checks are performed. The caller must ensure that the Pointer contains a valid Java object
+     * that can i.e., processed by the garbage collector and the Pointer does not contain 0.
+     *
+     * @return this Pointer cast to non-null Object.
+     */
+    Object toObjectNonNull();
+
+    /**
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
@@ -842,6 +851,22 @@ public interface Pointer extends Unsigned, PointerBase {
      */
     void writeObject(WordBase offset, Object val);
 
+    int compareAndSwapInt(WordBase offset, int expectedValue, int newValue, LocationIdentity locationIdentity);
+
+    long compareAndSwapLong(WordBase offset, long expectedValue, long newValue, LocationIdentity locationIdentity);
+
+    Word compareAndSwapWord(WordBase offset, WordBase expectedValue, WordBase newValue, LocationIdentity locationIdentity);
+
+    Object compareAndSwapObject(WordBase offset, Object expectedValue, Object newValue, LocationIdentity locationIdentity);
+
+    boolean logicCompareAndSwapInt(WordBase offset, int expectedValue, int newValue, LocationIdentity locationIdentity);
+
+    boolean logicCompareAndSwapLong(WordBase offset, long expectedValue, long newValue, LocationIdentity locationIdentity);
+
+    boolean logicCompareAndSwapWord(WordBase offset, WordBase expectedValue, WordBase newValue, LocationIdentity locationIdentity);
+
+    boolean logicCompareAndSwapObject(WordBase offset, Object expectedValue, Object newValue, LocationIdentity locationIdentity);
+
     /**
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
@@ -922,6 +947,22 @@ public interface Pointer extends Unsigned, PointerBase {
      * @param val the value to be written to memory
      */
     void writeObject(int offset, Object val);
+
+    int compareAndSwapInt(int offset, int expectedValue, int newValue, LocationIdentity locationIdentity);
+
+    long compareAndSwapLong(int offset, long expectedValue, long newValue, LocationIdentity locationIdentity);
+
+    Word compareAndSwapWord(int offset, WordBase expectedValue, WordBase newValue, LocationIdentity locationIdentity);
+
+    Object compareAndSwapObject(int offset, Object expectedValue, Object newValue, LocationIdentity locationIdentity);
+
+    boolean logicCompareAndSwapInt(int offset, int expectedValue, int newValue, LocationIdentity locationIdentity);
+
+    boolean logicCompareAndSwapLong(int offset, long expectedValue, long newValue, LocationIdentity locationIdentity);
+
+    boolean logicCompareAndSwapWord(int offset, WordBase expectedValue, WordBase newValue, LocationIdentity locationIdentity);
+
+    boolean logicCompareAndSwapObject(int offset, Object expectedValue, Object newValue, LocationIdentity locationIdentity);
 
     // Math functions that are defined in Unsigned, but known to preserve the
     // pointer-characteristics.

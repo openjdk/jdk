@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -1387,7 +1387,7 @@ const int Matcher::min_vector_size(const BasicType bt) {
 }
 
 // Vector ideal reg corresponding to specidied size in bytes
-const int Matcher::vector_ideal_reg(int size) {
+const uint Matcher::vector_ideal_reg(int size) {
   assert(MaxVectorSize >= size, "");
   switch(size) {
     case  4: return Op_VecS;
@@ -1401,7 +1401,7 @@ const int Matcher::vector_ideal_reg(int size) {
 }
 
 // Only lowest bits of xmm reg are used for vector shift count.
-const int Matcher::vector_shift_count_ideal_reg(int size) {
+const uint Matcher::vector_shift_count_ideal_reg(int size) {
   return Op_VecS;
 }
 

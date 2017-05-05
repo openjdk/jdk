@@ -23,10 +23,13 @@
 package org.graalvm.compiler.phases.verify;
 
 import org.graalvm.compiler.core.common.type.ObjectStamp;
+import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.ObjectEqualsNode;
+import org.graalvm.compiler.nodes.java.LoadFieldNode;
+import org.graalvm.compiler.nodes.spi.UncheckedInterfaceProvider;
 import org.graalvm.compiler.nodes.type.StampTool;
 import org.graalvm.compiler.phases.VerifyPhase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
@@ -80,6 +83,16 @@ public class VerifyUsageWithEquals extends VerifyPhase<PhaseContext> {
         if (node.stamp() instanceof ObjectStamp) {
             ResolvedJavaType restrictedType = metaAccess.lookupJavaType(restrictedClass);
             ResolvedJavaType nodeType = StampTool.typeOrNull(node);
+            if (nodeType == null && node instanceof LoadFieldNode) {
+                nodeType = (ResolvedJavaType) ((LoadFieldNode) node).field().getType();
+            }
+            if (nodeType == null && node instanceof Invoke) {
+                ResolvedJavaMethod target = ((Invoke) node).callTarget().targetMethod();
+                nodeType = (ResolvedJavaType) target.getSignature().getReturnType(target.getDeclaringClass());
+            }
+            if (nodeType == null && node instanceof UncheckedInterfaceProvider) {
+                nodeType = StampTool.typeOrNull(((UncheckedInterfaceProvider) node).uncheckedStamp());
+            }
 
             if (nodeType != null && restrictedType.isAssignableFrom(nodeType)) {
                 return true;

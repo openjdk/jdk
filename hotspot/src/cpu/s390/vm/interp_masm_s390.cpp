@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -371,7 +371,8 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result
   Register tmp = index;  // reuse
   z_sllg(index, index, LogBytesPerHeapOop); // Offset into resolved references array.
   // Load pointer for resolved_references[] objArray.
-  z_lg(result, ConstantPool::resolved_references_offset_in_bytes(), result);
+  z_lg(result, ConstantPool::cache_offset_in_bytes(), result);
+  z_lg(result, ConstantPoolCache::resolved_references_offset_in_bytes(), result);
   // JNIHandles::resolve(result)
   z_lg(result, 0, result); // Load resolved references array itself.
 #ifdef ASSERT
@@ -384,6 +385,16 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result
 #endif
   z_agr(result, index);    // Address of indexed array element.
   load_heap_oop(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT), result);
+}
+
+// load cpool->resolved_klass_at(index)
+void InterpreterMacroAssembler::load_resolved_klass_at_offset(Register cpool, Register offset, Register iklass) {
+  // int value = *(Rcpool->int_at_addr(which));
+  // int resolved_klass_index = extract_low_short_from_int(value);
+  z_llgh(offset, Address(cpool, offset, sizeof(ConstantPool) + 2)); // offset = resolved_klass_index (s390 is big-endian)
+  z_sllg(offset, offset, LogBytesPerWord);                          // Convert 'index' to 'offset'
+  z_lg(iklass, Address(cpool, ConstantPool::resolved_klasses_offset_in_bytes())); // iklass = cpool->_resolved_klasses
+  z_lg(iklass, Address(iklass, offset, Array<Klass*>::base_offset_in_bytes()));
 }
 
 void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache,

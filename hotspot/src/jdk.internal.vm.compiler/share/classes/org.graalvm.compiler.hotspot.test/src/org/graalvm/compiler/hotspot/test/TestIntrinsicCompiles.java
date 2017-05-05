@@ -22,13 +22,11 @@
  */
 package org.graalvm.compiler.hotspot.test;
 
-import java.util.List;
-import java.util.Set;
+import static org.graalvm.compiler.core.common.CompilationIdentifier.INVALID_COMPILATION_ID;
 
-import org.junit.Test;
+import java.util.List;
 
 import org.graalvm.compiler.api.test.Graal;
-import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.hotspot.HotSpotGraalCompiler;
 import org.graalvm.compiler.hotspot.HotSpotGraalRuntimeProvider;
@@ -39,6 +37,8 @@ import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.MethodSubstitutionPlugin;
 import org.graalvm.compiler.runtime.RuntimeProvider;
+import org.graalvm.util.EconomicSet;
+import org.junit.Test;
 
 import jdk.vm.ci.hotspot.HotSpotVMConfigStore;
 import jdk.vm.ci.hotspot.VMIntrinsicMethod;
@@ -62,7 +62,7 @@ public class TestIntrinsicCompiles extends GraalCompilerTest {
         return false;
     }
 
-    private static ResolvedJavaMethod findMethod(Set<ResolvedJavaMethod> methods, VMIntrinsicMethod intrinsic) {
+    private static ResolvedJavaMethod findMethod(EconomicSet<ResolvedJavaMethod> methods, VMIntrinsicMethod intrinsic) {
         for (ResolvedJavaMethod method : methods) {
             if (match(method, intrinsic)) {
                 return method;
@@ -80,7 +80,7 @@ public class TestIntrinsicCompiles extends GraalCompilerTest {
         Plugins graphBuilderPlugins = providers.getGraphBuilderPlugins();
         InvocationPlugins invocationPlugins = graphBuilderPlugins.getInvocationPlugins();
 
-        Set<ResolvedJavaMethod> pluginMethods = invocationPlugins.getMethods();
+        EconomicSet<ResolvedJavaMethod> pluginMethods = invocationPlugins.getMethods();
         HotSpotVMConfigStore store = rt.getVMConfig().getStore();
         List<VMIntrinsicMethod> intrinsics = store.getIntrinsics();
         for (VMIntrinsicMethod intrinsic : intrinsics) {
@@ -88,7 +88,7 @@ public class TestIntrinsicCompiles extends GraalCompilerTest {
             if (method != null) {
                 InvocationPlugin plugin = invocationPlugins.lookupInvocation(method);
                 if (plugin instanceof MethodSubstitutionPlugin && !method.isNative()) {
-                    StructuredGraph graph = compiler.getIntrinsicGraph(method, providers, CompilationIdentifier.INVALID_COMPILATION_ID);
+                    StructuredGraph graph = compiler.getIntrinsicGraph(method, providers, INVALID_COMPILATION_ID, getInitialOptions());
                     getCode(method, graph);
                 }
             }

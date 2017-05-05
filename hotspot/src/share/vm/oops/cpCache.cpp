@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,14 +101,14 @@ bool ConstantPoolCacheEntry::init_flags_atomic(intptr_t flags) {
 // are updated, lest other processors see a non-zero bytecode but zero f1/f2.
 void ConstantPoolCacheEntry::set_field(Bytecodes::Code get_code,
                                        Bytecodes::Code put_code,
-                                       KlassHandle field_holder,
+                                       Klass* field_holder,
                                        int field_index,
                                        int field_offset,
                                        TosState field_type,
                                        bool is_final,
                                        bool is_volatile,
                                        Klass* root_klass) {
-  set_f1(field_holder());
+  set_f1(field_holder);
   set_f2(field_offset);
   assert((field_index & field_index_mask) == field_index,
          "field index does not fit in low flag bits");
@@ -282,7 +282,7 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
   // the lock, so that when the losing writer returns, he can use the linked
   // cache entry.
 
-  objArrayHandle resolved_references = cpool->resolved_references();
+  objArrayHandle resolved_references(Thread::current(), cpool->resolved_references());
   // Use the resolved_references() lock for this cpCache entry.
   // resolved_references are created for all classes with Invokedynamic, MethodHandle
   // or MethodType constant pool cache entries.

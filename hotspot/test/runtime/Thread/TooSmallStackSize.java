@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,11 +170,11 @@ public class TooSmallStackSize {
         checkStack("-XX:ThreadStackSize=", ThreadStackSizeString, "16");
 
         /*
-         * Try with a 32k stack size, which is the size that the launcher will
+         * Try with a 64k stack size, which is the size that the launcher will
          * set to if you try setting to anything smaller. This should produce the same
          * result as setting to 16k if the fix for 6762191 is in place.
          */
-        String min_stack_allowed = checkStack("-XX:ThreadStackSize=", ThreadStackSizeString, "32");
+        String min_stack_allowed = checkStack("-XX:ThreadStackSize=", ThreadStackSizeString, "64");
 
         /*
          * Try again with a the minimum stack size that was given in the error message
@@ -182,17 +182,24 @@ public class TooSmallStackSize {
         checkMinStackAllowed("-XX:ThreadStackSize=", ThreadStackSizeString, min_stack_allowed);
 
         /*
+         * Now try with a stack size that is not page aligned.
+         */
+        checkMinStackAllowed("-XX:ThreadStackSize=", ThreadStackSizeString, "513");
+
+        /*
          * Now redo the same tests with the compiler thread stack size:
          */
         checkStack("-XX:CompilerThreadStackSize=", CompilerThreadStackSizeString, "16");
-        min_stack_allowed = checkStack("-XX:CompilerThreadStackSize=", CompilerThreadStackSizeString, "32");
+        min_stack_allowed = checkStack("-XX:CompilerThreadStackSize=", CompilerThreadStackSizeString, "64");
         checkMinStackAllowed("-XX:CompilerThreadStackSize=", CompilerThreadStackSizeString, min_stack_allowed);
+        checkMinStackAllowed("-XX:CompilerThreadStackSize=", CompilerThreadStackSizeString, "513");
 
         /*
          * Now redo the same tests with the VM thread stack size:
          */
         checkStack("-XX:VMThreadStackSize=", VMThreadStackSizeString, "16");
-        min_stack_allowed = checkStack("-XX:VMThreadStackSize=", VMThreadStackSizeString, "32");
+        min_stack_allowed = checkStack("-XX:VMThreadStackSize=", VMThreadStackSizeString, "64");
         checkMinStackAllowed("-XX:VMThreadStackSize=", VMThreadStackSizeString, min_stack_allowed);
+        checkMinStackAllowed("-XX:VMThreadStackSize=", VMThreadStackSizeString, "513");
     }
 }

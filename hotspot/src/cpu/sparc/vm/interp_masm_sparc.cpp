@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -318,52 +318,32 @@ void InterpreterMacroAssembler::dispatch_Lbyte_code(TosState state, address* tab
 void InterpreterMacroAssembler::load_unaligned_double(Register r1, int offset, FloatRegister d) {
   assert_not_delayed();
 
-#ifdef _LP64
   ldf(FloatRegisterImpl::D, r1, offset, d);
-#else
-  ldf(FloatRegisterImpl::S, r1, offset, d);
-  ldf(FloatRegisterImpl::S, r1, offset + Interpreter::stackElementSize, d->successor());
-#endif
 }
 
 // Known good alignment in _LP64 but unknown otherwise
 void InterpreterMacroAssembler::store_unaligned_double(FloatRegister d, Register r1, int offset) {
   assert_not_delayed();
 
-#ifdef _LP64
   stf(FloatRegisterImpl::D, d, r1, offset);
   // store something more useful here
   debug_only(stx(G0, r1, offset+Interpreter::stackElementSize);)
-#else
-  stf(FloatRegisterImpl::S, d, r1, offset);
-  stf(FloatRegisterImpl::S, d->successor(), r1, offset + Interpreter::stackElementSize);
-#endif
 }
 
 
 // Known good alignment in _LP64 but unknown otherwise
 void InterpreterMacroAssembler::load_unaligned_long(Register r1, int offset, Register rd) {
   assert_not_delayed();
-#ifdef _LP64
   ldx(r1, offset, rd);
-#else
-  ld(r1, offset, rd);
-  ld(r1, offset + Interpreter::stackElementSize, rd->successor());
-#endif
 }
 
 // Known good alignment in _LP64 but unknown otherwise
 void InterpreterMacroAssembler::store_unaligned_long(Register l, Register r1, int offset) {
   assert_not_delayed();
 
-#ifdef _LP64
   stx(l, r1, offset);
   // store something more useful here
   stx(G0, r1, offset+Interpreter::stackElementSize);
-#else
-  st(l, r1, offset);
-  st(l->successor(), r1, offset + Interpreter::stackElementSize);
-#endif
 }
 
 void InterpreterMacroAssembler::pop_i(Register r) {
@@ -527,9 +507,7 @@ void InterpreterMacroAssembler::empty_expression_stack() {
   sub( Lesp, Gframe_size, Gframe_size );
   and3( Gframe_size, -(2 * wordSize), Gframe_size );          // align SP (downwards) to an 8/16-byte boundary
   debug_only(verify_sp(Gframe_size, G4_scratch));
-#ifdef _LP64
   sub(Gframe_size, STACK_BIAS, Gframe_size );
-#endif
   mov(Gframe_size, SP);
 
   bind(done);
@@ -541,28 +519,20 @@ void InterpreterMacroAssembler::verify_sp(Register Rsp, Register Rtemp) {
   Label Bad, OK;
 
   // Saved SP must be aligned.
-#ifdef _LP64
   btst(2*BytesPerWord-1, Rsp);
-#else
-  btst(LongAlignmentMask, Rsp);
-#endif
   br(Assembler::notZero, false, Assembler::pn, Bad);
   delayed()->nop();
 
   // Saved SP, plus register window size, must not be above FP.
   add(Rsp, frame::register_save_words * wordSize, Rtemp);
-#ifdef _LP64
   sub(Rtemp, STACK_BIAS, Rtemp);  // Bias Rtemp before cmp to FP
-#endif
   cmp_and_brx_short(Rtemp, FP, Assembler::greaterUnsigned, Assembler::pn, Bad);
 
   // Saved SP must not be ridiculously below current SP.
   size_t maxstack = MAX2(JavaThread::stack_size_at_create(), (size_t) 4*K*K);
   set(maxstack, Rtemp);
   sub(SP, Rtemp, Rtemp);
-#ifdef _LP64
   add(Rtemp, STACK_BIAS, Rtemp);  // Unbias Rtemp before cmp to Rsp
-#endif
   cmp_and_brx_short(Rsp, Rtemp, Assembler::lessUnsigned, Assembler::pn, Bad);
 
   ba_short(OK);
@@ -584,9 +554,7 @@ void InterpreterMacroAssembler::verify_esp(Register Resp) {
   delayed()->sub(Resp, frame::memory_parameter_word_sp_offset * wordSize, Resp);
   stop("too many pops:  Lesp points into monitor area");
   bind(OK1);
-#ifdef _LP64
   sub(Resp, STACK_BIAS, Resp);
-#endif
   cmp(Resp, SP);
   brx(Assembler::greaterEqualUnsigned, false, Assembler::pt, OK2);
   delayed()->add(Resp, STACK_BIAS + frame::memory_parameter_word_sp_offset * wordSize, Resp);
@@ -696,21 +664,12 @@ void InterpreterMacroAssembler::get_4_byte_integer_at_bcp(
   }
 
   br(Assembler::zero, true, Assembler::pn, aligned);
-#ifdef _LP64
   delayed()->ldsw(Rtmp, 0, Rdst);
-#else
-  delayed()->ld(Rtmp, 0, Rdst);
-#endif
 
   ldub(Lbcp, bcp_offset + 3, Rdst);
   ldub(Lbcp, bcp_offset + 2, Rtmp);  sll(Rtmp,  8, Rtmp);  or3(Rtmp, Rdst, Rdst);
   ldub(Lbcp, bcp_offset + 1, Rtmp);  sll(Rtmp, 16, Rtmp);  or3(Rtmp, Rdst, Rdst);
-#ifdef _LP64
   ldsb(Lbcp, bcp_offset + 0, Rtmp);  sll(Rtmp, 24, Rtmp);
-#else
-  // Unsigned load is faster than signed on some implementations
-  ldub(Lbcp, bcp_offset + 0, Rtmp);  sll(Rtmp, 24, Rtmp);
-#endif
   or3(Rtmp, Rdst, Rdst );
 
   bind(aligned);
@@ -796,12 +755,31 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
   sll(index, LogBytesPerHeapOop, tmp);
   get_constant_pool(result);
   // load pointer for resolved_references[] objArray
-  ld_ptr(result, ConstantPool::resolved_references_offset_in_bytes(), result);
+  ld_ptr(result, ConstantPool::cache_offset_in_bytes(), result);
+  ld_ptr(result, ConstantPoolCache::resolved_references_offset_in_bytes(), result);
   // JNIHandles::resolve(result)
   ld_ptr(result, 0, result);
   // Add in the index
   add(result, tmp, result);
   load_heap_oop(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT), result);
+}
+
+
+// load cpool->resolved_klass_at(index)
+void InterpreterMacroAssembler::load_resolved_klass_at_offset(Register Rcpool,
+                                           Register Roffset, Register Rklass) {
+  // int value = *this_cp->int_at_addr(which);
+  // int resolved_klass_index = extract_low_short_from_int(value);
+  //
+  // Because SPARC is big-endian, the low_short is at (cpool->int_at_addr(which) + 2 bytes)
+  add(Roffset, Rcpool, Roffset);
+  lduh(Roffset, sizeof(ConstantPool) + 2, Roffset);  // Roffset = resolved_klass_index
+
+  Register Rresolved_klasses = Rklass;
+  ld_ptr(Rcpool, ConstantPool::resolved_klasses_offset_in_bytes(), Rresolved_klasses);
+  sll(Roffset, LogBytesPerWord, Roffset);
+  add(Roffset, Array<Klass*>::base_offset_in_bytes(), Roffset);
+  ld_ptr(Rresolved_klasses, Roffset, Rklass);
 }
 
 
@@ -910,10 +888,8 @@ void InterpreterMacroAssembler::index_check_without_pop(Register array, Register
   assert_not_delayed();
 
   verify_oop(array);
-#ifdef _LP64
   // sign extend since tos (index) can be a 32bit value
   sra(index, G0, index);
-#endif // _LP64
 
   // check array
   Label ptr_ok;
@@ -1191,11 +1167,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
   // return tos
   assert(Otos_l1 == Otos_i, "adjust code below");
   switch (state) {
-#ifdef _LP64
   case ltos: mov(Otos_l, Otos_l->after_save()); break; // O0 -> I0
-#else
-  case ltos: mov(Otos_l2, Otos_l2->after_save()); // fall through  // O1 -> I1
-#endif
   case btos:                                      // fall through
   case ztos:                                      // fall through
   case ctos:
@@ -1207,20 +1179,6 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
   case vtos: /* nothing to do */                     break;
   default  : ShouldNotReachHere();
   }
-
-#if defined(COMPILER2) && !defined(_LP64)
-  if (state == ltos) {
-    // C2 expects long results in G1 we can't tell if we're returning to interpreted
-    // or compiled so just be safe use G1 and O0/O1
-
-    // Shift bits into high (msb) of G1
-    sllx(Otos_l1->after_save(), 32, G1);
-    // Zero extend low bits
-    srl (Otos_l2->after_save(), 0, Otos_l2->after_save());
-    or3 (Otos_l2->after_save(), G1, G1);
-  }
-#endif /* COMPILER2 */
-
 }
 
 // Lock object
@@ -1270,9 +1228,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg, Register Object) 
     // Check if owner is self by comparing the value in the markOop of object
     // with the stack pointer
     sub(temp_reg, SP, temp_reg);
-#ifdef _LP64
     sub(temp_reg, STACK_BIAS, temp_reg);
-#endif
     assert(os::vm_page_size() > 0xfff, "page size too small - change the constant");
 
     // Composite "andcc" test:
@@ -2711,11 +2667,7 @@ void InterpreterMacroAssembler::notify_method_exit(bool is_native_method,
 void InterpreterMacroAssembler::save_return_value(TosState state, bool is_native_call) {
   if (is_native_call) {
     stf(FloatRegisterImpl::D, F0, d_tmp);
-#ifdef _LP64
     stx(O0, l_tmp);
-#else
-    std(O0, l_tmp);
-#endif
   } else {
     push(state);
   }
@@ -2724,11 +2676,7 @@ void InterpreterMacroAssembler::save_return_value(TosState state, bool is_native
 void InterpreterMacroAssembler::restore_return_value( TosState state, bool is_native_call) {
   if (is_native_call) {
     ldf(FloatRegisterImpl::D, d_tmp, F0);
-#ifdef _LP64
     ldx(l_tmp, O0);
-#else
-    ldd(l_tmp, O0);
-#endif
   } else {
     pop(state);
   }

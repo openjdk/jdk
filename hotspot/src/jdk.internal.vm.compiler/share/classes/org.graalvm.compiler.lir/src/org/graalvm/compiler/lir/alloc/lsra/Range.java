@@ -27,8 +27,6 @@ package org.graalvm.compiler.lir.alloc.lsra;
  */
 public final class Range {
 
-    public static final Range EndMarker = new Range(Integer.MAX_VALUE, Integer.MAX_VALUE, null);
-
     /**
      * The start of the range, inclusive.
      */
@@ -61,18 +59,23 @@ public final class Range {
         this.next = next;
     }
 
+    public boolean isEndMarker() {
+        assert from != Integer.MAX_VALUE || (to == Integer.MAX_VALUE && next == null);
+        return from == Integer.MAX_VALUE;
+    }
+
     int intersectsAt(Range other) {
         Range r1 = this;
         Range r2 = other;
 
         assert r2 != null : "null ranges not allowed";
-        assert r1 != EndMarker && r2 != EndMarker : "empty ranges not allowed";
+        assert !r1.isEndMarker() && !r2.isEndMarker() : "empty ranges not allowed";
 
         do {
             if (r1.from < r2.from) {
                 if (r1.to <= r2.from) {
                     r1 = r1.next;
-                    if (r1 == EndMarker) {
+                    if (r1.isEndMarker()) {
                         return -1;
                     }
                 } else {
@@ -82,7 +85,7 @@ public final class Range {
                 if (r2.from < r1.from) {
                     if (r2.to <= r1.from) {
                         r2 = r2.next;
-                        if (r2 == EndMarker) {
+                        if (r2.isEndMarker()) {
                             return -1;
                         }
                     } else {
@@ -91,13 +94,13 @@ public final class Range {
                 } else { // r1.from() == r2.from()
                     if (r1.from == r1.to) {
                         r1 = r1.next;
-                        if (r1 == EndMarker) {
+                        if (r1.isEndMarker()) {
                             return -1;
                         }
                     } else {
                         if (r2.from == r2.to) {
                             r2 = r2.next;
-                            if (r2 == EndMarker) {
+                            if (r2.isEndMarker()) {
                                 return -1;
                             }
                         } else {

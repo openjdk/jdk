@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ protected:
   PtrQueueSet* qset() { return _qset; }
   bool is_permanent() const { return _permanent; }
 
-  // Process queue entries and release resources, if not permanent.
+  // Process queue entries and release resources.
   void flush_impl();
 
   // Initialize this queue to contain a null buffer, and be part of the

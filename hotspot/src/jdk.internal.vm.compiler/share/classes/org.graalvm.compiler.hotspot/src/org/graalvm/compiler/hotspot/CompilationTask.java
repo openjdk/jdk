@@ -30,7 +30,20 @@ import static org.graalvm.compiler.core.GraalCompilerOptions.PrintCompilation;
 import static org.graalvm.compiler.core.GraalCompilerOptions.PrintFilter;
 import static org.graalvm.compiler.core.GraalCompilerOptions.PrintStackTraceOnException;
 import static org.graalvm.compiler.core.phases.HighTier.Options.Inline;
+import static org.graalvm.compiler.debug.Debug.INFO_LEVEL;
+import static org.graalvm.compiler.debug.DelegatingDebugConfig.Feature.DUMP_METHOD;
+import static org.graalvm.compiler.debug.DelegatingDebugConfig.Level.DUMP;
+import static org.graalvm.compiler.debug.GraalDebugConfig.Options.Dump;
+import static org.graalvm.compiler.debug.GraalDebugConfig.Options.DumpPath;
+import static org.graalvm.compiler.debug.GraalDebugConfig.Options.ForceDebugEnable;
+import static org.graalvm.compiler.debug.GraalDebugConfig.Options.PrintCFGFileName;
+import static org.graalvm.compiler.debug.GraalDebugConfig.Options.PrintGraphFile;
+import static org.graalvm.compiler.debug.GraalDebugConfig.Options.PrintGraphFileName;
+import static org.graalvm.compiler.java.BytecodeParserOptions.InlineDuringParsing;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import org.graalvm.compiler.code.CompilationResult;
@@ -38,14 +51,18 @@ import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.Debug.Scope;
 import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugCounter;
+import org.graalvm.compiler.debug.DebugDumpHandler;
 import org.graalvm.compiler.debug.DebugDumpScope;
+import org.graalvm.compiler.debug.DebugRetryableTask;
 import org.graalvm.compiler.debug.DebugTimer;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.Management;
 import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.debug.TimeSource;
-import org.graalvm.compiler.options.OptionValue;
-import org.graalvm.compiler.options.OptionValue.OverrideScope;
+import org.graalvm.compiler.options.OptionKey;
+import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.printer.GraalDebugConfigCustomizer;
+import org.graalvm.util.EconomicMap;
 
 import jdk.vm.ci.code.BailoutException;
 import jdk.vm.ci.code.CodeCacheProvider;
@@ -93,6 +110,137 @@ public class CompilationTask {
     private final boolean installAsDefault;
 
     private final boolean useProfilingInfo;
+    private final OptionValues options;
+
+    final class RetryableCompilation extends DebugRetryableTask<HotSpotCompilationRequestResult> {
+        private final EventProvider.CompilationEvent compilationEvent;
+        CompilationResult result;
+
+        RetryableCompilation(EventProvider.CompilationEvent compilationEvent) {
+            this.compilationEvent = compilationEvent;
+        }
+
+        @SuppressWarnings("try")
+        @Override
+        protected HotSpotCompilationRequestResult run(Throwable retryCause) {
+            HotSpotResolvedJavaMethod method = getMethod();
+            int entryBCI = getEntryBCI();
+            final boolean isOSR = entryBCI != JVMCICompiler.INVOCATION_ENTRY_BCI;
+            CompilationStatistics stats = CompilationStatistics.create(options, method, isOSR);
+            final boolean printCompilation = PrintCompilation.getValue(options) && !TTY.isSuppressed();
+            final boolean printAfterCompilation = PrintAfterCompilation.getValue(options) && !TTY.isSuppressed();
+            if (printCompilation) {
+                TTY.println(getMethodDescription() + "...");
+            }
+
+            TTY.Filter filter = new TTY.Filter(PrintFilter.getValue(options), method);
+            final long start;
+            final long allocatedBytesBefore;
+            if (printAfterCompilation || printCompilation) {
+                final long threadId = Thread.currentThread().getId();
+                start = TimeSource.getTimeNS();
+                allocatedBytesBefore = printAfterCompilation || printCompilation ? Lazy.threadMXBean.getThreadAllocatedBytes(threadId) : 0L;
+            } else {
+                start = 0L;
+                allocatedBytesBefore = 0L;
+            }
+
+            try (Scope s = Debug.scope("Compiling", new DebugDumpScope(getIdString(), true))) {
+                // Begin the compilation event.
+                compilationEvent.begin();
+                result = compiler.compile(method, entryBCI, useProfilingInfo, compilationId, options);
+            } catch (Throwable e) {
+                throw Debug.handle(e);
+            } finally {
+                // End the compilation event.
+                compilationEvent.end();
+
+                filter.remove();
+
+                if (printAfterCompilation || printCompilation) {
+                    final long threadId = Thread.currentThread().getId();
+                    final long stop = TimeSource.getTimeNS();
+                    final long duration = (stop - start) / 1000000;
+                    final int targetCodeSize = result != null ? result.getTargetCodeSize() : -1;
+                    final int bytecodeSize = result != null ? result.getBytecodeSize() : 0;
+                    final long allocatedBytesAfter = Lazy.threadMXBean.getThreadAllocatedBytes(threadId);
+                    final long allocatedKBytes = (allocatedBytesAfter - allocatedBytesBefore) / 1024;
+
+                    if (printAfterCompilation) {
+                        TTY.println(getMethodDescription() + String.format(" | %4dms %5dB %5dB %5dkB", duration, bytecodeSize, targetCodeSize, allocatedKBytes));
+                    } else if (printCompilation) {
+                        TTY.println(String.format("%-6d JVMCI %-70s %-45s %-50s | %4dms %5dB %5dB %5dkB", getId(), "", "", "", duration, bytecodeSize, targetCodeSize, allocatedKBytes));
+                    }
+                }
+            }
+
+            if (result != null) {
+                try (DebugCloseable b = CodeInstallationTime.start()) {
+                    installMethod(result);
+                }
+            }
+            stats.finish(method, installedCode);
+            if (result != null) {
+                return HotSpotCompilationRequestResult.success(result.getBytecodeSize() - method.getCodeSize());
+            }
+            return null;
+        }
+
+        @Override
+        protected boolean onRetry(Throwable t) {
+            if (t instanceof BailoutException) {
+                return false;
+            }
+
+            if (!Debug.isEnabled()) {
+                TTY.printf("Error while processing %s.%nRe-run with -D%s%s=true to capture graph dumps upon a compilation failure.%n", CompilationTask.this,
+                                HotSpotGraalOptionValues.GRAAL_OPTION_PROPERTY_PREFIX, ForceDebugEnable.getName());
+                return false;
+            }
+
+            if (Dump.hasBeenSet(options)) {
+                // If dumping is explicitly enabled, Graal is being debugged
+                // so don't interfere with what the user is expecting to see.
+                return false;
+            }
+
+            String outputDirectory = compiler.getGraalRuntime().getOutputDirectory();
+            if (outputDirectory == null) {
+                return false;
+            }
+            String methodFQN = getMethod().format("%H.%n");
+            File dumpPath = new File(outputDirectory, methodFQN);
+            dumpPath.mkdirs();
+            if (!dumpPath.exists()) {
+                TTY.println("Warning: could not create dump directory " + dumpPath);
+                return false;
+            }
+
+            TTY.println("Retrying " + CompilationTask.this);
+            retryDumpHandlers = new ArrayList<>();
+            retryOptions = new OptionValues(options,
+                            PrintGraphFile, true,
+                            PrintCFGFileName, methodFQN,
+                            PrintGraphFileName, methodFQN,
+                            DumpPath, dumpPath.getPath());
+            override(DUMP, INFO_LEVEL).enable(DUMP_METHOD);
+            new GraalDebugConfigCustomizer().customize(this);
+            return true;
+        }
+
+        private Collection<DebugDumpHandler> retryDumpHandlers;
+        private OptionValues retryOptions;
+
+        @Override
+        public Collection<DebugDumpHandler> dumpHandlers() {
+            return retryDumpHandlers;
+        }
+
+        @Override
+        public OptionValues getOptions() {
+            return retryOptions;
+        }
+    }
 
     static class Lazy {
         /**
@@ -102,12 +250,33 @@ public class CompilationTask {
         static final com.sun.management.ThreadMXBean threadMXBean = (com.sun.management.ThreadMXBean) Management.getThreadMXBean();
     }
 
-    public CompilationTask(HotSpotJVMCIRuntimeProvider jvmciRuntime, HotSpotGraalCompiler compiler, HotSpotCompilationRequest request, boolean useProfilingInfo, boolean installAsDefault) {
+    public CompilationTask(HotSpotJVMCIRuntimeProvider jvmciRuntime, HotSpotGraalCompiler compiler, HotSpotCompilationRequest request, boolean useProfilingInfo, boolean installAsDefault,
+                    OptionValues options) {
         this.jvmciRuntime = jvmciRuntime;
         this.compiler = compiler;
         this.compilationId = new HotSpotCompilationIdentifier(request);
         this.useProfilingInfo = useProfilingInfo;
         this.installAsDefault = installAsDefault;
+
+        /*
+         * Disable inlining if HotSpot has it disabled unless it's been explicitly set in Graal.
+         */
+        HotSpotGraalRuntimeProvider graalRuntime = compiler.getGraalRuntime();
+        GraalHotSpotVMConfig config = graalRuntime.getVMConfig();
+        OptionValues newOptions = options;
+        if (!config.inline) {
+            EconomicMap<OptionKey<?>, Object> m = OptionValues.newOptionMap();
+            if (Inline.getValue(options) && !Inline.hasBeenSet(options)) {
+                m.put(Inline, false);
+            }
+            if (InlineDuringParsing.getValue(options) && !InlineDuringParsing.hasBeenSet(options)) {
+                m.put(InlineDuringParsing, false);
+            }
+            if (!m.isEmpty()) {
+                newOptions = new OptionValues(options, m);
+            }
+        }
+        this.options = newOptions;
     }
 
     public HotSpotResolvedJavaMethod getMethod() {
@@ -173,9 +342,8 @@ public class CompilationTask {
     public HotSpotCompilationRequestResult runCompilation() {
         HotSpotGraalRuntimeProvider graalRuntime = compiler.getGraalRuntime();
         GraalHotSpotVMConfig config = graalRuntime.getVMConfig();
-        final long threadId = Thread.currentThread().getId();
         int entryBCI = getEntryBCI();
-        final boolean isOSR = entryBCI != JVMCICompiler.INVOCATION_ENTRY_BCI;
+        boolean isOSR = entryBCI != JVMCICompiler.INVOCATION_ENTRY_BCI;
         HotSpotResolvedJavaMethod method = getMethod();
 
         // register the compilation id in the method metrics
@@ -197,78 +365,16 @@ public class CompilationTask {
             return null;
         }
 
-        CompilationResult result = null;
+        RetryableCompilation compilation = new RetryableCompilation(compilationEvent);
         try (DebugCloseable a = CompilationTime.start()) {
-            CompilationStatistics stats = CompilationStatistics.create(method, isOSR);
-            final boolean printCompilation = PrintCompilation.getValue() && !TTY.isSuppressed();
-            final boolean printAfterCompilation = PrintAfterCompilation.getValue() && !TTY.isSuppressed();
-            if (printCompilation) {
-                TTY.println(getMethodDescription() + "...");
-            }
-
-            TTY.Filter filter = new TTY.Filter(PrintFilter.getValue(), method);
-            final long start;
-            final long allocatedBytesBefore;
-            if (printAfterCompilation || printCompilation) {
-                start = TimeSource.getTimeNS();
-                allocatedBytesBefore = printAfterCompilation || printCompilation ? Lazy.threadMXBean.getThreadAllocatedBytes(threadId) : 0L;
-            } else {
-                start = 0L;
-                allocatedBytesBefore = 0L;
-            }
-
-            try (Scope s = Debug.scope("Compiling", new DebugDumpScope(getIdString(), true))) {
-                // Begin the compilation event.
-                compilationEvent.begin();
-                /*
-                 * Disable inlining if HotSpot has it disabled unless it's been explicitly set in
-                 * Graal.
-                 */
-                boolean disableInlining = !config.inline && !Inline.hasBeenSet();
-                try (OverrideScope s1 = disableInlining ? OptionValue.override(Inline, false) : null) {
-                    result = compiler.compile(method, entryBCI, useProfilingInfo, compilationId);
-                }
-            } catch (Throwable e) {
-                throw Debug.handle(e);
-            } finally {
-                // End the compilation event.
-                compilationEvent.end();
-
-                filter.remove();
-
-                if (printAfterCompilation || printCompilation) {
-                    final long stop = TimeSource.getTimeNS();
-                    final long duration = (stop - start) / 1000000;
-                    final int targetCodeSize = result != null ? result.getTargetCodeSize() : -1;
-                    final int bytecodeSize = result != null ? result.getBytecodeSize() : 0;
-                    final long allocatedBytesAfter = Lazy.threadMXBean.getThreadAllocatedBytes(threadId);
-                    final long allocatedKBytes = (allocatedBytesAfter - allocatedBytesBefore) / 1024;
-
-                    if (printAfterCompilation) {
-                        TTY.println(getMethodDescription() + String.format(" | %4dms %5dB %5dB %5dkB", duration, bytecodeSize, targetCodeSize, allocatedKBytes));
-                    } else if (printCompilation) {
-                        TTY.println(String.format("%-6d JVMCI %-70s %-45s %-50s | %4dms %5dB %5dB %5dkB", getId(), "", "", "", duration, bytecodeSize, targetCodeSize, allocatedKBytes));
-                    }
-                }
-            }
-
-            if (result != null) {
-                try (DebugCloseable b = CodeInstallationTime.start()) {
-                    installMethod(result);
-                }
-            }
-            stats.finish(method, installedCode);
-            if (result != null) {
-                return HotSpotCompilationRequestResult.success(result.getBytecodeSize() - method.getCodeSize());
-            }
-            return null;
+            return compilation.execute();
         } catch (BailoutException bailout) {
             BAILOUTS.increment();
-            if (ExitVMOnBailout.getValue()) {
+            if (ExitVMOnBailout.getValue(options)) {
                 TTY.out.println(method.format("Bailout in %H.%n(%p)"));
                 bailout.printStackTrace(TTY.out);
                 System.exit(-1);
-            } else if (PrintBailout.getValue()) {
+            } else if (PrintBailout.getValue(options)) {
                 TTY.out.println(method.format("Bailout in %H.%n(%p)"));
                 bailout.printStackTrace(TTY.out);
             }
@@ -279,7 +385,7 @@ public class CompilationTask {
              * will happen if retry is false.
              */
             final boolean permanentBailout = bailout.isPermanent();
-            if (permanentBailout && PrintBailout.getValue()) {
+            if (permanentBailout && PrintBailout.getValue(options)) {
                 TTY.println("Permanent bailout %s compiling method %s %s.", bailout.getMessage(), HotSpotGraalCompiler.str(method), (isOSR ? "OSR" : ""));
             }
             return HotSpotCompilationRequestResult.failure(bailout.getMessage(), !permanentBailout);
@@ -303,8 +409,9 @@ public class CompilationTask {
             try {
                 int compiledBytecodes = 0;
                 int codeSize = 0;
-                if (result != null) {
-                    compiledBytecodes = result.getBytecodeSize();
+
+                if (compilation.result != null) {
+                    compiledBytecodes = compilation.result.getBytecodeSize();
                     CompiledBytecodes.add(compiledBytecodes);
                     if (installedCode != null) {
                         codeSize = installedCode.getSize();
@@ -318,7 +425,7 @@ public class CompilationTask {
                     compilationEvent.setMethod(method.format("%H.%n(%p)"));
                     compilationEvent.setCompileId(getId());
                     compilationEvent.setCompileLevel(config.compilationLevelFullOptimization);
-                    compilationEvent.setSucceeded(result != null && installedCode != null);
+                    compilationEvent.setSucceeded(compilation.result != null && installedCode != null);
                     compilationEvent.setIsOsr(isOSR);
                     compilationEvent.setCodeSize(codeSize);
                     compilationEvent.setInlinedBytes(compiledBytecodes);
@@ -335,8 +442,8 @@ public class CompilationTask {
          * Automatically enable ExitVMOnException during bootstrap or when asserts are enabled but
          * respect ExitVMOnException if it's been explicitly set.
          */
-        boolean exitVMOnException = ExitVMOnException.getValue();
-        if (!ExitVMOnException.hasBeenSet()) {
+        boolean exitVMOnException = ExitVMOnException.getValue(options);
+        if (!ExitVMOnException.hasBeenSet(options)) {
             assert (exitVMOnException = true) == true;
             if (!exitVMOnException) {
                 HotSpotGraalRuntimeProvider runtime = compiler.getGraalRuntime();
@@ -346,7 +453,7 @@ public class CompilationTask {
             }
         }
 
-        if (PrintStackTraceOnException.getValue() || exitVMOnException) {
+        if (PrintStackTraceOnException.getValue(options) || exitVMOnException) {
             try {
                 t.printStackTrace(TTY.out);
             } catch (Throwable throwable) {
@@ -371,7 +478,7 @@ public class CompilationTask {
         installedCode = null;
         Object[] context = {new DebugDumpScope(getIdString(), true), codeCache, getMethod(), compResult};
         try (Scope s = Debug.scope("CodeInstall", context)) {
-            HotSpotCompiledCode compiledCode = HotSpotCompiledCodeBuilder.createCompiledCode(getRequest().getMethod(), getRequest(), compResult);
+            HotSpotCompiledCode compiledCode = HotSpotCompiledCodeBuilder.createCompiledCode(codeCache, getRequest().getMethod(), getRequest(), compResult);
             installedCode = (HotSpotInstalledCode) codeCache.installCode(getRequest().getMethod(), compiledCode, null, getRequest().getMethod().getSpeculationLog(), installAsDefault);
         } catch (Throwable e) {
             throw Debug.handle(e);

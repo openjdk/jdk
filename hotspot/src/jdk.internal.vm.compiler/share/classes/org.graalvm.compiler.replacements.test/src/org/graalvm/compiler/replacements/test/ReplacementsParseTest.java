@@ -29,7 +29,6 @@ import org.junit.Test;
 import org.graalvm.compiler.api.replacements.ClassSubstitution;
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
 import org.graalvm.compiler.bytecode.BytecodeProvider;
-import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.graph.Node.ConstantNodeParameter;
 import org.graalvm.compiler.graph.Node.NodeIntrinsic;
 import org.graalvm.compiler.nodes.PiNode;
@@ -43,12 +42,12 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 /**
  * Tests for expected behavior when parsing snippets and intrinsics.
  */
-public class ReplacementsParseTest extends GraalCompilerTest {
+public class ReplacementsParseTest extends ReplacementsTest {
 
     @Override
     protected Plugins getDefaultGraphBuilderPlugins() {
         Plugins ret = super.getDefaultGraphBuilderPlugins();
-        // manually register generated factory, jvmci service providers don't work from unit tests
+        // Manually register generated factory as Graal service providers don't work for unit tests
         new PluginFactory_ReplacementsParseTest().registerPlugins(ret.getInvocationPlugins(), null);
         return ret;
     }
@@ -134,7 +133,7 @@ public class ReplacementsParseTest extends GraalCompilerTest {
     @Override
     protected GraphBuilderConfiguration editGraphBuilderConfiguration(GraphBuilderConfiguration conf) {
         InvocationPlugins invocationPlugins = conf.getPlugins().getInvocationPlugins();
-        BytecodeProvider replacementBytecodeProvider = getReplacements().getReplacementBytecodeProvider();
+        BytecodeProvider replacementBytecodeProvider = getSystemClassLoaderBytecodeProvider();
         Registration r = new Registration(invocationPlugins, TestMethods.class, replacementBytecodeProvider);
         r.registerMethodSubstitution(TestMethodsSubstitutions.class, "nextAfter", double.class, double.class);
         r.registerMethodSubstitution(TestMethodsSubstitutions.class, "stringize", Object.class);

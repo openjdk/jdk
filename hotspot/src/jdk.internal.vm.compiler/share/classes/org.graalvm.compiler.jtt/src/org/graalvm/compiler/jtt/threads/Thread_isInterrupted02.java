@@ -26,10 +26,9 @@
 
 package org.graalvm.compiler.jtt.threads;
 
+import org.graalvm.compiler.jtt.JTTTest;
 import org.junit.Assert;
 import org.junit.Test;
-
-import org.graalvm.compiler.jtt.JTTTest;
 
 //Test all, mainly monitors
 public class Thread_isInterrupted02 extends JTTTest {
@@ -105,11 +104,13 @@ public class Thread_isInterrupted02 extends JTTTest {
 
     @Test(timeout = 20000)
     public void run0() throws Throwable {
+        initializeForTimeout();
         runTest("test", 0, 0);
     }
 
     @Test(timeout = 20000)
     public void run1() throws Throwable {
+        initializeForTimeout();
         runTest("test", 1, 500);
     }
 

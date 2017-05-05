@@ -39,7 +39,7 @@ import org.graalvm.compiler.graph.Node.NodeIntrinsic;
 import org.graalvm.compiler.hotspot.nodes.ComputeObjectAddressNode;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.extended.ForeignCallNode;
-import org.graalvm.compiler.nodes.extended.UnsafeLoadNode;
+import org.graalvm.compiler.nodes.extended.RawLoadNode;
 import org.graalvm.compiler.word.Pointer;
 import org.graalvm.compiler.word.Word;
 
@@ -82,7 +82,7 @@ public class CipherBlockChainingSubstitutions {
     @MethodSubstitution(isStatic = false)
     static int encrypt(Object rcvr, byte[] in, int inOffset, int inLength, byte[] out, int outOffset) {
         Object realReceiver = PiNode.piCastNonNull(rcvr, cipherBlockChainingClass);
-        Object embeddedCipher = UnsafeLoadNode.load(realReceiver, embeddedCipherOffset, JavaKind.Object, LocationIdentity.any());
+        Object embeddedCipher = RawLoadNode.load(realReceiver, embeddedCipherOffset, JavaKind.Object, LocationIdentity.any());
         if (getAESCryptClass().isInstance(embeddedCipher)) {
             Object aesCipher = getAESCryptClass().cast(embeddedCipher);
             crypt(realReceiver, in, inOffset, inLength, out, outOffset, aesCipher, true, false);
@@ -95,7 +95,7 @@ public class CipherBlockChainingSubstitutions {
     @MethodSubstitution(isStatic = false, value = "implEncrypt")
     static int implEncrypt(Object rcvr, byte[] in, int inOffset, int inLength, byte[] out, int outOffset) {
         Object realReceiver = PiNode.piCastNonNull(rcvr, cipherBlockChainingClass);
-        Object embeddedCipher = UnsafeLoadNode.load(realReceiver, embeddedCipherOffset, JavaKind.Object, LocationIdentity.any());
+        Object embeddedCipher = RawLoadNode.load(realReceiver, embeddedCipherOffset, JavaKind.Object, LocationIdentity.any());
         if (getAESCryptClass().isInstance(embeddedCipher)) {
             Object aesCipher = getAESCryptClass().cast(embeddedCipher);
             crypt(realReceiver, in, inOffset, inLength, out, outOffset, aesCipher, true, false);
@@ -108,7 +108,7 @@ public class CipherBlockChainingSubstitutions {
     @MethodSubstitution(isStatic = false)
     static int decrypt(Object rcvr, byte[] in, int inOffset, int inLength, byte[] out, int outOffset) {
         Object realReceiver = PiNode.piCastNonNull(rcvr, cipherBlockChainingClass);
-        Object embeddedCipher = UnsafeLoadNode.load(realReceiver, embeddedCipherOffset, JavaKind.Object, LocationIdentity.any());
+        Object embeddedCipher = RawLoadNode.load(realReceiver, embeddedCipherOffset, JavaKind.Object, LocationIdentity.any());
         if (in != out && getAESCryptClass().isInstance(embeddedCipher)) {
             Object aesCipher = getAESCryptClass().cast(embeddedCipher);
             crypt(realReceiver, in, inOffset, inLength, out, outOffset, aesCipher, false, false);
@@ -121,7 +121,7 @@ public class CipherBlockChainingSubstitutions {
     @MethodSubstitution(isStatic = false)
     static int implDecrypt(Object rcvr, byte[] in, int inOffset, int inLength, byte[] out, int outOffset) {
         Object realReceiver = PiNode.piCastNonNull(rcvr, cipherBlockChainingClass);
-        Object embeddedCipher = UnsafeLoadNode.load(realReceiver, embeddedCipherOffset, JavaKind.Object, LocationIdentity.any());
+        Object embeddedCipher = RawLoadNode.load(realReceiver, embeddedCipherOffset, JavaKind.Object, LocationIdentity.any());
         if (in != out && getAESCryptClass().isInstance(embeddedCipher)) {
             Object aesCipher = getAESCryptClass().cast(embeddedCipher);
             crypt(realReceiver, in, inOffset, inLength, out, outOffset, aesCipher, false, false);
@@ -138,7 +138,7 @@ public class CipherBlockChainingSubstitutions {
     @MethodSubstitution(isStatic = false, value = "decrypt")
     static int decryptWithOriginalKey(Object rcvr, byte[] in, int inOffset, int inLength, byte[] out, int outOffset) {
         Object realReceiver = PiNode.piCastNonNull(rcvr, cipherBlockChainingClass);
-        Object embeddedCipher = UnsafeLoadNode.load(realReceiver, embeddedCipherOffset, JavaKind.Object, LocationIdentity.any());
+        Object embeddedCipher = RawLoadNode.load(realReceiver, embeddedCipherOffset, JavaKind.Object, LocationIdentity.any());
         if (in != out && getAESCryptClass().isInstance(embeddedCipher)) {
             Object aesCipher = getAESCryptClass().cast(embeddedCipher);
             crypt(realReceiver, in, inOffset, inLength, out, outOffset, aesCipher, false, true);
@@ -154,7 +154,7 @@ public class CipherBlockChainingSubstitutions {
     @MethodSubstitution(isStatic = false, value = "implDecrypt")
     static int implDecryptWithOriginalKey(Object rcvr, byte[] in, int inOffset, int inLength, byte[] out, int outOffset) {
         Object realReceiver = PiNode.piCastNonNull(rcvr, cipherBlockChainingClass);
-        Object embeddedCipher = UnsafeLoadNode.load(realReceiver, embeddedCipherOffset, JavaKind.Object, LocationIdentity.any());
+        Object embeddedCipher = RawLoadNode.load(realReceiver, embeddedCipherOffset, JavaKind.Object, LocationIdentity.any());
         if (in != out && getAESCryptClass().isInstance(embeddedCipher)) {
             Object aesCipher = getAESCryptClass().cast(embeddedCipher);
             crypt(realReceiver, in, inOffset, inLength, out, outOffset, aesCipher, false, true);
@@ -168,8 +168,8 @@ public class CipherBlockChainingSubstitutions {
         AESCryptSubstitutions.checkArgs(in, inOffset, out, outOffset);
         Object realReceiver = PiNode.piCastNonNull(rcvr, cipherBlockChainingClass);
         Object aesCipher = getAESCryptClass().cast(embeddedCipher);
-        Object kObject = UnsafeLoadNode.load(aesCipher, AESCryptSubstitutions.kOffset, JavaKind.Object, LocationIdentity.any());
-        Object rObject = UnsafeLoadNode.load(realReceiver, rOffset, JavaKind.Object, LocationIdentity.any());
+        Object kObject = RawLoadNode.load(aesCipher, AESCryptSubstitutions.kOffset, JavaKind.Object, LocationIdentity.any());
+        Object rObject = RawLoadNode.load(realReceiver, rOffset, JavaKind.Object, LocationIdentity.any());
         Pointer kAddr = Word.objectToTrackedPointer(kObject).add(getArrayBaseOffset(JavaKind.Int));
         Pointer rAddr = Word.objectToTrackedPointer(rObject).add(getArrayBaseOffset(JavaKind.Byte));
         Word inAddr = Word.unsigned(ComputeObjectAddressNode.get(in, getArrayBaseOffset(JavaKind.Byte) + inOffset));
@@ -178,7 +178,7 @@ public class CipherBlockChainingSubstitutions {
             encryptAESCryptStub(ENCRYPT, inAddr, outAddr, kAddr, rAddr, inLength);
         } else {
             if (withOriginalKey) {
-                Object lastKeyObject = UnsafeLoadNode.load(aesCipher, AESCryptSubstitutions.lastKeyOffset, JavaKind.Object, LocationIdentity.any());
+                Object lastKeyObject = RawLoadNode.load(aesCipher, AESCryptSubstitutions.lastKeyOffset, JavaKind.Object, LocationIdentity.any());
                 Pointer lastKeyAddr = Word.objectToTrackedPointer(lastKeyObject).add(getArrayBaseOffset(JavaKind.Byte));
                 decryptAESCryptWithOriginalKeyStub(DECRYPT_WITH_ORIGINAL_KEY, inAddr, outAddr, kAddr, rAddr, inLength, lastKeyAddr);
             } else {

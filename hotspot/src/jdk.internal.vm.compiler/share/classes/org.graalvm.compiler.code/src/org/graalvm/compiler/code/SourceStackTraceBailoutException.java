@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.code;
 
-import org.graalvm.compiler.common.PermanentBailoutException;
+import org.graalvm.compiler.core.common.PermanentBailoutException;
 
 /**
  * Represents a bailout exception with a stack trace in terms of the Java source being compiled

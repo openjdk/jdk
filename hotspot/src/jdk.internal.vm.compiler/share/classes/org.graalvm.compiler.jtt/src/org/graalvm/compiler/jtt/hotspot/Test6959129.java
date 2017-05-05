@@ -22,9 +22,8 @@
  */
 package org.graalvm.compiler.jtt.hotspot;
 
-import org.junit.Test;
-
 import org.graalvm.compiler.jtt.JTTTest;
+import org.junit.Test;
 
 public class Test6959129 extends JTTTest {
 
@@ -76,6 +75,7 @@ public class Test6959129 extends JTTTest {
 
     @Test(timeout = 20000)
     public void run0() throws Throwable {
+        initializeForTimeout();
         runTest("test");
     }
 

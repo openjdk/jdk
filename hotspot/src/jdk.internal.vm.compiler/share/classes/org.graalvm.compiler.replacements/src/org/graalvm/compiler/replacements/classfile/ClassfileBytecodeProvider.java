@@ -30,12 +30,12 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.instrument.Instrumentation;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.bytecode.Bytecode;
 import org.graalvm.compiler.bytecode.BytecodeProvider;
+import org.graalvm.util.EconomicMap;
+import org.graalvm.util.Equivalence;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MetaAccessProvider;
@@ -63,8 +63,10 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 public final class ClassfileBytecodeProvider implements BytecodeProvider {
 
     private final ClassLoader loader;
-    private final Map<Class<?>, Classfile> classfiles = new HashMap<>();
-    private final Map<String, Class<?>> classes = new HashMap<>();
+    private final EconomicMap<Class<?>, Classfile> classfiles = EconomicMap.create(Equivalence.IDENTITY);
+    private final EconomicMap<String, Class<?>> classes = EconomicMap.create();
+    private final EconomicMap<ResolvedJavaType, FieldsCache> fields = EconomicMap.create();
+    private final EconomicMap<ResolvedJavaType, MethodsCache> methods = EconomicMap.create();
     final MetaAccessProvider metaAccess;
     final SnippetReflectionProvider snippetReflection;
 
@@ -73,6 +75,12 @@ public final class ClassfileBytecodeProvider implements BytecodeProvider {
         this.snippetReflection = snippetReflection;
         ClassLoader cl = getClass().getClassLoader();
         this.loader = cl == null ? ClassLoader.getSystemClassLoader() : cl;
+    }
+
+    public ClassfileBytecodeProvider(MetaAccessProvider metaAccess, SnippetReflectionProvider snippetReflection, ClassLoader loader) {
+        this.metaAccess = metaAccess;
+        this.snippetReflection = snippetReflection;
+        this.loader = loader;
     }
 
     @Override
@@ -158,28 +166,180 @@ public final class ClassfileBytecodeProvider implements BytecodeProvider {
         return c;
     }
 
-    static ResolvedJavaMethod findMethod(ResolvedJavaType type, String name, String descriptor, boolean isStatic) {
-        if (isStatic && name.equals("<clinit>")) {
-            ResolvedJavaMethod method = type.getClassInitializer();
-            if (method != null) {
-                return method;
-            }
+    /**
+     * Name and type of a field.
+     */
+    static final class FieldKey {
+        final String name;
+        final String type;
+
+        FieldKey(String name, String type) {
+            this.name = name;
+            this.type = type;
         }
-        ResolvedJavaMethod[] methodsToSearch = name.equals("<init>") ? type.getDeclaredConstructors() : type.getDeclaredMethods();
-        for (ResolvedJavaMethod method : methodsToSearch) {
-            if (method.isStatic() == isStatic && method.getName().equals(name) && method.getSignature().toMethodDescriptor().equals(descriptor)) {
-                return method;
-            }
+
+        @Override
+        public String toString() {
+            return name + ":" + type;
         }
-        return null;
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof FieldKey) {
+                FieldKey that = (FieldKey) obj;
+                return that.name.equals(this.name) && that.type.equals(this.type);
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return name.hashCode() ^ type.hashCode();
+        }
     }
 
-    static ResolvedJavaField findField(ResolvedJavaType type, String name, String fieldType, boolean isStatic) {
-        ResolvedJavaField[] fields = isStatic ? type.getStaticFields() : type.getInstanceFields(false);
-        for (ResolvedJavaField field : fields) {
-            if (field.getName().equals(name) && field.getType().getName().equals(fieldType)) {
-                return field;
+    /**
+     * Name and descriptor of a method.
+     */
+    static final class MethodKey {
+        final String name;
+        final String descriptor;
+
+        MethodKey(String name, String descriptor) {
+            this.name = name;
+            this.descriptor = descriptor;
+        }
+
+        @Override
+        public String toString() {
+            return name + ":" + descriptor;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof MethodKey) {
+                MethodKey that = (MethodKey) obj;
+                return that.name.equals(this.name) && that.descriptor.equals(this.descriptor);
             }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return name.hashCode() ^ descriptor.hashCode();
+        }
+    }
+
+    /**
+     * Method cache for a {@link ResolvedJavaType}.
+     */
+    static final class MethodsCache {
+
+        volatile EconomicMap<MethodKey, ResolvedJavaMethod> constructors;
+        volatile EconomicMap<MethodKey, ResolvedJavaMethod> methods;
+
+        ResolvedJavaMethod lookup(ResolvedJavaType type, String name, String descriptor) {
+            MethodKey key = new MethodKey(name, descriptor);
+
+            if (name.equals("<clinit>")) {
+                // No need to cache <clinit> as it will be looked up at most once
+                return type.getClassInitializer();
+            }
+            if (!name.equals("<init>")) {
+                if (methods == null) {
+                    // Racy initialization is safe since `methods` is volatile
+                    methods = createMethodMap(type.getDeclaredMethods());
+                }
+
+                return methods.get(key);
+            } else {
+                if (constructors == null) {
+                    // Racy initialization is safe since instanceFields is volatile
+                    constructors = createMethodMap(type.getDeclaredConstructors());
+                }
+                return constructors.get(key);
+            }
+        }
+
+        private static EconomicMap<MethodKey, ResolvedJavaMethod> createMethodMap(ResolvedJavaMethod[] methodArray) {
+            EconomicMap<MethodKey, ResolvedJavaMethod> map = EconomicMap.create();
+            for (ResolvedJavaMethod m : methodArray) {
+                map.put(new MethodKey(m.getName(), m.getSignature().toMethodDescriptor()), m);
+            }
+            return map;
+        }
+    }
+
+    /**
+     * Field cache for a {@link ResolvedJavaType}.
+     */
+    static final class FieldsCache {
+
+        volatile EconomicMap<FieldKey, ResolvedJavaField> instanceFields;
+        volatile EconomicMap<FieldKey, ResolvedJavaField> staticFields;
+
+        ResolvedJavaField lookup(ResolvedJavaType type, String name, String fieldType, boolean isStatic) {
+            FieldKey key = new FieldKey(name, fieldType);
+            if (isStatic) {
+                if (staticFields == null) {
+                    // Racy initialization is safe since staticFields is volatile
+                    staticFields = createFieldMap(type.getStaticFields());
+                }
+                return staticFields.get(key);
+            } else {
+                if (instanceFields == null) {
+                    // Racy initialization is safe since instanceFields is volatile
+                    instanceFields = createFieldMap(type.getInstanceFields(false));
+                }
+                return instanceFields.get(key);
+            }
+        }
+
+        private static EconomicMap<FieldKey, ResolvedJavaField> createFieldMap(ResolvedJavaField[] fieldArray) {
+            EconomicMap<FieldKey, ResolvedJavaField> map = EconomicMap.create();
+            for (ResolvedJavaField f : fieldArray) {
+                map.put(new FieldKey(f.getName(), f.getType().getName()), f);
+            }
+            return map;
+        }
+    }
+
+    /**
+     * Gets the methods cache for {@code type}.
+     *
+     * Synchronized since the cache is lazily created.
+     */
+    private synchronized MethodsCache getMethods(ResolvedJavaType type) {
+        MethodsCache methodsCache = methods.get(type);
+        if (methodsCache == null) {
+            methodsCache = new MethodsCache();
+            methods.put(type, methodsCache);
+        }
+        return methodsCache;
+    }
+
+    /**
+     * Gets the fields cache for {@code type}.
+     *
+     * Synchronized since the cache is lazily created.
+     */
+    private synchronized FieldsCache getFields(ResolvedJavaType type) {
+        FieldsCache fieldsCache = fields.get(type);
+        if (fieldsCache == null) {
+            fieldsCache = new FieldsCache();
+            fields.put(type, fieldsCache);
+        }
+        return fieldsCache;
+    }
+
+    ResolvedJavaField findField(ResolvedJavaType type, String name, String fieldType, boolean isStatic) {
+        return getFields(type).lookup(type, name, fieldType, isStatic);
+    }
+
+    ResolvedJavaMethod findMethod(ResolvedJavaType type, String name, String descriptor, boolean isStatic) {
+        ResolvedJavaMethod method = getMethods(type).lookup(type, name, descriptor);
+        if (method != null && method.isStatic() == isStatic) {
+            return method;
         }
         return null;
     }

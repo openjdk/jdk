@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,16 @@ class VMError : public AllStatic {
   // no core/minidump has been written to disk
   static char coredump_message[O_BUFLEN];
 
+  // Timeout handling:
+  // Timestamp at which error reporting started; -1 if no error reporting in progress.
+  static volatile jlong _reporting_start_time;
+  // Whether or not error reporting did timeout.
+  static volatile bool _reporting_did_timeout;
+  // Timestamp at which the last error reporting step started; -1 if no error reporting
+  //   in progress.
+  static volatile jlong _step_start_time;
+  // Whether or not the last error reporting step did timeout.
+  static volatile bool _step_did_timeout;
 
   // set signal handlers on Solaris/Linux or the default exception filter
   // on Windows, to handle recursive crashes.
@@ -103,6 +113,20 @@ class VMError : public AllStatic {
 
   static fdStream out;
   static fdStream log; // error log used by VMError::report_and_die()
+
+  // Timeout handling.
+  // Hook functions for platform dependend functionality:
+  static void reporting_started();
+  static void interrupt_reporting_thread();
+
+  // Helper function to get the current timestamp.
+  static jlong get_current_timestamp();
+
+  // Accessors to get/set the start times for step and total timeout.
+  static void record_reporting_start_time();
+  static jlong get_reporting_start_time();
+  static void record_step_start_time();
+  static jlong get_step_start_time();
 
 public:
 
@@ -147,6 +171,11 @@ public:
   static bool fatal_error_in_progress() { return first_error_tid != -1; }
 
   static intptr_t get_first_error_tid() { return first_error_tid; }
+
+  // Called by the WatcherThread to check if error reporting has timed-out.
+  //  Returns true if error reporting has not completed within the ErrorLogTimeout limit.
+  static bool check_timeout();
+
 };
 
 #endif // SHARE_VM_UTILITIES_VMERROR_HPP

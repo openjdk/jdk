@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -68,16 +68,16 @@ class KlassFactory : AllStatic {
   friend class SystemDictionary;
 
  private:
-  static instanceKlassHandle create_from_stream(ClassFileStream* stream,
-                                                Symbol* name,
-                                                ClassLoaderData* loader_data,
-                                                Handle protection_domain,
-                                                const InstanceKlass* host_klass,
-                                                GrowableArray<Handle>* cp_patches,
-                                                TRAPS);
+  static InstanceKlass* create_from_stream(ClassFileStream* stream,
+                                           Symbol* name,
+                                           ClassLoaderData* loader_data,
+                                           Handle protection_domain,
+                                           const InstanceKlass* host_klass,
+                                           GrowableArray<Handle>* cp_patches,
+                                           TRAPS);
  public:
-  static instanceKlassHandle check_shared_class_file_load_hook(
-                                          instanceKlassHandle ik,
+  static InstanceKlass* check_shared_class_file_load_hook(
+                                          InstanceKlass* ik,
                                           Symbol* class_name,
                                           Handle class_loader,
                                           Handle protection_domain, TRAPS);

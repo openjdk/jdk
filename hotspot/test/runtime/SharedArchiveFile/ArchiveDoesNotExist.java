@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,15 @@
  *          attempting to use CDS archive. JVM should exit gracefully
  *          when sharing mode is ON, and continue w/o sharing if sharing
  *          mode is AUTO.
+ * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main ArchiveDoesNotExist
  */
 
-import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.cds.CDSOptions;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import java.io.File;
 
@@ -45,27 +47,22 @@ public class ArchiveDoesNotExist {
         if (cdsFile.exists())
             throw new RuntimeException("Test error: cds file already exists");
 
-        // Sharing: on
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-           "-XX:+UnlockDiagnosticVMOptions",
-           "-XX:SharedArchiveFile=./" + fileName,
-           "-Xshare:on",
-           "-version");
+        CDSOptions opts = (new CDSOptions()).setArchiveName(fileName);
 
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Specified shared archive not found");
-        output.shouldHaveExitValue(1);
+        // -Xshare=on
+        OutputAnalyzer out = CDSTestUtils.runWithArchive(opts);
+        if (!CDSTestUtils.isUnableToMap(out)) {
+            out.shouldContain("Specified shared archive not found")
+               .shouldHaveExitValue(1);
+        }
 
-        // Sharing: auto
-        pb = ProcessTools.createJavaProcessBuilder(
-           "-XX:+UnlockDiagnosticVMOptions",
-           "-XX:SharedArchiveFile=./" + fileName,
-           "-Xshare:auto",
-           "-version");
-
-        output = new OutputAnalyzer(pb.start());
-        output.shouldMatch("(java|openjdk) version");
-        output.shouldNotContain("sharing");
-        output.shouldHaveExitValue(0);
+        // -Xshare=auto
+        opts.setXShareMode("auto");
+        out = CDSTestUtils.runWithArchive(opts);
+        if (!CDSTestUtils.isUnableToMap(out)) {
+            out.shouldMatch("(java|openjdk) version")
+               .shouldNotContain("sharing")
+               .shouldHaveExitValue(0);
+        }
     }
 }

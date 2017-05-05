@@ -25,7 +25,6 @@ package org.graalvm.compiler.nodes.calc;
 import org.graalvm.compiler.core.common.type.AbstractPointerStamp;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
-import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.NodeCycles;
@@ -37,10 +36,10 @@ import org.graalvm.compiler.nodes.UnaryOpLogicNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
-import org.graalvm.compiler.nodes.spi.PiPushable;
 import org.graalvm.compiler.nodes.spi.Virtualizable;
 import org.graalvm.compiler.nodes.spi.VirtualizerTool;
 import org.graalvm.compiler.nodes.type.StampTool;
+import org.graalvm.compiler.nodes.util.GraphUtil;
 
 import jdk.vm.ci.meta.TriState;
 
@@ -48,7 +47,7 @@ import jdk.vm.ci.meta.TriState;
  * An IsNullNode will be true if the supplied value is null, and false if it is non-null.
  */
 @NodeInfo(cycles = NodeCycles.CYCLES_2)
-public final class IsNullNode extends UnaryOpLogicNode implements LIRLowerable, Virtualizable, PiPushable {
+public final class IsNullNode extends UnaryOpLogicNode implements LIRLowerable, Virtualizable {
 
     public static final NodeClass<IsNullNode> TYPE = NodeClass.create(IsNullNode.class);
 
@@ -58,8 +57,7 @@ public final class IsNullNode extends UnaryOpLogicNode implements LIRLowerable, 
     }
 
     public static LogicNode create(ValueNode forValue) {
-        LogicNode result = tryCanonicalize(forValue);
-        return result == null ? new IsNullNode(forValue) : result;
+        return canonicalized(null, forValue);
     }
 
     public static LogicNode tryCanonicalize(ValueNode forValue) {
@@ -85,8 +83,31 @@ public final class IsNullNode extends UnaryOpLogicNode implements LIRLowerable, 
 
     @Override
     public ValueNode canonical(CanonicalizerTool tool, ValueNode forValue) {
+        return canonicalized(this, forValue);
+    }
+
+    private static LogicNode canonicalized(IsNullNode isNullNode, ValueNode forValue) {
+        IsNullNode self = isNullNode;
         LogicNode result = tryCanonicalize(forValue);
-        return result == null ? this : result;
+        if (result != null) {
+            return result;
+        }
+
+        if (forValue instanceof PiNode) {
+            return IsNullNode.create(GraphUtil.skipPi(forValue));
+        }
+
+        if (forValue instanceof ConvertNode) {
+            ConvertNode convertNode = (ConvertNode) forValue;
+            if (convertNode.mayNullCheckSkipConversion()) {
+                return IsNullNode.create(convertNode.getValue());
+            }
+        }
+
+        if (self == null) {
+            self = new IsNullNode(GraphUtil.skipPi(forValue));
+        }
+        return self;
     }
 
     @Override
@@ -99,24 +120,9 @@ public final class IsNullNode extends UnaryOpLogicNode implements LIRLowerable, 
     }
 
     @Override
-    public boolean push(PiNode parent) {
-        if (parent.stamp() instanceof ObjectStamp && parent.object().stamp() instanceof ObjectStamp) {
-            ObjectStamp piStamp = (ObjectStamp) parent.stamp();
-            ObjectStamp piValueStamp = (ObjectStamp) parent.object().stamp();
-            if (piStamp.nonNull() == piValueStamp.nonNull() && piStamp.alwaysNull() == piValueStamp.alwaysNull()) {
-                replaceFirstInput(parent, parent.object());
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @NodeIntrinsic
-    public static native IsNullNode isNull(Object object);
-
-    @Override
     public Stamp getSucceedingStampForValue(boolean negated) {
-        return negated ? getValue().stamp().join(StampFactory.objectNonNull()) : StampFactory.alwaysNull();
+        AbstractPointerStamp pointerStamp = (AbstractPointerStamp) getValue().stamp();
+        return negated ? pointerStamp.asNonNull() : pointerStamp.asAlwaysNull();
     }
 
     @Override

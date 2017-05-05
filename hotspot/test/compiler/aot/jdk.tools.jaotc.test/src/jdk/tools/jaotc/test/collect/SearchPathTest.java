@@ -44,6 +44,8 @@ import java.nio.file.Paths;
 import jdk.tools.jaotc.collect.*;
 
 import static jdk.tools.jaotc.test.collect.Utils.set;
+import static jdk.tools.jaotc.test.collect.Utils.mkpath;
+import static jdk.tools.jaotc.test.collect.Utils.mkpaths;
 import static org.junit.Assert.*;
 
 public class SearchPathTest {
@@ -57,9 +59,9 @@ public class SearchPathTest {
 
     @Test
     public void itShouldUsePathIfPathIsAbsoluteAndExisting() {
-        fileSupport = new FakeFileSupport(set("/foo"), set());
+        fileSupport = new FakeFileSupport(mkpaths("/foo"), set());
         SearchPath target = new SearchPath(fileSupport);
-        Path foo = Paths.get("/foo");
+        Path foo = Paths.get(mkpath("/foo"));
         Path result = target.find(fs, foo);
         assertSame(result, foo);
     }
@@ -68,13 +70,13 @@ public class SearchPathTest {
     public void itShouldReturnNullIfPathIsAbsoluteAndNonExisting() {
         fileSupport = new FakeFileSupport(set(), set());
         SearchPath target = new SearchPath(fileSupport);
-        Path result = target.find(fs, Paths.get("/bar"));
+        Path result = target.find(fs, Paths.get(mkpath("/bar")));
         assertNull(result);
     }
 
     @Test
     public void itShouldUseRelativeExisting() {
-        fileSupport = new FakeFileSupport(set("hello", "tmp/hello", "search/hello"), set());
+        fileSupport = new FakeFileSupport(mkpaths("hello", "tmp/hello", "search/hello"), set());
         SearchPath target = new SearchPath(fileSupport);
         target.add("search");
         Path hello = Paths.get("hello");
@@ -84,22 +86,22 @@ public class SearchPathTest {
 
     @Test
     public void itShouldSearchDefaultsBeforeSearchPaths() {
-        fileSupport = new FakeFileSupport(set("bar/foobar"), set());
+        fileSupport = new FakeFileSupport(mkpaths("bar/foobar"), set());
         SearchPath target = new SearchPath(fileSupport);
         Path result = target.find(fs, Paths.get("foobar"), "default1", "bar");
-        assertEquals("bar/foobar", result.toString());
-        assertEquals(set("foobar", "default1/foobar", "bar/foobar"), fileSupport.getCheckedExists());
+        assertEquals(mkpath("bar/foobar"), result.toString());
+        assertEquals(mkpaths("foobar", "default1/foobar", "bar/foobar"), fileSupport.getCheckedExists());
     }
 
     @Test
     public void itShouldUseSearchPathsIfNotInDefaults() {
-        fileSupport = new FakeFileSupport(set("bar/tmp/foobar"), set());
+        fileSupport = new FakeFileSupport(mkpaths("bar/tmp/foobar"), set());
         SearchPath target = new SearchPath(fileSupport);
         target.add("foo/tmp", "bar/tmp");
 
         Path result = target.find(fs, Paths.get("foobar"), "foo", "bar");
-        assertEquals("bar/tmp/foobar", result.toString());
-        assertEquals(set("foobar", "foo/foobar", "bar/foobar", "bar/tmp/foobar", "foo/tmp/foobar"), fileSupport.getCheckedExists());
+        assertEquals(mkpath("bar/tmp/foobar"), result.toString());
+        assertEquals(mkpaths("foobar", "foo/foobar", "bar/foobar", "bar/tmp/foobar", "foo/tmp/foobar"), fileSupport.getCheckedExists());
     }
 
     @Test
@@ -110,6 +112,6 @@ public class SearchPathTest {
 
         Path result = target.find(fs, Paths.get("entry"), "dir3", "dir4");
         assertNull(result);
-        assertEquals(set("entry", "dir1/entry", "dir2/entry", "dir3/entry", "dir4/entry"), fileSupport.getCheckedExists());
+        assertEquals(mkpaths("entry", "dir1/entry", "dir2/entry", "dir3/entry", "dir4/entry"), fileSupport.getCheckedExists());
     }
 }

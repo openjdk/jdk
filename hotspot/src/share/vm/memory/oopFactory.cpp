@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,17 +57,15 @@ typeArrayOop oopFactory::new_typeArray(BasicType type, int length, TRAPS) {
   return result;
 }
 
-// Create a Java array that points to metadata.
-// As far as Java code is concerned, a metaData array is either an array of
-// int or long depending on pointer size.  Only a few things use this, like
-// stack trace elements in Throwable.  They cast Method* into this type.
-// Note:can't point to symbols because there's no way to unreference count
-// them when this object goes away.
-typeArrayOop oopFactory::new_metaDataArray(int length, TRAPS) {
+// Create a Java array that points to Symbol.
+// As far as Java code is concerned, a Symbol array is either an array of
+// int or long depending on pointer size.  Only stack trace elements in Throwable use
+// this.  They cast Symbol* into this type.
+typeArrayOop oopFactory::new_symbolArray(int length, TRAPS) {
   BasicType type = LP64_ONLY(T_LONG) NOT_LP64(T_INT);
   Klass* type_asKlassOop = Universe::typeArrayKlassObj(type);
   TypeArrayKlass* type_asArrayKlass = TypeArrayKlass::cast(type_asKlassOop);
-  typeArrayOop result = type_asArrayKlass->allocate_common(length, true, THREAD);
+  typeArrayOop result = type_asArrayKlass->allocate(length, THREAD);
   return result;
 }
 
@@ -86,4 +84,14 @@ objArrayOop oopFactory::new_objArray(Klass* klass, int length, TRAPS) {
   } else {
     return InstanceKlass::cast(klass)->allocate_objArray(1, length, THREAD);
   }
+}
+
+objArrayHandle oopFactory::new_objArray_handle(Klass* klass, int length, TRAPS) {
+  objArrayOop obj = new_objArray(klass, length, CHECK_(objArrayHandle()));
+  return objArrayHandle(THREAD, obj);
+}
+
+typeArrayHandle oopFactory::new_byteArray_handle(int length, TRAPS) {
+  typeArrayOop obj = new_byteArray(length, CHECK_(typeArrayHandle()));
+  return typeArrayHandle(THREAD, obj);
 }

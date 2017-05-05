@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.core.test.tutorial;
 
-import static org.graalvm.compiler.core.common.CompilationIdentifier.INVALID_COMPILATION_ID;
+import static org.graalvm.compiler.core.test.GraalCompilerTest.getInitialOptions;
 
 import java.util.ArrayDeque;
 import java.util.Collections;
@@ -45,7 +45,6 @@ import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.ValuePhiNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
@@ -241,7 +240,7 @@ public class StaticAnalysis {
                  * Build the Graal graph for the method using the bytecode parser provided by Graal.
                  */
 
-                StructuredGraph graph = new StructuredGraph(method, AllowAssumptions.NO, INVALID_COMPILATION_ID);
+                StructuredGraph graph = new StructuredGraph.Builder(getInitialOptions()).method(method).build();
                 /*
                  * Support for graph dumping, IGV uses this information to show the method name of a
                  * graph.

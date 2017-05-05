@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,13 +48,16 @@
   LOG_TAG(class) \
   LOG_TAG(classhisto) \
   LOG_TAG(cleanup) \
+  LOG_TAG(codecache) \
   LOG_TAG(compaction) \
+  LOG_TAG(compilation) \
   LOG_TAG(constraints) \
   LOG_TAG(constantpool) \
   LOG_TAG(coops) \
   LOG_TAG(cpu) \
   LOG_TAG(cset) \
   LOG_TAG(data) \
+  LOG_TAG(datacreation) \
   LOG_TAG(defaultmethods) \
   LOG_TAG(dump) \
   LOG_TAG(ergo) \
@@ -69,7 +72,9 @@
   LOG_TAG(ihop) \
   LOG_TAG(iklass) \
   LOG_TAG(init) \
+  LOG_TAG(inlining) \
   LOG_TAG(itables) \
+  LOG_TAG(jit) \
   LOG_TAG(jni) \
   LOG_TAG(jvmti) \
   LOG_TAG(liveness) \
@@ -78,6 +83,7 @@
   LOG_TAG(logging) \
   LOG_TAG(mark) \
   LOG_TAG(marking) \
+  LOG_TAG(memops) \
   LOG_TAG(methodcomparator) \
   LOG_TAG(metadata) \
   LOG_TAG(metaspace) \
@@ -94,6 +100,7 @@
   LOG_TAG(pagesize) \
   LOG_TAG(patch) \
   LOG_TAG(path) \
+  LOG_TAG(perf) \
   LOG_TAG(phases) \
   LOG_TAG(plab) \
   LOG_TAG(promotion) \

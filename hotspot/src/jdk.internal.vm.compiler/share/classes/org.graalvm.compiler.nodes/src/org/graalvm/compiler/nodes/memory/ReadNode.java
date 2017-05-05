@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import static org.graalvm.compiler.nodes.NamedLocationIdentity.ARRAY_LENGTH_LOCA
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.core.common.type.Stamp;
-import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node;
@@ -40,15 +39,11 @@ import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.CanonicalizableLocation;
 import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.FrameState;
-import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.extended.GuardingNode;
-import org.graalvm.compiler.nodes.extended.ValueAnchorNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
-import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.nodes.spi.Virtualizable;
 import org.graalvm.compiler.nodes.spi.VirtualizerTool;
@@ -61,20 +56,12 @@ import jdk.vm.ci.meta.MetaAccessProvider;
  * Reads an {@linkplain FixedAccessNode accessed} value.
  */
 @NodeInfo(nameTemplate = "Read#{p#location/s}", cycles = CYCLES_2, size = SIZE_1)
-public class ReadNode extends FloatableAccessNode implements LIRLowerable, Canonicalizable, Virtualizable, GuardingNode {
+public class ReadNode extends FloatableAccessNode implements LIRLowerableAccess, Canonicalizable, Virtualizable, GuardingNode {
 
     public static final NodeClass<ReadNode> TYPE = NodeClass.create(ReadNode.class);
 
     public ReadNode(AddressNode address, LocationIdentity location, Stamp stamp, BarrierType barrierType) {
-        super(TYPE, address, location, stamp, null, barrierType);
-    }
-
-    public ReadNode(AddressNode address, LocationIdentity location, Stamp stamp, GuardingNode guard, BarrierType barrierType) {
-        super(TYPE, address, location, stamp, guard, barrierType);
-    }
-
-    public ReadNode(AddressNode address, LocationIdentity location, Stamp stamp, GuardingNode guard, BarrierType barrierType, boolean nullCheck, FrameState stateBefore) {
-        this(TYPE, address, location, stamp, guard, barrierType, nullCheck, stateBefore);
+        this(TYPE, address, location, stamp, null, barrierType, false, null);
     }
 
     protected ReadNode(NodeClass<? extends ReadNode> c, AddressNode address, LocationIdentity location, Stamp stamp, GuardingNode guard, BarrierType barrierType, boolean nullCheck,
@@ -82,38 +69,17 @@ public class ReadNode extends FloatableAccessNode implements LIRLowerable, Canon
         super(c, address, location, stamp, guard, barrierType, nullCheck, stateBefore);
     }
 
-    public ReadNode(AddressNode address, LocationIdentity location, ValueNode guard, BarrierType barrierType) {
-        /*
-         * Used by node intrinsics. Really, you can trust me on that! Since the initial value for
-         * location is a parameter, i.e., a ParameterNode, the constructor cannot use the declared
-         * type LocationNode.
-         */
-        super(TYPE, address, location, StampFactory.forNodeIntrinsic(), (GuardingNode) guard, barrierType);
-    }
-
     @Override
     public void generate(NodeLIRBuilderTool gen) {
-        LIRKind readKind = gen.getLIRGeneratorTool().getLIRKind(stamp());
+        LIRKind readKind = gen.getLIRGeneratorTool().getLIRKind(getAccessStamp());
         gen.setResult(this, gen.getLIRGeneratorTool().getArithmetic().emitLoad(readKind, gen.operand(address), gen.state(this)));
     }
 
     @Override
     public Node canonical(CanonicalizerTool tool) {
         if (tool.allUsagesAvailable() && hasNoUsages()) {
-            if (getGuard() != null && !(getGuard() instanceof FixedNode)) {
-                // The guard is necessary even if the read goes away.
-                return new ValueAnchorNode((ValueNode) getGuard());
-            } else {
-                // Read without usages or guard can be safely removed.
-                return null;
-            }
-        }
-        if (getAddress() instanceof OffsetAddressNode) {
-            OffsetAddressNode objAddress = (OffsetAddressNode) getAddress();
-            if (objAddress.getBase() instanceof PiNode && ((PiNode) objAddress.getBase()).getGuard() == getGuard()) {
-                OffsetAddressNode newAddress = new OffsetAddressNode(((PiNode) objAddress.getBase()).getOriginalNode(), objAddress.getOffset());
-                return new ReadNode(newAddress, getLocationIdentity(), stamp(), getGuard(), getBarrierType(), getNullCheck(), stateBefore());
-            }
+            // Read without usages or guard can be safely removed.
+            return null;
         }
         if (!getNullCheck()) {
             return canonicalizeRead(this, getAddress(), getLocationIdentity(), tool);
@@ -156,7 +122,6 @@ public class ReadNode extends FloatableAccessNode implements LIRLowerable, Canon
             if (locationIdentity.equals(ARRAY_LENGTH_LOCATION)) {
                 ValueNode length = GraphUtil.arrayLength(object);
                 if (length != null) {
-                    // TODO Does this need a PiCastNode to the positive range?
                     return length;
                 }
             }
@@ -179,5 +144,10 @@ public class ReadNode extends FloatableAccessNode implements LIRLowerable, Canon
     @Override
     public boolean canNullCheck() {
         return true;
+    }
+
+    @Override
+    public Stamp getAccessStamp() {
+        return stamp();
     }
 }

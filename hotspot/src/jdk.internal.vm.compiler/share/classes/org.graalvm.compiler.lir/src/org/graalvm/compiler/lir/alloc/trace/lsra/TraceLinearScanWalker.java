@@ -22,16 +22,15 @@
  */
 package org.graalvm.compiler.lir.alloc.trace.lsra;
 
-import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
-import static org.graalvm.compiler.lir.LIRValueUtil.isVariable;
 import static jdk.vm.ci.code.CodeUtil.isOdd;
 import static jdk.vm.ci.code.ValueUtil.asRegister;
 import static jdk.vm.ci.code.ValueUtil.isRegister;
+import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
+import static org.graalvm.compiler.lir.LIRValueUtil.isVariable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
-import java.util.List;
 
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig.AllocatableRegisters;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
@@ -47,6 +46,7 @@ import org.graalvm.compiler.lir.alloc.OutOfRegistersException;
 import org.graalvm.compiler.lir.alloc.trace.lsra.TraceInterval.RegisterPriority;
 import org.graalvm.compiler.lir.alloc.trace.lsra.TraceInterval.SpillState;
 import org.graalvm.compiler.lir.alloc.trace.lsra.TraceLinearScanPhase.TraceLinearScan;
+import org.graalvm.compiler.lir.ssa.SSAUtil;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.meta.Value;
@@ -61,7 +61,7 @@ final class TraceLinearScanWalker extends TraceIntervalWalker {
     private final int[] blockPos;
     private final BitSet isInMemory;
 
-    private List<TraceInterval>[] spillIntervals;
+    private final ArrayList<TraceInterval>[] spillIntervals;
 
     private TraceLocalMoveResolver moveResolver; // for ordering spill moves
 
@@ -75,7 +75,7 @@ final class TraceLinearScanWalker extends TraceIntervalWalker {
      * bootstrap run of Graal). Therefore, we initialize {@link #spillIntervals} with this marker
      * value, and allocate a "real" list only on demand in {@link #setUsePos}.
      */
-    private static final List<TraceInterval> EMPTY_LIST = new ArrayList<>(0);
+    private static final ArrayList<TraceInterval> EMPTY_LIST = new ArrayList<>(0);
 
     // accessors mapped to same functions in class LinearScan
     private int blockCount() {
@@ -96,7 +96,7 @@ final class TraceLinearScanWalker extends TraceIntervalWalker {
 
         moveResolver = allocator.createMoveResolver();
         int numRegs = allocator.getRegisters().size();
-        spillIntervals = Util.uncheckedCast(new List<?>[numRegs]);
+        spillIntervals = Util.uncheckedCast(new ArrayList<?>[numRegs]);
         for (int i = 0; i < numRegs; i++) {
             spillIntervals[i] = EMPTY_LIST;
         }
@@ -147,7 +147,7 @@ final class TraceLinearScanWalker extends TraceIntervalWalker {
                     this.usePos[i] = usePos;
                 }
                 if (!onlyProcessUsePos) {
-                    List<TraceInterval> list = spillIntervals[i];
+                    ArrayList<TraceInterval> list = spillIntervals[i];
                     if (list == EMPTY_LIST) {
                         list = new ArrayList<>(2);
                         spillIntervals[i] = list;
@@ -280,7 +280,7 @@ final class TraceLinearScanWalker extends TraceIntervalWalker {
         // numbering of instructions is known.
         // When the block already contains spill moves, the index must be increased until the
         // correct index is reached.
-        List<LIRInstruction> instructions = allocator.getLIR().getLIRforBlock(opBlock);
+        ArrayList<LIRInstruction> instructions = allocator.getLIR().getLIRforBlock(opBlock);
         int index = (opId - instructions.get(0).id()) >> 1;
         assert instructions.get(index).id() <= opId : "error in calculation";
 
@@ -405,10 +405,10 @@ final class TraceLinearScanWalker extends TraceIntervalWalker {
             // moved to odd opId
             final int optimalSplitPosFinal;
             boolean blockBegin = allocator.isBlockBegin(optimalSplitPos);
+            assert blockBegin || !allocator.isBlockBegin(optimalSplitPos - 1);
+            boolean moveNecessary = !blockBegin;
             if (blockBegin) {
-                assert (optimalSplitPos & 1) == 0 : "Block begins must be even: " + optimalSplitPos;
-                // move position after the label (odd optId)
-                optimalSplitPosFinal = optimalSplitPos + 1;
+                optimalSplitPosFinal = optimalSplitPos;
             } else {
                 // move position before actual instruction (odd opId)
                 optimalSplitPosFinal = (optimalSplitPos - 1) | 1;
@@ -424,12 +424,8 @@ final class TraceLinearScanWalker extends TraceIntervalWalker {
             }
             assert optimalSplitPosFinal > currentPosition : "Can not split interval " + interval + " at current position: " + currentPosition;
 
-            // was:
-            // assert isBlockBegin || ((optimalSplitPos1 & 1) == 1) :
-            // "split pos must be odd when not on block boundary";
-            // assert !isBlockBegin || ((optimalSplitPos1 & 1) == 0) :
-            // "split pos must be even on block boundary";
-            assert (optimalSplitPosFinal & 1) == 1 : "split pos must be odd";
+            assert blockBegin || ((optimalSplitPosFinal & 1) == 1) : "split pos must be odd when not on block boundary";
+            assert !blockBegin || ((optimalSplitPosFinal & 1) == 0) : "split pos must be even on block boundary";
 
             // TODO (je) duplicate code. try to fold
             if (optimalSplitPosFinal == interval.to() && interval.nextUsage(RegisterPriority.MustHaveRegister, minSplitPos) == Integer.MAX_VALUE) {
@@ -442,7 +438,6 @@ final class TraceLinearScanWalker extends TraceIntervalWalker {
             }
             TraceInterval splitPart = interval.split(optimalSplitPosFinal, allocator);
 
-            boolean moveNecessary = true;
             splitPart.setInsertMoveWhenActivated(moveNecessary);
 
             assert splitPart.from() >= currentPosition : "cannot append new interval before current walk position";
@@ -571,17 +566,18 @@ final class TraceLinearScanWalker extends TraceIntervalWalker {
      * @param spillPos position of the spill
      */
     private void changeSpillState(TraceInterval interval, int spillPos) {
-        if (TraceLinearScanPhase.Options.LIROptTraceRAEliminateSpillMoves.getValue()) {
+        if (TraceLinearScanPhase.Options.LIROptTraceRAEliminateSpillMoves.getValue(allocator.getOptions())) {
             switch (interval.spillState()) {
                 case NoSpillStore:
-                    final int minSpillPos = interval.spillDefinitionPos();
-                    final int maxSpillPost = spillPos;
+                    final int minSpillPos = calculateMinSpillPos(interval.spillDefinitionPos(), spillPos);
+                    final int maxSpillPos = calculateMaxSpillPos(minSpillPos, spillPos);
 
-                    final int optimalSpillPos = findOptimalSpillPos(minSpillPos, maxSpillPost);
+                    final int optimalSpillPos = findOptimalSpillPos(minSpillPos, maxSpillPos);
 
-                    // assert !allocator.isBlockBegin(optimalSpillPos);
-                    assert !allocator.isBlockEnd(optimalSpillPos);
-                    assert (optimalSpillPos & 1) == 0 : "Spill pos must be even";
+                    /* Cannot spill at block begin since it interferes with move resolution. */
+                    assert isNotBlockBeginOrMerge(optimalSpillPos) : "Spill pos at block begin: " + optimalSpillPos;
+                    assert !allocator.isBlockEnd(optimalSpillPos) : "Spill pos at block end: " + optimalSpillPos;
+                    assert (optimalSpillPos & 1) == 0 : "Spill pos must be even " + optimalSpillPos;
 
                     interval.setSpillDefinitionPos(optimalSpillPos);
                     interval.setSpillState(SpillState.SpillStore);
@@ -599,6 +595,62 @@ final class TraceLinearScanWalker extends TraceIntervalWalker {
         } else {
             interval.setSpillState(SpillState.NoOptimization);
         }
+    }
+
+    private int calculateMinSpillPos(int spillDefinitionPos, int spillPos) {
+        int spillDefinitionPosEven = spillDefinitionPos & ~1;
+        if (spillDefinitionPosEven == 0 || !allocator.isBlockBegin(spillDefinitionPosEven) || spillDefinitionPos == spillPos) {
+            assert !allocator.isBlockEnd(spillDefinitionPosEven) : "Defintion at block end? " + spillDefinitionPos;
+            return spillDefinitionPos;
+        }
+        assert allocator.isBlockBegin(spillDefinitionPosEven);
+        if (SSAUtil.isMerge(allocator.blockForId(spillDefinitionPos))) {
+            /* Spill at merge are OK since there will be no resolution moves. */
+            return spillDefinitionPos;
+        }
+        int minSpillPos = spillDefinitionPosEven + 2;
+        while (allocator.isBlockEnd(minSpillPos)) {
+            // +2 is block begin, +4 is the instruction afterwards
+            minSpillPos += 4;
+        }
+        assert minSpillPos <= spillPos : String.format("No minSpillPos found. defPos: %d, spillPos: %d, minSpillPos, %d", spillDefinitionPos, spillPos, minSpillPos);
+        return minSpillPos;
+    }
+
+    private int calculateMaxSpillPos(final int minSpillPos, int spillPos) {
+        int spillPosEven = spillPos & ~1;
+        if (spillPosEven == 0) {
+            return spillPos;
+        }
+        if ((minSpillPos & ~1) == spillPosEven) {
+            assert isNotBlockBeginOrMerge(spillPos);
+            return spillPos;
+        }
+        int maxSpillPos;
+        /* Move away from block end. */
+        if (allocator.isBlockEnd(spillPosEven)) {
+            /* Block end. Use instruction before. */
+            maxSpillPos = spillPosEven - 2;
+        } else if (allocator.isBlockBegin(spillPosEven)) {
+            /* Block begin. Use instruction before previous block end. */
+            maxSpillPos = spillPosEven - 4;
+        } else {
+            return spillPos;
+        }
+        assert !allocator.isBlockEnd(maxSpillPos) : "Can no longer be a block end! " + maxSpillPos;
+
+        /* Skip block begins. */
+        while (allocator.isBlockBegin(maxSpillPos) && maxSpillPos > minSpillPos) {
+            // -2 is block end, -4 is the instruction before
+            maxSpillPos -= 4;
+        }
+        assert minSpillPos <= maxSpillPos;
+        return maxSpillPos;
+    }
+
+    private boolean isNotBlockBeginOrMerge(int spillPos) {
+        int spillPosEven = spillPos & ~1;
+        return spillPosEven == 0 || !allocator.isBlockBegin(spillPosEven) || SSAUtil.isMerge(allocator.blockForId(spillPosEven));
     }
 
     /**
@@ -655,13 +707,13 @@ final class TraceLinearScanWalker extends TraceIntervalWalker {
         assert fromBlockNr < toBlockNr : "must cross block boundary";
 
         /*
-         * Try to split at end of maxBlock. If this would be after maxSplitPos, then use the begin
-         * of maxBlock. We use last instruction -2 because we want to insert the move before the
-         * block end op.
+         * Try to split at end of maxBlock. We use last instruction -2 because we want to insert the
+         * move before the block end op. If this would be after maxSplitPos, then use the
+         * maxSplitPos.
          */
         int optimalSplitPos = allocator.getLastLirInstructionId(maxBlock) - 2;
         if (optimalSplitPos > maxSplitPos) {
-            optimalSplitPos = allocator.getFirstLirInstructionId(maxBlock);
+            optimalSplitPos = maxSplitPos;
         }
 
         // minimal block probability
@@ -671,12 +723,21 @@ final class TraceLinearScanWalker extends TraceIntervalWalker {
 
             if (cur.probability() < minProbability) {
                 // Block with lower probability found. Split at the end of this block.
-                minProbability = cur.probability();
-                optimalSplitPos = allocator.getLastLirInstructionId(cur) - 2;
+                int opIdBeforeBlockEnd = allocator.getLastLirInstructionId(cur) - 2;
+                if (allocator.getLIR().getLIRforBlock(cur).size() > 2) {
+                    minProbability = cur.probability();
+                    optimalSplitPos = opIdBeforeBlockEnd;
+                } else {
+                    /*
+                     * Skip blocks with only LabelOp and BlockEndOp since they cause move ordering
+                     * problems.
+                     */
+                    assert allocator.isBlockBegin(opIdBeforeBlockEnd);
+                }
             }
         }
-        assert optimalSplitPos > allocator.maxOpId() || allocator.isBlockBegin(optimalSplitPos) || allocator.isBlockEnd(optimalSplitPos + 2) : "algorithm must move split pos to block boundary";
-
+        assert optimalSplitPos > allocator.maxOpId() || optimalSplitPos == maxSplitPos || allocator.isBlockEnd(optimalSplitPos + 2) : "algorithm must move split pos to block boundary";
+        assert !allocator.isBlockBegin(optimalSplitPos);
         return optimalSplitPos;
     }
 
@@ -893,7 +954,7 @@ final class TraceLinearScanWalker extends TraceIntervalWalker {
                              * avoid errors
                              */
                             allocator.assignSpillSlot(interval);
-                            if (Debug.isDumpEnabled(Debug.INFO_LOG_LEVEL)) {
+                            if (Debug.isDumpEnabled(Debug.INFO_LEVEL)) {
                                 dumpLIRAndIntervals(description);
                             }
                             throw new OutOfRegistersException("LinearScan: no register found", description);
@@ -930,7 +991,7 @@ final class TraceLinearScanWalker extends TraceIntervalWalker {
     }
 
     protected void dumpLIRAndIntervals(String description) {
-        Debug.dump(Debug.INFO_LOG_LEVEL, allocator.getLIR(), description);
+        Debug.dump(Debug.INFO_LEVEL, allocator.getLIR(), description);
         allocator.printIntervals(description);
     }
 

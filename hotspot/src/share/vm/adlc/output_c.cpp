@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4172,11 +4172,11 @@ void ArchDesc::buildFrameMethods(FILE *fp_cpp) {
   fprintf(fp_cpp,"%s\n", _frame->_c_calling_convention);
   fprintf(fp_cpp,"}\n\n");
   // Java Return Value Location
-  fprintf(fp_cpp,"OptoRegPair Matcher::return_value(int ideal_reg, bool is_outgoing) {\n");
+  fprintf(fp_cpp,"OptoRegPair Matcher::return_value(uint ideal_reg, bool is_outgoing) {\n");
   fprintf(fp_cpp,"%s\n", _frame->_return_value);
   fprintf(fp_cpp,"}\n\n");
   // Native Return Value Location
-  fprintf(fp_cpp,"OptoRegPair Matcher::c_return_value(int ideal_reg, bool is_outgoing) {\n");
+  fprintf(fp_cpp,"OptoRegPair Matcher::c_return_value(uint ideal_reg, bool is_outgoing) {\n");
   fprintf(fp_cpp,"%s\n", _frame->_c_return_value);
   fprintf(fp_cpp,"}\n\n");
 

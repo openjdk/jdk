@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,9 +194,9 @@ typedef Hashtable<intptr_t, mtInternal>       IntptrHashtable;
 typedef Hashtable<Symbol*, mtSymbol>          SymbolHashtable;
 typedef HashtableEntry<Symbol*, mtClass>      SymbolHashtableEntry;
 typedef Hashtable<oop, mtSymbol>              StringHashtable;
-typedef TwoOopHashtable<Klass*, mtClass>      KlassTwoOopHashtable;
-typedef Hashtable<Klass*, mtClass>            KlassHashtable;
-typedef HashtableEntry<Klass*, mtClass>       KlassHashtableEntry;
+typedef TwoOopHashtable<InstanceKlass*, mtClass> KlassTwoOopHashtable;
+typedef Hashtable<InstanceKlass*, mtClass>       KlassHashtable;
+typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
 typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
 typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
 typedef RehashableHashtable<Symbol*, mtSymbol>   RehashableSymbolHashtable;
@@ -238,8 +238,8 @@ typedef RehashableHashtable<Symbol*, mtSymbol>   RehashableSymbolHashtable;
   nonstatic_field(ConstantPool,                _pool_holder,                                  InstanceKlass*)                        \
   nonstatic_field(ConstantPool,                _operands,                                     Array<u2>*)                            \
   nonstatic_field(ConstantPool,                _length,                                       int)                                   \
-  nonstatic_field(ConstantPool,                _resolved_references,                          jobject)                               \
-  nonstatic_field(ConstantPool,                _reference_map,                                Array<u2>*)                            \
+  nonstatic_field(ConstantPoolCache,           _resolved_references,                          jobject)                               \
+  nonstatic_field(ConstantPoolCache,           _reference_map,                                Array<u2>*)                            \
   nonstatic_field(ConstantPoolCache,           _length,                                       int)                                   \
   nonstatic_field(ConstantPoolCache,           _constant_pool,                                ConstantPool*)                         \
   volatile_nonstatic_field(InstanceKlass,      _array_klasses,                                Klass*)                                \
@@ -3046,6 +3046,10 @@ VMStructEntry VMStructs::localHotSpotVMStructs[] = {
   GENERATE_VM_STRUCT_LAST_ENTRY()
 };
 
+size_t VMStructs::localHotSpotVMStructsLength() {
+  return sizeof(localHotSpotVMStructs) / sizeof(VMStructEntry);
+}
+
 VMTypeEntry VMStructs::localHotSpotVMTypes[] = {
 
   VM_TYPES(GENERATE_VM_TYPE_ENTRY,
@@ -3108,6 +3112,10 @@ VMTypeEntry VMStructs::localHotSpotVMTypes[] = {
   GENERATE_VM_TYPE_LAST_ENTRY()
 };
 
+size_t VMStructs::localHotSpotVMTypesLength() {
+  return sizeof(localHotSpotVMTypes) / sizeof(VMTypeEntry);
+}
+
 VMIntConstantEntry VMStructs::localHotSpotVMIntConstants[] = {
 
   VM_INT_CONSTANTS(GENERATE_VM_INT_CONSTANT_ENTRY,
@@ -3150,6 +3158,10 @@ VMIntConstantEntry VMStructs::localHotSpotVMIntConstants[] = {
   GENERATE_VM_INT_CONSTANT_LAST_ENTRY()
 };
 
+size_t VMStructs::localHotSpotVMIntConstantsLength() {
+  return sizeof(localHotSpotVMIntConstants) / sizeof(VMIntConstantEntry);
+}
+
 VMLongConstantEntry VMStructs::localHotSpotVMLongConstants[] = {
 
   VM_LONG_CONSTANTS(GENERATE_VM_LONG_CONSTANT_ENTRY,
@@ -3178,6 +3190,10 @@ VMLongConstantEntry VMStructs::localHotSpotVMLongConstants[] = {
 
   GENERATE_VM_LONG_CONSTANT_LAST_ENTRY()
 };
+
+size_t VMStructs::localHotSpotVMLongConstantsLength() {
+  return sizeof(localHotSpotVMLongConstants) / sizeof(VMLongConstantEntry);
+}
 
 // This is used both to check the types of referenced fields and, in
 // debug builds, to ensure that all of the field types are present.
@@ -3470,45 +3486,3 @@ VMStructs::findType(const char* typeName) {
 void vmStructs_init() {
   debug_only(VMStructs::init());
 }
-
-#ifndef PRODUCT
-void VMStructs::test() {
-  // Make sure last entry in the each array is indeed the correct end marker.
-  // The reason why these are static is to make sure they are zero initialized.
-  // Putting them on the stack will leave some garbage in the padding of some fields.
-  static VMStructEntry struct_last_entry = GENERATE_VM_STRUCT_LAST_ENTRY();
-  assert(memcmp(&localHotSpotVMStructs[(sizeof(localHotSpotVMStructs) / sizeof(VMStructEntry)) - 1],
-                &struct_last_entry,
-                sizeof(VMStructEntry)) == 0, "Incorrect last entry in localHotSpotVMStructs");
-
-  static VMTypeEntry type_last_entry = GENERATE_VM_TYPE_LAST_ENTRY();
-  assert(memcmp(&localHotSpotVMTypes[sizeof(localHotSpotVMTypes) / sizeof(VMTypeEntry) - 1],
-                &type_last_entry,
-                sizeof(VMTypeEntry)) == 0, "Incorrect last entry in localHotSpotVMTypes");
-
-  static VMIntConstantEntry int_last_entry = GENERATE_VM_INT_CONSTANT_LAST_ENTRY();
-  assert(memcmp(&localHotSpotVMIntConstants[sizeof(localHotSpotVMIntConstants) / sizeof(VMIntConstantEntry) - 1],
-                &int_last_entry,
-                sizeof(VMIntConstantEntry)) == 0, "Incorrect last entry in localHotSpotVMIntConstants");
-
-  static VMLongConstantEntry long_last_entry = GENERATE_VM_LONG_CONSTANT_LAST_ENTRY();
-  assert(memcmp(&localHotSpotVMLongConstants[sizeof(localHotSpotVMLongConstants) / sizeof(VMLongConstantEntry) - 1],
-                &long_last_entry,
-                sizeof(VMLongConstantEntry)) == 0, "Incorrect last entry in localHotSpotVMLongConstants");
-
-
-  // Check for duplicate entries in type array
-  for (int i = 0; localHotSpotVMTypes[i].typeName != NULL; i++) {
-    for (int j = i + 1; localHotSpotVMTypes[j].typeName != NULL; j++) {
-      if (strcmp(localHotSpotVMTypes[i].typeName, localHotSpotVMTypes[j].typeName) == 0) {
-        tty->print_cr("Duplicate entries for '%s'", localHotSpotVMTypes[i].typeName);
-        assert(false, "Duplicate types in localHotSpotVMTypes array");
-      }
-    }
-  }
-}
-
-void VMStructs_test() {
-  VMStructs::test();
-}
-#endif
