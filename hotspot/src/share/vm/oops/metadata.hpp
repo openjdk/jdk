@@ -47,6 +47,7 @@ class Metadata : public MetaspaceObj {
   virtual bool is_method()             const volatile { return false; }
   virtual bool is_methodData()         const volatile { return false; }
   virtual bool is_constantPool()       const volatile { return false; }
+  virtual bool is_methodCounters()     const volatile { return false; }
 
   virtual const char* internal_name()  const = 0;
 

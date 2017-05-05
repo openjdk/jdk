@@ -22,6 +22,7 @@
  */
 package org.w3c.dom.ptests;
 
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
 import static jaxp.library.JAXPTestUtilities.compareWithGold;
 import static jaxp.library.JAXPTestUtilities.tryRunWithTmpPermission;
 import static org.testng.Assert.assertEquals;
@@ -157,7 +158,7 @@ public class NodeTest {
         Element element = (Element) document.getElementsByTagName("sender").item(0);
         parentElement.insertBefore(createTestDocumentFragment(document), element);
 
-        String outputfile = "InsertBefore.out";
+        String outputfile = USER_DIR + "InsertBefore.out";
         String goldfile = GOLDEN_DIR + "InsertBeforeGF.out";
         tryRunWithTmpPermission(() -> outputXml(document, outputfile), new PropertyPermission("user.dir", "read"));
         assertTrue(compareWithGold(goldfile, outputfile));
@@ -175,7 +176,7 @@ public class NodeTest {
         Element element = (Element) document.getElementsByTagName("sender").item(0);
         parentElement.replaceChild(createTestDocumentFragment(document), element);
 
-        String outputfile = "ReplaceChild3.out";
+        String outputfile = USER_DIR + "ReplaceChild3.out";
         String goldfile = GOLDEN_DIR + "ReplaceChild3GF.out";
         tryRunWithTmpPermission(() -> outputXml(document, outputfile), new PropertyPermission("user.dir", "read"));
         assertTrue(compareWithGold(goldfile, outputfile));

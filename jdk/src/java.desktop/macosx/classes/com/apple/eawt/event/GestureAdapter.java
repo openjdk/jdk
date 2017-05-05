@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ package com.apple.eawt.event;
  * Abstract adapter class for receiving gesture events. This class is provided
  * as a convenience for creating listeners.
  *
- * Subclasses registered with {@link GestureUtilities#addGestureListenerTo()}
+ * Subclasses registered with {@link GestureUtilities#addGestureListenerTo}
  * will receive all phase, magnification, rotation, and swipe events.
  *
  * @see GestureUtilities

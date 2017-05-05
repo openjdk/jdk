@@ -105,7 +105,7 @@ JLINK_ORDER_RESOURCES := **module-info.class
 JLINK_JLI_CLASSES :=
 ifeq ($(ENABLE_GENERATE_CLASSLIST), true)
   JLINK_ORDER_RESOURCES += @$(SUPPORT_OUTPUTDIR)/link_opt/classlist
-  JLINK_JLI_CLASSES := --generate-jli-classes=@$(SUPPORT_OUTPUTDIR)/link_opt/jli_trace.out
+  JLINK_JLI_CLASSES := --generate-jli-classes=@$(SUPPORT_OUTPUTDIR)/link_opt/default_jli_trace.txt
 endif
 JLINK_ORDER_RESOURCES += \
     /java.base/java/** \
@@ -119,6 +119,7 @@ JLINK_TOOL := $(JLINK) -J-Djlink.debug=true \
     --module-path $(IMAGES_OUTPUTDIR)/jmods \
     --endian $(OPENJDK_BUILD_CPU_ENDIAN) \
     --release-info $(BASE_RELEASE_FILE) \
+    --release-info add:OS_VERSION=\"$(REQUIRED_OS_VERSION)\" \
     --order-resources=$(call CommaList, $(JLINK_ORDER_RESOURCES)) \
     --dedup-legal-notices=error-if-not-same-content \
     $(JLINK_JLI_CLASSES) \
@@ -308,34 +309,6 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
   JRE_TARGETS += $(JRE_MAN_PAGE_LIST)
   JDK_TARGETS += $(JDK_MAN_PAGE_LIST)
 endif # Windows
-
-################################################################################
-# doc files
-
-JRE_DOC_LOCATION ?= $(JDK_TOPDIR)
-JDK_DOC_LOCATION ?= $(JDK_TOPDIR)
-
-JRE_DOC_TARGETS := $(addprefix $(JRE_IMAGE_DIR)/, $(JRE_DOC_FILES))
-JDK_DOC_TARGETS := $(addprefix $(JDK_IMAGE_DIR)/, $(JDK_DOC_FILES))
-
-# Processing license files from source area to image area
-# These are modified to have the platform specific EOL chars.
-define process-doc-file
-	$(call LogInfo, Processing $(patsubst $(OUTPUT_ROOT)/%,%,$@))
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	LC_ALL=C $(SED) 's/$$//g' $< > $@
-	$(CHMOD) 444 $@
-endef
-
-$(JRE_IMAGE_DIR)/%: $(JRE_DOC_LOCATION)/%
-	$(process-doc-file)
-
-$(JDK_IMAGE_DIR)/%: $(JDK_DOC_LOCATION)/%
-	$(process-doc-file)
-
-JRE_TARGETS += $(JRE_DOC_TARGETS)
-JDK_TARGETS += $(JDK_DOC_TARGETS)
 
 ################################################################################
 # src.zip

@@ -66,7 +66,7 @@ public class JmodTest {
 
     static final String CLASSES_PREFIX = "classes/";
     static final String CMDS_PREFIX = "bin/";
-    static final String LIBS_PREFIX = "native/";
+    static final String LIBS_PREFIX = "lib/";
     static final String CONFIGS_PREFIX = "conf/";
 
     @BeforeTest
