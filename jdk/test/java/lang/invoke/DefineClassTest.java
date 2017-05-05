@@ -75,7 +75,7 @@ public class DefineClassTest {
     @Test
     public void testDefineClass() throws Exception {
         final String CLASS_NAME = THIS_PACKAGE + ".Foo";
-        Lookup lookup = lookup().dropLookupMode(PRIVATE);
+        Lookup lookup = lookup();
         Class<?> clazz = lookup.defineClass(generateClass(CLASS_NAME));
 
         // test name
@@ -101,7 +101,7 @@ public class DefineClassTest {
     public void testAccess() throws Exception {
         final String THIS_CLASS = this.getClass().getName();
         final String CLASS_NAME = THIS_PACKAGE + ".Runner";
-        Lookup lookup = lookup().dropLookupMode(PRIVATE);
+        Lookup lookup = lookup();
 
         // public
         byte[] classBytes = generateRunner(CLASS_NAME + nextNumber(), THIS_CLASS, "method1");
@@ -144,9 +144,8 @@ public class DefineClassTest {
         final String CLASS_NAME = THIS_PACKAGE + ".ClassWithClinit";
 
         byte[] classBytes = generateClassWithInitializer(CLASS_NAME, THIS_CLASS, "fail");
-        Lookup lookup = lookup().dropLookupMode(PRIVATE);
+        Class<?> clazz = lookup().defineClass(classBytes);
 
-        Class<?> clazz = lookup.defineClass(classBytes);
         // trigger initializer to run
         try {
             clazz.newInstance();
@@ -186,14 +185,14 @@ public class DefineClassTest {
         assertNotEquals(target1.getProtectionDomain(), target2.getProtectionDomain());
 
         // protection domain 1
-        Lookup lookup1 = privateLookupIn(target1, lookup()).dropLookupMode(PRIVATE);
+        Lookup lookup1 = privateLookupIn(target1, lookup());
 
         Class<?> clazz = lookup1.defineClass(generateClass("p.Foo"));
         testSameAbode(clazz, lookup1.lookupClass());
         testDiscoverable(clazz, lookup1);
 
         // protection domain 2
-        Lookup lookup2 = privateLookupIn(target2, lookup()).dropLookupMode(PRIVATE);
+        Lookup lookup2 = privateLookupIn(target2, lookup());
 
         clazz = lookup2.defineClass(generateClass("p.Bar"));
         testSameAbode(clazz, lookup2.lookupClass());
@@ -205,7 +204,7 @@ public class DefineClassTest {
      */
     @Test
     public void testBootLoader() throws Exception {
-        Lookup lookup = privateLookupIn(Thread.class, lookup()).dropLookupMode(PRIVATE);
+        Lookup lookup = privateLookupIn(Thread.class, lookup());
         assertTrue(lookup.getClass().getClassLoader() == null);
 
         Class<?> clazz = lookup.defineClass(generateClass("java.lang.Foo"));
@@ -216,8 +215,7 @@ public class DefineClassTest {
 
     @Test(expectedExceptions = { IllegalArgumentException.class })
     public void testWrongPackage() throws Exception {
-        Lookup lookup = lookup().dropLookupMode(PRIVATE);
-        lookup.defineClass(generateClass("other.C"));
+        lookup().defineClass(generateClass("other.C"));
     }
 
     @Test(expectedExceptions = { IllegalAccessException.class })
@@ -226,23 +224,14 @@ public class DefineClassTest {
         lookup.defineClass(generateClass(THIS_PACKAGE + ".C"));
     }
 
-    @Test(expectedExceptions = { UnsupportedOperationException.class })
-    public void testHasPrivateAccess() throws Exception {
-        Lookup lookup = lookup();
-        assertTrue(lookup.hasPrivateAccess());
-        lookup.defineClass(generateClass(THIS_PACKAGE + ".C"));
-    }
-
     @Test(expectedExceptions = { ClassFormatError.class })
     public void testTruncatedClassFile() throws Exception {
-        Lookup lookup = lookup().dropLookupMode(PRIVATE);
-        lookup.defineClass(new byte[0]);
+        lookup().defineClass(new byte[0]);
     }
 
     @Test(expectedExceptions = { NullPointerException.class })
     public void testNull() throws Exception {
-        Lookup lookup = lookup().dropLookupMode(PRIVATE);
-        lookup.defineClass(null);
+        lookup().defineClass(null);
     }
 
     /**

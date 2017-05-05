@@ -109,20 +109,17 @@ public final class Configuration {
     private final Set<ResolvedModule> modules;
     private final Map<String, ResolvedModule> nameToModule;
 
-    // module constraints on target
-    private final String osName;
-    private final String osArch;
+    // constraint on target platform
+    private final String targetPlatform;
 
-    String osName() { return osName; }
-    String osArch() { return osArch; }
+    String targetPlatform() { return targetPlatform; }
 
     private Configuration() {
         this.parents = Collections.emptyList();
         this.graph = Collections.emptyMap();
         this.modules = Collections.emptySet();
         this.nameToModule = Collections.emptyMap();
-        this.osName = null;
-        this.osArch = null;
+        this.targetPlatform = null;
     }
 
     private Configuration(List<Configuration> parents,
@@ -147,8 +144,7 @@ public final class Configuration {
         this.modules = Set.of(moduleArray);
         this.nameToModule = Map.ofEntries(nameEntries);
 
-        this.osName = resolver.osName();
-        this.osArch = resolver.osArch();
+        this.targetPlatform = resolver.targetPlatform();
     }
 
     /**
