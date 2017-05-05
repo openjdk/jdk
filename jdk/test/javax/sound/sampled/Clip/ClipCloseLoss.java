@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import javax.sound.sampled.Mixer;
  * @bug 4946913
  * @summary DirectClip doesn't kill the thread correctly, sometimes
  * @run main/othervm ClipCloseLoss
- * @key headful
  */
 public class ClipCloseLoss {
     static int frameCount = 441000; // lets say 10 seconds

@@ -27,6 +27,7 @@ import java.lang.reflect.Field;
 
 import org.testng.annotations.DataProvider;
 
+import sun.hotspot.WhiteBox;
 import jdk.internal.misc.Unsafe;
 import jdk.vm.ci.hotspot.HotSpotConstantReflectionProvider;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider;
@@ -36,6 +37,10 @@ import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.runtime.JVMCI;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 
 public class MemoryAccessProviderData {
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
@@ -43,6 +48,18 @@ public class MemoryAccessProviderData {
     private static final TestClass TEST_OBJECT = new TestClass();
     private static final JavaConstant TEST_CONSTANT = CONSTANT_REFLECTION.forObject(TEST_OBJECT);
     private static final JavaConstant TEST_CLASS_CONSTANT = CONSTANT_REFLECTION.forObject(TestClass.class);
+    private static KindData[] PRIMITIVE_KIND_DATA = {
+        new KindData(JavaKind.Boolean, TEST_OBJECT),
+        new KindData(JavaKind.Byte, TEST_OBJECT),
+        new KindData(JavaKind.Char, TEST_OBJECT),
+        new KindData(JavaKind.Short, TEST_OBJECT),
+        new KindData(JavaKind.Int, TEST_OBJECT),
+        new KindData(JavaKind.Float, TEST_OBJECT),
+        new KindData(JavaKind.Long, TEST_OBJECT),
+        new KindData(JavaKind.Double, TEST_OBJECT)
+    };
+    private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
+
 
     @DataProvider(name = "positiveObject")
     public static Object[][] getPositiveObjectJavaKind() {
@@ -54,51 +71,40 @@ public class MemoryAccessProviderData {
 
     @DataProvider(name = "positivePrimitive")
     public static Object[][] getPositivePrimitiveJavaKinds() {
-        Field booleanField;
-        Field byteField;
-        Field shortField;
-        Field intField;
-        Field longField;
-        Field floatField;
-        Field doubleField;
-        Field charField;
-        try {
-            booleanField = MemoryAccessProviderData.TestClass.class.getDeclaredField("booleanField");
-            byteField = MemoryAccessProviderData.TestClass.class.getDeclaredField("byteField");
-            shortField = MemoryAccessProviderData.TestClass.class.getDeclaredField("shortField");
-            intField = MemoryAccessProviderData.TestClass.class.getDeclaredField("intField");
-            longField = MemoryAccessProviderData.TestClass.class.getDeclaredField("longField");
-            floatField = MemoryAccessProviderData.TestClass.class.getDeclaredField("floatField");
-            doubleField = MemoryAccessProviderData.TestClass.class.getDeclaredField("doubleField");
-            charField = MemoryAccessProviderData.TestClass.class.getDeclaredField("charField");
-        } catch (NoSuchFieldException e) {
-            throw new Error("TESTBUG: can't find test field " + e, e);
+        List<Object[]> result = new ArrayList<>();
+        for (KindData k : PRIMITIVE_KIND_DATA) {
+            result.add(new Object[] {k.kind, TEST_CONSTANT, k.instanceFieldOffset, k.instanceFieldValue, Math.max(8, k.kind.getBitCount())});
+            result.add(new Object[] {k.kind, TEST_CLASS_CONSTANT, k.staticFieldOffset, k.staticFieldValue, Math.max(8, k.kind.getBitCount())});
         }
-        long booleanFieldOffset = UNSAFE.objectFieldOffset(booleanField);
-        long byteFieldOffset = UNSAFE.objectFieldOffset(byteField);
-        long shortFieldOffset = UNSAFE.objectFieldOffset(shortField);
-        long intFieldOffset = UNSAFE.objectFieldOffset(intField);
-        long longFieldOffset = UNSAFE.objectFieldOffset(longField);
-        long floatFieldOffset = UNSAFE.objectFieldOffset(floatField);
-        long doubleFieldOffset = UNSAFE.objectFieldOffset(doubleField);
-        long charFieldOffset = UNSAFE.objectFieldOffset(charField);
-        return new Object[][]{
-                        new Object[]{JavaKind.Boolean, TEST_CONSTANT, booleanFieldOffset,
-                                        JavaConstant.forBoolean(TEST_OBJECT.booleanField), 8},
-                        new Object[]{JavaKind.Byte, TEST_CONSTANT, byteFieldOffset,
-                                        JavaConstant.forByte(TEST_OBJECT.byteField), 8},
-                        new Object[]{JavaKind.Short, TEST_CONSTANT, shortFieldOffset,
-                                        JavaConstant.forShort(TEST_OBJECT.shortField), 16},
-                        new Object[]{JavaKind.Int, TEST_CONSTANT, intFieldOffset,
-                                        JavaConstant.forInt(TEST_OBJECT.intField), 32},
-                        new Object[]{JavaKind.Long, TEST_CONSTANT, longFieldOffset,
-                                        JavaConstant.forLong(TEST_OBJECT.longField), 64},
-                        new Object[]{JavaKind.Float, TEST_CONSTANT, floatFieldOffset,
-                                        JavaConstant.forFloat(TEST_OBJECT.floatField), 32},
-                        new Object[]{JavaKind.Double, TEST_CONSTANT, doubleFieldOffset,
-                                        JavaConstant.forDouble(TEST_OBJECT.doubleField), 64},
-                        new Object[]{JavaKind.Char, TEST_CONSTANT, charFieldOffset,
-                                        JavaConstant.forChar(TEST_OBJECT.charField), 16}};
+        return result.toArray(new Object[result.size()][]);
+    }
+
+    @DataProvider(name = "outOfBoundsInstanceFields")
+    public static Object[][] getOutOfBoundsStaticFieldReads() {
+        long instanceSize = WHITE_BOX.getObjectSize(TEST_OBJECT);
+        List<Object[]> result = new ArrayList<>();
+        for (KindData k : PRIMITIVE_KIND_DATA) {
+            long lastValidOffset = instanceSize - (k.kind.getByteCount());
+            result.add(new Object[] {k.kind, TEST_CONSTANT, lastValidOffset, false});
+            result.add(new Object[] {k.kind, TEST_CONSTANT, (long) -1, true});
+            result.add(new Object[] {k.kind, TEST_CONSTANT, lastValidOffset + 1, true});
+            result.add(new Object[] {k.kind, TEST_CONSTANT, lastValidOffset + 100, true});
+        }
+        return result.toArray(new Object[result.size()][]);
+    }
+
+    @DataProvider(name = "outOfBoundsStaticFields")
+    public static Object[][] getOutOfBoundsInstanceFieldReads() {
+        long staticsSize = WHITE_BOX.getObjectSize(TEST_OBJECT.getClass());
+        List<Object[]> result = new ArrayList<>();
+        for (KindData k : PRIMITIVE_KIND_DATA) {
+            long lastValidOffset = staticsSize - (k.kind.getByteCount());
+            result.add(new Object[] {k.kind, TEST_CLASS_CONSTANT, lastValidOffset, false});
+            result.add(new Object[] {k.kind, TEST_CLASS_CONSTANT, (long) -1, true});
+            result.add(new Object[] {k.kind, TEST_CLASS_CONSTANT, lastValidOffset + 1, true});
+            result.add(new Object[] {k.kind, TEST_CLASS_CONSTANT, lastValidOffset + 100, true});
+        }
+        return result.toArray(new Object[result.size()][]);
     }
 
     @DataProvider(name = "negative")
@@ -107,6 +113,7 @@ public class MemoryAccessProviderData {
                         new Object[]{JavaKind.Void, JavaConstant.NULL_POINTER},
                         new Object[]{JavaKind.Illegal, JavaConstant.INT_1}};
     }
+
 
     private static class TestClass {
         public final boolean booleanField = true;
@@ -117,6 +124,43 @@ public class MemoryAccessProviderData {
         public final double doubleField = 6.0d;
         public final float floatField = 7.0f;
         public final char charField = 'a';
-        public final String stringField = "abc";
+        public final String objectField = "abc";
+
+        public static final boolean booleanStaticField = true;
+        public static final byte byteStaticField = 2;
+        public static final short shortStaticField = 3;
+        public static final int intStaticField = 4;
+        public static final long longStaticField = 5L;
+        public static final double doubleStaticField = 6.0d;
+        public static final float floatStaticField = 7.0f;
+        public static final char charStaticField = 'a';
+        public static final String objectStaticField = "abc";
+    }
+
+
+    static class KindData {
+        final JavaKind kind;
+        final Field instanceField;
+        final Field staticField;
+        final long instanceFieldOffset;
+        final long staticFieldOffset;
+        final JavaConstant instanceFieldValue;
+        final JavaConstant staticFieldValue;
+        KindData(JavaKind kind, Object testObject) {
+            this.kind = kind;
+            try {
+                Class<?> c = testObject.getClass();
+                instanceField = c.getDeclaredField(kind.getJavaName() + "Field");
+                staticField = c.getDeclaredField(kind.getJavaName() + "StaticField");
+                instanceField.setAccessible(true);
+                staticField.setAccessible(true);
+                instanceFieldOffset = UNSAFE.objectFieldOffset(instanceField);
+                staticFieldOffset = UNSAFE.staticFieldOffset(staticField);
+                instanceFieldValue = JavaConstant.forBoxedPrimitive(instanceField.get(testObject));
+                staticFieldValue = JavaConstant.forBoxedPrimitive(staticField.get(null));
+            } catch (Exception e) {
+                throw new Error("TESTBUG for kind " + kind, e);
+            }
+        }
     }
 }

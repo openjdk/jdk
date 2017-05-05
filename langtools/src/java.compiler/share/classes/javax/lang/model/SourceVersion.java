@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ public enum SourceVersion {
      * 1.7: diamond syntax, try-with-resources, etc.
      * 1.8: lambda expressions and default methods
      *   9: modules, small cleanups to 1.7 and 1.8 changes
+     *  10: to-be-determined changes
      */
 
     /**
@@ -150,7 +151,15 @@ public enum SourceVersion {
      *
      * @since 9
      */
-     RELEASE_9;
+     RELEASE_9,
+
+    /**
+     * The version recognized by the Java Platform, Standard Edition
+     * 10.
+     *
+     * @since 10
+     */
+     RELEASE_10;
 
     // Note that when adding constants for newer releases, the
     // behavior of latest() and latestSupported() must be updated too.
@@ -161,7 +170,7 @@ public enum SourceVersion {
      * @return the latest source version that can be modeled
      */
     public static SourceVersion latest() {
-        return RELEASE_9;
+        return RELEASE_10;
     }
 
     private static final SourceVersion latestSupported = getLatestSupported();
@@ -171,6 +180,8 @@ public enum SourceVersion {
             String specVersion = System.getProperty("java.specification.version");
 
             switch (specVersion) {
+                case "10":
+                    return RELEASE_10;
                 case "9":
                 case "1.9":
                     return RELEASE_9;

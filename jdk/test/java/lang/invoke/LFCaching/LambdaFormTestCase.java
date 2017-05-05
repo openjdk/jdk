@@ -51,7 +51,7 @@ public abstract class LambdaFormTestCase {
      * used to get a lambda form from a method handle.
      */
     protected static final Method INTERNAL_FORM;
-    protected static final Field DEBUG_NAME;
+    protected static final Field KIND_FIELD;
     protected static final Field REF_FIELD;
     private static final List<GarbageCollectorMXBean> gcInfo;
 
@@ -64,8 +64,8 @@ public abstract class LambdaFormTestCase {
             INTERNAL_FORM = MethodHandle.class.getDeclaredMethod("internalForm");
             INTERNAL_FORM.setAccessible(true);
 
-            DEBUG_NAME = Class.forName("java.lang.invoke.LambdaForm").getDeclaredField("debugName");
-            DEBUG_NAME.setAccessible(true);
+            KIND_FIELD = Class.forName("java.lang.invoke.LambdaForm").getDeclaredField("kind");
+            KIND_FIELD.setAccessible(true);
 
             REF_FIELD = Reference.class.getDeclaredField("referent");
             REF_FIELD.setAccessible(true);

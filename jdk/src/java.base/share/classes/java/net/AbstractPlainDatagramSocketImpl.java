@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -275,6 +275,7 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
         return (fd == null) ? true : false;
     }
 
+    @SuppressWarnings("deprecation")
     protected void finalize() {
         close();
     }

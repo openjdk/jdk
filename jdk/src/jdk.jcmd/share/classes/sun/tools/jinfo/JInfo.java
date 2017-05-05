@@ -96,37 +96,37 @@ final public class JInfo {
         String parg = args[optionCount];
 
         ProcessArgumentMatcher ap = new ProcessArgumentMatcher(parg);
-        Collection<VirtualMachineDescriptor> vids = ap.getVirtualMachineDescriptors(JInfo.class);
+        Collection<String> pids = ap.getVirtualMachinePids(JInfo.class);
 
-        if (vids.isEmpty()) {
+        if (pids.isEmpty()) {
             System.err.println("Could not find any processes matching : '" + parg + "'");
             System.exit(1);
         }
 
-        for (VirtualMachineDescriptor vid : vids) {
-            if (vids.size() > 1) {
-                System.out.println("Pid:" + vid.id());
+        for (String pid : pids) {
+            if (pids.size() > 1) {
+                System.out.println("Pid:" + pid);
             }
             if (!doFlag && !doFlags && !doSysprops) {
                 // Print flags and sysporps if no options given
-                sysprops(vid.id());
+                sysprops(pid);
                 System.out.println();
-                flags(vid.id());
+                flags(pid);
                 System.out.println();
-                commandLine(vid.id());
+                commandLine(pid);
             }
             if (doFlag) {
                 if (flag < 0) {
                     System.err.println("Missing flag");
                     usage(1);
                 }
-                flag(vid.id(), args[flag]);
+                flag(pid, args[flag]);
             }
             if (doFlags) {
-                flags(vid.id());
+                flags(pid);
             }
             if (doSysprops) {
-                sysprops(vid.id());
+                sysprops(pid);
             }
         }
     }
