@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2017, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -642,13 +642,6 @@ address TemplateInterpreterGenerator::generate_exception_handler_common(const ch
   return entry;
 }
 
-// Unused, should never pass by.
-address TemplateInterpreterGenerator::generate_continuation_for (TosState state) {
-  address entry = __ pc();
-  __ should_not_reach_here();
-  return entry;
-}
-
 address TemplateInterpreterGenerator::generate_return_entry_for (TosState state, int step, size_t index_size) {
   address entry = __ pc();
 
@@ -683,6 +676,10 @@ address TemplateInterpreterGenerator::generate_return_entry_for (TosState state,
   __ z_llgc(size, Address(cache, offset, flags_offset+(sizeof(size_t)-1)));
   __ z_sllg(size, size, Interpreter::logStackElementSize); // Each argument size in bytes.
   __ z_agr(Z_esp, size);                                   // Pop arguments.
+
+  __ check_and_handle_popframe(Z_thread);
+  __ check_and_handle_earlyret(Z_thread);
+
   __ dispatch_next(state, step);
 
   BLOCK_COMMENT("} return_entry");
@@ -1933,8 +1930,11 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   return entry_point;
 }
 
-// Method entry for static native methods:
-//   int java.util.zip.CRC32.update(int crc, int b)
+
+/**
+ * Method entry for static native methods:
+ *   int java.util.zip.CRC32.update(int crc, int b)
+ */
 address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
 
   if (UseCRC32Intrinsics) {
@@ -1964,7 +1964,7 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
     __ z_llgf(crc, 2 * wordSize, argP); // Current crc state, zero extend to 64 bit to have a clean register.
 
     StubRoutines::zarch::generate_load_crc_table_addr(_masm, table);
-    __ kernel_crc32_singleByte(crc, data, dataLen, table, Z_R1);
+    __ kernel_crc32_singleByte(crc, data, dataLen, table, Z_R1, true);
 
     // Restore caller sp for c2i case.
     __ resize_frame_absolute(Z_R10, Z_R0, true); // Cut the stack back to where the caller started.
@@ -1983,9 +1983,11 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
 }
 
 
-// Method entry for static native methods:
-//   int java.util.zip.CRC32.updateBytes(int crc, byte[] b, int off, int len)
-//   int java.util.zip.CRC32.updateByteBuffer(int crc, long buf, int off, int len)
+/**
+ * Method entry for static native methods:
+ *   int java.util.zip.CRC32.updateBytes(     int crc, byte[] b,  int off, int len)
+ *   int java.util.zip.CRC32.updateByteBuffer(int crc, long* buf, int off, int len)
+ */
 address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
 
   if (UseCRC32Intrinsics) {
@@ -2020,10 +2022,10 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
       // data = buf + off
       BLOCK_COMMENT("CRC32_updateByteBuffer {");
       __ z_llgf(crc,    5*wordSize, argP);  // current crc state
-      __ z_lg(data,    3*wordSize, argP);   // start of byte buffer
+      __ z_lg(data,     3*wordSize, argP);  // start of byte buffer
       __ z_agf(data,    2*wordSize, argP);  // Add byte buffer offset.
       __ z_lgf(dataLen, 1*wordSize, argP);  // #bytes to process
-    } else {                         // Used for "updateBytes update".
+    } else {                                                         // Used for "updateBytes update".
       // crc     @ (SP + 4W) (32bit)
       // buf     @ (SP + 3W) (64bit ptr to byte array)
       // off     @ (SP + 2W) (32bit)
@@ -2031,7 +2033,7 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
       // data = buf + off + base_offset
       BLOCK_COMMENT("CRC32_updateBytes {");
       __ z_llgf(crc,    4*wordSize, argP);  // current crc state
-      __ z_lg(data,    3*wordSize, argP);   // start of byte buffer
+      __ z_lg(data,     3*wordSize, argP);  // start of byte buffer
       __ z_agf(data,    2*wordSize, argP);  // Add byte buffer offset.
       __ z_lgf(dataLen, 1*wordSize, argP);  // #bytes to process
       __ z_aghi(data, arrayOopDesc::base_offset_in_bytes(T_BYTE));
@@ -2041,7 +2043,7 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
 
     __ resize_frame(-(6*8), Z_R0, true); // Resize frame to provide add'l space to spill 5 registers.
     __ z_stmg(t0, t3, 1*8, Z_SP);        // Spill regs 10..13 to make them available as work registers.
-    __ kernel_crc32_1word(crc, data, dataLen, table, t0, t1, t2, t3);
+    __ kernel_crc32_1word(crc, data, dataLen, table, t0, t1, t2, t3, true);
     __ z_lmg(t0, t3, 1*8, Z_SP);         // Spill regs 10..13 back from stack.
 
     // Restore caller sp for c2i case.
@@ -2060,8 +2062,79 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
   return NULL;
 }
 
-// Not supported
+
+/**
+ * Method entry for intrinsic-candidate (non-native) methods:
+ *   int java.util.zip.CRC32C.updateBytes(           int crc, byte[] b,  int off, int end)
+ *   int java.util.zip.CRC32C.updateDirectByteBuffer(int crc, long* buf, int off, int end)
+ * Unlike CRC32, CRC32C does not have any methods marked as native
+ * CRC32C also uses an "end" variable instead of the length variable CRC32 uses
+ */
 address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
+
+  if (UseCRC32CIntrinsics) {
+    uint64_t entry_off = __ offset();
+
+    // We don't generate local frame and don't align stack because
+    // we call stub code and there is no safepoint on this path.
+
+    // Load parameters.
+    // Z_esp is callers operand stack pointer, i.e. it points to the parameters.
+    const Register argP    = Z_esp;
+    const Register crc     = Z_ARG1;  // crc value
+    const Register data    = Z_ARG2;  // address of java byte array
+    const Register dataLen = Z_ARG3;  // source data len
+    const Register table   = Z_ARG4;  // address of crc32 table
+    const Register t0      = Z_R10;   // work reg for kernel* emitters
+    const Register t1      = Z_R11;   // work reg for kernel* emitters
+    const Register t2      = Z_R12;   // work reg for kernel* emitters
+    const Register t3      = Z_R13;   // work reg for kernel* emitters
+
+    // Arguments are reversed on java expression stack.
+    // Calculate address of start element.
+    if (kind == Interpreter::java_util_zip_CRC32C_updateDirectByteBuffer) { // Used for "updateByteBuffer direct".
+      // crc     @ (SP + 5W) (32bit)
+      // buf     @ (SP + 3W) (64bit ptr to long array)
+      // off     @ (SP + 2W) (32bit)
+      // dataLen @ (SP + 1W) (32bit)
+      // data = buf + off
+      BLOCK_COMMENT("CRC32C_updateDirectByteBuffer {");
+      __ z_llgf(crc,    5*wordSize, argP);  // current crc state
+      __ z_lg(data,     3*wordSize, argP);  // start of byte buffer
+      __ z_agf(data,    2*wordSize, argP);  // Add byte buffer offset.
+      __ z_lgf(dataLen, 1*wordSize, argP);  // #bytes to process, calculated as
+      __ z_sgf(dataLen, Address(argP, 2*wordSize));  // (end_index - offset)
+    } else {                                                                // Used for "updateBytes update".
+      // crc     @ (SP + 4W) (32bit)
+      // buf     @ (SP + 3W) (64bit ptr to byte array)
+      // off     @ (SP + 2W) (32bit)
+      // dataLen @ (SP + 1W) (32bit)
+      // data = buf + off + base_offset
+      BLOCK_COMMENT("CRC32C_updateBytes {");
+      __ z_llgf(crc,    4*wordSize, argP);  // current crc state
+      __ z_lg(data,     3*wordSize, argP);  // start of byte buffer
+      __ z_agf(data,    2*wordSize, argP);  // Add byte buffer offset.
+      __ z_lgf(dataLen, 1*wordSize, argP);  // #bytes to process, calculated as
+      __ z_sgf(dataLen, Address(argP, 2*wordSize));  // (end_index - offset)
+      __ z_aghi(data, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+    }
+
+    StubRoutines::zarch::generate_load_crc32c_table_addr(_masm, table);
+
+    __ resize_frame(-(6*8), Z_R0, true); // Resize frame to provide add'l space to spill 5 registers.
+    __ z_stmg(t0, t3, 1*8, Z_SP);        // Spill regs 10..13 to make them available as work registers.
+    __ kernel_crc32_1word(crc, data, dataLen, table, t0, t1, t2, t3, false);
+    __ z_lmg(t0, t3, 1*8, Z_SP);         // Spill regs 10..13 back from stack.
+
+    // Restore caller sp for c2i case.
+    __ resize_frame_absolute(Z_R10, Z_R0, true); // Cut the stack back to where the caller started.
+
+    __ z_br(Z_R14);
+
+    BLOCK_COMMENT("} CRC32C_update{Bytes|DirectByteBuffer}");
+    return __ addr_at(entry_off);
+  }
+
   return NULL;
 }
 

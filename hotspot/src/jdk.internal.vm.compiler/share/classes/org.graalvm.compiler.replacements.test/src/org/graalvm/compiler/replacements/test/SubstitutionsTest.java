@@ -33,9 +33,7 @@ import org.junit.Test;
 
 import org.graalvm.compiler.api.replacements.ClassSubstitution;
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
-import org.graalvm.compiler.bytecode.BytecodeProvider;
 import org.graalvm.compiler.core.common.type.StampFactory;
-import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
@@ -53,10 +51,11 @@ import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plu
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
 import org.graalvm.compiler.nodes.memory.MemoryNode;
+import org.graalvm.compiler.replacements.classfile.ClassfileBytecodeProvider;
 
 import jdk.vm.ci.meta.JavaKind;
 
-public class SubstitutionsTest extends GraalCompilerTest {
+public class SubstitutionsTest extends ReplacementsTest {
 
     @NodeInfo(allowedUsageTypes = {Memory}, cycles = CYCLES_IGNORED, size = SIZE_IGNORED)
     static class TestMemory extends FixedWithNextNode implements MemoryNode {
@@ -121,8 +120,8 @@ public class SubstitutionsTest extends GraalCompilerTest {
     @Override
     protected GraphBuilderConfiguration editGraphBuilderConfiguration(GraphBuilderConfiguration conf) {
         InvocationPlugins invocationPlugins = conf.getPlugins().getInvocationPlugins();
-        BytecodeProvider replacementBytecodeProvider = getReplacements().getReplacementBytecodeProvider();
-        Registration r = new Registration(invocationPlugins, TestMethod.class, replacementBytecodeProvider);
+        ClassfileBytecodeProvider bytecodeProvider = getSystemClassLoaderBytecodeProvider();
+        Registration r = new Registration(invocationPlugins, TestMethod.class, bytecodeProvider);
         r.registerMethodSubstitution(TestMethodSubstitution.class, "test");
         return super.editGraphBuilderConfiguration(conf);
     }
@@ -134,7 +133,7 @@ public class SubstitutionsTest extends GraalCompilerTest {
     @Override
     protected Plugins getDefaultGraphBuilderPlugins() {
         Plugins ret = super.getDefaultGraphBuilderPlugins();
-        // manually register generated factories, jvmci service providers don't work from unit tests
+        // manually register generated factories, Graal service providers don't work from unit tests
         new PluginFactory_SubstitutionsTest().registerPlugins(ret.getInvocationPlugins(), null);
         return ret;
     }

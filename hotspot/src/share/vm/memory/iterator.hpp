@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,16 @@ class ExtendedOopClosure : public OopClosure {
 
  public:
   ReferenceProcessor* ref_processor() const { return _ref_processor; }
+
+  // Iteration of InstanceRefKlasses differ depending on the closure,
+  // the below enum describes the different alternatives.
+  enum ReferenceIterationMode {
+    DO_DISCOVERY, // Apply closure and discover references
+    DO_FIELDS     // Apply closure to all fields
+  };
+
+  // The default iteration mode is to do discovery.
+  virtual ReferenceIterationMode reference_iteration_mode() { return DO_DISCOVERY; }
 
   // If the do_metadata functions return "true",
   // we invoke the following when running oop_iterate():

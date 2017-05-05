@@ -25,7 +25,7 @@ package org.graalvm.compiler.core.amd64;
 
 import jdk.vm.ci.meta.JavaConstant;
 
-import org.graalvm.compiler.asm.NumUtil;
+import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.asm.amd64.AMD64Address.Scale;
 import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.nodes.ValueNode;

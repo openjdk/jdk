@@ -22,31 +22,35 @@
  */
 package org.graalvm.compiler.hotspot.stubs;
 
-import static org.graalvm.compiler.nodes.StructuredGraph.NO_PROFILING_INFO;
 import static org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext.CompilationContext.INLINE_AFTER_PARSING;
 
 import java.lang.reflect.Method;
 
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.Snippet.ConstantParameter;
-import org.graalvm.compiler.core.common.CompilationIdentifier;
+import org.graalvm.compiler.api.replacements.Snippet.NonNullParameter;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
+import org.graalvm.compiler.bytecode.BytecodeProvider;
+import org.graalvm.compiler.core.common.CompilationIdentifier;
+import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.Debug.Scope;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.java.GraphBuilderPhase;
+import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.StructuredGraph.GuardsStage;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
+import org.graalvm.compiler.phases.common.RemoveValueProxyPhase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
 import org.graalvm.compiler.replacements.ConstantBindingParameterPlugin;
 import org.graalvm.compiler.replacements.SnippetTemplate;
@@ -71,8 +75,8 @@ public abstract class SnippetStub extends Stub implements Snippets {
      *            this object
      * @param linkage linkage details for a call to the stub
      */
-    public SnippetStub(String snippetMethodName, HotSpotProviders providers, HotSpotForeignCallLinkage linkage) {
-        this(null, snippetMethodName, providers, linkage);
+    public SnippetStub(String snippetMethodName, OptionValues options, HotSpotProviders providers, HotSpotForeignCallLinkage linkage) {
+        this(null, snippetMethodName, options, providers, linkage);
     }
 
     /**
@@ -84,20 +88,11 @@ public abstract class SnippetStub extends Stub implements Snippets {
      *            {@code snippetDeclaringClass}
      * @param linkage linkage details for a call to the stub
      */
-    public SnippetStub(Class<? extends Snippets> snippetDeclaringClass, String snippetMethodName, HotSpotProviders providers, HotSpotForeignCallLinkage linkage) {
-        super(providers, linkage);
+    public SnippetStub(Class<? extends Snippets> snippetDeclaringClass, String snippetMethodName, OptionValues options, HotSpotProviders providers, HotSpotForeignCallLinkage linkage) {
+        super(options, providers, linkage);
         Method javaMethod = SnippetTemplate.AbstractTemplates.findMethod(snippetDeclaringClass == null ? getClass() : snippetDeclaringClass, snippetMethodName, null);
         this.method = providers.getMetaAccess().lookupJavaMethod(javaMethod);
     }
-
-    @SuppressWarnings("all")
-    private static boolean assertionsEnabled() {
-        boolean enabled = false;
-        assert enabled = true;
-        return enabled;
-    }
-
-    public static final ThreadLocal<StructuredGraph> SnippetGraphUnderConstruction = assertionsEnabled() ? new ThreadLocal<>() : null;
 
     @Override
     @SuppressWarnings("try")
@@ -112,29 +107,25 @@ public abstract class SnippetStub extends Stub implements Snippets {
 
         // Stubs cannot have optimistic assumptions since they have
         // to be valid for the entire run of the VM.
-        final StructuredGraph graph = new StructuredGraph(method, AllowAssumptions.NO, NO_PROFILING_INFO, compilationId);
+        final StructuredGraph graph = new StructuredGraph.Builder(options).method(method).compilationId(compilationId).build();
         try (Scope outer = Debug.scope("SnippetStub", graph)) {
             graph.disableUnsafeAccessTracking();
 
-            if (SnippetGraphUnderConstruction != null) {
-                assert SnippetGraphUnderConstruction.get() == null : SnippetGraphUnderConstruction.get().toString() + " " + graph;
-                SnippetGraphUnderConstruction.set(graph);
-            }
+            IntrinsicContext initialIntrinsicContext = new IntrinsicContext(method, method, getReplacementsBytecodeProvider(), INLINE_AFTER_PARSING);
+            GraphBuilderPhase.Instance instance = new GraphBuilderPhase.Instance(metaAccess, providers.getStampProvider(),
+                            providers.getConstantReflection(), providers.getConstantFieldProvider(),
+                            config, OptimisticOptimizations.NONE,
+                            initialIntrinsicContext);
+            instance.apply(graph);
 
-            try {
-                IntrinsicContext initialIntrinsicContext = new IntrinsicContext(method, method, providers.getReplacements().getReplacementBytecodeProvider(), INLINE_AFTER_PARSING);
-                GraphBuilderPhase.Instance instance = new GraphBuilderPhase.Instance(metaAccess, providers.getStampProvider(),
-                                providers.getConstantReflection(), providers.getConstantFieldProvider(),
-                                config, OptimisticOptimizations.NONE,
-                                initialIntrinsicContext);
-                instance.apply(graph);
-
-            } finally {
-                if (SnippetGraphUnderConstruction != null) {
-                    SnippetGraphUnderConstruction.set(null);
+            for (ParameterNode param : graph.getNodes(ParameterNode.TYPE)) {
+                int index = param.index();
+                if (method.getParameterAnnotation(NonNullParameter.class, index) != null) {
+                    param.setStamp(param.stamp().join(StampFactory.objectNonNull()));
                 }
             }
 
+            new RemoveValueProxyPhase().apply(graph);
             graph.setGuardsStage(GuardsStage.FLOATING_GUARDS);
             CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
             PhaseContext context = new PhaseContext(providers);
@@ -145,6 +136,10 @@ public abstract class SnippetStub extends Stub implements Snippets {
         }
 
         return graph;
+    }
+
+    protected BytecodeProvider getReplacementsBytecodeProvider() {
+        return providers.getReplacements().getReplacementBytecodeProvider();
     }
 
     protected boolean checkConstArg(int index, String expectedName) {

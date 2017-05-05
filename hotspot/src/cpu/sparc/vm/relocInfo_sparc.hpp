@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,12 +34,8 @@
 
     // There is no need for format bits; the instructions are
     // sufficiently self-identifying.
-#ifndef _LP64
-    format_width       =  0
-#else
     // Except narrow oops in 64-bits VM.
     format_width       =  1
-#endif
   };
 
 

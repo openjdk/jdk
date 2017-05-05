@@ -77,8 +77,8 @@ bool SimpleThresholdPolicy::is_trivial(Method* method) {
   }
 #if INCLUDE_JVMCI
   if (UseJVMCICompiler) {
-    if (TieredCompilation && CompileBroker::compiler(CompLevel_full_optimization) != NULL &&
-        CompileBroker::compiler(CompLevel_full_optimization)->is_trivial(method)) {
+    AbstractCompiler* comp = CompileBroker::compiler(CompLevel_full_optimization);
+    if (TieredCompilation && comp != NULL && comp->is_trivial(method)) {
       return true;
     }
   }

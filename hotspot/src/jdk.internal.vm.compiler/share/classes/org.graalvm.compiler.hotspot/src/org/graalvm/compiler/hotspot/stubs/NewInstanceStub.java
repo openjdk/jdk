@@ -23,7 +23,6 @@
 package org.graalvm.compiler.hotspot.stubs;
 
 import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfig.INJECTED_VMCONFIG;
-import static org.graalvm.compiler.hotspot.nodes.DirectCompareAndSwapNode.compareAndSwap;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.HEAP_END_LOCATION;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.HEAP_TOP_LOCATION;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.PROTOTYPE_MARK_WORD_LOCATION;
@@ -37,7 +36,7 @@ import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.getAndClearObjectResult;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.initializeTlab;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.isInstanceKlassFullyInitialized;
-import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.loadKlassLayoutHelperIntrinsic;
+import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.readLayoutHelper;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.log2WordSize;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.prototypeMarkWordOffset;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.readTlabEnd;
@@ -64,7 +63,6 @@ import static org.graalvm.compiler.hotspot.stubs.StubUtil.printf;
 import static org.graalvm.compiler.hotspot.stubs.StubUtil.verifyObject;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.FAST_PATH_PROBABILITY;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.probability;
-
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.Snippet.ConstantParameter;
@@ -79,7 +77,7 @@ import org.graalvm.compiler.hotspot.nodes.type.KlassPointerStamp;
 import org.graalvm.compiler.hotspot.replacements.NewObjectSnippets;
 import org.graalvm.compiler.hotspot.word.KlassPointer;
 import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.memory.address.RawAddressNode;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.word.Word;
 
 import jdk.vm.ci.code.Register;
@@ -94,8 +92,8 @@ import jdk.vm.ci.meta.JavaKind;
  */
 public class NewInstanceStub extends SnippetStub {
 
-    public NewInstanceStub(HotSpotProviders providers, HotSpotForeignCallLinkage linkage) {
-        super("newInstance", providers, linkage);
+    public NewInstanceStub(OptionValues options, HotSpotProviders providers, HotSpotForeignCallLinkage linkage) {
+        super("newInstance", options, providers, linkage);
     }
 
     @Override
@@ -105,8 +103,10 @@ public class NewInstanceStub extends SnippetStub {
         Object[] args = new Object[count];
         assert checkConstArg(1, "intArrayHub");
         assert checkConstArg(2, "threadRegister");
+        assert checkConstArg(3, "options");
         args[1] = ConstantNode.forConstant(KlassPointerStamp.klassNonNull(), intArrayType.klass(), null);
         args[2] = providers.getRegisters().getThreadRegister();
+        args[3] = options;
         return args;
     }
 
@@ -126,8 +126,8 @@ public class NewInstanceStub extends SnippetStub {
     }
 
     @Fold
-    static boolean logging() {
-        return StubOptions.TraceNewInstanceStub.getValue();
+    static boolean logging(OptionValues options) {
+        return StubOptions.TraceNewInstanceStub.getValue(options);
     }
 
     /**
@@ -138,17 +138,17 @@ public class NewInstanceStub extends SnippetStub {
      * @param intArrayHub the hub for {@code int[].class}
      */
     @Snippet
-    private static Object newInstance(KlassPointer hub, @ConstantParameter KlassPointer intArrayHub, @ConstantParameter Register threadRegister) {
+    private static Object newInstance(KlassPointer hub, @ConstantParameter KlassPointer intArrayHub, @ConstantParameter Register threadRegister, @ConstantParameter OptionValues options) {
         /*
          * The type is known to be an instance so Klass::_layout_helper is the instance size as a
          * raw number
          */
-        int sizeInBytes = loadKlassLayoutHelperIntrinsic(hub);
         Word thread = registerAsWord(threadRegister);
         boolean inlineContiguousAllocationSupported = GraalHotSpotVMConfigNode.inlineContiguousAllocationSupported();
-        if (!forceSlowPath() && inlineContiguousAllocationSupported) {
+        if (!forceSlowPath(options) && inlineContiguousAllocationSupported) {
             if (isInstanceKlassFullyInitialized(hub)) {
-                Word memory = refillAllocate(thread, intArrayHub, sizeInBytes, logging());
+                int sizeInBytes = readLayoutHelper(hub);
+                Word memory = refillAllocate(thread, intArrayHub, sizeInBytes, logging(options));
                 if (memory.notEqual(0)) {
                     Word prototypeMarkWord = hub.readWord(prototypeMarkWordOffset(INJECTED_VMCONFIG), PROTOTYPE_MARK_WORD_LOCATION);
                     NewObjectSnippets.formatObjectForStub(hub, sizeInBytes, memory, prototypeMarkWord);
@@ -157,7 +157,7 @@ public class NewInstanceStub extends SnippetStub {
             }
         }
 
-        if (logging()) {
+        if (logging(options)) {
             printf("newInstance: calling new_instance_c\n");
         }
 
@@ -229,7 +229,7 @@ public class NewInstanceStub extends SnippetStub {
                 // an int
                 int tlabFreeSpaceInInts = (int) tlabFreeSpaceInBytes >>> 2;
                 int length = ((alignmentReserveInBytes - headerSize) >>> 2) + tlabFreeSpaceInInts;
-                NewObjectSnippets.formatArray(intArrayHub, 0, length, headerSize, top, intArrayMarkWord, false, false, false);
+                NewObjectSnippets.formatArray(intArrayHub, 0, length, headerSize, top, intArrayMarkWord, false, false, null);
 
                 long allocated = thread.readLong(threadAllocatedBytesOffset(INJECTED_VMCONFIG), TLAB_THREAD_ALLOCATED_BYTES_LOCATION);
                 allocated = allocated + top.subtract(readTlabStart(thread)).rawValue();
@@ -291,16 +291,15 @@ public class NewInstanceStub extends SnippetStub {
             if (newHeapTop.aboveThan(heapEnd)) {
                 return Word.zero();
             }
-
-            if (compareAndSwap(RawAddressNode.address(heapTopAddress), heapTop, newHeapTop, HEAP_TOP_LOCATION).equal(heapTop)) {
+            if (heapTopAddress.logicCompareAndSwapWord(0, heapTop, newHeapTop, HEAP_TOP_LOCATION)) {
                 return heapTop;
             }
         }
     }
 
     @Fold
-    static boolean forceSlowPath() {
-        return StubOptions.ForceUseOfNewInstanceStub.getValue();
+    static boolean forceSlowPath(OptionValues options) {
+        return StubOptions.ForceUseOfNewInstanceStub.getValue(options);
     }
 
     public static final ForeignCallDescriptor NEW_INSTANCE_C = newDescriptor(NewInstanceStub.class, "newInstanceC", void.class, Word.class, KlassPointer.class);

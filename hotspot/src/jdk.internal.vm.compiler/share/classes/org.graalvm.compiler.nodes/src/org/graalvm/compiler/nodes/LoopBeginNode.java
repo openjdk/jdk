@@ -229,8 +229,8 @@ public final class LoopBeginNode extends AbstractMergeNode implements IterableNo
             loopexit.removeProxies();
             FrameState loopStateAfter = loopexit.stateAfter();
             graph().replaceFixedWithFixed(loopexit, graph().add(new BeginNode()));
-            if (loopStateAfter != null && loopStateAfter.isAlive() && loopStateAfter.hasNoUsages()) {
-                GraphUtil.killWithUnusedFloatingInputs(loopStateAfter);
+            if (loopStateAfter != null) {
+                GraphUtil.tryKillUnused(loopStateAfter);
             }
         }
     }

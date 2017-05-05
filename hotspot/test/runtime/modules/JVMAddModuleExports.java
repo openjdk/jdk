@@ -43,10 +43,10 @@ public class JVMAddModuleExports {
 
         from_module = ModuleHelper.ModuleObject("from_module", from_cl, new String[] { "mypackage", "this/package" });
         assertNotNull(from_module, "Module should not be null");
-        ModuleHelper.DefineModule(from_module, "9.0", "from_module/here", new String[] { "mypackage", "this/package" });
+        ModuleHelper.DefineModule(from_module, false, "9.0", "from_module/here", new String[] { "mypackage", "this/package" });
         to_module = ModuleHelper.ModuleObject("to_module", to_cl, new String[] { "yourpackage", "that/package" });
         assertNotNull(to_module, "Module should not be null");
-        ModuleHelper.DefineModule(to_module, "9.0", "to_module/here", new String[] { "yourpackage", "that/package" });
+        ModuleHelper.DefineModule(to_module, false, "9.0", "to_module/here", new String[] { "yourpackage", "that/package" });
 
         // Null from_module argument, expect an NPE
         try {

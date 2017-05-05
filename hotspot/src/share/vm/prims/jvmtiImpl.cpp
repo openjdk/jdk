@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -287,12 +287,12 @@ void JvmtiBreakpoint::each_method_version_do(method_action meth_act) {
 
   // add/remove breakpoint to/from versions of the method that are EMCP.
   Thread *thread = Thread::current();
-  instanceKlassHandle ikh = instanceKlassHandle(thread, _method->method_holder());
+  InstanceKlass* ik = _method->method_holder();
   Symbol* m_name = _method->name();
   Symbol* m_signature = _method->signature();
 
   // search previous versions if they exist
-  for (InstanceKlass* pv_node = ikh->previous_versions();
+  for (InstanceKlass* pv_node = ik->previous_versions();
        pv_node != NULL;
        pv_node = pv_node->previous_versions()) {
     Array<Method*>* methods = pv_node->methods();
@@ -694,12 +694,12 @@ bool VM_GetOrSetLocal::check_slot_type(javaVFrame* jvf) {
     JavaThread* cur_thread = JavaThread::current();
     HandleMark hm(cur_thread);
 
-    Handle obj = Handle(cur_thread, JNIHandles::resolve_external_guard(jobj));
+    Handle obj(cur_thread, JNIHandles::resolve_external_guard(jobj));
     NULL_CHECK(obj, (_result = JVMTI_ERROR_INVALID_OBJECT, false));
-    KlassHandle ob_kh = KlassHandle(cur_thread, obj->klass());
-    NULL_CHECK(ob_kh, (_result = JVMTI_ERROR_INVALID_OBJECT, false));
+    Klass* ob_k = obj->klass();
+    NULL_CHECK(ob_k, (_result = JVMTI_ERROR_INVALID_OBJECT, false));
 
-    if (!is_assignable(signature, ob_kh(), cur_thread)) {
+    if (!is_assignable(signature, ob_k, cur_thread)) {
       _result = JVMTI_ERROR_TYPE_MISMATCH;
       return false;
     }
@@ -777,7 +777,7 @@ void VM_GetOrSetLocal::doit() {
       case T_FLOAT:  locals->set_float_at (_index, _value.f); break;
       case T_DOUBLE: locals->set_double_at(_index, _value.d); break;
       case T_OBJECT: {
-        Handle ob_h(JNIHandles::resolve_external_guard(_value.l));
+        Handle ob_h(Thread::current(), JNIHandles::resolve_external_guard(_value.l));
         locals->set_obj_at (_index, ob_h);
         break;
       }

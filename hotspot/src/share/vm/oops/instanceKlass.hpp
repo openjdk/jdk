@@ -464,16 +464,10 @@ class InstanceKlass: public Klass {
                                     const Symbol* class_name2);
 
   // find an enclosing class
-  InstanceKlass* compute_enclosing_class(bool* inner_is_member, TRAPS) const {
-    return compute_enclosing_class_impl(this, inner_is_member, THREAD);
-  }
-  static InstanceKlass* compute_enclosing_class_impl(const InstanceKlass* self,
-                                                     bool* inner_is_member,
-                                                     TRAPS);
+  InstanceKlass* compute_enclosing_class(bool* inner_is_member, TRAPS) const;
 
-  // Find InnerClasses attribute for k and return outer_class_info_index & inner_name_index.
-  static bool find_inner_classes_attr(instanceKlassHandle k,
-                                      int* ooff, int* noff, TRAPS);
+  // Find InnerClasses attribute and return outer_class_info_index & inner_name_index.
+  bool find_inner_classes_attr(int* ooff, int* noff, TRAPS) const;
 
  private:
   // Check prohibited package ("java/" only loadable by boot or platform loaders)
@@ -482,12 +476,7 @@ class InstanceKlass: public Klass {
                                        TRAPS);
  public:
   // tell if two classes have the same enclosing class (at package level)
-  bool is_same_package_member(const Klass* class2, TRAPS) const {
-    return is_same_package_member_impl(this, class2, THREAD);
-  }
-  static bool is_same_package_member_impl(const InstanceKlass* self,
-                                          const Klass* class2,
-                                          TRAPS);
+  bool is_same_package_member(const Klass* class2, TRAPS) const;
 
   // initialization state
   bool is_loaded() const                   { return _init_state >= loaded; }
@@ -524,7 +513,7 @@ class InstanceKlass: public Klass {
   void unlink_class();
   void rewrite_class(TRAPS);
   void link_methods(TRAPS);
-  Method* class_initializer();
+  Method* class_initializer() const;
 
   // set the class to initialized if no static initializer is present
   void eager_initialize(Thread *thread);
@@ -711,7 +700,7 @@ class InstanceKlass: public Klass {
   void set_is_being_redefined(bool value)  { _is_being_redefined = value; }
 
   // RedefineClasses() support for previous versions:
-  void add_previous_version(instanceKlassHandle ikh, int emcp_method_count);
+  void add_previous_version(InstanceKlass* ik, int emcp_method_count);
   void purge_previous_version_list();
 
   InstanceKlass* previous_versions() const { return _previous_versions; }
@@ -883,10 +872,9 @@ public:
                                     u2 method_index);
 
   // jmethodID support
-  static jmethodID get_jmethod_id(instanceKlassHandle ik_h,
-                     const methodHandle& method_h);
-  static jmethodID get_jmethod_id_fetch_or_update(instanceKlassHandle ik_h,
-                     size_t idnum, jmethodID new_id, jmethodID* new_jmeths,
+  jmethodID get_jmethod_id(const methodHandle& method_h);
+  jmethodID get_jmethod_id_fetch_or_update(size_t idnum,
+                     jmethodID new_id, jmethodID* new_jmeths,
                      jmethodID* to_dealloc_id_p,
                      jmethodID** to_dealloc_jmeths_p);
   static void get_jmethod_id_length_value(jmethodID* cache, size_t idnum,
@@ -1139,7 +1127,7 @@ public:
   }
 
   // Java itable
-  klassItable* itable() const;        // return new klassItable wrapper
+  klassItable itable() const;        // return klassItable wrapper
   Method* method_at_itable(Klass* holder, int index, TRAPS);
 
 #if INCLUDE_JVMTI
@@ -1175,8 +1163,6 @@ public:
 
   // GC specific object visitors
   //
-  // Mark Sweep
-  int  oop_ms_adjust_pointers(oop obj);
 #if INCLUDE_ALL_GCS
   // Parallel Scavenge
   void oop_ps_push_contents(  oop obj, PSPromotionManager* pm);
@@ -1306,19 +1292,13 @@ public:
 private:
   void fence_and_clear_init_lock();
 
-  // Static methods that are used to implement member methods where an exposed this pointer
-  // is needed due to possible GCs
-  static bool link_class_impl                           (instanceKlassHandle this_k, bool throw_verifyerror, TRAPS);
-  static bool verify_code                               (instanceKlassHandle this_k, bool throw_verifyerror, TRAPS);
-  static void initialize_impl                           (instanceKlassHandle this_k, TRAPS);
-  static void initialize_super_interfaces               (instanceKlassHandle this_k, TRAPS);
-  static void eager_initialize_impl                     (instanceKlassHandle this_k);
-  static void set_initialization_state_and_notify_impl  (instanceKlassHandle this_k, ClassState state, TRAPS);
-  static void call_class_initializer_impl               (instanceKlassHandle this_k, TRAPS);
-  static Klass* array_klass_impl                        (instanceKlassHandle this_k, bool or_null, int n, TRAPS);
-  static void do_local_static_fields_impl               (instanceKlassHandle this_k, void f(fieldDescriptor* fd, Handle, TRAPS), Handle, TRAPS);
+  bool link_class_impl                           (bool throw_verifyerror, TRAPS);
+  bool verify_code                               (bool throw_verifyerror, TRAPS);
+  void initialize_impl                           (TRAPS);
+  void initialize_super_interfaces               (TRAPS);
+  void eager_initialize_impl                     ();
   /* jni_id_for_impl for jfieldID only */
-  static JNIid* jni_id_for_impl                         (instanceKlassHandle this_k, int offset);
+  JNIid* jni_id_for_impl                         (int offset);
 
   // Returns the array class for the n'th dimension
   Klass* array_klass_impl(bool or_null, int n, TRAPS);
@@ -1447,7 +1427,7 @@ class InnerClassesIterator : public StackObj {
   int _idx;
  public:
 
-  InnerClassesIterator(instanceKlassHandle k) {
+  InnerClassesIterator(const InstanceKlass* k) {
     _inner_classes = k->inner_classes();
     if (k->inner_classes() != NULL) {
       _length = _inner_classes->length();

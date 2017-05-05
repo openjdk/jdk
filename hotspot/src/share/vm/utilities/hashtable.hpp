@@ -166,9 +166,6 @@ public:
     return h;
   }
 
-  // Reverse the order of elements in each of the buckets.
-  void reverse();
-
 private:
   // Instance variables
   int               _table_size;
@@ -261,12 +258,6 @@ public:
 
   // Debugging
   void print()               PRODUCT_RETURN;
-
-  // Reverse the order of elements in each of the buckets. Hashtable
-  // entries which refer to objects at a lower address than 'boundary'
-  // are separated from those which refer to objects at higher
-  // addresses, and appear first in the list.
-  void reverse(void* boundary = NULL);
 
 protected:
 

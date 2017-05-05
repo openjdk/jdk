@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,8 @@ ciType::ciType(BasicType basic_type) : ciMetadata() {
   _basic_type = basic_type;
 }
 
-ciType::ciType(KlassHandle k) : ciMetadata(k()) {
-  _basic_type = k()->is_array_klass() ? T_ARRAY : T_OBJECT;
+ciType::ciType(Klass* k) : ciMetadata(k) {
+  _basic_type = k->is_array_klass() ? T_ARRAY : T_OBJECT;
 }
 
 

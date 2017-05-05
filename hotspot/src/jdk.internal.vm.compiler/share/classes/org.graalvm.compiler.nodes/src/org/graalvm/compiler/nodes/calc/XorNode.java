@@ -57,9 +57,8 @@ public final class XorNode extends BinaryArithmeticNode<Xor> implements BinaryCo
         ConstantNode tryConstantFold = tryConstantFold(op, x, y, stamp);
         if (tryConstantFold != null) {
             return tryConstantFold;
-        } else {
-            return new XorNode(x, y).maybeCommuteInputs();
         }
+        return canonical(null, op, stamp, x, y);
     }
 
     @Override
@@ -69,28 +68,32 @@ public final class XorNode extends BinaryArithmeticNode<Xor> implements BinaryCo
             return ret;
         }
 
+        return canonical(this, getOp(forX, forY), stamp(), forX, forY);
+    }
+
+    private static ValueNode canonical(XorNode self, BinaryOp<Xor> op, Stamp stamp, ValueNode forX, ValueNode forY) {
         if (GraphUtil.unproxify(forX) == GraphUtil.unproxify(forY)) {
-            return ConstantNode.forPrimitive(stamp(), getOp(forX, forY).getZero(forX.stamp()));
+            return ConstantNode.forPrimitive(stamp, op.getZero(forX.stamp()));
         }
         if (forX.isConstant() && !forY.isConstant()) {
             return new XorNode(forY, forX);
         }
         if (forY.isConstant()) {
             Constant c = forY.asConstant();
-            if (getOp(forX, forY).isNeutral(c)) {
+            if (op.isNeutral(c)) {
                 return forX;
             }
 
             if (c instanceof PrimitiveConstant && ((PrimitiveConstant) c).getJavaKind().isNumericInteger()) {
                 long rawY = ((PrimitiveConstant) c).asLong();
-                long mask = CodeUtil.mask(PrimitiveStamp.getBits(stamp()));
+                long mask = CodeUtil.mask(PrimitiveStamp.getBits(stamp));
                 if ((rawY & mask) == mask) {
                     return new NotNode(forX);
                 }
             }
-            return reassociate(this, ValueNode.isConstantPredicate(), forX, forY);
+            return reassociate(self != null ? self : (XorNode) new XorNode(forX, forY).maybeCommuteInputs(), ValueNode.isConstantPredicate(), forX, forY);
         }
-        return this;
+        return self != null ? self : new XorNode(forX, forY).maybeCommuteInputs();
     }
 
     @Override

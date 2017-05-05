@@ -45,7 +45,10 @@ import org.graalvm.compiler.word.Word;
 @ClassSubstitution(Thread.class)
 public class ThreadSubstitutions {
 
-    @MethodSubstitution(isStatic = false)
+    /**
+     * hidden in 9.
+     */
+    @MethodSubstitution(isStatic = false, optional = true)
     public static boolean isInterrupted(final Thread thisObject, boolean clearInterrupted) {
         Word javaThread = CurrentJavaThreadNode.get();
         Object thread = javaThread.readObject(threadObjectOffset(INJECTED_VMCONFIG), JAVA_THREAD_THREAD_OBJECT_LOCATION);

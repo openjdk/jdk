@@ -24,7 +24,6 @@ package org.graalvm.compiler.loop;
 
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.Map;
 
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Graph;
@@ -36,6 +35,7 @@ import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.FrameState;
+import org.graalvm.compiler.nodes.GuardNode;
 import org.graalvm.compiler.nodes.GuardPhiNode;
 import org.graalvm.compiler.nodes.GuardProxyNode;
 import org.graalvm.compiler.nodes.Invoke;
@@ -53,6 +53,7 @@ import org.graalvm.compiler.nodes.java.MonitorEnterNode;
 import org.graalvm.compiler.nodes.spi.NodeWithState;
 import org.graalvm.compiler.nodes.virtual.CommitAllocationNode;
 import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
+import org.graalvm.util.EconomicMap;
 
 public abstract class LoopFragment {
 
@@ -60,7 +61,7 @@ public abstract class LoopFragment {
     private final LoopFragment original;
     protected NodeBitMap nodes;
     protected boolean nodesReady;
-    private Map<Node, Node> duplicationMap;
+    private EconomicMap<Node, Node> duplicationMap;
 
     public LoopFragment(LoopEx loop) {
         this(loop, null);
@@ -212,7 +213,7 @@ public abstract class LoopFragment {
             }
         }
 
-        final NodeBitMap notloopNodes = graph.createNodeBitMap();
+        final NodeBitMap nonLoopNodes = graph.createNodeBitMap();
         for (AbstractBeginNode b : blocks) {
             if (b.isDeleted()) {
                 continue;
@@ -221,24 +222,24 @@ public abstract class LoopFragment {
             for (Node n : b.getBlockNodes()) {
                 if (n instanceof CommitAllocationNode) {
                     for (VirtualObjectNode obj : ((CommitAllocationNode) n).getVirtualObjects()) {
-                        markFloating(obj, nodes, notloopNodes);
+                        markFloating(obj, nodes, nonLoopNodes);
                     }
                 }
                 if (n instanceof MonitorEnterNode) {
-                    markFloating(((MonitorEnterNode) n).getMonitorId(), nodes, notloopNodes);
+                    markFloating(((MonitorEnterNode) n).getMonitorId(), nodes, nonLoopNodes);
                 }
                 for (Node usage : n.usages()) {
-                    markFloating(usage, nodes, notloopNodes);
+                    markFloating(usage, nodes, nonLoopNodes);
                 }
             }
         }
     }
 
-    private static boolean markFloating(Node n, NodeBitMap loopNodes, NodeBitMap notloopNodes) {
+    private static boolean markFloating(Node n, NodeBitMap loopNodes, NodeBitMap nonLoopNodes) {
         if (loopNodes.isMarked(n)) {
             return true;
         }
-        if (notloopNodes.isMarked(n)) {
+        if (nonLoopNodes.isMarked(n)) {
             return false;
         }
         if (n instanceof FixedNode) {
@@ -251,20 +252,25 @@ public abstract class LoopFragment {
             if (mark) {
                 loopNodes.mark(n);
             } else {
-                notloopNodes.mark(n);
+                nonLoopNodes.mark(n);
                 return false;
             }
         }
         for (Node usage : n.usages()) {
-            if (markFloating(usage, loopNodes, notloopNodes)) {
+            if (markFloating(usage, loopNodes, nonLoopNodes)) {
                 mark = true;
             }
+        }
+        if (!mark && n instanceof GuardNode) {
+            // (gd) this is only OK if we are not going to make loop transforms based on this
+            assert !((GuardNode) n).graph().hasValueProxies();
+            mark = true;
         }
         if (mark) {
             loopNodes.mark(n);
             return true;
         }
-        notloopNodes.mark(n);
+        nonLoopNodes.mark(n);
         return false;
     }
 

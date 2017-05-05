@@ -22,35 +22,26 @@
  */
 package org.graalvm.compiler.replacements.test;
 
-import org.junit.Test;
-
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
-import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
-import org.graalvm.compiler.replacements.ReplacementsImpl;
-import org.graalvm.compiler.replacements.Snippets;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.word.Pointer;
 import org.graalvm.compiler.word.Unsigned;
 import org.graalvm.compiler.word.Word;
 import org.graalvm.compiler.word.WordBase;
+import org.junit.Test;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 /**
  * Tests for the {@link Word} type.
  */
-public class WordTest extends GraalCompilerTest implements Snippets {
-
-    private final ReplacementsImpl installer;
-
-    public WordTest() {
-        installer = (ReplacementsImpl) getReplacements();
-    }
+public class WordTest extends SnippetsTest {
 
     @Override
-    protected StructuredGraph parseEager(ResolvedJavaMethod m, AllowAssumptions allowAssumptions, CompilationIdentifier compilationId) {
+    protected StructuredGraph parseEager(ResolvedJavaMethod m, AllowAssumptions allowAssumptions, CompilationIdentifier compilationId, OptionValues options) {
         // create a copy to assign a valid compilation id
         return installer.makeGraph(m, null, null).copyWithIdentifier(compilationId);
     }

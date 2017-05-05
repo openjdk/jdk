@@ -48,17 +48,17 @@ import org.junit.Test;
 import org.graalvm.compiler.api.replacements.ClassSubstitution;
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
 import org.graalvm.compiler.bytecode.BytecodeProvider;
-import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
+import org.graalvm.compiler.replacements.test.ReplacementsTest;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 /**
  * Tests that intrinsics (and snippets) are isolated from bytecode instrumentation.
  */
-public class RedefineIntrinsicTest extends GraalCompilerTest {
+public class RedefineIntrinsicTest extends ReplacementsTest {
 
     public static class Original {
 
@@ -80,7 +80,7 @@ public class RedefineIntrinsicTest extends GraalCompilerTest {
     @Override
     protected GraphBuilderConfiguration editGraphBuilderConfiguration(GraphBuilderConfiguration conf) {
         InvocationPlugins invocationPlugins = conf.getPlugins().getInvocationPlugins();
-        BytecodeProvider replacementBytecodeProvider = getReplacements().getReplacementBytecodeProvider();
+        BytecodeProvider replacementBytecodeProvider = getSystemClassLoaderBytecodeProvider();
         Registration r = new Registration(invocationPlugins, Original.class, replacementBytecodeProvider);
         r.registerMethodSubstitution(Intrinsic.class, "getValue");
         return super.editGraphBuilderConfiguration(conf);
@@ -174,8 +174,14 @@ public class RedefineIntrinsicTest extends GraalCompilerTest {
         int p = vmName.indexOf('@');
         assumeTrue("VM name not in <pid>@<host> format: " + vmName, p != -1);
         String pid = vmName.substring(0, p);
-        ClassLoader cl = ToolProvider.getSystemToolClassLoader();
-        Class<?> c = Class.forName("com.sun.tools.attach.VirtualMachine", true, cl);
+        Class<?> c;
+        if (Java8OrEarlier) {
+            ClassLoader cl = ToolProvider.getSystemToolClassLoader();
+            c = Class.forName("com.sun.tools.attach.VirtualMachine", true, cl);
+        } else {
+            // I don't know what changed to make this necessary...
+            c = Class.forName("com.sun.tools.attach.VirtualMachine", true, RedefineIntrinsicTest.class.getClassLoader());
+        }
         Method attach = c.getDeclaredMethod("attach", String.class);
         Method loadAgent = c.getDeclaredMethod("loadAgent", String.class, String.class);
         Method detach = c.getDeclaredMethod("detach");

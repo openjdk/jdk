@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,36 +36,96 @@
 #include "utilities/macros.hpp"
 
 template <bool nv, typename T, class OopClosureType, class Contains>
-void InstanceRefKlass::oop_oop_iterate_ref_processing_specialized(oop obj, OopClosureType* closure, Contains& contains) {
-  T* disc_addr = (T*)java_lang_ref_Reference::discovered_addr(obj);
-  if (closure->apply_to_weak_ref_discovered_field()) {
-    Devirtualizer<nv>::do_oop(closure, disc_addr);
-  }
-
+void InstanceRefKlass::do_referent(oop obj, OopClosureType* closure, Contains& contains) {
   T* referent_addr = (T*)java_lang_ref_Reference::referent_addr(obj);
-  T heap_oop = oopDesc::load_heap_oop(referent_addr);
-  ReferenceProcessor* rp = closure->ref_processor();
-  if (!oopDesc::is_null(heap_oop)) {
-    oop referent = oopDesc::decode_heap_oop_not_null(heap_oop);
-    if (!referent->is_gc_marked() && (rp != NULL) &&
-        rp->discover_reference(obj, reference_type())) {
-      return;
-    } else if (contains(referent_addr)) {
-      // treat referent as normal oop
-      Devirtualizer<nv>::do_oop(closure, referent_addr);
-    }
+  if (contains(referent_addr)) {
+    Devirtualizer<nv>::do_oop(closure, referent_addr);
   }
+}
+
+template <bool nv, typename T, class OopClosureType, class Contains>
+void InstanceRefKlass::do_next(oop obj, OopClosureType* closure, Contains& contains) {
   T* next_addr = (T*)java_lang_ref_Reference::next_addr(obj);
-  T next_oop  = oopDesc::load_heap_oop(next_addr);
-  // Treat discovered as normal oop, if ref is not "active" (next non-NULL)
-  if (!oopDesc::is_null(next_oop) && contains(disc_addr)) {
-    // i.e. ref is not "active"
-    log_develop_trace(gc, ref)("   Process discovered as normal " PTR_FORMAT, p2i(disc_addr));
-    Devirtualizer<nv>::do_oop(closure, disc_addr);
-  }
-  // treat next as normal oop
   if (contains(next_addr)) {
     Devirtualizer<nv>::do_oop(closure, next_addr);
+  }
+}
+
+template <bool nv, typename T, class OopClosureType, class Contains>
+void InstanceRefKlass::do_discovered(oop obj, OopClosureType* closure, Contains& contains) {
+  T* discovered_addr = (T*)java_lang_ref_Reference::discovered_addr(obj);
+  if (contains(discovered_addr)) {
+    Devirtualizer<nv>::do_oop(closure, discovered_addr);
+  }
+}
+
+template <typename T, class OopClosureType>
+bool InstanceRefKlass::try_discover(oop obj, ReferenceType type, OopClosureType* closure) {
+  ReferenceProcessor* rp = closure->ref_processor();
+  if (rp != NULL) {
+    T referent_oop = oopDesc::load_heap_oop((T*)java_lang_ref_Reference::referent_addr(obj));
+    if (!oopDesc::is_null(referent_oop)) {
+      oop referent = oopDesc::decode_heap_oop_not_null(referent_oop);
+      if (!referent->is_gc_marked()) {
+        // Only try to discover if not yet marked.
+        return rp->discover_reference(obj, type);
+      }
+    }
+  }
+  return false;
+}
+
+template <bool nv, typename T, class OopClosureType, class Contains>
+void InstanceRefKlass::oop_oop_iterate_discovery(oop obj, ReferenceType type, OopClosureType* closure, Contains& contains) {
+  log_develop_trace(gc, ref)("Process reference with discovery " PTR_FORMAT, p2i(obj));
+
+  // Special case for some closures.
+  if (closure->apply_to_weak_ref_discovered_field()) {
+    do_discovered<nv, T>(obj, closure, contains);
+  }
+
+  // Try to discover reference and return if it succeeds.
+  if (try_discover<T>(obj, type, closure)) {
+    return;
+  }
+
+  // Treat referent as normal oop.
+  do_referent<nv, T>(obj, closure, contains);
+
+  // Treat discovered as normal oop, if ref is not "active" (next non-NULL).
+  T next_oop  = oopDesc::load_heap_oop((T*)java_lang_ref_Reference::next_addr(obj));
+  if (!oopDesc::is_null(next_oop)) {
+    do_discovered<nv, T>(obj, closure, contains);
+  }
+
+  // Treat next as normal oop.
+  do_next<nv, T>(obj, closure, contains);
+}
+
+template <bool nv, typename T, class OopClosureType, class Contains>
+void InstanceRefKlass::oop_oop_iterate_fields(oop obj, OopClosureType* closure, Contains& contains) {
+  do_referent<nv, T>(obj, closure, contains);
+  do_discovered<nv, T>(obj, closure, contains);
+  do_next<nv, T>(obj, closure, contains);
+
+  trace_reference_gc("InstanceRefKlass::oop_oop_iterate_fields()",
+                     obj,
+                     (T*)java_lang_ref_Reference::referent_addr(obj),
+                     (T*)java_lang_ref_Reference::next_addr(obj),
+                     (T*)java_lang_ref_Reference::discovered_addr(obj));
+}
+
+template <bool nv, typename T, class OopClosureType, class Contains>
+void InstanceRefKlass::oop_oop_iterate_ref_processing_specialized(oop obj, OopClosureType* closure, Contains& contains) {
+  switch (closure->reference_iteration_mode()) {
+    case ExtendedOopClosure::DO_DISCOVERY:
+      oop_oop_iterate_discovery<nv, T>(obj, reference_type(), closure, contains);
+      break;
+    case ExtendedOopClosure::DO_FIELDS:
+      oop_oop_iterate_fields<nv, T>(obj, closure, contains);
+      break;
+    default:
+      ShouldNotReachHere();
   }
 }
 
@@ -124,6 +184,19 @@ void InstanceRefKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure,
 
   oop_oop_iterate_ref_processing_bounded<nv>(obj, closure, mr);
 }
+
+#ifdef ASSERT
+template <typename T>
+void InstanceRefKlass::trace_reference_gc(const char *s, oop obj, T* referent_addr, T* next_addr, T* discovered_addr) {
+  log_develop_trace(gc, ref)("%s obj " PTR_FORMAT, s, p2i(obj));
+  log_develop_trace(gc, ref)("     referent_addr/* " PTR_FORMAT " / " PTR_FORMAT,
+      p2i(referent_addr), p2i(referent_addr ? (address)oopDesc::load_decode_heap_oop(referent_addr) : NULL));
+  log_develop_trace(gc, ref)("     next_addr/* " PTR_FORMAT " / " PTR_FORMAT,
+      p2i(next_addr), p2i(next_addr ? (address)oopDesc::load_decode_heap_oop(next_addr) : NULL));
+  log_develop_trace(gc, ref)("     discovered_addr/* " PTR_FORMAT " / " PTR_FORMAT,
+      p2i(discovered_addr), p2i(discovered_addr ? (address)oopDesc::load_decode_heap_oop(discovered_addr) : NULL));
+}
+#endif
 
 // Macro to define InstanceRefKlass::oop_oop_iterate for virtual/nonvirtual for
 // all closures.  Macros calling macros above for each oop size.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ private:
   bool compute_injected_fields_helper();
 
 protected:
-  ciInstanceKlass(KlassHandle h_k);
+  ciInstanceKlass(Klass* k);
   ciInstanceKlass(ciSymbol* name, jobject loader, jobject protection_domain);
 
   InstanceKlass* get_instanceKlass() const {

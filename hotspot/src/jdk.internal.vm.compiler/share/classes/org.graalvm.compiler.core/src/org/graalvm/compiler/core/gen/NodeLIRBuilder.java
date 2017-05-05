@@ -22,25 +22,23 @@
  */
 package org.graalvm.compiler.core.gen;
 
-import static org.graalvm.compiler.core.common.GraalOptions.MatchExpressions;
-import static org.graalvm.compiler.debug.GraalDebugConfig.Options.LogVerbose;
-import static org.graalvm.compiler.lir.LIR.verifyBlock;
 import static jdk.vm.ci.code.ValueUtil.asRegister;
 import static jdk.vm.ci.code.ValueUtil.isLegal;
 import static jdk.vm.ci.code.ValueUtil.isRegister;
+import static org.graalvm.compiler.core.common.GraalOptions.MatchExpressions;
+import static org.graalvm.compiler.debug.GraalDebugConfig.Options.LogVerbose;
+import static org.graalvm.compiler.lir.LIR.verifyBlock;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.match.ComplexMatchValue;
+import org.graalvm.compiler.core.match.MatchPattern;
 import org.graalvm.compiler.core.match.MatchRuleRegistry;
 import org.graalvm.compiler.core.match.MatchStatement;
 import org.graalvm.compiler.debug.Debug;
@@ -99,6 +97,9 @@ import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.nodes.spi.NodeValueMap;
 import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
+import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.util.EconomicMap;
+import org.graalvm.util.UnmodifiableMapCursor;
 
 import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.StackSlot;
@@ -117,6 +118,7 @@ public abstract class NodeLIRBuilder implements NodeLIRBuilderTool, LIRGeneratio
 
     private final NodeMap<Value> nodeOperands;
     private final DebugInfoBuilder debugInfoBuilder;
+    private final int traceLIRGeneratorLevel;
 
     protected final LIRGenerator gen;
 
@@ -124,16 +126,18 @@ public abstract class NodeLIRBuilder implements NodeLIRBuilderTool, LIRGeneratio
     private ValueNode lastInstructionPrinted; // Debugging only
 
     private final NodeMatchRules nodeMatchRules;
-    private Map<Class<? extends Node>, List<MatchStatement>> matchRules;
+    private EconomicMap<Class<? extends Node>, List<MatchStatement>> matchRules;
 
     public NodeLIRBuilder(StructuredGraph graph, LIRGeneratorTool gen, NodeMatchRules nodeMatchRules) {
         this.gen = (LIRGenerator) gen;
         this.nodeMatchRules = nodeMatchRules;
         this.nodeOperands = graph.createNodeMap();
         this.debugInfoBuilder = createDebugInfoBuilder(graph, this);
-        if (MatchExpressions.getValue()) {
-            matchRules = MatchRuleRegistry.lookup(nodeMatchRules.getClass());
+        OptionValues options = graph.getOptions();
+        if (MatchExpressions.getValue(options)) {
+            matchRules = MatchRuleRegistry.lookup(nodeMatchRules.getClass(), options);
         }
+        traceLIRGeneratorLevel = TTY.isSuppressed() ? 0 : Options.TraceLIRGeneratorLevel.getValue(options);
 
         assert nodeMatchRules.lirBuilder == null;
         nodeMatchRules.lirBuilder = this;
@@ -177,9 +181,10 @@ public abstract class NodeLIRBuilder implements NodeLIRBuilderTool, LIRGeneratio
     @Override
     public ValueNode valueForOperand(Value value) {
         assert nodeOperands != null;
-        for (Entry<Node, Value> entry : nodeOperands.entries()) {
-            if (entry.getValue().equals(value)) {
-                return (ValueNode) entry.getKey();
+        UnmodifiableMapCursor<Node, Value> cursor = nodeOperands.getEntries();
+        while (cursor.advance()) {
+            if (cursor.getValue().equals(value)) {
+                return (ValueNode) cursor.getKey();
             }
         }
         return null;
@@ -206,7 +211,7 @@ public abstract class NodeLIRBuilder implements NodeLIRBuilderTool, LIRGeneratio
      */
     public void setMatchResult(Node x, Value operand) {
         assert operand.equals(ComplexMatchValue.INTERIOR_MATCH) || operand instanceof ComplexMatchValue;
-        assert operand instanceof ComplexMatchValue || x.getUsageCount() == 1 : "interior matches must be single user";
+        assert operand instanceof ComplexMatchValue || MatchPattern.isSingleValueUser(x) : "interior matches must be single user";
         assert nodeOperands != null && nodeOperands.get(x) == null : "operand cannot be set twice";
         assert !(x instanceof VirtualObjectNode);
         nodeOperands.set(x, operand);
@@ -227,7 +232,7 @@ public abstract class NodeLIRBuilder implements NodeLIRBuilderTool, LIRGeneratio
     }
 
     public final void append(LIRInstruction op) {
-        if (Options.PrintIRWithLIR.getValue() && !TTY.isSuppressed()) {
+        if (Options.PrintIRWithLIR.getValue(nodeOperands.graph().getOptions()) && !TTY.isSuppressed()) {
             if (currentInstruction != null && lastInstructionPrinted != currentInstruction) {
                 lastInstructionPrinted = currentInstruction;
                 InstructionPrinter ip = new InstructionPrinter(TTY.out());
@@ -318,6 +323,8 @@ public abstract class NodeLIRBuilder implements NodeLIRBuilderTool, LIRGeneratio
     @Override
     @SuppressWarnings("try")
     public void doBlock(Block block, StructuredGraph graph, BlockMap<List<Node>> blockMap) {
+
+        OptionValues options = graph.getOptions();
         try (BlockScope blockScope = gen.getBlockScope(block)) {
             setSourcePosition(null);
 
@@ -332,7 +339,7 @@ public abstract class NodeLIRBuilder implements NodeLIRBuilderTool, LIRGeneratio
                     AbstractMergeNode merge = (AbstractMergeNode) begin;
                     LabelOp label = (LabelOp) gen.getResult().getLIR().getLIRforBlock(block).get(0);
                     label.setPhiValues(createPhiIn(merge));
-                    if (Options.PrintIRWithLIR.getValue() && !TTY.isSuppressed()) {
+                    if (Options.PrintIRWithLIR.getValue(options) && !TTY.isSuppressed()) {
                         TTY.println("Created PhiIn: " + label);
 
                     }
@@ -345,11 +352,12 @@ public abstract class NodeLIRBuilder implements NodeLIRBuilderTool, LIRGeneratio
             // of instructions
             matchComplexExpressions(nodes);
 
+            boolean trace = traceLIRGeneratorLevel >= 3;
             for (int i = 0; i < nodes.size(); i++) {
                 Node node = nodes.get(i);
                 if (node instanceof ValueNode) {
                     ValueNode valueNode = (ValueNode) node;
-                    if (Options.TraceLIRGeneratorLevel.getValue() >= 3) {
+                    if (trace) {
                         TTY.println("LIRGen for " + valueNode);
                     }
                     Value operand = getOperand(valueNode);
@@ -401,7 +409,7 @@ public abstract class NodeLIRBuilder implements NodeLIRBuilderTool, LIRGeneratio
     protected void matchComplexExpressions(List<Node> nodes) {
         if (matchRules != null) {
             try (Scope s = Debug.scope("MatchComplexExpressions")) {
-                if (LogVerbose.getValue()) {
+                if (LogVerbose.getValue(nodeOperands.graph().getOptions())) {
                     int i = 0;
                     for (Node node : nodes) {
                         Debug.log("%d: (%s) %1S", i++, node.getUsageCount(), node);
@@ -432,7 +440,7 @@ public abstract class NodeLIRBuilder implements NodeLIRBuilderTool, LIRGeneratio
     protected abstract boolean peephole(ValueNode valueNode);
 
     private void doRoot(ValueNode instr) {
-        if (Options.TraceLIRGeneratorLevel.getValue() >= 2) {
+        if (traceLIRGeneratorLevel >= 2) {
             TTY.println("Emitting LIR for instruction " + instr);
         }
         currentInstruction = instr;

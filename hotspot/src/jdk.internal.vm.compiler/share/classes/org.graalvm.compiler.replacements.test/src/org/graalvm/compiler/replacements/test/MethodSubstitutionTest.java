@@ -56,9 +56,9 @@ public abstract class MethodSubstitutionTest extends GraalCompilerTest {
         try (Scope s = Debug.scope("MethodSubstitutionTest", getResolvedJavaMethod(snippet))) {
             StructuredGraph graph = parseEager(snippet, AllowAssumptions.YES);
             HighTierContext context = getDefaultHighTierContext();
-            Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "Graph");
+            Debug.dump(Debug.BASIC_LEVEL, graph, "Graph");
             new InliningPhase(new CanonicalizerPhase()).apply(graph, context);
-            Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "Graph");
+            Debug.dump(Debug.BASIC_LEVEL, graph, "Graph");
             new CanonicalizerPhase().apply(graph, context);
             new DeadCodeEliminationPhase().apply(graph);
             // Try to ensure any macro nodes are lowered to expose any resulting invokes

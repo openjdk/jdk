@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,9 +60,9 @@ Node *PhaseChaitin::get_spillcopy_wide(MachSpillCopyNode::SpillType spill_type, 
   // If ideal reg doesn't exist we've got a bad schedule happening
   // that is forcing us to spill something that isn't spillable.
   // Bail rather than abort
-  int ireg = def->ideal_reg();
+  uint ireg = def->ideal_reg();
   if (ireg == 0 || ireg == Op_RegFlags) {
-    assert(false, "attempted to spill a non-spillable item: %d: %s <- %d: %s, ireg = %d, spill_type: %s",
+    assert(false, "attempted to spill a non-spillable item: %d: %s <- %d: %s, ireg = %u, spill_type: %s",
            def->_idx, def->Name(), use->_idx, use->Name(), ireg,
            MachSpillCopyNode::spill_type(spill_type));
     C->record_method_not_compilable("attempted to spill a non-spillable item");
@@ -1184,7 +1184,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
         // Grab UP info for DEF
         const RegMask &dmask = n->out_RegMask();
         bool defup = dmask.is_UP();
-        int ireg = n->ideal_reg();
+        uint ireg = n->ideal_reg();
         bool is_vect = RegMask::is_vector(ireg);
         // Only split at Def if this is a HRP block or bound (and spilled once)
         if( !n->rematerialize() &&

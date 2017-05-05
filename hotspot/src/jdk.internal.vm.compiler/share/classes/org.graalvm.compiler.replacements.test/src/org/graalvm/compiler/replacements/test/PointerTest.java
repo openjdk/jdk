@@ -22,13 +22,8 @@
  */
 package org.graalvm.compiler.replacements.test;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import org.graalvm.compiler.api.replacements.Snippet;
-import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.LocationIdentity;
-import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.nodes.NamedLocationIdentity;
 import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -40,35 +35,27 @@ import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
-import org.graalvm.compiler.replacements.ReplacementsImpl;
-import org.graalvm.compiler.replacements.Snippets;
 import org.graalvm.compiler.word.Pointer;
 import org.graalvm.compiler.word.Word;
 import org.graalvm.compiler.word.nodes.WordCastNode;
+import org.junit.Assert;
+import org.junit.Test;
 
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 /**
  * Tests for the {@link Pointer} read and write operations.
  */
-public class PointerTest extends GraalCompilerTest implements Snippets {
+public class PointerTest extends SnippetsTest {
 
     private static final LocationIdentity ID = NamedLocationIdentity.mutable("ID");
     private static final JavaKind[] KINDS = new JavaKind[]{JavaKind.Byte, JavaKind.Char, JavaKind.Short, JavaKind.Int, JavaKind.Long, JavaKind.Float, JavaKind.Double, JavaKind.Object};
     private final TargetDescription target;
-    private final ReplacementsImpl installer;
 
     public PointerTest() {
         target = getCodeCache().getTarget();
-        installer = (ReplacementsImpl) getProviders().getReplacements();
-    }
-
-    @Override
-    protected StructuredGraph parseEager(ResolvedJavaMethod m, AllowAssumptions allowAssumptions, CompilationIdentifier compilationId) {
-        return installer.makeGraph(m, null, null);
     }
 
     @Test

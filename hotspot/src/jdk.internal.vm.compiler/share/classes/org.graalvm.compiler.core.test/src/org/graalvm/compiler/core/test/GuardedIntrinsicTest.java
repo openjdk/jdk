@@ -24,10 +24,6 @@ package org.graalvm.compiler.core.test;
 
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.ConstantNode;
@@ -45,6 +41,10 @@ import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
+import org.graalvm.compiler.options.OptionValues;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -111,8 +111,8 @@ public class GuardedIntrinsicTest extends GraalCompilerTest {
     private StructuredGraph parsedForCompile;
 
     @Override
-    protected StructuredGraph parseForCompile(ResolvedJavaMethod method, CompilationIdentifier compilationId) {
-        graph = super.parseForCompile(method, compilationId);
+    protected StructuredGraph parseForCompile(ResolvedJavaMethod method, CompilationIdentifier compilationId, OptionValues options) {
+        graph = super.parseForCompile(method, compilationId, options);
         parsedForCompile = (StructuredGraph) graph.copy();
         return graph;
     }
@@ -209,7 +209,7 @@ public class GuardedIntrinsicTest extends GraalCompilerTest {
         @Override
         public int hashCode() {
             int result = ((identity == null) ? 0 : identity.hashCode());
-            return result + object.hashCode();
+            return result + System.identityHashCode(object);
         }
     }
 

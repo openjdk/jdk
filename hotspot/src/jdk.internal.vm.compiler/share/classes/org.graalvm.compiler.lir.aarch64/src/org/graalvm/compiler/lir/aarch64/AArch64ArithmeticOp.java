@@ -51,6 +51,7 @@ public enum AArch64ArithmeticOp {
     SUB(ARITHMETIC),
     SUBS(ARITHMETIC),
     MUL,
+    MULVS,
     DIV,
     SMULH,
     UMULH,
@@ -176,6 +177,14 @@ public enum AArch64ArithmeticOp {
                     assert AArch64MacroAssembler.isArithmeticImmediate(b.asLong());
                     masm.sub(size, dst, src, (int) b.asLong());
                     break;
+                case ADDS:
+                    assert AArch64MacroAssembler.isArithmeticImmediate(b.asLong());
+                    masm.adds(size, dst, src, (int) b.asLong());
+                    break;
+                case SUBS:
+                    assert AArch64MacroAssembler.isArithmeticImmediate(b.asLong());
+                    masm.subs(size, dst, src, (int) b.asLong());
+                    break;
                 case AND:
                     // XXX Should this be handled somewhere else?
                     if (size == 32 && b.asLong() == 0xFFFF_FFFFL) {
@@ -290,6 +299,9 @@ public enum AArch64ArithmeticOp {
                     break;
                 case FDIV:
                     masm.fdiv(size, dst, src1, src2);
+                    break;
+                case MULVS:
+                    masm.mulvs(size, dst, src1, src2);
                     break;
                 default:
                     throw GraalError.shouldNotReachHere("op=" + op.name());

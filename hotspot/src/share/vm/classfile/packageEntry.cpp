@@ -101,7 +101,6 @@ void PackageEntry::set_exported(ModuleEntry* m) {
     // NULL indicates the package is being unqualifiedly exported.  Clean up
     // the qualified list at the next safepoint.
     set_unqual_exported();
-
   } else {
     // Add the exported module
     add_qexport(m);
@@ -111,6 +110,11 @@ void PackageEntry::set_exported(ModuleEntry* m) {
 // Set the package as exported to all unnamed modules unless the package is
 // already unqualifiedly exported.
 void PackageEntry::set_is_exported_allUnnamed() {
+  if (module()->is_open()) {
+    // No-op for open modules since all packages are unqualifiedly exported
+    return;
+  }
+
   MutexLocker m1(Module_lock);
   if (!is_unqual_exported()) {
    _export_flags = PKG_EXP_ALLUNNAMED;
@@ -170,8 +174,6 @@ PackageEntryTable::PackageEntryTable(int table_size)
 }
 
 PackageEntryTable::~PackageEntryTable() {
-  assert_locked_or_safepoint(Module_lock);
-
   // Walk through all buckets and all entries in each bucket,
   // freeing each entry.
   for (int i = 0; i < table_size(); ++i) {
@@ -208,11 +210,6 @@ PackageEntry* PackageEntryTable::new_entry(unsigned int hash, Symbol* name, Modu
   // Initialize fields specific to a PackageEntry
   entry->init();
   entry->name()->increment_refcount();
-  if (!module->is_named()) {
-    // Set the exported state to true because all packages
-    // within the unnamed module are unqualifiedly exported
-    entry->set_unqual_exported();
-  }
   entry->set_module(module);
   return entry;
 }
@@ -272,6 +269,7 @@ PackageEntry* PackageEntryTable::lookup_only(Symbol* name) {
 // Called when a define module for java.base is being processed.
 // Verify the packages loaded thus far are in java.base's package list.
 void PackageEntryTable::verify_javabase_packages(GrowableArray<Symbol*> *pkg_list) {
+  assert_lock_strong(Module_lock);
   for (int i = 0; i < table_size(); i++) {
     for (PackageEntry* entry = bucket(i);
                        entry != NULL;

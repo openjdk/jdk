@@ -27,6 +27,7 @@ import org.graalvm.compiler.api.replacements.SnippetTemplateCache;
 import org.graalvm.compiler.bytecode.BytecodeProvider;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
+import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
@@ -34,6 +35,8 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
  * Interface for managing replacements.
  */
 public interface Replacements {
+
+    OptionValues getOptions();
 
     /**
      * Gets the snippet graph derived from a given method.

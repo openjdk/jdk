@@ -162,8 +162,7 @@ static void define_javabase_module(jobject module, jstring version,
   }
 
 
-  // Check that the list of packages has no duplicates and that the
-  // packages are syntactically ok.
+  // Check that the packages are syntactically ok.
   GrowableArray<Symbol*>* pkg_list = new GrowableArray<Symbol*>(num_packages);
   for (int x = 0; x < num_packages; x++) {
     const char *package_name = packages[x];
@@ -172,12 +171,7 @@ static void define_javabase_module(jobject module, jstring version,
                 err_msg("Invalid package name: %s for module: " JAVA_BASE_NAME, package_name));
     }
     Symbol* pkg_symbol = SymbolTable::new_symbol(package_name, CHECK);
-    // append_if_missing() returns FALSE if entry already exists.
-    if (!pkg_list->append_if_missing(pkg_symbol)) {
-      THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-                err_msg("Duplicate package name: %s for module " JAVA_BASE_NAME,
-                        package_name));
-    }
+    pkg_list->append(pkg_symbol);
   }
 
   // Validate java_base's loader is the boot loader.
@@ -186,7 +180,7 @@ static void define_javabase_module(jobject module, jstring version,
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
               "Class loader must be the boot class loader");
   }
-  Handle h_loader = Handle(THREAD, loader);
+  Handle h_loader(THREAD, loader);
 
   // Ensure the boot loader's PackageEntryTable has been created
   PackageEntryTable* package_table = get_package_entry_table(h_loader, CHECK);
@@ -244,9 +238,11 @@ static void define_javabase_module(jobject module, jstring version,
                      pkg_list->length());
 
   // packages defined to java.base
-  for (int x = 0; x < pkg_list->length(); x++) {
-    log_trace(modules)("define_javabase_module(): creation of package %s for module " JAVA_BASE_NAME,
-                       (pkg_list->at(x))->as_C_string());
+  if (log_is_enabled(Trace, modules)) {
+    for (int x = 0; x < pkg_list->length(); x++) {
+      log_trace(modules)("define_javabase_module(): creation of package %s for module " JAVA_BASE_NAME,
+                         (pkg_list->at(x))->as_C_string());
+    }
   }
 }
 
@@ -264,7 +260,7 @@ void throw_dup_pkg_exception(const char* module_name, PackageEntry* package, TRA
   }
 }
 
-void Modules::define_module(jobject module, jstring version,
+void Modules::define_module(jobject module, jboolean is_open, jstring version,
                             jstring location, const char* const* packages,
                             jsize num_packages, TRAPS) {
   ResourceMark rm(THREAD);
@@ -297,6 +293,7 @@ void Modules::define_module(jobject module, jstring version,
 
   // Special handling of java.base definition
   if (strcmp(module_name, JAVA_BASE_NAME) == 0) {
+    assert(is_open == JNI_FALSE, "java.base module cannot be open");
     define_javabase_module(module, version, location, packages, num_packages, CHECK);
     return;
   }
@@ -324,7 +321,7 @@ void Modules::define_module(jobject module, jstring version,
 
     // Only modules defined to either the boot or platform class loader, can define a "java/" package.
     if (!h_loader.is_null() &&
-        !SystemDictionary::is_platform_class_loader(h_loader) &&
+        !SystemDictionary::is_platform_class_loader(h_loader()) &&
         (strncmp(package_name, JAVAPKG, JAVAPKG_LEN) == 0 &&
           (package_name[JAVAPKG_LEN] == '/' || package_name[JAVAPKG_LEN] == '\0'))) {
       const char* class_loader_name = SystemDictionary::loader_name(h_loader());
@@ -341,12 +338,7 @@ void Modules::define_module(jobject module, jstring version,
     }
 
     Symbol* pkg_symbol = SymbolTable::new_symbol(package_name, CHECK);
-    // append_if_missing() returns FALSE if entry already exists.
-    if (!pkg_list->append_if_missing(pkg_symbol)) {
-      THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-                err_msg("Duplicate package name: %s for module %s",
-                        package_name, module_name));
-    }
+    pkg_list->append(pkg_symbol);
   }
 
   ModuleEntryTable* module_table = get_module_entry_table(h_loader, CHECK);
@@ -405,7 +397,8 @@ void Modules::define_module(jobject module, jstring version,
     // Add the module and its packages.
     if (!dupl_modules && existing_pkg == NULL) {
       // Create the entry for this module in the class loader's module entry table.
-      ModuleEntry* module_entry = module_table->locked_create_entry_or_null(module_handle, module_symbol,
+      ModuleEntry* module_entry = module_table->locked_create_entry_or_null(module_handle,
+                                    (is_open == JNI_TRUE), module_symbol,
                                     version_symbol, location_symbol, loader_data);
 
       if (module_entry == NULL) {
@@ -485,17 +478,15 @@ void Modules::set_bootloader_unnamed_module(jobject module, TRAPS) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
               "Class loader must be the boot class loader");
   }
-  Handle h_loader = Handle(THREAD, loader);
+  Handle h_loader(THREAD, loader);
 
   log_debug(modules)("set_bootloader_unnamed_module(): recording unnamed module for boot loader");
 
-  // Ensure the boot loader's PackageEntryTable has been created
-  ModuleEntryTable* module_table = get_module_entry_table(h_loader, CHECK);
-
   // Set java.lang.Module for the boot loader's unnamed module
-  ModuleEntry* unnamed_module = module_table->unnamed_module();
+  ClassLoaderData* boot_loader_data = ClassLoaderData::the_null_class_loader_data();
+  ModuleEntry* unnamed_module = boot_loader_data->unnamed_module();
   assert(unnamed_module != NULL, "boot loader's unnamed ModuleEntry not defined");
-  unnamed_module->set_module(ClassLoaderData::the_null_class_loader_data()->add_handle(module_handle));
+  unnamed_module->set_module(boot_loader_data->add_handle(module_handle));
   // Store pointer to the ModuleEntry in the unnamed module's java.lang.Module object.
   java_lang_Module::set_module_entry(module_handle(), unnamed_module);
 }
@@ -515,8 +506,8 @@ void Modules::add_module_exports(jobject from_module, const char* package_name, 
               "from_module cannot be found");
   }
 
-  // All packages in unnamed are exported by default.
-  if (!from_module_entry->is_named()) return;
+  // All packages in unnamed and open modules are exported by default.
+  if (!from_module_entry->is_named() || from_module_entry->is_open()) return;
 
   ModuleEntry* to_module_entry;
   if (to_module == NULL) {
@@ -649,39 +640,6 @@ jobject Modules::get_module(jclass clazz, TRAPS) {
 
   return JNIHandles::make_local(THREAD, module);
 }
-
-
-jobject Modules::get_module_by_package_name(jobject loader, const char* package_name, TRAPS) {
-  ResourceMark rm(THREAD);
-  assert(ModuleEntryTable::javabase_defined(),
-         "Attempt to call get_module_from_pkg before " JAVA_BASE_NAME " is defined");
-
-  if (package_name == NULL) {
-    THROW_MSG_(vmSymbols::java_lang_NullPointerException(),
-               "package is null", JNI_FALSE);
-  }
-
-  Handle h_loader (THREAD, JNIHandles::resolve(loader));
-  // Check that loader is a subclass of java.lang.ClassLoader.
-  if (loader != NULL && !java_lang_ClassLoader::is_subclass(h_loader->klass())) {
-    THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
-               "Class loader is not a subclass of java.lang.ClassLoader", JNI_FALSE);
-  }
-
-  if (strlen(package_name) == 0) {
-    // Return the unnamed module
-    ModuleEntryTable* module_table = get_module_entry_table(h_loader, CHECK_NULL);
-    if (NULL == module_table) return NULL;
-    const ModuleEntry* const unnamed_module = module_table->unnamed_module();
-    return JNIHandles::make_local(THREAD, JNIHandles::resolve(unnamed_module->module()));
-
-  } else {
-    TempNewSymbol package_sym = SymbolTable::new_symbol(package_name, CHECK_NULL);
-    return get_module(package_sym, h_loader, CHECK_NULL);
-  }
-  return NULL;
-}
-
 
 jobject Modules::get_named_module(Handle h_loader, const char* package_name, TRAPS) {
   assert(ModuleEntryTable::javabase_defined(),

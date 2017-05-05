@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,11 +61,6 @@ class LatestMethodCache : public CHeapObj<mtClass> {
   int    method_idnum() const    { return _method_idnum; }
 
   Method* get_method();
-
-  // Enhanced Class Redefinition support
-  void classes_do(void f(Klass*)) {
-    f(_klass);
-  }
 
   // CDS support.  Replace the klass in this with the archive version
   // could use this for Enhanced Class Redefinition also.
@@ -230,7 +225,7 @@ class Universe: AllStatic {
   static void initialize_basic_type_mirrors(TRAPS);
   static void fixup_mirrors(TRAPS);
 
-  static void reinitialize_vtable_of(KlassHandle h_k, TRAPS);
+  static void reinitialize_vtable_of(Klass* k, TRAPS);
   static void reinitialize_itables(TRAPS);
   static void compute_base_vtable_size();             // compute vtable size of class Object
 
@@ -479,9 +474,6 @@ class Universe: AllStatic {
   // Apply "f" to all klasses for basic types (classes not present in
   // SystemDictionary).
   static void basic_type_classes_do(void f(Klass*));
-
-  // For sharing -- fill in a list of known vtable pointers.
-  static void init_self_patching_vtbl_list(void** list, int count);
 
   // Debugging
   enum VERIFY_FLAGS {

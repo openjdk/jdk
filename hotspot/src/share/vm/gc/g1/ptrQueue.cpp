@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ PtrQueue::~PtrQueue() {
 }
 
 void PtrQueue::flush_impl() {
-  if (!_permanent && _buf != NULL) {
+  if (_buf != NULL) {
     BufferNode* node = BufferNode::make_node_from_buffer(_buf, _index);
     if (is_empty()) {
       // No work to do.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1105,6 +1105,48 @@ char* os::Posix::describe_pthread_attr(char* buf, size_t buflen, const pthread_a
   return buf;
 }
 
+char* os::Posix::realpath(const char* filename, char* outbuf, size_t outbuflen) {
+
+  if (filename == NULL || outbuf == NULL || outbuflen < 1) {
+    assert(false, "os::Posix::realpath: invalid arguments.");
+    errno = EINVAL;
+    return NULL;
+  }
+
+  char* result = NULL;
+
+  // This assumes platform realpath() is implemented according to POSIX.1-2008.
+  // POSIX.1-2008 allows to specify NULL for the output buffer, in which case
+  // output buffer is dynamically allocated and must be ::free()'d by the caller.
+  char* p = ::realpath(filename, NULL);
+  if (p != NULL) {
+    if (strlen(p) < outbuflen) {
+      strcpy(outbuf, p);
+      result = outbuf;
+    } else {
+      errno = ENAMETOOLONG;
+    }
+    ::free(p); // *not* os::free
+  } else {
+    // Fallback for platforms struggling with modern Posix standards (AIX 5.3, 6.1). If realpath
+    // returns EINVAL, this may indicate that realpath is not POSIX.1-2008 compatible and
+    // that it complains about the NULL we handed down as user buffer.
+    // In this case, use the user provided buffer but at least check whether realpath caused
+    // a memory overwrite.
+    if (errno == EINVAL) {
+      outbuf[outbuflen - 1] = '\0';
+      p = ::realpath(filename, outbuf);
+      if (p != NULL) {
+        guarantee(outbuf[outbuflen - 1] == '\0', "realpath buffer overwrite detected.");
+        result = p;
+      }
+    }
+  }
+  return result;
+
+}
+
+
 // Check minimum allowable stack sizes for thread creation and to initialize
 // the java system classes, including StackOverflowError - depends on page
 // size.
@@ -1116,11 +1158,14 @@ char* os::Posix::describe_pthread_attr(char* buf, size_t buflen, const pthread_a
 // page size which again depends on the concrete system the VM is running
 // on. Space for libc guard pages is not included in this size.
 jint os::Posix::set_minimum_stack_sizes() {
+  size_t os_min_stack_allowed = SOLARIS_ONLY(thr_min_stack()) NOT_SOLARIS(PTHREAD_STACK_MIN);
+
   _java_thread_min_stack_allowed = _java_thread_min_stack_allowed +
                                    JavaThread::stack_guard_zone_size() +
                                    JavaThread::stack_shadow_zone_size();
 
   _java_thread_min_stack_allowed = align_size_up(_java_thread_min_stack_allowed, vm_page_size());
+  _java_thread_min_stack_allowed = MAX2(_java_thread_min_stack_allowed, os_min_stack_allowed);
 
   size_t stack_size_in_bytes = ThreadStackSize * K;
   if (stack_size_in_bytes != 0 &&
@@ -1144,6 +1189,7 @@ jint os::Posix::set_minimum_stack_sizes() {
                                        JavaThread::stack_shadow_zone_size();
 
   _compiler_thread_min_stack_allowed = align_size_up(_compiler_thread_min_stack_allowed, vm_page_size());
+  _compiler_thread_min_stack_allowed = MAX2(_compiler_thread_min_stack_allowed, os_min_stack_allowed);
 
   stack_size_in_bytes = CompilerThreadStackSize * K;
   if (stack_size_in_bytes != 0 &&
@@ -1155,6 +1201,7 @@ jint os::Posix::set_minimum_stack_sizes() {
   }
 
   _vm_internal_thread_min_stack_allowed = align_size_up(_vm_internal_thread_min_stack_allowed, vm_page_size());
+  _vm_internal_thread_min_stack_allowed = MAX2(_vm_internal_thread_min_stack_allowed, os_min_stack_allowed);
 
   stack_size_in_bytes = VMThreadStackSize * K;
   if (stack_size_in_bytes != 0 &&
@@ -1208,6 +1255,14 @@ size_t os::Posix::get_initial_stack_size(ThreadType thr_type, size_t req_stack_s
     stack_size = MAX2(stack_size,
                       _vm_internal_thread_min_stack_allowed);
     break;
+  }
+
+  // pthread_attr_setstacksize() may require that the size be rounded up to the OS page size.
+  // Be careful not to round up to 0. Align down in that case.
+  if (stack_size <= SIZE_MAX - vm_page_size()) {
+    stack_size = align_size_up(stack_size, vm_page_size());
+  } else {
+    stack_size = align_size_down(stack_size, vm_page_size());
   }
 
   return stack_size;

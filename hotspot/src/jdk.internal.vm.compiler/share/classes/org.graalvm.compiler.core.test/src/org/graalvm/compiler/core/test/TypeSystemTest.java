@@ -180,18 +180,18 @@ public class TypeSystemTest extends GraalCompilerTest {
 
     private void test(String snippet, String referenceSnippet) {
         StructuredGraph graph = parseEager(snippet, AllowAssumptions.NO);
-        Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "Graph");
+        Debug.dump(Debug.BASIC_LEVEL, graph, "Graph");
         /*
          * When using FlowSensitiveReductionPhase instead of ConditionalEliminationPhase,
          * tail-duplication gets activated thus resulting in a graph with more nodes than the
          * reference graph.
          */
-        new DominatorConditionalEliminationPhase(false).apply(graph, new PhaseContext(getProviders()));
+        DominatorConditionalEliminationPhase.create(false).apply(graph, new PhaseContext(getProviders()));
         new CanonicalizerPhase().apply(graph, new PhaseContext(getProviders()));
         // a second canonicalizer is needed to process nested MaterializeNodes
         new CanonicalizerPhase().apply(graph, new PhaseContext(getProviders()));
         StructuredGraph referenceGraph = parseEager(referenceSnippet, AllowAssumptions.NO);
-        new DominatorConditionalEliminationPhase(false).apply(referenceGraph, new PhaseContext(getProviders()));
+        DominatorConditionalEliminationPhase.create(false).apply(referenceGraph, new PhaseContext(getProviders()));
         new CanonicalizerPhase().apply(referenceGraph, new PhaseContext(getProviders()));
         new CanonicalizerPhase().apply(referenceGraph, new PhaseContext(getProviders()));
         assertEquals(referenceGraph, graph);
@@ -200,15 +200,15 @@ public class TypeSystemTest extends GraalCompilerTest {
     @Override
     protected void assertEquals(StructuredGraph expected, StructuredGraph graph) {
         if (getNodeCountExcludingUnusedConstants(expected) != getNodeCountExcludingUnusedConstants(graph)) {
-            Debug.dump(Debug.BASIC_LOG_LEVEL, expected, "expected (node count)");
-            Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "graph (node count)");
+            Debug.dump(Debug.BASIC_LEVEL, expected, "expected (node count)");
+            Debug.dump(Debug.BASIC_LEVEL, graph, "graph (node count)");
             Assert.fail("Graphs do not have the same number of nodes: " + expected.getNodeCount() + " vs. " + graph.getNodeCount());
         }
     }
 
     public static void outputGraph(StructuredGraph graph, String message) {
         TTY.println("========================= " + message);
-        SchedulePhase schedulePhase = new SchedulePhase();
+        SchedulePhase schedulePhase = new SchedulePhase(graph.getOptions());
         schedulePhase.apply(graph);
         ScheduleResult schedule = graph.getLastSchedule();
         for (Block block : schedule.getCFG().getBlocks()) {
@@ -244,7 +244,7 @@ public class TypeSystemTest extends GraalCompilerTest {
         StructuredGraph graph = parseEager(snippet, AllowAssumptions.NO);
         new CanonicalizerPhase().apply(graph, new PhaseContext(getProviders()));
         new CanonicalizerPhase().apply(graph, new PhaseContext(getProviders()));
-        Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "Graph " + snippet);
+        Debug.dump(Debug.BASIC_LEVEL, graph, "Graph " + snippet);
         Assert.assertFalse("shouldn't have nodes of type " + clazz, graph.getNodes().filter(clazz).iterator().hasNext());
     }
 }

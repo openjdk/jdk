@@ -22,8 +22,6 @@
  */
 package org.graalvm.compiler.replacements;
 
-import static org.graalvm.compiler.core.common.CompilationIdentifier.INVALID_COMPILATION_ID;
-import static org.graalvm.compiler.nodes.StructuredGraph.NO_PROFILING_INFO;
 import static org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext.CompilationContext.INLINE_AFTER_PARSING;
 
 import java.lang.reflect.Method;
@@ -50,7 +48,6 @@ import org.graalvm.compiler.nodes.InvokeNode;
 import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.MergeNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
@@ -161,16 +158,7 @@ public class GraphKit implements GraphBuilderTool {
 
     @Override
     public <T extends ValueNode> T append(T node) {
-        T result = graph.addOrUnique(changeToWord(node));
-        if (result instanceof FixedNode) {
-            updateLastFixed((FixedNode) result);
-        }
-        return result;
-    }
-
-    @Override
-    public <T extends ValueNode> T recursiveAppend(T node) {
-        T result = graph.addOrUniqueWithInputs(node);
+        T result = graph.addOrUniqueWithInputs(changeToWord(node));
         if (result instanceof FixedNode) {
             updateLastFixed((FixedNode) result);
         }
@@ -315,7 +303,7 @@ public class GraphKit implements GraphBuilderTool {
         Plugins plugins = new Plugins(graphBuilderPlugins);
         GraphBuilderConfiguration config = GraphBuilderConfiguration.getSnippetDefault(plugins);
 
-        StructuredGraph calleeGraph = new StructuredGraph(method, AllowAssumptions.NO, NO_PROFILING_INFO, INVALID_COMPILATION_ID);
+        StructuredGraph calleeGraph = new StructuredGraph.Builder(invoke.getOptions()).method(method).build();
         IntrinsicContext initialReplacementContext = new IntrinsicContext(method, method, providers.getReplacements().getReplacementBytecodeProvider(), INLINE_AFTER_PARSING);
         GraphBuilderPhase.Instance instance = new GraphBuilderPhase.Instance(metaAccess, providers.getStampProvider(), providers.getConstantReflection(), providers.getConstantFieldProvider(), config,
                         OptimisticOptimizations.NONE,
@@ -326,7 +314,7 @@ public class GraphKit implements GraphBuilderTool {
         calleeGraph.clearAllStateAfter();
         new DeadCodeEliminationPhase(Optionality.Required).apply(calleeGraph);
 
-        InliningUtil.inline(invoke, calleeGraph, false, null, method);
+        InliningUtil.inline(invoke, calleeGraph, false, method);
     }
 
     protected void pushStructure(Structure structure) {
@@ -361,7 +349,7 @@ public class GraphKit implements GraphBuilderTool {
      * {@link #endIf} to close the if-block.
      *
      * @param condition The condition for the if-block
-     * @param trueProbability The estimated probability the the condition is true
+     * @param trueProbability The estimated probability the condition is true
      */
     public void startIf(LogicNode condition, double trueProbability) {
         AbstractBeginNode thenSuccessor = graph.add(new BeginNode());

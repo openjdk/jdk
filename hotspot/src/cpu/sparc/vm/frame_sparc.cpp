@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,11 +114,7 @@ address RegisterMap::pd_location(VMReg regname) const {
     // register locations. When that is fixed we'd will return NULL
     // (or assert here).
     reg = regname->prev()->as_Register();
-#ifdef _LP64
     second_word = sizeof(jint);
-#else
-    return NULL;
-#endif // _LP64
   } else {
     reg = regname->as_Register();
   }
@@ -332,9 +328,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
 
 // Construct an unpatchable, deficient frame
 void frame::init(intptr_t* sp, address pc, CodeBlob* cb) {
-#ifdef _LP64
   assert( (((intptr_t)sp & (wordSize-1)) == 0), "frame constructor passed an invalid sp");
-#endif
   _sp = sp;
   _younger_sp = NULL;
   _pc = pc;
@@ -693,11 +687,9 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
     intptr_t* d_scratch = fp() + interpreter_frame_d_scratch_fp_offset;
 
     address l_addr = (address)l_scratch;
-#ifdef _LP64
     // On 64-bit the result for 1/8/16/32-bit result types is in the other
     // word half
     l_addr += wordSize/2;
-#endif
 
     switch (type) {
       case T_OBJECT:

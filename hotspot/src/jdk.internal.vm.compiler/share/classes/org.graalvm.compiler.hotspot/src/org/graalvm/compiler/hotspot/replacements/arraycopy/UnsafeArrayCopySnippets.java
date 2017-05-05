@@ -39,20 +39,21 @@ import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayIndexScale;
 
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Snippet;
-import org.graalvm.compiler.asm.NumUtil;
+import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.hotspot.phases.WriteBarrierAdditionPhase;
 import org.graalvm.compiler.nodes.NamedLocationIdentity;
 import org.graalvm.compiler.nodes.extended.UnsafeCopyNode;
-import org.graalvm.compiler.nodes.extended.UnsafeLoadNode;
+import org.graalvm.compiler.nodes.extended.RawLoadNode;
+import org.graalvm.compiler.nodes.extended.RawStoreNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.replacements.SnippetTemplate;
 import org.graalvm.compiler.replacements.SnippetTemplate.AbstractTemplates;
 import org.graalvm.compiler.replacements.SnippetTemplate.Arguments;
 import org.graalvm.compiler.replacements.SnippetTemplate.SnippetInfo;
 import org.graalvm.compiler.replacements.Snippets;
-import org.graalvm.compiler.replacements.nodes.DirectObjectStoreNode;
 import org.graalvm.compiler.word.ObjectAccess;
 import org.graalvm.compiler.word.Unsigned;
 import org.graalvm.compiler.word.Word;
@@ -205,7 +206,7 @@ public class UnsafeArrayCopySnippets implements Snippets {
 
     /**
      * For this kind, Object, we want to avoid write barriers between writes, but instead have them
-     * at the end of the snippet. This is done by using {@link DirectObjectStoreNode}, and rely on
+     * at the end of the snippet. This is done by using {@link RawStoreNode}, and rely on
      * {@link WriteBarrierAdditionPhase} to put write barriers after the {@link UnsafeArrayCopyNode}
      * with kind Object.
      */
@@ -218,14 +219,14 @@ public class UnsafeArrayCopySnippets implements Snippets {
         if (src == dest && srcPos < destPos) { // bad aliased case
             long start = (long) (length - 1) * scale;
             for (long i = start; i >= 0; i -= scale) {
-                Object a = UnsafeLoadNode.load(src, arrayBaseOffset + i + (long) srcPos * scale, kind, arrayLocation);
-                DirectObjectStoreNode.storeObject(dest, arrayBaseOffset, i + (long) destPos * scale, a, getArrayLocation(kind), kind);
+                Object a = RawLoadNode.load(src, arrayBaseOffset + i + (long) srcPos * scale, kind, arrayLocation);
+                RawStoreNode.storeObject(dest, arrayBaseOffset + i + (long) destPos * scale, a, kind, getArrayLocation(kind), false);
             }
         } else {
             long end = (long) length * scale;
             for (long i = 0; i < end; i += scale) {
-                Object a = UnsafeLoadNode.load(src, arrayBaseOffset + i + (long) srcPos * scale, kind, arrayLocation);
-                DirectObjectStoreNode.storeObject(dest, arrayBaseOffset, i + (long) destPos * scale, a, getArrayLocation(kind), kind);
+                Object a = RawLoadNode.load(src, arrayBaseOffset + i + (long) srcPos * scale, kind, arrayLocation);
+                RawStoreNode.storeObject(dest, arrayBaseOffset + i + (long) destPos * scale, a, kind, getArrayLocation(kind), false);
             }
         }
     }
@@ -284,8 +285,8 @@ public class UnsafeArrayCopySnippets implements Snippets {
         private final SnippetInfo[] arraycopySnippets;
         private final SnippetInfo genericPrimitiveSnippet;
 
-        public Templates(HotSpotProviders providers, TargetDescription target) {
-            super(providers, providers.getSnippetReflection(), target);
+        public Templates(OptionValues options, HotSpotProviders providers, TargetDescription target) {
+            super(options, providers, providers.getSnippetReflection(), target);
 
             arraycopySnippets = new SnippetInfo[JavaKind.values().length];
             arraycopySnippets[JavaKind.Boolean.ordinal()] = snippet(UnsafeArrayCopySnippets.class, "arraycopyBoolean");

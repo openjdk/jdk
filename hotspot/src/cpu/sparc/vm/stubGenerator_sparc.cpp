@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,9 +216,7 @@ class StubGenerator: public StubCodeGenerator {
     __ ld_ptr(parameter_size.as_in().as_address(), t); // get parameter size (in words)
     __ sll(t, Interpreter::logStackElementSize, t);    // compute number of bytes
     __ sub(FP, t, Gargs);                              // setup parameter pointer
-#ifdef _LP64
     __ add( Gargs, STACK_BIAS, Gargs );                // Account for LP64 stack bias
-#endif
     __ mov(SP, O5_savedSP);
 
 
@@ -271,27 +269,8 @@ class StubGenerator: public StubCodeGenerator {
       __ delayed()->stf(FloatRegisterImpl::D, F0, addr, G0);
 
       __ BIND(is_long);
-#ifdef _LP64
       __ ba(exit);
       __ delayed()->st_long(O0, addr, G0);      // store entire long
-#else
-#if defined(COMPILER2)
-  // All return values are where we want them, except for Longs.  C2 returns
-  // longs in G1 in the 32-bit build whereas the interpreter wants them in O0/O1.
-  // Since the interpreter will return longs in G1 and O0/O1 in the 32bit
-  // build we simply always use G1.
-  // Note: I tried to make c2 return longs in O0/O1 and G1 so we wouldn't have to
-  // do this here. Unfortunately if we did a rethrow we'd see an machepilog node
-  // first which would move g1 -> O0/O1 and destroy the exception we were throwing.
-
-      __ ba(exit);
-      __ delayed()->stx(G1, addr, G0);  // store entire long
-#else
-      __ st(O1, addr, BytesPerInt);
-      __ ba(exit);
-      __ delayed()->st(O0, addr, G0);
-#endif /* COMPILER2 */
-#endif /* _LP64 */
      }
      return start;
   }
@@ -746,22 +725,10 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ pc();
     Label miss;
 
-#if defined(COMPILER2) && !defined(_LP64)
-    // Do not use a 'save' because it blows the 64-bit O registers.
-    __ add(SP,-4*wordSize,SP);  // Make space for 4 temps (stack must be 2 words aligned)
-    __ st_ptr(L0,SP,(frame::register_save_words+0)*wordSize);
-    __ st_ptr(L1,SP,(frame::register_save_words+1)*wordSize);
-    __ st_ptr(L2,SP,(frame::register_save_words+2)*wordSize);
-    __ st_ptr(L3,SP,(frame::register_save_words+3)*wordSize);
-    Register Rret   = O0;
-    Register Rsub   = O1;
-    Register Rsuper = O2;
-#else
     __ save_frame(0);
     Register Rret   = I0;
     Register Rsub   = I1;
     Register Rsuper = I2;
-#endif
 
     Register L0_ary_len = L0;
     Register L1_ary_ptr = L1;
@@ -775,32 +742,14 @@ class StubGenerator: public StubCodeGenerator {
     // Match falls through here.
     __ addcc(G0,0,Rret);        // set Z flags, Z result
 
-#if defined(COMPILER2) && !defined(_LP64)
-    __ ld_ptr(SP,(frame::register_save_words+0)*wordSize,L0);
-    __ ld_ptr(SP,(frame::register_save_words+1)*wordSize,L1);
-    __ ld_ptr(SP,(frame::register_save_words+2)*wordSize,L2);
-    __ ld_ptr(SP,(frame::register_save_words+3)*wordSize,L3);
-    __ retl();                  // Result in Rret is zero; flags set to Z
-    __ delayed()->add(SP,4*wordSize,SP);
-#else
     __ ret();                   // Result in Rret is zero; flags set to Z
     __ delayed()->restore();
-#endif
 
     __ BIND(miss);
     __ addcc(G0,1,Rret);        // set NZ flags, NZ result
 
-#if defined(COMPILER2) && !defined(_LP64)
-    __ ld_ptr(SP,(frame::register_save_words+0)*wordSize,L0);
-    __ ld_ptr(SP,(frame::register_save_words+1)*wordSize,L1);
-    __ ld_ptr(SP,(frame::register_save_words+2)*wordSize,L2);
-    __ ld_ptr(SP,(frame::register_save_words+3)*wordSize,L3);
-    __ retl();                  // Result in Rret is != 0; flags set to NZ
-    __ delayed()->add(SP,4*wordSize,SP);
-#else
     __ ret();                   // Result in Rret is != 0; flags set to NZ
     __ delayed()->restore();
-#endif
 
     return start;
   }
@@ -828,11 +777,11 @@ class StubGenerator: public StubCodeGenerator {
   //    Rtmp  -  scratch
   //
   void assert_clean_int(Register Rint, Register Rtmp) {
-#if defined(ASSERT) && defined(_LP64)
+  #if defined(ASSERT)
     __ signx(Rint, Rtmp);
     __ cmp(Rint, Rtmp);
     __ breakpoint_trap(Assembler::notEqual, Assembler::xcc);
-#endif
+  #endif
   }
 
   //
@@ -1019,10 +968,11 @@ class StubGenerator: public StubCodeGenerator {
         // than prefetch distance.
         __ set(prefetch_count, O4);
         __ cmp_and_brx_short(count, O4, Assembler::less, Assembler::pt, L_block_copy);
-        __ sub(count, prefetch_count, count);
+        __ sub(count, O4, count);
 
         (this->*copy_loop_func)(from, to, count, count_dec, L_block_copy_prefetch, true, true);
-        __ add(count, prefetch_count, count); // restore count
+        __ set(prefetch_count, O4);
+        __ add(count, O4, count);
 
       } // prefetch_count > 0
 
@@ -1043,11 +993,12 @@ class StubGenerator: public StubCodeGenerator {
       // than prefetch distance.
       __ set(prefetch_count, O4);
       __ cmp_and_brx_short(count, O4, Assembler::lessUnsigned, Assembler::pt, L_copy);
-      __ sub(count, prefetch_count, count);
+      __ sub(count, O4, count);
 
       Label L_copy_prefetch;
       (this->*copy_loop_func)(from, to, count, count_dec, L_copy_prefetch, true, false);
-      __ add(count, prefetch_count, count); // restore count
+      __ set(prefetch_count, O4);
+      __ add(count, O4, count);
 
     } // prefetch_count > 0
 
@@ -1269,17 +1220,6 @@ class StubGenerator: public StubCodeGenerator {
       // Aligned arrays have 4 bytes alignment in 32-bits VM
       // and 8 bytes - in 64-bits VM. So we do it only for 32-bits VM
       //
-#ifndef _LP64
-      // copy a 4-bytes word if necessary to align 'to' to 8 bytes
-      __ andcc(to, 7, G0);
-      __ br(Assembler::zero, false, Assembler::pn, L_skip_alignment);
-      __ delayed()->ld(from, 0, O3);
-      __ inc(from, 4);
-      __ inc(to, 4);
-      __ dec(count, 4);
-      __ st(O3, to, -4);
-    __ BIND(L_skip_alignment);
-#endif
     } else {
       // copy bytes to align 'to' on 8 byte boundary
       __ andcc(to, 7, G1); // misaligned bytes
@@ -1296,9 +1236,7 @@ class StubGenerator: public StubCodeGenerator {
       __ delayed()->inc(to);
     __ BIND(L_skip_alignment);
     }
-#ifdef _LP64
     if (!aligned)
-#endif
     {
       // Copy with shift 16 bytes per iteration if arrays do not have
       // the same alignment mod 8, otherwise fall through to the next
@@ -1395,14 +1333,12 @@ class StubGenerator: public StubCodeGenerator {
       __ delayed()->stb(O3, end_to, 0);
     __ BIND(L_skip_alignment);
     }
-#ifdef _LP64
     if (aligned) {
       // Both arrays are aligned to 8-bytes in 64-bits VM.
       // The 'count' is decremented in copy_16_bytes_backward_with_shift()
       // in unaligned case.
       __ dec(count, 16);
     } else
-#endif
     {
       // Copy with shift 16 bytes per iteration if arrays do not have
       // the same alignment mod 8, otherwise jump to the next
@@ -1490,17 +1426,6 @@ class StubGenerator: public StubCodeGenerator {
       // Aligned arrays have 4 bytes alignment in 32-bits VM
       // and 8 bytes - in 64-bits VM.
       //
-#ifndef _LP64
-      // copy a 2-elements word if necessary to align 'to' to 8 bytes
-      __ andcc(to, 7, G0);
-      __ br(Assembler::zero, false, Assembler::pt, L_skip_alignment);
-      __ delayed()->ld(from, 0, O3);
-      __ inc(from, 4);
-      __ inc(to, 4);
-      __ dec(count, 2);
-      __ st(O3, to, -4);
-    __ BIND(L_skip_alignment);
-#endif
     } else {
       // copy 1 element if necessary to align 'to' on an 4 bytes
       __ andcc(to, 3, G0);
@@ -1524,9 +1449,7 @@ class StubGenerator: public StubCodeGenerator {
       __ sth(O4, to, -2);
     __ BIND(L_skip_alignment2);
     }
-#ifdef _LP64
     if (!aligned)
-#endif
     {
       // Copy with shift 16 bytes per iteration if arrays do not have
       // the same alignment mod 8, otherwise fall through to the next
@@ -1643,9 +1566,7 @@ class StubGenerator: public StubCodeGenerator {
       __ dec(count, 1 << (shift - 1));
       __ BIND(L_skip_align2);
     }
-#ifdef _LP64
     if (!aligned) {
-#endif
     // align to 8 bytes, we know we are 4 byte aligned to start
     __ andcc(to, 7, G0);
     __ br(Assembler::zero, false, Assembler::pt, L_fill_32_bytes);
@@ -1654,9 +1575,7 @@ class StubGenerator: public StubCodeGenerator {
     __ inc(to, 4);
     __ dec(count, 1 << shift);
     __ BIND(L_fill_32_bytes);
-#ifdef _LP64
     }
-#endif
 
     if (t == T_INT) {
       // Zero extend value
@@ -1857,14 +1776,12 @@ class StubGenerator: public StubCodeGenerator {
       __ sth(O4, end_to, 0);
     __ BIND(L_skip_alignment2);
     }
-#ifdef _LP64
     if (aligned) {
       // Both arrays are aligned to 8-bytes in 64-bits VM.
       // The 'count' is decremented in copy_16_bytes_backward_with_shift()
       // in unaligned case.
       __ dec(count, 8);
     } else
-#endif
     {
       // Copy with shift 16 bytes per iteration if arrays do not have
       // the same alignment mod 8, otherwise jump to the next
@@ -1974,9 +1891,7 @@ class StubGenerator: public StubCodeGenerator {
     // Aligned arrays have 4 bytes alignment in 32-bits VM
     // and 8 bytes - in 64-bits VM.
     //
-#ifdef _LP64
     if (!aligned)
-#endif
     {
       // The next check could be put under 'ifndef' since the code in
       // generate_disjoint_long_copy_core() has own checks and set 'offset'.
@@ -2463,16 +2378,12 @@ class StubGenerator: public StubCodeGenerator {
     __ mov(to, G1);
     __ mov(count, G5);
     gen_write_ref_array_pre_barrier(G1, G5, dest_uninitialized);
-  #ifdef _LP64
     assert_clean_int(count, O3);     // Make sure 'count' is clean int.
     if (UseCompressedOops) {
       generate_disjoint_int_copy_core(aligned);
     } else {
       generate_disjoint_long_copy_core(aligned);
     }
-  #else
-    generate_disjoint_int_copy_core(aligned);
-  #endif
     // O0 is used as temp register
     gen_write_ref_array_post_barrier(G1, G5, O0);
 
@@ -2518,15 +2429,11 @@ class StubGenerator: public StubCodeGenerator {
     __ mov(count, G5);
     gen_write_ref_array_pre_barrier(G1, G5, dest_uninitialized);
 
-  #ifdef _LP64
     if (UseCompressedOops) {
       generate_conjoint_int_copy_core(aligned);
     } else {
       generate_conjoint_long_copy_core(aligned);
     }
-  #else
-    generate_conjoint_int_copy_core(aligned);
-  #endif
 
     // O0 is used as temp register
     gen_write_ref_array_post_barrier(G1, G5, O0);
@@ -3138,7 +3045,6 @@ class StubGenerator: public StubCodeGenerator {
                                                                                 "arrayof_jint_disjoint_arraycopy");
     StubRoutines::_arrayof_jint_arraycopy          = generate_conjoint_int_copy(true, entry, &entry_jint_arraycopy,
                                                                                 "arrayof_jint_arraycopy");
-#ifdef _LP64
     // In 64 bit we need both aligned and unaligned versions of jint arraycopy.
     // entry_jint_arraycopy always points to the unaligned version (notice that we overwrite it).
     StubRoutines::_jint_disjoint_arraycopy         = generate_disjoint_int_copy(false, &entry,
@@ -3146,14 +3052,6 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_jint_arraycopy                  = generate_conjoint_int_copy(false, entry,
                                                                                 &entry_jint_arraycopy,
                                                                                 "jint_arraycopy");
-#else
-    // In 32 bit jints are always HeapWordSize aligned, so always use the aligned version
-    // (in fact in 32bit we always have a pre-loop part even in the aligned version,
-    //  because it uses 64-bit loads/stores, so the aligned flag is actually ignored).
-    StubRoutines::_jint_disjoint_arraycopy = StubRoutines::_arrayof_jint_disjoint_arraycopy;
-    StubRoutines::_jint_arraycopy          = StubRoutines::_arrayof_jint_arraycopy;
-#endif
-
 
     //*** jlong
     // It is always aligned
@@ -3178,7 +3076,6 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_arrayof_oop_arraycopy_uninit          = generate_conjoint_oop_copy(true, entry, NULL,
                                                                                       "arrayof_oop_arraycopy_uninit",
                                                                                       /*dest_uninitialized*/true);
-#ifdef _LP64
     if (UseCompressedOops) {
       // With compressed oops we need unaligned versions, notice that we overwrite entry_oop_arraycopy.
       StubRoutines::_oop_disjoint_arraycopy            = generate_disjoint_oop_copy(false, &entry,
@@ -3193,7 +3090,6 @@ class StubGenerator: public StubCodeGenerator {
                                                                                     "oop_arraycopy_uninit",
                                                                                     /*dest_uninitialized*/true);
     } else
-#endif
     {
       // oop arraycopy is always aligned on 32bit and 64bit without compressed oops
       StubRoutines::_oop_disjoint_arraycopy            = StubRoutines::_arrayof_oop_disjoint_arraycopy;
@@ -5104,17 +5000,6 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::Sparc::_stop_subroutine_entry            = generate_stop_subroutine();
     StubRoutines::Sparc::_flush_callers_register_windows_entry = generate_flush_callers_register_windows();
 
-#if !defined(COMPILER2) && !defined(_LP64)
-    StubRoutines::_atomic_xchg_entry         = generate_atomic_xchg();
-    StubRoutines::_atomic_cmpxchg_entry      = generate_atomic_cmpxchg();
-    StubRoutines::_atomic_add_entry          = generate_atomic_add();
-    StubRoutines::_atomic_xchg_ptr_entry     = StubRoutines::_atomic_xchg_entry;
-    StubRoutines::_atomic_cmpxchg_ptr_entry  = StubRoutines::_atomic_cmpxchg_entry;
-    StubRoutines::_atomic_cmpxchg_byte_entry = ShouldNotCallThisStub();
-    StubRoutines::_atomic_cmpxchg_long_entry = generate_atomic_cmpxchg_long();
-    StubRoutines::_atomic_add_ptr_entry      = StubRoutines::_atomic_add_entry;
-#endif  // COMPILER2 !=> _LP64
-
     // Build this early so it's available for the interpreter.
     StubRoutines::_throw_StackOverflowError_entry =
             generate_throw_exception("StackOverflowError throw_exception",
@@ -5222,11 +5107,9 @@ class StubGenerator: public StubCodeGenerator {
   void stub_prolog(StubCodeDesc* cdesc) {
     # ifdef ASSERT
       // put extra information in the stub code, to make it more readable
-#ifdef _LP64
 // Write the high part of the address
 // [RGV] Check if there is a dependency on the size of this prolog
       __ emit_data((intptr_t)cdesc >> 32,    relocInfo::none);
-#endif
       __ emit_data((intptr_t)cdesc,    relocInfo::none);
       __ emit_data(++_stub_count, relocInfo::none);
     # endif

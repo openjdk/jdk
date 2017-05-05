@@ -394,4 +394,9 @@ public abstract class LIRInstruction {
     public LIRInstructionClass<?> getLIRInstructionClass() {
         return instructionClass;
     }
+
+    @Override
+    public int hashCode() {
+        return id;
+    }
 }

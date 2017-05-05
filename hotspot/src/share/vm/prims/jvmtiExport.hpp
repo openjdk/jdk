@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,7 +150,7 @@ class JvmtiExport : public AllStatic {
   };
 
   static void post_field_modification(JavaThread *thread, Method* method, address location,
-                                      KlassHandle field_klass, Handle object, jfieldID field,
+                                      Klass* field_klass, Handle object, jfieldID field,
                                       char sig_type, jvalue *value);
 
 
@@ -310,7 +310,7 @@ class JvmtiExport : public AllStatic {
   static void post_field_access_by_jni   (JavaThread *thread, oop obj,
     Klass* klass, jfieldID fieldID, bool is_static) NOT_JVMTI_RETURN;
   static void post_field_access          (JavaThread *thread, Method* method,
-    address location, KlassHandle field_klass, Handle object, jfieldID field) NOT_JVMTI_RETURN;
+    address location, Klass* field_klass, Handle object, jfieldID field) NOT_JVMTI_RETURN;
   static oop jni_SetField_probe          (JavaThread *thread, jobject jobj,
     oop obj, Klass* klass, jfieldID fieldID, bool is_static, char sig_type,
     jvalue *value) NOT_JVMTI_RETURN_(NULL);
@@ -321,7 +321,7 @@ class JvmtiExport : public AllStatic {
     Klass* klass, jfieldID fieldID, bool is_static, char sig_type,
     jvalue *value);
   static void post_raw_field_modification(JavaThread *thread, Method* method,
-    address location, KlassHandle field_klass, Handle object, jfieldID field,
+    address location, Klass* field_klass, Handle object, jfieldID field,
     char sig_type, jvalue *value) NOT_JVMTI_RETURN;
 
   static void post_method_entry          (JavaThread *thread, Method* method, frame current_frame) NOT_JVMTI_RETURN;

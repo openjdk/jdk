@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ LIR_Opr LIRGenerator::exceptionOopOpr()              { return FrameMap::Oexcepti
 LIR_Opr LIRGenerator::exceptionPcOpr()               { return FrameMap::Oissuing_pc_opr; }
 LIR_Opr LIRGenerator::syncLockOpr()                  { return new_register(T_INT); }
 LIR_Opr LIRGenerator::syncTempOpr()                  { return new_register(T_OBJECT); }
-LIR_Opr LIRGenerator::getThreadTemp()                { return rlock_callee_saved(NOT_LP64(T_INT) LP64_ONLY(T_LONG)); }
+LIR_Opr LIRGenerator::getThreadTemp()                { return rlock_callee_saved(T_LONG); }
 
 LIR_Opr LIRGenerator::result_register_for(ValueType* type, bool callee) {
   LIR_Opr opr;
@@ -215,13 +215,11 @@ LIR_Address* LIRGenerator::emit_array_address(LIR_Opr array_opr, LIR_Opr index_o
       }
     }
   } else {
-#ifdef _LP64
     if (index_opr->type() == T_INT) {
       LIR_Opr tmp = new_register(T_LONG);
       __ convert(Bytecodes::_i2l, index_opr, tmp);
       index_opr = tmp;
     }
-#endif
 
     base_opr = new_pointer_register();
     assert (index_opr->is_register(), "Must be register");
@@ -1310,20 +1308,12 @@ void LIRGenerator::trace_block_entry(BlockBegin* block) {
 
 void LIRGenerator::volatile_field_store(LIR_Opr value, LIR_Address* address,
                                         CodeEmitInfo* info) {
-#ifdef _LP64
   __ store(value, address, info);
-#else
-  __ volatile_store_mem_reg(value, address, info);
-#endif
 }
 
 void LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
                                        CodeEmitInfo* info) {
-#ifdef _LP64
   __ load(address, result, info);
-#else
-  __ volatile_load_mem_reg(address, result, info);
-#endif
 }
 
 
@@ -1333,11 +1323,6 @@ void LIRGenerator::put_Object_unsafe(LIR_Opr src, LIR_Opr offset, LIR_Opr data,
   LIR_Opr index_op = offset;
 
   bool is_obj = (type == T_ARRAY || type == T_OBJECT);
-#ifndef _LP64
-  if (is_volatile && type == T_LONG) {
-    __ volatile_store_unsafe_reg(data, src, offset, type, NULL, lir_patch_none);
-  } else
-#endif
     {
       if (type == T_BOOLEAN) {
         type = T_BYTE;
@@ -1367,11 +1352,6 @@ void LIRGenerator::put_Object_unsafe(LIR_Opr src, LIR_Opr offset, LIR_Opr data,
 
 void LIRGenerator::get_Object_unsafe(LIR_Opr dst, LIR_Opr src, LIR_Opr offset,
                                      BasicType type, bool is_volatile) {
-#ifndef _LP64
-  if (is_volatile && type == T_LONG) {
-    __ volatile_load_unsafe_reg(src, offset, dst, type, NULL, lir_patch_none);
-  } else
-#endif
     {
     LIR_Address* addr = new LIR_Address(src, offset, type);
     __ load(addr, dst);
@@ -1396,17 +1376,13 @@ void LIRGenerator::do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x) {
   // Because we want a 2-arg form of xchg
   __ move(data, dst);
 
-  assert (!x->is_add() && (type == T_INT || (is_obj LP64_ONLY(&& UseCompressedOops))), "unexpected type");
+  assert (!x->is_add() && (type == T_INT || (is_obj && UseCompressedOops)), "unexpected type");
   LIR_Address* addr;
   if (offset->is_constant()) {
 
-#ifdef _LP64
     jlong l = offset->as_jlong();
     assert((jlong)((jint)l) == l, "offset too large for constant");
     jint c = (jint)l;
-#else
-    jint c = offset->as_jint();
-#endif
     addr = new LIR_Address(src.result(), c, type);
   } else {
     addr = new LIR_Address(src.result(), offset, type);

@@ -71,6 +71,7 @@ public class AMD64GraphBuilderPlugins {
                 registerIntegerLongPlugins(invocationPlugins, IntegerSubstitutions.class, JavaKind.Int, arch, replacementsBytecodeProvider);
                 registerIntegerLongPlugins(invocationPlugins, LongSubstitutions.class, JavaKind.Long, arch, replacementsBytecodeProvider);
                 registerUnsafePlugins(invocationPlugins, replacementsBytecodeProvider);
+                registerStringPlugins(invocationPlugins, arch, replacementsBytecodeProvider);
                 registerMathPlugins(invocationPlugins, arch, arithmeticStubs, replacementsBytecodeProvider);
             }
         });
@@ -117,7 +118,7 @@ public class AMD64GraphBuilderPlugins {
             r.register1("bitCount", type, new InvocationPlugin() {
                 @Override
                 public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
-                    b.push(JavaKind.Int, b.recursiveAppend(new BitCountNode(value).canonical(null)));
+                    b.push(JavaKind.Int, b.append(new BitCountNode(value).canonical(null)));
                     return true;
                 }
             });
@@ -151,7 +152,7 @@ public class AMD64GraphBuilderPlugins {
         r.register1(name, Double.TYPE, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
-                b.push(JavaKind.Double, b.recursiveAppend(UnaryMathIntrinsicNode.create(value, operation)));
+                b.push(JavaKind.Double, b.append(UnaryMathIntrinsicNode.create(value, operation)));
                 return true;
             }
         });
@@ -161,7 +162,7 @@ public class AMD64GraphBuilderPlugins {
         r.register2(name, Double.TYPE, Double.TYPE, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
-                b.push(JavaKind.Double, b.recursiveAppend(BinaryMathIntrinsicNode.create(x, y, operation)));
+                b.push(JavaKind.Double, b.append(BinaryMathIntrinsicNode.create(x, y, operation)));
                 return true;
             }
         });
@@ -175,6 +176,16 @@ public class AMD64GraphBuilderPlugins {
                 return true;
             }
         });
+    }
+
+    private static void registerStringPlugins(InvocationPlugins plugins, AMD64 arch, BytecodeProvider replacementsBytecodeProvider) {
+        if (Java8OrEarlier && arch.getFeatures().contains(CPUFeature.SSE4_2)) {
+            Registration r;
+            r = new Registration(plugins, String.class, replacementsBytecodeProvider);
+            r.setAllowOverwrite(true);
+            r.registerMethodSubstitution(AMD64StringSubstitutions.class, "indexOf", char[].class, int.class,
+                            int.class, char[].class, int.class, int.class, int.class);
+        }
     }
 
     private static void registerUnsafePlugins(InvocationPlugins plugins, BytecodeProvider replacementsBytecodeProvider) {
