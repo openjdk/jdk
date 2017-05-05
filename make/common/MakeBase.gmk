@@ -355,17 +355,28 @@ FindAllReposRel = \
 ################################################################################
 
 define SetupLogging
+  ifeq ($$(LOG_PROFILE_TIMES_FILE), true)
+    ifeq ($$(IS_GNU_TIME), yes)
+      SHELL :=  $$(BASH) $$(SRC_ROOT)/common/bin/shell-profiler.sh \
+                gnutime $$(TIME) \
+                $$(OUTPUT_ROOT)/build-profile.log $$(SHELL)
+    else ifneq ($$(FLOCK), )
+      SHELL :=  $$(BASH) $$(SRC_ROOT)/common/bin/shell-profiler.sh \
+                flock $$(FLOCK) \
+                $$(OUTPUT_ROOT)/build-profile.log $$(SHELL)
+    endif
+  endif
+
   ifeq ($$(LOG_LEVEL), trace)
+    SHELL_NO_RECURSE := $$(SHELL)
     # Shell redefinition trick inspired by http://www.cmcrossroads.com/ask-mr-make/6535-tracing-rule-execution-in-gnu-make
     # For each target executed, will print
     # Building <TARGET> (from <FIRST PREREQUISITE>) (<ALL NEWER PREREQUISITES> newer)
     # but with a limit of 20 on <ALL NEWER PREREQUISITES>, to avoid cluttering logs too much
     # (and causing a crash on Cygwin).
-    # Default shell seems to always be /bin/sh. Must override with bash to get this to work on Solaris.
-    # Only use time if it's GNU time which supports format and output file.
-    WRAPPER_SHELL := $$(BASH) $$(SRC_ROOT)/common/bin/shell-tracer.sh $$(if $$(findstring yes,$$(IS_GNU_TIME)),$$(TIME),-) $$(OUTPUT_ROOT)/build-trace-time.log $$(SHELL)
-    SHELL = $$(warning $$(if $$@,Building $$@,Running shell command) $$(if $$<, (from $$<))$$(if $$?, ($$(wordlist 1, 20, $$?) $$(if $$(wordlist 21, 22, $$?), ... [in total $$(words $$?) files]) newer)))$$(WRAPPER_SHELL)
+    SHELL = $$(warning $$(if $$@,Building $$@,Running shell command) $$(if $$<, (from $$<))$$(if $$?, ($$(wordlist 1, 20, $$?) $$(if $$(wordlist 21, 22, $$?), ... [in total $$(words $$?) files]) newer)))$$(SHELL_NO_RECURSE) -x
   endif
+
   # The warn level can never be turned off
   LogWarn = $$(info $$(strip $$1))
   LOG_WARN :=
@@ -755,6 +766,55 @@ define SetupCopyFilesBody
 endef
 
 ################################################################################
+# Parse a multiple-keyword variable, like FOO="KEYWORD1=val1;KEYWORD2=val2;..."
+# These will be converted into a series of variables like FOO_KEYWORD1=val1,
+# FOO_KEYWORD2=val2, etc. Unknown keywords will cause an error.
+#
+# Parameter 1 is the name of the rule, and is also the name of the variable.
+#
+# Remaining parameters are named arguments. These include:
+#   KEYWORDS          A list of valid keywords
+#   STRING_KEYWORDS   A list of valid keywords, processed as string. This means
+#       that '%20' will be replaced by ' ' to allow for multi-word strings.
+#
+ParseKeywordVariable = $(NamedParamsMacroTemplate)
+define ParseKeywordVariableBody
+  ifneq ($$($1), )
+    # To preserve spaces, substitute them with a hopefully unique pattern
+    # before splitting and then re-substitute spaces back.
+    $1_MANGLED := $$(subst $$(SPACE),||||,$$($1))
+    $$(foreach mangled_part, $$(subst ;, , $$($1_MANGLED)), \
+      $$(eval mangled_part_eval := $$(call DoubleDollar, $$(mangled_part))) \
+      $$(eval part := $$$$(subst ||||,$$$$(SPACE),$$$$(mangled_part_eval))) \
+      $$(eval $1_NO_MATCH := true) \
+      $$(foreach keyword, $$($1_KEYWORDS), \
+        $$(eval keyword_eval := $$(call DoubleDollar, $$(keyword))) \
+        $$(if $$(filter $$(keyword)=%, $$(part)), \
+          $$(eval $(strip $1)_$$$$(keyword_eval) := $$$$(strip $$$$(patsubst $$$$(keyword_eval)=%, %, $$$$(part)))) \
+          $$(eval $1_NO_MATCH := ) \
+        ) \
+      ) \
+      $$(foreach keyword, $$($1_STRING_KEYWORDS), \
+        $$(eval keyword_eval := $$(call DoubleDollar, $$(keyword))) \
+        $$(if $$(filter $$(keyword)=%, $$(part)), \
+          $$(eval $(strip $1)_$$$$(keyword_eval) := $$$$(strip $$$$(subst %20, , $$$$(patsubst $$$$(keyword_eval)=%, %, $$$$(part))))) \
+          $$(eval $1_NO_MATCH := ) \
+        ) \
+      ) \
+      $$(if $$($1_NO_MATCH), \
+        $$(if $$(filter $$(part), $$($1_KEYWORDS) $$($1_STRING_KEYWORDS)), \
+          $$(info Keyword $$(part) for $1 needs to be assigned a value.) \
+        , \
+          $$(info $$(part) is not a valid keyword for $1.) \
+          $$(info Valid keywords: $$($1_KEYWORDS) $$($1_STRING_KEYWORDS).) \
+        ) \
+        $$(error Cannot continue) \
+      ) \
+    )
+  endif
+endef
+
+################################################################################
 # ShellQuote
 #
 # Quotes a string with single quotes and replaces single quotes with '\'' so
@@ -762,6 +822,22 @@ endef
 
 ShellQuote = \
     $(SQUOTE)$(subst $(SQUOTE),$(SQUOTE)\$(SQUOTE)$(SQUOTE),$(strip $1))$(SQUOTE)
+
+################################################################################
+# FixPath
+#
+# On Windows, converts a path from cygwin/unix style (e.g. /bin/foo) into
+# "mixed mode" (e.g. c:/cygwin/bin/foo). On other platforms, return the path
+# unchanged.
+# This is normally not needed since we use the FIXPATH prefix for command lines,
+# but might be needed in certain circumstances.
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  FixPath = \
+      $(shell $(CYGPATH) -m $1)
+else
+  FixPath = \
+      $1
+endif
 
 ################################################################################
 # Write to and read from file
