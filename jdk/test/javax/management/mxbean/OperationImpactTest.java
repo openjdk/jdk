@@ -26,7 +26,7 @@
  * @bug 6320104
  * @summary Check that MXBean operations have impact UNKNOWN.
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean OperationImpactTest
  * @run build OperationImpactTest
  * @run main OperationImpactTest

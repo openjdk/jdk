@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,17 +27,15 @@
  * @summary Basic unit test of memory management testing:
  *          1) setUsageThreshold() and getUsageThreshold()
  *          2) test low memory detection on the old generation.
- *
  * @author  Mandy Chung
  *
- * @library /lib/testlibrary/
- * @modules java.management
- * @build jdk.testlibrary.* LowMemoryTest MemoryUtil RunUtil
- * @run main/timeout=600 LowMemoryTest
  * @requires vm.gc == "null"
  * @requires vm.opt.ExplicitGCInvokesConcurrent != "true"
- * @requires vm.opt.ExplicitGCInvokesConcurrentAndUnloadsClasses != "true"
  * @requires vm.opt.DisableExplicitGC != "true"
+ * @library /lib/testlibrary/
+ *
+ * @build jdk.testlibrary.* LowMemoryTest MemoryUtil RunUtil
+ * @run main/timeout=600 LowMemoryTest
  */
 
 import java.lang.management.*;

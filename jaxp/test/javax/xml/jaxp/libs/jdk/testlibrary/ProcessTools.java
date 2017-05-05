@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -256,24 +256,7 @@ public final class ProcessTools {
      * @return Process id
      */
     public static long getProcessId() {
-        return ProcessHandle.current().getPid();
-    }
-
-    /**
-     * Get platform specific VM arguments (e.g. -d64 on 64bit Solaris)
-     *
-     * @return String[] with platform specific arguments, empty if there are
-     *         none
-     */
-    public static String[] getPlatformSpecificVMArgs() {
-        String osName = System.getProperty("os.name");
-        String dataModel = System.getProperty("sun.arch.data.model");
-
-        if (osName.equals("SunOS") && dataModel.equals("64")) {
-            return new String[] { "-d64" };
-        }
-
-        return new String[] {};
+        return ProcessHandle.current().pid();
     }
 
     /**
@@ -283,8 +266,7 @@ public final class ProcessTools {
      * @param command Arguments to pass to the java command.
      * @return The ProcessBuilder instance representing the java command.
      */
-    public static ProcessBuilder createJavaProcessBuilder(String... command)
-            throws Exception {
+    public static ProcessBuilder createJavaProcessBuilder(String... command) {
         return createJavaProcessBuilder(false, command);
     }
 
@@ -297,12 +279,11 @@ public final class ProcessTools {
      * @param command Arguments to pass to the java command.
      * @return The ProcessBuilder instance representing the java command.
      */
-    public static ProcessBuilder createJavaProcessBuilder(boolean addTestVmAndJavaOptions, String... command) throws Exception {
+    public static ProcessBuilder createJavaProcessBuilder(boolean addTestVmAndJavaOptions, String... command) {
         String javapath = JDKToolFinder.getJDKTool("java");
 
         ArrayList<String> args = new ArrayList<>();
         args.add(javapath);
-        Collections.addAll(args, getPlatformSpecificVMArgs());
 
         if (addTestVmAndJavaOptions) {
             // -cp is needed to make sure the same classpath is used whether the test is
@@ -542,8 +523,8 @@ public final class ProcessTools {
         }
 
         @Override
-        public long getPid() {
-            return p.getPid();
+        public long pid() {
+            return p.pid();
         }
 
         @Override

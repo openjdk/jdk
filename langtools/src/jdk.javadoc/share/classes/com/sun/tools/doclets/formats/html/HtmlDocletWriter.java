@@ -1705,7 +1705,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         if (lessThanPos < 0) {
             return text;
         }
-
         StringBuilder result = new StringBuilder();
     main: while (lessThanPos != -1) {
             int currPos = lessThanPos + 1;
@@ -1740,17 +1739,16 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     if (ch == '>' && quoteKind == null) {
                         foundGT = true;
                     }
-                    if (++currPos == len)
+                    if (++currPos == len) {
                         break;
+                    }
                     ch = text.charAt(currPos);
                 }
-                startPos = currPos + 1;
-                currPos = startPos;
+                startPos = currPos;
             }
             lessThanPos = text.indexOf('<', currPos);
         }
         result.append(text.substring(startPos));
-
         return result.toString();
     }
 
@@ -1758,10 +1756,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         return ('a' <= ch && ch <= 'z') ||
                 ('A' <= ch && ch <= 'Z') ||
                 ('1' <= ch && ch <= '6');
-    }
-
-    private static boolean isWhitespace(char ch) {
-        return Character.isWhitespace(ch);
     }
 
     /**
