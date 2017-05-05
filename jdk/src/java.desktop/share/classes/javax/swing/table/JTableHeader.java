@@ -384,6 +384,7 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
      *                          renderer and, therefore, the proper tip
      * @return the tool tip for this component
      */
+    @SuppressWarnings("deprecation")
     public String getToolTipText(MouseEvent event) {
         String tip = null;
         Point p = event.getPoint();

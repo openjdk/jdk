@@ -41,6 +41,7 @@ package java.sql;
  * @see Connection#getWarnings
  * @see Statement#getWarnings
  * @see ResultSet#getWarnings
+ * @since 1.1
  */
 public class SQLWarning extends SQLException {
 
