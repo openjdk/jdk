@@ -465,7 +465,6 @@ jdk = \
 needs_jdk = \
   :jdk_jdi \
   com/sun/tools \
-  demo \
   jdk/security/jarsigner \
   sun/security/tools/jarsigner \
   sun/security/tools/policytool \
