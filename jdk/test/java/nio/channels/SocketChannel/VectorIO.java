@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,10 @@
  */
 
 /* @test
- * @summary Test socketchannel vector IO
- * @library ..
+ * @summary Test socketchannel vector IO (use -Dseed=X to set PRNG seed)
+ * @library .. /lib/testlibrary/
+ * @build jdk.testlibrary.RandomFactory
+ * @run main VectorIO
  * @key randomness
  */
 
@@ -32,11 +34,11 @@ import java.net.*;
 import java.nio.*;
 import java.nio.channels.*;
 import java.util.*;
-
+import jdk.testlibrary.RandomFactory;
 
 public class VectorIO {
 
-    static Random generator = new Random();
+    private static Random generator = RandomFactory.getRandom();
 
     static int testSize;
 
@@ -100,8 +102,6 @@ public class VectorIO {
     static class Server
         extends TestThread
     {
-        static Random generator = new Random();
-
         final int testSize;
         final ServerSocketChannel ssc;
 

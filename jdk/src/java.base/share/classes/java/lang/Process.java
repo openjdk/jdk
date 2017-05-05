@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,10 +80,10 @@ import java.util.stream.Stream;
  *
  * <p>Subclasses of Process should override the {@link #onExit()} and
  * {@link #toHandle()} methods to provide a fully functional Process including the
- * {@link #getPid() process id},
- * {@link #info() information about the process},
- * {@link #children() direct children}, and
- * {@link #descendants() direct children plus descendants of those children} of the process.
+ * {@linkplain #pid() process id},
+ * {@linkplain #info() information about the process},
+ * {@linkplain #children() direct children}, and
+ * {@linkplain #descendants() direct children plus descendants of those children} of the process.
  * Delegating to the underlying Process or ProcessHandle is typically
  * easiest and most efficient.
  *
@@ -237,14 +237,14 @@ public abstract class Process {
     /**
      * Kills the process.
      * Whether the process represented by this {@code Process} object is
-     * {@link #supportsNormalTermination normally terminated} or not is
+     * {@linkplain #supportsNormalTermination normally terminated} or not is
      * implementation dependent.
      * Forcible process destruction is defined as the immediate termination of a
      * process, whereas normal termination allows the process to shut down cleanly.
      * If the process is not alive, no action is taken.
      * <p>
      * The {@link java.util.concurrent.CompletableFuture} from {@link #onExit} is
-     * {@link java.util.concurrent.CompletableFuture#complete completed}
+     * {@linkplain java.util.concurrent.CompletableFuture#complete completed}
      * when the process has terminated.
      */
     public abstract void destroy();
@@ -257,7 +257,7 @@ public abstract class Process {
      * If the process is not alive, no action is taken.
      * <p>
      * The {@link java.util.concurrent.CompletableFuture} from {@link #onExit} is
-     * {@link java.util.concurrent.CompletableFuture#complete completed}
+     * {@linkplain java.util.concurrent.CompletableFuture#complete completed}
      * when the process has terminated.
      * <p>
      * Invoking this method on {@code Process} objects returned by
@@ -335,15 +335,15 @@ public abstract class Process {
      *
      * @implSpec
      * The implementation of this method returns the process id as:
-     * {@link #toHandle toHandle().getPid()}.
+     * {@link #toHandle toHandle().pid()}.
      *
      * @return the native process id of the process
      * @throws UnsupportedOperationException if the Process implementation
      *         does not support this operation
      * @since 9
      */
-    public long getPid() {
-        return toHandle().getPid();
+    public long pid() {
+        return toHandle().pid();
     }
 
     /**
@@ -357,9 +357,9 @@ public abstract class Process {
      * <p>
      * Calling {@code onExit().get()} waits for the process to terminate and returns
      * the Process. The future can be used to check if the process is
-     * {@link java.util.concurrent.CompletableFuture#isDone done} or to
-     * {@link java.util.concurrent.CompletableFuture#get() wait} for it to terminate.
-     * {@link java.util.concurrent.CompletableFuture#cancel(boolean) Cancelling}
+     * {@linkplain java.util.concurrent.CompletableFuture#isDone done} or to
+     * {@linkplain java.util.concurrent.CompletableFuture#get() wait} for it to terminate.
+     * {@linkplain java.util.concurrent.CompletableFuture#cancel(boolean) Cancelling}
      * the CompletableFuture does not affect the Process.
      * <p>
      * Processes returned from {@link ProcessBuilder#start} override the
@@ -389,7 +389,7 @@ public abstract class Process {
      * {@code waitFor} is interrupted, the thread's interrupt status is preserved.
      * <p>
      * When {@link #waitFor()} returns successfully the CompletableFuture is
-     * {@link java.util.concurrent.CompletableFuture#complete completed} regardless
+     * {@linkplain java.util.concurrent.CompletableFuture#complete completed} regardless
      * of the exit status of the process.
      *
      * This implementation may consume a lot of memory for thread stacks if a
@@ -463,7 +463,7 @@ public abstract class Process {
      * This implementation throws an instance of
      * {@link java.lang.UnsupportedOperationException} and performs no other action.
      * Subclasses should override this method to provide a ProcessHandle for the
-     * process.  The methods {@link #getPid}, {@link #info}, {@link #children},
+     * process.  The methods {@link #pid}, {@link #info}, {@link #children},
      * and {@link #descendants}, unless overridden, operate on the ProcessHandle.
      *
      * @return Returns a ProcessHandle for the Process
@@ -500,10 +500,10 @@ public abstract class Process {
     /**
      * Returns a snapshot of the direct children of the process.
      * The parent of a direct child process is the process.
-     * Typically, a process that is {@link #isAlive not alive} has no children.
+     * Typically, a process that is {@linkplain #isAlive not alive} has no children.
      * <p>
      * <em>Note that processes are created and terminate asynchronously.
-     * There is no guarantee that a process is {@link #isAlive alive}.
+     * There is no guarantee that a process is {@linkplain #isAlive alive}.
      * </em>
      *
      * @implSpec
@@ -526,10 +526,10 @@ public abstract class Process {
      * Returns a snapshot of the descendants of the process.
      * The descendants of a process are the children of the process
      * plus the descendants of those children, recursively.
-     * Typically, a process that is {@link #isAlive not alive} has no children.
+     * Typically, a process that is {@linkplain #isAlive not alive} has no children.
      * <p>
      * <em>Note that processes are created and terminate asynchronously.
-     * There is no guarantee that a process is {@link #isAlive alive}.
+     * There is no guarantee that a process is {@linkplain #isAlive alive}.
      * </em>
      *
      * @implSpec
