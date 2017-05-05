@@ -53,8 +53,8 @@ import java.util.Objects;
  * for CTR_DRBG. Please note that it is not the algorithm used in
  * {@link SecureRandom#getInstance}, which we will call a
  * <em>SecureRandom algorithm</em> below),
- * <li> optionally features, including prediction resistance
- * and reseeding supports.
+ * <li> optional features, including prediction resistance
+ * and reseeding supports,
  * <li> highest security strength.
  * </ul>
  * <p>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,6 @@ abstract class SunFileWriter extends AudioFileWriter {
      * rllong
      * Protected helper method to read 64 bits and changing the order of
      * each bytes.
-     * @param DataInputStream
      * @return 32 bits swapped value.
      * @exception IOException
      */
@@ -93,7 +92,6 @@ abstract class SunFileWriter extends AudioFileWriter {
     /**
      * big2little
      * Protected helper method to swap the order of bytes in a 32 bit int
-     * @param int
      * @return 32 bits swapped value
      */
     final int big2little(int i) {
@@ -113,7 +111,6 @@ abstract class SunFileWriter extends AudioFileWriter {
     /**
      * rlshort
      * Protected helper method to read 16 bits value. Swap high with low byte.
-     * @param DataInputStream
      * @return the swapped value.
      * @exception IOException
      */
@@ -135,7 +132,6 @@ abstract class SunFileWriter extends AudioFileWriter {
     /**
      * big2little
      * Protected helper method to swap the order of bytes in a 16 bit short
-     * @param int
      * @return 16 bits swapped value
      */
     final short big2littleShort(short i) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,18 @@
 
 package com.apple.eawt;
 
+import java.awt.desktop.AboutHandler;
+import java.awt.desktop.AppReopenedListener;
+import java.awt.desktop.OpenFilesHandler;
+import java.awt.desktop.PreferencesHandler;
+import java.awt.desktop.PrintFilesHandler;
+import java.awt.desktop.QuitHandler;
 import java.util.EventObject;
 
 /**
  * The class of events sent to the deprecated ApplicationListener callbacks.
  *
- * @deprecated replaced by {@link AboutHandler}, {@link PreferencesHandler}, {@link AppReOpenedListener}, {@link OpenFilesHandler}, {@link PrintFilesHandler}, {@link QuitHandler}, {@link MacQuitResponse}
+ * @deprecated replaced by {@link AboutHandler}, {@link PreferencesHandler}, {@link AppReopenedListener}, {@link OpenFilesHandler}, {@link PrintFilesHandler}, {@link QuitHandler}, {@link MacQuitResponse}
  * @since 1.4
  */
 @Deprecated

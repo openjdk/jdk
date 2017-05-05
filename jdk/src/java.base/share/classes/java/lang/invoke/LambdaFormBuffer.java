@@ -40,7 +40,6 @@ final class LambdaFormBuffer {
     private byte flags;
     private int firstChange;
     private Name resultName;
-    private String debugName;
     private ArrayList<Name> dups;
 
     private static final int F_TRANS = 0x10, F_OWNED = 0x03;
@@ -50,15 +49,15 @@ final class LambdaFormBuffer {
         setNames(lf.names);
         int result = lf.result;
         if (result == LAST_RESULT)  result = length - 1;
-        if (result >= 0 && lf.names[result].type != V_TYPE)
+        if (result >= 0 && lf.names[result].type != V_TYPE) {
             resultName = lf.names[result];
-        debugName = lf.debugName;
+        }
         assert(lf.nameRefsAreLegal());
     }
 
     private LambdaForm lambdaForm() {
         assert(!inTrans());  // need endEdit call to tidy things up
-        return new LambdaForm(debugName, arity, nameArray(), resultIndex());
+        return new LambdaForm(arity, nameArray(), resultIndex());
     }
 
     Name name(int i) {
