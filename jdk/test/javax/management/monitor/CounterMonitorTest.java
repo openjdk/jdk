@@ -27,7 +27,7 @@
  * @summary Test that the counter monitor, when running in difference mode,
  *          emits a notification every time the threshold is exceeded.
  * @author Luis-Miguel Alventosa, Shanliang JIANG
- * @modules java.management
+ *
  * @run clean CounterMonitorTest
  * @run build CounterMonitorTest
  * @run main CounterMonitorTest

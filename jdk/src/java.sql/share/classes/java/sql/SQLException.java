@@ -49,6 +49,8 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
  *       error information.
  *   <LI> the causal relationship, if any for this <code>SQLException</code>.
  * </UL>
+ *
+ * @since 1.1
  */
 public class SQLException extends java.lang.Exception
                           implements Iterable<Throwable> {

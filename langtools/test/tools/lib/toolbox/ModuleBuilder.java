@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -247,7 +247,9 @@ public class ModuleBuilder {
         List<String> sources = new ArrayList<>();
         StringBuilder sb = new StringBuilder();
         if (!comment.isEmpty()) {
-            sb.append("/**\n").append(comment.replace("\n", " *")).append(" */\n");
+            sb.append("/**\n * ")
+                    .append(comment.replace("\n", "\n * "))
+                    .append("\n */\n");
         }
         sb.append("module ").append(name).append(" {\n");
         requires.forEach(r -> sb.append("    " + r + "\n"));

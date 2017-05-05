@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package jdk.internal.module;
 
 import java.lang.module.ModuleDescriptor;
+import java.lang.module.ModuleDescriptor.Builder;
 import java.lang.module.ModuleDescriptor.Requires;
 import java.lang.module.ModuleDescriptor.Exports;
 import java.lang.module.ModuleDescriptor.Opens;
@@ -98,14 +99,17 @@ public final class ClassFileAttributes {
 
             // module_flags
             int module_flags = cr.readUnsignedShort(off);
-            boolean open = ((module_flags & ACC_OPEN) != 0);
-            boolean synthetic = ((module_flags & ACC_SYNTHETIC) != 0);
             off += 2;
 
-            ModuleDescriptor.Builder builder = JLMA.newModuleBuilder(mn,
-                                                                     false,
-                                                                     open,
-                                                                     synthetic);
+            Set<ModuleDescriptor.Modifier> modifiers = new HashSet<>();
+            if ((module_flags & ACC_OPEN) != 0)
+                modifiers.add(ModuleDescriptor.Modifier.OPEN);
+            if ((module_flags & ACC_SYNTHETIC) != 0)
+                modifiers.add(ModuleDescriptor.Modifier.SYNTHETIC);
+            if ((module_flags & ACC_MANDATED) != 0)
+                modifiers.add(ModuleDescriptor.Modifier.MANDATED);
+
+            Builder builder = JLMA.newModuleBuilder(mn, false, modifiers);
 
             // module_version
             String module_version = cr.readUTF8(off, buf);
@@ -142,19 +146,13 @@ public final class ClassFileAttributes {
                         mods.add(Requires.Modifier.MANDATED);
                 }
 
-
                 // requires_version
-                Version compiledVersion = null;
                 String requires_version = cr.readUTF8(off, buf);
                 off += 2;
-                if (requires_version != null) {
-                    compiledVersion = Version.parse(requires_version);
-                }
-
-                if (compiledVersion == null) {
+                if (requires_version == null) {
                     builder.requires(mods, dn);
                 } else {
-                    builder.requires(mods, dn, compiledVersion);
+                    JLMA.requires(builder, mods, dn, requires_version);
                 }
             }
 
@@ -283,19 +281,22 @@ public final class ClassFileAttributes {
             attr.putShort(module_name_index);
 
             // module_flags
+            Set<ModuleDescriptor.Modifier> modifiers = descriptor.modifiers();
             int module_flags = 0;
-            if (descriptor.isOpen())
+            if (modifiers.contains(ModuleDescriptor.Modifier.OPEN))
                 module_flags |= ACC_OPEN;
-            if (descriptor.isSynthetic())
+            if (modifiers.contains(ModuleDescriptor.Modifier.SYNTHETIC))
                 module_flags |= ACC_SYNTHETIC;
+            if (modifiers.contains(ModuleDescriptor.Modifier.MANDATED))
+                module_flags |= ACC_MANDATED;
             attr.putShort(module_flags);
 
             // module_version
-            Version v = descriptor.version().orElse(null);
-            if (v == null) {
+            String vs = descriptor.rawVersion().orElse(null);
+            if (vs == null) {
                 attr.putShort(0);
             } else {
-                int module_version_index = cw.newUTF8(v.toString());
+                int module_version_index = cw.newUTF8(vs);
                 attr.putShort(module_version_index);
             }
 
@@ -319,11 +320,11 @@ public final class ClassFileAttributes {
                 attr.putShort(requires_flags);
 
                 int requires_version_index;
-                v = r.compiledVersion().orElse(null);
-                if (v == null) {
+                vs = r.rawCompiledVersion().orElse(null);
+                if (vs == null) {
                     requires_version_index = 0;
                 } else {
-                    requires_version_index = cw.newUTF8(v.toString());
+                    requires_version_index = cw.newUTF8(vs);
                 }
                 attr.putShort(requires_version_index);
             }
@@ -552,8 +553,6 @@ public final class ClassFileAttributes {
      *   u2 os_name_index;
      *   // index to CONSTANT_utf8_info structure with the OS arch
      *   u2 os_arch_index
-     *   // index to CONSTANT_utf8_info structure with the OS version
-     *   u2 os_version_index;
      * }
      *
      * } </pre>
@@ -561,17 +560,23 @@ public final class ClassFileAttributes {
     public static class ModuleTargetAttribute extends Attribute {
         private final String osName;
         private final String osArch;
-        private final String osVersion;
 
-        public ModuleTargetAttribute(String osName, String osArch, String osVersion) {
+        public ModuleTargetAttribute(String osName, String osArch) {
             super(MODULE_TARGET);
             this.osName = osName;
             this.osArch = osArch;
-            this.osVersion = osVersion;
         }
 
         public ModuleTargetAttribute() {
-            this(null, null, null);
+            this(null, null);
+        }
+
+        public String osName() {
+            return osName;
+        }
+
+        public String osArch() {
+            return osArch;
         }
 
         @Override
@@ -585,7 +590,6 @@ public final class ClassFileAttributes {
 
             String osName = null;
             String osArch = null;
-            String osVersion = null;
 
             int name_index = cr.readUnsignedShort(off);
             if (name_index != 0)
@@ -597,12 +601,7 @@ public final class ClassFileAttributes {
                 osArch = cr.readUTF8(off, buf);
             off += 2;
 
-            int version_index = cr.readUnsignedShort(off);
-            if (version_index != 0)
-                osVersion = cr.readUTF8(off, buf);
-            off += 2;
-
-            return new ModuleTargetAttribute(osName, osArch, osVersion);
+            return new ModuleTargetAttribute(osName, osArch);
         }
 
         @Override
@@ -623,11 +622,6 @@ public final class ClassFileAttributes {
             if (osArch != null && osArch.length() > 0)
                 arch_index = cw.newUTF8(osArch);
             attr.putShort(arch_index);
-
-            int version_index = 0;
-            if (osVersion != null && osVersion.length() > 0)
-                version_index = cw.newUTF8(osVersion);
-            attr.putShort(version_index);
 
             return attr;
         }
