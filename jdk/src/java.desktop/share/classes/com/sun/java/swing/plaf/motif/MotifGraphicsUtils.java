@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,6 @@ public class MotifGraphicsUtils implements SwingConstants
       * <b>drawStringInRect()</b> does not clip to the rectangle, but instead
       * uses this rectangle and the desired justification to compute the point
       * at which to begin drawing the text.
-      * @see #drawString
       */
     public static void drawStringInRect(Graphics g, String aString, int x, int y,
                                  int width, int height, int justification) {
@@ -139,10 +138,11 @@ public class MotifGraphicsUtils implements SwingConstants
     }
 
   /**
-   * This method is not being used to paint menu item since
+   * @deprecated This method is not being used to paint menu item since
    * 6.0 This code left for compatibility only. Do not use or
    * override it, this will not cause any visible effect.
    */
+  @Deprecated(since = "9")
   public static void paintMenuItem(Graphics g, JComponent c,
                                    Icon checkIcon, Icon arrowIcon,
                                    Color background, Color foreground,

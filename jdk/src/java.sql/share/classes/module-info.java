@@ -25,6 +25,9 @@
 
 /**
  * Defines the JDBC API.
+ *
+ * @moduleGraph
+ * @since 9
  */
 module java.sql {
     requires transitive java.logging;

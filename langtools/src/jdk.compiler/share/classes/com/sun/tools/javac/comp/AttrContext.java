@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,10 @@ public class AttrContext {
      */
     boolean isNewClass = false;
 
+    /** Indicate if the type being visited is a service implementation
+     */
+    boolean visitingServiceImplementation = false;
+
     /** Are arguments to current function applications boxed into an array for varargs?
      */
     Resolve.MethodResolutionPhase pendingResolutionPhase = null;
@@ -127,6 +131,7 @@ public class AttrContext {
         info.isAnonymousDiamond = isAnonymousDiamond;
         info.isNewClass = isNewClass;
         info.preferredTreeForDiagnostics = preferredTreeForDiagnostics;
+        info.visitingServiceImplementation = visitingServiceImplementation;
         return info;
     }
 

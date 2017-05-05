@@ -98,7 +98,7 @@ public class ImageModules {
               List.of("hello world", "message.converter", "java.base"),
               List.of("WARNING") },
             { "--do-not-resolve-by-default",
-              List.of("ALL-DEFAULT", "ALL-SYSTEM"),
+              List.of("ALL-DEFAULT"),
               ToolResult.ASSERT_FAILURE,
               List.of("java.base", "java.lang.ClassNotFoundException: converter.MessageConverter"),
               List.of("WARNING", "message.converter") },
@@ -109,7 +109,7 @@ public class ImageModules {
                       "WARNING: Using incubator modules: message.converter"),
               List.of() },
             { "--do-not-resolve-by-default --warn-if-resolved=incubating",
-              List.of("ALL-DEFAULT", "ALL-SYSTEM"),
+              List.of("ALL-DEFAULT"),
               ToolResult.ASSERT_FAILURE,
               List.of("java.base", "java.lang.ClassNotFoundException: converter.MessageConverter"),
               List.of("WARNING", "message.converter") },
@@ -215,13 +215,13 @@ public class ImageModules {
               List.of() },
             { "--do-not-resolve-by-default",
               "",
-              List.of("ALL-DEFAULT", "ALL-SYSTEM"),
+              List.of("ALL-DEFAULT"),
               ToolResult.ASSERT_FAILURE,
               List.of("java.lang.ClassNotFoundException: writer.MessageWriter", "java.base"),
               List.of("message.writer") },
             { "--do-not-resolve-by-default",
               "--do-not-resolve-by-default",
-              List.of("ALL-DEFAULT", "ALL-SYSTEM"),
+              List.of("ALL-DEFAULT"),
               ToolResult.ASSERT_FAILURE,
               List.of("java.lang.ClassNotFoundException: writer.MessageWriter", "java.base"),
               List.of("message.converter", "message.writer") },
@@ -239,7 +239,8 @@ public class ImageModules {
               ToolResult.ASSERT_SUCCESS,
               List.of("HELLO CHEGAR !!!", "message.writer", "message.converter", "java.base",
                       "WARNING: Using incubator modules: message.converter"),
-              List.of() } };
+              List.of() }
+            };
         return values;
     }
 

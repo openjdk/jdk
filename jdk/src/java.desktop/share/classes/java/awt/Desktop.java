@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,12 @@
 
 package java.awt;
 
+import java.awt.desktop.AboutEvent;
 import java.awt.desktop.AboutHandler;
 import java.awt.desktop.OpenFilesHandler;
+import java.awt.desktop.OpenURIEvent;
 import java.awt.desktop.OpenURIHandler;
+import java.awt.desktop.PreferencesEvent;
 import java.awt.desktop.PreferencesHandler;
 import java.awt.desktop.PrintFilesHandler;
 import java.awt.desktop.QuitHandler;
@@ -42,8 +45,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 
-import sun.awt.SunToolkit;
 import javax.swing.JMenuBar;
+
+import sun.awt.SunToolkit;
 import sun.security.util.SecurityConstants;
 
 /**
@@ -335,7 +339,7 @@ public class Desktop {
      * most of the platforms support the {@link Desktop.Action#OPEN}
      * action.  But for a specific file, there may not be an
      * application registered to open it.  In this case, {@link
-     * #isSupported} may return {@code true}, but the corresponding
+     * #isSupported(Action)} may return {@code true}, but the corresponding
      * action method will throw an {@link IOException}.
      *
      * @param action the specified {@link Action}
@@ -720,7 +724,7 @@ public class Desktop {
      * default behavior.
      *
      * @param aboutHandler the handler to respond to the
-     * {@link java.awt.desktop.AboutHandler#handleAbout} )} message
+     * {@link java.awt.desktop.AboutHandler#handleAbout(AboutEvent)} message
      *
      * @throws SecurityException if a security manager exists and it
      * denies the
@@ -828,7 +832,7 @@ public class Desktop {
      * open a URL.
      *
      * Setting the handler to {@code null} causes all
-     * {@link OpenURIHandler#openURI(AppEvent.OpenURIEvent)} requests to be
+     * {@link OpenURIHandler#openURI(OpenURIEvent)} requests to be
      * enqueued until another handler is set.
      *
      * @implNote Please note that for Mac OS, notifications
