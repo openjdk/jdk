@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,6 +140,9 @@ do {                                                                           \
 // For backward compatibility.
 #define assert(p, ...) vmassert(p, __VA_ARGS__)
 
+#ifndef ASSERT
+#define vmassert_status(p, status, msg)
+#else
 // This version of vmassert is for use with checking return status from
 // library calls that return actual error values eg. EINVAL,
 // ENOMEM etc, rather than returning -1 and setting errno.
@@ -155,6 +158,7 @@ do {                                                                           \
     BREAKPOINT;                                                                \
   }                                                                            \
 } while (0)
+#endif
 
 // For backward compatibility.
 #define assert_status(p, status, msg) vmassert_status(p, status, msg)

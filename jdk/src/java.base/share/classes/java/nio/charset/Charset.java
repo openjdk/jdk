@@ -300,9 +300,8 @@ public abstract class Charset
      */
     private static void checkName(String s) {
         int n = s.length();
-        if (!atBugLevel("1.4")) {
-            if (n == 0)
-                throw new IllegalCharsetNameException(s);
+        if (n == 0 && !atBugLevel("1.4")) {
+            throw new IllegalCharsetNameException(s);
         }
         for (int i = 0; i < n; i++) {
             char c = s.charAt(i);
@@ -319,7 +318,9 @@ public abstract class Charset
     }
 
     /* The standard set of charsets */
-    private static CharsetProvider standardProvider = new StandardCharsets();
+    private static final CharsetProvider standardProvider = new StandardCharsets();
+
+    private static final String[] zeroAliases = new String[0];
 
     // Cache of the most-recently-returned charsets,
     // along with the names that were used to find them
@@ -626,7 +627,6 @@ public abstract class Charset
 
     private final String name;          // tickles a bug in oldjavac
     private final String[] aliases;     // tickles a bug in oldjavac
-    private final String[] zeroAliases = new String[0];
     private Set<String> aliasSet = null;
 
     /**

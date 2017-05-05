@@ -29,9 +29,7 @@ import java.lang.RuntimePermission;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Exports;
 import java.lang.module.ModuleDescriptor.Opens;
-import java.lang.reflect.Layer;
 import java.lang.reflect.Member;
-import java.lang.reflect.Module;
 import java.io.FileDescriptor;
 import java.io.File;
 import java.io.FilePermission;
@@ -1441,7 +1439,7 @@ class SecurityManager {
 
     static {
         // Get the modules in the boot layer
-        Stream<Module> bootLayerModules = Layer.boot().modules().stream();
+        Stream<Module> bootLayerModules = ModuleLayer.boot().modules().stream();
 
         // Filter out the modules loaded by the boot or platform loader
         PrivilegedAction<Set<Module>> pa = () ->
@@ -1455,6 +1453,18 @@ class SecurityManager {
                                  .map(SecurityManager::nonExportedPkgs)
                                  .flatMap(Set::stream)
                                  .collect(Collectors.toSet());
+    }
+
+    /**
+     * Called by java.security.Security
+     */
+    static void invalidatePackageAccessCache() {
+        synchronized (packageAccessLock) {
+            packageAccessValid = false;
+        }
+        synchronized (packageDefinitionLock) {
+            packageDefinitionValid = false;
+        }
     }
 
     /**

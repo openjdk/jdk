@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package java.awt.image;
 import java.awt.Transparency;
 import java.awt.color.ColorSpace;
 import java.math.BigInteger;
+import java.util.Arrays;
 
 /**
  * The {@code IndexColorModel} class is a {@code ColorModel}
@@ -129,6 +130,7 @@ public class IndexColorModel extends ColorModel {
     private int transparent_index = -1;
     private boolean allgrayopaque;
     private BigInteger validBits;
+    private volatile int hashCode;
 
     private sun.awt.image.BufImgSurfaceData.ICMColorData colorData = null;
 
@@ -1512,7 +1514,17 @@ public class IndexColorModel extends ColorModel {
      * Disposes of system resources associated with this
      * {@code ColorModel} once this {@code ColorModel} is no
      * longer referenced.
+     *
+     * @deprecated The {@code finalize} method has been deprecated.
+     *     Subclasses that override {@code finalize} in order to perform cleanup
+     *     should be modified to use alternative cleanup mechanisms and
+     *     to remove the overriding {@code finalize} method.
+     *     When overriding the {@code finalize} method, its implementation must explicitly
+     *     ensure that {@code super.finalize()} is invoked as described in {@link Object#finalize}.
+     *     See the specification for {@link Object#finalize()} for further
+     *     information about migration options.
      */
+    @Deprecated(since="9")
     public void finalize() {
     }
 
@@ -1531,5 +1543,101 @@ public class IndexColorModel extends ColorModel {
                          + " has alpha = "+supportsAlpha
                          + " isAlphaPre = "+isAlphaPremultiplied
                          );
+    }
+
+    /**
+     * Tests if the specified {@code Object} is an
+     * instance of {@code IndexColorModel}
+     * and if it equals this {@code IndexColorModel}
+     * @param obj the {@code Object} to test for equality
+     * @return {@code true} if the specified {@code Object}
+     * equals this {@code IndexColorModel}; {@code false} otherwise.
+     */
+    @Override
+    public boolean equals(Object obj) {
+
+        if (!(obj instanceof IndexColorModel)) {
+            return false;
+        }
+
+        IndexColorModel cm = (IndexColorModel) obj;
+        if (supportsAlpha != cm.hasAlpha() ||
+            isAlphaPremultiplied != cm.isAlphaPremultiplied() ||
+            pixel_bits != cm.getPixelSize() ||
+            transparency != cm.getTransparency() ||
+            numComponents != cm.getNumComponents() ||
+            (!(colorSpace.equals(cm.colorSpace))) ||
+            transferType != cm.transferType ||
+            map_size != cm.map_size ||
+            transparent_index != cm.transparent_index)
+        {
+            return false;
+        }
+
+        if (!(Arrays.equals(nBits, cm.getComponentSize()))) {
+            return false;
+        }
+
+        // verify whether we have to check equality of all bits in validBits
+        boolean testValidBits;
+        if (validBits == cm.validBits) {
+            testValidBits = false;
+        } else if (validBits == null || cm.validBits == null) {
+            return false;
+        } else if (validBits.equals(cm.validBits)) {
+            testValidBits = false;
+        } else {
+            testValidBits = true;
+        }
+
+        if (testValidBits) {
+            for (int i = 0; i < map_size; i++) {
+                if (rgb[i] != cm.rgb[i] ||
+                    validBits.testBit(i) != cm.validBits.testBit(i))
+                {
+                    return false;
+                }
+            }
+        } else {
+            for (int i = 0; i < map_size; i++) {
+                if (rgb[i] != cm.rgb[i]) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Returns the hash code for IndexColorModel.
+     *
+     * @return    a hash code for IndexColorModel
+     */
+    @Override
+    public int hashCode() {
+        int result = hashCode;
+        if (result == 0) {
+            /*
+             * We are intentionally not calculating hashCode for validBits,
+             * because it is only used for 8-bit indexed screens and they
+             * are very rare. It is very unlikely for 2 IndexColorModels
+             * to have different valiBits and have same value for all
+             * other properties.
+             */
+            result = 7;
+            result = 89 * result + this.pixel_bits;
+            result = 89 * result + Arrays.hashCode(this.nBits);
+            result = 89 * result + this.transparency;
+            result = 89 * result + (this.supportsAlpha ? 1 : 0);
+            result = 89 * result + (this.isAlphaPremultiplied ? 1 : 0);
+            result = 89 * result + this.numComponents;
+            result = 89 * result + this.colorSpace.hashCode();
+            result = 89 * result + this.transferType;
+            result = 89 * result + Arrays.hashCode(this.rgb);
+            result = 89 * result + this.map_size;
+            result = 89 * result + this.transparent_index;
+            hashCode = result;
+        }
+        return result;
     }
 }
