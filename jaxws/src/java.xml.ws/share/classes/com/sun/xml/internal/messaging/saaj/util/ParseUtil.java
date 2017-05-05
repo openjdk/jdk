@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,10 @@ public class ParseUtil {
      * Returns a new String constructed from the specified String by replacing
      * the URL escape sequences and UTF8 encoding with the characters they
      * represent.
+     *
+     * @param s string
+     *
+     * @return decoded string
      */
     public static String decode(String s) {
         StringBuilder sb = new StringBuilder();

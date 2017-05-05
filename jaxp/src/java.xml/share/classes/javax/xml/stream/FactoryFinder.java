@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -270,7 +270,7 @@ class FactoryFinder {
                     "Failed to read factoryId '" + factoryId + "'", se);
         }
 
-        // Try read $java.home/lib/stax.properties followed by
+        // Try read $java.home/conf/stax.properties followed by
         // $java.home/conf/jaxp.properties if former not present
         String configFile = null;
         try {
@@ -278,7 +278,7 @@ class FactoryFinder {
                 synchronized (cacheProps) {
                     if (firstTime) {
                         configFile = ss.getSystemProperty("java.home") + File.separator +
-                            "lib" + File.separator + "stax.properties";
+                            "conf" + File.separator + "stax.properties";
                         final File fStax = new File(configFile);
                         firstTime = false;
                         if (ss.doesFileExist(fStax)) {

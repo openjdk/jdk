@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,6 +152,9 @@ inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 // _cells[index]) in DataLayout::cell_offset() .  Therefore we define
 // offset_of as it is defined for gcc.
 #define offset_of(klass,field) (size_t)((intx)&(((klass*)16)->field) - 16)
+
+// AIX 5.3 has buggy __thread support. (see JDK-8176442).
+#define USE_LIBRARY_BASED_TLS_ONLY 1
 
 #ifndef USE_LIBRARY_BASED_TLS_ONLY
 #define THREAD_LOCAL_DECL __thread
