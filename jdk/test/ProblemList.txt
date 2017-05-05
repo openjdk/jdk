@@ -255,6 +255,11 @@ tools/jimage/JImageExtractTest.java                             8170120 generic-
 tools/jimage/JImageListTest.java                                8170120 generic-all
 tools/jimage/JImageVerifyTest.java                              8170120 generic-all
 
+tools/jar/multiRelease/RuntimeTest.java                         8173905 generic-all
+
+tools/schemagen/MultiReleaseJarTest.java                        8174692 generic-all
+tools/wsgen/MultiReleaseJarTest.java                            8174692 generic-all
+
 ############################################################################
 
 # jdk_jdi

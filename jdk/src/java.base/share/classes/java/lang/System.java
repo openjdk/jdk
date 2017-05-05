@@ -535,6 +535,8 @@ public final class System {
      * @param x object for which the hashCode is to be calculated
      * @return  the hashCode
      * @since   1.1
+     * @see Object#hashCode
+     * @see java.util.Objects#hashCode(Object)
      */
     @HotSpotIntrinsicCandidate
     public static native int identityHashCode(Object x);

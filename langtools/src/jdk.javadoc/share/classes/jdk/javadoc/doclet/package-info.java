@@ -29,6 +29,12 @@
  * to inspect the source-level structures of programs and
  * libraries, including API comments embedded in the source.
  *
+ * <p>
+ * The {@link StandardDoclet standard doclet} can be used to
+ * generate HTML-formatted documentation. It supports user-defined
+ * {@link Taglet taglets}, which can be used to generate customized
+ * output for user-defined tags in documentation comments.
+ *
  * <p style="font-style: italic">
  * <b>Note:</b> The declarations in this package supersede those
  * in the older package {@code com.sun.javadoc}. For details on the
