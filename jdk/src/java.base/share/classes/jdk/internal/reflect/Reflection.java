@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import jdk.internal.HotSpotIntrinsicCandidate;
-import jdk.internal.misc.SharedSecrets;
 import jdk.internal.misc.VM;
-import sun.security.action.GetPropertyAction;
 
 /** Common utility routines used by both java.lang and
     java.lang.reflect */
@@ -104,38 +102,39 @@ public class Reflection {
                                           int modifiers)
         throws IllegalAccessException
     {
-        if (currentClass == null || memberClass == null) {
-            throw new InternalError();
-        }
-
         if (!verifyMemberAccess(currentClass, memberClass, targetClass, modifiers)) {
-            throwIllegalAccessException(currentClass, memberClass, targetClass, modifiers);
+            throw newIllegalAccessException(currentClass, memberClass, targetClass, modifiers);
         }
     }
 
     /**
-     * Verify access to a member, returning {@code false} if no access
+     * Verify access to a member and return {@code true} if it is granted.
+     *
+     * @param currentClass the class performing the access
+     * @param memberClass the declaring class of the member being accessed
+     * @param targetClass the class of target object if accessing instance
+     *                    field or method;
+     *                    or the declaring class if accessing constructor;
+     *                    or null if accessing static field or method
+     * @param modifiers the member's access modifiers
+     * @return {@code true} if access to member is granted
      */
     public static boolean verifyMemberAccess(Class<?> currentClass,
                                              Class<?> memberClass,
                                              Class<?> targetClass,
                                              int modifiers)
     {
-        // Verify that currentClass can access a field, method, or
-        // constructor of memberClass, where that member's access bits are
-        // "modifiers".
-
-        boolean gotIsSameClassPackage = false;
-        boolean isSameClassPackage = false;
-
         if (currentClass == memberClass) {
             // Always succeeds
             return true;
         }
 
-        if (!verifyModuleAccess(currentClass, memberClass)) {
+        if (!verifyModuleAccess(currentClass.getModule(), memberClass)) {
             return false;
         }
+
+        boolean gotIsSameClassPackage = false;
+        boolean isSameClassPackage = false;
 
         if (!Modifier.isPublic(getClassAccessFlags(memberClass))) {
             isSameClassPackage = isSameClassPackage(currentClass, memberClass);
@@ -196,39 +195,20 @@ public class Reflection {
     }
 
     /**
-     * Returns {@code true} if memberClass's's module exports memberClass's
-     * package to currentClass's module.
+     * Returns {@code true} if memberClass's module exports memberClass's
+     * package to currentModule.
      */
-    public static boolean verifyModuleAccess(Class<?> currentClass,
-                                             Class<?> memberClass) {
-        return verifyModuleAccess(currentClass.getModule(), memberClass);
-    }
-
     public static boolean verifyModuleAccess(Module currentModule, Class<?> memberClass) {
         Module memberModule = memberClass.getModule();
-
-        // module may be null during startup (initLevel 0)
-        if (currentModule == memberModule)
-           return true;  // same module (named or unnamed)
-
-        // memberClass may be primitive or array class
-        Class<?> c = memberClass;
-        while (c.isArray()) {
-            c = c.getComponentType();
-        }
-        if (c.isPrimitive())
+        if (currentModule == memberModule) {
+            // same module (named or unnamed) or both null if called
+            // before module system is initialized, which means we are
+            // dealing with java.base only.
             return true;
-
-        String pkg = c.getPackageName();
-        boolean allowed = memberModule.isExported(pkg, currentModule);
-        if (allowed && memberModule.isNamed() && printStackTraceWhenAccessSucceeds()) {
-            if (!SharedSecrets.getJavaLangReflectModuleAccess()
-                    .isStaticallyExported(memberModule, pkg, currentModule)) {
-                String msg = currentModule + " allowed access to member of " + memberClass;
-                new Exception(msg).printStackTrace(System.err);
-            }
+        } else {
+            String pkg = memberClass.getPackageName();
+            return memberModule.isExported(pkg, currentModule);
         }
-        return allowed;
     }
 
     /**
@@ -237,10 +217,6 @@ public class Reflection {
     private static boolean isSameClassPackage(Class<?> c1, Class<?> c2) {
         if (c1.getClassLoader() != c2.getClassLoader())
             return false;
-        while (c1.isArray())
-            c1 = c1.getComponentType();
-        while (c2.isArray())
-            c2 = c2.getComponentType();
         return Objects.equals(c1.getPackageName(), c2.getPackageName());
     }
 
@@ -356,52 +332,14 @@ public class Reflection {
         return false;
     }
 
-
-    // true to print a stack trace when access fails
-    private static volatile boolean printStackWhenAccessFails;
-
-    // true to print a stack trace when access succeeds
-    private static volatile boolean printStackWhenAccessSucceeds;
-
-    // true if printStack* values are initialized
-    private static volatile boolean printStackPropertiesSet;
-
-    private static void ensurePrintStackPropertiesSet() {
-        if (!printStackPropertiesSet && VM.initLevel() >= 1) {
-            String s = GetPropertyAction.privilegedGetProperty(
-                    "sun.reflect.debugModuleAccessChecks");
-            if (s != null) {
-                printStackWhenAccessFails = !s.equalsIgnoreCase("false");
-                printStackWhenAccessSucceeds = s.equalsIgnoreCase("access");
-            }
-            printStackPropertiesSet = true;
-        }
-    }
-
-    public static void enableStackTraces() {
-        printStackWhenAccessFails = true;
-        printStackWhenAccessSucceeds = true;
-        printStackPropertiesSet = true;
-    }
-
-    public static boolean printStackTraceWhenAccessFails() {
-        ensurePrintStackPropertiesSet();
-        return printStackWhenAccessFails;
-    }
-
-    public static boolean printStackTraceWhenAccessSucceeds() {
-        ensurePrintStackPropertiesSet();
-        return printStackWhenAccessSucceeds;
-    }
-
     /**
-     * Throws IllegalAccessException with the an exception message based on
+     * Returns an IllegalAccessException with an exception message based on
      * the access that is denied.
      */
-    private static void throwIllegalAccessException(Class<?> currentClass,
-                                                    Class<?> memberClass,
-                                                    Object target,
-                                                    int modifiers)
+    public static IllegalAccessException newIllegalAccessException(Class<?> currentClass,
+                                                                   Class<?> memberClass,
+                                                                   Class<?> targetClass,
+                                                                   int modifiers)
         throws IllegalAccessException
     {
         String currentSuffix = "";
@@ -413,11 +351,7 @@ public class Reflection {
         if (m2.isNamed())
             memberSuffix = " (in " + m2 + ")";
 
-        Class<?> c = memberClass;
-        while (c.isArray()) {
-            c = c.getComponentType();
-        }
-        String memberPackageName = c.getPackageName();
+        String memberPackageName = memberClass.getPackageName();
 
         String msg = currentClass + currentSuffix + " cannot access ";
         if (m2.isExported(memberPackageName, m1)) {
@@ -433,20 +367,6 @@ public class Reflection {
             if (m2.isNamed()) msg += " to " + m1;
         }
 
-        throwIllegalAccessException(msg);
-    }
-
-    /**
-     * Throws IllegalAccessException with the given exception message.
-     */
-    public static void throwIllegalAccessException(String msg)
-        throws IllegalAccessException
-    {
-        IllegalAccessException e = new IllegalAccessException(msg);
-        ensurePrintStackPropertiesSet();
-        if (printStackWhenAccessFails) {
-            e.printStackTrace(System.err);
-        }
-        throw e;
+        return new IllegalAccessException(msg);
     }
 }

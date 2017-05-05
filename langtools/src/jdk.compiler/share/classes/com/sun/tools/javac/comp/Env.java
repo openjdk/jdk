@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,10 +126,6 @@ public class Env<A> implements Iterable<Env<A>> {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("Env[").append(info);
-//        if (enclMethod != null)
-//            sb.append(",enclMethod=").append(Pretty.toSimpleString(enclMethod));
-//        if (enclClass != null)
-//            sb.append(",enclClass=").append(Pretty.toSimpleString(enclClass));
         if (outer != null)
             sb.append(",outer=").append(outer);
         sb.append("]");
@@ -149,7 +145,6 @@ public class Env<A> implements Iterable<Env<A>> {
                     return current;
                 }
                 throw new NoSuchElementException();
-
             }
             public void remove() {
                 throw new UnsupportedOperationException();

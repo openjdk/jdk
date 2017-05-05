@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -71,102 +71,37 @@ $(eval $(call SetupBuildLauncher, keytool, \
 
 ################################################################################
 
-BUILD_JEXEC :=
-BUILD_JEXEC_SRC :=
-BUILD_JEXEC_INC :=
-BUILD_JEXEC_DST_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base
-
-#
-# UNHANDLED:
-# - COMPILE_APPROACH = normal
-#
-
-#
-# jdk/make/java/Makefile
-#
-ifeq ($(OPENJDK_TARGET_OS), solaris)
-  ifeq ($(OPENJDK_TARGET_CPU_BITS), 32)
-    BUILD_JEXEC := 1
-  endif
-endif
-
 ifeq ($(OPENJDK_TARGET_OS), linux)
-  BUILD_JEXEC := 1
-endif # OPENJDK_TARGET_OS
-
-#
-# jdk/make/java/jexec/Makefile
-#
-ifeq ($(BUILD_JEXEC), 1)
-
-  ifeq ($(OPENJDK_TARGET_OS), windows)
-  else ifeq ($(OPENJDK_TARGET_OS), macosx)
-    BUILD_JEXEC_SRC := $(JDK_TOPDIR)/src/java.base/macosx/native/launcher
-  else
-    BUILD_JEXEC_SRC := $(JDK_TOPDIR)/src/java.base/unix/native/launcher
-  endif
-
-  ifeq ($(OPENJDK_TARGET_OS), linux)
-    BUILD_JEXEC_DST_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base
-    BUILD_JEXEC_INC += -I$(JDK_TOPDIR)/src/java.base/share/native/libjli
-  endif
-endif
-
-#
-# Note that the two Makefile's seems to contradict each other,
-# and that src/macosx/bin/jexec.c seems unused
-#
-ifneq ($(BUILD_JEXEC_SRC), )
-  $(eval $(call SetupNativeCompilation,BUILD_JEXEC, \
-      SRC := $(BUILD_JEXEC_SRC), \
+  $(eval $(call SetupNativeCompilation, BUILD_JEXEC, \
+      SRC := $(JDK_TOPDIR)/src/$(MODULE)/unix/native/launcher, \
       INCLUDE_FILES := jexec.c, \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKEXE) \
-          $(BUILD_JEXEC_INC), \
+          -I$(JDK_TOPDIR)/src/$(MODULE)/share/native/libjli, \
       CFLAGS_linux := -fPIC, \
       CFLAGS_solaris := -KPIC, \
       LDFLAGS := $(LDFLAGS_JDKEXE), \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/jexec_obj, \
-      OUTPUT_DIR := $(BUILD_JEXEC_DST_DIR), \
-      PROGRAM := jexec))
+      OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE), \
+      PROGRAM := jexec, \
+  ))
 
   TARGETS += $(BUILD_JEXEC)
 endif
 
 ################################################################################
 
-BUILD_JSPAWNHELPER :=
-BUILD_JSPAWNHELPER_SRC := $(JDK_TOPDIR)/src/java.base/unix/native/jspawnhelper
-JSPAWNHELPER_CFLAGS := -I$(JDK_TOPDIR)/src/java.base/unix/native/libjava
-BUILD_JSPAWNHELPER_DST_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base
-LINK_JSPAWNHELPER_OBJECTS := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjava/childproc.o
-BUILD_JSPAWNHELPER_LDFLAGS :=
-
 ifneq ($(findstring $(OPENJDK_TARGET_OS), macosx solaris aix), )
-  BUILD_JSPAWNHELPER := 1
-endif
-
-ifeq ($(OPENJDK_TARGET_OS), macosx)
-  BUILD_JSPAWNHELPER_DST_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base
-endif
-
-ifeq ($(OPENJDK_TARGET_CPU_BITS), 64)
-  BUILD_JSPAWNHELPER_LDFLAGS += $(COMPILER_TARGET_BITS_FLAG)64
-endif
-
-ifeq ($(BUILD_JSPAWNHELPER), 1)
-  $(eval $(call SetupNativeCompilation,BUILD_JSPAWNHELPER, \
-      SRC := $(BUILD_JSPAWNHELPER_SRC), \
-      INCLUDE_FILES := jspawnhelper.c, \
+  $(eval $(call SetupNativeCompilation, BUILD_JSPAWNHELPER, \
+      SRC := $(JDK_TOPDIR)/src/$(MODULE)/unix/native/jspawnhelper, \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKEXE) $(JSPAWNHELPER_CFLAGS), \
-      LDFLAGS := $(LDFLAGS_JDKEXE) $(BUILD_JSPAWNHELPER_LDFLAGS), \
-      LIBS := $(LINK_JSPAWNHELPER_OBJECTS), \
+      CFLAGS := $(CFLAGS_JDKEXE) -I$(JDK_TOPDIR)/src/$(MODULE)/unix/native/libjava, \
+      EXTRA_OBJECT_FILES := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjava/childproc.o, \
+      LDFLAGS := $(LDFLAGS_JDKEXE), \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/jspawnhelper, \
-      OUTPUT_DIR := $(BUILD_JSPAWNHELPER_DST_DIR), \
-      PROGRAM := jspawnhelper))
-
-  $(BUILD_JSPAWNHELPER): $(LINK_JSPAWNHELPER_OBJECTS)
+      OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE), \
+      PROGRAM := jspawnhelper, \
+  ))
 
   TARGETS += $(BUILD_JSPAWNHELPER)
 endif
