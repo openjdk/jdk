@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 import java.io.File;
 import java.io.IOException;
 import java.lang.module.ModuleDescriptor;
-import java.lang.reflect.Layer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -38,17 +37,18 @@ import jdk.testlibrary.FileUtils;
 
 import static jdk.testlibrary.ProcessTools.*;
 
-
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
 /**
  * @test
- * @bug 8142968 8173381
+ * @bug 8142968 8173381 8174740
  * @library /lib/testlibrary
  * @modules jdk.compiler jdk.jlink
- * @build UserModuleTest CompilerUtils jdk.testlibrary.FileUtils jdk.testlibrary.ProcessTools
+ * @modules java.base/jdk.internal.module
+ * @modules java.base/jdk.internal.org.objectweb.asm
+ * @build ModuleTargetHelper UserModuleTest CompilerUtils jdk.testlibrary.FileUtils jdk.testlibrary.ProcessTools
  * @run testng UserModuleTest
  */
 
@@ -64,7 +64,7 @@ public class UserModuleTest {
     private static final String MAIN_MID = "m1/p1.Main";
 
     // the names of the modules in this test
-    private static String[] modules = new String[] {"m1", "m2", "m3", "m4"};
+    private static String[] modules = new String[] {"m1", "m2", "m3", "m4", "m5"};
 
 
     private static boolean hasJmods() {
@@ -85,7 +85,9 @@ public class UserModuleTest {
         for (String mn : modules) {
             Path msrc = SRC_DIR.resolve(mn);
             assertTrue(CompilerUtils.compile(msrc, MODS_DIR,
-                "--module-source-path", SRC_DIR.toString()));
+                "--module-source-path", SRC_DIR.toString(),
+                "--add-exports", "java.base/jdk.internal.module=" + mn,
+                "--add-exports", "java.base/jdk.internal.org.objectweb.asm=" + mn));
         }
 
         if (Files.exists(IMAGE)) {
@@ -106,7 +108,10 @@ public class UserModuleTest {
         if (!hasJmods()) return;
 
         Path java = IMAGE.resolve("bin").resolve("java");
-        assertTrue(executeProcess(java.toString(), "-m", MAIN_MID)
+        assertTrue(executeProcess(java.toString(),
+                        "--add-exports", "java.base/jdk.internal.module=m1,m4",
+                        "--add-exports", "java.base/jdk.internal.org.objectweb.asm=m1,m4",
+                        "-m", MAIN_MID)
                         .outputTo(System.out)
                         .errorTo(System.out)
                         .getExitValue() == 0);
@@ -136,6 +141,8 @@ public class UserModuleTest {
 
         Path java = IMAGE.resolve("bin").resolve("java");
         assertTrue(executeProcess(java.toString(),
+                                  "--add-exports", "java.base/jdk.internal.module=m1,m4",
+                                  "--add-exports", "java.base/jdk.internal.org.objectweb.asm=m1,m4",
                                   "-Djdk.system.module.finder.disabledFastPath",
                                   "-m", MAIN_MID)
                         .outputTo(System.out)
@@ -154,18 +161,67 @@ public class UserModuleTest {
         Path dir = Paths.get("dedupSetTest");
         createImage(dir, "m1", "m2", "m3", "m4");
         Path java = dir.resolve("bin").resolve("java");
-        assertTrue(executeProcess(java.toString(), "-m", MAIN_MID)
+        assertTrue(executeProcess(java.toString(),
+                         "--add-exports", "java.base/jdk.internal.module=m1,m4",
+                         "--add-exports", "java.base/jdk.internal.org.objectweb.asm=m1,m4",
+                         "-m", MAIN_MID)
+                        .outputTo(System.out)
+                        .errorTo(System.out)
+                        .getExitValue() == 0);
+    }
+
+    @Test
+    public void testRequiresStatic() throws Throwable {
+        if (!hasJmods()) return;
+
+        Path dir = Paths.get("requiresStatic");
+        createImage(dir, "m5");
+        Path java = dir.resolve("bin").resolve("java");
+        assertTrue(executeProcess(java.toString(), "-m", "m5/p5.Main")
+                        .outputTo(System.out)
+                        .errorTo(System.out)
+                        .getExitValue() == 0);
+
+        // run with m3 present
+        assertTrue(executeProcess(java.toString(),
+                                  "--module-path", MODS_DIR.toString(),
+                                  "--add-modules", "m3",
+                                  "-m", "m5/p5.Main")
+                        .outputTo(System.out)
+                        .errorTo(System.out)
+                        .getExitValue() == 0);
+    }
+
+    @Test
+    public void testRequiresStatic2() throws Throwable {
+        if (!hasJmods()) return;
+
+        Path dir = Paths.get("requiresStatic2");
+        createImage(dir, "m3", "m5");
+
+        Path java = dir.resolve("bin").resolve("java");
+        assertTrue(executeProcess(java.toString(), "-m", "m5/p5.Main")
+                        .outputTo(System.out)
+                        .errorTo(System.out)
+                        .getExitValue() == 0);
+
+        // boot layer with m3 and m5
+        assertTrue(executeProcess(java.toString(),
+                                  "--add-modules", "m3",
+                                  "-m", "m5/p5.Main")
                         .outputTo(System.out)
                         .errorTo(System.out)
                         .getExitValue() == 0);
     }
 
     private void createJmods(String... modules) throws IOException {
-        // use the same target platform as in java.base
-        ModuleDescriptor md = Layer.boot().findModule("java.base").get()
-                                   .getDescriptor();
-        String osName = md.osName().get();
-        String osArch = md.osArch().get();
+        ModuleTargetHelper.ModuleTarget mt = ModuleTargetHelper.getJavaBaseTarget();
+        if (mt == null) {
+            throw new RuntimeException("ModuleTarget is missing for java.base");
+        }
+
+        String osName = mt.osName();
+        String osArch = mt.osArch();
 
         // create JMOD files
         Files.createDirectories(JMODS_DIR);
@@ -202,6 +258,8 @@ public class UserModuleTest {
         // verify ModuleDescriptor
         Path java = dir.resolve("bin").resolve("java");
         assertTrue(executeProcess(java.toString(),
+                        "--add-exports", "java.base/jdk.internal.module=m1,m4",
+                        "--add-exports", "java.base/jdk.internal.org.objectweb.asm=m1,m4",
                         "--add-modules=m1", "-m", "m4")
             .outputTo(System.out)
             .errorTo(System.out)
@@ -231,6 +289,8 @@ public class UserModuleTest {
         // verify ModuleDescriptor
         Path java = dir.resolve("bin").resolve("java");
         assertTrue(executeProcess(java.toString(),
+                        "--add-exports", "java.base/jdk.internal.module=m1,m4",
+                        "--add-exports", "java.base/jdk.internal.org.objectweb.asm=m1,m4",
                         "--add-modules=m1", "-m", "m4", "retainModuleTarget")
             .outputTo(System.out)
             .errorTo(System.out)

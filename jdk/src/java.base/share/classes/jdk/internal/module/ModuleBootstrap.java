@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,6 @@ import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
-import java.lang.reflect.Layer;
-import java.lang.reflect.Module;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -60,7 +58,7 @@ import jdk.internal.perf.PerfCounter;
  * resolving a set of module names specified via the launcher (or equivalent)
  * -m and --add-modules options. The modules are located on a module path that
  * is constructed from the upgrade module path, system modules, and application
- * module path. The Configuration is instantiated as the boot Layer with each
+ * module path. The Configuration is instantiated as the boot layer with each
  * module in the the configuration defined to one of the built-in class loaders.
  */
 
@@ -105,11 +103,11 @@ public final class ModuleBootstrap {
     }
 
     /**
-     * Initialize the module system, returning the boot Layer.
+     * Initialize the module system, returning the boot layer.
      *
      * @see java.lang.System#initPhase2()
      */
-    public static Layer boot() {
+    public static ModuleLayer boot() {
 
         long t0 = System.nanoTime();
 
@@ -236,7 +234,6 @@ public final class ModuleBootstrap {
             ModuleFinder f = finder;  // observable modules
             systemModules.findAll()
                 .stream()
-                .filter(mref -> !ModuleResolution.doNotResolveByDefault(mref))
                 .map(ModuleReference::descriptor)
                 .map(ModuleDescriptor::name)
                 .filter(mn -> f.find(mn).isPresent())  // observable
@@ -275,10 +272,10 @@ public final class ModuleBootstrap {
 
         // run the resolver to create the configuration
         Configuration cf = SharedSecrets.getJavaLangModuleAccess()
-                .resolveRequiresAndUses(finder,
-                                        roots,
-                                        needPostResolutionChecks,
-                                        traceOutput);
+                .resolveAndBind(finder,
+                                roots,
+                                needPostResolutionChecks,
+                                traceOutput);
 
         // time to create configuration
         PerfCounters.resolveTime.addElapsedTimeFrom(t3);
@@ -318,25 +315,25 @@ public final class ModuleBootstrap {
         // if needed check that there are no split packages in the set of
         // resolved modules for the boot layer
         if (SystemModules.hasSplitPackages() || needPostResolutionChecks) {
-                Map<String, String> packageToModule = new HashMap<>();
-                for (ResolvedModule resolvedModule : cf.modules()) {
-                    ModuleDescriptor descriptor =
-                        resolvedModule.reference().descriptor();
-                    String name = descriptor.name();
-                    for (String p : descriptor.packages()) {
-                        String other = packageToModule.putIfAbsent(p, name);
-                        if (other != null) {
-                            fail("Package " + p + " in both module "
-                                 + name + " and module " + other);
-                        }
+            Map<String, String> packageToModule = new HashMap<>();
+            for (ResolvedModule resolvedModule : cf.modules()) {
+                ModuleDescriptor descriptor = resolvedModule.reference().descriptor();
+                String name = descriptor.name();
+                for (String p : descriptor.packages()) {
+                    String other = packageToModule.putIfAbsent(p, name);
+                    if (other != null) {
+                        String msg = "Package " + p + " in both module "
+                                     + name + " and module " + other;
+                        throw new LayerInstantiationException(msg);
                     }
                 }
             }
+        }
 
         long t4 = System.nanoTime();
 
         // define modules to VM/runtime
-        Layer bootLayer = Layer.empty().defineModules(cf, clf);
+        ModuleLayer bootLayer = ModuleLayer.empty().defineModules(cf, clf);
 
         PerfCounters.layerCreateTime.addElapsedTimeFrom(t4);
 
@@ -358,7 +355,7 @@ public final class ModuleBootstrap {
         PerfCounters.loadModulesTime.addElapsedTimeFrom(t5);
 
 
-        // --add-reads, -add-exports/-add-opens
+        // --add-reads, --add-exports/--add-opens
         addExtraReads(bootLayer);
         addExtraExportsAndOpens(bootLayer);
 
@@ -380,10 +377,9 @@ public final class ModuleBootstrap {
                                             Set<String> otherMods)
     {
         // resolve all root modules
-        Configuration cf = Configuration.empty()
-                .resolveRequires(finder,
-                                 ModuleFinder.of(),
-                                 roots);
+        Configuration cf = Configuration.empty().resolve(finder,
+                                                         ModuleFinder.of(),
+                                                         roots);
 
         // module name -> reference
         Map<String, ModuleReference> map = new HashMap<>();
@@ -416,7 +412,7 @@ public final class ModuleBootstrap {
 
     /**
      * Creates a finder from the module path that is the value of the given
-     * system property.
+     * system property and optionally patched by --patch-module
      */
     private static ModuleFinder createModulePathFinder(String prop) {
         String s = System.getProperty(prop);
@@ -429,7 +425,7 @@ public final class ModuleBootstrap {
             for (String dir: dirs) {
                 paths[i++] = Paths.get(dir);
             }
-            return ModuleFinder.of(paths);
+            return ModulePath.of(patcher, paths);
         }
     }
 
@@ -475,7 +471,7 @@ public final class ModuleBootstrap {
      * Process the --add-reads options to add any additional read edges that
      * are specified on the command-line.
      */
-    private static void addExtraReads(Layer bootLayer) {
+    private static void addExtraReads(ModuleLayer bootLayer) {
 
         // decode the command line options
         Map<String, List<String>> map = decode("jdk.module.addreads.");
@@ -513,8 +509,7 @@ public final class ModuleBootstrap {
      * Process the --add-exports and --add-opens options to export/open
      * additional packages specified on the command-line.
      */
-    private static void addExtraExportsAndOpens(Layer bootLayer) {
-
+    private static void addExtraExportsAndOpens(ModuleLayer bootLayer) {
         // --add-exports
         String prefix = "jdk.module.addexports.";
         Map<String, List<String>> extraExports = decode(prefix);
@@ -528,9 +523,27 @@ public final class ModuleBootstrap {
         if (!extraOpens.isEmpty()) {
             addExtraExportsOrOpens(bootLayer, extraOpens, true);
         }
+
+        // --permit-illegal-access
+        if (getAndRemoveProperty("jdk.module.permitIllegalAccess") != null) {
+            warn("--permit-illegal-access will be removed in the next major release");
+            IllegalAccessLogger.Builder builder = new IllegalAccessLogger.Builder();
+            Module unnamed = BootLoader.getUnnamedModule();
+            bootLayer.modules().stream().forEach(m -> {
+                m.getDescriptor()
+                 .packages()
+                 .stream()
+                 .filter(pn -> !m.isOpen(pn, unnamed))  // skip if opened by --add-opens
+                 .forEach(pn -> {
+                     builder.logAccessToOpenPackage(m, pn, "--permit-illegal-access");
+                     Modules.addOpensToAllUnnamed(m, pn);
+                 });
+            });
+            IllegalAccessLogger.setIllegalAccessLogger(builder.build());
+        }
     }
 
-    private static void addExtraExportsOrOpens(Layer bootLayer,
+    private static void addExtraExportsOrOpens(ModuleLayer bootLayer,
                                                Map<String, List<String>> map,
                                                boolean opens)
     {
@@ -541,12 +554,12 @@ public final class ModuleBootstrap {
             String key = e.getKey();
             String[] s = key.split("/");
             if (s.length != 2)
-                fail(unableToParse(option,  "<module>/<package>", key));
+                fail(unableToParse(option, "<module>/<package>", key));
 
             String mn = s[0];
             String pn = s[1];
             if (mn.isEmpty() || pn.isEmpty())
-                fail(unableToParse(option,  "<module>/<package>", key));
+                fail(unableToParse(option, "<module>/<package>", key));
 
             // The exporting module is in the boot layer
             Module m;
@@ -631,7 +644,7 @@ public final class ModuleBootstrap {
 
             // value is <module>(,<module>)* or <file>(<pathsep><file>)*
             if (!allowDuplicates && map.containsKey(key))
-                fail(key + " specified more than once in " + option(prefix));
+                fail(key + " specified more than once to " + option(prefix));
             List<String> values = map.computeIfAbsent(key, k -> new ArrayList<>());
             int ntargets = 0;
             for (String s : rhs.split(regex)) {
@@ -675,10 +688,6 @@ public final class ModuleBootstrap {
             ModuleReference mref = rm.reference();
             String mn = mref.descriptor().name();
 
-            // emit warning if module name ends with a non-Java letter
-            if (!Checks.hasLegalModuleNameLastCharacter(mn))
-                warn("Module name \"" + mn + "\" may soon be illegal");
-
             // emit warning if the WARN_INCUBATING module resolution bit set
             if (ModuleResolution.hasIncubatingWarning(mref)) {
                 if (incubating == null) {
@@ -704,7 +713,7 @@ public final class ModuleBootstrap {
     }
 
     static void warnUnknownModule(String option, String mn) {
-        warn("Unknown module: " + mn + " specified in " + option);
+        warn("Unknown module: " + mn + " specified to " + option);
     }
 
     static String unableToParse(String option, String text, String value) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,6 +90,8 @@ public class JDKPlatformProvider implements PlatformProvider {
             } catch (IOException | ProviderNotFoundException ex) {
             }
         }
+        // Workaround until full support for --release 9 distinct from --release 10
+        SUPPORTED_JAVA_PLATFORM_VERSIONS.add(targetNumericVersion(Target.JDK1_9));
         SUPPORTED_JAVA_PLATFORM_VERSIONS.add(targetNumericVersion(Target.DEFAULT));
     }
 
@@ -108,7 +110,9 @@ public class JDKPlatformProvider implements PlatformProvider {
 
         @Override
         public Collection<Path> getPlatformPath() {
-            if (Target.lookup(version) == Target.DEFAULT) {
+            // Comparison should be == Target.DEFAULT once --release 9
+            // is distinct from 10
+            if (Target.lookup(version).compareTo(Target.JDK1_9)  >=  0) {
                 return null;
             }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.lang.module.ModuleDescriptor;
+import java.lang.module.ModuleDescriptor.Builder;
 import java.lang.module.ModuleReader;
 import java.lang.module.ModuleReference;
 import java.net.MalformedURLException;
@@ -108,8 +109,11 @@ public final class ModulePatcher {
         if (paths == null)
             return mref;
 
-        // scan the JAR file or directory tree to get the set of packages
+        // Scan the JAR file or directory tree to get the set of packages.
+        // For automatic modules then packages that do not contain class files
+        // must be ignored.
         Set<String> packages = new HashSet<>();
+        boolean isAutomatic = descriptor.isAutomatic();
         try {
             for (Path file : paths) {
                 if (Files.isRegularFile(file)) {
@@ -118,8 +122,10 @@ public final class ModulePatcher {
                     // is not supported by the boot class loader
                     try (JarFile jf = new JarFile(file.toFile())) {
                         jf.stream()
+                          .filter(e -> !e.isDirectory()
+                                  && (!isAutomatic || e.getName().endsWith(".class")))
                           .map(e -> toPackageName(file, e))
-                          .filter(Checks::isJavaIdentifier)
+                          .filter(Checks::isPackageName)
                           .forEach(packages::add);
                     }
 
@@ -129,8 +135,11 @@ public final class ModulePatcher {
                     Path top = file;
                     Files.find(top, Integer.MAX_VALUE,
                                ((path, attrs) -> attrs.isRegularFile()))
+                            .filter(path -> (!isAutomatic
+                                    || path.toString().endsWith(".class"))
+                                    && !isHidden(path))
                             .map(path -> toPackageName(top, path))
-                            .filter(Checks::isJavaIdentifier)
+                            .filter(Checks::isPackageName)
                             .forEach(packages::add);
 
                 }
@@ -141,20 +150,41 @@ public final class ModulePatcher {
         }
 
         // if there are new packages then we need a new ModuleDescriptor
-        Set<String> original = descriptor.packages();
-        packages.addAll(original);
-        if (packages.size() > original.size()) {
-            descriptor = JLMA.newModuleDescriptor(descriptor, packages);
+        packages.removeAll(descriptor.packages());
+        if (!packages.isEmpty()) {
+            Builder builder = JLMA.newModuleBuilder(descriptor.name(),
+                                                    /*strict*/ false,
+                                                    descriptor.modifiers());
+            if (!descriptor.isAutomatic()) {
+                descriptor.requires().forEach(builder::requires);
+                descriptor.exports().forEach(builder::exports);
+                descriptor.opens().forEach(builder::opens);
+                descriptor.uses().forEach(builder::uses);
+            }
+            descriptor.provides().forEach(builder::provides);
+
+            descriptor.version().ifPresent(builder::version);
+            descriptor.mainClass().ifPresent(builder::mainClass);
+
+            // original + new packages
+            builder.packages(descriptor.packages());
+            builder.packages(packages);
+
+            descriptor = builder.build();
         }
 
         // return a module reference to the patched module
         URI location = mref.location().orElse(null);
 
+        ModuleTarget target = null;
         ModuleHashes recordedHashes = null;
+        ModuleHashes.HashSupplier hasher = null;
         ModuleResolution mres = null;
         if (mref instanceof ModuleReferenceImpl) {
             ModuleReferenceImpl impl = (ModuleReferenceImpl)mref;
+            target = impl.moduleTarget();
             recordedHashes = impl.recordedHashes();
+            hasher = impl.hasher();
             mres = impl.moduleResolution();
         }
 
@@ -162,8 +192,9 @@ public final class ModulePatcher {
                                        location,
                                        () -> new PatchedModuleReader(paths, mref),
                                        this,
+                                       target,
                                        recordedHashes,
-                                       null,
+                                       hasher,
                                        mres);
 
     }
@@ -197,7 +228,7 @@ public final class ModulePatcher {
         private volatile ModuleReader delegate;
 
         /**
-         * Creates the ModuleReader to reads resources a patched module.
+         * Creates the ModuleReader to reads resources in a patched module.
          */
         PatchedModuleReader(List<Path> patches, ModuleReference mref) {
             List<ResourceFinder> finders = new ArrayList<>();
@@ -262,13 +293,16 @@ public final class ModulePatcher {
         }
 
         /**
-         * Finds a resources in the patch locations. Returns null if not found.
+         * Finds a resources in the patch locations. Returns null if not found
+         * or the name is "module-info.class" as that cannot be overridden.
          */
         private Resource findResourceInPatch(String name) throws IOException {
-            for (ResourceFinder finder : finders) {
-                Resource r = finder.find(name);
-                if (r != null)
-                    return r;
+            if (!name.equals("module-info.class")) {
+                for (ResourceFinder finder : finders) {
+                    Resource r = finder.find(name);
+                    if (r != null)
+                        return r;
+                }
             }
             return null;
         }
@@ -449,9 +483,7 @@ public final class ModulePatcher {
 
         @Override
         public Stream<String> list() throws IOException {
-            return jf.stream()
-                    .filter(e -> !e.isDirectory())
-                    .map(JarEntry::getName);
+            return jf.stream().map(JarEntry::getName);
         }
     }
 
@@ -471,20 +503,9 @@ public final class ModulePatcher {
 
         @Override
         public Resource find(String name) throws IOException {
-            Path file = Paths.get(name.replace('/', File.separatorChar));
-            if (file.getRoot() == null) {
-                file = dir.resolve(file);
-            } else {
-                // drop the root component so that the resource is
-                // located relative to the module directory
-                int n = file.getNameCount();
-                if (n == 0)
-                    return null;
-                file = dir.resolve(file.subpath(0, n));
-            }
-
-            if (Files.isRegularFile(file)) {
-                return newResource(name, dir, file);
+            Path file = Resources.toFilePath(dir, name);
+            if (file != null) {
+                return  newResource(name, dir, file);
             } else {
                 return null;
             }
@@ -530,17 +551,15 @@ public final class ModulePatcher {
 
         @Override
         public Stream<String> list() throws IOException {
-            return Files.find(dir, Integer.MAX_VALUE,
-                              (path, attrs) -> attrs.isRegularFile())
-                    .map(f -> dir.relativize(f)
-                                 .toString()
-                                 .replace(File.separatorChar, '/'));
+            return Files.walk(dir, Integer.MAX_VALUE)
+                        .map(f -> Resources.toResourceName(dir, f))
+                        .filter(s -> s.length() > 0);
         }
     }
 
 
     /**
-     * Derives a package name from a file path to a .class file.
+     * Derives a package name from the file path of an entry in an exploded patch
      */
     private static String toPackageName(Path top, Path file) {
         Path entry = top.relativize(file);
@@ -549,6 +568,17 @@ public final class ModulePatcher {
             return warnIfModuleInfo(top, entry.toString());
         } else {
             return parent.toString().replace(File.separatorChar, '.');
+        }
+    }
+
+    /**
+     * Returns true if the given file exists and is a hidden file
+     */
+    private boolean isHidden(Path file) {
+        try {
+            return Files.isHidden(file);
+        } catch (IOException ioe) {
+            return false;
         }
     }
 

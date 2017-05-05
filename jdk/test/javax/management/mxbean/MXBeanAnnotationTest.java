@@ -26,7 +26,7 @@
  * @bug 6316491
  * @summary Check that the MXBean annotation works as advertised
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean MXBeanAnnotationTest
  * @run build MXBeanAnnotationTest
  * @run main MXBeanAnnotationTest

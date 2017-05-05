@@ -381,7 +381,18 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                     }
                     ImportTree it = findImport(tp);
                     if (it != null) {
-                        addElements(membersOf(at, at.getElements().getPackageElement("").asType(), false), it.isStatic() ? STATIC_ONLY.and(accessibility) : accessibility, smartFilter, result);
+                        // the context of the identifier is an import, look for
+                        // package names that start with the identifier.
+                        // If and when Java allows imports from the default
+                        // package to the the default package which would allow
+                        // JShell to change to use the default package, and that
+                        // change is done, then this should use some variation
+                        // of membersOf(at, at.getElements().getPackageElement("").asType(), false)
+                        addElements(listPackages(at, ""),
+                                it.isStatic()
+                                        ? STATIC_ONLY.and(accessibility)
+                                        : accessibility,
+                                smartFilter, result);
                     }
                     break;
                 case CLASS: {
@@ -1266,11 +1277,15 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                  .allMatch(param -> param.getSimpleName().toString().startsWith("arg"));
     }
 
+    private static List<Path> availableSourcesOverride; //for tests
     private List<Path> availableSources;
 
     private List<Path> findSources() {
         if (availableSources != null) {
             return availableSources;
+        }
+        if (availableSourcesOverride != null) {
+            return availableSources = availableSourcesOverride;
         }
         List<Path> result = new ArrayList<>();
         Path home = Paths.get(System.getProperty("java.home"));
