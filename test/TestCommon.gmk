@@ -370,7 +370,7 @@ endif
 # Give tests access to JT_JAVA, see JDK-8141609
 JTREG_BASIC_OPTIONS += -e:JDK8_HOME=${JT_JAVA}
 # Set other vm and test options
-JTREG_TEST_OPTIONS = $(JAVA_ARGS:%=-javaoptions:%) $(JAVA_OPTIONS:%=-vmoption:%) $(JAVA_VM_ARGS:%=-vmoption:%)
+JTREG_TEST_OPTIONS += $(JAVA_ARGS:%=-javaoptions:%) $(JAVA_OPTIONS:%=-vmoption:%) $(JAVA_VM_ARGS:%=-vmoption:%)
 
 ifeq ($(IGNORE_MARKED_TESTS), true)
   # Option to tell jtreg to not run tests marked with "ignore"

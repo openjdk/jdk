@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,19 +41,16 @@ import jdk.internal.loader.ClassLoaders;
  * are generated at build time.
  */
 final class ModuleLoaderMap {
-    /*
-     * The list of boot modules and platform modules are generated at build time.
-     */
-    private static final String[] BOOT_MODULES
-        = new String[] { "@@BOOT_MODULE_NAMES@@" };
-    private static final String[] PLATFORM_MODULES
-        = new String[] { "@@PLATFORM_MODULE_NAMES@@" };
 
     /**
      * Returns the function to map modules in the given configuration to the
      * built-in class loaders.
      */
     static Function<String, ClassLoader> mappingFunction(Configuration cf) {
+
+        // The list of boot modules and platform modules are generated at build time.
+        final String[] BOOT_MODULES = new String[] { "@@BOOT_MODULE_NAMES@@" };
+        final String[] PLATFORM_MODULES = new String[] { "@@PLATFORM_MODULE_NAMES@@" };
 
         Set<String> bootModules = new HashSet<>(BOOT_MODULES.length);
         for (String mn : BOOT_MODULES) {
