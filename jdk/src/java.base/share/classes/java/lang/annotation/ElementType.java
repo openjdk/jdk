@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package java.lang.annotation;
 /**
  * The constants of this enumerated type provide a simple classification of the
  * syntactic locations where annotations may appear in a Java program. These
- * constants are used in {@link Target java.lang.annotation.Target}
+ * constants are used in {@link java.lang.annotation.Target Target}
  * meta-annotations to specify where it is legal to write annotations of a
  * given type.
  *

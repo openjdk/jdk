@@ -24,7 +24,6 @@
 package jdk.testlibrary;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -60,7 +59,6 @@ public class JDKToolLauncher {
         } else {
             executable = JDKToolFinder.getTestJDKTool(tool);
         }
-        vmArgs.addAll(Arrays.asList(ProcessTools.getPlatformSpecificVMArgs()));
     }
 
     /**

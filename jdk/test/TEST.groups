@@ -28,8 +28,6 @@
 tier1 = \
     :jdk_lang \
     :jdk_util \
-    -java/util/concurrent/ThreadPoolExecutor/ConfigChanges.java \
-    -java/util/concurrent/forkjoin/FJExceptionTableLeak.java \
     sun/nio/cs/ISO8859x.java \
     java/nio/Buffer \
     com/sun/crypto/provider/Cipher \
@@ -37,8 +35,6 @@ tier1 = \
     tools/pack200
 
 tier2 = \
-    java/util/concurrent/ThreadPoolExecutor/ConfigChanges.java \
-    java/util/concurrent/forkjoin/FJExceptionTableLeak.java \
     :jdk_io \
     :jdk_nio \
     -sun/nio/cs/ISO8859x.java \
@@ -74,9 +70,11 @@ jdk_lang = \
     sun/reflect \
     jdk/internal/reflect \
     jdk/lambda \
+    jdk/internal/loader \
     jdk/internal/misc \
     jdk/internal/ref \
     jdk/internal/jimage \
+    jdk/internal/math \
     jdk/modules \
     vm
 
@@ -91,6 +89,7 @@ jdk_util = \
 jdk_util_other = \
     java/util \
     sun/util \
+    jdk/internal/util \
     -:jdk_collections \
     -:jdk_concurrent \
     -:jdk_stream
@@ -145,8 +144,7 @@ jdk_stream = \
     java/util/stream
 
 jdk_math = \
-    java/math \
-    jdk/internal/math
+    java/math
 
 jdk_io = \
     java/io
@@ -181,6 +179,7 @@ jdk_security2 = \
 jdk_security3 = \
     javax/security  \
     -javax/security/auth/kerberos \
+    com/sun/jarsigner \
     com/sun/security \
     -com/sun/security/jgss \
     com/sun/org/apache/xml/internal/security \
@@ -211,7 +210,8 @@ jdk_text = \
 jdk_management = \
     java/lang/management \
     com/sun/management \
-    sun/management
+    sun/management \
+    jdk/internal/agent
 
 jdk_instrument = \
     java/lang/instrument
@@ -273,6 +273,7 @@ jdk_other = \
     jdk/internal/jline \
     com/sun/jndi \
     com/sun/corba \
+    org/omg/CORBA \
     lib/testlibrary \
     sample
 

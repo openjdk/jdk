@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,8 @@ public class ClassFileConstants {
     // access, requires, exports, and opens flags
     public static final int ACC_MODULE        = 0x8000;
     public static final int ACC_OPEN          = 0x0020;
-    public static final int ACC_TRANSITIVE    = 0x0010;
-    public static final int ACC_STATIC_PHASE  = 0x0020;
+    public static final int ACC_TRANSITIVE    = 0x0020;
+    public static final int ACC_STATIC_PHASE  = 0x0040;
     public static final int ACC_SYNTHETIC     = 0x1000;
     public static final int ACC_MANDATED      = 0x8000;
 

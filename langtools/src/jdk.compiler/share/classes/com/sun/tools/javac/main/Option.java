@@ -399,6 +399,30 @@ public enum Option {
         }
     },
 
+    DEFAULT_MODULE_FOR_CREATED_FILES("--default-module-for-created-files",
+                                     "opt.arg.default.module.for.created.files",
+                                     "opt.default.module.for.created.files", EXTENDED, BASIC) {
+        @Override
+        public void process(OptionHelper helper, String option, String arg) throws InvalidValueException {
+            String prev = helper.get(DEFAULT_MODULE_FOR_CREATED_FILES);
+            if (prev != null) {
+                throw helper.newInvalidValueException("err.option.too.many",
+                                                      DEFAULT_MODULE_FOR_CREATED_FILES.primaryName);
+            } else if (arg.isEmpty()) {
+                throw helper.newInvalidValueException("err.no.value.for.option", option);
+            } else if (getPattern().matcher(arg).matches()) {
+                helper.put(DEFAULT_MODULE_FOR_CREATED_FILES.primaryName, arg);
+            } else {
+                throw helper.newInvalidValueException("err.bad.value.for.option", option, arg);
+            }
+        }
+
+        @Override
+        public Pattern getPattern() {
+            return Pattern.compile("[^,].*");
+        }
+    },
+
     X("--help-extra -X", "opt.X", STANDARD, INFO) {
         @Override
         public void process(OptionHelper helper, String option) throws InvalidValueException {
@@ -579,7 +603,7 @@ public enum Option {
         }
     },
 
-    XMODULE("-Xmodule:", "opt.arg.module", "opt.module", EXTENDED, BASIC) {
+    XMODULE("-Xmodule:", "opt.arg.module", "opt.module", HIDDEN, BASIC) {
         @Override
         public void process(OptionHelper helper, String option, String arg) throws InvalidValueException {
             String prev = helper.get(XMODULE);
