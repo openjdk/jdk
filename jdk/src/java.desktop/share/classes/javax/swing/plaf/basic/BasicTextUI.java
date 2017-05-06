@@ -1283,14 +1283,13 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
      * text component (i.e. the root of the hierarchy) that
      * can be traversed to determine how the model is being
      * represented spatially.
-     * <p>
-     * <font style="color: red;"><b>NOTE:</b>The View hierarchy can
+     * <p style="color:red;">
+     * <b>NOTE:</b>The View hierarchy can
      * be traversed from the root view, and other things
      * can be done as well.  Things done in this way cannot
      * be protected like simple method calls through the TextUI.
      * Therefore, proper operation in the presence of concurrency
      * must be arranged by any logic that calls this method!
-     * </font>
      *
      * @param tc the text component for which this UI is installed
      * @return the view

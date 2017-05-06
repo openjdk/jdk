@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,11 +57,11 @@ import sun.swing.text.UndoableEditLockSupport;
  * upper-case letter in bold are significant, those in lower-case
  * and italicized are insignificant.
  * <p>
- * <a name="figure1"></a>
+ * <a id="figure1"></a>
  * <table border=0 summary="">
  * <tr><td>
  *     <img src="doc-files/UndoManager-1.gif" alt="">
- * <tr><td align=center>Figure 1
+ * <tr><td style="text-align:center">Figure 1
  * </table>
  * <p>
  * As shown in <a href="#figure1">figure 1</a>, if <b>D</b> was just added, the
@@ -70,11 +70,11 @@ import sun.swing.text.UndoableEditLockSupport;
  * index of the next edit to 3 (edit <i>c</i>), as shown in the following
  * figure.
  * <p>
- * <a name="figure2"></a>
+ * <a id="figure2"></a>
  * <table border=0 summary="">
  * <tr><td>
  *     <img src="doc-files/UndoManager-2.gif" alt="">
- * <tr><td align=center>Figure 2
+ * <tr><td style="text-align:center">Figure 2
  * </table>
  * <p>
  * The last significant edit is <b>A</b>, so that invoking
@@ -82,11 +82,11 @@ import sun.swing.text.UndoableEditLockSupport;
  * <i>b</i>, and <b>A</b>, in that order, setting the index of the
  * next edit to 0, as shown in the following figure.
  * <p>
- * <a name="figure3"></a>
+ * <a id="figure3"></a>
  * <table border=0 summary="">
  * <tr><td>
  *     <img src="doc-files/UndoManager-3.gif" alt="">
- * <tr><td align=center>Figure 3
+ * <tr><td style="text-align:center">Figure 3
  * </table>
  * <p>
  * Invoking <code>redo</code> results in invoking <code>redo</code> on
@@ -108,11 +108,11 @@ import sun.swing.text.UndoableEditLockSupport;
  * the new edit is added after <i>c</i>, as shown in the following
  * figure.
  * <p>
- * <a name="figure4"></a>
+ * <a id="figure4"></a>
  * <table border=0 summary="">
  * <tr><td>
  *     <img src="doc-files/UndoManager-4.gif" alt="">
- * <tr><td align=center>Figure 4
+ * <tr><td style="text-align:center">Figure 4
  * </table>
  * <p>
  * Once <code>end</code> has been invoked on an <code>UndoManager</code>
