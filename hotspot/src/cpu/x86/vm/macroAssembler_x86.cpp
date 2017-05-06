@@ -763,11 +763,13 @@ void MacroAssembler::reset_last_Java_frame(bool clear_fp) {
 
   // Always clear the pc because it could have been set by make_walkable()
   movptr(Address(r15_thread, JavaThread::last_Java_pc_offset()), NULL_WORD);
+  vzeroupper();
 }
 
 void MacroAssembler::set_last_Java_frame(Register last_java_sp,
                                          Register last_java_fp,
                                          address  last_java_pc) {
+  vzeroupper();
   // determine last_java_sp register
   if (!last_java_sp->is_valid()) {
     last_java_sp = rsp;
@@ -3672,6 +3674,7 @@ void MacroAssembler::reset_last_Java_frame(Register java_thread, bool clear_fp) 
   // Always clear the pc because it could have been set by make_walkable()
   movptr(Address(java_thread, JavaThread::last_Java_pc_offset()), NULL_WORD);
 
+  vzeroupper();
 }
 
 void MacroAssembler::restore_rax(Register tmp) {
@@ -3714,6 +3717,7 @@ void MacroAssembler::set_last_Java_frame(Register java_thread,
                                          Register last_java_sp,
                                          Register last_java_fp,
                                          address  last_java_pc) {
+  vzeroupper();
   // determine java_thread register
   if (!java_thread->is_valid()) {
     java_thread = rdi;
@@ -6524,10 +6528,8 @@ void MacroAssembler::restore_cpu_control_state_after_jni() {
       call(RuntimeAddress(StubRoutines::x86::verify_mxcsr_entry()));
     }
   }
-  if (VM_Version::supports_avx()) {
-    // Clear upper bits of YMM registers to avoid SSE <-> AVX transition penalty.
-    vzeroupper();
-  }
+  // Clear upper bits of YMM registers to avoid SSE <-> AVX transition penalty.
+  vzeroupper();
 
 #ifndef _LP64
   // Either restore the x87 floating pointer control word after returning
