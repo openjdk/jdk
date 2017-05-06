@@ -79,7 +79,7 @@ public class AOTCompilationTask implements Runnable, Comparable<Object> {
     public AOTCompilationTask(Main main, OptionValues graalOptions, AOTCompiledClass holder, ResolvedJavaMethod method, AOTBackend aotBackend) {
         this.main = main;
         this.graalOptions = graalOptions;
-        this.id = ids.getAndIncrement();
+        this.id = ids.incrementAndGet();
         this.holder = holder;
         this.method = method;
         this.aotBackend = aotBackend;
@@ -127,11 +127,7 @@ public class AOTCompilationTask implements Runnable, Comparable<Object> {
             final long allocatedBytesAfter = threadMXBean.getThreadAllocatedBytes(threadId);
             final long allocatedBytes = (allocatedBytesAfter - allocatedBytesBefore) / 1024;
 
-            if (printAfterCompilation) {
-                TTY.println(getMethodDescription() + String.format(" | %4dms %5dB %5dkB", stop - start, targetCodeSize, allocatedBytes));
-            } else if (printCompilation) {
-                TTY.println(String.format("%-6d JVMCI %-70s %-45s %-50s | %4dms %5dB %5dkB", getId(), "", "", "", stop - start, targetCodeSize, allocatedBytes));
-            }
+            TTY.println(getMethodDescription() + String.format(" | %4dms %5dB %5dkB", stop - start, targetCodeSize, allocatedBytes));
         }
 
         if (compResult == null) {
@@ -149,7 +145,7 @@ public class AOTCompilationTask implements Runnable, Comparable<Object> {
     }
 
     private String getMethodDescription() {
-        return String.format("%-6d JVMCI %-70s %-45s %-50s %s", getId(), method.getDeclaringClass().getName(), method.getName(), method.getSignature().toMethodDescriptor(),
+        return String.format("%-6d aot %s %s", getId(), MiscUtils.uniqueMethodName(method),
                         getEntryBCI() == JVMCICompiler.INVOCATION_ENTRY_BCI ? "" : "(OSR@" + getEntryBCI() + ") ");
     }
 
