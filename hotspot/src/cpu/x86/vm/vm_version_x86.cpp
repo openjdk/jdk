@@ -436,14 +436,14 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ movl(rax, 0x10000);
     __ andl(rax, Address(rsi, 4));
     __ cmpl(rax, 0x10000);
-    __ jccb(Assembler::notEqual, legacy_save_restore);
+    __ jcc(Assembler::notEqual, legacy_save_restore);
     // check _cpuid_info.xem_xcr0_eax.bits.opmask
     // check _cpuid_info.xem_xcr0_eax.bits.zmm512
     // check _cpuid_info.xem_xcr0_eax.bits.zmm32
     __ movl(rax, 0xE0);
     __ andl(rax, Address(rbp, in_bytes(VM_Version::xem_xcr0_offset()))); // xcr0 bits sse | ymm
     __ cmpl(rax, 0xE0);
-    __ jccb(Assembler::notEqual, legacy_save_restore);
+    __ jcc(Assembler::notEqual, legacy_save_restore);
 
     // If UseAVX is unitialized or is set by the user to include EVEX
     if (use_evex) {
@@ -469,11 +469,12 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
       __ evmovdqul(xmm7, Address(rsp, 0), Assembler::AVX_512bit);
       __ addptr(rsp, 64);
 #endif // _WINDOWS
+      generate_vzeroupper(wrapup);
       VM_Version::clean_cpuFeatures();
       UseAVX = saved_useavx;
       UseSSE = saved_usesse;
       __ jmp(wrapup);
-    }
+   }
 
     __ bind(legacy_save_restore);
     // AVX check
@@ -498,6 +499,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ vmovdqu(xmm7, Address(rsp, 0));
     __ addptr(rsp, 32);
 #endif // _WINDOWS
+    generate_vzeroupper(wrapup);
     VM_Version::clean_cpuFeatures();
     UseAVX = saved_useavx;
     UseSSE = saved_usesse;
@@ -513,6 +515,21 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 
     return start;
   };
+  void generate_vzeroupper(Label& L_wrapup) {
+#   define __ _masm->
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::std_cpuid0_offset())));
+    __ cmpl(Address(rsi, 4), 0x756e6547);  // 'uneG'
+    __ jcc(Assembler::notEqual, L_wrapup);
+    __ movl(rcx, 0x0FFF0FF0);
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::std_cpuid1_offset())));
+    __ andl(rcx, Address(rsi, 0));
+    __ cmpl(rcx, 0x00050670);              // If it is Xeon Phi 3200/5200/7200
+    __ jcc(Assembler::equal, L_wrapup);
+    __ cmpl(rcx, 0x00080650);              // If it is Future Xeon Phi
+    __ jcc(Assembler::equal, L_wrapup);
+    __ vzeroupper();
+#   undef __
+  }
 };
 
 void VM_Version::get_processor_features() {
@@ -619,8 +636,10 @@ void VM_Version::get_processor_features() {
   if (UseAVX < 2)
     _features &= ~CPU_AVX2;
 
-  if (UseAVX < 1)
+  if (UseAVX < 1) {
     _features &= ~CPU_AVX;
+    _features &= ~CPU_VZEROUPPER;
+  }
 
   if (!UseAES && !FLAG_IS_DEFAULT(UseAES))
     _features &= ~CPU_AES;
@@ -628,6 +647,14 @@ void VM_Version::get_processor_features() {
   if (logical_processors_per_package() == 1) {
     // HT processor could be installed on a system which doesn't support HT.
     _features &= ~CPU_HT;
+  }
+
+  if( is_intel() ) { // Intel cpus specific settings
+    if ((cpu_family() == 0x06) &&
+        ((extended_cpu_model() == 0x57) ||   // Xeon Phi 3200/5200/7200
+        (extended_cpu_model() == 0x85))) {  // Future Xeon Phi
+      _features &= ~CPU_VZEROUPPER;
+    }
   }
 
   char buf[256];
@@ -918,16 +945,36 @@ void VM_Version::get_processor_features() {
       warning("MaxVectorSize must be a power of 2");
       FLAG_SET_DEFAULT(MaxVectorSize, 64);
     }
-    if (MaxVectorSize > 64) {
-      FLAG_SET_DEFAULT(MaxVectorSize, 64);
-    }
-    if (MaxVectorSize > 16 && (UseAVX == 0 || !os_supports_avx_vectors())) {
-      // 32 bytes vectors (in YMM) are only supported with AVX+
-      FLAG_SET_DEFAULT(MaxVectorSize, 16);
-    }
     if (UseSSE < 2) {
       // Vectors (in XMM) are only supported with SSE2+
-      FLAG_SET_DEFAULT(MaxVectorSize, 0);
+      if (MaxVectorSize > 0) {
+        if (!FLAG_IS_DEFAULT(MaxVectorSize))
+          warning("MaxVectorSize must be 0");
+        FLAG_SET_DEFAULT(MaxVectorSize, 0);
+      }
+    }
+    else if (UseAVX == 0 || !os_supports_avx_vectors()) {
+      // 32 bytes vectors (in YMM) are only supported with AVX+
+      if (MaxVectorSize > 16) {
+        if (!FLAG_IS_DEFAULT(MaxVectorSize))
+          warning("MaxVectorSize must be <= 16");
+        FLAG_SET_DEFAULT(MaxVectorSize, 16);
+      }
+    }
+    else if (UseAVX == 1 || UseAVX == 2) {
+      // 64 bytes vectors (in ZMM) are only supported with AVX 3
+      if (MaxVectorSize > 32) {
+        if (!FLAG_IS_DEFAULT(MaxVectorSize))
+          warning("MaxVectorSize must be <= 32");
+        FLAG_SET_DEFAULT(MaxVectorSize, 32);
+      }
+    }
+    else if (UseAVX > 2 ) {
+      if (MaxVectorSize > 64) {
+        if (!FLAG_IS_DEFAULT(MaxVectorSize))
+          warning("MaxVectorSize must be <= 64");
+        FLAG_SET_DEFAULT(MaxVectorSize, 64);
+      }
     }
 #if defined(COMPILER2) && defined(ASSERT)
     if (supports_avx() && PrintMiscellaneous && Verbose && TraceNewVectors) {

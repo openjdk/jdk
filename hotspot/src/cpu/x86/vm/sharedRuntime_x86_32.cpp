@@ -41,6 +41,7 @@
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
 #endif
+#include "vm_version_x86.hpp"
 
 #define __ masm->
 
@@ -120,8 +121,8 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   int zmm_bytes = num_xmm_regs * 32;
 #ifdef COMPILER2
   if (save_vectors) {
-    assert(UseAVX > 0, "up to 512bit vectors are supported with EVEX");
-    assert(MaxVectorSize <= 64, "up to 512bit vectors are supported now");
+    assert(UseAVX > 0, "Vectors larger than 16 byte long are supported only with AVX");
+    assert(MaxVectorSize <= 64, "Only up to 64 byte long vectors are supported");
     // Save upper half of YMM registers
     int vect_bytes = ymm_bytes;
     if (UseAVX > 2) {
@@ -219,6 +220,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
       }
     }
   }
+  __ vzeroupper();
 
   // Set an oopmap for the call site.  This oopmap will map all
   // oop-registers and debug-info registers as callee-saved.  This
@@ -269,8 +271,8 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
   int additional_frame_bytes = 0;
 #ifdef COMPILER2
   if (restore_vectors) {
-    assert(UseAVX > 0, "up to 512bit vectors are supported with EVEX");
-    assert(MaxVectorSize <= 64, "up to 512bit vectors are supported now");
+    assert(UseAVX > 0, "Vectors larger than 16 byte long are supported only with AVX");
+    assert(MaxVectorSize <= 64, "Only up to 64 byte long vectors are supported");
     // Save upper half of YMM registers
     additional_frame_bytes = ymm_bytes;
     if (UseAVX > 2) {
@@ -284,6 +286,8 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
 
   int off = xmm0_off;
   int delta = xmm1_off - off;
+
+  __ vzeroupper();
 
   if (UseSSE == 1) {
     // Restore XMM registers
@@ -2123,6 +2127,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // preserved and correspond to the bcp/locals pointers. So we do a runtime call
     // by hand.
     //
+    __ vzeroupper();
+
     save_native_result(masm, ret_type, stack_slots);
     __ push(thread);
     if (!is_critical_native) {
@@ -2304,7 +2310,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
     // BEGIN Slow path unlock
     __ bind(slow_path_unlock);
-
+    __ vzeroupper();
     // Slow path unlock
 
     if (ret_type == T_FLOAT || ret_type == T_DOUBLE ) {
@@ -2349,6 +2355,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // SLOW PATH Reguard the stack if needed
 
   __ bind(reguard);
+  __ vzeroupper();
   save_native_result(masm, ret_type, stack_slots);
   {
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages)));
