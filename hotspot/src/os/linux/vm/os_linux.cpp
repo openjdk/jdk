@@ -2750,8 +2750,9 @@ void os::numa_make_local(char *addr, size_t bytes, int lgrp_hint) {
 bool os::numa_topology_changed() { return false; }
 
 size_t os::numa_get_groups_num() {
-  int max_node = Linux::numa_max_node();
-  return max_node > 0 ? max_node + 1 : 1;
+  // Return just the number of nodes in which it's possible to allocate memory
+  // (in numa terminology, configured nodes).
+  return Linux::numa_num_configured_nodes();
 }
 
 int os::numa_get_group_id() {
@@ -2765,11 +2766,33 @@ int os::numa_get_group_id() {
   return 0;
 }
 
-size_t os::numa_get_leaf_groups(int *ids, size_t size) {
-  for (size_t i = 0; i < size; i++) {
-    ids[i] = i;
+int os::Linux::get_existing_num_nodes() {
+  size_t node;
+  size_t highest_node_number = Linux::numa_max_node();
+  int num_nodes = 0;
+
+  // Get the total number of nodes in the system including nodes without memory.
+  for (node = 0; node <= highest_node_number; node++) {
+    if (isnode_in_existing_nodes(node)) {
+      num_nodes++;
+    }
   }
-  return size;
+  return num_nodes;
+}
+
+size_t os::numa_get_leaf_groups(int *ids, size_t size) {
+  size_t highest_node_number = Linux::numa_max_node();
+  size_t i = 0;
+
+  // Map all node ids in which is possible to allocate memory. Also nodes are
+  // not always consecutively available, i.e. available from 0 to the highest
+  // node number.
+  for (size_t node = 0; node <= highest_node_number; node++) {
+    if (Linux::isnode_in_configured_nodes(node)) {
+      ids[i++] = node;
+    }
+  }
+  return i;
 }
 
 bool os::get_page_info(char *start, page_info* info) {
@@ -2841,6 +2864,8 @@ bool os::Linux::libnuma_init() {
                                            libnuma_dlsym(handle, "numa_node_to_cpus")));
       set_numa_max_node(CAST_TO_FN_PTR(numa_max_node_func_t,
                                        libnuma_dlsym(handle, "numa_max_node")));
+      set_numa_num_configured_nodes(CAST_TO_FN_PTR(numa_num_configured_nodes_func_t,
+                                                   libnuma_dlsym(handle, "numa_num_configured_nodes")));
       set_numa_available(CAST_TO_FN_PTR(numa_available_func_t,
                                         libnuma_dlsym(handle, "numa_available")));
       set_numa_tonode_memory(CAST_TO_FN_PTR(numa_tonode_memory_func_t,
@@ -2849,10 +2874,18 @@ bool os::Linux::libnuma_init() {
                                                 libnuma_dlsym(handle, "numa_interleave_memory")));
       set_numa_set_bind_policy(CAST_TO_FN_PTR(numa_set_bind_policy_func_t,
                                               libnuma_dlsym(handle, "numa_set_bind_policy")));
-
+      set_numa_bitmask_isbitset(CAST_TO_FN_PTR(numa_bitmask_isbitset_func_t,
+                                               libnuma_dlsym(handle, "numa_bitmask_isbitset")));
+      set_numa_distance(CAST_TO_FN_PTR(numa_distance_func_t,
+                                       libnuma_dlsym(handle, "numa_distance")));
 
       if (numa_available() != -1) {
         set_numa_all_nodes((unsigned long*)libnuma_dlsym(handle, "numa_all_nodes"));
+        set_numa_all_nodes_ptr((struct bitmask **)libnuma_dlsym(handle, "numa_all_nodes_ptr"));
+        set_numa_nodes_ptr((struct bitmask **)libnuma_dlsym(handle, "numa_nodes_ptr"));
+        // Create an index -> node mapping, since nodes are not always consecutive
+        _nindex_to_node = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<int>(0, true);
+        rebuild_nindex_to_node_map();
         // Create a cpu -> node mapping
         _cpu_to_node = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<int>(0, true);
         rebuild_cpu_to_node_map();
@@ -2868,6 +2901,17 @@ size_t os::Linux::default_guard_size(os::ThreadType thr_type) {
   // guard pages, only enable glibc guard page for non-Java threads.
   // (Remember: compiler thread is a Java thread, too!)
   return ((thr_type == java_thread || thr_type == compiler_thread) ? 0 : page_size());
+}
+
+void os::Linux::rebuild_nindex_to_node_map() {
+  int highest_node_number = Linux::numa_max_node();
+
+  nindex_to_node()->clear();
+  for (int node = 0; node <= highest_node_number; node++) {
+    if (Linux::isnode_in_existing_nodes(node)) {
+      nindex_to_node()->append(node);
+    }
+  }
 }
 
 // rebuild_cpu_to_node_map() constructs a table mapping cpud id to node id.
@@ -2889,16 +2933,46 @@ void os::Linux::rebuild_cpu_to_node_map() {
 
   cpu_to_node()->clear();
   cpu_to_node()->at_grow(cpu_num - 1);
-  size_t node_num = numa_get_groups_num();
 
+  size_t node_num = get_existing_num_nodes();
+
+  int distance = 0;
+  int closest_distance = INT_MAX;
+  int closest_node = 0;
   unsigned long *cpu_map = NEW_C_HEAP_ARRAY(unsigned long, cpu_map_size, mtInternal);
   for (size_t i = 0; i < node_num; i++) {
-    if (numa_node_to_cpus(i, cpu_map, cpu_map_size * sizeof(unsigned long)) != -1) {
+    // Check if node is configured (not a memory-less node). If it is not, find
+    // the closest configured node.
+    if (!isnode_in_configured_nodes(nindex_to_node()->at(i))) {
+      closest_distance = INT_MAX;
+      // Check distance from all remaining nodes in the system. Ignore distance
+      // from itself and from another non-configured node.
+      for (size_t m = 0; m < node_num; m++) {
+        if (m != i && isnode_in_configured_nodes(nindex_to_node()->at(m))) {
+          distance = numa_distance(nindex_to_node()->at(i), nindex_to_node()->at(m));
+          // If a closest node is found, update. There is always at least one
+          // configured node in the system so there is always at least one node
+          // close.
+          if (distance != 0 && distance < closest_distance) {
+            closest_distance = distance;
+            closest_node = nindex_to_node()->at(m);
+          }
+        }
+      }
+     } else {
+       // Current node is already a configured node.
+       closest_node = nindex_to_node()->at(i);
+     }
+
+    // Get cpus from the original node and map them to the closest node. If node
+    // is a configured node (not a memory-less node), then original node and
+    // closest node are the same.
+    if (numa_node_to_cpus(nindex_to_node()->at(i), cpu_map, cpu_map_size * sizeof(unsigned long)) != -1) {
       for (size_t j = 0; j < cpu_map_valid_size; j++) {
         if (cpu_map[j] != 0) {
           for (size_t k = 0; k < BitsPerCLong; k++) {
             if (cpu_map[j] & (1UL << k)) {
-              cpu_to_node()->at_put(j * BitsPerCLong + k, i);
+              cpu_to_node()->at_put(j * BitsPerCLong + k, closest_node);
             }
           }
         }
@@ -2916,14 +2990,20 @@ int os::Linux::get_node_by_cpu(int cpu_id) {
 }
 
 GrowableArray<int>* os::Linux::_cpu_to_node;
+GrowableArray<int>* os::Linux::_nindex_to_node;
 os::Linux::sched_getcpu_func_t os::Linux::_sched_getcpu;
 os::Linux::numa_node_to_cpus_func_t os::Linux::_numa_node_to_cpus;
 os::Linux::numa_max_node_func_t os::Linux::_numa_max_node;
+os::Linux::numa_num_configured_nodes_func_t os::Linux::_numa_num_configured_nodes;
 os::Linux::numa_available_func_t os::Linux::_numa_available;
 os::Linux::numa_tonode_memory_func_t os::Linux::_numa_tonode_memory;
 os::Linux::numa_interleave_memory_func_t os::Linux::_numa_interleave_memory;
 os::Linux::numa_set_bind_policy_func_t os::Linux::_numa_set_bind_policy;
+os::Linux::numa_bitmask_isbitset_func_t os::Linux::_numa_bitmask_isbitset;
+os::Linux::numa_distance_func_t os::Linux::_numa_distance;
 unsigned long* os::Linux::_numa_all_nodes;
+struct bitmask* os::Linux::_numa_all_nodes_ptr;
+struct bitmask* os::Linux::_numa_nodes_ptr;
 
 bool os::pd_uncommit_memory(char* addr, size_t size) {
   uintptr_t res = (uintptr_t) ::mmap(addr, size, PROT_NONE,
