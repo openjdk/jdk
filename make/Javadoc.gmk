@@ -55,6 +55,9 @@ DOCROOTPARENT_FLAG ?= TRUE
 JAVADOC_BASE_URL := http://www.oracle.com/pls/topic/lookup?ctx=javase9&id=homepage
 BUG_SUBMIT_URL := http://bugreport.java.com/bugreport/
 COPYRIGHT_URL := {@docroot}/../legal/cpyr.html
+LICENSE_URL := http://www.oracle.com/technetwork/java/javase/terms/license/java9speclicense.html
+REDISTRIBUTION_URL := http://www.oracle.com/technetwork/java/redist-137594.html
+
 
 # In order to get a specific ordering it's necessary to specify the total
 # ordering of tags as the tags are otherwise ordered in order of definition.
@@ -135,7 +138,10 @@ JAVADOC_BOTTOM := \
     the US and other countries.<br> \
     <a href="$(COPYRIGHT_URL)">Copyright</a> \
     &copy; 1993, $(COPYRIGHT_YEAR), $(FULL_COMPANY_NAME). \
-    $(COMPANY_ADDRESS). All rights reserved.$(DRAFT_MARKER_STR)</span>
+    $(COMPANY_ADDRESS). All rights reserved. \
+    Use is subject to <a href="$(LICENSE_URL)">license terms</a>. Also see the \
+    <a href="$(REDISTRIBUTION_URL)">documentation redistribution policy</a>. \
+    $(DRAFT_MARKER_STR)</span>
 
 JAVADOC_TOP := \
     <div style="background-color: $(HASH)EEEEEE"><div style="padding: 6px; \
