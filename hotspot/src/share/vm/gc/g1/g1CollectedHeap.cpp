@@ -2781,10 +2781,7 @@ size_t G1CollectedHeap::pending_card_num() {
   size_t buffer_size = dcqs.buffer_size();
   size_t buffer_num = dcqs.completed_buffers_num();
 
-  // PtrQueueSet::buffer_size() and PtrQueue:size() return sizes
-  // in bytes - not the number of 'entries'. We need to convert
-  // into a number of cards.
-  return (buffer_size * buffer_num + extra_cards) / oopSize;
+  return buffer_size * buffer_num + extra_cards;
 }
 
 class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
