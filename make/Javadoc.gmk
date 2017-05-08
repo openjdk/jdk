@@ -390,14 +390,14 @@ ifeq ($(ENABLE_FULL_DOCS), true)
     $(eval SPECS_$m := $(call FindModuleSpecsDirs, $m)) \
     $(foreach d, $(SPECS_$m), \
       $(if $(filter %.md, $(call CacheFind, $d)), \
-        $(eval $(call SetupProcessMarkdown, CONVERT_MARKDOWN_$m_$d, \
+        $(eval $(call SetupProcessMarkdown, CONVERT_MARKDOWN_$m_$(patsubst $(TOPDIR)/%,%,$d), \
             SRC := $d, \
             FILES := $(filter %.md, $(call CacheFind, $d)), \
             DEST := $(JAVADOC_OUTPUTDIR)/specs/, \
             CSS := $(GLOBAL_SPECS_DEFAULT_CSS_FILE), \
         )) \
       ) \
-      $(eval JDK_SPECS_TARGETS += $(CONVERT_MARKDOWN_$m_$d)) \
+      $(eval JDK_SPECS_TARGETS += $(CONVERT_MARKDOWN_$m_$(patsubst $(TOPDIR)/%,%,$d))) \
     ) \
   )
 endif
