@@ -53,15 +53,57 @@ class PtrQueue VALUE_OBJ_CLASS_SPEC {
   // be legally locked by then.
   const bool _permanent;
 
+  // The (byte) index at which an object was last enqueued.  Starts at
+  // capacity_in_bytes (indicating an empty buffer) and goes towards zero.
+  // Value is always pointer-size aligned.
+  size_t _index;
+
+  // Size of the current buffer, in bytes.
+  // Value is always pointer-size aligned.
+  size_t _capacity_in_bytes;
+
+  static const size_t _element_size = sizeof(void*);
+
+  // Get the capacity, in bytes.  The capacity must have been set.
+  size_t capacity_in_bytes() const {
+    assert(_capacity_in_bytes > 0, "capacity not set");
+    return _capacity_in_bytes;
+  }
+
+  void set_capacity(size_t entries) {
+    size_t byte_capacity = index_to_byte_index(entries);
+    assert(_capacity_in_bytes == 0 || _capacity_in_bytes == byte_capacity,
+           "changing capacity " SIZE_FORMAT " -> " SIZE_FORMAT,
+           _capacity_in_bytes, byte_capacity);
+    _capacity_in_bytes = byte_capacity;
+  }
+
+  static size_t byte_index_to_index(size_t ind) {
+    assert(is_size_aligned(ind, _element_size), "precondition");
+    return ind / _element_size;
+  }
+
+  static size_t index_to_byte_index(size_t ind) {
+    return ind * _element_size;
+  }
+
 protected:
   // The buffer.
   void** _buf;
-  // The (byte) index at which an object was last enqueued.  Starts at "_sz"
-  // (indicating an empty buffer) and goes towards zero.
-  size_t _index;
 
-  // The (byte) size of the buffer.
-  size_t _sz;
+  size_t index() const {
+    return byte_index_to_index(_index);
+  }
+
+  void set_index(size_t new_index) {
+    size_t byte_index = index_to_byte_index(new_index);
+    assert(byte_index <= capacity_in_bytes(), "precondition");
+    _index = byte_index;
+  }
+
+  size_t capacity() const {
+    return byte_index_to_index(capacity_in_bytes());
+  }
 
   // If there is a lock associated with this buffer, this is that lock.
   Mutex* _lock;
@@ -84,7 +126,12 @@ public:
   // Associate a lock with a ptr queue.
   void set_lock(Mutex* lock) { _lock = lock; }
 
-  void reset() { if (_buf != NULL) _index = _sz; }
+  // Forcibly set empty.
+  void reset() {
+    if (_buf != NULL) {
+      _index = capacity_in_bytes();
+    }
+  }
 
   void enqueue(volatile void* ptr) {
     enqueue((void*)(ptr));
@@ -109,13 +156,18 @@ public:
 
   void enqueue_known_active(void* ptr);
 
-  size_t size() {
-    assert(_sz >= _index, "Invariant.");
-    return _buf == NULL ? 0 : _sz - _index;
+  // Return the size of the in-use region.
+  size_t size() const {
+    size_t result = 0;
+    if (_buf != NULL) {
+      assert(_index <= capacity_in_bytes(), "Invariant");
+      result = byte_index_to_index(capacity_in_bytes() - _index);
+    }
+    return result;
   }
 
-  bool is_empty() {
-    return _buf == NULL || _sz == _index;
+  bool is_empty() const {
+    return _buf == NULL || capacity_in_bytes() == _index;
   }
 
   // Set the "active" property of the queue to "b".  An enqueue to an
@@ -124,22 +176,14 @@ public:
   void set_active(bool b) {
     _active = b;
     if (!b && _buf != NULL) {
-      _index = _sz;
+      reset();
     } else if (b && _buf != NULL) {
-      assert(_index == _sz, "invariant: queues are empty when activated.");
+      assert(index() == capacity(),
+             "invariant: queues are empty when activated.");
     }
   }
 
-  bool is_active() { return _active; }
-
-  static size_t byte_index_to_index(size_t ind) {
-    assert((ind % sizeof(void*)) == 0, "Invariant.");
-    return ind / sizeof(void*);
-  }
-
-  static size_t index_to_byte_index(size_t ind) {
-    return ind * sizeof(void*);
-  }
+  bool is_active() const { return _active; }
 
   // To support compiler.
 
@@ -156,7 +200,7 @@ protected:
     return byte_offset_of(Derived, _buf);
   }
 
-  static ByteSize byte_width_of_buf() { return in_ByteSize(sizeof(void*)); }
+  static ByteSize byte_width_of_buf() { return in_ByteSize(_element_size); }
 
   template<typename Derived>
   static ByteSize byte_offset_of_active() {
@@ -183,10 +227,10 @@ public:
   BufferNode* next() const     { return _next;  }
   void set_next(BufferNode* n) { _next = n;     }
   size_t index() const         { return _index; }
-  void set_index(size_t i)     { _index = i;    }
+  void set_index(size_t i)     { _index = i; }
 
-  // Allocate a new BufferNode with the "buffer" having size bytes.
-  static BufferNode* allocate(size_t byte_size);
+  // Allocate a new BufferNode with the "buffer" having size elements.
+  static BufferNode* allocate(size_t size);
 
   // Free a BufferNode.
   static void deallocate(BufferNode* node);
@@ -213,6 +257,10 @@ public:
 // set, and return completed buffers to the set.
 // All these variables are are protected by the TLOQ_CBL_mon. XXX ???
 class PtrQueueSet VALUE_OBJ_CLASS_SPEC {
+private:
+  // The size of all buffers in the set.
+  size_t _buffer_size;
+
 protected:
   Monitor* _cbl_mon;  // Protects the fields below.
   BufferNode* _completed_buffers_head;
@@ -229,9 +277,6 @@ protected:
   // Queue set can share a freelist. The _fl_owner variable
   // specifies the owner. It is set to "this" by default.
   PtrQueueSet* _fl_owner;
-
-  // The size of all buffers in the set.
-  size_t _sz;
 
   bool _all_active;
 
@@ -270,11 +315,11 @@ protected:
 
 public:
 
-  // Return an empty array of size _sz (required to be non-zero).
+  // Return the buffer for a BufferNode of size buffer_size().
   void** allocate_buffer();
 
-  // Return an empty buffer to the free list.  The "buf" argument is
-  // required to be a pointer to the head of an array of length "_sz".
+  // Return an empty buffer to the free list.  The node is required
+  // to have been allocated with a size of buffer_size().
   void deallocate_buffer(BufferNode* node);
 
   // Declares that "buf" is a complete buffer.
@@ -296,8 +341,11 @@ public:
   // can be called.  And should only be called once.
   void set_buffer_size(size_t sz);
 
-  // Get the buffer size.
-  size_t buffer_size() { return _sz; }
+  // Get the buffer size.  Must have been set.
+  size_t buffer_size() const {
+    assert(_buffer_size > 0, "buffer size not set");
+    return _buffer_size;
+  }
 
   // Get/Set the number of completed buffers that triggers log processing.
   void set_process_completed_threshold(int sz) { _process_completed_threshold = sz; }
