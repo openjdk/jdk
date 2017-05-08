@@ -5482,14 +5482,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
     if (log_is_enabled(Info, class, load)) {
       ResourceMark rm;
       const char* module_name = (module_entry->name() == NULL) ? UNNAMED_MODULE : module_entry->name()->as_C_string();
-
-      if (log_is_enabled(Info, class, load)) {
-        ik->print_loading_log(LogLevel::Info, _loader_data, module_name, _stream);
-      }
-      // No 'else' here as logging levels are not mutually exclusive
-      if (log_is_enabled(Debug, class, load)) {
-        ik->print_loading_log(LogLevel::Debug, _loader_data, module_name, _stream);
-      }
+      ik->print_class_load_logging(_loader_data, module_name, _stream);
     }
 
     if (log_is_enabled(Debug, class, resolve))  {

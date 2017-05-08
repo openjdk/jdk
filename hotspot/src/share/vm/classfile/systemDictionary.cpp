@@ -1384,14 +1384,7 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
       ik->restore_unshareable_info(loader_data, protection_domain, CHECK_NULL);
     }
 
-    if (log_is_enabled(Info, class, load)) {
-      ik->print_loading_log(LogLevel::Info, loader_data, NULL, NULL);
-    }
-    // No 'else' here as logging levels are not mutually exclusive
-
-    if (log_is_enabled(Debug, class, load)) {
-      ik->print_loading_log(LogLevel::Debug, loader_data, NULL, NULL);
-    }
+    ik->print_class_load_logging(loader_data, NULL, NULL);
 
     // For boot loader, ensure that GetSystemPackage knows that a class in this
     // package was loaded.

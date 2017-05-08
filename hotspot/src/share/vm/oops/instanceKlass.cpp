@@ -41,6 +41,7 @@
 #include "interpreter/rewriter.hpp"
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
+#include "logging/logMessage.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/metadataFactory.hpp"
@@ -72,7 +73,6 @@
 #include "utilities/dtrace.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/stringUtils.hpp"
-#include "logging/log.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
 #endif
@@ -3058,37 +3058,31 @@ const char* InstanceKlass::internal_name() const {
   return external_name();
 }
 
-void InstanceKlass::print_loading_log(LogLevel::type type,
-                                      ClassLoaderData* loader_data,
-                                      const char* module_name,
-                                      const ClassFileStream* cfs) const {
-  ResourceMark rm;
-  outputStream* log;
-
-  assert(type == LogLevel::Info || type == LogLevel::Debug, "sanity");
-
-  if (type == LogLevel::Info) {
-    log = Log(class, load)::info_stream();
-  } else {
-    assert(type == LogLevel::Debug,
-           "print_loading_log supports only Debug and Info levels");
-    log = Log(class, load)::debug_stream();
+void InstanceKlass::print_class_load_logging(ClassLoaderData* loader_data,
+                                             const char* module_name,
+                                             const ClassFileStream* cfs) const {
+  if (!log_is_enabled(Info, class, load)) {
+    return;
   }
 
+  ResourceMark rm;
+  LogMessage(class, load) msg;
+  stringStream info_stream;
+
   // Name and class hierarchy info
-  log->print("%s", external_name());
+  info_stream.print("%s", external_name());
 
   // Source
   if (cfs != NULL) {
     if (cfs->source() != NULL) {
       if (module_name != NULL) {
         if (ClassLoader::is_jrt(cfs->source())) {
-          log->print(" source: jrt:/%s", module_name);
+          info_stream.print(" source: jrt:/%s", module_name);
         } else {
-          log->print(" source: %s", cfs->source());
+          info_stream.print(" source: %s", cfs->source());
         }
       } else {
-        log->print(" source: %s", cfs->source());
+        info_stream.print(" source: %s", cfs->source());
       }
     } else if (loader_data == ClassLoaderData::the_null_class_loader_data()) {
       Thread* THREAD = Thread::current();
@@ -3098,46 +3092,52 @@ void InstanceKlass::print_loading_log(LogLevel::type type,
                 : NULL;
       // caller can be NULL, for example, during a JVMTI VM_Init hook
       if (caller != NULL) {
-        log->print(" source: instance of %s", caller->external_name());
+        info_stream.print(" source: instance of %s", caller->external_name());
       } else {
         // source is unknown
       }
     } else {
       oop class_loader = loader_data->class_loader();
-      log->print(" source: %s", class_loader->klass()->external_name());
+      info_stream.print(" source: %s", class_loader->klass()->external_name());
     }
   } else {
-    log->print(" source: shared objects file");
+    info_stream.print(" source: shared objects file");
   }
 
-  if (type == LogLevel::Debug) {
-    // Class hierarchy info
-    log->print(" klass: " INTPTR_FORMAT " super: " INTPTR_FORMAT,
-               p2i(this),  p2i(superklass()));
+  msg.info("%s", info_stream.as_string());
 
+  if (log_is_enabled(Debug, class, load)) {
+    stringStream debug_stream;
+
+    // Class hierarchy info
+    debug_stream.print(" klass: " INTPTR_FORMAT " super: " INTPTR_FORMAT,
+                       p2i(this),  p2i(superklass()));
+
+    // Interfaces
     if (local_interfaces() != NULL && local_interfaces()->length() > 0) {
-      log->print(" interfaces:");
+      debug_stream.print(" interfaces:");
       int length = local_interfaces()->length();
       for (int i = 0; i < length; i++) {
-        log->print(" " INTPTR_FORMAT,
-                   p2i(InstanceKlass::cast(local_interfaces()->at(i))));
+        debug_stream.print(" " INTPTR_FORMAT,
+                           p2i(InstanceKlass::cast(local_interfaces()->at(i))));
       }
     }
 
     // Class loader
-    log->print(" loader: [");
-    loader_data->print_value_on(log);
-    log->print("]");
+    debug_stream.print(" loader: [");
+    loader_data->print_value_on(&debug_stream);
+    debug_stream.print("]");
 
     // Classfile checksum
     if (cfs) {
-      log->print(" bytes: %d checksum: %08x",
-                 cfs->length(),
-                 ClassLoader::crc32(0, (const char*)cfs->buffer(),
-                 cfs->length()));
+      debug_stream.print(" bytes: %d checksum: %08x",
+                         cfs->length(),
+                         ClassLoader::crc32(0, (const char*)cfs->buffer(),
+                         cfs->length()));
     }
+
+    msg.debug("%s", debug_stream.as_string());
   }
-  log->cr();
 }
 
 #if INCLUDE_SERVICES

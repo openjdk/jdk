@@ -30,7 +30,6 @@
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
 #include "gc/shared/specialized_oop_closures.hpp"
-#include "logging/logLevel.hpp"
 #include "memory/referenceType.hpp"
 #include "oops/annotations.hpp"
 #include "oops/constMethod.hpp"
@@ -1369,8 +1368,9 @@ public:
   void oop_verify_on(oop obj, outputStream* st);
 
   // Logging
-  void print_loading_log(LogLevel::type type, ClassLoaderData* loader_data,
-                         const char* module_name, const ClassFileStream* cfs) const;
+  void print_class_load_logging(ClassLoaderData* loader_data,
+                                const char* module_name,
+                                const ClassFileStream* cfs) const;
 };
 
 // for adding methods
