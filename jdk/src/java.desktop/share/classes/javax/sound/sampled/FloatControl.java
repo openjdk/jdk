@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -361,8 +361,8 @@ public abstract class FloatControl extends Control {
          * loudness is unaffected. Note that gain measures dB, not amplitude.
          * The relationship between a gain in decibels and the corresponding
          * linear amplitude multiplier is:
-         *
-         * <CENTER>{@code linearScalar = pow(10.0, gainDB/20.0)}</CENTER>
+         * <p style="text-align:center">
+         * {@code linearScalar = pow(10.0, gainDB/20.0)}
          * <p>
          * The {@code FloatControl} class has methods to impose a maximum and
          * minimum allowable value for gain. However, because an audio signal
