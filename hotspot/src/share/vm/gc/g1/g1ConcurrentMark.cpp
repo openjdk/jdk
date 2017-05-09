@@ -135,8 +135,7 @@ void G1CMBitMap::clear_range(MemRegion mr) {
 G1CMMarkStack::G1CMMarkStack() :
   _max_chunk_capacity(0),
   _base(NULL),
-  _chunk_capacity(0),
-  _should_expand(false) {
+  _chunk_capacity(0) {
   set_empty();
 }
 
@@ -159,7 +158,6 @@ bool G1CMMarkStack::resize(size_t new_capacity) {
   _base = new_base;
   _chunk_capacity = new_capacity;
   set_empty();
-  _should_expand = false;
 
   return true;
 }
@@ -188,9 +186,6 @@ bool G1CMMarkStack::initialize(size_t initial_capacity, size_t max_capacity) {
 }
 
 void G1CMMarkStack::expand() {
-  // Clear expansion flag
-  _should_expand = false;
-
   if (_chunk_capacity == _max_chunk_capacity) {
     log_debug(gc)("Can not expand overflow mark stack further, already at maximum capacity of " SIZE_FORMAT " chunks.", _chunk_capacity);
     return;
@@ -590,8 +585,13 @@ void G1ConcurrentMark::reset() {
 
 
 void G1ConcurrentMark::reset_marking_state() {
-  _global_mark_stack.set_should_expand(has_overflown());
   _global_mark_stack.set_empty();
+
+  // Expand the marking stack, if we have to and if we can.
+  if (has_overflown()) {
+    _global_mark_stack.expand();
+  }
+
   clear_has_overflown();
   _finger = _heap_start;
 
@@ -1154,11 +1154,6 @@ void G1ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
     assert(!restart_for_overflow(), "sanity");
     // Completely reset the marking state since marking completed
     set_non_marking_state();
-  }
-
-  // Expand the marking stack, if we have to and if we can.
-  if (_global_mark_stack.should_expand()) {
-    _global_mark_stack.expand();
   }
 
   // Statistics
