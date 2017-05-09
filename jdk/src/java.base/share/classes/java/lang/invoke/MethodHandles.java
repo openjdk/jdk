@@ -113,6 +113,19 @@ public class MethodHandles {
     }
 
     /**
+     * This reflected$lookup method is the alternate implementation of
+     * the lookup method when being invoked by reflection.
+     */
+    @CallerSensitive
+    private static Lookup reflected$lookup() {
+        Class<?> caller = Reflection.getCallerClass();
+        if (caller.getClassLoader() == null) {
+            throw newIllegalArgumentException("illegal lookupClass: "+caller);
+        }
+        return new Lookup(caller);
+    }
+
+    /**
      * Returns a {@link Lookup lookup object} which is trusted minimally.
      * The lookup has the {@code PUBLIC} and {@code UNCONDITIONAL} modes.
      * It can only be used to create method handles to public members of
@@ -747,7 +760,7 @@ public class MethodHandles {
         Lookup(Class<?> lookupClass) {
             this(lookupClass, FULL_POWER_MODES);
             // make sure we haven't accidentally picked up a privileged class:
-            checkUnprivilegedlookupClass(lookupClass, FULL_POWER_MODES);
+            checkUnprivilegedlookupClass(lookupClass);
         }
 
         private Lookup(Class<?> lookupClass, int allowedModes) {
@@ -827,7 +840,7 @@ public class MethodHandles {
                 newModes = 0;
             }
 
-            checkUnprivilegedlookupClass(requestedLookupClass, newModes);
+            checkUnprivilegedlookupClass(requestedLookupClass);
             return new Lookup(requestedLookupClass, newModes);
         }
 
@@ -979,25 +992,10 @@ public class MethodHandles {
          */
         static final Lookup PUBLIC_LOOKUP = new Lookup(Object.class, (PUBLIC|UNCONDITIONAL));
 
-        private static void checkUnprivilegedlookupClass(Class<?> lookupClass, int allowedModes) {
+        private static void checkUnprivilegedlookupClass(Class<?> lookupClass) {
             String name = lookupClass.getName();
             if (name.startsWith("java.lang.invoke."))
                 throw newIllegalArgumentException("illegal lookupClass: "+lookupClass);
-
-            // For caller-sensitive MethodHandles.lookup() disallow lookup from
-            // restricted packages.  This a fragile and blunt approach.
-            // TODO replace with a more formal and less fragile mechanism
-            // that does not bluntly restrict classes under packages within
-            // java.base from looking up MethodHandles or VarHandles.
-            if (allowedModes == FULL_POWER_MODES && lookupClass.getClassLoader() == null) {
-                if ((name.startsWith("java.") &&
-                     !name.equals("java.lang.Thread") &&
-                     !name.startsWith("java.util.concurrent.")) ||
-                    (name.startsWith("sun.") &&
-                     !name.startsWith("sun.invoke."))) {
-                    throw newIllegalArgumentException("illegal lookupClass: " + lookupClass);
-                }
-            }
         }
 
         /**
