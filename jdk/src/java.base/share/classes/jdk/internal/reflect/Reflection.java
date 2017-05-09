@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.loader.ClassLoaders;
 import jdk.internal.misc.VM;
 
 /** Common utility routines used by both java.lang and
@@ -315,19 +316,9 @@ public class Reflection {
      */
     public static boolean isCallerSensitive(Method m) {
         final ClassLoader loader = m.getDeclaringClass().getClassLoader();
-        if (VM.isSystemDomainLoader(loader) || isExtClassLoader(loader))  {
+        if (VM.isSystemDomainLoader(loader) ||
+                loader == ClassLoaders.platformClassLoader()) {
             return m.isAnnotationPresent(CallerSensitive.class);
-        }
-        return false;
-    }
-
-    private static boolean isExtClassLoader(ClassLoader loader) {
-        ClassLoader cl = ClassLoader.getSystemClassLoader();
-        while (cl != null) {
-            if (cl.getParent() == null && cl == loader) {
-                return true;
-            }
-            cl = cl.getParent();
         }
         return false;
     }
