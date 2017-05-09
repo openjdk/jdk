@@ -213,7 +213,9 @@ import java.util.Arrays;
  * methods.
  * @since 1.8
  */
-public class LambdaMetafactory {
+public final class LambdaMetafactory {
+
+    private LambdaMetafactory() {}
 
     /** Flag for alternate metafactories indicating the lambda object
      * must be serializable */
