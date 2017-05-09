@@ -68,8 +68,9 @@ class ExtendedOopClosure : public OopClosure {
   // Iteration of InstanceRefKlasses differ depending on the closure,
   // the below enum describes the different alternatives.
   enum ReferenceIterationMode {
-    DO_DISCOVERY, // Apply closure and discover references
-    DO_FIELDS     // Apply closure to all fields
+    DO_DISCOVERY,                // Apply closure and discover references
+    DO_DISCOVERED_AND_DISCOVERY, // Apply closure to discovered field and do discovery
+    DO_FIELDS                    // Apply closure to all fields
   };
 
   // The default iteration mode is to do discovery.
@@ -102,7 +103,6 @@ class ExtendedOopClosure : public OopClosure {
   // True iff this closure may be safely applied more than once to an oop
   // location without an intervening "major reset" (like the end of a GC).
   virtual bool idempotent() { return false; }
-  virtual bool apply_to_weak_ref_discovered_field() { return false; }
 
 #ifdef ASSERT
   // Default verification of each visited oop field.

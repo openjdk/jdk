@@ -56,7 +56,8 @@ protected:
   ~G1ParClosureSuper() { }
 
 public:
-  virtual bool apply_to_weak_ref_discovered_field() { return true; }
+  // This closure needs special handling for InstanceRefKlass.
+  virtual ReferenceIterationMode reference_iteration_mode() { return DO_DISCOVERED_AND_DISCOVERY; }
 };
 
 class G1ParPushHeapRSClosure : public G1ParClosureSuper {
@@ -189,8 +190,6 @@ public:
     _from = from;
   }
 
-  bool apply_to_weak_ref_discovered_field() { return true; }
-
   bool self_forwarded(oop obj) {
     markOop m = obj->mark();
     bool result = (m->is_marked() && ((oop)m->decode_pointer() == obj));
@@ -202,6 +201,9 @@ public:
   template <class T> inline void do_oop_nv(T* p);
   virtual inline void do_oop(narrowOop* p);
   virtual inline void do_oop(oop* p);
+
+  // This closure needs special handling for InstanceRefKlass.
+  virtual ReferenceIterationMode reference_iteration_mode() { return DO_DISCOVERED_AND_DISCOVERY; }
 };
 
 #endif // SHARE_VM_GC_G1_G1OOPCLOSURES_HPP
