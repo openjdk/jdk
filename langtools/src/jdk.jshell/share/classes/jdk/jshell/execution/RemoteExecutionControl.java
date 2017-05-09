@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,6 +94,15 @@ public class RemoteExecutionControl extends DirectExecutionControl implements Ex
      * Create an instance using the default class loading.
      */
     public RemoteExecutionControl() {
+    }
+
+    /**
+     * Redefine processing on the remote end is only to register the redefined classes
+     */
+    @Override
+    public void redefine(ClassBytecodes[] cbcs)
+            throws ClassInstallException, NotImplementedException, EngineTerminationException {
+        classesRedefined(cbcs);
     }
 
     @Override
