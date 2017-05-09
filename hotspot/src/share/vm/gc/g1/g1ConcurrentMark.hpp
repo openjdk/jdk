@@ -259,8 +259,6 @@ private:
   TaskQueueEntryChunk* remove_chunk_from_chunk_list();
   TaskQueueEntryChunk* remove_chunk_from_free_list();
 
-  bool  _should_expand;
-
   // Resizes the mark stack to the given new capacity. Releases any previous
   // memory if successful.
   bool resize(size_t new_capacity);
@@ -292,9 +290,6 @@ private:
   bool is_empty() const { return _chunk_list == NULL; }
 
   size_t capacity() const  { return _chunk_capacity; }
-
-  bool should_expand() const { return _should_expand; }
-  void set_should_expand(bool value) { _should_expand = value; }
 
   // Expand the stack, typically in response to an overflow condition
   void expand();
