@@ -3720,7 +3720,7 @@ void TemplateTable::_new() {
       __ bge(CCR0, Lslow_case);
 
       // Increment waste limit to prevent getting stuck on this slow path.
-      __ addi(RtlabWasteLimitValue, RtlabWasteLimitValue, (int)ThreadLocalAllocBuffer::refill_waste_limit_increment());
+      __ add_const_optimized(RtlabWasteLimitValue, RtlabWasteLimitValue, ThreadLocalAllocBuffer::refill_waste_limit_increment());
       __ std(RtlabWasteLimitValue, in_bytes(JavaThread::tlab_refill_waste_limit_offset()), R16_thread);
     }
     // else: No allocation in the shared eden. // fallthru: __ b(Lslow_case);
