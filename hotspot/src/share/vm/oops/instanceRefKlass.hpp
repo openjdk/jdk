@@ -123,6 +123,12 @@ private:
   template <bool nv, typename T, class OopClosureType, class Contains>
   static void oop_oop_iterate_discovery(oop obj, ReferenceType type, OopClosureType* closure, Contains& contains);
 
+  // Used for a special case in G1 where the closure needs to be applied
+  // to the discovered field. Reference discovery is also done if the
+  // closure provides a ReferenceProcessor.
+  template <bool nv, typename T, class OopClosureType, class Contains>
+  static void oop_oop_iterate_discovered_and_discovery(oop obj, ReferenceType type, OopClosureType* closure, Contains& contains);
+
   // Apply the closure to all fields. No reference discovery is done.
   template <bool nv, typename T, class OopClosureType, class Contains>
   static void oop_oop_iterate_fields(oop obj, OopClosureType* closure, Contains& contains);

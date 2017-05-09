@@ -79,11 +79,6 @@ template <bool nv, typename T, class OopClosureType, class Contains>
 void InstanceRefKlass::oop_oop_iterate_discovery(oop obj, ReferenceType type, OopClosureType* closure, Contains& contains) {
   log_develop_trace(gc, ref)("Process reference with discovery " PTR_FORMAT, p2i(obj));
 
-  // Special case for some closures.
-  if (closure->apply_to_weak_ref_discovered_field()) {
-    do_discovered<nv, T>(obj, closure, contains);
-  }
-
   // Try to discover reference and return if it succeeds.
   if (try_discover<T>(obj, type, closure)) {
     return;
@@ -116,10 +111,21 @@ void InstanceRefKlass::oop_oop_iterate_fields(oop obj, OopClosureType* closure, 
 }
 
 template <bool nv, typename T, class OopClosureType, class Contains>
+void InstanceRefKlass::oop_oop_iterate_discovered_and_discovery(oop obj, ReferenceType type, OopClosureType* closure, Contains& contains) {
+  // Explicitly apply closure to the discovered field.
+  do_discovered<nv, T>(obj, closure, contains);
+  // Then do normal reference processing with discovery.
+  oop_oop_iterate_discovery<nv, T>(obj, type, closure, contains);
+}
+
+template <bool nv, typename T, class OopClosureType, class Contains>
 void InstanceRefKlass::oop_oop_iterate_ref_processing_specialized(oop obj, OopClosureType* closure, Contains& contains) {
   switch (closure->reference_iteration_mode()) {
     case ExtendedOopClosure::DO_DISCOVERY:
       oop_oop_iterate_discovery<nv, T>(obj, reference_type(), closure, contains);
+      break;
+    case ExtendedOopClosure::DO_DISCOVERED_AND_DISCOVERY:
+      oop_oop_iterate_discovered_and_discovery<nv, T>(obj, reference_type(), closure, contains);
       break;
     case ExtendedOopClosure::DO_FIELDS:
       oop_oop_iterate_fields<nv, T>(obj, closure, contains);
