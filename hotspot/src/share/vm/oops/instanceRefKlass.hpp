@@ -134,7 +134,7 @@ private:
   static void oop_oop_iterate_fields(oop obj, OopClosureType* closure, Contains& contains);
 
   template <typename T>
-  static void trace_reference_gc(const char *s, oop obj, T* referent_addr, T* next_addr, T* discovered_addr) NOT_DEBUG_RETURN;
+  static void trace_reference_gc(const char *s, oop obj) NOT_DEBUG_RETURN;
 
  public:
 

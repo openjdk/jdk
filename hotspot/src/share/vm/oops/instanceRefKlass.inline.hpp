@@ -77,8 +77,6 @@ bool InstanceRefKlass::try_discover(oop obj, ReferenceType type, OopClosureType*
 
 template <bool nv, typename T, class OopClosureType, class Contains>
 void InstanceRefKlass::oop_oop_iterate_discovery(oop obj, ReferenceType type, OopClosureType* closure, Contains& contains) {
-  log_develop_trace(gc, ref)("Process reference with discovery " PTR_FORMAT, p2i(obj));
-
   // Try to discover reference and return if it succeeds.
   if (try_discover<T>(obj, type, closure)) {
     return;
@@ -102,12 +100,6 @@ void InstanceRefKlass::oop_oop_iterate_fields(oop obj, OopClosureType* closure, 
   do_referent<nv, T>(obj, closure, contains);
   do_discovered<nv, T>(obj, closure, contains);
   do_next<nv, T>(obj, closure, contains);
-
-  trace_reference_gc("InstanceRefKlass::oop_oop_iterate_fields()",
-                     obj,
-                     (T*)java_lang_ref_Reference::referent_addr(obj),
-                     (T*)java_lang_ref_Reference::next_addr(obj),
-                     (T*)java_lang_ref_Reference::discovered_addr(obj));
 }
 
 template <bool nv, typename T, class OopClosureType, class Contains>
@@ -122,12 +114,15 @@ template <bool nv, typename T, class OopClosureType, class Contains>
 void InstanceRefKlass::oop_oop_iterate_ref_processing_specialized(oop obj, OopClosureType* closure, Contains& contains) {
   switch (closure->reference_iteration_mode()) {
     case ExtendedOopClosure::DO_DISCOVERY:
+      trace_reference_gc<T>("do_discovery", obj);
       oop_oop_iterate_discovery<nv, T>(obj, reference_type(), closure, contains);
       break;
     case ExtendedOopClosure::DO_DISCOVERED_AND_DISCOVERY:
+      trace_reference_gc<T>("do_discovered_and_discovery", obj);
       oop_oop_iterate_discovered_and_discovery<nv, T>(obj, reference_type(), closure, contains);
       break;
     case ExtendedOopClosure::DO_FIELDS:
+      trace_reference_gc<T>("do_fields", obj);
       oop_oop_iterate_fields<nv, T>(obj, closure, contains);
       break;
     default:
@@ -193,8 +188,12 @@ void InstanceRefKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure,
 
 #ifdef ASSERT
 template <typename T>
-void InstanceRefKlass::trace_reference_gc(const char *s, oop obj, T* referent_addr, T* next_addr, T* discovered_addr) {
-  log_develop_trace(gc, ref)("%s obj " PTR_FORMAT, s, p2i(obj));
+void InstanceRefKlass::trace_reference_gc(const char *s, oop obj) {
+  T* referent_addr   = (T*) java_lang_ref_Reference::referent_addr(obj);
+  T* next_addr       = (T*) java_lang_ref_Reference::next_addr(obj);
+  T* discovered_addr = (T*) java_lang_ref_Reference::discovered_addr(obj);
+
+  log_develop_trace(gc, ref)("InstanceRefKlass %s for obj " PTR_FORMAT, s, p2i(obj));
   log_develop_trace(gc, ref)("     referent_addr/* " PTR_FORMAT " / " PTR_FORMAT,
       p2i(referent_addr), p2i(referent_addr ? (address)oopDesc::load_decode_heap_oop(referent_addr) : NULL));
   log_develop_trace(gc, ref)("     next_addr/* " PTR_FORMAT " / " PTR_FORMAT,
