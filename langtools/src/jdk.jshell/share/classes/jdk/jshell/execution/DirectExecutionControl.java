@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,6 +89,17 @@ public class DirectExecutionControl implements ExecutionControl {
     public void redefine(ClassBytecodes[] cbcs)
             throws ClassInstallException, NotImplementedException, EngineTerminationException {
         throw new NotImplementedException("redefine not supported");
+    }
+
+    /**Notify that classes have been redefined.
+     *
+     * @param cbcs the class name and bytecodes to redefine
+     * @throws NotImplementedException if not implemented
+     * @throws EngineTerminationException the execution engine has terminated
+     */
+    protected void classesRedefined(ClassBytecodes[] cbcs)
+            throws NotImplementedException, EngineTerminationException {
+        loaderDelegate.classesRedefined(cbcs);
     }
 
     @Override

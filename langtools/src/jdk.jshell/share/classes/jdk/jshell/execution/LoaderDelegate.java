@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,13 @@ public interface LoaderDelegate {
      */
     void load(ClassBytecodes[] cbcs)
             throws ClassInstallException, NotImplementedException, EngineTerminationException;
+
+    /**
+     * Notify that classes have been redefined.
+     *
+     * @param cbcs the class names and bytecodes that have been redefined
+     */
+    public void classesRedefined(ClassBytecodes[] cbcs);
 
     /**
      * Adds the path to the execution class path.
