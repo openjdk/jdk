@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,13 @@
  *
  */
 
-#ifndef SHARE_VM_UTILITIES_ARRAY_HPP
-#define SHARE_VM_UTILITIES_ARRAY_HPP
+#ifndef SHARE_VM_OOPS_ARRAY_HPP
+#define SHARE_VM_OOPS_ARRAY_HPP
 
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/metaspace.hpp"
 #include "runtime/orderAccess.hpp"
-
-// Arrays for basic types
-typedef GrowableArray<int> intArray;
-typedef GrowableArray<int> intStack;
-typedef GrowableArray<bool> boolArray;
-typedef GrowableArray<bool> boolStack;
 
 // Array for metadata allocation
 
@@ -155,4 +149,4 @@ protected:
 };
 
 
-#endif // SHARE_VM_UTILITIES_ARRAY_HPP
+#endif // SHARE_VM_OOPS_ARRAY_HPP

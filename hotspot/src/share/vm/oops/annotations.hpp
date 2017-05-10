@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
 #ifndef SHARE_VM_OOPS_ANNOTATIONS_HPP
 #define SHARE_VM_OOPS_ANNOTATIONS_HPP
 
+#include "oops/array.hpp"
 #include "oops/metadata.hpp"
 #include "runtime/handles.hpp"
-#include "utilities/array.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
 
