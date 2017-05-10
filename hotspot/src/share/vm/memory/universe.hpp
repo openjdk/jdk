@@ -25,8 +25,8 @@
 #ifndef SHARE_VM_MEMORY_UNIVERSE_HPP
 #define SHARE_VM_MEMORY_UNIVERSE_HPP
 
+#include "oops/array.hpp"
 #include "runtime/handles.hpp"
-#include "utilities/array.hpp"
 #include "utilities/growableArray.hpp"
 
 // Universe is a name space holding known system classes and objects in the VM.
