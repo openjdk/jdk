@@ -27,8 +27,8 @@
 
 #include "interpreter/bytecodes.hpp"
 #include "memory/allocation.hpp"
+#include "oops/array.hpp"
 #include "runtime/orderAccess.hpp"
-#include "utilities/array.hpp"
 
 class PSPromotionManager;
 

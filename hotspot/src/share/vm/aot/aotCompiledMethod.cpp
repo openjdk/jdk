@@ -39,7 +39,6 @@
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "utilities/array.hpp"
 #include "utilities/xmlstream.hpp"
 
 #include <stdio.h>
