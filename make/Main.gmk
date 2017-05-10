@@ -277,7 +277,10 @@ ALL_TARGETS += $(HOTSPOT_VARIANT_TARGETS) $(HOTSPOT_VARIANT_GENSRC_TARGETS) \
 demos-jdk:
 	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileDemos.gmk)
 
-ALL_TARGETS += demos-jdk
+test-image-demos-jdk:
+	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileDemos.gmk images)
+
+ALL_TARGETS += demos-jdk test-image-demos-jdk
 
 ################################################################################
 # Jigsaw specific data and analysis targets.
@@ -631,6 +634,7 @@ else
   # jdk libs, even though they don't need to. To avoid warnings, make sure they
   # aren't built until after libjava and libjvm are available to link to.
   demos-jdk: java.base-libs exploded-image-optimize
+  test-image-demos-jdk: demos-jdk
 
   # Declare dependency from <module>-java to <module>-gensrc
   $(foreach m, $(GENSRC_MODULES), $(eval $m-java: $m-gensrc))
@@ -963,7 +967,8 @@ docs-image: docs-jdk
 
 # This target builds the test image
 test-image: prepare-test-image test-image-hotspot-jtreg-native \
-    test-image-jdk-jtreg-native test-image-failure-handler test-image-hotspot-gtest
+    test-image-jdk-jtreg-native test-image-failure-handler test-image-hotspot-gtest \
+    test-image-demos-jdk
 
 # all-images builds all our deliverables as images.
 all-images: product-images test-image docs-image

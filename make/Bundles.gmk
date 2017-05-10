@@ -183,6 +183,7 @@ ifneq ($(filter product-bundles, $(MAKECMDGOALS)), )
           $(JDK_SYMBOLS_EXCLUDE_PATTERN) \
           $(JDK_EXTRA_EXCLUDES) \
           $(SYMBOLS_EXCLUDE_PATTERN) \
+          $(JDK_IMAGE_HOMEDIR)/demo/%
           , \
           $(ALL_JDK_FILES) \
       )
