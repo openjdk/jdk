@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,10 +53,9 @@
  *   <li>PKCS #8: Private-Key Information Syntax Standard, Version 1.2,
  *     November 1993</li>
  *
- *   <li><a href="{@docRoot}/../technotes/guides/security/StandardNames.html">
- *     <b>Java&trade;
- *     Cryptography Architecture Standard Algorithm Name
- *     Documentation</b></a></li>
+ *   <li><a href="{@docRoot}/../specs/security/standard-names.html">
+ *     <b>Java&trade; Security Standard Algorithm Names Specification
+ *     </b></a></li>
  * </ul>
  *
  * <h2>Related Documentation</h2>
