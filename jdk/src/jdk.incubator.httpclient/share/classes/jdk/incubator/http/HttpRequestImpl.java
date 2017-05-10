@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,7 @@ class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         this.method = method;
         this.systemHeaders = new HttpHeadersImpl();
         this.userHeaders = ImmutableHeaders.empty();
-        this.uri = null;
+        this.uri = URI.create("socket://" + authority.getHostString() + ":" + Integer.toString(authority.getPort()) + "/");
         this.requestProcessor = HttpRequest.noBody();
         this.authority = authority;
         this.secure = false;
