@@ -28,7 +28,7 @@
  * MBeanException wrapping a ServiceNotFoundException is thrown is setAttribute
  * called but no setMethod field has been provided.
  * @author Jean-Francois Denise
- * @modules java.management
+ *
  * @run clean RequiredModelMBeanSetAttributeTest
  * @run build RequiredModelMBeanSetAttributeTest
  * @run main RequiredModelMBeanSetAttributeTest

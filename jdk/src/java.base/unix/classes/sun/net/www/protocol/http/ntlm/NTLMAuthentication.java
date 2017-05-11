@@ -35,6 +35,7 @@ import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.util.Base64;
 import java.util.Objects;
+import java.util.Properties;
 
 import sun.net.www.HeaderParser;
 import sun.net.www.protocol.http.AuthenticationInfo;
@@ -76,8 +77,15 @@ public class NTLMAuthentication extends AuthenticationInfo {
 
     private String hostname;
     /* Domain to use if not specified by user */
-    private static String defaultDomain =
-            GetPropertyAction.privilegedGetProperty("http.auth.ntlm.domain", "");
+    private static final String defaultDomain;
+    /* Whether cache is enabled for NTLM */
+    private static final boolean ntlmCache;
+    static {
+        Properties props = GetPropertyAction.privilegedGetProperties();
+        defaultDomain = props.getProperty("http.auth.ntlm.domain", "");
+        String ntlmCacheProp = props.getProperty("jdk.ntlm.cache", "true");
+        ntlmCache = Boolean.parseBoolean(ntlmCacheProp);
+    }
 
     public static boolean supportsTransparentAuth () {
         return false;
@@ -169,6 +177,11 @@ public class NTLMAuthentication extends AuthenticationInfo {
                 "",
                 Objects.requireNonNull(authenticatorKey));
         init (pw);
+    }
+
+    @Override
+    protected boolean useAuthCache() {
+        return ntlmCache && super.useAuthCache();
     }
 
     /**
