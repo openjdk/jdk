@@ -207,30 +207,30 @@ void os::Posix::print_rlimit_info(outputStream* st) {
   st->print(" STACK ");
   getrlimit(RLIMIT_STACK, &rlim);
   if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%luk", rlim.rlim_cur >> 10);
+  else st->print(UINT64_FORMAT "k", uint64_t(rlim.rlim_cur) >> 10);
 
   st->print(", CORE ");
   getrlimit(RLIMIT_CORE, &rlim);
   if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%luk", rlim.rlim_cur >> 10);
+  else st->print(UINT64_FORMAT "k", uint64_t(rlim.rlim_cur) >> 10);
 
   // Isn't there on solaris
 #if !defined(SOLARIS) && !defined(AIX)
   st->print(", NPROC ");
   getrlimit(RLIMIT_NPROC, &rlim);
   if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%lu", rlim.rlim_cur);
+  else st->print(UINT64_FORMAT, uint64_t(rlim.rlim_cur));
 #endif
 
   st->print(", NOFILE ");
   getrlimit(RLIMIT_NOFILE, &rlim);
   if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%lu", rlim.rlim_cur);
+  else st->print(UINT64_FORMAT, uint64_t(rlim.rlim_cur));
 
   st->print(", AS ");
   getrlimit(RLIMIT_AS, &rlim);
   if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%luk", rlim.rlim_cur >> 10);
+  else st->print(UINT64_FORMAT "k", uint64_t(rlim.rlim_cur) >> 10);
   st->cr();
 }
 
