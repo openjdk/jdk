@@ -281,9 +281,6 @@ void AbstractInterpreter::layout_activation(Method* method,
   *interpreter_frame->register_addr(LcpoolCache) = (intptr_t) method->constants()->cache();
   // save the mirror in the interpreter frame
   *interpreter_frame->interpreter_frame_mirror_addr() = method->method_holder()->java_mirror();
-#ifdef FAST_DISPATCH
-  *interpreter_frame->register_addr(IdispatchTables) = (intptr_t) Interpreter::dispatch_table();
-#endif
 
 #ifdef ASSERT
   BasicObjectLock* mp = (BasicObjectLock*)monitors;

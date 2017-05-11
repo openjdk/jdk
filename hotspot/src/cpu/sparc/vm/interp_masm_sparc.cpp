@@ -39,11 +39,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/thread.inline.hpp"
 
-#ifndef FAST_DISPATCH
-#define FAST_DISPATCH 1
-#endif
-#undef FAST_DISPATCH
-
 // Implementation of InterpreterMacroAssembler
 
 // This file specializes the assember with interpreter-specific macros
@@ -78,23 +73,12 @@ void InterpreterMacroAssembler::compute_extra_locals_size_in_bytes(Register args
 // own dispatch. The dispatch address is computed and placed in IdispatchAddress
 void InterpreterMacroAssembler::dispatch_prolog(TosState state, int bcp_incr) {
   assert_not_delayed();
-#ifdef FAST_DISPATCH
-  // FAST_DISPATCH and ProfileInterpreter are mutually exclusive since
-  // they both use I2.
-  assert(!ProfileInterpreter, "FAST_DISPATCH and +ProfileInterpreter are mutually exclusive");
-  ldub(Lbcp, bcp_incr, Lbyte_code);                     // load next bytecode
-  add(Lbyte_code, Interpreter::distance_from_dispatch_table(state), Lbyte_code);
-                                                        // add offset to correct dispatch table
-  sll(Lbyte_code, LogBytesPerWord, Lbyte_code);         // multiply by wordSize
-  ld_ptr(IdispatchTables, Lbyte_code, IdispatchAddress);// get entry addr
-#else
   ldub( Lbcp, bcp_incr, Lbyte_code);                    // load next bytecode
   // dispatch table to use
   AddressLiteral tbl(Interpreter::dispatch_table(state));
   sll(Lbyte_code, LogBytesPerWord, Lbyte_code);         // multiply by wordSize
   set(tbl, G3_scratch);                                 // compute addr of table
   ld_ptr(G3_scratch, Lbyte_code, IdispatchAddress);     // get entry addr
-#endif
 }
 
 
@@ -281,23 +265,11 @@ void InterpreterMacroAssembler::dispatch_Lbyte_code(TosState state, address* tab
   // %%%%% maybe implement +VerifyActivationFrameSize here
   //verify_thread(); //too slow; we will just verify on method entry & exit
   if (verify) interp_verify_oop(Otos_i, state, __FILE__, __LINE__);
-#ifdef FAST_DISPATCH
-  if (table == Interpreter::dispatch_table(state)) {
-    // use IdispatchTables
-    add(Lbyte_code, Interpreter::distance_from_dispatch_table(state), Lbyte_code);
-                                                        // add offset to correct dispatch table
-    sll(Lbyte_code, LogBytesPerWord, Lbyte_code);       // multiply by wordSize
-    ld_ptr(IdispatchTables, Lbyte_code, G3_scratch);    // get entry addr
-  } else {
-#endif
-    // dispatch table to use
-    AddressLiteral tbl(table);
-    sll(Lbyte_code, LogBytesPerWord, Lbyte_code);       // multiply by wordSize
-    set(tbl, G3_scratch);                               // compute addr of table
-    ld_ptr(G3_scratch, Lbyte_code, G3_scratch);         // get entry addr
-#ifdef FAST_DISPATCH
-  }
-#endif
+  // dispatch table to use
+  AddressLiteral tbl(table);
+  sll(Lbyte_code, LogBytesPerWord, Lbyte_code);       // multiply by wordSize
+  set(tbl, G3_scratch);                               // compute addr of table
+  ld_ptr(G3_scratch, Lbyte_code, G3_scratch);         // get entry addr
   jmp( G3_scratch, 0 );
   if (bcp_incr != 0)  delayed()->inc(Lbcp, bcp_incr);
   else                delayed()->nop();

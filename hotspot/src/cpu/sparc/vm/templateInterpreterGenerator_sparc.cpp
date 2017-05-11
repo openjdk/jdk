@@ -47,11 +47,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 
-#ifndef FAST_DISPATCH
-#define FAST_DISPATCH 1
-#endif
-#undef FAST_DISPATCH
-
 // Size of interpreter code.  Increase if too small.  Interpreter will
 // fail with a guarantee ("not enough space for interpreter generation");
 // if too small.
@@ -824,11 +819,6 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ sub(Gargs, BytesPerWord, Llocals);        // set Llocals
 
   if (ProfileInterpreter) {
-#ifdef FAST_DISPATCH
-    // FAST_DISPATCH and ProfileInterpreter are mutually exclusive since
-    // they both use I2.
-    assert(0, "FAST_DISPATCH and +ProfileInterpreter are mutually exclusive");
-#endif // FAST_DISPATCH
     __ set_method_data_pointer();
   }
 
@@ -1563,11 +1553,6 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   // generate the code to allocate the interpreter stack frame
 
   generate_fixed_frame(false);
-
-#ifdef FAST_DISPATCH
-  __ set((intptr_t)Interpreter::dispatch_table(), IdispatchTables);
-                                          // set bytecode dispatch table base
-#endif
 
   //
   // Code to initialize the extra (i.e. non-parm) locals

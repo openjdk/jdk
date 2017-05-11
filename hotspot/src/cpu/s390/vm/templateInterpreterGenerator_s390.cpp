@@ -1183,11 +1183,6 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   // native_call: assert that mdo == NULL
   const bool check_for_mdo = !native_call DEBUG_ONLY(|| native_call);
   if (ProfileInterpreter && check_for_mdo) {
-#ifdef FAST_DISPATCH
-    // FAST_DISPATCH and ProfileInterpreter are mutually exclusive since
-    // they both use I2.
-    assert(0, "FAST_DISPATCH and +ProfileInterpreter are mutually exclusive");
-#endif // FAST_DISPATCH
     Label get_continue;
 
     __ load_and_test_long(Rmdp, method_(method_data));
