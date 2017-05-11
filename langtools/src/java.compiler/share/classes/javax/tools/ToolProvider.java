@@ -106,7 +106,7 @@ public class ToolProvider {
     static {
         Class<?> c = null;
         try {
-            c = Class.forName("java.lang.reflect.Module");
+            c = Class.forName("java.lang.Module");
         } catch (Throwable t) {
         }
         useLegacy = (c == null);

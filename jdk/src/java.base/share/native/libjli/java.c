@@ -129,7 +129,6 @@ static jboolean ValidateModules(JNIEnv* env);
 static void SetPaths(int argc, char **argv);
 
 static void DumpState();
-static jboolean RemovableOption(char *option);
 
 enum OptionKind {
     LAUNCHER_OPTION = 0,
@@ -771,17 +770,16 @@ CheckJvmType(int *pargc, char ***argv, jboolean speculative) {
 }
 
 /*
- * static void SetJvmEnvironment(int argc, char **argv);
- *   Is called just before the JVM is loaded.  We can set env variables
- *   that are consumed by the JVM.  This function is non-destructive,
- *   leaving the arg list intact.  The first use is for the JVM flag
- *   -XX:NativeMemoryTracking=value.
+ * This method must be called before the VM is loaded, primarily
+ * used to parse and set any VM related options or env variables.
+ * This function is non-destructive leaving the argument list intact.
  */
 static void
 SetJvmEnvironment(int argc, char **argv) {
 
     static const char*  NMT_Env_Name    = "NMT_LEVEL_";
     int i;
+    /* process only the launcher arguments */
     for (i = 0; i < argc; i++) {
         char *arg = argv[i];
         /*
@@ -840,11 +838,8 @@ SetJvmEnvironment(int argc, char **argv) {
                     printf("TRACER_MARKER: NativeMemoryTracking: got value %s\n",envBuf);
                     free(envName);
                 }
-
             }
-
         }
-
     }
 }
 
@@ -1411,8 +1406,6 @@ ParseArguments(int *pargc, char ***pargv,
             ; /* Ignore machine independent options already handled */
         } else if (ProcessPlatformOption(arg)) {
             ; /* Processing of platform dependent options */
-        } else if (RemovableOption(arg)) {
-            ; /* Do not pass option to vm. */
         } else {
             /* java.class.path set on the command line */
             if (JLI_StrCCmp(arg, "-Djava.class.path=") == 0) {
@@ -2331,34 +2324,6 @@ DumpState()
     printf("\tlauncher name:%s\n", GetLauncherName());
     printf("\tjavaw:%s\n", (IsJavaw() == JNI_TRUE) ? "on" : "off");
     printf("\tfullversion:%s\n", GetFullVersion());
-}
-
-/*
- * Return JNI_TRUE for an option string that has no effect but should
- * _not_ be passed on to the vm; return JNI_FALSE otherwise.  On
- * Solaris SPARC, this screening needs to be done if:
- *    -d32 or -d64 is passed to a binary with an unmatched data model
- *    (the exec in CreateExecutionEnvironment removes -d<n> options and points the
- *    exec to the proper binary).  In the case of when the data model and the
- *    requested version is matched, an exec would not occur, and these options
- *    were erroneously passed to the vm.
- */
-jboolean
-RemovableOption(char * option)
-{
-  /*
-   * Unconditionally remove both -d32 and -d64 options since only
-   * the last such options has an effect; e.g.
-   * java -d32 -d64 -d32 -version
-   * is equivalent to
-   * java -d32 -version
-   */
-
-  if( (JLI_StrCCmp(option, "-d32")  == 0 ) ||
-      (JLI_StrCCmp(option, "-d64")  == 0 ) )
-    return JNI_TRUE;
-  else
-    return JNI_FALSE;
 }
 
 /*
