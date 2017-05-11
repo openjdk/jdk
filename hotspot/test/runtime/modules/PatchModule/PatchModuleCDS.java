@@ -31,8 +31,7 @@
  * @run main PatchModuleCDS
  */
 
-import java.io.File;
-import jdk.test.lib.InMemoryJavaCompiler;
+import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
