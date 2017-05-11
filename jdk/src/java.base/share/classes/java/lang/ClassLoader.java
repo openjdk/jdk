@@ -2857,7 +2857,7 @@ public abstract class ClassLoader {
         } catch (NoSuchFieldException e) {
             throw new InternalError(e);
         }
-        return unsafe.compareAndSwapObject(this, offset, null, obj);
+        return unsafe.compareAndSetObject(this, offset, null, obj);
     }
 }
 
