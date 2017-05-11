@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8029994
+ * @bug 8029994 8177085
  * @summary Support "include" and "includedir" in krb5.conf
  * @modules java.security.jgss/sun.security.krb5
  * @compile -XDignore.symbol.file Include.java
@@ -35,6 +35,7 @@ import sun.security.krb5.KrbException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 
 public class Include {
     public static void main(String[] args) throws Exception {
@@ -43,13 +44,15 @@ public class Include {
 
         Path conf = Paths.get("krb5.conf");         // base krb5.conf
 
-        Path ifile = Paths.get("f");                // include f
-        Path idir = Paths.get("x");                 // includedir fx
-        Path idirdir = Paths.get("x/xx");           // sub dir, will be ignored
-        Path idirdirfile = Paths.get("x/xx/ff");    // sub dir, will be ignored
-        Path idirfile1 = Paths.get("x/f1");         // one file
-        Path idirfile2 = Paths.get("x/f2");         // another file
-        Path idirfile3 = Paths.get("x/f.3");        // third file bad name
+        Path f = Paths.get("f");            // include
+        Path f2 = Paths.get("f2");          // f include f2
+        Path d = Paths.get("d");            // includedir
+        Path dd = Paths.get("d/dd");        // sub dir, ignore
+        Path ddf = Paths.get("d/dd/ddf");   // file in sub dir, ignore
+        Path df1 = Paths.get("d/f1");       // one file in dir
+        Path df2 = Paths.get("d/f2");       // another file
+        Path df3 = Paths.get("d/f.3");      // third file bad name
+        Path df4 = Paths.get("d/f4.conf");  // fourth file
 
         // OK: The base file can be missing
         System.setProperty("java.security.krb5.conf", "no-such-file");
@@ -59,8 +62,8 @@ public class Include {
 
         // Write base file
         Files.write(conf,
-                ("include " + ifile.toAbsolutePath() + "\n" +
-                        "includedir " + idir.toAbsolutePath() + "\n" +
+                ("include " + f.toAbsolutePath() + "\n" +
+                        "includedir " + d.toAbsolutePath() + "\n" +
                         krb5Conf + "base").getBytes()
         );
 
@@ -68,54 +71,63 @@ public class Include {
         tryReload(false);
 
         // Error: Only includedir exists
-        Files.createDirectory(idir);
+        Files.createDirectory(d);
         tryReload(false);
 
         // Error: Both exists, but include is a cycle
-        Files.write(ifile,
+        Files.write(f,
                 ("include " + conf.toAbsolutePath() + "\n" +
-                    krb5Conf + "incfile").getBytes());
+                    krb5Conf + "f").getBytes());
         tryReload(false);
 
-        // Error: A good include exists, but no includedir
-        Files.delete(idir);
-        Files.write(ifile, (krb5Conf + "incfile").getBytes());
+        // Error: A good include exists, but no includedir yet
+        Files.delete(d);
+        Files.write(f, (krb5Conf + "f").getBytes());
         tryReload(false);
 
         // OK: Everything is set
-        Files.createDirectory(idir);
+        Files.createDirectory(d);
         tryReload(true);   // Now OK
 
+        // make f include f2
+        Files.write(f,
+                ("include " + f2.toAbsolutePath() + "\n" +
+                        krb5Conf + "f").getBytes());
+        Files.write(f2, (krb5Conf + "f2").getBytes());
         // fx1 and fx2 will be loaded
-        Files.write(idirfile1, (krb5Conf + "incdir1").getBytes());
-        Files.write(idirfile2, (krb5Conf + "incdir2").getBytes());
+        Files.write(df1, (krb5Conf + "df1").getBytes());
+        Files.write(df2, (krb5Conf + "df2").getBytes());
         // fx3 and fxs (and file inside it) will be ignored
-        Files.write(idirfile3, (krb5Conf + "incdir3").getBytes());
-        Files.createDirectory(idirdir);
-        Files.write(idirdirfile, (krb5Conf + "incdirdir").getBytes());
+        Files.write(df3, (krb5Conf + "df3").getBytes());
+        Files.createDirectory(dd);
+        Files.write(ddf, (krb5Conf + "ddf").getBytes());
+        // fx4 will be loaded
+        Files.write(df4, (krb5Conf + "df4").getBytes());
 
         // OK: All good files read
         tryReload(true);
 
-        String v = Config.getInstance().getAll("section", "key");
-        // The order of files in includedir could be either
-        if (!v.equals("incfile incdir1 incdir2 base") &&
-                !v.equals("incfile incdir2 incdir1 base")) {
-            throw new Exception(v);
+        String[] v = Config.getInstance().getAll("section", "key") .split(" ");
+        // v will contain f2, f, df[124], and base.
+        // Order of df[124] is not determined. Sort them first.
+        Arrays.sort(v, 2, 5);
+        String longv = Arrays.toString(v);
+        if (!longv.equals("[f2, f, df1, df2, df4, base]")) {
+            throw new Exception(longv);
         }
 
         // Error: include file not absolute
         Files.write(conf,
-                ("include " + ifile + "\n" +
-                        "includedir " + idir.toAbsolutePath() + "\n" +
+                ("include " + f + "\n" +
+                        "includedir " + d.toAbsolutePath() + "\n" +
                         krb5Conf + "base").getBytes()
         );
         tryReload(false);
 
         // Error: includedir not absolute
         Files.write(conf,
-                ("include " + ifile.toAbsolutePath() + "\n" +
-                        "includedir " + idir + "\n" +
+                ("include " + f.toAbsolutePath() + "\n" +
+                        "includedir " + d + "\n" +
                         krb5Conf + "base").getBytes()
         );
         tryReload(false);

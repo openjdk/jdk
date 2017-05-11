@@ -24,11 +24,11 @@
 /*
  * @test
  * @bug 5106721
+ * @key intermittent
  * @summary Check the emission of notifications when a Security Manager is
  * installed. Test the property "jmx.remote.x.check.notification.emission".
  * @author Luis-Miguel Alventosa
- * @key intermittent
- * @modules java.management.rmi
+ *
  * @run clean NotificationEmissionTest
  * @run build NotificationEmissionTest
  * @run main NotificationEmissionTest 1

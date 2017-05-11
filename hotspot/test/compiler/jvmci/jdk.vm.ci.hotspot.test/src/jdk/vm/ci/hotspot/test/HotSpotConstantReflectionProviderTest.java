@@ -24,9 +24,9 @@
 /*
  * @test jdk.vm.ci.hotspot.test.HotSpotConstantReflectionProviderTest
  * @requires vm.jvmci
- * @modules jdk.vm.ci/jdk.vm.ci.runtime
- *          jdk.vm.ci/jdk.vm.ci.meta
- *          jdk.vm.ci/jdk.vm.ci.hotspot
+ * @modules jdk.internal.vm.ci/jdk.vm.ci.runtime
+ *          jdk.internal.vm.ci/jdk.vm.ci.meta
+ *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          java.base/jdk.internal.vm.annotation
  *          java.base/jdk.internal.misc
  * @library /test/lib /compiler/jvmci/jdk.vm.ci.hotspot.test/src
@@ -34,7 +34,7 @@
  * @run driver ClassFileInstaller jdk.vm.ci.hotspot.test.DummyClass
  * @run testng/othervm/timeout=300 -Xbootclasspath/a:.
  *      -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
- *       jdk.vm.ci.hotspot.test.HotSpotConstantReflectionProviderTest
+ *      -Djvmci.Compiler=null jdk.vm.ci.hotspot.test.HotSpotConstantReflectionProviderTest
  */
 
 package jdk.vm.ci.hotspot.test;

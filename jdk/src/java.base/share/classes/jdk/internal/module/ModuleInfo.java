@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@ import java.lang.module.ModuleDescriptor.Builder;
 import java.lang.module.ModuleDescriptor.Requires;
 import java.lang.module.ModuleDescriptor.Exports;
 import java.lang.module.ModuleDescriptor.Opens;
-import java.lang.module.ModuleDescriptor.Version;
 import java.nio.ByteBuffer;
 import java.nio.BufferUnderflowException;
 import java.util.ArrayList;
@@ -51,7 +50,6 @@ import java.util.function.Supplier;
 
 import jdk.internal.misc.JavaLangModuleAccess;
 import jdk.internal.misc.SharedSecrets;
-import jdk.internal.module.ModuleResolution;
 
 import static jdk.internal.module.ClassFileConstants.*;
 
@@ -91,17 +89,23 @@ public final class ModuleInfo {
      */
     public static final class Attributes {
         private final ModuleDescriptor descriptor;
+        private final ModuleTarget target;
         private final ModuleHashes recordedHashes;
         private final ModuleResolution moduleResolution;
         Attributes(ModuleDescriptor descriptor,
+                   ModuleTarget target,
                    ModuleHashes recordedHashes,
                    ModuleResolution moduleResolution) {
             this.descriptor = descriptor;
+            this.target = target;
             this.recordedHashes = recordedHashes;
             this.moduleResolution = moduleResolution;
         }
         public ModuleDescriptor descriptor() {
             return descriptor;
+        }
+        public ModuleTarget target() {
+            return target;
         }
         public ModuleHashes recordedHashes() {
             return recordedHashes;
@@ -221,10 +225,10 @@ public final class ModuleInfo {
         Set<String> attributes = new HashSet<>();
 
         Builder builder = null;
-        Set<String> packages = null;
+        Set<String> allPackages = null;
         String mainClass = null;
-        String[] osValues = null;
-        ModuleHashes hashes = null;
+        ModuleTarget moduleTarget = null;
+        ModuleHashes moduelHashes = null;
         ModuleResolution moduleResolution = null;
 
         for (int i = 0; i < attributes_count ; i++) {
@@ -245,7 +249,7 @@ public final class ModuleInfo {
                     break;
 
                 case MODULE_PACKAGES :
-                    packages = readModulePackagesAttribute(in, cpool);
+                    allPackages = readModulePackagesAttribute(in, cpool);
                     break;
 
                 case MODULE_MAIN_CLASS :
@@ -253,12 +257,12 @@ public final class ModuleInfo {
                     break;
 
                 case MODULE_TARGET :
-                    osValues = readModuleTargetAttribute(in, cpool);
+                    moduleTarget = readModuleTargetAttribute(in, cpool);
                     break;
 
                 case MODULE_HASHES :
                     if (parseHashes) {
-                        hashes = readModuleHashesAttribute(in, cpool);
+                        moduelHashes = readModuleHashesAttribute(in, cpool);
                     } else {
                         in.skipBytes(length);
                     }
@@ -284,55 +288,46 @@ public final class ModuleInfo {
             throw invalidModuleDescriptor(MODULE + " attribute not found");
         }
 
+        // ModuleMainClass  attribute
+        if (mainClass != null) {
+            builder.mainClass(mainClass);
+        }
+
         // If the ModulePackages attribute is not present then the packageFinder
         // is used to find the set of packages
         boolean usedPackageFinder = false;
-        if (packages == null && packageFinder != null) {
+        if (allPackages == null && packageFinder != null) {
             try {
-                packages = new HashSet<>(packageFinder.get());
+                allPackages = packageFinder.get();
             } catch (UncheckedIOException x) {
                 throw x.getCause();
             }
             usedPackageFinder = true;
         }
-        if (packages != null) {
-            Set<String> exportedPackages = JLMA.exportedPackages(builder);
-            Set<String> openPackages = JLMA.openPackages(builder);
-            if (packages.containsAll(exportedPackages)
-                    && packages.containsAll(openPackages)) {
-                packages.removeAll(exportedPackages);
-                packages.removeAll(openPackages);
-            } else {
-                // the set of packages is not complete
-                Set<String> exportedAndOpenPackages = new HashSet<>();
-                exportedAndOpenPackages.addAll(exportedPackages);
-                exportedAndOpenPackages.addAll(openPackages);
-                for (String pn : exportedAndOpenPackages) {
-                    if (!packages.contains(pn)) {
-                        String tail;
-                        if (usedPackageFinder) {
-                            tail = " not found by package finder";
-                        } else {
-                            tail = " missing from ModulePackages attribute";
-                        }
-                        throw invalidModuleDescriptor("Package " + pn + tail);
-                    }
+        if (allPackages != null) {
+            Set<String> knownPackages = JLMA.packages(builder);
+            if (!allPackages.containsAll(knownPackages)) {
+                Set<String> missingPackages = new HashSet<>(knownPackages);
+                missingPackages.removeAll(allPackages);
+                assert !missingPackages.isEmpty();
+                String missingPackage = missingPackages.iterator().next();
+                String tail;
+                if (usedPackageFinder) {
+                    tail = " not found in module";
+                } else {
+                    tail = " missing from ModulePackages class file attribute";
                 }
-                assert false; // should not get here
-            }
-            builder.contains(packages);
-        }
+                throw invalidModuleDescriptor("Package " + missingPackage + tail);
 
-        if (mainClass != null)
-            builder.mainClass(mainClass);
-        if (osValues != null) {
-            if (osValues[0] != null) builder.osName(osValues[0]);
-            if (osValues[1] != null) builder.osArch(osValues[1]);
-            if (osValues[2] != null) builder.osVersion(osValues[2]);
+            }
+            builder.packages(allPackages);
         }
 
         ModuleDescriptor descriptor = builder.build();
-        return new Attributes(descriptor, hashes, moduleResolution);
+        return new Attributes(descriptor,
+                              moduleTarget,
+                              moduelHashes,
+                              moduleResolution);
     }
 
     /**
@@ -347,10 +342,17 @@ public final class ModuleInfo {
         String mn = cpool.getModuleName(module_name_index);
 
         int module_flags = in.readUnsignedShort();
-        boolean open = ((module_flags & ACC_OPEN) != 0);
-        boolean synthetic = ((module_flags & ACC_SYNTHETIC) != 0);
 
-        Builder builder = JLMA.newModuleBuilder(mn, false, open, synthetic);
+        Set<ModuleDescriptor.Modifier> modifiers = new HashSet<>();
+        boolean open = ((module_flags & ACC_OPEN) != 0);
+        if (open)
+            modifiers.add(ModuleDescriptor.Modifier.OPEN);
+        if ((module_flags & ACC_SYNTHETIC) != 0)
+            modifiers.add(ModuleDescriptor.Modifier.SYNTHETIC);
+        if ((module_flags & ACC_MANDATED) != 0)
+            modifiers.add(ModuleDescriptor.Modifier.MANDATED);
+
+        Builder builder = JLMA.newModuleBuilder(mn, false, modifiers);
 
         int module_version_index = in.readUnsignedShort();
         if (module_version_index != 0) {
@@ -381,16 +383,11 @@ public final class ModuleInfo {
             }
 
             int requires_version_index = in.readUnsignedShort();
-            Version compiledVersion = null;
-            if (requires_version_index != 0) {
-                String vs = cpool.getUtf8(requires_version_index);
-                compiledVersion = Version.parse(vs);
-            }
-
-            if (compiledVersion == null) {
+            if (requires_version_index == 0) {
                 builder.requires(mods, dn);
             } else {
-                builder.requires(mods, dn, compiledVersion);
+                String vs = cpool.getUtf8(requires_version_index);
+                JLMA.requires(builder, mods, dn, vs);
             }
 
             if (dn.equals("java.base"))
@@ -429,7 +426,11 @@ public final class ModuleInfo {
                     Set<String> targets = new HashSet<>(exports_to_count);
                     for (int j=0; j<exports_to_count; j++) {
                         int exports_to_index = in.readUnsignedShort();
-                        targets.add(cpool.getModuleName(exports_to_index));
+                        String target = cpool.getModuleName(exports_to_index);
+                        if (!targets.add(target)) {
+                            throw invalidModuleDescriptor(pkg + " exported to "
+                                                          + target + " more than once");
+                        }
                     }
                     builder.exports(mods, pkg, targets);
                 } else {
@@ -465,7 +466,11 @@ public final class ModuleInfo {
                     Set<String> targets = new HashSet<>(open_to_count);
                     for (int j=0; j<open_to_count; j++) {
                         int opens_to_index = in.readUnsignedShort();
-                        targets.add(cpool.getModuleName(opens_to_index));
+                        String target = cpool.getModuleName(opens_to_index);
+                        if (!targets.add(target)) {
+                            throw invalidModuleDescriptor(pkg + " opened to "
+                                                          + target + " more than once");
+                        }
                     }
                     builder.opens(mods, pkg, targets);
                 } else {
@@ -493,7 +498,10 @@ public final class ModuleInfo {
                 for (int j=0; j<with_count; j++) {
                     index = in.readUnsignedShort();
                     String pn = cpool.getClassName(index);
-                    providers.add(pn);
+                    if (!providers.add(pn)) {
+                        throw invalidModuleDescriptor(sn + " provides " + pn
+                                                      + " more than once");
+                    }
                 }
                 builder.provides(sn, providers);
             }
@@ -535,24 +543,21 @@ public final class ModuleInfo {
     /**
      * Reads the ModuleTarget attribute
      */
-    private String[] readModuleTargetAttribute(DataInput in, ConstantPool cpool)
+    private ModuleTarget readModuleTargetAttribute(DataInput in, ConstantPool cpool)
         throws IOException
     {
-        String[] values = new String[3];
+        String osName = null;
+        String osArch = null;
 
         int name_index = in.readUnsignedShort();
         if (name_index != 0)
-            values[0] = cpool.getUtf8(name_index);
+            osName = cpool.getUtf8(name_index);
 
         int arch_index = in.readUnsignedShort();
         if (arch_index != 0)
-            values[1] = cpool.getUtf8(arch_index);
+            osArch = cpool.getUtf8(arch_index);
 
-        int version_index = in.readUnsignedShort();
-        if (version_index != 0)
-            values[2] = cpool.getUtf8(version_index);
-
-        return values;
+        return new ModuleTarget(osName, osArch);
     }
 
 
@@ -629,10 +634,7 @@ public final class ModuleInfo {
 
     /**
      * Return true if the given attribute name is the name of a pre-defined
-     * attribute that is not allowed in the class file.
-     *
-     * Except for Module, InnerClasses, SourceFile, SourceDebugExtension, and
-     * Deprecated, none of the pre-defined attributes in JVMS 4.7 may appear.
+     * attribute in JVMS 4.7 that is not allowed in a module-info class.
      */
     private static boolean isAttributeDisallowed(String name) {
         Set<String> notAllowed = predefinedNotAllowed;
@@ -640,6 +642,7 @@ public final class ModuleInfo {
             notAllowed = Set.of(
                     "ConstantValue",
                     "Code",
+                    "Deprecated",
                     "StackMapTable",
                     "Exceptions",
                     "EnclosingMethod",
