@@ -30,4 +30,4 @@ in the new package {@link jdk.javadoc.doclet}.
 </p>
 */
 
-package com.sun.tools.doclets;
+package com.sun.tools.doclets.standard;
