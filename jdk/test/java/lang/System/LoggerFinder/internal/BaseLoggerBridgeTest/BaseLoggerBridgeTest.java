@@ -47,7 +47,6 @@ import java.lang.System.LoggerFinder;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
 import java.util.stream.Stream;
-import java.lang.reflect.Module;
 
 /**
  * @test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,12 @@
 /* @test
  * @bug 6524172
  * @summary Invoking wakeup on closed Selector can throw NPE if close resets interrupt status
+ * @key intermittent
  */
 
-import java.nio.channels.Selector;
 import java.io.IOException;
+import java.nio.channels.ClosedSelectorException;
+import java.nio.channels.Selector;
 
 public class WakeupAfterClose {
 
@@ -40,6 +42,9 @@ public class WakeupAfterClose {
                     sel.select();
                 } catch (IOException x) {
                     x.printStackTrace();
+                } catch (ClosedSelectorException y) {
+                    System.err.println
+                        ("Caught expected ClosedSelectorException");
                 }
             }
         };

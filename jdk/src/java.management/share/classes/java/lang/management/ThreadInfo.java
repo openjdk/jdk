@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ import static java.lang.Thread.State.*;
  *   <li>Thread priority</li>
  * </ul>
  *
- * <h4><a name="SyncStats">Synchronization Statistics</a></h4>
+ * <h4><a id="SyncStats">Synchronization Statistics</a></h4>
  * <ul>
  *   <li>The number of times that the thread has blocked for
  *       synchronization or waited for notification.</li>
@@ -695,10 +695,11 @@ public class ThreadInfo {
      * The given {@code CompositeData} must contain the following attributes
      * unless otherwise specified below:
      * <blockquote>
-     * <table border summary="The attributes and their types the given CompositeData contains">
+     * <table border="1">
+     * <caption style="display:none">The attributes and their types the given CompositeData contains</caption>
      * <tr>
-     *   <th align=left>Attribute Name</th>
-     *   <th align=left>Type</th>
+     *   <th style="text-align:left">Attribute Name</th>
+     *   <th style="text-align:left">Type</th>
      * </tr>
      * <tr>
      *   <td>threadId</td>
@@ -759,16 +760,17 @@ public class ThreadInfo {
      *   <td>{@code java.lang.String}</td>
      * </tr>
      * <tr>
-     *   <td><a name="StackTrace">stackTrace</a></td>
+     *   <td><a id="StackTrace">stackTrace</a></td>
      *   <td>{@code javax.management.openmbean.CompositeData[]}
      *       <p>
      *       Each element is a {@code CompositeData} representing
      *       StackTraceElement containing the following attributes:
      *       <blockquote>
-     *       <table cellspacing=1 cellpadding=0 summary="The attributes and their types the given CompositeData contains">
+     *       <table cellspacing=1 cellpadding=0>
+     *       <caption style="display:none">The attributes and their types the given CompositeData contains</caption>
      *       <tr>
-     *         <th align=left>Attribute Name</th>
-     *         <th align=left>Type</th>
+     *         <th style="text-align:left">Attribute Name</th>
+     *         <th style="text-align:left">Type</th>
      *       </tr>
      *       <tr>
      *         <td>moduleName</td>
