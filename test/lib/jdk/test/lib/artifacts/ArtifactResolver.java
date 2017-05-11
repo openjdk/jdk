@@ -26,9 +26,10 @@ package jdk.test.lib.artifacts;
 import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.Map;
 
 public class ArtifactResolver {
-    public static HashMap<String, Path> resolve(Class klass) throws FileNotFoundException {
+    public static Map<String, Path> resolve(Class<?> klass) throws FileNotFoundException {
         ArtifactManager manager = new DefaultArtifactManager();
         try {
             String managerName = System.getProperty("jdk.test.lib.artifacts.artifactmanager");
@@ -41,12 +42,12 @@ public class ArtifactResolver {
             // If we end up here, we'll use the DefaultArtifactManager
         }
 
-        ArtifactContainer artifactContainer = (ArtifactContainer) klass.getAnnotation(ArtifactContainer.class);
+        ArtifactContainer artifactContainer = klass.getAnnotation(ArtifactContainer.class);
         HashMap<String, Path> locations = new HashMap<>();
         Artifact[] artifacts;
 
         if (artifactContainer == null) {
-            artifacts = new Artifact[]{(Artifact) klass.getAnnotation(Artifact.class)};
+            artifacts = new Artifact[]{klass.getAnnotation(Artifact.class)};
         } else {
             artifacts = artifactContainer.value();
         }
