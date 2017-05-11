@@ -239,11 +239,8 @@ var getJibProfilesCommon = function (input, data) {
     common.main_profile_base = {
         dependencies: ["boot_jdk", "gnumake", "jtreg"],
         default_make_targets: ["product-bundles", "test-bundles"],
-        configure_args: [
-            "--with-version-opt=" + common.build_id,
-            "--enable-jtreg-failure-handler",
-            "--with-version-build=" + common.build_number
-        ]
+        configure_args: concat(["--enable-jtreg-failure-handler"],
+                               versionArgs(input, common))
     };
     // Extra settings for debug profiles
     common.debug_suffix = "-debug";
@@ -269,10 +266,12 @@ var getJibProfilesCommon = function (input, data) {
 
     /**
      * Define common artifacts template for all main profiles
-     * @param pf - Name of platform in bundle names
-     * @param demo_ext - Type of extension for demo bundle
+     * @param o - Object containing data for artifacts
      */
-    common.main_profile_artifacts = function (pf, demo_ext) {
+    common.main_profile_artifacts = function (o) {
+        var jdk_subdir = (o.jdk_subdir != null ? o.jdk_subdir : "jdk-" + data.version);
+        var jre_subdir = (o.jre_subdir != null ? o.jre_subdir : "jre-" + data.version);
+        var pf = o.platform
         return {
             artifacts: {
                 jdk: {
@@ -281,7 +280,7 @@ var getJibProfilesCommon = function (input, data) {
                         "bundles/" + pf + "/jdk-" + data.version + "_" + pf + "_bin.tar.gz",
                         "bundles/" + pf + "/\\1"
                     ],
-                    subdir: "jdk-" + data.version,
+                    subdir: jdk_subdir,
                     exploded: "images/jdk"
                 },
                 jre: {
@@ -290,7 +289,7 @@ var getJibProfilesCommon = function (input, data) {
                         "bundles/" + pf + "/jre-" + data.version + "_" + pf + "_bin.tar.gz",
                         "bundles/" + pf + "/\\1"
                     ],
-                    subdir: "jre-" + data.version,
+                    subdir: jre_subdir,
                     exploded: "images/jre"
                 },
                 test: {
@@ -307,7 +306,7 @@ var getJibProfilesCommon = function (input, data) {
                         "bundles/" + pf + "/jdk-" + data.version + "_" + pf + "_bin-symbols.tar.gz",
                         "bundles/" + pf + "/\\1"
                     ],
-                    subdir: "jdk-" + data.version,
+                    subdir: jdk_subdir,
                     exploded: "images/jdk"
                 },
                 jre_symbols: {
@@ -316,15 +315,8 @@ var getJibProfilesCommon = function (input, data) {
                         "bundles/" + pf + "/jre-" + data.version + "_" + pf + "_bin-symbols.tar.gz",
                         "bundles/" + pf + "/\\1"
                     ],
-                    subdir: "jre-" + data.version,
+                    subdir: jre_subdir,
                     exploded: "images/jre"
-                },
-                demo: {
-                    local: "bundles/\\(jdk.*demo." + demo_ext + "\\)",
-                    remote: [
-                        "bundles/" + pf + "/jdk-" + data.version + "_" + pf + "_demo." + demo_ext,
-                        "bundles/" + pf + "/\\1"
-                    ],
                 }
             }
         };
@@ -333,9 +325,12 @@ var getJibProfilesCommon = function (input, data) {
 
     /**
      * Define common artifacts template for all debug profiles
-     * @param pf - Name of platform in bundle names
+     * @param o - Object containing data for artifacts
      */
-    common.debug_profile_artifacts = function (pf) {
+    common.debug_profile_artifacts = function (o) {
+        var jdk_subdir = "jdk-" + data.version + "/fastdebug";
+        var jre_subdir = "jre-" + data.version + "/fastdebug";
+        var pf = o.platform
         return {
             artifacts: {
                 jdk: {
@@ -344,7 +339,7 @@ var getJibProfilesCommon = function (input, data) {
                         "bundles/" + pf + "/jdk-" + data.version + "_" + pf + "_bin-debug.tar.gz",
                         "bundles/" + pf + "/\\1"
                     ],
-                    subdir: "jdk-" + data.version,
+                    subdir: jdk_subdir,
                     exploded: "images/jdk"
                 },
                 jre: {
@@ -353,7 +348,7 @@ var getJibProfilesCommon = function (input, data) {
                         "bundles/" + pf + "/jre-" + data.version + "_" + pf + "_bin-debug.tar.gz",
                         "bundles/" + pf + "/\\1"
                     ],
-                    subdir: "jre-" + data.version,
+                    subdir: jre_subdir,
                     exploded: "images/jre"
                 },
                 test: {
@@ -370,7 +365,7 @@ var getJibProfilesCommon = function (input, data) {
                         "bundles/" + pf + "/jdk-" + data.version + "_" + pf + "_bin-debug-symbols.tar.gz",
                         "bundles/" + pf + "/\\1"
                     ],
-                    subdir: "jdk-" + data.version,
+                    subdir: jdk_subdir,
                     exploded: "images/jdk"
                 },
                 jre_symbols: {
@@ -379,7 +374,7 @@ var getJibProfilesCommon = function (input, data) {
                         "bundles/" + pf + "/jre-" + data.version + "_" + pf + "_bin-debug-symbols.tar.gz",
                         "bundles/" + pf + "/\\1"
                     ],
-                    subdir: "jre-" + data.version,
+                    subdir: jre_subdir,
                     exploded: "images/jre"
                 }
             }
@@ -621,7 +616,7 @@ var getJibProfilesProfiles = function (input, common, data) {
     var testOnlyProfilesPrebuilt = {
         "run-test-prebuilt": {
             src: "src.conf",
-            dependencies: [ "jtreg", "gnumake", testedProfile + ".jdk",
+            dependencies: [ "jtreg", "gnumake", "boot_jdk", testedProfile + ".jdk",
                 testedProfile + ".test", "src.full"
             ],
             work_dir: input.get("src.full", "install_path") + "/test",
@@ -665,61 +660,53 @@ var getJibProfilesProfiles = function (input, common, data) {
     //
     // Define artifacts for profiles
     //
-    // Macosx bundles are named osx and Windows demo bundles use zip instead of
+    // Macosx bundles are named osx
     // tar.gz.
     var artifactData = {
         "linux-x64": {
             platform: "linux-x64",
-            demo_ext: "tar.gz"
         },
         "linux-x86": {
             platform: "linux-x86",
-            demo_ext: "tar.gz"
         },
         "macosx-x64": {
             platform: "osx-x64",
-            demo_ext: "tar.gz"
+            jdk_subdir: "jdk-" + data.version +  ".jdk/Contents/Home",
+            jre_subdir: "jre-" + data.version +  ".jre/Contents/Home"
         },
         "solaris-x64": {
             platform: "solaris-x64",
-            demo_ext: "tar.gz"
         },
         "solaris-sparcv9": {
             platform: "solaris-sparcv9",
-            demo_ext: "tar.gz"
         },
         "windows-x64": {
             platform: "windows-x64",
-            demo_ext: "zip"
         },
         "windows-x86": {
             platform: "windows-x86",
-            demo_ext: "zip"
         },
        "linux-arm64": {
             platform: "linux-arm64-vfp-hflt",
-            demo_ext: "tar.gz"
         },
         "linux-arm-vfp-hflt": {
             platform: "linux-arm32-vfp-hflt",
-            demo_ext: "tar.gz"
         },
         "linux-arm-vfp-hflt-dyn": {
             platform: "linux-arm32-vfp-hflt-dyn",
-            demo_ext: "tar.gz"
         }
     }
     // Generate common artifacts for all main profiles
     Object.keys(artifactData).forEach(function (name) {
         profiles[name] = concatObjects(profiles[name],
-            common.main_profile_artifacts(artifactData[name].platform, artifactData[name].demo_ext));
+            common.main_profile_artifacts(artifactData[name]));
     });
 
     // Generate common artifacts for all debug profiles
     Object.keys(artifactData).forEach(function (name) {
         var debugName = name + common.debug_suffix;
         profiles[debugName] = concatObjects(profiles[debugName],
-            common.debug_profile_artifacts(artifactData[name].platform));
+            common.debug_profile_artifacts(artifactData[name]));
     });
 
     // Extra profile specific artifacts
@@ -740,7 +727,12 @@ var getJibProfilesProfiles = function (input, common, data) {
             artifacts: {
                 jdk: {
                     local: "bundles/\\(jdk.*bin.tar.gz\\)",
-                    remote: "bundles/openjdk/GPL/linux-x64/\\1",
+                    remote: [
+                        "bundles/openjdk/GPL/linux-x64/jdk-" + data.version
+                            + "_linux-x64_bin.tar.gz",
+                        "bundles/openjdk/GPL/linux-x64/\\1"
+                    ],
+                    subdir: "jdk-" + data.version
                 },
                 jre: {
                     local: "bundles/\\(jre.*bin.tar.gz\\)",
@@ -748,18 +740,23 @@ var getJibProfilesProfiles = function (input, common, data) {
                 },
                 test: {
                     local: "bundles/\\(jdk.*bin-tests.tar.gz\\)",
-                    remote: "bundles/openjdk/GPL/linux-x64/\\1",
+                    remote: [
+                        "bundles/openjdk/GPL/linux-x64/jdk-" + data.version
+                            + "_linux-x64_bin-tests.tar.gz",
+                        "bundles/openjdk/GPL/linux-x64/\\1"
+                    ]
                 },
                 jdk_symbols: {
                     local: "bundles/\\(jdk.*bin-symbols.tar.gz\\)",
-                    remote: "bundles/openjdk/GPL/linux-x64/\\1",
+                    remote: [
+                        "bundles/openjdk/GPL/linux-x64/jdk-" + data.version
+                            + "_linux-x64_bin-symbols.tar.gz",
+                        "bundles/openjdk/GPL/linux-x64/\\1"
+                    ],
+                    subdir: "jdk-" + data.version
                 },
                 jre_symbols: {
                     local: "bundles/\\(jre.*bin-symbols.tar.gz\\)",
-                    remote: "bundles/openjdk/GPL/linux-x64/\\1",
-                },
-                demo: {
-                    local: "bundles/\\(jdk.*demo.tar.gz\\)",
                     remote: "bundles/openjdk/GPL/linux-x64/\\1",
                 },
                 doc_api_spec: {
@@ -773,11 +770,29 @@ var getJibProfilesProfiles = function (input, common, data) {
             artifacts: {
                 jdk: {
                     local: "bundles/\\(jdk.*bin.tar.gz\\)",
-                    remote: "bundles/openjdk/GPL/profile/linux-x86/\\1",
+                    remote: [
+                        "bundles/openjdk/GPL/linux-x86/jdk-" + data.version
+                            + "_linux-x86_bin.tar.gz",
+                        "bundles/openjdk/GPL/linux-x86/\\1"
+                    ],
+                    subdir: "jdk-" + data.version
                 },
                 jdk_symbols: {
                     local: "bundles/\\(jdk.*bin-symbols.tar.gz\\)",
-                    remote: "bundles/openjdk/GPL/profile/linux-x86/\\1",
+                    remote: [
+                        "bundles/openjdk/GPL/linux-x86/jdk-" + data.version
+                            + "_linux-x86_bin-symbols.tar.gz",
+                        "bundles/openjdk/GPL/linux-x86/\\1"
+                    ],
+                    subdir: "jdk-" + data.version
+                },
+                test: {
+                    local: "bundles/\\(jdk.*bin-tests.tar.gz\\)",
+                    remote: [
+                        "bundles/openjdk/GPL/linux-x86/jdk-" + data.version
+                            + "_linux-x86_bin-tests.tar.gz",
+                        "bundles/openjdk/GPL/linux-x86/\\1"
+                    ]
                 },
                 jre: {
                     // This regexp needs to not match the compact* files below
@@ -803,7 +818,12 @@ var getJibProfilesProfiles = function (input, common, data) {
             artifacts: {
                 jdk: {
                     local: "bundles/\\(jdk.*bin.tar.gz\\)",
-                    remote: "bundles/openjdk/GPL/windows-x86/\\1",
+                    remote: [
+                        "bundles/openjdk/GPL/windows-x86/jdk-" + data.version
+                            + "_windows-x86_bin.tar.gz",
+                        "bundles/openjdk/GPL/windows-x86/\\1"
+                    ],
+                    subdir: "jdk-" + data.version
                 },
                 jre: {
                     local: "bundles/\\(jre.*bin.tar.gz\\)",
@@ -811,18 +831,23 @@ var getJibProfilesProfiles = function (input, common, data) {
                 },
                 test: {
                     local: "bundles/\\(jdk.*bin-tests.tar.gz\\)",
-                    remote: "bundles/openjdk/GPL/windows-x86/\\1",
+                    remote: [
+                        "bundles/openjdk/GPL/windows-x86/jdk-" + data.version
+                            + "_windows-x86_bin-tests.tar.gz",
+                        "bundles/openjdk/GPL/windows-x86/\\1"
+                    ]
                 },
                 jdk_symbols: {
                     local: "bundles/\\(jdk.*bin-symbols.tar.gz\\)",
-                    remote: "bundles/openjdk/GPL/windows-x86/\\1"
+                    remote: [
+                        "bundles/openjdk/GPL/windows-x86/jdk-" + data.version
+                            + "_windows-x86_bin-symbols.tar.gz",
+                        "bundles/openjdk/GPL/windows-x86/\\1"
+                    ],
+                    subdir: "jdk-" + data.version
                 },
                 jre_symbols: {
                     local: "bundles/\\(jre.*bin-symbols.tar.gz\\)",
-                    remote: "bundles/openjdk/GPL/windows-x86/\\1",
-                },
-                demo: {
-                    local: "bundles/\\(jdk.*demo.zip\\)",
                     remote: "bundles/openjdk/GPL/windows-x86/\\1",
                 }
             }
@@ -1148,11 +1173,28 @@ var getVersion = function (major, minor, security, patch) {
         + "." + (minor != null ? minor : version_numbers.get("DEFAULT_VERSION_MINOR"))
         + "." + (security != null ? security :  version_numbers.get("DEFAULT_VERSION_SECURITY"))
         + "." + (patch != null ? patch : version_numbers.get("DEFAULT_VERSION_PATCH"));
-    while (version.match(".*\.0$")) {
+    while (version.match(".*\\.0$")) {
         version = version.substring(0, version.length - 2);
     }
     return version;
 };
+
+/**
+ * Constructs the common version configure args based on build type and
+ * other version inputs
+ */
+var versionArgs = function(input, common) {
+    var args = ["--with-version-build=" + common.build_number];
+    if (input.build_type == "promoted") {
+        args = concat(args,
+                      // This needs to be changed when we start building release candidates
+                      "--with-version-pre=ea",
+                      "--without-version-opt");
+    } else {
+        args = concat(args, "--with-version-opt=" + common.build_id);
+    }
+    return args;
+}
 
 // Properties representation of the common/autoconf/version-numbers file. Lazily
 // initiated by the function below.

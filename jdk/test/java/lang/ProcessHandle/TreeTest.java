@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ public class TreeTest extends ProcessUtil {
         try {
             ProcessHandle self = ProcessHandle.current();
 
-            printf("self pid: %d%n", self.getPid());
+            printf("self pid: %d%n", self.pid());
             printDeep(self, "");
 
             for (int i = 0; i < MAXCHILDREN; i++) {
@@ -154,7 +154,7 @@ public class TreeTest extends ProcessUtil {
 
             JavaChild p1 = JavaChild.spawnJavaChild("stdin");
             ProcessHandle p1Handle = p1.toHandle();
-            printf("  p1 pid: %d%n", p1.getPid());
+            printf("  p1 pid: %d%n", p1.pid());
 
             // Gather the PIDs from the output of the spawing process
             p1.forEachOutputLine((s) -> {
@@ -206,7 +206,7 @@ public class TreeTest extends ProcessUtil {
             // show the complete list of children (for debug)
             List<ProcessHandle> descendants = getDescendants(p1Handle);
             printf(" descendants:  %s%n",
-                    descendants.stream().map(p -> p.getPid())
+                    descendants.stream().map(p -> p.pid())
                            .collect(Collectors.toList()));
 
             // Verify that all spawned children show up in the descendants  List
@@ -252,7 +252,7 @@ public class TreeTest extends ProcessUtil {
 
             JavaChild p1 = JavaChild.spawnJavaChild("stdin");
             ProcessHandle p1Handle = p1.toHandle();
-            printf(" p1: %s%n", p1.getPid());
+            printf(" p1: %s%n", p1.pid());
 
             int newChildren = 3;
             CountDownLatch spawnCount = new CountDownLatch(newChildren);
@@ -356,11 +356,11 @@ public class TreeTest extends ProcessUtil {
             parent[sortindex[i]] = processes[sortindex[i]].parent().orElse(null);
         }
         Arrays.sort(sortindex, (i1, i2) -> {
-            int cmp = Long.compare((parent[i1] == null ? 0L : parent[i1].getPid()),
-                    (parent[i2] == null ? 0L : parent[i2].getPid()));
+            int cmp = Long.compare((parent[i1] == null ? 0L : parent[i1].pid()),
+                    (parent[i2] == null ? 0L : parent[i2].pid()));
             if (cmp == 0) {
-                cmp = Long.compare((processes[i1] == null ? 0L : processes[i1].getPid()),
-                        (processes[i2] == null ? 0L : processes[i2].getPid()));
+                cmp = Long.compare((processes[i1] == null ? 0L : processes[i1].pid()),
+                        (processes[i2] == null ? 0L : processes[i2].pid()));
             }
             return cmp;
         });
@@ -397,7 +397,7 @@ public class TreeTest extends ProcessUtil {
             ProcessHandle p1Handle = p1.toHandle();
 
             printf("Spawning %d x %d x %d processes, pid: %d%n",
-                    factor, factor, factor, p1.getPid());
+                    factor, factor, factor, p1.pid());
 
             // Start the first tier of subprocesses
             p1.sendAction("spawn", factor, "stdin");
@@ -448,7 +448,7 @@ public class TreeTest extends ProcessUtil {
 
             List<ProcessHandle> subprocesses = getDescendants(p1Handle);
             printf(" descendants:  %s%n",
-                    subprocesses.stream().map(p -> p.getPid())
+                    subprocesses.stream().map(p -> p.pid())
                     .collect(Collectors.toList()));
 
             p1.getOutputStream().close();  // Close stdin for the controlling p1

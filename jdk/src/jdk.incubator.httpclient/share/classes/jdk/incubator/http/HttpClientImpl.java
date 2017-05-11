@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,7 +125,11 @@ class HttpClientImpl extends HttpClient {
                 Redirect.NEVER : builder.followRedirects;
         this.proxySelector = builder.proxy;
         authenticator = builder.authenticator;
-        version = builder.version;
+        if (builder.version == null) {
+            version = HttpClient.Version.HTTP_2;
+        } else {
+            version = builder.version;
+        }
         if (builder.sslParams == null) {
             sslParams = getDefaultParams(sslContext);
         } else {
@@ -235,7 +239,7 @@ class HttpClientImpl extends HttpClient {
     sendAsync(HttpRequest req, HttpResponse.BodyHandler<T> responseHandler)
     {
         MultiExchange<Void,T> mex = new MultiExchange<>(req, this, responseHandler);
-        return mex.responseAsync(null)
+        return mex.responseAsync()
                   .thenApply((HttpResponseImpl<T> b) -> (HttpResponse<T>) b);
     }
 
@@ -582,12 +586,14 @@ class HttpClientImpl extends HttpClient {
     // Timers are implemented through timed Selector.select() calls.
 
     synchronized void registerTimer(TimeoutEvent event) {
+        Log.logTrace("Registering timer {0}", event);
         timeouts.add(event);
         selmgr.wakeupSelector();
     }
 
     synchronized void cancelTimer(TimeoutEvent event) {
-        timeouts.stream().filter(e -> e == event).forEach(timeouts::remove);
+        Log.logTrace("Canceling timer {0}", event);
+        timeouts.remove(event);
     }
 
     /**
@@ -595,23 +601,61 @@ class HttpClientImpl extends HttpClient {
      * returns the amount of time, in milliseconds, until the next earliest
      * event. A return value of 0 means that there are no events.
      */
-    private synchronized long purgeTimeoutsAndReturnNextDeadline() {
-        if (timeouts.isEmpty())
-            return 0L;
+    private long purgeTimeoutsAndReturnNextDeadline() {
+        long diff = 0L;
+        List<TimeoutEvent> toHandle = null;
+        int remaining = 0;
+        // enter critical section to retrieve the timeout event to handle
+        synchronized(this) {
+            if (timeouts.isEmpty()) return 0L;
 
-        Instant now = Instant.now();
-        Iterator<TimeoutEvent> itr = timeouts.iterator();
-        while (itr.hasNext()) {
-            TimeoutEvent event = itr.next();
-            long diff = now.until(event.deadline(), ChronoUnit.MILLIS);
-            if (diff <= 0) {
-                itr.remove();
-                event.handle();  // TODO: release lock.
-            } else {
-                return diff;
+            Instant now = Instant.now();
+            Iterator<TimeoutEvent> itr = timeouts.iterator();
+            while (itr.hasNext()) {
+                TimeoutEvent event = itr.next();
+                diff = now.until(event.deadline(), ChronoUnit.MILLIS);
+                if (diff <= 0) {
+                    itr.remove();
+                    toHandle = (toHandle == null) ? new ArrayList<>() : toHandle;
+                    toHandle.add(event);
+                } else {
+                    break;
+                }
             }
+            remaining = timeouts.size();
         }
-        return 0L;
+
+        // can be useful for debugging
+        if (toHandle != null && Log.trace()) {
+            Log.logTrace("purgeTimeoutsAndReturnNextDeadline: handling "
+                    + (toHandle == null ? 0 : toHandle.size()) + " events, "
+                    + "remaining " + remaining
+                    + ", next deadline: " + (diff < 0 ? 0L : diff));
+        }
+
+        // handle timeout events out of critical section
+        if (toHandle != null) {
+            Throwable failed = null;
+            for (TimeoutEvent event : toHandle) {
+                try {
+                   Log.logTrace("Firing timer {0}", event);
+                   event.handle();
+                } catch (Error | RuntimeException e) {
+                    // Not expected. Handle remaining events then throw...
+                    // If e is an OOME or SOE it might simply trigger a new
+                    // error from here - but in this case there's not much we
+                    // could do anyway. Just let it flow...
+                    if (failed == null) failed = e;
+                    else failed.addSuppressed(e);
+                    Log.logTrace("Failed to handle event {0}: {1}", event, e);
+                }
+            }
+            if (failed instanceof Error) throw (Error) failed;
+            if (failed instanceof RuntimeException) throw (RuntimeException) failed;
+        }
+
+        // return time to wait until next event. 0L if there's no more events.
+        return diff < 0 ? 0L : diff;
     }
 
     // used for the connection window

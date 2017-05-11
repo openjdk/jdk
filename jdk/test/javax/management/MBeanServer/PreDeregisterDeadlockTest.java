@@ -26,7 +26,7 @@
  * @bug 6318664
  * @summary Test deadlock in MBeanRegistration.preDeregister method
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean PreDeregisterDeadlockTest
  * @run build PreDeregisterDeadlockTest
  * @run main PreDeregisterDeadlockTest
