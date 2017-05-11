@@ -113,7 +113,7 @@ import sun.security.action.GetPropertyAction;
  * operating system-specific portion of storage for a file system.  A single
  * storage device (e.g. a physical disk-drive, flash memory, CD-ROM) may
  * contain multiple partitions.  The object, if any, will reside on the
- * partition <a name="partName">named</a> by some ancestor of the absolute
+ * partition <a id="partName">named</a> by some ancestor of the absolute
  * form of this pathname.
  *
  * <p> A file system may implement restrictions to certain operations on the

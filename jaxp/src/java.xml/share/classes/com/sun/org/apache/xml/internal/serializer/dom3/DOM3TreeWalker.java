@@ -1024,7 +1024,8 @@ final class DOM3TreeWalker {
                 return;
             }
 
-            if (bDispatch) {
+            if (bDispatch
+                    && (!fSerializer.getIndent() || !node.getData().replace('\n', ' ').trim().isEmpty())) {
                 dispatachChars(node);
             }
         }

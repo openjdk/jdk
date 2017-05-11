@@ -26,8 +26,9 @@
  * @bug 4898478
  * @summary Tests client default class loader used before JSR 160 loader
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @library /lib/testlibrary
+ *
  * @run clean MethodResultTest
  * @run build MethodResultTest
  * @run main MethodResultTest

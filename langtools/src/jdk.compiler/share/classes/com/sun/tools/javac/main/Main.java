@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,13 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.nio.file.NoSuchFileException;
+import java.security.CodeSource;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.tools.JavaFileManager;
 
@@ -43,6 +46,7 @@ import com.sun.tools.javac.file.CacheFSInfo;
 import com.sun.tools.javac.file.BaseFileManager;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.jvm.Target;
+import com.sun.tools.javac.main.CommandLine.UnmatchedQuote;
 import com.sun.tools.javac.platform.PlatformDescription;
 import com.sun.tools.javac.processing.AnnotationProcessingError;
 import com.sun.tools.javac.util.*;
@@ -80,6 +84,7 @@ public class Main {
      */
     boolean apiMode;
 
+    private static final String ENV_OPT_NAME = "JDK_JAVAC_OPTIONS";
 
     /** Result codes.
      */
@@ -201,19 +206,12 @@ public class Main {
             return Result.CMDERR;
         }
 
-        // prefix argv with contents of _JAVAC_OPTIONS if set
-        String envOpt = System.getenv("_JAVAC_OPTIONS");
-        if (envOpt != null && !envOpt.trim().isEmpty()) {
-            String[] envv = envOpt.split("\\s+");
-            String[] result = new String[envv.length + argv.length];
-            System.arraycopy(envv, 0, result, 0, envv.length);
-            System.arraycopy(argv, 0, result, envv.length, argv.length);
-            argv = result;
-        }
-
-        // expand @-files
+        // prefix argv with contents of environment variable and expand @-files
         try {
-            argv = CommandLine.parse(argv);
+            argv = CommandLine.parse(ENV_OPT_NAME, argv);
+        } catch (UnmatchedQuote ex) {
+            error("err.unmatched.quote", ex.variableName);
+            return Result.CMDERR;
         } catch (FileNotFoundException | NoSuchFileException e) {
             warning("err.file.not.found", e.getMessage());
             return Result.SYSERR;
@@ -304,7 +302,7 @@ public class Main {
         }
 
         try {
-            comp.compile(args.getFileObjects(), args.getClassNames(), null);
+            comp.compile(args.getFileObjects(), args.getClassNames(), null, List.nil());
 
             if (log.expectDiagKeys != null) {
                 if (log.expectDiagKeys.isEmpty()) {
@@ -330,6 +328,11 @@ public class Main {
         } catch (PropagatedException ex) {
             // TODO: what about errors from plugins?   should not simply rethrow the error here
             throw ex.getCause();
+        } catch (IllegalAccessError iae) {
+            if (twoClassLoadersInUse(iae)) {
+                bugMessage(iae);
+            }
+            return Result.ABNORMAL;
         } catch (Throwable ex) {
             // Nasty.  If we've already reported an error, compensate
             // for buggy compiler error recovery by swallowing thrown
@@ -346,6 +349,35 @@ public class Main {
                 }
             }
         }
+    }
+
+    private boolean twoClassLoadersInUse(IllegalAccessError iae) {
+        String msg = iae.getMessage();
+        Pattern pattern = Pattern.compile("(?i)(?<=tried to access class )([a-z_$][a-z\\d_$]*\\.)*[a-z_$][a-z\\d_$]*");
+        Matcher matcher = pattern.matcher(msg);
+        if (matcher.find()) {
+            try {
+                String otherClassName = matcher.group(0);
+                Class<?> otherClass = Class.forName(otherClassName);
+                ClassLoader otherClassLoader = otherClass.getClassLoader();
+                ClassLoader javacClassLoader = this.getClass().getClassLoader();
+                if (javacClassLoader != otherClassLoader) {
+                    CodeSource otherClassCodeSource = otherClass.getProtectionDomain().getCodeSource();
+                    CodeSource javacCodeSource = this.getClass().getProtectionDomain().getCodeSource();
+                    if (otherClassCodeSource != null && javacCodeSource != null) {
+                        log.printLines(PrefixKind.JAVAC, "err.two.class.loaders.2",
+                                otherClassCodeSource.getLocation(),
+                                javacCodeSource.getLocation());
+                    } else {
+                        log.printLines(PrefixKind.JAVAC, "err.two.class.loaders.1");
+                    }
+                    return true;
+                }
+            } catch (Throwable t) {
+                return false;
+            }
+        }
+        return false;
     }
 
     /** Print a message reporting an internal error.
