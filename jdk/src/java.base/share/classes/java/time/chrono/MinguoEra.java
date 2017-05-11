@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,26 +71,27 @@ import java.time.DateTimeException;
  * All previous years, zero or earlier in the proleptic count or one and greater
  * in the year-of-era count, are part of the 'Before Republic of China' era.
  *
- * <table summary="Minguo years and eras" cellpadding="2" cellspacing="3" border="0" >
+ * <table class="striped">
+ * <caption style="display:none">Minguo years and eras</caption>
  * <thead>
- * <tr class="tableSubHeadingColor">
- * <th class="colFirst" style="text-align:left">year-of-era</th>
- * <th class="colFirst" style="text-align:left">era</th>
- * <th class="colFirst" style="text-align:left">proleptic-year</th>
- * <th class="colLast" style="text-align:left">ISO proleptic-year</th>
+ * <tr>
+ * <th style="text-align:left">year-of-era</th>
+ * <th style="text-align:left">era</th>
+ * <th style="text-align:left">proleptic-year</th>
+ * <th style="text-align:left">ISO proleptic-year</th>
  * </tr>
  * </thead>
  * <tbody>
- * <tr class="rowColor">
+ * <tr>
  * <td>2</td><td>ROC</td><td>2</td><td>1913</td>
  * </tr>
- * <tr class="altColor">
+ * <tr>
  * <td>1</td><td>ROC</td><td>1</td><td>1912</td>
  * </tr>
- * <tr class="rowColor">
+ * <tr>
  * <td>1</td><td>BEFORE_ROC</td><td>0</td><td>1911</td>
  * </tr>
- * <tr class="altColor">
+ * <tr>
  * <td>2</td><td>BEFORE_ROC</td><td>-1</td><td>1910</td>
  * </tr>
  * </tbody>

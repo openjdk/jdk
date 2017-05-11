@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,9 +106,9 @@ import sun.security.jca.GetInstance.Instance;
  * <li>{@code SHA256withRSA}</li>
  * </ul>
  * These algorithms are described in the <a href=
- * "{@docRoot}/../technotes/guides/security/StandardNames.html#Signature">
+ * "{@docRoot}/../specs/security/standard-names.html#signature-algorithms">
  * Signature section</a> of the
- * Java Cryptography Architecture Standard Algorithm Name Documentation.
+ * Java Security Standard Algorithm Names Specification.
  * Consult the release documentation for your implementation to see if any
  * other algorithms are supported.
  *
@@ -164,8 +164,8 @@ public abstract class Signature extends SignatureSpi {
      *
      * @param algorithm the standard string name of the algorithm.
      * See the Signature section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#Signature">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#signature-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      */
     protected Signature(String algorithm) {
@@ -209,8 +209,8 @@ public abstract class Signature extends SignatureSpi {
      *
      * @param algorithm the standard name of the algorithm requested.
      * See the Signature section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#Signature">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#signature-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
      * @return the new {@code Signature} object
@@ -332,8 +332,8 @@ public abstract class Signature extends SignatureSpi {
      *
      * @param algorithm the name of the algorithm requested.
      * See the Signature section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#Signature">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#signature-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
      * @param provider the name of the provider.
@@ -385,8 +385,8 @@ public abstract class Signature extends SignatureSpi {
      *
      * @param algorithm the name of the algorithm requested.
      * See the Signature section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#Signature">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#signature-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
      * @param provider the provider.
