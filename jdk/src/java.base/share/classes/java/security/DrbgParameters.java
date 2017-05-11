@@ -263,14 +263,19 @@ public class DrbgParameters {
      * Capability effective = ((DrbgParametes.Initiate) s.getParameters())
      *         .getCapability();</pre>
      * </blockquote>
-     * <table border=1 summary="requested and effective capabilities">
+     * <table class="plain">
+     * <caption style="display:none">requested and effective capabilities</caption>
+     * <thead>
      * <tr>
      * <th>Requested Value</th>
      * <th>Possible Effective Values</th>
      * </tr>
+     * </thead>
+     * <tbody>
      * <tr><td>NONE</td><td>NONE, RESEED_ONLY, PR_AND_RESEED</td></tr>
      * <tr><td>RESEED_ONLY</td><td>RESEED_ONLY, PR_AND_RESEED</td></tr>
      * <tr><td>PR_AND_RESEED</td><td>PR_AND_RESEED</td></tr>
+     * </tbody>
      * </table>
      * <p>
      * A DRBG implementation supporting prediction resistance must also
