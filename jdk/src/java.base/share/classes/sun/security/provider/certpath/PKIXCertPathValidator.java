@@ -117,7 +117,7 @@ public final class PKIXCertPathValidator extends CertPathValidatorSpi {
                 // if this trust anchor is not worth trying,
                 // we move on to the next one
                 if (selector != null && !selector.match(trustedCert)) {
-                    if (debug != null) {
+                    if (debug != null && Debug.isVerbose()) {
                         debug.println("NO - don't try this trustedCert");
                     }
                     continue;
