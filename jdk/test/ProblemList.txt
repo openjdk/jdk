@@ -305,7 +305,4 @@ javax/rmi/PortableRemoteObject/8146975/RmiIiopReturnValueTest.java 8169737 linux
 
 org/omg/CORBA/OrbPropertiesTest.java			        8175177 generic-all
 
-sample/mergesort/MergeSortTest.java				8178912 generic-all
-sample/chatserver/ChatTest.java					8178912 generic-all
-
 ############################################################################

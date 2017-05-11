@@ -46,7 +46,7 @@ import sun.awt.AWTAccessor;
  * the menu bar with a {@code Frame} object, call the
  * frame's {@code setMenuBar} method.
  * <p>
- * <A NAME="mbexample"></A><!-- target for cross references -->
+ * <a id="mbexample"></a><!-- target for cross references -->
  * This is what a menu bar might look like:
  * <p>
  * <img src="doc-files/MenuBar-1.gif"

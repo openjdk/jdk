@@ -178,7 +178,7 @@ public class JLinkNegativeTest {
                     .output(imageFile)
                     .addMods("not_zip")
                     .modulePath(helper.defaultModulePath())
-                    .call().assertFailure("Error: java.util.zip.ZipException: zip file is empty");
+                    .call().assertFailure("Error: Error reading");
         } finally {
             deleteDirectory(jar);
         }
