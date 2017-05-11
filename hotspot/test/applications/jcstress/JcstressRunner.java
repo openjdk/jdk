@@ -35,7 +35,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 
 /**
@@ -48,7 +48,7 @@ public class JcstressRunner {
     public static final String MAIN_CLASS = "org.openjdk.jcstress.Main";
 
     public static Path pathToArtifact() {
-        HashMap<String, Path> artifacts;
+        Map<String, Path> artifacts;
         try {
             artifacts = ArtifactResolver.resolve(JcstressRunner.class);
         } catch (FileNotFoundException e) {
