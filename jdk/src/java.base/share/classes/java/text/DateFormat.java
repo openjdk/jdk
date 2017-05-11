@@ -133,7 +133,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * on the screen.
  * </ul>
  *
- * <h3><a name="synchronization">Synchronization</a></h3>
+ * <h3><a id="synchronization">Synchronization</a></h3>
  *
  * <p>
  * Date formats are not synchronized.

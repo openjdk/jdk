@@ -215,12 +215,12 @@ AC_DEFUN_ONCE([HOTSPOT_ENABLE_DISABLE_AOT],
     # Only enable AOT on linux-X64.
     if test "x$OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU" = "xlinux-x86_64"; then
       if test -e "$HOTSPOT_TOPDIR/src/jdk.aot"; then
-        if test -e "$HOTSPOT_TOPDIR/src/jdk.vm.compiler"; then
+        if test -e "$HOTSPOT_TOPDIR/src/jdk.internal.vm.compiler"; then
           ENABLE_AOT="true"
         else
           ENABLE_AOT="false"
           if test "x$enable_aot" = "xyes"; then
-            AC_MSG_ERROR([Cannot build AOT without hotspot/src/jdk.vm.compiler sources. Remove --enable-aot.])
+            AC_MSG_ERROR([Cannot build AOT without hotspot/src/jdk.internal.vm.compiler sources. Remove --enable-aot.])
           fi
         fi
       else
@@ -327,7 +327,7 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
     JVM_FEATURES_jvmci=""
   fi
 
-  AC_MSG_CHECKING([if jdk.vm.compiler should be built])
+  AC_MSG_CHECKING([if jdk.internal.vm.compiler should be built])
   if HOTSPOT_CHECK_JVM_FEATURE(graal); then
     AC_MSG_RESULT([yes, forced])
     if test "x$JVM_FEATURES_jvmci" != "xjvmci" ; then

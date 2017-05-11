@@ -50,7 +50,6 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Module;
 import java.net.JarURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
@@ -205,7 +204,7 @@ import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
  * known concrete subclasses {@code ListResourceBundle} and
  * {@code PropertyResourceBundle} are thread-safe.
  *
- * <h3><a name="bundleprovider">Resource Bundles in Named Modules</a></h3>
+ * <h3><a id="bundleprovider">Resource Bundles in Named Modules</a></h3>
  *
  * When resource bundles are deployed in named modules, the following
  * module-specific requirements and restrictions are applied.
@@ -240,7 +239,7 @@ import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
  * </li>
  * </ul>
  *
- * <h3><a name="RBP_support">ResourceBundleProvider Service Providers</a></h3>
+ * <h3><a id="RBP_support">ResourceBundleProvider Service Providers</a></h3>
  *
  * The {@code getBundle} factory methods load service providers of
  * {@link ResourceBundleProvider}, if available, using {@link ServiceLoader}.
@@ -267,7 +266,7 @@ import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
  * {@link #getBundle(String, Locale, ClassLoader, Control) getBundle}
  * factory method for details.
  *
- * <p><a name="modify_default_behavior">For the {@code getBundle} factory</a>
+ * <p><a id="modify_default_behavior">For the {@code getBundle} factory</a>
  * methods that take no {@link Control} instance, their <a
  * href="#default_behavior"> default behavior</a> of resource bundle loading
  * can be modified with custom {@link
@@ -350,6 +349,8 @@ import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
  * @see MissingResourceException
  * @see ResourceBundleProvider
  * @since 1.1
+ * @revised 9
+ * @spec JPMS
  */
 public abstract class ResourceBundle {
 
@@ -870,6 +871,8 @@ public abstract class ResourceBundle {
      * @throws UnsupportedOperationException
      *         if this method is called in a named module
      * @since 1.6
+     * @revised 9
+     * @spec JPMS
      */
     @CallerSensitive
     public static final ResourceBundle getBundle(String baseName,
@@ -938,6 +941,7 @@ public abstract class ResourceBundle {
      *         specified module
      * @return a resource bundle for the given base name and the default locale
      * @since 9
+     * @spec JPMS
      * @see ResourceBundleProvider
      */
     @CallerSensitive
@@ -991,6 +995,7 @@ public abstract class ResourceBundle {
      *         be found in the specified {@code module}
      * @return a resource bundle for the given base name and locale in the module
      * @since 9
+     * @spec JPMS
      */
     @CallerSensitive
     public static ResourceBundle getBundle(String baseName, Locale targetLocale, Module module) {
@@ -1036,6 +1041,8 @@ public abstract class ResourceBundle {
      * @throws UnsupportedOperationException
      *         if this method is called in a named module
      * @since 1.6
+     * @revised 9
+     * @spec JPMS
      */
     @CallerSensitive
     public static final ResourceBundle getBundle(String baseName, Locale targetLocale,
@@ -1056,7 +1063,7 @@ public abstract class ResourceBundle {
      * description of <a href="#modify_default_behavior">modifying the default
      * behavior</a>.
      *
-     * <p><a name="default_behavior">The following describes the default
+     * <p><a id="default_behavior">The following describes the default
      * behavior</a>.
      *
      * <p>
@@ -1073,7 +1080,7 @@ public abstract class ResourceBundle {
      * <p><code>getBundle</code> uses the base name, the specified locale, and
      * the default locale (obtained from {@link java.util.Locale#getDefault()
      * Locale.getDefault}) to generate a sequence of <a
-     * name="candidates"><em>candidate bundle names</em></a>.  If the specified
+     * id="candidates"><em>candidate bundle names</em></a>.  If the specified
      * locale's language, script, country, and variant are all empty strings,
      * then the base name is the only candidate bundle name.  Otherwise, a list
      * of candidate locales is generated from the attribute values of the
@@ -1163,7 +1170,7 @@ public abstract class ResourceBundle {
      * <p>If still no result bundle is found, the base name alone is looked up. If
      * this still fails, a <code>MissingResourceException</code> is thrown.
      *
-     * <p><a name="parent_chain"> Once a result resource bundle has been found,
+     * <p><a id="parent_chain"> Once a result resource bundle has been found,
      * its <em>parent chain</em> is instantiated</a>.  If the result bundle already
      * has a parent (perhaps because it was returned from a cache) the chain is
      * complete.
@@ -1193,7 +1200,7 @@ public abstract class ResourceBundle {
      * path name (using "/") instead of a fully qualified class name (using
      * ".").
      *
-     * <p><a name="default_behavior_example">
+     * <p><a id="default_behavior_example">
      * <strong>Example:</strong></a>
      * <p>
      * The following class and property files are provided:
@@ -1243,6 +1250,8 @@ public abstract class ResourceBundle {
      * @exception MissingResourceException
      *        if no resource bundle for the specified base name can be found
      * @since 1.2
+     * @revised 9
+     * @spec JPMS
      */
     @CallerSensitive
     public static ResourceBundle getBundle(String baseName, Locale locale,
@@ -1465,6 +1474,8 @@ public abstract class ResourceBundle {
      * @throws UnsupportedOperationException
      *         if this method is called in a named module
      * @since 1.6
+     * @revised 9
+     * @spec JPMS
      */
     @CallerSensitive
     public static ResourceBundle getBundle(String baseName, Locale targetLocale,
@@ -1824,7 +1835,7 @@ public abstract class ResourceBundle {
                         cacheKey.setFormat(format);
                         break;
                     }
-                } catch (Exception e) {
+                } catch (LinkageError|Exception e) {
                     cacheKey.setCause(e);
                 }
             }
@@ -2194,6 +2205,8 @@ public abstract class ResourceBundle {
      * by the caller's module.
      *
      * @since 1.6
+     * @revised 9
+     * @spec JPMS
      * @see ResourceBundle.Control#getTimeToLive(String,Locale)
      */
     @CallerSensitive
@@ -2468,13 +2481,15 @@ public abstract class ResourceBundle {
      * }
      * </pre>
      *
-     * @apiNote <a name="note">{@code ResourceBundle.Control} is not supported
+     * @apiNote <a id="note">{@code ResourceBundle.Control} is not supported
      * in named modules.</a> If the {@code ResourceBundle.getBundle} method with
      * a {@code ResourceBundle.Control} is called in a named module, the method
      * will throw an {@link UnsupportedOperationException}. Any service providers
      * of {@link ResourceBundleControlProvider} are ignored in named modules.
      *
      * @since 1.6
+     * @revised 9
+     * @spec JPMS
      * @see java.util.spi.ResourceBundleProvider
      */
     public static class Control {
@@ -3103,6 +3118,8 @@ public abstract class ResourceBundle {
          *        if an error occurred when reading resources using
          *        any I/O operations
          * @see java.util.spi.ResourceBundleProvider#getBundle(String, Locale)
+         * @revised 9
+         * @spec JPMS
          */
         public ResourceBundle newBundle(String baseName, Locale locale, String format,
                                         ClassLoader loader, boolean reload)

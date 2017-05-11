@@ -26,7 +26,6 @@
 package java.awt.event;
 
 import java.awt.AWTEvent;
-import java.awt.Event;
 import java.lang.annotation.Native;
 
 /**
@@ -63,25 +62,25 @@ public class ActionEvent extends AWTEvent {
      * The shift modifier. An indicator that the shift key was held
      * down during the event.
      */
-    public static final int SHIFT_MASK          = Event.SHIFT_MASK;
+    public static final int SHIFT_MASK = 1 << 0;
 
     /**
      * The control modifier. An indicator that the control key was held
      * down during the event.
      */
-    public static final int CTRL_MASK           = Event.CTRL_MASK;
+    public static final int CTRL_MASK = 1 << 1;
 
     /**
      * The meta modifier. An indicator that the meta key was held
      * down during the event.
      */
-    public static final int META_MASK           = Event.META_MASK;
+    public static final int META_MASK = 1 << 2;
 
     /**
      * The alt modifier. An indicator that the alt key was held
      * down during the event.
      */
-    public static final int ALT_MASK            = Event.ALT_MASK;
+    public static final int ALT_MASK = 1 << 3;
 
 
     /**
@@ -274,6 +273,7 @@ public class ActionEvent extends AWTEvent {
      *
      * @return a string identifying the event and its associated command
      */
+    @SuppressWarnings("deprecation")
     public String paramString() {
         String typeStr;
         switch(id) {

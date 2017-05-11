@@ -27,7 +27,7 @@
  * @bug 4917237
  * @summary test that process exit immediately after stop() / close() called
  * @author Jean Francois Denise
- * @modules java.management.rmi
+ *
  * @run clean RMIExitTest
  * @run build RMIExitTest
  * @run main RMIExitTest
