@@ -23,6 +23,7 @@
 
 package transform;
 
+import java.io.FilePermission;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -46,6 +47,7 @@ import static org.testng.Assert.assertEquals;
 import static jaxp.library.JAXPTestUtilities.runWithAllPerm;
 import static jaxp.library.JAXPTestUtilities.clearSystemProperty;
 import static jaxp.library.JAXPTestUtilities.setSystemProperty;
+import static jaxp.library.JAXPTestUtilities.tryRunWithTmpPermission;
 import static jaxp.library.JAXPTestUtilities.getSystemProperty;
 
 /*
@@ -77,7 +79,9 @@ public class XSLTFunctionsTest {
         Transformer t = tf.newTransformer(new StreamSource(new StringReader(xsl)));
 
         //Transform the xml
-        t.transform(new StreamSource(new StringReader(xml)), new StreamResult(new StringWriter()));
+        tryRunWithTmpPermission(
+                () -> t.transform(new StreamSource(new StringReader(xml)), new StreamResult(new StringWriter())),
+                new FilePermission(output, "write"), new FilePermission(redirect, "write"));
 
         // Verifies that the output is redirected successfully
         String userDir = getSystemProperty("user.dir");

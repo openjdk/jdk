@@ -23,6 +23,13 @@
  * questions.
  */
 
+/**
+ * Defines tools for manipulating Java Archive (JAR) files,
+ * including the jar and jarsigner tools.
+ *
+ * @moduleGraph
+ * @since 9
+ */
 module jdk.jartool {
     exports com.sun.jarsigner;
     exports jdk.security.jarsigner;

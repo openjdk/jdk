@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import com.apple.eawt.event.GestureUtilities;
 /**
  * Utility class perform animated full screen actions to top-level {@link Window}s.
  *
- * This class manages the relationship between {@link Windows}s and the {@link FullScreenListener}s
+ * This class manages the relationship between {@link Window}s and the {@link FullScreenListener}s
  * attached to them. It's design is similar to the Java SE 6u10 {@link com.sun.awt.AWTUtilities}
  * class which adds additional functionality to AWT Windows, without adding new API to the
  * {@link java.awt.Window} class.

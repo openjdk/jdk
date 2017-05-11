@@ -38,13 +38,13 @@ import java.util.Arrays;
  * Defined by <a href="http://www.ietf.org/rfc/rfc2373.txt">
  * <i>RFC&nbsp;2373: IP Version 6 Addressing Architecture</i></a>.
  *
- * <h3> <A NAME="format">Textual representation of IP addresses</a> </h3>
+ * <h3> <a id="format">Textual representation of IP addresses</a> </h3>
  *
  * Textual representation of IPv6 address used as input to methods
  * takes one of the following forms:
  *
  * <ol>
- *   <li><p> <A NAME="lform">The preferred form</a> is x:x:x:x:x:x:x:x,
+ *   <li><p> <a id="lform">The preferred form</a> is x:x:x:x:x:x:x:x,
  *   where the 'x's are
  *   the hexadecimal values of the eight 16-bit pieces of the
  *   address. This is the full form.  For example,
@@ -134,7 +134,7 @@ import java.util.Arrays;
  *         address.</td></tr>
  * </table></blockquote>
  *
- * <h4><A NAME="scoped">Textual representation of IPv6 scoped addresses</a></h4>
+ * <h4><a id="scoped">Textual representation of IPv6 scoped addresses</a></h4>
  *
  * <p> The textual representation of IPv6 addresses as described above can be
  * extended to specify IPv6 scoped addresses. This extension to the basic

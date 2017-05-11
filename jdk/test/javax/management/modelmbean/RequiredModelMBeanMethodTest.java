@@ -28,7 +28,7 @@
  * from the RequiredModelMBean class itself if they are not in the
  * ModelMBeanInfo
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean RequiredModelMBeanMethodTest
  * @run build RequiredModelMBeanMethodTest
  * @run main RequiredModelMBeanMethodTest

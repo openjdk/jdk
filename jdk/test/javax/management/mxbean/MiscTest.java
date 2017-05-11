@@ -28,7 +28,7 @@
  *          interfaceClassName, openType, originalType, StandardMBean,
  *          StandardEmitterMBean.
  * @author Luis-Miguel Alventosa
- * @modules java.management
+ *
  * @run clean MiscTest
  * @run build MiscTest
  * @run main MiscTest

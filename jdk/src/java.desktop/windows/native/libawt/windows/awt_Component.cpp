@@ -950,8 +950,11 @@ AwtComponent::SetWindowPos(HWND wnd, HWND after,
     return 1;
 }
 
+void AwtComponent::Reshape(int x, int y, int w, int h) {
+    ReshapeNoScale(ScaleUpX(x), ScaleUpY(y), ScaleUpX(w), ScaleUpY(h));
+}
 
-void AwtComponent::Reshape(int x, int y, int w, int h)
+void AwtComponent::ReshapeNoScale(int x, int y, int w, int h)
 {
 #if defined(DEBUG)
     RECT        rc;
@@ -959,11 +962,6 @@ void AwtComponent::Reshape(int x, int y, int w, int h)
     ::MapWindowPoints(HWND_DESKTOP, ::GetParent(GetHWnd()), (LPPOINT)&rc, 2);
     DTRACE_PRINTLN4("AwtComponent::Reshape from %d, %d, %d, %d", rc.left, rc.top, rc.right-rc.left, rc.bottom-rc.top);
 #endif
-
-    x = ScaleUpX(x);
-    y = ScaleUpY(y);
-    w = ScaleUpX(w);
-    h = ScaleUpY(h);
 
     AwtWindow* container = GetContainer();
     AwtComponent* parent = GetParent();
@@ -1507,6 +1505,9 @@ LRESULT AwtComponent::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
           mr = WmSysCommand(static_cast<UINT>(wParam & 0xFFF0),
                             GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
           break;
+      case WM_ENTERSIZEMOVE:
+          mr = WmEnterSizeMove();
+          break;
       case WM_EXITSIZEMOVE:
           mr = WmExitSizeMove();
           break;
@@ -2049,6 +2050,11 @@ MsgRouting AwtComponent::WmSizing()
 }
 
 MsgRouting AwtComponent::WmSysCommand(UINT uCmdType, int xPos, int yPos)
+{
+    return mrDoDefault;
+}
+
+MsgRouting AwtComponent::WmEnterSizeMove()
 {
     return mrDoDefault;
 }
@@ -4214,7 +4220,7 @@ MsgRouting AwtComponent::WmDrawItem(UINT ctrlId, DRAWITEMSTRUCT &drawInfo)
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
     if (drawInfo.CtlType == ODT_MENU) {
-        if (drawInfo.itemData != 0) {
+        if (IsMenu((HMENU)drawInfo.hwndItem) && drawInfo.itemData != 0) {
             AwtMenu* menu = (AwtMenu*)(drawInfo.itemData);
             menu->DrawItem(drawInfo);
         }

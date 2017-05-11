@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,10 +106,10 @@ import sun.util.logging.PlatformLogger;
  * <table cellpadding="2" summary="Variants of Hijrah Calendars">
  * <thead>
  * <tr class="tableSubHeadingColor">
- * <th class="colFirst" align="left" >Chronology ID</th>
- * <th class="colFirst" align="left" >Calendar Type</th>
- * <th class="colFirst" align="left" >Locale extension, see {@link java.util.Locale}</th>
- * <th class="colLast" align="left" >Description</th>
+ * <th class="colFirst" style="text-align:left" >Chronology ID</th>
+ * <th class="colFirst" style="text-align:left" >Calendar Type</th>
+ * <th class="colFirst" style="text-align:left" >Locale extension, see {@link java.util.Locale}</th>
+ * <th class="colLast" style="text-align:left" >Description</th>
  * </tr>
  * </thead>
  * <tbody>
@@ -150,9 +150,9 @@ import sun.util.logging.PlatformLogger;
  * <table cellpadding="2" summary="Configuration of Hijrah Calendar">
  * <thead>
  * <tr class="tableSubHeadingColor">
- * <th class="colFirst" align="left" > Property Name</th>
- * <th class="colFirst" align="left" > Property value</th>
- * <th class="colLast" align="left" > Description </th>
+ * <th class="colFirst" style="text-align:left" > Property Name</th>
+ * <th class="colFirst" style="text-align:left" > Property value</th>
+ * <th class="colLast" style="text-align:left" > Description </th>
  * </tr>
  * </thead>
  * <tbody>
@@ -813,8 +813,9 @@ public final class HijrahChronology extends AbstractChronology implements Serial
     private Properties readConfigProperties(final String calendarType) throws Exception {
         String resourceName = RESOURCE_PREFIX + calendarType + RESOURCE_SUFFIX;
         PrivilegedAction<InputStream> getResourceAction =  () -> HijrahChronology.class.getResourceAsStream(resourceName);
-        FilePermission perm = new FilePermission("<<ALL FILES>>", "read");
-        try (InputStream is = AccessController.doPrivileged(getResourceAction, null, perm)) {
+        FilePermission perm1 = new FilePermission("<<ALL FILES>>", "read");
+        RuntimePermission perm2 = new RuntimePermission("accessSystemModules");
+        try (InputStream is = AccessController.doPrivileged(getResourceAction, null, perm1, perm2)) {
             if (is == null) {
                 throw new RuntimeException("Hijrah calendar resource not found: /java/time/chrono/" + resourceName);
             }
