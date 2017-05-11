@@ -28,7 +28,6 @@
  *          properties contain another list of properties as the defaults.
  * @author  Mandy Chung
  *
- * @modules java.management
  * @run build PropertiesTest
  * @run main  PropertiesTest
  */

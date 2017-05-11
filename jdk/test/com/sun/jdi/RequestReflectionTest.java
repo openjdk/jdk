@@ -22,17 +22,15 @@
  */
 
 /**
- *  @test
- *  @bug 4425840
- *  @author Robert Field
+ * @test
+ * @bug 4425840
+ * @summary RequestReflectionTest checks to see that reflective
+ * accessors on EventRequests return what they are given.
+ * @author Robert Field
  *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g RequestReflectionTest.java
- *  @run driver RequestReflectionTest
- *
- *  @summary RequestReflectionTest checks to see that reflective
- *  accessors on EventRequests return what they are given.
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g RequestReflectionTest.java
+ * @run driver RequestReflectionTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

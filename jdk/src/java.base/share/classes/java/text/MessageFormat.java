@@ -68,7 +68,7 @@ import java.util.Locale;
  * behavior is defined by the pattern that you provide as well as the
  * subformats used for inserted arguments.
  *
- * <h3><a name="patterns">Patterns and Their Interpretation</a></h3>
+ * <h3><a id="patterns">Patterns and Their Interpretation</a></h3>
  *
  * <code>MessageFormat</code> uses patterns of the following form:
  * <blockquote><pre>
@@ -321,7 +321,7 @@ import java.util.Locale;
  * // result now equals {new String("z")}
  * </pre></blockquote>
  *
- * <h4><a name="synchronization">Synchronization</a></h4>
+ * <h4><a id="synchronization">Synchronization</a></h4>
  *
  * <p>
  * Message formats are not synchronized.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,22 +61,7 @@ public class TestRepeatedAnnotations extends JavadocTester {
                 + "<a href=\"../pkg/RegContaineeNotDoc.html\" "
                 + "title=\"annotation in pkg\">@RegContaineeNotDoc</a>,"
                 + "<a href=\"../pkg/RegContaineeNotDoc.html\" "
-                + "title=\"annotation in pkg\">@RegContaineeNotDoc</a>})",
-                "<a href=\"../pkg/ContaineeSynthDoc.html\" "
-                + "title=\"annotation in pkg\">@ContaineeSynthDoc</a> "
-                + "<a href=\"../pkg/ContaineeSynthDoc.html\" "
-                + "title=\"annotation in pkg\">@ContaineeSynthDoc</a> "
-                + "<a href=\"../pkg/ContaineeSynthDoc.html\" "
-                + "title=\"annotation in pkg\">@ContaineeSynthDoc</a>",
-                "<a href=\"../pkg/ContainerSynthDoc.html\" "
-                + "title=\"annotation in pkg\">@ContainerSynthDoc</a>("
-                + ""
-                + "<a href=\"../pkg/ContaineeSynthDoc.html\" "
-                + "title=\"annotation in pkg\">@ContaineeSynthDoc</a>)",
-                "<a href=\"../pkg/ContaineeSynthDoc.html\" "
-                + "title=\"annotation in pkg\">@ContaineeSynthDoc</a> "
-                + "<a href=\"../pkg/ContaineeSynthDoc.html\" "
-                + "title=\"annotation in pkg\">@ContaineeSynthDoc</a>");
+                + "title=\"annotation in pkg\">@RegContaineeNotDoc</a>})");
 
         checkOutput("pkg/D.html", true,
                 "<a href=\"../pkg/RegDoc.html\" title=\"annotation in pkg\">@RegDoc</a>"
@@ -88,7 +73,8 @@ public class TestRepeatedAnnotations extends JavadocTester {
                 "<a href=\"../pkg/NonSynthDocContainer.html\" "
                 + "title=\"annotation in pkg\">@NonSynthDocContainer</a>"
                 + "("
-                + "<a href=\"../pkg/RegArryDoc.html\" title=\"annotation in pkg\">@RegArryDoc</a>)");
+                + "<a href=\"../pkg/RegArryDoc.html\" title=\"annotation in pkg\">@RegArryDoc</a>"
+                + "(<a href=\"../pkg/RegArryDoc.html#y--\">y</a>=1))");
 
         checkOutput("pkg1/C.html", true,
                 "<a href=\"../pkg1/RegContainerValDoc.html\" "
