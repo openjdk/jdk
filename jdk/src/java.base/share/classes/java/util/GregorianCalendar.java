@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,88 +159,89 @@ import sun.util.calendar.ZoneInfo;
  * undefined. <code>GregorianCalendar</code> uses the following
  * default value for each calendar field if its value is undefined.
  *
- * <table cellpadding="0" cellspacing="3" border="0"
- *        summary="GregorianCalendar default field values"
- *        style="text-align: left; width: 66%;">
+ * <table class="striped" style="text-align: left; width: 66%;">
+ * <caption style="display:none">GregorianCalendar default field values</caption>
+ *   <thead>
+ *     <tr>
+ *       <th>
+ *          Field
+ *       </th>
+ *       <th>
+            Default Value
+ *       </th>
+ *     </tr>
+ *   </thead>
  *   <tbody>
  *     <tr>
- *       <th style="vertical-align: top; background-color: rgb(204, 204, 255);
- *           text-align: center;">Field<br>
- *       </th>
- *       <th style="vertical-align: top; background-color: rgb(204, 204, 255);
- *           text-align: center;">Default Value<br>
- *       </th>
- *     </tr>
- *     <tr>
- *       <td style="vertical-align: middle;">
- *              <code>ERA<br></code>
+ *       <td>
+ *              <code>ERA</code>
  *       </td>
- *       <td style="vertical-align: middle;">
- *              <code>AD<br></code>
+ *       <td>
+ *              <code>AD</code>
  *       </td>
  *     </tr>
  *     <tr>
- *       <td style="vertical-align: middle; background-color: rgb(238, 238, 255);">
- *              <code>YEAR<br></code>
+ *       <td>
+ *              <code>YEAR</code>
  *       </td>
- *       <td style="vertical-align: middle; background-color: rgb(238, 238, 255);">
- *              <code>1970<br></code>
- *       </td>
- *     </tr>
- *     <tr>
- *       <td style="vertical-align: middle;">
- *              <code>MONTH<br></code>
- *       </td>
- *       <td style="vertical-align: middle;">
- *              <code>JANUARY<br></code>
+ *       <td>
+ *              <code>1970</code>
  *       </td>
  *     </tr>
  *     <tr>
- *       <td style="vertical-align: top; background-color: rgb(238, 238, 255);">
- *              <code>DAY_OF_MONTH<br></code>
+ *       <td>
+ *              <code>MONTH</code>
  *       </td>
- *       <td style="vertical-align: top; background-color: rgb(238, 238, 255);">
- *              <code>1<br></code>
- *       </td>
- *     </tr>
- *     <tr>
- *       <td style="vertical-align: middle;">
- *              <code>DAY_OF_WEEK<br></code>
- *       </td>
- *       <td style="vertical-align: middle;">
- *              <code>the first day of week<br></code>
+ *       <td>
+ *              <code>JANUARY</code>
  *       </td>
  *     </tr>
  *     <tr>
- *       <td style="vertical-align: top; background-color: rgb(238, 238, 255);">
- *              <code>WEEK_OF_MONTH<br></code>
+ *       <td>
+ *              <code>DAY_OF_MONTH</code>
  *       </td>
- *       <td style="vertical-align: top; background-color: rgb(238, 238, 255);">
- *              <code>0<br></code>
- *       </td>
- *     </tr>
- *     <tr>
- *       <td style="vertical-align: top;">
- *              <code>DAY_OF_WEEK_IN_MONTH<br></code>
- *       </td>
- *       <td style="vertical-align: top;">
- *              <code>1<br></code>
+ *       <td>
+ *              <code>1</code>
  *       </td>
  *     </tr>
  *     <tr>
- *       <td style="vertical-align: middle; background-color: rgb(238, 238, 255);">
- *              <code>AM_PM<br></code>
+ *       <td>
+ *              <code>DAY_OF_WEEK</code>
  *       </td>
- *       <td style="vertical-align: middle; background-color: rgb(238, 238, 255);">
- *              <code>AM<br></code>
+ *       <td>
+ *              <code>the first day of week</code>
  *       </td>
  *     </tr>
  *     <tr>
- *       <td style="vertical-align: middle;">
- *              <code>HOUR, HOUR_OF_DAY, MINUTE, SECOND, MILLISECOND<br></code>
+ *       <td>
+ *              <code>WEEK_OF_MONTH</code>
  *       </td>
- *       <td style="vertical-align: middle;">
- *              <code>0<br></code>
+ *       <td>
+ *              <code>0</code>
+ *       </td>
+ *     </tr>
+ *     <tr>
+ *       <td>
+ *              <code>DAY_OF_WEEK_IN_MONTH</code>
+ *       </td>
+ *       <td>
+ *              <code>1</code>
+ *       </td>
+ *     </tr>
+ *     <tr>
+ *       <td>
+ *              <code>AM_PM</code>
+ *       </td>
+ *       <td>
+ *              <code>AM</code>
+ *       </td>
+ *     </tr>
+ *     <tr>
+ *       <td>
+ *              <code>HOUR, HOUR_OF_DAY, MINUTE, SECOND, MILLISECOND</code>
+ *       </td>
+ *       <td>
+ *              <code>0</code>
  *       </td>
  *     </tr>
  *   </tbody>
