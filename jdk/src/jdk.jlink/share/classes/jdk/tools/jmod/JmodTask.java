@@ -177,8 +177,7 @@ public class JmodTask {
         ModuleFinder moduleFinder;
         Version moduleVersion;
         String mainClass;
-        String osName;
-        String osArch;
+        String targetPlatform;
         Pattern modulesToHash;
         ModuleResolution moduleResolution;
         boolean dryrun;
@@ -311,9 +310,9 @@ public class JmodTask {
         try (JmodFile jf = new JmodFile(options.jmodFile)) {
             try (InputStream in = jf.getInputStream(Section.CLASSES, MODULE_INFO)) {
                 ModuleInfo.Attributes attrs = ModuleInfo.read(in, null);
-                printModuleDescriptor(attrs.descriptor(),
-                                      attrs.target(),
-                                      attrs.recordedHashes());
+                describeModule(attrs.descriptor(),
+                               attrs.target(),
+                               attrs.recordedHashes());
                 return true;
             } catch (IOException e) {
                 throw new CommandException("err.module.descriptor.not.found");
@@ -323,66 +322,92 @@ public class JmodTask {
 
     static <T> String toString(Collection<T> c) {
         if (c.isEmpty()) { return ""; }
-        return c.stream().map(e -> e.toString().toLowerCase(Locale.ROOT))
-                  .collect(joining(" "));
+        return " " + c.stream().map(e -> e.toString().toLowerCase(Locale.ROOT))
+                .sorted().collect(joining(" "));
     }
 
-    private void printModuleDescriptor(ModuleDescriptor md,
-                                       ModuleTarget target,
-                                       ModuleHashes hashes)
+    private void describeModule(ModuleDescriptor md,
+                                ModuleTarget target,
+                                ModuleHashes hashes)
         throws IOException
     {
         StringBuilder sb = new StringBuilder();
-        sb.append("\n").append(md.toNameAndVersion());
 
-        md.requires().stream()
-            .sorted(Comparator.comparing(Requires::name))
-            .forEach(r -> {
-                sb.append("\n  requires ");
-                if (!r.modifiers().isEmpty())
-                    sb.append(toString(r.modifiers())).append(" ");
-                sb.append(r.name());
-            });
+        sb.append(md.toNameAndVersion());
 
-        md.uses().stream().sorted()
-            .forEach(s -> sb.append("\n  uses ").append(s));
+        if (md.isOpen())
+            sb.append(" open");
+        if (md.isAutomatic())
+            sb.append(" automatic");
+        sb.append("\n");
 
+        // unqualified exports (sorted by package)
         md.exports().stream()
-            .sorted(Comparator.comparing(Exports::source))
-            .forEach(p -> sb.append("\n  exports ").append(p));
+                .sorted(Comparator.comparing(Exports::source))
+                .filter(e -> !e.isQualified())
+                .forEach(e -> sb.append("exports ").append(e.source())
+                                .append(toString(e.modifiers())).append("\n"));
 
-        md.opens().stream()
-            .sorted(Comparator.comparing(Opens::source))
-            .forEach(p -> sb.append("\n  opens ").append(p));
+        // dependences
+        md.requires().stream().sorted()
+                .forEach(r -> sb.append("requires ").append(r.name())
+                                .append(toString(r.modifiers())).append("\n"));
 
-        Set<String> concealed = new HashSet<>(md.packages());
-        md.exports().stream().map(Exports::source).forEach(concealed::remove);
-        md.opens().stream().map(Opens::source).forEach(concealed::remove);
-        concealed.stream().sorted()
-                 .forEach(p -> sb.append("\n  contains ").append(p));
+        // service use and provides
+        md.uses().stream().sorted()
+                .forEach(s -> sb.append("uses ").append(s).append("\n"));
 
         md.provides().stream()
-            .sorted(Comparator.comparing(Provides::service))
-            .forEach(p -> sb.append("\n  provides ").append(p.service())
-                            .append(" with ")
-                            .append(toString(p.providers())));
+                .sorted(Comparator.comparing(Provides::service))
+                .forEach(p -> sb.append("provides ").append(p.service())
+                                .append(" with")
+                                .append(toString(p.providers()))
+                                .append("\n"));
 
-        md.mainClass().ifPresent(v -> sb.append("\n  main-class " + v));
+        // qualified exports
+        md.exports().stream()
+                .sorted(Comparator.comparing(Exports::source))
+                .filter(Exports::isQualified)
+                .forEach(e -> sb.append("qualified exports ").append(e.source())
+                                .append(" to").append(toString(e.targets()))
+                                .append("\n"));
+
+        // open packages
+        md.opens().stream()
+                .sorted(Comparator.comparing(Opens::source))
+                .filter(o -> !o.isQualified())
+                .forEach(o -> sb.append("opens ").append(o.source())
+                                 .append(toString(o.modifiers()))
+                                 .append("\n"));
+
+        md.opens().stream()
+                .sorted(Comparator.comparing(Opens::source))
+                .filter(Opens::isQualified)
+                .forEach(o -> sb.append("qualified opens ").append(o.source())
+                                 .append(toString(o.modifiers()))
+                                 .append(" to").append(toString(o.targets()))
+                                 .append("\n"));
+
+        // non-exported/non-open packages
+        Set<String> concealed = new TreeSet<>(md.packages());
+        md.exports().stream().map(Exports::source).forEach(concealed::remove);
+        md.opens().stream().map(Opens::source).forEach(concealed::remove);
+        concealed.forEach(p -> sb.append("contains ").append(p).append("\n"));
+
+        md.mainClass().ifPresent(v -> sb.append("main-class ").append(v).append("\n"));
 
         if (target != null) {
-            String osName = target.osName();
-            if (osName != null)
-                sb.append("\n  operating-system-name " + osName);
-            String osArch = target.osArch();
-            if (osArch != null)
-                sb.append("\n  operating-system-architecture " + osArch);
-        }
+            String targetPlatform = target.targetPlatform();
+            if (!targetPlatform.isEmpty())
+                sb.append("platform ").append(targetPlatform).append("\n");
+       }
 
-        if (hashes != null) {
-            hashes.names().stream().sorted().forEach(
-                    mod -> sb.append("\n  hashes ").append(mod).append(" ")
-                             .append(hashes.algorithm()).append(" ")
-                             .append(toHex(hashes.hashFor(mod))));
+       if (hashes != null) {
+           hashes.names().stream().sorted().forEach(
+                   mod -> sb.append("hashes ").append(mod).append(" ")
+                            .append(hashes.algorithm()).append(" ")
+                            .append(toHex(hashes.hashFor(mod)))
+                            .append("\n"));
         }
 
         out.println(sb.toString());
@@ -437,8 +462,7 @@ public class JmodTask {
 
         final Version moduleVersion = options.moduleVersion;
         final String mainClass = options.mainClass;
-        final String osName = options.osName;
-        final String osArch = options.osArch;
+        final String targetPlatform = options.targetPlatform;
         final List<PathMatcher> excludes = options.excludes;
         final ModuleResolution moduleResolution = options.moduleResolution;
 
@@ -534,9 +558,10 @@ public class JmodTask {
                 if (mainClass != null)
                     extender.mainClass(mainClass);
 
-                // --os-name, --os-arch
-                if (osName != null || osArch != null)
-                    extender.targetPlatform(osName, osArch);
+                // --target-platform
+                if (targetPlatform != null) {
+                    extender.targetPlatform(targetPlatform);
+                }
 
                 // --module-version
                 if (moduleVersion != null)
@@ -1327,15 +1352,10 @@ public class JmodTask {
                         .withRequiredArg()
                         .withValuesConvertedBy(new ModuleVersionConverter());
 
-        OptionSpec<String> osName
-                = parser.accepts("os-name", getMessage("main.opt.os-name"))
+        OptionSpec<String> targetPlatform
+                = parser.accepts("target-platform", getMessage("main.opt.target-platform"))
                         .withRequiredArg()
-                        .describedAs(getMessage("main.opt.os-name.arg"));
-
-        OptionSpec<String> osArch
-                = parser.accepts("os-arch", getMessage("main.opt.os-arch"))
-                        .withRequiredArg()
-                        .describedAs(getMessage("main.opt.os-arch.arg"));
+                        .describedAs(getMessage("main.opt.target-platform.arg"));
 
         OptionSpec<Void> doNotResolveByDefault
                 = parser.accepts("do-not-resolve-by-default",
@@ -1400,10 +1420,8 @@ public class JmodTask {
                 options.moduleVersion = getLastElement(opts.valuesOf(moduleVersion));
             if (opts.has(mainClass))
                 options.mainClass = getLastElement(opts.valuesOf(mainClass));
-            if (opts.has(osName))
-                options.osName = getLastElement(opts.valuesOf(osName));
-            if (opts.has(osArch))
-                options.osArch = getLastElement(opts.valuesOf(osArch));
+            if (opts.has(targetPlatform))
+                options.targetPlatform = getLastElement(opts.valuesOf(targetPlatform));
             if (opts.has(warnIfResolved))
                 options.moduleResolution = getLastElement(opts.valuesOf(warnIfResolved));
             if (opts.has(doNotResolveByDefault)) {

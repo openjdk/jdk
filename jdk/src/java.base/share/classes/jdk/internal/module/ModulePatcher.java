@@ -120,7 +120,7 @@ public final class ModulePatcher {
 
                     // JAR file - do not open as a multi-release JAR as this
                     // is not supported by the boot class loader
-                    try (JarFile jf = new JarFile(file.toFile())) {
+                    try (JarFile jf = new JarFile(file.toString())) {
                         jf.stream()
                           .filter(e -> !e.isDirectory()
                                   && (!isAutomatic || e.getName().endsWith(".class")))
@@ -431,7 +431,7 @@ public final class ModulePatcher {
         private final URL csURL;
 
         JarResourceFinder(Path path) throws IOException {
-            this.jf = new JarFile(path.toFile());
+            this.jf = new JarFile(path.toString());
             this.csURL = path.toUri().toURL();
         }
 
@@ -505,7 +505,7 @@ public final class ModulePatcher {
         public Resource find(String name) throws IOException {
             Path file = Resources.toFilePath(dir, name);
             if (file != null) {
-                return  newResource(name, dir, file);
+                return newResource(name, dir, file);
             } else {
                 return null;
             }

@@ -339,11 +339,16 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
     public Dimension getMinimumSize( JComponent c ) {
         Dimension d = super.getMinimumSize(c);
         if (XPStyle.getXP() != null) {
-            d.width += 5;
+            d.width += 7;
+            boolean isEditable = false;
+            if (c instanceof JComboBox) {
+                isEditable = ((JComboBox) c).isEditable();
+            }
+            d.height += isEditable ? 4 : 6;
         } else {
             d.width += 4;
+            d.height += 2;
         }
-        d.height += 2;
         return d;
     }
 

@@ -114,10 +114,17 @@ module java.desktop {
     uses javax.sound.sampled.spi.FormatConversionProvider;
     uses javax.sound.sampled.spi.MixerProvider;
 
-    provides sun.datatransfer.DesktopDatatransferService with sun.awt.datatransfer.DesktopDatatransferServiceImpl;
-    provides java.net.ContentHandlerFactory with sun.awt.www.content.MultimediaContentHandlers;
-    provides javax.print.PrintServiceLookup with sun.print.PrintServiceLookupProvider;
-    provides javax.print.StreamPrintServiceFactory with sun.print.PSStreamPrinterFactory;
+    provides sun.datatransfer.DesktopDatatransferService with
+        sun.awt.datatransfer.DesktopDatatransferServiceImpl;
+
+    provides java.net.ContentHandlerFactory with
+        sun.awt.www.content.MultimediaContentHandlers;
+
+    provides javax.print.PrintServiceLookup with
+        sun.print.PrintServiceLookupProvider;
+
+    provides javax.print.StreamPrintServiceFactory with
+        sun.print.PSStreamPrinterFactory;
 
     provides javax.sound.midi.spi.MidiDeviceProvider with
         com.sun.media.sound.MidiInDeviceProvider,
@@ -125,14 +132,17 @@ module java.desktop {
         com.sun.media.sound.RealTimeSequencerProvider,
         com.sun.media.sound.SoftProvider;
 
-    provides javax.sound.midi.spi.MidiFileReader with com.sun.media.sound.StandardMidiFileReader;
-    provides javax.sound.midi.spi.MidiFileWriter with com.sun.media.sound.StandardMidiFileWriter;
+    provides javax.sound.midi.spi.MidiFileReader with
+        com.sun.media.sound.StandardMidiFileReader;
+
+    provides javax.sound.midi.spi.MidiFileWriter with
+        com.sun.media.sound.StandardMidiFileWriter;
 
     provides javax.sound.midi.spi.SoundbankReader with
-         com.sun.media.sound.AudioFileSoundbankReader,
-         com.sun.media.sound.DLSSoundbankReader,
-         com.sun.media.sound.JARSoundbankReader,
-         com.sun.media.sound.SF2SoundbankReader;
+        com.sun.media.sound.AudioFileSoundbankReader,
+        com.sun.media.sound.DLSSoundbankReader,
+        com.sun.media.sound.JARSoundbankReader,
+        com.sun.media.sound.SF2SoundbankReader;
 
     provides javax.sound.sampled.spi.AudioFileReader with
         com.sun.media.sound.AiffFileReader,
@@ -158,4 +168,3 @@ module java.desktop {
         com.sun.media.sound.DirectAudioDeviceProvider,
         com.sun.media.sound.PortMixerProvider;
 }
-
