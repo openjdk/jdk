@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,11 +60,15 @@ import java.util.concurrent.TimeUnit;
  * default group is not configured then the pooled threads of the default group
  * are {@link Thread#isDaemon daemon} threads.
  *
- * <table border summary="System properties">
+ * <table class="striped">
+ * <caption style="display:none:">System properties</caption>
+ *   <thead>
  *   <tr>
  *     <th>System property</th>
  *     <th>Description</th>
  *   </tr>
+ *   </thead>
+ *   <tbody>
  *   <tr>
  *     <td> {@code java.nio.channels.DefaultThreadPool.threadFactory} </td>
  *     <td> The value of this property is taken to be the fully-qualified name
@@ -86,6 +90,7 @@ import java.util.concurrent.TimeUnit;
  *     unspecified error to be thrown during the construction of the default
  *     group. </td>
  *   </tr>
+ *   </tbody>
  * </table>
  *
  * <a id="threading"></a><h2>Threading</h2>
