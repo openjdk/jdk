@@ -1347,6 +1347,16 @@ void LIRGenerator::volatile_field_store(LIR_Opr value, LIR_Address* address,
 
 void LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
                                        CodeEmitInfo* info) {
+  // 8179954: We need to make sure that the code generated for
+  // volatile accesses forms a sequentially-consistent set of
+  // operations when combined with STLR and LDAR.  Without a leading
+  // membar it's possible for a simple Dekker test to fail if loads
+  // use LD;DMB but stores use STLR.  This can happen if C2 compiles
+  // the stores in one method and C1 compiles the loads in another.
+  if (! UseBarriersForVolatile) {
+    __ membar();
+  }
+
   __ volatile_load_mem_reg(address, result, info);
 }
 
