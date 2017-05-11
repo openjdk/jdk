@@ -49,16 +49,16 @@ public class JVMAddModulePackage {
         module_two = ModuleHelper.ModuleObject("module_two", cl1, new String[] { "yourpackage" });
         assertNotNull(module_two, "Module should not be null");
         ModuleHelper.DefineModule(module_two, "9.0", "module_two/here", new String[] { "yourpackage" });
-        module_three = ModuleHelper.ModuleObject("module_three", cl3, new String[] { "package/num3" });
+        module_three = ModuleHelper.ModuleObject("module_three", cl3, new String[] { "apackage/num3" });
         assertNotNull(module_three, "Module should not be null");
-        ModuleHelper.DefineModule(module_three, "9.0", "module_three/here", new String[] { "package/num3" });
+        ModuleHelper.DefineModule(module_three, "9.0", "module_three/here", new String[] { "apackage/num3" });
 
         // Simple call
         ModuleHelper.AddModulePackage(module_one, "new_package");
 
         // Add a package and export it
-        ModuleHelper.AddModulePackage(module_one, "package/num3");
-        ModuleHelper.AddModuleExportsToAll(module_one, "package/num3");
+        ModuleHelper.AddModulePackage(module_one, "apackage/num3");
+        ModuleHelper.AddModuleExportsToAll(module_one, "apackage/num3");
 
         // Null module argument, expect an NPE
         try {
@@ -94,7 +94,7 @@ public class JVMAddModulePackage {
 
         // Invalid package name, expect an IAE
         try {
-            ModuleHelper.AddModulePackage(module_one, "your.package");
+            ModuleHelper.AddModulePackage(module_one, "your.apackage");
             throw new RuntimeException("Failed to get the expected IAE");
         } catch(IllegalArgumentException e) {
             // Expected
@@ -102,7 +102,7 @@ public class JVMAddModulePackage {
 
         // Invalid package name, expect an IAE
         try {
-            ModuleHelper.AddModulePackage(module_one, ";your/package");
+            ModuleHelper.AddModulePackage(module_one, ";your/apackage");
             throw new RuntimeException("Failed to get the expected IAE");
         } catch(IllegalArgumentException e) {
             // Expected
