@@ -127,6 +127,7 @@ public class Driver {
             cmd.add("-Dtest.src=" + testSrc);
             cmd.add("-Dtest.classes=" + testClasses);
             cmd.add("-Djava.security.manager");
+            cmd.add("--add-modules=jdk.incubator.httpclient");
             cmd.add("-Djava.security.policy=" + testSrc + sep + policy);
             cmd.add("-Dport.number=" + Integer.toString(Utils.getFreePort()));
             cmd.add("-Dport.number1=" + Integer.toString(Utils.getFreePort()));

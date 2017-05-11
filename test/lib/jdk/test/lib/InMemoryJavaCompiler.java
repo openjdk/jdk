@@ -28,7 +28,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import javax.tools.ForwardingJavaFileManager;
 import javax.tools.FileObject;
@@ -37,6 +39,7 @@ import javax.tools.JavaCompiler.CompilationTask;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
 import javax.tools.SimpleJavaFileObject;
+import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
 /**
@@ -104,11 +107,24 @@ public class InMemoryJavaCompiler {
     }
 
     private static class FileManagerWrapper extends ForwardingJavaFileManager {
-        private MemoryJavaFileObject file;
+        private static final Location PATCH_LOCATION = new Location() {
+            @Override
+            public String getName() {
+                return "patch module location";
+            }
 
-        public FileManagerWrapper(MemoryJavaFileObject file) {
+            @Override
+            public boolean isOutputLocation() {
+                return false;
+            }
+        };
+        private final MemoryJavaFileObject file;
+        private final String moduleOverride;
+
+        public FileManagerWrapper(MemoryJavaFileObject file, String moduleOverride) {
             super(getCompiler().getStandardFileManager(null, null, null));
             this.file = file;
+            this.moduleOverride = moduleOverride;
         }
 
         @Override
@@ -121,6 +137,28 @@ public class InMemoryJavaCompiler {
             }
             return file;
         }
+
+        @Override
+        public Location getLocationForModule(Location location, JavaFileObject fo) throws IOException {
+            if (fo == file && moduleOverride != null) {
+                return PATCH_LOCATION;
+            }
+            return super.getLocationForModule(location, fo);
+        }
+
+        @Override
+        public String inferModuleName(Location location) throws IOException {
+            if (location == PATCH_LOCATION) {
+                return moduleOverride;
+            }
+            return super.inferModuleName(location);
+        }
+
+        @Override
+        public boolean hasLocation(Location location) {
+            return super.hasLocation(location) || location == StandardLocation.PATCH_MODULE_PATH;
+        }
+
     }
 
     /**
@@ -148,6 +186,15 @@ public class InMemoryJavaCompiler {
     }
 
     private static CompilationTask getCompilationTask(MemoryJavaFileObject file, String... options) {
-        return getCompiler().getTask(null, new FileManagerWrapper(file), null, Arrays.asList(options), null, Arrays.asList(file));
+        List<String> opts = new ArrayList<>();
+        String moduleOverride = null;
+        for (String opt : options) {
+            if (opt.startsWith("-Xmodule:")) {
+                moduleOverride = opt.substring("-Xmodule:".length());
+            } else {
+                opts.add(opt);
+            }
+        }
+        return getCompiler().getTask(null, new FileManagerWrapper(file, moduleOverride), null, opts, null, Arrays.asList(file));
     }
 }

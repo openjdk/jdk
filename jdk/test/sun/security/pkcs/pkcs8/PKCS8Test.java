@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,12 +195,12 @@ public class PKCS8Test {
     public static void main(String[] args)
             throws IOException, InvalidKeyException {
 
-        BigInteger p = BigInteger.valueOf(1);
-        BigInteger q = BigInteger.valueOf(2);
-        BigInteger g = BigInteger.valueOf(3);
-        BigInteger x = BigInteger.valueOf(4);
+        BigInteger x = BigInteger.valueOf(1);
+        BigInteger p = BigInteger.valueOf(2);
+        BigInteger q = BigInteger.valueOf(3);
+        BigInteger g = BigInteger.valueOf(4);
 
-        DSAPrivateKey priv = new DSAPrivateKey(p, q, g, x);
+        DSAPrivateKey priv = new DSAPrivateKey(x, p, q, g);
 
         byte[] encodedKey = priv.getEncoded();
         byte[] expectedBytes = new byte[EXPECTED.length];

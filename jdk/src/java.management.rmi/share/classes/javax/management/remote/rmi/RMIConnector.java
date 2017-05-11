@@ -38,11 +38,11 @@ import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.ObjectStreamClass;
 import java.io.Serializable;
+import java.lang.module.ModuleDescriptor;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Module;
 import java.lang.reflect.Proxy;
 import java.net.MalformedURLException;
 import java.rmi.MarshalledObject;
@@ -106,6 +106,8 @@ import sun.reflect.misc.ReflectUtil;
 import sun.rmi.server.UnicastRef2;
 import sun.rmi.transport.LiveRef;
 import java.io.NotSerializableException;
+
+import static java.lang.module.ModuleDescriptor.Modifier.SYNTHETIC;
 
 /**
  * <p>A connection to a remote RMI connector.  Usually, such
@@ -2020,8 +2022,14 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                 Module rmiModule = RemoteRef.class.getModule();
 
                 String pkg = packageOf(pRefClassName);
-                assert pkg != null && pkg.length() > 0 && !pkg.equals(packageOf(proxyRefCName));
-                Module m = Modules.defineModule(cl, "jdk.remoteref", Collections.singleton(pkg));
+                assert pkg != null && pkg.length() > 0 &&
+                        !pkg.equals(packageOf(proxyRefCName));
+
+                ModuleDescriptor descriptor =
+                    ModuleDescriptor.newModule("jdk.remoteref", Set.of(SYNTHETIC))
+                        .packages(Set.of(pkg))
+                        .build();
+                Module m = Modules.defineModule(cl, descriptor, null);
 
                 // jdk.remoteref needs to read to java.base and jmxModule
                 Modules.addReads(m, Object.class.getModule());

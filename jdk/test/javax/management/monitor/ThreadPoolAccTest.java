@@ -27,7 +27,7 @@
  * @summary Test that each thread in the thread pool runs
  *          in the context of the monitor.start() caller.
  * @author Luis-Miguel Alventosa
- * @modules java.management
+ *
  * @run clean ThreadPoolAccTest
  * @run build ThreadPoolAccTest
  * @run main ThreadPoolAccTest

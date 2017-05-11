@@ -27,7 +27,7 @@
  * @summary Check that Standard MBeans can change their MBeanNotificationInfo[]
  * and MXBeans cannot
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean ChangingNotifsTest
  * @run build ChangingNotifsTest
  * @run main ChangingNotifsTest

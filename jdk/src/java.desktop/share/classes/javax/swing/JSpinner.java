@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1202,7 +1202,7 @@ public class JSpinner extends JComponent implements Accessible
          * on the new <code>JFormattedTextField</code>.
          *
          * @param spinner the spinner whose model <code>this</code> editor will monitor
-         * @param decimalFormatPattern the initial pattern for the
+         * @param format the initial pattern for the
          *     <code>DecimalFormat</code> object that's used to display
          *     and parse the value of the text field.
          * @exception IllegalArgumentException if the spinners model is not
