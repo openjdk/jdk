@@ -156,7 +156,6 @@ REGISTER_DECLARATION(Register, O5_savedSP       , O5);
 REGISTER_DECLARATION(Register, I5_savedSP       , I5); // Saved SP before bumping for locals.  This is simply
                                                        // a copy SP, so in 64-bit it's a biased value.  The bias
                                                        // is added and removed as needed in the frame code.
-REGISTER_DECLARATION(Register, IdispatchTables  , I4); // Base address of the bytecode dispatch tables
 REGISTER_DECLARATION(Register, IdispatchAddress , I3); // Register which saves the dispatch address for each bytecode
 REGISTER_DECLARATION(Register, ImethodDataPtr   , I2); // Pointer to the current method data
 
@@ -228,7 +227,6 @@ REGISTER_DECLARATION(Register, Oissuing_pc , O1); // where the exception is comi
 #define O5_savedSP          AS_REGISTER(Register, O5_savedSP)
 #define IdispatchAddress    AS_REGISTER(Register, IdispatchAddress)
 #define ImethodDataPtr      AS_REGISTER(Register, ImethodDataPtr)
-#define IdispatchTables     AS_REGISTER(Register, IdispatchTables)
 
 #define Oexception          AS_REGISTER(Register, Oexception)
 #define Oissuing_pc         AS_REGISTER(Register, Oissuing_pc)

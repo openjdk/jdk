@@ -107,24 +107,15 @@ void InterpreterMacroAssembler::dispatch_base(TosState state, address* table) {
   // TODO: Maybe implement +VerifyActivationFrameSize here.
   // verify_thread(); // Too slow. We will just verify on method entry & exit.
   verify_oop(Z_tos, state);
-#ifdef FAST_DISPATCH
-  if (table == Interpreter::dispatch_table(state)) {
-    // Use IdispatchTables.
-    add(Lbyte_code, Interpreter::distance_from_dispatch_table(state), Lbyte_code);
-                                                        // Add offset to correct dispatch table.
-    sll(Lbyte_code, LogBytesPerWord, Lbyte_code);       // Multiply by wordSize.
-    ld_ptr(IdispatchTables, Lbyte_code, G3_scratch);    // Get entry addr.
-  } else
-#endif
-  {
-    // Dispatch table to use.
-    load_absolute_address(Z_tmp_1, (address) table);  // Z_tmp_1 = table;
 
-    // 0 <= Z_bytecode < 256 => Use a 32 bit shift, because it is shorter than sllg.
-    // Z_bytecode must have been loaded zero-extended for this approach to be correct.
-    z_sll(Z_bytecode, LogBytesPerWord, Z_R0);   // Multiply by wordSize.
-    z_lg(Z_tmp_1, 0, Z_bytecode, Z_tmp_1);      // Get entry addr.
-  }
+  // Dispatch table to use.
+  load_absolute_address(Z_tmp_1, (address) table);  // Z_tmp_1 = table;
+
+  // 0 <= Z_bytecode < 256 => Use a 32 bit shift, because it is shorter than sllg.
+  // Z_bytecode must have been loaded zero-extended for this approach to be correct.
+  z_sll(Z_bytecode, LogBytesPerWord, Z_R0);   // Multiply by wordSize.
+  z_lg(Z_tmp_1, 0, Z_bytecode, Z_tmp_1);      // Get entry addr.
+
   z_br(Z_tmp_1);
 }
 
