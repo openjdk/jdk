@@ -367,13 +367,15 @@ COPY_SPEC_FILTER := %.html %.gif %.jpg %.mib %.css
 
 $(foreach m, $(ALL_MODULES), \
   $(eval SPECS_$m := $(call FindModuleSpecsDirs, $m)) \
-  $(if $(SPECS_$m), \
-    $(eval $(call SetupCopyFiles, COPY_$m, \
-        SRC := $(SPECS_$m), \
-        FILES := $(filter $(COPY_SPEC_FILTER), $(call CacheFind, $(SPECS_$m))), \
-        DEST := $(JAVADOC_OUTPUTDIR)/specs/, \
-    )) \
-    $(eval JDK_SPECS_TARGETS += $(COPY_$m)) \
+  $(foreach d, $(SPECS_$m), \
+    $(if $(filter $(COPY_SPEC_FILTER), $(call CacheFind, $d)), \
+      $(eval $(call SetupCopyFiles, COPY_$m, \
+          SRC := $d, \
+          FILES := $(filter $(COPY_SPEC_FILTER), $(call CacheFind, $d)), \
+          DEST := $(JAVADOC_OUTPUTDIR)/specs/, \
+      )) \
+      $(eval JDK_SPECS_TARGETS += $(COPY_$m)) \
+    ) \
   ) \
 )
 
