@@ -236,7 +236,7 @@ public class MotifDesktopIconUI extends BasicDesktopIconUI
                 }
             });
         }
-
+        @SuppressWarnings("deprecation")
         void forwardEventToParent(MouseEvent e) {
             getParent().dispatchEvent(new MouseEvent(
                 getParent(), e.getID(), e.getWhen(), e.getModifiers(),
@@ -329,7 +329,7 @@ public class MotifDesktopIconUI extends BasicDesktopIconUI
                 }
             });
         }
-
+        @SuppressWarnings("deprecation")
         void forwardEventToParent(MouseEvent e) {
             getParent().dispatchEvent(new MouseEvent(
                 getParent(), e.getID(), e.getWhen(), e.getModifiers(),

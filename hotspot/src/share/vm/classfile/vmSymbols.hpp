@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@
   template(java_lang_Object,                          "java/lang/Object")                         \
   template(java_lang_Class,                           "java/lang/Class")                          \
   template(java_lang_Package,                         "java/lang/Package")                        \
+  template(java_lang_Module,                          "java/lang/Module")                         \
   template(java_lang_String,                          "java/lang/String")                         \
   template(java_lang_StringLatin1,                    "java/lang/StringLatin1")                   \
   template(java_lang_StringUTF16,                     "java/lang/StringUTF16")                    \
@@ -90,7 +91,6 @@
   template(java_lang_reflect_Method,                  "java/lang/reflect/Method")                 \
   template(java_lang_reflect_Constructor,             "java/lang/reflect/Constructor")            \
   template(java_lang_reflect_Field,                   "java/lang/reflect/Field")                  \
-  template(java_lang_reflect_Module,                  "java/lang/reflect/Module")                 \
   template(java_lang_reflect_Parameter,               "java/lang/reflect/Parameter")              \
   template(java_lang_reflect_Array,                   "java/lang/reflect/Array")                  \
   template(java_lang_StringBuffer,                    "java/lang/StringBuffer")                   \
@@ -136,7 +136,7 @@
   template(initPhase1_name,                           "initPhase1")                               \
   template(initPhase2_name,                           "initPhase2")                               \
   template(initPhase3_name,                           "initPhase3")                               \
-  template(java_lang_reflect_module_init_signature,   "(Ljava/lang/ClassLoader;Ljava/lang/String;)V") \
+  template(java_lang_module_init_signature,           "(Ljava/lang/ClassLoader;Ljava/lang/String;)V") \
                                                                                                   \
   /* class file format tags */                                                                    \
   template(tag_source_file,                           "SourceFile")                               \
@@ -325,14 +325,8 @@
   template(java_lang_StackStreamFactory_AbstractStackWalker, "java/lang/StackStreamFactory$AbstractStackWalker") \
   template(doStackWalk_signature,                     "(JIIII)Ljava/lang/Object;")                \
   template(asPrimitive_name,                          "asPrimitive")                              \
-  template(asPrimitive_int_signature,                 "(I)Ljava/lang/LiveStackFrame$PrimitiveValue;") \
-  template(asPrimitive_long_signature,                "(J)Ljava/lang/LiveStackFrame$PrimitiveValue;") \
-  template(asPrimitive_short_signature,               "(S)Ljava/lang/LiveStackFrame$PrimitiveValue;") \
-  template(asPrimitive_byte_signature,                "(B)Ljava/lang/LiveStackFrame$PrimitiveValue;") \
-  template(asPrimitive_char_signature,                "(C)Ljava/lang/LiveStackFrame$PrimitiveValue;") \
-  template(asPrimitive_float_signature,               "(F)Ljava/lang/LiveStackFrame$PrimitiveValue;") \
-  template(asPrimitive_double_signature,              "(D)Ljava/lang/LiveStackFrame$PrimitiveValue;") \
-  template(asPrimitive_boolean_signature,             "(Z)Ljava/lang/LiveStackFrame$PrimitiveValue;") \
+  template(asPrimitive_int_signature,                 "(I)Ljava/lang/LiveStackFrame$PrimitiveSlot;") \
+  template(asPrimitive_long_signature,                "(J)Ljava/lang/LiveStackFrame$PrimitiveSlot;") \
                                                                                                   \
   /* common method and field names */                                                             \
   template(object_initializer_name,                   "<init>")                                   \
@@ -444,6 +438,7 @@
   template(monitors_name,                             "monitors")                                 \
   template(locals_name,                               "locals")                                   \
   template(operands_name,                             "operands")                                 \
+  template(mode_name,                                 "mode")                                     \
   template(oop_size_name,                             "oop_size")                                 \
   template(static_oop_field_count_name,               "static_oop_field_count")                   \
   template(protection_domain_name,                    "protection_domain")                        \
@@ -455,7 +450,7 @@
   template(getModule_name,                            "getModule")                                \
   template(input_stream_void_signature,               "(Ljava/io/InputStream;)V")                 \
   template(definePackage_name,                        "definePackage")                            \
-  template(definePackage_signature,                   "(Ljava/lang/String;Ljava/lang/reflect/Module;)Ljava/lang/Package;") \
+  template(definePackage_signature,                   "(Ljava/lang/String;Ljava/lang/Module;)Ljava/lang/Package;") \
   template(defineOrCheckPackage_name,                 "defineOrCheckPackage")                     \
   template(defineOrCheckPackage_signature,            "(Ljava/lang/String;Ljava/util/jar/Manifest;Ljava/net/URL;)Ljava/lang/Package;") \
   template(fileToEncodedURL_name,                     "fileToEncodedURL")                         \
@@ -537,7 +532,7 @@
   template(void_class_signature,                      "()Ljava/lang/Class;")                                      \
   template(void_class_array_signature,                "()[Ljava/lang/Class;")                                     \
   template(void_string_signature,                     "()Ljava/lang/String;")                                     \
-  template(void_module_signature,                     "()Ljava/lang/reflect/Module;")                             \
+  template(void_module_signature,                     "()Ljava/lang/Module;")                                     \
   template(object_array_object_signature,             "([Ljava/lang/Object;)Ljava/lang/Object;")                  \
   template(object_object_array_object_signature,      "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;")\
   template(exception_void_signature,                  "(Ljava/lang/Exception;)V")                                 \
@@ -557,7 +552,7 @@
   template(reference_signature,                       "Ljava/lang/ref/Reference;")                                \
   template(sun_misc_Cleaner_signature,                "Lsun/misc/Cleaner;")                                       \
   template(executable_signature,                      "Ljava/lang/reflect/Executable;")                           \
-  template(module_signature,                          "Ljava/lang/reflect/Module;")                               \
+  template(module_signature,                          "Ljava/lang/Module;")                                       \
   template(concurrenthashmap_signature,               "Ljava/util/concurrent/ConcurrentHashMap;")                 \
   template(String_StringBuilder_signature,            "(Ljava/lang/String;)Ljava/lang/StringBuilder;")            \
   template(int_StringBuilder_signature,               "(I)Ljava/lang/StringBuilder;")                             \
@@ -566,6 +561,7 @@
   template(int_StringBuffer_signature,                "(I)Ljava/lang/StringBuffer;")                              \
   template(char_StringBuffer_signature,               "(C)Ljava/lang/StringBuffer;")                              \
   template(int_String_signature,                      "(I)Ljava/lang/String;")                                    \
+  template(boolean_boolean_int_signature,             "(ZZ)I")                                                    \
   template(codesource_permissioncollection_signature, "(Ljava/security/CodeSource;Ljava/security/PermissionCollection;)V") \
   /* signature symbols needed by intrinsics */                                                                    \
   VM_INTRINSICS_DO(VM_INTRINSIC_IGNORE, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, template, VM_ALIAS_IGNORE)            \
@@ -646,16 +642,16 @@
   template(jdk_internal_module_Modules,                "jdk/internal/module/Modules")                             \
   template(jdk_internal_vm_VMSupport,                  "jdk/internal/vm/VMSupport")                               \
   template(addReads_name,                              "addReads")                                                \
-  template(addReads_signature,                         "(Ljava/lang/reflect/Module;Ljava/lang/reflect/Module;)V") \
+  template(addReads_signature,                         "(Ljava/lang/Module;Ljava/lang/Module;)V")                 \
   template(addExports_name,                            "addExports")                                              \
   template(addOpens_name,                              "addOpens")                                                \
-  template(addExports_signature,                       "(Ljava/lang/reflect/Module;Ljava/lang/String;Ljava/lang/reflect/Module;)V") \
+  template(addExports_signature,                       "(Ljava/lang/Module;Ljava/lang/String;Ljava/lang/Module;)V") \
   template(addUses_name,                               "addUses")                                                 \
-  template(addUses_signature,                          "(Ljava/lang/reflect/Module;Ljava/lang/Class;)V")          \
+  template(addUses_signature,                          "(Ljava/lang/Module;Ljava/lang/Class;)V")                  \
   template(addProvides_name,                           "addProvides")                                             \
-  template(addProvides_signature,                      "(Ljava/lang/reflect/Module;Ljava/lang/Class;Ljava/lang/Class;)V") \
+  template(addProvides_signature,                      "(Ljava/lang/Module;Ljava/lang/Class;Ljava/lang/Class;)V") \
   template(transformedByAgent_name,                    "transformedByAgent")                                      \
-  template(transformedByAgent_signature,               "(Ljava/lang/reflect/Module;)V")                           \
+  template(transformedByAgent_signature,               "(Ljava/lang/Module;)V")                                   \
   template(appendToClassPathForInstrumentation_name,   "appendToClassPathForInstrumentation")                     \
   do_alias(appendToClassPathForInstrumentation_signature, string_void_signature)                                  \
   template(serializePropertiesToByteArray_name,        "serializePropertiesToByteArray")                          \

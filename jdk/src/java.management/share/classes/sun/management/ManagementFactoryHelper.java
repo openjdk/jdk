@@ -45,7 +45,6 @@ import jdk.internal.misc.SharedSecrets;
 import java.util.ArrayList;
 import java.util.List;
 
-import java.lang.reflect.Module;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.security.PrivilegedAction;
 import java.util.Collections;
@@ -181,8 +180,7 @@ public class ManagementFactoryHelper {
             return AccessController.doPrivileged(new PrivilegedAction<>() {
                 @Override
                 public Class<?> run() {
-                    Optional<Module> logging = java.lang.reflect.Layer.boot()
-                        .findModule("java.logging");
+                    Optional<Module> logging = ModuleLayer.boot().findModule("java.logging");
                     if (logging.isPresent()) {
                         return Class.forName(logging.get(), className);
                     }

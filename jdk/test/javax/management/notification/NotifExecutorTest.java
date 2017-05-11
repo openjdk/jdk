@@ -26,7 +26,7 @@
  * @bug 4661545
  * @summary Tests to use an executor to send notifications.
  * @author Shanliang JIANG
- * @modules java.management
+ *
  * @run clean NotifExecutorTest
  * @run build NotifExecutorTest
  * @run main NotifExecutorTest
