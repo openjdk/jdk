@@ -1540,7 +1540,7 @@ void GraphBuilder::method_return(Value x, bool ignore_return) {
         ciMethod* caller = state()->scope()->method();
         ciMethodData* md = caller->method_data_or_null();
         ciProfileData* data = md->bci_to_data(invoke_bci);
-        if (data->is_CallTypeData() || data->is_VirtualCallTypeData()) {
+        if (data != NULL && (data->is_CallTypeData() || data->is_VirtualCallTypeData())) {
           bool has_return = data->is_CallTypeData() ? ((ciCallTypeData*)data)->has_return() : ((ciVirtualCallTypeData*)data)->has_return();
           // May not be true in case of an inlined call through a method handle intrinsic.
           if (has_return) {
@@ -1758,7 +1758,7 @@ Values* GraphBuilder::args_list_for_profiling(ciMethod* target, int& start, bool
   start = has_receiver ? 1 : 0;
   if (profile_arguments()) {
     ciProfileData* data = method()->method_data()->bci_to_data(bci());
-    if (data->is_CallTypeData() || data->is_VirtualCallTypeData()) {
+    if (data != NULL && (data->is_CallTypeData() || data->is_VirtualCallTypeData())) {
       n = data->is_CallTypeData() ? data->as_CallTypeData()->number_of_arguments() : data->as_VirtualCallTypeData()->number_of_arguments();
     }
   }
@@ -1828,6 +1828,20 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
       log->elem("call method='%d' instr='%s'",
                 log->identify(target),
                 Bytecodes::name(code));
+
+  // invoke-special-super
+  if (bc_raw == Bytecodes::_invokespecial && !target->is_object_initializer()) {
+    ciInstanceKlass* sender_klass =
+          calling_klass->is_anonymous() ? calling_klass->host_klass() :
+                                          calling_klass;
+    if (sender_klass->is_interface()) {
+      int index = state()->stack_size() - (target->arg_size_no_receiver() + 1);
+      Value receiver = state()->stack_at(index);
+      CheckCast* c = new CheckCast(sender_klass, receiver, copy_state_before());
+      c->set_invokespecial_receiver_check();
+      state()->stack_at_put(index, append_split(c));
+    }
+  }
 
   // Some methods are obviously bindable without any type checks so
   // convert them directly to an invokespecial or invokestatic.
@@ -3995,10 +4009,14 @@ bool GraphBuilder::try_method_handle_inline(ciMethod* callee, bool ignore_return
         ciMethod* target = type->as_ObjectType()->constant_value()->as_method_handle()->get_vmtarget();
         // We don't do CHA here so only inline static and statically bindable methods.
         if (target->is_static() || target->can_be_statically_bound()) {
-          Bytecodes::Code bc = target->is_static() ? Bytecodes::_invokestatic : Bytecodes::_invokevirtual;
-          ignore_return = ignore_return || (callee->return_type()->is_void() && !target->return_type()->is_void());
-          if (try_inline(target, /*holder_known*/ true, ignore_return, bc)) {
-            return true;
+          if (ciMethod::is_consistent_info(callee, target)) {
+            Bytecodes::Code bc = target->is_static() ? Bytecodes::_invokestatic : Bytecodes::_invokevirtual;
+            ignore_return = ignore_return || (callee->return_type()->is_void() && !target->return_type()->is_void());
+            if (try_inline(target, /*holder_known*/ true, ignore_return, bc)) {
+              return true;
+            }
+          } else {
+            print_inlining(target, "signatures mismatch", /*success*/ false);
           }
         } else {
           print_inlining(target, "not static or statically bindable", /*success*/ false);
@@ -4026,6 +4044,8 @@ bool GraphBuilder::try_method_handle_inline(ciMethod* callee, bool ignore_return
           if (try_method_handle_inline(target, ignore_return)) {
             return true;
           }
+        } else if (!ciMethod::is_consistent_info(callee, target)) {
+          print_inlining(target, "signatures mismatch", /*success*/ false);
         } else {
           ciSignature* signature = target->signature();
           const int receiver_skip = target->is_static() ? 0 : 1;
@@ -4343,7 +4363,7 @@ void GraphBuilder::profile_return_type(Value ret, ciMethod* callee, ciMethod* m,
   }
   ciMethodData* md = m->method_data_or_null();
   ciProfileData* data = md->bci_to_data(invoke_bci);
-  if (data->is_CallTypeData() || data->is_VirtualCallTypeData()) {
+  if (data != NULL && (data->is_CallTypeData() || data->is_VirtualCallTypeData())) {
     append(new ProfileReturnType(m , invoke_bci, callee, ret));
   }
 }

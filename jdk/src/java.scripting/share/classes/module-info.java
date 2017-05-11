@@ -25,6 +25,9 @@
 
 /**
  * Defines the Scripting API.
+ *
+ * @moduleGraph
+ * @since 9
  */
 module java.scripting {
     exports javax.script;

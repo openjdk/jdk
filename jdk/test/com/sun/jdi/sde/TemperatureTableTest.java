@@ -1,17 +1,16 @@
 /**
- *  @test
- *  @bug 4390869
- *  @bug 4460328
- *  @summary Test the new SourceDebugExtension facility
+ * @test
+ * @bug 4390869
+ * @bug 4460328
+ * @summary Test the new SourceDebugExtension facility
+ * @author Robert Field
  *
- *  @author Robert Field
+ * @library ..
  *
- *  @library ..
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter InstallSDE HelloWorld
- *  @run compile TemperatureTableTest.java
- *  @run compile -g TemperatureTableServlet.java
- *  @run driver TemperatureTableTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter InstallSDE HelloWorld
+ * @run compile TemperatureTableTest.java
+ * @run compile -g TemperatureTableServlet.java
+ * @run driver TemperatureTableTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

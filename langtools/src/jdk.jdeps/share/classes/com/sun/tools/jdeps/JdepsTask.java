@@ -524,7 +524,7 @@ class JdepsTask {
             e.printStackTrace();
             return EXIT_CMDERR;
         } catch (MultiReleaseException e) {
-            reportError(e.getKey(), (Object)e.getMsg());
+            reportError(e.getKey(), e.getParams());
             return EXIT_CMDERR;  // could be EXIT_ABNORMAL sometimes
         } finally {
             log.flush();
@@ -721,9 +721,9 @@ class JdepsTask {
             return run(config, writer, type);
         }
 
-        boolean run(JdepsConfiguration config, JdepsWriter writer, Type type) throws IOException {
-
-
+        boolean run(JdepsConfiguration config, JdepsWriter writer, Type type)
+            throws IOException
+        {
             // analyze the dependencies
             DepsAnalyzer analyzer = new DepsAnalyzer(config,
                                                      dependencyFilter(config),
@@ -1024,8 +1024,10 @@ class JdepsTask {
         boolean run(JdepsConfiguration config) throws IOException {
             if ((options.showSummary || options.verbose == MODULE) &&
                 !options.addmods.isEmpty() && inputArgs.isEmpty()) {
-                // print module descriptor
-                return new ModuleAnalyzer(config, log).genDotFiles(dotOutputDir);
+                // generate dot graph from the resolved graph from module
+                // resolution.  No class dependency analysis is performed.
+                return new ModuleDotGraph(config, options.apiOnly)
+                        .genDotFiles(dotOutputDir);
             }
 
             Type type = getAnalyzerType();

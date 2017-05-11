@@ -1516,6 +1516,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
      * @see JComponent#setToolTipText
      * @see JComponent#getToolTipText
      */
+    @SuppressWarnings("deprecation")
     public String getToolTipText(MouseEvent event) {
         if(event != null) {
             Point p = event.getPoint();
@@ -3394,15 +3395,18 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
             }
 
             public AccessibleSelection getAccessibleSelection() {
-                return getCurrentAccessibleContext().getAccessibleSelection();
+                AccessibleContext ac = getCurrentAccessibleContext();
+                return ac != null ? ac.getAccessibleSelection() : null;
             }
 
             public AccessibleText getAccessibleText() {
-                return getCurrentAccessibleContext().getAccessibleText();
+                AccessibleContext ac = getCurrentAccessibleContext();
+                return ac != null ? ac.getAccessibleText() : null;
             }
 
             public AccessibleValue getAccessibleValue() {
-                return getCurrentAccessibleContext().getAccessibleValue();
+                AccessibleContext ac = getCurrentAccessibleContext();
+                return ac != null ? ac.getAccessibleValue() : null;
             }
 
 
