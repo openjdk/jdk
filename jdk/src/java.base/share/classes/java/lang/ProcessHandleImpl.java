@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package java.lang;
 
+import java.lang.annotation.Native;
 import java.security.PrivilegedAction;
 import java.time.Duration;
 import java.time.Instant;
@@ -34,11 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -55,6 +52,12 @@ final class ProcessHandleImpl implements ProcessHandle {
      * Default size of stack for reaper processes.
      */
     private static long REAPER_DEFAULT_STACKSIZE = 128 * 1024;
+
+    /**
+     * Return value from waitForProcessExit0 indicating the process is not a child.
+     */
+    @Native
+    private static final int NOT_A_CHILD = -2;
 
     /**
      * Cache the ProcessHandle of this process.
@@ -131,6 +134,29 @@ final class ProcessHandleImpl implements ProcessHandle {
                 // spawn a thread to wait for and deliver the exit value
                 processReaperExecutor.execute(() -> {
                     int exitValue = waitForProcessExit0(pid, shouldReap);
+                    if (exitValue == NOT_A_CHILD) {
+                        // pid not alive or not a child of this process
+                        // If it is alive wait for it to terminate
+                        long sleep = 300;     // initial milliseconds to sleep
+                        int incr = 30;        // increment to the sleep time
+
+                        long startTime = isAlive0(pid);
+                        long origStart = startTime;
+                        while (startTime >= 0) {
+                            try {
+                                Thread.sleep(Math.min(sleep, 5000L)); // no more than 5 sec
+                                sleep += incr;
+                            } catch (InterruptedException ie) {
+                                // ignore and retry
+                            }
+                            startTime = isAlive0(pid);  // recheck if is alive
+                            if (origStart > 0 && startTime != origStart) {
+                                // start time changed, pid is not the same process
+                                break;
+                            }
+                        }
+                        exitValue = 0;
+                    }
                     newCompletion.complete(exitValue);
                     // remove from cache afterwards
                     completions.remove(pid, newCompletion);
@@ -146,7 +172,7 @@ final class ProcessHandleImpl implements ProcessHandle {
             throw new IllegalStateException("onExit for current process not allowed");
         }
 
-        return ProcessHandleImpl.completion(getPid(), false)
+        return ProcessHandleImpl.completion(pid(), false)
                 .handleAsync((exitStatus, unusedThrowable) -> this);
     }
 
@@ -229,7 +255,7 @@ final class ProcessHandleImpl implements ProcessHandle {
      * @return the native process ID
      */
     @Override
-    public long getPid() {
+    public long pid() {
         return pid;
     }
 

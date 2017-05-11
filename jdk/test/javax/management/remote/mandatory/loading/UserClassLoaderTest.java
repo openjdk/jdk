@@ -26,7 +26,7 @@
  * @bug 6356458
  * @summary test to not lose a user classloader
  * @author Shanliang JIANG
- * @modules java.management
+ *
  * @run clean UserClassLoaderTest
  * @run build UserClassLoaderTest
  * @run main UserClassLoaderTest

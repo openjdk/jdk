@@ -28,8 +28,7 @@
  * RuntimeMBeanException and (for Standard MBeans) that checked exceptions
  * are wrapped in MBeanException
  * @author Eamonn McManus
- * @modules java.management
- * @compile MBeanExceptionTest.java
+ *
  * @run main MBeanExceptionTest
  */
 

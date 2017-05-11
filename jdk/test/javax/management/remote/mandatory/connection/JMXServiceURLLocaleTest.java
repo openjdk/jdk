@@ -26,7 +26,7 @@
  * @bug 7065236
  * @summary Test for locale insensitive strings in JMXServiceURL class
  * @author Harsha Wardhana B
- * @modules java.management
+ *
  * @run clean JMXServiceURLLocaleTest
  * @run build JMXServiceURLLocaleTest
  * @run main JMXServiceURLLocaleTest

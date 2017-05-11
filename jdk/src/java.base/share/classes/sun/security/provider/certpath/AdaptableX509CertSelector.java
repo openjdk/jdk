@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,7 +214,7 @@ class AdaptableX509CertSelector extends X509CertSelector {
         try {
             byte[] extVal = xcert.getExtensionValue("2.5.29.14");
             if (extVal == null) {
-                if (debug != null) {
+                if (debug != null && Debug.isVerbose()) {
                     debug.println("AdaptableX509CertSelector.match: "
                         + "no subject key ID extension. Subject: "
                         + xcert.getSubjectX500Principal());
@@ -225,7 +225,7 @@ class AdaptableX509CertSelector extends X509CertSelector {
             byte[] certSubjectKeyID = in.getOctetString();
             if (certSubjectKeyID == null ||
                     !Arrays.equals(ski, certSubjectKeyID)) {
-                if (debug != null) {
+                if (debug != null && Debug.isVerbose()) {
                     debug.println("AdaptableX509CertSelector.match: "
                         + "subject key IDs don't match. "
                         + "Expected: " + Arrays.toString(ski) + " "
@@ -234,7 +234,7 @@ class AdaptableX509CertSelector extends X509CertSelector {
                 return false;
             }
         } catch (IOException ex) {
-            if (debug != null) {
+            if (debug != null && Debug.isVerbose()) {
                 debug.println("AdaptableX509CertSelector.match: "
                     + "exception in subject key ID check");
             }

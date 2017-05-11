@@ -30,7 +30,7 @@
  * @build compiler.calls.common.InvokeSpecial
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *    sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *    -XX:CompileCommand=exclude,compiler.calls.common.InvokeSpecial::caller  compiler.calls.common.InvokeSpecial
  *    -checkCallerCompileLevel 0 -nativeCallee
  */
