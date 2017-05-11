@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,8 @@
  * @summary If an error is produced by an annotation processor, the code should not be Attred, \
  *          unless requested
  * @modules jdk.compiler
- * @compile StopAfterError.java
+ * @library /tools/javac/lib
+ * @build StopAfterError JavacTestingAbstractProcessor
  * @compile/fail/ref=StopAfterError.out -XDrawDiagnostics -processor StopAfterError StopAfterErrorAux.java
  * @compile/fail/ref=StopAfterError.out -XDshould-stop.ifError=PROCESS -XDrawDiagnostics -processor StopAfterError StopAfterErrorAux.java
  * @compile/fail/ref=StopAfterErrorContinue.out -XDshould-stop.ifError=ATTR -XDrawDiagnostics -processor StopAfterError StopAfterErrorAux.java
@@ -42,8 +43,7 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic.Kind;
 
-@SupportedAnnotationTypes("*")
-public class StopAfterError extends AbstractProcessor {
+public class StopAfterError extends JavacTestingAbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -52,10 +52,4 @@ public class StopAfterError extends AbstractProcessor {
         }
         return false;
     }
-
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latestSupported();
-    }
-
 }

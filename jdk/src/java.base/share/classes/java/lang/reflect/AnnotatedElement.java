@@ -109,22 +109,22 @@ import sun.reflect.annotation.AnnotationType;
  * <caption>Overview of kind of presence detected by different AnnotatedElement methods</caption>
  * <tr><th colspan=2></th><th colspan=4>Kind of Presence</th>
  * <tr><th colspan=2>Method</th><th>Directly Present</th><th>Indirectly Present</th><th>Present</th><th>Associated</th>
- * <tr><td align=right>{@code T}</td><td>{@link #getAnnotation(Class) getAnnotation(Class&lt;T&gt;)}
+ * <tr><td style="text-align:right">{@code T}</td><td>{@link #getAnnotation(Class) getAnnotation(Class&lt;T&gt;)}
  * <td></td><td></td><td>X</td><td></td>
  * </tr>
- * <tr><td align=right>{@code Annotation[]}</td><td>{@link #getAnnotations getAnnotations()}
+ * <tr><td style="text-align:right">{@code Annotation[]}</td><td>{@link #getAnnotations getAnnotations()}
  * <td></td><td></td><td>X</td><td></td>
  * </tr>
- * <tr><td align=right>{@code T[]}</td><td>{@link #getAnnotationsByType(Class) getAnnotationsByType(Class&lt;T&gt;)}
+ * <tr><td style="text-align:right">{@code T[]}</td><td>{@link #getAnnotationsByType(Class) getAnnotationsByType(Class&lt;T&gt;)}
  * <td></td><td></td><td></td><td>X</td>
  * </tr>
- * <tr><td align=right>{@code T}</td><td>{@link #getDeclaredAnnotation(Class) getDeclaredAnnotation(Class&lt;T&gt;)}
+ * <tr><td style="text-align:right">{@code T}</td><td>{@link #getDeclaredAnnotation(Class) getDeclaredAnnotation(Class&lt;T&gt;)}
  * <td>X</td><td></td><td></td><td></td>
  * </tr>
- * <tr><td align=right>{@code Annotation[]}</td><td>{@link #getDeclaredAnnotations getDeclaredAnnotations()}
+ * <tr><td style="text-align:right">{@code Annotation[]}</td><td>{@link #getDeclaredAnnotations getDeclaredAnnotations()}
  * <td>X</td><td></td><td></td><td></td>
  * </tr>
- * <tr><td align=right>{@code T[]}</td><td>{@link #getDeclaredAnnotationsByType(Class) getDeclaredAnnotationsByType(Class&lt;T&gt;)}
+ * <tr><td style="text-align:right">{@code T[]}</td><td>{@link #getDeclaredAnnotationsByType(Class) getDeclaredAnnotationsByType(Class&lt;T&gt;)}
  * <td>X</td><td>X</td><td></td><td></td>
  * </tr>
  * </table>

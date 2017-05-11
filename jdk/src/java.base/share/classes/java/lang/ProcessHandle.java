@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ public interface ProcessHandle extends Comparable<ProcessHandle> {
      * @throws UnsupportedOperationException if the implementation
      *         does not support this operation
      */
-    long getPid();
+    long pid();
 
     /**
      * Returns an {@code Optional<ProcessHandle>} for an existing native process.
@@ -383,7 +383,7 @@ public interface ProcessHandle extends Comparable<ProcessHandle> {
     /**
      * Returns a hash code value for this ProcessHandle.
      * The hashcode value follows the general contract for {@link Object#hashCode()}.
-     * The value is a function of the {@link #getPid getPid()} value and
+     * The value is a function of the {@link #pid pid()} value and
      * may be a function of additional information to uniquely identify the process.
      * If two ProcessHandles are equal according to the {@link #equals(Object) equals}
      * method, then calling the hashCode method on each of the two objects
