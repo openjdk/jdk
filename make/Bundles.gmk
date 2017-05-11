@@ -183,21 +183,8 @@ ifneq ($(filter product-bundles, $(MAKECMDGOALS)), )
           $(JDK_SYMBOLS_EXCLUDE_PATTERN) \
           $(JDK_EXTRA_EXCLUDES) \
           $(SYMBOLS_EXCLUDE_PATTERN) \
-          $(JDK_IMAGE_HOMEDIR)/demo/% $(JDK_IMAGE_HOMEDIR)/sample/% \
           , \
           $(ALL_JDK_FILES) \
-      )
-  DEMOS_BUNDLE_FILES := \
-      $(filter-out \
-          $(JDK_SYMBOLS_EXCLUDE_PATTERN) \
-          $(SYMBOLS_EXCLUDE_PATTERN) \
-          , \
-          $(filter \
-               $(JDK_IMAGE_HOMEDIR)/demo/% $(JDK_IMAGE_HOMEDIR)/sample/% \
-               $(JDK_IMAGE_HOMEDIR)/release \
-               , \
-               $(ALL_JDK_FILES) \
-          ) \
       )
   JDK_SYMBOLS_BUNDLE_FILES := \
       $(filter \
@@ -205,7 +192,7 @@ ifneq ($(filter product-bundles, $(MAKECMDGOALS)), )
           $(SYMBOLS_EXCLUDE_PATTERN) \
           , \
           $(filter-out \
-              $(JDK_IMAGE_HOMEDIR)/demo/% $(JDK_IMAGE_HOMEDIR)/sample/% \
+              $(JDK_IMAGE_HOMEDIR)/demo/% \
               , \
               $(ALL_JDK_FILES) \
           ) \
@@ -271,14 +258,6 @@ ifneq ($(filter product-bundles, $(MAKECMDGOALS)), )
 
   PRODUCT_TARGETS += $(BUILD_JRE_SYMBOLS_BUNDLE)
 
-  $(eval $(call SetupBundleFile, BUILD_DEMOS_BUNDLE, \
-      BUNDLE_NAME := $(DEMOS_BUNDLE_NAME), \
-      FILES := $(DEMOS_BUNDLE_FILES), \
-      BASE_DIRS := $(JDK_IMAGE_DIR), \
-      SUBDIR := $(JDK_BUNDLE_SUBDIR), \
-  ))
-
-  PRODUCT_TARGETS += $(BUILD_DEMOS_BUNDLE)
 endif
 
 ################################################################################

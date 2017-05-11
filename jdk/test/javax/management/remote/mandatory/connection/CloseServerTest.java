@@ -26,7 +26,7 @@
  * @bug 4838640
  * @summary test server close in different conditions.
  * @author Shanliang JIANG
- * @modules java.management
+ *
  * @run clean CloseServerTest
  * @run build CloseServerTest
  * @run main CloseServerTest
