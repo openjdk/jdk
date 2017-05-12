@@ -23,7 +23,7 @@
 
 /*
  * @test TestGCLogMessages
- * @bug 8035406 8027295 8035398 8019342 8027959 8048179 8027962 8069330 8076463 8150630 8160055 8177059
+ * @bug 8035406 8027295 8035398 8019342 8027959 8048179 8027962 8069330 8076463 8150630 8160055 8177059 8166191
  * @summary Ensure the output for a minor GC with G1
  * includes the expected necessary messages.
  * @key gc
@@ -152,6 +152,7 @@ public class TestGCLogMessages {
         new TestGCLogMessages().testNormalLogs();
         new TestGCLogMessages().testWithToSpaceExhaustionLogs();
         new TestGCLogMessages().testWithInitialMark();
+        new TestGCLogMessages().testExpandHeap();
     }
 
     private void testNormalLogs() throws Exception {
@@ -226,6 +227,22 @@ public class TestGCLogMessages {
         output.shouldContain("Clear Claimed Marks");
         output.shouldHaveExitValue(0);
     }
+
+    private void testExpandHeap() throws Exception {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
+                                                                  "-Xmx10M",
+                                                                  "-Xbootclasspath/a:.",
+                                                                  "-Xlog:gc+ergo+heap=debug",
+                                                                  "-XX:+UnlockDiagnosticVMOptions",
+                                                                  "-XX:+WhiteBoxAPI",
+                                                                  GCTest.class.getName());
+
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldContain("Expand the heap. requested expansion amount: ");
+        output.shouldContain("B expansion amount: ");
+        output.shouldHaveExitValue(0);
+    }
+
 
     static class GCTest {
         private static byte[] garbage;
