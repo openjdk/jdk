@@ -4928,12 +4928,13 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
  private:
   FreeRegionList* _free_region_list;
   HeapRegionSet* _proxy_set;
-  uint _humongous_regions_removed;
+  uint _humongous_objects_reclaimed;
+  uint _humongous_regions_reclaimed;
   size_t _freed_bytes;
  public:
 
   G1FreeHumongousRegionClosure(FreeRegionList* free_region_list) :
-    _free_region_list(free_region_list), _humongous_regions_removed(0), _freed_bytes(0) {
+    _free_region_list(free_region_list), _humongous_objects_reclaimed(0), _humongous_regions_reclaimed(0), _freed_bytes(0) {
   }
 
   virtual bool doHeapRegion(HeapRegion* r) {
@@ -5009,11 +5010,12 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
     if (next_bitmap->isMarked(r->bottom())) {
       next_bitmap->clear(r->bottom());
     }
+    _humongous_objects_reclaimed++;
     do {
       HeapRegion* next = g1h->next_region_in_humongous(r);
       _freed_bytes += r->used();
       r->set_containing_set(NULL);
-      _humongous_regions_removed++;
+      _humongous_regions_reclaimed++;
       g1h->free_humongous_region(r, _free_region_list, false /* skip_remset */ );
       r = next;
     } while (r != NULL);
@@ -5021,8 +5023,12 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
     return false;
   }
 
-  uint humongous_free_count() {
-    return _humongous_regions_removed;
+  uint humongous_objects_reclaimed() {
+    return _humongous_objects_reclaimed;
+  }
+
+  uint humongous_regions_reclaimed() {
+    return _humongous_regions_reclaimed;
   }
 
   size_t bytes_freed() const {
@@ -5046,7 +5052,7 @@ void G1CollectedHeap::eagerly_reclaim_humongous_regions() {
   G1FreeHumongousRegionClosure cl(&local_cleanup_list);
   heap_region_iterate(&cl);
 
-  remove_from_old_sets(0, cl.humongous_free_count());
+  remove_from_old_sets(0, cl.humongous_regions_reclaimed());
 
   G1HRPrinter* hrp = hr_printer();
   if (hrp->is_active()) {
@@ -5061,7 +5067,7 @@ void G1CollectedHeap::eagerly_reclaim_humongous_regions() {
   decrement_summary_bytes(cl.bytes_freed());
 
   g1_policy()->phase_times()->record_fast_reclaim_humongous_time_ms((os::elapsedTime() - start_time) * 1000.0,
-                                                                    cl.humongous_free_count());
+                                                                    cl.humongous_objects_reclaimed());
 }
 
 class G1AbandonCollectionSetClosure : public HeapRegionClosure {
