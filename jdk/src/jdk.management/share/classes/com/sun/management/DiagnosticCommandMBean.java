@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,7 @@ import javax.management.DynamicMBean;
  * The additional meta-data provided for an operation associated with a
  * diagnostic command are described in the table below:
  *
- * <table border="1" cellpadding="5">
+ * <table class="striped"><caption style="display:none">description</caption>
  *   <tr>
  *     <th>Name</th><th>Type</th><th>Description</th>
  *   </tr>
@@ -167,7 +167,7 @@ import javax.management.DynamicMBean;
  * a Descriptor instance. The fields provided in this second Descriptor
  * instance are described in the table below:
  *
- * <table border="1" cellpadding="5">
+ * <table class="striped"><caption style="display:none">description</caption>
  *   <tr>
  *     <th>Name</th><th>Type</th><th>Description</th>
  *   </tr>

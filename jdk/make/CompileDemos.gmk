@@ -291,9 +291,21 @@ endif
 
 ################################################################################
 
+ifneq ($(filter images, $(MAKECMDGOALS)), )
+  $(eval $(call SetupCopyFiles, COPY_TO_TEST_IMAGE, \
+      SRC := $(SUPPORT_OUTPUTDIR)/demos/image, \
+      DEST := $(TEST_IMAGE_DIR)/jdk/demos, \
+      FILES := $(call DoubleDollar, $(call CacheFind, $(SUPPORT_OUTPUTDIR)/demos/image)), \
+  ))
+
+  IMAGES_TARGETS := $(COPY_TO_TEST_IMAGE)
+endif
+
+################################################################################
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, jdk, CompileDemos.gmk))
 
 all: $(TARGETS)
+images: $(IMAGES_TARGETS)
 
 .PHONY: all

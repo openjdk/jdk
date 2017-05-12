@@ -113,6 +113,19 @@ public class MethodHandles {
     }
 
     /**
+     * This reflected$lookup method is the alternate implementation of
+     * the lookup method when being invoked by reflection.
+     */
+    @CallerSensitive
+    private static Lookup reflected$lookup() {
+        Class<?> caller = Reflection.getCallerClass();
+        if (caller.getClassLoader() == null) {
+            throw newIllegalArgumentException("illegal lookupClass: "+caller);
+        }
+        return new Lookup(caller);
+    }
+
+    /**
      * Returns a {@link Lookup lookup object} which is trusted minimally.
      * The lookup has the {@code PUBLIC} and {@code UNCONDITIONAL} modes.
      * It can only be used to create method handles to public members of
@@ -265,12 +278,16 @@ public class MethodHandles {
      * (Bytecode behaviors are described in section 5.4.3.5 of the Java Virtual Machine Specification.)
      * Here is a summary of the correspondence between these factory methods and
      * the behavior of the resulting method handles:
-     * <table border=1 cellpadding=5 summary="lookup method behaviors">
+     * <table class="striped">
+     * <caption style="display:none">lookup method behaviors</caption>
+     * <thead>
      * <tr>
      *     <th><a id="equiv"></a>lookup expression</th>
      *     <th>member</th>
      *     <th>bytecode behavior</th>
      * </tr>
+     * </thead>
+     * <tbody>
      * <tr>
      *     <td>{@link java.lang.invoke.MethodHandles.Lookup#findGetter lookup.findGetter(C.class,"f",FT.class)}</td>
      *     <td>{@code FT f;}</td><td>{@code (T) this.f;}</td>
@@ -327,6 +344,7 @@ public class MethodHandles {
      *     <td>{@link java.lang.invoke.MethodHandles.Lookup#findClass lookup.findClass("C")}</td>
      *     <td>{@code class C { ... }}</td><td>{@code C.class;}</td>
      * </tr>
+     * </tbody>
      * </table>
      *
      * Here, the type {@code C} is the class or interface being searched for a member,
@@ -747,7 +765,7 @@ public class MethodHandles {
         Lookup(Class<?> lookupClass) {
             this(lookupClass, FULL_POWER_MODES);
             // make sure we haven't accidentally picked up a privileged class:
-            checkUnprivilegedlookupClass(lookupClass, FULL_POWER_MODES);
+            checkUnprivilegedlookupClass(lookupClass);
         }
 
         private Lookup(Class<?> lookupClass, int allowedModes) {
@@ -827,7 +845,7 @@ public class MethodHandles {
                 newModes = 0;
             }
 
-            checkUnprivilegedlookupClass(requestedLookupClass, newModes);
+            checkUnprivilegedlookupClass(requestedLookupClass);
             return new Lookup(requestedLookupClass, newModes);
         }
 
@@ -876,9 +894,7 @@ public class MethodHandles {
          * accessible to the class. The {@code PACKAGE} lookup mode serves to authenticate
          * that the lookup object was created by a caller in the runtime package (or derived
          * from a lookup originally created by suitably privileged code to a target class in
-         * the runtime package). The lookup modes cannot include {@link #PRIVATE PRIVATE}
-         * access. A lookup with {@code PRIVATE} access can be downgraded to drop this lookup
-         * mode with the {@linkplain #dropLookupMode(int) dropLookupMode} method. </p>
+         * the runtime package). </p>
          *
          * <p> The {@code bytes} parameter is the class bytes of a valid class file (as defined
          * by the <em>The Java Virtual Machine Specification</em>) with a class name in the
@@ -896,7 +912,6 @@ public class MethodHandles {
          * @throws IllegalArgumentException the bytes are for a class in a different package
          * to the lookup class
          * @throws IllegalAccessException if this lookup does not have {@code PACKAGE} access
-         * @throws UnsupportedOperationException if the lookup class has {@code PRIVATE} access
          * @throws LinkageError if the class is malformed ({@code ClassFormatError}), cannot be
          * verified ({@code VerifyError}), is already defined, or another linkage error occurs
          * @throws SecurityException if denied by the security manager
@@ -911,8 +926,6 @@ public class MethodHandles {
             SecurityManager sm = System.getSecurityManager();
             if (sm != null)
                 sm.checkPermission(new RuntimePermission("defineClass"));
-            if (hasPrivateAccess())
-                throw new UnsupportedOperationException("PRIVATE access not supported");
             if ((lookupModes() & PACKAGE) == 0)
                 throw new IllegalAccessException("Lookup does not have PACKAGE access");
             assert (lookupModes() & (MODULE|PUBLIC)) != 0;
@@ -984,25 +997,10 @@ public class MethodHandles {
          */
         static final Lookup PUBLIC_LOOKUP = new Lookup(Object.class, (PUBLIC|UNCONDITIONAL));
 
-        private static void checkUnprivilegedlookupClass(Class<?> lookupClass, int allowedModes) {
+        private static void checkUnprivilegedlookupClass(Class<?> lookupClass) {
             String name = lookupClass.getName();
             if (name.startsWith("java.lang.invoke."))
                 throw newIllegalArgumentException("illegal lookupClass: "+lookupClass);
-
-            // For caller-sensitive MethodHandles.lookup() disallow lookup from
-            // restricted packages.  This a fragile and blunt approach.
-            // TODO replace with a more formal and less fragile mechanism
-            // that does not bluntly restrict classes under packages within
-            // java.base from looking up MethodHandles or VarHandles.
-            if (allowedModes == FULL_POWER_MODES && lookupClass.getClassLoader() == null) {
-                if ((name.startsWith("java.") &&
-                     !name.equals("java.lang.Thread") &&
-                     !name.startsWith("java.util.concurrent.")) ||
-                    (name.startsWith("sun.") &&
-                     !name.startsWith("sun.invoke."))) {
-                    throw newIllegalArgumentException("illegal lookupClass: " + lookupClass);
-                }
-            }
         }
 
         /**
@@ -1447,9 +1445,10 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
         }
 
         /**
-         * Produces a VarHandle giving access to non-static fields of type
-         * {@code T} declared by a receiver class of type {@code R}, supporting
-         * shape {@code (R : T)}.
+         * Produces a VarHandle giving access to a non-static field {@code name}
+         * of type {@code type} declared in a class of type {@code recv}.
+         * The VarHandle's variable type is {@code type} and it has one
+         * coordinate type, {@code recv}.
          * <p>
          * Access checking is performed immediately on behalf of the lookup
          * class.
@@ -1472,7 +1471,7 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          * <p>
          * If the field is declared {@code volatile} then the returned VarHandle
          * will override access to the field (effectively ignore the
-         * {@code volatile} declaration) in accordance to it's specified
+         * {@code volatile} declaration) in accordance to its specified
          * access modes.
          * <p>
          * If the field type is {@code float} or {@code double} then numeric
@@ -1568,9 +1567,10 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
         }
 
         /**
-         * Produces a VarHandle giving access to a static field of type
-         * {@code T} declared by a given declaring class, supporting shape
-         * {@code ((empty) : T)}.
+         * Produces a VarHandle giving access to a static field {@code name} of
+         * type {@code type} declared in a class of type {@code decl}.
+         * The VarHandle's variable type is {@code type} and it has no
+         * coordinate types.
          * <p>
          * Access checking is performed immediately on behalf of the lookup
          * class.
@@ -1596,7 +1596,7 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          * <p>
          * If the field is declared {@code volatile} then the returned VarHandle
          * will override access to the field (effectively ignore the
-         * {@code volatile} declaration) in accordance to it's specified
+         * {@code volatile} declaration) in accordance to its specified
          * access modes.
          * <p>
          * If the field type is {@code float} or {@code double} then numeric
@@ -1691,7 +1691,13 @@ return mh1;
         public MethodHandle bind(Object receiver, String name, MethodType type) throws NoSuchMethodException, IllegalAccessException {
             Class<? extends Object> refc = receiver.getClass(); // may get NPE
             MemberName method = resolveOrFail(REF_invokeSpecial, refc, name, type);
-            MethodHandle mh = getDirectMethodNoRestrict(REF_invokeSpecial, refc, method, findBoundCallerClass(method));
+            MethodHandle mh = getDirectMethodNoRestrictInvokeSpecial(refc, method, findBoundCallerClass(method));
+            if (!mh.type().leadingReferenceParameter().isAssignableFrom(receiver.getClass())) {
+                throw new IllegalAccessException("The restricted defining class " +
+                                                 mh.type().leadingReferenceParameter().getName() +
+                                                 " is not assignable from receiver class " +
+                                                 receiver.getClass().getName());
+            }
             return mh.bindArgumentL(0, receiver).setVarargs(method);
         }
 
@@ -1877,11 +1883,12 @@ return mh1;
         }
 
         /**
-         * Produces a VarHandle that accesses fields of type {@code T} declared
-         * by a class of type {@code R}, as described by the given reflected
-         * field.
-         * If the field is non-static the VarHandle supports a shape of
-         * {@code (R : T)}, otherwise supports a shape of {@code ((empty) : T)}.
+         * Produces a VarHandle giving access to a reflected field {@code f}
+         * of type {@code T} declared in a class of type {@code R}.
+         * The VarHandle's variable type is {@code T}.
+         * If the field is non-static the VarHandle has one coordinate type,
+         * {@code R}.  Otherwise, the field is static, and the VarHandle has no
+         * coordinate types.
          * <p>
          * Access checking is performed immediately on behalf of the lookup
          * class, regardless of the value of the field's {@code accessible}
@@ -1909,7 +1916,7 @@ return mh1;
          * <p>
          * If the field is declared {@code volatile} then the returned VarHandle
          * will override access to the field (effectively ignore the
-         * {@code volatile} declaration) in accordance to it's specified
+         * {@code volatile} declaration) in accordance to its specified
          * access modes.
          * <p>
          * If the field type is {@code float} or {@code double} then numeric
@@ -2240,7 +2247,7 @@ return mh1;
                 throw method.makeAccessException("caller class must be a subclass below the method", caller);
             }
             MethodType rawType = mh.type();
-            if (rawType.parameterType(0) == caller)  return mh;
+            if (caller.isAssignableFrom(rawType.parameterType(0))) return mh; // no need to restrict; already narrow
             MethodType narrowType = rawType.changeParameterType(0, caller);
             assert(!mh.isVarargsCollector());  // viewAsType will lose varargs-ness
             assert(mh.viewAsTypeChecks(narrowType, true));
@@ -2253,11 +2260,11 @@ return mh1;
             final boolean checkSecurity = true;
             return getDirectMethodCommon(refKind, refc, method, checkSecurity, doRestrict, callerClass);
         }
-        /** Check access and get the requested method, eliding receiver narrowing rules. */
-        private MethodHandle getDirectMethodNoRestrict(byte refKind, Class<?> refc, MemberName method, Class<?> callerClass) throws IllegalAccessException {
+        /** Check access and get the requested method, for invokespecial with no restriction on the application of narrowing rules. */
+        private MethodHandle getDirectMethodNoRestrictInvokeSpecial(Class<?> refc, MemberName method, Class<?> callerClass) throws IllegalAccessException {
             final boolean doRestrict    = false;
             final boolean checkSecurity = true;
-            return getDirectMethodCommon(refKind, refc, method, checkSecurity, doRestrict, callerClass);
+            return getDirectMethodCommon(REF_invokeSpecial, refc, method, checkSecurity, doRestrict, callerClass);
         }
         /** Check access and get the requested method, eliding security manager checks. */
         private MethodHandle getDirectMethodNoSecurityManager(byte refKind, Class<?> refc, MemberName method, Class<?> callerClass) throws IllegalAccessException {
@@ -2309,10 +2316,8 @@ return mh1;
             DirectMethodHandle dmh = DirectMethodHandle.make(refKind, refc, method);
             MethodHandle mh = dmh;
             // Optionally narrow the receiver argument to refc using restrictReceiver.
-            if (doRestrict &&
-                   (refKind == REF_invokeSpecial ||
-                       (MethodHandleNatives.refKindHasReceiver(refKind) &&
-                           restrictProtectedReceiver(method)))) {
+            if ((doRestrict && refKind == REF_invokeSpecial) ||
+                    (MethodHandleNatives.refKindHasReceiver(refKind) && restrictProtectedReceiver(method))) {
                 mh = restrictReceiver(method, dmh, lookupClass());
             }
             mh = maybeBindCaller(method, mh, callerClass);
@@ -2572,9 +2577,11 @@ return mh1;
     }
 
     /**
-     *
-     * Produces a VarHandle giving access to elements of an array type
-     * {@code T[]}, supporting shape {@code (T[], int : T)}.
+     * Produces a VarHandle giving access to elements of an array of type
+     * {@code arrayClass}.  The VarHandle's variable type is the component type
+     * of {@code arrayClass} and the list of coordinate types is
+     * {@code (arrayClass, int)}, where the {@code int} coordinate type
+     * corresponds to an argument that is an index into an array.
      * <p>
      * Certain access modes of the returned VarHandle are unsupported under
      * the following conditions:
@@ -2629,13 +2636,14 @@ return mh1;
     /**
      * Produces a VarHandle giving access to elements of a {@code byte[]} array
      * viewed as if it were a different primitive array type, such as
-     * {@code int[]} or {@code long[]}.  The shape of the resulting VarHandle is
-     * {@code (byte[], int : T)}, where the {@code int} coordinate type
-     * corresponds to an argument that is an index in a {@code byte[]} array,
-     * and {@code T} is the component type of the given view array class.  The
-     * returned VarHandle accesses bytes at an index in a {@code byte[]} array,
-     * composing bytes to or from a value of {@code T} according to the given
-     * endianness.
+     * {@code int[]} or {@code long[]}.
+     * The VarHandle's variable type is the component type of
+     * {@code viewArrayClass} and the list of coordinate types is
+     * {@code (byte[], int)}, where the {@code int} coordinate type
+     * corresponds to an argument that is an index into a {@code byte[]} array.
+     * The returned VarHandle accesses bytes at an index in a {@code byte[]}
+     * array, composing bytes to or from a value of the component type of
+     * {@code viewArrayClass} according to the given endianness.
      * <p>
      * The supported component types (variables types) are {@code short},
      * {@code char}, {@code int}, {@code long}, {@code float} and
@@ -2713,13 +2721,14 @@ return mh1;
      * Produces a VarHandle giving access to elements of a {@code ByteBuffer}
      * viewed as if it were an array of elements of a different primitive
      * component type to that of {@code byte}, such as {@code int[]} or
-     * {@code long[]}.  The shape of the resulting VarHandle is
-     * {@code (ByteBuffer, int : T)}, where the {@code int} coordinate type
-     * corresponds to an argument that is an index in a {@code ByteBuffer}, and
-     * {@code T} is the component type of the given view array class.  The
-     * returned VarHandle accesses bytes at an index in a {@code ByteBuffer},
-     * composing bytes to or from a value of {@code T} according to the given
-     * endianness.
+     * {@code long[]}.
+     * The VarHandle's variable type is the component type of
+     * {@code viewArrayClass} and the list of coordinate types is
+     * {@code (ByteBuffer, int)}, where the {@code int} coordinate type
+     * corresponds to an argument that is an index into a {@code byte[]} array.
+     * The returned VarHandle accesses bytes at an index in a
+     * {@code ByteBuffer}, composing bytes to or from a value of the component
+     * type of {@code viewArrayClass} according to the given endianness.
      * <p>
      * The supported component types (variables types) are {@code short},
      * {@code char}, {@code int}, {@code long}, {@code float} and
