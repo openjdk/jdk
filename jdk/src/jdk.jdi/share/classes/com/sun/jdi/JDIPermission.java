@@ -40,7 +40,7 @@ package com.sun.jdi;
  * permission allows, and discusses the risks of granting code the
  * permission.
  *
- * <table border="1" cellpadding=5>
+ * <table class="plain">
  * <caption style="display:none">Table shows permission target name, what the
  * permission allows, and associated risks</caption>
  * <tr>
