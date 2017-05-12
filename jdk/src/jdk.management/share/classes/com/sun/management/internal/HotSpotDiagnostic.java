@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package com.sun.management.internal;
 
 import java.io.IOException;
@@ -32,6 +31,8 @@ import javax.management.ObjectName;
 
 import com.sun.management.HotSpotDiagnosticMXBean;
 import com.sun.management.VMOption;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import sun.management.Util;
 
 /**
@@ -43,6 +44,14 @@ public class HotSpotDiagnostic implements HotSpotDiagnosticMXBean {
 
     @Override
     public void dumpHeap(String outputFile, boolean live) throws IOException {
+
+        String propertyName = "jdk.management.heapdump.allowAnyFileSuffix";
+        PrivilegedAction<Boolean> pa = () -> Boolean.parseBoolean(System.getProperty(propertyName, "false"));
+        boolean allowAnyFileSuffix = AccessController.doPrivileged(pa);
+        if (!allowAnyFileSuffix && !outputFile.endsWith(".hprof")) {
+            throw new IllegalArgumentException("heapdump file must have .hprof extention");
+        }
+
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkWrite(outputFile);
