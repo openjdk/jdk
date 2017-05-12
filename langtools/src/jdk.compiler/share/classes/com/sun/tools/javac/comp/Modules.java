@@ -142,6 +142,7 @@ public class Modules extends JCTree.Visitor {
     private final ModuleFinder moduleFinder;
     private final Source source;
     private final boolean allowModules;
+    private final boolean allowAccessIntoSystem;
 
     public final boolean multiModuleMode;
 
@@ -192,6 +193,7 @@ public class Modules extends JCTree.Visitor {
         allowModules = source.allowModules();
         Options options = Options.instance(context);
 
+        allowAccessIntoSystem = options.isUnset(Option.RELEASE);
         lintOptions = options.isUnset(Option.XLINT_CUSTOM, "-" + LintCategory.OPTIONS.option);
 
         Collection<String> xmodules = options.keySet()
@@ -1230,7 +1232,7 @@ public class Modules extends JCTree.Visitor {
             for (String limit : extraLimitMods) {
                 limitMods.add(syms.enterModule(names.fromString(limit)));
             }
-            observable = computeTransitiveClosure(limitMods, null);
+            observable = computeTransitiveClosure(limitMods, rootModules, null);
             observable.addAll(rootModules);
             if (lintOptions) {
                 for (ModuleSymbol msym : limitMods) {
@@ -1310,7 +1312,7 @@ public class Modules extends JCTree.Visitor {
             }
         }
 
-        Set<ModuleSymbol> result = computeTransitiveClosure(enabledRoot, observable);
+        Set<ModuleSymbol> result = computeTransitiveClosure(enabledRoot, rootModules, observable);
 
         result.add(syms.unnamedModule);
 
@@ -1348,12 +1350,18 @@ public class Modules extends JCTree.Visitor {
         return allModules == null || allModules.contains(msym);
     }
 
-    private Set<ModuleSymbol> computeTransitiveClosure(Set<? extends ModuleSymbol> base, Set<ModuleSymbol> observable) {
+    private Set<ModuleSymbol> computeTransitiveClosure(Set<? extends ModuleSymbol> base,
+                                                       Set<? extends ModuleSymbol> rootModules,
+                                                       Set<ModuleSymbol> observable) {
         List<ModuleSymbol> primaryTodo = List.nil();
         List<ModuleSymbol> secondaryTodo = List.nil();
 
         for (ModuleSymbol ms : base) {
-            primaryTodo = primaryTodo.prepend(ms);
+            if (rootModules.contains(ms)) {
+                primaryTodo = primaryTodo.prepend(ms);
+            } else {
+                secondaryTodo = secondaryTodo.prepend(ms);
+            }
         }
 
         Set<ModuleSymbol> result = new LinkedHashSet<>();
@@ -1376,12 +1384,12 @@ public class Modules extends JCTree.Visitor {
             if (!result.add(current) || current == syms.unnamedModule || ((current.flags_field & Flags.AUTOMATIC_MODULE) != 0))
                 continue;
             current.complete();
-            if (current.kind == ERR && isPrimaryTodo && warnedMissing.add(current)) {
+            if (current.kind == ERR && (isPrimaryTodo || base.contains(current)) && warnedMissing.add(current)) {
                 log.error(Errors.ModuleNotFound(current));
             }
             for (RequiresDirective rd : current.requires) {
                 if (rd.module == syms.java_base) continue;
-                if ((rd.isTransitive() && isPrimaryTodo) || base.contains(current)) {
+                if ((rd.isTransitive() && isPrimaryTodo) || rootModules.contains(current)) {
                     primaryTodo = primaryTodo.prepend(rd.module);
                 } else {
                     secondaryTodo = secondaryTodo.prepend(rd.module);
@@ -1488,6 +1496,10 @@ public class Modules extends JCTree.Visitor {
             }
         }
 
+        if (!allowAccessIntoSystem && (msym.flags() & Flags.SYSTEM_MODULE) != 0 &&
+            msym.patchLocation != null) {
+            log.error(Errors.PatchModuleWithRelease(msym));
+        }
     }
 
     private Set<ModuleSymbol> retrieveRequiresTransitive(ModuleSymbol msym) {
@@ -1613,6 +1625,12 @@ public class Modules extends JCTree.Visitor {
 
             if (!isValidName(packageName))
                 continue;
+
+            if (!allowAccessIntoSystem && (msym.flags() & Flags.SYSTEM_MODULE) != 0) {
+                log.error(Errors.AddExportsWithRelease(msym));
+                continue;
+            }
+
             PackageSymbol p = syms.enterPackage(msym, names.fromString(packageName));
             p.modle = msym;  // TODO: do we need this?
 
@@ -1685,6 +1703,11 @@ public class Modules extends JCTree.Visitor {
                 if (lintOptions) {
                     log.warning(Warnings.ModuleForOptionNotFound(Option.ADD_READS, msym));
                 }
+                continue;
+            }
+
+            if (!allowAccessIntoSystem && (msym.flags() & Flags.SYSTEM_MODULE) != 0) {
+                log.error(Errors.AddReadsWithRelease(msym));
                 continue;
             }
 
