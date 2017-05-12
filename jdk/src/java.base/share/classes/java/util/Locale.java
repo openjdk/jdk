@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1587,44 +1587,50 @@ public final class Locale implements Cloneable, Serializable {
      *
      * <p>Grandfathered tags with canonical replacements are as follows:
      *
-     * <table summary="Grandfathered tags with canonical replacements">
+     * <table class="striped">
+     * <caption style="display:none">Grandfathered tags with canonical replacements</caption>
+     * <thead style="text-align:center">
+     * <tr><th style="padding: 0 2px">grandfathered tag</th><th style="padding: 0 2px">modern replacement</th></tr>
+     * </thead>
      * <tbody style="text-align:center">
-     * <tr><th>grandfathered tag</th><th>&nbsp;</th><th>modern replacement</th></tr>
-     * <tr><td>art-lojban</td><td>&nbsp;</td><td>jbo</td></tr>
-     * <tr><td>i-ami</td><td>&nbsp;</td><td>ami</td></tr>
-     * <tr><td>i-bnn</td><td>&nbsp;</td><td>bnn</td></tr>
-     * <tr><td>i-hak</td><td>&nbsp;</td><td>hak</td></tr>
-     * <tr><td>i-klingon</td><td>&nbsp;</td><td>tlh</td></tr>
-     * <tr><td>i-lux</td><td>&nbsp;</td><td>lb</td></tr>
-     * <tr><td>i-navajo</td><td>&nbsp;</td><td>nv</td></tr>
-     * <tr><td>i-pwn</td><td>&nbsp;</td><td>pwn</td></tr>
-     * <tr><td>i-tao</td><td>&nbsp;</td><td>tao</td></tr>
-     * <tr><td>i-tay</td><td>&nbsp;</td><td>tay</td></tr>
-     * <tr><td>i-tsu</td><td>&nbsp;</td><td>tsu</td></tr>
-     * <tr><td>no-bok</td><td>&nbsp;</td><td>nb</td></tr>
-     * <tr><td>no-nyn</td><td>&nbsp;</td><td>nn</td></tr>
-     * <tr><td>sgn-BE-FR</td><td>&nbsp;</td><td>sfb</td></tr>
-     * <tr><td>sgn-BE-NL</td><td>&nbsp;</td><td>vgt</td></tr>
-     * <tr><td>sgn-CH-DE</td><td>&nbsp;</td><td>sgg</td></tr>
-     * <tr><td>zh-guoyu</td><td>&nbsp;</td><td>cmn</td></tr>
-     * <tr><td>zh-hakka</td><td>&nbsp;</td><td>hak</td></tr>
-     * <tr><td>zh-min-nan</td><td>&nbsp;</td><td>nan</td></tr>
-     * <tr><td>zh-xiang</td><td>&nbsp;</td><td>hsn</td></tr>
+     * <tr><td>art-lojban</td><td>jbo</td></tr>
+     * <tr><td>i-ami</td><td>ami</td></tr>
+     * <tr><td>i-bnn</td><td>bnn</td></tr>
+     * <tr><td>i-hak</td><td>hak</td></tr>
+     * <tr><td>i-klingon</td><td>tlh</td></tr>
+     * <tr><td>i-lux</td><td>lb</td></tr>
+     * <tr><td>i-navajo</td><td>nv</td></tr>
+     * <tr><td>i-pwn</td><td>pwn</td></tr>
+     * <tr><td>i-tao</td><td>tao</td></tr>
+     * <tr><td>i-tay</td><td>tay</td></tr>
+     * <tr><td>i-tsu</td><td>tsu</td></tr>
+     * <tr><td>no-bok</td><td>nb</td></tr>
+     * <tr><td>no-nyn</td><td>nn</td></tr>
+     * <tr><td>sgn-BE-FR</td><td>sfb</td></tr>
+     * <tr><td>sgn-BE-NL</td><td>vgt</td></tr>
+     * <tr><td>sgn-CH-DE</td><td>sgg</td></tr>
+     * <tr><td>zh-guoyu</td><td>cmn</td></tr>
+     * <tr><td>zh-hakka</td><td>hak</td></tr>
+     * <tr><td>zh-min-nan</td><td>nan</td></tr>
+     * <tr><td>zh-xiang</td><td>hsn</td></tr>
      * </tbody>
      * </table>
      *
      * <p>Grandfathered tags with no modern replacement will be
      * converted as follows:
      *
-     * <table summary="Grandfathered tags with no modern replacement">
+     * <table class="striped">
+     * <caption style="display:none">Grandfathered tags with no modern replacement</caption>
+     * <thead style="text-align:center">
+     * <tr><th style="padding: 0 2px">grandfathered tag</th><th style="padding: 0 2px">converts to</th></tr>
+     * </thead>
      * <tbody style="text-align:center">
-     * <tr><th>grandfathered tag</th><th>&nbsp;</th><th>converts to</th></tr>
-     * <tr><td>cel-gaulish</td><td>&nbsp;</td><td>xtg-x-cel-gaulish</td></tr>
-     * <tr><td>en-GB-oed</td><td>&nbsp;</td><td>en-GB-x-oed</td></tr>
-     * <tr><td>i-default</td><td>&nbsp;</td><td>en-x-i-default</td></tr>
-     * <tr><td>i-enochian</td><td>&nbsp;</td><td>und-x-i-enochian</td></tr>
-     * <tr><td>i-mingo</td><td>&nbsp;</td><td>see-x-i-mingo</td></tr>
-     * <tr><td>zh-min</td><td>&nbsp;</td><td>nan-x-zh-min</td></tr>
+     * <tr><td>cel-gaulish</td><td>xtg-x-cel-gaulish</td></tr>
+     * <tr><td>en-GB-oed</td><td>en-GB-x-oed</td></tr>
+     * <tr><td>i-default</td><td>en-x-i-default</td></tr>
+     * <tr><td>i-enochian</td><td>und-x-i-enochian</td></tr>
+     * <tr><td>i-mingo</td><td>see-x-i-mingo</td></tr>
+     * <tr><td>zh-min</td><td>nan-x-zh-min</td></tr>
      * </tbody>
      * </table>
      *
@@ -2767,12 +2773,16 @@ public final class Locale implements Cloneable, Serializable {
      *
      * The filtering method will behave as follows:
      *
-     * <table cellpadding=2 summary="Filtering method behavior">
+     * <table class="striped">
+     * <caption>Filtering method behavior</caption>
+     * <thead>
      * <tr>
      * <th>Filtering Mode</th>
      * <th>Language Priority List: {@code "de-DE"}</th>
      * <th>Language Priority List: {@code "de-*-DE"}</th>
      * </tr>
+     * </thead>
+     * <tbody>
      * <tr>
      * <td style="vertical-align:top">
      * {@link FilteringMode#AUTOSELECT_FILTERING AUTOSELECT_FILTERING}
@@ -2832,6 +2842,7 @@ public final class Locale implements Cloneable, Serializable {
      * not a valid basic language range.
      * </td>
      * </tr>
+     * </tbody>
      * </table>
      *
      * @see #filter(List, Collection, FilteringMode)

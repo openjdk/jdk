@@ -43,13 +43,14 @@
 #define ARG_ERROR2      "Error: %s requires jar file specification"
 #define ARG_ERROR3      "Error: The -J option should not be followed by a space."
 #define ARG_ERROR4      "Error: %s requires module path specification"
-#define ARG_ERROR5      "Error: %s requires module id"
+#define ARG_ERROR5      "Error: %s requires module name"
 #define ARG_ERROR6      "Error: %s requires modules to be specified"
 #define ARG_ERROR7      "Error: %s can only be specified once"
 #define ARG_ERROR8      "Error: Unmatched quote in environment variable %s"
 #define ARG_ERROR9      "Error: Option %s is not allowed in environment variable %s"
 #define ARG_ERROR10     "Error: Option %s in %s is not allowed in environment variable %s"
 #define ARG_ERROR11     "Error: Cannot specify main class in environment variable %s"
+#define ARG_ERROR12     "Error: %s requires module name"
 
 #define JVM_ERROR1      "Error: Could not create the Java Virtual Machine.\n" GEN_ERROR
 #define JVM_ERROR2      "Error: Could not detach main thread.\n" JNI_ERROR

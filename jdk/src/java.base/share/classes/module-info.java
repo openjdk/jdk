@@ -161,6 +161,7 @@ module java.base {
         java.security.jgss,
         java.sql,
         java.xml,
+        jdk.attach,
         jdk.charsets,
         jdk.compiler,   // reflective dependency
         jdk.incubator.httpclient,
@@ -189,7 +190,8 @@ module java.base {
         jdk.unsupported;
     exports jdk.internal.vm.annotation to
         jdk.unsupported,
-        jdk.internal.vm.ci;
+        jdk.internal.vm.ci,
+        jdk.incubator.httpclient;
     exports jdk.internal.util.jar to
         jdk.jartool,
         jdk.jdeps,
