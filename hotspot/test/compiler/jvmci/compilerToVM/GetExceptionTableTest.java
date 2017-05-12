@@ -34,6 +34,7 @@
  *          jdk.internal.vm.ci/jdk.vm.ci.code
  * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ *                   -Djvmci.Compiler=null
  *                   compiler.jvmci.compilerToVM.GetExceptionTableTest
  */
 
@@ -137,4 +138,3 @@ public class GetExceptionTableTest {
         }
     }
 }
-

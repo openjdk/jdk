@@ -47,7 +47,7 @@ help:
 	$(info $(_)                        # dependencies for the target. This is faster but may)
 	$(info $(_)                        # result in incorrect build results!)
 	$(info $(_) make docs              # Create all docs)
-	$(info $(_) make docs-javadoc      # Create just javadocs, depends on less than full docs)
+	$(info $(_) make docs-jdk-api      # Create just JDK javadocs)
 	$(info $(_) make profiles          # Create complete jre compact profile images)
 	$(info $(_) make bootcycle-images  # Build images twice, second time with newly built JDK)
 	$(info $(_) make install           # Install the generated images locally)

@@ -1215,8 +1215,10 @@ public:
 
   void fill_words(Register base, Register cnt, Register value);
   void zero_words(Register base, u_int64_t cnt);
-  void zero_words(Register base, Register cnt);
-  void block_zero(Register base, Register cnt, bool is_large = false);
+  void zero_words(Register ptr, Register cnt);
+  void zero_dcache_blocks(Register base, Register cnt);
+
+  static const int zero_words_block_size;
 
   void byte_array_inflate(Register src, Register dst, Register len,
                           FloatRegister vtmp1, FloatRegister vtmp2,

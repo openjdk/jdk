@@ -230,6 +230,7 @@ class LinkResolver: AllStatic {
                                                  const methodHandle& resolved_method,
                                                  Klass* resolved_klass,
                                                  Klass* current_klass,
+                                                 Handle recv,
                                                  bool check_access, TRAPS);
   static void runtime_resolve_virtual_method    (CallInfo& result,
                                                  const methodHandle& resolved_method,
@@ -256,7 +257,7 @@ class LinkResolver: AllStatic {
   // runtime resolving from constant pool
   static void resolve_invokestatic   (CallInfo& result,
                                       const constantPoolHandle& pool, int index, TRAPS);
-  static void resolve_invokespecial  (CallInfo& result,
+  static void resolve_invokespecial  (CallInfo& result, Handle recv,
                                       const constantPoolHandle& pool, int index, TRAPS);
   static void resolve_invokevirtual  (CallInfo& result, Handle recv,
                                       const constantPoolHandle& pool, int index, TRAPS);
@@ -289,6 +290,7 @@ class LinkResolver: AllStatic {
                                      const LinkInfo& link_info,
                                      bool initialize_klass, TRAPS);
   static void resolve_special_call  (CallInfo& result,
+                                     Handle recv,
                                      const LinkInfo& link_info,
                                      TRAPS);
   static void resolve_virtual_call  (CallInfo& result, Handle recv, Klass* recv_klass,

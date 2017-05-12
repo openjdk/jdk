@@ -58,18 +58,11 @@ public interface ResourcePoolModule {
     public ModuleDescriptor descriptor();
 
     /**
-     * The module target OS name for this module.
+     * The target platform
      *
-     * @return The module target OS name
+     * @return The target platform
      */
-    public String osName();
-
-    /**
-     * The module target OS arch for this module.
-     *
-     * @return The module target OS arch
-     */
-    public String osArch();
+    public String targetPlatform();
 
     /**
      * Retrieves all the packages located in this module.

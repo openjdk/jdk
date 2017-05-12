@@ -45,7 +45,6 @@ class JvmtiEventControllerPrivate;
 class JvmtiManageCapabilities;
 class JvmtiEnv;
 class JvmtiThreadState;
-class AttachOperation;
 
 #define JVMTI_SUPPORT_FLAG(key)                                           \
   private:                                                                \
@@ -396,7 +395,6 @@ class JvmtiExport : public AllStatic {
 #if INCLUDE_SERVICES
   // attach support
   static jint load_agent_library(const char *agent, const char *absParam, const char *options, outputStream* out) NOT_JVMTI_RETURN_(JNI_ERR);
-  static jint load_agent_library(AttachOperation* op, outputStream* out) NOT_JVMTI_RETURN_(JNI_ERR);
 #endif
 
   // SetNativeMethodPrefix support

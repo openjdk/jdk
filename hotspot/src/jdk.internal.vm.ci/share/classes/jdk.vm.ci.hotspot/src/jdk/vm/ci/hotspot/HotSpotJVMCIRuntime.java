@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.ServiceLoader;
 import java.util.TreeMap;
 
 import jdk.internal.misc.VM;
@@ -50,7 +51,6 @@ import jdk.vm.ci.runtime.JVMCIBackend;
 import jdk.vm.ci.runtime.JVMCICompiler;
 import jdk.vm.ci.runtime.JVMCICompilerFactory;
 import jdk.vm.ci.services.JVMCIServiceLocator;
-import jdk.vm.ci.services.Services;
 
 /**
  * HotSpot implementation of a JVMCI runtime.
@@ -88,7 +88,10 @@ public final class HotSpotJVMCIRuntime implements HotSpotJVMCIRuntimeProvider {
      */
     public enum Option {
         // @formatter:off
-        Compiler(String.class, null, "Selects the system compiler."),
+        Compiler(String.class, null, "Selects the system compiler. This must match the getCompilerName() value returned " +
+                                     "by a jdk.vm.ci.runtime.JVMCICompilerFactory provider. " +
+                                     "An empty string or the value \"null\" selects a compiler " +
+                                     "that will raise an exception upon receiving a compilation request."),
         // Note: The following one is not used (see InitTimer.ENABLED). It is added here
         // so that -XX:+JVMCIPrintProperties shows the option.
         InitTimer(Boolean.class, false, "Specifies if initialization timing is enabled."),
@@ -208,7 +211,7 @@ public final class HotSpotJVMCIRuntime implements HotSpotJVMCIRuntimeProvider {
     }
 
     public static HotSpotJVMCIBackendFactory findFactory(String architecture) {
-        for (HotSpotJVMCIBackendFactory factory : Services.load(HotSpotJVMCIBackendFactory.class)) {
+        for (HotSpotJVMCIBackendFactory factory : ServiceLoader.load(HotSpotJVMCIBackendFactory.class, ClassLoader.getSystemClassLoader())) {
             if (factory.getArchitecture().equalsIgnoreCase(architecture)) {
                 return factory;
             }

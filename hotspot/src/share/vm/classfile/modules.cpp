@@ -231,17 +231,19 @@ static void define_javabase_module(jobject module, jstring version,
   // Patch any previously loaded class's module field with java.base's java.lang.Module.
   ModuleEntryTable::patch_javabase_entries(module_handle);
 
-  log_debug(modules)("define_javabase_module(): Definition of module: "
-                     JAVA_BASE_NAME ", version: %s, location: %s, package #: %d",
-                     module_version != NULL ? module_version : "NULL",
-                     module_location != NULL ? module_location : "NULL",
-                     pkg_list->length());
+  log_info(module, load)(JAVA_BASE_NAME " location: %s",
+                         module_location != NULL ? module_location : "NULL");
+  log_debug(module)("define_javabase_module(): Definition of module: "
+                    JAVA_BASE_NAME ", version: %s, location: %s, package #: %d",
+                    module_version != NULL ? module_version : "NULL",
+                    module_location != NULL ? module_location : "NULL",
+                    pkg_list->length());
 
   // packages defined to java.base
-  if (log_is_enabled(Trace, modules)) {
+  if (log_is_enabled(Trace, module)) {
     for (int x = 0; x < pkg_list->length(); x++) {
-      log_trace(modules)("define_javabase_module(): creation of package %s for module " JAVA_BASE_NAME,
-                         (pkg_list->at(x))->as_C_string());
+      log_trace(module)("define_javabase_module(): creation of package %s for module " JAVA_BASE_NAME,
+                        (pkg_list->at(x))->as_C_string());
     }
   }
 }
@@ -431,23 +433,24 @@ void Modules::define_module(jobject module, jboolean is_open, jstring version,
       throw_dup_pkg_exception(module_name, existing_pkg, CHECK);
   }
 
-  if (log_is_enabled(Debug, modules)) {
-    outputStream* logst = Log(modules)::debug_stream();
+  log_info(module, load)("%s location: %s", module_name,
+                         module_location != NULL ? module_location : "NULL");
+  if (log_is_enabled(Debug, module)) {
+    outputStream* logst = Log(module)::debug_stream();
     logst->print("define_module(): creation of module: %s, version: %s, location: %s, ",
                  module_name, module_version != NULL ? module_version : "NULL",
                  module_location != NULL ? module_location : "NULL");
     loader_data->print_value_on(logst);
     logst->print_cr(", package #: %d", pkg_list->length());
     for (int y = 0; y < pkg_list->length(); y++) {
-      log_trace(modules)("define_module(): creation of package %s for module %s",
-                         (pkg_list->at(y))->as_C_string(), module_name);
+      log_trace(module)("define_module(): creation of package %s for module %s",
+                        (pkg_list->at(y))->as_C_string(), module_name);
     }
   }
 
   // If the module is defined to the boot loader and an exploded build is being
   // used, prepend <java.home>/modules/modules_name, if it exists, to the system boot class path.
   if (loader == NULL &&
-      !Universe::is_module_initialized() &&
       !ClassLoader::has_jrt_entry()) {
     ClassLoader::add_to_exploded_build_list(module_symbol, CHECK);
   }
@@ -480,7 +483,7 @@ void Modules::set_bootloader_unnamed_module(jobject module, TRAPS) {
   }
   Handle h_loader(THREAD, loader);
 
-  log_debug(modules)("set_bootloader_unnamed_module(): recording unnamed module for boot loader");
+  log_debug(module)("set_bootloader_unnamed_module(): recording unnamed module for boot loader");
 
   // Set java.lang.Module for the boot loader's unnamed module
   ClassLoaderData* boot_loader_data = ClassLoaderData::the_null_class_loader_data();
@@ -536,10 +539,10 @@ void Modules::add_module_exports(jobject from_module, const char* package_name, 
                       from_module_entry->name()->as_C_string()));
   }
 
-  log_debug(modules)("add_module_exports(): package %s in module %s is exported to module %s",
-                     package_entry->name()->as_C_string(),
-                     from_module_entry->name()->as_C_string(),
-                     to_module_entry == NULL ? "NULL" :
+  log_debug(module)("add_module_exports(): package %s in module %s is exported to module %s",
+                    package_entry->name()->as_C_string(),
+                    from_module_entry->name()->as_C_string(),
+                    to_module_entry == NULL ? "NULL" :
                       to_module_entry->is_named() ?
                         to_module_entry->name()->as_C_string() : UNNAMED_MODULE);
 
@@ -583,12 +586,12 @@ void Modules::add_reads_module(jobject from_module, jobject to_module, TRAPS) {
   }
 
   ResourceMark rm(THREAD);
-  log_debug(modules)("add_reads_module(): Adding read from module %s to module %s",
-                     from_module_entry->is_named() ?
-                     from_module_entry->name()->as_C_string() : UNNAMED_MODULE,
-                     to_module_entry == NULL ? "all unnamed" :
-                       (to_module_entry->is_named() ?
-                        to_module_entry->name()->as_C_string() : UNNAMED_MODULE));
+  log_debug(module)("add_reads_module(): Adding read from module %s to module %s",
+                    from_module_entry->is_named() ?
+                    from_module_entry->name()->as_C_string() : UNNAMED_MODULE,
+                    to_module_entry == NULL ? "all unnamed" :
+                      (to_module_entry->is_named() ?
+                       to_module_entry->name()->as_C_string() : UNNAMED_MODULE));
 
   // if modules are the same or if from_module is unnamed then no need to add the read.
   if (from_module_entry != to_module_entry && from_module_entry->is_named()) {
@@ -607,7 +610,7 @@ jobject Modules::get_module(jclass clazz, TRAPS) {
   }
   oop mirror = JNIHandles::resolve_non_null(clazz);
   if (mirror == NULL) {
-    log_debug(modules)("get_module(): no mirror, returning NULL");
+    log_debug(module)("get_module(): no mirror, returning NULL");
     return NULL;
   }
   if (!java_lang_Class::is_instance(mirror)) {
@@ -620,9 +623,9 @@ jobject Modules::get_module(jclass clazz, TRAPS) {
   assert(module != NULL, "java.lang.Class module field not set");
   assert(java_lang_Module::is_instance(module), "module is not an instance of type java.lang.Module");
 
-  if (log_is_enabled(Debug, modules)) {
+  if (log_is_enabled(Debug, module)) {
     ResourceMark rm(THREAD);
-    outputStream* logst = Log(modules)::debug_stream();
+    outputStream* logst = Log(module)::debug_stream();
     Klass* klass = java_lang_Class::as_Klass(mirror);
     oop module_name = java_lang_Module::name(module);
     if (module_name != NULL) {
@@ -722,8 +725,8 @@ void Modules::add_module_package(jobject module, const char* package_name, TRAPS
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), message);
   }
 
-  log_debug(modules)("add_module_package(): Adding package %s to module %s",
-                     package_name, module_entry->name()->as_C_string());
+  log_debug(module)("add_module_package(): Adding package %s to module %s",
+                    package_name, module_entry->name()->as_C_string());
 
   TempNewSymbol pkg_symbol = SymbolTable::new_symbol(package_name, CHECK);
   PackageEntryTable* package_table = loader_data->packages();
@@ -778,8 +781,8 @@ void Modules::add_module_exports_to_all_unnamed(jobject module, const char* pack
                         module_entry->name()->as_C_string()));
     }
 
-    log_debug(modules)("add_module_exports_to_all_unnamed(): package %s in module"
-                       " %s is exported to all unnamed modules",
+    log_debug(module)("add_module_exports_to_all_unnamed(): package %s in module"
+                      " %s is exported to all unnamed modules",
                        package_entry->name()->as_C_string(),
                        module_entry->name()->as_C_string());
 

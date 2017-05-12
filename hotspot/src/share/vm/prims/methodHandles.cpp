@@ -727,7 +727,7 @@ Handle MethodHandles::resolve_MemberName(Handle mname, Klass* caller, TRAPS) {
           assert(!is_signature_polymorphic_static(mh_invoke_id), "");
           LinkResolver::resolve_handle_call(result, link_info, THREAD);
         } else if (ref_kind == JVM_REF_invokeSpecial) {
-          LinkResolver::resolve_special_call(result,
+          LinkResolver::resolve_special_call(result, Handle(),
                         link_info, THREAD);
         } else if (ref_kind == JVM_REF_invokeVirtual) {
           LinkResolver::resolve_virtual_call(result, Handle(), defc,
@@ -755,7 +755,7 @@ Handle MethodHandles::resolve_MemberName(Handle mname, Klass* caller, TRAPS) {
       {
         assert(!HAS_PENDING_EXCEPTION, "");
         if (name == vmSymbols::object_initializer_name()) {
-          LinkResolver::resolve_special_call(result, link_info, THREAD);
+          LinkResolver::resolve_special_call(result, Handle(), link_info, THREAD);
         } else {
           break;                // will throw after end of switch
         }

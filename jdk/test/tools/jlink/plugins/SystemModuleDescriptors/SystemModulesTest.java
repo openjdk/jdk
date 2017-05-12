@@ -71,17 +71,23 @@ public class SystemModulesTest {
                     .forEach(this::checkAttributes);
     }
 
-    // JMOD files are created with osName and osArch that may be different
-    // than os.name and os.arch system property
+    // JMOD files are created with OS name and arch matching the bundle name
     private boolean checkOSName(String name) {
-        if (name.equals(OS_NAME))
-            return true;
-
         if (OS_NAME.startsWith("Windows")) {
-            return name.startsWith("Windows");
-        } else {
-            System.err.println("ERROR: " + name + " but expected: " + OS_NAME);
-            return false;
+            return name.equals("windows");
+        }
+
+        switch (OS_NAME) {
+            case "Linux":
+                return name.equals("linux");
+            case "SunOS":
+                return name.equals("solaris");
+            case "Mac OS X":
+                return name.equals("macos");
+            default:
+                // skip validation on unknown platform
+                System.out.println("Skip checking OS name in ModuleTarget: " + name);
+                return true;
         }
     }
 
@@ -94,10 +100,12 @@ public class SystemModulesTest {
             case "x86":
                 return name.equals("x86");
             case "amd64":
-                return name.equals("x86_64");
+            case "x86_64":
+                return name.equals("amd64");
             default:
-                System.err.println("ERROR: " + name + " but expected: " + OS_ARCH);
-                return false;
+                // skip validation on unknown platform
+                System.out.println("Skip checking OS arch in ModuleTarget: " + name);
+                return true;
         }
     }
 
@@ -105,12 +113,13 @@ public class SystemModulesTest {
         try {
             if (modRef.descriptor().name().equals("java.base")) {
                 ModuleTargetHelper.ModuleTarget mt = ModuleTargetHelper.read(modRef);
-                assertTrue(checkOSName(mt.osName()));
-                assertTrue(checkOSArch(mt.osArch()));
+                String[] values = mt.targetPlatform().split("-");
+                assertTrue(checkOSName(values[0]));
+                assertTrue(checkOSArch(values[1]));
             } else {
                 // target platform attribute is dropped by jlink plugin for other modules
                 ModuleTargetHelper.ModuleTarget mt = ModuleTargetHelper.read(modRef);
-                assertTrue(mt == null || (mt.osName() == null && mt.osArch() == null));
+                assertTrue(mt == null || mt.targetPlatform() == null);
             }
         } catch (IOException exp) {
             throw new UncheckedIOException(exp);

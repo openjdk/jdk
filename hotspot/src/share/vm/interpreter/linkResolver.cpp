@@ -1053,12 +1053,14 @@ methodHandle LinkResolver::linktime_resolve_static_method(const LinkInfo& link_i
 
 
 void LinkResolver::resolve_special_call(CallInfo& result,
+                                        Handle recv,
                                         const LinkInfo& link_info,
                                         TRAPS) {
   methodHandle resolved_method = linktime_resolve_special_method(link_info, CHECK);
   runtime_resolve_special_method(result, resolved_method,
                                  link_info.resolved_klass(),
                                  link_info.current_klass(),
+                                 recv,
                                  link_info.check_access(), CHECK);
 }
 
@@ -1146,6 +1148,7 @@ void LinkResolver::runtime_resolve_special_method(CallInfo& result,
                                                   const methodHandle& resolved_method,
                                                   Klass* resolved_klass,
                                                   Klass* current_klass,
+                                                  Handle recv,
                                                   bool check_access, TRAPS) {
 
   // resolved method is selected method unless we have an old-style lookup
@@ -1154,30 +1157,53 @@ void LinkResolver::runtime_resolve_special_method(CallInfo& result,
   // no checks for shadowing
   methodHandle sel_method(THREAD, resolved_method());
 
-  // check if this is an old-style super call and do a new lookup if so
   if (check_access &&
-      // a) check if ACC_SUPER flag is set for the current class
-      (current_klass->is_super() || !AllowNonVirtualCalls) &&
-      // b) check if the class of the resolved_klass is a superclass
-      // (not supertype in order to exclude interface classes) of the current class.
-      // This check is not performed for super.invoke for interface methods
-      // in super interfaces.
-      current_klass->is_subclass_of(resolved_klass) &&
-      current_klass != resolved_klass &&
-      // c) check if the method is not <init>
+      // check if the method is not <init>
       resolved_method->name() != vmSymbols::object_initializer_name()) {
-    // Lookup super method
-    Klass* super_klass = current_klass->super();
-    sel_method = lookup_instance_method_in_klasses(super_klass,
-                         resolved_method->name(),
-                         resolved_method->signature(), CHECK);
-    // check if found
-    if (sel_method.is_null()) {
-      ResourceMark rm(THREAD);
-      THROW_MSG(vmSymbols::java_lang_AbstractMethodError(),
-                Method::name_and_sig_as_C_string(resolved_klass,
-                                          resolved_method->name(),
-                                          resolved_method->signature()));
+
+  // check if this is an old-style super call and do a new lookup if so
+        // a) check if ACC_SUPER flag is set for the current class
+    if ((current_klass->is_super() || !AllowNonVirtualCalls) &&
+        // b) check if the class of the resolved_klass is a superclass
+        // (not supertype in order to exclude interface classes) of the current class.
+        // This check is not performed for super.invoke for interface methods
+        // in super interfaces.
+        current_klass->is_subclass_of(resolved_klass) &&
+        current_klass != resolved_klass) {
+      // Lookup super method
+      Klass* super_klass = current_klass->super();
+      sel_method = lookup_instance_method_in_klasses(super_klass,
+                           resolved_method->name(),
+                           resolved_method->signature(), CHECK);
+      // check if found
+      if (sel_method.is_null()) {
+        ResourceMark rm(THREAD);
+        THROW_MSG(vmSymbols::java_lang_AbstractMethodError(),
+                  Method::name_and_sig_as_C_string(resolved_klass,
+                                            resolved_method->name(),
+                                            resolved_method->signature()));
+      }
+    }
+
+    // Check that the class of objectref (the receiver) is the current class or interface,
+    // or a subtype of the current class or interface (the sender), otherwise invokespecial
+    // throws IllegalAccessError.
+    // The verifier checks that the sender is a subtype of the class in the I/MR operand.
+    // The verifier also checks that the receiver is a subtype of the sender, if the sender is
+    // a class.  If the sender is an interface, the check has to be performed at runtime.
+    InstanceKlass* sender = InstanceKlass::cast(current_klass);
+    sender = sender->is_anonymous() ? sender->host_klass() : sender;
+    if (sender->is_interface() && recv.not_null()) {
+      Klass* receiver_klass = recv->klass();
+      if (!receiver_klass->is_subtype_of(sender)) {
+        ResourceMark rm(THREAD);
+        char buf[500];
+        jio_snprintf(buf, sizeof(buf),
+                     "Receiver class %s must be the current class or a subtype of interface %s",
+                     receiver_klass->name()->as_C_string(),
+                     sender->name()->as_C_string());
+        THROW_MSG(vmSymbols::java_lang_IllegalAccessError(), buf);
+      }
     }
   }
 
@@ -1511,7 +1537,7 @@ methodHandle LinkResolver::resolve_static_call_or_null(const LinkInfo& link_info
 methodHandle LinkResolver::resolve_special_call_or_null(const LinkInfo& link_info) {
   EXCEPTION_MARK;
   CallInfo info;
-  resolve_special_call(info, link_info, THREAD);
+  resolve_special_call(info, Handle(), link_info, THREAD);
   if (HAS_PENDING_EXCEPTION) {
     CLEAR_PENDING_EXCEPTION;
     return methodHandle();
@@ -1527,7 +1553,7 @@ methodHandle LinkResolver::resolve_special_call_or_null(const LinkInfo& link_inf
 void LinkResolver::resolve_invoke(CallInfo& result, Handle recv, const constantPoolHandle& pool, int index, Bytecodes::Code byte, TRAPS) {
   switch (byte) {
     case Bytecodes::_invokestatic   : resolve_invokestatic   (result,       pool, index, CHECK); break;
-    case Bytecodes::_invokespecial  : resolve_invokespecial  (result,       pool, index, CHECK); break;
+    case Bytecodes::_invokespecial  : resolve_invokespecial  (result, recv, pool, index, CHECK); break;
     case Bytecodes::_invokevirtual  : resolve_invokevirtual  (result, recv, pool, index, CHECK); break;
     case Bytecodes::_invokehandle   : resolve_invokehandle   (result,       pool, index, CHECK); break;
     case Bytecodes::_invokedynamic  : resolve_invokedynamic  (result,       pool, index, CHECK); break;
@@ -1556,7 +1582,7 @@ void LinkResolver::resolve_invoke(CallInfo& result, Handle& recv,
       resolve_static_call(result, link_info, /*initialize_class=*/false, CHECK);
       break;
     case Bytecodes::_invokespecial:
-      resolve_special_call(result, link_info, CHECK);
+      resolve_special_call(result, recv, link_info, CHECK);
       break;
     default:
       fatal("bad call: %s", Bytecodes::name(byte));
@@ -1569,9 +1595,10 @@ void LinkResolver::resolve_invokestatic(CallInfo& result, const constantPoolHand
 }
 
 
-void LinkResolver::resolve_invokespecial(CallInfo& result, const constantPoolHandle& pool, int index, TRAPS) {
+void LinkResolver::resolve_invokespecial(CallInfo& result, Handle recv,
+                                         const constantPoolHandle& pool, int index, TRAPS) {
   LinkInfo link_info(pool, index, CHECK);
-  resolve_special_call(result, link_info, CHECK);
+  resolve_special_call(result, recv, link_info, CHECK);
 }
 
 

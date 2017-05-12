@@ -953,6 +953,13 @@ bool ciMethod::is_compiled_lambda_form() const {
 }
 
 // ------------------------------------------------------------------
+// ciMethod::is_object_initializer
+//
+bool ciMethod::is_object_initializer() const {
+   return name() == ciSymbol::object_initializer_name();
+}
+
+// ------------------------------------------------------------------
 // ciMethod::has_member_arg
 //
 // Return true if the method is a linker intrinsic like _linkToVirtual.

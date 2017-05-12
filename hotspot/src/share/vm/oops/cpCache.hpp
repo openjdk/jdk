@@ -230,13 +230,15 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
   void set_direct_or_vtable_call(
     Bytecodes::Code invoke_code,                 // the bytecode used for invoking the method
     methodHandle    method,                      // the method/prototype if any (NULL, otherwise)
-    int             vtable_index                 // the vtable index if any, else negative
+    int             vtable_index,                // the vtable index if any, else negative
+    bool            sender_is_interface
   );
 
  public:
   void set_direct_call(                          // sets entry to exact concrete method entry
     Bytecodes::Code invoke_code,                 // the bytecode used for invoking the method
-    methodHandle    method                       // the method to call
+    methodHandle    method,                      // the method to call
+    bool            sender_is_interface
   );
 
   void set_vtable_call(                          // sets entry to vtable index
