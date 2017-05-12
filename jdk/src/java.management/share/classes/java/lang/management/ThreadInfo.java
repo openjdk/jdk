@@ -695,7 +695,7 @@ public class ThreadInfo {
      * The given {@code CompositeData} must contain the following attributes
      * unless otherwise specified below:
      * <blockquote>
-     * <table border="1">
+     * <table class="plain">
      * <caption style="display:none">The attributes and their types the given CompositeData contains</caption>
      * <tr>
      *   <th style="text-align:left">Attribute Name</th>
@@ -766,7 +766,7 @@ public class ThreadInfo {
      *       Each element is a {@code CompositeData} representing
      *       StackTraceElement containing the following attributes:
      *       <blockquote>
-     *       <table cellspacing=1 cellpadding=0>
+     *       <table class="borderless">
      *       <caption style="display:none">The attributes and their types the given CompositeData contains</caption>
      *       <tr>
      *         <th style="text-align:left">Attribute Name</th>
