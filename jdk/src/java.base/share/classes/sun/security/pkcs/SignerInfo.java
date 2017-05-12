@@ -323,6 +323,12 @@ public class SignerInfo implements DerEncoder {
                 data = content.getContentBytes();
             }
 
+            Timestamp timestamp = null;
+            try {
+                timestamp = getTimestamp();
+            } catch (Exception ignore) {
+            }
+
             ConstraintsParameters cparams =
                     new ConstraintsParameters(timestamp);
             String digestAlgname = getDigestAlgorithmId().getName();

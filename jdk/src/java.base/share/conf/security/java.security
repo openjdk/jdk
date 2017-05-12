@@ -545,21 +545,21 @@ krb5.kdc.bad.policy = tryLast
 #     jdkCA
 #       This constraint prohibits the specified algorithm only if the
 #       algorithm is used in a certificate chain that terminates at a marked
-#       trust anchor in the lib/security/cacerts keystore.  If the jdkCA
-#       constraint is not set, then all chains using the specified algorithm
+#       trust anchor in the lib/security/cacerts keystore.  If the jdkCA
+#       constraint is not set, then all chains using the specified algorithm
 #       are restricted.  jdkCA may only be used once in a DisabledAlgorithm
 #       expression.
-#       Example:  To apply this constraint to SHA-1 certificates, include
-#       the following:  "SHA1 jdkCA"
+#       Example:  To apply this constraint to SHA-1 certificates, include
+#       the following:  "SHA1 jdkCA"
 #
 #   DenyAfterConstraint:
 #     denyAfter YYYY-MM-DD
 #       This constraint prohibits a certificate with the specified algorithm
 #       from being used after the date regardless of the certificate's
-#       validity.  JAR files that are signed and timestamped before the
+#       validity.  JAR files that are signed and timestamped before the
 #       constraint date with certificates containing the disabled algorithm
-#       will not be restricted.  The date is processed in the UTC timezone.
-#       This constraint can only be used once in a DisabledAlgorithm
+#       will not be restricted.  The date is processed in the UTC timezone.
+#       This constraint can only be used once in a DisabledAlgorithm
 #       expression.
 #       Example:  To deny usage of RSA 2048 bit certificates after Feb 3 2020,
 #       use the following:  "RSA keySize == 2048 & denyAfter 2020-02-03"
