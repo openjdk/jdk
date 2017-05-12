@@ -142,6 +142,8 @@ java/lang/management/MemoryMXBean/PendingAllGC.sh               8158837 generic-
 
 # jdk_io
 
+java/io/pathNames/GeneralWin32.java                             8180264 windows-all
+
 ############################################################################
 
 # jdk_management
@@ -210,6 +212,8 @@ sun/security/tools/jarsigner/warnings/BadKeyUsageTest.java      8026393 generic-
 javax/net/ssl/DTLS/PacketLossRetransmission.java                8169086 macosx-x64
 javax/net/ssl/DTLS/RespondToRetransmit.java                     8169086 macosx-x64
 
+sun/security/krb5/auto/UnboundSSL.java                          8180265 windows-all
+sun/security/provider/KeyStore/DKSTest.sh                       8180266 windows-all
 sun/security/ssl/X509KeyManager/PreferredKey.java               8176354 generic-all
 
 ############################################################################
