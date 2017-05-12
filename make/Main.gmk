@@ -380,6 +380,9 @@ docs-javase-api-modulegraph:
 docs-jdk-specs:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Docs.gmk docs-jdk-specs)
 
+docs-jdk-index:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Docs.gmk docs-jdk-index)
+
 docs-zip:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Docs.gmk docs-zip)
 
@@ -388,7 +391,7 @@ update-build-docs:
 
 ALL_TARGETS += docs-jdk-api-javadoc docs-jdk-api-modulegraph \
     docs-javase-api-javadoc docs-javase-api-modulegraph docs-jdk-specs \
-    docs-zip update-build-docs
+    docs-jdk-index docs-zip update-build-docs
 
 ################################################################################
 # Cross compilation support
@@ -797,6 +800,8 @@ else
   # The gensrc steps for hotspot and jdk.jdi create html spec files.
   docs-jdk-specs: hotspot-$(JVM_VARIANT_MAIN)-gensrc jdk.jdi-gensrc
 
+  docs-jdk-index: exploded-image buildtools-modules
+
   docs-zip: docs-jdk
 
   test: jdk-image test-image
@@ -926,7 +931,7 @@ ifeq ($(ENABLE_FULL_DOCS), true)
   docs-javase-api: docs-javase-api-modulegraph
 endif
 
-docs-jdk: docs-jdk-api docs-jdk-specs
+docs-jdk: docs-jdk-api docs-jdk-specs docs-jdk-index
 docs-javase: docs-javase-api
 
 # alias for backwards compatibility
