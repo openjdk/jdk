@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * Use is subject to license terms.
  *
  * This library is free software; you can redistribute it and/or
@@ -34,6 +34,7 @@
  *   Stephen Fung <fungstep@hotmail.com> and
  *   Douglas Stebila <douglas@stebila.ca>, Sun Microsystems Laboratories
  *
+ * Last Modified Date from the Original Code: May 2017
  *********************************************************************** */
 
 #ifndef _ECL_PRIV_H
@@ -193,12 +194,13 @@ struct ECGroupStr {
                                                  mp_int *ry, const ECGroup *group);
         mp_err (*point_mul) (const mp_int *n, const mp_int *px,
                                                  const mp_int *py, mp_int *rx, mp_int *ry,
-                                                 const ECGroup *group);
+                                                 const ECGroup *group, int timing);
         mp_err (*base_point_mul) (const mp_int *n, mp_int *rx, mp_int *ry,
                                                           const ECGroup *group);
         mp_err (*points_mul) (const mp_int *k1, const mp_int *k2,
                                                   const mp_int *px, const mp_int *py, mp_int *rx,
-                                                  mp_int *ry, const ECGroup *group);
+                                                  mp_int *ry, const ECGroup *group,
+                                                  int timing);
         mp_err (*validate_point) (const mp_int *px, const mp_int *py, const ECGroup *group);
         /* Extra storage for implementation-specific data.  Any memory
          * allocated to these extra fields will be cleared by extra_free. */
@@ -262,10 +264,12 @@ void ec_GFp_extra_free_mont(GFMethod *meth);
 /* point multiplication */
 mp_err ec_pts_mul_basic(const mp_int *k1, const mp_int *k2,
                                                 const mp_int *px, const mp_int *py, mp_int *rx,
-                                                mp_int *ry, const ECGroup *group);
+                                                mp_int *ry, const ECGroup *group,
+                                                int timing);
 mp_err ec_pts_mul_simul_w2(const mp_int *k1, const mp_int *k2,
                                                    const mp_int *px, const mp_int *py, mp_int *rx,
-                                                   mp_int *ry, const ECGroup *group);
+                                                   mp_int *ry, const ECGroup *group,
+                                                   int timing);
 
 /* Computes the windowed non-adjacent-form (NAF) of a scalar. Out should
  * be an array of signed char's to output to, bitsize should be the number

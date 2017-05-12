@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * Use is subject to license terms.
  *
  * This library is free software; you can redistribute it and/or
@@ -33,7 +33,7 @@
  * Contributor(s):
  *   Douglas Stebila <douglas@stebila.ca>, Sun Microsystems Laboratories
  *
- * Last Modified Date from the Original Code: Nov 2016
+ * Last Modified Date from the Original Code: May 2017
  *********************************************************************** */
 
 #include "mpi.h"
@@ -50,7 +50,8 @@
  * are assumed to be NOT field-encoded. */
 mp_err
 ECPoint_mul(const ECGroup *group, const mp_int *k, const mp_int *px,
-                        const mp_int *py, mp_int *rx, mp_int *ry)
+                        const mp_int *py, mp_int *rx, mp_int *ry,
+                        int timing)
 {
         mp_err res = MP_OKAY;
         mp_int kt;
@@ -76,16 +77,16 @@ ECPoint_mul(const ECGroup *group, const mp_int *k, const mp_int *px,
                         kt.flag = (mp_sign)0;
                         MP_CHECKOK(group->
                                            point_mul(&kt, &group->genx, &group->geny, rx, ry,
-                                                                 group));
+                                                                 group, timing));
                 }
         } else {
                 if (group->meth->field_enc) {
                         MP_CHECKOK(group->meth->field_enc(px, rx, group->meth));
                         MP_CHECKOK(group->meth->field_enc(py, ry, group->meth));
-                        MP_CHECKOK(group->point_mul(&kt, rx, ry, rx, ry, group));
+                        MP_CHECKOK(group->point_mul(&kt, rx, ry, rx, ry, group, timing));
                 } else {
                         kt.flag = (mp_sign)0;
-                        MP_CHECKOK(group->point_mul(&kt, px, py, rx, ry, group));
+                        MP_CHECKOK(group->point_mul(&kt, px, py, rx, ry, group, timing));
                 }
         }
         if (group->meth->field_dec) {
@@ -107,7 +108,7 @@ ECPoint_mul(const ECGroup *group, const mp_int *k, const mp_int *px,
 mp_err
 ec_pts_mul_basic(const mp_int *k1, const mp_int *k2, const mp_int *px,
                                  const mp_int *py, mp_int *rx, mp_int *ry,
-                                 const ECGroup *group)
+                                 const ECGroup *group, int timing)
 {
         mp_err res = MP_OKAY;
         mp_int sx, sy;
@@ -119,9 +120,9 @@ ec_pts_mul_basic(const mp_int *k1, const mp_int *k2, const mp_int *px,
 
         /* if some arguments are not defined used ECPoint_mul */
         if (k1 == NULL) {
-                return ECPoint_mul(group, k2, px, py, rx, ry);
+                return ECPoint_mul(group, k2, px, py, rx, ry, timing);
         } else if ((k2 == NULL) || (px == NULL) || (py == NULL)) {
-                return ECPoint_mul(group, k1, NULL, NULL, rx, ry);
+                return ECPoint_mul(group, k1, NULL, NULL, rx, ry, timing);
         }
 
         MP_DIGITS(&sx) = 0;
@@ -129,8 +130,8 @@ ec_pts_mul_basic(const mp_int *k1, const mp_int *k2, const mp_int *px,
         MP_CHECKOK(mp_init(&sx, FLAG(k1)));
         MP_CHECKOK(mp_init(&sy, FLAG(k1)));
 
-        MP_CHECKOK(ECPoint_mul(group, k1, NULL, NULL, &sx, &sy));
-        MP_CHECKOK(ECPoint_mul(group, k2, px, py, rx, ry));
+        MP_CHECKOK(ECPoint_mul(group, k1, NULL, NULL, &sx, &sy, timing));
+        MP_CHECKOK(ECPoint_mul(group, k2, px, py, rx, ry, timing));
 
         if (group->meth->field_enc) {
                 MP_CHECKOK(group->meth->field_enc(&sx, &sx, group->meth));
@@ -162,7 +163,7 @@ ec_pts_mul_basic(const mp_int *k1, const mp_int *k2, const mp_int *px,
 mp_err
 ec_pts_mul_simul_w2(const mp_int *k1, const mp_int *k2, const mp_int *px,
                                         const mp_int *py, mp_int *rx, mp_int *ry,
-                                        const ECGroup *group)
+                                        const ECGroup *group, int timing)
 {
         mp_err res = MP_OKAY;
         mp_int precomp[4][4][2];
@@ -177,9 +178,9 @@ ec_pts_mul_simul_w2(const mp_int *k1, const mp_int *k2, const mp_int *px,
 
         /* if some arguments are not defined used ECPoint_mul */
         if (k1 == NULL) {
-                return ECPoint_mul(group, k2, px, py, rx, ry);
+                return ECPoint_mul(group, k2, px, py, rx, ry, timing);
         } else if ((k2 == NULL) || (px == NULL) || (py == NULL)) {
-                return ECPoint_mul(group, k1, NULL, NULL, rx, ry);
+                return ECPoint_mul(group, k1, NULL, NULL, rx, ry, timing);
         }
 
         /* initialize precomputation table */
@@ -311,7 +312,8 @@ ec_pts_mul_simul_w2(const mp_int *k1, const mp_int *k2, const mp_int *px,
  * Input and output values are assumed to be NOT field-encoded. */
 mp_err
 ECPoints_mul(const ECGroup *group, const mp_int *k1, const mp_int *k2,
-                         const mp_int *px, const mp_int *py, mp_int *rx, mp_int *ry)
+                         const mp_int *px, const mp_int *py, mp_int *rx, mp_int *ry,
+                         int timing)
 {
         mp_err res = MP_OKAY;
         mp_int k1t, k2t;
@@ -348,9 +350,9 @@ ECPoints_mul(const ECGroup *group, const mp_int *k1, const mp_int *k2,
 
         /* if points_mul is defined, then use it */
         if (group->points_mul) {
-                res = group->points_mul(k1p, k2p, px, py, rx, ry, group);
+                res = group->points_mul(k1p, k2p, px, py, rx, ry, group, timing);
         } else {
-                res = ec_pts_mul_simul_w2(k1p, k2p, px, py, rx, ry, group);
+                res = ec_pts_mul_simul_w2(k1p, k2p, px, py, rx, ry, group, timing);
         }
 
   CLEANUP:

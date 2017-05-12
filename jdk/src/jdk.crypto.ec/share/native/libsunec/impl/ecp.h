@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * Use is subject to license terms.
  *
  * This library is free software; you can redistribute it and/or
@@ -33,6 +33,7 @@
  * Contributor(s):
  *   Douglas Stebila <douglas@stebila.ca>, Sun Microsystems Laboratories
  *
+ * Last Modified Date from the Original Code: May 2017
  *********************************************************************** */
 
 #ifndef _ECP_H
@@ -122,7 +123,7 @@ mp_err ec_GFp_pt_mul_jac(const mp_int *n, const mp_int *px,
 mp_err
  ec_GFp_pts_mul_jac(const mp_int *k1, const mp_int *k2, const mp_int *px,
                                         const mp_int *py, mp_int *rx, mp_int *ry,
-                                        const ECGroup *group);
+                                        const ECGroup *group, int timing);
 
 /* Computes R = nP where R is (rx, ry) and P is the base point. Elliptic
  * curve points P and R can be identical. Uses mixed Modified-Jacobian
@@ -131,9 +132,13 @@ mp_err
  * returns output that is still field-encoded. Uses 5-bit window NAF
  * method (algorithm 11) for scalar-point multiplication from Brown,
  * Hankerson, Lopez, Menezes. Software Implementation of the NIST Elliptic
- * Curves Over Prime Fields. */
+ * Curves Over Prime Fields. The implementation includes a countermeasure
+ * that attempts to hide the size of n from timing channels. This counter-
+ * measure is enabled using the timing argument. The high-rder bits of timing
+ * must be uniformly random in order for this countermeasure to work. */
 mp_err
  ec_GFp_pt_mul_jm_wNAF(const mp_int *n, const mp_int *px, const mp_int *py,
-                                           mp_int *rx, mp_int *ry, const ECGroup *group);
+                                           mp_int *rx, mp_int *ry, const ECGroup *group,
+                                           int timing);
 
 #endif /* _ECP_H */

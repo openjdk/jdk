@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * Use is subject to license terms.
  *
  * This library is free software; you can redistribute it and/or
@@ -33,6 +33,7 @@
  * Contributor(s):
  *   Stephen Fung <fungstep@hotmail.com>, Sun Microsystems Laboratories
  *
+ * Last Modified Date from the Original Code: May 2017
  *********************************************************************** */
 
 #include "ecp.h"
@@ -213,19 +214,23 @@ CLEANUP:
  * Curves Over Prime Fields. */
 mp_err
 ec_GFp_pt_mul_jm_wNAF(const mp_int *n, const mp_int *px, const mp_int *py,
-                                          mp_int *rx, mp_int *ry, const ECGroup *group)
+                                          mp_int *rx, mp_int *ry, const ECGroup *group,
+                                          int timing)
 {
         mp_err res = MP_OKAY;
-        mp_int precomp[16][2], rz, tpx, tpy;
-        mp_int raz4;
+        mp_int precomp[16][2], rz, tpx, tpy, tpz;
+        mp_int raz4, tpaz4;
         mp_int scratch[MAX_SCRATCH];
         signed char *naf = NULL;
         int i, orderBitSize;
+        int numDoubles, numAdds, extraDoubles, extraAdds;
 
         MP_DIGITS(&rz) = 0;
         MP_DIGITS(&raz4) = 0;
         MP_DIGITS(&tpx) = 0;
         MP_DIGITS(&tpy) = 0;
+        MP_DIGITS(&tpz) = 0;
+        MP_DIGITS(&tpaz4) = 0;
         for (i = 0; i < 16; i++) {
                 MP_DIGITS(&precomp[i][0]) = 0;
                 MP_DIGITS(&precomp[i][1]) = 0;
@@ -239,7 +244,9 @@ ec_GFp_pt_mul_jm_wNAF(const mp_int *n, const mp_int *px, const mp_int *py,
 
         /* initialize precomputation table */
         MP_CHECKOK(mp_init(&tpx, FLAG(n)));
-        MP_CHECKOK(mp_init(&tpy, FLAG(n)));;
+        MP_CHECKOK(mp_init(&tpy, FLAG(n)));
+        MP_CHECKOK(mp_init(&tpz, FLAG(n)));
+        MP_CHECKOK(mp_init(&tpaz4, FLAG(n)));
         MP_CHECKOK(mp_init(&rz, FLAG(n)));
         MP_CHECKOK(mp_init(&raz4, FLAG(n)));
 
@@ -295,17 +302,62 @@ ec_GFp_pt_mul_jm_wNAF(const mp_int *n, const mp_int *px, const mp_int *py,
         /* Compute 5NAF */
         ec_compute_wNAF(naf, orderBitSize, n, 5);
 
+        numAdds = 0;
+        numDoubles = orderBitSize;
         /* wNAF method */
         for (i = orderBitSize; i >= 0; i--) {
+
+                if (ec_GFp_pt_is_inf_jac(rx, ry, &rz) == MP_YES) {
+                  numDoubles--;
+                }
+
                 /* R = 2R */
                 ec_GFp_pt_dbl_jm(rx, ry, &rz, &raz4, rx, ry, &rz,
                                              &raz4, scratch, group);
+
                 if (naf[i] != 0) {
                         ec_GFp_pt_add_jm_aff(rx, ry, &rz, &raz4,
                                                                  &precomp[(naf[i] + 15) / 2][0],
                                                                  &precomp[(naf[i] + 15) / 2][1], rx, ry,
                                                                  &rz, &raz4, scratch, group);
+                        numAdds++;
                 }
+        }
+
+        /* extra operations to make timing less dependent on secrets */
+        if (timing) {
+                /* low-order bit of timing argument contains no entropy */
+                timing >>= 1;
+
+                MP_CHECKOK(ec_GFp_pt_set_inf_jac(&tpx, &tpy, &tpz));
+                mp_zero(&tpaz4);
+
+                /* Set the temp value to a non-infinite point */
+                ec_GFp_pt_add_jm_aff(&tpx, &tpy, &tpz, &tpaz4,
+                                                                 &precomp[8][0],
+                                                                 &precomp[8][1], &tpx, &tpy,
+                                                                 &tpz, &tpaz4, scratch, group);
+
+                /* two bits of extra adds */
+                extraAdds = timing & 0x3;
+                timing >>= 2;
+                /* Window size is 5, so the maximum number of additions is ceil(orderBitSize/5) */
+                /* This is the same as (orderBitSize + 4) / 5 */
+                for(i = numAdds; i <= (orderBitSize + 4) / 5 + extraAdds; i++) {
+                        ec_GFp_pt_add_jm_aff(&tpx, &tpy, &tpz, &tpaz4,
+                                                                 &precomp[9 + (i % 3)][0],
+                                                                 &precomp[9 + (i % 3)][1], &tpx, &tpy,
+                                                                 &tpz, &tpaz4, scratch, group);
+                }
+
+                /* two bits of extra doubles */
+                extraDoubles = timing & 0x3;
+                timing >>= 2;
+                for(i = numDoubles; i <= orderBitSize + extraDoubles; i++) {
+                        ec_GFp_pt_dbl_jm(&tpx, &tpy, &tpz, &tpaz4, &tpx, &tpy, &tpz,
+                                             &tpaz4, scratch, group);
+                }
+
         }
 
         /* convert result S to affine coordinates */
@@ -321,6 +373,8 @@ ec_GFp_pt_mul_jm_wNAF(const mp_int *n, const mp_int *px, const mp_int *py,
         }
         mp_clear(&tpx);
         mp_clear(&tpy);
+        mp_clear(&tpz);
+        mp_clear(&tpaz4);
         mp_clear(&rz);
         mp_clear(&raz4);
 #ifdef _KERNEL
