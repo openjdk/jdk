@@ -33,23 +33,9 @@
  * supports input methods for other languages and the use of entirely different
  * input mechanisms, such as handwriting or speech recognition.
  *
- * <h2>Package Specification</h2>
- * <ul>
- *     <li><a href="{@docRoot}/../technotes/guides/imf/spec.html">
- *         Input Method Framework Specification</a></li>
- *     <li><a href="{@docRoot}/../technotes/guides/imf/api-reference.html">
- *         Input Method Client API Reference</a></li>
- * </ul>
- *
  * <h2>Related Documentation</h2>
  * For overviews, tutorials, examples, guides, and tool documentation, please
- * see:
- * <ul>
- *     <li><a href="{@docRoot}/../technotes/guides/imf/overview.html">
- *         Input Method Framework Overview</a></li>
- *     <li><a href="{@docRoot}/../technotes/guides/imf/api-tutorial.html">
- *         Input Method Client API Tutorial</a></li>
- * </ul>
+ * see {@extLink imf_overview Input Method Framework Overview}.
  *
  * @since 1.2
  */

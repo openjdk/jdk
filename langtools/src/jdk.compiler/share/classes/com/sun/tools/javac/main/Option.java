@@ -603,17 +603,6 @@ public enum Option {
         }
     },
 
-    XMODULE("-Xmodule:", "opt.arg.module", "opt.module", HIDDEN, BASIC) {
-        @Override
-        public void process(OptionHelper helper, String option, String arg) throws InvalidValueException {
-            String prev = helper.get(XMODULE);
-            if (prev != null) {
-                throw helper.newInvalidValueException("err.option.too.many", XMODULE.primaryName);
-            }
-            helper.put(XMODULE.primaryName, arg);
-        }
-    },
-
     MODULE("--module -m", "opt.arg.m", "opt.m", STANDARD, BASIC),
 
     ADD_MODULES("--add-modules", "opt.arg.addmods", "opt.addmods", STANDARD, BASIC) {

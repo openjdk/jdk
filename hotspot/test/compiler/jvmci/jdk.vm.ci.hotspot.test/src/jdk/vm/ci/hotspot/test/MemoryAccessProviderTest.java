@@ -37,7 +37,7 @@
  * @run testng/othervm -Xbootclasspath/a:.
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
- *      jdk.vm.ci.hotspot.test.MemoryAccessProviderTest
+ *      -Djvmci.Compiler=null jdk.vm.ci.hotspot.test.MemoryAccessProviderTest
  */
 
 package jdk.vm.ci.hotspot.test;

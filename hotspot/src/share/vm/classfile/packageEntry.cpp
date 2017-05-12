@@ -77,13 +77,13 @@ void PackageEntry::set_export_walk_required(ClassLoaderData* m_loader_data) {
       (this_pkg_mod == NULL || this_pkg_mod->loader_data() != m_loader_data) &&
       !m_loader_data->is_builtin_class_loader_data()) {
     _must_walk_exports = true;
-    if (log_is_enabled(Trace, modules)) {
+    if (log_is_enabled(Trace, module)) {
       ResourceMark rm;
       assert(name() != NULL, "PackageEntry without a valid name");
-      log_trace(modules)("PackageEntry::set_export_walk_required(): package %s defined in module %s, exports list must be walked",
-                         name()->as_C_string(),
-                         (this_pkg_mod == NULL || this_pkg_mod->name() == NULL) ?
-                           UNNAMED_MODULE : this_pkg_mod->name()->as_C_string());
+      log_trace(module)("PackageEntry::set_export_walk_required(): package %s defined in module %s, exports list must be walked",
+                        name()->as_C_string(),
+                        (this_pkg_mod == NULL || this_pkg_mod->name() == NULL) ?
+                          UNNAMED_MODULE : this_pkg_mod->name()->as_C_string());
     }
   }
 }
@@ -136,13 +136,13 @@ void PackageEntry::purge_qualified_exports() {
     // on the remaining live modules on the exports list.
     _must_walk_exports = false;
 
-    if (log_is_enabled(Trace, modules)) {
+    if (log_is_enabled(Trace, module)) {
       ResourceMark rm;
       assert(name() != NULL, "PackageEntry without a valid name");
       ModuleEntry* pkg_mod = module();
-      log_trace(modules)("PackageEntry::purge_qualified_exports(): package %s defined in module %s, exports list being walked",
-                         name()->as_C_string(),
-                         (pkg_mod == NULL || pkg_mod->name() == NULL) ? UNNAMED_MODULE : pkg_mod->name()->as_C_string());
+      log_trace(module)("PackageEntry::purge_qualified_exports(): package %s defined in module %s, exports list being walked",
+                        name()->as_C_string(),
+                        (pkg_mod == NULL || pkg_mod->name() == NULL) ? UNNAMED_MODULE : pkg_mod->name()->as_C_string());
     }
 
     // Go backwards because this removes entries that are dead.

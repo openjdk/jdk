@@ -54,7 +54,6 @@
 #include "runtime/os.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vframe.hpp"
-#include "services/attachListener.hpp"
 #include "services/serviceUtil.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
@@ -2472,15 +2471,6 @@ void JvmtiExport::transition_pending_onload_raw_monitors() {
 // type for the Agent_OnAttach entry point
 extern "C" {
   typedef jint (JNICALL *OnAttachEntry_t)(JavaVM*, char *, void *);
-}
-
-jint JvmtiExport::load_agent_library(AttachOperation* op, outputStream* st) {
-  // get agent name and options
-  const char* agent = op->arg(0);
-  const char* absParam = op->arg(1);
-  const char* options = op->arg(2);
-
-  return load_agent_library(agent, absParam, options, st);
 }
 
 jint JvmtiExport::load_agent_library(const char *agent, const char *absParam,

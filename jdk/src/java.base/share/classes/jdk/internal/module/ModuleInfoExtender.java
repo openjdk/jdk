@@ -62,9 +62,8 @@ public final class ModuleInfoExtender {
     // the value of the ModuleMainClass attribute
     private String mainClass;
 
-    // the values for the ModuleTarget attribute
-    private String osName;
-    private String osArch;
+    // the value for the ModuleTarget attribute
+    private String targetPlatform;
 
     // the hashes for the ModuleHashes attribute
     private ModuleHashes hashes;
@@ -108,11 +107,10 @@ public final class ModuleInfoExtender {
     }
 
     /**
-     * Sets the values for the ModuleTarget attribute.
+     * Sets the value for the ModuleTarget attribute.
      */
-    public ModuleInfoExtender targetPlatform(String osName, String osArch) {
-        this.osName = osName;
-        this.osArch = osArch;
+    public ModuleInfoExtender targetPlatform(String targetPlatform) {
+        this.targetPlatform = targetPlatform;
         return this;
     }
 
@@ -199,8 +197,8 @@ public final class ModuleInfoExtender {
             cv.addAttribute(new ModulePackagesAttribute(packages));
         if (mainClass != null)
             cv.addAttribute(new ModuleMainClassAttribute(mainClass));
-        if (osName != null || osArch != null)
-            cv.addAttribute(new ModuleTargetAttribute(osName, osArch));
+        if (targetPlatform != null)
+            cv.addAttribute(new ModuleTargetAttribute(targetPlatform));
         if (hashes != null)
             cv.addAttribute(new ModuleHashesAttribute(hashes));
         if (moduleResolution != null)

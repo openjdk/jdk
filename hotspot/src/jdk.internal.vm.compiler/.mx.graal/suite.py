@@ -8,6 +8,36 @@ suite = {
   # (e.g., macosx-x86_64-normal-server-release).
   "outputRoot" : "../../../build/mx/hotspot",
 
+  "jdklibraries" : {
+    "JVMCI_SERVICES" : {
+      "path" : "lib/jvmci-services.jar",
+      "sourcePath" : "lib/jvmci-services.src.zip",
+      "optional" : False,
+      "jdkStandardizedSince" : "9",
+      "module" : "jdk.internal.vm.ci"
+    },
+    "JVMCI_API" : {
+      "path" : "lib/jvmci/jvmci-api.jar",
+      "sourcePath" : "lib/jvmci/jvmci-api.src.zip",
+      "dependencies" : [
+        "JVMCI_SERVICES",
+      ],
+      "optional" : False,
+      "jdkStandardizedSince" : "9",
+      "module" : "jdk.internal.vm.ci"
+    },
+    "JVMCI_HOTSPOT" : {
+      "path" : "lib/jvmci/jvmci-hotspot.jar",
+      "sourcePath" : "lib/jvmci/jvmci-hotspot.src.zip",
+      "dependencies" : [
+        "JVMCI_API",
+      ],
+      "optional" : False,
+      "jdkStandardizedSince" : "9",
+      "module" : "jdk.internal.vm.ci"
+    },
+  },
+
   "libraries" : {
 
     # ------------- Libraries -------------
@@ -36,6 +66,7 @@ suite = {
 
     "org.graalvm.compiler.serviceprovider" : {
       "subDir" : "share/classes",
+      "dependencies" : ["JVMCI_SERVICES"],
       "sourceDirs" : ["src"],
       "checkstyle" : "org.graalvm.compiler.graph",
       "javaCompliance" : "1.8",
@@ -53,6 +84,7 @@ suite = {
 
     "org.graalvm.compiler.options" : {
       "subDir" : "share/classes",
+      "dependencies" : ["JVMCI_SERVICES", "JVMCI_API"],
       "sourceDirs" : ["src"],
       "dependencies" : ["org.graalvm.util"],
       "checkstyle" : "org.graalvm.compiler.graph",
@@ -94,6 +126,7 @@ suite = {
         "org.graalvm.compiler.debug.TTYStreamProvider",
       ],
       "dependencies" : [
+        "JVMCI_API",
         "org.graalvm.compiler.serviceprovider",
         "org.graalvm.compiler.options"
       ],
@@ -159,6 +192,7 @@ suite = {
       "sourceDirs" : ["src"],
       "checkstyle" : "org.graalvm.compiler.graph",
       "dependencies" : [
+        "JVMCI_HOTSPOT",
         "org.graalvm.compiler.core.test",
       ],
       "javaCompliance" : "1.8",
@@ -168,6 +202,9 @@ suite = {
     "org.graalvm.compiler.api.runtime" : {
       "subDir" : "share/classes",
       "sourceDirs" : ["src"],
+      "dependencies" : [
+        "JVMCI_API",
+      ],
       "checkstyle" : "org.graalvm.compiler.graph",
       "javaCompliance" : "1.8",
       "workingSets" : "API,Graal",
@@ -178,6 +215,7 @@ suite = {
       "sourceDirs" : ["src"],
       "dependencies" : [
         "mx:JUNIT",
+        "JVMCI_SERVICES",
         "org.graalvm.compiler.api.runtime",
       ],
       "checkstyle" : "org.graalvm.compiler.graph",
@@ -188,6 +226,7 @@ suite = {
     "org.graalvm.compiler.api.replacements" : {
       "subDir" : "share/classes",
       "sourceDirs" : ["src"],
+      "dependencies" : ["JVMCI_API"],
       "checkstyle" : "org.graalvm.compiler.graph",
       "javaCompliance" : "1.8",
       "workingSets" : "API,Graal,Replacements",
@@ -197,6 +236,7 @@ suite = {
       "subDir" : "share/classes",
       "sourceDirs" : ["src"],
       "dependencies" : [
+        "JVMCI_HOTSPOT",
         "org.graalvm.compiler.api.runtime",
         "org.graalvm.compiler.replacements",
         "org.graalvm.compiler.printer",
@@ -289,6 +329,8 @@ suite = {
         "org.graalvm.compiler.hotspot",
         "org.graalvm.compiler.lir.jtt",
         "org.graalvm.compiler.lir.test",
+        "JVMCI_API",
+        "JVMCI_HOTSPOT",
       ],
       "checkstyle" : "org.graalvm.compiler.graph",
       "javaCompliance" : "1.8",
@@ -375,6 +417,7 @@ suite = {
       "subDir" : "share/classes",
       "sourceDirs" : ["src"],
       "dependencies" : [
+        "JVMCI_API",
         "org.graalvm.compiler.core.common"
       ],
       "checkstyle" : "org.graalvm.compiler.graph",
@@ -430,6 +473,7 @@ suite = {
     "org.graalvm.compiler.bytecode" : {
       "subDir" : "share/classes",
       "sourceDirs" : ["src"],
+      "dependencies" : ["JVMCI_API"],
       "checkstyle" : "org.graalvm.compiler.graph",
       "javaCompliance" : "1.8",
       "workingSets" : "Graal,Java",
@@ -814,6 +858,7 @@ suite = {
       "dependencies" : [
         "org.graalvm.compiler.lir.jtt",
         "org.graalvm.compiler.lir.aarch64",
+        "JVMCI_HOTSPOT"
       ],
       "checkstyle" : "org.graalvm.compiler.graph",
       "javaCompliance" : "1.8",
@@ -843,6 +888,7 @@ suite = {
       "dependencies" : [
         "org.graalvm.compiler.lir.jtt",
         "org.graalvm.compiler.lir.amd64",
+        "JVMCI_HOTSPOT"
       ],
       "checkstyle" : "org.graalvm.compiler.graph",
       "javaCompliance" : "1.8",
@@ -871,6 +917,7 @@ suite = {
       "sourceDirs" : ["src"],
       "dependencies" : [
         "org.graalvm.compiler.lir.jtt",
+        "JVMCI_HOTSPOT"
       ],
       "checkstyle" : "org.graalvm.compiler.graph",
       "javaCompliance" : "1.8",

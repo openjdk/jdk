@@ -99,6 +99,7 @@ public class ModuleDescriptor
      *
      * @see ModuleDescriptor#modifiers()
      * @since 9
+     * @spec JPMS
      */
     public static enum Modifier {
         /**

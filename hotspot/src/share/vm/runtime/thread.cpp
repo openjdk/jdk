@@ -3404,7 +3404,7 @@ static void call_initPhase1(TRAPS) {
 //
 //     After phase 2, The VM will begin search classes from -Xbootclasspath/a.
 static void call_initPhase2(TRAPS) {
-  TraceTime timer("Phase2 initialization", TRACETIME_LOG(Info, modules, startuptime));
+  TraceTime timer("Phase2 initialization", TRACETIME_LOG(Info, module, startuptime));
 
   Klass* klass = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_System(), true, CHECK);
 

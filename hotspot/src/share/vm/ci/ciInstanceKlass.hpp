@@ -260,6 +260,8 @@ public:
     return NULL;
   }
 
+  ciInstanceKlass* host_klass();
+
   bool can_be_instantiated() {
     assert(is_loaded(), "must be loaded");
     return !is_interface() && !is_abstract();

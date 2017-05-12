@@ -143,8 +143,10 @@ public abstract class Reference<T> {
     /*
      * system property to disable clearing before enqueuing.
      */
-    private static final boolean disableClearBeforeEnqueue
-        = Boolean.getBoolean("jdk.lang.ref.disableClearBeforeEnqueue");
+    private static final class ClearBeforeEnqueue {
+        static final boolean DISABLE =
+            Boolean.getBoolean("jdk.lang.ref.disableClearBeforeEnqueue");
+    }
 
     /*
      * Atomically get and clear (set to null) the VM's pending list.
@@ -297,7 +299,7 @@ public abstract class Reference<T> {
      *           it was not registered with a queue when it was created
      */
     public boolean enqueue() {
-        if (!disableClearBeforeEnqueue)
+        if (!ClearBeforeEnqueue.DISABLE)
             this.referent = null;
         return this.queue.enqueue(this);
     }

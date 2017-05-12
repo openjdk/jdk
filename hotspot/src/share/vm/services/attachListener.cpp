@@ -99,6 +99,36 @@ static jint get_properties(AttachOperation* op, outputStream* out, Symbol* seria
   return JNI_OK;
 }
 
+// Implementation of "load" command.
+static jint load_agent(AttachOperation* op, outputStream* out) {
+  // get agent name and options
+  const char* agent = op->arg(0);
+  const char* absParam = op->arg(1);
+  const char* options = op->arg(2);
+
+  // If loading a java agent then need to ensure that the java.instrument module is loaded
+  if (strcmp(agent, "instrument") == 0) {
+    Thread* THREAD = Thread::current();
+    ResourceMark rm(THREAD);
+    HandleMark hm(THREAD);
+    JavaValue result(T_OBJECT);
+    Handle h_module_name = java_lang_String::create_from_str("java.instrument", THREAD);
+    JavaCalls::call_static(&result,
+                           SystemDictionary::module_Modules_klass(),
+                           vmSymbols::loadModule_name(),
+                           vmSymbols::loadModule_signature(),
+                           h_module_name,
+                           THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      java_lang_Throwable::print(PENDING_EXCEPTION, out);
+      CLEAR_PENDING_EXCEPTION;
+      return JNI_ERR;
+    }
+  }
+
+  return JvmtiExport::load_agent_library(agent, absParam, options, out);
+}
+
 // Implementation of "properties" command.
 // See also: PrintSystemPropertiesDCmd class
 static jint get_system_properties(AttachOperation* op, outputStream* out) {
@@ -281,7 +311,7 @@ static AttachOperationFunctionInfo funcs[] = {
   { "agentProperties",  get_agent_properties },
   { "datadump",         data_dump },
   { "dumpheap",         dump_heap },
-  { "load",             JvmtiExport::load_agent_library },
+  { "load",             load_agent },
   { "properties",       get_system_properties },
   { "threaddump",       thread_dump },
   { "inspectheap",      heap_inspection },
@@ -320,6 +350,10 @@ static void attach_listener_thread_entry(JavaThread* thread, TRAPS) {
     // handle special detachall operation
     if (strcmp(op->name(), AttachOperation::detachall_operation_name()) == 0) {
       AttachListener::detachall();
+    } else if (!EnableDynamicAgentLoading && strcmp(op->name(), "load") == 0) {
+      st.print("Dynamic agent loading is not enabled. "
+               "Use -XX:+EnableDynamicAgentLoading to launch target VM.");
+      res = JNI_ERR;
     } else {
       // find the function to dispatch too
       AttachOperationFunctionInfo* info = NULL;

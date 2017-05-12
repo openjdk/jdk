@@ -69,7 +69,7 @@ import java.beans.*;
  * are desired, and use simple <code>ActionListener</code>s elsewhere.
  * <br>
  *
- * <h3><a name="buttonActions"></a>Swing Components Supporting <code>Action</code></h3>
+ * <h3><a id="buttonActions"></a>Swing Components Supporting <code>Action</code></h3>
  * <p>
  * Many of Swing's components have an <code>Action</code> property.  When
  * an <code>Action</code> is set on a component, the following things
@@ -96,34 +96,34 @@ import java.beans.*;
  *
  * <table border="1" cellpadding="1" cellspacing="0"
  *         summary="Supported Action properties">
- *  <tr valign="top"  align="left">
- *    <th style="background-color:#CCCCFF" align="left">Component Property
- *    <th style="background-color:#CCCCFF" align="left">Components
- *    <th style="background-color:#CCCCFF" align="left">Action Key
- *    <th style="background-color:#CCCCFF" align="left">Notes
- *  <tr valign="top"  align="left">
+ *  <tr valign="top" style="text-align:left">
+ *    <th style="background-color:#CCCCFF;text-align:left">Component Property
+ *    <th style="background-color:#CCCCFF;text-align:left">Components
+ *    <th style="background-color:#CCCCFF;text-align:left">Action Key
+ *    <th style="background-color:#CCCCFF;text-align:left">Notes
+ *  <tr valign="top" style="text-align:left">
  *      <td><b><code>enabled</code></b>
  *      <td>All
  *      <td>The <code>isEnabled</code> method
  *      <td>&nbsp;
- *  <tr valign="top"  align="left">
+ *  <tr valign="top" style="text-align:left">
  *      <td><b><code>toolTipText</code></b>
  *      <td>All
  *      <td><code>SHORT_DESCRIPTION</code>
  *      <td>&nbsp;
- *  <tr valign="top"  align="left">
+ *  <tr valign="top" style="text-align:left">
  *      <td><b><code>actionCommand</code></b>
  *      <td>All
  *      <td><code>ACTION_COMMAND_KEY</code>
  *      <td>&nbsp;
- *  <tr valign="top"  align="left">
+ *  <tr valign="top" style="text-align:left">
  *      <td><b><code>mnemonic</code></b>
  *      <td>All buttons
  *      <td><code>MNEMONIC_KEY</code>
  *      <td>A <code>null</code> value or <code>Action</code> results in the
  *          button's <code>mnemonic</code> property being set to
  *          <code>'\0'</code>.
- *  <tr valign="top"  align="left">
+ *  <tr valign="top" style="text-align:left">
  *      <td><b><code>text</code></b>
  *      <td>All buttons
  *      <td><code>NAME</code>
@@ -139,7 +139,7 @@ import java.beans.*;
  *          <code>true</code> if the <code>Action</code> has a
  *          non-<code>null</code> value for <code>LARGE_ICON_KEY</code> or
  *          <code>SMALL_ICON</code>.
- *  <tr valign="top"  align="left">
+ *  <tr valign="top" style="text-align:left">
  *      <td><b><code>displayedMnemonicIndex</code></b>
  *      <td>All buttons
  *      <td><code>DISPLAYED_MNEMONIC_INDEX_KEY</code>
@@ -150,7 +150,7 @@ import java.beans.*;
  *          mnemonic index is not updated.  In any subsequent changes to
  *          <code>DISPLAYED_MNEMONIC_INDEX_KEY</code>, <code>null</code>
  *          is treated as -1.
- *  <tr valign="top"  align="left">
+ *  <tr valign="top" style="text-align:left">
  *      <td><b><code>icon</code></b>
  *      <td>All buttons except of <code>JCheckBox</code>,
  *      <code>JToggleButton</code> and <code>JRadioButton</code>.
@@ -160,13 +160,13 @@ import java.beans.*;
  *         <code>SMALL_ICON</code>.  All other buttons will use
  *         <code>LARGE_ICON_KEY</code>; if the value is <code>null</code> they
  *         use <code>SMALL_ICON</code>.
- *  <tr valign="top"  align="left">
+ *  <tr valign="top" style="text-align:left">
  *      <td><b><code>accelerator</code></b>
  *      <td>All <code>JMenuItem</code> subclasses, with the exception of
  *          <code>JMenu</code>.
  *      <td><code>ACCELERATOR_KEY</code>
  *      <td>&nbsp;
- *  <tr valign="top"  align="left">
+ *  <tr valign="top" style="text-align:left">
  *      <td><b><code>selected</code></b>
  *      <td><code>JToggleButton</code>, <code>JCheckBox</code>,
  *          <code>JRadioButton</code>, <code>JCheckBoxMenuItem</code> and

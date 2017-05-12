@@ -365,12 +365,21 @@ public final class ProcessTools {
      *
      * The jvm process will have exited before this method returns.
      *
-     * @param cmds User specifed arguments.
+     * @param cmds User specified arguments.
      * @return The output from the process.
      */
     public static OutputAnalyzer executeTestJvm(String... cmds) throws Exception {
         ProcessBuilder pb = createJavaProcessBuilder(Utils.addTestJavaOpts(cmds));
         return executeProcess(pb);
+    }
+
+    /**
+     * @see #executeTestJvm(String...)
+     * @param cmds User specified arguments.
+     * @return The output from the process.
+     */
+    public static OutputAnalyzer executeTestJava(String... cmds) throws Exception {
+        return executeTestJvm(cmds);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,8 @@ public class JdiExecutionControlProvider implements ExecutionControlProvider {
      * {@code ExecutionControlProvider}. The map can optionally be modified;
      * Modified or unmodified it can be passed to
      * {@link #generate(jdk.jshell.spi.ExecutionEnv, java.util.Map) }.
-     * <table summary="Parameters">
+     * <table>
+     * <caption>Parameters</caption>
      *   <tr>
      *     <th>Parameter</th>
      *     <th>Description</th>

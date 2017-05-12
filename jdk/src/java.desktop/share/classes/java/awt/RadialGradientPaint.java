@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,18 +79,18 @@ import java.beans.ConstructorProperties;
  * The gradient color proportions are equal for any particular line drawn
  * from the focus point. The following figure shows that the distance AB
  * is equal to the distance BC, and the distance AD is equal to the distance DE.
- * <center>
+ * <p style="text-align:center">
  * <img src = "doc-files/RadialGradientPaint-3.png" alt="image showing the
  * distance AB=BC, and AD=DE">
- * </center>
+ * <p>
  * If the gradient and graphics rendering transforms are uniformly scaled and
  * the user sets the focus so that it coincides with the center of the circle,
  * the gradient color proportions are equal for any line drawn from the center.
  * The following figure shows the distances AB, BC, AD, and DE. They are all equal.
- * <center>
+ * <p style="text-align:center">
  * <img src = "doc-files/RadialGradientPaint-4.png" alt="image showing the
  * distance of AB, BC, AD, and DE are all equal">
- * </center>
+ * <p>
  * Note that some minor variations in distances may occur due to sampling at
  * the granularity of a pixel.
  * If no cycle method is specified, {@code NO_CYCLE} will be chosen by
@@ -116,11 +116,9 @@ import java.beans.ConstructorProperties;
  * <p>
  * This image demonstrates the example code above, with default
  * (centered) focus for each of the three cycle methods:
- * <center>
+ * <p style="text-align:center">
  * <img src = "doc-files/RadialGradientPaint-1.png" alt="image showing the
  * output of the sameple code">
- * </center>
- *
  * <p>
  * It is also possible to specify a non-centered focus point, as
  * in the following code:
@@ -139,10 +137,9 @@ import java.beans.ConstructorProperties;
  * <p>
  * This image demonstrates the previous example code, with non-centered
  * focus for each of the three cycle methods:
- * <center>
+ * <p style="text-align:center">
  * <img src = "doc-files/RadialGradientPaint-2.png" alt="image showing the
  * output of the sample code">
- * </center>
  *
  * @see java.awt.Paint
  * @see java.awt.Graphics2D#setPaint
