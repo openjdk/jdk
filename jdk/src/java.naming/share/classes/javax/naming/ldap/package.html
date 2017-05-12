@@ -48,7 +48,7 @@ The core interface in this package is <code>LdapContext</code>, which defines
 methods on a context for performing extended operations and handling
 controls.
 
-<h4>Extended Operations</h4>
+<h3>Extended Operations</h3>
 <p>
 This package defines the interface <code>ExtendedRequest</code>
 to represent the argument to an extended operation,
@@ -125,7 +125,7 @@ public class GetTimeResponse() implements ExtendedResponse {
 }
 </pre></blockquote>
 
-<h4>Controls</h4>
+<h3>Controls</h3>
 
 This package defines the interface <code>Control</code> to represent an LDAPv3
 control. It can be a control that is sent to an LDAP server
@@ -203,7 +203,7 @@ Context ctx = ectx.createSubsubcontext("cn=newobj");
 Control[] respCtls = ectx.getResponseControls();
 if (respCtls != null) {
     // Find the one we want
-    for (int i = 0; i < respCtls; i++) {
+    for (int i = 0; i &lt; respCtls; i++) {
         if(respCtls[i] instanceof ChangeIDControl) {
 	    ChangeIDControl cctl = (ChangeIDControl)respCtls[i];
 	    System.out.println(cctl.getChangeID());
