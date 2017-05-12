@@ -25,9 +25,11 @@ package org.graalvm.compiler.hotspot.replacements;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_1;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
 
+import org.graalvm.api.word.LocationIdentity;
+
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import org.graalvm.compiler.core.common.LocationIdentity;
+
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.Node;

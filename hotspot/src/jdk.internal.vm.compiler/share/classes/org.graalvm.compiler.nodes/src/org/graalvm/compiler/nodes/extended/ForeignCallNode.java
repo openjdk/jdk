@@ -29,7 +29,7 @@ import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_2;
 
 import java.util.List;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
+import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;

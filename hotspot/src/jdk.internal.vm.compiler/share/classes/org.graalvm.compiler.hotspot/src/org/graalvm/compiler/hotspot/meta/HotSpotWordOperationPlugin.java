@@ -22,14 +22,14 @@
  */
 package org.graalvm.compiler.hotspot.meta;
 
-import static org.graalvm.compiler.core.common.LocationIdentity.any;
+import static org.graalvm.api.word.LocationIdentity.any;
 import static org.graalvm.compiler.hotspot.word.HotSpotOperation.HotspotOpcode.POINTER_EQ;
 import static org.graalvm.compiler.hotspot.word.HotSpotOperation.HotspotOpcode.POINTER_NE;
 import static org.graalvm.compiler.nodes.ConstantNode.forBoolean;
 
+import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.bytecode.BridgeMethodUtils;
-import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.debug.GraalError;
@@ -51,7 +51,7 @@ import org.graalvm.compiler.nodes.memory.HeapAccess.BarrierType;
 import org.graalvm.compiler.nodes.memory.ReadNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.type.StampTool;
-import org.graalvm.compiler.replacements.WordOperationPlugin;
+import org.graalvm.compiler.word.WordOperationPlugin;
 import org.graalvm.compiler.word.WordTypes;
 
 import jdk.vm.ci.meta.JavaKind;

@@ -29,7 +29,6 @@ import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
-import org.graalvm.compiler.test.AddExports;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -38,7 +37,6 @@ import jdk.vm.ci.meta.JavaConstant;
 /**
  * This class tests that the canonicalization for constant negate nodes cover all cases.
  */
-@AddExports("jdk.internal.vm.ci/jdk.vm.ci.meta")
 public class NegateNodeCanonicalizationTest {
 
     private StructuredGraph graph;

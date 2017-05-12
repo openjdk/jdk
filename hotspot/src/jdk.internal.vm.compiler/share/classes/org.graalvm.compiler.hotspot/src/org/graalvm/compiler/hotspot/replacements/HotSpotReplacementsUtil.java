@@ -22,15 +22,16 @@
  */
 package org.graalvm.compiler.hotspot.replacements;
 
+import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayBaseOffset;
+import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayIndexScale;
 import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfig.INJECTED_VMCONFIG;
 import static org.graalvm.compiler.hotspot.meta.HotSpotForeignCallsProviderImpl.VERIFY_OOP;
 import static org.graalvm.compiler.hotspot.replacements.UnsafeAccess.UNSAFE;
-import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayBaseOffset;
-import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayIndexScale;
 
+import org.graalvm.api.word.LocationIdentity;
+import org.graalvm.api.word.WordFactory;
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Fold.InjectedParameter;
-import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.core.common.SuppressFBWarnings;
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
@@ -40,17 +41,17 @@ import org.graalvm.compiler.graph.Node.ConstantNodeParameter;
 import org.graalvm.compiler.graph.Node.NodeIntrinsic;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
-import org.graalvm.compiler.hotspot.nodes.CompressionNode;
 import org.graalvm.compiler.hotspot.nodes.ComputeObjectAddressNode;
 import org.graalvm.compiler.hotspot.word.KlassPointer;
 import org.graalvm.compiler.nodes.CanonicalizableLocation;
+import org.graalvm.compiler.nodes.CompressionNode;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.NamedLocationIdentity;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.extended.ForeignCallNode;
 import org.graalvm.compiler.nodes.extended.LoadHubNode;
-import org.graalvm.compiler.nodes.extended.StoreHubNode;
 import org.graalvm.compiler.nodes.extended.RawLoadNode;
+import org.graalvm.compiler.nodes.extended.StoreHubNode;
 import org.graalvm.compiler.nodes.memory.Access;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
@@ -559,7 +560,7 @@ public class HotSpotReplacementsUtil {
     }
 
     public static Word arrayStart(int[] a) {
-        return Word.unsigned(ComputeObjectAddressNode.get(a, getArrayBaseOffset(JavaKind.Int)));
+        return WordFactory.unsigned(ComputeObjectAddressNode.get(a, getArrayBaseOffset(JavaKind.Int)));
     }
 
     @Fold

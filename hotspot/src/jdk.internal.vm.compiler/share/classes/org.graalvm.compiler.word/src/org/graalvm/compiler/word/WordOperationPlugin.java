@@ -20,18 +20,19 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.graalvm.compiler.replacements;
+package org.graalvm.compiler.word;
 
-import static org.graalvm.compiler.core.common.LocationIdentity.any;
+import static org.graalvm.api.word.LocationIdentity.any;
 import static org.graalvm.compiler.nodes.ConstantNode.forInt;
 import static org.graalvm.compiler.nodes.ConstantNode.forIntegerKind;
 
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
 
+import org.graalvm.api.word.LocationIdentity;
+import org.graalvm.api.word.WordFactory;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.bytecode.BridgeMethodUtils;
-import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -67,11 +68,8 @@ import org.graalvm.compiler.nodes.memory.HeapAccess.BarrierType;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.nodes.type.StampTool;
-import org.graalvm.compiler.word.Word;
 import org.graalvm.compiler.word.Word.Opcode;
 import org.graalvm.compiler.word.Word.Operation;
-import org.graalvm.compiler.word.WordTypes;
-import org.graalvm.compiler.word.nodes.WordCastNode;
 
 import jdk.vm.ci.code.BailoutException;
 import jdk.vm.ci.meta.JavaKind;
@@ -85,7 +83,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  * A plugin for calls to {@linkplain Operation word operations}, as well as all other nodes that
  * need special handling for {@link Word} types.
  */
-public class WordOperationPlugin implements NodePlugin, TypePlugin, InlineInvokePlugin {
+public class WordOperationPlugin extends WordFactory implements NodePlugin, TypePlugin, InlineInvokePlugin {
     protected final WordTypes wordTypes;
     protected final JavaKind wordKind;
     protected final SnippetReflectionProvider snippetReflection;
@@ -102,7 +100,7 @@ public class WordOperationPlugin implements NodePlugin, TypePlugin, InlineInvoke
     }
 
     /**
-     * Processes a call to a method if it is annotated with {@link Operation} by adding nodes to the
+     * Processes a call to a method if it is annotated as a word operation by adding nodes to the
      * graph being built that implement the denoted operation.
      *
      * @return {@code true} iff {@code method} is annotated with {@link Operation} (and was thus
@@ -248,8 +246,28 @@ public class WordOperationPlugin implements NodePlugin, TypePlugin, InlineInvoke
     }
 
     protected void processWordOperation(GraphBuilderContext b, ValueNode[] args, ResolvedJavaMethod wordMethod) throws GraalError {
-        Operation operation = BridgeMethodUtils.getAnnotation(Word.Operation.class, wordMethod);
         JavaKind returnKind = wordMethod.getSignature().getReturnKind();
+        WordFactory.FactoryOperation factoryOperation = BridgeMethodUtils.getAnnotation(WordFactory.FactoryOperation.class, wordMethod);
+        if (factoryOperation != null) {
+            switch (factoryOperation.opcode()) {
+                case ZERO:
+                    assert args.length == 0;
+                    b.addPush(returnKind, forIntegerKind(wordKind, 0L));
+                    return;
+
+                case FROM_UNSIGNED:
+                    assert args.length == 1;
+                    b.push(returnKind, fromUnsigned(b, args[0]));
+                    return;
+
+                case FROM_SIGNED:
+                    assert args.length == 1;
+                    b.push(returnKind, fromSigned(b, args[0]));
+                    return;
+            }
+        }
+
+        Word.Operation operation = BridgeMethodUtils.getAnnotation(Word.Operation.class, wordMethod);
         switch (operation.opcode()) {
             case NODE_CLASS:
                 assert args.length == 2;
@@ -310,20 +328,6 @@ public class WordOperationPlugin implements NodePlugin, TypePlugin, InlineInvoke
                 writeOp(b, writeKind, address, location, args[2], operation.opcode());
                 break;
             }
-            case ZERO:
-                assert args.length == 0;
-                b.addPush(returnKind, forIntegerKind(wordKind, 0L));
-                break;
-
-            case FROM_UNSIGNED:
-                assert args.length == 1;
-                b.push(returnKind, fromUnsigned(b, args[0]));
-                break;
-
-            case FROM_SIGNED:
-                assert args.length == 1;
-                b.push(returnKind, fromSigned(b, args[0]));
-                break;
 
             case TO_RAW_VALUE:
                 assert args.length == 1;

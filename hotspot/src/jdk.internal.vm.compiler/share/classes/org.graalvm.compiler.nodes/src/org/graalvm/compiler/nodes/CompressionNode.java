@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.graalvm.compiler.hotspot.nodes;
+package org.graalvm.compiler.nodes;
 
 import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
@@ -28,35 +28,27 @@ import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_2;
 
 import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.core.common.type.AbstractObjectStamp;
-import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
-import org.graalvm.compiler.hotspot.HotSpotLIRGenerator;
-import org.graalvm.compiler.hotspot.nodes.type.KlassPointerStamp;
-import org.graalvm.compiler.hotspot.nodes.type.NarrowOopStamp;
+import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.ConvertNode;
 import org.graalvm.compiler.nodes.calc.UnaryNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.nodes.type.StampTool;
 
-import jdk.vm.ci.hotspot.HotSpotCompressedNullConstant;
-import jdk.vm.ci.hotspot.HotSpotConstant;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
-import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Value;
 
 /**
  * Compress or uncompress an oop or metaspace pointer.
  */
 @NodeInfo(nameTemplate = "{p#op/s}", cycles = CYCLES_2, size = SIZE_2)
-public final class CompressionNode extends UnaryNode implements ConvertNode, LIRLowerable {
+public abstract class CompressionNode extends UnaryNode implements ConvertNode, LIRLowerable {
 
     public static final NodeClass<CompressionNode> TYPE = NodeClass.create(CompressionNode.class);
 
@@ -68,8 +60,8 @@ public final class CompressionNode extends UnaryNode implements ConvertNode, LIR
     protected final CompressionOp op;
     protected final CompressEncoding encoding;
 
-    public CompressionNode(CompressionOp op, ValueNode input, CompressEncoding encoding) {
-        super(TYPE, mkStamp(op, input.stamp(), encoding), input);
+    public CompressionNode(NodeClass<? extends UnaryNode> c, CompressionOp op, ValueNode input, Stamp stamp, CompressEncoding encoding) {
+        super(c, stamp, input);
         this.op = op;
         this.encoding = encoding;
     }
@@ -77,38 +69,12 @@ public final class CompressionNode extends UnaryNode implements ConvertNode, LIR
     @Override
     public Stamp foldStamp(Stamp newStamp) {
         assert newStamp.isCompatible(getValue().stamp());
-        return mkStamp(op, newStamp, encoding);
+        return mkStamp(newStamp);
     }
 
-    public static CompressionNode compress(ValueNode input, CompressEncoding encoding) {
-        return input.graph().unique(new CompressionNode(CompressionOp.Compress, input, encoding));
-    }
+    protected abstract Constant compress(Constant c);
 
-    public static CompressionNode compressNoUnique(ValueNode input, CompressEncoding encoding) {
-        return new CompressionNode(CompressionOp.Compress, input, encoding);
-    }
-
-    public static CompressionNode uncompress(ValueNode input, CompressEncoding encoding) {
-        return input.graph().unique(new CompressionNode(CompressionOp.Uncompress, input, encoding));
-    }
-
-    private static Constant compress(Constant c) {
-        if (JavaConstant.NULL_POINTER.equals(c)) {
-            return HotSpotCompressedNullConstant.COMPRESSED_NULL;
-        } else if (c instanceof HotSpotConstant) {
-            return ((HotSpotConstant) c).compress();
-        } else {
-            throw GraalError.shouldNotReachHere("invalid constant input for compress op: " + c);
-        }
-    }
-
-    private static Constant uncompress(Constant c) {
-        if (c instanceof HotSpotConstant) {
-            return ((HotSpotConstant) c).uncompress();
-        } else {
-            throw GraalError.shouldNotReachHere("invalid constant input for uncompress op: " + c);
-        }
-    }
+    protected abstract Constant uncompress(Constant c);
 
     @Override
     public Constant convert(Constant c, ConstantReflectionProvider constantReflection) {
@@ -139,31 +105,7 @@ public final class CompressionNode extends UnaryNode implements ConvertNode, LIR
         return true;
     }
 
-    private static Stamp mkStamp(CompressionOp op, Stamp input, CompressEncoding encoding) {
-        switch (op) {
-            case Compress:
-                if (input instanceof ObjectStamp) {
-                    // compressed oop
-                    return NarrowOopStamp.compressed((ObjectStamp) input, encoding);
-                } else if (input instanceof KlassPointerStamp) {
-                    // compressed klass pointer
-                    return ((KlassPointerStamp) input).compressed(encoding);
-                }
-                break;
-            case Uncompress:
-                if (input instanceof NarrowOopStamp) {
-                    // oop
-                    assert encoding.equals(((NarrowOopStamp) input).getEncoding());
-                    return ((NarrowOopStamp) input).uncompressed();
-                } else if (input instanceof KlassPointerStamp) {
-                    // metaspace pointer
-                    assert encoding.equals(((KlassPointerStamp) input).getEncoding());
-                    return ((KlassPointerStamp) input).uncompressed();
-                }
-                break;
-        }
-        throw GraalError.shouldNotReachHere(String.format("Unexpected input stamp %s", input));
-    }
+    protected abstract Stamp mkStamp(Stamp input);
 
     public CompressionOp getOp() {
         return op;
@@ -194,7 +136,7 @@ public final class CompressionNode extends UnaryNode implements ConvertNode, LIR
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
-        HotSpotLIRGenerator hsGen = (HotSpotLIRGenerator) gen.getLIRGeneratorTool();
+        LIRGeneratorTool hsGen = gen.getLIRGeneratorTool();
         boolean nonNull;
         if (getValue().stamp() instanceof AbstractObjectStamp) {
             nonNull = StampTool.isPointerNonNull(getValue().stamp());

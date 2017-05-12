@@ -182,7 +182,7 @@ public final class RedundantMoveElimination extends PostAllocationOptimizationPh
                 ArrayList<LIRInstruction> instructions = lir.getLIRforBlock(block);
                 for (LIRInstruction op : instructions) {
                     if (isEligibleMove(op)) {
-                        Value dest = ((MoveOp) op).getResult();
+                        Value dest = MoveOp.asMoveOp(op).getResult();
                         if (isRegister(dest)) {
                             int regNum = ((RegisterValue) dest).getRegister().number;
                             if (regNum >= numRegs) {
@@ -346,7 +346,7 @@ public final class RedundantMoveElimination extends PostAllocationOptimizationPh
                         for (int idx = 0; idx < numInsts; idx++) {
                             LIRInstruction op = instructions.get(idx);
                             if (isEligibleMove(op)) {
-                                ValueMoveOp moveOp = (ValueMoveOp) op;
+                                ValueMoveOp moveOp = ValueMoveOp.asValueMoveOp(op);
                                 int sourceIdx = getStateIdx(moveOp.getInput());
                                 int destIdx = getStateIdx(moveOp.getResult());
                                 if (sourceIdx >= 0 && destIdx >= 0 && iterState[sourceIdx] == iterState[destIdx]) {
@@ -381,7 +381,7 @@ public final class RedundantMoveElimination extends PostAllocationOptimizationPh
                     /*
                      * Handle the special case of a move instruction
                      */
-                    ValueMoveOp moveOp = (ValueMoveOp) op;
+                    ValueMoveOp moveOp = ValueMoveOp.asValueMoveOp(op);
                     int sourceIdx = getStateIdx(moveOp.getInput());
                     int destIdx = getStateIdx(moveOp.getResult());
                     if (sourceIdx >= 0 && destIdx >= 0) {
@@ -547,8 +547,8 @@ public final class RedundantMoveElimination extends PostAllocationOptimizationPh
          * Returns true for a move instruction which is a candidate for elimination.
          */
         private static boolean isEligibleMove(LIRInstruction op) {
-            if (op instanceof ValueMoveOp) {
-                ValueMoveOp moveOp = (ValueMoveOp) op;
+            if (ValueMoveOp.isValueMoveOp(op)) {
+                ValueMoveOp moveOp = ValueMoveOp.asValueMoveOp(op);
                 Value source = moveOp.getInput();
                 Value dest = moveOp.getResult();
                 /*

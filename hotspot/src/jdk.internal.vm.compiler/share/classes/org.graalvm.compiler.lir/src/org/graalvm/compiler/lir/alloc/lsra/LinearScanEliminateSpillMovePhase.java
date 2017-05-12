@@ -114,7 +114,7 @@ public class LinearScanEliminateSpillMovePhase extends LinearScanAllocationPhase
                         int opId = op.id();
 
                         if (opId == -1) {
-                            MoveOp move = (MoveOp) op;
+                            MoveOp move = MoveOp.asMoveOp(op);
                             /*
                              * Remove move from register to stack if the stack slot is guaranteed to
                              * be correct. Only moves that have been inserted by LinearScan can be
@@ -126,12 +126,12 @@ public class LinearScanEliminateSpillMovePhase extends LinearScanAllocationPhase
                                  * instruction.
                                  */
                                 if (Debug.isLogEnabled()) {
-                                    if (move instanceof ValueMoveOp) {
-                                        ValueMoveOp vmove = (ValueMoveOp) move;
+                                    if (ValueMoveOp.isValueMoveOp(op)) {
+                                        ValueMoveOp vmove = ValueMoveOp.asValueMoveOp(op);
                                         Debug.log("eliminating move from interval %d (%s) to %d (%s) in block %s", allocator.operandNumber(vmove.getInput()), vmove.getInput(),
                                                         allocator.operandNumber(vmove.getResult()), vmove.getResult(), block);
                                     } else {
-                                        LoadConstantOp load = (LoadConstantOp) move;
+                                        LoadConstantOp load = LoadConstantOp.asLoadConstantOp(op);
                                         Debug.log("eliminating constant load from %s to %d (%s) in block %s", load.getConstant(), allocator.operandNumber(load.getResult()), load.getResult(), block);
                                     }
                                 }

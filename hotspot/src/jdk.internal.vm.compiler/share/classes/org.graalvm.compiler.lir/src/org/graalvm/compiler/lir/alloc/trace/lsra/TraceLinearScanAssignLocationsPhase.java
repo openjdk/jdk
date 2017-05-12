@@ -42,7 +42,6 @@ import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.InstructionValueProcedure;
-import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstruction.OperandFlag;
 import org.graalvm.compiler.lir.LIRInstruction.OperandMode;
@@ -163,10 +162,6 @@ final class TraceLinearScanAssignLocationsPhase extends TraceLinearScanAllocatio
             return result;
         }
 
-        private void computeDebugInfo(final LIRInstruction op, LIRFrameState info) {
-            info.forEachState(op, this::debugInfoProcedure);
-        }
-
         @SuppressWarnings("try")
         private void assignBlock(AbstractBlockBase<?> block) {
             try (Indent indent2 = Debug.logAndIndent("assign locations in block B%d", block.getId())) {
@@ -259,6 +254,12 @@ final class TraceLinearScanAssignLocationsPhase extends TraceLinearScanAllocatio
                 return value;
             }
         };
+        private final InstructionValueProcedure debugInfoValueProc = new InstructionValueProcedure() {
+            @Override
+            public Value doValue(LIRInstruction instruction, Value value, OperandMode mode, EnumSet<OperandFlag> flags) {
+                return debugInfoProcedure(instruction, value, mode, flags);
+            }
+        };
 
         /**
          * Assigns the operand of an {@link LIRInstruction}.
@@ -272,8 +273,8 @@ final class TraceLinearScanAssignLocationsPhase extends TraceLinearScanAllocatio
             assert op != null && instructions.get(j) == op;
 
             // remove useless moves
-            if (op instanceof MoveOp) {
-                AllocatableValue result = ((MoveOp) op).getResult();
+            if (MoveOp.isMoveOp(op)) {
+                AllocatableValue result = MoveOp.asMoveOp(op).getResult();
                 if (isVariable(result) && allocator.isMaterialized(result, op.id(), OperandMode.DEF)) {
                     /*
                      * This happens if a materializable interval is originally not spilled but then
@@ -291,11 +292,11 @@ final class TraceLinearScanAssignLocationsPhase extends TraceLinearScanAllocatio
             op.forEachOutput(assignProc);
 
             // compute reference map and debug information
-            op.forEachState((inst, state) -> computeDebugInfo(inst, state));
+            op.forEachState(debugInfoValueProc);
 
             // remove useless moves
-            if (op instanceof ValueMoveOp) {
-                ValueMoveOp move = (ValueMoveOp) op;
+            if (ValueMoveOp.isValueMoveOp(op)) {
+                ValueMoveOp move = ValueMoveOp.asValueMoveOp(op);
                 if (move.getInput().equals(move.getResult())) {
                     instructions.set(j, null);
                     return true;

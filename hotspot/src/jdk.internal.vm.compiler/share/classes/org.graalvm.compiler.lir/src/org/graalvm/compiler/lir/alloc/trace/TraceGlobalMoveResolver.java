@@ -39,6 +39,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 
 import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.DebugCounter;
 import org.graalvm.compiler.debug.GraalError;
@@ -79,6 +80,7 @@ public final class TraceGlobalMoveResolver extends TraceGlobalMoveResolutionPhas
     private final MoveFactory spillMoveFactory;
     private final FrameMapBuilder frameMapBuilder;
     private final OptionValues options;
+    private final RegisterAllocationConfig registerAllocationConfig;
 
     private void setValueBlocked(Value location, int direction) {
         assert direction == 1 || direction == -1 : "out of bounds";
@@ -136,7 +138,7 @@ public final class TraceGlobalMoveResolver extends TraceGlobalMoveResolutionPhas
         return frameMapBuilder.getRegisterConfig().getAllocatableRegisters();
     }
 
-    public TraceGlobalMoveResolver(LIRGenerationResult res, MoveFactory spillMoveFactory, Architecture arch) {
+    public TraceGlobalMoveResolver(LIRGenerationResult res, MoveFactory spillMoveFactory, RegisterAllocationConfig registerAllocationConfig, Architecture arch) {
 
         this.mappingFrom = new ArrayList<>(8);
         this.mappingFromStack = new ArrayList<>(8);
@@ -147,6 +149,7 @@ public final class TraceGlobalMoveResolver extends TraceGlobalMoveResolutionPhas
         this.frameMapBuilder = res.getFrameMapBuilder();
         this.spillMoveFactory = spillMoveFactory;
         this.registerBlocked = new int[arch.getRegisters().size()];
+        this.registerAllocationConfig = registerAllocationConfig;
 
         FrameMapBuilderTool frameMapBuilderTool = (FrameMapBuilderTool) frameMapBuilder;
         this.stackBlocked = new int[frameMapBuilderTool.getNumberOfStackSlots()];
@@ -288,7 +291,6 @@ public final class TraceGlobalMoveResolver extends TraceGlobalMoveResolutionPhas
         }
         if (isRegister(from) && isRegister(to) && asRegister(from).equals(asRegister(to))) {
             // Values differ but Registers are the same
-            assert LIRKind.verifyMoveKinds(to.getValueKind(), from.getValueKind()) : String.format("Same register but Kind mismatch %s <- %s", to, from);
             return true;
         }
         return false;
@@ -314,7 +316,7 @@ public final class TraceGlobalMoveResolver extends TraceGlobalMoveResolutionPhas
 
     private void insertMove(Value fromOperand, AllocatableValue toOperand) {
         assert !fromOperand.equals(toOperand) : "from and to are equal: " + fromOperand + " vs. " + toOperand;
-        assert LIRKind.verifyMoveKinds(fromOperand.getValueKind(), fromOperand.getValueKind()) : "move between different types";
+        assert LIRKind.verifyMoveKinds(fromOperand.getValueKind(), fromOperand.getValueKind(), registerAllocationConfig) : "move between different types";
         assert insertIdx != -1 : "must setup insert position first";
 
         insertionBuffer.append(insertIdx, createMove(fromOperand, toOperand));
@@ -451,8 +453,10 @@ public final class TraceGlobalMoveResolver extends TraceGlobalMoveResolutionPhas
         }
 
         assert !from.equals(to) : "from and to interval equal: " + from;
-        assert LIRKind.verifyMoveKinds(to.getValueKind(), from.getValueKind()) : String.format("Kind mismatch: %s vs. %s, from=%s, to=%s", from.getValueKind(), to.getValueKind(), from, to);
-        assert fromStack == null || LIRKind.verifyMoveKinds(to.getValueKind(), fromStack.getValueKind()) : String.format("Kind mismatch: %s vs. %s, fromStack=%s, to=%s", fromStack.getValueKind(),
+        assert LIRKind.verifyMoveKinds(to.getValueKind(), from.getValueKind(), registerAllocationConfig) : String.format("Kind mismatch: %s vs. %s, from=%s, to=%s", from.getValueKind(),
+                        to.getValueKind(), from, to);
+        assert fromStack == null || LIRKind.verifyMoveKinds(to.getValueKind(), fromStack.getValueKind(), registerAllocationConfig) : String.format("Kind mismatch: %s vs. %s, fromStack=%s, to=%s",
+                        fromStack.getValueKind(),
                         to.getValueKind(), fromStack, to);
         mappingFrom.add(from);
         mappingFromStack.add(fromStack);

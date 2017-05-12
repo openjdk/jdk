@@ -25,7 +25,7 @@ package org.graalvm.compiler.nodes.cfg;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
+import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.core.common.cfg.AbstractControlFlowGraph;
 import org.graalvm.compiler.core.common.cfg.Loop;

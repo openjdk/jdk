@@ -35,6 +35,7 @@ import java.util.List;
 import org.graalvm.compiler.asm.amd64.AMD64Address.Scale;
 import org.graalvm.compiler.core.amd64.AMD64ArithmeticLIRGenerator;
 import org.graalvm.compiler.core.amd64.AMD64LIRGenerator;
+import org.graalvm.compiler.core.amd64.AMD64LIRKindTool;
 import org.graalvm.compiler.core.amd64.AMD64MoveFactoryBase.BackupSlotProvider;
 import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.core.common.LIRKind;
@@ -52,7 +53,6 @@ import org.graalvm.compiler.hotspot.HotSpotLockStack;
 import org.graalvm.compiler.hotspot.debug.BenchmarkCounters;
 import org.graalvm.compiler.hotspot.meta.HotSpotConstantLoadAction;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
-import org.graalvm.compiler.hotspot.nodes.type.HotSpotLIRKindTool;
 import org.graalvm.compiler.hotspot.stubs.Stub;
 import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.LIRFrameState;
@@ -111,7 +111,7 @@ public class AMD64HotSpotLIRGenerator extends AMD64LIRGenerator implements HotSp
     }
 
     private AMD64HotSpotLIRGenerator(HotSpotProviders providers, GraalHotSpotVMConfig config, LIRGenerationResult lirGenRes, BackupSlotProvider backupSlotProvider) {
-        this(new AMD64HotSpotLIRKindTool(), new AMD64HotSpotArithmeticLIRGenerator(), new AMD64HotSpotMoveFactory(backupSlotProvider), providers, config, lirGenRes);
+        this(new AMD64LIRKindTool(), new AMD64HotSpotArithmeticLIRGenerator(), new AMD64HotSpotMoveFactory(backupSlotProvider), providers, config, lirGenRes);
     }
 
     protected AMD64HotSpotLIRGenerator(LIRKindTool lirKindTool, AMD64ArithmeticLIRGenerator arithmeticLIRGen, MoveFactory moveFactory, HotSpotProviders providers, GraalHotSpotVMConfig config,
@@ -400,8 +400,7 @@ public class AMD64HotSpotLIRGenerator extends AMD64LIRGenerator implements HotSp
     @Override
     public Value emitLoadObjectAddress(Constant constant) {
         HotSpotObjectConstant objectConstant = (HotSpotObjectConstant) constant;
-        HotSpotLIRKindTool kindTool = (HotSpotLIRKindTool) getLIRKindTool();
-        LIRKind kind = objectConstant.isCompressed() ? kindTool.getNarrowOopKind() : kindTool.getObjectKind();
+        LIRKind kind = objectConstant.isCompressed() ? getLIRKindTool().getNarrowOopKind() : getLIRKindTool().getObjectKind();
         Variable result = newVariable(kind);
         append(new AMD64HotSpotLoadAddressOp(result, constant, HotSpotConstantLoadAction.RESOLVE));
         return result;
@@ -410,8 +409,7 @@ public class AMD64HotSpotLIRGenerator extends AMD64LIRGenerator implements HotSp
     @Override
     public Value emitLoadMetaspaceAddress(Constant constant, HotSpotConstantLoadAction action) {
         HotSpotMetaspaceConstant metaspaceConstant = (HotSpotMetaspaceConstant) constant;
-        HotSpotLIRKindTool kindTool = (HotSpotLIRKindTool) getLIRKindTool();
-        LIRKind kind = metaspaceConstant.isCompressed() ? kindTool.getNarrowPointerKind() : kindTool.getWordKind();
+        LIRKind kind = metaspaceConstant.isCompressed() ? getLIRKindTool().getNarrowPointerKind() : getLIRKindTool().getWordKind();
         Variable result = newVariable(kind);
         append(new AMD64HotSpotLoadAddressOp(result, constant, action));
         return result;

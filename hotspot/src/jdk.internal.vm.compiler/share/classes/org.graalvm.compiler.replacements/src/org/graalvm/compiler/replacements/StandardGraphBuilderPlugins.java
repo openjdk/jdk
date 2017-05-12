@@ -30,16 +30,16 @@ import static jdk.vm.ci.code.MemoryBarriers.LOAD_LOAD;
 import static jdk.vm.ci.code.MemoryBarriers.LOAD_STORE;
 import static jdk.vm.ci.code.MemoryBarriers.STORE_LOAD;
 import static jdk.vm.ci.code.MemoryBarriers.STORE_STORE;
-import static org.graalvm.compiler.core.common.util.Util.Java8OrEarlier;
+import static org.graalvm.compiler.serviceprovider.JDK9Method.Java8OrEarlier;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 
+import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.bytecode.BytecodeProvider;
-import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.calc.UnsignedMath;
 import org.graalvm.compiler.core.common.type.ObjectStamp;

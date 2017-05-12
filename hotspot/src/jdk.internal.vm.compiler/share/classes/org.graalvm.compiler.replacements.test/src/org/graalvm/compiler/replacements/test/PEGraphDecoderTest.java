@@ -23,9 +23,9 @@
 package org.graalvm.compiler.replacements.test;
 
 import static org.graalvm.compiler.nodes.graphbuilderconf.InlineInvokePlugin.InlineInfo.createStandardInlineInfo;
-import org.junit.Test;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
+import org.graalvm.api.word.LocationIdentity;
+import org.junit.Test;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.debug.Debug;

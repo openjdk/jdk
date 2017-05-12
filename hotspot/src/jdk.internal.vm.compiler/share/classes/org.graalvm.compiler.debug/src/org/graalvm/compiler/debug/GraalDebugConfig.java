@@ -63,6 +63,9 @@ public class GraalDebugConfig implements DebugConfig {
         public static final OptionKey<String> MethodFilter = new OptionKey<>(null);
         @Option(help = "Only check MethodFilter against the root method in the context if true, otherwise check all methods", type = OptionType.Debug)
         public static final OptionKey<Boolean> MethodFilterRootOnly = new OptionKey<>(false);
+        @Option(help = "Dump a before and after graph if the named phase changes the graph.%n" +
+                       "The argument is substring matched against the simple name of the phase class", type = OptionType.Debug)
+        public static final OptionKey<String> DumpOnPhaseChange = new OptionKey<>(null);
 
         @Option(help = "How to print counters and timing values:%n" +
                        "Name - aggregate by unqualified name%n" +
@@ -320,8 +323,8 @@ public class GraalDebugConfig implements DebugConfig {
         } else {
             level = filter.matchLevel(Debug.currentScope());
         }
-        if (level > 0 && !checkMethodFilter()) {
-            level = 0;
+        if (level >= 0 && !checkMethodFilter()) {
+            level = -1;
         }
         return level;
     }

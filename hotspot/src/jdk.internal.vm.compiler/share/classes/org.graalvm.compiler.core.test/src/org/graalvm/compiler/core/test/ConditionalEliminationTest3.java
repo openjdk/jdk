@@ -26,9 +26,8 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 /**
- * Collection of tests for
- * {@link org.graalvm.compiler.phases.common.DominatorConditionalEliminationPhase} including those
- * that triggered bugs in this phase.
+ * Collection of tests for {@link org.graalvm.compiler.phases.common.ConditionalEliminationPhase}
+ * including those that triggered bugs in this phase.
  */
 @Ignore
 public class ConditionalEliminationTest3 extends ConditionalEliminationTestBase {

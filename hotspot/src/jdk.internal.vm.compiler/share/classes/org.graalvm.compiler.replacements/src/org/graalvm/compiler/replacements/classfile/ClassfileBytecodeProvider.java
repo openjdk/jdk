@@ -22,9 +22,8 @@
  */
 package org.graalvm.compiler.replacements.classfile;
 
-import static org.graalvm.compiler.core.common.util.ModuleAPI.getModule;
-import static org.graalvm.compiler.core.common.util.ModuleAPI.getResourceAsStream;
-import static org.graalvm.compiler.core.common.util.Util.JAVA_SPECIFICATION_VERSION;
+import static org.graalvm.compiler.serviceprovider.JDK9Method.getModule;
+import static org.graalvm.compiler.serviceprovider.JDK9Method.getResourceAsStream;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -34,6 +33,7 @@ import java.lang.instrument.Instrumentation;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.bytecode.Bytecode;
 import org.graalvm.compiler.bytecode.BytecodeProvider;
+import org.graalvm.compiler.serviceprovider.JDK9Method;
 import org.graalvm.util.EconomicMap;
 import org.graalvm.util.Equivalence;
 
@@ -101,7 +101,7 @@ public final class ClassfileBytecodeProvider implements BytecodeProvider {
 
     private static InputStream getClassfileAsStream(Class<?> c) {
         String classfilePath = c.getName().replace('.', '/') + ".class";
-        if (JAVA_SPECIFICATION_VERSION >= 9) {
+        if (JDK9Method.JAVA_SPECIFICATION_VERSION >= 9) {
             Object module = getModule.invoke(c);
             return getResourceAsStream.invoke(module, classfilePath);
         } else {

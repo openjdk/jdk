@@ -32,9 +32,9 @@ import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.TypeReference;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
-import org.graalvm.compiler.hotspot.nodes.CompressionNode;
+import org.graalvm.compiler.hotspot.nodes.HotSpotCompressionNode;
+import org.graalvm.compiler.hotspot.nodes.type.HotSpotNarrowOopStamp;
 import org.graalvm.compiler.hotspot.nodes.type.KlassPointerStamp;
-import org.graalvm.compiler.hotspot.nodes.type.NarrowOopStamp;
 import org.graalvm.compiler.hotspot.replacements.HubGetClassNode;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -87,7 +87,7 @@ public class LoadJavaMirrorWithKlassPhase extends BasePhase<PhaseContext> {
                     ValueNode getClass = graph.unique(new HubGetClassNode(metaAccess, klass));
 
                     if (((HotSpotObjectConstant) constant).isCompressed()) {
-                        return CompressionNode.compress(getClass, oopEncoding);
+                        return HotSpotCompressionNode.compress(getClass, oopEncoding);
                     } else {
                         return getClass;
                     }
@@ -112,7 +112,7 @@ public class LoadJavaMirrorWithKlassPhase extends BasePhase<PhaseContext> {
                     }
 
                     if (oopEncoding != null) {
-                        stamp = NarrowOopStamp.compressed((AbstractObjectStamp) stamp, oopEncoding);
+                        stamp = HotSpotNarrowOopStamp.compressed((AbstractObjectStamp) stamp, oopEncoding);
                     }
                     AddressNode address = graph.unique(new OffsetAddressNode(clazz, ConstantNode.forLong(typeField.offset(), graph)));
                     ValueNode read = graph.unique(new FloatingReadNode(address, FINAL_LOCATION, null, stamp));
@@ -120,7 +120,7 @@ public class LoadJavaMirrorWithKlassPhase extends BasePhase<PhaseContext> {
                     if (oopEncoding == null || ((HotSpotObjectConstant) constant).isCompressed()) {
                         return read;
                     } else {
-                        return CompressionNode.uncompress(read, oopEncoding);
+                        return HotSpotCompressionNode.uncompress(read, oopEncoding);
                     }
                 }
             }

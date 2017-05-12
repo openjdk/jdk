@@ -71,12 +71,15 @@ import static org.graalvm.compiler.replacements.SnippetTemplate.DEFAULT_REPLACER
 
 import java.util.List;
 
+import org.graalvm.api.word.LocationIdentity;
+import org.graalvm.api.word.Pointer;
+import org.graalvm.api.word.WordBase;
+import org.graalvm.api.word.WordFactory;
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.Snippet.ConstantParameter;
 import org.graalvm.compiler.bytecode.Bytecode;
 import org.graalvm.compiler.bytecode.ResolvedJavaMethodBytecode;
-import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -118,9 +121,7 @@ import org.graalvm.compiler.replacements.SnippetTemplate.AbstractTemplates;
 import org.graalvm.compiler.replacements.SnippetTemplate.Arguments;
 import org.graalvm.compiler.replacements.SnippetTemplate.SnippetInfo;
 import org.graalvm.compiler.replacements.Snippets;
-import org.graalvm.compiler.word.Pointer;
 import org.graalvm.compiler.word.Word;
-import org.graalvm.compiler.word.WordBase;
 
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.code.Register;
@@ -282,11 +283,11 @@ public class MonitorSnippets implements Snippets {
                 //
                 // assuming both the stack pointer and page_size have their least
                 // significant 2 bits cleared and page_size is a power of 2
-                final Word alignedMask = Word.unsigned(wordSize() - 1);
+                final Word alignedMask = WordFactory.unsigned(wordSize() - 1);
                 final Word stackPointer = registerAsWord(stackPointerRegister).add(config(INJECTED_VMCONFIG).stackBias);
                 if (probability(FAST_PATH_PROBABILITY, currentMark.subtract(stackPointer).and(alignedMask.subtract(pageSize())).equal(0))) {
                     // Recursively locked => write 0 to the lock slot
-                    lock.writeWord(lockDisplacedMarkOffset(INJECTED_VMCONFIG), Word.zero(), DISPLACED_MARK_WORD_LOCATION);
+                    lock.writeWord(lockDisplacedMarkOffset(INJECTED_VMCONFIG), WordFactory.zero(), DISPLACED_MARK_WORD_LOCATION);
                     traceObject(trace, "+lock{cas:recursive}", object, true, options);
                     counters.lockCasRecursive.inc();
                     return;
@@ -323,7 +324,7 @@ public class MonitorSnippets implements Snippets {
         }
 
         // Now check to see whether biasing is enabled for this object
-        if (probability(NOT_FREQUENT_PROBABILITY, biasableLockBits.equal(Word.unsigned(biasedLockPattern(INJECTED_VMCONFIG))))) {
+        if (probability(NOT_FREQUENT_PROBABILITY, biasableLockBits.equal(WordFactory.unsigned(biasedLockPattern(INJECTED_VMCONFIG))))) {
             Pointer objectPointer = Word.objectToTrackedPointer(object);
             // At this point we know that the mark word has the bias pattern and
             // that we are not the bias owner in the current epoch. We need to
@@ -486,7 +487,7 @@ public class MonitorSnippets implements Snippets {
             // lock, the object could not be rebiased toward another thread, so
             // the bias bit would be clear.
             trace(trace, "             mark: 0x%016lx\n", mark);
-            if (probability(FREQUENT_PROBABILITY, mark.and(biasedLockMaskInPlace(INJECTED_VMCONFIG)).equal(Word.unsigned(biasedLockPattern(INJECTED_VMCONFIG))))) {
+            if (probability(FREQUENT_PROBABILITY, mark.and(biasedLockMaskInPlace(INJECTED_VMCONFIG)).equal(WordFactory.unsigned(biasedLockPattern(INJECTED_VMCONFIG))))) {
                 endLockScope();
                 decCounter(options);
                 traceObject(trace, "-lock{bias}", object, false, options);
@@ -561,7 +562,7 @@ public class MonitorSnippets implements Snippets {
                     // Nobody is waiting, success
                     // release_store
                     MembarNode.memoryBarrier(LOAD_STORE | STORE_STORE);
-                    monitor.writeWord(ownerOffset, Word.zero());
+                    monitor.writeWord(ownerOffset, WordFactory.zero());
                     traceObject(trace, "-lock{inflated:simple}", object, false, options);
                     counters.unlockInflatedSimple.inc();
                     return true;

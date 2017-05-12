@@ -22,10 +22,10 @@
  */
 package org.graalvm.compiler.hotspot.sparc;
 
-import static org.graalvm.compiler.lir.LIRValueUtil.asConstant;
-import static org.graalvm.compiler.lir.LIRValueUtil.isConstantValue;
 import static jdk.vm.ci.sparc.SPARCKind.WORD;
 import static jdk.vm.ci.sparc.SPARCKind.XWORD;
+import static org.graalvm.compiler.lir.LIRValueUtil.asConstant;
+import static org.graalvm.compiler.lir.LIRValueUtil.isConstantValue;
 
 import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.core.common.LIRKind;
@@ -34,14 +34,15 @@ import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
 import org.graalvm.compiler.core.common.spi.LIRKindTool;
 import org.graalvm.compiler.core.sparc.SPARCArithmeticLIRGenerator;
 import org.graalvm.compiler.core.sparc.SPARCLIRGenerator;
+import org.graalvm.compiler.core.sparc.SPARCLIRKindTool;
 import org.graalvm.compiler.debug.GraalError;
+import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.HotSpotBackend;
 import org.graalvm.compiler.hotspot.HotSpotDebugInfoBuilder;
 import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage;
 import org.graalvm.compiler.hotspot.HotSpotLIRGenerationResult;
 import org.graalvm.compiler.hotspot.HotSpotLIRGenerator;
 import org.graalvm.compiler.hotspot.HotSpotLockStack;
-import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.debug.BenchmarkCounters;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.hotspot.meta.HotSpotRegistersProvider;
@@ -92,7 +93,7 @@ public class SPARCHotSpotLIRGenerator extends SPARCLIRGenerator implements HotSp
     }
 
     private SPARCHotSpotLIRGenerator(HotSpotProviders providers, GraalHotSpotVMConfig config, LIRGenerationResult lirGenRes, ConstantTableBaseProvider constantTableBaseProvider) {
-        this(new SPARCHotSpotLIRKindTool(), new SPARCArithmeticLIRGenerator(), new SPARCHotSpotMoveFactory(constantTableBaseProvider), providers, config, lirGenRes, constantTableBaseProvider);
+        this(new SPARCLIRKindTool(), new SPARCArithmeticLIRGenerator(), new SPARCHotSpotMoveFactory(constantTableBaseProvider), providers, config, lirGenRes, constantTableBaseProvider);
     }
 
     public SPARCHotSpotLIRGenerator(LIRKindTool lirKindTool, SPARCArithmeticLIRGenerator arithmeticLIRGen, MoveFactory moveFactory, HotSpotProviders providers, GraalHotSpotVMConfig config,

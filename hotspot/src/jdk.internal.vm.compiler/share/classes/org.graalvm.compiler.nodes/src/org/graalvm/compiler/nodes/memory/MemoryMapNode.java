@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.nodes.memory;
 
-import static org.graalvm.compiler.core.common.LocationIdentity.any;
+import static org.graalvm.api.word.LocationIdentity.any;
 import static org.graalvm.compiler.nodeinfo.InputType.Extension;
 import static org.graalvm.compiler.nodeinfo.InputType.Memory;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_0;
@@ -32,7 +32,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
+import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.NodeInputList;

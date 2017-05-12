@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.nodes.spi;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
+import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.nodes.memory.MemoryNode;
 
 public interface MemoryProxy extends Proxy, MemoryNode {

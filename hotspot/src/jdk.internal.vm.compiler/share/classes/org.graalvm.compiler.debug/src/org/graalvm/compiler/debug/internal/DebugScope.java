@@ -235,7 +235,7 @@ public final class DebugScope implements Debug.Scope {
     }
 
     public boolean isDumpEnabled(int dumpLevel) {
-        assert dumpLevel > 0;
+        assert dumpLevel >= 0;
         return currentDumpLevel >= dumpLevel;
     }
 
@@ -441,7 +441,7 @@ public final class DebugScope implements Debug.Scope {
             memUseTrackingEnabled = false;
             timeEnabled = false;
             verifyEnabled = false;
-            currentDumpLevel = 0;
+            currentDumpLevel = -1;
             methodMetricsEnabled = false;
             // Be pragmatic: provide a default log stream to prevent a crash if the stream is not
             // set while logging

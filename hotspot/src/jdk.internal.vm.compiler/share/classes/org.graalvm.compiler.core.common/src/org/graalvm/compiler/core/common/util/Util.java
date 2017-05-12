@@ -39,25 +39,6 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
  */
 public class Util {
 
-    private static int getJavaSpecificationVersion() {
-        String value = System.getProperty("java.specification.version");
-        if (value.startsWith("1.")) {
-            value = value.substring(2);
-        }
-        return Integer.parseInt(value);
-    }
-
-    /**
-     * The integer value corresponding to the value of the {@code java.specification.version} system
-     * property after any leading {@code "1."} has been stripped.
-     */
-    public static final int JAVA_SPECIFICATION_VERSION = getJavaSpecificationVersion();
-
-    /**
-     * Determines if the Java runtime is version 8 or earlier.
-     */
-    public static final boolean Java8OrEarlier = JAVA_SPECIFICATION_VERSION <= 8;
-
     /**
      * Statically cast an object to an arbitrary Object type. Dynamically checked.
      */
@@ -193,9 +174,6 @@ public class Util {
      * {@code flag}.
      */
     public static void setAccessible(Field field, boolean flag) {
-        if (!Java8OrEarlier) {
-            ModuleAPI.openForReflectionTo(field.getDeclaringClass(), Util.class);
-        }
         field.setAccessible(flag);
     }
 
@@ -204,9 +182,6 @@ public class Util {
      * {@code flag}.
      */
     public static void setAccessible(Executable executable, boolean flag) {
-        if (!Java8OrEarlier) {
-            ModuleAPI.openForReflectionTo(executable.getDeclaringClass(), Util.class);
-        }
         executable.setAccessible(flag);
     }
 }

@@ -23,7 +23,7 @@
 package org.graalvm.compiler.replacements;
 
 import static java.util.FormattableFlags.ALTERNATE;
-import static org.graalvm.compiler.core.common.LocationIdentity.any;
+import static org.graalvm.api.word.LocationIdentity.any;
 import static org.graalvm.compiler.debug.Debug.applyFormattingFlagsAndWidth;
 import static org.graalvm.compiler.debug.GraalDebugConfig.Options.DebugStubsAndSnippets;
 import static org.graalvm.compiler.graph.iterators.NodePredicates.isNotA;
@@ -45,13 +45,14 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
+import org.graalvm.api.word.LocationIdentity;
+import org.graalvm.api.word.WordBase;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.Snippet.ConstantParameter;
 import org.graalvm.compiler.api.replacements.Snippet.NonNullParameter;
 import org.graalvm.compiler.api.replacements.Snippet.VarargsParameter;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.core.common.GraalOptions;
-import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.StampPair;
@@ -123,7 +124,6 @@ import org.graalvm.compiler.phases.tiers.PhaseContext;
 import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.replacements.nodes.ExplodeLoopNode;
 import org.graalvm.compiler.replacements.nodes.LoadSnippetVarargParameterNode;
-import org.graalvm.compiler.word.WordBase;
 import org.graalvm.util.CollectionsUtil;
 import org.graalvm.util.EconomicMap;
 import org.graalvm.util.EconomicSet;

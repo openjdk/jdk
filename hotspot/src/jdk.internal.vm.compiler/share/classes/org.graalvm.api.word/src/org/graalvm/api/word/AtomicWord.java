@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.graalvm.compiler.word;
+package org.graalvm.api.word;
 
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -42,7 +42,7 @@ public class AtomicWord<T extends WordBase> {
     protected final AtomicLong value;
 
     /**
-     * Creates a new AtomicLong with initial value {@link Word#zero}.
+     * Creates a new AtomicWord with initial value {@link WordFactory#zero}.
      */
     public AtomicWord() {
         value = new AtomicLong();
@@ -53,9 +53,8 @@ public class AtomicWord<T extends WordBase> {
      *
      * @return the current value
      */
-    @SuppressWarnings("unchecked")
     public final T get() {
-        return (T) Word.unsigned(value.get());
+        return WordFactory.unsigned(value.get());
     }
 
     /**
@@ -73,9 +72,8 @@ public class AtomicWord<T extends WordBase> {
      * @param newValue the new value
      * @return the previous value
      */
-    @SuppressWarnings("unchecked")
     public final T getAndSet(T newValue) {
-        return (T) Word.unsigned(value.getAndSet(newValue.rawValue()));
+        return WordFactory.unsigned(value.getAndSet(newValue.rawValue()));
     }
 
     /**

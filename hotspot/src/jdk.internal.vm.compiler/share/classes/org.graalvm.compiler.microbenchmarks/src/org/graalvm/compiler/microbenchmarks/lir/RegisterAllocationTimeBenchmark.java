@@ -22,68 +22,26 @@
  */
 package org.graalvm.compiler.microbenchmarks.lir;
 
-import java.util.HashMap;
-
-import org.openjdk.jmh.annotations.Benchmark;
-
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
-import org.graalvm.compiler.lir.phases.LIRSuites;
 import org.graalvm.compiler.microbenchmarks.graal.GraalBenchmark;
-import org.graalvm.compiler.microbenchmarks.graal.util.MethodSpec;
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.Measurement;
+import org.openjdk.jmh.annotations.Param;
+import org.openjdk.jmh.annotations.Warmup;
 
+@Warmup(iterations = 10)
+@Measurement(iterations = 10)
 public class RegisterAllocationTimeBenchmark extends GraalBenchmark {
 
-    // Checkstyle: stop method name check
-    public static class LSRA_Allocation extends GraalCompilerState.AllocationStage {
-        @SuppressWarnings("try")
-        @Override
-        protected LIRSuites createLIRSuites() {
-            return super.createLIRSuites();
-        }
-    }
-
-    @MethodSpec(declaringClass = String.class, name = "equals")
-    public static class LSRA_StringEquals extends LSRA_Allocation {
-    }
-
-    @MethodSpec(declaringClass = HashMap.class, name = "computeIfAbsent")
-    public static class LSRA_HashMapComputeIfAbsent extends LSRA_Allocation {
+    public static class State extends GraalCompilerState.AllocationStage {
+        @MethodDescString @Param({
+                        "java.lang.String#equals",
+                        "java.util.HashMap#computeIfAbsent"
+        }) public String method;
     }
 
     @Benchmark
-    public LIRGenerationResult lsra_STRING_equals(LSRA_StringEquals s) {
+    public LIRGenerationResult allocateRegisters(State s) {
         return s.compile();
     }
-
-    @Benchmark
-    public LIRGenerationResult lsra_HASHMAP_computeIfAbsent(LSRA_HashMapComputeIfAbsent s) {
-        return s.compile();
-    }
-
-    public static class TraceRA_Allocation extends GraalCompilerState.AllocationStage {
-        @SuppressWarnings("try")
-        @Override
-        protected LIRSuites createLIRSuites() {
-            return super.createLIRSuites();
-        }
-    }
-
-    @MethodSpec(declaringClass = String.class, name = "equals")
-    public static class TraceRA_StringEquals extends TraceRA_Allocation {
-    }
-
-    @MethodSpec(declaringClass = HashMap.class, name = "computeIfAbsent")
-    public static class TraceRA_HashMapComputeIfAbsent extends TraceRA_Allocation {
-    }
-
-    @Benchmark
-    public LIRGenerationResult tracera_STRING_equals(TraceRA_StringEquals s) {
-        return s.compile();
-    }
-
-    @Benchmark
-    public LIRGenerationResult tracera_HASHMAP_computeIfAbsent(TraceRA_HashMapComputeIfAbsent s) {
-        return s.compile();
-    }
-    // Checkstyle: resume method name check
 }

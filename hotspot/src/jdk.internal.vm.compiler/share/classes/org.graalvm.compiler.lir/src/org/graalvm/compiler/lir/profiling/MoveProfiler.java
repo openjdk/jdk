@@ -87,12 +87,12 @@ public final class MoveProfiler {
         MoveStatistics stats = null;
         // analysis phase
         for (LIRInstruction inst : instructions) {
-            if (inst instanceof MoveOp) {
+            if (MoveOp.isMoveOp(inst)) {
                 if (stats == null) {
                     stats = new MoveStatistics();
                     blockMap.put(block, stats);
                 }
-                stats.add(MoveType.get((MoveOp) inst));
+                stats.add(MoveType.get(inst));
             }
         }
     }

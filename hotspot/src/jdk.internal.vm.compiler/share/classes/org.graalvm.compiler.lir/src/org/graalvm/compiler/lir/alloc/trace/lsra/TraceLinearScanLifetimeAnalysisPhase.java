@@ -440,8 +440,8 @@ public final class TraceLinearScanLifetimeAnalysisPhase extends TraceLinearScanA
                 // skip method header
                 return RegisterPriority.None;
             }
-            if (op instanceof ValueMoveOp) {
-                ValueMoveOp move = (ValueMoveOp) op;
+            if (ValueMoveOp.isValueMoveOp(op)) {
+                ValueMoveOp move = ValueMoveOp.asValueMoveOp(op);
                 if (optimizeMethodArgument(move.getInput())) {
                     return RegisterPriority.None;
                 }
@@ -715,8 +715,8 @@ public final class TraceLinearScanLifetimeAnalysisPhase extends TraceLinearScanA
      *         can only be a {@link JavaConstant}.
      */
     private static JavaConstant getMaterializedValue(LIRInstruction op, Value operand, TraceInterval interval, boolean neverSpillConstants, MoveFactory spillMoveFactory) {
-        if (op instanceof LoadConstantOp) {
-            LoadConstantOp move = (LoadConstantOp) op;
+        if (LoadConstantOp.isLoadConstantOp(op)) {
+            LoadConstantOp move = LoadConstantOp.asLoadConstantOp(op);
             if (move.getConstant() instanceof JavaConstant) {
                 if (!neverSpillConstants) {
                     if (!spillMoveFactory.allowConstantToStackMove(move.getConstant())) {

@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.debug.DebugCloseable;
@@ -48,6 +49,7 @@ import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.BeginNode;
+import org.graalvm.compiler.nodes.ControlSinkNode;
 import org.graalvm.compiler.nodes.FixedGuardNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
@@ -63,6 +65,7 @@ import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.extended.AnchoringNode;
 import org.graalvm.compiler.nodes.extended.GuardedNode;
 import org.graalvm.compiler.nodes.extended.GuardingNode;
+import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringProvider;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
@@ -278,6 +281,43 @@ public class LoweringPhase extends BasePhase<PhaseContext> {
                 Mark mark = graph.getMark();
                 assert postLoweringMark.equals(mark) : graph + ": lowering of " + node + " produced lowerable " + n + " that should have been recursively lowered as it introduces these new nodes: " +
                                 graph.getNewNodes(postLoweringMark).snapshot();
+            }
+            if (graph.isAfterFloatingReadPhase() && n instanceof MemoryCheckpoint && !(node instanceof MemoryCheckpoint) && !(node instanceof ControlSinkNode)) {
+                /*
+                 * The lowering introduced a MemoryCheckpoint but the current node isn't a
+                 * checkpoint. This is only OK if the locations involved don't affect the memory
+                 * graph or if the new kill location doesn't connect into the existing graph.
+                 */
+                boolean isAny = false;
+                if (n instanceof MemoryCheckpoint.Single) {
+                    isAny = ((MemoryCheckpoint.Single) n).getLocationIdentity().isAny();
+                } else {
+                    for (LocationIdentity ident : ((MemoryCheckpoint.Multi) n).getLocationIdentities()) {
+                        if (ident.isAny()) {
+                            isAny = true;
+                        }
+                    }
+                }
+                if (isAny && n instanceof FixedWithNextNode) {
+                    /*
+                     * Check if the next kill location leads directly to a ControlSinkNode in the
+                     * new part of the graph. This is a fairly conservative test that could be made
+                     * more general if required.
+                     */
+                    FixedWithNextNode cur = (FixedWithNextNode) n;
+                    while (cur != null && graph.isNew(preLoweringMark, cur)) {
+                        if (cur.next() instanceof ControlSinkNode) {
+                            isAny = false;
+                            break;
+                        }
+                        if (cur.next() instanceof FixedWithNextNode) {
+                            cur = (FixedWithNextNode) cur.next();
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                assert !isAny : node + " " + n;
             }
         }
         return true;

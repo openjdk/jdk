@@ -20,19 +20,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.graalvm.compiler.word;
-
-import org.graalvm.compiler.core.common.LocationIdentity;
-import org.graalvm.compiler.nodes.memory.HeapAccess.BarrierType;
+package org.graalvm.api.word;
 
 /**
- * Lowest-level memory access of native C memory. These methods access the raw memory without any
+ * Lowest-level memory access of native C memory.
+ * <p>
+ * Do not use these methods to access Java objects. These methods access the raw memory without any
  * null checks, read- or write barriers. Even when the VM uses compressed pointers, then readObject
  * and writeObject methods access uncompressed pointers.
- * <p>
- * Do not use these methods to access Java objects, i.e., do not use
- * {@code Word.fromObject(obj).readXxx()}. Instead, use {@link ObjectAccess} or
- * {@link BarrieredAccess} to access Java objects.
  */
 public interface Pointer extends Unsigned, PointerBase {
 
@@ -164,7 +159,7 @@ public interface Pointer extends Unsigned, PointerBase {
      * @param locationIdentity the identity of the read
      * @return the result of the memory access
      */
-    Word readWord(WordBase offset, LocationIdentity locationIdentity);
+    <T extends WordBase> T readWord(WordBase offset, LocationIdentity locationIdentity);
 
     /**
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
@@ -258,7 +253,7 @@ public interface Pointer extends Unsigned, PointerBase {
      * @param locationIdentity the identity of the read
      * @return the result of the memory access
      */
-    Word readWord(int offset, LocationIdentity locationIdentity);
+    <T extends WordBase> T readWord(int offset, LocationIdentity locationIdentity);
 
     /**
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
@@ -612,7 +607,7 @@ public interface Pointer extends Unsigned, PointerBase {
      * @param offset the signed offset for the memory access
      * @return the result of the memory access
      */
-    Word readWord(WordBase offset);
+    <T extends WordBase> T readWord(WordBase offset);
 
     /**
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
@@ -626,21 +621,6 @@ public interface Pointer extends Unsigned, PointerBase {
      * @return the result of the memory access
      */
     Object readObject(WordBase offset);
-
-    /**
-     * Reads the memory at address {@code (this + offset)}. This access will decompress the oop if
-     * the VM uses compressed oops, and it can be parameterized to allow read barriers (G1 referent
-     * field).
-     * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
-     * knows that the highest-order bit of the unsigned value is never used).
-     *
-     * @param offset the signed offset for the memory access
-     * @param barrierType the type of the read barrier to be added
-     * @return the result of the memory access
-     */
-    Object readObject(WordBase offset, BarrierType barrierType);
 
     /**
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
@@ -712,7 +692,7 @@ public interface Pointer extends Unsigned, PointerBase {
      * @param offset the signed offset for the memory access
      * @return the result of the memory access
      */
-    Word readWord(int offset);
+    <T extends WordBase> T readWord(int offset);
 
     /**
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
@@ -722,17 +702,6 @@ public interface Pointer extends Unsigned, PointerBase {
      * @return the result of the memory access
      */
     Object readObject(int offset);
-
-    /**
-     * Reads the memory at address {@code (this + offset)}. This access will decompress the oop if
-     * the VM uses compressed oops, and it can be parameterized to allow read barriers (G1 referent
-     * field).
-     *
-     * @param offset the signed offset for the memory access
-     * @param barrierType the type of the read barrier to be added
-     * @return the result of the memory access
-     */
-    Object readObject(int offset, BarrierType barrierType);
 
     /**
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
@@ -855,7 +824,7 @@ public interface Pointer extends Unsigned, PointerBase {
 
     long compareAndSwapLong(WordBase offset, long expectedValue, long newValue, LocationIdentity locationIdentity);
 
-    Word compareAndSwapWord(WordBase offset, WordBase expectedValue, WordBase newValue, LocationIdentity locationIdentity);
+    <T extends WordBase> T compareAndSwapWord(WordBase offset, T expectedValue, T newValue, LocationIdentity locationIdentity);
 
     Object compareAndSwapObject(WordBase offset, Object expectedValue, Object newValue, LocationIdentity locationIdentity);
 
@@ -952,7 +921,7 @@ public interface Pointer extends Unsigned, PointerBase {
 
     long compareAndSwapLong(int offset, long expectedValue, long newValue, LocationIdentity locationIdentity);
 
-    Word compareAndSwapWord(int offset, WordBase expectedValue, WordBase newValue, LocationIdentity locationIdentity);
+    <T extends WordBase> T compareAndSwapWord(int offset, T expectedValue, T newValue, LocationIdentity locationIdentity);
 
     Object compareAndSwapObject(int offset, Object expectedValue, Object newValue, LocationIdentity locationIdentity);
 

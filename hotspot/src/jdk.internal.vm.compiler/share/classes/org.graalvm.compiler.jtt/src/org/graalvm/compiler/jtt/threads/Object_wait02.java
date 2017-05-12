@@ -25,9 +25,15 @@
 package org.graalvm.compiler.jtt.threads;
 
 import org.graalvm.compiler.jtt.JTTTest;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.DisableOnDebug;
+import org.junit.rules.TestRule;
+import org.junit.rules.Timeout;
 
 public class Object_wait02 extends JTTTest {
+
+    @Rule public TestRule timeout = new DisableOnDebug(Timeout.seconds(20));
 
     private static class TestClass implements Runnable {
         @Override
@@ -60,19 +66,19 @@ public class Object_wait02 extends JTTTest {
         return done;
     }
 
-    @Test(timeout = 20000)
+    @Test
     public void run0() throws Throwable {
         initializeForTimeout();
         runTest("test", 0);
     }
 
-    @Test(timeout = 20000)
+    @Test
     public void run1() throws Throwable {
         initializeForTimeout();
         runTest("test", 1);
     }
 
-    @Test(timeout = 20000)
+    @Test
     public void run2() throws Throwable {
         initializeForTimeout();
         runTest("test", 2);

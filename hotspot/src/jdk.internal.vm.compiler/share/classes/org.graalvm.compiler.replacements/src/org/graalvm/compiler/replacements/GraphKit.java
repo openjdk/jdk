@@ -88,7 +88,7 @@ public class GraphKit implements GraphBuilderTool {
 
     private final List<Structure> structures;
 
-    abstract static class Structure {
+    protected abstract static class Structure {
     }
 
     public GraphKit(StructuredGraph graph, Providers providers, WordTypes wordTypes, GraphBuilderConfiguration.Plugins graphBuilderPlugins) {
@@ -304,7 +304,7 @@ public class GraphKit implements GraphBuilderTool {
         GraphBuilderConfiguration config = GraphBuilderConfiguration.getSnippetDefault(plugins);
 
         StructuredGraph calleeGraph = new StructuredGraph.Builder(invoke.getOptions()).method(method).build();
-        IntrinsicContext initialReplacementContext = new IntrinsicContext(method, method, providers.getReplacements().getReplacementBytecodeProvider(), INLINE_AFTER_PARSING);
+        IntrinsicContext initialReplacementContext = new IntrinsicContext(method, method, providers.getReplacements().getDefaultReplacementBytecodeProvider(), INLINE_AFTER_PARSING);
         GraphBuilderPhase.Instance instance = new GraphBuilderPhase.Instance(metaAccess, providers.getStampProvider(), providers.getConstantReflection(), providers.getConstantFieldProvider(), config,
                         OptimisticOptimizations.NONE,
                         initialReplacementContext);

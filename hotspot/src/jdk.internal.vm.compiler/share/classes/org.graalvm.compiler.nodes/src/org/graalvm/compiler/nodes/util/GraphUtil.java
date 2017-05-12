@@ -35,9 +35,9 @@ import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.graph.NodeBitMap;
 import org.graalvm.compiler.graph.NodeSourcePosition;
 import org.graalvm.compiler.graph.NodeStack;
-import org.graalvm.compiler.graph.NodeWorkList;
 import org.graalvm.compiler.graph.Position;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.graph.spi.SimplifierTool;
@@ -680,28 +680,115 @@ public class GraphUtil {
      * unambiguous phis. Note that this method will perform an exhaustive search through phis. It is
      * intended to be used during graph building, when phi nodes aren't yet canonicalized.
      *
-     * @param proxy The node whose original value should be determined.
+     * @param value The node whose original value should be determined.
+     * @return The original value (which might be the input value itself).
      */
-    public static ValueNode originalValue(ValueNode proxy) {
-        ValueNode v = proxy;
-        do {
-            if (v instanceof LimitedValueProxy) {
-                v = ((LimitedValueProxy) v).getOriginalNode();
-            } else if (v instanceof PhiNode) {
-                PhiNode phiNode = (PhiNode) v;
-                v = phiNode.singleValueOrThis();
-                if (v == phiNode) {
-                    v = null;
-                }
-            } else {
-                break;
-            }
-        } while (v != null);
+    public static ValueNode originalValue(ValueNode value) {
+        ValueNode result = originalValueSimple(value);
+        assert result != null;
+        return result;
+    }
 
-        if (v == null) {
-            v = new OriginalValueSearch(proxy).result;
+    private static ValueNode originalValueSimple(ValueNode value) {
+        /* The very simple case: look through proxies. */
+        ValueNode cur = originalValueForProxy(value);
+
+        while (cur instanceof PhiNode) {
+            /*
+             * We found a phi function. Check if we can analyze it without allocating temporary data
+             * structures.
+             */
+            PhiNode phi = (PhiNode) cur;
+
+            ValueNode phiSingleValue = null;
+            int count = phi.valueCount();
+            for (int i = 0; i < count; ++i) {
+                ValueNode phiCurValue = originalValueForProxy(phi.valueAt(i));
+                if (phiCurValue == phi) {
+                    /* Simple cycle, we can ignore the input value. */
+                } else if (phiSingleValue == null) {
+                    /* The first input. */
+                    phiSingleValue = phiCurValue;
+                } else if (phiSingleValue != phiCurValue) {
+                    /* Another input that is different from the first input. */
+
+                    if (phiSingleValue instanceof PhiNode || phiCurValue instanceof PhiNode) {
+                        /*
+                         * We have two different input values for the phi function, and at least one
+                         * of the inputs is another phi function. We need to do a complicated
+                         * exhaustive check.
+                         */
+                        return originalValueForComplicatedPhi(phi, new NodeBitMap(value.graph()));
+                    } else {
+                        /*
+                         * We have two different input values for the phi function, but none of them
+                         * is another phi function. This phi function cannot be reduce any further,
+                         * so the phi function is the original value.
+                         */
+                        return phi;
+                    }
+                }
+            }
+
+            /*
+             * Successfully reduced the phi function to a single input value. The single input value
+             * can itself be a phi function again, so we might take another loop iteration.
+             */
+            assert phiSingleValue != null;
+            cur = phiSingleValue;
         }
-        return v;
+
+        /* We reached a "normal" node, which is the original value. */
+        assert !(cur instanceof LimitedValueProxy) && !(cur instanceof PhiNode);
+        return cur;
+    }
+
+    private static ValueNode originalValueForProxy(ValueNode value) {
+        ValueNode cur = value;
+        while (cur instanceof LimitedValueProxy) {
+            cur = ((LimitedValueProxy) cur).getOriginalNode();
+        }
+        return cur;
+    }
+
+    /**
+     * Handling for complicated nestings of phi functions. We need to reduce phi functions
+     * recursively, and need a temporary map of visited nodes to avoid endless recursion of cycles.
+     */
+    private static ValueNode originalValueForComplicatedPhi(PhiNode phi, NodeBitMap visited) {
+        if (visited.isMarked(phi)) {
+            /*
+             * Found a phi function that was already seen. Either a cycle, or just a second phi
+             * input to a path we have already processed.
+             */
+            return null;
+        }
+        visited.mark(phi);
+
+        ValueNode phiSingleValue = null;
+        int count = phi.valueCount();
+        for (int i = 0; i < count; ++i) {
+            ValueNode phiCurValue = originalValueForProxy(phi.valueAt(i));
+            if (phiCurValue instanceof PhiNode) {
+                /* Recursively process a phi function input. */
+                phiCurValue = originalValueForComplicatedPhi((PhiNode) phiCurValue, visited);
+            }
+
+            if (phiCurValue == null) {
+                /* Cycle to a phi function that was already seen. We can ignore this input. */
+            } else if (phiSingleValue == null) {
+                /* The first input. */
+                phiSingleValue = phiCurValue;
+            } else if (phiCurValue != phiSingleValue) {
+                /*
+                 * Another input that is different from the first input. Since we already
+                 * recursively looked through other phi functions, we now know that this phi
+                 * function cannot be reduce any further, so the phi function is the original value.
+                 */
+                return phi;
+            }
+        }
+        return phiSingleValue;
     }
 
     public static boolean tryKillUnused(Node node) {
@@ -710,64 +797,6 @@ public class GraphUtil {
             return true;
         }
         return false;
-    }
-
-    /**
-     * Exhaustive search for {@link GraphUtil#originalValue(ValueNode)} when a simple search fails.
-     * This can happen in the presence of complicated phi/proxy/phi constructs.
-     */
-    static class OriginalValueSearch {
-        ValueNode result;
-
-        OriginalValueSearch(ValueNode proxy) {
-            NodeWorkList worklist = proxy.graph().createNodeWorkList();
-            worklist.add(proxy);
-            for (Node node : worklist) {
-                if (node instanceof LimitedValueProxy) {
-                    ValueNode originalValue = ((LimitedValueProxy) node).getOriginalNode();
-                    if (!process(originalValue, worklist)) {
-                        return;
-                    }
-                } else if (node instanceof PhiNode) {
-                    for (Node value : ((PhiNode) node).values()) {
-                        if (!process((ValueNode) value, worklist)) {
-                            return;
-                        }
-                    }
-                } else {
-                    if (!process((ValueNode) node, null)) {
-                        return;
-                    }
-                }
-            }
-        }
-
-        /**
-         * Process a node as part of this search.
-         *
-         * @param node the next node encountered in the search
-         * @param worklist if non-null, {@code node} will be added to this list. Otherwise,
-         *            {@code node} is treated as a candidate result.
-         * @return true if the search should continue, false if a definitive {@link #result} has
-         *         been found
-         */
-        private boolean process(ValueNode node, NodeWorkList worklist) {
-            if (node.isAlive()) {
-                if (worklist == null) {
-                    if (result == null) {
-                        // Initial candidate result: continue search
-                        result = node;
-                    } else if (result != node) {
-                        // Conflicts with existing candidate: stop search with null result
-                        result = null;
-                        return false;
-                    }
-                } else {
-                    worklist.add(node);
-                }
-            }
-            return true;
-        }
     }
 
     /**

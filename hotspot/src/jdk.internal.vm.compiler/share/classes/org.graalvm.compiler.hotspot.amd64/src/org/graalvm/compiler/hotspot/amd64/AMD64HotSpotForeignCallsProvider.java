@@ -26,7 +26,7 @@ import static jdk.vm.ci.amd64.AMD64.rax;
 import static jdk.vm.ci.amd64.AMD64.rdx;
 import static jdk.vm.ci.hotspot.HotSpotCallingConventionType.NativeCall;
 import static jdk.vm.ci.meta.Value.ILLEGAL;
-import static org.graalvm.compiler.core.common.LocationIdentity.any;
+import static org.graalvm.api.word.LocationIdentity.any;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.EXCEPTION_HANDLER;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.EXCEPTION_HANDLER_IN_CALLER;
 import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.JUMP_ADDRESS;

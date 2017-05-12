@@ -63,6 +63,8 @@ import static org.graalvm.compiler.hotspot.stubs.StubUtil.printf;
 import static org.graalvm.compiler.hotspot.stubs.StubUtil.verifyObject;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.FAST_PATH_PROBABILITY;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.probability;
+
+import org.graalvm.api.word.WordFactory;
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.Snippet.ConstantParameter;
@@ -122,7 +124,7 @@ public class NewInstanceStub extends SnippetStub {
             writeTlabTop(thread, newTop);
             return top;
         }
-        return Word.zero();
+        return WordFactory.zero();
     }
 
     @Fold
@@ -173,19 +175,19 @@ public class NewInstanceStub extends SnippetStub {
      * @param sizeInBytes the size of the allocation
      * @param log specifies if logging is enabled
      *
-     * @return the newly allocated, uninitialized chunk of memory, or {@link Word#zero()} if the
-     *         operation was unsuccessful
+     * @return the newly allocated, uninitialized chunk of memory, or {@link WordFactory#zero()} if
+     *         the operation was unsuccessful
      */
     static Word refillAllocate(Word thread, KlassPointer intArrayHub, int sizeInBytes, boolean log) {
         // If G1 is enabled, the "eden" allocation space is not the same always
         // and therefore we have to go to slowpath to allocate a new TLAB.
         if (useG1GC(INJECTED_VMCONFIG)) {
-            return Word.zero();
+            return WordFactory.zero();
         }
         if (!useTLAB(INJECTED_VMCONFIG)) {
-            return edenAllocate(Word.unsigned(sizeInBytes), log);
+            return edenAllocate(WordFactory.unsigned(sizeInBytes), log);
         }
-        Word intArrayMarkWord = Word.unsigned(tlabIntArrayMarkWord(INJECTED_VMCONFIG));
+        Word intArrayMarkWord = WordFactory.unsigned(tlabIntArrayMarkWord(INJECTED_VMCONFIG));
         int alignmentReserveInBytes = tlabAlignmentReserveInHeapWords(INJECTED_VMCONFIG) * wordSize();
 
         Word top = readTlabTop(thread);
@@ -247,7 +249,7 @@ public class NewInstanceStub extends SnippetStub {
 
                 return NewInstanceStub.allocate(thread, sizeInBytes);
             } else {
-                return Word.zero();
+                return WordFactory.zero();
             }
         } else {
             // Retain TLAB
@@ -262,7 +264,7 @@ public class NewInstanceStub extends SnippetStub {
                                 TLAB_SLOW_ALLOCATIONS_LOCATION);
             }
 
-            return edenAllocate(Word.unsigned(sizeInBytes), log);
+            return edenAllocate(WordFactory.unsigned(sizeInBytes), log);
         }
     }
 
@@ -271,25 +273,25 @@ public class NewInstanceStub extends SnippetStub {
      *
      * @param sizeInBytes the size of the chunk to allocate
      * @param log specifies if logging is enabled
-     * @return the allocated chunk or {@link Word#zero()} if allocation fails
+     * @return the allocated chunk or {@link WordFactory#zero()} if allocation fails
      */
     public static Word edenAllocate(Word sizeInBytes, boolean log) {
         final long heapTopRawAddress = GraalHotSpotVMConfigNode.heapTopAddress();
         final long heapEndRawAddress = GraalHotSpotVMConfigNode.heapEndAddress();
 
-        Word heapTopAddress = Word.unsigned(heapTopRawAddress);
-        Word heapEndAddress = Word.unsigned(heapEndRawAddress);
+        Word heapTopAddress = WordFactory.unsigned(heapTopRawAddress);
+        Word heapEndAddress = WordFactory.unsigned(heapEndRawAddress);
 
         while (true) {
             Word heapTop = heapTopAddress.readWord(0, HEAP_TOP_LOCATION);
             Word newHeapTop = heapTop.add(sizeInBytes);
             if (newHeapTop.belowOrEqual(heapTop)) {
-                return Word.zero();
+                return WordFactory.zero();
             }
 
             Word heapEnd = heapEndAddress.readWord(0, HEAP_END_LOCATION);
             if (newHeapTop.aboveThan(heapEnd)) {
-                return Word.zero();
+                return WordFactory.zero();
             }
             if (heapTopAddress.logicCompareAndSwapWord(0, heapTop, newHeapTop, HEAP_TOP_LOCATION)) {
                 return heapTop;

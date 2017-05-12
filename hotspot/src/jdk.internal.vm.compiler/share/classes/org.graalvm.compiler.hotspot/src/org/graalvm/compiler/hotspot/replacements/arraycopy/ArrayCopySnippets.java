@@ -39,11 +39,12 @@ import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.probabil
 import java.lang.reflect.Method;
 import java.util.EnumMap;
 
+import org.graalvm.api.word.LocationIdentity;
+import org.graalvm.api.word.WordFactory;
 import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.Snippet.ConstantParameter;
-import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
@@ -247,7 +248,7 @@ public class ArrayCopySnippets implements Snippets {
                 ArrayCopyCallNode.arraycopyObjectKillsAny(nonNullSrc, srcPos, nonNullDest, destPos, length);
             } else {
                 KlassPointer destElemKlass = destKlass.readKlassPointer(arrayClassElementOffset(INJECTED_VMCONFIG), OBJ_ARRAY_KLASS_ELEMENT_KLASS_LOCATION);
-                Word superCheckOffset = Word.signed(destElemKlass.readInt(superCheckOffsetOffset(INJECTED_VMCONFIG), KLASS_SUPER_CHECK_OFFSET_LOCATION));
+                Word superCheckOffset = WordFactory.signed(destElemKlass.readInt(superCheckOffsetOffset(INJECTED_VMCONFIG), KLASS_SUPER_CHECK_OFFSET_LOCATION));
                 counters.objectCheckcastCounter.inc();
                 counters.objectCheckcastCopiedCounter.add(length);
                 int copiedElements = CheckcastArrayCopyCallNode.checkcastArraycopy(nonNullSrc, srcPos, nonNullDest, destPos, length, superCheckOffset, destElemKlass, false);

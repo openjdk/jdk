@@ -23,8 +23,8 @@
 package org.graalvm.compiler.hotspot;
 
 import org.graalvm.compiler.core.match.MatchableNode;
-import org.graalvm.compiler.hotspot.nodes.CompressionNode;
 import org.graalvm.compiler.lir.gen.LIRGenerator;
+import org.graalvm.compiler.nodes.CompressionNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 

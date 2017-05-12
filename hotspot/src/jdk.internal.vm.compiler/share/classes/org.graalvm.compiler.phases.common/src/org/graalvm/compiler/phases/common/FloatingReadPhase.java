@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.phases.common;
 
-import static org.graalvm.compiler.core.common.LocationIdentity.any;
+import static org.graalvm.api.word.LocationIdentity.any;
 import static org.graalvm.compiler.graph.Graph.NodeEvent.NODE_ADDED;
 import static org.graalvm.compiler.graph.Graph.NodeEvent.ZERO_USAGES;
 
@@ -30,7 +30,7 @@ import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
+import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.core.common.cfg.Loop;
 import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.graph.Graph.NodeEventScope;

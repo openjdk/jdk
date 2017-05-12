@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.graalvm.compiler.word;
+package org.graalvm.api.word;
 
 /**
  * A {@link Unsigned} value that may be updated atomically. See the
@@ -36,7 +36,7 @@ public class AtomicUnsigned extends AtomicWord<Unsigned> {
      * @return the previous value
      */
     public final Unsigned getAndAdd(Unsigned delta) {
-        return Word.unsigned(value.getAndAdd(delta.rawValue()));
+        return WordFactory.unsigned(value.getAndAdd(delta.rawValue()));
     }
 
     /**
@@ -46,7 +46,7 @@ public class AtomicUnsigned extends AtomicWord<Unsigned> {
      * @return the updated value
      */
     public final Unsigned addAndGet(Unsigned delta) {
-        return Word.unsigned(value.addAndGet(delta.rawValue()));
+        return WordFactory.unsigned(value.addAndGet(delta.rawValue()));
     }
 
     /**
@@ -56,7 +56,7 @@ public class AtomicUnsigned extends AtomicWord<Unsigned> {
      * @return the previous value
      */
     public final Unsigned getAndSubtract(Unsigned delta) {
-        return Word.unsigned(value.getAndAdd(-delta.rawValue()));
+        return WordFactory.unsigned(value.getAndAdd(-delta.rawValue()));
     }
 
     /**
@@ -66,6 +66,6 @@ public class AtomicUnsigned extends AtomicWord<Unsigned> {
      * @return the updated value
      */
     public final Unsigned subtractAndGet(Unsigned delta) {
-        return Word.unsigned(value.addAndGet(-delta.rawValue()));
+        return WordFactory.unsigned(value.addAndGet(-delta.rawValue()));
     }
 }

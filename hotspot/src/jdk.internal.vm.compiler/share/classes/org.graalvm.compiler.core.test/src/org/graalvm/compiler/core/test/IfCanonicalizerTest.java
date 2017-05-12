@@ -196,6 +196,33 @@ public class IfCanonicalizerTest extends GraalCompilerTest {
         return (n < 0) ? 1 : (n >= 1024) ? 1024 : n + 1;
     }
 
+    @Test
+    public void test10() {
+        // Exercise NormalizeCompareNode with long values
+        test("test10Snippet", 0, 1);
+    }
+
+    public static long test10Snippet(int x, int y) {
+        return (x < y) ? -1L : ((x == y) ? 0L : 1L);
+    }
+
+    @Test
+    public void test11() {
+        test("test11Snippet", 0, 1);
+    }
+
+    public static long test11Snippet(int x, int y) {
+        long normalizeCompare = normalizeCompareLong(x, y);
+        if (normalizeCompare == 0) {
+            return 5;
+        }
+        return 1;
+    }
+
+    private static Long normalizeCompareLong(int x, int y) {
+        return (x < y) ? -1L : ((x == y) ? 0L : 1L);
+    }
+
     private void testCombinedIf(String snippet, int count) {
         StructuredGraph graph = parseEager(snippet, AllowAssumptions.YES);
         PhaseContext context = new PhaseContext(getProviders());

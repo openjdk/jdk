@@ -126,7 +126,7 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
         this.registerAttributes = registerAllocationConfig.getRegisterConfig().getAttributesMap();
         this.allocatedBlocks = new BitSet(lirGenRes.getLIR().getControlFlowGraph().getBlocks().length);
         this.resultTraces = resultTraces;
-        this.moveResolver = new TraceGlobalMoveResolver(lirGenRes, spillMoveFactory, target.arch);
+        this.moveResolver = new TraceGlobalMoveResolver(lirGenRes, spillMoveFactory, registerAllocationConfig, target.arch);
         this.neverSpillConstants = neverSpillConstant;
         this.livenessInfo = livenessInfo;
 

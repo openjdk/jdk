@@ -170,11 +170,10 @@ public final class ConstantLoadOptimization extends PreAllocationOptimizationPha
         }
 
         private static boolean isConstantLoad(LIRInstruction inst) {
-            if (!(inst instanceof LoadConstantOp)) {
+            if (!LoadConstantOp.isLoadConstantOp(inst)) {
                 return false;
             }
-            LoadConstantOp load = (LoadConstantOp) inst;
-            return isVariable(load.getResult());
+            return isVariable(LoadConstantOp.asLoadConstantOp(inst).getResult());
         }
 
         private void addUsageToBlockMap(UseEntry entry) {

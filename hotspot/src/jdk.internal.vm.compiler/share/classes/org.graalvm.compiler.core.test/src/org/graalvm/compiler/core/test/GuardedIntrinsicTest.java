@@ -35,7 +35,6 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.debug.OpaqueNode;
 import org.graalvm.compiler.nodes.extended.LoadHubNode;
 import org.graalvm.compiler.nodes.extended.LoadMethodNode;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
@@ -118,8 +117,7 @@ public class GuardedIntrinsicTest extends GraalCompilerTest {
     }
 
     @Override
-    protected GraphBuilderConfiguration editGraphBuilderConfiguration(GraphBuilderConfiguration conf) {
-        InvocationPlugins invocationPlugins = conf.getPlugins().getInvocationPlugins();
+    protected void registerInvocationPlugins(InvocationPlugins invocationPlugins) {
         Registration r = new Registration(invocationPlugins, Super.class);
 
         r.register1("getAge", Receiver.class, new InvocationPlugin() {
@@ -131,7 +129,7 @@ public class GuardedIntrinsicTest extends GraalCompilerTest {
                 return true;
             }
         });
-        return super.editGraphBuilderConfiguration(conf);
+        super.registerInvocationPlugins(invocationPlugins);
     }
 
     public static int referenceMakeSuperAge() {

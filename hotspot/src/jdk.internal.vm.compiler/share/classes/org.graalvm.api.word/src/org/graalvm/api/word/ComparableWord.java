@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,23 +20,23 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.graalvm.compiler.hotspot.aarch64;
+package org.graalvm.api.word;
 
-import org.graalvm.compiler.core.aarch64.AArch64LIRKindTool;
-import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.hotspot.nodes.type.HotSpotLIRKindTool;
+public interface ComparableWord extends WordBase {
 
-import jdk.vm.ci.aarch64.AArch64Kind;
+    /**
+     * Compares this word with the specified value.
+     *
+     * @param val value to which this word is to be compared.
+     * @return {@code this == val}
+     */
+    boolean equal(ComparableWord val);
 
-public class AArch64HotSpotLIRKindTool extends AArch64LIRKindTool implements HotSpotLIRKindTool {
-
-    @Override
-    public LIRKind getNarrowOopKind() {
-        return LIRKind.reference(AArch64Kind.DWORD);
-    }
-
-    @Override
-    public LIRKind getNarrowPointerKind() {
-        return LIRKind.value(AArch64Kind.DWORD);
-    }
+    /**
+     * Compares this word with the specified value.
+     *
+     * @param val value to which this word is to be compared.
+     * @return {@code this != val}
+     */
+    boolean notEqual(ComparableWord val);
 }

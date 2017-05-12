@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.graalvm.compiler.word;
+package org.graalvm.api.word;
 
 /**
  * Utility methods on Unsigned values.

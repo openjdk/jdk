@@ -33,6 +33,7 @@ import static org.graalvm.compiler.hotspot.replacements.HotspotSnippetsOptions.L
 import static org.graalvm.compiler.nodes.PiNode.piCastToSnippetReplaceeStamp;
 import static org.graalvm.compiler.replacements.SnippetTemplate.DEFAULT_REPLACER;
 
+import org.graalvm.api.word.WordFactory;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.Snippet.ConstantParameter;
 import org.graalvm.compiler.core.common.type.Stamp;
@@ -72,7 +73,7 @@ public class LoadExceptionObjectSnippets implements Snippets {
         Word thread = registerAsWord(threadRegister);
         Object exception = readExceptionOop(thread);
         writeExceptionOop(thread, null);
-        writeExceptionPc(thread, Word.zero());
+        writeExceptionPc(thread, WordFactory.zero());
         return piCastToSnippetReplaceeStamp(exception);
     }
 

@@ -22,18 +22,18 @@
  */
 package org.graalvm.compiler.hotspot.replacements;
 
+import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayBaseOffset;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.DECRYPT_BLOCK;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.DECRYPT_BLOCK_WITH_ORIGINAL_KEY;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.ENCRYPT_BLOCK;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.VERY_SLOW_PATH_PROBABILITY;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.probability;
-import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayBaseOffset;
 
-import java.lang.reflect.Field;
-
+import org.graalvm.api.word.LocationIdentity;
+import org.graalvm.api.word.Pointer;
+import org.graalvm.api.word.WordFactory;
 import org.graalvm.compiler.api.replacements.ClassSubstitution;
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
-import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node.ConstantNodeParameter;
@@ -43,7 +43,6 @@ import org.graalvm.compiler.nodes.DeoptimizeNode;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.extended.ForeignCallNode;
 import org.graalvm.compiler.nodes.extended.RawLoadNode;
-import org.graalvm.compiler.word.Pointer;
 import org.graalvm.compiler.word.Word;
 
 import jdk.vm.ci.meta.DeoptimizationAction;
@@ -61,7 +60,12 @@ public class AESCryptSubstitutions {
     static final long kOffset;
     static final long lastKeyOffset;
     static final Class<?> AESCryptClass;
-    static final int AES_BLOCK_SIZE;
+
+    /**
+     * The AES block size is a constant 128 bits as defined by the
+     * <a href="http://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.197.pdf">standard<a/>.
+     */
+    static final int AES_BLOCK_SIZE_IN_BYTES = 16;
 
     static {
         try {
@@ -72,9 +76,6 @@ public class AESCryptSubstitutions {
             AESCryptClass = Class.forName("com.sun.crypto.provider.AESCrypt", true, cl);
             kOffset = UnsafeAccess.UNSAFE.objectFieldOffset(AESCryptClass.getDeclaredField("K"));
             lastKeyOffset = UnsafeAccess.UNSAFE.objectFieldOffset(AESCryptClass.getDeclaredField("lastKey"));
-            Field aesBlockSizeField = Class.forName("com.sun.crypto.provider.AESConstants", true, cl).getDeclaredField("AES_BLOCK_SIZE");
-            aesBlockSizeField.setAccessible(true);
-            AES_BLOCK_SIZE = aesBlockSizeField.getInt(null);
         } catch (Exception ex) {
             throw new GraalError(ex);
         }
@@ -122,8 +123,8 @@ public class AESCryptSubstitutions {
         Object realReceiver = PiNode.piCastNonNull(rcvr, AESCryptClass);
         Object kObject = RawLoadNode.load(realReceiver, kOffset, JavaKind.Object, LocationIdentity.any());
         Pointer kAddr = Word.objectToTrackedPointer(kObject).add(getArrayBaseOffset(JavaKind.Int));
-        Word inAddr = Word.unsigned(ComputeObjectAddressNode.get(in, getArrayBaseOffset(JavaKind.Byte) + inOffset));
-        Word outAddr = Word.unsigned(ComputeObjectAddressNode.get(out, getArrayBaseOffset(JavaKind.Byte) + outOffset));
+        Word inAddr = WordFactory.unsigned(ComputeObjectAddressNode.get(in, getArrayBaseOffset(JavaKind.Byte) + inOffset));
+        Word outAddr = WordFactory.unsigned(ComputeObjectAddressNode.get(out, getArrayBaseOffset(JavaKind.Byte) + outOffset));
         if (encrypt) {
             encryptBlockStub(ENCRYPT_BLOCK, inAddr, outAddr, kAddr);
         } else {
@@ -141,7 +142,7 @@ public class AESCryptSubstitutions {
      * Perform null and array bounds checks for arguments to a cipher operation.
      */
     static void checkArgs(byte[] in, int inOffset, byte[] out, int outOffset) {
-        if (probability(VERY_SLOW_PATH_PROBABILITY, inOffset < 0 || in.length - AES_BLOCK_SIZE < inOffset || outOffset < 0 || out.length - AES_BLOCK_SIZE < outOffset)) {
+        if (probability(VERY_SLOW_PATH_PROBABILITY, inOffset < 0 || in.length - AES_BLOCK_SIZE_IN_BYTES < inOffset || outOffset < 0 || out.length - AES_BLOCK_SIZE_IN_BYTES < outOffset)) {
             DeoptimizeNode.deopt(DeoptimizationAction.None, DeoptimizationReason.RuntimeConstraint);
         }
     }

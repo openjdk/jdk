@@ -22,11 +22,11 @@
  */
 package org.graalvm.compiler.hotspot.replacements.arraycopy;
 
-import static org.graalvm.compiler.core.common.LocationIdentity.any;
+import static org.graalvm.api.word.LocationIdentity.any;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_256;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_64;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
+import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.InputType;

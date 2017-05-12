@@ -565,8 +565,8 @@ public class LinearScanLifetimeAnalysisPhase extends LinearScanAllocationPhase {
      * of such moves is assigned the stack slot (which is in the caller's frame) as its spill slot.
      */
     protected void handleMethodArguments(LIRInstruction op) {
-        if (op instanceof ValueMoveOp) {
-            ValueMoveOp move = (ValueMoveOp) op;
+        if (ValueMoveOp.isValueMoveOp(op)) {
+            ValueMoveOp move = ValueMoveOp.asValueMoveOp(op);
             if (optimizeMethodArgument(move.getInput())) {
                 StackSlot slot = asStackSlot(move.getInput());
                 if (DetailedAsserts.getValue(allocator.getOptions())) {
@@ -659,8 +659,8 @@ public class LinearScanLifetimeAnalysisPhase extends LinearScanAllocationPhase {
      * Determines the register priority for an instruction's output/result operand.
      */
     protected RegisterPriority registerPriorityOfOutputOperand(LIRInstruction op) {
-        if (op instanceof ValueMoveOp) {
-            ValueMoveOp move = (ValueMoveOp) op;
+        if (ValueMoveOp.isValueMoveOp(op)) {
+            ValueMoveOp move = ValueMoveOp.asValueMoveOp(op);
             if (optimizeMethodArgument(move.getInput())) {
                 return RegisterPriority.None;
             }
@@ -833,8 +833,8 @@ public class LinearScanLifetimeAnalysisPhase extends LinearScanAllocationPhase {
      *         can only be a {@link JavaConstant}.
      */
     protected Constant getMaterializedValue(LIRInstruction op, Value operand, Interval interval) {
-        if (op instanceof LoadConstantOp) {
-            LoadConstantOp move = (LoadConstantOp) op;
+        if (LoadConstantOp.isLoadConstantOp(op)) {
+            LoadConstantOp move = LoadConstantOp.asLoadConstantOp(op);
 
             if (!allocator.neverSpillConstants()) {
                 /*

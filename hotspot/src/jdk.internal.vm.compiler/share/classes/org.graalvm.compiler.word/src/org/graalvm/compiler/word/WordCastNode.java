@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.graalvm.compiler.word.nodes;
+package org.graalvm.compiler.word;
 
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_1;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
@@ -41,7 +41,6 @@ import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
-import org.graalvm.compiler.word.Word.Opcode;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaConstant;
@@ -50,10 +49,10 @@ import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.meta.ValueKind;
 
 /**
- * Casts between Word and Object exposed by the {@link Opcode#FROM_ADDRESS},
- * {@link Opcode#OBJECT_TO_TRACKED}, {@link Opcode#OBJECT_TO_UNTRACKED} and {@link Opcode#TO_OBJECT}
- * operations. It has an impact on the pointer maps for the GC, so it must not be scheduled or
- * optimized away.
+ * Casts between Word and Object exposed by the {@link Word#fromAddress},
+ * {@link Word#objectToTrackedPointer}, {@link Word#objectToUntrackedPointer} and
+ * {@link Word#toObject()} operations. It has an impact on the pointer maps for the GC, so it must
+ * not be scheduled or optimized away.
  */
 @NodeInfo(cycles = CYCLES_1, size = SIZE_1)
 public final class WordCastNode extends FixedWithNextNode implements LIRLowerable, Canonicalizable {

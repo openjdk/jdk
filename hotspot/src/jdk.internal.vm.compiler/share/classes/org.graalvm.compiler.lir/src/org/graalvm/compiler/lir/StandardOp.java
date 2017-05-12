@@ -239,6 +239,16 @@ public class StandardOp {
     public interface MoveOp {
 
         AllocatableValue getResult();
+
+        // Checkstyle: stop
+        static MoveOp asMoveOp(LIRInstruction op) {
+            return (MoveOp) op;
+        }
+        // Checkstyle: resume
+
+        static boolean isMoveOp(LIRInstruction op) {
+            return op.isMoveOp();
+        }
     }
 
     /**
@@ -247,6 +257,16 @@ public class StandardOp {
     public interface ValueMoveOp extends MoveOp {
 
         AllocatableValue getInput();
+
+        // Checkstyle: stop
+        static ValueMoveOp asValueMoveOp(LIRInstruction op) {
+            return (ValueMoveOp) op;
+        }
+        // Checkstyle: resume
+
+        static boolean isValueMoveOp(LIRInstruction op) {
+            return op.isValueMoveOp();
+        }
     }
 
     /**
@@ -255,6 +275,16 @@ public class StandardOp {
     public interface LoadConstantOp extends MoveOp {
 
         Constant getConstant();
+
+        // Checkstyle: stop
+        static LoadConstantOp asLoadConstantOp(LIRInstruction op) {
+            return (LoadConstantOp) op;
+        }
+        // Checkstyle: resume
+
+        static boolean isLoadConstantOp(LIRInstruction op) {
+            return op.isLoadConstantOp();
+        }
     }
 
     /**

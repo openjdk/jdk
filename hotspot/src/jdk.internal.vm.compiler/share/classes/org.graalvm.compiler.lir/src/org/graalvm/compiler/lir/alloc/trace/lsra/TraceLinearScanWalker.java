@@ -1042,8 +1042,8 @@ final class TraceLinearScanWalker extends TraceIntervalWalker {
     }
 
     private static boolean isMove(LIRInstruction op, TraceInterval from, TraceInterval to) {
-        if (op instanceof ValueMoveOp) {
-            ValueMoveOp move = (ValueMoveOp) op;
+        if (ValueMoveOp.isValueMoveOp(op)) {
+            ValueMoveOp move = ValueMoveOp.asValueMoveOp(op);
             if (isVariable(move.getInput()) && isVariable(move.getResult())) {
                 return move.getInput() != null && move.getInput().equals(from.operand) && move.getResult() != null && move.getResult().equals(to.operand);
             }

@@ -626,7 +626,7 @@ public abstract class PEGraphDecoder extends SimplifyingGraphDecoder {
     }
 
     protected boolean tryInvocationPlugin(PEMethodScope methodScope, LoopScope loopScope, InvokeData invokeData, MethodCallTargetNode callTarget) {
-        if (invocationPlugins == null || invocationPlugins.size() == 0) {
+        if (invocationPlugins == null || invocationPlugins.isEmpty()) {
             return false;
         }
 

@@ -41,6 +41,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.Snippet.ConstantParameter;
 import org.graalvm.compiler.api.replacements.Snippet.NonNullParameter;
@@ -50,7 +51,6 @@ import org.graalvm.compiler.bytecode.BridgeMethodUtils;
 import org.graalvm.compiler.core.CompilerThreadFactory;
 import org.graalvm.compiler.core.CompilerThreadFactory.DebugConfigAccess;
 import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.DebugConfigScope;
@@ -79,6 +79,7 @@ import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.phases.verify.VerifyBailoutUsage;
 import org.graalvm.compiler.phases.verify.VerifyCallerSensitiveMethods;
 import org.graalvm.compiler.phases.verify.VerifyDebugUsage;
+import org.graalvm.compiler.phases.verify.VerifyInstanceOfUsage;
 import org.graalvm.compiler.phases.verify.VerifyUpdateUsages;
 import org.graalvm.compiler.phases.verify.VerifyUsageWithEquals;
 import org.graalvm.compiler.phases.verify.VerifyVirtualizableUsage;
@@ -167,7 +168,7 @@ public class CheckGraalInvariants extends GraalCompilerTest {
         MetaAccessProvider metaAccess = providers.getMetaAccess();
 
         PhaseSuite<HighTierContext> graphBuilderSuite = new PhaseSuite<>();
-        Plugins plugins = new Plugins(new InvocationPlugins(metaAccess));
+        Plugins plugins = new Plugins(new InvocationPlugins());
         GraphBuilderConfiguration config = GraphBuilderConfiguration.getDefault(plugins).withEagerResolving(true);
         graphBuilderSuite.appendPhase(new GraphBuilderPhase(config));
         HighTierContext context = new HighTierContext(providers, graphBuilderSuite, OptimisticOptimizations.NONE);
@@ -365,6 +366,7 @@ public class CheckGraalInvariants extends GraalCompilerTest {
         new VerifyVirtualizableUsage().apply(graph, context);
         new VerifyUpdateUsages().apply(graph, context);
         new VerifyBailoutUsage().apply(graph, context);
+        new VerifyInstanceOfUsage().apply(graph, context);
         if (graph.method().isBridge()) {
             BridgeMethodUtils.getBridgedMethod(graph.method());
         }

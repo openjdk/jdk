@@ -36,6 +36,7 @@ import static org.graalvm.compiler.hotspot.stubs.StubUtil.fatal;
 import static org.graalvm.compiler.hotspot.stubs.StubUtil.newDescriptor;
 import static org.graalvm.compiler.hotspot.stubs.StubUtil.printf;
 
+import org.graalvm.api.word.WordFactory;
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Fold.InjectedParameter;
 import org.graalvm.compiler.api.replacements.Snippet;
@@ -127,7 +128,7 @@ public class ExceptionHandlerStub extends SnippetStub {
                 // This thread-local is only cleared in DEBUG builds of the VM
                 // (see OptoRuntime::generate_exception_blob)
                 Word currentExceptionPc = readExceptionPc(thread);
-                if (currentExceptionPc.notEqual(Word.zero())) {
+                if (currentExceptionPc.notEqual(WordFactory.zero())) {
                     fatal("exception PC in thread must be zero, not %p", currentExceptionPc.rawValue());
                 }
             }

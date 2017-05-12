@@ -35,6 +35,7 @@ import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.FAST_PAT
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.NOT_FREQUENT_PROBABILITY;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.probability;
 
+import org.graalvm.api.word.WordFactory;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -64,7 +65,7 @@ public class HashCodeSnippets implements Snippets {
 
         // this code is independent from biased locking (although it does not look that way)
         final Word biasedLock = mark.and(biasedLockMaskInPlace(INJECTED_VMCONFIG));
-        if (probability(FAST_PATH_PROBABILITY, biasedLock.equal(Word.unsigned(unlockedMask(INJECTED_VMCONFIG))))) {
+        if (probability(FAST_PATH_PROBABILITY, biasedLock.equal(WordFactory.unsigned(unlockedMask(INJECTED_VMCONFIG))))) {
             int hash = (int) mark.unsignedShiftRight(identityHashCodeShift(INJECTED_VMCONFIG)).rawValue();
             if (probability(FAST_PATH_PROBABILITY, hash != uninitializedIdentityHashCodeValue(INJECTED_VMCONFIG))) {
                 return hash;

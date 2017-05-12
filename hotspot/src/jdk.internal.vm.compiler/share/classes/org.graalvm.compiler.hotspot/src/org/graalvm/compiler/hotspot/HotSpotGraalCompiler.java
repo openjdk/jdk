@@ -31,6 +31,7 @@ import java.util.Formattable;
 import java.util.Formatter;
 
 import org.graalvm.compiler.api.runtime.GraalJVMCICompiler;
+import org.graalvm.compiler.bytecode.Bytecode;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.GraalCompiler;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
@@ -100,7 +101,8 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
         if (graalRuntime.isShutdown()) {
             return HotSpotCompilationRequestResult.failure(String.format("Shutdown entered"), false);
         }
-        OptionValues options = graalRuntime.getOptions();
+        OptionValues options = graalRuntime.getOptions(request.getMethod());
+
         if (graalRuntime.isBootstrapping()) {
             if (GraalDebugConfig.Options.BootstrapInitializeOnly.getValue(options)) {
                 return HotSpotCompilationRequestResult.failure(String.format("Skip compilation because %s is enabled", GraalDebugConfig.Options.BootstrapInitializeOnly.getName()), true);
@@ -186,14 +188,15 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
     @SuppressWarnings("try")
     public StructuredGraph getIntrinsicGraph(ResolvedJavaMethod method, HotSpotProviders providers, CompilationIdentifier compilationId, OptionValues options) {
         Replacements replacements = providers.getReplacements();
-        ResolvedJavaMethod substMethod = replacements.getSubstitutionMethod(method);
-        if (substMethod != null) {
+        Bytecode subst = replacements.getSubstitutionBytecode(method);
+        if (subst != null) {
+            ResolvedJavaMethod substMethod = subst.getMethod();
             assert !substMethod.equals(method);
             StructuredGraph graph = new StructuredGraph.Builder(options, AllowAssumptions.YES).method(substMethod).compilationId(compilationId).build();
             try (Debug.Scope scope = Debug.scope("GetIntrinsicGraph", graph)) {
                 Plugins plugins = new Plugins(providers.getGraphBuilderPlugins());
                 GraphBuilderConfiguration config = GraphBuilderConfiguration.getSnippetDefault(plugins);
-                IntrinsicContext initialReplacementContext = new IntrinsicContext(method, substMethod, replacements.getReplacementBytecodeProvider(), ROOT_COMPILATION);
+                IntrinsicContext initialReplacementContext = new IntrinsicContext(method, substMethod, subst.getOrigin(), ROOT_COMPILATION);
                 new GraphBuilderPhase.Instance(providers.getMetaAccess(), providers.getStampProvider(), providers.getConstantReflection(), providers.getConstantFieldProvider(), config,
                                 OptimisticOptimizations.NONE, initialReplacementContext).apply(graph);
                 assert !graph.isFrozen();

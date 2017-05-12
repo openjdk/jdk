@@ -44,6 +44,7 @@ compiler/codecache/stress/OverloadCompileQueueTest.java 8166554 generic-all
 compiler/compilercontrol/jcmd/ClearDirectivesFileStackTest.java 8140405 generic-all
 compiler/jvmci/compilerToVM/GetResolvedJavaTypeTest.java 8158860 generic-all
 compiler/jvmci/compilerToVM/InvalidateInstalledCodeTest.java 8163894 generic-all
+compiler/jvmci/jdk.vm.ci.code.test/src/jdk/vm/ci/code/test/NativeCallTest.java 8180324 generic-all
 compiler/startup/SmallCodeCacheStartup.java 8134286 generic-all
 compiler/tiered/LevelTransitionTest.java 8067651 generic-all
 compiler/types/correctness/CorrectnessTest.java 8066173 generic-all

@@ -243,30 +243,25 @@ public abstract class NodeLIRBuilder implements NodeLIRBuilderTool, LIRGeneratio
     }
 
     protected LIRKind getExactPhiKind(PhiNode phi) {
-        // TODO (je): maybe turn this into generator-style instead of allocating an ArrayList.
-        ArrayList<LIRKind> values = new ArrayList<>(phi.valueCount());
-        for (int i = 0; i < phi.valueCount(); i++) {
+        LIRKind derivedKind = gen.toRegisterKind(gen.getLIRKind(phi.stamp()));
+        /* Collect reference information. */
+        for (int i = 0; i < phi.valueCount() && !derivedKind.isUnknownReference(); i++) {
             ValueNode node = phi.valueAt(i);
             Value value = getOperand(node);
+
+            // get ValueKind for input
+            final LIRKind valueKind;
             if (value != null) {
-                values.add(value.getValueKind(LIRKind.class));
+                valueKind = value.getValueKind(LIRKind.class);
             } else {
                 assert isPhiInputFromBackedge(phi, i) : String.format("Input %s to phi node %s is not yet available although it is not coming from a loop back edge", node, phi);
-                // non-java constant -> get LIRKind from stamp.
                 LIRKind kind = gen.getLIRKind(node.stamp());
-                values.add(gen.toRegisterKind(kind));
+                valueKind = gen.toRegisterKind(kind);
             }
+            /* Merge the reference information of the derived kind and the input. */
+            derivedKind = LIRKind.mergeReferenceInformation(derivedKind, valueKind);
         }
-        LIRKind derivedKind = LIRKind.merge(values);
-        assert verifyPHIKind(derivedKind, gen.getLIRKind(phi.stamp()));
         return derivedKind;
-    }
-
-    private boolean verifyPHIKind(LIRKind derivedKind, LIRKind phiKind) {
-        PlatformKind derivedPlatformKind = derivedKind.getPlatformKind();
-        PlatformKind phiPlatformKind = gen.toRegisterKind(phiKind).getPlatformKind();
-        assert derivedPlatformKind.equals(phiPlatformKind) : "kinds don't match: " + derivedPlatformKind + " vs " + phiPlatformKind;
-        return true;
     }
 
     private static boolean isPhiInputFromBackedge(PhiNode phi, int index) {

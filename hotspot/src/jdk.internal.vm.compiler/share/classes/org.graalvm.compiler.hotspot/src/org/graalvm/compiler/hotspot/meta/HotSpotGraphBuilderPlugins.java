@@ -25,10 +25,11 @@ package org.graalvm.compiler.hotspot.meta;
 import static jdk.vm.ci.meta.DeoptimizationAction.InvalidateRecompile;
 import static jdk.vm.ci.meta.DeoptimizationReason.Unresolved;
 import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
-import static org.graalvm.compiler.core.common.util.Util.Java8OrEarlier;
 import static org.graalvm.compiler.hotspot.meta.HotSpotAOTProfilingPlugin.Options.TieredAOT;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.JAVA_THREAD_THREAD_OBJECT_LOCATION;
 import static org.graalvm.compiler.java.BytecodeParserOptions.InlineDuringParsing;
+import static org.graalvm.compiler.serviceprovider.JDK9Method.Java8OrEarlier;
+
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.VolatileCallSite;
@@ -37,9 +38,9 @@ import java.lang.reflect.Modifier;
 import java.math.BigInteger;
 import java.util.zip.CRC32;
 
+import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.bytecode.BytecodeProvider;
-import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.hotspot.FingerprintUtil;
@@ -89,13 +90,15 @@ import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.nodes.spi.StampProvider;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.phases.tiers.CompilerConfiguration;
 import org.graalvm.compiler.replacements.InlineDuringParsingPlugin;
 import org.graalvm.compiler.replacements.MethodHandlePlugin;
 import org.graalvm.compiler.replacements.NodeIntrinsificationProvider;
 import org.graalvm.compiler.replacements.ReplacementsImpl;
 import org.graalvm.compiler.replacements.StandardGraphBuilderPlugins;
-import org.graalvm.compiler.replacements.WordOperationPlugin;
 import org.graalvm.compiler.serviceprovider.GraalServices;
+import org.graalvm.compiler.serviceprovider.JDK9Method;
+import org.graalvm.compiler.word.WordOperationPlugin;
 import org.graalvm.compiler.word.WordTypes;
 
 import jdk.vm.ci.code.CodeUtil;
@@ -123,9 +126,10 @@ public class HotSpotGraphBuilderPlugins {
      * @param foreignCalls
      * @param stampProvider
      */
-    public static Plugins create(GraalHotSpotVMConfig config, HotSpotWordTypes wordTypes, MetaAccessProvider metaAccess, ConstantReflectionProvider constantReflection,
-                    SnippetReflectionProvider snippetReflection, ForeignCallsProvider foreignCalls, StampProvider stampProvider, ReplacementsImpl replacements) {
-        InvocationPlugins invocationPlugins = new HotSpotInvocationPlugins(config, metaAccess);
+    public static Plugins create(CompilerConfiguration compilerConfiguration, GraalHotSpotVMConfig config, HotSpotWordTypes wordTypes, MetaAccessProvider metaAccess,
+                    ConstantReflectionProvider constantReflection, SnippetReflectionProvider snippetReflection, ForeignCallsProvider foreignCalls, StampProvider stampProvider,
+                    ReplacementsImpl replacements) {
+        InvocationPlugins invocationPlugins = new HotSpotInvocationPlugins(config, compilerConfiguration);
 
         Plugins plugins = new Plugins(invocationPlugins);
         NodeIntrinsificationProvider nodeIntrinsificationProvider = new NodeIntrinsificationProvider(metaAccess, snippetReflection, foreignCalls, wordTypes);
@@ -187,7 +191,7 @@ public class HotSpotGraphBuilderPlugins {
 
             @Override
             public void run() {
-                BytecodeProvider replacementBytecodeProvider = replacements.getReplacementBytecodeProvider();
+                BytecodeProvider replacementBytecodeProvider = replacements.getDefaultReplacementBytecodeProvider();
                 registerObjectPlugins(invocationPlugins, options, replacementBytecodeProvider);
                 registerClassPlugins(plugins, config, replacementBytecodeProvider);
                 registerSystemPlugins(invocationPlugins, foreignCalls);
@@ -448,7 +452,7 @@ public class HotSpotGraphBuilderPlugins {
     public static final String constantPoolClass;
 
     static {
-        if (Java8OrEarlier) {
+        if (JDK9Method.Java8OrEarlier) {
             cbcEncryptName = "encrypt";
             cbcDecryptName = "decrypt";
             aesEncryptName = "encryptBlock";

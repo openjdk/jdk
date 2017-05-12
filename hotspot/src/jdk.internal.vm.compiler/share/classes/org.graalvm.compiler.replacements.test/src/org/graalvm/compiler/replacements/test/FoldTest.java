@@ -22,8 +22,6 @@
  */
 package org.graalvm.compiler.replacements.test;
 
-import org.junit.Test;
-
 import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.api.replacements.ClassSubstitution;
 import org.graalvm.compiler.api.replacements.Fold;
@@ -32,12 +30,11 @@ import org.graalvm.compiler.bytecode.BytecodeProvider;
 import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StartNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
 import org.graalvm.compiler.nodes.graphbuilderconf.NodeIntrinsicPluginFactory.InjectionProvider;
 import org.graalvm.compiler.replacements.NodeIntrinsificationProvider;
+import org.junit.Test;
 
 public class FoldTest extends ReplacementsTest {
 
@@ -81,25 +78,17 @@ public class FoldTest extends ReplacementsTest {
     }
 
     @Override
-    protected GraphBuilderConfiguration editGraphBuilderConfiguration(GraphBuilderConfiguration conf) {
-        InvocationPlugins invocationPlugins = conf.getPlugins().getInvocationPlugins();
+    protected void registerInvocationPlugins(InvocationPlugins invocationPlugins) {
+        InjectionProvider injection = new NodeIntrinsificationProvider(getMetaAccess(), getSnippetReflection(), getProviders().getForeignCalls(), null);
+        new PluginFactory_FoldTest().registerPlugins(invocationPlugins, injection);
         BytecodeProvider replacementBytecodeProvider = getSystemClassLoaderBytecodeProvider();
         Registration r = new Registration(invocationPlugins, TestMethod.class, replacementBytecodeProvider);
         r.registerMethodSubstitution(TestMethodSubstitution.class, "test");
-        return super.editGraphBuilderConfiguration(conf);
+        super.registerInvocationPlugins(invocationPlugins);
     }
 
     public static int callTest() {
         return TestMethod.test();
-    }
-
-    @Override
-    protected Plugins getDefaultGraphBuilderPlugins() {
-        Plugins ret = super.getDefaultGraphBuilderPlugins();
-        // manually register generated factories, jvmci service providers don't work from unit tests
-        InjectionProvider injection = new NodeIntrinsificationProvider(getMetaAccess(), getSnippetReflection(), getProviders().getForeignCalls(), null);
-        new PluginFactory_FoldTest().registerPlugins(ret.getInvocationPlugins(), injection);
-        return ret;
     }
 
     @Override

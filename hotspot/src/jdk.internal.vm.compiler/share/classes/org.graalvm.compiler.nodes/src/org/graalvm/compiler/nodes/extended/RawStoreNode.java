@@ -26,7 +26,7 @@ import static org.graalvm.compiler.nodeinfo.InputType.State;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
+import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
@@ -124,10 +124,27 @@ public final class RawStoreNode extends UnsafeAccessNode implements StateSplit, 
                 int entryIndex = virtual.entryIndexForOffset(off, accessKind());
                 if (entryIndex != -1) {
                     JavaKind entryKind = virtual.entryKind(entryIndex);
-                    if (entryKind == accessKind() || entryKind == accessKind().getStackKind()) {
+                    boolean canVirtualize = entryKind == accessKind() || entryKind == accessKind().getStackKind();
+                    if (!canVirtualize) {
+                        /*
+                         * Special case: If the entryKind is long, allow arbitrary kinds as long as
+                         * a value of the same kind is already there. This can only happen if some
+                         * other node initialized the entry with a value of a different kind. One
+                         * example where this happens is the Truffle NewFrameNode.
+                         */
+                        ValueNode entry = tool.getEntry(virtual, entryIndex);
+                        if (entryKind == JavaKind.Long && entry.getStackKind() == value.getStackKind()) {
+                            canVirtualize = true;
+                        }
+                    }
+                    if (canVirtualize) {
                         tool.setVirtualEntry(virtual, entryIndex, value(), true);
                         tool.delete();
                     } else {
+                        /*
+                         * Special case: Allow storing a single long or double value into two
+                         * consecutive int slots.
+                         */
                         if ((accessKind() == JavaKind.Long || accessKind() == JavaKind.Double) && entryKind == JavaKind.Int) {
                             int nextIndex = virtual.entryIndexForOffset(off + 4, entryKind);
                             if (nextIndex != -1) {

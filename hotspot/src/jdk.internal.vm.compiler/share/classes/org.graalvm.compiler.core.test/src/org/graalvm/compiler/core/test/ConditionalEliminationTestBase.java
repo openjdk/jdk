@@ -29,17 +29,16 @@ import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.ConvertDeoptimizeToGuardPhase;
-import org.graalvm.compiler.phases.common.DominatorConditionalEliminationPhase;
 import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
+import org.graalvm.compiler.phases.common.ConditionalEliminationPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
 import org.junit.Assert;
 
 /**
- * Collection of tests for
- * {@link org.graalvm.compiler.phases.common.DominatorConditionalEliminationPhase} including those
- * that triggered bugs in this phase.
+ * Collection of tests for {@link org.graalvm.compiler.phases.common.ConditionalEliminationPhase}
+ * including those that triggered bugs in this phase.
  */
 public class ConditionalEliminationTestBase extends GraalCompilerTest {
     protected static int sink0;
@@ -70,7 +69,7 @@ public class ConditionalEliminationTestBase extends GraalCompilerTest {
         try (Debug.Scope scope = Debug.scope("ConditionalEliminationTest.ReferenceGraph", referenceGraph)) {
             prepareGraph(referenceGraph, canonicalizer, context, applyLowering);
             if (applyConditionalEliminationOnReference) {
-                DominatorConditionalEliminationPhase.create(true).apply(referenceGraph, context);
+                new ConditionalEliminationPhase(true).apply(referenceGraph, context);
             }
             canonicalizer.apply(referenceGraph, context);
             canonicalizer.apply(referenceGraph, context);
@@ -102,7 +101,7 @@ public class ConditionalEliminationTestBase extends GraalCompilerTest {
         canonicalizer.apply(graph, context);
 
         int baseProxyCount = graph.getNodes().filter(ProxyNode.class).count();
-        DominatorConditionalEliminationPhase.create(true).apply(graph, context);
+        new ConditionalEliminationPhase(true).apply(graph, context);
         canonicalizer.apply(graph, context);
         new SchedulePhase(graph.getOptions()).apply(graph, context);
         int actualProxiesCreated = graph.getNodes().filter(ProxyNode.class).count() - baseProxyCount;

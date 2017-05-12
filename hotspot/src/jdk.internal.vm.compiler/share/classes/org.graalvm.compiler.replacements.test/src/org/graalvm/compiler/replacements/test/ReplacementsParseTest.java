@@ -24,18 +24,16 @@ package org.graalvm.compiler.replacements.test;
 
 import java.util.function.Function;
 
-import org.junit.Test;
-
 import org.graalvm.compiler.api.replacements.ClassSubstitution;
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
 import org.graalvm.compiler.bytecode.BytecodeProvider;
 import org.graalvm.compiler.graph.Node.ConstantNodeParameter;
 import org.graalvm.compiler.graph.Node.NodeIntrinsic;
 import org.graalvm.compiler.nodes.PiNode;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
+import org.junit.Test;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
@@ -44,22 +42,14 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
  */
 public class ReplacementsParseTest extends ReplacementsTest {
 
-    @Override
-    protected Plugins getDefaultGraphBuilderPlugins() {
-        Plugins ret = super.getDefaultGraphBuilderPlugins();
-        // Manually register generated factory as Graal service providers don't work for unit tests
-        new PluginFactory_ReplacementsParseTest().registerPlugins(ret.getInvocationPlugins(), null);
-        return ret;
-    }
-
-    private static final Object THROW_EXCEPTION_MARKER = new Object() {
+    static final Object THROW_EXCEPTION_MARKER = new Object() {
         @Override
         public String toString() {
             return "THROW_EXCEPTION_MARKER";
         }
     };
 
-    static class TestMethods {
+    static class TestObject {
         static double next(double v) {
             return Math.nextAfter(v, 1.0);
         }
@@ -70,6 +60,25 @@ public class ReplacementsParseTest extends ReplacementsTest {
 
         static double nextAfter(double x, double d) {
             return Math.nextAfter(x, d);
+        }
+
+        TestObject() {
+            this(null);
+        }
+
+        TestObject(Object id) {
+            this.id = id;
+        }
+
+        final Object id;
+
+        String stringizeId() {
+            String res = String.valueOf(id);
+            if (res.equals(THROW_EXCEPTION_MARKER.toString())) {
+                // Tests exception throwing from partial intrinsification
+                throw new RuntimeException("ex: " + id);
+            }
+            return res;
         }
 
         static String stringize(Object obj) {
@@ -86,8 +95,8 @@ public class ReplacementsParseTest extends ReplacementsTest {
         }
     }
 
-    @ClassSubstitution(TestMethods.class)
-    static class TestMethodsSubstitutions {
+    @ClassSubstitution(TestObject.class)
+    static class TestObjectSubstitutions {
 
         @MethodSubstitution(isStatic = true)
         static double nextAfter(double x, double d) {
@@ -96,7 +105,7 @@ public class ReplacementsParseTest extends ReplacementsTest {
         }
 
         /**
-         * Tests partial intrinsification.
+         * Tests conditional intrinsification of a static method.
          */
         @MethodSubstitution
         static String stringize(Object obj) {
@@ -108,6 +117,25 @@ public class ReplacementsParseTest extends ReplacementsTest {
                 // slow/uncommon case.
                 return stringize(obj);
             }
+        }
+
+        /**
+         * Tests conditional intrinsification of a non-static method.
+         */
+        @MethodSubstitution(isStatic = false)
+        static String stringizeId(TestObject thisObj) {
+            if (thisObj.id != null && thisObj.id.getClass() == String.class) {
+                return asNonNullString(thisObj.id);
+            } else {
+                // A recursive call denotes exiting/deoptimizing
+                // out of the partial intrinsification to the
+                // slow/uncommon case.
+                return outOfLinePartialIntrinsification(thisObj);
+            }
+        }
+
+        static String outOfLinePartialIntrinsification(TestObject thisObj) {
+            return stringizeId(thisObj);
         }
 
         public static String asNonNullString(Object object) {
@@ -131,16 +159,18 @@ public class ReplacementsParseTest extends ReplacementsTest {
     }
 
     @Override
-    protected GraphBuilderConfiguration editGraphBuilderConfiguration(GraphBuilderConfiguration conf) {
-        InvocationPlugins invocationPlugins = conf.getPlugins().getInvocationPlugins();
+    protected void registerInvocationPlugins(InvocationPlugins invocationPlugins) {
         BytecodeProvider replacementBytecodeProvider = getSystemClassLoaderBytecodeProvider();
-        Registration r = new Registration(invocationPlugins, TestMethods.class, replacementBytecodeProvider);
-        r.registerMethodSubstitution(TestMethodsSubstitutions.class, "nextAfter", double.class, double.class);
-        r.registerMethodSubstitution(TestMethodsSubstitutions.class, "stringize", Object.class);
+        Registration r = new Registration(invocationPlugins, TestObject.class, replacementBytecodeProvider);
+        new PluginFactory_ReplacementsParseTest().registerPlugins(invocationPlugins, null);
+        r.registerMethodSubstitution(TestObjectSubstitutions.class, "nextAfter", double.class, double.class);
+        r.registerMethodSubstitution(TestObjectSubstitutions.class, "stringize", Object.class);
+        r.registerMethodSubstitution(TestObjectSubstitutions.class, "stringizeId", Receiver.class);
+
         if (replacementBytecodeProvider.supportsInvokedynamic()) {
-            r.registerMethodSubstitution(TestMethodsSubstitutions.class, "identity", String.class);
+            r.registerMethodSubstitution(TestObjectSubstitutions.class, "identity", String.class);
         }
-        return super.editGraphBuilderConfiguration(conf);
+        super.registerInvocationPlugins(invocationPlugins);
     }
 
     /**
@@ -152,7 +182,7 @@ public class ReplacementsParseTest extends ReplacementsTest {
     }
 
     public double test1Snippet(double d) {
-        return TestMethods.next(d);
+        return TestObject.next(d);
     }
 
     /**
@@ -164,7 +194,7 @@ public class ReplacementsParseTest extends ReplacementsTest {
     }
 
     public double test2Snippet(double d) {
-        return TestMethods.next2(d);
+        return TestObject.next2(d);
     }
 
     /**
@@ -185,7 +215,7 @@ public class ReplacementsParseTest extends ReplacementsTest {
     public void doNextAfter(double[] outArray, double[] inArray) {
         for (int i = 0; i < inArray.length; i++) {
             double direction = (i & 1) == 0 ? Double.POSITIVE_INFINITY : -Double.NEGATIVE_INFINITY;
-            outArray[i] = TestMethods.nextAfter(inArray[i], direction);
+            outArray[i] = TestObject.nextAfter(inArray[i], direction);
         }
     }
 
@@ -196,13 +226,29 @@ public class ReplacementsParseTest extends ReplacementsTest {
         test("callStringize", Boolean.TRUE);
     }
 
+    @Test
+    public void testCallStringizeId() {
+        test("callStringizeId", new TestObject("a string"));
+        test("callStringizeId", new TestObject(THROW_EXCEPTION_MARKER));
+        test("callStringizeId", new TestObject(Boolean.TRUE));
+    }
+
     public static Object callStringize(Object obj) {
-        return TestMethods.stringize(obj);
+        return TestObject.stringize(obj);
+    }
+
+    public static Object callStringizeId(TestObject testObj) {
+        return indirect(testObj);
+    }
+
+    @BytecodeParserNeverInline
+    private static String indirect(TestObject testObj) {
+        return testObj.stringizeId();
     }
 
     @Test
     public void testRootCompileStringize() {
-        ResolvedJavaMethod method = getResolvedJavaMethod(TestMethods.class, "stringize");
+        ResolvedJavaMethod method = getResolvedJavaMethod(TestObject.class, "stringize");
         test(method, null, "a string");
         test(method, null, Boolean.TRUE);
         test(method, null, THROW_EXCEPTION_MARKER);
@@ -215,6 +261,6 @@ public class ReplacementsParseTest extends ReplacementsTest {
     }
 
     public static String callLambda(String value) {
-        return TestMethods.identity(value);
+        return TestObject.identity(value);
     }
 }

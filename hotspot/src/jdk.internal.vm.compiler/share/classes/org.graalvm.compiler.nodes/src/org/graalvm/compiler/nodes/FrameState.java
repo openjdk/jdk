@@ -137,6 +137,7 @@ public final class FrameState extends VirtualState implements IterableNodeType {
         }
         assert stackSize >= 0;
         this.outerFrameState = outerFrameState;
+        assert outerFrameState == null || outerFrameState.bci >= 0;
         this.code = code;
         this.bci = bci;
         this.localsSize = localsSize;
@@ -236,7 +237,7 @@ public final class FrameState extends VirtualState implements IterableNodeType {
     }
 
     public void setOuterFrameState(FrameState x) {
-        assert x == null || !x.isDeleted();
+        assert x == null || (!x.isDeleted() && x.bci >= 0);
         updateUsages(this.outerFrameState, x);
         this.outerFrameState = x;
     }

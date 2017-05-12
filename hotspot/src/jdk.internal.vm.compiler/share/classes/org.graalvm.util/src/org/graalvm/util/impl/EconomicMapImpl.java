@@ -815,7 +815,7 @@ public final class EconomicMapImpl<K, V> implements EconomicMap<K, V>, EconomicS
         while (cursor.advance()) {
             builder.append("(").append(cursor.getKey()).append(",").append(cursor.getValue()).append("),");
         }
-        builder.append("}");
+        builder.append("})");
         return builder.toString();
     }
 

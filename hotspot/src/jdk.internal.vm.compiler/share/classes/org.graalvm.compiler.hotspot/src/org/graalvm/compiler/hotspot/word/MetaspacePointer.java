@@ -25,15 +25,15 @@ package org.graalvm.compiler.hotspot.word;
 import static org.graalvm.compiler.hotspot.word.HotSpotOperation.HotspotOpcode.FROM_POINTER;
 import static org.graalvm.compiler.hotspot.word.HotSpotOperation.HotspotOpcode.IS_NULL;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
+import org.graalvm.api.word.LocationIdentity;
+import org.graalvm.api.word.Pointer;
+import org.graalvm.api.word.Signed;
+import org.graalvm.api.word.Unsigned;
+import org.graalvm.api.word.WordBase;
 import org.graalvm.compiler.nodes.memory.HeapAccess.BarrierType;
-import org.graalvm.compiler.word.Pointer;
-import org.graalvm.compiler.word.Signed;
-import org.graalvm.compiler.word.Unsigned;
 import org.graalvm.compiler.word.Word;
 import org.graalvm.compiler.word.Word.Opcode;
 import org.graalvm.compiler.word.Word.Operation;
-import org.graalvm.compiler.word.WordBase;
 
 /**
  * Marker type for a metaspace pointer.

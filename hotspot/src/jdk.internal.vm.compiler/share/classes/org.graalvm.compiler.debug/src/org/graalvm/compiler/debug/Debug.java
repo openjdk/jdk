@@ -123,6 +123,12 @@ public class Debug {
     }
 
     /**
+     * A special dump level that indicates the dumping machinery is enabled but no dumps will be
+     * produced except through other options.
+     */
+    public static final int ENABLED_LEVEL = 0;
+
+    /**
      * Basic debug level.
      *
      * For HIR dumping, only ~5 graphs per method: after parsing, after inlining, after high tier,
