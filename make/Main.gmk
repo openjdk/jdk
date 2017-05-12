@@ -366,22 +366,22 @@ ALL_TARGETS += store-source-revision create-source-revision-tracker bootcycle-im
 # If building full docs, to complete docs-*-api we need both the javadoc and
 # modulegraph targets.
 docs-jdk-api-javadoc:
-	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-jdk-api-javadoc)
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Docs.gmk docs-jdk-api-javadoc)
 
 docs-jdk-api-modulegraph:
-	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-jdk-api-modulegraph)
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Docs.gmk docs-jdk-api-modulegraph)
 
 docs-javase-api-javadoc:
-	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-javase-api-javadoc)
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Docs.gmk docs-javase-api-javadoc)
 
 docs-javase-api-modulegraph:
-	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-javase-api-modulegraph)
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Docs.gmk docs-javase-api-modulegraph)
 
 docs-jdk-specs:
-	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-jdk-specs)
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Docs.gmk docs-jdk-specs)
 
 docs-zip:
-	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-zip)
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Docs.gmk docs-zip)
 
 update-build-docs:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f UpdateBuildDocs.gmk)
