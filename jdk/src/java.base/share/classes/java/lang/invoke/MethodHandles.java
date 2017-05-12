@@ -1660,7 +1660,7 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          * (If the trailing array argument is the only argument,
          * the given receiver value will be bound to it.)
          * <p>
-         * This is equivalent to the following code:
+         * This is almost equivalent to the following code, with some differences noted below:
          * <blockquote><pre>{@code
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
@@ -1673,7 +1673,10 @@ return mh1;
          * where {@code defc} is either {@code receiver.getClass()} or a super
          * type of that class, in which the requested method is accessible
          * to the lookup class.
-         * (Note that {@code bindTo} does not preserve variable arity.)
+         * (Unlike {@code bind}, {@code bindTo} does not preserve variable arity.
+         * Also, {@code bindTo} may throw a {@code ClassCastException} in instances where {@code bind} would
+         * throw an {@code IllegalAccessException}, as in the case where the member is {@code protected} and
+         * the receiver is restricted by {@code findVirtual} to the lookup class.)
          * @param receiver the object from which the method is accessed
          * @param name the name of the method
          * @param type the type of the method, with the receiver argument omitted
