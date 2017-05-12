@@ -1577,14 +1577,18 @@ public class Gen extends JCTree.Visitor {
     }
 
     public void visitBreak(JCBreak tree) {
+        int tmpPos = code.pendingStatPos;
         Env<GenContext> targetEnv = unwind(tree.target, env);
+        code.pendingStatPos = tmpPos;
         Assert.check(code.state.stacksize == 0);
         targetEnv.info.addExit(code.branch(goto_));
         endFinalizerGaps(env, targetEnv);
     }
 
     public void visitContinue(JCContinue tree) {
+        int tmpPos = code.pendingStatPos;
         Env<GenContext> targetEnv = unwind(tree.target, env);
+        code.pendingStatPos = tmpPos;
         Assert.check(code.state.stacksize == 0);
         targetEnv.info.addCont(code.branch(goto_));
         endFinalizerGaps(env, targetEnv);
