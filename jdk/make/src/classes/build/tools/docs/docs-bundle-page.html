@@ -1,0 +1,146 @@
+<!--
+Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+This code is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License version 2 only, as
+published by the Free Software Foundation.  Oracle designates this
+particular file as subject to the "Classpath" exception as provided
+by Oracle in the LICENSE file that accompanied this code.
+
+This code is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+version 2 for more details (a copy is included in the LICENSE file that
+accompanied this code).
+
+You should have received a copy of the GNU General Public License version
+2 along with this work; if not, write to the Free Software Foundation,
+Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+or visit www.oracle.com if you need additional information or have any
+questions.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta http-equiv="content-type" content="text/html;" charset="utf-8">
+  <style type="text/css">
+table {
+  border-collapse: collapse;
+}
+table {
+  border: 1px solid black;
+}
+th ,td {
+  border: 0px solid black;
+}
+thead th {
+  background-color: #DDD;
+}
+tbody > tr:nth-child(even) {
+    background-color: #EEE
+}
+tbody > tr:nth-child(odd) {
+    background-color: #FFF
+}
+th, td {
+  font-family: sans-serif; /* could eventually be DejaVu */
+  font-size: small;
+  padding: 5px 10px;
+  vertical-align:top;
+}
+td a {
+  text-decoration: none;
+}
+tr th {
+  text-align:left;
+}
+caption {
+  font-size: smaller;
+  font-weight: bold;
+}
+</style>
+<title>@HEADER_TITLE@</title>
+</head>
+<body>
+
+<h1>@HEADER_TITLE@</h1>
+
+<ul>
+<li><a href="api/index.html">JDK API Specification</a></li>
+<li>Java Language Specification</li>
+<li>Java Virtual Machine Specification</li>
+</ul>
+
+<table>
+<caption>Modules</caption>
+<thead>
+<tr>
+  <th scope="col">Group</th>
+  <th scope="col">Java SE</th>
+  <th scope="col">JDK</th>
+  <th scope="col">JavaFX</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <th scope="row">Foundation</th>
+  <td>@CORE_MODULES@</td>
+</tr>
+<tr>
+<th scope="row">Security</th>
+  <td>@SECURITY_MODULES@</td>
+</tr>
+<tr>
+<th scope="row">Instrumentation and<br>Management</th>
+  <td>@INSTRUMENT_MGMT_MODULES@</td>
+</tr>
+<tr>
+<th scope="row">Integration</th>
+  <td>@INTEGRATION_MODULES@</td>
+</tr>
+<tr>
+  <th scope="row">User Interface</th>
+  <td>@UI_TOOLKITS_MODULES@</td>
+</tr>
+<tr>
+  <th scope="row">Compiler and Scripting</th>
+  <td>@COMPILER_SCRIPTING_MODULES@</td>
+</tr>
+<tr>
+  <th scope="row">Debugging</th>
+  <td>@DEBUG_MODULES@</td>
+</tr>
+<tr>
+  <th scope="row">Tools and Tool APIs</th>
+  <td>@TOOL_MODULES@</td>
+</tr>
+<tr>
+  <th scope="row">Incubating Features</th>
+  <td>@INCUBATOR_MODULES@</td>
+</tr>
+<tr>
+  <th scope="row">Java EE</th>
+  <td>@JAVA_EE_MODULES@</td>
+</tr>
+<tr>
+  <th scope="row"></th>
+  <th scope="row">Outside Java SE</th>
+  <th scope="row">JDK</th>
+  <th scope="row">JavaFX</th>
+</tr>
+<tr>
+  <th scope="row">Others</th>
+  <td>@OTHER_MODULES@</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+<hr/>
+<a href="legal/cpyr.html">Copyright</a>&copy; 1993, 2017, Oracle and/or its affiliates. All rights reserved.</p>
+</body>
+</html>
