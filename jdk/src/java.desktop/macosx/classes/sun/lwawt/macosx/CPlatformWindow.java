@@ -274,13 +274,18 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         }
         AtomicLong ref = new AtomicLong();
         contentView.execute(viewPtr -> {
+            boolean hasOwnerPtr = false;
+
             if (owner != null) {
-                owner.execute(ownerPtr -> {
+                hasOwnerPtr = 0L != owner.executeGet(ownerPtr -> {
                     ref.set(nativeCreateNSWindow(viewPtr, ownerPtr, styleBits,
-                                                 bounds.x, bounds.y,
-                                                 bounds.width, bounds.height));
+                                                    bounds.x, bounds.y,
+                                                    bounds.width, bounds.height));
+                    return 1;
                 });
-            } else {
+            }
+
+            if (!hasOwnerPtr) {
                 ref.set(nativeCreateNSWindow(viewPtr, 0,
                                              styleBits, bounds.x, bounds.y,
                                              bounds.width, bounds.height));
