@@ -136,8 +136,7 @@ struct NSAppArgs {
  *  |
  * \|/
  * ParseArguments
- * (removes -d32 and -d64 if any,
- *  processes version options,
+ * (processes version options,
  *  creates argument list for vm,
  *  etc.)
  *   |
@@ -147,20 +146,20 @@ struct NSAppArgs {
  *   |
  *   |
  *  \|/
- * Path is desired JRE ? YES --> Have Desired Model ? NO --> Re-exec --> Main
- *  NO                               YES --> Continue
+ * Path is desired JRE ? YES --> Continue
+ *  NO
  *   |
  *   |
  *  \|/
  * Paths have well known
- * jvm paths ?       --> NO --> Have Desired Model ? NO --> Re-exec --> Main
- *  YES                              YES --> Continue
+ * jvm paths ?       --> NO --> Continue
+ *  YES
  *   |
  *   |
  *  \|/
  *  Does libjvm.so exist
- *  in any of them ? --> NO --> Have Desired Model ? NO --> Re-exec --> Main
- *   YES                             YES --> Continue
+ *  in any of them ? --> NO --> Continue
+ *   YES
  *   |
  *   |
  *  \|/
@@ -217,7 +216,7 @@ static InvocationFunctions *GetExportedJNIFunctions() {
     }
 
     char jvmPath[PATH_MAX];
-    jboolean gotJVMPath = GetJVMPath(jrePath, preferredJVM, jvmPath, sizeof(jvmPath), CURRENT_DATA_MODEL);
+    jboolean gotJVMPath = GetJVMPath(jrePath, preferredJVM, jvmPath, sizeof(jvmPath));
     if (!gotJVMPath) {
         JLI_ReportErrorMessage("Failed to GetJVMPath()");
         return NULL;
@@ -362,203 +361,51 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
                            char jrepath[], jint so_jrepath,
                            char jvmpath[], jint so_jvmpath,
                            char jvmcfg[],  jint so_jvmcfg) {
-  /*
-   * First, determine if we are running the desired data model.  If we
-   * are running the desired data model, all the error messages
-   * associated with calling GetJREPath, ReadKnownVMs, etc. should be
-   * output.  However, if we are not running the desired data model,
-   * some of the errors should be suppressed since it is more
-   * informative to issue an error message based on whether or not the
-   * os/processor combination has dual mode capabilities.
-   */
     jboolean jvmpathExists;
 
     /* Compute/set the name of the executable */
     SetExecname(*pargv);
 
-    /* Check data model flags, and exec process, if needed */
-    {
-      char * jvmtype    = NULL;
-      int  argc         = *pargc;
-      char **argv       = *pargv;
-      int running       = CURRENT_DATA_MODEL;
+    char * jvmtype    = NULL;
+    int  argc         = *pargc;
+    char **argv       = *pargv;
 
-      int wanted        = running;      /* What data mode is being
-                                           asked for? Current model is
-                                           fine unless another model
-                                           is asked for */
-
-      char** newargv    = NULL;
-      int    newargc    = 0;
-
-      /*
-       * Starting in 1.5, all unix platforms accept the -d32 and -d64
-       * options.  On platforms where only one data-model is supported
-       * (e.g. ia-64 Linux), using the flag for the other data model is
-       * an error and will terminate the program.
-       */
-
-      { /* open new scope to declare local variables */
-        int i;
-
-        newargv = (char **)JLI_MemAlloc((argc+1) * sizeof(char*));
-        newargv[newargc++] = argv[0];
-
-        /* scan for data model arguments and remove from argument list;
-           last occurrence determines desired data model */
-        for (i=1; i < argc; i++) {
-
-          if (JLI_StrCmp(argv[i], "-J-d64") == 0 || JLI_StrCmp(argv[i], "-d64") == 0) {
-            wanted = 64;
-            continue;
-          }
-          if (JLI_StrCmp(argv[i], "-J-d32") == 0 || JLI_StrCmp(argv[i], "-d32") == 0) {
-            wanted = 32;
-            continue;
-          }
-          newargv[newargc++] = argv[i];
-
-          if (IsJavaArgs()) {
-            if (argv[i][0] != '-') continue;
-          } else {
-            if (JLI_StrCmp(argv[i], "-classpath") == 0 || JLI_StrCmp(argv[i], "-cp") == 0) {
-              i++;
-              if (i >= argc) break;
-              newargv[newargc++] = argv[i];
-              continue;
-            }
-            if (argv[i][0] != '-') { i++; break; }
-          }
-        }
-
-        /* copy rest of args [i .. argc) */
-        while (i < argc) {
-          newargv[newargc++] = argv[i++];
-        }
-        newargv[newargc] = NULL;
-
-        /*
-         * newargv has all proper arguments here
-         */
-
-        argc = newargc;
-        argv = newargv;
-      }
-
-      /* If the data model is not changing, it is an error if the
-         jvmpath does not exist */
-      if (wanted == running) {
-        /* Find out where the JRE is that we will be using. */
-        if (!GetJREPath(jrepath, so_jrepath, JNI_FALSE) ) {
-          JLI_ReportErrorMessage(JRE_ERROR1);
-          exit(2);
-        }
-        JLI_Snprintf(jvmcfg, so_jvmcfg, "%s%slib%s%s%sjvm.cfg",
-          jrepath, FILESEP, FILESEP,  "", "");
-        /* Find the specified JVM type */
-        if (ReadKnownVMs(jvmcfg, JNI_FALSE) < 1) {
-          JLI_ReportErrorMessage(CFG_ERROR7);
-          exit(1);
-        }
-
-        jvmpath[0] = '\0';
-        jvmtype = CheckJvmType(pargc, pargv, JNI_FALSE);
-        if (JLI_StrCmp(jvmtype, "ERROR") == 0) {
-            JLI_ReportErrorMessage(CFG_ERROR9);
-            exit(4);
-        }
-
-        if (!GetJVMPath(jrepath, jvmtype, jvmpath, so_jvmpath, wanted)) {
-          JLI_ReportErrorMessage(CFG_ERROR8, jvmtype, jvmpath);
-          exit(4);
-        }
-
-        /*
-         * Mac OS X requires the Cocoa event loop to be run on the "main"
-         * thread. Spawn off a new thread to run main() and pass
-         * this thread off to the Cocoa event loop.
-         */
-        MacOSXStartup(argc, argv);
-
-        /*
-         * we seem to have everything we need, so without further ado
-         * we return back, otherwise proceed to set the environment.
-         */
-        return;
-      } else {  /* do the same speculatively or exit */
-#if defined(DUAL_MODE)
-        if (running != wanted) {
-          /* Find out where the JRE is that we will be using. */
-          if (!GetJREPath(jrepath, so_jrepath, JNI_TRUE)) {
-            /* give up and let other code report error message */
-            JLI_ReportErrorMessage(JRE_ERROR2, wanted);
-            exit(1);
-          }
-          JLI_Snprintf(jvmcfg, so_jvmcfg, "%s%slib%s%s%sjvm.cfg",
-            jrepath, FILESEP, FILESEP,  "", "");
-          /*
-           * Read in jvm.cfg for target data model and process vm
-           * selection options.
-           */
-          if (ReadKnownVMs(jvmcfg, JNI_TRUE) < 1) {
-            /* give up and let other code report error message */
-            JLI_ReportErrorMessage(JRE_ERROR2, wanted);
-            exit(1);
-          }
-          jvmpath[0] = '\0';
-          jvmtype = CheckJvmType(pargc, pargv, JNI_TRUE);
-          if (JLI_StrCmp(jvmtype, "ERROR") == 0) {
-            JLI_ReportErrorMessage(CFG_ERROR9);
-            exit(4);
-          }
-
-          /* exec child can do error checking on the existence of the path */
-          jvmpathExists = GetJVMPath(jrepath, jvmtype, jvmpath, so_jvmpath, wanted);
-        }
-#else /* ! DUAL_MODE */
-        JLI_ReportErrorMessage(JRE_ERROR2, wanted);
-        exit(1);
-#endif /* DUAL_MODE */
-        }
-        {
-            char *newexec = execname;
-            JLI_TraceLauncher("TRACER_MARKER:About to EXEC\n");
-            (void) fflush(stdout);
-            (void) fflush(stderr);
-            /*
-            * Use posix_spawn() instead of execv() on Mac OS X.
-            * This allows us to choose which architecture the child process
-            * should run as.
-            */
-            {
-                posix_spawnattr_t attr;
-                size_t unused_size;
-                pid_t  unused_pid;
-
-#if defined(__i386__) || defined(__x86_64__)
-                cpu_type_t cpu_type[] = { (wanted == 64) ? CPU_TYPE_X86_64 : CPU_TYPE_X86,
-                                    (running== 64) ? CPU_TYPE_X86_64 : CPU_TYPE_X86 };
-#else
-                cpu_type_t cpu_type[] = { CPU_TYPE_ANY };
-#endif /* __i386 .. */
-
-                posix_spawnattr_init(&attr);
-                posix_spawnattr_setflags(&attr, POSIX_SPAWN_SETEXEC);
-                posix_spawnattr_setbinpref_np(&attr, sizeof(cpu_type) / sizeof(cpu_type_t),
-                                            cpu_type, &unused_size);
-
-                posix_spawn(&unused_pid, newexec, NULL, &attr, argv, environ);
-            }
-            JLI_ReportErrorMessageSys(JRE_ERROR4, newexec);
-
-#if defined(DUAL_MODE)
-            if (running != wanted) {
-                JLI_ReportErrorMessage(JRE_ERROR5, wanted, running);
-            }
-#endif /* DUAL_MODE */
-        }
+    /* Find out where the JRE is that we will be using. */
+    if (!GetJREPath(jrepath, so_jrepath, JNI_FALSE) ) {
+        JLI_ReportErrorMessage(JRE_ERROR1);
+        exit(2);
+    }
+    JLI_Snprintf(jvmcfg, so_jvmcfg, "%s%slib%sjvm.cfg",
+                 jrepath, FILESEP, FILESEP);
+    /* Find the specified JVM type */
+    if (ReadKnownVMs(jvmcfg, JNI_FALSE) < 1) {
+        JLI_ReportErrorMessage(CFG_ERROR7);
         exit(1);
     }
+
+    jvmpath[0] = '\0';
+    jvmtype = CheckJvmType(pargc, pargv, JNI_FALSE);
+    if (JLI_StrCmp(jvmtype, "ERROR") == 0) {
+        JLI_ReportErrorMessage(CFG_ERROR9);
+        exit(4);
+    }
+
+    if (!GetJVMPath(jrepath, jvmtype, jvmpath, so_jvmpath)) {
+        JLI_ReportErrorMessage(CFG_ERROR8, jvmtype, jvmpath);
+        exit(4);
+    }
+
+    /*
+     * Mac OS X requires the Cocoa event loop to be run on the "main"
+     * thread. Spawn off a new thread to run main() and pass
+     * this thread off to the Cocoa event loop.
+     */
+    MacOSXStartup(argc, argv);
+
+    /*
+     * we seem to have everything we need
+     */
+    return;
 }
 
 /*
@@ -566,7 +413,7 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
  */
 static jboolean
 GetJVMPath(const char *jrepath, const char *jvmtype,
-           char *jvmpath, jint jvmpathsize, int bitsWanted)
+           char *jvmpath, jint jvmpathsize)
 {
     struct stat s;
 
@@ -577,8 +424,7 @@ GetJVMPath(const char *jrepath, const char *jvmtype,
          * macosx client library is built thin, i386 only.
          * 64 bit client requests must load server library
          */
-        const char *jvmtypeUsed = ((bitsWanted == 64) && (strcmp(jvmtype, "client") == 0)) ? "server" : jvmtype;
-        JLI_Snprintf(jvmpath, jvmpathsize, "%s/lib/%s/" JVM_DLL, jrepath, jvmtypeUsed);
+        JLI_Snprintf(jvmpath, jvmpathsize, "%s/lib/server/" JVM_DLL, jrepath);
     }
 
     JLI_TraceLauncher("Does `%s' exist ... ", jvmpath);

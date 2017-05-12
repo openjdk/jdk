@@ -64,7 +64,7 @@ import java.util.stream.StreamSupport;
  * but is not required to, throw the exception if the collection to be added
  * is empty.
  *
- * <p><a name="optional-restrictions">
+ * <p><a id="optional-restrictions">
  * Some collection implementations have restrictions on the elements that
  * they may contain.</a>  For example, some implementations prohibit null elements,
  * and some have restrictions on the types of their elements.  Attempting to
@@ -112,7 +112,7 @@ import java.util.stream.StreamSupport;
  * however most current implementations do not do so.
  *
  * <p>This interface is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
+ * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
  * @implSpec

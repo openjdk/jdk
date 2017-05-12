@@ -946,6 +946,14 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         return locations.getLocation(location);
     }
 
+    @Override @DefinedBy(Api.COMPILER)
+    public boolean contains(Location location, FileObject fo) throws IOException {
+        nullCheck(location);
+        nullCheck(fo);
+        Path p = asPath(fo);
+        return locations.contains(location, p);
+    }
+
     private Path getClassOutDir() {
         return locations.getOutputLocation(CLASS_OUTPUT);
     }

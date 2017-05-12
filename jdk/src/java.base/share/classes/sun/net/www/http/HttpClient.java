@@ -102,7 +102,20 @@ public class HttpClient extends NetworkClient {
     // from previous releases.
     private static boolean retryPostProp = true;
 
+    /* Value of the system property jdk.ntlm.cache;
+       if false, then NTLM connections will not be cached.
+       The default value is 'true'. */
+    private static final boolean cacheNTLMProp;
+    /* Value of the system property jdk.spnego.cache;
+       if false, then connections authentified using the Negotiate/Kerberos
+       scheme will not be cached.
+       The default value is 'true'. */
+    private static final boolean cacheSPNEGOProp;
+
     volatile boolean keepingAlive;    /* this is a keep-alive connection */
+    volatile boolean disableKeepAlive;/* keep-alive has been disabled for this
+                                         connection - this will be used when
+                                         recomputing the value of keepingAlive */
     int keepAliveConnections = -1;    /* number of keep-alives left */
 
     /**Idle timeout value, in milliseconds. Zero means infinity,
@@ -152,6 +165,8 @@ public class HttpClient extends NetworkClient {
         Properties props = GetPropertyAction.privilegedGetProperties();
         String keepAlive = props.getProperty("http.keepAlive");
         String retryPost = props.getProperty("sun.net.http.retryPost");
+        String cacheNTLM = props.getProperty("jdk.ntlm.cache");
+        String cacheSPNEGO = props.getProperty("jdk.spnego.cache");
 
         if (keepAlive != null) {
             keepAliveProp = Boolean.parseBoolean(keepAlive);
@@ -161,9 +176,21 @@ public class HttpClient extends NetworkClient {
 
         if (retryPost != null) {
             retryPostProp = Boolean.parseBoolean(retryPost);
-        } else
+        } else {
             retryPostProp = true;
+        }
 
+        if (cacheNTLM != null) {
+            cacheNTLMProp = Boolean.parseBoolean(cacheNTLM);
+        } else {
+            cacheNTLMProp = true;
+        }
+
+        if (cacheSPNEGO != null) {
+            cacheSPNEGOProp = Boolean.parseBoolean(cacheSPNEGO);
+        } else {
+            cacheSPNEGOProp = true;
+        }
     }
 
     /**
@@ -723,6 +750,7 @@ public class HttpClient extends NetworkClient {
                 nread += r;
             }
             String keep=null;
+            String authenticate=null;
             ret = b[0] == 'H' && b[1] == 'T'
                     && b[2] == 'T' && b[3] == 'P' && b[4] == '/' &&
                 b[5] == '1' && b[6] == '.';
@@ -751,17 +779,44 @@ public class HttpClient extends NetworkClient {
                  */
                 if (usingProxy) { // not likely a proxy will return this
                     keep = responses.findValue("Proxy-Connection");
+                    authenticate = responses.findValue("Proxy-Authenticate");
                 }
                 if (keep == null) {
                     keep = responses.findValue("Connection");
+                    authenticate = responses.findValue("WWW-Authenticate");
                 }
+
+                // 'disableKeepAlive' starts with the value false.
+                // It can transition from false to true, but once true
+                // it stays true.
+                // If cacheNTLMProp is false, and disableKeepAlive is false,
+                // then we need to examine the response headers to figure out
+                // whether we are doing NTLM authentication. If we do NTLM,
+                // and cacheNTLMProp is false, than we can't keep this connection
+                // alive: we will switch disableKeepAlive to true.
+                boolean canKeepAlive = !disableKeepAlive;
+                if (canKeepAlive && (cacheNTLMProp == false || cacheSPNEGOProp == false)
+                        && authenticate != null) {
+                    authenticate = authenticate.toLowerCase(Locale.US);
+                    if (cacheNTLMProp == false) {
+                        canKeepAlive &= !authenticate.startsWith("ntlm ");
+                    }
+                    if (cacheSPNEGOProp == false) {
+                        canKeepAlive &= !authenticate.startsWith("negotiate ");
+                        canKeepAlive &= !authenticate.startsWith("kerberos ");
+                    }
+                }
+                disableKeepAlive |= !canKeepAlive;
+
                 if (keep != null && keep.toLowerCase(Locale.US).equals("keep-alive")) {
                     /* some servers, notably Apache1.1, send something like:
                      * "Keep-Alive: timeout=15, max=1" which we should respect.
                      */
-                    HeaderParser p = new HeaderParser(
+                    if (disableKeepAlive) {
+                        keepAliveConnections = 1;
+                    } else {
+                        HeaderParser p = new HeaderParser(
                             responses.findValue("Keep-Alive"));
-                    if (p != null) {
                         /* default should be larger in case of proxy */
                         keepAliveConnections = p.findInt("max", usingProxy?50:5);
                         keepAliveTimeout = p.findInt("timeout", usingProxy?60:5);
@@ -771,7 +826,7 @@ public class HttpClient extends NetworkClient {
                      * We're talking 1.1 or later. Keep persistent until
                      * the server says to close.
                      */
-                    if (keep != null) {
+                    if (keep != null || disableKeepAlive) {
                         /*
                          * The only Connection token we understand is close.
                          * Paranoia: if there is any Connection header then
@@ -853,7 +908,7 @@ public class HttpClient extends NetworkClient {
                 keepAliveConnections = 1;
                 keepingAlive = false;
             } else {
-                keepingAlive = true;
+                keepingAlive = !disableKeepAlive;
             }
             failedOnce = false;
         } else {
@@ -886,7 +941,7 @@ public class HttpClient extends NetworkClient {
                 (cl >= 0 ||
                  code == HttpURLConnection.HTTP_NOT_MODIFIED ||
                  code == HttpURLConnection.HTTP_NO_CONTENT)) {
-                keepingAlive = true;
+                keepingAlive = !disableKeepAlive;
                 failedOnce = false;
             } else if (keepingAlive) {
                 /* Previously we were keeping alive, and now we're not.  Remove
@@ -908,7 +963,11 @@ public class HttpClient extends NetworkClient {
                 pi.setContentType(responses.findValue("content-type"));
             }
 
-            if (isKeepingAlive())   {
+            // If disableKeepAlive == true, the client will not be returned
+            // to the cache. But we still need to use a keepalive stream to
+            // allow the multi-message authentication exchange on the connection
+            boolean useKeepAliveStream = isKeepingAlive() || disableKeepAlive;
+            if (useKeepAliveStream)   {
                 // Wrap KeepAliveStream if keep alive is enabled.
                 logFinest("KeepAlive stream used: " + url);
                 serverInput = new KeepAliveStream(serverInput, pi, cl, this);

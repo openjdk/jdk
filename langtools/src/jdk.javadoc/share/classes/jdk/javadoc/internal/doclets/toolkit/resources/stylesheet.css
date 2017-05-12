@@ -27,19 +27,11 @@ a:link, a:visited {
     text-decoration:none;
     color:#4A6782;
 }
-a:hover, a:focus {
+a[href]:hover, a[href]:focus {
     text-decoration:none;
     color:#bb7a2a;
 }
-a:active {
-    text-decoration:none;
-    color:#4A6782;
-}
 a[name] {
-    color:#353833;
-}
-a[name]:hover {
-    text-decoration:none;
     color:#353833;
 }
 a[name]:before, a[name]:target, a[id]:before, a[id]:target {
@@ -579,15 +571,13 @@ td.colSecond, th.colSecond, td.colLast, th.colConstructorName, th.colLast {
 .packagesSummary th.colLast, .packagesSummary td.colLast {
     white-space:normal;
 }
-td.colFirst a:link, td.colFirst a:active, td.colFirst a:visited, td.colFirst a:hover,
-td.colSecond a:link, td.colSecond a:active, td.colSecond a:visited, td.colSecond a:hover,
-th.colFirst a:link, th.colFirst a:active, th.colFirst a:visited, th.colFirst a:hover,
-th.colSecond a:link, th.colSecond a:active, th.colSecond a:visited, th.colSecond a:hover,
-th.colConstructorName a:link, th.colConstructorName a:active, th.colConstructorName a:visited,
-th.colConstructorName a:hover,
-td.colLast a:link, td.colLast a:active, td.colLast a:visited, td.colLast a:hover,
-.constantValuesContainer td a:link, .constantValuesContainer td a:active,
-.constantValuesContainer td a:visited, .constantValuesContainer td a:hover {
+td.colFirst a:link, td.colFirst a:visited,
+td.colSecond a:link, td.colSecond a:visited,
+th.colFirst a:link, th.colFirst a:visited,
+th.colSecond a:link, th.colSecond a:visited,
+th.colConstructorName a:link, th.colConstructorName a:visited,
+td.colLast a:link, td.colLast a:visited,
+.constantValuesContainer td a:link, .constantValuesContainer td a:visited {
     font-weight:bold;
 }
 .tableSubHeadingColor {

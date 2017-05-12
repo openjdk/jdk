@@ -1874,7 +1874,8 @@ public class ICC_Profile implements Serializable {
                     return
                         PCMM.class.getResourceAsStream("profiles/" + fileName);
                 }
-            }, null, new FilePermission("<<ALL FILES>>", "read"));
+            }, null, new FilePermission("<<ALL FILES>>", "read"),
+                     new RuntimePermission("accessSystemModules"));
     }
 
     /**

@@ -135,6 +135,24 @@ public class ReflectionFactory {
         return soleInstance;
     }
 
+    /**
+     * Returns an alternate reflective Method instance for the given method
+     * intended for reflection to invoke, if present.
+     *
+     * A trusted method can define an alternate implementation for a method `foo`
+     * by defining a method named "reflected$foo" that will be invoked
+     * reflectively.
+     */
+    private static Method findMethodForReflection(Method method) {
+        String altName = "reflected$" + method.getName();
+        try {
+           return method.getDeclaringClass()
+                        .getDeclaredMethod(altName, method.getParameterTypes());
+        } catch (NoSuchMethodException ex) {
+            return null;
+        }
+    }
+
     //--------------------------------------------------------------------------
     //
     // Routines used by java.lang.reflect
@@ -160,6 +178,13 @@ public class ReflectionFactory {
 
     public MethodAccessor newMethodAccessor(Method method) {
         checkInitted();
+
+        if (Reflection.isCallerSensitive(method)) {
+            Method altMethod = findMethodForReflection(method);
+            if (altMethod != null) {
+                method = altMethod;
+            }
+        }
 
         if (noInflation && !ReflectUtil.isVMAnonymousClass(method.getDeclaringClass())) {
             return new MethodAccessorGenerator().

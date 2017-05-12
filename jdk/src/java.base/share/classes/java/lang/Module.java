@@ -57,6 +57,7 @@ import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.misc.JavaLangAccess;
 import jdk.internal.misc.SharedSecrets;
+import jdk.internal.module.ModuleLoaderMap;
 import jdk.internal.module.ServicesCatalog;
 import jdk.internal.module.Resources;
 import jdk.internal.org.objectweb.asm.AnnotationVisitor;
@@ -215,8 +216,8 @@ public final class Module implements AnnotatedElement {
     }
 
     /**
-     * Returns the layer that contains this module or {@code null} if this
-     * module is not in a layer.
+     * Returns the module layer that contains this module or {@code null} if
+     * this module is not in a module layer.
      *
      * A module layer contains named modules and therefore this method always
      * returns {@code null} when invoked on an unnamed module.
@@ -691,6 +692,13 @@ public final class Module implements AnnotatedElement {
      * <p> This method has no effect if the package is already <em>open</em>
      * to the given module. </p>
      *
+     * @apiNote This method can be used for cases where a <em>consumer
+     * module</em> uses a qualified opens to open a package to an <em>API
+     * module</em> but where the reflective access to the members of classes in
+     * the consumer module is delegated to code in another module. Code in the
+     * API module can use this method to open the package in the consumer module
+     * to the other module.
+     *
      * @param  pn
      *         The package name
      * @param  other
@@ -1074,7 +1082,7 @@ public final class Module implements AnnotatedElement {
             if (loader != null) {
                 moduleToLoader.put(name, loader);
                 loaders.add(loader);
-            } else if (!isBootLayer) {
+            } else if (!(clf instanceof ModuleLoaderMap.Mapper)) {
                 throw new IllegalArgumentException("loader can't be 'null'");
             }
         }
@@ -1448,11 +1456,11 @@ public final class Module implements AnnotatedElement {
      *     encapsulated. </li>
      *
      *     <li> A <em>package name</em> is derived from the resource name. If
-     *     the package name is a {@link #getPackages() package} in the module
-     *     then the resource can only be located by the caller of this method
-     *     when the package is {@link #isOpen(String,Module) open} to at least
-     *     the caller's module. If the resource is not in a package in the module
-     *     then the resource is not encapsulated. </li>
+     *     the package name is a {@linkplain #getPackages() package} in the
+     *     module then the resource can only be located by the caller of this
+     *     method when the package is {@linkplain #isOpen(String,Module) open}
+     *     to at least the caller's module. If the resource is not in a
+     *     package in the module then the resource is not encapsulated. </li>
      * </ul>
      *
      * <p> In the above, the <em>package name</em> for a resource is derived
@@ -1511,8 +1519,7 @@ public final class Module implements AnnotatedElement {
         }
 
         // locate resource in module
-        JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
-        URL url = jla.findResource(loader, mn, name);
+        URL url = loader.findResource(mn, name);
         if (url != null) {
             try {
                 return url.openStream();

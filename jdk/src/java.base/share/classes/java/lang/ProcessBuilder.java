@@ -71,7 +71,7 @@ import sun.security.action.GetPropertyAction;
  * working directory of the current process, usually the directory
  * named by the system property {@code user.dir}.
  *
- * <li><a name="redirect-input">a source of <i>standard input</i></a>.
+ * <li><a id="redirect-input">a source of <i>standard input</i></a>.
  * By default, the subprocess reads input from a pipe.  Java code
  * can access this pipe via the output stream returned by
  * {@link Process#getOutputStream()}.  However, standard input may
@@ -86,7 +86,7 @@ import sun.security.action.GetPropertyAction;
  * <li>the {@link OutputStream#close() close} method does nothing
  * </ul>
  *
- * <li><a name="redirect-output">a destination for <i>standard output</i>
+ * <li><a id="redirect-output">a destination for <i>standard output</i>
  * and <i>standard error</i></a>.  By default, the subprocess writes standard
  * output and standard error to pipes.  Java code can access these pipes
  * via the input streams returned by {@link Process#getOutputStream()} and
