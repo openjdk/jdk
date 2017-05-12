@@ -31,7 +31,7 @@
 #include <sys/param.h>
 #include <dlfcn.h>
 #include <sys/socket.h>
-#include <sys/poll.h>
+#include <poll.h>
 #include <sys/filio.h>
 #include <unistd.h>
 #include <netdb.h>
