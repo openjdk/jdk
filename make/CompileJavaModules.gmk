@@ -461,12 +461,28 @@ jdk.internal.jvmstat_COPY := aliasmap
 # -parameters provides method's parameters information in class file,
 # JVMCI compilers make use of that information for various sanity checks.
 # Don't use Indy strings concatenation to have good JVMCI startup performance.
+# The exports are needed since JVMCI is dynamically exported (see
+# jdk.vm.ci.services.internal.ReflectionAccessJDK::openJVMCITo).
 
 jdk.internal.vm.ci_ADD_JAVAC_FLAGS := -parameters -Xlint:-exports -XDstringConcat=inline
 
 ################################################################################
 
-jdk.internal.vm.compiler_ADD_JAVAC_FLAGS := -parameters -XDstringConcat=inline
+jdk.internal.vm.compiler_ADD_JAVAC_FLAGS := -parameters -XDstringConcat=inline \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.aarch64=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.amd64=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.code=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.code.site=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.code.stack=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.common=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot.aarch64=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot.amd64=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot.sparc=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.meta=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.runtime=jdk.internal.vm.compiler \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.sparc=jdk.internal.vm.compiler \
+    #
 
 jdk.internal.vm.compiler_EXCLUDES += \
     org.graalvm.compiler.core.match.processor \
@@ -502,7 +518,27 @@ jdk.internal.vm.compiler_EXCLUDES += \
 
 ################################################################################
 
-jdk.aot_ADD_JAVAC_FLAGS := -parameters -XDstringConcat=inline
+# -parameters provides method's parameters information in class file,
+# JVMCI compilers make use of that information for various sanity checks.
+# Don't use Indy strings concatenation to have good JAOTC startup performance.
+# The exports are needed since JVMCI is dynamically exported (see
+# jdk.vm.ci.services.internal.ReflectionAccessJDK::openJVMCITo).
+
+jdk.aot_ADD_JAVAC_FLAGS := -parameters -XDstringConcat=inline \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.aarch64=jdk.internal.vm.compiler,jdk.aot \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.amd64=jdk.internal.vm.compiler,jdk.aot \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.code=jdk.internal.vm.compiler,jdk.aot \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.code.site=jdk.internal.vm.compiler,jdk.aot \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.code.stack=jdk.internal.vm.compiler,jdk.aot \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.common=jdk.internal.vm.compiler,jdk.aot \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot=jdk.internal.vm.compiler,jdk.aot \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot.aarch64=jdk.internal.vm.compiler,jdk.aot \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot.amd64=jdk.internal.vm.compiler,jdk.aot \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot.sparc=jdk.internal.vm.compiler,jdk.aot \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.meta=jdk.internal.vm.compiler,jdk.aot \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.runtime=jdk.internal.vm.compiler,jdk.aot \
+    --add-exports jdk.internal.vm.ci/jdk.vm.ci.sparc=jdk.internal.vm.compiler,jdk.aot \
+    #
 
 ################################################################################
 

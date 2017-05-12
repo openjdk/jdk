@@ -39,10 +39,12 @@
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:+UseJVMCICompiler
+ *                   -Djvmci.Compiler=null
  *                   compiler.jvmci.compilerToVM.IsCompilableTest
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler
+ *                   -Djvmci.Compiler=null
  *                   compiler.jvmci.compilerToVM.IsCompilableTest
  */
 

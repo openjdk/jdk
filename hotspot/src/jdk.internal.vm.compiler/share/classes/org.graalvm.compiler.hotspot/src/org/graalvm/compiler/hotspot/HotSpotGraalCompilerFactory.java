@@ -22,21 +22,19 @@
  */
 package org.graalvm.compiler.hotspot;
 
-import static org.graalvm.compiler.core.common.util.Util.Java8OrEarlier;
-import static org.graalvm.compiler.options.OptionValue.PROFILE_OPTIONVALUE_PROPERTY_NAME;
 import static jdk.vm.ci.common.InitTimer.timer;
+import static org.graalvm.compiler.options.OptionValue.PROFILE_OPTIONVALUE_PROPERTY_NAME;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.ServiceLoader;
 
-import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.MethodFilter;
 import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionDescriptors;
@@ -46,10 +44,11 @@ import org.graalvm.compiler.options.OptionsParser;
 import org.graalvm.compiler.phases.tiers.CompilerConfiguration;
 
 import jdk.vm.ci.common.InitTimer;
+import jdk.vm.ci.hotspot.HotSpotJVMCICompilerFactory;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotSignature;
-import jdk.vm.ci.hotspot.HotSpotJVMCICompilerFactory;
 import jdk.vm.ci.runtime.JVMCIRuntime;
+import jdk.vm.ci.services.Services;
 
 public final class HotSpotGraalCompilerFactory extends HotSpotJVMCICompilerFactory {
 
@@ -135,8 +134,8 @@ public final class HotSpotGraalCompilerFactory extends HotSpotJVMCICompilerFacto
         if (allOptionsSettings == null) {
             try (InitTimer t = timer("InitializeOptions")) {
                 ServiceLoader<OptionDescriptors> loader = ServiceLoader.load(OptionDescriptors.class, OptionDescriptors.class.getClassLoader());
-                Properties savedProps = getSavedProperties(Java8OrEarlier);
-                String optionsFile = savedProps.getProperty(GRAAL_OPTIONS_FILE_PROPERTY_NAME);
+                Map<String, String> savedProps = Services.getSavedProperties();
+                String optionsFile = savedProps.get(GRAAL_OPTIONS_FILE_PROPERTY_NAME);
 
                 if (optionsFile != null) {
                     File graalOptions = new File(optionsFile);
@@ -165,15 +164,15 @@ public final class HotSpotGraalCompilerFactory extends HotSpotJVMCICompilerFacto
                 }
 
                 Map<String, String> optionSettings = new HashMap<>();
-                for (Map.Entry<Object, Object> e : savedProps.entrySet()) {
-                    String name = (String) e.getKey();
+                for (Entry<String, String> e : savedProps.entrySet()) {
+                    String name = e.getKey();
                     if (name.startsWith(GRAAL_OPTION_PROPERTY_PREFIX)) {
                         if (name.equals("graal.PrintFlags") || name.equals("graal.ShowFlags")) {
                             System.err.println("The " + name + " option has been removed and will be ignored. Use -XX:+JVMCIPrintProperties instead.");
                         } else if (name.equals(GRAAL_OPTIONS_FILE_PROPERTY_NAME) || name.equals(GRAAL_VERSION_PROPERTY_NAME) || name.equals(PROFILE_OPTIONVALUE_PROPERTY_NAME)) {
                             // Ignore well known properties that do not denote an option
                         } else {
-                            String value = (String) e.getValue();
+                            String value = e.getValue();
                             optionSettings.put(name.substring(GRAAL_OPTION_PROPERTY_PREFIX.length()), value);
                         }
                     }
@@ -203,18 +202,6 @@ public final class HotSpotGraalCompilerFactory extends HotSpotJVMCICompilerFacto
                     adjustCompilationLevelInternal(Object.class, "hashCode", "()I", CompilationLevel.Simple);
                 }
             }
-        }
-    }
-
-    private static Properties getSavedProperties(boolean jdk8OrEarlier) {
-        try {
-            String vmClassName = jdk8OrEarlier ? "sun.misc.VM" : "jdk.internal.misc.VM";
-            Class<?> vmClass = Class.forName(vmClassName);
-            Field savedPropsField = vmClass.getDeclaredField("savedProps");
-            savedPropsField.setAccessible(true);
-            return (Properties) savedPropsField.get(null);
-        } catch (Exception e) {
-            throw new GraalError(e);
         }
     }
 

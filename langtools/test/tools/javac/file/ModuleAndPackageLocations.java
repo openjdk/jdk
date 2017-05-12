@@ -117,7 +117,6 @@ public class ModuleAndPackageLocations extends TestRunner {
             assertRefused(() -> fm.getJavaFileForOutput(StandardLocation.MODULE_SOURCE_PATH, "", Kind.SOURCE, null));
             assertRefused(() -> fm.getLocationForModule(StandardLocation.SOURCE_PATH, "test"));
             JavaFileObject out = fm.getJavaFileForInput(StandardLocation.CLASS_OUTPUT, "test.Test", Kind.CLASS);
-            assertRefused(() -> fm.getLocationForModule(StandardLocation.SOURCE_PATH, out));
             assertRefused(() -> fm.inferBinaryName(StandardLocation.MODULE_PATH, out));
             assertRefused(() -> fm.inferModuleName(StandardLocation.MODULE_SOURCE_PATH));
             assertRefused(() -> fm.list(StandardLocation.MODULE_SOURCE_PATH, "test", EnumSet.allOf(Kind.class), false));

@@ -336,26 +336,32 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         // Get all the exported and opened packages, for the transitive closure of the module, to be displayed in
         // the indirect packages tables.
         dependentModules.forEach((module, mod) -> {
-            SortedSet<PackageElement> pkgList = new TreeSet<>(utils.makePackageComparator());
+            SortedSet<PackageElement> exportPkgList = new TreeSet<>(utils.makePackageComparator());
             (ElementFilter.exportsIn(module.getDirectives())).forEach((directive) -> {
                 PackageElement pkg = directive.getPackage();
                 if (shouldDocument(pkg)) {
-                    pkgList.add(pkg);
+                    // Qualified exports are not displayed in API mode
+                    if (moduleMode == ModuleMode.ALL || directive.getTargetModules() == null) {
+                        exportPkgList.add(pkg);
+                    }
                 }
             });
-            // If none of the transitive modules have exported packages to be displayed, we should not be
+            // If none of the indirect modules have exported packages to be displayed, we should not be
             // displaying the table and so it should not be added to the map.
-            if (!pkgList.isEmpty()) {
-                indirectPackages.put(module, pkgList);
+            if (!exportPkgList.isEmpty()) {
+                indirectPackages.put(module, exportPkgList);
             }
             SortedSet<PackageElement> openPkgList = new TreeSet<>(utils.makePackageComparator());
             (ElementFilter.opensIn(module.getDirectives())).forEach((directive) -> {
                 PackageElement pkg = directive.getPackage();
                 if (shouldDocument(pkg)) {
-                    openPkgList.add(pkg);
+                    // Qualified opens are not displayed in API mode
+                    if (moduleMode == ModuleMode.ALL || directive.getTargetModules() == null) {
+                        openPkgList.add(pkg);
+                    }
                 }
             });
-            // If none of the transitive modules have opened packages to be displayed, we should not be
+            // If none of the indirect modules have opened packages to be displayed, we should not be
             // displaying the table and so it should not be added to the map.
             if (!openPkgList.isEmpty()) {
                 indirectOpenPackages.put(module, openPkgList);

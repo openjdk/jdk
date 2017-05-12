@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @bug 7112427 8012295 8025633 8026567 8061305 8081854 8150130 8162363 8167967 8172528 8175200
+ * @bug 7112427 8012295 8025633 8026567 8061305 8081854 8150130 8162363
+ *      8167967 8172528 8175200 8178830
  * @summary Test of the JavaFX doclet features.
  * @author jvalenta
  * @library ../lib
@@ -265,12 +266,13 @@ public class TestJavaFX extends JavadocTester {
 
     /*
      * Force the doclet to emit a warning when processing a synthesized,
-     * DocComment, and ensure that the run succeeds.
+     * DocComment, and ensure that the run succeeds, using the newer
+     * --javafx flag.
      */
     @Test
     void test4() {
         javadoc("-d", "out4",
-                "-javafx",
+                "--javafx",
                 "-Xdoclint:none",
                 "-sourcepath", testSrc,
                 "-package",

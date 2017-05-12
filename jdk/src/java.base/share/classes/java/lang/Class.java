@@ -726,16 +726,16 @@ public final class Class<T> implements java.io.Serializable,
      *
      * <blockquote><table summary="Element types and encodings">
      * <tr><th> Element Type <th> &nbsp;&nbsp;&nbsp; <th> Encoding
-     * <tr><td> boolean      <td> &nbsp;&nbsp;&nbsp; <td align=center> Z
-     * <tr><td> byte         <td> &nbsp;&nbsp;&nbsp; <td align=center> B
-     * <tr><td> char         <td> &nbsp;&nbsp;&nbsp; <td align=center> C
+     * <tr><td> boolean      <td> &nbsp;&nbsp;&nbsp; <td style="text-align:center"> Z
+     * <tr><td> byte         <td> &nbsp;&nbsp;&nbsp; <td style="text-align:center"> B
+     * <tr><td> char         <td> &nbsp;&nbsp;&nbsp; <td style="text-align:center"> C
      * <tr><td> class or interface
-     *                       <td> &nbsp;&nbsp;&nbsp; <td align=center> L<i>classname</i>;
-     * <tr><td> double       <td> &nbsp;&nbsp;&nbsp; <td align=center> D
-     * <tr><td> float        <td> &nbsp;&nbsp;&nbsp; <td align=center> F
-     * <tr><td> int          <td> &nbsp;&nbsp;&nbsp; <td align=center> I
-     * <tr><td> long         <td> &nbsp;&nbsp;&nbsp; <td align=center> J
-     * <tr><td> short        <td> &nbsp;&nbsp;&nbsp; <td align=center> S
+     *                       <td> &nbsp;&nbsp;&nbsp; <td style="text-align:center"> L<i>classname</i>;
+     * <tr><td> double       <td> &nbsp;&nbsp;&nbsp; <td style="text-align:center"> D
+     * <tr><td> float        <td> &nbsp;&nbsp;&nbsp; <td style="text-align:center"> F
+     * <tr><td> int          <td> &nbsp;&nbsp;&nbsp; <td style="text-align:center"> I
+     * <tr><td> long         <td> &nbsp;&nbsp;&nbsp; <td style="text-align:center"> J
+     * <tr><td> short        <td> &nbsp;&nbsp;&nbsp; <td style="text-align:center"> S
      * </table></blockquote>
      *
      * <p> The class or interface name <i>classname</i> is the binary name of
@@ -2875,19 +2875,19 @@ public final class Class<T> implements java.io.Serializable,
         static <T> boolean casReflectionData(Class<?> clazz,
                                              SoftReference<ReflectionData<T>> oldData,
                                              SoftReference<ReflectionData<T>> newData) {
-            return unsafe.compareAndSwapObject(clazz, reflectionDataOffset, oldData, newData);
+            return unsafe.compareAndSetObject(clazz, reflectionDataOffset, oldData, newData);
         }
 
         static <T> boolean casAnnotationType(Class<?> clazz,
                                              AnnotationType oldType,
                                              AnnotationType newType) {
-            return unsafe.compareAndSwapObject(clazz, annotationTypeOffset, oldType, newType);
+            return unsafe.compareAndSetObject(clazz, annotationTypeOffset, oldType, newType);
         }
 
         static <T> boolean casAnnotationData(Class<?> clazz,
                                              AnnotationData oldData,
                                              AnnotationData newData) {
-            return unsafe.compareAndSwapObject(clazz, annotationDataOffset, oldData, newData);
+            return unsafe.compareAndSetObject(clazz, annotationDataOffset, oldData, newData);
         }
     }
 

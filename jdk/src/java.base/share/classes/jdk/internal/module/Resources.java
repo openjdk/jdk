@@ -26,10 +26,10 @@ package jdk.internal.module;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 
 /**
@@ -94,7 +94,7 @@ public final class Resources {
         if (expectDirectory) {
             name = name.substring(0, name.length() - 1);  // drop trailing "/"
         }
-        Path path = toSafeFilePath(name);
+        Path path = toSafeFilePath(dir.getFileSystem(), name);
         if (path != null) {
             Path file = dir.resolve(path);
             try {
@@ -116,7 +116,7 @@ public final class Resources {
      * are rejected, as are resource names that translates to a file path
      * with a root component.
      */
-    private static Path toSafeFilePath(String name) {
+    private static Path toSafeFilePath(FileSystem fs, String name) {
         // scan elements of resource name
         int next;
         int off = 0;
@@ -135,12 +135,12 @@ public final class Resources {
         // convert to file path
         Path path;
         if (File.separatorChar == '/') {
-            path = Paths.get(name);
+            path = fs.getPath(name);
         } else {
             // not allowed to embed file separators
             if (name.contains(File.separator))
                 return null;
-            path = Paths.get(name.replace('/', File.separatorChar));
+            path = fs.getPath(name.replace('/', File.separatorChar));
         }
 
         // file path not allowed to have root component

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -422,8 +422,9 @@ var getJibProfilesProfiles = function (input, common, data) {
         "linux-x64": {
             target_os: "linux",
             target_cpu: "x64",
-            dependencies: ["devkit"],
-            configure_args: concat(common.configure_args_64bit, "--with-zlib=system"),
+            dependencies: ["devkit", "graphviz", "pandoc"],
+            configure_args: concat(common.configure_args_64bit,
+                "--enable-full-docs", "--with-zlib=system"),
             default_make_targets: ["docs-bundles"],
         },
 
@@ -964,7 +965,23 @@ var getJibProfilesDependencies = function (input, common) {
             ext: "tar.gz",
             revision: "2.7.1-v120+1.0",
             module: "freetype-" + input.target_platform
-        }
+        },
+
+        graphviz: {
+            organization: common.organization,
+            ext: "tar.gz",
+            revision: "2.38.0-1+1.1",
+            module: "graphviz-" + input.target_platform,
+            configure_args: "DOT=" + input.get("graphviz", "install_path") + "/dot"
+        },
+
+        pandoc: {
+            organization: common.organization,
+            ext: "tar.gz",
+            revision: "1.17.2+1.0",
+            module: "pandoc-" + input.target_platform,
+            configure_args: "PANDOC=" + input.get("pandoc", "install_path") + "/pandoc/pandoc"
+        },
     };
 
     return dependencies;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,7 @@ import static sun.swing.SwingUtilities2.Section.*;
  * Responsibility for listening to selection changes in order to keep the list's
  * visual representation up to date lies with the list's {@code ListUI}.
  * <p>
- * <a name="renderer"></a>
+ * <a id="renderer"></a>
  * Painting of cells in a {@code JList} is handled by a delegate called a
  * cell renderer, installed on the list as the {@code cellRenderer} property.
  * The renderer provides a {@code java.awt.Component} that is used
@@ -201,7 +201,7 @@ import static sun.swing.SwingUtilities2.Section.*;
  * To avoid these calculations, you can set a {@code fixedCellWidth} and
  * {@code fixedCellHeight} on the list, or have these values calculated
  * automatically based on a single prototype value:
- * <a name="prototype_example"></a>
+ * <a id="prototype_example"></a>
  * <pre>
  * {@code
  * JList<String> bigDataList = new JList<String>(bigData);
@@ -3395,15 +3395,18 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
             }
 
             public AccessibleSelection getAccessibleSelection() {
-                return getCurrentAccessibleContext().getAccessibleSelection();
+                AccessibleContext ac = getCurrentAccessibleContext();
+                return ac != null ? ac.getAccessibleSelection() : null;
             }
 
             public AccessibleText getAccessibleText() {
-                return getCurrentAccessibleContext().getAccessibleText();
+                AccessibleContext ac = getCurrentAccessibleContext();
+                return ac != null ? ac.getAccessibleText() : null;
             }
 
             public AccessibleValue getAccessibleValue() {
-                return getCurrentAccessibleContext().getAccessibleValue();
+                AccessibleContext ac = getCurrentAccessibleContext();
+                return ac != null ? ac.getAccessibleValue() : null;
             }
 
 

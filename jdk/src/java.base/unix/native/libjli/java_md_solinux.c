@@ -62,9 +62,7 @@
  *
  * The selection of the proper vm shared library to open depends on
  * several classes of command line options, including vm "flavor"
- * options (-client, -server) and the data model options, -d32  and
- * -d64, as well as a version specification which may have come from
- * the command line or from the manifest of an executable jar file.
+ * options (-client, -server).
  * The vm selection options are not passed to the running
  * virtual machine; they must be screened out by the launcher.
  *
@@ -120,34 +118,30 @@
  *  |
  * \|/
  * ParseArguments
- * (removes -d32 and -d64 if any,
- *  processes version options,
- *  creates argument list for vm,
- *  etc.)
  *   |
  *   |
  *  \|/
  * RequiresSetenv
  * Is LD_LIBRARY_PATH
- * and friends set ? --> NO --> Have Desired Model ? NO --> Error/Exit
- *  YES                              YES --> Continue
+ * and friends set ? --> NO --> Continue
+ *  YES
  *   |
  *   |
  *  \|/
- * Path is desired JRE ? YES --> Have Desired Model ? NO --> Error/Exit
- *  NO                               YES --> Continue
+ * Path is desired JRE ? YES --> Continue
+ *  NO
  *   |
  *   |
  *  \|/
  * Paths have well known
- * jvm paths ?       --> NO --> Have Desired Model ? NO --> Error/Exit
- *  YES                              YES --> Continue
+ * jvm paths ?       --> NO --> Error/Exit
+ *  YES
  *   |
  *   |
  *  \|/
- *  Does libjvm.so exit
- *  in any of them ? --> NO --> Have Desired Model ? NO --> Error/Exit
- *   YES                             YES --> Continue
+ *  Does libjvm.so exist
+ *  in any of them ? --> NO  --> Continue
+ *   YES
  *   |
  *   |
  *  \|/
@@ -302,229 +296,97 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
                            char jrepath[], jint so_jrepath,
                            char jvmpath[], jint so_jvmpath,
                            char jvmcfg[],  jint so_jvmcfg) {
-  /*
-   * First, determine if we are running the desired data model.  If we
-   * are running the desired data model, all the error messages
-   * associated with calling GetJREPath, ReadKnownVMs, etc. should be
-   * output, otherwise we simply exit with an error, as we no longer
-   * support dual data models.
-   */
-    jboolean jvmpathExists;
+
+    char * jvmtype = NULL;
+    int argc = *pargc;
+    char **argv = *pargv;
+
+#ifdef SETENV_REQUIRED
+    jboolean mustsetenv = JNI_FALSE;
+    char *runpath = NULL; /* existing effective LD_LIBRARY_PATH setting */
+    char* new_runpath = NULL; /* desired new LD_LIBRARY_PATH string */
+    char* newpath = NULL; /* path on new LD_LIBRARY_PATH */
+    char* lastslash = NULL;
+    char** newenvp = NULL; /* current environment */
+    size_t new_runpath_size;
+#endif  /* SETENV_REQUIRED */
 
     /* Compute/set the name of the executable */
     SetExecname(*pargv);
 
-    /* Check data model flags, and exec process, if needed */
-    {
-      char * jvmtype    = NULL;
-      int  argc         = *pargc;
-      char **argv       = *pargv;
-      int running       = CURRENT_DATA_MODEL;
-      /*
-       * As of jdk9, there is no support for dual mode operations, however
-       * for legacy error reporting purposes and until -d options are supported
-       * we need this.
-       */
-      int wanted        = running;
-#ifdef SETENV_REQUIRED
-      jboolean mustsetenv = JNI_FALSE;
-      char *runpath     = NULL; /* existing effective LD_LIBRARY_PATH setting */
-      char* new_runpath = NULL; /* desired new LD_LIBRARY_PATH string */
-      char* newpath     = NULL; /* path on new LD_LIBRARY_PATH */
-      char* lastslash   = NULL;
-      char** newenvp    = NULL; /* current environment */
-      size_t new_runpath_size;
-#ifdef __solaris__
-      char*  dmpath     = NULL;  /* data model specific LD_LIBRARY_PATH,
-                                    Solaris only */
-#endif /* __solaris__ */
-#endif  /* SETENV_REQUIRED */
-
-      char** newargv    = NULL;
-      int    newargc    = 0;
-
-      /*
-       * Starting in 1.5, all unix platforms accept the -d32 and -d64
-       * options.  On platforms where only one data-model is supported
-       * (e.g. ia-64 Linux), using the flag for the other data model is
-       * an error and will terminate the program.
-       */
-
-      { /* open new scope to declare local variables */
-        int i;
-
-        newargv = (char **)JLI_MemAlloc((argc+1) * sizeof(char*));
-        newargv[newargc++] = argv[0];
-
-        /* scan for data model arguments and remove from argument list;
-           last occurrence determines desired data model */
-        for (i=1; i < argc; i++) {
-
-          if (JLI_StrCmp(argv[i], "-J-d64") == 0 || JLI_StrCmp(argv[i], "-d64") == 0) {
-            wanted = 64;
-            continue;
-          }
-          if (JLI_StrCmp(argv[i], "-J-d32") == 0 || JLI_StrCmp(argv[i], "-d32") == 0) {
-            wanted = 32;
-            continue;
-          }
-          newargv[newargc++] = argv[i];
-
-          if (IsJavaArgs()) {
-            if (argv[i][0] != '-') continue;
-          } else {
-            if (JLI_StrCmp(argv[i], "-classpath") == 0 || JLI_StrCmp(argv[i], "-cp") == 0) {
-              i++;
-              if (i >= argc) break;
-              newargv[newargc++] = argv[i];
-              continue;
-            }
-            if (argv[i][0] != '-') { i++; break; }
-          }
-        }
-
-        /* copy rest of args [i .. argc) */
-        while (i < argc) {
-          newargv[newargc++] = argv[i++];
-        }
-        newargv[newargc] = NULL;
-
-        /*
-         * newargv has all proper arguments here
-         */
-
-        argc = newargc;
-        argv = newargv;
-      }
-
-      /* If the data model is not changing, it is an error if the
-         jvmpath does not exist */
-      if (wanted == running) {
-        /* Find out where the JRE is that we will be using. */
-        if (!GetJREPath(jrepath, so_jrepath, JNI_FALSE) ) {
-          JLI_ReportErrorMessage(JRE_ERROR1);
-          exit(2);
-        }
-        JLI_Snprintf(jvmcfg, so_jvmcfg, "%s%slib%s%sjvm.cfg",
-                     jrepath, FILESEP, FILESEP, FILESEP);
-        /* Find the specified JVM type */
-        if (ReadKnownVMs(jvmcfg, JNI_FALSE) < 1) {
-          JLI_ReportErrorMessage(CFG_ERROR7);
-          exit(1);
-        }
-
-        jvmpath[0] = '\0';
-        jvmtype = CheckJvmType(pargc, pargv, JNI_FALSE);
-        if (JLI_StrCmp(jvmtype, "ERROR") == 0) {
-            JLI_ReportErrorMessage(CFG_ERROR9);
-            exit(4);
-        }
-
-        if (!GetJVMPath(jrepath, jvmtype, jvmpath, so_jvmpath, 0 )) {
-          JLI_ReportErrorMessage(CFG_ERROR8, jvmtype, jvmpath);
-          exit(4);
-        }
-        /*
-         * we seem to have everything we need, so without further ado
-         * we return back, otherwise proceed to set the environment.
-         */
-#ifdef SETENV_REQUIRED
-        mustsetenv = RequiresSetenv(jvmpath);
-        JLI_TraceLauncher("mustsetenv: %s\n", mustsetenv ? "TRUE" : "FALSE");
-
-        if (mustsetenv == JNI_FALSE) {
-            JLI_MemFree(newargv);
-            return;
-        }
-#else
-        JLI_MemFree(newargv);
-        return;
-#endif /* SETENV_REQUIRED */
-      } else {  /* do the same speculatively or exit */
-        JLI_ReportErrorMessage(JRE_ERROR2, wanted);
+    /* Check to see if the jvmpath exists */
+    /* Find out where the JRE is that we will be using. */
+    if (!GetJREPath(jrepath, so_jrepath, JNI_FALSE)) {
+        JLI_ReportErrorMessage(JRE_ERROR1);
+        exit(2);
+    }
+    JLI_Snprintf(jvmcfg, so_jvmcfg, "%s%slib%sjvm.cfg",
+            jrepath, FILESEP, FILESEP);
+    /* Find the specified JVM type */
+    if (ReadKnownVMs(jvmcfg, JNI_FALSE) < 1) {
+        JLI_ReportErrorMessage(CFG_ERROR7);
         exit(1);
-      }
+    }
+
+    jvmpath[0] = '\0';
+    jvmtype = CheckJvmType(pargc, pargv, JNI_FALSE);
+    if (JLI_StrCmp(jvmtype, "ERROR") == 0) {
+        JLI_ReportErrorMessage(CFG_ERROR9);
+        exit(4);
+    }
+
+    if (!GetJVMPath(jrepath, jvmtype, jvmpath, so_jvmpath)) {
+        JLI_ReportErrorMessage(CFG_ERROR8, jvmtype, jvmpath);
+        exit(4);
+    }
+    /*
+     * we seem to have everything we need, so without further ado
+     * we return back, otherwise proceed to set the environment.
+     */
 #ifdef SETENV_REQUIRED
-        if (mustsetenv) {
-            /*
-             * We will set the LD_LIBRARY_PATH as follows:
-             *
-             *     o          $JVMPATH (directory portion only)
-             *     o          $JRE/lib
-             *     o          $JRE/../lib
-             *
-             * followed by the user's previous effective LD_LIBRARY_PATH, if
-             * any.
-             */
+    mustsetenv = RequiresSetenv(jvmpath);
+    JLI_TraceLauncher("mustsetenv: %s\n", mustsetenv ? "TRUE" : "FALSE");
 
-#ifdef __solaris__
-            /*
-             * Starting in Solaris 7, ld.so.1 supports three LD_LIBRARY_PATH
-             * variables:
-             *
-             * 1. LD_LIBRARY_PATH -- used for 32 and 64 bit searches if
-             * data-model specific variables are not set.
-             *
-             * 2. LD_LIBRARY_PATH_64 -- overrides and replaces LD_LIBRARY_PATH
-             * for 64-bit binaries.
-             * The vm uses LD_LIBRARY_PATH to set the java.library.path system
-             * property.  To shield the vm from the complication of multiple
-             * LD_LIBRARY_PATH variables, if the appropriate data model
-             * specific variable is set, we will act as if LD_LIBRARY_PATH had
-             * the value of the data model specific variant and the data model
-             * specific variant will be unset.  Note that the variable for the
-             * *wanted* data model must be used (if it is set), not simply the
-             * current running data model.
-             */
+    if (mustsetenv == JNI_FALSE) {
+        return;
+    }
+#else
+    return;
+#endif /* SETENV_REQUIRED */
 
-            switch (wanted) {
-                case 0:
-                case 64:
-                    dmpath = getenv("LD_LIBRARY_PATH_64");
-                    wanted = 64;
-                    break;
+#ifdef SETENV_REQUIRED
+    if (mustsetenv) {
+        /*
+         * We will set the LD_LIBRARY_PATH as follows:
+         *
+         *     o          $JVMPATH (directory portion only)
+         *     o          $JRE/lib
+         *     o          $JRE/../lib
+         *
+         * followed by the user's previous effective LD_LIBRARY_PATH, if
+         * any.
+         */
 
-                default:
-                    JLI_ReportErrorMessage(JRE_ERROR3, __LINE__);
-                    exit(1); /* unknown value in wanted */
-                    break;
-            }
+        runpath = getenv(LD_LIBRARY_PATH);
 
-            /*
-             * If dmpath is NULL, the relevant data model specific variable is
-             * not set and normal LD_LIBRARY_PATH should be used.
-             */
-            if (dmpath == NULL) {
-                runpath = getenv("LD_LIBRARY_PATH");
-            } else {
-                runpath = dmpath;
-            }
-#else /* ! __solaris__ */
-            /*
-             * If not on Solaris, assume only a single LD_LIBRARY_PATH
-             * variable.
-             */
-            runpath = getenv(LD_LIBRARY_PATH);
-#endif /* __solaris__ */
-
-            /* runpath contains current effective LD_LIBRARY_PATH setting */
-            { /* New scope to declare local variable */
-              char *new_jvmpath = JLI_StringDup(jvmpath);
-              new_runpath_size = ((runpath != NULL) ? JLI_StrLen(runpath) : 0) +
-                      2 * JLI_StrLen(jrepath) +
+        /* runpath contains current effective LD_LIBRARY_PATH setting */
+        { /* New scope to declare local variable */
+            char *new_jvmpath = JLI_StringDup(jvmpath);
+            new_runpath_size = ((runpath != NULL) ? JLI_StrLen(runpath) : 0) +
+                    2 * JLI_StrLen(jrepath) +
 #ifdef AIX
-                      /* On AIX we additionally need 'jli' in the path because ld doesn't support $ORIGIN. */
-                      JLI_StrLen(jrepath) + JLI_StrLen("/lib//jli:") +
+                    /* On AIX we additionally need 'jli' in the path because ld doesn't support $ORIGIN. */
+                    JLI_StrLen(jrepath) + JLI_StrLen("/lib//jli:") +
 #endif
-                      JLI_StrLen(new_jvmpath) + 52;
-              new_runpath = JLI_MemAlloc(new_runpath_size);
-              newpath = new_runpath + JLI_StrLen(LD_LIBRARY_PATH "=");
+                    JLI_StrLen(new_jvmpath) + 52;
+            new_runpath = JLI_MemAlloc(new_runpath_size);
+            newpath = new_runpath + JLI_StrLen(LD_LIBRARY_PATH "=");
 
 
-              /*
-               * Create desired LD_LIBRARY_PATH value for target data model.
-               */
-              {
+            /*
+             * Create desired LD_LIBRARY_PATH value for target data model.
+             */
+            {
                 /* remove the name of the .so from the JVM path */
                 lastslash = JLI_StrRChr(new_jvmpath, '/');
                 if (lastslash)
@@ -555,85 +417,66 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
                  */
                 if (runpath != NULL &&
                         JLI_StrNCmp(newpath, runpath, JLI_StrLen(newpath)) == 0 &&
-                        (runpath[JLI_StrLen(newpath)] == 0 || runpath[JLI_StrLen(newpath)] == ':') &&
-                        (running == wanted) /* data model does not have to be changed */
-#ifdef __solaris__
-                        && (dmpath == NULL) /* data model specific variables not set  */
-#endif /* __solaris__ */
-                        ) {
-                    JLI_MemFree(newargv);
+                        (runpath[JLI_StrLen(newpath)] == 0 ||
+                        runpath[JLI_StrLen(newpath)] == ':')) {
                     JLI_MemFree(new_runpath);
                     return;
                 }
-              }
             }
-
-            /*
-             * Place the desired environment setting onto the prefix of
-             * LD_LIBRARY_PATH.  Note that this prevents any possible infinite
-             * loop of execv() because we test for the prefix, above.
-             */
-            if (runpath != 0) {
-                /* ensure storage for runpath + colon + NULL */
-                if ((JLI_StrLen(runpath) + 1 + 1) > new_runpath_size) {
-                    JLI_ReportErrorMessageSys(JRE_ERROR11);
-                    exit(1);
-                }
-                JLI_StrCat(new_runpath, ":");
-                JLI_StrCat(new_runpath, runpath);
-            }
-
-            if (putenv(new_runpath) != 0) {
-                exit(1); /* problem allocating memory; LD_LIBRARY_PATH not set
-                    properly */
-            }
-
-            /*
-             * Unix systems document that they look at LD_LIBRARY_PATH only
-             * once at startup, so we have to re-exec the current executable
-             * to get the changed environment variable to have an effect.
-             */
-
-#ifdef __solaris__
-            /*
-             * If dmpath is not NULL, remove the data model specific string
-             * in the environment for the exec'ed child.
-             */
-            if (dmpath != NULL)
-                (void)UnsetEnv("LD_LIBRARY_PATH_64");
-#endif /* __solaris */
-
-            newenvp = environ;
         }
-#endif /* SETENV_REQUIRED */
-        {
-            char *newexec = execname;
-            JLI_TraceLauncher("TRACER_MARKER:About to EXEC\n");
-            (void) fflush(stdout);
-            (void) fflush(stderr);
-#ifdef SETENV_REQUIRED
-            if (mustsetenv) {
-                execve(newexec, argv, newenvp);
-            } else {
-                execv(newexec, argv);
+
+        /*
+         * Place the desired environment setting onto the prefix of
+         * LD_LIBRARY_PATH.  Note that this prevents any possible infinite
+         * loop of execv() because we test for the prefix, above.
+         */
+        if (runpath != 0) {
+            /* ensure storage for runpath + colon + NULL */
+            if ((JLI_StrLen(runpath) + 1 + 1) > new_runpath_size) {
+                JLI_ReportErrorMessageSys(JRE_ERROR11);
+                exit(1);
             }
-#else /* !SETENV_REQUIRED */
-            execv(newexec, argv);
-#endif /* SETENV_REQUIRED */
-            JLI_ReportErrorMessageSys(JRE_ERROR4, newexec);
+            JLI_StrCat(new_runpath, ":");
+            JLI_StrCat(new_runpath, runpath);
         }
-        exit(1);
+
+        if (putenv(new_runpath) != 0) {
+            /* problem allocating memory; LD_LIBRARY_PATH not set properly */
+            exit(1);
+        }
+
+        /*
+         * Unix systems document that they look at LD_LIBRARY_PATH only
+         * once at startup, so we have to re-exec the current executable
+         * to get the changed environment variable to have an effect.
+         */
+
+        newenvp = environ;
     }
+#endif /* SETENV_REQUIRED */
+    {
+        char *newexec = execname;
+        JLI_TraceLauncher("TRACER_MARKER:About to EXEC\n");
+        (void) fflush(stdout);
+        (void) fflush(stderr);
+#ifdef SETENV_REQUIRED
+        if (mustsetenv) {
+            execve(newexec, argv, newenvp);
+        } else {
+            execv(newexec, argv);
+        }
+#else /* !SETENV_REQUIRED */
+        execv(newexec, argv);
+#endif /* SETENV_REQUIRED */
+        JLI_ReportErrorMessageSys(JRE_ERROR4, newexec);
+    }
+    exit(1);
 }
 
-/*
- * On Solaris VM choosing is done by the launcher (java.c),
- * bitsWanted is used by MacOSX,  on Solaris and Linux this.
- * parameter is unused.
- */
+
 static jboolean
 GetJVMPath(const char *jrepath, const char *jvmtype,
-           char *jvmpath, jint jvmpathsize, int bitsWanted)
+           char *jvmpath, jint jvmpathsize)
 {
     struct stat s;
 
