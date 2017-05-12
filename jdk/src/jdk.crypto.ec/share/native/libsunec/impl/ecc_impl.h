@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * Use is subject to license terms.
  *
  * This library is free software; you can redistribute it and/or
@@ -34,7 +34,7 @@
  *   Dr Vipul Gupta <vipul.gupta@sun.com> and
  *   Douglas Stebila <douglas@stebila.ca>, Sun Microsystems Laboratories
  *
- * Last Modified Date from the Original Code: November 2013
+ * Last Modified Date from the Original Code: May 2017
  *********************************************************************** */
 
 #ifndef _ECC_IMPL_H
@@ -258,7 +258,7 @@ extern SECStatus EC_NewKey(ECParams *ecParams, ECPrivateKey **privKey,
     const unsigned char* random, int randomlen, int);
 /* This function has been modified to accept an array of random bytes */
 extern SECStatus ECDSA_SignDigest(ECPrivateKey *, SECItem *, const SECItem *,
-    const unsigned char* random, int randomlen, int);
+    const unsigned char* random, int randomlen, int, int timing);
 extern SECStatus ECDSA_VerifyDigest(ECPublicKey *, const SECItem *,
     const SECItem *, int);
 extern SECStatus ECDH_Derive(SECItem *, ECParams *, SECItem *, boolean_t,

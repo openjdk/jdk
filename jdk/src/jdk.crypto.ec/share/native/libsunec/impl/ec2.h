@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * Use is subject to license terms.
  *
  * This library is free software; you can redistribute it and/or
@@ -33,6 +33,7 @@
  * Contributor(s):
  *   Douglas Stebila <douglas@stebila.ca>, Sun Microsystems Laboratories
  *
+ * Last Modified Date from the Original Code: May 2017
  *********************************************************************** */
 
 #ifndef _EC2_H
@@ -79,7 +80,7 @@ mp_err ec_GF2m_pt_mul_aff(const mp_int *n, const mp_int *px,
  * determines the field GF2m.  Uses Montgomery projective coordinates. */
 mp_err ec_GF2m_pt_mul_mont(const mp_int *n, const mp_int *px,
                                                    const mp_int *py, mp_int *rx, mp_int *ry,
-                                                   const ECGroup *group);
+                                                   const ECGroup *group, int timing);
 
 #ifdef ECL_ENABLE_GF2M_PROJ
 /* Converts a point P(px, py) from affine coordinates to projective

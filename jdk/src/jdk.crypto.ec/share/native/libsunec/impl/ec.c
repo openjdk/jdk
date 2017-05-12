@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * Use is subject to license terms.
  *
  * This library is free software; you can redistribute it and/or
@@ -34,7 +34,7 @@
  *   Dr Vipul Gupta <vipul.gupta@sun.com> and
  *   Douglas Stebila <douglas@stebila.ca>, Sun Microsystems Laboratories
  *
- * Last Modified Date from the Original Code: November 2016
+ * Last Modified Date from the Original Code: May 2017
  *********************************************************************** */
 
 #include "mplogic.h"
@@ -87,7 +87,7 @@ ec_point_at_infinity(SECItem *pointP)
  */
 SECStatus
 ec_points_mul(const ECParams *params, const mp_int *k1, const mp_int *k2,
-             const SECItem *pointP, SECItem *pointQ, int kmflag)
+             const SECItem *pointP, SECItem *pointQ, int kmflag, int timing)
 {
     mp_int Px, Py, Qx, Qy;
     mp_int Gx, Gy, order, irreducible, a, b;
@@ -199,9 +199,9 @@ ec_points_mul(const ECParams *params, const mp_int *k1, const mp_int *k2,
                 goto cleanup;
 
         if ((k2 != NULL) && (pointP != NULL)) {
-                CHECK_MPI_OK( ECPoints_mul(group, k1, k2, &Px, &Py, &Qx, &Qy) );
+                CHECK_MPI_OK( ECPoints_mul(group, k1, k2, &Px, &Py, &Qx, &Qy, timing) );
         } else {
-                CHECK_MPI_OK( ECPoints_mul(group, k1, NULL, NULL, NULL, &Qx, &Qy) );
+                CHECK_MPI_OK( ECPoints_mul(group, k1, NULL, NULL, NULL, &Qx, &Qy, timing) );
     }
 
     /* Construct the SECItem representation of point Q */
@@ -333,7 +333,8 @@ ec_NewKey(ECParams *ecParams, ECPrivateKey **privKey,
     CHECK_MPI_OK( mp_read_unsigned_octets(&k, key->privateValue.data,
         (mp_size) len) );
 
-    rv = ec_points_mul(ecParams, &k, NULL, NULL, &(key->publicValue), kmflag);
+    /* key generation does not support timing mitigation */
+    rv = ec_points_mul(ecParams, &k, NULL, NULL, &(key->publicValue), kmflag, /*timing*/ 0);
     if (rv != SECSuccess) goto cleanup;
     *privKey = key;
 
@@ -610,7 +611,8 @@ ECDH_Derive(SECItem  *publicValue,
     }
 
     /* Multiply our private key and peer's public point */
-    if ((ec_points_mul(ecParams, NULL, &k, publicValue, &pointQ, kmflag) != SECSuccess) ||
+    /* ECDH doesn't support timing mitigation */
+    if ((ec_points_mul(ecParams, NULL, &k, publicValue, &pointQ, kmflag, /*timing*/ 0) != SECSuccess) ||
         ec_point_at_infinity(&pointQ))
         goto cleanup;
 
@@ -645,7 +647,8 @@ cleanup:
  */
 SECStatus
 ECDSA_SignDigestWithSeed(ECPrivateKey *key, SECItem *signature,
-    const SECItem *digest, const unsigned char *kb, const int kblen, int kmflag)
+    const SECItem *digest, const unsigned char *kb, const int kblen, int kmflag,
+    int timing)
 {
     SECStatus rv = SECFailure;
     mp_int x1;
@@ -715,16 +718,6 @@ ECDSA_SignDigestWithSeed(ECPrivateKey *key, SECItem *signature,
     }
 
     /*
-     * Using an equivalent exponent of fixed length (same as n or 1 bit less
-     * than n) to keep the kG timing relatively constant.
-     *
-     * Note that this is an extra step on top of the approach defined in
-     * ANSI X9.62 so as to make a fixed length K.
-     */
-    CHECK_MPI_OK( mp_add(&k, &n, &k) );
-    CHECK_MPI_OK( mp_div_2(&k, &k) );
-
-    /*
     ** ANSI X9.62, Section 5.3.2, Step 2
     **
     ** Compute kG
@@ -732,7 +725,7 @@ ECDSA_SignDigestWithSeed(ECPrivateKey *key, SECItem *signature,
     kGpoint.len = 2*flen + 1;
     kGpoint.data = PORT_Alloc(2*flen + 1, kmflag);
     if ((kGpoint.data == NULL) ||
-        (ec_points_mul(ecParams, &k, NULL, NULL, &kGpoint, kmflag)
+        (ec_points_mul(ecParams, &k, NULL, NULL, &kGpoint, kmflag, timing)
             != SECSuccess))
         goto cleanup;
 
@@ -854,7 +847,7 @@ cleanup:
 */
 SECStatus
 ECDSA_SignDigest(ECPrivateKey *key, SECItem *signature, const SECItem *digest,
-    const unsigned char* random, int randomLen, int kmflag)
+    const unsigned char* random, int randomLen, int kmflag, int timing)
 {
     SECStatus rv = SECFailure;
     int len;
@@ -872,7 +865,7 @@ ECDSA_SignDigest(ECPrivateKey *key, SECItem *signature, const SECItem *digest,
     if (kBytes == NULL) goto cleanup;
 
     /* Generate ECDSA signature with the specified k value */
-    rv = ECDSA_SignDigestWithSeed(key, signature, digest, kBytes, len, kmflag);
+    rv = ECDSA_SignDigestWithSeed(key, signature, digest, kBytes, len, kmflag, timing);
 
 cleanup:
     if (kBytes) {
@@ -1018,7 +1011,8 @@ ECDSA_VerifyDigest(ECPublicKey *key, const SECItem *signature,
     ** Here, A = u1.G     B = u2.Q    and   C = A + B
     ** If the result, C, is the point at infinity, reject the signature
     */
-    if (ec_points_mul(ecParams, &u1, &u2, &key->publicValue, &pointC, kmflag)
+    /* verification does not support timing mitigation */
+    if (ec_points_mul(ecParams, &u1, &u2, &key->publicValue, &pointC, kmflag, /*timing*/ 0)
         != SECSuccess) {
         rv = SECFailure;
         goto cleanup;
