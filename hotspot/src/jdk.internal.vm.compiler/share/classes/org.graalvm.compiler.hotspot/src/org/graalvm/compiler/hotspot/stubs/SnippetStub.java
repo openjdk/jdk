@@ -139,7 +139,7 @@ public abstract class SnippetStub extends Stub implements Snippets {
     }
 
     protected BytecodeProvider getReplacementsBytecodeProvider() {
-        return providers.getReplacements().getReplacementBytecodeProvider();
+        return providers.getReplacements().getDefaultReplacementBytecodeProvider();
     }
 
     protected boolean checkConstArg(int index, String expectedName) {

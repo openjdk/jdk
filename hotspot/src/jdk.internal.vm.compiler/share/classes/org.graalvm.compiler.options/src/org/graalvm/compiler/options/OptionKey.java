@@ -152,6 +152,21 @@ public class OptionKey<T> {
     }
 
     /**
+     * Sets the value of this option in a given map if it doesn't already have a value. The
+     * {@link #onValueUpdate(EconomicMap, Object, Object)} method is called once the value is set.
+     *
+     * @param values map of option values
+     * @param v the value to set for this key in {@code map}
+     */
+    @SuppressWarnings("unchecked")
+    public void putIfAbsent(EconomicMap<OptionKey<?>, Object> values, Object v) {
+        if (!values.containsKey(this)) {
+            T oldValue = (T) values.put(this, v);
+            onValueUpdate(values, oldValue, (T) v);
+        }
+    }
+
+    /**
      * Notifies this object when a value associated with this key is set or updated in
      * {@code values}.
      *

@@ -24,12 +24,12 @@ package org.graalvm.compiler.api.test;
 
 import java.util.Formatter;
 
+import org.graalvm.compiler.api.runtime.GraalJVMCICompiler;
+import org.graalvm.compiler.api.runtime.GraalRuntime;
+
 import jdk.vm.ci.runtime.JVMCI;
 import jdk.vm.ci.runtime.JVMCICompiler;
 import jdk.vm.ci.services.Services;
-
-import org.graalvm.compiler.api.runtime.GraalJVMCICompiler;
-import org.graalvm.compiler.api.runtime.GraalRuntime;
 
 /**
  * Access point for {@linkplain #getRuntime() retrieving} the {@link GraalRuntime} instance of the
@@ -40,7 +40,7 @@ public class Graal {
     private static final GraalRuntime runtime = initializeRuntime();
 
     private static GraalRuntime initializeRuntime() {
-        Services.exportJVMCITo(Graal.class);
+        Services.initializeJVMCI();
         JVMCICompiler compiler = JVMCI.getRuntime().getCompiler();
         if (compiler instanceof GraalJVMCICompiler) {
             GraalJVMCICompiler graal = (GraalJVMCICompiler) compiler;

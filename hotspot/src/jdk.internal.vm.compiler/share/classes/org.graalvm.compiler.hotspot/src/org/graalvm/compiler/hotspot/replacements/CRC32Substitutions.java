@@ -26,6 +26,9 @@ import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.
 
 import java.util.zip.CRC32;
 
+import org.graalvm.api.word.Pointer;
+import org.graalvm.api.word.WordBase;
+import org.graalvm.api.word.WordFactory;
 import org.graalvm.compiler.api.replacements.ClassSubstitution;
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Fold.InjectedParameter;
@@ -62,12 +65,12 @@ public class CRC32Substitutions {
      */
     @MethodSubstitution(optional = true)
     static int update(int crc, int b) {
-        final long crcTableRawAddress = GraalHotSpotVMConfigNode.crcTableAddress();
+        final Pointer crcTableRawAddress = WordFactory.pointer(GraalHotSpotVMConfigNode.crcTableAddress());
 
         int c = ~crc;
         int index = (b ^ c) & 0xFF;
         int offset = index << 2;
-        int result = Word.unsigned(crcTableRawAddress).readInt(offset);
+        int result = crcTableRawAddress.readInt(offset);
         result = result ^ (c >>> 8);
         return ~result;
     }
@@ -77,7 +80,7 @@ public class CRC32Substitutions {
      */
     @MethodSubstitution(optional = true)
     static int updateBytes(int crc, byte[] buf, int off, int len) {
-        Word bufAddr = Word.unsigned(ComputeObjectAddressNode.get(buf, arrayBaseOffset(JavaKind.Byte) + off));
+        Word bufAddr = WordFactory.unsigned(ComputeObjectAddressNode.get(buf, arrayBaseOffset(JavaKind.Byte) + off));
         return updateBytesCRC32(UPDATE_BYTES_CRC32, crc, bufAddr, len);
     }
 
@@ -86,7 +89,7 @@ public class CRC32Substitutions {
      */
     @MethodSubstitution(optional = true)
     static int updateBytes0(int crc, byte[] buf, int off, int len) {
-        Word bufAddr = Word.unsigned(ComputeObjectAddressNode.get(buf, arrayBaseOffset(JavaKind.Byte) + off));
+        Word bufAddr = WordFactory.unsigned(ComputeObjectAddressNode.get(buf, arrayBaseOffset(JavaKind.Byte) + off));
         return updateBytesCRC32(UPDATE_BYTES_CRC32, crc, bufAddr, len);
     }
 
@@ -95,7 +98,7 @@ public class CRC32Substitutions {
      */
     @MethodSubstitution(optional = true)
     static int updateByteBuffer(int crc, long addr, int off, int len) {
-        Word bufAddr = Word.unsigned(addr).add(off);
+        WordBase bufAddr = WordFactory.unsigned(addr).add(off);
         return updateBytesCRC32(UPDATE_BYTES_CRC32, crc, bufAddr, len);
     }
 
@@ -104,12 +107,12 @@ public class CRC32Substitutions {
      */
     @MethodSubstitution(optional = true)
     static int updateByteBuffer0(int crc, long addr, int off, int len) {
-        Word bufAddr = Word.unsigned(addr).add(off);
+        WordBase bufAddr = WordFactory.unsigned(addr).add(off);
         return updateBytesCRC32(UPDATE_BYTES_CRC32, crc, bufAddr, len);
     }
 
-    public static final ForeignCallDescriptor UPDATE_BYTES_CRC32 = new ForeignCallDescriptor("updateBytesCRC32", int.class, int.class, Word.class, int.class);
+    public static final ForeignCallDescriptor UPDATE_BYTES_CRC32 = new ForeignCallDescriptor("updateBytesCRC32", int.class, int.class, WordBase.class, int.class);
 
     @NodeIntrinsic(ForeignCallNode.class)
-    public static native int updateBytesCRC32(@ConstantNodeParameter ForeignCallDescriptor descriptor, int crc, Word buf, int length);
+    public static native int updateBytesCRC32(@ConstantNodeParameter ForeignCallDescriptor descriptor, int crc, WordBase buf, int length);
 }

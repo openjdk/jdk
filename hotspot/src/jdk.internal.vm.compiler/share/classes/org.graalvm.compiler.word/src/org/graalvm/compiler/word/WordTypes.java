@@ -22,7 +22,8 @@
  */
 package org.graalvm.compiler.word;
 
-import org.graalvm.compiler.bytecode.BridgeMethodUtils;
+import org.graalvm.api.word.WordBase;
+import org.graalvm.api.word.WordFactory;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -51,6 +52,11 @@ public class WordTypes {
     private final ResolvedJavaType wordImplType;
 
     /**
+     * Resolved type for {@link WordFactory}.
+     */
+    private final ResolvedJavaType wordFactoryType;
+
+    /**
      * Resolved type for {@link ObjectAccess}.
      */
     private final ResolvedJavaType objectAccessType;
@@ -66,14 +72,21 @@ public class WordTypes {
         this.wordKind = wordKind;
         this.wordBaseType = metaAccess.lookupJavaType(WordBase.class);
         this.wordImplType = metaAccess.lookupJavaType(Word.class);
+        this.wordFactoryType = metaAccess.lookupJavaType(WordFactory.class);
         this.objectAccessType = metaAccess.lookupJavaType(ObjectAccess.class);
         this.barrieredAccessType = metaAccess.lookupJavaType(BarrieredAccess.class);
+
+        this.wordImplType.initialize();
     }
 
     /**
      * Determines if a given method denotes a word operation.
      */
     public boolean isWordOperation(ResolvedJavaMethod targetMethod) {
+        final boolean isWordFactory = wordFactoryType.equals(targetMethod.getDeclaringClass());
+        if (isWordFactory) {
+            return true;
+        }
         final boolean isObjectAccess = objectAccessType.equals(targetMethod.getDeclaringClass());
         final boolean isBarrieredAccess = barrieredAccessType.equals(targetMethod.getDeclaringClass());
         if (isObjectAccess || isBarrieredAccess) {
@@ -99,7 +112,6 @@ public class WordTypes {
             wordMethod = wordImplType.resolveConcreteMethod(targetMethod, callingContextType);
         }
         assert wordMethod != null : targetMethod;
-        assert BridgeMethodUtils.getAnnotation(Operation.class, wordMethod) != null;
         return wordMethod;
     }
 

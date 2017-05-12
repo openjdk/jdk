@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.nodes.memory;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
+import org.graalvm.api.word.LocationIdentity;
 
 /**
  * Maps a {@linkplain LocationIdentity location} to the last node that (potentially) wrote to the

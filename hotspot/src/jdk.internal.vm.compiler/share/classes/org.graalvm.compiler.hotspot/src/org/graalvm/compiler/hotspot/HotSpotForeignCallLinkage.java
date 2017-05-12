@@ -24,7 +24,7 @@ package org.graalvm.compiler.hotspot;
 
 import jdk.vm.ci.meta.InvokeTarget;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
+import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
 import org.graalvm.compiler.core.target.Backend;
 import org.graalvm.compiler.hotspot.stubs.Stub;

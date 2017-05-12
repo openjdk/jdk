@@ -33,6 +33,7 @@ import static org.graalvm.compiler.lir.alloc.trace.TraceUtil.isShadowedRegisterV
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.core.common.alloc.Trace;
 import org.graalvm.compiler.core.common.alloc.TraceBuilderResult;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
@@ -68,14 +69,15 @@ public final class TraceGlobalMoveResolutionPhase {
     public static void resolve(TargetDescription target, LIRGenerationResult lirGenRes, TraceAllocationContext context) {
         Debug.dump(Debug.VERBOSE_LEVEL, lirGenRes.getLIR(), "Before TraceGlobalMoveResultion");
         MoveFactory spillMoveFactory = context.spillMoveFactory;
-        resolveGlobalDataFlow(context.resultTraces, lirGenRes, spillMoveFactory, target.arch, context.livenessInfo);
+        resolveGlobalDataFlow(context.resultTraces, lirGenRes, spillMoveFactory, target.arch, context.livenessInfo, context.registerAllocationConfig);
     }
 
     @SuppressWarnings("try")
-    private static void resolveGlobalDataFlow(TraceBuilderResult resultTraces, LIRGenerationResult lirGenRes, MoveFactory spillMoveFactory, Architecture arch, GlobalLivenessInfo livenessInfo) {
+    private static void resolveGlobalDataFlow(TraceBuilderResult resultTraces, LIRGenerationResult lirGenRes, MoveFactory spillMoveFactory, Architecture arch, GlobalLivenessInfo livenessInfo,
+                    RegisterAllocationConfig registerAllocationConfig) {
         LIR lir = lirGenRes.getLIR();
         /* Resolve trace global data-flow mismatch. */
-        TraceGlobalMoveResolver moveResolver = new TraceGlobalMoveResolver(lirGenRes, spillMoveFactory, arch);
+        TraceGlobalMoveResolver moveResolver = new TraceGlobalMoveResolver(lirGenRes, spillMoveFactory, registerAllocationConfig, arch);
 
         try (Indent indent = Debug.logAndIndent("Trace global move resolution")) {
             for (Trace trace : resultTraces.getTraces()) {
@@ -139,8 +141,7 @@ public final class TraceGlobalMoveResolutionPhase {
         assert Arrays.asList(toBlock.getPredecessors()).contains(fromBlock) : String.format("%s not in predecessor list: %s", fromBlock,
                         Arrays.toString(toBlock.getPredecessors()));
         assert fromBlock.getSuccessorCount() == 1 || toBlock.getPredecessorCount() == 1 : String.format("Critical Edge? %s has %d successors and %s has %d predecessors",
-                        fromBlock,
-                        fromBlock.getSuccessorCount(), toBlock, toBlock.getPredecessorCount());
+                        fromBlock, fromBlock.getSuccessorCount(), toBlock, toBlock.getPredecessorCount());
         assert Arrays.asList(fromBlock.getSuccessors()).contains(toBlock) : String.format("Predecessor block %s has wrong successor: %s, should contain: %s", fromBlock,
                         Arrays.toString(fromBlock.getSuccessors()), toBlock);
         return true;

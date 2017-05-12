@@ -38,11 +38,11 @@ import java.util.Objects;
 class JVMCIVersionCheck {
 
     private static final int JVMCI8_MIN_MAJOR_VERSION = 0;
-    private static final int JVMCI8_MIN_MINOR_VERSION = 24;
+    private static final int JVMCI8_MIN_MINOR_VERSION = 26;
 
     // MAX_VALUE indicates that no current EA version is compatible with Graal.
     // Note: Keep README.md in sync with the EA version support checked here.
-    private static final int JVMCI9_MIN_EA_BUILD = 161;
+    private static final int JVMCI9_MIN_EA_BUILD = 168;
 
     private static void failVersionCheck(boolean exit, String reason, Object... args) {
         Formatter errorMessage = new Formatter().format(reason, args);
@@ -79,13 +79,27 @@ class JVMCIVersionCheck {
                 start += "-jvmci-".length();
                 int end = vmVersion.indexOf('.', start);
                 if (end > 0) {
-                    int major = Integer.parseInt(vmVersion.substring(start, end));
+                    int major;
+                    try {
+                        major = Integer.parseInt(vmVersion.substring(start, end));
+                    } catch (NumberFormatException e) {
+                        failVersionCheck(exitOnFailure, "The VM does not support the minimum JVMCI API version required by Graal.%n" +
+                                        "Cannot read JVMCI major version from java.vm.version property: %s.%n", vmVersion);
+                        return;
+                    }
                     start = end + 1;
                     end = start;
                     while (end < vmVersion.length() && Character.isDigit(vmVersion.charAt(end))) {
                         end++;
                     }
-                    int minor = Integer.parseInt(vmVersion.substring(start, end));
+                    int minor;
+                    try {
+                        minor = Integer.parseInt(vmVersion.substring(start, end));
+                    } catch (NumberFormatException e) {
+                        failVersionCheck(exitOnFailure, "The VM does not support the minimum JVMCI API version required by Graal.%n" +
+                                        "Cannot read JVMCI minor version from java.vm.version property: %s.%n", vmVersion);
+                        return;
+                    }
                     if (major >= JVMCI8_MIN_MAJOR_VERSION && minor >= JVMCI8_MIN_MINOR_VERSION) {
                         return;
                     }
@@ -114,7 +128,14 @@ class JVMCIVersionCheck {
                 while (end < vmVersion.length() && Character.isDigit(vmVersion.charAt(end))) {
                     end++;
                 }
-                int build = Integer.parseInt(vmVersion.substring(start, end));
+                int build;
+                try {
+                    build = Integer.parseInt(vmVersion.substring(start, end));
+                } catch (NumberFormatException e) {
+                    failVersionCheck(exitOnFailure, "The VM does not support the minimum JVMCI API version required by Graal.%n" +
+                                    "Cannot read JDK9 EA build number from java.vm.version property: %s.%n", vmVersion);
+                    return;
+                }
                 if (build >= JVMCI9_MIN_EA_BUILD) {
                     return;
                 }

@@ -28,10 +28,16 @@ package org.graalvm.compiler.jtt.threads;
 
 import org.graalvm.compiler.jtt.JTTTest;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.DisableOnDebug;
+import org.junit.rules.TestRule;
+import org.junit.rules.Timeout;
 
 //Test all, mainly monitors
 public class Thread_isInterrupted02 extends JTTTest {
+
+    @Rule public TestRule timeout = new DisableOnDebug(Timeout.seconds(20));
 
     private static final Object start = new Object();
     private static final Object end = new Object();
@@ -102,13 +108,13 @@ public class Thread_isInterrupted02 extends JTTTest {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
     public void run0() throws Throwable {
         initializeForTimeout();
         runTest("test", 0, 0);
     }
 
-    @Test(timeout = 20000)
+    @Test
     public void run1() throws Throwable {
         initializeForTimeout();
         runTest("test", 1, 500);

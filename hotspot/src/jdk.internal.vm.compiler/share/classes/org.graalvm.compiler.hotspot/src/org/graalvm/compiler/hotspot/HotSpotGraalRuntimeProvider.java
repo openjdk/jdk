@@ -29,6 +29,7 @@ import org.graalvm.compiler.replacements.SnippetCounter.Group;
 import org.graalvm.compiler.runtime.RuntimeProvider;
 
 import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 //JaCoCo Exclude
 
@@ -59,6 +60,16 @@ public interface HotSpotGraalRuntimeProvider extends GraalRuntime, RuntimeProvid
     OptionValues getOptions();
 
     /**
+     * Gets the option values associated with this runtime that are applicable for given method.
+     *
+     * @param forMethod the method we are seeking for options for
+     * @return the options - by default same as {@link #getOptions()}
+     */
+    default OptionValues getOptions(ResolvedJavaMethod forMethod) {
+        return getOptions();
+    }
+
+    /**
      * Determines if the VM is currently bootstrapping the JVMCI compiler.
      */
     boolean isBootstrapping();
@@ -74,7 +85,7 @@ public interface HotSpotGraalRuntimeProvider extends GraalRuntime, RuntimeProvid
      * diagnostics are about to be generated.
      *
      * @return the directory into which diagnostics can be written or {@code null} if the directory
-     *         does not exist and could not be created
+     *         does not exist and could not be created or has already been deleted
      */
     String getOutputDirectory();
 }

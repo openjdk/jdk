@@ -66,6 +66,10 @@ public class GraalDebugInitializationParticipant implements DebugInitializationP
             params.enableMethodFilter = true;
         }
 
+        if (!params.enable && GraalDebugConfig.Options.DumpOnPhaseChange.getValue(options) != null) {
+            params.enable = true;
+        }
+
         if (!params.enableUnscopedMethodMetrics && GraalDebugConfig.Options.MethodMeter.getValue(options) != null) {
             // mm requires full debugging support
             params.enable = true;

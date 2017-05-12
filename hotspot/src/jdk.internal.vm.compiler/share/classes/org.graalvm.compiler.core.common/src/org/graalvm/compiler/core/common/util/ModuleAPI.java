@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,13 @@
  */
 package org.graalvm.compiler.core.common.util;
 
-import static org.graalvm.compiler.core.common.util.Util.JAVA_SPECIFICATION_VERSION;
+import static org.graalvm.compiler.serviceprovider.JDK9Method.JAVA_SPECIFICATION_VERSION;
 
-import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+
+import org.graalvm.compiler.debug.GraalError;
 
 /**
  * Reflection based access to the Module API introduced by JDK 9. This allows the API to be used in
@@ -42,11 +43,19 @@ import java.lang.reflect.Modifier;
  */
 public final class ModuleAPI {
 
-    private ModuleAPI(Method method) {
-        this.method = method;
+    public ModuleAPI(Class<?> declaringClass, String name, Class<?>... parameterTypes) {
+        try {
+            this.method = declaringClass.getMethod(name, parameterTypes);
+        } catch (Exception e) {
+            throw new GraalError(e);
+        }
     }
 
-    private final Method method;
+    public final Method method;
+
+    public Class<?> getReturnType() {
+        return method.getReturnType();
+    }
 
     /**
      * {@code Class.getModule()}.
@@ -54,34 +63,9 @@ public final class ModuleAPI {
     public static final ModuleAPI getModule;
 
     /**
-     * {@code jdk.internal.module.Modules.addExports(Module, String, Module)}.
-     */
-    public static final ModuleAPI addExports;
-
-    /**
-     * {@code jdk.internal.module.Modules.addOpens(Module, String, Module)}.
-     */
-    public static final ModuleAPI addOpens;
-
-    /**
      * {@code java.lang.Module.getResourceAsStream(String)}.
      */
     public static final ModuleAPI getResourceAsStream;
-
-    /**
-     * {@code java.lang.Module.getPackages()}.
-     */
-    public static final ModuleAPI getPackages;
-
-    /**
-     * {@code java.lang.Module.canRead(Module)}.
-     */
-    public static final ModuleAPI canRead;
-
-    /**
-     * {@code java.lang.Module.isExported(String)}.
-     */
-    public static final ModuleAPI isExported;
 
     /**
      * {@code java.lang.Module.isExported(String, Module)}.
@@ -98,7 +82,7 @@ public final class ModuleAPI {
         try {
             return (T) method.invoke(null, args);
         } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-            throw new InternalError(e);
+            throw new GraalError(e);
         }
     }
 
@@ -112,84 +96,31 @@ public final class ModuleAPI {
         try {
             return (T) method.invoke(receiver, args);
         } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-            throw new InternalError(e);
+            throw new GraalError(e);
         }
     }
 
-    /**
-     * Opens all packages in {@code moduleMember}'s module for deep reflection (i.e., allow
-     * {@link AccessibleObject#setAccessible(boolean)} to be called for any class/method/field) by
-     * {@code requestor}'s module.
-     */
-    public static void openAllPackagesForReflectionTo(Class<?> moduleMember, Class<?> requestor) {
-        Object moduleToOpen = getModule.invoke(moduleMember);
-        Object requestorModule = getModule.invoke(requestor);
-        if (moduleToOpen != requestorModule) {
-            String[] packages = getPackages.invoke(moduleToOpen);
-            for (String pkg : packages) {
-                addOpens.invokeStatic(moduleToOpen, pkg, requestorModule);
-            }
-        }
-    }
-
-    /**
-     * Opens {@code declaringClass}'s package to allow a method declared in {@code accessor} to call
-     * {@link AccessibleObject#setAccessible(boolean)} on an {@link AccessibleObject} representing a
-     * field or method declared by {@code declaringClass}.
-     */
-    public static void openForReflectionTo(Class<?> declaringClass, Class<?> accessor) {
-        Object moduleToOpen = getModule.invoke(declaringClass);
-        Object accessorModule = getModule.invoke(accessor);
-        if (moduleToOpen != accessorModule) {
-            addOpens.invokeStatic(moduleToOpen, declaringClass.getPackage().getName(), accessorModule);
-        }
-    }
-
-    /**
-     * Exports the package named {@code packageName} declared in {@code moduleMember}'s module to
-     * {@code requestor}'s module.
-     */
-    public static void exportPackageTo(Class<?> moduleMember, String packageName, Class<?> requestor) {
-        Object moduleToExport = getModule.invoke(moduleMember);
-        Object requestorModule = getModule.invoke(requestor);
-        if (moduleToExport != requestorModule) {
-            addExports.invokeStatic(moduleToExport, packageName, requestorModule);
-        }
-    }
-
-    private void checkAvailability() throws InternalError {
+    private void checkAvailability() throws GraalError {
         if (method == null) {
-            throw new InternalError("Cannot use Module API on JDK " + JAVA_SPECIFICATION_VERSION);
+            throw new GraalError("Cannot use Module API on JDK " + JAVA_SPECIFICATION_VERSION);
         }
     }
 
     static {
         if (JAVA_SPECIFICATION_VERSION >= 9) {
-            try {
-                getModule = new ModuleAPI(Class.class.getMethod("getModule"));
-                Class<?> moduleClass = getModule.method.getReturnType();
-                Class<?> modulesClass = Class.forName("jdk.internal.module.Modules");
-                getResourceAsStream = new ModuleAPI(moduleClass.getMethod("getResourceAsStream", String.class));
-                getPackages = new ModuleAPI(moduleClass.getMethod("getPackages"));
-                canRead = new ModuleAPI(moduleClass.getMethod("canRead", moduleClass));
-                isExported = new ModuleAPI(moduleClass.getMethod("isExported", String.class));
-                isExportedTo = new ModuleAPI(moduleClass.getMethod("isExported", String.class, moduleClass));
-                addExports = new ModuleAPI(modulesClass.getDeclaredMethod("addExports", moduleClass, String.class, moduleClass));
-                addOpens = new ModuleAPI(modulesClass.getDeclaredMethod("addOpens", moduleClass, String.class, moduleClass));
-            } catch (NoSuchMethodException | SecurityException | ClassNotFoundException e) {
-                throw new InternalError(e);
-            }
+            getModule = new ModuleAPI(Class.class, "getModule");
+            Class<?> moduleClass = getModule.getReturnType();
+            getResourceAsStream = new ModuleAPI(moduleClass, "getResourceAsStream", String.class);
+            isExportedTo = new ModuleAPI(moduleClass, "isExported", String.class, moduleClass);
         } else {
-            ModuleAPI unavailable = new ModuleAPI(null);
+            ModuleAPI unavailable = new ModuleAPI();
             getModule = unavailable;
             getResourceAsStream = unavailable;
-            getPackages = unavailable;
-            canRead = unavailable;
-            isExported = unavailable;
             isExportedTo = unavailable;
-            addExports = unavailable;
-            addOpens = unavailable;
         }
+    }
 
+    private ModuleAPI() {
+        method = null;
     }
 }

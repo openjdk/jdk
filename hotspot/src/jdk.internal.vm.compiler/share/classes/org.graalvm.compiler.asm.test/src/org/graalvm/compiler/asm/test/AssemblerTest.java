@@ -37,7 +37,6 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.runtime.RuntimeProvider;
 import org.graalvm.compiler.serviceprovider.GraalServices;
-import org.graalvm.compiler.test.AddExports;
 import org.graalvm.compiler.test.GraalTest;
 import org.junit.Assert;
 
@@ -52,7 +51,6 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.runtime.JVMCI;
 import jdk.vm.ci.runtime.JVMCIBackend;
 
-@AddExports("jdk.internal.vm.ci/jdk.vm.ci.runtime")
 public abstract class AssemblerTest extends GraalTest {
 
     private final MetaAccessProvider metaAccess;

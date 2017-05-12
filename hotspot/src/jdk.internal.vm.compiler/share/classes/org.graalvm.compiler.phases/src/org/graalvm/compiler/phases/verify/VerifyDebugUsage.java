@@ -24,6 +24,7 @@ package org.graalvm.compiler.phases.verify;
 
 import static org.graalvm.compiler.debug.Debug.BASIC_LEVEL;
 import static org.graalvm.compiler.debug.Debug.DETAILED_LEVEL;
+import static org.graalvm.compiler.debug.Debug.ENABLED_LEVEL;
 import static org.graalvm.compiler.debug.Debug.INFO_LEVEL;
 import static org.graalvm.compiler.debug.Debug.VERBOSE_LEVEL;
 import static org.graalvm.compiler.debug.Debug.VERY_DETAILED_LEVEL;
@@ -135,7 +136,7 @@ public class VerifyDebugUsage extends VerifyPhase<PhaseContext> {
         }
     }
 
-    private static final Set<Integer> DebugLevels = new HashSet<>(Arrays.asList(BASIC_LEVEL, INFO_LEVEL, VERBOSE_LEVEL, DETAILED_LEVEL, VERY_DETAILED_LEVEL));
+    private static final Set<Integer> DebugLevels = new HashSet<>(Arrays.asList(ENABLED_LEVEL, BASIC_LEVEL, INFO_LEVEL, VERBOSE_LEVEL, DETAILED_LEVEL, VERY_DETAILED_LEVEL));
 
     /**
      * The set of methods allowed to call a {@code Debug.dump(...)} method with the {@code level}
@@ -150,7 +151,7 @@ public class VerifyDebugUsage extends VerifyPhase<PhaseContext> {
                     "org.graalvm.compiler.phases.BasePhase.dumpAfter",
                     "org.graalvm.compiler.core.GraalCompiler.emitFrontEnd",
                     "org.graalvm.compiler.truffle.PartialEvaluator.fastPartialEvaluation",
-                    "org.graalvm.compiler.truffle.PartialEvaluator.reportPerformanceWarnings",
+                    "org.graalvm.compiler.truffle.PartialEvaluator$PerformanceInformationHandler.reportPerformanceWarnings",
                     "org.graalvm.compiler.truffle.TruffleCompiler.compileMethodHelper",
                     "org.graalvm.compiler.core.test.VerifyDebugUsageTest$ValidDumpUsagePhase.run",
                     "org.graalvm.compiler.core.test.VerifyDebugUsageTest$InvalidConcatDumpUsagePhase.run",

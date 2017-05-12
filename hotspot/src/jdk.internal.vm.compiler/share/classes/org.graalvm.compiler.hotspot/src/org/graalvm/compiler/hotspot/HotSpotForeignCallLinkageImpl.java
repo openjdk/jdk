@@ -23,9 +23,11 @@
 package org.graalvm.compiler.hotspot;
 
 import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.RegisterEffect.DESTROYS_REGISTERS;
+
+import org.graalvm.api.word.LocationIdentity;
+
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
 import org.graalvm.compiler.core.target.Backend;
 import org.graalvm.compiler.hotspot.meta.HotSpotForeignCallsProvider;

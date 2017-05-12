@@ -76,7 +76,7 @@ public final class VerifyingMoveFactory implements MoveFactory {
     @Override
     public LIRInstruction createLoad(AllocatableValue result, Constant input) {
         LIRInstruction inst = inner.createLoad(result, input);
-        assert inst instanceof LoadConstantOp && checkResult(inst, result, null);
+        assert LoadConstantOp.isLoadConstantOp(inst) && checkResult(inst, result, null);
         return inst;
     }
 

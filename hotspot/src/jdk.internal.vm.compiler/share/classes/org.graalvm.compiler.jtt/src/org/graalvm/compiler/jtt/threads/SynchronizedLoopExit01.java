@@ -25,7 +25,11 @@
 package org.graalvm.compiler.jtt.threads;
 
 import org.graalvm.compiler.jtt.JTTTest;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.DisableOnDebug;
+import org.junit.rules.TestRule;
+import org.junit.rules.Timeout;
 
 /**
  * Inspired by {@code com.sun.media.sound.DirectAudioDevice$DirectDL.drain()}.
@@ -34,6 +38,8 @@ import org.junit.Test;
  *
  */
 public final class SynchronizedLoopExit01 extends JTTTest {
+
+    @Rule public TestRule timeout = new DisableOnDebug(Timeout.seconds(20));
 
     protected Object object = new Object();
     protected volatile boolean drained = false;
@@ -52,7 +58,7 @@ public final class SynchronizedLoopExit01 extends JTTTest {
         return b;
     }
 
-    @Test(timeout = 20000)
+    @Test
     public void run0() throws Throwable {
         initializeForTimeout();
         runTest("test");

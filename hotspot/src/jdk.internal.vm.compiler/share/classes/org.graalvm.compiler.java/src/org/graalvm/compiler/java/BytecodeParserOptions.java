@@ -57,5 +57,9 @@ public class BytecodeParserOptions {
 
     @Option(help = "Use intrinsics guarded by a virtual dispatch test at indirect call sites.", type = OptionType.Debug)
     public static final OptionKey<Boolean> UseGuardedIntrinsics = new OptionKey<>(true);
+
+    // Remove once GR-3604 reduces the memory overhead of including node source info dumps
+    @Option(help = "Enable node source positions if dumping is enabled.", type = OptionType.Debug)
+    public static final OptionKey<Boolean> DumpWithInfopoints = new OptionKey<>(false);
     // @formatter:on
 }

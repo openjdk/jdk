@@ -22,22 +22,20 @@
  */
 package org.graalvm.compiler.core.test;
 
-import org.junit.Test;
-
 import org.graalvm.compiler.nodes.GuardNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
-import org.graalvm.compiler.phases.common.DominatorConditionalEliminationPhase;
 import org.graalvm.compiler.phases.common.FloatingReadPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
+import org.graalvm.compiler.phases.common.ConditionalEliminationPhase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
+import org.junit.Test;
 
 /**
- * Collection of tests for
- * {@link org.graalvm.compiler.phases.common.DominatorConditionalEliminationPhase} including those
- * that triggered bugs in this phase.
+ * Collection of tests for {@link org.graalvm.compiler.phases.common.ConditionalEliminationPhase}
+ * including those that triggered bugs in this phase.
  */
 public class ConditionalEliminationTest2 extends ConditionalEliminationTestBase {
 
@@ -103,7 +101,7 @@ public class ConditionalEliminationTest2 extends ConditionalEliminationTestBase 
         new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, context);
         canonicalizer.apply(graph, context);
         new FloatingReadPhase().apply(graph);
-        DominatorConditionalEliminationPhase.create(true).apply(graph, context);
+        new ConditionalEliminationPhase(true).apply(graph, context);
         canonicalizer.apply(graph, context);
 
         assertDeepEquals(1, graph.getNodes().filter(GuardNode.class).count());
@@ -125,7 +123,7 @@ public class ConditionalEliminationTest2 extends ConditionalEliminationTestBase 
 
         new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, context);
         canonicalizer.apply(graph, context);
-        DominatorConditionalEliminationPhase.create(true).apply(graph, context);
+        new ConditionalEliminationPhase(true).apply(graph, context);
         canonicalizer.apply(graph, context);
 
         assertDeepEquals(0, graph.getNodes().filter(GuardNode.class).count());

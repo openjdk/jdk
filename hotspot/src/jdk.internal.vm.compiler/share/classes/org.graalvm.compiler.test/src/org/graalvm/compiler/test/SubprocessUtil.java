@@ -22,10 +22,13 @@
  */
 package org.graalvm.compiler.test;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Formatter;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -79,30 +82,6 @@ public final class SubprocessUtil {
     }
 
     /**
-     * Formats an executed shell command followed by its output. The command is formatted such that
-     * it can be copy and pasted into a console for re-execution.
-     *
-     * @param command the list containing the program and its arguments
-     * @param outputLines the output of the command broken into lines
-     * @param header if non null, the returned string has a prefix of this value plus a newline
-     * @param trailer if non null, the returned string has a suffix of this value plus a newline
-     */
-    public static String formatExecutedCommand(List<String> command, List<String> outputLines, String header, String trailer) {
-        Formatter msg = new Formatter();
-        if (header != null) {
-            msg.format("%s%n", header);
-        }
-        msg.format("%s%n", CollectionsUtil.mapAndJoin(command, e -> quoteShellArg(String.valueOf(e)), " "));
-        for (String line : outputLines) {
-            msg.format("%s%n", line);
-        }
-        if (trailer != null) {
-            msg.format("%s%n", trailer);
-        }
-        return msg.toString();
-    }
-
-    /**
      * Returns a new copy {@code args} with debugger arguments removed.
      */
     public static List<String> withoutDebuggerArguments(List<String> args) {
@@ -128,6 +107,95 @@ public final class SubprocessUtil {
             int index = findMainClassIndex(args);
             return args.subList(0, index);
         }
+    }
+
+    /**
+     * The details of a subprocess execution.
+     */
+    public static class Subprocess {
+
+        /**
+         * The command line of the subprocess.
+         */
+        public final List<String> command;
+
+        /**
+         * Exit code of the subprocess.
+         */
+        public final int exitCode;
+
+        /**
+         * Output from the subprocess broken into lines.
+         */
+        public final List<String> output;
+
+        public Subprocess(List<String> command, int exitCode, List<String> output) {
+            this.command = command;
+            this.exitCode = exitCode;
+            this.output = output;
+        }
+
+        public static final String DASHES_DELIMITER = "-------------------------------------------------------";
+
+        /**
+         * Returns the command followed by the output as a string.
+         *
+         * @param delimiter if non-null, the returned string has this value as a prefix and suffix
+         */
+        public String toString(String delimiter) {
+            Formatter msg = new Formatter();
+            if (delimiter != null) {
+                msg.format("%s%n", delimiter);
+            }
+            msg.format("%s%n", CollectionsUtil.mapAndJoin(command, e -> quoteShellArg(String.valueOf(e)), " "));
+            for (String line : output) {
+                msg.format("%s%n", line);
+            }
+            if (delimiter != null) {
+                msg.format("%s%n", delimiter);
+            }
+            return msg.toString();
+        }
+
+        /**
+         * Returns the command followed by the output as a string delimited by
+         * {@value #DASHES_DELIMITER}.
+         */
+        @Override
+        public String toString() {
+            return toString(DASHES_DELIMITER);
+        }
+    }
+
+    /**
+     * Executes a Java subprocess.
+     *
+     * @param vmArgs the VM arguments
+     * @param mainClassAndArgs the main class and its arguments
+     */
+    public static Subprocess java(List<String> vmArgs, String... mainClassAndArgs) throws IOException, InterruptedException {
+        return java(vmArgs, Arrays.asList(mainClassAndArgs));
+    }
+
+    /**
+     * Executes a Java subprocess.
+     *
+     * @param vmArgs the VM arguments
+     * @param mainClassAndArgs the main class and its arguments
+     */
+    public static Subprocess java(List<String> vmArgs, List<String> mainClassAndArgs) throws IOException, InterruptedException {
+        List<String> command = new ArrayList<>(vmArgs);
+        command.addAll(mainClassAndArgs);
+        ProcessBuilder processBuilder = new ProcessBuilder(command);
+        processBuilder.redirectErrorStream(true);
+        Process process = processBuilder.start();
+        BufferedReader stdout = new BufferedReader(new InputStreamReader(process.getInputStream()));
+        String line;
+        List<String> output = new ArrayList<>();
+        while ((line = stdout.readLine()) != null) {
+            output.add(line);
+        }
+        return new Subprocess(command, process.waitFor(), output);
     }
 
     private static final boolean isJava8OrEarlier = System.getProperty("java.specification.version").compareTo("1.9") < 0;

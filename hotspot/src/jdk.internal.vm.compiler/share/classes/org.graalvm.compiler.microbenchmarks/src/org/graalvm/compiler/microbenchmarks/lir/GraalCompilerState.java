@@ -246,14 +246,16 @@ public abstract class GraalCompilerState {
         return structuredGraph;
     }
 
-    protected Suites createSuites() {
-        Suites ret = backend.getSuites().getDefaultSuites(options).copy();
-        return ret;
+    protected OptionValues getOptions() {
+        return options;
     }
 
-    protected LIRSuites createLIRSuites() {
-        LIRSuites ret = backend.getSuites().getDefaultLIRSuites(options).copy();
-        return ret;
+    protected Suites createSuites(OptionValues opts) {
+        return backend.getSuites().getDefaultSuites(opts).copy();
+    }
+
+    protected LIRSuites createLIRSuites(OptionValues opts) {
+        return backend.getSuites().getDefaultLIRSuites(opts).copy();
     }
 
     protected Backend getBackend() {
@@ -323,7 +325,7 @@ public abstract class GraalCompilerState {
         assert !graph.isFrozen();
         ResolvedJavaMethod installedCodeOwner = graph.method();
         request = new Request<>(graph, installedCodeOwner, getProviders(), getBackend(), getDefaultGraphBuilderSuite(), OptimisticOptimizations.ALL,
-                        graph.getProfilingInfo(), createSuites(), createLIRSuites(), new CompilationResult(), CompilationResultBuilderFactory.Default);
+                        graph.getProfilingInfo(), createSuites(getOptions()), createLIRSuites(getOptions()), new CompilationResult(), CompilationResultBuilderFactory.Default);
     }
 
     /**

@@ -22,6 +22,7 @@
  */
 package org.graalvm.compiler.lir.gen;
 
+import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
@@ -260,4 +261,9 @@ public interface LIRGeneratorTool extends DiagnosticLIRGeneratorTool, ValueKindF
     void emitPause();
 
     void emitPrefetchAllocate(Value address);
+
+    Value emitCompress(Value pointer, CompressEncoding encoding, boolean nonNull);
+
+    Value emitUncompress(Value pointer, CompressEncoding encoding, boolean nonNull);
+
 }

@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.nodes.calc;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_8;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_32;
 
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.BinaryOp.Rem;
@@ -34,7 +34,7 @@ import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
-@NodeInfo(shortName = "%", cycles = CYCLES_8/* div */)
+@NodeInfo(shortName = "%", cycles = CYCLES_32/* div */)
 public class RemNode extends BinaryArithmeticNode<Rem> implements Lowerable {
 
     public static final NodeClass<RemNode> TYPE = NodeClass.create(RemNode.class);

@@ -25,9 +25,15 @@
 package org.graalvm.compiler.jtt.threads;
 
 import org.graalvm.compiler.jtt.JTTTest;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.DisableOnDebug;
+import org.junit.rules.TestRule;
+import org.junit.rules.Timeout;
 
 public final class Thread_sleep01 extends JTTTest {
+
+    @Rule public TestRule timeout = new DisableOnDebug(Timeout.seconds(20));
 
     public static boolean test(int i) throws InterruptedException {
         final long before = System.currentTimeMillis();
@@ -35,19 +41,19 @@ public final class Thread_sleep01 extends JTTTest {
         return System.currentTimeMillis() - before >= i;
     }
 
-    @Test(timeout = 20000)
+    @Test
     public void run0() throws Throwable {
         initializeForTimeout();
         runTest("test", 10);
     }
 
-    @Test(timeout = 20000)
+    @Test
     public void run1() throws Throwable {
         initializeForTimeout();
         runTest("test", 20);
     }
 
-    @Test(timeout = 20000)
+    @Test
     public void run2() throws Throwable {
         initializeForTimeout();
         runTest("test", 100);

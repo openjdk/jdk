@@ -24,6 +24,7 @@ package org.graalvm.compiler.nodes.virtual;
 
 import static org.graalvm.compiler.nodeinfo.InputType.Association;
 import static org.graalvm.compiler.nodeinfo.InputType.Extension;
+import static org.graalvm.compiler.nodeinfo.InputType.Memory;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_UNKNOWN;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_UNKNOWN;
 
@@ -32,6 +33,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
@@ -46,6 +48,7 @@ import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.java.AbstractNewObjectNode;
 import org.graalvm.compiler.nodes.java.MonitorIdNode;
+import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
 import org.graalvm.compiler.nodes.memory.WriteNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
@@ -54,14 +57,14 @@ import org.graalvm.compiler.nodes.spi.VirtualizerTool;
 
 // @formatter:off
 @NodeInfo(nameTemplate = "Alloc {i#virtualObjects}",
-          allowedUsageTypes = Extension,
+          allowedUsageTypes = {Extension, Memory},
           cycles = CYCLES_UNKNOWN,
           cyclesRationale = "We don't know statically how many, and which, allocations are done.",
           size = SIZE_UNKNOWN,
           sizeRationale = "We don't know statically how much code for which allocations has to be generated."
 )
 // @formatter:on
-public final class CommitAllocationNode extends FixedWithNextNode implements VirtualizableAllocation, Lowerable, Simplifiable {
+public final class CommitAllocationNode extends FixedWithNextNode implements VirtualizableAllocation, Lowerable, Simplifiable, MemoryCheckpoint.Single {
 
     public static final NodeClass<CommitAllocationNode> TYPE = NodeClass.create(CommitAllocationNode.class);
 
@@ -112,6 +115,11 @@ public final class CommitAllocationNode extends FixedWithNextNode implements Vir
             }
         }
         tool.getLowerer().lower(this, tool);
+    }
+
+    @Override
+    public LocationIdentity getLocationIdentity() {
+        return locks.isEmpty() ? LocationIdentity.init() : LocationIdentity.any();
     }
 
     @Override
@@ -166,8 +174,7 @@ public final class CommitAllocationNode extends FixedWithNextNode implements Vir
     public void simplify(SimplifierTool tool) {
         boolean[] used = new boolean[virtualObjects.size()];
         int usedCount = 0;
-        for (Node usage : usages()) {
-            AllocatedObjectNode addObject = (AllocatedObjectNode) usage;
+        for (AllocatedObjectNode addObject : usages().filter(AllocatedObjectNode.class)) {
             int index = virtualObjects.indexOf(addObject.getVirtualObject());
             assert !used[index];
             used[index] = true;

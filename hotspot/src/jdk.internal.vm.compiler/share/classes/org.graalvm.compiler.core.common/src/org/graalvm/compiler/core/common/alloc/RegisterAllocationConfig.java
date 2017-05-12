@@ -27,6 +27,7 @@ import org.graalvm.util.EconomicMap;
 import org.graalvm.util.Equivalence;
 
 import jdk.vm.ci.code.Register;
+import jdk.vm.ci.code.Register.RegisterCategory;
 import jdk.vm.ci.code.RegisterArray;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.meta.PlatformKind;
@@ -118,6 +119,13 @@ public class RegisterAllocationConfig {
         AllocatableRegisters ret = createAllocatableRegisters(registerConfig.filterAllocatableRegisters(kind, getAllocatableRegisters()));
         categorized.put(key, ret);
         return ret;
+    }
+
+    /**
+     * Gets the {@link RegisterCategory} for the given {@link PlatformKind}.
+     */
+    public RegisterCategory getRegisterCategory(PlatformKind kind) {
+        return getAllocatableRegisters(kind).allocatableRegisters[0].getRegisterCategory();
     }
 
     protected AllocatableRegisters createAllocatableRegisters(RegisterArray registers) {

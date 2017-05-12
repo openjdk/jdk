@@ -37,7 +37,6 @@ import sun.misc.Unsafe;
 /**
  * Base class that contains common utility methods and classes useful in unit tests.
  */
-@AddExports("jdk.internal.vm.ci/jdk.vm.ci.services")
 public class GraalTest {
 
     public static final Unsafe UNSAFE;
@@ -81,7 +80,7 @@ public class GraalTest {
         }
     }
 
-    protected Method getMethod(Class<?> clazz, String methodName, Class<?>[] parameterTypes) {
+    protected Method getMethod(Class<?> clazz, String methodName, Class<?>... parameterTypes) {
         try {
             return clazz.getMethod(methodName, parameterTypes);
         } catch (NoSuchMethodException | SecurityException e) {

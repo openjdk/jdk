@@ -36,9 +36,9 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.calc.ConditionalNode;
 import org.graalvm.compiler.nodes.calc.IntegerEqualsNode;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
@@ -53,9 +53,8 @@ public class ShortCircuitOrNodeTest extends GraalCompilerTest {
     }
 
     @Override
-    protected Plugins getDefaultGraphBuilderPlugins() {
-        Plugins plugins = super.getDefaultGraphBuilderPlugins();
-        Registration r = new Registration(plugins.getInvocationPlugins(), ShortCircuitOrNodeTest.class);
+    protected void registerInvocationPlugins(InvocationPlugins invocationPlugins) {
+        Registration r = new Registration(invocationPlugins, ShortCircuitOrNodeTest.class);
         r.register2("shortCircuitOr", boolean.class, boolean.class, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode b1, ValueNode b2) {
@@ -66,8 +65,7 @@ public class ShortCircuitOrNodeTest extends GraalCompilerTest {
                 return true;
             }
         });
-
-        return plugins;
+        super.registerInvocationPlugins(invocationPlugins);
     }
 
     public static int testSharedConditionSnippet(Object o) {

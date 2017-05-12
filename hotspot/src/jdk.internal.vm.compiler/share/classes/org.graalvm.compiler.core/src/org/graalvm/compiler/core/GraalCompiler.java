@@ -193,12 +193,11 @@ public class GraalCompiler {
         String methodPattern = GraalCompilerOptions.CrashAt.getValue(graph.getOptions());
         if (methodPattern != null) {
             String crashLabel = null;
-            ResolvedJavaMethod method = graph.method();
-            if (method == null) {
-                if (graph.name.contains(methodPattern)) {
-                    crashLabel = graph.name;
-                }
-            } else {
+            if (graph.name != null && graph.name.contains(methodPattern)) {
+                crashLabel = graph.name;
+            }
+            if (crashLabel == null) {
+                ResolvedJavaMethod method = graph.method();
                 MethodFilter[] filters = MethodFilter.parse(methodPattern);
                 for (MethodFilter filter : filters) {
                     if (filter.matches(method)) {

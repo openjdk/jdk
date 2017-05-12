@@ -22,12 +22,15 @@
  */
 package org.graalvm.compiler.phases.common;
 
+import org.graalvm.compiler.core.common.type.FloatStamp;
+import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
 import org.graalvm.compiler.nodes.BeginNode;
+import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.LogicNode;
@@ -36,6 +39,11 @@ import org.graalvm.compiler.nodes.ShortCircuitOrNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.ConditionalNode;
+import org.graalvm.compiler.nodes.calc.FloatEqualsNode;
+import org.graalvm.compiler.nodes.calc.FloatLessThanNode;
+import org.graalvm.compiler.nodes.calc.IntegerEqualsNode;
+import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
+import org.graalvm.compiler.nodes.calc.NormalizeCompareNode;
 import org.graalvm.compiler.phases.Phase;
 
 public class ExpandLogicPhase extends Phase {
@@ -46,7 +54,32 @@ public class ExpandLogicPhase extends Phase {
             processBinary(logic);
         }
         assert graph.getNodes(ShortCircuitOrNode.TYPE).isEmpty();
-        graph.setAllowShortCircuitOr(false);
+
+        for (NormalizeCompareNode logic : graph.getNodes(NormalizeCompareNode.TYPE)) {
+            processNormalizeCompareNode(logic);
+        }
+        graph.setAfterExpandLogic();
+    }
+
+    private static void processNormalizeCompareNode(NormalizeCompareNode normalize) {
+        LogicNode equalComp;
+        LogicNode lessComp;
+        StructuredGraph graph = normalize.graph();
+        ValueNode x = normalize.getX();
+        ValueNode y = normalize.getY();
+        if (x.stamp() instanceof FloatStamp) {
+            equalComp = graph.addOrUniqueWithInputs(FloatEqualsNode.create(x, y));
+            lessComp = graph.addOrUniqueWithInputs(FloatLessThanNode.create(x, y, normalize.isUnorderedLess()));
+        } else {
+            equalComp = graph.addOrUniqueWithInputs(IntegerEqualsNode.create(x, y));
+            lessComp = graph.addOrUniqueWithInputs(IntegerLessThanNode.create(x, y));
+        }
+
+        Stamp stamp = normalize.stamp();
+        ConditionalNode equalValue = graph.unique(
+                        new ConditionalNode(equalComp, ConstantNode.forIntegerStamp(stamp, 0, graph), ConstantNode.forIntegerStamp(stamp, 1, graph)));
+        ConditionalNode value = graph.unique(new ConditionalNode(lessComp, ConstantNode.forIntegerStamp(stamp, -1, graph), equalValue));
+        normalize.replaceAtUsagesAndDelete(value);
     }
 
     private static void processBinary(ShortCircuitOrNode binary) {

@@ -22,6 +22,9 @@
  */
 package org.graalvm.compiler.replacements.test.classfile;
 
+import static org.graalvm.compiler.test.SubprocessUtil.getVMCommandLine;
+import static org.graalvm.compiler.test.SubprocessUtil.java;
+import static org.graalvm.compiler.test.SubprocessUtil.withoutDebuggerArguments;
 import static org.junit.Assume.assumeTrue;
 
 import java.io.FileOutputStream;
@@ -35,6 +38,7 @@ import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.ProtectionDomain;
+import java.util.List;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -42,16 +46,15 @@ import java.util.jar.Manifest;
 
 import javax.tools.ToolProvider;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import org.graalvm.compiler.api.replacements.ClassSubstitution;
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
 import org.graalvm.compiler.bytecode.BytecodeProvider;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
 import org.graalvm.compiler.replacements.test.ReplacementsTest;
+import org.graalvm.compiler.test.SubprocessUtil.Subprocess;
+import org.junit.Assert;
+import org.junit.Test;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
@@ -78,12 +81,11 @@ public class RedefineIntrinsicTest extends ReplacementsTest {
     }
 
     @Override
-    protected GraphBuilderConfiguration editGraphBuilderConfiguration(GraphBuilderConfiguration conf) {
-        InvocationPlugins invocationPlugins = conf.getPlugins().getInvocationPlugins();
+    protected void registerInvocationPlugins(InvocationPlugins invocationPlugins) {
         BytecodeProvider replacementBytecodeProvider = getSystemClassLoaderBytecodeProvider();
         Registration r = new Registration(invocationPlugins, Original.class, replacementBytecodeProvider);
         r.registerMethodSubstitution(Intrinsic.class, "getValue");
-        return super.editGraphBuilderConfiguration(conf);
+        super.registerInvocationPlugins(invocationPlugins);
     }
 
     public static String callOriginalGetValue() {
@@ -98,6 +100,22 @@ public class RedefineIntrinsicTest extends ReplacementsTest {
 
     @Test
     public void test() throws Throwable {
+        String recursionPropName = getClass().getName() + ".recursion";
+        if (Java8OrEarlier || Boolean.getBoolean(recursionPropName)) {
+            testHelper();
+        } else {
+            List<String> vmArgs = withoutDebuggerArguments(getVMCommandLine());
+            vmArgs.add("-D" + recursionPropName + "=true");
+            vmArgs.add("-Djdk.attach.allowAttachSelf=true");
+            Subprocess proc = java(vmArgs, "com.oracle.mxtool.junit.MxJUnitWrapper", getClass().getName());
+            if (proc.exitCode != 0) {
+                Assert.fail(String.format("non-zero exit code %d for command:%n%s", proc.exitCode, proc));
+            }
+        }
+    }
+
+    public void testHelper() throws Throwable {
+
         Object receiver = null;
         Object[] args = {};
 

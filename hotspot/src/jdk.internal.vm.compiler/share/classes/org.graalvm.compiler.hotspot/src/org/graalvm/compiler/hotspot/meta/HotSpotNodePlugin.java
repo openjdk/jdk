@@ -33,8 +33,8 @@ import org.graalvm.compiler.nodes.graphbuilderconf.InlineInvokePlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.TypePlugin;
 import org.graalvm.compiler.nodes.util.ConstantFoldUtil;
-import org.graalvm.compiler.replacements.WordOperationPlugin;
 import org.graalvm.compiler.word.Word;
+import org.graalvm.compiler.word.WordOperationPlugin;
 
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;

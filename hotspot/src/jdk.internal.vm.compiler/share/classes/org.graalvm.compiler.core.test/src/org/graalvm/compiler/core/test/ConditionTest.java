@@ -28,14 +28,11 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.Random;
 
-import jdk.vm.ci.meta.JavaConstant;
-
+import org.graalvm.compiler.core.common.calc.Condition;
 import org.junit.Test;
 
-import org.graalvm.compiler.core.common.calc.Condition;
-import org.graalvm.compiler.test.AddExports;
+import jdk.vm.ci.meta.JavaConstant;
 
-@AddExports("jdk.internal.vm.ci/jdk.vm.ci.meta")
 public class ConditionTest {
 
     @Test

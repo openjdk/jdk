@@ -25,8 +25,7 @@ package org.graalvm.compiler.hotspot.test;
 import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
-
-import org.graalvm.compiler.core.common.LocationIdentity;
+import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.Debug.Scope;
 import org.graalvm.compiler.debug.DebugConfig;

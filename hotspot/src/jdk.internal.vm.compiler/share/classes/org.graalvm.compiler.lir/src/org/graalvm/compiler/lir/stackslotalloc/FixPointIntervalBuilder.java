@@ -271,7 +271,7 @@ final class FixPointIntervalBuilder {
                                 from.setLocationHint(to);
                             }
                             if (Debug.isLogEnabled()) {
-                                Debug.log("operation %s at opId %d: added hint from interval %d to %d", op, op.id(), from, to);
+                                Debug.log("operation %s at opId %d: added hint from interval %s to %s", op, op.id(), from, to);
                             }
 
                             return registerHint;

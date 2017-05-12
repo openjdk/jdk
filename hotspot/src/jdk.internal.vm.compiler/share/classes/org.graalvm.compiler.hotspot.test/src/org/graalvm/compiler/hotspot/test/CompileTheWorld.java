@@ -26,9 +26,9 @@ import static java.util.Collections.singletonList;
 import static org.graalvm.compiler.core.GraalCompilerOptions.ExitVMOnException;
 import static org.graalvm.compiler.core.GraalCompilerOptions.PrintBailout;
 import static org.graalvm.compiler.core.GraalCompilerOptions.PrintStackTraceOnException;
-import static org.graalvm.compiler.core.common.util.Util.Java8OrEarlier;
 import static org.graalvm.compiler.core.test.ReflectionOptionDescriptors.extractEntries;
 import static org.graalvm.compiler.hotspot.test.CompileTheWorld.Options.DESCRIPTORS;
+import static org.graalvm.compiler.serviceprovider.JDK9Method.Java8OrEarlier;
 
 import java.io.Closeable;
 import java.io.File;
@@ -69,7 +69,6 @@ import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.bytecode.Bytecodes;
 import org.graalvm.compiler.core.CompilerThreadFactory;
 import org.graalvm.compiler.core.CompilerThreadFactory.DebugConfigAccess;
-import org.graalvm.compiler.core.common.util.Util;
 import org.graalvm.compiler.core.test.ReflectionOptionDescriptors;
 import org.graalvm.compiler.debug.DebugEnvironment;
 import org.graalvm.compiler.debug.GraalDebugConfig;
@@ -85,7 +84,9 @@ import org.graalvm.compiler.options.OptionDescriptors;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.options.OptionsParser;
+import org.graalvm.compiler.serviceprovider.JDK9Method;
 import org.graalvm.util.EconomicMap;
+import org.graalvm.util.UnmodifiableEconomicMap;
 
 import jdk.vm.ci.hotspot.HotSpotCodeCacheProvider;
 import jdk.vm.ci.hotspot.HotSpotCompilationRequest;
@@ -98,7 +99,6 @@ import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.runtime.JVMCI;
 import jdk.vm.ci.runtime.JVMCICompiler;
-import jdk.vm.ci.services.Services;
 
 /**
  * This class implements compile-the-world functionality with JVMCI.
@@ -106,9 +106,9 @@ import jdk.vm.ci.services.Services;
 public final class CompileTheWorld {
 
     /**
-     * Magic token to denote that JDK classes are to be compiled. If {@link Util#Java8OrEarlier},
-     * then the classes in {@code rt.jar} are compiled. Otherwise the classes in the Java runtime
-     * image are compiled.
+     * Magic token to denote that JDK classes are to be compiled. If
+     * {@link JDK9Method#Java8OrEarlier}, then the classes in {@code rt.jar} are compiled. Otherwise
+     * the classes in the Java runtime image are compiled.
      */
     public static final String SUN_BOOT_CLASS_PATH = "sun.boot.class.path";
 
@@ -184,7 +184,7 @@ public final class CompileTheWorld {
     private ThreadPoolExecutor threadPool;
 
     private OptionValues currentOptions;
-    private final EconomicMap<OptionKey<?>, Object> compilationOptions;
+    private final UnmodifiableEconomicMap<OptionKey<?>, Object> compilationOptions;
 
     /**
      * Creates a compile-the-world instance.
@@ -205,21 +205,22 @@ public final class CompileTheWorld {
         this.methodFilters = methodFilters == null || methodFilters.isEmpty() ? null : MethodFilter.parse(methodFilters);
         this.excludeMethodFilters = excludeMethodFilters == null || excludeMethodFilters.isEmpty() ? null : MethodFilter.parse(excludeMethodFilters);
         this.verbose = verbose;
-        EconomicMap<OptionKey<?>, Object> compilationOptionsCopy = EconomicMap.create(compilationOptions);
         this.currentOptions = initialOptions;
 
+        // Copy the initial options and add in any extra options
+        EconomicMap<OptionKey<?>, Object> compilationOptionsCopy = EconomicMap.create(initialOptions.getMap());
+        compilationOptionsCopy.putAll(compilationOptions);
+
         // We don't want the VM to exit when a method fails to compile...
-        ExitVMOnException.update(compilationOptionsCopy, false);
+        ExitVMOnException.putIfAbsent(compilationOptionsCopy, false);
 
         // ...but we want to see exceptions.
-        PrintBailout.update(compilationOptionsCopy, true);
-        PrintStackTraceOnException.update(compilationOptionsCopy, true);
+        PrintBailout.putIfAbsent(compilationOptionsCopy, true);
+        PrintStackTraceOnException.putIfAbsent(compilationOptionsCopy, true);
 
         // By default only report statistics for the CTW threads themselves
-        if (!GraalDebugConfig.Options.DebugValueThreadFilter.hasBeenSet(initialOptions)) {
-            GraalDebugConfig.Options.DebugValueThreadFilter.update(compilationOptionsCopy, "^CompileTheWorld");
-        }
-        this.compilationOptions = EconomicMap.create(compilationOptionsCopy);
+        GraalDebugConfig.Options.DebugValueThreadFilter.putIfAbsent(compilationOptionsCopy, "^CompileTheWorld");
+        this.compilationOptions = compilationOptionsCopy;
     }
 
     public CompileTheWorld(HotSpotJVMCIRuntimeProvider jvmciRuntime, HotSpotGraalCompiler compiler, OptionValues options) {
@@ -509,7 +510,7 @@ public final class CompileTheWorld {
         }
 
         OptionValues savedOptions = currentOptions;
-        currentOptions = new OptionValues(savedOptions, compilationOptions);
+        currentOptions = new OptionValues(compilationOptions);
         threadPool = new ThreadPoolExecutor(threadCount, threadCount, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(),
                         new CompilerThreadFactory("CompileTheWorld", new DebugConfigAccess() {
                             @Override
@@ -683,7 +684,7 @@ public final class CompileTheWorld {
             public void run() {
                 waitToRun();
                 OptionValues savedOptions = currentOptions;
-                currentOptions = new OptionValues(savedOptions, compilationOptions);
+                currentOptions = new OptionValues(compilationOptions);
                 try {
                     compileMethod(method, classFileCounter);
                 } finally {
@@ -808,7 +809,6 @@ public final class CompileTheWorld {
     }
 
     public static void main(String[] args) throws Throwable {
-        Services.exportJVMCITo(CompileTheWorld.class);
         HotSpotJVMCIRuntime jvmciRuntime = HotSpotJVMCIRuntime.runtime();
         HotSpotGraalCompiler compiler = (HotSpotGraalCompiler) jvmciRuntime.getCompiler();
         HotSpotGraalRuntimeProvider graalRuntime = compiler.getGraalRuntime();

@@ -66,6 +66,7 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.UnaryOpLogicNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.ValuePhiNode;
+import org.graalvm.compiler.nodes.StructuredGraph.ScheduleResult;
 import org.graalvm.compiler.nodes.calc.AndNode;
 import org.graalvm.compiler.nodes.calc.BinaryArithmeticNode;
 import org.graalvm.compiler.nodes.calc.BinaryNode;
@@ -83,6 +84,7 @@ import org.graalvm.compiler.nodes.spi.StampInverter;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
+import org.graalvm.compiler.phases.schedule.SchedulePhase.SchedulingStrategy;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
 import org.graalvm.util.EconomicMap;
 import org.graalvm.util.Equivalence;
@@ -92,16 +94,22 @@ import org.graalvm.util.Pair;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.TriState;
 
-public class NewConditionalEliminationPhase extends BasePhase<PhaseContext> {
+public class ConditionalEliminationPhase extends BasePhase<PhaseContext> {
 
     private static final DebugCounter counterStampsRegistered = Debug.counter("StampsRegistered");
     private static final DebugCounter counterStampsFound = Debug.counter("StampsFound");
     private static final DebugCounter counterIfsKilled = Debug.counter("CE_KilledIfs");
     private static final DebugCounter counterPhiStampsImproved = Debug.counter("CE_ImprovedPhis");
     private final boolean fullSchedule;
+    private final boolean moveGuards;
 
-    public NewConditionalEliminationPhase(boolean fullSchedule) {
+    public ConditionalEliminationPhase(boolean fullSchedule) {
+        this(fullSchedule, true);
+    }
+
+    public ConditionalEliminationPhase(boolean fullSchedule, boolean moveGuards) {
         this.fullSchedule = fullSchedule;
+        this.moveGuards = moveGuards;
     }
 
     @Override
@@ -109,16 +117,32 @@ public class NewConditionalEliminationPhase extends BasePhase<PhaseContext> {
     protected void run(StructuredGraph graph, PhaseContext context) {
         try (Debug.Scope s = Debug.scope("DominatorConditionalElimination")) {
             BlockMap<List<Node>> blockToNodes = null;
+            NodeMap<Block> nodeToBlock = null;
             ControlFlowGraph cfg = ControlFlowGraph.compute(graph, true, true, true, true);
             if (fullSchedule) {
-                cfg.visitDominatorTree(new MoveGuardsUpwards(), graph.hasValueProxies());
-                SchedulePhase.run(graph, SchedulePhase.SchedulingStrategy.EARLIEST, cfg);
-                blockToNodes = graph.getLastSchedule().getBlockToNodesMap();
+                if (moveGuards) {
+                    cfg.visitDominatorTree(new MoveGuardsUpwards(), graph.hasValueProxies());
+                }
+                SchedulePhase.run(graph, SchedulingStrategy.EARLIEST, cfg);
+                ScheduleResult r = graph.getLastSchedule();
+                blockToNodes = r.getBlockToNodesMap();
+                nodeToBlock = r.getNodeToBlockMap();
+            } else {
+                nodeToBlock = cfg.getNodeToBlock();
+                blockToNodes = getBlockToNodes(cfg);
             }
-
-            Instance visitor = new Instance(graph, blockToNodes, context);
+            ControlFlowGraph.RecursiveVisitor<?> visitor = createVisitor(graph, cfg, blockToNodes, nodeToBlock, context);
             cfg.visitDominatorTree(visitor, graph.hasValueProxies());
         }
+    }
+
+    protected BlockMap<List<Node>> getBlockToNodes(@SuppressWarnings("unused") ControlFlowGraph cfg) {
+        return null;
+    }
+
+    protected ControlFlowGraph.RecursiveVisitor<?> createVisitor(StructuredGraph graph, @SuppressWarnings("unused") ControlFlowGraph cfg, BlockMap<List<Node>> blockToNodes,
+                    @SuppressWarnings("unused") NodeMap<Block> nodeToBlock, PhaseContext context) {
+        return new Instance(graph, blockToNodes, context);
     }
 
     public static class MoveGuardsUpwards implements ControlFlowGraph.RecursiveVisitor<Block> {
@@ -305,6 +329,11 @@ public class NewConditionalEliminationPhase extends BasePhase<PhaseContext> {
             Debug.log("[Pre Processing block %s]", block);
             // For now conservatively collect guards only within the same block.
             pendingTests.clear();
+            processNodes(block);
+            return mark;
+        }
+
+        protected void processNodes(Block block) {
             if (blockToNodes != null) {
                 for (Node n : blockToNodes.get(block)) {
                     if (n.isAlive()) {
@@ -314,7 +343,6 @@ public class NewConditionalEliminationPhase extends BasePhase<PhaseContext> {
             } else {
                 processBlock(block);
             }
-            return mark;
         }
 
         private void processBlock(Block block) {
@@ -366,7 +394,7 @@ public class NewConditionalEliminationPhase extends BasePhase<PhaseContext> {
             }
         }
 
-        private void introducePisForPhis(MergeNode merge) {
+        protected void introducePisForPhis(MergeNode merge) {
             EconomicMap<ValuePhiNode, PhiInfoElement> mergeMap = this.mergeMaps.get(merge);
             if (mergeMap != null) {
                 MapCursor<ValuePhiNode, PhiInfoElement> entries = mergeMap.getEntries();
@@ -445,7 +473,7 @@ public class NewConditionalEliminationPhase extends BasePhase<PhaseContext> {
             }
         }
 
-        private void processEnd(EndNode end) {
+        protected void processEnd(EndNode end) {
             AbstractMergeNode abstractMerge = end.merge();
             if (abstractMerge instanceof MergeNode) {
                 MergeNode merge = (MergeNode) abstractMerge;
@@ -685,11 +713,16 @@ public class NewConditionalEliminationPhase extends BasePhase<PhaseContext> {
 
         protected boolean tryProveGuardCondition(DeoptimizingGuard thisGuard, LogicNode node, GuardRewirer rewireGuardFunction) {
             InfoElement infoElement = getInfoElements(node);
-            if (infoElement != null) {
-                assert infoElement.getStamp() == StampFactory.tautology() || infoElement.getStamp() == StampFactory.contradiction();
-                // No proxified input and stamp required.
-                return rewireGuards(infoElement.getGuard(), infoElement.getStamp() == StampFactory.tautology(), null, null, rewireGuardFunction);
+            while (infoElement != null) {
+                Stamp stamp = infoElement.getStamp();
+                JavaConstant constant = (JavaConstant) stamp.asConstant();
+                if (constant != null) {
+                    // No proxified input and stamp required.
+                    return rewireGuards(infoElement.getGuard(), constant.asBoolean(), null, null, rewireGuardFunction);
+                }
+                infoElement = nextElement(infoElement);
             }
+
             if (node instanceof UnaryOpLogicNode) {
                 UnaryOpLogicNode unaryLogicNode = (UnaryOpLogicNode) node;
                 ValueNode value = unaryLogicNode.getValue();

@@ -24,9 +24,10 @@ package org.graalvm.compiler.phases.schedule;
 
 import java.util.List;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
+import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
 import org.graalvm.compiler.core.common.cfg.Loop;
+import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
@@ -122,6 +123,7 @@ public final class MemoryScheduleVerification extends BlockIteratorClosure<Econo
         for (FloatingReadNode r : cloneState(currentState)) {
             if (r.getLocationIdentity().overlaps(location)) {
                 // This read is killed by this location.
+                Debug.log(Debug.VERBOSE_LEVEL, "%s removing %s from state", n, r);
                 currentState.remove(r);
             }
         }

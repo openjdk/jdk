@@ -214,7 +214,8 @@ public class InliningUtil extends ValueMergeUtil {
             sb.append(methodName(frameState.outerFrameState(), frameState.outerFrameState().bci));
             sb.append("->");
         }
-        sb.append(frameState.getMethod().format("%h.%n"));
+        ResolvedJavaMethod method = frameState.getMethod();
+        sb.append(method != null ? method.format("%h.%n") : "?");
         sb.append("@").append(bci);
         return sb.toString();
     }
@@ -290,6 +291,7 @@ public class InliningUtil extends ValueMergeUtil {
 
             ArrayList<Node> nodes = new ArrayList<>(inlineGraph.getNodes().count());
             ArrayList<ReturnNode> returnNodes = new ArrayList<>(4);
+            ArrayList<InvokeNode> partialIntrinsicExits = new ArrayList<>();
             UnwindNode unwindNode = null;
             final StartNode entryPointNode = inlineGraph.start();
             FixedNode firstCFGNode = entryPointNode.next();
@@ -303,6 +305,15 @@ public class InliningUtil extends ValueMergeUtil {
                     nodes.add(node);
                     if (node instanceof ReturnNode) {
                         returnNodes.add((ReturnNode) node);
+                    } else if (node instanceof InvokeNode) {
+                        InvokeNode invokeInInlineGraph = (InvokeNode) node;
+                        if (invokeInInlineGraph.bci() == BytecodeFrame.UNKNOWN_BCI) {
+                            ResolvedJavaMethod target1 = invoke.callTarget().targetMethod();
+                            ResolvedJavaMethod target2 = invokeInInlineGraph.callTarget().targetMethod();
+                            assert target1.equals(target2) : String.format("invoke in inlined method expected to be partial intrinsic exit (i.e., call to %s), not a call to %s",
+                                            target1.format("%H.%n(%p)"), target2.format("%H.%n(%p)"));
+                            partialIntrinsicExits.add(invokeInInlineGraph);
+                        }
                     } else if (node instanceof UnwindNode) {
                         assert unwindNode == null;
                         unwindNode = (UnwindNode) node;
@@ -358,6 +369,13 @@ public class InliningUtil extends ValueMergeUtil {
             firstCFGNode = (FixedNode) duplicates.get(firstCFGNode);
             for (int i = 0; i < returnNodes.size(); i++) {
                 returnNodes.set(i, (ReturnNode) duplicates.get(returnNodes.get(i)));
+            }
+            for (InvokeNode exit : partialIntrinsicExits) {
+                // A partial intrinsic exit must be replaced with a call to
+                // the intrinsified method.
+                InvokeNode dup = (InvokeNode) duplicates.get(exit);
+                InvokeNode repl = graph.add(new InvokeNode(invoke.callTarget(), invoke.bci()));
+                dup.intrinsify(repl);
             }
             if (unwindNode != null) {
                 unwindNode = (UnwindNode) duplicates.get(unwindNode);

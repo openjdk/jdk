@@ -23,6 +23,8 @@
 package org.graalvm.compiler.hotspot;
 
 import java.util.EnumSet;
+
+import org.graalvm.api.word.Pointer;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
@@ -62,7 +64,6 @@ import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.tiers.SuitesProvider;
-import org.graalvm.compiler.word.Pointer;
 import org.graalvm.compiler.word.Word;
 import org.graalvm.util.Equivalence;
 import org.graalvm.util.EconomicMap;

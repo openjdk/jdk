@@ -184,18 +184,27 @@ public final class ControlFlowGraph implements AbstractControlFlowGraph<Block> {
         return block;
     }
 
-    private static final class DeferredExit {
+    public static final class DeferredExit {
 
-        private DeferredExit(Block block, DeferredExit next) {
+        public DeferredExit(Block block, DeferredExit next) {
             this.block = block;
             this.next = next;
         }
 
         private final Block block;
         private final DeferredExit next;
+
+        public Block getBlock() {
+            return block;
+        }
+
+        public DeferredExit getNext() {
+            return next;
+        }
+
     }
 
-    private static void addDeferredExit(DeferredExit[] deferredExits, Block b) {
+    public static void addDeferredExit(DeferredExit[] deferredExits, Block b) {
         Loop<Block> outermostExited = b.getDominator().getLoop();
         Loop<Block> exitBlockLoop = b.getLoop();
         assert outermostExited != null;
@@ -282,7 +291,7 @@ public final class ControlFlowGraph implements AbstractControlFlowGraph<Block> {
         }
     }
 
-    private static boolean isDominatorTreeLoopExit(Block b) {
+    public static boolean isDominatorTreeLoopExit(Block b) {
         Block dominator = b.getDominator();
         return dominator != null && b.getLoop() != dominator.getLoop() && (!b.isLoopHeader() || dominator.getLoopDepth() >= b.getLoopDepth());
     }
@@ -404,6 +413,10 @@ public final class ControlFlowGraph implements AbstractControlFlowGraph<Block> {
     @Override
     public List<Loop<Block>> getLoops() {
         return loops;
+    }
+
+    public int getMaxDominatorDepth() {
+        return maxDominatorDepth;
     }
 
     private void identifyBlock(Block block) {

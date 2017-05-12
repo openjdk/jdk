@@ -41,6 +41,9 @@ import static org.graalvm.compiler.hotspot.stubs.StubUtil.handlePendingException
 import static org.graalvm.compiler.hotspot.stubs.StubUtil.newDescriptor;
 import static org.graalvm.compiler.hotspot.stubs.StubUtil.printf;
 import static org.graalvm.compiler.hotspot.stubs.StubUtil.verifyObject;
+
+import org.graalvm.api.word.WordFactory;
+
 import static jdk.vm.ci.hotspot.HotSpotMetaAccessProvider.computeArrayAllocationSize;
 
 import org.graalvm.compiler.api.replacements.Fold;
@@ -128,7 +131,7 @@ public class NewArrayStub extends SnippetStub {
                     printf("newArray: allocated new array at %p\n", memory.rawValue());
                 }
                 return verifyObject(
-                                formatArray(hub, sizeInBytes, length, headerSize, memory, Word.unsigned(arrayPrototypeMarkWord(INJECTED_VMCONFIG)), fillContents, false, null));
+                                formatArray(hub, sizeInBytes, length, headerSize, memory, WordFactory.unsigned(arrayPrototypeMarkWord(INJECTED_VMCONFIG)), fillContents, false, null));
             }
         }
         if (logging(options)) {

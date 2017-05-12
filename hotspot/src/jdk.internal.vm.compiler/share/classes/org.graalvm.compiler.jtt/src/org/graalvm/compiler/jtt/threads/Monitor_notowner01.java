@@ -25,9 +25,15 @@
 package org.graalvm.compiler.jtt.threads;
 
 import org.graalvm.compiler.jtt.JTTTest;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.DisableOnDebug;
+import org.junit.rules.TestRule;
+import org.junit.rules.Timeout;
 
 public class Monitor_notowner01 extends JTTTest {
+
+    @Rule public TestRule timeout = new DisableOnDebug(Timeout.seconds(20));
 
     static Object monitor = new Object();
     static Object finished = new Object();
@@ -63,7 +69,7 @@ public class Monitor_notowner01 extends JTTTest {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
     public void run0() throws Throwable {
         initializeForTimeout();
         runTest("test");

@@ -26,9 +26,8 @@ import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.junit.Test;
 
 /**
- * Collection of tests for
- * {@link org.graalvm.compiler.phases.common.DominatorConditionalEliminationPhase} including those
- * that triggered bugs in this phase.
+ * Collection of tests for {@link org.graalvm.compiler.phases.common.ConditionalEliminationPhase}
+ * including those that triggered bugs in this phase.
  */
 public class ConditionalEliminationTest1 extends ConditionalEliminationTestBase {
     protected static int sink3;

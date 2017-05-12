@@ -68,11 +68,12 @@ import static org.graalvm.compiler.replacements.SnippetTemplate.DEFAULT_REPLACER
 import static org.graalvm.compiler.replacements.nodes.CStringConstant.cstring;
 import static org.graalvm.compiler.replacements.nodes.ExplodeLoopNode.explodeLoop;
 
+import org.graalvm.api.word.LocationIdentity;
+import org.graalvm.api.word.WordFactory;
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.Snippet.ConstantParameter;
 import org.graalvm.compiler.api.replacements.Snippet.VarargsParameter;
-import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.debug.Debug;
@@ -467,7 +468,7 @@ public class NewObjectSnippets implements Snippets {
             }
         } else {
             // Use Word instead of int to avoid extension to long in generated code
-            Word off = Word.signed(offset);
+            Word off = WordFactory.signed(offset);
             if (constantSize && ((size - offset) / 8) <= MAX_UNROLLED_OBJECT_ZEROING_STORES) {
                 if (counters != null && counters.instanceSeqInit != null) {
                     counters.instanceSeqInit.inc();
@@ -525,9 +526,9 @@ public class NewObjectSnippets implements Snippets {
     protected static void verifyHeap(@ConstantParameter Register threadRegister) {
         Word thread = registerAsWord(threadRegister);
         Word topValue = readTlabTop(thread);
-        if (!topValue.equal(Word.zero())) {
+        if (!topValue.equal(WordFactory.zero())) {
             Word topValueContents = topValue.readWord(0, MARK_WORD_LOCATION);
-            if (topValueContents.equal(Word.zero())) {
+            if (topValueContents.equal(WordFactory.zero())) {
                 AssertionSnippets.vmMessageC(AssertionSnippets.ASSERTION_VM_MESSAGE_C, true, cstring("overzeroing of TLAB detected"), 0L, 0L, 0L);
             }
         }

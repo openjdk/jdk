@@ -40,7 +40,6 @@ import jdk.vm.ci.hotspot.HotSpotJVMCICompilerFactory;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotSignature;
 import jdk.vm.ci.runtime.JVMCIRuntime;
-import jdk.vm.ci.services.Services;
 
 public final class HotSpotGraalCompilerFactory extends HotSpotJVMCICompilerFactory {
 
@@ -155,7 +154,7 @@ public final class HotSpotGraalCompilerFactory extends HotSpotJVMCICompilerFacto
     static {
         // Fail-fast detection for package renaming to guard use of package
         // prefixes in adjustCompilationLevelInternal.
-        assert Services.class.getName().equals("jdk.vm.ci.services.Services");
+        assert jdk.vm.ci.services.Services.class.getName().equals("jdk.vm.ci.services.Services");
         assert HotSpotGraalCompilerFactory.class.getName().equals("org.graalvm.compiler.hotspot.HotSpotGraalCompilerFactory");
     }
 

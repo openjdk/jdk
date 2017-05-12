@@ -33,6 +33,7 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.test.AddExports;
 
+// Export needed to open String.value field to reflection by this test
 @AddExports("java.base/java.lang")
 public final class MethodHandleEagerResolution extends GraalCompilerTest {
     private static final MethodHandle FIELD_HANDLE;

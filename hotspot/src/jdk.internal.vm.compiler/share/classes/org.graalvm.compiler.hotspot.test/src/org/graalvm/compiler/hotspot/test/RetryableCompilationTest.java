@@ -22,43 +22,50 @@
  */
 package org.graalvm.compiler.hotspot.test;
 
-import static org.graalvm.compiler.test.SubprocessUtil.formatExecutedCommand;
 import static org.graalvm.compiler.test.SubprocessUtil.getVMCommandLine;
 import static org.graalvm.compiler.test.SubprocessUtil.withoutDebuggerArguments;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import org.graalvm.compiler.core.test.GraalCompilerTest;
-import org.graalvm.compiler.hotspot.CompilationTask;
+import org.graalvm.compiler.test.SubprocessUtil;
+import org.graalvm.compiler.test.SubprocessUtil.Subprocess;
 import org.junit.Assert;
 import org.junit.Test;
 
 /**
- * Tests {@link CompilationTask} support for dumping graphs and other info useful for debugging a
- * compiler crash.
+ * Tests support for dumping graphs and other info useful for debugging a compiler crash.
  */
 public class RetryableCompilationTest extends GraalCompilerTest {
+
+    /**
+     * Tests compilation requested by the VM.
+     */
     @Test
-    public void test() throws IOException {
-        List<String> args = withoutDebuggerArguments(getVMCommandLine());
+    public void testVMCompilation() throws IOException, InterruptedException {
+        testHelper(Arrays.asList("-XX:+BootstrapJVMCI", "-XX:+UseJVMCICompiler", "-Dgraal.CrashAt=Object.*,String.*", "-version"));
+    }
 
-        args.add("-XX:+BootstrapJVMCI");
-        args.add("-XX:+UseJVMCICompiler");
-        args.add("-Dgraal.CrashAt=Object.*,String.*");
-        args.add("-version");
+    /**
+     * Tests compilation requested by Truffle.
+     */
+    @Test
+    public void testTruffleCompilation() throws IOException, InterruptedException {
+        testHelper(Arrays.asList("-Dgraal.CrashAt=root test1"), "org.graalvm.compiler.truffle.test.SLTruffleGraalTestSuite", "test");
+    }
 
-        ProcessBuilder processBuilder = new ProcessBuilder(args);
-        processBuilder.redirectErrorStream(true);
-        Process process = processBuilder.start();
-        BufferedReader stdout = new BufferedReader(new InputStreamReader(process.getInputStream()));
+    private static void testHelper(List<String> extraVmArgs, String... mainClassAndArgs) throws IOException, InterruptedException {
+        List<String> vmArgs = withoutDebuggerArguments(getVMCommandLine());
+        vmArgs.addAll(extraVmArgs);
+
+        Subprocess proc = SubprocessUtil.java(vmArgs, mainClassAndArgs);
 
         String forcedCrashString = "Forced crash after compiling";
         String diagnosticOutputFilePrefix = "Graal diagnostic output saved in ";
@@ -66,11 +73,7 @@ public class RetryableCompilationTest extends GraalCompilerTest {
         boolean seenForcedCrashString = false;
         String diagnosticOutputZip = null;
 
-        List<String> outputLines = new ArrayList<>();
-
-        String line;
-        while ((line = stdout.readLine()) != null) {
-            outputLines.add(line);
+        for (String line : proc.output) {
             if (line.contains(forcedCrashString)) {
                 seenForcedCrashString = true;
             } else if (diagnosticOutputZip == null) {
@@ -80,12 +83,11 @@ public class RetryableCompilationTest extends GraalCompilerTest {
                 }
             }
         }
-        String dashes = "-------------------------------------------------------";
         if (!seenForcedCrashString) {
-            Assert.fail(String.format("Did not find '%s' in output of command:%n%s", forcedCrashString, formatExecutedCommand(args, outputLines, dashes, dashes)));
+            Assert.fail(String.format("Did not find '%s' in output of command:%n%s", forcedCrashString, proc));
         }
         if (diagnosticOutputZip == null) {
-            Assert.fail(String.format("Did not find '%s' in output of command:%n%s", diagnosticOutputFilePrefix, formatExecutedCommand(args, outputLines, dashes, dashes)));
+            Assert.fail(String.format("Did not find '%s' in output of command:%n%s", diagnosticOutputFilePrefix, proc));
         }
 
         File zip = new File(diagnosticOutputZip).getAbsoluteFile();

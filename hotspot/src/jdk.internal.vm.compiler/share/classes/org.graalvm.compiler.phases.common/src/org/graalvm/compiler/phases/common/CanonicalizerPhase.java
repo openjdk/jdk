@@ -26,6 +26,7 @@ import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugCounter;
+import org.graalvm.compiler.graph.GraalGraphError;
 import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Graph.Mark;
 import org.graalvm.compiler.graph.Graph.NodeEventListener;
@@ -326,7 +327,7 @@ public class CanonicalizerPhase extends BasePhase<PhaseContext> {
                             canonical = ((BinaryCommutative<?>) node).maybeCommuteInputs();
                         }
                     } catch (Throwable e) {
-                        throw new RuntimeException(e);
+                        throw new GraalGraphError(e).addContext(node);
                     }
                     if (performReplacement(node, canonical)) {
                         return true;

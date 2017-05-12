@@ -22,18 +22,18 @@
  */
 package org.graalvm.compiler.printer;
 
-import static org.graalvm.compiler.core.common.util.Util.JAVA_SPECIFICATION_VERSION;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
-import org.graalvm.compiler.core.common.util.ModuleAPI;
 import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.serviceprovider.JDK9Method;
+
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MetaUtil;
@@ -68,15 +68,14 @@ interface GraphPrinter extends Closeable {
     void close();
 
     /**
-     * A JVMCI package {@linkplain Services#exportJVMCITo(Class) dynamically exported} to trusted
-     * modules.
+     * A JVMCI package dynamically exported to trusted modules.
      */
     String JVMCI_RUNTIME_PACKAGE = JVMCI.class.getPackage().getName();
 
     /**
      * {@code jdk.vm.ci} module.
      */
-    Object JVMCI_MODULE = JAVA_SPECIFICATION_VERSION < 9 ? null : ModuleAPI.getModule.invoke(Services.class);
+    Object JVMCI_MODULE = JDK9Method.JAVA_SPECIFICATION_VERSION < 9 ? null : JDK9Method.getModule.invoke(Services.class);
 
     /**
      * Classes whose {@link #toString()} method does not run any untrusted code.
@@ -102,14 +101,14 @@ interface GraphPrinter extends Closeable {
         if (TRUSTED_CLASSES.contains(c)) {
             return true;
         }
-        if (JAVA_SPECIFICATION_VERSION < 9) {
+        if (JDK9Method.JAVA_SPECIFICATION_VERSION < 9) {
             if (c.getClassLoader() == Services.class.getClassLoader()) {
                 // Loaded by the JVMCI class loader
                 return true;
             }
         } else {
-            Object module = ModuleAPI.getModule.invoke(c);
-            if (JVMCI_MODULE == module || (Boolean) ModuleAPI.isExportedTo.invoke(JVMCI_MODULE, JVMCI_RUNTIME_PACKAGE, module)) {
+            Object module = JDK9Method.getModule.invoke(c);
+            if (JVMCI_MODULE == module || (Boolean) JDK9Method.isOpenTo.invoke(JVMCI_MODULE, JVMCI_RUNTIME_PACKAGE, module)) {
                 // Can access non-statically-exported package in JVMCI
                 return true;
             }

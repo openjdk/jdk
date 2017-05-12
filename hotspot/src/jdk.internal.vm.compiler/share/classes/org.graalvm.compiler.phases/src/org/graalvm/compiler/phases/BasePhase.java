@@ -31,8 +31,13 @@ import org.graalvm.compiler.debug.DebugCounter;
 import org.graalvm.compiler.debug.DebugMemUseTracker;
 import org.graalvm.compiler.debug.DebugTimer;
 import org.graalvm.compiler.debug.Fingerprint;
+import org.graalvm.compiler.debug.GraalDebugConfig;
 import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Graph.Mark;
+import org.graalvm.compiler.graph.Graph.NodeEvent;
+import org.graalvm.compiler.graph.Graph.NodeEventListener;
+import org.graalvm.compiler.graph.Graph.NodeEventScope;
+import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionKey;
@@ -145,42 +150,20 @@ public abstract class BasePhase<C> implements PhaseSizeContract {
         return null;
     }
 
-    private BasePhase<?> dumpBefore(StructuredGraph graph) {
-        BasePhase<?> enclosingPhase = getEnclosingPhase();
-        boolean isTopLevel = enclosingPhase == null;
-        if (isTopLevel) {
-            if (Debug.isDumpEnabled(Debug.VERBOSE_LEVEL)) {
-                Debug.dump(Debug.VERBOSE_LEVEL, graph, "Before phase %s", getName());
-            }
-        } else {
-            if (Debug.isDumpEnabled(Debug.VERBOSE_LEVEL + 1)) {
-                Debug.dump(Debug.VERBOSE_LEVEL + 1, graph, "Before phase %s", getName());
-            }
+    private boolean dumpBefore(final StructuredGraph graph, final C context, boolean isTopLevel) {
+        if (isTopLevel && Debug.isDumpEnabled(Debug.VERBOSE_LEVEL)) {
+            Debug.dump(Debug.VERBOSE_LEVEL, graph, "Before phase %s", getName());
+        } else if (!isTopLevel && Debug.isDumpEnabled(Debug.VERBOSE_LEVEL + 1)) {
+            Debug.dump(Debug.VERBOSE_LEVEL + 1, graph, "Before subphase %s", getName());
+        } else if (Debug.isDumpEnabled(Debug.ENABLED_LEVEL) && shouldDump(graph, context)) {
+            Debug.dump(Debug.ENABLED_LEVEL, graph, "Before %s %s", isTopLevel ? "phase" : "subphase", getName());
+            return true;
         }
-        return enclosingPhase;
+        return false;
     }
 
     protected boolean isInliningPhase() {
         return false;
-    }
-
-    private void dumpAfter(BasePhase<?> enclosingPhase, StructuredGraph graph) {
-        boolean isTopLevel = enclosingPhase == null;
-        if (isTopLevel) {
-            if (isInliningPhase()) {
-                if (Debug.isDumpEnabled(Debug.BASIC_LEVEL)) {
-                    Debug.dump(Debug.BASIC_LEVEL, graph, "After phase %s", getName());
-                }
-            } else {
-                if (Debug.isDumpEnabled(Debug.INFO_LEVEL)) {
-                    Debug.dump(Debug.INFO_LEVEL, graph, "After phase %s", getName());
-                }
-            }
-        } else {
-            if (Debug.isDumpEnabled(Debug.INFO_LEVEL + 1)) {
-                Debug.dump(Debug.INFO_LEVEL + 1, graph, "After phase %s", getName());
-            }
-        }
     }
 
     @SuppressWarnings("try")
@@ -195,9 +178,10 @@ public abstract class BasePhase<C> implements PhaseSizeContract {
                 sizeBefore = NodeCostUtil.computeGraphSize(graph);
                 before = graph.getMark();
             }
-            BasePhase<?> enclosingPhase = null;
+            boolean isTopLevel = getEnclosingPhase() == null;
+            boolean dumpedBefore = false;
             if (dumpGraph && Debug.isEnabled()) {
-                enclosingPhase = dumpBefore(graph);
+                dumpedBefore = dumpBefore(graph, context, isTopLevel);
             }
             inputNodesCount.add(graph.getNodeCount());
             this.run(graph, context);
@@ -210,7 +194,7 @@ public abstract class BasePhase<C> implements PhaseSizeContract {
             }
 
             if (dumpGraph && Debug.isEnabled()) {
-                dumpAfter(enclosingPhase, graph);
+                dumpAfter(graph, isTopLevel, dumpedBefore);
             }
             if (Fingerprint.ENABLED) {
                 String graphDesc = graph.method() == null ? graph.name : graph.method().format("%H.%n(%p)");
@@ -222,6 +206,69 @@ public abstract class BasePhase<C> implements PhaseSizeContract {
             assert graph.verify();
         } catch (Throwable t) {
             throw Debug.handle(t);
+        }
+    }
+
+    private void dumpAfter(final StructuredGraph graph, boolean isTopLevel, boolean dumpedBefore) {
+        boolean dumped = false;
+        if (isTopLevel) {
+            if (isInliningPhase()) {
+                if (Debug.isDumpEnabled(Debug.BASIC_LEVEL)) {
+                    Debug.dump(Debug.BASIC_LEVEL, graph, "After phase %s", getName());
+                    dumped = true;
+                }
+            } else {
+                if (Debug.isDumpEnabled(Debug.INFO_LEVEL)) {
+                    Debug.dump(Debug.INFO_LEVEL, graph, "After phase %s", getName());
+                    dumped = true;
+                }
+            }
+        } else {
+            if (Debug.isDumpEnabled(Debug.INFO_LEVEL + 1)) {
+                Debug.dump(Debug.INFO_LEVEL + 1, graph, "After subphase %s", getName());
+                dumped = true;
+            }
+        }
+        if (!dumped && Debug.isDumpEnabled(Debug.ENABLED_LEVEL) && dumpedBefore) {
+            Debug.dump(Debug.ENABLED_LEVEL, graph, "After %s %s", isTopLevel ? "phase" : "subphase", getName());
+        }
+    }
+
+    @SuppressWarnings("try")
+    private boolean shouldDump(StructuredGraph graph, C context) {
+        String phaseChange = GraalDebugConfig.Options.DumpOnPhaseChange.getValue(graph.getOptions());
+        if (phaseChange != null && getClass().getSimpleName().contains(phaseChange)) {
+            StructuredGraph graphCopy = (StructuredGraph) graph.copy();
+            GraphChangeListener listener = new GraphChangeListener(graphCopy);
+            try (NodeEventScope s = graphCopy.trackNodeEvents(listener)) {
+                try (Scope s2 = Debug.sandbox("GraphChangeListener", null)) {
+                    run(graphCopy, context);
+                } catch (Throwable t) {
+                    Debug.handle(t);
+                }
+            }
+            return listener.changed;
+        }
+        return false;
+    }
+
+    private final class GraphChangeListener implements NodeEventListener {
+        boolean changed;
+        private StructuredGraph graph;
+        private Mark mark;
+
+        GraphChangeListener(StructuredGraph graphCopy) {
+            this.graph = graphCopy;
+            this.mark = graph.getMark();
+        }
+
+        @Override
+        public void event(NodeEvent e, Node node) {
+            if (!graph.isNew(mark, node) && node.isAlive()) {
+                if (e == NodeEvent.INPUT_CHANGED || e == NodeEvent.ZERO_USAGES) {
+                    changed = true;
+                }
+            }
         }
     }
 
