@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,24 +61,24 @@
  * described by {@link javax.lang.model Language Model API} to query Elements and Types.
  * <p>
  *
- * <a name="terminology"></a>
+ * <a id="terminology"></a>
  * <h3>Terminology</h3>
  *
  * <dl>
- *   <dt><a name="selected"></a>Selected</dt>
+ *   <dt><a id="selected"></a>Selected</dt>
  *     <dd>An element is considered to be <em>selected</em>, if the
  *         <em>selection controls</em> <a href="#options">allow</a> it
  *         to be documented. (Note that synthetic elements are never
  *         selected.)
  *    </dd>
  *
- *   <dt><a name="specified"></a>Specified</dt>
+ *   <dt><a id="specified"></a>Specified</dt>
  *   <dd>The set of elements specified by the user are considered to be <em>specified
  *       elements</em>. Specified elements provide the starting points
  *       for determining the <em>included elements</em> to be documented.
  *   </dd>
  *
- *   <dt><a name="included"></a>Included</dt>
+ *   <dt><a id="included"></a>Included</dt>
  *   <dd>An element is considered to be <em>included</em>, if it is
  *       <em>specified</em> if it contains a <em>specified</em> element,
  *       or it is enclosed in a <em>specified</em> element, and is <em>selected</em>.
@@ -87,7 +87,7 @@
  *
  * </dl>
  * <p>
- * <a name="options"></a>
+ * <a id="options"></a>
  * <h3>Options</h3>
  * Javadoc <em>selection control</em> can be specified with these options
  * as follows:
@@ -131,7 +131,7 @@
  *   <li>{@code sourcefilenames} can be used to specify source file names.
  * </ul>
  * <p>
- * <a name="legacy-interactions"></a>
+ * <a id="legacy-interactions"></a>
  * <h4>Interactions with older options.</h4>
  *
  * The new {@code --show-*} options provide a more detailed replacement
@@ -148,13 +148,13 @@
     <tr><td>{@code -private}<td>private<td>private<td>all<td>all
   </table>
  * <p>
- * <a name="qualified"></a>
+ * <a id="qualified"></a>
  * A <em>qualified</em> element name is one that has its package
  * name prepended to it, such as {@code java.lang.String}.  A non-qualified
  * name has no package name, such as {@code String}.
  * <p>
  *
- * <a name="example"></a>
+ * <a id="example"></a>
  * <h3>Example</h3>
  *
  * The following is an example doclet that displays information of a class
@@ -274,7 +274,7 @@
  *       source-location/Example.java
  * </pre>
  *
- * <h3><a name="migration">Migration Guide</a></h3>
+ * <h3><a id="migration">Migration Guide</a></h3>
  *
  * <p>Many of the types in the old {@code com.sun.javadoc} API do not have equivalents in this
  * package. Instead, types in the {@code javax.lang.model} and {@code com.sun.source} APIs

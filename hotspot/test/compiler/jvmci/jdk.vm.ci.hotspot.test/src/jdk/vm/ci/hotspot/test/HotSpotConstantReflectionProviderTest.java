@@ -34,7 +34,7 @@
  * @run driver ClassFileInstaller jdk.vm.ci.hotspot.test.DummyClass
  * @run testng/othervm/timeout=300 -Xbootclasspath/a:.
  *      -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
- *       jdk.vm.ci.hotspot.test.HotSpotConstantReflectionProviderTest
+ *      -Djvmci.Compiler=null jdk.vm.ci.hotspot.test.HotSpotConstantReflectionProviderTest
  */
 
 package jdk.vm.ci.hotspot.test;

@@ -199,9 +199,8 @@ Additional options to the Gtest test framework.
 Use `GTEST="OPTIONS=--help"` to see all available Gtest options.
 
 ---
-# Override some definitions in http://openjdk.java.net/page.css that are
-# unsuitable for this document.
+# Override some definitions in the global css file that are not optimal for
+# this document.
 header-includes:
  - '<style type="text/css">pre, code, tt { color: #1d6ae5; }</style>'
- - '<style type="text/css">pre { font-size: 10pt; }</style>'
 ---

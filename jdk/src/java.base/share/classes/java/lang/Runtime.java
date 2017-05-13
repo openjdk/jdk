@@ -930,10 +930,9 @@ public class Runtime {
     }
 
     /**
-     * Returns the version of the Java Runtime Environment as a {@link
-     * Runtime.Version}.
+     * Returns the version of the Java Runtime Environment as a {@link Version}.
      *
-     * @return  the {@link Runtime.Version} of the Java Runtime Environment
+     * @return  the {@link Version} of the Java Runtime Environment
      *
      * @since  9
      */
@@ -948,10 +947,10 @@ public class Runtime {
 
     /**
      * A representation of a version string for an implementation of the
-     * Java&nbsp;SE Platform.  A version string contains a version number
+     * Java&nbsp;SE Platform.  A version string consists of a version number
      * optionally followed by pre-release and build information.
      *
-     * <h2><a name="verNum">Version numbers</a></h2>
+     * <h2><a id="verNum">Version numbers</a></h2>
      *
      * <p> A <em>version number</em>, {@code $VNUM}, is a non-empty sequence
      * of elements separated by period characters (U+002E).  An element is
@@ -960,7 +959,7 @@ public class Runtime {
      * </p>
      *
      * <blockquote><pre>
-     *     ^[1-9][0-9]*(((\.0)*\.[1-9][0-9]*)*)*$
+     *     [1-9][0-9]*((\.0)*\.[1-9][0-9]*)*
      * </pre></blockquote>
      *
      * <p> The sequence may be of arbitrary length but the first three
@@ -972,7 +971,7 @@ public class Runtime {
      *
      * <ul>
      *
-     * <li><p> <a name="major">{@code $MAJOR}</a> --- The major version
+     * <li><p> <a id="major">{@code $MAJOR}</a> --- The major version
      * number, incremented for a major release that contains significant new
      * features as specified in a new edition of the Java&#160;SE Platform
      * Specification, <em>e.g.</em>, <a
@@ -984,7 +983,7 @@ public class Runtime {
      * number of JDK&#160;9 is {@code 9}.  When {@code $MAJOR} is incremented,
      * all subsequent elements are removed. </p></li>
      *
-     * <li><p> <a name="minor">{@code $MINOR}</a> --- The minor version
+     * <li><p> <a id="minor">{@code $MINOR}</a> --- The minor version
      * number, incremented for a minor update release that may contain
      * compatible bug fixes, revisions to standard APIs mandated by a
      * <a href="https://jcp.org/en/procedures/jcp2#5.3">Maintenance Release</a>
@@ -993,7 +992,7 @@ public class Runtime {
      * additional service providers, new garbage collectors, and ports to new
      * hardware architectures. </p></li>
      *
-     * <li><p> <a name="security">{@code $SECURITY}</a> --- The security
+     * <li><p> <a id="security">{@code $SECURITY}</a> --- The security
      * level, incremented for a security update release that contains critical
      * fixes including those necessary to improve security.  {@code $SECURITY}
      * is <strong>not</strong> reset when {@code $MINOR} is incremented.  A
@@ -1022,34 +1021,37 @@ public class Runtime {
      * sequence; <em>e.g.</em>, {@code 9.1.2} is less than {@code 9.1.2.1}.
      * </p>
      *
-     * <h2><a name="verStr">Version strings</a></h2>
+     * <h2><a id="verStr">Version strings</a></h2>
      *
      * <p> A <em>version string</em>, {@code $VSTR}, consists of a version
      * number {@code $VNUM}, as described above, optionally followed by
-     * pre-release and build information, in the format </p>
+     * pre-release and build information, in one of the following formats:
+     * </p>
      *
      * <blockquote><pre>
-     *     $VNUM(-$PRE)?(\+($BUILD)?(-$OPT)?)?
+     *     $VNUM(-$PRE)?\+$BUILD(-$OPT)?
+     *     $VNUM-$PRE(-$OPT)?
+     *     $VNUM(+-$OPT)?
      * </pre></blockquote>
      *
      * <p> where: </p>
      *
      * <ul>
      *
-     * <li><p> <a name="pre">{@code $PRE}</a>, matching {@code ([a-zA-Z0-9]+)}
+     * <li><p> <a id="pre">{@code $PRE}</a>, matching {@code ([a-zA-Z0-9]+)}
      * --- A pre-release identifier.  Typically {@code ea}, for a
      * potentially unstable early-access release under active development,
-     * or {@code internal}, for an internal developer build.
+     * or {@code internal}, for an internal developer build. </p></li>
      *
-     * <li><p> <a name="build">{@code $BUILD}</a>, matching {@code
+     * <li><p> <a id="build">{@code $BUILD}</a>, matching {@code
      * (0|[1-9][0-9]*)} --- The build number, incremented for each promoted
      * build.  {@code $BUILD} is reset to {@code 1} when any portion of {@code
-     * $VNUM} is incremented. </p>
+     * $VNUM} is incremented. </p></li>
      *
-     * <li><p> <a name="opt">{@code $OPT}</a>, matching {@code
-     * ([-a-zA-Z0-9\.]+)} --- Additional build information, if desired.  In
+     * <li><p> <a id="opt">{@code $OPT}</a>, matching {@code
+     * ([-a-zA-Z0-9.]+)} --- Additional build information, if desired.  In
      * the case of an {@code internal} build this will often contain the date
-     * and time of the build. </p>
+     * and time of the build. </p></li>
      *
      * </ul>
      *
@@ -1067,15 +1069,21 @@ public class Runtime {
      *
      * <p> A <em>short version string</em>, {@code $SVSTR}, often useful in
      * less formal contexts, is a version number optionally followed by a
-     * pre-release identifier:
+     * pre-release identifier:</p>
      *
      * <blockquote><pre>
      *     $VNUM(-$PRE)?
      * </pre></blockquote>
      *
+     * <p>This is a <a href="./doc-files/ValueBased.html">value-based</a>
+     * class; use of identity-sensitive operations (including reference equality
+     * ({@code ==}), identity hash code, or synchronization) on instances of
+     * {@code Version} may have unpredictable results and should be avoided.
+     * </p>
+     *
      * @since  9
      */
-    public static class Version
+    public static final class Version
         implements Comparable<Version>
     {
         private final List<Integer>     version;
@@ -1083,9 +1091,18 @@ public class Runtime {
         private final Optional<Integer> build;
         private final Optional<String>  optional;
 
-        Version(List<Integer> version, Optional<String> pre,
-                Optional<Integer> build, Optional<String> optional) {
-            this.version = Collections.unmodifiableList(version);
+        /*
+         * List of version number components passed to this constructor MUST
+         * be at least unmodifiable (ideally immutable). In the case on an
+         * unmodifiable list, the caller MUST hand the list over to this
+         * constructor and never change the underlying list.
+         */
+        private Version(List<Integer> unmodifiableListOfVersions,
+                        Optional<String> pre,
+                        Optional<Integer> build,
+                        Optional<String> optional)
+        {
+            this.version = unmodifiableListOfVersions;
             this.pre = pre;
             this.build = build;
             this.optional = optional;
@@ -1129,9 +1146,11 @@ public class Runtime {
                                                    + s + "'");
 
             // $VNUM is a dot-separated list of integers of arbitrary length
-            List<Integer> version = new ArrayList<>();
-            for (String i : m.group(VersionPattern.VNUM_GROUP).split("\\."))
-                version.add(Integer.parseInt(i));
+            String[] split = m.group(VersionPattern.VNUM_GROUP).split("\\.");
+            Integer[] version = new Integer[split.length];
+            for (int i = 0; i < split.length; i++) {
+                version[i] = Integer.parseInt(split[i]);
+            }
 
             Optional<String> pre = Optional.ofNullable(
                     m.group(VersionPattern.PRE_GROUP));
@@ -1158,7 +1177,7 @@ public class Runtime {
                         + " build or optional components: '" + s + "'");
                 }
             }
-            return new Version(version, pre, build, optional);
+            return new Version(List.of(version), pre, build, optional);
         }
 
         private static boolean isSimpleNumber(String s) {
@@ -1269,9 +1288,7 @@ public class Runtime {
          * During this comparison, a version with optional build information is
          * considered to be greater than a version without one. </p>
          *
-         * <p> A version is not comparable to any other type of object.
-         *
-         * @param  ob
+         * @param  obj
          *         The object to be compared
          *
          * @return  A negative integer, zero, or a positive integer if this
@@ -1282,8 +1299,8 @@ public class Runtime {
          *          If the given object is {@code null}
          */
         @Override
-        public int compareTo(Version ob) {
-            return compare(ob, false);
+        public int compareTo(Version obj) {
+            return compare(obj, false);
         }
 
         /**
@@ -1294,9 +1311,10 @@ public class Runtime {
          * described in {@link #compareTo(Version)} with the exception that the
          * optional build information is always ignored. </p>
          *
-         * <p> A version is not comparable to any other type of object.
+         * <p> This method provides ordering which is consistent with
+         * {@code equalsIgnoreOptional()}. </p>
          *
-         * @param  ob
+         * @param  obj
          *         The object to be compared
          *
          * @return  A negative integer, zero, or a positive integer if this
@@ -1306,47 +1324,47 @@ public class Runtime {
          * @throws  NullPointerException
          *          If the given object is {@code null}
          */
-        public int compareToIgnoreOptional(Version ob) {
-            return compare(ob, true);
+        public int compareToIgnoreOptional(Version obj) {
+            return compare(obj, true);
         }
 
-        private int compare(Version ob, boolean ignoreOpt) {
-            if (ob == null)
-                throw new NullPointerException("Invalid argument");
+        private int compare(Version obj, boolean ignoreOpt) {
+            if (obj == null)
+                throw new NullPointerException();
 
-            int ret = compareVersion(ob);
+            int ret = compareVersion(obj);
             if (ret != 0)
                 return ret;
 
-            ret = comparePre(ob);
+            ret = comparePre(obj);
             if (ret != 0)
                 return ret;
 
-            ret = compareBuild(ob);
+            ret = compareBuild(obj);
             if (ret != 0)
                 return ret;
 
             if (!ignoreOpt)
-                return compareOptional(ob);
+                return compareOptional(obj);
 
             return 0;
         }
 
-        private int compareVersion(Version ob) {
+        private int compareVersion(Version obj) {
             int size = version.size();
-            int oSize = ob.version().size();
+            int oSize = obj.version().size();
             int min = Math.min(size, oSize);
             for (int i = 0; i < min; i++) {
                 int val = version.get(i);
-                int oVal = ob.version().get(i);
+                int oVal = obj.version().get(i);
                 if (val != oVal)
                     return val - oVal;
             }
             return size - oSize;
         }
 
-        private int comparePre(Version ob) {
-            Optional<String> oPre = ob.pre();
+        private int comparePre(Version obj) {
+            Optional<String> oPre = obj.pre();
             if (!pre.isPresent()) {
                 if (oPre.isPresent())
                     return 1;
@@ -1368,8 +1386,8 @@ public class Runtime {
             return 0;
         }
 
-        private int compareBuild(Version ob) {
-            Optional<Integer> oBuild = ob.build();
+        private int compareBuild(Version obj) {
+            Optional<Integer> oBuild = obj.build();
             if (oBuild.isPresent()) {
                 return (build.isPresent()
                         ? build.get().compareTo(oBuild.get())
@@ -1380,8 +1398,8 @@ public class Runtime {
             return 0;
         }
 
-        private int compareOptional(Version ob) {
-            Optional<String> oOpt = ob.optional();
+        private int compareOptional(Version obj) {
+            Optional<String> oOpt = obj.optional();
             if (!optional.isPresent()) {
                 if (oOpt.isPresent())
                     return -1;
@@ -1427,10 +1445,7 @@ public class Runtime {
          * <p> Two {@code Version}s are equal if and only if they represent the
          * same version string.
          *
-         * <p> This method satisfies the general contract of the {@link
-         * Object#equals(Object) Object.equals} method. </p>
-         *
-         * @param  ob
+         * @param  obj
          *         The object to which this {@code Version} is to be compared
          *
          * @return  {@code true} if, and only if, the given object is a {@code
@@ -1438,12 +1453,12 @@ public class Runtime {
          *
          */
         @Override
-        public boolean equals(Object ob) {
-            boolean ret = equalsIgnoreOptional(ob);
+        public boolean equals(Object obj) {
+            boolean ret = equalsIgnoreOptional(obj);
             if (!ret)
                 return false;
 
-            Version that = (Version)ob;
+            Version that = (Version)obj;
             return (this.optional().equals(that.optional()));
         }
 
@@ -1454,7 +1469,7 @@ public class Runtime {
          * <p> Two {@code Version}s are equal if and only if they represent the
          * same version string disregarding the optional build information.
          *
-         * @param  ob
+         * @param  obj
          *         The object to which this {@code Version} is to be compared
          *
          * @return  {@code true} if, and only if, the given object is a {@code
@@ -1462,13 +1477,13 @@ public class Runtime {
          *          ignoring the optional build information
          *
          */
-        public boolean equalsIgnoreOptional(Object ob) {
-            if (this == ob)
+        public boolean equalsIgnoreOptional(Object obj) {
+            if (this == obj)
                 return true;
-            if (!(ob instanceof Version))
+            if (!(obj instanceof Version))
                 return false;
 
-            Version that = (Version)ob;
+            Version that = (Version)obj;
             return (this.version().equals(that.version())
                 && this.pre().equals(that.pre())
                 && this.build().equals(that.build()));
@@ -1476,9 +1491,6 @@ public class Runtime {
 
         /**
          * Returns the hash code of this version.
-         *
-         * <p> This method satisfies the general contract of the {@link
-         * Object#hashCode Object.hashCode} method.
          *
          * @return  The hashcode of this version
          */
@@ -1507,8 +1519,7 @@ public class Runtime {
         private static final String BUILD
             = "(?:(?<PLUS>\\+)(?<BUILD>0|[1-9][0-9]*)?)?";
         private static final String OPT      = "(?:-(?<OPT>[-a-zA-Z0-9.]+))?";
-        private static final String VSTR_FORMAT
-            = "^" + VNUM + PRE + BUILD + OPT + "$";
+        private static final String VSTR_FORMAT = VNUM + PRE + BUILD + OPT;
 
         static final Pattern VSTR_PATTERN = Pattern.compile(VSTR_FORMAT);
 

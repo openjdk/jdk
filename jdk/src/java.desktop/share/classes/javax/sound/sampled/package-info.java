@@ -28,9 +28,10 @@
  * sampled audio data.
  *
  * <h2>Related Documentation</h2>
- * For overviews, tutorials, examples, and guides, please see:
+ * For more information on using Java Sound see:
  * <ul>
- *     <li><a href="../../../../technotes/guides/sound">Sound</a></li>
+ *     <li><a href="https://docs.oracle.com/javase/tutorial/sound/">
+ *     The Java Sound Tutorial</a></li>
  * </ul>
  *
  * @since 1.3

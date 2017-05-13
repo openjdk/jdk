@@ -204,4 +204,11 @@ public class ForwardingJavaFileManager<M extends JavaFileManager> implements Jav
     public Iterable<Set<Location>> listLocationsForModules(Location location) throws IOException {
         return fileManager.listLocationsForModules(location);
     }
+
+    /**
+     * @since 9
+     */
+    public boolean contains(Location location, FileObject fo) throws IOException {
+        return fileManager.contains(location, fo);
+    }
 }

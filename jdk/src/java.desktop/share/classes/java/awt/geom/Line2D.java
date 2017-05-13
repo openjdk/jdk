@@ -31,12 +31,7 @@ import java.io.Serializable;
 
 /**
  * This {@code Line2D} represents a line segment in {@code (x,y)}
- * coordinate space.  This class, like all of the Java 2D API, uses a
- * default coordinate system called <i>user space</i> in which the y-axis
- * values increase downward and x-axis values increase to the right.  For
- * more information on the user space coordinate system, see the
- * <a href="{@docRoot}/../technotes/guides/2d/spec/j2d-intro.html">
- * Coordinate Systems</a> section of the Java 2D Programmer's Guide.
+ * coordinate space.
  * <p>
  * This class is only the abstract superclass for all objects that
  * store a 2D line segment.

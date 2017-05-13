@@ -49,21 +49,14 @@
  * @run main/othervm -XX:+UnlockExperimentalVMOptions
  *     -Xbootclasspath/a:. -Xmixed
  *     -XX:+UseJVMCICompiler -XX:-BootstrapJVMCI
- *     -Dcompiler.jvmci.events.JvmciNotifyInstallEventTest.failoninit=false
  *     compiler.jvmci.events.JvmciNotifyInstallEventTest
  * @run main/othervm -XX:+UnlockExperimentalVMOptions
- *     -Djvmci.compiler=EmptyCompiler -Xbootclasspath/a:. -Xmixed
+ *     -Djvmci.Compiler=EmptyCompiler -Xbootclasspath/a:. -Xmixed
  *     -XX:+UseJVMCICompiler -XX:-BootstrapJVMCI
- *     -Dcompiler.jvmci.events.JvmciNotifyInstallEventTest.failoninit=false
  *     compiler.jvmci.events.JvmciNotifyInstallEventTest
  * @run main/othervm -XX:+UnlockExperimentalVMOptions
- *     -Djvmci.compiler=EmptyCompiler -Xbootclasspath/a:. -Xmixed
+ *     -Djvmci.Compiler=EmptyCompiler -Xbootclasspath/a:. -Xmixed
  *     -XX:+UseJVMCICompiler -XX:-BootstrapJVMCI -XX:JVMCINMethodSizeLimit=0
- *     -Dcompiler.jvmci.events.JvmciNotifyInstallEventTest.failoninit=false
- *     compiler.jvmci.events.JvmciNotifyInstallEventTest
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-EnableJVMCI
- *     -Djvmci.compiler=EmptyCompiler -Xbootclasspath/a:. -Xmixed
- *     -Dcompiler.jvmci.events.JvmciNotifyInstallEventTest.failoninit=true
  *     compiler.jvmci.events.JvmciNotifyInstallEventTest
  */
 
@@ -91,8 +84,6 @@ import java.lang.reflect.Method;
 
 public class JvmciNotifyInstallEventTest extends JVMCIServiceLocator implements HotSpotVMEventListener {
     private static final String METHOD_NAME = "testMethod";
-    private static final boolean FAIL_ON_INIT = !Boolean.getBoolean(
-            "compiler.jvmci.events.JvmciNotifyInstallEventTest.failoninit");
     private static volatile int gotInstallNotification = 0;
 
     public static void main(String args[]) {
@@ -116,16 +107,9 @@ public class JvmciNotifyInstallEventTest extends JVMCIServiceLocator implements 
             codeCache = (HotSpotCodeCacheProvider) HotSpotJVMCIRuntime.runtime()
                     .getHostJVMCIBackend().getCodeCache();
         } catch (InternalError ie) {
-            if (FAIL_ON_INIT) {
-                throw new AssertionError(
-                        "Got unexpected InternalError trying to get code cache",
-                        ie);
-            }
             // passed
             return;
         }
-        Asserts.assertTrue(FAIL_ON_INIT,
-                    "Haven't caught InternalError in negative case");
         Method testMethod;
         try {
             testMethod = SimpleClass.class.getDeclaredMethod(METHOD_NAME);

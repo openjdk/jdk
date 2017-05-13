@@ -69,8 +69,7 @@ interface GraphPrinter extends Closeable {
     void close();
 
     /**
-     * A JVMCI package {@linkplain Services#exportJVMCITo(Class) dynamically exported} to trusted
-     * modules.
+     * A JVMCI package dynamically exported to trusted modules.
      */
     String JVMCI_RUNTIME_PACKAGE = JVMCI.class.getPackage().getName();
 

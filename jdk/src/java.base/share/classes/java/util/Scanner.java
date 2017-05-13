@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ import java.util.stream.StreamSupport;
  *     s.close();
  * }</pre></blockquote>
  *
- * <p>The <a name="default-delimiter">default whitespace delimiter</a> used
+ * <p>The <a id="default-delimiter">default whitespace delimiter</a> used
  * by a scanner is as recognized by {@link Character#isWhitespace(char)
  * Character.isWhitespace()}. The {@link #reset reset()}
  * method will reset the value of the scanner's delimiter to the default
@@ -152,11 +152,11 @@ import java.util.stream.StreamSupport;
  * {@link #reset} method will reset the value of the scanner's radix to
  * {@code 10} regardless of whether it was previously changed.
  *
- * <h3> <a name="localized-numbers">Localized numbers</a> </h3>
+ * <h3> <a id="localized-numbers">Localized numbers</a> </h3>
  *
  * <p> An instance of this class is capable of scanning numbers in the standard
  * formats as well as in the formats of the scanner's locale. A scanner's
- * <a name="initial-locale">initial locale </a>is the value returned by the {@link
+ * <a id="initial-locale">initial locale </a>is the value returned by the {@link
  * java.util.Locale#getDefault(Locale.Category)
  * Locale.getDefault(Locale.Category.FORMAT)} method; it may be changed via the {@link
  * #useLocale useLocale()} method. The {@link #reset} method will reset the value of the
@@ -213,7 +213,7 @@ import java.util.stream.StreamSupport;
  *         getInfinity()}
  * </dl></blockquote>
  *
- * <h4> <a name="number-syntax">Number syntax</a> </h4>
+ * <h4> <a id="number-syntax">Number syntax</a> </h4>
  *
  * <p> The strings that can be parsed as numbers by an instance of this class
  * are specified in terms of the following regular-expression grammar, where
@@ -244,7 +244,7 @@ import java.util.stream.StreamSupport;
  *       <dd>{@code ( ( }<i>Digit</i>{@code + )
  *               | }<i>GroupedNumeral</i>{@code  )}
  *
- *   <dt><a name="Integer-regex"><i>Integer</i>:</a>
+ *   <dt><a id="Integer-regex"><i>Integer</i>:</a>
  *       <dd>{@code ( [-+]? ( }<i>Numeral</i>{@code
  *                               ) )}
  *       <dd>{@code | }<i>LocalPositivePrefix</i> <i>Numeral</i>
@@ -263,7 +263,7 @@ import java.util.stream.StreamSupport;
  *   <dt><i>Exponent</i>:
  *       <dd>{@code ( [eE] [+-]? }<i>Digit</i>{@code + )}
  *
- *   <dt><a name="Decimal-regex"><i>Decimal</i>:</a>
+ *   <dt><a id="Decimal-regex"><i>Decimal</i>:</a>
  *       <dd>{@code ( [-+]? }<i>DecimalNumeral</i>
  *                         <i>Exponent</i>{@code ? )}
  *       <dd>{@code | }<i>LocalPositivePrefix</i>
@@ -294,7 +294,7 @@ import java.util.stream.StreamSupport;
  *                 <i>NonNumber</i>
  *                 <i>LocalNegativeSuffix</i>
  *
- *   <dt><a name="Float-regex"><i>Float</i></a>:
+ *   <dt><a id="Float-regex"><i>Float</i></a>:
  *       <dd><i>Decimal</i>
  *           {@code | }<i>HexFloat</i>
  *           {@code | }<i>SignedNonNumber</i>
@@ -2846,6 +2846,7 @@ public final class Scanner implements Iterator<String>, Closeable {
     class FindSpliterator extends Spliterators.AbstractSpliterator<MatchResult> {
         final Pattern pattern;
         int expectedCount = -1;
+        private boolean advance = false; // true if we need to auto-advance
 
         FindSpliterator(Pattern pattern) {
             super(Long.MAX_VALUE,
@@ -2861,12 +2862,15 @@ public final class Scanner implements Iterator<String>, Closeable {
                     throw new ConcurrentModificationException();
                 }
             } else {
+                // init
+                matchValid = false;
+                matcher.usePattern(pattern);
                 expectedCount = modCount;
             }
 
             while (true) {
                 // assert expectedCount == modCount
-                if (findPatternInBuffer(pattern, 0)) { // doesn't increment modCount
+                if (nextInBuffer()) { // doesn't increment modCount
                     cons.accept(matcher.toMatchResult());
                     if (expectedCount != modCount) {
                         throw new ConcurrentModificationException();
@@ -2878,6 +2882,29 @@ public final class Scanner implements Iterator<String>, Closeable {
                 else
                     return false; // reached end of input
             }
+        }
+
+        // reimplementation of findPatternInBuffer with auto-advance on zero-length matches
+        private boolean nextInBuffer() {
+            if (advance) {
+                if (position + 1 > buf.limit()) {
+                    if (!sourceClosed)
+                        needInput = true;
+                    return false;
+                }
+                position++;
+                advance = false;
+            }
+            matcher.region(position, buf.limit());
+            if (matcher.find() && (!matcher.hitEnd() || sourceClosed)) {
+                 // Did not hit end, or hit real end
+                 position = matcher.end();
+                 advance = matcher.start() == position;
+                 return true;
+            }
+            if (!sourceClosed)
+                needInput = true;
+            return false;
         }
     }
 
