@@ -28,13 +28,14 @@ package javax.lang.model.element;
 import java.util.List;
 
 /**
- * Represents a module program element.  Provides access to information
- * about the module and its members.
+ * Represents a module program element.  Provides access to
+ * information about the module, its directives, and its members.
  *
  * @see javax.lang.model.util.Elements#getModuleOf
  * @since 9
+ * @jls 7.7 Module Declarations
  * @spec JPMS
- */  // TODO: add @jls to module section
+ */
 public interface ModuleElement extends Element, QualifiedNameable {
 
     /**
@@ -121,12 +122,13 @@ public interface ModuleElement extends Element, QualifiedNameable {
     };
 
     /**
-     * Represents a "module statement" within the declaration of this module.
+     * Represents a directive within the declaration of this
+     * module. The directives of a module declaration configure the
+     * module in the Java Platform Module System.
      *
      * @since 9
      * @spec JPMS
-     *
-     */ // TODO: add jls to Module Statement
+     */
     interface Directive {
         /**
          * Returns the {@code kind} of this directive.
@@ -152,7 +154,7 @@ public interface ModuleElement extends Element, QualifiedNameable {
      * pattern.  Classes implementing this interface are used to operate
      * on a directive when the kind of directive is unknown at compile time.
      * When a visitor is passed to a directive's {@link Directive#accept
-     * accept} method, the <tt>visit<i>Xyz</i></tt> method applicable
+     * accept} method, the <code>visit<i>Xyz</i></code> method applicable
      * to that directive is invoked.
      *
      * <p> Classes implementing this interface may or may not throw a

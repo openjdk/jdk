@@ -33,7 +33,7 @@ import java.util.Map;
  * An abstract class for service providers that provide localized string
  * representations (display names) of {@code Calendar} field values.
  *
- * <p><a name="calendartypes"><b>Calendar Types</b></a>
+ * <p><a id="calendartypes"><b>Calendar Types</b></a>
  *
  * <p>Calendar types are used to specify calendar systems for which the {@link
  * #getDisplayName(String, int, int, int, Locale) getDisplayName} and {@link

@@ -42,10 +42,8 @@
  *     <li><a href="http://docs.oracle.com/javase/tutorial/uiswing/components/colorchooser.html"
  *     target="_top">How to Use Color Choosers</a>,
  *     a section in <em>The Java Tutorial</em></li>
- *     <li><a href="../../../../technotes/guides/intl/index.html"
- *     target="_top">Internationalization Documentation</a></li>
- *     <li><a href="../../../../technotes/guides/imf/index.html"
- *     target="_top">Input Method Framework Documentation</a></li>
+ *     <li>{@extLink i18n_overview Internationalization Overview}</li>
+ *     <li>{@extLink imf_overview Input Method Framework Overview}</li>
  * </ul>
  *
  * @since 1.2

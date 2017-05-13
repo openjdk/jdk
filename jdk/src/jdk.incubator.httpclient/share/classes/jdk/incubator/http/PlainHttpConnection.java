@@ -76,6 +76,11 @@ class PlainHttpConnection extends HttpConnection implements AsyncConnection {
         }
     }
 
+    @Override
+    public void stopAsyncReading() {
+        client.cancelRegistration(chan);
+    }
+
     class ConnectEvent extends AsyncEvent {
         CompletableFuture<Void> cf;
 
@@ -213,6 +218,12 @@ class PlainHttpConnection extends HttpConnection implements AsyncConnection {
         }
     }
 
+    @Override
+    public void enableCallback() {
+        // not used
+        assert false;
+    }
+
     void asyncOutput(ByteBufferReference[] refs, AsyncWriteQueue delayCallback) {
         try {
             ByteBuffer[] bufs = ByteBufferReference.toBuffers(refs);
@@ -246,7 +257,6 @@ class PlainHttpConnection extends HttpConnection implements AsyncConnection {
         closed = true;
         try {
             Log.logError("Closing: " + toString());
-            //System.out.println("Closing: " + this);
             chan.close();
         } catch (IOException e) {}
     }
@@ -272,7 +282,6 @@ class PlainHttpConnection extends HttpConnection implements AsyncConnection {
                 while (true) {
                     ByteBufferReference buf = readBufferSupplier.get();
                     int n = chan.read(buf.get());
-                    //System.err.printf("Read %d bytes from chan\n", n);
                     if (n == -1) {
                         throw new IOException();
                     }

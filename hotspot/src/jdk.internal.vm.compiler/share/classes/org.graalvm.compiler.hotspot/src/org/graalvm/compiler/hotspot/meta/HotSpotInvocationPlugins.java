@@ -38,7 +38,6 @@ import org.graalvm.compiler.nodes.type.StampTool;
 import org.graalvm.compiler.replacements.nodes.MacroNode;
 
 import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
 /**
@@ -47,8 +46,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 final class HotSpotInvocationPlugins extends InvocationPlugins {
     final GraalHotSpotVMConfig config;
 
-    HotSpotInvocationPlugins(GraalHotSpotVMConfig config, MetaAccessProvider metaAccess) {
-        super(metaAccess);
+    HotSpotInvocationPlugins(GraalHotSpotVMConfig config) {
         this.config = config;
     }
 

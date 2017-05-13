@@ -19,3 +19,6 @@ requiredVersion=4.2 b07
 
 # Use new module options
 useNewOptions=true
+
+# Use --patch-module instead of -Xmodule:
+useNewPatchModule=true

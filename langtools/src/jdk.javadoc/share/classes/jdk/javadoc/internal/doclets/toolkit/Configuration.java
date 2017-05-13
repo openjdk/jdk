@@ -523,7 +523,7 @@ public abstract class Configuration {
                     return true;
                 }
             },
-            new Hidden(resources, "-javafx") {
+            new Option(resources, "--javafx -javafx") {
                 @Override
                 public boolean process(String opt, List<String> args) {
                     javafx = true;
@@ -1082,11 +1082,14 @@ public abstract class Configuration {
         private final int argCount;
 
         protected Option(Resources resources, String name, int argCount) {
-            this(resources, "doclet.usage." + name.toLowerCase().replaceAll("^-+", ""), name, argCount);
+            this(resources, null, name, argCount);
         }
 
         protected Option(Resources resources, String keyBase, String name, int argCount) {
             this.names = name.trim().split("\\s+");
+            if (keyBase == null) {
+                keyBase = "doclet.usage." + names[0].toLowerCase().replaceAll("^-+", "");
+            }
             String desc = getOptionsMessage(resources, keyBase + ".description");
             if (desc.isEmpty()) {
                 this.description = "<MISSING KEY>";

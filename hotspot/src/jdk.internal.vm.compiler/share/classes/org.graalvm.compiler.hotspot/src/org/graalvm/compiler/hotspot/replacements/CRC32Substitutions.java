@@ -57,7 +57,7 @@ public class CRC32Substitutions {
         return config.crcTableAddress;
     }
 
-    @MethodSubstitution
+    @MethodSubstitution(optional = true)
     static int update(int crc, int b) {
         final long crcTableRawAddress = GraalHotSpotVMConfigNode.crcTableAddress();
 
@@ -69,7 +69,7 @@ public class CRC32Substitutions {
         return ~result;
     }
 
-    @MethodSubstitution
+    @MethodSubstitution(optional = true)
     static int updateBytes(int crc, byte[] buf, int off, int len) {
         Word bufAddr = Word.unsigned(ComputeObjectAddressNode.get(buf, arrayBaseOffset(JavaKind.Byte) + off));
         return updateBytesCRC32(UPDATE_BYTES_CRC32, crc, bufAddr, len);
@@ -84,7 +84,7 @@ public class CRC32Substitutions {
         return updateBytesCRC32(UPDATE_BYTES_CRC32, crc, bufAddr, len);
     }
 
-    @MethodSubstitution
+    @MethodSubstitution(optional = true)
     static int updateByteBuffer(int crc, long addr, int off, int len) {
         Word bufAddr = Word.unsigned(addr).add(off);
         return updateBytesCRC32(UPDATE_BYTES_CRC32, crc, bufAddr, len);

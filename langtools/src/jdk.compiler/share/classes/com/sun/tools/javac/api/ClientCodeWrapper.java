@@ -326,6 +326,17 @@ public class ClientCodeWrapper {
         }
 
         @Override @DefinedBy(Api.COMPILER)
+        public boolean contains(Location location, FileObject file) throws IOException {
+            try {
+                return clientJavaFileManager.contains(location, unwrap(file));
+            } catch (ClientCodeException e) {
+                throw e;
+            } catch (RuntimeException | Error e) {
+                throw new ClientCodeException(e);
+            }
+        }
+
+        @Override @DefinedBy(Api.COMPILER)
         public void flush() throws IOException {
             try {
                 clientJavaFileManager.flush();

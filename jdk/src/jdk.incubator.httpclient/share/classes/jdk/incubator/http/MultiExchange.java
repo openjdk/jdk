@@ -192,7 +192,7 @@ class MultiExchange<U,T> {
     }
 
     HttpClient.Version version() {
-        return client.version();
+        return request.version().orElse(client.version());
     }
 
     private synchronized void setExchange(Exchange<T> exchange) {

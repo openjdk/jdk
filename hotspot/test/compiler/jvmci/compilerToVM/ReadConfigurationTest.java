@@ -32,6 +32,7 @@
  * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  * @build compiler.jvmci.compilerToVM.ReadConfigurationTest
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ *                   -Djvmci.Compiler=null
  *                   compiler.jvmci.compilerToVM.ReadConfigurationTest
  */
 
