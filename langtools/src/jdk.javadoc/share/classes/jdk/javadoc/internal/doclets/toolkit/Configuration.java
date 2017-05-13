@@ -699,7 +699,11 @@ public abstract class Configuration {
         typeElementCatalog = new TypeElementCatalog(includedTypeElements, this);
         initTagletManager(customTagStrs);
         groups.stream().forEach((grp) -> {
-            group.checkPackageGroups(grp.value1, grp.value2);
+            if (showModules) {
+                group.checkModuleGroups(grp.value1, grp.value2);
+            } else {
+                group.checkPackageGroups(grp.value1, grp.value2);
+            }
         });
     }
 
