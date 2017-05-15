@@ -56,7 +56,6 @@ define_pd_global(intx, InlineSmallCode,       1500);
 #define DEFAULT_STACK_RED_PAGES (1)
 #define DEFAULT_STACK_RESERVED_PAGES (SOLARIS_ONLY(1) NOT_SOLARIS(0))
 
-// Stack slots are 2X larger in LP64 than in the 32 bit VM.
 define_pd_global(intx, CompilerThreadStackSize, 1024);
 define_pd_global(intx, ThreadStackSize,       1024);
 define_pd_global(intx, VMThreadStackSize,     1024);

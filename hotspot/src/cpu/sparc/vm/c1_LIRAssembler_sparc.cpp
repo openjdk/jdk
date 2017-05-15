@@ -1390,7 +1390,6 @@ void LIR_Assembler::return_op(LIR_Opr result) {
   if (StackReservedPages > 0 && compilation()->has_reserved_stack_access()) {
     __ reserved_stack_check();
   }
-  // the poll may need a register so just pick one that isn't the return register
   __ set((intptr_t)os::get_polling_page(), L0);
   __ relocate(relocInfo::poll_return_type);
   __ ld_ptr(L0, 0, G0);
@@ -1556,8 +1555,9 @@ void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, L
   Label skip;
     if  (type == T_INT) {
       __ br(acond, false, Assembler::pt, skip);
-    } else
+    } else {
       __ brx(acond, false, Assembler::pt, skip); // checks icc on 32bit and xcc on 64bit
+    }
   if (opr1->is_constant() && opr1->type() == T_INT) {
     Register dest = result->as_register();
     if (Assembler::is_simm13(opr1->as_jint())) {

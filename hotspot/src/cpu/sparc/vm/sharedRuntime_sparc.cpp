@@ -327,7 +327,6 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
         slot += 2;
       }
       break;
-      break;
 
     case T_FLOAT:
       if (flt_reg < flt_reg_max) {

@@ -1236,8 +1236,7 @@ class StubGenerator: public StubCodeGenerator {
       __ delayed()->inc(to);
     __ BIND(L_skip_alignment);
     }
-    if (!aligned)
-    {
+    if (!aligned) {
       // Copy with shift 16 bytes per iteration if arrays do not have
       // the same alignment mod 8, otherwise fall through to the next
       // code for aligned copy.
@@ -1338,8 +1337,7 @@ class StubGenerator: public StubCodeGenerator {
       // The 'count' is decremented in copy_16_bytes_backward_with_shift()
       // in unaligned case.
       __ dec(count, 16);
-    } else
-    {
+    } else {
       // Copy with shift 16 bytes per iteration if arrays do not have
       // the same alignment mod 8, otherwise jump to the next
       // code for aligned copy (and substracting 16 from 'count' before jump).
@@ -1449,8 +1447,7 @@ class StubGenerator: public StubCodeGenerator {
       __ sth(O4, to, -2);
     __ BIND(L_skip_alignment2);
     }
-    if (!aligned)
-    {
+    if (!aligned) {
       // Copy with shift 16 bytes per iteration if arrays do not have
       // the same alignment mod 8, otherwise fall through to the next
       // code for aligned copy.
@@ -1567,14 +1564,14 @@ class StubGenerator: public StubCodeGenerator {
       __ BIND(L_skip_align2);
     }
     if (!aligned) {
-    // align to 8 bytes, we know we are 4 byte aligned to start
-    __ andcc(to, 7, G0);
-    __ br(Assembler::zero, false, Assembler::pt, L_fill_32_bytes);
-    __ delayed()->nop();
-    __ stw(value, to, 0);
-    __ inc(to, 4);
-    __ dec(count, 1 << shift);
-    __ BIND(L_fill_32_bytes);
+      // align to 8 bytes, we know we are 4 byte aligned to start
+      __ andcc(to, 7, G0);
+      __ br(Assembler::zero, false, Assembler::pt, L_fill_32_bytes);
+      __ delayed()->nop();
+      __ stw(value, to, 0);
+      __ inc(to, 4);
+      __ dec(count, 1 << shift);
+      __ BIND(L_fill_32_bytes);
     }
 
     if (t == T_INT) {
@@ -1781,8 +1778,7 @@ class StubGenerator: public StubCodeGenerator {
       // The 'count' is decremented in copy_16_bytes_backward_with_shift()
       // in unaligned case.
       __ dec(count, 8);
-    } else
-    {
+    } else {
       // Copy with shift 16 bytes per iteration if arrays do not have
       // the same alignment mod 8, otherwise jump to the next
       // code for aligned copy (and substracting 8 from 'count' before jump).
@@ -1891,8 +1887,7 @@ class StubGenerator: public StubCodeGenerator {
     // Aligned arrays have 4 bytes alignment in 32-bits VM
     // and 8 bytes - in 64-bits VM.
     //
-    if (!aligned)
-    {
+    if (!aligned) {
       // The next check could be put under 'ifndef' since the code in
       // generate_disjoint_long_copy_core() has own checks and set 'offset'.
 
@@ -3089,8 +3084,7 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_oop_arraycopy_uninit              = generate_conjoint_oop_copy(false, entry, NULL,
                                                                                     "oop_arraycopy_uninit",
                                                                                     /*dest_uninitialized*/true);
-    } else
-    {
+    } else {
       // oop arraycopy is always aligned on 32bit and 64bit without compressed oops
       StubRoutines::_oop_disjoint_arraycopy            = StubRoutines::_arrayof_oop_disjoint_arraycopy;
       StubRoutines::_oop_arraycopy                     = StubRoutines::_arrayof_oop_arraycopy;
@@ -5107,8 +5101,8 @@ class StubGenerator: public StubCodeGenerator {
   void stub_prolog(StubCodeDesc* cdesc) {
     # ifdef ASSERT
       // put extra information in the stub code, to make it more readable
-// Write the high part of the address
-// [RGV] Check if there is a dependency on the size of this prolog
+      // Write the high part of the address
+      // [RGV] Check if there is a dependency on the size of this prolog
       __ emit_data((intptr_t)cdesc >> 32,    relocInfo::none);
       __ emit_data((intptr_t)cdesc,    relocInfo::none);
       __ emit_data(++_stub_count, relocInfo::none);

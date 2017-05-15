@@ -352,7 +352,6 @@ reg_class o7_regP(R_O7H,R_O7);
 reg_class long_reg(             R_G1H,R_G1,             R_G3H,R_G3, R_G4H,R_G4, R_G5H,R_G5
                    ,R_O0H,R_O0, R_O1H,R_O1, R_O2H,R_O2, R_O3H,R_O3, R_O4H,R_O4, R_O5H,R_O5
 // 64-bit, longs in 1 register: use all 64-bit integer registers
-// 32-bit, longs in 1 register: cannot use I's and L's.  Restrict to O's and G's.
                    ,R_L0H,R_L0, R_L1H,R_L1, R_L2H,R_L2, R_L3H,R_L3, R_L4H,R_L4, R_L5H,R_L5, R_L6H,R_L6, R_L7H,R_L7
                    ,R_I0H,R_I0, R_I1H,R_I1, R_I2H,R_I2, R_I3H,R_I3, R_I4H,R_I4, R_I5H,R_I5
                   );
