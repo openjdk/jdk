@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,6 +89,11 @@ public final class Utils {
      * Returns the value of 'test.jdk' system property
      */
     public static final String TEST_JDK = System.getProperty("test.jdk");
+
+    /*
+     * Returns the value of 'compile.jdk' system property
+     */
+    public static final String COMPILE_JDK= System.getProperty("compile.jdk", TEST_JDK);
 
     /**
      * Returns the value of 'test.classes' system property
@@ -680,5 +685,58 @@ public final class Utils {
                 String.format("A mandatory property '%s' isn't set", propName));
         return prop;
     }
+
+    // This method is intended to be called from a jtreg test.
+    // It will identify the name of the test by means of stack walking.
+    // It can handle both jtreg tests and a testng tests wrapped inside jtreg tests.
+    // For jtreg tests the name of the test will be searched by stack-walking
+    // until the method main() is found; the class containing that method is the
+    // main test class and will be returned as the name of the test.
+    // Special handling is used for testng tests.
+    public static String getTestName() {
+        String result = null;
+        // If we are using testng, then we should be able to load the "Test" annotation.
+        Class testClassAnnotation;
+
+        try {
+            testClassAnnotation = Class.forName("org.testng.annotations.Test");
+        } catch (ClassNotFoundException e) {
+            testClassAnnotation = null;
+        }
+
+        StackTraceElement[] elms = (new Throwable()).getStackTrace();
+        for (StackTraceElement n: elms) {
+            String className = n.getClassName();
+
+            // If this is a "main" method, then use its class name, but only
+            // if we are not using testng.
+            if (testClassAnnotation == null && "main".equals(n.getMethodName())) {
+                result = className;
+                break;
+            }
+
+            // If this is a testng test, the test will have no "main" method. We can
+            // detect a testng test class by looking for the org.testng.annotations.Test
+            // annotation. If present, then use the name of this class.
+            if (testClassAnnotation != null) {
+                try {
+                    Class c = Class.forName(className);
+                    if (c.isAnnotationPresent(testClassAnnotation)) {
+                        result = className;
+                        break;
+                    }
+                } catch (ClassNotFoundException e) {
+                    throw new RuntimeException("Unexpected exception: " + e, e);
+                }
+            }
+        }
+
+        if (result == null) {
+            throw new RuntimeException("Couldn't find main test class in stack trace");
+        }
+
+        return result;
+    }
+
 }
 
