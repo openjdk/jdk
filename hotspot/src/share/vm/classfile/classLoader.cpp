@@ -822,11 +822,7 @@ void ClassLoader::setup_search_path(const char *class_path, bool bootstrap_searc
 // will be added to the ClassLoader::_exploded_entries array.
 void ClassLoader::add_to_exploded_build_list(Symbol* module_sym, TRAPS) {
   assert(!ClassLoader::has_jrt_entry(), "Exploded build not applicable");
-
-  // Set up the boot loader's _exploded_entries list
-  if (_exploded_entries == NULL) {
-    _exploded_entries = new (ResourceObj::C_HEAP, mtModule) GrowableArray<ModuleClassPathList*>(EXPLODED_ENTRY_SIZE, true);
-  }
+  assert(_exploded_entries != NULL, "_exploded_entries was not initialized");
 
   // Find the module's symbol
   ResourceMark rm(THREAD);
@@ -850,7 +846,10 @@ void ClassLoader::add_to_exploded_build_list(Symbol* module_sym, TRAPS) {
     if (new_entry != NULL) {
       ModuleClassPathList* module_cpl = new ModuleClassPathList(module_sym);
       module_cpl->add_to_list(new_entry);
-      _exploded_entries->push(module_cpl);
+      {
+        MutexLocker ml(Module_lock, THREAD);
+        _exploded_entries->push(module_cpl);
+      }
       log_info(class, load)("path: %s", path);
     }
   }
@@ -1351,9 +1350,30 @@ const char* ClassLoader::file_name_for_class_name(const char* class_name,
   return file_name;
 }
 
-// Search either the patch-module or exploded build entries for class
+ClassPathEntry* find_first_module_cpe(ModuleEntry* mod_entry,
+                                      const GrowableArray<ModuleClassPathList*>* const module_list) {
+  int num_of_entries = module_list->length();
+  const Symbol* class_module_name = mod_entry->name();
+
+  // Loop through all the modules in either the patch-module or exploded entries looking for module
+  for (int i = 0; i < num_of_entries; i++) {
+    ModuleClassPathList* module_cpl = module_list->at(i);
+    Symbol* module_cpl_name = module_cpl->module_name();
+
+    if (module_cpl_name->fast_compare(class_module_name) == 0) {
+      // Class' module has been located.
+      return module_cpl->module_first_entry();
+    }
+  }
+  return NULL;
+}
+
+
+// Search either the patch-module or exploded build entries for class.
 ClassFileStream* ClassLoader::search_module_entries(const GrowableArray<ModuleClassPathList*>* const module_list,
-                                                    const char* const class_name, const char* const file_name, TRAPS) {
+                                                    const char* const class_name,
+                                                    const char* const file_name,
+                                                    TRAPS) {
   ClassFileStream* stream = NULL;
 
   // Find the class' defining module in the boot loader's module entry table
@@ -1372,36 +1392,32 @@ ClassFileStream* ClassLoader::search_module_entries(const GrowableArray<ModuleCl
   }
 
   // The module must be a named module
+  ClassPathEntry* e = NULL;
   if (mod_entry != NULL && mod_entry->is_named()) {
-    int num_of_entries = module_list->length();
-    const Symbol* class_module_name = mod_entry->name();
-
-    // Loop through all the modules in either the patch-module or exploded entries looking for module
-    for (int i = 0; i < num_of_entries; i++) {
-      ModuleClassPathList* module_cpl = module_list->at(i);
-      Symbol* module_cpl_name = module_cpl->module_name();
-
-      if (module_cpl_name->fast_compare(class_module_name) == 0) {
-        // Class' module has been located, attempt to load
-        // the class from the module's ClassPathEntry list.
-        ClassPathEntry* e = module_cpl->module_first_entry();
-        while (e != NULL) {
-          stream = e->open_stream(file_name, CHECK_NULL);
-          // No context.check is required since CDS is not supported
-          // for an exploded modules build or if --patch-module is specified.
-          if (NULL != stream) {
-            return stream;
-          }
-          e = e->next();
-        }
-        // If the module was located, break out even if the class was not
-        // located successfully from that module's ClassPathEntry list.
-        // There will not be another valid entry for that module.
-        return NULL;
-      }
+    if (module_list == _exploded_entries) {
+      // The exploded build entries can be added to at any time so a lock is
+      // needed when searching them.
+      assert(!ClassLoader::has_jrt_entry(), "Must be exploded build");
+      MutexLocker ml(Module_lock, THREAD);
+      e = find_first_module_cpe(mod_entry, module_list);
+    } else {
+      e = find_first_module_cpe(mod_entry, module_list);
     }
   }
 
+  // Try to load the class from the module's ClassPathEntry list.
+  while (e != NULL) {
+    stream = e->open_stream(file_name, CHECK_NULL);
+    // No context.check is required since CDS is not supported
+    // for an exploded modules build or if --patch-module is specified.
+    if (NULL != stream) {
+      return stream;
+    }
+    e = e->next();
+  }
+  // If the module was located, break out even if the class was not
+  // located successfully from that module's ClassPathEntry list.
+  // There will not be another valid entry for that module.
   return NULL;
 }
 
@@ -1679,6 +1695,12 @@ void ClassLoader::classLoader_init2(TRAPS) {
   if (!has_jrt_entry()) {
     assert(!DumpSharedSpaces, "DumpSharedSpaces not supported with exploded module builds");
     assert(!UseSharedSpaces, "UsedSharedSpaces not supported with exploded module builds");
+    // Set up the boot loader's _exploded_entries list.  Note that this gets
+    // done before loading any classes, by the same thread that will
+    // subsequently do the first class load. So, no lock is needed for this.
+    assert(_exploded_entries == NULL, "Should only get initialized once");
+    _exploded_entries = new (ResourceObj::C_HEAP, mtModule)
+      GrowableArray<ModuleClassPathList*>(EXPLODED_ENTRY_SIZE, true);
     add_to_exploded_build_list(vmSymbols::java_base(), CHECK);
   }
 }
