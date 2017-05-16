@@ -110,8 +110,6 @@ class MetaspaceShared : AllStatic {
   static ReservedSpace* _shared_rs;
   static int _max_alignment;
   static MetaspaceSharedStats _stats;
-  static bool _link_classes_made_progress;
-  static bool _check_classes_made_progress;
   static bool _has_error_classes;
   static bool _archive_loading_failed;
   static bool _remapped_readwrite;
@@ -202,10 +200,8 @@ class MetaspaceShared : AllStatic {
   static void print_shared_spaces();
 
   static bool try_link_class(InstanceKlass* ik, TRAPS);
-  static void link_one_shared_class(Klass* obj, TRAPS);
-  static void check_one_shared_class(Klass* obj);
-  static void check_shared_class_loader_type(Klass* obj);
   static void link_and_cleanup_shared_classes(TRAPS);
+  static void check_shared_class_loader_type(Klass* obj);
 
   static int count_class(const char* classlist_file);
   static void estimate_regions_size() NOT_CDS_RETURN;
