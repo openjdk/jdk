@@ -28,9 +28,9 @@ title: 'Java Object Serialization Specification: A - Security in Object Serializ
 
 -------------------------------------------------------------------------------
 
-Refer to the [Secure Coding Guidelines for the Java Programming
-Language](http://www.oracle.com/technetwork/java/seccodeguide-139067.html) for
-information about security in object serialization.
+Refer to the [Secure Coding Guidelines for the Java Programming 
+Language](http://www.oracle.com/pls/topic/lookup?ctx=javase9&id=secure_coding_guidelines_javase) 
+for information about security in object serialization.
 
 -------------------------------------------------------------------------------
 
