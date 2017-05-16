@@ -270,9 +270,8 @@ void ClassLoaderData::methods_do(void f(Method*)) {
 }
 
 void ClassLoaderData::loaded_classes_do(KlassClosure* klass_closure) {
-  // Lock to avoid classes being modified/added/removed during iteration
-  MutexLockerEx ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
-  for (Klass* k = _klasses; k != NULL; k = k->next_link()) {
+  // Lock-free access requires load_ptr_acquire
+  for (Klass* k = load_ptr_acquire(&_klasses); k != NULL; k = k->next_link()) {
     // Do not filter ArrayKlass oops here...
     if (k->is_array_klass() || (k->is_instance_klass() && InstanceKlass::cast(k)->is_loaded())) {
       klass_closure->do_klass(k);
