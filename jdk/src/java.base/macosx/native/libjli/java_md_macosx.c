@@ -424,7 +424,7 @@ GetJVMPath(const char *jrepath, const char *jvmtype,
          * macosx client library is built thin, i386 only.
          * 64 bit client requests must load server library
          */
-        JLI_Snprintf(jvmpath, jvmpathsize, "%s/lib/server/" JVM_DLL, jrepath);
+        JLI_Snprintf(jvmpath, jvmpathsize, "%s/lib/%s/" JVM_DLL, jrepath, jvmtype);
     }
 
     JLI_TraceLauncher("Does `%s' exist ... ", jvmpath);
