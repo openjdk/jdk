@@ -449,9 +449,8 @@ void Modules::define_module(jobject module, jboolean is_open, jstring version,
   }
 
   // If the module is defined to the boot loader and an exploded build is being
-  // used, prepend <java.home>/modules/modules_name, if it exists, to the system boot class path.
-  if (loader == NULL &&
-      !ClassLoader::has_jrt_entry()) {
+  // used, prepend <java.home>/modules/modules_name to the system boot class path.
+  if (loader == NULL && !ClassLoader::has_jrt_entry()) {
     ClassLoader::add_to_exploded_build_list(module_symbol, CHECK);
   }
 }
