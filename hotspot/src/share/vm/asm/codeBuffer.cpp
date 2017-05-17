@@ -623,9 +623,7 @@ csize_t CodeBuffer::total_offset_of(const CodeSection* cs) const {
 }
 
 csize_t CodeBuffer::total_relocation_size() const {
-  csize_t lsize = copy_relocations_to(NULL);  // dry run only
-  csize_t csize = total_content_size();
-  csize_t total = RelocIterator::locs_and_index_size(csize, lsize);
+  csize_t total = copy_relocations_to(NULL);  // dry run only
   return (csize_t) align_size_up(total, HeapWordSize);
 }
 
@@ -725,13 +723,6 @@ csize_t CodeBuffer::copy_relocations_to(CodeBlob* dest) const {
   // if dest == NULL, this is just the sizing pass
   //
   buf_offset = copy_relocations_to(buf, buf_limit, false);
-
-  // Account for index:
-  if (buf != NULL) {
-    RelocIterator::create_index(dest->relocation_begin(),
-                                buf_offset / sizeof(relocInfo),
-                                dest->relocation_end());
-  }
 
   return buf_offset;
 }
