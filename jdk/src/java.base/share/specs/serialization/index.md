@@ -20,8 +20,8 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 
-include-before: 'CONTENTS | PREV | [NEXT](changelog.html)'
-include-after: 'CONTENTS | PREV | [NEXT](changelog.html)'
+include-before: 'CONTENTS | PREV | [NEXT](serial-arch.html)'
+include-after: 'CONTENTS | PREV | [NEXT](serial-arch.html)'
 
 title: 'Java Object Serialization Specification: Contents'
 ---
@@ -29,8 +29,6 @@ title: 'Java Object Serialization Specification: Contents'
 -------------------------------------------------------------------------------
 
 ## Table of Contents
-
-### 0 [Change History](changelog.html)
 
 ### 1 [System Architecture](serial-arch.html)
 

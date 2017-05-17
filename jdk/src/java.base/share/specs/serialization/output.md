@@ -221,7 +221,8 @@ object is serialized as follows:
     If the replacement object is not one of the types covered by Steps 3
     through 7, processing resumes using the replacement object at Step 10.
 
-9.  If the object is a `java.lang.String,` the string is written as length
+9.  <a id="java-lang-string-encoding"></a>
+    If the object is a `java.lang.String,` the string is written as length
     information followed by the contents of the string encoded in modified
     UTF-8. For details, refer to [Section 6.2, "Stream
     Elements"](protocol.html#stream-elements). A handle is assigned to the

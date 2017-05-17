@@ -84,7 +84,7 @@ import sun.security.util.SecurityConstants;
  * started. The boot layer contains module {@code java.base} and is the only
  * layer in the Java virtual machine with a module named "{@code java.base}".
  * The modules in the boot layer are mapped to the bootstrap class loader and
- * other class loaders that are <a href="../ClassLoader.html#builtinLoaders">
+ * other class loaders that are <a href="ClassLoader.html#builtinLoaders">
  * built-in</a> into the Java virtual machine. The boot layer will often be
  * the {@link #parents() parent} when creating additional layers. </p>
  *

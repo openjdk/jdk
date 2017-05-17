@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,25 +70,26 @@ import java.time.DateTimeException;
  * A definition has therefore been created with two eras - 'Current era' (CE) for
  * years on or after 0001-01-01 (ISO), and 'Before current era' (BCE) for years before that.
  *
- * <table summary="ISO years and eras" cellpadding="2" cellspacing="3" border="0" >
+ * <table class="striped">
+ * <caption style="display:none">ISO years and eras</caption>
  * <thead>
- * <tr class="tableSubHeadingColor">
- * <th class="colFirst" style="text-align:left">year-of-era</th>
- * <th class="colFirst" style="text-align:left">era</th>
- * <th class="colLast" style="text-align:left">proleptic-year</th>
+ * <tr>
+ * <th style="text-align:left">year-of-era</th>
+ * <th style="text-align:left">era</th>
+ * <th style="text-align:left">proleptic-year</th>
  * </tr>
  * </thead>
  * <tbody>
- * <tr class="rowColor">
+ * <tr>
  * <td>2</td><td>CE</td><td>2</td>
  * </tr>
- * <tr class="altColor">
+ * <tr>
  * <td>1</td><td>CE</td><td>1</td>
  * </tr>
- * <tr class="rowColor">
+ * <tr>
  * <td>1</td><td>BCE</td><td>0</td>
  * </tr>
- * <tr class="altColor">
+ * <tr>
  * <td>2</td><td>BCE</td><td>-1</td>
  * </tr>
  * </tbody>
