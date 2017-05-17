@@ -36,10 +36,9 @@ import jdk.test.lib.process.ProcessTools;
 public class CDSTestUtils {
     // Specify this property to copy sdandard output of the child test process to
     // the parent/main stdout of the test.
-    // By default such output is logged into a file, but not copied into the main stdout
-    // to avoid excessive log pollution. See executeAndLog() for details
+    // By default such output is logged into a file, and is copied into the main stdout.
     public static final boolean CopyChildStdoutToMainStdout =
-        Boolean.getBoolean("test.cds.copy.child.stdout");
+        Boolean.valueOf(System.getProperty("test.cds.copy.child.stdout", "true"));
 
     // This property is passed to child test processes
     public static final String TestTimeoutFactor = System.getProperty("test.timeout.factor", "1.0");
