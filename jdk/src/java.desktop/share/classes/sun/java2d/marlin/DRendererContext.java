@@ -30,12 +30,12 @@ import java.lang.ref.WeakReference;
 import java.util.concurrent.atomic.AtomicInteger;
 import sun.java2d.ReentrantContext;
 import sun.java2d.marlin.ArrayCacheConst.CacheStats;
-import sun.java2d.marlin.MarlinRenderingEngine.NormalizingPathIterator;
+import sun.java2d.marlin.DMarlinRenderingEngine.NormalizingPathIterator;
 
 /**
  * This class is a renderer context dedicated to a single thread
  */
-final class RendererContext extends ReentrantContext implements IRendererContext {
+final class DRendererContext extends ReentrantContext implements IRendererContext {
 
     // RendererContext creation counter
     private static final AtomicInteger CTX_COUNT = new AtomicInteger(1);
@@ -45,8 +45,8 @@ final class RendererContext extends ReentrantContext implements IRendererContext
      *
      * @return new RendererContext instance
      */
-    static RendererContext createContext() {
-        return new RendererContext("ctx"
+    static DRendererContext createContext() {
+        return new DRendererContext("ctx"
                        + Integer.toString(CTX_COUNT.getAndIncrement()));
     }
 
@@ -55,22 +55,22 @@ final class RendererContext extends ReentrantContext implements IRendererContext
     // dirty flag indicating an exception occured during pipeline in pathTo()
     boolean dirty = false;
     // shared data
-    final float[] float6 = new float[6];
+    final double[] double6 = new double[6];
     // shared curve (dirty) (Renderer / Stroker)
-    final Curve curve = new Curve();
+    final DCurve curve = new DCurve();
     // MarlinRenderingEngine NormalizingPathIterator NearestPixelCenter:
     final NormalizingPathIterator nPCPathIterator;
     // MarlinRenderingEngine NearestPixelQuarter NormalizingPathIterator:
     final NormalizingPathIterator nPQPathIterator;
     // MarlinRenderingEngine.TransformingPathConsumer2D
-    final TransformingPathConsumer2D transformerPC2D;
+    final DTransformingPathConsumer2D transformerPC2D;
     // recycled Path2D instance (weak)
-    private WeakReference<Path2D.Float> refPath2D = null;
-    final Renderer renderer;
-    final Stroker stroker;
+    private WeakReference<Path2D.Double> refPath2D = null;
+    final DRenderer renderer;
+    final DStroker stroker;
     // Simplifies out collinear lines
-    final CollinearSimplifier simplifier = new CollinearSimplifier();
-    final Dasher dasher;
+    final DCollinearSimplifier simplifier = new DCollinearSimplifier();
+    final DDasher dasher;
     final MarlinTileGenerator ptg;
     final MarlinCache cache;
     // flag indicating the shape is stroked (1) or filled (0)
@@ -81,20 +81,23 @@ final class RendererContext extends ReentrantContext implements IRendererContext
     private final IntArrayCache cleanIntCache = new IntArrayCache(true, 5);
     /* dirty int[] cache = 4 refs */
     private final IntArrayCache dirtyIntCache = new IntArrayCache(false, 4);
-    /* dirty float[] cache = 3 refs */
-    private final FloatArrayCache dirtyFloatCache = new FloatArrayCache(false, 3);
+    /* dirty double[] cache = 3 refs */
+    private final DoubleArrayCache dirtyDoubleCache = new DoubleArrayCache(false, 3);
     /* dirty byte[] cache = 1 ref */
     private final ByteArrayCache dirtyByteCache = new ByteArrayCache(false, 1);
 
     // RendererContext statistics
     final RendererStats stats;
 
+    final PathConsumer2DAdapter p2dAdapter = new PathConsumer2DAdapter();
+
+
     /**
      * Constructor
      *
      * @param name context name (debugging)
      */
-    RendererContext(final String name) {
+    DRendererContext(final String name) {
         if (LOG_CREATE_CONTEXT) {
             MarlinUtils.logInfo("new RendererContext = " + name);
         }
@@ -105,26 +108,26 @@ final class RendererContext extends ReentrantContext implements IRendererContext
             stats = RendererStats.createInstance(cleanerObj, name);
             // push cache stats:
             stats.cacheStats = new CacheStats[] { cleanIntCache.stats,
-                dirtyIntCache.stats, dirtyFloatCache.stats, dirtyByteCache.stats
+                dirtyIntCache.stats, dirtyDoubleCache.stats, dirtyByteCache.stats
             };
         } else {
             stats = null;
         }
 
         // NormalizingPathIterator instances:
-        nPCPathIterator = new NormalizingPathIterator.NearestPixelCenter(float6);
-        nPQPathIterator  = new NormalizingPathIterator.NearestPixelQuarter(float6);
+        nPCPathIterator = new NormalizingPathIterator.NearestPixelCenter(double6);
+        nPQPathIterator  = new NormalizingPathIterator.NearestPixelQuarter(double6);
 
         // MarlinRenderingEngine.TransformingPathConsumer2D
-        transformerPC2D = new TransformingPathConsumer2D();
+        transformerPC2D = new DTransformingPathConsumer2D();
 
         // Renderer:
         cache = new MarlinCache(this);
-        renderer = new Renderer(this); // needs MarlinCache from rdrCtx.cache
+        renderer = new DRenderer(this); // needs MarlinCache from rdrCtx.cache
         ptg = new MarlinTileGenerator(stats, renderer, cache);
 
-        stroker = new Stroker(this);
-        dasher = new Dasher(this);
+        stroker = new DStroker(this);
+        dasher = new DDasher(this);
     }
 
     /**
@@ -157,17 +160,17 @@ final class RendererContext extends ReentrantContext implements IRendererContext
         }
     }
 
-    Path2D.Float getPath2D() {
+    Path2D.Double getPath2D() {
         // resolve reference:
-        Path2D.Float p2d
+        Path2D.Double p2d
             = (refPath2D != null) ? refPath2D.get() : null;
 
         // create a new Path2D ?
         if (p2d == null) {
-            p2d = new Path2D.Float(Path2D.WIND_NON_ZERO, INITIAL_EDGES_COUNT); // 32K
+            p2d = new Path2D.Double(Path2D.WIND_NON_ZERO, INITIAL_EDGES_COUNT); // 32K
 
             // update weak reference:
-            refPath2D = new WeakReference<Path2D.Float>(p2d);
+            refPath2D = new WeakReference<Path2D.Double>(p2d);
         }
         // reset the path anyway:
         p2d.reset();
@@ -196,11 +199,62 @@ final class RendererContext extends ReentrantContext implements IRendererContext
         return dirtyIntCache.createRef(initialSize);
     }
 
-    FloatArrayCache.Reference newDirtyFloatArrayRef(final int initialSize) {
-        return dirtyFloatCache.createRef(initialSize);
+    DoubleArrayCache.Reference newDirtyDoubleArrayRef(final int initialSize) {
+        return dirtyDoubleCache.createRef(initialSize);
     }
 
     ByteArrayCache.Reference newDirtyByteArrayRef(final int initialSize) {
         return dirtyByteCache.createRef(initialSize);
+    }
+
+    static final class PathConsumer2DAdapter implements DPathConsumer2D {
+        private sun.awt.geom.PathConsumer2D out;
+
+        PathConsumer2DAdapter() {}
+
+        PathConsumer2DAdapter init(sun.awt.geom.PathConsumer2D out) {
+            this.out = out;
+            return this;
+        }
+
+        @Override
+        public void moveTo(double x0, double y0) {
+            out.moveTo((float)x0, (float)y0);
+        }
+
+        @Override
+        public void lineTo(double x1, double y1) {
+            out.lineTo((float)x1, (float)y1);
+        }
+
+        @Override
+        public void closePath() {
+            out.closePath();
+        }
+
+        @Override
+        public void pathDone() {
+            out.pathDone();
+        }
+
+        @Override
+        public void curveTo(double x1, double y1,
+                            double x2, double y2,
+                            double x3, double y3)
+        {
+            out.curveTo((float)x1, (float)y1,
+                    (float)x2, (float)y2,
+                    (float)x3, (float)y3);
+        }
+
+        @Override
+        public void quadTo(double x1, double y1, double x2, double y2) {
+            out.quadTo((float)x1, (float)y1, (float)x2, (float)y2);
+        }
+
+        @Override
+        public long getNativeConsumer() {
+            throw new InternalError("Not using a native peer");
+        }
     }
 }

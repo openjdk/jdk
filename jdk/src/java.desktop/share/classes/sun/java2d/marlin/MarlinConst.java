@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,10 +95,10 @@ interface MarlinConst {
     // 4096 edges for initial capacity
     static final int INITIAL_EDGES_COUNT = MarlinProperties.getInitialEdges();
 
-    // initial edges = 3/4 * edges count (4096)
+    // initial edges = edges count (4096)
     // 6 ints per edges = 24 bytes
-    // edges capacity = 24 x initial edges = 18 * edges count (4096) = 72K
-    static final int INITIAL_EDGES_CAPACITY = INITIAL_EDGES_COUNT * 18;
+    // edges capacity = 24 x initial edges = 24 * edges count (4096) = 96K
+    static final int INITIAL_EDGES_CAPACITY = INITIAL_EDGES_COUNT * 24;
 
     // zero value as byte
     static final byte BYTE_0 = (byte) 0;
@@ -114,14 +114,17 @@ interface MarlinConst {
     public static final int SUBPIXEL_POSITIONS_Y = 1 << (SUBPIXEL_LG_POSITIONS_Y);
 
     public static final float NORM_SUBPIXELS
-        = (float)Math.sqrt(( SUBPIXEL_POSITIONS_X * SUBPIXEL_POSITIONS_X
-                           + SUBPIXEL_POSITIONS_Y * SUBPIXEL_POSITIONS_Y)/2.0);
+        = (float) Math.sqrt(( SUBPIXEL_POSITIONS_X * SUBPIXEL_POSITIONS_X
+                            + SUBPIXEL_POSITIONS_Y * SUBPIXEL_POSITIONS_Y) / 2.0d);
 
     public static final int MAX_AA_ALPHA
         = SUBPIXEL_POSITIONS_X * SUBPIXEL_POSITIONS_Y;
 
-    public static final int TILE_SIZE_LG = MarlinProperties.getTileSize_Log2();
-    public static final int TILE_SIZE = 1 << TILE_SIZE_LG; // 32 by default
+    public static final int TILE_H_LG = MarlinProperties.getTileSize_Log2();
+    public static final int TILE_H = 1 << TILE_H_LG; // 32 by default
+
+    public static final int TILE_W_LG = MarlinProperties.getTileWidth_Log2();
+    public static final int TILE_W = 1 << TILE_W_LG; // 32 by default
 
     public static final int BLOCK_SIZE_LG = MarlinProperties.getBlockSize_Log2();
     public static final int BLOCK_SIZE    = 1 << BLOCK_SIZE_LG;

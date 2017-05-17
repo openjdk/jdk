@@ -32,7 +32,6 @@ import java.awt.geom.Path2D;
 import java.awt.geom.PathIterator;
 import java.security.AccessController;
 import static sun.java2d.marlin.MarlinUtils.logInfo;
-import sun.awt.geom.PathConsumer2D;
 import sun.java2d.ReentrantContextProvider;
 import sun.java2d.ReentrantContextProviderCLQ;
 import sun.java2d.ReentrantContextProviderTL;
@@ -44,13 +43,13 @@ import sun.security.action.GetPropertyAction;
 /**
  * Marlin RendererEngine implementation (derived from Pisces)
  */
-public final class MarlinRenderingEngine extends RenderingEngine
-                                         implements MarlinConst
+public final class DMarlinRenderingEngine extends RenderingEngine
+                                          implements MarlinConst
 {
     private static enum NormMode {
         ON_WITH_AA {
             @Override
-            PathIterator getNormalizingPathIterator(final RendererContext rdrCtx,
+            PathIterator getNormalizingPathIterator(final DRendererContext rdrCtx,
                                                     final PathIterator src)
             {
                 // NormalizingPathIterator NearestPixelCenter:
@@ -59,7 +58,7 @@ public final class MarlinRenderingEngine extends RenderingEngine
         },
         ON_NO_AA{
             @Override
-            PathIterator getNormalizingPathIterator(final RendererContext rdrCtx,
+            PathIterator getNormalizingPathIterator(final DRendererContext rdrCtx,
                                                     final PathIterator src)
             {
                 // NearestPixel NormalizingPathIterator:
@@ -68,7 +67,7 @@ public final class MarlinRenderingEngine extends RenderingEngine
         },
         OFF{
             @Override
-            PathIterator getNormalizingPathIterator(final RendererContext rdrCtx,
+            PathIterator getNormalizingPathIterator(final DRendererContext rdrCtx,
                                                     final PathIterator src)
             {
                 // return original path iterator if normalization is disabled:
@@ -76,21 +75,21 @@ public final class MarlinRenderingEngine extends RenderingEngine
             }
         };
 
-        abstract PathIterator getNormalizingPathIterator(RendererContext rdrCtx,
+        abstract PathIterator getNormalizingPathIterator(DRendererContext rdrCtx,
                                                          PathIterator src);
     }
 
     private static final float MIN_PEN_SIZE = 1.0f / NORM_SUBPIXELS;
 
-    static final float UPPER_BND = Float.MAX_VALUE / 2.0f;
-    static final float LOWER_BND = -UPPER_BND;
+    static final double UPPER_BND = Float.MAX_VALUE / 2.0d;
+    static final double LOWER_BND = -UPPER_BND;
 
     /**
      * Public constructor
      */
-    public MarlinRenderingEngine() {
+    public DMarlinRenderingEngine() {
         super();
-        logSettings(MarlinRenderingEngine.class.getName());
+        logSettings(DMarlinRenderingEngine.class.getName());
     }
 
     /**
@@ -119,10 +118,10 @@ public final class MarlinRenderingEngine extends RenderingEngine
                                     float[] dashes,
                                     float dashphase)
     {
-        final RendererContext rdrCtx = getRendererContext();
+        final DRendererContext rdrCtx = getRendererContext();
         try {
             // initialize a large copyable Path2D to avoid a lot of array growing:
-            final Path2D.Float p2d = rdrCtx.getPath2D();
+            final Path2D.Double p2d = rdrCtx.getPath2D();
 
             strokeTo(rdrCtx,
                      src,
@@ -138,10 +137,10 @@ public final class MarlinRenderingEngine extends RenderingEngine
                     );
 
             // Use Path2D copy constructor (trim)
-            return new Path2D.Float(p2d);
+            return new Path2D.Double(p2d);
 
         } finally {
-            // recycle the RendererContext instance
+            // recycle the DRendererContext instance
             returnRendererContext(rdrCtx);
         }
     }
@@ -160,7 +159,7 @@ public final class MarlinRenderingEngine extends RenderingEngine
      * {@code antialias} boolean parameter is true.
      * <p>
      * The geometry of the widened path is forwarded to the indicated
-     * {@link PathConsumer2D} object as it is calculated.
+     * {@link DPathConsumer2D} object as it is calculated.
      *
      * @param src the source path to be widened
      * @param bs the {@code BasicSroke} object specifying the
@@ -169,7 +168,7 @@ public final class MarlinRenderingEngine extends RenderingEngine
      *                  be applied
      * @param antialias indicates whether or not adjustments appropriate
      *                  to antialiased rendering should be applied
-     * @param consumer the {@code PathConsumer2D} instance to forward
+     * @param consumer the {@code DPathConsumer2D} instance to forward
      *                 the widened geometry to
      * @since 1.7
      */
@@ -180,36 +179,37 @@ public final class MarlinRenderingEngine extends RenderingEngine
                          boolean thin,
                          boolean normalize,
                          boolean antialias,
-                         final PathConsumer2D consumer)
+                         final sun.awt.geom.PathConsumer2D consumer)
     {
         final NormMode norm = (normalize) ?
                 ((antialias) ? NormMode.ON_WITH_AA : NormMode.ON_NO_AA)
                 : NormMode.OFF;
 
-        final RendererContext rdrCtx = getRendererContext();
+        final DRendererContext rdrCtx = getRendererContext();
         try {
-            strokeTo(rdrCtx, src, at, bs, thin, norm, antialias, consumer);
+            strokeTo(rdrCtx, src, at, bs, thin, norm, antialias,
+                     rdrCtx.p2dAdapter.init(consumer));
         } finally {
-            // recycle the RendererContext instance
+            // recycle the DRendererContext instance
             returnRendererContext(rdrCtx);
         }
     }
 
-    final void strokeTo(final RendererContext rdrCtx,
+    final void strokeTo(final DRendererContext rdrCtx,
                         Shape src,
                         AffineTransform at,
                         BasicStroke bs,
                         boolean thin,
                         NormMode normalize,
                         boolean antialias,
-                        PathConsumer2D pc2d)
+                        DPathConsumer2D pc2d)
     {
-        float lw;
+        double lw;
         if (thin) {
             if (antialias) {
                 lw = userSpaceLineWidth(at, MIN_PEN_SIZE);
             } else {
-                lw = userSpaceLineWidth(at, 1.0f);
+                lw = userSpaceLineWidth(at, 1.0d);
             }
         } else {
             lw = bs.getLineWidth();
@@ -227,15 +227,15 @@ public final class MarlinRenderingEngine extends RenderingEngine
                  pc2d);
     }
 
-    private final float userSpaceLineWidth(AffineTransform at, float lw) {
+    private final double userSpaceLineWidth(AffineTransform at, double lw) {
 
-        float widthScale;
+        double widthScale;
 
         if (at == null) {
-            widthScale = 1.0f;
+            widthScale = 1.0d;
         } else if ((at.getType() & (AffineTransform.TYPE_GENERAL_TRANSFORM  |
                                     AffineTransform.TYPE_GENERAL_SCALE)) != 0) {
-            widthScale = (float)Math.sqrt(at.getDeterminant());
+            widthScale = Math.sqrt(at.getDeterminant());
         } else {
             // First calculate the "maximum scale" of this transform.
             double A = at.getScaleX();       // m00
@@ -289,23 +289,23 @@ public final class MarlinRenderingEngine extends RenderingEngine
             // sqrt omitted, compare to squared limits below.
             double widthsquared = ((EA + EC + hypot) / 2.0d);
 
-            widthScale = (float)Math.sqrt(widthsquared);
+            widthScale = Math.sqrt(widthsquared);
         }
 
         return (lw / widthScale);
     }
 
-    final void strokeTo(final RendererContext rdrCtx,
+    final void strokeTo(final DRendererContext rdrCtx,
                         Shape src,
                         AffineTransform at,
-                        float width,
+                        double width,
                         NormMode norm,
                         int caps,
                         int join,
                         float miterlimit,
                         float[] dashes,
                         float dashphase,
-                        PathConsumer2D pc2d)
+                        DPathConsumer2D pc2d)
     {
         // We use strokerat so that in Stroker and Dasher we can work only
         // with the pre-transformation coordinates. This will repeat a lot of
@@ -324,6 +324,14 @@ public final class MarlinRenderingEngine extends RenderingEngine
 
         int dashLen = -1;
         boolean recycleDashes = false;
+        double[] dashesD = null;
+
+        // Ensure converting dashes to double precision:
+        if (dashes != null) {
+            recycleDashes = true;
+            dashLen = dashes.length;
+            dashesD = rdrCtx.dasher.copyDashArray(dashes);
+        }
 
         if (at != null && !at.isIdentity()) {
             final double a = at.getScaleX();
@@ -332,7 +340,7 @@ public final class MarlinRenderingEngine extends RenderingEngine
             final double d = at.getScaleY();
             final double det = a * d - c * b;
 
-            if (Math.abs(det) <= (2.0f * Float.MIN_VALUE)) {
+            if (Math.abs(det) <= (2.0d * Double.MIN_VALUE)) {
                 // this rendering engine takes one dimensional curves and turns
                 // them into 2D shapes by giving them width.
                 // However, if everything is to be passed through a singular
@@ -344,7 +352,7 @@ public final class MarlinRenderingEngine extends RenderingEngine
                 // of writing of this comment (September 16, 2010)). Actually,
                 // I am not sure if the moveTo is necessary to avoid the SIGSEGV
                 // but the pathDone is definitely needed.
-                pc2d.moveTo(0.0f, 0.0f);
+                pc2d.moveTo(0.0d, 0.0d);
                 pc2d.pathDone();
                 return;
             }
@@ -356,14 +364,11 @@ public final class MarlinRenderingEngine extends RenderingEngine
             // a*b == -c*d && a*a+c*c == b*b+d*d. In the actual check below, we
             // leave a bit of room for error.
             if (nearZero(a*b + c*d) && nearZero(a*a + c*c - (b*b + d*d))) {
-                final float scale = (float) Math.sqrt(a*a + c*c);
+                final double scale =  Math.sqrt(a*a + c*c);
 
-                if (dashes != null) {
-                    recycleDashes = true;
-                    dashLen = dashes.length;
-                    dashes = rdrCtx.dasher.copyDashArray(dashes);
+                if (dashesD != null) {
                     for (int i = 0; i < dashLen; i++) {
-                        dashes[i] *= scale;
+                        dashesD[i] *= scale;
                     }
                     dashphase *= scale;
                 }
@@ -400,16 +405,13 @@ public final class MarlinRenderingEngine extends RenderingEngine
             pc2d = rdrCtx.simplifier.init(pc2d);
         }
 
-        final TransformingPathConsumer2D transformerPC2D = rdrCtx.transformerPC2D;
+        final DTransformingPathConsumer2D transformerPC2D = rdrCtx.transformerPC2D;
         pc2d = transformerPC2D.deltaTransformConsumer(pc2d, strokerat);
 
         pc2d = rdrCtx.stroker.init(pc2d, width, caps, join, miterlimit);
 
-        if (dashes != null) {
-            if (!recycleDashes) {
-                dashLen = dashes.length;
-            }
-            pc2d = rdrCtx.dasher.init(pc2d, dashes, dashLen, dashphase,
+        if (dashesD != null) {
+            pc2d = rdrCtx.dasher.init(pc2d, dashesD, dashLen, dashphase,
                                       recycleDashes);
         }
         pc2d = transformerPC2D.inverseDeltaTransformConsumer(pc2d, strokerat);
@@ -443,13 +445,13 @@ public final class MarlinRenderingEngine extends RenderingEngine
         private PathIterator src;
 
         // the adjustment applied to the current position.
-        private float curx_adjust, cury_adjust;
+        private double curx_adjust, cury_adjust;
         // the adjustment applied to the last moveTo position.
-        private float movx_adjust, movy_adjust;
+        private double movx_adjust, movy_adjust;
 
-        private final float[] tmp;
+        private final double[] tmp;
 
-        NormalizingPathIterator(final float[] tmp) {
+        NormalizingPathIterator(final double[] tmp) {
             this.tmp = tmp;
         }
 
@@ -468,7 +470,7 @@ public final class MarlinRenderingEngine extends RenderingEngine
         }
 
         @Override
-        public final int currentSegment(final float[] coords) {
+        public final int currentSegment(final double[] coords) {
             int lastCoord;
             final int type = src.currentSegment(coords);
 
@@ -493,7 +495,7 @@ public final class MarlinRenderingEngine extends RenderingEngine
             }
 
             // normalize endpoint
-            float coord, x_adjust, y_adjust;
+            double coord, x_adjust, y_adjust;
 
             coord = coords[lastCoord];
             x_adjust = normCoord(coord); // new coord
@@ -514,8 +516,8 @@ public final class MarlinRenderingEngine extends RenderingEngine
                 case PathIterator.SEG_LINETO:
                     break;
                 case PathIterator.SEG_QUADTO:
-                    coords[0] += (curx_adjust + x_adjust) / 2.0f;
-                    coords[1] += (cury_adjust + y_adjust) / 2.0f;
+                    coords[0] += (curx_adjust + x_adjust) / 2.0d;
+                    coords[1] += (cury_adjust + y_adjust) / 2.0d;
                     break;
                 case PathIterator.SEG_CUBICTO:
                     coords[0] += curx_adjust;
@@ -532,14 +534,14 @@ public final class MarlinRenderingEngine extends RenderingEngine
             return type;
         }
 
-        abstract float normCoord(final float coord);
+        abstract double normCoord(final double coord);
 
         @Override
-        public final int currentSegment(final double[] coords) {
-            final float[] _tmp = tmp; // dirty
+        public final int currentSegment(final float[] coords) {
+            final double[] _tmp = tmp; // dirty
             int type = this.currentSegment(_tmp);
             for (int i = 0; i < 6; i++) {
-                coords[i] = _tmp[i];
+                coords[i] = (float)_tmp[i];
             }
             return type;
         }
@@ -567,39 +569,39 @@ public final class MarlinRenderingEngine extends RenderingEngine
         static final class NearestPixelCenter
                                 extends NormalizingPathIterator
         {
-            NearestPixelCenter(final float[] tmp) {
+            NearestPixelCenter(final double[] tmp) {
                 super(tmp);
             }
 
             @Override
-            float normCoord(final float coord) {
+            double normCoord(final double coord) {
                 // round to nearest pixel center
-                return FloatMath.floor_f(coord) + 0.5f;
+                return Math.floor(coord) + 0.5d;
             }
         }
 
         static final class NearestPixelQuarter
                                 extends NormalizingPathIterator
         {
-            NearestPixelQuarter(final float[] tmp) {
+            NearestPixelQuarter(final double[] tmp) {
                 super(tmp);
             }
 
             @Override
-            float normCoord(final float coord) {
+            double normCoord(final double coord) {
                 // round to nearest (0.25, 0.25) pixel quarter
-                return FloatMath.floor_f(coord + 0.25f) + 0.25f;
+                return Math.floor(coord + 0.25d) + 0.25d;
             }
         }
     }
 
-    private static void pathTo(final RendererContext rdrCtx, final PathIterator pi,
-                               final PathConsumer2D pc2d)
+    private static void pathTo(final DRendererContext rdrCtx, final PathIterator pi,
+                               final DPathConsumer2D pc2d)
     {
         // mark context as DIRTY:
         rdrCtx.dirty = true;
 
-        final float[] coords = rdrCtx.float6;
+        final double[] coords = rdrCtx.double6;
 
         pathToLoop(coords, pi, pc2d);
 
@@ -607,8 +609,8 @@ public final class MarlinRenderingEngine extends RenderingEngine
         rdrCtx.dirty = false;
     }
 
-    private static void pathToLoop(final float[] coords, final PathIterator pi,
-                                   final PathConsumer2D pc2d)
+    private static void pathToLoop(final double[] coords, final PathIterator pi,
+                                   final DPathConsumer2D pc2d)
     {
         // ported from DuctusRenderingEngine.feedConsumer() but simplified:
         // - removed skip flag = !subpathStarted
@@ -775,9 +777,9 @@ public final class MarlinRenderingEngine extends RenderingEngine
                                               int[] bbox)
     {
         MarlinTileGenerator ptg = null;
-        Renderer r = null;
+        DRenderer r = null;
 
-        final RendererContext rdrCtx = getRendererContext();
+        final DRendererContext rdrCtx = getRendererContext();
         try {
             // Test if at is identity:
             final AffineTransform _at = (at != null && !at.isIdentity()) ? at
@@ -855,18 +857,18 @@ public final class MarlinRenderingEngine extends RenderingEngine
         }
 
         MarlinTileGenerator ptg = null;
-        Renderer r = null;
+        DRenderer r = null;
 
-        final RendererContext rdrCtx = getRendererContext();
+        final DRendererContext rdrCtx = getRendererContext();
         try {
             r = rdrCtx.renderer.init(clip.getLoX(), clip.getLoY(),
                                          clip.getWidth(), clip.getHeight(),
-                                         Renderer.WIND_EVEN_ODD);
+                                         DRenderer.WIND_EVEN_ODD);
 
-            r.moveTo((float) x, (float) y);
-            r.lineTo((float) (x+dx1), (float) (y+dy1));
-            r.lineTo((float) (x+dx1+dx2), (float) (y+dy1+dy2));
-            r.lineTo((float) (x+dx2), (float) (y+dy2));
+            r.moveTo( x,  y);
+            r.lineTo( (x+dx1),  (y+dy1));
+            r.lineTo( (x+dx1+dx2),  (y+dy1+dy2));
+            r.lineTo( (x+dx2),  (y+dy2));
             r.closePath();
 
             if (innerpgram) {
@@ -876,10 +878,10 @@ public final class MarlinRenderingEngine extends RenderingEngine
                 dy1 -= 2.0d * ldy1;
                 dx2 -= 2.0d * ldx2;
                 dy2 -= 2.0d * ldy2;
-                r.moveTo((float) x, (float) y);
-                r.lineTo((float) (x+dx1), (float) (y+dy1));
-                r.lineTo((float) (x+dx1+dx2), (float) (y+dy1+dy2));
-                r.lineTo((float) (x+dx2), (float) (y+dy2));
+                r.moveTo( x,  y);
+                r.lineTo( (x+dx1),  (y+dy1));
+                r.lineTo( (x+dx1+dx2),  (y+dy1+dy2));
+                r.lineTo( (x+dx2),  (y+dy2));
                 r.closePath();
             }
             r.pathDone();
@@ -913,28 +915,28 @@ public final class MarlinRenderingEngine extends RenderingEngine
     }
 
     static {
-        if (PathIterator.WIND_NON_ZERO != Renderer.WIND_NON_ZERO ||
-            PathIterator.WIND_EVEN_ODD != Renderer.WIND_EVEN_ODD ||
-            BasicStroke.JOIN_MITER != Stroker.JOIN_MITER ||
-            BasicStroke.JOIN_ROUND != Stroker.JOIN_ROUND ||
-            BasicStroke.JOIN_BEVEL != Stroker.JOIN_BEVEL ||
-            BasicStroke.CAP_BUTT != Stroker.CAP_BUTT ||
-            BasicStroke.CAP_ROUND != Stroker.CAP_ROUND ||
-            BasicStroke.CAP_SQUARE != Stroker.CAP_SQUARE)
+        if (PathIterator.WIND_NON_ZERO != DRenderer.WIND_NON_ZERO ||
+            PathIterator.WIND_EVEN_ODD != DRenderer.WIND_EVEN_ODD ||
+            BasicStroke.JOIN_MITER != DStroker.JOIN_MITER ||
+            BasicStroke.JOIN_ROUND != DStroker.JOIN_ROUND ||
+            BasicStroke.JOIN_BEVEL != DStroker.JOIN_BEVEL ||
+            BasicStroke.CAP_BUTT != DStroker.CAP_BUTT ||
+            BasicStroke.CAP_ROUND != DStroker.CAP_ROUND ||
+            BasicStroke.CAP_SQUARE != DStroker.CAP_SQUARE)
         {
             throw new InternalError("mismatched renderer constants");
         }
     }
 
-    // --- RendererContext handling ---
-    // use ThreadLocal or ConcurrentLinkedQueue to get one RendererContext
+    // --- DRendererContext handling ---
+    // use ThreadLocal or ConcurrentLinkedQueue to get one DRendererContext
     private static final boolean USE_THREAD_LOCAL;
 
     // reference type stored in either TL or CLQ
     static final int REF_TYPE;
 
-    // Per-thread RendererContext
-    private static final ReentrantContextProvider<RendererContext> RDR_CTX_PROVIDER;
+    // Per-thread DRendererContext
+    private static final ReentrantContextProvider<DRendererContext> RDR_CTX_PROVIDER;
 
     // Static initializer to use TL or CLQ mode
     static {
@@ -944,33 +946,30 @@ public final class MarlinRenderingEngine extends RenderingEngine
         final String refType = AccessController.doPrivileged(
                             new GetPropertyAction("sun.java2d.renderer.useRef",
                             "soft"));
-        switch (refType) {
-            default:
-            case "soft":
-                REF_TYPE = ReentrantContextProvider.REF_SOFT;
-                break;
-            case "weak":
-                REF_TYPE = ReentrantContextProvider.REF_WEAK;
-                break;
-            case "hard":
-                REF_TYPE = ReentrantContextProvider.REF_HARD;
-                break;
+
+        // Java 1.6 does not support strings in switch:
+        if ("hard".equalsIgnoreCase(refType)) {
+            REF_TYPE = ReentrantContextProvider.REF_HARD;
+        } else if ("weak".equalsIgnoreCase(refType)) {
+            REF_TYPE = ReentrantContextProvider.REF_WEAK;
+        } else {
+            REF_TYPE = ReentrantContextProvider.REF_SOFT;
         }
 
         if (USE_THREAD_LOCAL) {
-            RDR_CTX_PROVIDER = new ReentrantContextProviderTL<RendererContext>(REF_TYPE)
+            RDR_CTX_PROVIDER = new ReentrantContextProviderTL<DRendererContext>(REF_TYPE)
                 {
                     @Override
-                    protected RendererContext newContext() {
-                        return RendererContext.createContext();
+                    protected DRendererContext newContext() {
+                        return DRendererContext.createContext();
                     }
                 };
         } else {
-            RDR_CTX_PROVIDER = new ReentrantContextProviderCLQ<RendererContext>(REF_TYPE)
+            RDR_CTX_PROVIDER = new ReentrantContextProviderCLQ<DRendererContext>(REF_TYPE)
                 {
                     @Override
-                    protected RendererContext newContext() {
-                        return RendererContext.createContext();
+                    protected DRendererContext newContext() {
+                        return DRendererContext.createContext();
                     }
                 };
         }
@@ -1071,26 +1070,26 @@ public final class MarlinRenderingEngine extends RenderingEngine
                 + MarlinProperties.getQuadDecD2());
 
         logInfo("Renderer settings:");
-        logInfo("CUB_DEC_BND  = " + Renderer.CUB_DEC_BND);
-        logInfo("CUB_INC_BND  = " + Renderer.CUB_INC_BND);
-        logInfo("QUAD_DEC_BND = " + Renderer.QUAD_DEC_BND);
+        logInfo("CUB_DEC_BND  = " + DRenderer.CUB_DEC_BND);
+        logInfo("CUB_INC_BND  = " + DRenderer.CUB_INC_BND);
+        logInfo("QUAD_DEC_BND = " + DRenderer.QUAD_DEC_BND);
 
         logInfo("INITIAL_EDGES_CAPACITY               = "
                 + MarlinConst.INITIAL_EDGES_CAPACITY);
         logInfo("INITIAL_CROSSING_COUNT               = "
-                + Renderer.INITIAL_CROSSING_COUNT);
+                + DRenderer.INITIAL_CROSSING_COUNT);
 
         logInfo("=========================================================="
                 + "=====================");
     }
 
     /**
-     * Get the RendererContext instance dedicated to the current thread
-     * @return RendererContext instance
+     * Get the DRendererContext instance dedicated to the current thread
+     * @return DRendererContext instance
      */
     @SuppressWarnings({"unchecked"})
-    static RendererContext getRendererContext() {
-        final RendererContext rdrCtx = RDR_CTX_PROVIDER.acquire();
+    static DRendererContext getRendererContext() {
+        final DRendererContext rdrCtx = RDR_CTX_PROVIDER.acquire();
         if (DO_MONITORS) {
             rdrCtx.stats.mon_pre_getAATileGenerator.start();
         }
@@ -1098,10 +1097,10 @@ public final class MarlinRenderingEngine extends RenderingEngine
     }
 
     /**
-     * Reset and return the given RendererContext instance for reuse
-     * @param rdrCtx RendererContext instance
+     * Reset and return the given DRendererContext instance for reuse
+     * @param rdrCtx DRendererContext instance
      */
-    static void returnRendererContext(final RendererContext rdrCtx) {
+    static void returnRendererContext(final DRendererContext rdrCtx) {
         rdrCtx.dispose();
 
         if (DO_MONITORS) {

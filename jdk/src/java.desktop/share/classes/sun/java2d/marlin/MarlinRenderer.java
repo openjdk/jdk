@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,6 @@
 
 package sun.java2d.marlin;
 
-public final class Version {
-
-    private static final String VERSION = "marlin-0.7.5-Unsafe-OpenJDK";
-
-    public static String getVersion() {
-        return VERSION;
-    }
-
-    private Version() {
-    }
+public interface MarlinRenderer extends MarlinConst {
 
 }
