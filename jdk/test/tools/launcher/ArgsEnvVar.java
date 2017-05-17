@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8170832
+ * @bug 8170832 8180447
  * @summary Arguments passed in environment variable
  * @build TestHelper
  * @run main ArgsEnvVar
@@ -224,6 +224,21 @@ public class ArgsEnvVar extends TestHelper {
         verifyOptions(List.of("-p", "?", "-jar", "test.jar", "one", "two"), tr);
     }
 
+    @Test
+    public void testTrailingSpaces() {
+        env.put(JDK_JAVA_OPTIONS, "--add-exports java.base/jdk.internal.misc=ALL-UNNAMED ");
+        TestResult tr = doExec(env, javaCmd, "-jar", "test.jar");
+        verifyOptions(List.of("--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED", "-jar", "test.jar"), tr);
+
+        env.put(JDK_JAVA_OPTIONS, "--class-path ' '");
+        tr = doExec(env, javaCmd, "-jar", "test.jar");
+        verifyOptions(List.of("--class-path", " ", "-jar", "test.jar"), tr);
+
+        env.put(JDK_JAVA_OPTIONS, "  --add-exports java.base/jdk.internal.misc=ALL-UNNAMED ");
+        tr = doExec(env, javaCmd, "-jar", "test.jar");
+        verifyOptions(List.of("--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED", "-jar", "test.jar"), tr);
+    }
+
     public static void main(String... args) throws Exception {
         init();
         ArgsEnvVar a = new ArgsEnvVar();
@@ -236,4 +251,3 @@ public class ArgsEnvVar extends TestHelper {
         }
     }
 }
-
