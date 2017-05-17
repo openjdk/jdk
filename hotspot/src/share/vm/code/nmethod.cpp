@@ -2357,26 +2357,6 @@ void nmethod::print_relocations() {
   tty->print_cr("relocations:");
   RelocIterator iter(this);
   iter.print();
-  if (UseRelocIndex) {
-    jint* index_end   = (jint*)relocation_end() - 1;
-    jint  index_size  = *index_end;
-    jint* index_start = (jint*)( (address)index_end - index_size );
-    tty->print_cr("    index @" INTPTR_FORMAT ": index_size=%d", p2i(index_start), index_size);
-    if (index_size > 0) {
-      jint* ip;
-      for (ip = index_start; ip+2 <= index_end; ip += 2)
-        tty->print_cr("  (%d %d) addr=" INTPTR_FORMAT " @" INTPTR_FORMAT,
-                      ip[0],
-                      ip[1],
-                      p2i(header_end()+ip[0]),
-                      p2i(relocation_begin()-1+ip[1]));
-      for (; ip < index_end; ip++)
-        tty->print_cr("  (%d ?)", ip[0]);
-      tty->print_cr("          @" INTPTR_FORMAT ": index_size=%d", p2i(ip), *ip);
-      ip++;
-      tty->print_cr("reloc_end @" INTPTR_FORMAT ":", p2i(ip));
-    }
-  }
 }
 
 

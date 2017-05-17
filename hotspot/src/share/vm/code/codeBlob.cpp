@@ -131,14 +131,6 @@ RuntimeBlob::RuntimeBlob(const char* name, int header_size, int size, int frame_
   : CodeBlob(name, compiler_none, CodeBlobLayout((address) this, size, header_size, locs_size, size), frame_complete, 0, NULL, false /* caller_must_gc_arguments */)
 {
   assert(locs_size   == round_to(locs_size,   oopSize), "unaligned size");
-  assert(!UseRelocIndex, "no space allocated for reloc index yet");
-
-  // Note: If UseRelocIndex is enabled, there needs to be (at least) one
-  //       extra word for the relocation information, containing the reloc
-  //       index table length. Unfortunately, the reloc index table imple-
-  //       mentation is not easily understandable and thus it is not clear
-  //       what exactly the format is supposed to be. For now, we just turn
-  //       off the use of this table (gri 7/6/2000).
 }
 
 
