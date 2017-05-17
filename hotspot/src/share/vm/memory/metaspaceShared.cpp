@@ -61,8 +61,6 @@ ReservedSpace* MetaspaceShared::_shared_rs = NULL;
 
 MetaspaceSharedStats MetaspaceShared::_stats;
 
-bool MetaspaceShared::_link_classes_made_progress;
-bool MetaspaceShared::_check_classes_made_progress;
 bool MetaspaceShared::_has_error_classes;
 bool MetaspaceShared::_archive_loading_failed = false;
 bool MetaspaceShared::_remapped_readwrite = false;
@@ -174,18 +172,11 @@ address MetaspaceShared::cds_i2i_entry_code_buffers(size_t total_size) {
 // Global object for holding classes that have been loaded.  Since this
 // is run at a safepoint just before exit, this is the entire set of classes.
 static GrowableArray<Klass*>* _global_klass_objects;
-static void collect_classes(Klass* k) {
-  _global_klass_objects->append_if_missing(k);
-  if (k->is_instance_klass()) {
-    // Add in the array classes too
-    InstanceKlass* ik = InstanceKlass::cast(k);
-    ik->array_klasses_do(collect_classes);
+class CollectClassesClosure : public KlassClosure {
+  void do_klass(Klass* k) {
+    _global_klass_objects->append_if_missing(k);
   }
-}
-
-static void collect_classes2(Klass* k, ClassLoaderData* class_data) {
-  collect_classes(k);
-}
+};
 
 static void remove_unshareable_in_classes() {
   for (int i = 0; i < _global_klass_objects->length(); i++) {
@@ -731,12 +722,8 @@ void VM_PopulateDumpSharedSpace::doit() {
   // Gather systemDictionary classes in a global array and do everything to
   // that so we don't have to walk the SystemDictionary again.
   _global_klass_objects = new GrowableArray<Klass*>(1000);
-  Universe::basic_type_classes_do(collect_classes);
-
-  // Need to call SystemDictionary::classes_do(void f(Klass*, ClassLoaderData*))
-  // as we may have some classes with NULL ClassLoaderData* in the dictionary. Other
-  // variants of SystemDictionary::classes_do will skip those classes.
-  SystemDictionary::classes_do(collect_classes2);
+  CollectClassesClosure collect_classes;
+  ClassLoaderDataGraph::loaded_classes_do(&collect_classes);
 
   tty->print_cr("Number of classes %d", _global_klass_objects->length());
   {
@@ -920,23 +907,40 @@ void VM_PopulateDumpSharedSpace::doit() {
 #undef fmt_space
 }
 
+class LinkSharedClassesClosure : public KlassClosure {
+  Thread* THREAD;
+  bool    _made_progress;
+ public:
+  LinkSharedClassesClosure(Thread* thread) : THREAD(thread), _made_progress(false) {}
 
-void MetaspaceShared::link_one_shared_class(Klass* k, TRAPS) {
-  if (k->is_instance_klass()) {
-    InstanceKlass* ik = InstanceKlass::cast(k);
-    // Link the class to cause the bytecodes to be rewritten and the
-    // cpcache to be created. Class verification is done according
-    // to -Xverify setting.
-    _link_classes_made_progress |= try_link_class(ik, THREAD);
-    guarantee(!HAS_PENDING_EXCEPTION, "exception in link_class");
-  }
-}
+  void reset()               { _made_progress = false; }
+  bool made_progress() const { return _made_progress; }
 
-void MetaspaceShared::check_one_shared_class(Klass* k) {
-  if (k->is_instance_klass() && InstanceKlass::cast(k)->check_sharing_error_state()) {
-    _check_classes_made_progress = true;
+  void do_klass(Klass* k) {
+    if (k->is_instance_klass()) {
+      InstanceKlass* ik = InstanceKlass::cast(k);
+      // Link the class to cause the bytecodes to be rewritten and the
+      // cpcache to be created. Class verification is done according
+      // to -Xverify setting.
+      _made_progress |= MetaspaceShared::try_link_class(ik, THREAD);
+      guarantee(!HAS_PENDING_EXCEPTION, "exception in link_class");
+    }
   }
-}
+};
+
+class CheckSharedClassesClosure : public KlassClosure {
+  bool    _made_progress;
+ public:
+  CheckSharedClassesClosure() : _made_progress(false) {}
+
+  void reset()               { _made_progress = false; }
+  bool made_progress() const { return _made_progress; }
+  void do_klass(Klass* k) {
+    if (k->is_instance_klass() && InstanceKlass::cast(k)->check_sharing_error_state()) {
+      _made_progress = true;
+    }
+  }
+};
 
 void MetaspaceShared::check_shared_class_loader_type(Klass* k) {
   if (k->is_instance_klass()) {
@@ -951,21 +955,23 @@ void MetaspaceShared::check_shared_class_loader_type(Klass* k) {
 void MetaspaceShared::link_and_cleanup_shared_classes(TRAPS) {
   // We need to iterate because verification may cause additional classes
   // to be loaded.
+  LinkSharedClassesClosure link_closure(THREAD);
   do {
-    _link_classes_made_progress = false;
-    SystemDictionary::classes_do(link_one_shared_class, THREAD);
+    link_closure.reset();
+    ClassLoaderDataGraph::loaded_classes_do(&link_closure);
     guarantee(!HAS_PENDING_EXCEPTION, "exception in link_class");
-  } while (_link_classes_made_progress);
+  } while (link_closure.made_progress());
 
   if (_has_error_classes) {
     // Mark all classes whose super class or interfaces failed verification.
+    CheckSharedClassesClosure check_closure;
     do {
       // Not completely sure if we need to do this iteratively. Anyway,
       // we should come here only if there are unverifiable classes, which
       // shouldn't happen in normal cases. So better safe than sorry.
-      _check_classes_made_progress = false;
-      SystemDictionary::classes_do(check_one_shared_class);
-    } while (_check_classes_made_progress);
+      check_closure.reset();
+      ClassLoaderDataGraph::loaded_classes_do(&check_closure);
+    } while (check_closure.made_progress());
 
     if (IgnoreUnverifiableClassesDuringDump) {
       // This is useful when running JCK or SQE tests. You should not
@@ -1074,6 +1080,11 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
 
     VMThread::execute(&op);
   }
+
+  if (PrintSystemDictionaryAtExit) {
+    SystemDictionary::print();
+  }
+
   // Since various initialization steps have been undone by this process,
   // it is not reasonable to continue running a java process.
   exit(0);

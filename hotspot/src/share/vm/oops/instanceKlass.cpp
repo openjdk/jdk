@@ -1995,13 +1995,18 @@ void InstanceKlass::store_fingerprint(uint64_t fingerprint) {
   }
 }
 
-static void remove_unshareable_in_class(Klass* k) {
-  // remove klass's unshareable info
-  k->remove_unshareable_info();
-}
-
 void InstanceKlass::remove_unshareable_info() {
   Klass::remove_unshareable_info();
+
+  if (is_in_error_state()) {
+    // Classes are attempted to link during dumping and may fail,
+    // but these classes are still in the dictionary and class list in CLD.
+    // Check in_error state first because in_error is > linked state, so
+    // is_linked() is true.
+    // If there's a linking error, there is nothing else to remove.
+    return;
+  }
+
   // Unlink the class
   if (is_linked()) {
     unlink_class();
@@ -2016,9 +2021,6 @@ void InstanceKlass::remove_unshareable_info() {
     Method* m = methods()->at(i);
     m->remove_unshareable_info();
   }
-
-  // do array classes also.
-  array_klasses_do(remove_unshareable_in_class);
 }
 
 static void restore_unshareable_in_class(Klass* k, TRAPS) {
