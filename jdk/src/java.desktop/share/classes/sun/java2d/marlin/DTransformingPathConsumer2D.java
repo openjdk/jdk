@@ -25,41 +25,40 @@
 
 package sun.java2d.marlin;
 
-import sun.awt.geom.PathConsumer2D;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 
-final class TransformingPathConsumer2D {
+final class DTransformingPathConsumer2D {
 
-    TransformingPathConsumer2D() {
-        // used by RendererContext
+    DTransformingPathConsumer2D() {
+        // used by DRendererContext
     }
 
-    // recycled PathConsumer2D instance from wrapPath2d()
+    // recycled DPathConsumer2D instance from wrapPath2d()
     private final Path2DWrapper        wp_Path2DWrapper        = new Path2DWrapper();
 
-    PathConsumer2D wrapPath2d(Path2D.Float p2d)
+    DPathConsumer2D wrapPath2d(Path2D.Double p2d)
     {
         return wp_Path2DWrapper.init(p2d);
     }
 
-    // recycled PathConsumer2D instances from deltaTransformConsumer()
+    // recycled DPathConsumer2D instances from deltaTransformConsumer()
     private final DeltaScaleFilter     dt_DeltaScaleFilter     = new DeltaScaleFilter();
     private final DeltaTransformFilter dt_DeltaTransformFilter = new DeltaTransformFilter();
 
-    PathConsumer2D deltaTransformConsumer(PathConsumer2D out,
+    DPathConsumer2D deltaTransformConsumer(DPathConsumer2D out,
                                           AffineTransform at)
     {
         if (at == null) {
             return out;
         }
-        float mxx = (float) at.getScaleX();
-        float mxy = (float) at.getShearX();
-        float myx = (float) at.getShearY();
-        float myy = (float) at.getScaleY();
+        double mxx = at.getScaleX();
+        double mxy = at.getShearX();
+        double myx = at.getShearY();
+        double myy = at.getScaleY();
 
-        if (mxy == 0.0f && myx == 0.0f) {
-            if (mxx == 1.0f && myy == 1.0f) {
+        if (mxy == 0.0d && myx == 0.0d) {
+            if (mxx == 1.0d && myy == 1.0d) {
                 return out;
             } else {
                 return dt_DeltaScaleFilter.init(out, mxx, myy);
@@ -69,29 +68,29 @@ final class TransformingPathConsumer2D {
         }
     }
 
-    // recycled PathConsumer2D instances from inverseDeltaTransformConsumer()
+    // recycled DPathConsumer2D instances from inverseDeltaTransformConsumer()
     private final DeltaScaleFilter     iv_DeltaScaleFilter     = new DeltaScaleFilter();
     private final DeltaTransformFilter iv_DeltaTransformFilter = new DeltaTransformFilter();
 
-    PathConsumer2D inverseDeltaTransformConsumer(PathConsumer2D out,
+    DPathConsumer2D inverseDeltaTransformConsumer(DPathConsumer2D out,
                                                  AffineTransform at)
     {
         if (at == null) {
             return out;
         }
-        float mxx = (float) at.getScaleX();
-        float mxy = (float) at.getShearX();
-        float myx = (float) at.getShearY();
-        float myy = (float) at.getScaleY();
+        double mxx = at.getScaleX();
+        double mxy = at.getShearX();
+        double myx = at.getShearY();
+        double myy = at.getScaleY();
 
-        if (mxy == 0.0f && myx == 0.0f) {
-            if (mxx == 1.0f && myy == 1.0f) {
+        if (mxy == 0.0d && myx == 0.0d) {
+            if (mxx == 1.0d && myy == 1.0d) {
                 return out;
             } else {
-                return iv_DeltaScaleFilter.init(out, 1.0f/mxx, 1.0f/myy);
+                return iv_DeltaScaleFilter.init(out, 1.0d/mxx, 1.0d/myy);
             }
         } else {
-            float det = mxx * myy - mxy * myx;
+            double det = mxx * myy - mxy * myx;
             return iv_DeltaTransformFilter.init(out,
                                                 myy / det,
                                                -mxy / det,
@@ -101,14 +100,14 @@ final class TransformingPathConsumer2D {
     }
 
 
-    static final class DeltaScaleFilter implements PathConsumer2D {
-        private PathConsumer2D out;
-        private float sx, sy;
+    static final class DeltaScaleFilter implements DPathConsumer2D {
+        private DPathConsumer2D out;
+        private double sx, sy;
 
         DeltaScaleFilter() {}
 
-        DeltaScaleFilter init(PathConsumer2D out,
-                              float mxx, float myy)
+        DeltaScaleFilter init(DPathConsumer2D out,
+                              double mxx, double myy)
         {
             this.out = out;
             sx = mxx;
@@ -117,27 +116,27 @@ final class TransformingPathConsumer2D {
         }
 
         @Override
-        public void moveTo(float x0, float y0) {
+        public void moveTo(double x0, double y0) {
             out.moveTo(x0 * sx, y0 * sy);
         }
 
         @Override
-        public void lineTo(float x1, float y1) {
+        public void lineTo(double x1, double y1) {
             out.lineTo(x1 * sx, y1 * sy);
         }
 
         @Override
-        public void quadTo(float x1, float y1,
-                           float x2, float y2)
+        public void quadTo(double x1, double y1,
+                           double x2, double y2)
         {
             out.quadTo(x1 * sx, y1 * sy,
                        x2 * sx, y2 * sy);
         }
 
         @Override
-        public void curveTo(float x1, float y1,
-                            float x2, float y2,
-                            float x3, float y3)
+        public void curveTo(double x1, double y1,
+                            double x2, double y2,
+                            double x3, double y3)
         {
             out.curveTo(x1 * sx, y1 * sy,
                         x2 * sx, y2 * sy,
@@ -160,15 +159,15 @@ final class TransformingPathConsumer2D {
         }
     }
 
-    static final class DeltaTransformFilter implements PathConsumer2D {
-        private PathConsumer2D out;
-        private float mxx, mxy, myx, myy;
+    static final class DeltaTransformFilter implements DPathConsumer2D {
+        private DPathConsumer2D out;
+        private double mxx, mxy, myx, myy;
 
         DeltaTransformFilter() {}
 
-        DeltaTransformFilter init(PathConsumer2D out,
-                                  float mxx, float mxy,
-                                  float myx, float myy)
+        DeltaTransformFilter init(DPathConsumer2D out,
+                                  double mxx, double mxy,
+                                  double myx, double myy)
         {
             this.out = out;
             this.mxx = mxx;
@@ -179,20 +178,20 @@ final class TransformingPathConsumer2D {
         }
 
         @Override
-        public void moveTo(float x0, float y0) {
+        public void moveTo(double x0, double y0) {
             out.moveTo(x0 * mxx + y0 * mxy,
                        x0 * myx + y0 * myy);
         }
 
         @Override
-        public void lineTo(float x1, float y1) {
+        public void lineTo(double x1, double y1) {
             out.lineTo(x1 * mxx + y1 * mxy,
                        x1 * myx + y1 * myy);
         }
 
         @Override
-        public void quadTo(float x1, float y1,
-                           float x2, float y2)
+        public void quadTo(double x1, double y1,
+                           double x2, double y2)
         {
             out.quadTo(x1 * mxx + y1 * mxy,
                        x1 * myx + y1 * myy,
@@ -201,9 +200,9 @@ final class TransformingPathConsumer2D {
         }
 
         @Override
-        public void curveTo(float x1, float y1,
-                            float x2, float y2,
-                            float x3, float y3)
+        public void curveTo(double x1, double y1,
+                            double x2, double y2,
+                            double x3, double y3)
         {
             out.curveTo(x1 * mxx + y1 * mxy,
                         x1 * myx + y1 * myy,
@@ -229,23 +228,23 @@ final class TransformingPathConsumer2D {
         }
     }
 
-    static final class Path2DWrapper implements PathConsumer2D {
-        private Path2D.Float p2d;
+    static final class Path2DWrapper implements DPathConsumer2D {
+        private Path2D.Double p2d;
 
         Path2DWrapper() {}
 
-        Path2DWrapper init(Path2D.Float p2d) {
+        Path2DWrapper init(Path2D.Double p2d) {
             this.p2d = p2d;
             return this;
         }
 
         @Override
-        public void moveTo(float x0, float y0) {
+        public void moveTo(double x0, double y0) {
             p2d.moveTo(x0, y0);
         }
 
         @Override
-        public void lineTo(float x1, float y1) {
+        public void lineTo(double x1, double y1) {
             p2d.lineTo(x1, y1);
         }
 
@@ -258,15 +257,15 @@ final class TransformingPathConsumer2D {
         public void pathDone() {}
 
         @Override
-        public void curveTo(float x1, float y1,
-                            float x2, float y2,
-                            float x3, float y3)
+        public void curveTo(double x1, double y1,
+                            double x2, double y2,
+                            double x3, double y3)
         {
             p2d.curveTo(x1, y1, x2, y2, x3, y3);
         }
 
         @Override
-        public void quadTo(float x1, float y1, float x2, float y2) {
+        public void quadTo(double x1, double y1, double x2, double y2) {
             p2d.quadTo(x1, y1, x2, y2);
         }
 

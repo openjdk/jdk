@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,7 +132,7 @@ public abstract class RenderingEngine {
             }
         }
         if (reImpl == null) {
-            final String marlinREClass = "sun.java2d.marlin.MarlinRenderingEngine";
+            final String marlinREClass = "sun.java2d.marlin.DMarlinRenderingEngine";
             try {
                 Class<?> cls = Class.forName(marlinREClass);
                 reImpl = (RenderingEngine) cls.getConstructor().newInstance();

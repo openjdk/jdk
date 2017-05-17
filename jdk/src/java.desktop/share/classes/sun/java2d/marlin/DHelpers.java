@@ -31,15 +31,10 @@ import static java.lang.Math.sqrt;
 import static java.lang.Math.cbrt;
 import static java.lang.Math.acos;
 
-final class Helpers implements MarlinConst {
+final class DHelpers implements MarlinConst {
 
-    private Helpers() {
+    private DHelpers() {
         throw new Error("This is a non instantiable class");
-    }
-
-    static boolean within(final float x, final float y, final float err) {
-        final float d = y - x;
-        return (d <= err && d >= -err);
     }
 
     static boolean within(final double x, final double y, final double err) {
@@ -47,32 +42,32 @@ final class Helpers implements MarlinConst {
         return (d <= err && d >= -err);
     }
 
-    static int quadraticRoots(final float a, final float b,
-                              final float c, float[] zeroes, final int off)
+    static int quadraticRoots(final double a, final double b,
+                              final double c, double[] zeroes, final int off)
     {
         int ret = off;
-        float t;
-        if (a != 0.0f) {
-            final float dis = b*b - 4*a*c;
-            if (dis > 0.0f) {
-                final float sqrtDis = (float) Math.sqrt(dis);
+        double t;
+        if (a != 0.0d) {
+            final double dis = b*b - 4*a*c;
+            if (dis > 0.0d) {
+                final double sqrtDis = Math.sqrt(dis);
                 // depending on the sign of b we use a slightly different
                 // algorithm than the traditional one to find one of the roots
                 // so we can avoid adding numbers of different signs (which
                 // might result in loss of precision).
-                if (b >= 0.0f) {
-                    zeroes[ret++] = (2.0f * c) / (-b - sqrtDis);
-                    zeroes[ret++] = (-b - sqrtDis) / (2.0f * a);
+                if (b >= 0.0d) {
+                    zeroes[ret++] = (2.0d * c) / (-b - sqrtDis);
+                    zeroes[ret++] = (-b - sqrtDis) / (2.0d * a);
                 } else {
-                    zeroes[ret++] = (-b + sqrtDis) / (2.0f * a);
-                    zeroes[ret++] = (2.0f * c) / (-b + sqrtDis);
+                    zeroes[ret++] = (-b + sqrtDis) / (2.0d * a);
+                    zeroes[ret++] = (2.0d * c) / (-b + sqrtDis);
                 }
-            } else if (dis == 0.0f) {
-                t = (-b) / (2.0f * a);
+            } else if (dis == 0.0d) {
+                t = (-b) / (2.0d * a);
                 zeroes[ret++] = t;
             }
         } else {
-            if (b != 0.0f) {
+            if (b != 0.0d) {
                 t = (-c) / b;
                 zeroes[ret++] = t;
             }
@@ -81,11 +76,11 @@ final class Helpers implements MarlinConst {
     }
 
     // find the roots of g(t) = d*t^3 + a*t^2 + b*t + c in [A,B)
-    static int cubicRootsInAB(float d, float a, float b, float c,
-                              float[] pts, final int off,
-                              final float A, final float B)
+    static int cubicRootsInAB(double d, double a, double b, double c,
+                              double[] pts, final int off,
+                              final double A, final double B)
     {
-        if (d == 0.0f) {
+        if (d == 0.0d) {
             int num = quadraticRoots(a, b, c, pts, off);
             return filterOutNotInAB(pts, off, num, A, B) - off;
         }
@@ -123,25 +118,25 @@ final class Helpers implements MarlinConst {
             final double phi = (1.0d/3.0d) * acos(-q / sqrt(-cb_p));
             final double t = 2.0d * sqrt(-p);
 
-            pts[ off+0 ] = (float) ( t * cos(phi));
-            pts[ off+1 ] = (float) (-t * cos(phi + (PI / 3.0d)));
-            pts[ off+2 ] = (float) (-t * cos(phi - (PI / 3.0d)));
+            pts[ off+0 ] = ( t * cos(phi));
+            pts[ off+1 ] = (-t * cos(phi + (PI / 3.0d)));
+            pts[ off+2 ] = (-t * cos(phi - (PI / 3.0d)));
             num = 3;
         } else {
             final double sqrt_D = sqrt(D);
             final double u = cbrt(sqrt_D - q);
             final double v = - cbrt(sqrt_D + q);
 
-            pts[ off ] = (float) (u + v);
+            pts[ off ] = (u + v);
             num = 1;
 
             if (within(D, 0.0d, 1e-8d)) {
-                pts[off+1] = -(pts[off] / 2.0f);
+                pts[off+1] = -(pts[off] / 2.0d);
                 num = 2;
             }
         }
 
-        final float sub = (1.0f/3.0f) * a;
+        final double sub = (1.0d/3.0d) * a;
 
         for (int i = 0; i < num; ++i) {
             pts[ off+i ] -= sub;
@@ -150,22 +145,22 @@ final class Helpers implements MarlinConst {
         return filterOutNotInAB(pts, off, num, A, B) - off;
     }
 
-    static float evalCubic(final float a, final float b,
-                           final float c, final float d,
-                           final float t)
+    static double evalCubic(final double a, final double b,
+                           final double c, final double d,
+                           final double t)
     {
         return t * (t * (t * a + b) + c) + d;
     }
 
-    static float evalQuad(final float a, final float b,
-                          final float c, final float t)
+    static double evalQuad(final double a, final double b,
+                          final double c, final double t)
     {
         return t * (t * a + b) + c;
     }
 
     // returns the index 1 past the last valid element remaining after filtering
-    static int filterOutNotInAB(float[] nums, final int off, final int len,
-                                final float a, final float b)
+    static int filterOutNotInAB(double[] nums, final int off, final int len,
+                                final double a, final double b)
     {
         int ret = off;
         for (int i = off, end = off + len; i < end; i++) {
@@ -176,39 +171,39 @@ final class Helpers implements MarlinConst {
         return ret;
     }
 
-    static float polyLineLength(float[] poly, final int off, final int nCoords) {
+    static double polyLineLength(double[] poly, final int off, final int nCoords) {
         assert nCoords % 2 == 0 && poly.length >= off + nCoords : "";
-        float acc = 0.0f;
+        double acc = 0.0d;
         for (int i = off + 2; i < off + nCoords; i += 2) {
             acc += linelen(poly[i], poly[i+1], poly[i-2], poly[i-1]);
         }
         return acc;
     }
 
-    static float linelen(float x1, float y1, float x2, float y2) {
-        final float dx = x2 - x1;
-        final float dy = y2 - y1;
-        return (float) Math.sqrt(dx*dx + dy*dy);
+    static double linelen(double x1, double y1, double x2, double y2) {
+        final double dx = x2 - x1;
+        final double dy = y2 - y1;
+        return Math.sqrt(dx*dx + dy*dy);
     }
 
-    static void subdivide(float[] src, int srcoff, float[] left, int leftoff,
-                          float[] right, int rightoff, int type)
+    static void subdivide(double[] src, int srcoff, double[] left, int leftoff,
+                          double[] right, int rightoff, int type)
     {
         switch(type) {
         case 6:
-            Helpers.subdivideQuad(src, srcoff, left, leftoff, right, rightoff);
+            DHelpers.subdivideQuad(src, srcoff, left, leftoff, right, rightoff);
             return;
         case 8:
-            Helpers.subdivideCubic(src, srcoff, left, leftoff, right, rightoff);
+            DHelpers.subdivideCubic(src, srcoff, left, leftoff, right, rightoff);
             return;
         default:
             throw new InternalError("Unsupported curve type");
         }
     }
 
-    static void isort(float[] a, int off, int len) {
+    static void isort(double[] a, int off, int len) {
         for (int i = off + 1, end = off + len; i < end; i++) {
-            float ai = a[i];
+            double ai = a[i];
             int j = i - 1;
             for (; j >= off && a[j] > ai; j--) {
                 a[j+1] = a[j];
@@ -248,18 +243,18 @@ final class Helpers implements MarlinConst {
      * the 6 right coordinates
      * @since 1.7
      */
-    static void subdivideCubic(float[] src, int srcoff,
-                               float[] left, int leftoff,
-                               float[] right, int rightoff)
+    static void subdivideCubic(double[] src, int srcoff,
+                               double[] left, int leftoff,
+                               double[] right, int rightoff)
     {
-        float x1 = src[srcoff + 0];
-        float y1 = src[srcoff + 1];
-        float ctrlx1 = src[srcoff + 2];
-        float ctrly1 = src[srcoff + 3];
-        float ctrlx2 = src[srcoff + 4];
-        float ctrly2 = src[srcoff + 5];
-        float x2 = src[srcoff + 6];
-        float y2 = src[srcoff + 7];
+        double x1 = src[srcoff + 0];
+        double y1 = src[srcoff + 1];
+        double ctrlx1 = src[srcoff + 2];
+        double ctrly1 = src[srcoff + 3];
+        double ctrlx2 = src[srcoff + 4];
+        double ctrly2 = src[srcoff + 5];
+        double x2 = src[srcoff + 6];
+        double y2 = src[srcoff + 7];
         if (left != null) {
             left[leftoff + 0] = x1;
             left[leftoff + 1] = y1;
@@ -268,18 +263,18 @@ final class Helpers implements MarlinConst {
             right[rightoff + 6] = x2;
             right[rightoff + 7] = y2;
         }
-        x1 = (x1 + ctrlx1) / 2.0f;
-        y1 = (y1 + ctrly1) / 2.0f;
-        x2 = (x2 + ctrlx2) / 2.0f;
-        y2 = (y2 + ctrly2) / 2.0f;
-        float centerx = (ctrlx1 + ctrlx2) / 2.0f;
-        float centery = (ctrly1 + ctrly2) / 2.0f;
-        ctrlx1 = (x1 + centerx) / 2.0f;
-        ctrly1 = (y1 + centery) / 2.0f;
-        ctrlx2 = (x2 + centerx) / 2.0f;
-        ctrly2 = (y2 + centery) / 2.0f;
-        centerx = (ctrlx1 + ctrlx2) / 2.0f;
-        centery = (ctrly1 + ctrly2) / 2.0f;
+        x1 = (x1 + ctrlx1) / 2.0d;
+        y1 = (y1 + ctrly1) / 2.0d;
+        x2 = (x2 + ctrlx2) / 2.0d;
+        y2 = (y2 + ctrly2) / 2.0d;
+        double centerx = (ctrlx1 + ctrlx2) / 2.0d;
+        double centery = (ctrly1 + ctrly2) / 2.0d;
+        ctrlx1 = (x1 + centerx) / 2.0d;
+        ctrly1 = (y1 + centery) / 2.0d;
+        ctrlx2 = (x2 + centerx) / 2.0d;
+        ctrly2 = (y2 + centery) / 2.0d;
+        centerx = (ctrlx1 + ctrlx2) / 2.0d;
+        centery = (ctrly1 + ctrly2) / 2.0d;
         if (left != null) {
             left[leftoff + 2] = x1;
             left[leftoff + 3] = y1;
@@ -299,18 +294,18 @@ final class Helpers implements MarlinConst {
     }
 
 
-    static void subdivideCubicAt(float t, float[] src, int srcoff,
-                                 float[] left, int leftoff,
-                                 float[] right, int rightoff)
+    static void subdivideCubicAt(double t, double[] src, int srcoff,
+                                 double[] left, int leftoff,
+                                 double[] right, int rightoff)
     {
-        float x1 = src[srcoff + 0];
-        float y1 = src[srcoff + 1];
-        float ctrlx1 = src[srcoff + 2];
-        float ctrly1 = src[srcoff + 3];
-        float ctrlx2 = src[srcoff + 4];
-        float ctrly2 = src[srcoff + 5];
-        float x2 = src[srcoff + 6];
-        float y2 = src[srcoff + 7];
+        double x1 = src[srcoff + 0];
+        double y1 = src[srcoff + 1];
+        double ctrlx1 = src[srcoff + 2];
+        double ctrly1 = src[srcoff + 3];
+        double ctrlx2 = src[srcoff + 4];
+        double ctrly2 = src[srcoff + 5];
+        double x2 = src[srcoff + 6];
+        double y2 = src[srcoff + 7];
         if (left != null) {
             left[leftoff + 0] = x1;
             left[leftoff + 1] = y1;
@@ -323,8 +318,8 @@ final class Helpers implements MarlinConst {
         y1 = y1 + t * (ctrly1 - y1);
         x2 = ctrlx2 + t * (x2 - ctrlx2);
         y2 = ctrly2 + t * (y2 - ctrly2);
-        float centerx = ctrlx1 + t * (ctrlx2 - ctrlx1);
-        float centery = ctrly1 + t * (ctrly2 - ctrly1);
+        double centerx = ctrlx1 + t * (ctrlx2 - ctrlx1);
+        double centery = ctrly1 + t * (ctrly2 - ctrly1);
         ctrlx1 = x1 + t * (centerx - x1);
         ctrly1 = y1 + t * (centery - y1);
         ctrlx2 = centerx + t * (x2 - centerx);
@@ -349,16 +344,16 @@ final class Helpers implements MarlinConst {
         }
     }
 
-    static void subdivideQuad(float[] src, int srcoff,
-                              float[] left, int leftoff,
-                              float[] right, int rightoff)
+    static void subdivideQuad(double[] src, int srcoff,
+                              double[] left, int leftoff,
+                              double[] right, int rightoff)
     {
-        float x1 = src[srcoff + 0];
-        float y1 = src[srcoff + 1];
-        float ctrlx = src[srcoff + 2];
-        float ctrly = src[srcoff + 3];
-        float x2 = src[srcoff + 4];
-        float y2 = src[srcoff + 5];
+        double x1 = src[srcoff + 0];
+        double y1 = src[srcoff + 1];
+        double ctrlx = src[srcoff + 2];
+        double ctrly = src[srcoff + 3];
+        double x2 = src[srcoff + 4];
+        double y2 = src[srcoff + 5];
         if (left != null) {
             left[leftoff + 0] = x1;
             left[leftoff + 1] = y1;
@@ -367,12 +362,12 @@ final class Helpers implements MarlinConst {
             right[rightoff + 4] = x2;
             right[rightoff + 5] = y2;
         }
-        x1 = (x1 + ctrlx) / 2.0f;
-        y1 = (y1 + ctrly) / 2.0f;
-        x2 = (x2 + ctrlx) / 2.0f;
-        y2 = (y2 + ctrly) / 2.0f;
-        ctrlx = (x1 + x2) / 2.0f;
-        ctrly = (y1 + y2) / 2.0f;
+        x1 = (x1 + ctrlx) / 2.0d;
+        y1 = (y1 + ctrly) / 2.0d;
+        x2 = (x2 + ctrlx) / 2.0d;
+        y2 = (y2 + ctrly) / 2.0d;
+        ctrlx = (x1 + x2) / 2.0d;
+        ctrly = (y1 + y2) / 2.0d;
         if (left != null) {
             left[leftoff + 2] = x1;
             left[leftoff + 3] = y1;
@@ -387,16 +382,16 @@ final class Helpers implements MarlinConst {
         }
     }
 
-    static void subdivideQuadAt(float t, float[] src, int srcoff,
-                                float[] left, int leftoff,
-                                float[] right, int rightoff)
+    static void subdivideQuadAt(double t, double[] src, int srcoff,
+                                double[] left, int leftoff,
+                                double[] right, int rightoff)
     {
-        float x1 = src[srcoff + 0];
-        float y1 = src[srcoff + 1];
-        float ctrlx = src[srcoff + 2];
-        float ctrly = src[srcoff + 3];
-        float x2 = src[srcoff + 4];
-        float y2 = src[srcoff + 5];
+        double x1 = src[srcoff + 0];
+        double y1 = src[srcoff + 1];
+        double ctrlx = src[srcoff + 2];
+        double ctrly = src[srcoff + 3];
+        double x2 = src[srcoff + 4];
+        double y2 = src[srcoff + 5];
         if (left != null) {
             left[leftoff + 0] = x1;
             left[leftoff + 1] = y1;
@@ -425,9 +420,9 @@ final class Helpers implements MarlinConst {
         }
     }
 
-    static void subdivideAt(float t, float[] src, int srcoff,
-                            float[] left, int leftoff,
-                            float[] right, int rightoff, int size)
+    static void subdivideAt(double t, double[] src, int srcoff,
+                            double[] left, int leftoff,
+                            double[] right, int rightoff, int size)
     {
         switch(size) {
         case 8:
