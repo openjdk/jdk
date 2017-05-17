@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1108,9 +1108,12 @@ static bool   init_done = false;
 
 // Helper method to print the header.
 static void print_header() {
-  tty->print("         vmop                    "
-             "[threads: total initially_running wait_to_block]    ");
-  tty->print("[time: spin block sync cleanup vmop] ");
+  // The number of spaces is significant here, and should match the format
+  // specifiers in print_statistics().
+
+  tty->print("          vmop                            "
+             "[ threads:    total initially_running wait_to_block ]"
+             "[ time:    spin   block    sync cleanup    vmop ] ");
 
   // no page armed status printed out if it is always armed.
   if (need_to_track_page_armed_status) {
@@ -1249,27 +1252,24 @@ void SafepointSynchronize::end_statistics(jlong vmop_end_time) {
 }
 
 void SafepointSynchronize::print_statistics() {
-  SafepointStats* sstats = _safepoint_stats;
-
   for (int index = 0; index <= _cur_stat_index; index++) {
     if (index % 30 == 0) {
       print_header();
     }
-    sstats = &_safepoint_stats[index];
-    tty->print("%.3f: ", sstats->_time_stamp);
-    tty->print("%-26s       ["
-               INT32_FORMAT_W(8) INT32_FORMAT_W(11) INT32_FORMAT_W(15)
-               "    ]    ",
-               sstats->_vmop_type == -1 ? "no vm operation" :
-               VM_Operation::name(sstats->_vmop_type),
+    SafepointStats* sstats = &_safepoint_stats[index];
+    tty->print("%8.3f: ", sstats->_time_stamp);
+    tty->print("%-30s  [          "
+               INT32_FORMAT_W(8) " " INT32_FORMAT_W(17) " " INT32_FORMAT_W(13) " "
+               "]",
+               (sstats->_vmop_type == -1 ? "no vm operation" : VM_Operation::name(sstats->_vmop_type)),
                sstats->_nof_total_threads,
                sstats->_nof_initial_running_threads,
                sstats->_nof_threads_wait_to_block);
     // "/ MICROUNITS " is to convert the unit from nanos to millis.
-    tty->print("  ["
-               INT64_FORMAT_W(6) INT64_FORMAT_W(6)
-               INT64_FORMAT_W(6) INT64_FORMAT_W(6)
-               INT64_FORMAT_W(6) "    ]  ",
+    tty->print("[       "
+               INT64_FORMAT_W(7) " " INT64_FORMAT_W(7) " "
+               INT64_FORMAT_W(7) " " INT64_FORMAT_W(7) " "
+               INT64_FORMAT_W(7) " ] ",
                sstats->_time_to_spin / MICROUNITS,
                sstats->_time_to_wait_to_block / MICROUNITS,
                sstats->_time_to_sync / MICROUNITS,
@@ -1277,9 +1277,9 @@ void SafepointSynchronize::print_statistics() {
                sstats->_time_to_exec_vmop / MICROUNITS);
 
     if (need_to_track_page_armed_status) {
-      tty->print(INT32_FORMAT "         ", sstats->_page_armed);
+      tty->print(INT32_FORMAT_W(10) " ", sstats->_page_armed);
     }
-    tty->print_cr(INT32_FORMAT "   ", sstats->_nof_threads_hit_page_trap);
+    tty->print_cr(INT32_FORMAT_W(15) " ", sstats->_nof_threads_hit_page_trap);
   }
 }
 
