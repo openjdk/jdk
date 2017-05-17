@@ -2501,9 +2501,6 @@ public:
   diagnostic(bool, StressCodeAging, false,                                  \
           "Start with counters compiled in")                                \
                                                                             \
-  develop(bool, UseRelocIndex, false,                                       \
-          "Use an index to speed random access to relocations")             \
-                                                                            \
   develop(bool, StressCodeBuffers, false,                                   \
           "Exercise code buffer expansion and other rare state changes")    \
                                                                             \
