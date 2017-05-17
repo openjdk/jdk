@@ -137,6 +137,7 @@ import sun.security.jca.*;
  * <li>{@code AES/CBC/PKCS5Padding} (128)</li>
  * <li>{@code AES/ECB/NoPadding} (128)</li>
  * <li>{@code AES/ECB/PKCS5Padding} (128)</li>
+ * <li>{@code AES/GCM/NoPadding} (128)</li>
  * <li>{@code DES/CBC/NoPadding} (56)</li>
  * <li>{@code DES/CBC/PKCS5Padding} (56)</li>
  * <li>{@code DES/ECB/NoPadding} (56)</li>
