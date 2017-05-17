@@ -1,19 +1,22 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
+<!DOCTYPE html>
+<html>
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-  <meta http-equiv="Content-Style-Type" content="text/css" />
-  <meta name="generator" content="pandoc" />
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
   <title>Testing OpenJDK</title>
   <style type="text/css">code{white-space: pre;}</style>
-  <link rel="stylesheet" href=" ../../jdk/make/data/docs-resources/specs/resources/jdk-default.css" type="text/css" />
+  <link rel="stylesheet" href="../../jdk/make/data/docs-resources/specs/resources/jdk-default.css">
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
   <style type="text/css">pre, code, tt { color: #1d6ae5; }</style>
 </head>
 <body>
-<div id="header">
+<header>
 <h1 class="title">Testing OpenJDK</h1>
-</div>
-<div id="TOC">
+</header>
+<nav id="TOC">
 <ul>
 <li><a href="#using-the-run-test-framework">Using the run-test framework</a></li>
 <li><a href="#test-selection">Test selection</a><ul>
@@ -26,7 +29,7 @@
 <li><a href="#gtest-keywords">Gtest keywords</a></li>
 </ul></li>
 </ul>
-</div>
+</nav>
 <h2 id="using-the-run-test-framework">Using the run-test framework</h2>
 <p>This new way of running tests is developer-centric. It assumes that you have built a jdk locally and want to test it. Running common test targets is simple, and more complex ad-hoc combination of tests is possible. The user interface is forgiving, and clearly report errors it cannot resolve.</p>
 <p>Some example command-lines:</p>
