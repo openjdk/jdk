@@ -964,6 +964,17 @@ static inline ObjectMonitor* next(ObjectMonitor* block) {
 
 
 void ObjectSynchronizer::oops_do(OopClosure* f) {
+  if (MonitorInUseLists) {
+    // When using thread local monitor lists, we only scan the
+    // global used list here (for moribund threads), and
+    // the thread-local monitors in Thread::oops_do().
+    global_used_oops_do(f);
+  } else {
+    global_oops_do(f);
+  }
+}
+
+void ObjectSynchronizer::global_oops_do(OopClosure* f) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
   PaddedEnd<ObjectMonitor> * block =
     (PaddedEnd<ObjectMonitor> *)OrderAccess::load_ptr_acquire(&gBlockList);
@@ -974,6 +985,26 @@ void ObjectSynchronizer::oops_do(OopClosure* f) {
       if (mid->object() != NULL) {
         f->do_oop((oop*)mid->object_addr());
       }
+    }
+  }
+}
+
+void ObjectSynchronizer::global_used_oops_do(OopClosure* f) {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
+  list_oops_do(gOmInUseList, f);
+}
+
+void ObjectSynchronizer::thread_local_used_oops_do(Thread* thread, OopClosure* f) {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
+  list_oops_do(thread->omInUseList, f);
+}
+
+void ObjectSynchronizer::list_oops_do(ObjectMonitor* list, OopClosure* f) {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
+  ObjectMonitor* mid;
+  for (mid = list; mid != NULL; mid = mid->FreeNext) {
+    if (mid->object() != NULL) {
+      f->do_oop((oop*)mid->object_addr());
     }
   }
 }
