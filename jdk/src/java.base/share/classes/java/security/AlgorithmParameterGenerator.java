@@ -75,9 +75,9 @@ import java.util.Objects;
  * <li>{@code DSA} (1024, 2048)</li>
  * </ul>
  * These algorithms are described in the <a href=
- * "{@docRoot}/../technotes/guides/security/StandardNames.html#AlgorithmParameterGenerator">
+ * "{@docRoot}/../specs/security/standard-names.html#algorithmparametergenerator-algorithms">
  * AlgorithmParameterGenerator section</a> of the
- * Java Cryptography Architecture Standard Algorithm Name Documentation.
+ * Java Security Standard Algorithm Names Specification.
  * Consult the release documentation for your implementation to see if any
  * other algorithms are supported.
  *
@@ -150,8 +150,8 @@ public class AlgorithmParameterGenerator {
      * @param algorithm the name of the algorithm this
      * parameter generator is associated with.
      * See the AlgorithmParameterGenerator section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#AlgorithmParameterGenerator">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#algorithmparametergenerator-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
      * @return the new {@code AlgorithmParameterGenerator} object
@@ -195,8 +195,8 @@ public class AlgorithmParameterGenerator {
      * @param algorithm the name of the algorithm this
      * parameter generator is associated with.
      * See the AlgorithmParameterGenerator section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#AlgorithmParameterGenerator">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#algorithmparametergenerator-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
      * @param provider the string name of the Provider.
@@ -245,8 +245,8 @@ public class AlgorithmParameterGenerator {
      * @param algorithm the string name of the algorithm this
      * parameter generator is associated with.
      * See the AlgorithmParameterGenerator section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#AlgorithmParameterGenerator">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#algorithmparametergenerator-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
      * @param provider the {@code Provider} object.

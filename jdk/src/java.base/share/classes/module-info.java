@@ -190,7 +190,8 @@ module java.base {
         jdk.unsupported;
     exports jdk.internal.vm.annotation to
         jdk.unsupported,
-        jdk.internal.vm.ci;
+        jdk.internal.vm.ci,
+        jdk.incubator.httpclient;
     exports jdk.internal.util.jar to
         jdk.jartool,
         jdk.jdeps,

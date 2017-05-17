@@ -24,7 +24,6 @@
 /* @test
  * @bug 6524172
  * @summary Invoking wakeup on closed Selector can throw NPE if close resets interrupt status
- * @key intermittent
  */
 
 import java.io.IOException;
