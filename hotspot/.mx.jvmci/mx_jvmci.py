@@ -303,9 +303,9 @@ class HotSpotProject(mx.NativeProject):
                         out.close('link')
 
                     out.open('link')
-                    out.element('name', data='generated')
+                    out.element('name', data='gensrc')
                     out.element('type', data='2')
-                    generated = join(_get_hotspot_build_dir(jvmVariant, debugLevel), 'generated')
+                    generated = join(_get_hotspot_build_dir(jvmVariant, debugLevel), 'gensrc')
                     out.element('locationURI', data=mx.get_eclipse_project_rel_locationURI(generated, eclProjectDir))
                     out.close('link')
 
@@ -620,18 +620,12 @@ _jvmci_bootclasspath_prepends = []
 def _get_hotspot_build_dir(jvmVariant=None, debugLevel=None):
     """
     Gets the directory in which a particular HotSpot configuration is built
-    (e.g., <JDK_REPO_ROOT>/build/macosx-x86_64-normal-server-release/hotspot/bsd_amd64_compiler2)
+    (e.g., <JDK_REPO_ROOT>/build/macosx-x86_64-normal-server-release/hotspot/variant-<variant>)
     """
     if jvmVariant is None:
         jvmVariant = _vm.jvmVariant
 
-    os = mx.get_os()
-    if os == 'darwin':
-        os = 'bsd'
-    arch = mx.get_arch()
-    buildname = {'client': 'compiler1', 'server': 'compiler2'}.get(jvmVariant, jvmVariant)
-
-    name = '{}_{}_{}'.format(os, arch, buildname)
+    name = 'variant-{}'.format(jvmVariant)
     return join(_get_jdk_build_dir(debugLevel=debugLevel), 'hotspot', name)
 
 class JVMCI9JDKConfig(mx.JDKConfig):
