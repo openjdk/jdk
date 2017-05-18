@@ -97,18 +97,7 @@ void ProtectionDomainCacheEntry::print() {
 #endif
 
 void ProtectionDomainCacheTable::verify() {
-  int element_count = 0;
-  for (int index = 0; index < table_size(); index++) {
-    for (ProtectionDomainCacheEntry* probe = bucket(index);
-                                     probe != NULL;
-                                     probe = probe->next()) {
-      probe->verify();
-      element_count++;
-    }
-  }
-  guarantee(number_of_entries() == element_count,
-            "Verify of protection domain cache table failed");
-  DEBUG_ONLY(verify_lookup_length((double)number_of_entries() / table_size(), "Domain Cache Table"));
+  verify_table<ProtectionDomainCacheEntry>("Protection Domain Table");
 }
 
 void ProtectionDomainCacheEntry::verify() {

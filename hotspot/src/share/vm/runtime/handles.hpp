@@ -126,6 +126,8 @@ DEF_HANDLE(typeArray        , is_typeArray_noinline        )
 
 // Metadata Handles.  Unlike oop Handles these are needed to prevent metadata
 // from being reclaimed by RedefineClasses.
+// Metadata Handles should be passed around as const references to avoid copy construction
+// and destruction for parameters.
 
 // Specific Handles for different oop types
 #define DEF_METADATA_HANDLE(name, type)          \

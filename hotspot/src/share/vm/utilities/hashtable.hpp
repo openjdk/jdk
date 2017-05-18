@@ -124,17 +124,9 @@ private:
   // Instance variable
   BasicHashtableEntry<F>*       _entry;
 
-#ifdef ASSERT
-private:
-  unsigned _hits;
-public:
-  unsigned hits()   { return _hits; }
-  void count_hit()  { _hits++; }
-#endif
-
 public:
   // Accessing
-  void clear()                        { _entry = NULL; DEBUG_ONLY(_hits = 0); }
+  void clear()                        { _entry = NULL; }
 
   // The following methods use order access methods to avoid race
   // conditions in multiprocessor systems.
@@ -179,10 +171,7 @@ private:
 protected:
 
 #ifdef ASSERT
-  bool              _lookup_warning;
-  mutable int       _lookup_count;
-  mutable int       _lookup_length;
-  bool verify_lookup_length(double load, const char *table_name);
+  void verify_lookup_length(int max_bucket_count, const char *table_name);
 #endif
 
   void initialize(int table_size, int entry_size, int number_of_entries);
@@ -232,16 +221,7 @@ public:
 
   int number_of_entries() { return _number_of_entries; }
 
-  void verify() PRODUCT_RETURN;
-
-#ifdef ASSERT
-  void bucket_count_hit(int i) const {
-    _buckets[i].count_hit();
-  }
-  unsigned bucket_hits(int i) const {
-    return _buckets[i].hits();
-  }
-#endif
+  template <class T> void verify_table(const char* table_name) PRODUCT_RETURN;
 };
 
 

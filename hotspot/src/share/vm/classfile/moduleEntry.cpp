@@ -510,18 +510,7 @@ void ModuleEntry::print(outputStream* st) {
 }
 
 void ModuleEntryTable::verify() {
-  int element_count = 0;
-  for (int i = 0; i < table_size(); i++) {
-    for (ModuleEntry* probe = bucket(i);
-                              probe != NULL;
-                              probe = probe->next()) {
-      probe->verify();
-      element_count++;
-    }
-  }
-  guarantee(number_of_entries() == element_count,
-            "Verify of Module Entry Table failed");
-  DEBUG_ONLY(verify_lookup_length((double)number_of_entries() / table_size(), "Module Entry Table"));
+  verify_table<ModuleEntry>("Module Entry Table");
 }
 
 void ModuleEntry::verify() {

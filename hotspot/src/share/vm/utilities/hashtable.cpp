@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,11 @@
 
 #include "precompiled.hpp"
 #include "classfile/altHashing.hpp"
+#include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/moduleEntry.hpp"
+#include "classfile/packageEntry.hpp"
+#include "classfile/protectionDomainCache.hpp"
 #include "classfile/stringTable.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/filemap.hpp"
@@ -276,14 +280,22 @@ template <class T, MEMFLAGS F> void Hashtable<T, F>::print() {
 }
 
 
-template <MEMFLAGS F> void BasicHashtable<F>::verify() {
-  int count = 0;
-  for (int i = 0; i < table_size(); i++) {
-    for (BasicHashtableEntry<F>* p = bucket(i); p != NULL; p = p->next()) {
-      ++count;
+template <MEMFLAGS F>
+template <class T> void BasicHashtable<F>::verify_table(const char* table_name) {
+  int element_count = 0;
+  int max_bucket_count = 0;
+  for (int index = 0; index < table_size(); index++) {
+    int bucket_count = 0;
+    for (T* probe = (T*)bucket(index); probe != NULL; probe = probe->next()) {
+      probe->verify();
+      bucket_count++;
     }
+    element_count += bucket_count;
+    max_bucket_count = MAX2(max_bucket_count, bucket_count);
   }
-  assert(count == number_of_entries(), "number of hashtable entries incorrect");
+  guarantee(number_of_entries() == element_count,
+            "Verify of %s failed", table_name);
+  DEBUG_ONLY(verify_lookup_length(max_bucket_count, table_name));
 }
 
 
@@ -291,18 +303,12 @@ template <MEMFLAGS F> void BasicHashtable<F>::verify() {
 
 #ifdef ASSERT
 
-template <MEMFLAGS F> bool BasicHashtable<F>::verify_lookup_length(double load, const char *table_name) {
-  if ((!_lookup_warning) && (_lookup_count != 0)
-      && ((double)_lookup_length / (double)_lookup_count > load * 2.0)) {
-    warning("Performance bug: %s lookup_count=%d "
-            "lookup_length=%d average=%lf load=%f",
-            table_name, _lookup_count, _lookup_length,
-            (double)_lookup_length / _lookup_count, load);
-    _lookup_warning = true;
-
-    return false;
-  }
-  return true;
+// Assert if the longest bucket is 10x longer than the average bucket size.
+// Could change back to a warning, but warnings are not noticed.
+template <MEMFLAGS F> void BasicHashtable<F>::verify_lookup_length(int max_bucket_count, const char *table_name) {
+  log_info(hashtables)("%s max bucket size %d element count %d table size %d", table_name,
+                       max_bucket_count, _number_of_entries, _table_size);
+  assert (max_bucket_count < ((1 + number_of_entries()/table_size())*10), "Table is unbalanced");
 }
 
 #endif
@@ -344,3 +350,8 @@ template class HashtableEntry<Symbol*, mtTracing>;
 template class BasicHashtable<mtTracing>;
 #endif
 template class BasicHashtable<mtCompiler>;
+
+template void BasicHashtable<mtClass>::verify_table<DictionaryEntry>(char const*);
+template void BasicHashtable<mtModule>::verify_table<ModuleEntry>(char const*);
+template void BasicHashtable<mtModule>::verify_table<PackageEntry>(char const*);
+template void BasicHashtable<mtClass>::verify_table<ProtectionDomainCacheEntry>(char const*);
