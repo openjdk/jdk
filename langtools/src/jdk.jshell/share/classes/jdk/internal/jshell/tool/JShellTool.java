@@ -90,7 +90,6 @@ import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
 import java.util.MissingResourceException;
-import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.ServiceLoader;
 import java.util.Spliterators;
@@ -126,6 +125,7 @@ import static jdk.internal.jshell.tool.ContinuousCompletionProvider.STARTSWITH_M
 public class JShellTool implements MessageHandler {
 
     private static final Pattern LINEBREAK = Pattern.compile("\\R");
+    private static final Pattern ID = Pattern.compile("[se]?\\d+([-\\s].*)?");
             static final String RECORD_SEPARATOR = "\u241E";
     private static final String RB_NAME_PREFIX  = "jdk.internal.jshell.tool.resources";
     private static final String VERSION_RB_NAME = RB_NAME_PREFIX + ".version";
@@ -1189,36 +1189,54 @@ public class JShellTool implements MessageHandler {
         }
     }
 
-    private void processCommand(String cmd) {
-        if (cmd.startsWith("/-")) {
+    /**
+     * Process a command (as opposed to a snippet) -- things that start with
+     * slash.
+     *
+     * @param input
+     */
+    private void processCommand(String input) {
+        if (input.startsWith("/-")) {
             try {
                 //handle "/-[number]"
-                cmdUseHistoryEntry(Integer.parseInt(cmd.substring(1)));
+                cmdUseHistoryEntry(Integer.parseInt(input.substring(1)));
                 return ;
             } catch (NumberFormatException ex) {
                 //ignore
             }
         }
-        String arg = "";
-        int idx = cmd.indexOf(' ');
+        String cmd;
+        String arg;
+        int idx = input.indexOf(' ');
         if (idx > 0) {
-            arg = cmd.substring(idx + 1).trim();
-            cmd = cmd.substring(0, idx);
+            arg = input.substring(idx + 1).trim();
+            cmd = input.substring(0, idx);
+        } else {
+            cmd = input;
+            arg = "";
         }
+        // find the command as a "real command", not a pseudo-command or doc subject
         Command[] candidates = findCommand(cmd, c -> c.kind.isRealCommand);
         switch (candidates.length) {
             case 0:
-                if (!rerunHistoryEntryById(cmd.substring(1))) {
-                    errormsg("jshell.err.no.such.command.or.snippet.id", cmd);
+                // not found, it is either a snippet command or an error
+                if (ID.matcher(cmd.substring(1)).matches()) {
+                    // it is in the form of a snipppet id, see if it is a valid history reference
+                    rerunHistoryEntriesById(input);
+                } else {
+                    errormsg("jshell.err.invalid.command", cmd);
                     fluffmsg("jshell.msg.help.for.help");
-                }   break;
+                }
+                break;
             case 1:
                 Command command = candidates[0];
                 // If comand was successful and is of a replayable kind, add it the replayable history
                 if (command.run.apply(arg) && command.kind == CommandKind.REPLAY) {
                     addToReplayHistory((command.command + " " + arg).trim());
-                }   break;
+                }
+                break;
             default:
+                // command if too short (ambigous), show the possibly matches
                 errormsg("jshell.err.command.ambiguous", cmd,
                         Arrays.stream(candidates).map(c -> c.command).collect(Collectors.joining(", ")));
                 fluffmsg("jshell.msg.help.for.help");
@@ -1700,6 +1718,9 @@ public class JShellTool implements MessageHandler {
                 CommandKind.HELP_SUBJECT));
         registerCommand(new Command("context",
                 "help.context",
+                CommandKind.HELP_SUBJECT));
+        registerCommand(new Command("rerun",
+                "help.rerun",
                 CommandKind.HELP_SUBJECT));
 
         commandCompletions = new ContinuousCompletionProvider(
@@ -2247,6 +2268,20 @@ public class JShellTool implements MessageHandler {
             Predicate<Snippet> defFilter, String rawargs, String cmd) {
         ArgTokenizer at = new ArgTokenizer(cmd, rawargs.trim());
         at.allowedOptions("-all", "-start");
+        return argsOptionsToSnippets(snippetSupplier, defFilter, at);
+    }
+
+    /**
+     * Convert user arguments to a Stream of snippets referenced by those
+     * arguments (or lack of arguments).
+     *
+     * @param snippets the base list of possible snippets
+     * @param defFilter the filter to apply to the arguments if no argument
+     * @param at the ArgTokenizer, with allowed options set
+     * @return
+     */
+    private <T extends Snippet> Stream<T> argsOptionsToSnippets(Supplier<Stream<T>> snippetSupplier,
+            Predicate<Snippet> defFilter, ArgTokenizer at) {
         List<String> args = new ArrayList<>();
         String s;
         while ((s = at.next()) != null) {
@@ -2263,11 +2298,11 @@ public class JShellTool implements MessageHandler {
             errormsg("jshell.err.conflicting.options", at.whole());
             return null;
         }
-        if (at.hasOption("-all")) {
+        if (at.isAllowedOption("-all") && at.hasOption("-all")) {
             // all snippets including start-up, failed, and overwritten
             return snippetSupplier.get();
         }
-        if (at.hasOption("-start")) {
+        if (at.isAllowedOption("-start") && at.hasOption("-start")) {
             // start-up snippets
             return snippetSupplier.get()
                     .filter(this::inStartUp);
@@ -2277,54 +2312,227 @@ public class JShellTool implements MessageHandler {
             return snippetSupplier.get()
                     .filter(defFilter);
         }
-        return argsToSnippets(snippetSupplier, args);
+        return new ArgToSnippets<>(snippetSupplier).argsToSnippets(args);
     }
 
     /**
-     * Convert user arguments to a Stream of snippets referenced by those
-     * arguments.
+     * Support for converting arguments that are definition names, snippet ids,
+     * or snippet id ranges into a stream of snippets,
      *
-     * @param snippetSupplier the base list of possible snippets
-     * @param args the user's argument to the command, maybe be the empty list
-     * @return a Stream of referenced snippets or null if no matches to specific
-     * arg
+     * @param <T> the snipper subtype
      */
-    private <T extends Snippet> Stream<T> argsToSnippets(Supplier<Stream<T>> snippetSupplier,
-            List<String> args) {
-        Stream<T> result = null;
-        for (String arg : args) {
+    private class ArgToSnippets<T extends Snippet> {
+
+        // the supplier of snippet streams
+        final Supplier<Stream<T>> snippetSupplier;
+        // these two are parallel, and lazily filled if a range is encountered
+        List<T> allSnippets;
+        String[] allIds = null;
+
+        /**
+         *
+         * @param snippetSupplier the base list of possible snippets
+        */
+        ArgToSnippets(Supplier<Stream<T>> snippetSupplier) {
+            this.snippetSupplier = snippetSupplier;
+        }
+
+        /**
+         * Convert user arguments to a Stream of snippets referenced by those
+         * arguments.
+         *
+         * @param args the user's argument to the command, maybe be the empty
+         * list
+         * @return a Stream of referenced snippets or null if no matches to
+         * specific arg
+         */
+        Stream<T> argsToSnippets(List<String> args) {
+            Stream<T> result = null;
+            for (String arg : args) {
+                // Find the best match
+                Stream<T> st = argToSnippets(arg);
+                if (st == null) {
+                    return null;
+                } else {
+                    result = (result == null)
+                            ? st
+                            : Stream.concat(result, st);
+                }
+            }
+            return result;
+        }
+
+        /**
+         * Convert a user argument to a Stream of snippets referenced by the
+         * argument.
+         *
+         * @param snippetSupplier the base list of possible snippets
+         * @param arg the user's argument to the command
+         * @return a Stream of referenced snippets or null if no matches to
+         * specific arg
+         */
+        Stream<T> argToSnippets(String arg) {
+            if (arg.contains("-")) {
+                return range(arg);
+            }
             // Find the best match
             Stream<T> st = layeredSnippetSearch(snippetSupplier, arg);
             if (st == null) {
-                Stream<Snippet> est = layeredSnippetSearch(state::snippets, arg);
-                if (est == null) {
-                    errormsg("jshell.err.no.such.snippets", arg);
-                } else {
-                    errormsg("jshell.err.the.snippet.cannot.be.used.with.this.command",
-                            arg, est.findFirst().get().source());
-                }
+                badSnippetErrormsg(arg);
                 return null;
-            }
-            if (result == null) {
-                result = st;
             } else {
-                result = Stream.concat(result, st);
+                return st;
             }
         }
-        return result;
-    }
 
-    private <T extends Snippet> Stream<T> layeredSnippetSearch(Supplier<Stream<T>> snippetSupplier, String arg) {
-        return nonEmptyStream(
-                // the stream supplier
-                snippetSupplier,
-                // look for active user declarations matching the name
-                sn -> isActive(sn) && matchingDeclaration(sn, arg),
-                // else, look for any declarations matching the name
-                sn -> matchingDeclaration(sn, arg),
-                // else, look for an id of this name
-                sn -> sn.id().equals(arg)
-        );
+        /**
+         * Look for inappropriate snippets to give best error message
+         *
+         * @param arg the bad snippet arg
+         * @param errKey the not found error key
+         */
+        void badSnippetErrormsg(String arg) {
+            Stream<Snippet> est = layeredSnippetSearch(state::snippets, arg);
+            if (est == null) {
+                if (ID.matcher(arg).matches()) {
+                    errormsg("jshell.err.no.snippet.with.id", arg);
+                } else {
+                    errormsg("jshell.err.no.such.snippets", arg);
+                }
+            } else {
+                errormsg("jshell.err.the.snippet.cannot.be.used.with.this.command",
+                        arg, est.findFirst().get().source());
+            }
+        }
+
+        /**
+         * Search through the snippets for the best match to the id/name.
+         *
+         * @param <R> the snippet type
+         * @param aSnippetSupplier the supplier of snippet streams
+         * @param arg the arg to match
+         * @return a Stream of referenced snippets or null if no matches to
+         * specific arg
+         */
+        <R extends Snippet> Stream<R> layeredSnippetSearch(Supplier<Stream<R>> aSnippetSupplier, String arg) {
+            return nonEmptyStream(
+                    // the stream supplier
+                    aSnippetSupplier,
+                    // look for active user declarations matching the name
+                    sn -> isActive(sn) && matchingDeclaration(sn, arg),
+                    // else, look for any declarations matching the name
+                    sn -> matchingDeclaration(sn, arg),
+                    // else, look for an id of this name
+                    sn -> sn.id().equals(arg)
+            );
+        }
+
+        /**
+         * Given an id1-id2 range specifier, return a stream of snippets within
+         * our context
+         *
+         * @param arg the range arg
+         * @return a Stream of referenced snippets or null if no matches to
+         * specific arg
+         */
+        Stream<T> range(String arg) {
+            int dash = arg.indexOf('-');
+            String iid = arg.substring(0, dash);
+            String tid = arg.substring(dash + 1);
+            int iidx = snippetIndex(iid);
+            if (iidx < 0) {
+                return null;
+            }
+            int tidx = snippetIndex(tid);
+            if (tidx < 0) {
+                return null;
+            }
+            if (tidx < iidx) {
+                errormsg("jshell.err.end.snippet.range.less.than.start", iid, tid);
+                return null;
+            }
+            return allSnippets.subList(iidx, tidx+1).stream();
+        }
+
+        /**
+         * Lazily initialize the id mapping -- needed only for id ranges.
+         */
+        void initIdMapping() {
+            if (allIds == null) {
+                allSnippets = snippetSupplier.get()
+                        .sorted((a, b) -> order(a) - order(b))
+                        .collect(toList());
+                allIds = allSnippets.stream()
+                        .map(sn -> sn.id())
+                        .toArray(n -> new String[n]);
+            }
+        }
+
+        /**
+         * Return all the snippet ids -- within the context, and in order.
+         *
+         * @return the snippet ids
+         */
+        String[] allIds() {
+            initIdMapping();
+            return allIds;
+        }
+
+        /**
+         * Establish an order on snippet ids.  All startup snippets are first,
+         * all error snippets are last -- within that is by snippet number.
+         *
+         * @param id the id string
+         * @return an ordering int
+         */
+        int order(String id) {
+            try {
+                switch (id.charAt(0)) {
+                    case 's':
+                        return Integer.parseInt(id.substring(1));
+                    case 'e':
+                        return 0x40000000 + Integer.parseInt(id.substring(1));
+                    default:
+                        return 0x20000000 + Integer.parseInt(id);
+                }
+            } catch (Exception ex) {
+                return 0x60000000;
+            }
+        }
+
+        /**
+         * Establish an order on snippets, based on its snippet id. All startup
+         * snippets are first, all error snippets are last -- within that is by
+         * snippet number.
+         *
+         * @param sn the id string
+         * @return an ordering int
+         */
+        int order(Snippet sn) {
+            return order(sn.id());
+        }
+
+        /**
+         * Find the index into the parallel allSnippets and allIds structures.
+         *
+         * @param s the snippet id name
+         * @return the index, or, if not found, report the error and return a
+         * negative number
+         */
+        int snippetIndex(String s) {
+            int idx = Arrays.binarySearch(allIds(), 0, allIds().length, s,
+                    (a, b) -> order(a) - order(b));
+            if (idx < 0) {
+                // the id is not in the snippet domain, find the right error to report
+                if (!ID.matcher(s).matches()) {
+                    errormsg("jshell.err.range.requires.id", s);
+                } else {
+                    badSnippetErrormsg(s);
+                }
+            }
+            return idx;
+        }
+
     }
 
     private boolean cmdDrop(String rawargs) {
@@ -2342,24 +2550,13 @@ public class JShellTool implements MessageHandler {
             errormsg("jshell.err.drop.arg");
             return false;
         }
-        Stream<Snippet> stream = argsToSnippets(this::dropableSnippets, args);
+        Stream<Snippet> stream = new ArgToSnippets<>(this::dropableSnippets).argsToSnippets(args);
         if (stream == null) {
             // Snippet not found. Error already printed
             fluffmsg("jshell.msg.see.classes.etc");
             return false;
         }
-        List<Snippet> snippets = stream.collect(toList());
-        if (snippets.size() > args.size()) {
-            // One of the args references more thean one snippet
-            errormsg("jshell.err.drop.ambiguous");
-            fluffmsg("jshell.msg.use.one.of", snippets.stream()
-                    .map(sn -> String.format("\n/drop %-5s :   %s", sn.id(), sn.source().replace("\n", "\n       ")))
-                    .collect(Collectors.joining(", "))
-            );
-            return false;
-        }
-        snippets.stream()
-                .forEach(sn -> state.drop(sn).forEach(this::handleEvent));
+        stream.forEach(sn -> state.drop(sn).forEach(this::handleEvent));
         return true;
     }
 
@@ -2690,37 +2887,38 @@ public class JShellTool implements MessageHandler {
     }
 
     private boolean cmdSave(String rawargs) {
-        ArgTokenizer at = new ArgTokenizer("/save", rawargs.trim());
-        at.allowedOptions("-all", "-start", "-history");
-        String filename = at.next();
-        if (filename == null) {
+        // The filename to save to is the last argument, extract it
+        String[] args = rawargs.split("\\s");
+        String filename = args[args.length - 1];
+        if (filename.isEmpty()) {
             errormsg("jshell.err.file.filename", "/save");
             return false;
         }
-        if (!checkOptionsAndRemainingInput(at)) {
-            return false;
-        }
-        if (at.optionCount() > 1) {
-            errormsg("jshell.err.conflicting.options", at.whole());
+        // All the non-filename arguments are the specifier of what to save
+        String srcSpec = Arrays.stream(args, 0, args.length - 1)
+                .collect(Collectors.joining("\n"));
+        // From the what to save specifier, compute the snippets (as a stream)
+        ArgTokenizer at = new ArgTokenizer("/save", srcSpec);
+        at.allowedOptions("-all", "-start", "-history");
+        Stream<Snippet> snippetStream = argsOptionsToSnippets(state::snippets, this::mainActive, at);
+        if (snippetStream == null) {
+            // error occurred, already reported
             return false;
         }
         try (BufferedWriter writer = Files.newBufferedWriter(toPathResolvingUserHome(filename),
                 Charset.defaultCharset(),
                 CREATE, TRUNCATE_EXISTING, WRITE)) {
             if (at.hasOption("-history")) {
+                // they want history (commands and snippets), ignore the snippet stream
                 for (String s : input.currentSessionHistory()) {
                     writer.write(s);
                     writer.write("\n");
                 }
-            } else if (at.hasOption("-start")) {
-                writer.append(startup.toString());
             } else {
-                String sources = (at.hasOption("-all")
-                        ? state.snippets()
-                        : state.snippets().filter(this::mainActive))
+                // write the snippet stream to the file
+                writer.write(snippetStream
                         .map(Snippet::source)
-                        .collect(Collectors.joining("\n"));
-                writer.write(sources);
+                        .collect(Collectors.joining("\n")));
             }
         } catch (FileNotFoundException e) {
             errormsg("jshell.err.file.not.found", "/save", filename, e.getMessage());
@@ -2837,14 +3035,21 @@ public class JShellTool implements MessageHandler {
         return true;
     }
 
-    private boolean rerunHistoryEntryById(String id) {
-        Optional<Snippet> snippet = state.snippets()
-            .filter(s -> s.id().equals(id))
-            .findFirst();
-        return snippet.map(s -> {
-            rerunSnippet(s);
-            return true;
-        }).orElse(false);
+    /**
+     * Handle snippet reevaluation commands: {@code /<id>}. These commands are a
+     * sequence of ids and id ranges (names are permitted, though not in the
+     * first position. Support for names is purposely not documented).
+     *
+     * @param rawargs the whole command including arguments
+     */
+    private void rerunHistoryEntriesById(String rawargs) {
+        ArgTokenizer at = new ArgTokenizer("/<id>", rawargs.trim().substring(1));
+        at.allowedOptions();
+        Stream<Snippet> stream = argsOptionsToSnippets(state::snippets, sn -> true, at);
+        if (stream != null) {
+            // successfully parsed, rerun snippets
+            stream.forEach(sn -> rerunSnippet(sn));
+        }
     }
 
     private void rerunSnippet(Snippet snippet) {
