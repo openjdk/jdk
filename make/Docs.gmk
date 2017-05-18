@@ -163,7 +163,7 @@ JAVASE_JAVADOC_DOC_TITLE := Java&trade; Platform, Standard Edition \
 
 ################################################################################
 
-JDK_DOCS_INDEX_HTML_TITLE := Java&trade; Platform, Standard Edition Development Kit \
+JDK_INDEX_TITLE := Java&trade; Platform, Standard Edition Development Kit \
     (JDK&trade;) $(VERSION_SPECIFICATION) Specification<br>$(DRAFT_MARKER_TITLE)
 
 ################################################################################
@@ -356,15 +356,27 @@ $(eval $(call SetupApiDocsGeneration, JAVASE_API, \
 
 ################################################################################
 
-JDK_DOCS_INDEX_HTML := $(DOCS_OUTPUTDIR)/index.html
+JDK_INDEX_HTML := $(DOCS_OUTPUTDIR)/index.html
+JDK_INDEX_TOOLS_DIR := $(TOOLS_CLASSES_DIR)/build/tools/docs
 
-$(JDK_DOCS_INDEX_HTML): $(BUILD_JIGSAW_TOOLS)
+$(JDK_INDEX_HTML): $(BUILD_JIGSAW_TOOLS) \
+    $(JDK_INDEX_TOOLS_DIR)/docs-bundle-page.html  \
+    $(JDK_INDEX_TOOLS_DIR)/docs-module-groups.properties
 	$(call LogInfo, Generating docs bundle index page)
 	$(MKDIR) -p $(@D)
-	$(TOOL_GEN_DOCS_BUNDLE_PAGE) --title '$(JDK_DOCS_INDEX_HTML_TITLE)' \
+	$(TOOL_GEN_DOCS_BUNDLE_PAGE) --title '$(JDK_INDEX_TITLE)' \
 		--output $@
 
-JDK_DOCS_INDEX_HTML_TARGETS := $(JDK_DOCS_INDEX_HTML)
+JDK_INDEX_TARGETS := $(JDK_INDEX_HTML)
+
+# Copy the global resources
+GLOBAL_SPECS_RESOURCES_DIR := $(JDK_TOPDIR)/make/data/docs-resources/
+$(eval $(call SetupCopyFiles, COPY_GLOBAL_RESOURCES, \
+    SRC := $(GLOBAL_SPECS_RESOURCES_DIR), \
+    FILES := $(call CacheFind, $(GLOBAL_SPECS_RESOURCES_DIR)), \
+    DEST := $(DOCS_OUTPUTDIR), \
+))
+JDK_INDEX_TARGETS += $(COPY_GLOBAL_RESOURCES)
 
 ################################################################################
 # Copy JDK specs files
@@ -389,20 +401,11 @@ $(foreach m, $(ALL_MODULES), \
   ) \
 )
 
-# Copy the global resources
-GLOBAL_SPECS_RESOURCES_DIR := $(JDK_TOPDIR)/make/data/docs-resources/specs
-$(eval $(call SetupCopyFiles, COPY_GLOBAL_RESOURCES, \
-    SRC := $(GLOBAL_SPECS_RESOURCES_DIR), \
-    FILES := $(call CacheFind, $(GLOBAL_SPECS_RESOURCES_DIR)), \
-    DEST := $(DOCS_OUTPUTDIR)/specs/, \
-))
-JDK_SPECS_TARGETS += $(COPY_GLOBAL_RESOURCES)
-
 ifeq ($(ENABLE_FULL_DOCS), true)
   # For all markdown files in $module/share/specs directories, convert them to
   # html.
 
-  GLOBAL_SPECS_DEFAULT_CSS_FILE := $(DOCS_OUTPUTDIR)/specs/resources/jdk-default.css
+  GLOBAL_SPECS_DEFAULT_CSS_FILE := $(DOCS_OUTPUTDIR)/resources/jdk-default.css
 
   $(foreach m, $(ALL_MODULES), \
     $(eval SPECS_$m := $(call FindModuleSpecsDirs, $m)) \
@@ -464,7 +467,7 @@ docs-javase-api-modulegraph: $(JAVASE_API_MODULEGRAPH_TARGETS)
 
 docs-jdk-specs: $(JDK_SPECS_TARGETS)
 
-docs-jdk-index: $(JDK_DOCS_INDEX_HTML_TARGETS)
+docs-jdk-index: $(JDK_INDEX_TARGETS)
 
 docs-zip: $(ZIP_TARGETS)
 
