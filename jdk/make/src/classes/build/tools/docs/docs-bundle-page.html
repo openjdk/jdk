@@ -27,42 +27,12 @@ questions.
 <html lang="en">
 <head>
   <meta http-equiv="content-type" content="text/html;" charset="utf-8">
+  <link rel="stylesheet" href="resources/jdk-default.css" type="text/css" />
   <style type="text/css">
-table {
-  border-collapse: collapse;
-}
-table {
-  border: 1px solid black;
-}
-th ,td {
-  border: 0px solid black;
-}
-thead th {
-  background-color: #DDD;
-}
-tbody > tr:nth-child(even) {
-    background-color: #EEE
-}
-tbody > tr:nth-child(odd) {
-    background-color: #FFF
-}
-th, td {
-  font-family: sans-serif; /* could eventually be DejaVu */
-  font-size: small;
-  padding: 5px 10px;
-  vertical-align:top;
-}
-td a {
-  text-decoration: none;
-}
-tr th {
-  text-align:left;
-}
-caption {
-  font-size: smaller;
-  font-weight: bold;
-}
-</style>
+    caption {
+      text-align: center;
+    }
+  </style>
 <title>@HEADER_TITLE@</title>
 </head>
 <body>
@@ -127,10 +97,10 @@ caption {
   <td>@JAVA_EE_MODULES@</td>
 </tr>
 <tr>
-  <th scope="row"></th>
-  <th scope="row">Outside Java SE</th>
-  <th scope="row">JDK</th>
-  <th scope="row">JavaFX</th>
+  <th scope="col"></th>
+  <th scope="col">Outside Java SE</th>
+  <th scope="col">JDK</th>
+  <th scope="col">JavaFX</th>
 </tr>
 <tr>
   <th scope="row">Others</th>
