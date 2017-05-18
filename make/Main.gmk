@@ -798,7 +798,8 @@ else
   docs-javase-api-modulegraph: exploded-image buildtools-modules
 
   # The gensrc steps for hotspot and jdk.jdi create html spec files.
-  docs-jdk-specs: hotspot-$(JVM_VARIANT_MAIN)-gensrc jdk.jdi-gensrc
+  docs-jdk-specs: hotspot-$(JVM_VARIANT_MAIN)-gensrc jdk.jdi-gensrc \
+      docs-jdk-index
 
   docs-jdk-index: exploded-image buildtools-modules
 
