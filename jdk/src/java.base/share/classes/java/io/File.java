@@ -923,6 +923,12 @@ public class File
      * java.nio.file.Files#readAttributes(Path,Class,LinkOption[])
      * Files.readAttributes} method may be used.
      *
+     * @apiNote
+     * While the unit of time of the return value is milliseconds,
+     * the granularity of the value depends on the underlying
+     * file system and may be larger.  For example, some
+     * file systems use time stamps in units of seconds.
+     *
      * @return  A <code>long</code> value representing the time the file was
      *          last modified, measured in milliseconds since the epoch
      *          (00:00:00 GMT, January 1, 1970), or <code>0L</code> if the
