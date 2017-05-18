@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.util.*;
 
 import javax.security.auth.x500.X500Principal;
 
+import sun.net.util.IPAddressUtil;
 import sun.security.util.*;
 import sun.security.pkcs.PKCS9Attribute;
 
@@ -440,6 +441,7 @@ implements CertAttrSet<String>, Cloneable {
         X500Principal subjectPrincipal = cert.getSubjectX500Principal();
         X500Name subject = X500Name.asX500Name(subjectPrincipal);
 
+        // Check subject as an X500Name
         if (subject.isEmpty() == false) {
             if (verify(subject) == false) {
                 return false;
@@ -465,12 +467,51 @@ implements CertAttrSet<String>, Cloneable {
                         "certificate: " + ce.getMessage());
         }
 
-        // If there are no subjectAlternativeNames, perform the special-case
-        // check where if the subjectName contains any EMAILADDRESS
-        // attributes, they must be checked against RFC822 constraints.
-        // If that passes, we're fine.
         if (altNames == null) {
-            return verifyRFC822SpecialCase(subject);
+            altNames = new GeneralNames();
+
+            // RFC 5280 4.2.1.10:
+            // When constraints are imposed on the rfc822Name name form,
+            // but the certificate does not include a subject alternative name,
+            // the rfc822Name constraint MUST be applied to the attribute of
+            // type emailAddress in the subject distinguished name.
+            for (AVA ava : subject.allAvas()) {
+                ObjectIdentifier attrOID = ava.getObjectIdentifier();
+                if (attrOID.equals(PKCS9Attribute.EMAIL_ADDRESS_OID)) {
+                    String attrValue = ava.getValueString();
+                    if (attrValue != null) {
+                        try {
+                            altNames.add(new GeneralName(
+                                    new RFC822Name(attrValue)));
+                        } catch (IOException ioe) {
+                            continue;
+                        }
+                    }
+                }
+            }
+        }
+
+        // If there is no IPAddressName or DNSName in subjectAlternativeNames,
+        // see if the last CN inside subjectName can be used instead.
+        DerValue derValue = subject.findMostSpecificAttribute
+                (X500Name.commonName_oid);
+        String cn = derValue == null ? null : derValue.getAsString();
+
+        if (cn != null) {
+            try {
+                if (IPAddressUtil.isIPv4LiteralAddress(cn) ||
+                        IPAddressUtil.isIPv6LiteralAddress(cn)) {
+                    if (!hasNameType(altNames, GeneralNameInterface.NAME_IP)) {
+                        altNames.add(new GeneralName(new IPAddressName(cn)));
+                    }
+                } else {
+                    if (!hasNameType(altNames, GeneralNameInterface.NAME_DNS)) {
+                        altNames.add(new GeneralName(new DNSName(cn)));
+                    }
+                }
+            } catch (IOException ioe) {
+                // OK, cn is neither IP nor DNS
+            }
         }
 
         // verify each subjectAltName
@@ -483,6 +524,15 @@ implements CertAttrSet<String>, Cloneable {
 
         // All tests passed.
         return true;
+    }
+
+    private static boolean hasNameType(GeneralNames names, int type) {
+        for (GeneralName name : names.names()) {
+            if (name.getType() == type) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -562,37 +612,6 @@ implements CertAttrSet<String>, Cloneable {
             if (sameType) {
                 return false;
             }
-        }
-        return true;
-    }
-
-    /**
-     * Perform the RFC 822 special case check. We have a certificate
-     * that does not contain any subject alternative names. Check that
-     * any EMAILADDRESS attributes in its subject name conform to these
-     * NameConstraints.
-     *
-     * @param subject the certificate's subject name
-     * @return true if certificate verifies successfully
-     * @throws IOException on error
-     */
-    public boolean verifyRFC822SpecialCase(X500Name subject) throws IOException {
-        for (AVA ava : subject.allAvas()) {
-            ObjectIdentifier attrOID = ava.getObjectIdentifier();
-            if (attrOID.equals(PKCS9Attribute.EMAIL_ADDRESS_OID)) {
-                String attrValue = ava.getValueString();
-                if (attrValue != null) {
-                    RFC822Name emailName;
-                    try {
-                        emailName = new RFC822Name(attrValue);
-                    } catch (IOException ioe) {
-                        continue;
-                    }
-                    if (!verify(emailName)) {
-                        return(false);
-                    }
-                }
-             }
         }
         return true;
     }
