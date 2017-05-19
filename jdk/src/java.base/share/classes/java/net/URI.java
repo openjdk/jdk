@@ -281,7 +281,7 @@ import java.lang.NullPointerException;  // for javadoc
  *           limited to US-ASCII)</i></td></tr>
  * </table></blockquote>
  *
- * <p><a name="legal-chars"></a> The set of all legal URI characters consists of
+ * <p><a id="legal-chars"></a> The set of all legal URI characters consists of
  * the <i>unreserved</i>, <i>reserved</i>, <i>escaped</i>, and <i>other</i>
  * characters.
  *
@@ -308,20 +308,20 @@ import java.lang.NullPointerException;  // for javadoc
  *
  * <ul>
  *
- *   <li><p><a name="encode"></a> A character is <i>encoded</i> by replacing it
+ *   <li><p><a id="encode"></a> A character is <i>encoded</i> by replacing it
  *   with the sequence of escaped octets that represent that character in the
  *   UTF-8 character set.  The Euro currency symbol ({@code '\u005Cu20AC'}),
  *   for example, is encoded as {@code "%E2%82%AC"}.  <i>(<b>Deviation from
  *   RFC&nbsp;2396</b>, which does not specify any particular character
  *   set.)</i> </p></li>
  *
- *   <li><p><a name="quote"></a> An illegal character is <i>quoted</i> simply by
+ *   <li><p><a id="quote"></a> An illegal character is <i>quoted</i> simply by
  *   encoding it.  The space character, for example, is quoted by replacing it
  *   with {@code "%20"}.  UTF-8 contains US-ASCII, hence for US-ASCII
  *   characters this transformation has exactly the effect required by
  *   RFC&nbsp;2396. </p></li>
  *
- *   <li><p><a name="decode"></a>
+ *   <li><p><a id="decode"></a>
  *   A sequence of escaped octets is <i>decoded</i> by
  *   replacing it with the sequence of characters that it represents in the
  *   UTF-8 character set.  UTF-8 contains US-ASCII, hence decoding has the
@@ -983,7 +983,7 @@ public final class URI
      * <p> If the given URI is already absolute, or if this URI is opaque, then
      * the given URI is returned.
      *
-     * <p><a name="resolve-frag"></a> If the given URI's fragment component is
+     * <p><a id="resolve-frag"></a> If the given URI's fragment component is
      * defined, its path component is empty, and its scheme, authority, and
      * query components are undefined, then a URI with the given fragment but
      * with all other components equal to those of this URI is returned.  This

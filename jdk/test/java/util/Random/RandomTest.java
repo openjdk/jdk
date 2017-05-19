@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,12 @@
  * questions.
  */
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
-
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.BiConsumer;
+
+import org.testng.annotations.Test;
 
 import static org.testng.Assert.*;
 
@@ -172,12 +171,12 @@ public class RandomTest {
      */
     public void testBadStreamSize() {
         Random r = new Random();
-        executeAndCatchIAE(() -> r.ints(-1L));
-        executeAndCatchIAE(() -> r.ints(-1L, 2, 3));
-        executeAndCatchIAE(() -> r.longs(-1L));
-        executeAndCatchIAE(() -> r.longs(-1L, -1L, 1L));
-        executeAndCatchIAE(() -> r.doubles(-1L));
-        executeAndCatchIAE(() -> r.doubles(-1L, .5, .6));
+        assertThrowsIAE(() -> r.ints(-1L));
+        assertThrowsIAE(() -> r.ints(-1L, 2, 3));
+        assertThrowsIAE(() -> r.longs(-1L));
+        assertThrowsIAE(() -> r.longs(-1L, -1L, 1L));
+        assertThrowsIAE(() -> r.doubles(-1L));
+        assertThrowsIAE(() -> r.doubles(-1L, .5, .6));
     }
 
     /**
@@ -186,10 +185,10 @@ public class RandomTest {
      */
     public void testBadStreamBounds() {
         Random r = new Random();
-        executeAndCatchIAE(() -> r.ints(2, 1));
-        executeAndCatchIAE(() -> r.ints(10, 42, 42));
-        executeAndCatchIAE(() -> r.longs(-1L, -1L));
-        executeAndCatchIAE(() -> r.longs(10, 1L, -2L));
+        assertThrowsIAE(() -> r.ints(2, 1));
+        assertThrowsIAE(() -> r.ints(10, 42, 42));
+        assertThrowsIAE(() -> r.longs(-1L, -1L));
+        assertThrowsIAE(() -> r.longs(10, 1L, -2L));
 
         testDoubleBadOriginBound((o, b) -> r.doubles(10, o, b));
     }
@@ -198,45 +197,28 @@ public class RandomTest {
     static final double FINITE = Math.PI;
 
     void testDoubleBadOriginBound(BiConsumer<Double, Double> bi) {
-        executeAndCatchIAE(() -> bi.accept(17.0, 2.0));
-        executeAndCatchIAE(() -> bi.accept(0.0, 0.0));
-        executeAndCatchIAE(() -> bi.accept(Double.NaN, FINITE));
-        executeAndCatchIAE(() -> bi.accept(FINITE, Double.NaN));
-        executeAndCatchIAE(() -> bi.accept(Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY));
+        assertThrowsIAE(() -> bi.accept(17.0, 2.0));
+        assertThrowsIAE(() -> bi.accept(0.0, 0.0));
+        assertThrowsIAE(() -> bi.accept(Double.NaN, FINITE));
+        assertThrowsIAE(() -> bi.accept(FINITE, Double.NaN));
+        assertThrowsIAE(() -> bi.accept(Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY));
 
         // Returns NaN
-//        executeAndCatchIAE(() -> bi.accept(Double.NEGATIVE_INFINITY, FINITE));
-//        executeAndCatchIAE(() -> bi.accept(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY));
+//        assertThrowsIAE(() -> bi.accept(Double.NEGATIVE_INFINITY, FINITE));
+//        assertThrowsIAE(() -> bi.accept(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY));
 
-        executeAndCatchIAE(() -> bi.accept(FINITE, Double.NEGATIVE_INFINITY));
+        assertThrowsIAE(() -> bi.accept(FINITE, Double.NEGATIVE_INFINITY));
 
         // Returns Double.MAX_VALUE
-//        executeAndCatchIAE(() -> bi.accept(FINITE, Double.POSITIVE_INFINITY));
+//        assertThrowsIAE(() -> bi.accept(FINITE, Double.POSITIVE_INFINITY));
 
-        executeAndCatchIAE(() -> bi.accept(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY));
-        executeAndCatchIAE(() -> bi.accept(Double.POSITIVE_INFINITY, FINITE));
-        executeAndCatchIAE(() -> bi.accept(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY));
+        assertThrowsIAE(() -> bi.accept(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY));
+        assertThrowsIAE(() -> bi.accept(Double.POSITIVE_INFINITY, FINITE));
+        assertThrowsIAE(() -> bi.accept(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY));
     }
 
-    private void executeAndCatchIAE(Runnable r) {
-        executeAndCatch(IllegalArgumentException.class, r);
-    }
-
-    private void executeAndCatch(Class<? extends Exception> expected, Runnable r) {
-        Exception caught = null;
-        try {
-            r.run();
-        }
-        catch (Exception e) {
-            caught = e;
-        }
-
-        assertNotNull(caught,
-                      String.format("No Exception was thrown, expected an Exception of %s to be thrown",
-                                    expected.getName()));
-        Assert.assertTrue(expected.isInstance(caught),
-                          String.format("Exception thrown %s not an instance of %s",
-                                        caught.getClass().getName(), expected.getName()));
+    private void assertThrowsIAE(ThrowingRunnable r) {
+        assertThrows(IllegalArgumentException.class, r);
     }
 
     /**

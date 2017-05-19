@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 
 // A proper regression test for 5045582 requires too much memory.
 // If you have a really big machine, run like this:
-// java -d64 -Xms25g -Xmx25g Big 30
+// java -Xms25g -Xmx25g Big 30
 
 import java.util.*;
 
@@ -68,7 +68,7 @@ public class Big {
         }
 
         // To test Object arrays larger than 1<<30, you need 13GB. Run like:
-        // java -d64 -Xms13g -Xmx13g Big 30 2
+        // java -Xms13g -Xmx13g Big 30 2
         if ((tasks & 0x2) != 0) {
             System.out.println("Integer[]");
             System.gc();
