@@ -36,7 +36,7 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * A plain text socket tunnel through a proxy. Uses "CONNECT" but does not
- * encrypt. Used by WebSockets. Subclassed in SSLTunnelConnection for encryption.
+ * encrypt. Used by WebSocket. Subclassed in SSLTunnelConnection for encryption.
  */
 class PlainTunnelingConnection extends HttpConnection {
 
@@ -50,7 +50,7 @@ class PlainTunnelingConnection extends HttpConnection {
             .thenCompose((Void v) -> {
                 HttpRequestImpl req = new HttpRequestImpl("CONNECT", client, address);
                 MultiExchange<Void,Void> mconnectExchange = new MultiExchange<>(req, client, this::ignore);
-                return mconnectExchange.responseAsync(null)
+                return mconnectExchange.responseAsync()
                     .thenCompose((HttpResponseImpl<Void> resp) -> {
                         CompletableFuture<Void> cf = new MinimalFuture<>();
                         if (resp.statusCode() != 200) {

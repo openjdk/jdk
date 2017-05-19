@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,9 +46,12 @@ import jdk.incubator.http.internal.common.Utils;
 class Http1Exchange<T> extends ExchangeImpl<T> {
 
     final HttpRequestImpl request;        // main request
-    final List<CompletableFuture<?>> operations; // used for cancel
+    private final List<CompletableFuture<?>> operations; // used for cancel
     final Http1Request requestAction;
-    volatile Http1Response<T> response;
+    private volatile Http1Response<T> response;
+    // use to record possible cancellation raised before any operation
+    // has been initiated.
+    private IOException failed;
     final HttpConnection connection;
     final HttpClientImpl client;
     final Executor executor;
@@ -70,7 +73,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         this.request = exchange.request();
         this.client = exchange.client();
         this.executor = exchange.executor();
-        this.operations = Collections.synchronizedList(new LinkedList<>());
+        this.operations = new LinkedList<>();
         this.buffer = exchange.getBuffer();
         if (connection != null) {
             this.connection = connection;
@@ -88,14 +91,14 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
 
 
     @Override
-    T readBody(BodyHandler<T> handler, boolean returnToCache)
+    T readBody(BodyHandler<T> handler, boolean returnConnectionToPool)
         throws IOException
     {
         BodyProcessor<T> processor = handler.apply(response.responseCode(),
                                                    response.responseHeaders());
         setClientForResponse(processor);
         CompletableFuture<T> bodyCF = response.readBody(processor,
-                                                        returnToCache,
+                                                        returnConnectionToPool,
                                                         this::executeInline);
         try {
             return bodyCF.join();
@@ -114,14 +117,14 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
 
     @Override
     CompletableFuture<T> readBodyAsync(BodyHandler<T> handler,
-                                       boolean returnToCache,
+                                       boolean returnConnectionToPool,
                                        Executor executor)
     {
         BodyProcessor<T> processor = handler.apply(response.responseCode(),
                                                    response.responseHeaders());
         setClientForResponse(processor);
         CompletableFuture<T> bodyCF = response.readBody(processor,
-                                                        returnToCache,
+                                                        returnConnectionToPool,
                                                         executor);
         return bodyCF;
     }
@@ -186,25 +189,32 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         }
         connection.close();
         int count = 0;
-        for (CompletableFuture<?> cf : operations) {
-            cf.completeExceptionally(cause);
-            count++;
+        if (operations.isEmpty()) {
+            failed = cause;
+            Log.logTrace("Http1Exchange: request [{0}/timeout={1}ms] no pending operation."
+                         + "\n\tCan''t cancel yet with {2}",
+                         request.uri(),
+                         request.duration() == null ? -1 :
+                         // calling duration.toMillis() can throw an exception.
+                         // this is just debugging, we don't care if it overflows.
+                         (request.duration().getSeconds() * 1000
+                          + request.duration().getNano() / 1000000),
+                         cause);
+        } else {
+            for (CompletableFuture<?> cf : operations) {
+                cf.completeExceptionally(cause);
+                count++;
+            }
         }
         Log.logError("Http1Exchange.cancel: count=" + count);
     }
 
     CompletableFuture<Response> getResponseAsyncImpl(Executor executor) {
-        CompletableFuture<Response> cf = new MinimalFuture<>();
-        executor.execute(() -> {
-            try {
-                response = new Http1Response<>(connection, Http1Exchange.this);
-                response.readHeaders();
-                cf.complete(response.response());
-            } catch (Throwable e) {
-                cf.completeExceptionally(e);
-            }
-        });
-        return cf;
+        return MinimalFuture.supply( () -> {
+            response = new Http1Response<>(connection, Http1Exchange.this);
+            response.readHeaders();
+            return response.response();
+        }, executor);
     }
 
     @Override
@@ -212,8 +222,24 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         CompletableFuture<Response> cf =
             connection.whenReceivingResponse()
                       .thenCompose((v) -> getResponseAsyncImpl(executor));
-
-        operations.add(cf);
+        IOException cause;
+        synchronized(this) {
+            operations.add(cf);
+            cause = failed;
+            failed = null;
+        }
+        if (cause != null) {
+            Log.logTrace("Http1Exchange: request [{0}/timeout={1}ms]"
+                         + "\n\tCompleting exceptionally with {2}\n",
+                         request.uri(),
+                         request.duration() == null ? -1 :
+                         // calling duration.toMillis() can throw an exception.
+                         // this is just debugging, we don't care if it overflows.
+                         (request.duration().getSeconds() * 1000
+                          + request.duration().getNano() / 1000000),
+                         cause);
+            cf.completeExceptionally(cause);
+        }
         return cf;
     }
 }

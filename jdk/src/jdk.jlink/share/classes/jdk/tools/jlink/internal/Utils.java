@@ -24,7 +24,6 @@
  */
 package jdk.tools.jlink.internal;
 
-import java.lang.reflect.Module;
 import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
