@@ -350,18 +350,7 @@ void PackageEntry::print(outputStream* st) {
 }
 
 void PackageEntryTable::verify() {
-  int element_count = 0;
-  for (int index = 0; index < table_size(); index++) {
-    for (PackageEntry* probe = bucket(index);
-                              probe != NULL;
-                              probe = probe->next()) {
-      probe->verify();
-      element_count++;
-    }
-  }
-  guarantee(number_of_entries() == element_count,
-            "Verify of Package Entry Table failed");
-  DEBUG_ONLY(verify_lookup_length((double)number_of_entries() / table_size(), "Package Entry Table"));
+  verify_table<PackageEntry>("Package Entry Table");
 }
 
 void PackageEntry::verify() {
