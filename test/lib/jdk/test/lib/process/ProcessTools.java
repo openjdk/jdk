@@ -28,13 +28,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.lang.management.ManagementFactory;
-import java.lang.management.RuntimeMXBean;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -45,7 +42,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import jdk.test.lib.JDKToolFinder;
-import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 
 public final class ProcessTools {
@@ -66,23 +62,23 @@ public final class ProcessTools {
     }
 
     /**
-    * Pumps stdout and stderr from running the process into a String.
-    *
-    * @param processHandler ProcessHandler to run.
-    * @return Output from process.
-    * @throws IOException If an I/O error occurs.
-    */
+     * Pumps stdout and stderr from running the process into a String.
+     *
+     * @param processHandler ProcessHandler to run.
+     * @return Output from process.
+     * @throws IOException If an I/O error occurs.
+     */
     public static OutputBuffer getOutput(ProcessBuilder processBuilder) throws IOException {
         return getOutput(processBuilder.start());
     }
 
     /**
-    * Pumps stdout and stderr the running process into a String.
-    *
-    * @param process Process to pump.
-    * @return Output from process.
-    * @throws IOException If an I/O error occurs.
-    */
+     * Pumps stdout and stderr the running process into a String.
+     *
+     * @param process Process to pump.
+     * @return Output from process.
+     * @throws IOException If an I/O error occurs.
+     */
     public static OutputBuffer getOutput(Process process) throws IOException {
         ByteArrayOutputStream stderrBuffer = new ByteArrayOutputStream();
         ByteArrayOutputStream stdoutBuffer = new ByteArrayOutputStream();
@@ -304,38 +300,14 @@ public final class ProcessTools {
     public static long getProcessId() throws Exception {
         return ProcessHandle.current().pid();
     }
-    /**
-     * Gets the array of strings containing input arguments passed to the VM
-     *
-     * @return arguments
-     */
-    public static String[] getVmInputArgs() {
-        RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
-        List<String> args = runtime.getInputArguments();
-        return args.toArray(new String[args.size()]);
-    }
 
-    /**
-     * Get platform specific VM arguments (e.g. -d64 on 64bit Solaris)
-     *
-     * @return String[] with platform specific arguments, empty if there are
-     *         none
-     */
-    public static String[] getPlatformSpecificVMArgs() {
-
-    if (Platform.is64bit() && Platform.isSolaris()) {
-            return new String[] { "-d64" };
-        }
-
-        return new String[] {};
-    }
 
 
     /**
      * Create ProcessBuilder using the java launcher from the jdk to be tested and
      * with any platform specific arguments prepended
      */
-    public static ProcessBuilder createJavaProcessBuilder(String... command) throws Exception {
+    public static ProcessBuilder createJavaProcessBuilder(String... command) {
         return createJavaProcessBuilder(false, command);
     }
 
@@ -348,12 +320,11 @@ public final class ProcessTools {
      * @param command Arguments to pass to the java command.
      * @return The ProcessBuilder instance representing the java command.
      */
-    public static ProcessBuilder createJavaProcessBuilder(boolean addTestVmAndJavaOptions, String... command) throws Exception {
+    public static ProcessBuilder createJavaProcessBuilder(boolean addTestVmAndJavaOptions, String... command) {
         String javapath = JDKToolFinder.getJDKTool("java");
 
         ArrayList<String> args = new ArrayList<>();
         args.add(javapath);
-        Collections.addAll(args, getPlatformSpecificVMArgs());
 
         args.add("-cp");
         args.add(System.getProperty("java.class.path"));
@@ -386,26 +357,6 @@ public final class ProcessTools {
 
     /**
      * Executes a test jvm process, waits for it to finish and returns the process output.
-     * The default jvm options from the test's run command, jtreg, test.vm.opts and test.java.opts, are added.
-     * The java from the test.jdk is used to execute the command.
-     *
-     * The command line will be like:
-     * {test.jdk}/bin/java {test.fromRun.opts} {test.vm.opts} {test.java.opts} cmds
-     *
-     * @param cmds User specifed arguments.
-     * @return The output from the process.
-     */
-    public static OutputAnalyzer executeTestJvmAllArgs(String... cmds) throws Throwable {
-        List<String> argsList = new ArrayList<>();
-        String[] testArgs = getVmInputArgs();
-        Collections.addAll(argsList, testArgs);
-        Collections.addAll(argsList, Utils.addTestJavaOpts(cmds));
-        ProcessBuilder pb = createJavaProcessBuilder(argsList.toArray(new String[argsList.size()]));
-        return executeProcess(pb);
-    }
-
-    /**
-     * Executes a test jvm process, waits for it to finish and returns the process output.
      * The default jvm options from jtreg, test.vm.opts and test.java.opts, are added.
      * The java from the test.jdk is used to execute the command.
      *
@@ -414,12 +365,21 @@ public final class ProcessTools {
      *
      * The jvm process will have exited before this method returns.
      *
-     * @param cmds User specifed arguments.
+     * @param cmds User specified arguments.
      * @return The output from the process.
      */
     public static OutputAnalyzer executeTestJvm(String... cmds) throws Exception {
         ProcessBuilder pb = createJavaProcessBuilder(Utils.addTestJavaOpts(cmds));
         return executeProcess(pb);
+    }
+
+    /**
+     * @see #executeTestJvm(String...)
+     * @param cmds User specified arguments.
+     * @return The output from the process.
+     */
+    public static OutputAnalyzer executeTestJava(String... cmds) throws Exception {
+        return executeTestJvm(cmds);
     }
 
     /**

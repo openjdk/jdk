@@ -205,9 +205,9 @@ void JLI_CmdToArgs(char* cmdline) {
     size_t i, cnt;
 
     JLI_List envArgs = JLI_List_new(1);
-    if (JLI_AddArgsFromEnvVar(envArgs, JAVA_OPTIONS)) {
+    if (JLI_AddArgsFromEnvVar(envArgs, JDK_JAVA_OPTIONS)) {
         // JLI_SetTraceLauncher is not called yet
-        // Show _JAVA_OPTIONS content along with JAVA_OPTIONS to aid diagnosis
+        // Show _JAVA_OPTIONS content along with JDK_JAVA_OPTIONS to aid diagnosis
         if (getenv(JLDEBUG_ENV_ENTRY)) {
             char *tmp = getenv("_JAVA_OPTIONS");
             if (NULL != tmp) {

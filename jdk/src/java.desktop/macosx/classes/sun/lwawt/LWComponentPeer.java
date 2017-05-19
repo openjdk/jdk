@@ -1224,6 +1224,7 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
      * Changes the target of the AWTEvent from awt component to appropriate
      * swing delegate.
      */
+    @SuppressWarnings("deprecation")
     private AWTEvent createDelegateEvent(final AWTEvent e) {
         // TODO modifiers should be changed to getModifiers()|getModifiersEx()?
         AWTEvent delegateEvent = null;
