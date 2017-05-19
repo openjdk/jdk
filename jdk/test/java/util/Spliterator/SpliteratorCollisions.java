@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8005698
- * @library ../stream/bootlib
+ * @library /lib/testlibrary/bootlib
  * @build java.base/java.util.SpliteratorTestHelper
  * @run testng SpliteratorCollisions
  * @summary Spliterator traversing and splitting hash maps containing colliding hashes

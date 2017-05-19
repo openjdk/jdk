@@ -88,6 +88,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see ElementScanner7
  * @see ElementScanner8
  * @since 9
+ * @spec JPMS
  */
 @SupportedSourceVersion(RELEASE_9)
 public class ElementScanner9<R, P> extends ElementScanner8<R, P> {
