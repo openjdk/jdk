@@ -35,7 +35,7 @@ import java.io.*;
  * read from the connected <code>PipedInputStream</code> by some
  * other thread. Attempting to use both objects from a single thread
  * is not recommended as it may deadlock the thread.
- * The pipe is said to be <a name=BROKEN> <i>broken</i> </a> if a
+ * The pipe is said to be <a id=BROKEN> <i>broken</i> </a> if a
  * thread that was reading data bytes from the connected piped input
  * stream is no longer alive.
  *

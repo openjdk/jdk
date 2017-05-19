@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,8 +69,9 @@ import java.sql.SQLException;
  * <p>
  * If the connection pool manager wraps or provides a proxy to the logical
  * handle returned from a call to {@code PoolConnection.getConnection}, the pool
- * manager must do
- * one of the following when the application calls {@code Connection.close}:
+ * manager must do one of the following when the connection pool manager
+ * closes or returns the {@code PooledConnection} to the pool in response to
+ * the application calling {@code Connection.close}:
  * <ul>
  * <li>call {@code endRequest} on the logical {@code Connection} handle
  * <li>call {@code close} on the logical {@code Connection} handle

@@ -41,7 +41,6 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import junit.framework.Test;
-import junit.framework.TestSuite;
 
 public class ConcurrentLinkedQueueTest extends JSR166TestCase {
 
@@ -65,7 +64,7 @@ public class ConcurrentLinkedQueueTest extends JSR166TestCase {
      * Returns a new queue of given size containing consecutive
      * Integers 0 ... n - 1.
      */
-    private ConcurrentLinkedQueue<Integer> populatedQueue(int n) {
+    private static ConcurrentLinkedQueue<Integer> populatedQueue(int n) {
         ConcurrentLinkedQueue<Integer> q = new ConcurrentLinkedQueue<>();
         assertTrue(q.isEmpty());
         for (int i = 0; i < n; ++i)

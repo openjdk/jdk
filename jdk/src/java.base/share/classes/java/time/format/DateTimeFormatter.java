@@ -153,9 +153,9 @@ import java.util.Set;
  * <table summary="Predefined Formatters" cellpadding="2" cellspacing="3" border="0" >
  * <thead>
  * <tr class="tableSubHeadingColor">
- * <th class="colFirst" align="left">Formatter</th>
- * <th class="colFirst" align="left">Description</th>
- * <th class="colLast" align="left">Example</th>
+ * <th class="colFirst" style="text-align:left">Formatter</th>
+ * <th class="colFirst" style="text-align:left">Description</th>
+ * <th class="colLast" style="text-align:left">Example</th>
  * </tr>
  * </thead>
  * <tbody>

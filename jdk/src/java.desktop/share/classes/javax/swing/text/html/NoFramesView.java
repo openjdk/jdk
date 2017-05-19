@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ class NoFramesView extends BlockView {
      * @param g the rendering surface to use
      * @param allocation the allocated region to render into
      * @see #isVisible
-     * @see text.ParagraphView#paint
+     * @see javax.swing.text.ParagraphView#paint
      */
     public void paint(Graphics g, Shape allocation) {
         Container host = getContainer();
@@ -126,7 +126,7 @@ class NoFramesView extends BlockView {
      *           typically the view is told to render into the span
      *           that is returned, although there is no guarantee;
      *           the parent may choose to resize or break the view
-     * @see text.ParagraphView#getPreferredSpan
+     * @see javax.swing.text.ParagraphView#getPreferredSpan
      */
     public float getPreferredSpan(int axis) {
         if (!visible) {
@@ -143,7 +143,7 @@ class NoFramesView extends BlockView {
      * @param axis may be either <code>View.X_AXIS</code> or
      *          <code>View.Y_AXIS</code>
      * @return  the minimum span the view can be rendered into
-     * @see text.ParagraphView#getMinimumSpan
+     * @see javax.swing.text.ParagraphView#getMinimumSpan
      */
     public float getMinimumSpan(int axis) {
         if (!visible) {
@@ -160,7 +160,7 @@ class NoFramesView extends BlockView {
      * @param axis may be either <code>View.X_AXIS</code> or
      *  <code>View.Y_AXIS</code>
      * @return  the maximum span the view can be rendered into
-     * @see text.ParagraphView#getMaximumSpan
+     * @see javax.swing.text.ParagraphView#getMaximumSpan
      */
     public float getMaximumSpan(int axis) {
         if (!visible) {

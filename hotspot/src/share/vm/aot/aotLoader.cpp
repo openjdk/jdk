@@ -113,8 +113,8 @@ static const char* modules[] = {
   "java.logging",
   "jdk.compiler",
   "jdk.scripting.nashorn",
-  "jdk.vm.ci",
-  "jdk.vm.compiler"
+  "jdk.internal.vm.ci",
+  "jdk.internal.vm.compiler"
 };
 
 void AOTLoader::initialize() {
