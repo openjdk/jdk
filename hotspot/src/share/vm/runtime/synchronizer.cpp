@@ -1283,14 +1283,14 @@ void ObjectSynchronizer::omRelease(Thread * Self, ObjectMonitor * m,
 // a global gOmInUseList under the global list lock so these
 // will continue to be scanned.
 //
-// We currently call omFlush() from the Thread:: dtor _after the thread
+// We currently call omFlush() from Threads::remove() _before the thread
 // has been excised from the thread list and is no longer a mutator.
-// That means that omFlush() can run concurrently with a safepoint and
-// the scavenge operator.  Calling omFlush() from JavaThread::exit() might
-// be a better choice as we could safely reason that that the JVM is
-// not at a safepoint at the time of the call, and thus there could
-// be not inopportune interleavings between omFlush() and the scavenge
-// operator.
+// This means that omFlush() can not run concurrently with a safepoint and
+// interleave with the scavenge operator. In particular, this ensures that
+// the thread's monitors are scanned by a GC safepoint, either via
+// Thread::oops_do() (if safepoint happens before omFlush()) or via
+// ObjectSynchronizer::oops_do() (if it happens after omFlush() and the thread's
+// monitors have been transferred to the global in-use list).
 
 void ObjectSynchronizer::omFlush(Thread * Self) {
   ObjectMonitor * list = Self->omFreeList;  // Null-terminated SLL
@@ -1338,6 +1338,8 @@ void ObjectSynchronizer::omFlush(Thread * Self) {
     tail->FreeNext = gFreeList;
     gFreeList = list;
     gMonitorFreeCount += tally;
+    assert(Self->omFreeCount == tally, "free-count off");
+    Self->omFreeCount = 0;
   }
 
   if (inUseTail != NULL) {

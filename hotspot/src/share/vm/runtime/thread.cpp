@@ -336,9 +336,6 @@ void Thread::record_stack_base_and_size() {
 
 
 Thread::~Thread() {
-  // Reclaim the objectmonitors from the omFreeList of the moribund thread.
-  ObjectSynchronizer::omFlush(this);
-
   EVENT_THREAD_DESTRUCT(this);
 
   // stack_base can be NULL if the thread is never started or exited before
@@ -4251,6 +4248,10 @@ void Threads::add(JavaThread* p, bool force_daemon) {
 }
 
 void Threads::remove(JavaThread* p) {
+
+  // Reclaim the objectmonitors from the omInUseList and omFreeList of the moribund thread.
+  ObjectSynchronizer::omFlush(p);
+
   // Extra scope needed for Thread_lock, so we can check
   // that we do not remove thread without safepoint code notice
   { MutexLocker ml(Threads_lock);
