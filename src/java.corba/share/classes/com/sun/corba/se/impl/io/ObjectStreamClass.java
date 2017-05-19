@@ -38,7 +38,10 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.DigestOutputStream;
 import java.security.AccessController;
+import java.security.PermissionCollection;
+import java.security.Permissions;
 import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
 
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Field;
@@ -57,6 +60,8 @@ import java.io.Serializable;
 
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Set;
 
 import com.sun.corba.se.impl.util.RepositoryId;
 
@@ -443,6 +448,65 @@ public class ObjectStreamClass implements java.io.Serializable {
     private static final PersistentFieldsValue persistentFieldsValue =
         new PersistentFieldsValue();
 
+    /**
+     * Creates a PermissionDomain that grants no permission.
+     */
+    private ProtectionDomain noPermissionsDomain() {
+        PermissionCollection perms = new Permissions();
+        perms.setReadOnly();
+        return new ProtectionDomain(null, perms);
+    }
+
+    /**
+     * Aggregate the ProtectionDomains of all the classes that separate
+     * a concrete class {@code cl} from its ancestor's class declaring
+     * a constructor {@code cons}.
+     *
+     * If {@code cl} is defined by the boot loader, or the constructor
+     * {@code cons} is declared by {@code cl}, or if there is no security
+     * manager, then this method does nothing and {@code null} is returned.
+     *
+     * @param cons A constructor declared by {@code cl} or one of its
+     *             ancestors.
+     * @param cl A concrete class, which is either the class declaring
+     *           the constructor {@code cons}, or a serializable subclass
+     *           of that class.
+     * @return An array of ProtectionDomain representing the set of
+     *         ProtectionDomain that separate the concrete class {@code cl}
+     *         from its ancestor's declaring {@code cons}, or {@code null}.
+     */
+    private ProtectionDomain[] getProtectionDomains(Constructor<?> cons,
+                                                    Class<?> cl) {
+        ProtectionDomain[] domains = null;
+        if (cons != null && cl.getClassLoader() != null
+                && System.getSecurityManager() != null) {
+            Class<?> cls = cl;
+            Class<?> fnscl = cons.getDeclaringClass();
+            Set<ProtectionDomain> pds = null;
+            while (cls != fnscl) {
+                ProtectionDomain pd = cls.getProtectionDomain();
+                if (pd != null) {
+                    if (pds == null) pds = new HashSet<>();
+                    pds.add(pd);
+                }
+                cls = cls.getSuperclass();
+                if (cls == null) {
+                    // that's not supposed to happen
+                    // make a ProtectionDomain with no permission.
+                    // should we throw instead?
+                    if (pds == null) pds = new HashSet<>();
+                    else pds.clear();
+                    pds.add(noPermissionsDomain());
+                    break;
+                }
+            }
+            if (pds != null) {
+                domains = pds.toArray(new ProtectionDomain[0]);
+            }
+        }
+        return domains;
+    }
+
     /*
      * Initialize class descriptor.  This method is only invoked on class
      * descriptors created via calls to lookupInternal().  This method is kept
@@ -568,10 +632,14 @@ public class ObjectStreamClass implements java.io.Serializable {
 
                 readResolveObjectMethod = bridge.readResolveForSerialization(cl);
 
+                domains = new ProtectionDomain[] {noPermissionsDomain()};
+
                 if (externalizable)
                     cons = getExternalizableConstructor(cl) ;
                 else
                     cons = getSerializableConstructor(cl) ;
+
+                domains = getProtectionDomains(cons, cl);
 
                 if (serializable && !forProxyClass) {
                     writeObjectMethod = bridge.writeObjectForSerialization(cl) ;
@@ -910,7 +978,7 @@ public class ObjectStreamClass implements java.io.Serializable {
     {
         if (cons != null) {
             try {
-                return cons.newInstance();
+                return bridge.newInstanceForSerialization(cons, domains);
             } catch (IllegalAccessException ex) {
                 // should not occur, as access checks have been suppressed
                 InternalError ie = new InternalError();
@@ -1506,6 +1574,7 @@ public class ObjectStreamClass implements java.io.Serializable {
     private transient MethodHandle writeReplaceObjectMethod;
     private transient MethodHandle readResolveObjectMethod;
     private transient Constructor<?> cons;
+    private transient ProtectionDomain[] domains;
 
     /**
      * Beginning in Java to IDL ptc/02-01-12, RMI-IIOP has a
