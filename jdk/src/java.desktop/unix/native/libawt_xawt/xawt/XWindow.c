@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -370,7 +370,7 @@ KeymapEntry keymapTable[] =
     {java_awt_event_KeyEvent_VK_ROMAN_CHARACTERS, XK_Romaji, FALSE, java_awt_event_KeyEvent_KEY_LOCATION_STANDARD},
 
     {java_awt_event_KeyEvent_VK_COMPOSE, XK_Multi_key, FALSE, java_awt_event_KeyEvent_KEY_LOCATION_STANDARD},
-    {java_awt_event_KeyEvent_VK_ALT_GRAPH, XK_Mode_switch, FALSE, java_awt_event_KeyEvent_KEY_LOCATION_STANDARD},
+    {java_awt_event_KeyEvent_VK_ALT_GRAPH, XK_ISO_Level3_Shift, FALSE, java_awt_event_KeyEvent_KEY_LOCATION_STANDARD},
 
     /* Editing block */
     {java_awt_event_KeyEvent_VK_AGAIN, XK_Redo, FALSE, java_awt_event_KeyEvent_KEY_LOCATION_STANDARD},
