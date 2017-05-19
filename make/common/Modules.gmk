@@ -151,6 +151,7 @@ DOCS_MODULES += \
     jdk.crypto.ec \
     jdk.dynalink \
     jdk.editpad \
+    jdk.hotspot.agent \
     jdk.httpserver \
     jdk.incubator.httpclient \
     jdk.jartool \
