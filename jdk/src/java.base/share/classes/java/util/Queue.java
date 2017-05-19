@@ -47,7 +47,7 @@ package java.util;
  * implementations; in most implementations, insert operations cannot
  * fail.
  *
- * <table BORDER CELLPADDING=3 CELLSPACING=1>
+ * <table class="plain">
  * <caption>Summary of Queue methods</caption>
  *  <tr>
  *    <td></td>

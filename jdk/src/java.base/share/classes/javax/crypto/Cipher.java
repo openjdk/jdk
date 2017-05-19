@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,9 +150,9 @@ import sun.security.jca.*;
  * <li>{@code RSA/ECB/OAEPWithSHA-256AndMGF1Padding} (1024, 2048)</li>
  * </ul>
  * These transformations are described in the
- * <a href="{@docRoot}/../technotes/guides/security/StandardNames.html#Cipher">
+ * <a href="{@docRoot}/../specs/security/standard-names.html#cipher-algorithm-names">
  * Cipher section</a> of the
- * Java Cryptography Architecture Standard Algorithm Name Documentation.
+ * Java Security Standard Algorithm Names Specification.
  * Consult the release documentation for your implementation to see if any
  * other transformations are supported.
  *
@@ -489,8 +489,8 @@ public class Cipher {
      * @param transformation the name of the transformation, e.g.,
      * <i>DES/CBC/PKCS5Padding</i>.
      * See the Cipher section in the <a href=
-     *   "{@docRoot}/../technotes/guides/security/StandardNames.html#Cipher">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     *   "{@docRoot}/../specs/security/standard-names.html#cipher-algorithm-names">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard transformation names.
      *
      * @return a cipher that implements the requested transformation
@@ -567,8 +567,8 @@ public class Cipher {
      * @param transformation the name of the transformation,
      * e.g., <i>DES/CBC/PKCS5Padding</i>.
      * See the Cipher section in the <a href=
-     *   "{@docRoot}/../technotes/guides/security/StandardNames.html#Cipher">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     *   "{@docRoot}/../specs/security/standard-names.html#cipher-algorithm-names">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard transformation names.
      *
      * @param provider the name of the provider.
@@ -627,8 +627,8 @@ public class Cipher {
      * @param transformation the name of the transformation,
      * e.g., <i>DES/CBC/PKCS5Padding</i>.
      * See the Cipher section in the <a href=
-     *   "{@docRoot}/../technotes/guides/security/StandardNames.html#Cipher">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     *   "{@docRoot}/../specs/security/standard-names.html#cipher-algorithm-names">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard transformation names.
      *
      * @param provider the provider.

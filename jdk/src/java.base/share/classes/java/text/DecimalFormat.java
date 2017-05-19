@@ -172,19 +172,22 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * are not localized.
  *
  * <blockquote>
- * <table border=0 cellspacing=3 cellpadding=0 summary="Chart showing symbol,
- *  location, localized, and meaning.">
- *     <tr style="background-color: rgb(204, 204, 255);">
+ * <table class="striped">
+ * <caption style="display:none">Chart showing symbol, location, localized, and meaning.</caption>
+ * <thead>
+ *     <tr>
  *          <th style="text-align:left">Symbol
  *          <th style="text-align:left">Location
  *          <th style="text-align:left">Localized?
  *          <th style="text-align:left">Meaning
+ * </thead>
+ * <tbody>
  *     <tr style="vertical-align:top">
  *          <td><code>0</code>
  *          <td>Number
  *          <td>Yes
  *          <td>Digit
- *     <tr style="vertical-align: top; background-color: rgb(238, 238, 255);">
+ *     <tr style="vertical-align: top">
  *          <td><code>#</code>
  *          <td>Number
  *          <td>Yes
@@ -194,7 +197,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *          <td>Number
  *          <td>Yes
  *          <td>Decimal separator or monetary decimal separator
- *     <tr style="vertical-align: top; background-color: rgb(238, 238, 255);">
+ *     <tr style="vertical-align: top">
  *          <td><code>-</code>
  *          <td>Number
  *          <td>Yes
@@ -204,7 +207,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *          <td>Number
  *          <td>Yes
  *          <td>Grouping separator
- *     <tr style="vertical-align: top; background-color: rgb(238, 238, 255);">
+ *     <tr style="vertical-align: top">
  *          <td><code>E</code>
  *          <td>Number
  *          <td>Yes
@@ -215,7 +218,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *          <td>Subpattern boundary
  *          <td>Yes
  *          <td>Separates positive and negative subpatterns
- *     <tr style="vertical-align: top; background-color: rgb(238, 238, 255);">
+ *     <tr style="vertical-align: top">
  *          <td><code>%</code>
  *          <td>Prefix or suffix
  *          <td>Yes
@@ -225,7 +228,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *          <td>Prefix or suffix
  *          <td>Yes
  *          <td>Multiply by 1000 and show as per mille value
- *     <tr style="vertical-align: top; background-color: rgb(238, 238, 255);">
+ *     <tr style="vertical-align: top">
  *          <td><code>&#164;</code> (<code>&#92;u00A4</code>)
  *          <td>Prefix or suffix
  *          <td>No
@@ -241,6 +244,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *              for example, <code>"'#'#"</code> formats 123 to
  *              <code>"#123"</code>.  To create a single quote
  *              itself, use two in a row: <code>"# o''clock"</code>.
+ * </tbody>
  * </table>
  * </blockquote>
  *
