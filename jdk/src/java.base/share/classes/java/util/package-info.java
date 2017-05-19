@@ -24,27 +24,24 @@
  */
 
 /**
- * Contains the collections framework, legacy collection classes,
- * event model, date and time facilities, internationalization, and
- * miscellaneous utility classes (a string tokenizer, a random-number
- * generator, and a bit array).
+ * Contains the collections framework, some internationalization support classes,
+ * a service loader, properties, random number generation, string parsing
+ * and scanning classes, base64 encoding and decoding, a bit array, and
+ * several miscellaneous utility classes. This package also contains
+ * legacy collection classes and legacy date and time classes.
  *
  * <h2><a id="CollectionsFramework"></a>{@index "Java Collections Framework"}</h2>
+ * <p>For an overview, API outline, and design rationale, please see:
  * <ul>
- *   <li><a href="../../../technotes/guides/collections/overview.html"><b>Collections Framework Overview</b></a>
- *   <li><a href="../../../technotes/guides/collections/reference.html"><b>
- *        Collections Framework Annotated Outline</b></a>
+ *   <li><a href="doc-files/coll-index.html">
+ *          <b>Collections Framework Documentation</b></a>
  * </ul>
  *
- * <h2>Related Documentation</h2>
- * For overviews, tutorials, examples, guides, and tool documentation,
- * please see:
+ * <p>For a tutorial and programming guide with examples of use
+ * of the collections framework, please see:
  * <ul>
- *     <li><a href="http://docs.oracle.com/javase/tutorial/collections/index.html">
- *        <b>Collections Framework Tutorial</b></a>
- *     <li><a
- *     href="../../../technotes/guides/collections/designfaq.html"><b>Collections
- *     Framework Design FAQ</b></a>
+ *   <li><a href="http://docs.oracle.com/javase/tutorial/collections/index.html">
+ *          <b>Collections Framework Tutorial</b></a>
  * </ul>
  *
  * @since 1.0
