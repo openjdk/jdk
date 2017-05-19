@@ -39,7 +39,7 @@ package java.io;
  * the stream; it only changes the value that will be returned by
  * {@code getLineNumber()}.
  *
- * <p> A line is considered to be <a name="lt">terminated</a> by any one of a
+ * <p> A line is considered to be <a id="lt">terminated</a> by any one of a
  * line feed ('\n'), a carriage return ('\r'), or a carriage return followed
  * immediately by a linefeed.
  *

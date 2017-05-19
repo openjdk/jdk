@@ -118,7 +118,7 @@ import java.util.Collections;
  * versa.  Changing the file's content by writing bytes will change the content
  * seen by the originating object, and vice versa.
  *
- * <a name="open-mode"></a> <p> At various points this class specifies that an
+ * <a id="open-mode"></a> <p> At various points this class specifies that an
  * instance that is "open for reading," "open for writing," or "open for
  * reading and writing" is required.  A channel obtained via the {@link
  * java.io.FileInputStream#getChannel getChannel} method of a {@link
@@ -131,7 +131,7 @@ import java.util.Collections;
  * was created with mode {@code "r"} and will be open for reading and writing
  * if the instance was created with mode {@code "rw"}.
  *
- * <a name="append-mode"></a><p> A file channel that is open for writing may be in
+ * <a id="append-mode"></a><p> A file channel that is open for writing may be in
  * <i>append mode</i>, for example if it was obtained from a file-output stream
  * that was created by invoking the {@link
  * java.io.FileOutputStream#FileOutputStream(java.io.File,boolean)

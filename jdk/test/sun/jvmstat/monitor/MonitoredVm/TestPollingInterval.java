@@ -40,9 +40,10 @@ import sun.jvmstat.monitor.VmIdentifier;
  * @test
  * @bug 6672135
  * @summary setInterval() for local MonitoredHost and local MonitoredVm
- * @modules jdk.internal.jvmstat/sun.jvmstat.monitor
+ *
  * @library /lib/testlibrary
  * @library /test/lib
+ *
  * @build jdk.testlibrary.*
  * @build jdk.test.lib.apps.*
  * @run main TestPollingInterval

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ class FilterInputStream extends InputStream {
     }
 
     /**
-     * Reads up to <code>byte.length</code> bytes of data from this
+     * Reads up to <code>b.length</code> bytes of data from this
      * input stream into an array of bytes. This method blocks until some
      * input is available.
      * <p>

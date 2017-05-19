@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3500,9 +3500,9 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
   case vmIntrinsics::_putLongVolatile    : append_unsafe_put_obj(callee, T_LONG,    true); return;
   case vmIntrinsics::_putFloatVolatile   : append_unsafe_put_obj(callee, T_FLOAT,   true); return;
   case vmIntrinsics::_putDoubleVolatile  : append_unsafe_put_obj(callee, T_DOUBLE,  true); return;
-  case vmIntrinsics::_compareAndSwapLong:
-  case vmIntrinsics::_compareAndSwapInt:
-  case vmIntrinsics::_compareAndSwapObject: append_unsafe_CAS(callee); return;
+  case vmIntrinsics::_compareAndSetLong:
+  case vmIntrinsics::_compareAndSetInt:
+  case vmIntrinsics::_compareAndSetObject: append_unsafe_CAS(callee); return;
   case vmIntrinsics::_getAndAddInt:
   case vmIntrinsics::_getAndAddLong      : append_unsafe_get_and_set_obj(callee, true); return;
   case vmIntrinsics::_getAndSetInt       :

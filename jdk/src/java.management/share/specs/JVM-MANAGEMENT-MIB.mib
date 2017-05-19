@@ -1,0 +1,3266 @@
+--
+--
+--
+-- Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
+-- DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+--
+-- This code is free software; you can redistribute it and/or modify it
+-- under the terms of the GNU General Public License version 2 only, as
+-- published by the Free Software Foundation.  Oracle designates this
+-- particular file as subject to the "Classpath" exception as provided
+-- by Oracle in the LICENSE file that accompanied this code.
+--
+-- This code is distributed in the hope that it will be useful, but WITHOUT
+-- ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+-- FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+-- version 2 for more details (a copy is included in the LICENSE file that
+-- accompanied this code).
+--
+-- You should have received a copy of the GNU General Public License version
+-- 2 along with this work; if not, write to the Free Software Foundation,
+-- Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+--
+-- Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+-- or visit www.oracle.com if you need additional information or have any
+-- questions.
+--
+--
+-- The JVM-MANAGEMENT-MIB Module
+--
+-- See jvmManagementMIB MODULE-IDENTITY for a description overview.
+-- See conformance statements for mandatory objects
+--
+
+JVM-MANAGEMENT-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+    MODULE-IDENTITY, OBJECT-TYPE, NOTIFICATION-TYPE, Counter32, Gauge32,
+	Integer32, Counter64, enterprises
+        FROM SNMPv2-SMI
+    DisplayString, TEXTUAL-CONVENTION, RowPointer
+        FROM SNMPv2-TC
+    MODULE-COMPLIANCE, OBJECT-GROUP, NOTIFICATION-GROUP
+        FROM SNMPv2-CONF;
+
+-- Module Identity
+------------------
+
+jvmMgtMIB MODULE-IDENTITY
+    LAST-UPDATED "200403041800Z"
+    -- Format is "YYYYMMDDhhmmZ"
+    ORGANIZATION "Sun Microsystems, Inc."
+    CONTACT-INFO "Sun Microsystems, Inc.
+                  4150 Network Circle
+		  Santa Clara, CA 95054
+		  1-800-555-9SUN or
+		  1-650-960-1300
+		  http://www.sun.com
+		  or contact your local support representative"
+    DESCRIPTION
+            "Copyright 2004 Sun Microsystems, Inc. All rights reserved.
+
+             This module defines the MIB that provides access to the
+	     Java[tm] Virtual Machine monitoring data.
+	     This module is derived from the Java[tm] programming language APIs
+             described in the java.lang.management package of
+             Java[tm] 2, Standard Edition, 5.0.
+
+	     See the Java programming language APIs of JSR 163 for
+             'Monitoring and Management of the Java[TM] Virtual Machine'
+             for more details.
+
+	     Where the Java programming language API uses long, or int,
+             the MIB often uses the corresponding unsigned quantity -
+             which is closer to the object semantics.
+
+             In those cases, it often happens that the -1 value that might
+             be used by the API to indicate an unknown/unimplemented
+             value cannot be used. Instead the MIB uses the value 0, which
+             stricly speaking cannot be distinguished from a valid value.
+             In many cases however, a running system will have non-zero
+             values, so using 0 instead of -1 to indicate an unknown
+             quantity does not lose any functionality.
+	    "
+    REVISION     "200403041800Z"
+    -- Format is "YYYYMMDDhhmmZ"
+    DESCRIPTION
+            "
+            JVM-MANAGEMENT-MIB - JSR 163 Final Release 1.0
+            "
+
+    ::= { standard jsr163(163) 1 }
+
+
+-- Enterprise OIDs
+------------------
+
+--        internet          OBJECT IDENTIFIER ::= { iso(1) org(3) dod(6) 1 }
+--        private           OBJECT IDENTIFIER ::= { internet 4 }
+--        enterprises       OBJECT IDENTIFIER ::= { private 1 }
+	sun	  	  OBJECT IDENTIFIER ::= { enterprises 42 }
+	jmgt		  OBJECT IDENTIFIER ::= { sun products(2) 145 }
+	-- experimental      OBJECT IDENTIFIER ::= { jmgt 1 }
+        standard          OBJECT IDENTIFIER ::= { jmgt 3 }
+
+----------------------------------------------------------------------------
+-- Textual Conventions
+----------------------
+--
+-- Note: Some of the TEXTUAL-CONVENTIONs defined in this module are
+--       OCTET STRING with a 1023 size limitation (SIZE(0..1023)).
+--
+-- As per RFC2578, section 7.1.2.  OCTET STRING:
+--
+--       "The OCTET STRING type represents arbitrary binary or textual data.
+--        Although the SMI-specified size limitation for this type is 65535
+--        octets, MIB designers should realize that there may be
+--        implementation and interoperability limitations for sizes in
+--        excess of 255 octets."
+--
+-- As a consequence an agent implementing this MIB may decide to
+-- restrict this maximum size to a lesser value than 1023, provided that
+-- it makes it clear in an AGENT-CAPABILITY statement.
+--
+----------------------------------------------------------------------------
+
+JvmUnsigned64TC ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+           "A non-negative 64-bit bit integer, without counter
+            semantics."
+    -- We have cloned the Unsigned64TC defined in RFC 2564 rather
+    -- than importing it because the JVM-MANAGEMENT-MIB and the
+    -- APPLICATION-MIB are not related.
+    --
+    REFERENCE "RFC 2564 - APPLICATION-MIB, Unsigned64TC."
+    SYNTAX Counter64
+
+
+JvmJavaObjectNameTC ::= TEXTUAL-CONVENTION
+    DISPLAY-HINT "255a"
+    STATUS       current
+    DESCRIPTION
+          "An Object Name, as implemented by the java.lang.management API,
+	  which identify a runtime Object (e.g. a Class Loader, a
+          Memory Manager, etc...).
+	  The name is assumed to be unique in the scope of the object's
+	  class.
+
+	  This object syntax is equivalent to a DisplayString, but with a
+          a 1023 bytes size limits (instead of 255 for a DisplayString).
+
+	  Note that the SNMP agent may have to truncate the string returned
+          by the underlying API if it does not fit in this type.
+	  (1023 bytes max).
+	  "
+    SYNTAX       OCTET STRING (SIZE (0..1023))
+
+JvmPathElementTC ::= TEXTUAL-CONVENTION
+    DISPLAY-HINT "255a"
+    STATUS       current
+    DESCRIPTION
+          "A file or directory element in a PATH/CLASSPATH/LIBRARY_PATH
+           structure.
+
+	  This object syntax is equivalent to a DisplayString, but with a
+          a 1023 bytes size limits (instead of 255 for a DisplayString).
+
+	  Note that the SNMP agent may have to truncate the string returned
+          by the underlying API if it does not fit in this type.
+	  (1023 bytes max).
+	  "
+    SYNTAX       OCTET STRING (SIZE (0..1023))
+
+JvmArgValueTC ::= TEXTUAL-CONVENTION
+    DISPLAY-HINT "255a"
+    STATUS       current
+    DESCRIPTION
+          "A string representing an input argument.
+
+	  This object syntax is equivalent to a DisplayString, but with a
+          a 1023 bytes size limits (instead of 255 for a DisplayString).
+
+	  Note that the SNMP agent may have to truncate the string returned
+          by the underlying API if it does not fit in this type.
+	  (1023 bytes max).
+	  "
+    SYNTAX       OCTET STRING (SIZE (0..1023))
+
+JvmVerboseLevelTC ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+	"Defines whether the verbose flag for a feature is active.
+	 verbose: the flag is on.
+	 silent:  the flag is off.
+	"
+    SYNTAX INTEGER { silent(1), verbose(2) }
+
+
+JvmImplSupportStateTC ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+	"Defines whether a feature is supported or not.
+	"
+    SYNTAX INTEGER { unsupported(1), supported(2) }
+
+JvmImplOptFeatureStateTC ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+	"Defines whether an optional feature is supported, enabled,
+	 or disabled.
+
+         An optional feature can be:
+
+	 unsupported: The JVM does not support this feature.
+	 enabled    : The JVM supports this feature, and it
+	              is enabled.
+	 disabled   : The JVM supports this feature, and it
+	              is disabled.
+
+         Only enabled(3) and disabled(4) may be supplied as values to a
+         SET request. unsupported(1) can only be set internally by the
+         agent.
+	 "
+    SYNTAX INTEGER { unsupported(1), enabled(3), disabled(4) }
+
+JvmTimeMillis64TC ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+          "An elapsed time, expressed in milli-seconds.
+           This type is based on Counter64, but without its specific
+           semantics.
+	  "
+    SYNTAX Counter64
+
+JvmTimeNanos64TC ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+          "An elapsed time, expressed in nano-seconds.
+           This type is based on Counter64, but without its specific
+           semantics.
+	  "
+    SYNTAX Counter64
+
+JvmPositive32TC ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+          "A positive Integer32. In Java that would be a number
+           in [0..Integer.MAX_VALUE].
+	  "
+    -- We use Integer32 (0..2147483647) rather than Unsigned32 because
+    -- Unsigned32 (0..2147483647) because Unsigned32 is based on
+    -- Gauge32 - which has a specific ASN.1 tag and a specific semantics.
+    -- In principle you cannot use a Gauge32 as base type for an index
+    -- in a table.
+    -- Note also that Unsigned32 is (0..2^32-1)
+    --          while Positive32 is (0..2^31-1)
+    --
+    SYNTAX Integer32 (0..2147483647)
+
+JvmManagedMemoryTypeTC ::= TEXTUAL-CONVENTION
+    STATUS  current
+    DESCRIPTION
+	"
+         Defines the type of memory contained in a memory pool.
+	 The pool may contain, heap memory or non-heap memory.
+	"
+    SYNTAX  INTEGER { nonheap(1), heap(2) }
+
+
+JvmValidityStateTC ::= TEXTUAL-CONVENTION
+    STATUS  current
+    DESCRIPTION
+	"
+         Defines whether an object is still valid.
+	"
+    SYNTAX  INTEGER { invalid(1), valid(2) }
+
+
+JvmThreadStateTC ::= TEXTUAL-CONVENTION
+    STATUS  current
+    DESCRIPTION
+	"Defines the possible states of a thread running in the
+	 Java virtual machine. They are virtual machine thread states
+	 and do not reflect any operating system thread states.
+
+	 The first two bits: inNative(1) and suspended(2) can be
+         combined together and with any other bits. The remaining
+         bits 3-9, are mutually exclusive. Bits 10-16 are reserved
+         for future evolution of this MIB.
+
+         An agent MUST always return a thread state with one of the
+         bits in the range 3-9 set to 1. The other(9) bit should only
+         be set to 1 if new thread states which are mutally exclusive
+         with bits 3-8 are defined.  An implementation can define
+         additional implementation dependant states and uses bits
+         from bit 17.
+
+	 See java.lang.Thread.State,
+	     java.lang.management.ThreadInfo.
+	 "
+     --
+     -- Take care that in SNMP bits are numbered starting at 1, from
+     -- left to right (1 is the highest bit). A bitmap defined by the
+     -- BITS construct is thus a byte array where bit 1 is the highest bit
+     -- of the first byte.
+     --
+     SYNTAX  BITS { -- Bits 1-2 may be specified in any combination
+                    inNative(1),
+                    suspended(2),
+
+                    -- Bits 3-9 are mutually exclusive. Attempting to
+                    -- set more than a single bit to 1 will result in
+                    -- a returned error-status of inconsistentValue.
+                    newThread(3),
+                    runnable(4),
+                    blocked(5),
+                    terminated(6),
+                    waiting(7),
+                    timedWaiting(8),
+                    other(9)
+                    -- Bits 10-16 are reserved for future use by
+                    -- this MIB
+                  }
+
+
+JvmIndex64TC ::= TEXTUAL-CONVENTION
+    STATUS current
+    DESCRIPTION
+	"A 64 bits string mapping an unsigned 64 bits integer value
+         in big-endian ordering (i.e: 1 is encoded as 0x0000000000000001).
+
+	 This type can be used when an unsigned 64 bits integer needs
+	 to be used inside a table index.
+	"
+    SYNTAX OCTET STRING (SIZE(8))
+
+
+-- OBJECT-TYPE OID tree
+-----------------------
+
+jvmMgtMIBObjects
+	OBJECT IDENTIFIER ::= { jvmMgtMIB 1 }
+jvmMgtMIBNotifications
+	OBJECT IDENTIFIER ::= { jvmMgtMIB 2 }
+jvmMgtMIBConformance
+	OBJECT IDENTIFIER ::= { jvmMgtMIB 3 }
+
+-----------------------------------------------------------------------
+--
+-- The JVM Class Loading group
+--
+-- A collection of objects used to monitor Class Loading in the
+-- Java Virtual Machine. These objects define the SNMP  management
+-- interface for the class loading system of the Java virtual machine.
+--
+-- This group only contains a few scalar object and no tables. The objects
+-- from this group are mapped from the java.lang.management.ClassLoadingMXBean
+-- interface.
+--
+-- See J2SE 5.0 API Specification,
+--     java.lang.management.ClassLoadingMXBean
+-----------------------------------------------------------------------
+
+-- Root OBJECT IDENTIFIER for ClassLoading group.
+--
+jvmClassLoading   OBJECT IDENTIFIER ::= { jvmMgtMIBObjects 1 }
+
+-- The following objects are mapped from the ClassLoadingMXBean interface.
+-----------------------------------------------------------------------
+
+jvmClassesLoadedCount OBJECT-TYPE
+    SYNTAX      Gauge32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "The number of classes currently loaded in the JVM.
+
+	     See java.lang.management.ClassLoadingMXBean.getLoadedClassCount()
+            "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.ClassLoadingMXBean"
+    ::= { jvmClassLoading 1 }
+
+jvmClassesTotalLoadedCount OBJECT-TYPE
+    SYNTAX      Counter64
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "The total number of classes that have been loaded since
+	     the JVM has started execution.
+
+	     See java.lang.management.ClassLoadingMXBean.
+	              getTotalLoadedClassCount()
+            "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.ClassLoadingMXBean"
+    ::= { jvmClassLoading 2 }
+
+jvmClassesUnloadedCount OBJECT-TYPE
+    SYNTAX      Counter64
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "The total number of classes that have been unloaded since
+	     the JVM has started execution.
+
+	     See java.lang.management.ClassLoadingMXBean.getUnloadedClassCount()
+            "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.ClassLoadingMXBean"
+    ::= { jvmClassLoading 3 }
+
+jvmClassesVerboseLevel OBJECT-TYPE
+    SYNTAX      JvmVerboseLevelTC
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+            "Enables or disables the verbose output for the class loading
+             system. The verbose output information and the output stream
+             to which the verbose information is emitted are implementation
+             dependent. Typically, a Java virtual machine implementation
+             prints a message each time a class file is loaded.
+
+	     verbose: if the verbose output is enabled.
+	     silent:  otherwise.
+
+	     See java.lang.management.ClassLoadingMXBean.isVerbose(),
+                 java.lang.management.ClassLoadingMXBean.setVerbose()
+            "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.ClassLoadingMXBean"
+    DEFVAL { silent }
+    ::= { jvmClassLoading 4 }
+
+
+-----------------------------------------------------------------------
+--
+-- The JVM Memory group
+--
+-- A collection of objects used to monitor memory management in the
+-- Java Virtual Machine. These objects define management interface for
+-- the memory system of the Java virtual machine.
+--
+-- Memory:
+--
+-- The memory system of the Java virtual machine manages the following
+-- kinds of memory: heap, and non-heap. More information on these types
+-- of memory can be obtained from the J2SE 5.0 API Specification,
+-- java.lang.management.MemoryMXBean.
+--
+-- Memory Pools and Memory Managers:
+--
+-- Memory pools and memory managers are the abstract entities that monitor
+-- and manage the memory system of the Java virtual machine.
+--
+-- Memory managers are represented by the jvmMemManagerTable, which contains
+-- one row per Memory manager.
+-- The garbage collector is one type of memory  manager responsible for
+-- reclaiming memory occupied by unreachable objects.
+-- The jvmMemGCTable is an extension of the jvmMemManagerTable, which contains
+-- the attribute specific to garbage collectors. A garbage collector entity
+-- is thus represented by one row in the jvmMemManagerTable, and one
+-- extension row in the jvmMemGCTable.
+--
+-- Memory Pools are represented by the jvmMemPoolTable, which contains one
+-- row per memory pool. A Java virtual machine may create or remove
+-- memory pools during execution. A memory pool can belong to either the
+-- heap or the non-heap memory.
+--
+-- A memory manager is responsible for managing one or more memory pools.
+-- A memory pool can be managed by more than one memory manager.
+-- The jvmMemMgrRelPoolTable represents this managing/managed relationship.
+--
+-- A Java virtual machine may add or remove memory managers during execution.
+--
+-- See J2SE 5.0 API Specification, java.lang.management.MemoryMXBean for
+--     more information on memory types, memory managers, memory pools,
+--     and the memory subsystem.
+--
+-----------------------------------------------------------------------
+
+-- Root OBJECT IDENTIFIER for the JVM Memory group.
+--
+jvmMemory   OBJECT IDENTIFIER ::= { jvmMgtMIBObjects 2 }
+
+-- The following objects are mapped from the MemoryMXBean interface.
+-----------------------------------------------------------------------
+
+jvmMemoryPendingFinalCount OBJECT-TYPE
+    SYNTAX      Gauge32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The approximate number objects that are pending for finalization.
+
+	 See java.lang.management.MemoryMXBean.
+                  getObjectPendingFinalizationCount()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryMXBean"
+    ::= { jvmMemory 1 }
+
+jvmMemoryGCVerboseLevel OBJECT-TYPE
+    SYNTAX      JvmVerboseLevelTC
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+	"Enables or disables verbose output for the memory system.
+         The verbose output information and the output stream to which
+         the verbose information is emitted are implementation dependent.
+         Typically, a Java virtual machine implementation prints a
+         message whenever it frees memory at garbage collection.
+
+	 verbose: if the verbose output is enabled,
+         silent:  otherwise.
+
+	 See java.lang.management.MemoryMXBean.isVerbose(),
+             java.lang.management.MemoryMXBean.setVerbose()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryMXBean"
+    ::= { jvmMemory 2 }
+
+jvmMemoryGCCall OBJECT-TYPE
+    SYNTAX      INTEGER { unsupported(1), supported(2), start(3),
+                          started(4), failed(5) }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+	"This object makes it possible to remotelly trigger the
+	 Garbage Collector in the JVM.
+
+	 This object's syntax is an enumeration which defines:
+
+	 * Two state values, that can be returned from a GET request:
+
+           unsupported(1): means that remote invocation of gc() is not
+                           supported by the SNMP agent.
+           supported(2)  : means that remote invocation of gc() is supported
+	                   by the SNMP agent.
+
+         * One action value, that can be provided in a SET request to
+           trigger the garbage collector:
+
+           start(3)      : means that a manager wishes to trigger
+                           garbage collection.
+
+         * Two result value, that will be returned in the response to a
+           SET request when remote invocation of gc is supported
+	   by the SNMP agent:
+
+	   started(4)    : means that garbage collection was
+                           successfully triggered. It does not mean
+                           however that the action was successfullly
+                           completed: gc might still be running when
+                           this value is returned.
+	   failed(5)     : means that garbage collection couldn't be
+                           triggered.
+
+         * If remote invocation is not supported by the SNMP agent, then
+           unsupported(1) will always be returned as a result of either
+           a GET request, or a SET request with start(3) as input value.
+
+         * If a SET request with anything but start(3) is received, then
+	   the agent will return a wrongValue error.
+
+	 See java.lang.management.MemoryMXBean.gc()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryMXBean"
+    ::= { jvmMemory 3 }
+
+-- The object identifiers in the range jvmMemory.[4-9] are reserved for future
+-- evolution of this MIB.
+--
+-- We use the range jvmMemory.[10..19] for objects related to global JVM
+-- heap memory  usage, as returned by
+--      java.lang.management.MemoryMXBean.getHeapMemoryUsage().
+-- Object identifiers in the range jvmMemory.[14..19] are not used but
+-- reserved for future evolution of this MIB.
+--
+jvmMemoryHeapInitSize OBJECT-TYPE
+    SYNTAX      JvmUnsigned64TC
+    UNITS       "bytes"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"
+        Total amount of memory (in bytes) that the Java virtual machine
+        initially requests from the operating system for memory management
+	for heap memory pools.
+
+	See java.lang.management.MemoryMXBean.getHeapMemoryUsage().getInit()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryMXBean,
+              java.lang.management.MemoryUsage"
+    ::= { jvmMemory 10 }
+
+
+jvmMemoryHeapUsed OBJECT-TYPE
+    SYNTAX      JvmUnsigned64TC
+    UNITS       "bytes"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"
+        Total amount of used memory (in bytes) from heap memory pools.
+
+	See java.lang.management.MemoryMXBean.getHeapMemoryUsage().getUsed()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryMXBean,
+              java.lang.management.MemoryUsage"
+    ::= { jvmMemory 11 }
+
+jvmMemoryHeapCommitted OBJECT-TYPE
+    SYNTAX      JvmUnsigned64TC
+    UNITS       "bytes"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"
+        Total amount of memory (in bytes) committed by heap memory pools.
+
+	See java.lang.management.MemoryMXBean.getHeapMemoryUsage().
+	         getCommitted()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryMXBean,
+              java.lang.management.MemoryUsage"
+    ::= { jvmMemory 12 }
+
+jvmMemoryHeapMaxSize OBJECT-TYPE
+    SYNTAX      JvmUnsigned64TC
+    UNITS       "bytes"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"
+        Total maximum size of memory (in bytes) for all heap memory pools.
+
+	See java.lang.management.MemoryMXBean.getHeapMemoryUsage().getMax()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryMXBean,
+              java.lang.management.MemoryUsage"
+    ::= { jvmMemory 13 }
+
+-- We use the range jvmMemory.[20..29] for objects related to global JVM
+-- heap memory usage, as returned by
+--      lang.management.MemoryMXBean.getNonHeapMemoryUsage().
+-- Object identifiers in the range jvmMemory.[24..29] are not used but are
+-- reserved for future evolution of this MIB.
+--
+jvmMemoryNonHeapInitSize OBJECT-TYPE
+    SYNTAX      JvmUnsigned64TC
+    UNITS       "bytes"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"
+        Total amount of memory (in bytes) that the Java virtual machine
+        initially requests from the operating system for memory management
+	for non heap memory pools.
+
+	See java.lang.management.MemoryMXBean.getNonHeapMemoryUsage().getInit()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryMXBean,
+              java.lang.management.MemoryUsage"
+    ::= { jvmMemory 20 }
+
+
+jvmMemoryNonHeapUsed OBJECT-TYPE
+    SYNTAX      JvmUnsigned64TC
+    UNITS       "bytes"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"
+        Total amount of used memory (in bytes) from non heap memory pools.
+
+	See java.lang.management.MemoryMXBean.getNonHeapMemoryUsage().getUsed()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryMXBean,
+              java.lang.management.MemoryUsage"
+    ::= { jvmMemory 21 }
+
+jvmMemoryNonHeapCommitted OBJECT-TYPE
+    SYNTAX      JvmUnsigned64TC
+    UNITS       "bytes"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"
+        Total amount of memory (in bytes) committed by non heap memory pools.
+
+	See java.lang.management.MemoryMXBean.
+	         getNonHeapMemoryUsage().getCommitted()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryMXBean,
+              java.lang.management.MemoryUsage"
+    ::= { jvmMemory 22 }
+
+jvmMemoryNonHeapMaxSize OBJECT-TYPE
+    SYNTAX      JvmUnsigned64TC
+    UNITS       "bytes"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"
+        Total maximum size of memory (in bytes) for all non heap memory pools.
+
+	See java.lang.management.MemoryMXBean.getNonHeapMemoryUsage().getMax()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryMXBean,
+              java.lang.management.MemoryUsage"
+    ::= { jvmMemory 23 }
+
+-- The object identifiers in the range jvmMemory.[30-99] are not used but are
+-- reserved for future evolution of this MIB.
+--
+-- The JVM Memory Manager Table
+--
+-- The jvmMemManagerTable represent memory manager abstract entities.
+-- The jvmMemManagerTable contains one row per memory manager. In
+-- addition, those memory managers which are also garbage collectors have
+-- an extension row in the jvmMemGCTable.
+--
+-- See J2SE 5.0 API Specification, java.lang.management.MemoryMXBean for
+--     a detailed description of the memory subsystem.
+--
+-- See J2SE 5.0 API Specification, java.lang.management.MemoryManagerMXBean
+--     for more information on memory managers.
+--
+-----------------------------------------------------------------------
+--
+-- We use the range jvmMemory.[100..109] for objects related to memory
+-- managers.
+-- Object identifiers in the range jvmMemory.[102-109] are not used
+-- but are reserved for future evolution of this MIB.
+--
+jvmMemManagerTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF JvmMemManagerEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"The Memory Manager Table contains the whole list of Memory
+	 Managers  as returned by ManagementFactory.getMemoryManagerMXBeans().
+
+	 When a MemoryManagerMXBean object is an instance of
+	 GarbageCollectorMXBean, then additional information specific to
+	 the GarbageCollectorMXBean class will be found in the
+	 jvmGCTable, at the same index.
+
+	 Relationships between MemoryManagers and MemoryPools are shown
+	 by the Memory Manager-Pool Relation table (jvmMemMgrPoolRelTable).
+	"
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryManagerMXBean"
+    ::= { jvmMemory 100 }
+
+jvmMemManagerEntry OBJECT-TYPE
+    SYNTAX      JvmMemManagerEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"A jvmMemManagerEntry conceptual row represent an instance of the
+	 java.lang.management.MemoryManagerMXBean interface. If that instance
+	 is also an instance of java.lang.management.GarbageCollectorMXBean,
+	 then additional information will be found in the jvmGCTable, at the
+         same index.
+
+	 Columnar objects in this table are mapped from attributes of
+	 the MemoryManagerMXBean interface.
+
+	 See java.lang.management.MemoryManagerMXBean
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryManagerMXBean"
+    INDEX { jvmMemManagerIndex }
+    ::= { jvmMemManagerTable 1 }
+
+JvmMemManagerEntry ::= SEQUENCE {
+        jvmMemManagerIndex JvmPositive32TC,
+        jvmMemManagerName  JvmJavaObjectNameTC,
+	jvmMemManagerState JvmValidityStateTC
+}
+
+jvmMemManagerIndex OBJECT-TYPE
+    SYNTAX      JvmPositive32TC
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"An index opaquely computed by the agent and which uniquely
+	 identifies a Memory Manager.
+
+	 The jvmMemManagerIndex index is opaquely computed by the agent,
+	 from e.g the hash code of the MemoryManager (or MemoryManager name).
+	 The agent is responsible for allocating a free index when it needs
+	 one (e.g. if two objects have the same hash, then it may increment
+	 one of the values until the conflict is resolved). As a result a
+	 manager must not depend on the value of that index across,
+	 e.g. reboot of the agent, as this value is not guaranteed to
+	 stay identical after the agent restarts.
+	 "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryManagerMXBean"
+    ::= { jvmMemManagerEntry 1 }
+
+jvmMemManagerName OBJECT-TYPE
+    SYNTAX      JvmJavaObjectNameTC
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The name of this memory manager, as returned by
+	 MemoryManagerMXBean.getName().
+
+	 See java.mangement.MemoryManagerMXBean.getName().
+	"
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryManagerMXBean"
+    ::= { jvmMemManagerEntry 2 }
+
+jvmMemManagerState OBJECT-TYPE
+    SYNTAX      JvmValidityStateTC
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"
+         Indicates whether this memory manager is valid in the Java
+         virtual machine. A memory manager becomes invalid once the
+         Java virtual machine removes it from the memory system.
+
+	 See java.lang.management.MemoryManagerMXBean.isValid()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryManagerMXBean"
+    ::= { jvmMemManagerEntry 3 }
+
+
+-- The JVM Garbage Collector Table
+--
+-- The jvmMemGCTable is an extension of the jvmMemManagerTable.
+-- It represents garbage collector abstract entities. A garbage collector
+-- is a memory manager responsible for reclaiming  memory occupied by
+-- unreachable objects.
+--
+-- A garbage collector is thus represented by one row in the
+-- jvmMemManagerTable, plus an extension row in the jvmMemGCTable.
+-- The extension row in the jvmMemGCTable contains those attributes which
+-- are specific to garbage collectors.
+--
+-- See J2SE 5.0 API Specification, java.lang.management.MemoryMXBean for
+--     a detailed description of the memory subsystem.
+--
+-- See J2SE 5.0 API Specification, java.lang.management.MemoryManagerMXBean
+--     for more information on memory managers, and
+--     java.lang.management.GarbageCollectorMXBean for more information on
+--     garbage collectors.
+--
+-----------------------------------------------------------------------
+
+jvmMemGCTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF JvmMemGCEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"The Garbage Collector table provides additional information
+	 on those MemoryManagers which are also GarbageCollectors.
+	 This table extends the  jvmMemManagerTable table. The index
+	 used in the jvmMemGCTable table is imported from the
+	 jvmMemManagerTable table. If a row from the jvmMemManagerTable
+	 table is deleted, and if it has an extension in the jvmMemGCTable
+	 table, then the extension row will also be deleted.
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.GarbageCollectorMXBean"
+    ::= { jvmMemory 101 }
+
+jvmMemGCEntry OBJECT-TYPE
+    SYNTAX      JvmMemGCEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"Provide additional information on Garbage Collectors.
+
+	 Columnar objects in this table are mapped from the
+	 GarbageCollectorMXBean interface.
+
+	 See java.lang.management.GarbageCollectorMXBean
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.GarbageCollectorMXBean"
+    INDEX   { jvmMemManagerIndex }
+    ::= {jvmMemGCTable 1 }
+
+JvmMemGCEntry ::= SEQUENCE {
+        jvmMemGCCount  Counter64,
+        jvmMemGCTimeMs JvmTimeMillis64TC
+}
+
+jvmMemGCCount OBJECT-TYPE
+    SYNTAX      Counter64
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The total number of collections that have occurred,
+	 as returned by GarbageCollectorMXBean.getCollectionCount().
+
+	 If garbage collection statistics are not available, this
+	 object is set to 0.
+
+	 See java.lang.management.GarbageCollectorMXBean.getCollectionCount()
+	"
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.GarbageCollectorMXBean"
+    ::= { jvmMemGCEntry 2 }
+
+jvmMemGCTimeMs OBJECT-TYPE
+    SYNTAX      JvmTimeMillis64TC
+    UNITS       "milliseconds"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The approximate accumulated collection elapsed time in
+	 milliseconds, since the Java virtual machine has started.
+	 This object is set to 0 if the collection elapsed time is
+	 undefined for this collector.
+
+	 See java.lang.management.GarbageCollectorMXBean.getCollectionTime()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.GarbageCollectorMXBean"
+    DEFVAL { 0 }
+    ::= { jvmMemGCEntry 3 }
+
+-- The JVM Memory Pool Table
+--
+-- The jvmMemPoolTable represent memory pool abstract entities.
+-- The jvmMemPoolTable contains one row per memory pool.
+--
+-- See J2SE 5.0 API Specification, java.lang.management.MemoryMXBean for
+--     a detailed description of the memory subsystem.
+--
+-- See J2SE 5.0 API Specification, java.lang.management.MemoryPoolMXBean
+--     for more information on memory pool.
+--
+-----------------------------------------------------------------------
+--
+-- We use the range jvmMemory.[110..119] for objects related to memory pools.
+-- Object identifiers in the range jvmMemory.[111-119] are not used but
+-- are reserved for future evolution of this MIB.
+--
+jvmMemPoolTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF JvmMemPoolEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"The Memory Pool Table contains the whole list of MemoryPools
+	 as returned by ManagementFactory.getMemoryPoolMXBeans().
+	"
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryPoolMXBean"
+    ::= { jvmMemory 110 }
+
+jvmMemPoolEntry OBJECT-TYPE
+    SYNTAX      JvmMemPoolEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"
+         Represents a memory pool. The pool may contain heap memory or
+         non-heap memory. A row in this table represents
+	 an instance of MemoryPoolMXBean.
+
+	 See java.lang.management.MemoryPoolMXBean
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryPoolMXBean"
+    INDEX { jvmMemPoolIndex }
+    ::= { jvmMemPoolTable 1 }
+
+JvmMemPoolEntry ::= SEQUENCE {
+        jvmMemPoolIndex                 JvmPositive32TC,
+	jvmMemPoolName                  JvmJavaObjectNameTC,
+	jvmMemPoolType                  JvmManagedMemoryTypeTC,
+	jvmMemPoolState                 JvmValidityStateTC,
+	jvmMemPoolPeakReset             JvmTimeMillis64TC,
+
+	jvmMemPoolInitSize              JvmUnsigned64TC,
+	jvmMemPoolUsed                  JvmUnsigned64TC,
+	jvmMemPoolCommitted             JvmUnsigned64TC,
+	jvmMemPoolMaxSize               JvmUnsigned64TC,
+
+	jvmMemPoolPeakUsed              JvmUnsigned64TC,
+	jvmMemPoolPeakCommitted         JvmUnsigned64TC,
+	jvmMemPoolPeakMaxSize           JvmUnsigned64TC,
+
+	jvmMemPoolCollectUsed           JvmUnsigned64TC,
+	jvmMemPoolCollectCommitted      JvmUnsigned64TC,
+	jvmMemPoolCollectMaxSize        JvmUnsigned64TC,
+
+	jvmMemPoolThreshold             JvmUnsigned64TC,
+	jvmMemPoolThreshdCount          Counter64,
+	jvmMemPoolThreshdSupport        JvmImplSupportStateTC,
+	jvmMemPoolCollectThreshold      JvmUnsigned64TC,
+	jvmMemPoolCollectThreshdCount   Counter64,
+	jvmMemPoolCollectThreshdSupport JvmImplSupportStateTC
+
+}
+
+jvmMemPoolIndex OBJECT-TYPE
+    SYNTAX      JvmPositive32TC
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"An index value opaquely computed by the agent which uniquely
+	 identifies a row in the jvmMemPoolTable.
+
+	 The jvmMemPoolIndex index is opaquely computed by the agent,
+	 from e.g the hash code of the MemoryPool (or MemoryPool name).
+	 The agent is responsible for allocating a free index when it
+	 needs one (e.g. if two objects have the same hash, then it may
+	 increment one of the values until the conflict is resolved).
+	 As a result a manager must not depend on the value of that
+	 index across, e.g. reboot of the agent, as this value is not
+	 guaranteed to stay identical after the agent restarts.
+        "
+    ::= { jvmMemPoolEntry 1 }
+
+jvmMemPoolName OBJECT-TYPE
+    SYNTAX      JvmJavaObjectNameTC
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The name of this memory pool, as returned by
+         MemoryPoolMXBean.getName().
+
+	 See java.lang.management.MemoryPoolMXBean.getName()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryPoolMXBean"
+    ::= { jvmMemPoolEntry 2 }
+
+jvmMemPoolType OBJECT-TYPE
+    SYNTAX      JvmManagedMemoryTypeTC
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The type of memory managed in this pool. This pool may be used for
+	 heap memory or non-heap memory.
+
+	 See java.lang.management.MemoryPoolMXBean.getMemoryType()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryPoolMXBean"
+    ::= { jvmMemPoolEntry 3 }
+
+jvmMemPoolState OBJECT-TYPE
+    SYNTAX      JvmValidityStateTC
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"
+         Indicates whether this memory pool is valid in the Java
+         virtual machine. A memory pool becomes invalid once the
+         Java virtual machine removes it from the memory system.
+
+	 See java.lang.management.MemoryPoolMXBean.isValid()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryPoolMXBean"
+    ::= { jvmMemPoolEntry 4 }
+
+jvmMemPoolPeakReset OBJECT-TYPE
+    SYNTAX      JvmTimeMillis64TC
+    UNITS       "milliseconds"
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+	"
+        This object indicates the last time - in milliseconds - at which
+        the peak memory usage statistic of this memory pool was reset
+	to the current memory usage. This corresponds to a time stamp
+	as returned by java.lang.System.currentTimeMillis();
+
+	Setting this object to a time earlier than its current time value
+	has no effect. Setting this object to a time later than its current
+	time value causes the peak memory usage statistic of this memory
+	pool to be reset to the current memory usage. The new value of this
+	object will be the time at which the reset operation is triggered.
+
+	There could be a delay between the time at which the reset operation
+	is triggered and the time at which the actual resetting happens, so
+	this value is only indicative.
+
+	 See java.lang.management.MemoryPoolMXBean.resetPeakUsage()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryPoolMXBean"
+    ::= { jvmMemPoolEntry 5 }
+
+
+-- The object identifier arcs in the range jvmMemPoolEntry.[6-9] are
+-- reserved for future evolution of this MIB.
+--
+-- We use the range jvmMemPoolEntry.[10..19] for objects related to this
+-- pool memory usage, as returned by
+--      java.lang.management.MemoryPoolMXBean.getUsage().
+-- Object identifiers in the range jvmMemPoolEntry.[14..19] are not
+-- used but are reserved for future evolution of this MIB.
+--
+jvmMemPoolInitSize OBJECT-TYPE
+    SYNTAX      JvmUnsigned64TC
+    UNITS       "bytes"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"
+        Initial size of this memory pool.
+
+	See java.lang.management.MemoryPoolMXBean.getUsage().getInit()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryPoolMXBean,
+              java.lang.management.MemoryUsage"
+    ::= { jvmMemPoolEntry 10 }
+
+
+jvmMemPoolUsed OBJECT-TYPE
+    SYNTAX      JvmUnsigned64TC
+    UNITS       "bytes"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"
+        Amount of used memory in this memory pool.
+
+	See java.lang.management.MemoryPoolMXBean.getUsage().getUsed()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryPoolMXBean,
+              java.lang.management.MemoryUsage"
+    ::= { jvmMemPoolEntry 11 }
+
+jvmMemPoolCommitted OBJECT-TYPE
+    SYNTAX      JvmUnsigned64TC
+    UNITS       "bytes"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"
+        Amount of committed memory in this memory pool.
+
+	See java.lang.management.MemoryPoolMXBean.getUsage().getCommitted()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryPoolMXBean,
+              java.lang.management.MemoryUsage"
+    ::= { jvmMemPoolEntry 12 }
+
+jvmMemPoolMaxSize OBJECT-TYPE
+    SYNTAX      JvmUnsigned64TC
+    UNITS       "bytes"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"
+        Maximal size of this memory pool.
+
+	See java.lang.management.MemoryPoolMXBean.getUsage().getMax()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryPoolMXBean,
+              java.lang.management.MemoryUsage"
+    ::= { jvmMemPoolEntry 13 }
+
+-- We use the range jvmMemPoolEntry.[20..29] for objects related to
+-- this pool peak memory usage, as returned by
+--      java.lang.management.MemoryPoolMXBean.getPeakUsage().
+-- The object identifier arc jvmMemPoolEntry.20 which would have been
+-- used for the initial size is not used because the notion of initial
+-- size in the context of peak usage is meaningless.
+-- Therefore, we start numbering objects at 21.
+-- Object identifiers in the range jvmMemPoolEntry.[24..29] are not
+-- used but are reserved for future evolution of this MIB.
+--
+jvmMemPoolPeakUsed OBJECT-TYPE
+    SYNTAX      JvmUnsigned64TC
+    UNITS       "bytes"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"
+        Amount of used memory in this memory pool when the peak usage
+	was reached.
+
+	See java.lang.management.MemoryPoolMXBean.getPeakUsage().getUsed()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryPoolMXBean,
+              java.lang.management.MemoryUsage"
+    ::= { jvmMemPoolEntry 21 }
+
+jvmMemPoolPeakCommitted OBJECT-TYPE
+    SYNTAX      JvmUnsigned64TC
+    UNITS       "bytes"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"
+        Amount of committed memory in this memory pool when the peak usage
+	was reached.
+
+	See java.lang.management.MemoryPoolMXBean.getPeakUsage().getCommitted()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryPoolMXBean,
+              java.lang.management.MemoryUsage"
+    ::= { jvmMemPoolEntry 22 }
+
+jvmMemPoolPeakMaxSize OBJECT-TYPE
+    SYNTAX      JvmUnsigned64TC
+    UNITS       "bytes"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"
+        Maximal size of this memory pool when the peak usage
+	was reached.
+
+	See java.lang.management.MemoryPoolMXBean.getPeakUsage().getMax()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryPoolMXBean,
+              java.lang.management.MemoryUsage"
+    ::= { jvmMemPoolEntry 23 }
+
+-- We use the range jvmMemPoolEntry.[30..39] for objects related to this
+-- pool collection memory usage, as returned by
+--      java.lang.management.MemoryPoolMXBean.getCollectionUsage().
+-- The object identifier arc jvmMemPoolEntry.30 which would have been used
+-- for the initial size is not used because the notion of initial size in the
+-- context of collection usage is meaningless.
+-- Therefore, we start numbering objects at 31.
+-- Object identifiers in the range jvmMemPoolEntry.[34..39] are not used
+-- but are reserved for future evolution of this MIB.
+--
+jvmMemPoolCollectUsed OBJECT-TYPE
+    SYNTAX      JvmUnsigned64TC
+    UNITS       "bytes"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"
+         The amount of used memory at the most recent time that the
+	 Java virtual machine has expended effort in recycling unused objects
+	 in this memory pool.
+
+	See java.lang.management.MemoryPoolMXBean.getCollectionUsage().getUsed()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryPoolMXBean,
+              java.lang.management.MemoryUsage"
+    ::= { jvmMemPoolEntry 31 }
+
+jvmMemPoolCollectCommitted OBJECT-TYPE
+    SYNTAX      JvmUnsigned64TC
+    UNITS       "bytes"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"
+         The amount of committed memory at the most recent time that the
+	 Java virtual machine has expended effort in recycling unused objects
+	 in this memory pool.
+
+	 See java.lang.management.MemoryPoolMXBean.getCollectionUsage().
+            getCommitted()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryPoolMXBean,
+              java.lang.management.MemoryUsage"
+    ::= { jvmMemPoolEntry 32 }
+
+jvmMemPoolCollectMaxSize OBJECT-TYPE
+    SYNTAX      JvmUnsigned64TC
+    UNITS       "bytes"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"
+         The value of the maximum amount of memory at the most recent time
+	 that the Java virtual machine has expended effort in recycling
+	 unused objects in this memory pool.
+
+	See java.lang.management.MemoryPoolMXBean.getCollectionUsage().getMax()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryPoolMXBean,
+              java.lang.management.MemoryUsage"
+    ::= { jvmMemPoolEntry 33 }
+
+-- Object identifiers in the range jvmMemPoolEntry.[40-109] are reserved
+-- for future evolution of this MIB.
+--
+-- We use the range jvmMemPoolEntry.[110..119] for objects related to this
+-- pool memory usage thresholds (range jvmMemPoolEntry.[10..19] was used for
+-- this pool memory usage).
+-- Object identifier arcs in the range jvmMemPoolEntry.[113..119] are not
+-- used but are reserved for future evolution of this MIB.
+--
+jvmMemPoolThreshold OBJECT-TYPE
+    SYNTAX      JvmUnsigned64TC
+    UNITS       "bytes"
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+	"The threshold value for the memory usage of this memory pool,
+	 in bytes. A zero value (0) indicates that no threshold value is
+         configured.
+	 When the amount of used memory crosses over this threshold
+	 value the JVM will trigger a usage memory threshold exceeded
+	 notification, and the jvmMemPoolThreshdCount increases.
+
+	 If memory usage threshold is not supported, then this object, if
+	 implemented, will always be equals to 0. In that case, attempting
+         to set this object will trigger an inconsistentValue error.
+
+	 See also jvmMemPoolThreshdSupport.
+
+	 See java.lang.management.MemoryPoolMXBean.getUsageThreshold(),
+             java.lang.management.MemoryPoolMXBean.setUsageThreshold(long),
+             java.lang.management.MemoryPoolMXBean.getUsageThresholdCount(),
+             java.lang.management.MemoryPoolMXBean.isUsageThresholdSupported()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryPoolMXBean"
+    DEFVAL { 0 }
+    ::= { jvmMemPoolEntry 110 }
+
+jvmMemPoolThreshdCount OBJECT-TYPE
+    SYNTAX      Counter64
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The number of times that the memory usage has crossed
+	 the usage threshold, as detected by the Java virtual machine.
+
+	 If memory usage threshold is not supported, then this object, if
+	 implemented, will always be equals to 0.
+
+	 See also jvmMemPoolThresholdSupport.
+
+	 See java.lang.management.MemoryPoolMXBean.getUsageThresholdCount(),
+             java.lang.management.MemoryPoolMXBean.isUsageThresholdSupported()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryPoolMXBean"
+    ::= { jvmMemPoolEntry 111 }
+
+jvmMemPoolThreshdSupport OBJECT-TYPE
+    SYNTAX      JvmImplSupportStateTC
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"Tells whether this memory pool supports usage threshold.
+
+	 See java.lang.management.MemoryPoolMXBean.isUsageThresholdSupported()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryPoolMXBean"
+    ::= { jvmMemPoolEntry 112 }
+
+-- Object identifiers in the range jvmMemPoolEntry.[120-129] are reserved
+-- for future evolution of this MIB.
+--
+-- We use the range jvmMemPoolEntry.[130..139] for objects related to
+-- this pool memory collection usage thresholds (range
+-- jvmMemPoolEntry.[30..39] was used for this pool collection memory usage).
+-- Object identifiers in the range jvmMemPoolEntry.[133..139] are not used
+-- but are reserved for future evolution of this MIB.
+--
+jvmMemPoolCollectThreshold OBJECT-TYPE
+    SYNTAX      JvmUnsigned64TC
+    UNITS       "bytes"
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+	"The threshold value for the collection usage of this memory pool,
+	 in bytes. A zero value (0) indicates that no threshold value is
+         configured.
+	 When the amount of used memory crosses over this threshold
+	 value the JVM will trigger a collection memory threshold exceeded
+	 notification, and the jvmMemPoolCollectThreshdCount increases.
+
+	 If collection usage threshold is not supported, then this object, if
+	 implemented, will always be equals to 0. In that case, attempting
+         to set this object will trigger an inconsistentValue error.
+
+	 See also jvmMemPoolCollectThreshdSupport.
+
+	 See java.lang.management.MemoryPoolMXBean.
+                                  getCollectionUsageThreshold(),
+             java.lang.management.MemoryPoolMXBean.
+                                  setCollectionUsageThreshold(long),
+	     java.lang.management.MemoryPoolMXBean.
+	                          isCollectionUsageThresholdSupported(),
+	     java.lang.management.MemoryPoolMXBean.
+	                          getCollectionUsageThresholdCount()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryPoolMXBean"
+    DEFVAL { 0 }
+    ::= { jvmMemPoolEntry 131 }
+
+jvmMemPoolCollectThreshdCount OBJECT-TYPE
+    SYNTAX      Counter64
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The number of times that the memory usage has crossed
+	 the collection usage threshold, as detected by the Java virtual
+	 machine.
+
+	 If memory usage threshold is not supported, then this object, if
+	 implemented, will always be equals to 0.
+
+	 See also jvmMemPoolCollectThreshdSupport.
+
+	 See java.lang.management.MemoryPoolMXBean.
+                                  getCollectionUsageThresholdCount(),
+             java.lang.management.MemoryPoolMXBean.
+                                  isCollectionUsageThresholdSupported()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryPoolMXBean"
+    ::= { jvmMemPoolEntry 132 }
+
+jvmMemPoolCollectThreshdSupport OBJECT-TYPE
+    SYNTAX      JvmImplSupportStateTC
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"Tells whether this memory pool supports collection usage threshold.
+
+	 See java.lang.management.MemoryPoolMXBean.
+                       isCollectionUsageThresholdSupported()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryPoolMXBean"
+    ::= { jvmMemPoolEntry 133 }
+
+-- The JVM Memory Manager-Pool Relation Table
+-----------------------------------------------------------------------
+-- The JVM Memory Pool Table
+--
+-- The jvmMemPoolTable represent memory pool abstract entities.
+-- The jvmMemPoolTable contains one row per memory pool.
+--
+-- See J2SE 5.0 API Specification, java.lang.management.MemoryMXBean for
+--     a detailed description of the memory subsystem.
+--
+-- See J2SE 5.0 API Specification, java.lang.management.MemoryPoolMXBean
+--     for more information on memory pool.
+--
+-----------------------------------------------------------------------
+--
+-- We use the range jvmMemory.[110..119] for objects related to memory pools.
+-- Object identifier arcs in the range jvmMemory.[111-119] are not used
+-- but are reserved for future evolution of this MIB.
+--
+
+jvmMemMgrPoolRelTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF JvmMemMgrPoolRelEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"The Memory Manager-Pool Relation Table shows the
+         Memory Manager / Memory Pool relations, as returned by
+         MemoryPoolMXBean.getMemoryManagerNames() and
+         MemoryManagerMXBean.getMemoryPoolNames().
+         This table imports the indexes from the jvmMemManagerTable table
+         and jvmMemPoolTable table. The jvmMemMgrRelManagerName and
+         jvmMemMgrRelPoolName objects are not actually necessary since
+         the indexes are self-sufficient to express the relationship -
+         but the names  will make the table more understandable when displayed
+         in a management console.
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryPoolMXBean,
+	      java.lang.management.MemoryManagerMXBean"
+    ::= { jvmMemory 120 }
+
+jvmMemMgrPoolRelEntry OBJECT-TYPE
+    SYNTAX      JvmMemMgrPoolRelEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"A row in this table indicates that the Memory Manager identified
+         by jvmMemManagerIndex manages the Memory Pool identified by
+         jvmMemPoolIndex. Note that a pool may be managed by several
+         memory managers, and a memory manager can manage several
+         memory pool.
+
+	 See java.lang.management.MemoryManagerMXBean.getMemoryPoolNames(),
+	     java.lang.management.MemoryPoolMXBean.getMemoryManagerNames()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryPoolMXBean,
+	      java.lang.management.MemoryManagerMXBean"
+    INDEX { jvmMemManagerIndex, jvmMemPoolIndex }
+    ::= { jvmMemMgrPoolRelTable 1 }
+
+JvmMemMgrPoolRelEntry ::= SEQUENCE {
+       jvmMemMgrRelManagerName JvmJavaObjectNameTC,
+       jvmMemMgrRelPoolName    JvmJavaObjectNameTC
+}
+
+jvmMemMgrRelManagerName OBJECT-TYPE
+    SYNTAX      JvmJavaObjectNameTC
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The name of the memory manager.
+
+	 See java.manangement.MemoryManagerMXBean.getName();
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+	      java.lang.management.MemoryManagerMXBean"
+    ::= { jvmMemMgrPoolRelEntry 2 }
+
+jvmMemMgrRelPoolName OBJECT-TYPE
+    SYNTAX      JvmJavaObjectNameTC
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The name of the memory pool.
+
+	 See java.manangement.MemoryPoolMXBean.getName();
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryPoolMXBean"
+    ::= { jvmMemMgrPoolRelEntry 3 }
+
+
+-----------------------------------------------------------------------
+--
+-- The JVM Thread group
+--
+-- A collection of objects used to monitor threads in the
+-- Java Virtual Machine. These objects define the SNMP management
+-- interface for the thread system of the Java virtual machine.
+--
+-- The jvmThreadInstanceTable represents the threads which are currently
+-- alive in the system. The representation of a thread is derived from the
+-- set of methods in the ThreadMXBean that return information about a
+-- given thread.
+--
+-- See J2SE 5.0 API Specification, java.lang.management.ThreadMXBean for
+--     a detailed description of the threading subsystem.
+--
+-----------------------------------------------------------------------
+
+--
+-----------------------------------------------------------------------
+
+jvmThreading   OBJECT IDENTIFIER ::= { jvmMgtMIBObjects 3 }
+
+-- The following objects are mapped from the ThreadMXBean interface.
+-----------------------------------------------------------------------
+
+jvmThreadCount OBJECT-TYPE
+    SYNTAX      Gauge32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The current number of live threads.
+
+	 See java.lang.management.ThreadMXBean.getThreadCount()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.ThreadMXBean"
+    ::= { jvmThreading 1 }
+
+jvmThreadDaemonCount OBJECT-TYPE
+    SYNTAX      Gauge32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The current number of daemon threads.
+
+	 See java.lang.management.ThreadMXBean.getDaemonThreadCount()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.ThreadMXBean"
+    ::= { jvmThreading 2 }
+
+jvmThreadPeakCount OBJECT-TYPE
+    SYNTAX      Counter32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The peak thread count since the execution of the application.
+
+	 See java.lang.management.ThreadMXBean.getPeakThreadCount()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.ThreadMXBean"
+    ::= { jvmThreading 3 }
+
+jvmThreadTotalStartedCount OBJECT-TYPE
+    SYNTAX      Counter64
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The total number of threads created and started since the Java
+	 Virtual Machine started.
+
+	 See java.lang.management.ThreadMXBean.getTotalStartedThreadCount()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.ThreadMXBean"
+    ::= { jvmThreading 4 }
+
+jvmThreadContentionMonitoring OBJECT-TYPE
+    SYNTAX      JvmImplOptFeatureStateTC
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+	"The state of the Thread Contention Monitoring feature.
+         This feature can be:
+
+	 unsupported: The JVM does not support Thread Contention Monitoring.
+	 enabled    : The JVM supports Thread Contention Monitoring, and it
+	              is enabled.
+	 disabled   : The JVM supports Thread Contention Monitoring, and it
+	              is disabled.
+
+         Only enabled(3) and disabled(4) may be supplied as values to a
+         SET request. unsupported(1) can only be set internally by the
+         agent.
+
+	 When the feature is unsupported(1), any attempt to change
+	 that value will fail: trying to set this object to
+         enabled(3) or disabled(4) will result in an `inconsistentValue'
+         error. Trying to set it to any other value will result in an
+	 `wrongValue' error.
+
+	 See java.lang.management.ThreadMXBean.
+	                     isThreadContentionMonitoringSupported(),
+	     java.lang.management.ThreadMXBean.
+                             isThreadContentionMonitoringEnabled(),
+             java.lang.management.ThreadMXBean.
+                             setThreadContentionMonitoringEnabled()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.ThreadMXBean"
+    ::= { jvmThreading 5 }
+
+jvmThreadCpuTimeMonitoring OBJECT-TYPE
+    SYNTAX      JvmImplOptFeatureStateTC
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+	"The state of the Thread CPU Time Monitoring feature.
+         This feature can be:
+
+	 unsupported: The JVM does not support Thread CPU Time Monitoring.
+	 enabled    : The JVM supports Thread CPU Time Monitoring, and it
+	              is enabled.
+	 disabled   : The JVM supports Thread CPU Time Monitoring, and it
+	              is disabled.
+
+         Only enabled(3) and disabled(4) may be supplied as values to a
+         SET request. unsupported(1) can only be set internally by the
+         agent.
+
+	 When the feature is unsupported(1), any attempt to change
+	 that value will fail: trying to set this object to
+         enabled(3) or disabled(4) will result in an `inconsistentValue'
+         error. Trying to set it to any other value will result in an
+	 `wrongValue' error.
+
+	 See java.lang.management.ThreadMXBean.
+	                     isThreadCpuTimeSupported(),
+	     java.lang.management.ThreadMXBean.
+                             isThreadCpuTimeEnabled(),
+             java.lang.management.ThreadMXBean.
+                             setThreadCpuTimeEnabled()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.ThreadMXBean"
+    ::= { jvmThreading 6 }
+
+jvmThreadPeakCountReset OBJECT-TYPE
+    SYNTAX      JvmTimeMillis64TC
+    UNITS       "milliseconds"
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+	"
+        This object indicates the last time - in milliseconds - at which
+        the peak thread count was reset to the current thread count.
+	This corresponds to a time stamp as returned by
+	java.lang.System.currentTimeMillis().
+
+	Setting this object to a time earlier than its current time value
+	has no effect. Setting this object to a time later than its current
+	time value causes the peak thread count statistic to be reset to
+        the current thread count. The new value of this object will be
+        the time at which the reset operation is triggered.
+
+	There could be a delay between the time at which the reset operation
+	is triggered and the time at which the actual resetting happens, so
+	this value is only indicative.
+
+	 See java.lang.management.ThreadMXBean.resetPeakThreadCount()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.ThreadMXBean"
+    ::= { jvmThreading 7 }
+
+
+-- Object identifiers in the range jvmThreading.[8-10] are reserved
+-- for future evolution of this MIB.
+--
+-----------------------------------------------------------------------
+-- The JVM Thread Instance Table
+--
+-- The jvmThreadInstanceTable represents the threads which are currently
+-- alive in the system. The representation of a thread is derived from the
+-- set of methods in the ThreadMXBean that return information about a
+-- given thread.
+--
+-- See J2SE 5.0 API Specification, java.lang.management.ThreadMXBean for
+--     a detailed description of the threading subsystem.
+-- See also J2SE 5.0 API Specification, java.lang.management.ThreadInfo,
+--     and java.lang.Thread
+--
+-----------------------------------------------------------------------
+
+jvmThreadInstanceTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF JvmThreadInstanceEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"The Thread Instance Table is built from all the methods of
+	 ThreadMXBean that take a ThreadID as parameter.
+
+	 See java.lang.management.ThreadMXBean.getAllThreadIds()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.ThreadMXBean"
+    ::= { jvmThreading 10 }
+
+jvmThreadInstanceEntry OBJECT-TYPE
+    SYNTAX      JvmThreadInstanceEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"A row in this table represents a live thread.
+	 Attributes in this row are built from all the methods of
+	 ThreadMXBean that take a ThreadID as parameter.
+
+	 See java.lang.management.ThreadMXBean
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.ThreadMXBean"
+    INDEX { jvmThreadInstIndex }
+    ::= { jvmThreadInstanceTable 1 }
+
+JvmThreadInstanceEntry ::= SEQUENCE {
+        jvmThreadInstIndex            JvmIndex64TC,
+	jvmThreadInstId               JvmUnsigned64TC,
+	jvmThreadInstState            JvmThreadStateTC,
+        jvmThreadInstBlockCount       Counter64,
+        jvmThreadInstBlockTimeMs      JvmTimeMillis64TC,
+        jvmThreadInstWaitCount        Counter64,
+        jvmThreadInstWaitTimeMs       JvmTimeMillis64TC,
+        jvmThreadInstCpuTimeNs        JvmTimeNanos64TC,
+	jvmThreadInstLockName         JvmJavaObjectNameTC,
+	jvmThreadInstLockOwnerPtr     RowPointer,
+	jvmThreadInstName             JvmJavaObjectNameTC
+}
+
+jvmThreadInstIndex OBJECT-TYPE
+    SYNTAX      JvmIndex64TC
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"An index uniquely identifying a live thread, and directly
+         derived from the value of jvmThreadInstId. The jvmThreadInstId
+	 cannot be used directly as index in the table, because integer
+	 indexes cannot exceed an unsigned 32 int.
+
+	 The jvmThreadInstIndex index is an 8 byte octet string as
+         defined by the JvmIndex64TC TEXTUAL-CONVENTION. Its value is
+         directly derived from the value of the corresponding ThreadID
+         returned by jvmThreadInstId.
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.ThreadMXBean, java.lang.Thread"
+    ::= { jvmThreadInstanceEntry 1 }
+
+jvmThreadInstId OBJECT-TYPE
+    SYNTAX      JvmUnsigned64TC
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The thread ID, as returned by Thread.getId().
+
+	 See java.lang.management.ThreadMXBean.getThreadInfo(long,boolean).
+	                          getThreadId()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.ThreadMXBean, java.lang.Thread"
+    ::= { jvmThreadInstanceEntry 2 }
+
+jvmThreadInstState OBJECT-TYPE
+    SYNTAX      JvmThreadStateTC
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The state of this thread instance.
+
+	 See java.lang.management.ThreadMXBean.getThreadInfo(long,boolean).
+	                          getThreadState()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.ThreadMXBean"
+    ::= { jvmThreadInstanceEntry 3 }
+
+jvmThreadInstBlockCount OBJECT-TYPE
+    SYNTAX      Counter64
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The total number of times that this thread has blocked to enter
+         or re-enter a monitor..
+
+	 See java.lang.management.ThreadMXBean.getThreadInfo(long,boolean).
+	                          getBlockedCount()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.ThreadMXBean"
+    ::= { jvmThreadInstanceEntry 4 }
+
+jvmThreadInstBlockTimeMs OBJECT-TYPE
+    SYNTAX      JvmTimeMillis64TC
+    UNITS       "milliseconds"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The approximate accumulated elapsed time (in millisecond)
+	 that a thread has blocked to enter or re-enter a monitor since
+         it has started - or since thread contention monitoring was
+	 enabled.
+
+	 This object is always set to 0 if thread contention monitoring
+	 is disabled or not supported.
+
+	 See java.lang.management.ThreadMXBean.getThreadInfo(long,boolean).
+	                          getBlockedTime()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.ThreadMXBean"
+    ::= { jvmThreadInstanceEntry 5 }
+
+jvmThreadInstWaitCount OBJECT-TYPE
+    SYNTAX      Counter64
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The total number of times that this thread has waited for
+         notification.
+
+	 See java.lang.management.ThreadMXBean.getThreadInfo(long,boolean).
+	                          getWaitedCount()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.ThreadMXBean"
+    ::= { jvmThreadInstanceEntry 6 }
+
+jvmThreadInstWaitTimeMs OBJECT-TYPE
+    SYNTAX      JvmTimeMillis64TC
+    UNITS       "milliseconds"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The approximate accumulated elapsed time (in millisecond)
+	 that a thread has waited on a monitor through a
+         java.lang.Object.wait method since it has started - or since
+	 thread contention monitoring wasenabled.
+
+	 This object is always set to 0 if thread contention monitoring
+	 is disabled or not supported.
+
+	 See java.lang.management.ThreadMXBean.getThreadInfo(long,boolean).
+	                          getWaitedTime()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.ThreadMXBean"
+    ::= { jvmThreadInstanceEntry 7 }
+
+jvmThreadInstCpuTimeNs OBJECT-TYPE
+    SYNTAX      JvmTimeNanos64TC
+    UNITS       "nanoseconds"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The approximate accumulated CPU time (in nanosecond) for a thread
+         since it has started - or since thread CPU time monitoring was
+	 enabled.
+
+	 If the thread of the specified ID is not alive or does not exist,
+	 or the CPU time measurement is disabled or not supported,
+	 this object is set to 0.
+
+	 See java.lang.management.ThreadMXBean.getThreadCpuTime(long),
+	     java.lang.management.ThreadMXBean.isThreadCpuTimeSupported(),
+	     java.lang.management.ThreadMXBean.isThreadCpuTimeEnabled()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.ThreadMXBean"
+    ::= { jvmThreadInstanceEntry 8 }
+
+jvmThreadInstName OBJECT-TYPE
+    SYNTAX      JvmJavaObjectNameTC
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"This thread name - as returned by Thread.getThreadName().
+
+	 See java.lang.management.ThreadInfo.getThreadName()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.ThreadMXBean,
+              java.lang.management.ThreadInfo"
+    ::= { jvmThreadInstanceEntry 9 }
+
+jvmThreadInstLockName OBJECT-TYPE
+    SYNTAX      JvmJavaObjectNameTC
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The string representation of the monitor lock that this thread
+	 is blocked to enter or waiting to be notified through the
+	 Object.wait method.
+
+	 See J2SE 5.0 API Specification,
+             java.lang.management.ThreadInfo.getLockName()
+         for more information on the format of this string.
+
+	 If this thread is not blocked then a zero-length string is returned.
+
+	 Note that the SNMP agent may have to truncate the string returned
+         by the underlying API if it does not fit in the JvmJavaObjectNameTC
+	 (1023 bytes max).
+
+	 See java.lang.management.ThreadInfo.getLockName()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.ThreadMXBean,
+              java.lang.management.ThreadInfo"
+    ::= { jvmThreadInstanceEntry 10 }
+
+jvmThreadInstLockOwnerPtr OBJECT-TYPE
+    SYNTAX      RowPointer
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"A pointer to the thread which owns the monitor of the
+	 object on which this thread instance is blocked.
+         This object will point to jvmThreadInstId of the
+	 lock owner thread.
+
+	 If this thread is not blocked then 0.0 is returned.
+
+	 See java.lang.management.ThreadInfo.getLockOwnerId()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.ThreadMXBean,
+              java.lang.management.ThreadInfo"
+    ::= { jvmThreadInstanceEntry 11 }
+
+-----------------------------------------------------------------------
+--
+-- The JVM Runtime group
+--
+-- A collection of objects used to monitor the Java Virtual Machine
+-- Runtime. These objects define the SNMP management interface for the
+-- runtime system of the Java virtual machine.
+--
+-- The JVM Runtime group defines object mapped from the
+-- java.lang.management.RuntimeMXBean interface.
+--
+-- See J2SE 5.0 API Specification, java.lang.management.RuntimeMXBean for
+--     a detailed description of the runtime system.
+--
+-----------------------------------------------------------------------
+
+jvmRuntime   OBJECT IDENTIFIER ::= { jvmMgtMIBObjects 4 }
+
+-- The following objects are mapped from the RuntimeMXBean interface.
+-----------------------------------------------------------------------
+
+jvmRTName OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The name representing the running Java virtual machine.
+
+	 Note that the SNMP agent may have to truncate the name returned
+         by the underlying API if it does not fit in the DisplayString
+	 (255 bytes max).
+
+	 See java.lang.management.RuntimeMXBean.getName()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.RuntimeMXBean"
+    ::= { jvmRuntime 1 }
+
+jvmRTVMName OBJECT-TYPE
+    SYNTAX      JvmJavaObjectNameTC
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The Java virtual machine implementation name.
+
+	 See java.lang.management.RuntimeMXBean.getVmName()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.RuntimeMXBean"
+    ::= { jvmRuntime 2 }
+
+jvmRTVMVendor OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The Java virtual machine implementation vendor.
+
+	 Note that the SNMP agent may have to truncate the string returned
+         by the underlying API if it does not fit in the DisplayString
+	 (255 bytes max).
+
+	 See java.lang.management.RuntimeMXBean.getVmVendor()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.RuntimeMXBean"
+    ::= { jvmRuntime 3 }
+
+jvmRTVMVersion OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The Java virtual machine implementation version.
+
+	 Note that the SNMP agent may have to truncate the string returned
+         by the underlying API if it does not fit in the DisplayString
+	 (255 bytes max).
+
+	 See java.lang.management.RuntimeMXBean.getVmVersion()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.RuntimeMXBean"
+    ::= { jvmRuntime 4 }
+
+jvmRTSpecName OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The Java virtual machine specification name.
+
+	 Note that the SNMP agent may have to truncate the string returned
+         by the underlying API if it does not fit in the DisplayString
+	 (255 bytes max).
+
+	 See java.lang.management.RuntimeMXBean.getSpecName()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.RuntimeMXBean"
+    ::= { jvmRuntime 5 }
+
+jvmRTSpecVendor OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The Java virtual machine specification vendor.
+
+	 Note that the SNMP agent may have to truncate the string returned
+         by the underlying API if it does not fit in the DisplayString
+	 (255 bytes max).
+
+         See java.lang.management.RuntimeMXBean.getSpecVendor()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.RuntimeMXBean"
+    ::= { jvmRuntime 6 }
+
+jvmRTSpecVersion OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The Java virtual machine specification version.
+
+	 Note that the SNMP agent may have to truncate the string returned
+         by the underlying API if it does not fit in the DisplayString
+	 (255 bytes max).
+
+         See java.lang.management.RuntimeMXBean.getSpecVersion()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.RuntimeMXBean"
+    ::= { jvmRuntime 7 }
+
+jvmRTManagementSpecVersion OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The version of the management specification for the Java virtual
+	 machine implementation.
+
+	 Note that the SNMP agent may have to truncate the string returned
+         by the underlying API if it does not fit in the DisplayString
+	 (255 bytes max).
+
+         See java.lang.management.RuntimeMXBean.getManagementSpecVersion()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.RuntimeMXBean"
+    ::= { jvmRuntime 8 }
+
+jvmRTBootClassPathSupport OBJECT-TYPE
+    SYNTAX      JvmImplSupportStateTC
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"Indicates whether the Java virtual machine supports the
+	 boot class path mechanism used by the bootstrap class loader
+         to search for class files.
+
+	 See java.lang.management.RuntimeMXBean.isBootClassPathSupported()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.RuntimeMXBean"
+    ::= { jvmRuntime 9 }
+
+jvmRTInputArgsCount OBJECT-TYPE
+    SYNTAX      JvmPositive32TC
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The number of input arguments passed to the Java Virtual Machine.
+
+	 See java.lang.management.RuntimeMXBean.getInputArguments()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.RuntimeMXBean"
+    ::= { jvmRuntime 10 }
+
+jvmRTUptimeMs OBJECT-TYPE
+    SYNTAX      JvmTimeMillis64TC
+    UNITS       "milliseconds"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"Uptime of the Java virtual machine, in milliseconds. This is
+         equivalent to ( System.currentTimeMillis() - jvmStartTimeMs ).
+
+         See also jvmRTStartTimeMs.
+
+         See java.lang.management.RuntimeMXBean.getUptime()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.RuntimeMXBean"
+    ::= { jvmRuntime 11 }
+
+jvmRTStartTimeMs OBJECT-TYPE
+    SYNTAX      JvmTimeMillis64TC
+    UNITS       "milliseconds"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The approximate time when the Java virtual machine started, in
+         milliseconds. This is a time stamp as returned by
+         System.currentTimeMillis(). This time will not change unless
+         the Java Virtual Machine is restarted.
+
+         See also jvmRTUptimeMs.
+
+         See java.lang.management.RuntimeMXBean.getStartTime()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.RuntimeMXBean"
+    ::= { jvmRuntime 12 }
+
+
+-- Object identifiers in the range jvmRuntime.[13-19] are reserved
+-- for future evolution of this MIB.
+--
+-----------------------------------------------------------------------
+--
+-- The JVM Input Argument Table
+--
+-- The jvmRTInputArgsTable contains one row per input argument given on
+-- the Java command line.
+--
+-- See J2SE 5.0 API Specification,
+--     java.lang.management.RuntimeMXBean.getInputArguments()
+--     for more information.
+-----------------------------------------------------------------------
+
+jvmRTInputArgsTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF JvmRTInputArgsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"The Input Argument Table lists the input arguments passed
+	 to the Java Virtual Machine.
+
+	 The jvmRTInputArgsIndex is the index of the argument in
+	 the array returned by RuntimeMXBean.getInputArguments().
+
+	 See java.lang.management.RuntimeMXBean.getInputArguments()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.RuntimeMXBean"
+    ::= { jvmRuntime 20 }
+
+jvmRTInputArgsEntry OBJECT-TYPE
+    SYNTAX      JvmRTInputArgsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"Represent an input argument passed to the Java Virtual Machine.
+
+	 See java.lang.management.RuntimeMXBean.getInputArguments()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.RuntimeMXBean"
+    INDEX { jvmRTInputArgsIndex }
+    ::= { jvmRTInputArgsTable 1 }
+
+JvmRTInputArgsEntry ::= SEQUENCE {
+        jvmRTInputArgsIndex JvmPositive32TC,
+	jvmRTInputArgsItem  JvmArgValueTC
+}
+
+jvmRTInputArgsIndex OBJECT-TYPE
+    SYNTAX      JvmPositive32TC
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"The index of the input argument, as in the array returned
+	 by RuntimeMXBean.getInputArguments().
+
+	 See java.lang.management.RuntimeMXBean.getInputArguments()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.RuntimeMXBean"
+    ::= { jvmRTInputArgsEntry 1 }
+
+jvmRTInputArgsItem OBJECT-TYPE
+    SYNTAX      JvmArgValueTC
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"An input argument at index jvmRTInputArgsIndex, as in the array
+	 returned by RuntimeMXBean.getInputArguments().
+
+	 Note that the SNMP agent may have to truncate the string returned
+         by the underlying API if it does not fit in the JvmArgValueTC
+         (1023 bytes max).
+
+	 See java.lang.management.RuntimeMXBean.getInputArguments()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.RuntimeMXBean"
+    ::= { jvmRTInputArgsEntry 2 }
+
+
+-----------------------------------------------------------------------
+--
+-- The JVM Boot Class Path Table
+--
+-- The jvmRTBootClassPathTable contains one row per path element in the
+-- bootclasspath. This table may not be implemented (or may be empty) if
+-- the bootclasspath feature is not supported by the underlying
+-- implementation.
+--
+-- See J2SE 5.0 API Specification,
+--     java.lang.management.RuntimeMXBean.getBootClassPath()
+--     java.lang.management.RuntimeMXBean.isBootClassPathSupported()
+--     for more information.
+-----------------------------------------------------------------------
+
+jvmRTBootClassPathTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF JvmRTBootClassPathEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"The boot class path that is used by the bootstrap class loader
+	 to search for a class file for loading.
+
+	 Note that the SNMP agent may have to truncate the bootclasspath
+	 elements contained in the string returned by the underlying API
+	 if it does not fit in the JvmPathElementTC (1023 bytes max).
+
+	 This table is not implemented (or empty) if jvmRTBootClassPathSupport
+         is unsupported(1).
+
+	 See java.lang.management.RuntimeMXBean.getBootClassPath()
+	     java.lang.management.RuntimeMXBean.isBootClassPathSupported()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.RuntimeMXBean"
+    ::= { jvmRuntime 21 }
+
+jvmRTBootClassPathEntry OBJECT-TYPE
+    SYNTAX      JvmRTBootClassPathEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"Represent a path element in the Java Virtual Machine bootclasspath.
+
+	 See java.lang.management.RuntimeMXBean.getBootClassPath()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.RuntimeMXBean"
+    INDEX { jvmRTBootClassPathIndex }
+    ::= { jvmRTBootClassPathTable 1 }
+
+JvmRTBootClassPathEntry ::= SEQUENCE {
+        jvmRTBootClassPathIndex JvmPositive32TC,
+	jvmRTBootClassPathItem  JvmPathElementTC
+}
+
+jvmRTBootClassPathIndex OBJECT-TYPE
+    SYNTAX      JvmPositive32TC
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"The index of the path element, as in the array obtained
+	 by splitting RuntimeMXBean.getBootClassPath() in its elementary path
+	 constituents.
+
+	 See java.lang.management.RuntimeMXBean.getBootClassPath()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.RuntimeMXBean"
+    ::= { jvmRTBootClassPathEntry 1 }
+
+jvmRTBootClassPathItem OBJECT-TYPE
+    SYNTAX      JvmPathElementTC
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"An path element at index jvmRTBootClassPathIndex, as in the
+	 array obtained by splitting RuntimeMXBean.getBootClassPath() in
+	 its elementary path constituents.
+
+	 Note that the SNMP agent may have to truncate the string returned
+         by the underlying API if it does not fit in the JvmPathElementTC
+	 (1023 bytes max).
+
+	 See java.lang.management.RuntimeMXBean.getBootClassPath()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.RuntimeMXBean"
+    ::= { jvmRTBootClassPathEntry 2 }
+
+-----------------------------------------------------------------------
+--
+-- The JVM Class Path Table
+--
+-- The jvmRTClassPathTable contains one row per path element in the
+-- classpath.
+--
+-- See J2SE 5.0 API Specification,
+--     java.lang.management.RuntimeMXBean.getClassPath()
+--     for more information.
+-----------------------------------------------------------------------
+
+jvmRTClassPathTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF JvmRTClassPathEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"The  class path that is used by the system class loader
+	 to search for a class file.
+
+	 Note that the SNMP agent may have to truncate the classpath
+	 elements contained in the string returned by the underlying API
+	 if it does not fit in the JvmPathElementTC (1023 bytes max).
+
+	 See java.lang.management.RuntimeMXBean.getClassPath()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.RuntimeMXBean"
+    ::= { jvmRuntime 22 }
+
+jvmRTClassPathEntry OBJECT-TYPE
+    SYNTAX      JvmRTClassPathEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"Represent a path element in the Java Virtual Machine classpath.
+
+	 See java.lang.management.RuntimeMXBean.getClassPath()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.RuntimeMXBean"
+    INDEX { jvmRTClassPathIndex }
+    ::= { jvmRTClassPathTable 1 }
+
+JvmRTClassPathEntry ::= SEQUENCE {
+        jvmRTClassPathIndex JvmPositive32TC,
+	jvmRTClassPathItem  JvmPathElementTC
+}
+
+jvmRTClassPathIndex OBJECT-TYPE
+    SYNTAX      JvmPositive32TC
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"The index of the path element, as in the array obtained
+	 by splitting RuntimeMXBean.getClassPath() in its elementary
+	 path constituents.
+
+	 See java.lang.management.RuntimeMXBean.getClassPath()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.RuntimeMXBean"
+    ::= { jvmRTClassPathEntry 1 }
+
+jvmRTClassPathItem OBJECT-TYPE
+    SYNTAX      JvmPathElementTC
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"An path element at index jvmRTClassPathIndex, as in the array
+	 obtained by splitting RuntimeMXBean.getClassPath() in its elementary
+	 path constituents.
+
+	 Note that the SNMP agent may have to truncate the string returned
+         by the underlying API if it does not fit in the JvmPathElementTC
+	 (1023 bytes max).
+
+	 See java.lang.management.RuntimeMXBean.getClassPath()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.RuntimeMXBean"
+    ::= { jvmRTClassPathEntry 2 }
+
+-----------------------------------------------------------------------
+--
+-- The JVM Library Path Table
+--
+-- The jvmRTLibraryPathTable contains one row per path element in the
+-- librarypath.
+--
+-- See J2SE 5.0 API Specification,
+--     java.lang.management.RuntimeMXBean.getLibraryPath()
+--     for more information.
+-----------------------------------------------------------------------
+
+jvmRTLibraryPathTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF JvmRTLibraryPathEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"The  library path.
+
+	 Note that the SNMP agent may have to truncate the librarypath
+	 elements contained in the string returned by the underlying API
+	 if it does not fit in the JvmPathElementTC (1023 bytes max).
+
+	 See java.lang.management.RuntimeMXBean.getLibraryPath()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.RuntimeMXBean"
+    ::= { jvmRuntime 23 }
+
+jvmRTLibraryPathEntry OBJECT-TYPE
+    SYNTAX      JvmRTLibraryPathEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"Represent a path element in the Java Virtual Machine librarypath.
+
+	 See java.lang.management.RuntimeMXBean.getLibraryPath()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.RuntimeMXBean"
+    INDEX { jvmRTLibraryPathIndex }
+    ::= { jvmRTLibraryPathTable 1 }
+
+JvmRTLibraryPathEntry ::= SEQUENCE {
+        jvmRTLibraryPathIndex JvmPositive32TC,
+	jvmRTLibraryPathItem  JvmPathElementTC
+}
+
+jvmRTLibraryPathIndex OBJECT-TYPE
+    SYNTAX      JvmPositive32TC
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"The index of the path element, as in the array obtained
+	 by splitting RuntimeMXBean.getLibraryPath() in its elementary
+	 constituents.
+
+	 See java.lang.management.RuntimeMXBean.getLibraryPath()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.RuntimeMXBean"
+    ::= { jvmRTLibraryPathEntry 1 }
+
+jvmRTLibraryPathItem OBJECT-TYPE
+    SYNTAX      JvmPathElementTC
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"An path element at index jvmRTLibraryPathIndex, as in the array
+	 obtained by splitting RuntimeMXBean.getLibraryPath() in its elementary
+	 path constituents.
+
+	 Note that the SNMP agent may have to truncate the string returned
+         by the underlying API if it does not fit in the JvmPathElementTC
+	 (1023 bytes max).
+
+	 See java.lang.management.RuntimeMXBean.getLibraryPath()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.RuntimeMXBean"
+    ::= { jvmRTLibraryPathEntry 2 }
+
+-----------------------------------------------------------------------
+--
+-- The JVM Compilation group
+--
+-- A collection of objects used to monitor the Java Virtual Machine
+-- Runtime Compiler (JIT). These objects define the SNMP management
+-- interface for the compilation system of the Java virtual machine.
+--
+-- The JVM Compilation group defines object mapped from the
+-- java.lang.management.CompilationMXBean interface.
+--
+-- See J2SE 5.0 API Specification, java.lang.management.CompilationMXBean for
+--     a detailed description of the runtime system.
+--
+-----------------------------------------------------------------------
+
+jvmCompilation   OBJECT IDENTIFIER ::= { jvmMgtMIBObjects 5 }
+
+-- The following objects are mapped from the CompilationMXBean interface.
+-----------------------------------------------------------------------
+
+jvmJITCompilerName OBJECT-TYPE
+    SYNTAX      JvmJavaObjectNameTC
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The name of the Just-in-time (JIT) compiler.
+
+	 See java.lang.management.CompilationMXBean.getName()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.CompilationMXBean"
+    ::= { jvmCompilation 1 }
+
+jvmJITCompilerTimeMs OBJECT-TYPE
+    SYNTAX      JvmTimeMillis64TC
+    UNITS       "milliseconds"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"Gets the approximate accumulated elapsed time (in milliseconds)
+	 spent in compilation since the Java virtual machine has started.
+	 If multiple threads are used for compilation, this value is
+	 the summation of the approximate time that each thread
+	 spent in compilation.
+
+	 If compiler time monitoring is not supported, then this object
+	 remains set to 0.
+
+	 See java.lang.management.CompilationMXBean.getTotalCompilationTime()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.CompilationMXBean"
+    ::= { jvmCompilation 2 }
+
+
+jvmJITCompilerTimeMonitoring OBJECT-TYPE
+    SYNTAX      JvmImplSupportStateTC
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"Indicates whether the Java virtual machine supports
+	 compilation time monitoring.
+
+	 See java.lang.management.CompilationMXBean.
+                             isCompilationTimeMonitoringSupported()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.CompilationMXBean"
+    ::= { jvmCompilation 3 }
+
+-----------------------------------------------------------------------
+--
+-- The JVM Operating System group
+--
+-- A collection of objects used to monitor some resource of the
+-- Operating System the Java Virtual Machine is running on. These objects
+-- define the SNMP management interface offered by the Java virtual machine
+-- for the operating system on which it is running.
+--
+-- The JVM Operating System group defines object mapped from the
+-- java.lang.management.OperatingSystemMXBean interface.
+--
+-- See J2SE 5.0 API Specification, java.lang.management.OperatingSystemMXBean
+--     for a detailed description of the operating system.
+--
+-----------------------------------------------------------------------
+
+jvmOS   OBJECT IDENTIFIER ::= { jvmMgtMIBObjects 6 }
+
+-- The following objects are mapped from the OperatingSystemMXBean interface.
+-----------------------------------------------------------------------
+
+jvmOSName OBJECT-TYPE
+    SYNTAX      JvmJavaObjectNameTC
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The operating system name.
+
+	 See java.lang.management.OperatingSystemMXBean.getName()
+	"
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.OperatingSystemMXBean"
+    ::= { jvmOS 1 }
+
+jvmOSArch OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The operating system architecture.
+
+	 Note that the SNMP agent may have to truncate the string returned
+         by the underlying API if it does not fit in the DisplayString
+	 (255 bytes max).
+
+	 See java.lang.management.OperatingSystemMXBean.getArch()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.OperatingSystemMXBean"
+    ::= { jvmOS 2 }
+
+jvmOSVersion OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The operating system version.
+
+	 Note that the SNMP agent may have to truncate the string returned
+         by the underlying API if it does not fit in the DisplayString
+	 (255 bytes max).
+
+	 See java.lang.management.OperatingSystemMXBean.getVersion()
+	"
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.OperatingSystemMXBean"
+    ::= { jvmOS 3 }
+
+jvmOSProcessorCount OBJECT-TYPE
+
+    SYNTAX      Integer32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The number of processors available to the Java virtual machine.
+
+         See java.lang.management.OperatingSystemMXBean.getAvailableProcessors()
+        "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.OperatingSystemMXBean"
+    ::= { jvmOS 4 }
+
+--
+-- NOTIFICATIONS
+--
+-----------------------------------------------------------------------
+
+--
+-- Low Memory Notifications
+--
+
+jvmMgtMIBMemoryNotifs    OBJECT IDENTIFIER ::= { jvmMgtMIBNotifications 2 }
+jvmMgtMIBLowMemoryNotifs OBJECT IDENTIFIER ::= { jvmMgtMIBMemoryNotifs  1 }
+
+jvmLowMemoryPrefix OBJECT IDENTIFIER
+    ::= { jvmMgtMIBLowMemoryNotifs 0 }
+
+-- Not used at this time, but reserved for future evolution of this MIB:
+--
+-- jvmLowMemoryData OBJECT IDENTIFIER
+--    ::= { jvmMgtMIBLowMemoryNotifs 1 }
+--
+
+jvmLowMemoryPoolUsageNotif NOTIFICATION-TYPE
+    OBJECTS {  jvmMemPoolName, jvmMemPoolUsed, jvmMemPoolThreshdCount }
+    STATUS current
+    DESCRIPTION
+           "This notification is sent when the memory usage threshold of
+	    a memory pool is exceeded.
+           "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryNotification,
+	      java.lang.management.MemoryPoolMXBean"
+    ::= { jvmLowMemoryPrefix  1 }
+
+jvmLowMemoryPoolCollectNotif NOTIFICATION-TYPE
+    OBJECTS {  jvmMemPoolName, jvmMemPoolCollectUsed,
+               jvmMemPoolCollectThreshdCount }
+    STATUS current
+    DESCRIPTION
+           "This notification is sent when the collection memory usage
+	    threshold of a memory pool is exceeded.
+           "
+    REFERENCE "J2SE 5.0 API Specification,
+              java.lang.management.MemoryNotification,
+	      java.lang.management.MemoryPoolMXBean"
+    ::= { jvmLowMemoryPrefix  2 }
+
+--
+-- Conformance Section
+--
+-----------------------------------------------------------------------
+
+-- conformance information
+
+jvmMgtMIBCompliances
+               OBJECT IDENTIFIER ::= { jvmMgtMIBConformance 1 }
+jvmMgtMIBGroups
+               OBJECT IDENTIFIER ::= { jvmMgtMIBConformance 2 }
+
+
+-- compliance statements
+
+jvmManagementCompliance MODULE-COMPLIANCE
+    STATUS  current
+    DESCRIPTION
+            "The compliance statement for SNMP entities which
+            implement this MIB."
+    MODULE  -- this module
+    MANDATORY-GROUPS {
+                     jvmClassLoadingBasicGroup,
+		     jvmClassLoadingSetGroup,
+		     jvmMemoryBasicGroup,
+		     jvmMemoryHeapUsageGroup,
+		     jvmMemoryNonHeapUsageGroup,
+		     jvmMemorySetGroup,
+		     jvmMemManagerGroup,
+		     jvmMemGCGroup,
+		     jvmMemPoolBasicGroup,
+		     jvmMemPoolUsageGroup,
+		     jvmMemPoolPeakUsageGroup,
+		     jvmMemPoolCollectUsageGroup,
+		     jvmMemMgrPoolRelationGroup,
+		     jvmThreadBasicGroup,
+		     jvmThreadInstanceBasicGroup,
+		     jvmRuntimeBasicGroup,
+		     jvmOSGroup
+    }
+
+    -- optional/conditional groups
+    GROUP  jvmMemPoolMonitoringGroup
+        DESCRIPTION
+            "This group may not be implemented if the Java virtual
+             machine does not support low memory detection in memory usage.
+	    "
+    GROUP  jvmMemPoolCollectMonitoringGroup
+        DESCRIPTION
+            "This group may not be implemented if the Java virtual
+             machine does not support low memory detection in collection
+	     memory usage.
+	    "
+    GROUP  jvmLowMemoryUsageNotifGroup
+        DESCRIPTION
+            "This group may not be implemented if the Java virtual
+             machine does not support low memory usage detection.
+	    "
+    GROUP  jvmLowMemoryCollectNotifGroup
+        DESCRIPTION
+            "This group may not be implemented if the Java virtual
+             machine does not support low collection memory usage detection.
+	    "
+    GROUP  jvmThreadInstanceCpuGroup
+        DESCRIPTION
+            "This group may not be implemented if the Java virtual
+             machine does not support CPU time measurement for other threads.
+	    "
+    GROUP  jvmThreadInstanceBlockGroup
+        DESCRIPTION
+            "This group may not be implemented if the Java virtual
+             machine does not support thread contention monitoring.
+	    "
+    GROUP  jvmRuntimeBootCPGroup
+        DESCRIPTION
+            "This group may not be implemented if the underlying
+	     implementation does not support the bootclasspath feature.
+            "
+    GROUP  jvmJITCompilerBasicGroup
+        DESCRIPTION
+            "This group may not be implemented if the Java virtual
+             machine has no compilation system.
+	    "
+    GROUP  jvmJITCompilerTimeStatGroup
+        DESCRIPTION
+            "This group may not be implemented if the Java virtual
+             machine has no compilation system, or does not support
+             JIT Compiler time statistics.
+	    "
+    ::= { jvmMgtMIBCompliances 1 }
+
+
+-- units of conformance
+
+jvmClassLoadingGroups OBJECT IDENTIFIER ::= { jvmMgtMIBGroups 1 }
+
+jvmClassLoadingBasicGroup  OBJECT-GROUP
+    OBJECTS {
+             jvmClassesLoadedCount,
+	     jvmClassesTotalLoadedCount,
+	     jvmClassesUnloadedCount
+    }
+    STATUS current
+    DESCRIPTION
+	"A collection of  objects that are mapped from JSR 163
+	 java.lang.management.ClassLoadingMXBean interface.
+        "
+    ::= { jvmClassLoadingGroups 1 }
+
+jvmClassLoadingSetGroup  OBJECT-GROUP
+    OBJECTS {
+             jvmClassesVerboseLevel
+    }
+    STATUS current
+    DESCRIPTION
+	"A collection of writable scalar objects that are mapped from JSR 163
+	 java.lang.management.ClassLoadingMXBean interface, and make it possible
+	 to act on class loading. Accessing these objects may
+	 require special permissions - the agent implementation is
+	 responsible for puting in place the appropriate access control
+	 if needed.
+        "
+    ::= { jvmClassLoadingGroups 2 }
+
+jvmMemoryGroups OBJECT IDENTIFIER ::= { jvmMgtMIBGroups 2 }
+
+jvmMemoryBasicGroup  OBJECT-GROUP
+    OBJECTS {
+             jvmMemoryPendingFinalCount
+    }
+    STATUS current
+    DESCRIPTION
+	"A collection of columnar objects that are mapped from JSR 163
+	 java.lang.management.MemoryManagerMXBean interface.
+        "
+    ::= { jvmMemoryGroups 1 }
+
+jvmMemoryHeapUsageGroup OBJECT-GROUP
+    OBJECTS {
+             jvmMemoryHeapInitSize,
+	     jvmMemoryHeapUsed,
+	     jvmMemoryHeapCommitted,
+	     jvmMemoryHeapMaxSize
+    }
+    STATUS current
+    DESCRIPTION
+	"A collection of objects that are mapped from JSR 163
+	 java.lang.management.MemoryMXBean.getHeapMemoryUsage().
+	 When several of these objects are requested within a single
+	 SNMP request, the agent must ensure that
+         java.lang.management.MemoryPoolMXBean.getHeapMemoryUsage() is
+	 called only once, in order to guarantee that the set of
+	 values returned for these objects remain coherent and give
+	 a consistent snapshot of the heap memory usage made by
+	 Heap Memory Pools.
+        "
+    ::= { jvmMemoryGroups 2 }
+
+jvmMemoryNonHeapUsageGroup OBJECT-GROUP
+    OBJECTS {
+             jvmMemoryNonHeapInitSize,
+	     jvmMemoryNonHeapUsed,
+	     jvmMemoryNonHeapCommitted,
+	     jvmMemoryNonHeapMaxSize
+    }
+    STATUS current
+    DESCRIPTION
+	"A collection of objects that are mapped from JSR 163
+	 java.lang.management.MemoryMXBean.getNonHeapMemoryUsage().
+	 When several of these objects are requested within a single
+	 SNMP request, the agent must ensure that
+         java.lang.management.MemoryPoolMXBean.getNonHeapMemoryUsage() is
+	 called only once, in order to guarantee that the set of
+	 values returned for these objects remain coherent and give
+	 a consistent snapshot of the non heap memory usage made by
+	 Non Heap Memory Pools.
+        "
+    ::= { jvmMemoryGroups 3 }
+
+jvmMemorySetGroup OBJECT-GROUP
+    OBJECTS {
+             jvmMemoryGCVerboseLevel,
+	     jvmMemoryGCCall
+    }
+    STATUS current
+    DESCRIPTION
+	"A collection of writable scalar objects that are mapped from JSR 163
+	 java.lang.management.MemoryMXBean interface, and make it possible
+	 to act on the Garbage Collector. Accessing these objects may
+	 require special permissions - the agent implementation is
+	 responsible for puting in place the appropriate access control
+	 if needed.
+        "
+    ::= { jvmMemoryGroups 4 }
+
+jvmMemManagerGroup  OBJECT-GROUP
+    OBJECTS {
+	     jvmMemManagerName,
+	     jvmMemManagerState
+    }
+    STATUS current
+    DESCRIPTION
+	"A collection of columnar objects that are mapped from JSR 163
+	 java.lang.management.MemoryManagerMXBean interface.
+        "
+    ::= { jvmMemoryGroups 5 }
+
+jvmMemGCGroup  OBJECT-GROUP
+    OBJECTS {
+             jvmMemGCCount,
+             jvmMemGCTimeMs
+    }
+    STATUS current
+    DESCRIPTION
+	"A collection of columnar objects that are mapped from JSR 163
+	 java.lang.management.GarbageCollectorMXBean interface, and are
+	 specific to GarbageCollector MXBeans.
+	 These objects are used to model the inheritence link between
+	 GarbageCollectorMXBean and its super interface - MemoryManagerMXBean.
+        "
+    ::= { jvmMemoryGroups 6 }
+
+jvmMemPoolGroups OBJECT IDENTIFIER ::= { jvmMemoryGroups 7 }
+
+jvmMemPoolBasicGroup  OBJECT-GROUP
+    OBJECTS {
+	     jvmMemPoolName,
+	     jvmMemPoolType,
+	     jvmMemPoolState,
+	     jvmMemPoolPeakReset,
+	     jvmMemPoolThreshdSupport,
+	     jvmMemPoolCollectThreshdSupport
+    }
+    STATUS current
+    DESCRIPTION
+	"A collection of columnar objects that are mapped from JSR 163
+	 java.lang.management.MemoryPoolMXBean interface.
+        "
+    ::= { jvmMemPoolGroups 1 }
+
+jvmMemPoolMonitoringGroup OBJECT-GROUP
+     OBJECTS {
+	     jvmMemPoolThreshold,
+	     jvmMemPoolThreshdCount
+     }
+    STATUS current
+    DESCRIPTION
+	"Memory usage threshold objects mapped from
+	 JSR 163 java.lang.management.MemoryPoolMXBean interface, which makes
+	 it possible to configure low memory detection.
+	 Accessing this object may require special permissions - the agent
+	 implementation is responsible for puting in place the appropriate
+	 access control if needed.
+        "
+    ::= { jvmMemPoolGroups 2 }
+
+jvmMemPoolUsageGroup OBJECT-GROUP
+    OBJECTS {
+             jvmMemPoolInitSize,
+	     jvmMemPoolUsed,
+	     jvmMemPoolCommitted,
+	     jvmMemPoolMaxSize
+    }
+    STATUS current
+    DESCRIPTION
+	"A collection of objects that are mapped from JSR 163
+	 java.lang.management.MemoryPoolMXBean.getUsage().
+	 When several of these objects are requested within a single
+	 SNMP request, the agent must ensure that
+         java.lang.management.MemoryPoolMXBean.getUsage() is
+	 called only once, in order to guarantee that the set of
+	 values returned for these objects remain coherent and give
+	 a consistent snapshot of the memory used by this Memory
+	 Pool.
+        "
+    ::= { jvmMemPoolGroups 3 }
+
+jvmMemPoolPeakUsageGroup OBJECT-GROUP
+    OBJECTS {
+             jvmMemPoolPeakUsed,
+	     jvmMemPoolPeakCommitted,
+	     jvmMemPoolPeakMaxSize
+    }
+    STATUS current
+    DESCRIPTION
+	"A collection of objects that are mapped from JSR 163
+	 java.lang.management.MemoryPoolMXBean.getPeakUsage().
+	 When several of these objects are requested within a single
+	 SNMP request, the agent must ensure that
+         java.lang.management.MemoryPoolMXBean.getPeakUsage() is
+	 called only once, in order to guarantee that the set of
+	 values returned for these objects remain coherent and give
+	 a consistent snapshot of the peak memory usage made by
+	 this Memory Pool.
+        "
+    ::= { jvmMemPoolGroups 4 }
+
+jvmMemPoolCollectUsageGroup OBJECT-GROUP
+    OBJECTS {
+             jvmMemPoolCollectUsed,
+	     jvmMemPoolCollectCommitted,
+	     jvmMemPoolCollectMaxSize
+    }
+    STATUS current
+    DESCRIPTION
+	"A collection of objects that are mapped from JSR 163
+	 java.lang.management.MemoryPoolMXBean.getCollectionUsage().
+	 When several of these objects are requested within a single
+	 SNMP request, the agent must ensure that
+         java.lang.management.MemoryPoolMXBean.getCollectionUsage() is
+	 called only once, in order to guarantee that the set of
+	 values returned for these objects remain coherent and give
+	 a consistent snapshot of the collection memory usage made by
+	 this Memory Pool.
+        "
+    ::= { jvmMemPoolGroups 5 }
+
+jvmMemPoolCollectMonitoringGroup OBJECT-GROUP
+     OBJECTS {
+	     jvmMemPoolCollectThreshold,
+	     jvmMemPoolCollectThreshdCount
+     }
+    STATUS current
+    DESCRIPTION
+	"Memory collection usage threshold objects mapped from JSR 163
+	 java.lang.management.MemoryPoolMXBean interface, which makes
+	 it possible to configure low memory detection.
+	 Accessing this object may require special permissions - the agent
+	 implementation is responsible for putting in place the appropriate
+	 access control if needed.
+        "
+    ::= { jvmMemPoolGroups 6 }
+
+
+jvmMemMgrPoolRelationGroup  OBJECT-GROUP
+    OBJECTS {
+             jvmMemMgrRelManagerName,
+	     jvmMemMgrRelPoolName
+    }
+    STATUS current
+    DESCRIPTION
+	"A collection of columnar objects that are mapped from JSR 163
+	 java.lang.management.MemoryPoolMXBean and
+         java.lang.management.MemoryManagerMXBean interface, and show the
+	 relationship between Memory Managers and Memory Pools.
+        "
+    ::= { jvmMemoryGroups 8 }
+
+jvmThreadGroups OBJECT IDENTIFIER ::= { jvmMgtMIBGroups 3 }
+
+jvmThreadBasicGroup OBJECT-GROUP
+    OBJECTS {
+             jvmThreadCount,
+	     jvmThreadDaemonCount,
+	     jvmThreadPeakCount,
+	     jvmThreadTotalStartedCount,
+	     jvmThreadContentionMonitoring,
+	     jvmThreadCpuTimeMonitoring,
+	     jvmThreadPeakCountReset
+    }
+    STATUS current
+    DESCRIPTION
+	"A collection of scalar objects that are mapped from JSR 163
+	 java.lang.management.ThreadMXBean interface.
+        "
+    ::= { jvmThreadGroups 1 }
+
+jvmThreadInstanceGroups OBJECT IDENTIFIER ::= { jvmThreadGroups 2 }
+
+jvmThreadInstanceBasicGroup OBJECT-GROUP
+    OBJECTS {
+	     jvmThreadInstId,
+	     jvmThreadInstState,
+	     jvmThreadInstName,
+	     jvmThreadInstLockName,
+	     jvmThreadInstLockOwnerPtr
+    }
+    STATUS current
+    DESCRIPTION
+	"A collection of columnar objects that are mapped from JSR 163
+	 java.lang.management.ThreadMXBean interface, and are
+	 relative to an instance of java.lang.Thread.
+        "
+    ::= { jvmThreadInstanceGroups 1}
+
+jvmThreadInstanceCpuGroup OBJECT-GROUP
+    OBJECTS {
+	     jvmThreadInstCpuTimeNs
+    }
+    STATUS current
+    DESCRIPTION
+	"A columnar object mapped from JSR 163
+	 java.lang.management.ThreadMXBean interface which provides CPU
+	 time statistics about an instance of java.lang.Thread.
+        "
+    ::= { jvmThreadInstanceGroups 2 }
+
+
+jvmThreadInstanceBlockGroup OBJECT-GROUP
+    OBJECTS {
+	     jvmThreadInstBlockCount,
+	     jvmThreadInstBlockTimeMs,
+	     jvmThreadInstWaitCount,
+	     jvmThreadInstWaitTimeMs
+    }
+    STATUS current
+    DESCRIPTION
+	"A collection of columnar objects that are mapped from JSR 163
+	 java.lang.management.ThreadMXBean interface, and which provide
+         synchronization statistics about an instance of java.lang.Thread.
+        "
+    ::= { jvmThreadInstanceGroups 3 }
+
+
+jvmRuntimeGroups OBJECT IDENTIFIER ::= { jvmMgtMIBGroups 4 }
+
+jvmRuntimeBasicGroup OBJECT-GROUP
+    OBJECTS {
+             jvmRTName,
+	     jvmRTVMName,
+	     jvmRTVMVendor,
+	     jvmRTVMVersion,
+	     jvmRTSpecName,
+	     jvmRTSpecVendor,
+	     jvmRTSpecVersion,
+	     jvmRTManagementSpecVersion,
+	     jvmRTUptimeMs,
+	     jvmRTStartTimeMs,
+	     jvmRTBootClassPathSupport,
+	     jvmRTInputArgsCount,
+	     jvmRTInputArgsItem,
+	     jvmRTClassPathItem,
+	     jvmRTLibraryPathItem
+    }
+    STATUS current
+    DESCRIPTION
+	"A collection of objects that are mapped from JSR 163
+	 java.lang.management.RuntimeMXBean interface.
+        "
+    ::= { jvmRuntimeGroups 1 }
+
+
+jvmRuntimeBootCPGroup OBJECT-GROUP
+    OBJECTS {
+	     jvmRTBootClassPathItem
+    }
+    STATUS current
+    DESCRIPTION
+	"A columnar object that is mapped from JSR 163
+	 java.lang.management.RuntimeMXBean.getBootClassPath() interface,
+	 and provide information about bootclasspath elements.
+        "
+    ::= { jvmRuntimeGroups 2 }
+
+jvmJITCompilerGroups OBJECT IDENTIFIER ::= { jvmMgtMIBGroups 5 }
+
+jvmJITCompilerBasicGroup OBJECT-GROUP
+    OBJECTS {
+             jvmJITCompilerName,
+             jvmJITCompilerTimeMonitoring
+    }
+    STATUS current
+    DESCRIPTION
+	"A collection of objects that are mapped from JSR 163
+	 java.lang.management.CompilationMXBean interface.
+        "
+    ::= { jvmJITCompilerGroups 1 }
+
+jvmJITCompilerTimeStatGroup OBJECT-GROUP
+    OBJECTS {
+             jvmJITCompilerTimeMs
+    }
+    STATUS current
+    DESCRIPTION
+	"A collection of objects that are mapped from JSR 163
+	 java.lang.management.CompilationMXBean interface and provide
+	 time statistic about the JIT Compiler.
+        "
+    ::= { jvmJITCompilerGroups 2 }
+
+jvmOSGroup OBJECT-GROUP
+    OBJECTS {
+             jvmOSName,
+	     jvmOSArch,
+	     jvmOSVersion,
+	     jvmOSProcessorCount
+    }
+    STATUS current
+    DESCRIPTION
+	"A collection of objects that are mapped from JSR 163
+	 java.lang.management.OperatingSystemMXBean interface.
+        "
+    ::= { jvmMgtMIBGroups 6 }
+
+jvmLowMemoryUsageNotifGroup NOTIFICATION-GROUP
+    NOTIFICATIONS  {
+             jvmLowMemoryPoolUsageNotif
+    }
+    STATUS current
+    DESCRIPTION
+           "A collection of notifications emitted when low
+            memory usage conditions are detected.
+           "
+    ::= { jvmMgtMIBGroups 7 }
+
+jvmLowMemoryCollectNotifGroup NOTIFICATION-GROUP
+    NOTIFICATIONS  {
+             jvmLowMemoryPoolCollectNotif
+    }
+    STATUS current
+    DESCRIPTION
+           "A collection of notifications emitted when low
+            collection memory usage conditions are detected.
+           "
+    ::= { jvmMgtMIBGroups 8 }
+
+END

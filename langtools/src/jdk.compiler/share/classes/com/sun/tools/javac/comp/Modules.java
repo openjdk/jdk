@@ -89,7 +89,6 @@ import com.sun.tools.javac.tree.JCTree.JCExports;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCModuleDecl;
 import com.sun.tools.javac.tree.JCTree.JCOpens;
-import com.sun.tools.javac.tree.JCTree.JCPackageDecl;
 import com.sun.tools.javac.tree.JCTree.JCProvides;
 import com.sun.tools.javac.tree.JCTree.JCRequires;
 import com.sun.tools.javac.tree.JCTree.JCUses;
@@ -112,6 +111,7 @@ import static com.sun.tools.javac.code.Flags.ABSTRACT;
 import static com.sun.tools.javac.code.Flags.ENUM;
 import static com.sun.tools.javac.code.Flags.PUBLIC;
 import static com.sun.tools.javac.code.Flags.UNATTRIBUTED;
+import com.sun.tools.javac.code.Kinds;
 import static com.sun.tools.javac.code.Kinds.Kind.ERR;
 import static com.sun.tools.javac.code.Kinds.Kind.MDL;
 import static com.sun.tools.javac.code.Kinds.Kind.MTH;
@@ -145,7 +145,7 @@ public class Modules extends JCTree.Visitor {
 
     public final boolean multiModuleMode;
 
-    private final String moduleOverride;
+    private final String legacyModuleOverride;
 
     private final Name java_se;
     private final Name java_;
@@ -166,6 +166,8 @@ public class Modules extends JCTree.Visitor {
 
     private Set<ModuleSymbol> rootModules = null;
     private final Set<ModuleSymbol> warnedMissing = new HashSet<>();
+
+    public PackageNameFinder findPackageInFile;
 
     public static Modules instance(Context context) {
         Modules instance = context.get(Modules.class);
@@ -192,7 +194,13 @@ public class Modules extends JCTree.Visitor {
 
         lintOptions = options.isUnset(Option.XLINT_CUSTOM, "-" + LintCategory.OPTIONS.option);
 
-        moduleOverride = options.get(Option.XMODULE);
+        Collection<String> xmodules = options.keySet()
+                                             .stream()
+                                             .filter(opt -> opt.startsWith(XMODULES_PREFIX))
+                                             .map(opt -> opt.substring(XMODULES_PREFIX.length()))
+                                             .collect(Collectors.toList());
+
+        legacyModuleOverride = xmodules.size() == 1 ? xmodules.iterator().next() : null;
 
         multiModuleMode = fileManager.hasLocation(StandardLocation.MODULE_SOURCE_PATH);
         ClassWriter classWriter = ClassWriter.instance(context);
@@ -209,20 +217,13 @@ public class Modules extends JCTree.Visitor {
         limitModsOpt = options.get(Option.LIMIT_MODULES);
         moduleVersionOpt = options.get(Option.MODULE_VERSION);
     }
+    //where
+        private static final String XMODULES_PREFIX = "-Xmodule:";
 
     int depth = -1;
-    private void dprintln(String msg) {
-        for (int i = 0; i < depth; i++)
-            System.err.print("  ");
-        System.err.println(msg);
-    }
 
     public void addExtraAddModules(String... extras) {
         extraAddMods.addAll(Arrays.asList(extras));
-    }
-
-    public void addExtraLimitModules(String... extras) {
-        extraLimitMods.addAll(Arrays.asList(extras));
     }
 
     boolean inInitModules;
@@ -366,9 +367,33 @@ public class Modules extends JCTree.Visitor {
 
                 JavaFileObject prev = log.useSource(tree.sourcefile);
                 try {
-                    Location locn = getModuleLocation(tree);
-                    if (locn != null) {
-                        Name name = names.fromString(fileManager.inferModuleName(locn));
+                    Location msplocn = getModuleLocation(tree);
+                    Location plocn = fileManager.hasLocation(StandardLocation.PATCH_MODULE_PATH) ?
+                            fileManager.getLocationForModule(StandardLocation.PATCH_MODULE_PATH,
+                                                             tree.sourcefile) :
+                            null;
+
+                    if (plocn != null) {
+                        Name name = names.fromString(fileManager.inferModuleName(plocn));
+                        ModuleSymbol msym = moduleFinder.findModule(name);
+                        tree.modle = msym;
+                        rootModules.add(msym);
+
+                        if (msplocn != null) {
+                            Name mspname = names.fromString(fileManager.inferModuleName(msplocn));
+                            if (name != mspname) {
+                                log.error(tree.pos(), Errors.FilePatchedAndMsp(name, mspname));
+                            }
+                        }
+                    } else if (msplocn != null) {
+                        if (tree.getModuleDecl() != null) {
+                            JavaFileObject canonical =
+                                    fileManager.getJavaFileForInput(msplocn, "module-info", Kind.SOURCE);
+                            if (canonical == null || !fileManager.isSameFile(canonical, tree.sourcefile)) {
+                                log.error(tree.pos(), Errors.ModuleNotFoundOnModuleSourcePath);
+                            }
+                        }
+                        Name name = names.fromString(fileManager.inferModuleName(msplocn));
                         ModuleSymbol msym;
                         JCModuleDecl decl = tree.getModuleDecl();
                         if (decl != null) {
@@ -383,10 +408,19 @@ public class Modules extends JCTree.Visitor {
                             msym = syms.enterModule(name);
                         }
                         if (msym.sourceLocation == null) {
-                            msym.sourceLocation = locn;
+                            msym.sourceLocation = msplocn;
+                            if (fileManager.hasLocation(StandardLocation.PATCH_MODULE_PATH)) {
+                                msym.patchLocation = fileManager.getLocationForModule(
+                                        StandardLocation.PATCH_MODULE_PATH, msym.name.toString());
+                            }
                             if (fileManager.hasLocation(StandardLocation.CLASS_OUTPUT)) {
-                                msym.classLocation = fileManager.getLocationForModule(
+                                Location outputLocn = fileManager.getLocationForModule(
                                         StandardLocation.CLASS_OUTPUT, msym.name.toString());
+                                if (msym.patchLocation == null) {
+                                    msym.classLocation = outputLocn;
+                                } else {
+                                    msym.patchOutputLocation = outputLocn;
+                                }
                             }
                         }
                         tree.modle = msym;
@@ -414,7 +448,9 @@ public class Modules extends JCTree.Visitor {
             }
             defaultModule = syms.unnamedModule;
         } else {
+            ModuleSymbol module = null;
             if (defaultModule == null) {
+                String moduleOverride = singleModuleOverride(trees);
                 switch (rootModules.size()) {
                     case 0:
                         defaultModule = moduleFinder.findSingleModule();
@@ -422,38 +458,60 @@ public class Modules extends JCTree.Visitor {
                             if (moduleOverride != null) {
                                 checkNoAllModulePath();
                                 defaultModule = moduleFinder.findModule(names.fromString(moduleOverride));
-                                defaultModule.sourceLocation = StandardLocation.SOURCE_PATH;
+                                if (legacyModuleOverride != null) {
+                                    defaultModule.sourceLocation = StandardLocation.SOURCE_PATH;
+                                }
+                                defaultModule.patchOutputLocation = StandardLocation.CLASS_OUTPUT;
                             } else {
                                 // Question: why not do findAllModules and initVisiblePackages here?
                                 // i.e. body of unnamedModuleCompleter
                                 defaultModule.completer = getUnnamedModuleCompleter();
+                                defaultModule.sourceLocation = StandardLocation.SOURCE_PATH;
                                 defaultModule.classLocation = StandardLocation.CLASS_PATH;
                             }
                         } else {
-                            checkSpecifiedModule(trees, Errors.ModuleInfoWithXmoduleClasspath);
                             checkNoAllModulePath();
                             defaultModule.complete();
                             // Question: why not do completeModule here?
                             defaultModule.completer = sym -> completeModule((ModuleSymbol) sym);
+                            defaultModule.sourceLocation = StandardLocation.SOURCE_PATH;
                         }
                         rootModules.add(defaultModule);
                         break;
                     case 1:
-                        checkSpecifiedModule(trees, Errors.ModuleInfoWithXmoduleSourcepath);
                         checkNoAllModulePath();
                         defaultModule = rootModules.iterator().next();
-                        defaultModule.classLocation = StandardLocation.CLASS_OUTPUT;
+                        defaultModule.sourceLocation = StandardLocation.SOURCE_PATH;
+                        if (fileManager.hasLocation(StandardLocation.PATCH_MODULE_PATH)) {
+                            try {
+                                defaultModule.patchLocation = fileManager.getLocationForModule(
+                                        StandardLocation.PATCH_MODULE_PATH, defaultModule.name.toString());
+                            } catch (IOException ex) {
+                                throw new Error(ex);
+                            }
+                        }
+                        if (defaultModule.patchLocation == null) {
+                            defaultModule.classLocation = StandardLocation.CLASS_OUTPUT;
+                        } else {
+                            defaultModule.patchOutputLocation = StandardLocation.CLASS_OUTPUT;
+                        }
                         break;
                     default:
                         Assert.error("too many modules");
                 }
-                defaultModule.sourceLocation = StandardLocation.SOURCE_PATH;
-            } else if (rootModules.size() == 1 && defaultModule == rootModules.iterator().next()) {
-                defaultModule.complete();
-                defaultModule.completer = sym -> completeModule((ModuleSymbol) sym);
+            } else if (rootModules.size() == 1) {
+                module = rootModules.iterator().next();
+                module.complete();
+                module.completer = sym -> completeModule((ModuleSymbol) sym);
             } else {
                 Assert.check(rootModules.isEmpty());
-                rootModules.add(defaultModule);
+                String moduleOverride = singleModuleOverride(trees);
+                if (moduleOverride != null) {
+                    module = moduleFinder.findModule(names.fromString(moduleOverride));
+                } else {
+                    module = defaultModule;
+                }
+                rootModules.add(module);
             }
 
             if (defaultModule != syms.unnamedModule) {
@@ -461,9 +519,83 @@ public class Modules extends JCTree.Visitor {
                 syms.unnamedModule.classLocation = StandardLocation.CLASS_PATH;
             }
 
-            for (JCCompilationUnit tree: trees) {
-                tree.modle = defaultModule;
+            if (module == null) {
+                module = defaultModule;
             }
+
+            for (JCCompilationUnit tree : trees) {
+                if (defaultModule != syms.unnamedModule
+                        && defaultModule.sourceLocation == StandardLocation.SOURCE_PATH
+                        && fileManager.hasLocation(StandardLocation.SOURCE_PATH)) {
+                    checkSourceLocation(tree, module);
+                }
+                tree.modle = module;
+            }
+        }
+    }
+
+    private void checkSourceLocation(JCCompilationUnit tree, ModuleSymbol msym) {
+        // skip check if legacy module override still in use
+        if (legacyModuleOverride != null) {
+            return;
+        }
+
+        try {
+            JavaFileObject fo = tree.sourcefile;
+            if (fileManager.contains(msym.sourceLocation, fo)) {
+                return;
+            }
+            if (msym.patchLocation != null && fileManager.contains(msym.patchLocation, fo)) {
+                return;
+            }
+            if (fileManager.hasLocation(StandardLocation.SOURCE_OUTPUT)) {
+                if (fileManager.contains(StandardLocation.SOURCE_OUTPUT, fo)) {
+                    return;
+                }
+            } else {
+                if (fileManager.contains(StandardLocation.CLASS_OUTPUT, fo)) {
+                    return;
+                }
+            }
+        } catch (IOException e) {
+            throw new Error(e);
+        }
+
+        JavaFileObject prev = log.useSource(tree.sourcefile);
+        try {
+            log.error(tree.pos(), "file.sb.on.source.or.patch.path.for.module");
+        } finally {
+            log.useSource(prev);
+        }
+    }
+
+    private String singleModuleOverride(List<JCCompilationUnit> trees) {
+        if (!fileManager.hasLocation(StandardLocation.PATCH_MODULE_PATH)) {
+            return legacyModuleOverride;
+        }
+
+        Set<String> override = new LinkedHashSet<>();
+        for (JCCompilationUnit tree : trees) {
+            JavaFileObject fo = tree.sourcefile;
+
+            try {
+                Location loc =
+                        fileManager.getLocationForModule(StandardLocation.PATCH_MODULE_PATH, fo);
+
+                if (loc != null) {
+                    override.add(fileManager.inferModuleName(loc));
+                }
+            } catch (IOException ex) {
+                throw new Error(ex);
+            }
+        }
+
+        switch (override.size()) {
+            case 0: return legacyModuleOverride;
+            case 1: return override.iterator().next();
+            default:
+                log.error(Errors.TooManyPatchedModules(override));
+                return null;
         }
     }
 
@@ -478,40 +610,17 @@ public class Modules extends JCTree.Visitor {
      * @throws IOException if there is a problem while searching for the module.
      */
     private Location getModuleLocation(JCCompilationUnit tree) throws IOException {
-        Name pkgName;
-        if (tree.getModuleDecl() != null) {
-            pkgName = null;
-        } else {
-            JCPackageDecl pkg = tree.getPackage();
-            pkgName = (pkg == null) ? names.empty : TreeInfo.fullName(pkg.pid);
-        }
-
         JavaFileObject fo = tree.sourcefile;
 
-        // For now, just check module source path.
-        // We may want to check source path as well.
         Location loc =
-                fileManager.getLocationForModule(StandardLocation.MODULE_SOURCE_PATH,
-                                                 fo, (pkgName == null) ? null : pkgName.toString());
+                fileManager.getLocationForModule(StandardLocation.MODULE_SOURCE_PATH, fo);
         if (loc == null) {
             Location sourceOutput = fileManager.hasLocation(StandardLocation.SOURCE_OUTPUT) ?
                     StandardLocation.SOURCE_OUTPUT : StandardLocation.CLASS_OUTPUT;
             loc =
-                fileManager.getLocationForModule(sourceOutput,
-                                                 fo, (pkgName == null) ? null : pkgName.toString());
+                fileManager.getLocationForModule(sourceOutput, fo);
         }
         return loc;
-    }
-
-    private void checkSpecifiedModule(List<JCCompilationUnit> trees, JCDiagnostic.Error error) {
-        if (moduleOverride != null) {
-            JavaFileObject prev = log.useSource(trees.head.sourcefile);
-            try {
-                log.error(trees.head.pos(), error);
-            } finally {
-                log.useSource(prev);
-            }
-        }
     }
 
     private void checkNoAllModulePath() {
@@ -642,6 +751,11 @@ public class Modules extends JCTree.Visitor {
     public boolean isRootModule(ModuleSymbol module) {
         Assert.checkNonNull(rootModules);
         return rootModules.contains(module);
+    }
+
+    public Set<ModuleSymbol> getRootModules() {
+        Assert.checkNonNull(rootModules);
+        return rootModules;
     }
 
     class ModuleVisitor extends JCTree.Visitor {
@@ -888,7 +1002,30 @@ public class Modules extends JCTree.Visitor {
 
         @Override
         public void visitExports(JCExports tree) {
-            if (tree.directive.packge.members().isEmpty()) {
+            Iterable<Symbol> packageContent = tree.directive.packge.members().getSymbols();
+            List<JavaFileObject> filesToCheck = List.nil();
+            boolean packageNotEmpty = false;
+            for (Symbol sym : packageContent) {
+                if (sym.kind != Kinds.Kind.TYP)
+                    continue;
+                ClassSymbol csym = (ClassSymbol) sym;
+                if (sym.completer.isTerminal() ||
+                    csym.classfile.getKind() == Kind.CLASS) {
+                    packageNotEmpty = true;
+                    filesToCheck = List.nil();
+                    break;
+                }
+                if (csym.classfile.getKind() == Kind.SOURCE) {
+                    filesToCheck = filesToCheck.prepend(csym.classfile);
+                }
+            }
+            for (JavaFileObject jfo : filesToCheck) {
+                if (findPackageInFile.findPackageNameOf(jfo) == tree.directive.packge.fullname) {
+                    packageNotEmpty = true;
+                    break;
+                }
+            }
+            if (!packageNotEmpty) {
                 log.error(tree.qualid.pos(), Errors.PackageEmptyOrNotFound(tree.directive.packge));
             }
             msym.directives = msym.directives.prepend(tree.directive);
@@ -931,8 +1068,18 @@ public class Modules extends JCTree.Visitor {
             }
             ListBuffer<ClassSymbol> impls = new ListBuffer<>();
             for (JCExpression implName : tree.implNames) {
-                Type it = attr.attribType(implName, env, syms.objectType);
+                Type it;
+                boolean prevVisitingServiceImplementation = env.info.visitingServiceImplementation;
+                try {
+                    env.info.visitingServiceImplementation = true;
+                    it = attr.attribType(implName, env, syms.objectType);
+                } finally {
+                    env.info.visitingServiceImplementation = prevVisitingServiceImplementation;
+                }
                 ClassSymbol impl = (ClassSymbol) it.tsym;
+                if ((impl.flags_field & PUBLIC) == 0) {
+                    log.error(implName.pos(), Errors.NotDefPublic(impl, impl.location()));
+                }
                 //find provider factory:
                 MethodSymbol factory = factoryMethod(impl);
                 if (factory != null) {
@@ -976,6 +1123,7 @@ public class Modules extends JCTree.Visitor {
         public void visitRequires(JCRequires tree) {
             if (tree.directive != null && allModules().contains(tree.directive.module)) {
                 chk.checkDeprecated(tree.moduleName.pos(), msym, tree.directive.module);
+                chk.checkModuleRequires(tree.moduleName.pos(), tree.directive);
                 msym.directives = msym.directives.prepend(tree.directive);
             }
         }
@@ -1132,7 +1280,7 @@ public class Modules extends JCTree.Visitor {
                     case ALL_SYSTEM:
                         modules = new HashSet<>(syms.getAllModules())
                                 .stream()
-                                .filter(systemModulePred.and(observablePred).and(noIncubatorPred));
+                                .filter(systemModulePred.and(observablePred));
                         break;
                     case ALL_MODULE_PATH:
                         modules = new HashSet<>(syms.getAllModules())
@@ -1157,6 +1305,15 @@ public class Modules extends JCTree.Visitor {
 
         result.add(syms.unnamedModule);
 
+        boolean hasAutomatic = result.stream().anyMatch(IS_AUTOMATIC);
+
+        if (hasAutomatic) {
+            syms.getAllModules()
+                .stream()
+                .filter(IS_AUTOMATIC)
+                .forEach(result::add);
+        }
+
         String incubatingModules = result.stream()
                 .filter(msym -> msym.resolutionFlags.contains(ModuleResolutionFlags.WARN_INCUBATING))
                 .map(msym -> msym.name.toString())
@@ -1174,6 +1331,9 @@ public class Modules extends JCTree.Visitor {
             rootModules.forEach(m -> m.version = version);
         }
     }
+    //where:
+        private static final Predicate<ModuleSymbol> IS_AUTOMATIC =
+                m -> (m.flags_field & Flags.AUTOMATIC_MODULE) != 0;
 
     public boolean isInModuleGraph(ModuleSymbol msym) {
         return allModules == null || allModules.contains(msym);
@@ -1594,8 +1754,12 @@ public class Modules extends JCTree.Visitor {
     }
 
     public void newRound() {
-        rootModules = null;
         allModules = null;
+        rootModules = null;
         warnedMissing.clear();
+    }
+
+    public interface PackageNameFinder {
+        public Name findPackageNameOf(JavaFileObject jfo);
     }
 }
