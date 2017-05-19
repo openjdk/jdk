@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -1024,7 +1024,8 @@ final class DOM3TreeWalker {
                 return;
             }
 
-            if (bDispatch) {
+            if (bDispatch
+                    && (!fSerializer.getIndent() || !node.getData().replace('\n', ' ').trim().isEmpty())) {
                 dispatachChars(node);
             }
         }

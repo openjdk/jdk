@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1322,7 +1322,7 @@ public abstract class TIFFDecompressor {
      * Sets the index of the planar configuration band to be decoded. This value
      * is ignored for chunky (interleaved) images.
      *
-     * @param the index of the planar band to decode
+     * @param planarBand the index of the planar band to decode
      */
     public void setPlanarBand(int planarBand) { this.planarBand = planarBand; }
 
@@ -2069,7 +2069,7 @@ public abstract class TIFFDecompressor {
      * <p> The default implementation calls {@code decodeRaw(byte[] b,
      * ...)} and copies the resulting data into {@code f}.
      *
-     * @param f a {@code double} array to be written.
+     * @param d a {@code double} array to be written.
      * @param dstOffset the starting offset in {@code f} to be
      * written.
      * @param bitsPerPixel the number of bits for each pixel.

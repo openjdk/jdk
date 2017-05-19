@@ -38,7 +38,6 @@ import static javax.management.openmbean.SimpleType.*;
  * @test
  * @bug     8042901
  * @summary Check that MappedMXBeanType.toOpenTypeData supports VMOption
- * @modules jdk.management/com.sun.management
  * @author  Shanliang Jiang
  */
 public class VMOptionOpenDataTest {

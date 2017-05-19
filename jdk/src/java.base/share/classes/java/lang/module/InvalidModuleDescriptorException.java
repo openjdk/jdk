@@ -31,6 +31,7 @@ package java.lang.module;
  *
  * @see ModuleDescriptor#read
  * @since 9
+ * @spec JPMS
  */
 public class InvalidModuleDescriptorException extends RuntimeException {
     private static final long serialVersionUID = 4863390386809347380L;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,10 +52,10 @@ information. From this root all other program structure
 information can be extracted.
 <p>
 
-<a name="terminology"></a>
+<a id="terminology"></a>
 <h3>Terminology</h3>
 
-<a name="included"></a>
+<a id="included"></a>
 When calling javadoc, you pass in package names and source file names --
 these are called the <em>specified</em> packages and classes.
 You also pass in Javadoc options; the <em>access control</em> Javadoc options
@@ -66,7 +66,7 @@ result set, called the <em>included</em> set, or "documented" set.
 {@link com.sun.javadoc.PackageDoc#allClasses(boolean) allClasses(false)}.)
 <p>
 
-<a name="class"></a>
+<a id="class"></a>
 Throughout this API, the term <em>class</em> is normally a
 shorthand for "class or interface", as in: {@link com.sun.javadoc.ClassDoc},
 {@link com.sun.javadoc.PackageDoc#allClasses() allClasses()}, and
@@ -82,13 +82,13 @@ Throughout the API, the detailed description of each program element
 describes explicitly which meaning is being used.
 <p>
 
-<a name="qualified"></a>
+<a id="qualified"></a>
 A <em>qualified</em> class or interface name is one that has its package
 name prepended to it, such as {@code java.lang.String}.  A non-qualified
 name has no package name, such as {@code String}.
 <p>
 
-<a name="example"></a>
+<a id="example"></a>
 <h3>Example</h3>
 
 The following is an example doclet that

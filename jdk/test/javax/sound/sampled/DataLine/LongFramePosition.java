@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import javax.sound.sampled.SourceDataLine;
  * @test
  * @bug 5049129
  * @summary DataLine.getLongFramePosition
- * @key headful
  */
 public class LongFramePosition {
 
@@ -59,12 +58,12 @@ public class LongFramePosition {
             } finally {
                 sdl.close();
             }
-        } catch(LineUnavailableException e){
+        } catch (LineUnavailableException | IllegalArgumentException e) {
             System.out.println(e);
             System.out.println("Cannot execute test.");
             return;
         }
-        if (failed) throw new Exception("Test FAILED!");
+        if (failed) throw new RuntimeException("Test FAILED!");
         System.out.println("Test Passed.");
     }
 }
