@@ -278,12 +278,16 @@ public class MethodHandles {
      * (Bytecode behaviors are described in section 5.4.3.5 of the Java Virtual Machine Specification.)
      * Here is a summary of the correspondence between these factory methods and
      * the behavior of the resulting method handles:
-     * <table border=1 cellpadding=5 summary="lookup method behaviors">
+     * <table class="striped">
+     * <caption style="display:none">lookup method behaviors</caption>
+     * <thead>
      * <tr>
      *     <th><a id="equiv"></a>lookup expression</th>
      *     <th>member</th>
      *     <th>bytecode behavior</th>
      * </tr>
+     * </thead>
+     * <tbody>
      * <tr>
      *     <td>{@link java.lang.invoke.MethodHandles.Lookup#findGetter lookup.findGetter(C.class,"f",FT.class)}</td>
      *     <td>{@code FT f;}</td><td>{@code (T) this.f;}</td>
@@ -340,6 +344,7 @@ public class MethodHandles {
      *     <td>{@link java.lang.invoke.MethodHandles.Lookup#findClass lookup.findClass("C")}</td>
      *     <td>{@code class C { ... }}</td><td>{@code C.class;}</td>
      * </tr>
+     * </tbody>
      * </table>
      *
      * Here, the type {@code C} is the class or interface being searched for a member,
@@ -1670,8 +1675,8 @@ return mh1;
          * to the lookup class.
          * (Unlike {@code bind}, {@code bindTo} does not preserve variable arity.
          * Also, {@code bindTo} may throw a {@code ClassCastException} in instances where {@code bind} would
-         * throw a {@code IllegalAccessException}, as in the case where the member is {@code protected} and
-         * the receiver is restricted by {@code findVirtual} to the lookup class)
+         * throw an {@code IllegalAccessException}, as in the case where the member is {@code protected} and
+         * the receiver is restricted by {@code findVirtual} to the lookup class.)
          * @param receiver the object from which the method is accessed
          * @param name the name of the method
          * @param type the type of the method, with the receiver argument omitted
