@@ -165,6 +165,7 @@ CH	+4723+00832	Europe/Zurich
 CI	+0519-00402	Africa/Abidjan
 CK	-2114-15946	Pacific/Rarotonga
 CL	-3327-07040	America/Santiago	Chile (most areas)
+CL	-5309-07055	America/Punta_Arenas	Region of Magallanes
 CL	-2709-10926	Pacific/Easter	Easter Island
 CM	+0403+00942	Africa/Douala
 CN	+3114+12128	Asia/Shanghai	Beijing Time
@@ -420,7 +421,6 @@ UA	+5026+03031	Europe/Kiev	Ukraine (most areas)
 UA	+4837+02218	Europe/Uzhgorod	Ruthenia
 UA	+4750+03510	Europe/Zaporozhye	Zaporozh'ye/Zaporizhia; Lugansk/Luhansk (east)
 UG	+0019+03225	Africa/Kampala
-UM	+1645-16931	Pacific/Johnston	Johnston Atoll
 UM	+2813-17722	Pacific/Midway	Midway Islands
 UM	+1917+16637	Pacific/Wake	Wake Island
 US	+404251-0740023	America/New_York	Eastern (most areas)

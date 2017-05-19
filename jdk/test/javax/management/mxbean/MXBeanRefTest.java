@@ -26,7 +26,7 @@
  * @bug 6296433 6283873
  * @summary Test that inter-MXBean references work as expected.
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean MXBeanRefTest
  * @run build MXBeanRefTest
  * @run main MXBeanRefTest

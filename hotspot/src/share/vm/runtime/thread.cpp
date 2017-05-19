@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3404,14 +3404,21 @@ static void call_initPhase1(TRAPS) {
 //
 //     After phase 2, The VM will begin search classes from -Xbootclasspath/a.
 static void call_initPhase2(TRAPS) {
-  TraceTime timer("Phase2 initialization", TRACETIME_LOG(Info, modules, startuptime));
+  TraceTime timer("Phase2 initialization", TRACETIME_LOG(Info, module, startuptime));
 
   Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_System(), true, CHECK);
   instanceKlassHandle klass (THREAD, k);
 
-  JavaValue result(T_VOID);
+  JavaValue result(T_INT);
+  JavaCallArguments args;
+  args.push_int(DisplayVMOutputToStderr);
+  args.push_int(log_is_enabled(Debug, init)); // print stack trace if exception thrown
   JavaCalls::call_static(&result, klass, vmSymbols::initPhase2_name(),
-                                         vmSymbols::void_method_signature(), CHECK);
+                                         vmSymbols::boolean_boolean_int_signature(), &args, CHECK);
+  if (result.get_jint() != JNI_OK) {
+    vm_exit_during_initialization(); // no message or exception
+  }
+
   universe_post_module_init();
 }
 
@@ -3458,7 +3465,7 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
                                       java_lang_Thread::RUNNABLE);
 
   // The VM creates objects of this class.
-  initialize_class(vmSymbols::java_lang_reflect_Module(), CHECK);
+  initialize_class(vmSymbols::java_lang_Module(), CHECK);
 
   // The VM preresolves methods to these classes. Make sure that they get initialized
   initialize_class(vmSymbols::java_lang_reflect_Method(), CHECK);
