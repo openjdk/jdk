@@ -55,7 +55,7 @@ package java.math;
  * <caption><b>Summary of Rounding Operations Under Different Rounding Modes</b></caption>
  * <tr><th></th><th colspan=8>Result of rounding input to one digit with the given
  *                           rounding mode</th>
- * <tr valign=top>
+ * <tr style="vertical-align:top">
  * <th>Input Number</th>         <th>{@code UP}</th>
  *                                           <th>{@code DOWN}</th>
  *                                                        <th>{@code CEILING}</th>
@@ -65,16 +65,16 @@ package java.math;
  *                                                                                                                    <th>{@code HALF_EVEN}</th>
  *                                                                                                                                     <th>{@code UNNECESSARY}</th>
  *
- * <tr align=right><td>5.5</td>  <td>6</td>  <td>5</td>    <td>6</td>    <td>5</td>  <td>6</td>      <td>5</td>       <td>6</td>       <td>throw {@code ArithmeticException}</td>
- * <tr align=right><td>2.5</td>  <td>3</td>  <td>2</td>    <td>3</td>    <td>2</td>  <td>3</td>      <td>2</td>       <td>2</td>       <td>throw {@code ArithmeticException}</td>
- * <tr align=right><td>1.6</td>  <td>2</td>  <td>1</td>    <td>2</td>    <td>1</td>  <td>2</td>      <td>2</td>       <td>2</td>       <td>throw {@code ArithmeticException}</td>
- * <tr align=right><td>1.1</td>  <td>2</td>  <td>1</td>    <td>2</td>    <td>1</td>  <td>1</td>      <td>1</td>       <td>1</td>       <td>throw {@code ArithmeticException}</td>
- * <tr align=right><td>1.0</td>  <td>1</td>  <td>1</td>    <td>1</td>    <td>1</td>  <td>1</td>      <td>1</td>       <td>1</td>       <td>1</td>
- * <tr align=right><td>-1.0</td> <td>-1</td> <td>-1</td>   <td>-1</td>   <td>-1</td> <td>-1</td>     <td>-1</td>      <td>-1</td>      <td>-1</td>
- * <tr align=right><td>-1.1</td> <td>-2</td> <td>-1</td>   <td>-1</td>   <td>-2</td> <td>-1</td>     <td>-1</td>      <td>-1</td>      <td>throw {@code ArithmeticException}</td>
- * <tr align=right><td>-1.6</td> <td>-2</td> <td>-1</td>   <td>-1</td>   <td>-2</td> <td>-2</td>     <td>-2</td>      <td>-2</td>      <td>throw {@code ArithmeticException}</td>
- * <tr align=right><td>-2.5</td> <td>-3</td> <td>-2</td>   <td>-2</td>   <td>-3</td> <td>-3</td>     <td>-2</td>      <td>-2</td>      <td>throw {@code ArithmeticException}</td>
- * <tr align=right><td>-5.5</td> <td>-6</td> <td>-5</td>   <td>-5</td>   <td>-6</td> <td>-6</td>     <td>-5</td>      <td>-6</td>      <td>throw {@code ArithmeticException}</td>
+ * <tr style="text-align:right"><td>5.5</td>  <td>6</td>  <td>5</td>    <td>6</td>    <td>5</td>  <td>6</td>      <td>5</td>       <td>6</td>       <td>throw {@code ArithmeticException}</td>
+ * <tr style="text-align:right"><td>2.5</td>  <td>3</td>  <td>2</td>    <td>3</td>    <td>2</td>  <td>3</td>      <td>2</td>       <td>2</td>       <td>throw {@code ArithmeticException}</td>
+ * <tr style="text-align:right"><td>1.6</td>  <td>2</td>  <td>1</td>    <td>2</td>    <td>1</td>  <td>2</td>      <td>2</td>       <td>2</td>       <td>throw {@code ArithmeticException}</td>
+ * <tr style="text-align:right"><td>1.1</td>  <td>2</td>  <td>1</td>    <td>2</td>    <td>1</td>  <td>1</td>      <td>1</td>       <td>1</td>       <td>throw {@code ArithmeticException}</td>
+ * <tr style="text-align:right"><td>1.0</td>  <td>1</td>  <td>1</td>    <td>1</td>    <td>1</td>  <td>1</td>      <td>1</td>       <td>1</td>       <td>1</td>
+ * <tr style="text-align:right"><td>-1.0</td> <td>-1</td> <td>-1</td>   <td>-1</td>   <td>-1</td> <td>-1</td>     <td>-1</td>      <td>-1</td>      <td>-1</td>
+ * <tr style="text-align:right"><td>-1.1</td> <td>-2</td> <td>-1</td>   <td>-1</td>   <td>-2</td> <td>-1</td>     <td>-1</td>      <td>-1</td>      <td>throw {@code ArithmeticException}</td>
+ * <tr style="text-align:right"><td>-1.6</td> <td>-2</td> <td>-1</td>   <td>-1</td>   <td>-2</td> <td>-2</td>     <td>-2</td>      <td>-2</td>      <td>throw {@code ArithmeticException}</td>
+ * <tr style="text-align:right"><td>-2.5</td> <td>-3</td> <td>-2</td>   <td>-2</td>   <td>-3</td> <td>-3</td>     <td>-2</td>      <td>-2</td>      <td>throw {@code ArithmeticException}</td>
+ * <tr style="text-align:right"><td>-5.5</td> <td>-6</td> <td>-5</td>   <td>-5</td>   <td>-6</td> <td>-6</td>     <td>-5</td>      <td>-6</td>      <td>throw {@code ArithmeticException}</td>
  *</table>
  *
  *
@@ -102,18 +102,18 @@ public enum RoundingMode {
          *<p>Example:
          *<table border>
          * <caption><b>Rounding mode UP Examples</b></caption>
-         *<tr valign=top><th>Input Number</th>
+         *<tr style="vertical-align:top"><th>Input Number</th>
          *    <th>Input rounded to one digit<br> with {@code UP} rounding
-         *<tr align=right><td>5.5</td>  <td>6</td>
-         *<tr align=right><td>2.5</td>  <td>3</td>
-         *<tr align=right><td>1.6</td>  <td>2</td>
-         *<tr align=right><td>1.1</td>  <td>2</td>
-         *<tr align=right><td>1.0</td>  <td>1</td>
-         *<tr align=right><td>-1.0</td> <td>-1</td>
-         *<tr align=right><td>-1.1</td> <td>-2</td>
-         *<tr align=right><td>-1.6</td> <td>-2</td>
-         *<tr align=right><td>-2.5</td> <td>-3</td>
-         *<tr align=right><td>-5.5</td> <td>-6</td>
+         *<tr style="text-align:right"><td>5.5</td>  <td>6</td>
+         *<tr style="text-align:right"><td>2.5</td>  <td>3</td>
+         *<tr style="text-align:right"><td>1.6</td>  <td>2</td>
+         *<tr style="text-align:right"><td>1.1</td>  <td>2</td>
+         *<tr style="text-align:right"><td>1.0</td>  <td>1</td>
+         *<tr style="text-align:right"><td>-1.0</td> <td>-1</td>
+         *<tr style="text-align:right"><td>-1.1</td> <td>-2</td>
+         *<tr style="text-align:right"><td>-1.6</td> <td>-2</td>
+         *<tr style="text-align:right"><td>-2.5</td> <td>-3</td>
+         *<tr style="text-align:right"><td>-5.5</td> <td>-6</td>
          *</table>
          */
     UP(BigDecimal.ROUND_UP),
@@ -126,18 +126,18 @@ public enum RoundingMode {
          *<p>Example:
          *<table border>
          * <caption><b>Rounding mode DOWN Examples</b></caption>
-         *<tr valign=top><th>Input Number</th>
+         *<tr style="vertical-align:top"><th>Input Number</th>
          *    <th>Input rounded to one digit<br> with {@code DOWN} rounding
-         *<tr align=right><td>5.5</td>  <td>5</td>
-         *<tr align=right><td>2.5</td>  <td>2</td>
-         *<tr align=right><td>1.6</td>  <td>1</td>
-         *<tr align=right><td>1.1</td>  <td>1</td>
-         *<tr align=right><td>1.0</td>  <td>1</td>
-         *<tr align=right><td>-1.0</td> <td>-1</td>
-         *<tr align=right><td>-1.1</td> <td>-1</td>
-         *<tr align=right><td>-1.6</td> <td>-1</td>
-         *<tr align=right><td>-2.5</td> <td>-2</td>
-         *<tr align=right><td>-5.5</td> <td>-5</td>
+         *<tr style="text-align:right"><td>5.5</td>  <td>5</td>
+         *<tr style="text-align:right"><td>2.5</td>  <td>2</td>
+         *<tr style="text-align:right"><td>1.6</td>  <td>1</td>
+         *<tr style="text-align:right"><td>1.1</td>  <td>1</td>
+         *<tr style="text-align:right"><td>1.0</td>  <td>1</td>
+         *<tr style="text-align:right"><td>-1.0</td> <td>-1</td>
+         *<tr style="text-align:right"><td>-1.1</td> <td>-1</td>
+         *<tr style="text-align:right"><td>-1.6</td> <td>-1</td>
+         *<tr style="text-align:right"><td>-2.5</td> <td>-2</td>
+         *<tr style="text-align:right"><td>-5.5</td> <td>-5</td>
          *</table>
          */
     DOWN(BigDecimal.ROUND_DOWN),
@@ -151,18 +151,18 @@ public enum RoundingMode {
          *<p>Example:
          *<table border>
          * <caption><b>Rounding mode CEILING Examples</b></caption>
-         *<tr valign=top><th>Input Number</th>
+         *<tr style="vertical-align:top"><th>Input Number</th>
          *    <th>Input rounded to one digit<br> with {@code CEILING} rounding
-         *<tr align=right><td>5.5</td>  <td>6</td>
-         *<tr align=right><td>2.5</td>  <td>3</td>
-         *<tr align=right><td>1.6</td>  <td>2</td>
-         *<tr align=right><td>1.1</td>  <td>2</td>
-         *<tr align=right><td>1.0</td>  <td>1</td>
-         *<tr align=right><td>-1.0</td> <td>-1</td>
-         *<tr align=right><td>-1.1</td> <td>-1</td>
-         *<tr align=right><td>-1.6</td> <td>-1</td>
-         *<tr align=right><td>-2.5</td> <td>-2</td>
-         *<tr align=right><td>-5.5</td> <td>-5</td>
+         *<tr style="text-align:right"><td>5.5</td>  <td>6</td>
+         *<tr style="text-align:right"><td>2.5</td>  <td>3</td>
+         *<tr style="text-align:right"><td>1.6</td>  <td>2</td>
+         *<tr style="text-align:right"><td>1.1</td>  <td>2</td>
+         *<tr style="text-align:right"><td>1.0</td>  <td>1</td>
+         *<tr style="text-align:right"><td>-1.0</td> <td>-1</td>
+         *<tr style="text-align:right"><td>-1.1</td> <td>-1</td>
+         *<tr style="text-align:right"><td>-1.6</td> <td>-1</td>
+         *<tr style="text-align:right"><td>-2.5</td> <td>-2</td>
+         *<tr style="text-align:right"><td>-5.5</td> <td>-5</td>
          *</table>
          */
     CEILING(BigDecimal.ROUND_CEILING),
@@ -176,18 +176,18 @@ public enum RoundingMode {
          *<p>Example:
          *<table border>
          * <caption><b>Rounding mode FLOOR Examples</b></caption>
-         *<tr valign=top><th>Input Number</th>
+         *<tr style="vertical-align:top"><th>Input Number</th>
          *    <th>Input rounded to one digit<br> with {@code FLOOR} rounding
-         *<tr align=right><td>5.5</td>  <td>5</td>
-         *<tr align=right><td>2.5</td>  <td>2</td>
-         *<tr align=right><td>1.6</td>  <td>1</td>
-         *<tr align=right><td>1.1</td>  <td>1</td>
-         *<tr align=right><td>1.0</td>  <td>1</td>
-         *<tr align=right><td>-1.0</td> <td>-1</td>
-         *<tr align=right><td>-1.1</td> <td>-2</td>
-         *<tr align=right><td>-1.6</td> <td>-2</td>
-         *<tr align=right><td>-2.5</td> <td>-3</td>
-         *<tr align=right><td>-5.5</td> <td>-6</td>
+         *<tr style="text-align:right"><td>5.5</td>  <td>5</td>
+         *<tr style="text-align:right"><td>2.5</td>  <td>2</td>
+         *<tr style="text-align:right"><td>1.6</td>  <td>1</td>
+         *<tr style="text-align:right"><td>1.1</td>  <td>1</td>
+         *<tr style="text-align:right"><td>1.0</td>  <td>1</td>
+         *<tr style="text-align:right"><td>-1.0</td> <td>-1</td>
+         *<tr style="text-align:right"><td>-1.1</td> <td>-2</td>
+         *<tr style="text-align:right"><td>-1.6</td> <td>-2</td>
+         *<tr style="text-align:right"><td>-2.5</td> <td>-3</td>
+         *<tr style="text-align:right"><td>-5.5</td> <td>-6</td>
          *</table>
          */
     FLOOR(BigDecimal.ROUND_FLOOR),
@@ -203,18 +203,18 @@ public enum RoundingMode {
          *<p>Example:
          *<table border>
          * <caption><b>Rounding mode HALF_UP Examples</b></caption>
-         *<tr valign=top><th>Input Number</th>
+         *<tr style="vertical-align:top"><th>Input Number</th>
          *    <th>Input rounded to one digit<br> with {@code HALF_UP} rounding
-         *<tr align=right><td>5.5</td>  <td>6</td>
-         *<tr align=right><td>2.5</td>  <td>3</td>
-         *<tr align=right><td>1.6</td>  <td>2</td>
-         *<tr align=right><td>1.1</td>  <td>1</td>
-         *<tr align=right><td>1.0</td>  <td>1</td>
-         *<tr align=right><td>-1.0</td> <td>-1</td>
-         *<tr align=right><td>-1.1</td> <td>-1</td>
-         *<tr align=right><td>-1.6</td> <td>-2</td>
-         *<tr align=right><td>-2.5</td> <td>-3</td>
-         *<tr align=right><td>-5.5</td> <td>-6</td>
+         *<tr style="text-align:right"><td>5.5</td>  <td>6</td>
+         *<tr style="text-align:right"><td>2.5</td>  <td>3</td>
+         *<tr style="text-align:right"><td>1.6</td>  <td>2</td>
+         *<tr style="text-align:right"><td>1.1</td>  <td>1</td>
+         *<tr style="text-align:right"><td>1.0</td>  <td>1</td>
+         *<tr style="text-align:right"><td>-1.0</td> <td>-1</td>
+         *<tr style="text-align:right"><td>-1.1</td> <td>-1</td>
+         *<tr style="text-align:right"><td>-1.6</td> <td>-2</td>
+         *<tr style="text-align:right"><td>-2.5</td> <td>-3</td>
+         *<tr style="text-align:right"><td>-5.5</td> <td>-6</td>
          *</table>
          */
     HALF_UP(BigDecimal.ROUND_HALF_UP),
@@ -229,18 +229,18 @@ public enum RoundingMode {
          *<p>Example:
          *<table border>
          * <caption><b>Rounding mode HALF_DOWN Examples</b></caption>
-         *<tr valign=top><th>Input Number</th>
+         *<tr style="vertical-align:top"><th>Input Number</th>
          *    <th>Input rounded to one digit<br> with {@code HALF_DOWN} rounding
-         *<tr align=right><td>5.5</td>  <td>5</td>
-         *<tr align=right><td>2.5</td>  <td>2</td>
-         *<tr align=right><td>1.6</td>  <td>2</td>
-         *<tr align=right><td>1.1</td>  <td>1</td>
-         *<tr align=right><td>1.0</td>  <td>1</td>
-         *<tr align=right><td>-1.0</td> <td>-1</td>
-         *<tr align=right><td>-1.1</td> <td>-1</td>
-         *<tr align=right><td>-1.6</td> <td>-2</td>
-         *<tr align=right><td>-2.5</td> <td>-2</td>
-         *<tr align=right><td>-5.5</td> <td>-5</td>
+         *<tr style="text-align:right"><td>5.5</td>  <td>5</td>
+         *<tr style="text-align:right"><td>2.5</td>  <td>2</td>
+         *<tr style="text-align:right"><td>1.6</td>  <td>2</td>
+         *<tr style="text-align:right"><td>1.1</td>  <td>1</td>
+         *<tr style="text-align:right"><td>1.0</td>  <td>1</td>
+         *<tr style="text-align:right"><td>-1.0</td> <td>-1</td>
+         *<tr style="text-align:right"><td>-1.1</td> <td>-1</td>
+         *<tr style="text-align:right"><td>-1.6</td> <td>-2</td>
+         *<tr style="text-align:right"><td>-2.5</td> <td>-2</td>
+         *<tr style="text-align:right"><td>-5.5</td> <td>-5</td>
          *</table>
          */
     HALF_DOWN(BigDecimal.ROUND_HALF_DOWN),
@@ -262,18 +262,18 @@ public enum RoundingMode {
          *<p>Example:
          *<table border>
          * <caption><b>Rounding mode HALF_EVEN Examples</b></caption>
-         *<tr valign=top><th>Input Number</th>
+         *<tr style="vertical-align:top"><th>Input Number</th>
          *    <th>Input rounded to one digit<br> with {@code HALF_EVEN} rounding
-         *<tr align=right><td>5.5</td>  <td>6</td>
-         *<tr align=right><td>2.5</td>  <td>2</td>
-         *<tr align=right><td>1.6</td>  <td>2</td>
-         *<tr align=right><td>1.1</td>  <td>1</td>
-         *<tr align=right><td>1.0</td>  <td>1</td>
-         *<tr align=right><td>-1.0</td> <td>-1</td>
-         *<tr align=right><td>-1.1</td> <td>-1</td>
-         *<tr align=right><td>-1.6</td> <td>-2</td>
-         *<tr align=right><td>-2.5</td> <td>-2</td>
-         *<tr align=right><td>-5.5</td> <td>-6</td>
+         *<tr style="text-align:right"><td>5.5</td>  <td>6</td>
+         *<tr style="text-align:right"><td>2.5</td>  <td>2</td>
+         *<tr style="text-align:right"><td>1.6</td>  <td>2</td>
+         *<tr style="text-align:right"><td>1.1</td>  <td>1</td>
+         *<tr style="text-align:right"><td>1.0</td>  <td>1</td>
+         *<tr style="text-align:right"><td>-1.0</td> <td>-1</td>
+         *<tr style="text-align:right"><td>-1.1</td> <td>-1</td>
+         *<tr style="text-align:right"><td>-1.6</td> <td>-2</td>
+         *<tr style="text-align:right"><td>-2.5</td> <td>-2</td>
+         *<tr style="text-align:right"><td>-5.5</td> <td>-6</td>
          *</table>
          */
     HALF_EVEN(BigDecimal.ROUND_HALF_EVEN),
@@ -286,18 +286,18 @@ public enum RoundingMode {
          *<p>Example:
          *<table border>
          * <caption><b>Rounding mode UNNECESSARY Examples</b></caption>
-         *<tr valign=top><th>Input Number</th>
+         *<tr style="vertical-align:top"><th>Input Number</th>
          *    <th>Input rounded to one digit<br> with {@code UNNECESSARY} rounding
-         *<tr align=right><td>5.5</td>  <td>throw {@code ArithmeticException}</td>
-         *<tr align=right><td>2.5</td>  <td>throw {@code ArithmeticException}</td>
-         *<tr align=right><td>1.6</td>  <td>throw {@code ArithmeticException}</td>
-         *<tr align=right><td>1.1</td>  <td>throw {@code ArithmeticException}</td>
-         *<tr align=right><td>1.0</td>  <td>1</td>
-         *<tr align=right><td>-1.0</td> <td>-1</td>
-         *<tr align=right><td>-1.1</td> <td>throw {@code ArithmeticException}</td>
-         *<tr align=right><td>-1.6</td> <td>throw {@code ArithmeticException}</td>
-         *<tr align=right><td>-2.5</td> <td>throw {@code ArithmeticException}</td>
-         *<tr align=right><td>-5.5</td> <td>throw {@code ArithmeticException}</td>
+         *<tr style="text-align:right"><td>5.5</td>  <td>throw {@code ArithmeticException}</td>
+         *<tr style="text-align:right"><td>2.5</td>  <td>throw {@code ArithmeticException}</td>
+         *<tr style="text-align:right"><td>1.6</td>  <td>throw {@code ArithmeticException}</td>
+         *<tr style="text-align:right"><td>1.1</td>  <td>throw {@code ArithmeticException}</td>
+         *<tr style="text-align:right"><td>1.0</td>  <td>1</td>
+         *<tr style="text-align:right"><td>-1.0</td> <td>-1</td>
+         *<tr style="text-align:right"><td>-1.1</td> <td>throw {@code ArithmeticException}</td>
+         *<tr style="text-align:right"><td>-1.6</td> <td>throw {@code ArithmeticException}</td>
+         *<tr style="text-align:right"><td>-2.5</td> <td>throw {@code ArithmeticException}</td>
+         *<tr style="text-align:right"><td>-5.5</td> <td>throw {@code ArithmeticException}</td>
          *</table>
          */
     UNNECESSARY(BigDecimal.ROUND_UNNECESSARY);

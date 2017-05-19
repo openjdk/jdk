@@ -26,7 +26,6 @@
  * @bug     4858522 6191542
  * @summary Basic unit test of OperatingSystemMXBean.getCommittedVirtualMemorySize()
  * @author  Steve Bohne
- * @modules jdk.management
  */
 
 /*

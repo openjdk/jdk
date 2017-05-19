@@ -32,6 +32,7 @@ import java.nio.channels.SocketChannel;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import javax.net.ssl.SSLEngine;
 
 import jdk.incubator.http.internal.common.ByteBufferReference;
 import jdk.incubator.http.internal.common.ExceptionallyCloseable;
@@ -44,33 +45,48 @@ class AsyncSSLConnection extends HttpConnection
                          implements AsyncConnection, ExceptionallyCloseable {
 
     final AsyncSSLDelegate sslDelegate;
-    final PlainHttpConnection delegate;
+    final PlainHttpConnection plainConnection;
 
     AsyncSSLConnection(InetSocketAddress addr, HttpClientImpl client, String[] ap) {
         super(addr, client);
-        delegate = new PlainHttpConnection(addr, client);
-        sslDelegate = new AsyncSSLDelegate(delegate, client, ap);
+        plainConnection = new PlainHttpConnection(addr, client);
+        sslDelegate = new AsyncSSLDelegate(plainConnection, client, ap);
     }
 
     @Override
     synchronized void configureMode(Mode mode) throws IOException {
         super.configureMode(mode);
-        delegate.configureMode(mode);
+        plainConnection.configureMode(mode);
+    }
+
+    private CompletableFuture<Void> configureModeAsync(Void ignore) {
+        CompletableFuture<Void> cf = new CompletableFuture<>();
+        try {
+            configureMode(Mode.ASYNC);
+            cf.complete(null);
+        } catch (Throwable t) {
+            cf.completeExceptionally(t);
+        }
+        return cf;
     }
 
     @Override
     public void connect() throws IOException, InterruptedException {
-        delegate.connect();
+        plainConnection.connect();
+        configureMode(Mode.ASYNC);
+        startReading();
+        sslDelegate.connect();
     }
 
     @Override
     public CompletableFuture<Void> connectAsync() {
-        return delegate.connectAsync();
+        // not used currently
+        throw new InternalError();
     }
 
     @Override
     boolean connected() {
-        return delegate.connected();
+        return plainConnection.connected() && sslDelegate.connected();
     }
 
     @Override
@@ -85,7 +101,12 @@ class AsyncSSLConnection extends HttpConnection
 
     @Override
     SocketChannel channel() {
-        return delegate.channel();
+        return plainConnection.channel();
+    }
+
+    @Override
+    public void enableCallback() {
+        sslDelegate.enableCallback();
     }
 
     @Override
@@ -131,22 +152,26 @@ class AsyncSSLConnection extends HttpConnection
 
     @Override
     public void closeExceptionally(Throwable cause) {
-        Utils.close(cause, sslDelegate, delegate.channel());
+        Utils.close(cause, sslDelegate, plainConnection.channel());
     }
 
     @Override
     public void close() {
-        Utils.close(sslDelegate, delegate.channel());
+        Utils.close(sslDelegate, plainConnection.channel());
     }
 
     @Override
     void shutdownInput() throws IOException {
-        delegate.channel().shutdownInput();
+        plainConnection.channel().shutdownInput();
     }
 
     @Override
     void shutdownOutput() throws IOException {
-        delegate.channel().shutdownOutput();
+        plainConnection.channel().shutdownOutput();
+    }
+
+    SSLEngine getEngine() {
+        return sslDelegate.getEngine();
     }
 
     @Override
@@ -154,7 +179,7 @@ class AsyncSSLConnection extends HttpConnection
                                   Consumer<Throwable> errorReceiver,
                                   Supplier<ByteBufferReference> readBufferSupplier) {
         sslDelegate.setAsyncCallbacks(asyncReceiver, errorReceiver, readBufferSupplier);
-        delegate.setAsyncCallbacks(sslDelegate::asyncReceive, errorReceiver, sslDelegate::getNetBuffer);
+        plainConnection.setAsyncCallbacks(sslDelegate::asyncReceive, errorReceiver, sslDelegate::getNetBuffer);
     }
 
     // Blocking read functions not used here
@@ -176,7 +201,12 @@ class AsyncSSLConnection extends HttpConnection
 
     @Override
     public void startReading() {
-        delegate.startReading();
+        plainConnection.startReading();
         sslDelegate.startReading();
+    }
+
+    @Override
+    public void stopAsyncReading() {
+        plainConnection.stopAsyncReading();
     }
 }

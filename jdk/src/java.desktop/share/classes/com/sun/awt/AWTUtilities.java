@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package com.sun.awt;
 
 import java.awt.*;
+
+import javax.swing.JRootPane;
 
 import sun.awt.AWTAccessor;
 import sun.awt.SunToolkit;
@@ -323,7 +325,7 @@ public final class AWTUtilities {
      * is thrown.
      * <p>If the window is a {@code Frame} or a {@code Dialog}, the window must
      * be undecorated prior to enabling the per-pixel translucency effect (see
-     * {@link Frame#setUndecorated()} and/or {@link Dialog#setUndecorated()}).
+     * {@link Frame#setUndecorated} and/or {@link Dialog#setUndecorated}).
      * If the window becomes decorated through a subsequent call to the
      * corresponding {@code setUndecorated()} method, the per-pixel
      * translucency effect will be disabled and the opaque property reset to
@@ -431,7 +433,7 @@ public final class AWTUtilities {
      * </ul>
      * <p>
      * The most common example when the 'mixing-cutout' shape is needed is a
-     * glass pane component. The {@link JRootPane#setGlassPane()} method
+     * glass pane component. The {@link JRootPane#setGlassPane} method
      * automatically sets the <i>empty-shape</i> as the 'mixing-cutout' shape
      * for the given glass pane component.  If a developer needs some other
      * 'mixing-cutout' shape for the glass pane (which is rare), this must be
@@ -456,8 +458,7 @@ public final class AWTUtilities {
                     "The component argument should not be null.");
         }
 
-        AWTAccessor.getComponentAccessor().setMixingCutoutShape(component,
-                shape);
+        component.setMixingCutoutShape(shape);
     }
 }
 

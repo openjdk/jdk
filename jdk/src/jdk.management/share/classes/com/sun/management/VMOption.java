@@ -47,8 +47,6 @@ import javax.management.openmbean.CompositeData;
  * object was constructed.  The value of the VM option
  * may be changed after the {@code VMOption} object was constructed,
  *
- * @see <a href="{@docRoot}/../../../../technotes/guides/vm/index.html">
- *         Java Virtual Machine</a>
  * @author Mandy Chung
  * @since 1.6
  */

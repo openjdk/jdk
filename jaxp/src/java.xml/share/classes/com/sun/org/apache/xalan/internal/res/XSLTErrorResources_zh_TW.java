@@ -3,13 +3,14 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 1999-2005 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,6 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.sun.org.apache.xalan.internal.res;
 
 import java.util.ListResourceBundle;
@@ -1022,7 +1024,7 @@ public class XSLTErrorResources_zh_TW extends ListResourceBundle
      "\u5C6C\u6027: {0}"},
 
     { ER_NULL_ENTITY_RESOLVER,
-     "\u7A7A\u503C\u500B\u9AD4\u89E3\u6790\u5668"},
+     "\u7A7A\u503C\u5BE6\u9AD4\u89E3\u6790\u5668"},
 
     { ER_NULL_DTD_HANDLER,
      "\u7A7A\u503C DTD \u8655\u7406\u7A0B\u5F0F"},
@@ -1356,8 +1358,8 @@ public class XSLTErrorResources_zh_TW extends ListResourceBundle
   { "optionLXCIN", "   [-LXCIN compiledStylesheetFileNameIn]"},
   { "optionLXCOUT", "   [-LXCOUT compiledStylesheetFileNameOutOut]"},
   { "optionPARSER", "   [-PARSER \u5256\u6790\u5668\u806F\u7D61\u7684\u5B8C\u6574\u985E\u5225\u540D\u7A31]"},
-  {  "optionE", "   [-E (\u52FF\u5C55\u958B\u500B\u9AD4\u53C3\u7167)]"},
-  {  "optionV",  "   [-E (\u52FF\u5C55\u958B\u500B\u9AD4\u53C3\u7167)]"},
+  {  "optionE", "   [-E (\u52FF\u5C55\u958B\u5BE6\u9AD4\u53C3\u7167)]"},
+  {  "optionV",  "   [-E (\u52FF\u5C55\u958B\u5BE6\u9AD4\u53C3\u7167)]"},
   {  "optionQC", "   [-QC (\u975C\u97F3\u6A23\u5F0F\u885D\u7A81\u8B66\u544A)]"},
   {  "optionQ", "   [-Q  (\u975C\u97F3\u6A21\u5F0F)]"},
   {  "optionLF", "   [-LF (\u8F38\u51FA\u4E0A\u50C5\u4F7F\u7528\u63DB\u884C\u5B57\u5143 {\u9810\u8A2D\u70BA CR/LF})]"},
@@ -1381,7 +1383,7 @@ public class XSLTErrorResources_zh_TW extends ListResourceBundle
   { "noParsermsg4", "\u82E5\u7121 IBM \u7684 XML Parser for Java\uFF0C\u53EF\u4E0B\u8F09\u81EA"},
   { "noParsermsg5", "IBM \u7684 AlphaWorks: http://www.alphaworks.ibm.com/formula/xml"},
   { "optionURIRESOLVER", "   [-URIRESOLVER \u5B8C\u6574\u985E\u5225\u540D\u7A31 (\u7528\u4F86\u89E3\u6790 URI \u7684 URIResolver)]"},
-  { "optionENTITYRESOLVER",  "   [-ENTITYRESOLVER \u5B8C\u6574\u985E\u5225\u540D\u7A31 (\u7528\u4F86\u89E3\u6790\u500B\u9AD4\u7684 EntityResolver )]"},
+  { "optionENTITYRESOLVER",  "   [-ENTITYRESOLVER \u5B8C\u6574\u985E\u5225\u540D\u7A31 (\u7528\u4F86\u89E3\u6790\u5BE6\u9AD4\u7684 EntityResolver )]"},
   { "optionCONTENTHANDLER",  "   [-CONTENTHANDLER \u5B8C\u6574\u985E\u5225\u540D\u7A31 (\u7528\u4F86\u5E8F\u5217\u5316\u8F38\u51FA\u7684 ContentHandler)]"},
   {  "optionLINENUMBERS",  "   [-L \u4F7F\u7528\u884C\u865F\u65BC\u4F86\u6E90\u6587\u4EF6]"},
   { "optionSECUREPROCESSING", "   [-SECURE (\u5C07\u5B89\u5168\u8655\u7406\u529F\u80FD\u8A2D\u70BA\u771F\u3002)]"},

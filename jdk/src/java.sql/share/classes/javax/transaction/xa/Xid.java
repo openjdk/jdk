@@ -32,6 +32,8 @@ package javax.transaction.xa;
  * and branch qualifier. The Xid interface is used by the transaction
  * manager and the resource managers. This interface is not visible to
  * the application programs.
+ *
+ * @since 1.4
  */
 public interface Xid {
 

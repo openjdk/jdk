@@ -93,80 +93,53 @@ public class CompressorPluginTest {
                 new ResourceDecompressorFactory[]{
                     new StringSharingDecompressorFactory()});
 
-        // compress == ZIP + String sharing
-        Properties options = new Properties();
-        options.setProperty(ZipPlugin.NAME, "");
-        checkCompress(classes, new DefaultCompressPlugin(), options,
+        // compress level 0 == no compression
+        Properties options0 = new Properties();
+        options0.setProperty(DefaultCompressPlugin.NAME,
+                "0");
+        checkCompress(classes, new DefaultCompressPlugin(),
+                options0,
                 new ResourceDecompressorFactory[]{
-                    new ZipDecompressorFactory(),
-                    new StringSharingDecompressorFactory()
                 });
 
-        // compress == ZIP + String sharing + filter
-        options.setProperty(DefaultCompressPlugin.FILTER,
-                "**Exception.class");
-        checkCompress(classes, new DefaultCompressPlugin(), options,
-                new ResourceDecompressorFactory[]{
-                    new ZipDecompressorFactory(),
-                    new StringSharingDecompressorFactory()
-                }, Collections.singletonList(".*Exception.class"));
-
-        // compress level 1 == ZIP
+        // compress level 1 == String sharing
         Properties options1 = new Properties();
-        options1.setProperty(DefaultCompressPlugin.NAME,
-                "1");
+        options1.setProperty(DefaultCompressPlugin.NAME, "1");
         checkCompress(classes, new DefaultCompressPlugin(),
                 options1,
                 new ResourceDecompressorFactory[]{
-                    new ZipDecompressorFactory()
+                    new StringSharingDecompressorFactory()
                 });
 
-        // compress level 1 == ZIP
+        // compress level 1 == String sharing + filter
         options1.setProperty(DefaultCompressPlugin.FILTER,
                 "**Exception.class");
+        options1.setProperty(DefaultCompressPlugin.NAME, "1");
         checkCompress(classes, new DefaultCompressPlugin(),
                 options1,
+                new ResourceDecompressorFactory[]{
+                    new StringSharingDecompressorFactory()
+                }, Collections.singletonList(".*Exception.class"));
+
+        // compress level 2 == ZIP
+        Properties options2 = new Properties();
+        options2.setProperty(DefaultCompressPlugin.FILTER,
+                "**Exception.class");
+        options2.setProperty(DefaultCompressPlugin.NAME, "2");
+        checkCompress(classes, new DefaultCompressPlugin(),
+                options2,
                 new ResourceDecompressorFactory[]{
                     new ZipDecompressorFactory()
                 }, Collections.singletonList(".*Exception.class"));
 
-        // compress level 2 == ZIP + String sharing
-        Properties options2 = new Properties();
-        options2.setProperty(DefaultCompressPlugin.NAME,
-                "2");
-        checkCompress(classes, new DefaultCompressPlugin(),
-                options2,
-                new ResourceDecompressorFactory[]{
-                    new ZipDecompressorFactory(),
-                    new StringSharingDecompressorFactory()
-                });
-
-        // compress level 2 == ZIP + String sharing + filter
+        // compress level 2 == ZIP + filter
         options2.setProperty(DefaultCompressPlugin.FILTER,
                 "**Exception.class");
+        options2.setProperty(DefaultCompressPlugin.NAME, "2");
         checkCompress(classes, new DefaultCompressPlugin(),
                 options2,
                 new ResourceDecompressorFactory[]{
                     new ZipDecompressorFactory(),
-                    new StringSharingDecompressorFactory()
-                }, Collections.singletonList(".*Exception.class"));
-
-        // compress level 0 == String sharing
-        Properties options0 = new Properties();
-        options0.setProperty(DefaultCompressPlugin.NAME, "0");
-        checkCompress(classes, new DefaultCompressPlugin(),
-                options0,
-                new ResourceDecompressorFactory[]{
-                    new StringSharingDecompressorFactory()
-                });
-
-        // compress level 0 == String sharing + filter
-        options0.setProperty(DefaultCompressPlugin.FILTER,
-                "**Exception.class");
-        checkCompress(classes, new DefaultCompressPlugin(),
-                options0,
-                new ResourceDecompressorFactory[]{
-                    new StringSharingDecompressorFactory()
                 }, Collections.singletonList(".*Exception.class"));
     }
 
@@ -234,6 +207,11 @@ public class CompressorPluginTest {
             Properties config,
             ResourceDecompressorFactory[] factories,
             List<String> includes) throws Exception {
+        if (factories.length == 0) {
+            // no compression, nothing to check!
+            return;
+        }
+
         long[] original = new long[1];
         long[] compressed = new long[1];
         resources.entries().forEach(resource -> {
