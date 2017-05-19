@@ -25,6 +25,7 @@
  * @bug 4460583 4470470 4840199 6419424 6710579 6596323 6824135 6395224 7142919
  *      8151582 8068693 8153209
  * @run main/othervm AsyncCloseAndInterrupt
+ * @key intermittent
  * @summary Comprehensive test of asynchronous closing and interruption
  * @author Mark Reinhold
  */

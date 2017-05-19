@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,11 +45,14 @@ public class SymbolTable extends sun.jvm.hotspot.utilities.Hashtable {
     Type type = db.lookupType("SymbolTable");
     theTableField  = type.getAddressField("_the_table");
     sharedTableField = type.getAddressField("_shared_table");
+    type = db.lookupType("RehashableSymbolHashtable");
+    seedField = type.getCIntegerField("_seed");
   }
 
   // Fields
   private static AddressField theTableField;
   private static AddressField sharedTableField;
+  private static CIntegerField seedField;
 
   private CompactHashTable sharedTable;
 
@@ -60,6 +63,17 @@ public class SymbolTable extends sun.jvm.hotspot.utilities.Hashtable {
     Address shared = sharedTableField.getStaticFieldAddress();
     table.sharedTable = (CompactHashTable)VMObjectFactory.newObject(CompactHashTable.class, shared);
     return table;
+  }
+
+  public static long getSeed() {
+      return (long) seedField.getValue();
+  }
+
+  public static boolean useAlternateHashcode() {
+      if (getSeed() != 0) {
+          return true;
+      }
+      return false;
   }
 
   public SymbolTable(Address addr) {
@@ -86,9 +100,15 @@ public class SymbolTable extends sun.jvm.hotspot.utilities.Hashtable {
   public Symbol probe(byte[] name) {
     long hashValue = hashSymbol(name);
 
+    // shared table does not use alternate hashing algorithm,
+    // it always uses the same original hash code.
     Symbol s = sharedTable.probe(name, hashValue);
     if (s != null) {
       return s;
+    }
+
+    if (useAlternateHashcode()) {
+        hashValue = AltHashing.murmur3_32(getSeed(), name);
     }
 
     for (HashtableEntry e = (HashtableEntry) bucket(hashToIndex(hashValue)); e != null; e = (HashtableEntry) e.next()) {

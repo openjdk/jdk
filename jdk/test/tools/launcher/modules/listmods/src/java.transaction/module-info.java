@@ -23,5 +23,4 @@
 
 module java.transaction {
     exports javax.transaction;
-    exports javax.transaction.atomic;
 }

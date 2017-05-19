@@ -159,6 +159,7 @@ public interface ElementVisitor<R, P> {
      * @param p  a visitor-specified parameter
      * @return a visitor-specified result
      * @since 9
+     * @spec JPMS
      */
     default R visitModule(ModuleElement e, P p) {
         return visitUnknown(e, p);

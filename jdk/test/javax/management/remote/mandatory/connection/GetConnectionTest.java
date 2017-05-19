@@ -26,7 +26,7 @@
  * @bug 4951414
  * @summary Try to get an IOException.
  * @author Shanliang JIANG
- * @modules java.management.rmi
+ *
  * @run clean GetConnectionTest
  * @run build GetConnectionTest
  * @run main GetConnectionTest
