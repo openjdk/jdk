@@ -1,3 +1,26 @@
+/*
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.Point2D;
@@ -81,15 +104,16 @@ public class SystemTrayIconHelper {
             try {
                 // sun.lwawt.macosx.CTrayIcon
                 Field f_peer = getField( java.awt.TrayIcon.class, "peer");
-                Method m_addExports = Class.forName("java.awt.Helper").getDeclaredMethod("addExports", String.class, java.lang.reflect.Module.class);
+                Method m_addExports = Class.forName("java.awt.Helper").getDeclaredMethod("addExports", String.class, java.lang.Module.class);
                 m_addExports.invoke(null, "sun.lwawt.macosx", robot.getClass().getModule());
 
 
                 Object peer = f_peer.get(icon);
-                Method m_getModel = peer.getClass().getDeclaredMethod(
-                        "getModel");
+                Class<?> superclass = peer.getClass().getSuperclass();
+                System.out.println("superclass = " + superclass);
+                Field m_getModel = superclass.getDeclaredField("ptr");
                 m_getModel.setAccessible(true);
-                long model = (Long) (m_getModel.invoke(peer, new Object[]{}));
+                long model = (Long) m_getModel.get(peer);
                 Method m_getLocation = peer.getClass().getDeclaredMethod(
                         "nativeGetIconLocation", new Class[]{Long.TYPE});
                 m_getLocation.setAccessible(true);
@@ -105,7 +129,7 @@ public class SystemTrayIconHelper {
         } else {
             try {
                 // sun.awt.X11.XTrayIconPeer
-                Method m_addExports = Class.forName("java.awt.Helper").getDeclaredMethod("addExports", String.class, java.lang.reflect.Module.class);
+                Method m_addExports = Class.forName("java.awt.Helper").getDeclaredMethod("addExports", String.class, java.lang.Module.class);
                 m_addExports.invoke(null, "sun.awt.X11", robot.getClass().getModule());
 
                 Field f_peer = getField(java.awt.TrayIcon.class, "peer");

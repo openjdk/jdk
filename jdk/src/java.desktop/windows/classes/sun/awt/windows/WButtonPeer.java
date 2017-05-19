@@ -95,6 +95,7 @@ final class WButtonPeer extends WComponentPeer implements ButtonPeer {
     private static native void initIDs();
 
     @Override
+    @SuppressWarnings("deprecation")
     public boolean handleJavaKeyEvent(KeyEvent e) {
          switch (e.getID()) {
             case KeyEvent.KEY_RELEASED:

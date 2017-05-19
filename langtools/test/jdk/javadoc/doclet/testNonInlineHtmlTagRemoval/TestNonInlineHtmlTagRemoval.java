@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8048628
+ * @bug      8048628 8174715
  * @summary  Verify html inline tags are removed correctly in the first sentence.
  * @library  ../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -39,8 +39,8 @@ public class TestNonInlineHtmlTagRemoval extends JavadocTester {
     }
 
     @Test
-    void test() {
-        javadoc("-d", "out",
+    void testPositive() {
+        javadoc("-d", "out1",
                 "-sourcepath", testSrc,
                 testSrc("C.java"));
         checkExit(Exit.OK);
@@ -55,6 +55,18 @@ public class TestNonInlineHtmlTagRemoval extends JavadocTester {
                 "<div class=\"block\">case7   end of sentence.</div>",
                 "<div class=\"block\">case8   end of sentence.</div>",
                 "<div class=\"block\">case9   end of sentence.</div>",
-                "<div class=\"block\">caseA   end of sentence.</div>");
+                "<div class=\"block\">caseA   end of sentence.</div>",
+                "<div class=\"block\">caseB A block quote example:</div>");
+    }
+
+    @Test
+    void testNegative() {
+        javadoc("-d", "out2",
+                "-sourcepath", testSrc,
+                testSrc("Negative.java"));
+        checkExit(Exit.ERROR);
+
+        checkOutput("Negative.html", true,
+                "<div class=\"block\">case1: A hanging &lt;  : xx<</div>");
     }
 }

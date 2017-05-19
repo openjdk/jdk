@@ -24,10 +24,11 @@
 #
 # @test
 # @bug     4530538
-# @summary 
+# @summary
 # @author  Mandy Chung
+#
 # @requires vm.gc=="Parallel" | vm.gc=="null"
-# @modules java.management
+#
 # @run compile MemoryTest.java
 # @run shell MemoryTestAllGC.sh
 #
@@ -42,7 +43,7 @@ else
 fi
 
 runOne()
-{ 
+{
    echo "runOne $@"
    $TESTJAVA/bin/java ${TESTVMOPTS} -classpath $TESTCLASSES $@ || exit 2
 }
