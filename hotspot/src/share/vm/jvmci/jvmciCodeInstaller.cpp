@@ -630,7 +630,7 @@ JVMCIEnv::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler, Hand
     if (nm != NULL && env == NULL) {
       DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, compiler);
       bool printnmethods = directive->PrintAssemblyOption || directive->PrintNMethodsOption;
-      if (printnmethods || PrintDebugInfo || PrintRelocations || PrintDependencies || PrintExceptionHandlers) {
+      if (!printnmethods && (PrintDebugInfo || PrintRelocations || PrintDependencies || PrintExceptionHandlers)) {
         nm->print_nmethod(printnmethods);
       }
       DirectivesStack::release(directive);

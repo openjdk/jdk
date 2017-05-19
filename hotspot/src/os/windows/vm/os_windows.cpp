@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -5250,12 +5250,30 @@ void Parker::unpark() {
 int os::fork_and_exec(char* cmd) {
   STARTUPINFO si;
   PROCESS_INFORMATION pi;
+  DWORD exit_code;
 
+  char * cmd_string;
+  char * cmd_prefix = "cmd /C ";
+  size_t len = strlen(cmd) + strlen(cmd_prefix) + 1;
+  cmd_string = NEW_C_HEAP_ARRAY_RETURN_NULL(char, len, mtInternal);
+  if (cmd_string == NULL) {
+    return -1;
+  }
+  cmd_string[0] = '\0';
+  strcat(cmd_string, cmd_prefix);
+  strcat(cmd_string, cmd);
+
+  // now replace all '\n' with '&'
+  char * substring = cmd_string;
+  while ((substring = strchr(substring, '\n')) != NULL) {
+    substring[0] = '&';
+    substring++;
+  }
   memset(&si, 0, sizeof(si));
   si.cb = sizeof(si);
   memset(&pi, 0, sizeof(pi));
   BOOL rslt = CreateProcess(NULL,   // executable name - use command line
-                            cmd,    // command line
+                            cmd_string,    // command line
                             NULL,   // process security attribute
                             NULL,   // thread security attribute
                             TRUE,   // inherits system handles
@@ -5269,17 +5287,17 @@ int os::fork_and_exec(char* cmd) {
     // Wait until child process exits.
     WaitForSingleObject(pi.hProcess, INFINITE);
 
-    DWORD exit_code;
     GetExitCodeProcess(pi.hProcess, &exit_code);
 
     // Close process and thread handles.
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
-
-    return (int)exit_code;
   } else {
-    return -1;
+    exit_code = -1;
   }
+
+  FREE_C_HEAP_ARRAY(char, cmd_string);
+  return (int)exit_code;
 }
 
 bool os::find(address addr, outputStream* st) {

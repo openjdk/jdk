@@ -211,6 +211,8 @@ class DictionaryEntry : public HashtableEntry<InstanceKlass*, mtClass> {
     }
     st->print_cr("pd set count = #%d", count);
   }
+
+  void verify();
 };
 
 // Entry in a SymbolPropertyTable, mapping a single Symbol*

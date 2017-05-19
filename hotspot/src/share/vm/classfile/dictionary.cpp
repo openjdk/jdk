@@ -337,15 +337,12 @@ void Dictionary::add_klass(Symbol* class_name, ClassLoaderData* loader_data,
 DictionaryEntry* Dictionary::get_entry(int index, unsigned int hash,
                                        Symbol* class_name,
                                        ClassLoaderData* loader_data) {
-  DEBUG_ONLY(_lookup_count++);
   for (DictionaryEntry* entry = bucket(index);
                         entry != NULL;
                         entry = entry->next()) {
     if (entry->hash() == hash && entry->equals(class_name, loader_data)) {
-      DEBUG_ONLY(bucket_count_hit(index));
       return entry;
     }
-    DEBUG_ONLY(_lookup_length++);
   }
   return NULL;
 }
@@ -548,114 +545,24 @@ void Dictionary::print(bool details) {
   tty->cr();
 }
 
-#ifdef ASSERT
-void Dictionary::printPerformanceInfoDetails() {
-  if (log_is_enabled(Info, hashtables)) {
-    ResourceMark rm;
-
-    log_info(hashtables)(" ");
-    log_info(hashtables)("Java system dictionary (table_size=%d, classes=%d)",
-                            table_size(), number_of_entries());
-    log_info(hashtables)("1st number: the bucket index");
-    log_info(hashtables)("2nd number: the hit percentage for this bucket");
-    log_info(hashtables)("3rd number: the entry's index within this bucket");
-    log_info(hashtables)("4th number: the hash index of this entry");
-    log_info(hashtables)(" ");
-
-    // find top buckets with highest lookup count
-#define TOP_COUNT 16
-    int topItemsIndicies[TOP_COUNT];
-    for (int i = 0; i < TOP_COUNT; i++) {
-      topItemsIndicies[i] = i;
-    }
-    double total = 0.0;
-    for (int i = 0; i < table_size(); i++) {
-      // find the total count number, so later on we can
-      // express bucket lookup count as a percentage of all lookups
-      unsigned value = bucket_hits(i);
-      total += value;
-
-      // find the top entry with min value
-      int min_index = 0;
-      unsigned min_value = bucket_hits(topItemsIndicies[min_index]);
-      for (int j = 1; j < TOP_COUNT; j++) {
-        unsigned top_value = bucket_hits(topItemsIndicies[j]);
-        if (top_value < min_value) {
-          min_value = top_value;
-          min_index = j;
-        }
-      }
-      // if the bucket loookup value is bigger than the top buckets min
-      // move that bucket index into the top list
-      if (value > min_value) {
-        topItemsIndicies[min_index] = i;
-      }
-    }
-
-    for (int index = 0; index < table_size(); index++) {
-      double percentage = 100.0 * (double)bucket_hits(index)/total;
-      int chain = 0;
-      for (DictionaryEntry* probe = bucket(index);
-           probe != NULL;
-           probe = probe->next()) {
-        Klass* e = probe->klass();
-        ClassLoaderData* loader_data =  probe->loader_data();
-        bool is_defining_class =
-        (loader_data == e->class_loader_data());
-        log_info(hashtables)("%4d: %5.2f%%: %3d: %10u: %s, loader %s",
-                                index, percentage, chain, probe->hash(), e->external_name(),
-                                (loader_data != NULL) ? loader_data->loader_name() : "NULL");
-
-        chain++;
-      }
-      if (chain == 0) {
-        log_info(hashtables)("%4d:", index+1);
-      }
-    }
-    log_info(hashtables)(" ");
-
-    // print out the TOP_COUNT of buckets with highest lookup count (unsorted)
-    log_info(hashtables)("Top %d buckets:", TOP_COUNT);
-    for (int i = 0; i < TOP_COUNT; i++) {
-      log_info(hashtables)("%4d: hits %5.2f%%",
-                              topItemsIndicies[i],
-                                100.0*(double)bucket_hits(topItemsIndicies[i])/total);
-    }
-  }
+void DictionaryEntry::verify() {
+  Klass* e = klass();
+  ClassLoaderData* cld = loader_data();
+  guarantee(e->is_instance_klass(),
+                          "Verify of system dictionary failed");
+  // class loader must be present;  a null class loader is the
+  // boostrap loader
+  guarantee(cld != NULL || DumpSharedSpaces ||
+            cld->class_loader() == NULL ||
+            cld->class_loader()->is_instance(),
+            "checking type of class_loader");
+  e->verify();
+  verify_protection_domain_set();
 }
-#endif // ASSERT
 
 void Dictionary::verify() {
   guarantee(number_of_entries() >= 0, "Verify of system dictionary failed");
-
-  int element_count = 0;
-  for (int index = 0; index < table_size(); index++) {
-    for (DictionaryEntry* probe = bucket(index);
-                          probe != NULL;
-                          probe = probe->next()) {
-      Klass* e = probe->klass();
-      ClassLoaderData* loader_data = probe->loader_data();
-      guarantee(e->is_instance_klass(),
-                              "Verify of system dictionary failed");
-      // class loader must be present;  a null class loader is the
-      // boostrap loader
-      guarantee(loader_data != NULL || DumpSharedSpaces ||
-                loader_data->class_loader() == NULL ||
-                loader_data->class_loader()->is_instance(),
-                "checking type of class_loader");
-      e->verify();
-      probe->verify_protection_domain_set();
-      element_count++;
-    }
-  }
-  guarantee(number_of_entries() == element_count,
-            "Verify of system dictionary failed");
-#ifdef ASSERT
-  if (!verify_lookup_length((double)number_of_entries() / table_size(), "System Dictionary")) {
-    this->printPerformanceInfoDetails();
-  }
-#endif // ASSERT
-
+  verify_table<DictionaryEntry>("System Dictionary");
   _pd_cache_table->verify();
 }
 

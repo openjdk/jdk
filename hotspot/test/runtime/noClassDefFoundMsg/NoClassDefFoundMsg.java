@@ -28,7 +28,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.compiler
- * @run main NoClassDefFoundMsg
+ * @run main/native NoClassDefFoundMsg
  */
 
 import jdk.test.lib.InMemoryJavaCompiler;
