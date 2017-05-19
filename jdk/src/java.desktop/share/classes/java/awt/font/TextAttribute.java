@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,14 +96,14 @@ import jdk.internal.misc.SharedSecrets;
  * </UL>
  *
  * <h4>Summary of attributes</h4>
- * <table style="float:center" border="0" cellspacing="0" cellpadding="2" width="95%"
+ * <table style="float:center;width:95%" border="0" cellspacing="0" cellpadding="2"
  *     summary="Key, value type, principal constants, and default value
  *     behavior of all TextAttributes">
  * <tr style="background-color:#ccccff">
- * <th valign="TOP" align="CENTER">Key</th>
- * <th valign="TOP" align="CENTER">Value Type</th>
- * <th valign="TOP" align="CENTER">Principal Constants</th>
- * <th valign="TOP" align="CENTER">Default Value</th>
+ * <th valign="TOP" style="text-align:center">Key</th>
+ * <th valign="TOP" style="text-align:center">Value Type</th>
+ * <th valign="TOP" style="text-align:center">Principal Constants</th>
+ * <th valign="TOP" style="text-align:center">Default Value</th>
  * </tr>
  * <tr>
  * <td valign="TOP">{@link #FAMILY}</td>

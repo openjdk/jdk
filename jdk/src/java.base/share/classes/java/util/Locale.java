@@ -83,7 +83,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * described below.
  *
  * <dl>
- *   <dt><a name="def_language"><b>language</b></a></dt>
+ *   <dt><a id="def_language"><b>language</b></a></dt>
  *
  *   <dd>ISO 639 alpha-2 or alpha-3 language code, or registered
  *   language subtags up to 8 alpha letters (for future enhancements).
@@ -101,7 +101,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  *
  *   <dd>Example: "en" (English), "ja" (Japanese), "kok" (Konkani)</dd>
  *
- *   <dt><a name="def_script"><b>script</b></a></dt>
+ *   <dt><a id="def_script"><b>script</b></a></dt>
  *
  *   <dd>ISO 15924 alpha-4 script code.  You can find a full list of
  *   valid script codes in the IANA Language Subtag Registry (search
@@ -115,7 +115,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  *
  *   <dd>Example: "Latn" (Latin), "Cyrl" (Cyrillic)</dd>
  *
- *   <dt><a name="def_region"><b>country (region)</b></a></dt>
+ *   <dt><a id="def_region"><b>country (region)</b></a></dt>
  *
  *   <dd>ISO 3166 alpha-2 country code or UN M.49 numeric-3 area code.
  *   You can find a full list of valid country and region codes in the
@@ -129,7 +129,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  *   <dd>Example: "US" (United States), "FR" (France), "029"
  *   (Caribbean)</dd>
  *
- *   <dt><a name="def_variant"><b>variant</b></a></dt>
+ *   <dt><a id="def_variant"><b>variant</b></a></dt>
  *
  *   <dd>Any arbitrary value used to indicate a variation of a
  *   <code>Locale</code>.  Where there are two or more variant values
@@ -160,7 +160,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  *
  *   <dd>Example: "polyton" (Polytonic Greek), "POSIX"</dd>
  *
- *   <dt><a name="def_extensions"><b>extensions</b></a></dt>
+ *   <dt><a id="def_extensions"><b>extensions</b></a></dt>
  *
  *   <dd>A map from single character keys to string values, indicating
  *   extensions apart from language identification.  The extensions in
@@ -188,7 +188,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * requirement (is well-formed), but does not validate the value
  * itself.  See {@link Builder} for details.
  *
- * <h3><a name="def_locale_extension">Unicode locale/language extension</a></h3>
+ * <h3><a id="def_locale_extension">Unicode locale/language extension</a></h3>
  *
  * <p>UTS#35, "Unicode Locale Data Markup Language" defines optional
  * attributes and keywords to override or refine the default behavior
@@ -269,7 +269,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * </pre>
  * </blockquote>
  *
- * <h4><a name="LocaleMatching">Locale Matching</a></h4>
+ * <h4><a id="LocaleMatching">Locale Matching</a></h4>
  *
  * <p>If an application or a system is internationalized and provides localized
  * resources for multiple locales, it sometimes needs to find one or more
@@ -408,7 +408,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * Clients desiring a string representation of the complete locale can
  * then always rely on <code>toLanguageTag</code> for this purpose.
  *
- * <h5><a name="special_cases_constructor">Special cases</a></h5>
+ * <h5><a id="special_cases_constructor">Special cases</a></h5>
  *
  * <p>For compatibility reasons, two
  * non-conforming locales are treated as special cases.  These are
@@ -1588,7 +1588,7 @@ public final class Locale implements Cloneable, Serializable {
      * <p>Grandfathered tags with canonical replacements are as follows:
      *
      * <table summary="Grandfathered tags with canonical replacements">
-     * <tbody align="center">
+     * <tbody style="text-align:center">
      * <tr><th>grandfathered tag</th><th>&nbsp;</th><th>modern replacement</th></tr>
      * <tr><td>art-lojban</td><td>&nbsp;</td><td>jbo</td></tr>
      * <tr><td>i-ami</td><td>&nbsp;</td><td>ami</td></tr>
@@ -1617,7 +1617,7 @@ public final class Locale implements Cloneable, Serializable {
      * converted as follows:
      *
      * <table summary="Grandfathered tags with no modern replacement">
-     * <tbody align="center">
+     * <tbody style="text-align:center">
      * <tr><th>grandfathered tag</th><th>&nbsp;</th><th>converts to</th></tr>
      * <tr><td>cel-gaulish</td><td>&nbsp;</td><td>xtg-x-cel-gaulish</td></tr>
      * <tr><td>en-GB-oed</td><td>&nbsp;</td><td>en-GB-x-oed</td></tr>
@@ -2774,60 +2774,60 @@ public final class Locale implements Cloneable, Serializable {
      * <th>Language Priority List: {@code "de-*-DE"}</th>
      * </tr>
      * <tr>
-     * <td valign=top>
+     * <td style="vertical-align:top">
      * {@link FilteringMode#AUTOSELECT_FILTERING AUTOSELECT_FILTERING}
      * </td>
-     * <td valign=top>
+     * <td style="vertical-align:top">
      * Performs <em>basic</em> filtering and returns {@code "de-DE"} and
      * {@code "de-DE-1996"}.
      * </td>
-     * <td valign=top>
+     * <td style="vertical-align:top">
      * Performs <em>extended</em> filtering and returns {@code "de-DE"},
      * {@code "de-Deva-DE"}, {@code "de-DE-1996"}, {@code "de-Latn-DE"}, and
      * {@code "de-Latn-DE-1996"}.
      * </td>
      * </tr>
      * <tr>
-     * <td valign=top>
+     * <td style="vertical-align:top">
      * {@link FilteringMode#EXTENDED_FILTERING EXTENDED_FILTERING}
      * </td>
-     * <td valign=top>
+     * <td style="vertical-align:top">
      * Performs <em>extended</em> filtering and returns {@code "de-DE"},
      * {@code "de-Deva-DE"}, {@code "de-DE-1996"}, {@code "de-Latn-DE"}, and
      * {@code "de-Latn-DE-1996"}.
      * </td>
-     * <td valign=top>Same as above.</td>
+     * <td style="vertical-align:top">Same as above.</td>
      * </tr>
      * <tr>
-     * <td valign=top>
+     * <td style="vertical-align:top">
      * {@link FilteringMode#IGNORE_EXTENDED_RANGES IGNORE_EXTENDED_RANGES}
      * </td>
-     * <td valign=top>
+     * <td style="vertical-align:top">
      * Performs <em>basic</em> filtering and returns {@code "de-DE"} and
      * {@code "de-DE-1996"}.
      * </td>
-     * <td valign=top>
+     * <td style="vertical-align:top">
      * Performs <em>basic</em> filtering and returns {@code null} because
      * nothing matches.
      * </td>
      * </tr>
      * <tr>
-     * <td valign=top>
+     * <td style="vertical-align:top">
      * {@link FilteringMode#MAP_EXTENDED_RANGES MAP_EXTENDED_RANGES}
      * </td>
-     * <td valign=top>Same as above.</td>
-     * <td valign=top>
+     * <td style="vertical-align:top">Same as above.</td>
+     * <td style="vertical-align:top">
      * Performs <em>basic</em> filtering and returns {@code "de-DE"} and
      * {@code "de-DE-1996"} because {@code "de-*-DE"} is mapped to
      * {@code "de-DE"}.
      * </td>
      * </tr>
      * <tr>
-     * <td valign=top>
+     * <td style="vertical-align:top">
      * {@link FilteringMode#REJECT_EXTENDED_RANGES REJECT_EXTENDED_RANGES}
      * </td>
-     * <td valign=top>Same as above.</td>
-     * <td valign=top>
+     * <td style="vertical-align:top">Same as above.</td>
+     * <td style="vertical-align:top">
      * Throws {@link IllegalArgumentException} because {@code "de-*-DE"} is
      * not a valid basic language range.
      * </td>

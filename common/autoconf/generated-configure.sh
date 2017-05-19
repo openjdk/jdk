@@ -918,6 +918,7 @@ COMPRESS_JARS
 INCLUDE_SA
 UNLIMITED_CRYPTO
 CACERTS_FILE
+ENABLE_FULL_DOCS
 ENABLE_HEADLESS_ONLY
 DEFAULT_MAKE_TARGET
 OS_VERSION_MICRO
@@ -932,9 +933,11 @@ DSYMUTIL
 IS_GNU_TIME
 PATCH
 DTRACE
+FLOCK
 TIME
 STAT
 HG
+DOT
 READELF
 OTOOL
 LDD
@@ -993,8 +996,9 @@ OPENJDK_TARGET_CPU_OSARCH
 OPENJDK_TARGET_CPU_ISADIR
 OPENJDK_TARGET_CPU_LEGACY_LIB
 OPENJDK_TARGET_CPU_LEGACY
-REQUIRED_OS_VERSION
-REQUIRED_OS_NAME
+RELEASE_FILE_OS_ARCH
+RELEASE_FILE_OS_NAME
+OPENJDK_MODULE_TARGET_PLATFORM
 COMPILE_TYPE
 OPENJDK_TARGET_CPU_ENDIAN
 OPENJDK_TARGET_CPU_BITS
@@ -1024,6 +1028,7 @@ build_os
 build_vendor
 build_cpu
 build
+PANDOC
 NICE
 CPIO
 DF
@@ -1136,6 +1141,7 @@ with_conf_name
 with_output_sync
 with_default_make_target
 enable_headless_only
+enable_full_docs
 with_cacerts_file
 enable_unlimited_crypto
 with_copyright_year
@@ -1281,15 +1287,18 @@ READLINK
 DF
 CPIO
 NICE
+PANDOC
 MAKE
 UNZIP
 ZIPEXE
 LDD
 OTOOL
 READELF
+DOT
 HG
 STAT
 TIME
+FLOCK
 DTRACE
 PATCH
 DSYMUTIL
@@ -1967,6 +1976,8 @@ Optional Features:
   --enable-debug          set the debug level to fastdebug (shorthand for
                           --with-debug-level=fastdebug) [disabled]
   --enable-headless-only  only build headless (no GUI) support [disabled]
+  --enable-full-docs      build complete documentation [enabled if all tools
+                          found]
   --disable-unlimited-crypto
                           Disable unlimited crypto policy [enabled]
   --disable-keep-packaged-modules
@@ -2244,15 +2255,18 @@ Some influential environment variables:
   DF          Override default value for DF
   CPIO        Override default value for CPIO
   NICE        Override default value for NICE
+  PANDOC      Override default value for PANDOC
   MAKE        Override default value for MAKE
   UNZIP       Override default value for UNZIP
   ZIPEXE      Override default value for ZIPEXE
   LDD         Override default value for LDD
   OTOOL       Override default value for OTOOL
   READELF     Override default value for READELF
+  DOT         Override default value for DOT
   HG          Override default value for HG
   STAT        Override default value for STAT
   TIME        Override default value for TIME
+  FLOCK       Override default value for FLOCK
   DTRACE      Override default value for DTRACE
   PATCH       Override default value for PATCH
   DSYMUTIL    Override default value for DSYMUTIL
@@ -4887,6 +4901,8 @@ VALID_JVM_VARIANTS="server client minimal core zero zeroshark custom"
 
 
 
+
+
 #%%% Build and target systems %%%
 
 
@@ -5043,7 +5059,7 @@ TOOLCHAIN_MINIMUM_VERSION_xlc=""
 #
 # $1 = compiler to test (CC or CXX)
 # $2 = human readable name of compiler (C or C++)
-# $3 = list of compiler names to search for
+# $3 = compiler name to search for
 
 
 # Detect the core components of the toolchain, i.e. the compilers (CC and CXX),
@@ -5170,7 +5186,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1486175373
+DATE_WHEN_GENERATED=1494615666
 
 ###############################################################################
 #
@@ -15358,6 +15374,203 @@ $as_echo "$tool_specified" >&6; }
 
 
 
+  # Publish this variable in the help.
+
+
+  if [ -z "${PANDOC+x}" ]; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in pandoc
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_PANDOC+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $PANDOC in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PANDOC="$PANDOC" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_PANDOC="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+PANDOC=$ac_cv_path_PANDOC
+if test -n "$PANDOC"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PANDOC" >&5
+$as_echo "$PANDOC" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$PANDOC" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !PANDOC! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!PANDOC!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xPANDOC" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of PANDOC from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of PANDOC from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in pandoc
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_PANDOC+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $PANDOC in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PANDOC="$PANDOC" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_PANDOC="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+PANDOC=$ac_cv_path_PANDOC
+if test -n "$PANDOC"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PANDOC" >&5
+$as_echo "$PANDOC" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$PANDOC" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if we try to supply an empty value
+      if test "x$PANDOC" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool PANDOC= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool PANDOC= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for PANDOC" >&5
+$as_echo_n "checking for PANDOC... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$PANDOC"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool PANDOC=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool PANDOC=$tool_basename" >&6;}
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_PANDOC+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $PANDOC in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PANDOC="$PANDOC" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_PANDOC="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+PANDOC=$ac_cv_path_PANDOC
+if test -n "$PANDOC"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PANDOC" >&5
+$as_echo "$PANDOC" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+          if test "x$PANDOC" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool PANDOC=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool PANDOC=$tool_specified" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for PANDOC" >&5
+$as_echo_n "checking for PANDOC... " >&6; }
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+            as_fn_error $? "User supplied tool PANDOC=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+        fi
+      fi
+    fi
+
+  fi
+
+
+
+
 # Now we can determine OpenJDK build and target platforms. This is required to
 # have early on.
 # Make sure we can run config.sub.
@@ -15821,30 +16034,38 @@ $as_echo_n "checking compilation type... " >&6; }
 $as_echo "$COMPILE_TYPE" >&6; }
 
 
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    OPENJDK_MODULE_TARGET_OS_NAME="macos"
+  else
+    OPENJDK_MODULE_TARGET_OS_NAME="$OPENJDK_TARGET_OS"
+  fi
+
+  if test "x$OPENJDK_TARGET_CPU" = xx86_64; then
+    OPENJDK_MODULE_TARGET_OS_ARCH="amd64"
+  else
+    OPENJDK_MODULE_TARGET_OS_ARCH="$OPENJDK_TARGET_CPU"
+  fi
+
+  OPENJDK_MODULE_TARGET_PLATFORM="${OPENJDK_MODULE_TARGET_OS_NAME}-${OPENJDK_MODULE_TARGET_OS_ARCH}"
+
+
+
   if test "x$OPENJDK_TARGET_OS" = "xsolaris"; then
-    REQUIRED_OS_NAME=SunOS
-    REQUIRED_OS_VERSION=5.10
+    RELEASE_FILE_OS_NAME=SunOS
   fi
   if test "x$OPENJDK_TARGET_OS" = "xlinux"; then
-    REQUIRED_OS_NAME=Linux
-    REQUIRED_OS_VERSION=2.6
+    RELEASE_FILE_OS_NAME=Linux
   fi
   if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
-    REQUIRED_OS_NAME=Windows
-    if test "x$OPENJDK_TARGET_CPU_BITS" = "x64"; then
-      REQUIRED_OS_VERSION=5.2
-    else
-      REQUIRED_OS_VERSION=5.1
-    fi
+    RELEASE_FILE_OS_NAME=Windows
   fi
-  if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
-    REQUIRED_OS_NAME=Darwin
-    REQUIRED_OS_VERSION=11.2
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    RELEASE_FILE_OS_NAME="Darwin"
   fi
   if test "x$OPENJDK_TARGET_OS" = "xaix"; then
-    REQUIRED_OS_NAME=AIX
-    REQUIRED_OS_VERSION=7.1
+    RELEASE_FILE_OS_NAME="AIX"
   fi
+  RELEASE_FILE_OS_ARCH=${OPENJDK_TARGET_CPU}
 
 
 
@@ -16200,8 +16421,8 @@ $as_echo "$as_me: Your cygwin is too old. You are running $CYGWIN_VERSION, but a
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking cygwin root directory as unix-style path" >&5
 $as_echo_n "checking cygwin root directory as unix-style path... " >&6; }
-    # The cmd output ends with Windows line endings (CR/LF), the grep command will strip that away
-    cygwin_winpath_root=`cd / ; cmd /c cd | $GREP ".*"`
+    # The cmd output ends with Windows line endings (CR/LF)
+    cygwin_winpath_root=`cd / ; cmd /c cd | $TR -d '\r\n'`
     # Force cygpath to report the proper root by including a trailing space, and then stripping it off again.
     CYGWIN_ROOT_PATH=`$CYGPATH -u "$cygwin_winpath_root " | $CUT -f 1 -d " "`
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CYGWIN_ROOT_PATH" >&5
@@ -22270,6 +22491,203 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
+  if [ -z "${DOT+x}" ]; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in dot
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_DOT+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $DOT in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_DOT="$DOT" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_DOT="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+DOT=$ac_cv_path_DOT
+if test -n "$DOT"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DOT" >&5
+$as_echo "$DOT" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$DOT" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !DOT! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!DOT!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xDOT" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of DOT from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of DOT from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in dot
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_DOT+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $DOT in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_DOT="$DOT" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_DOT="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+DOT=$ac_cv_path_DOT
+if test -n "$DOT"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DOT" >&5
+$as_echo "$DOT" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$DOT" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if we try to supply an empty value
+      if test "x$DOT" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool DOT= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool DOT= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DOT" >&5
+$as_echo_n "checking for DOT... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$DOT"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool DOT=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool DOT=$tool_basename" >&6;}
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_DOT+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $DOT in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_DOT="$DOT" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_DOT="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+DOT=$ac_cv_path_DOT
+if test -n "$DOT"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DOT" >&5
+$as_echo "$DOT" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+          if test "x$DOT" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool DOT=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool DOT=$tool_specified" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DOT" >&5
+$as_echo_n "checking for DOT... " >&6; }
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+            as_fn_error $? "User supplied tool DOT=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+        fi
+      fi
+    fi
+
+  fi
+
+
+
+
+  # Publish this variable in the help.
+
+
   if [ -z "${HG+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in hg
@@ -22846,6 +23264,203 @@ $as_echo_n "checking for TIME... " >&6; }
             { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
             as_fn_error $? "User supplied tool TIME=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+        fi
+      fi
+    fi
+
+  fi
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if [ -z "${FLOCK+x}" ]; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in flock
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_FLOCK+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $FLOCK in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_FLOCK="$FLOCK" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_FLOCK="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+FLOCK=$ac_cv_path_FLOCK
+if test -n "$FLOCK"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FLOCK" >&5
+$as_echo "$FLOCK" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$FLOCK" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !FLOCK! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!FLOCK!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xFLOCK" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of FLOCK from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of FLOCK from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in flock
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_FLOCK+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $FLOCK in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_FLOCK="$FLOCK" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_FLOCK="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+FLOCK=$ac_cv_path_FLOCK
+if test -n "$FLOCK"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FLOCK" >&5
+$as_echo "$FLOCK" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$FLOCK" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if we try to supply an empty value
+      if test "x$FLOCK" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool FLOCK= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool FLOCK= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FLOCK" >&5
+$as_echo_n "checking for FLOCK... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$FLOCK"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool FLOCK=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool FLOCK=$tool_basename" >&6;}
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_FLOCK+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $FLOCK in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_FLOCK="$FLOCK" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_FLOCK="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+FLOCK=$ac_cv_path_FLOCK
+if test -n "$FLOCK"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FLOCK" >&5
+$as_echo "$FLOCK" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+          if test "x$FLOCK" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool FLOCK=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool FLOCK=$tool_specified" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FLOCK" >&5
+$as_echo_n "checking for FLOCK... " >&6; }
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+            as_fn_error $? "User supplied tool FLOCK=$tool_specified does not exist or is not executable" "$LINENO" 5
           fi
           { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
@@ -24092,6 +24707,20 @@ $as_echo "$tool_specified" >&6; }
   fi
 
 
+  # Check bash version
+  # Extra [ ] to stop m4 mangling
+   BASH_VER=`$BASH --version | $SED -n  -e 's/^.*bash.*ersion *\([0-9.]*\).*$/\1/ p'`
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking bash version" >&5
+$as_echo_n "checking bash version... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BASH_VER" >&5
+$as_echo "$BASH_VER" >&6; }
+
+  BASH_MAJOR=`$ECHO $BASH_VER | $CUT -d . -f 1`
+  BASH_MINOR=`$ECHO $BASH_VER | $CUT -d . -f 2`
+  if test $BASH_MAJOR -lt 3 || (test $BASH_MAJOR -eq 3 && test $BASH_MINOR -lt 2); then
+    as_fn_error $? "bash version 3.2 or better is required" "$LINENO" 5
+  fi
+
   # Test if bash supports pipefail.
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if bash supports pipefail" >&5
 $as_echo_n "checking if bash supports pipefail... " >&6; }
@@ -24302,6 +24931,101 @@ $as_echo "no" >&6; }
 $as_echo "no" >&6; }
   else
     as_fn_error $? "--enable-headless-only can only take yes or no" "$LINENO" 5
+  fi
+
+
+
+  # Should we build the complete docs, or just a lightweight version?
+  # Check whether --enable-full-docs was given.
+if test "${enable_full_docs+set}" = set; then :
+  enableval=$enable_full_docs;
+fi
+
+
+  # Verify dependencies
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for graphviz dot" >&5
+$as_echo_n "checking for graphviz dot... " >&6; }
+  if test "x$DOT" != "x"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+  else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, cannot generate full docs" >&5
+$as_echo "no, cannot generate full docs" >&6; }
+    FULL_DOCS_DEP_MISSING=true
+  fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pandoc" >&5
+$as_echo_n "checking for pandoc... " >&6; }
+  if test "x$PANDOC" != "x"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+  else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, cannot generate full docs" >&5
+$as_echo "no, cannot generate full docs" >&6; }
+    FULL_DOCS_DEP_MISSING=true
+  fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking full docs" >&5
+$as_echo_n "checking full docs... " >&6; }
+  if test "x$enable_full_docs" = xyes; then
+    if test "x$FULL_DOCS_DEP_MISSING" = "xtrue"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, missing dependencies" >&5
+$as_echo "no, missing dependencies" >&6; }
+
+  # Print a helpful message on how to acquire the necessary build dependency.
+  # dot is the help tag: freetype, cups, alsa etc
+  MISSING_DEPENDENCY=dot
+
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
+
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      brew)
+        brew_help    $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
+  fi
+
+      as_fn_error $? "Cannot enable full docs with missing dependencies. See above. $HELP_MSG" "$LINENO" 5
+    else
+      ENABLE_FULL_DOCS=true
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, forced" >&5
+$as_echo "yes, forced" >&6; }
+    fi
+  elif test "x$enable_full_docs" = xno; then
+    ENABLE_FULL_DOCS=false
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, forced" >&5
+$as_echo "no, forced" >&6; }
+  elif test "x$enable_full_docs" = x; then
+    # Check for prerequisites
+    if test "x$FULL_DOCS_DEP_MISSING" = xtrue; then
+      ENABLE_FULL_DOCS=false
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, missing dependencies" >&5
+$as_echo "no, missing dependencies" >&6; }
+    else
+      ENABLE_FULL_DOCS=true
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, dependencies present" >&5
+$as_echo "yes, dependencies present" >&6; }
+    fi
+  else
+    as_fn_error $? "--enable-full-docs can only take yes or no" "$LINENO" 5
   fi
 
 
@@ -30692,7 +31416,7 @@ $as_echo "no" >&6; }
 
 
   # Check if the boot jdk is 32 or 64 bit
-  if "$JAVA" -d64 -version > /dev/null 2>&1; then
+  if "$JAVA" -version 2>&1 | $GREP -q "64-Bit"; then
     BOOT_JDK_BITS="64"
   else
     BOOT_JDK_BITS="32"
@@ -33124,10 +33848,9 @@ done
     if test -n "$TOOLCHAIN_PATH"; then
       PATH_save="$PATH"
       PATH="$TOOLCHAIN_PATH"
-      for ac_prog in $SEARCH_LIST
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
+      if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}$SEARCH_LIST", so it can be a program name with args.
+set dummy ${ac_tool_prefix}$SEARCH_LIST; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_TOOLCHAIN_PATH_CC+:} false; then :
@@ -33166,20 +33889,73 @@ $as_echo "no" >&6; }
 fi
 
 
-  test -n "$TOOLCHAIN_PATH_CC" && break
+fi
+if test -z "$ac_cv_path_TOOLCHAIN_PATH_CC"; then
+  ac_pt_TOOLCHAIN_PATH_CC=$TOOLCHAIN_PATH_CC
+  # Extract the first word of "$SEARCH_LIST", so it can be a program name with args.
+set dummy $SEARCH_LIST; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ac_pt_TOOLCHAIN_PATH_CC+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ac_pt_TOOLCHAIN_PATH_CC in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ac_pt_TOOLCHAIN_PATH_CC="$ac_pt_TOOLCHAIN_PATH_CC" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ac_pt_TOOLCHAIN_PATH_CC="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
 done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ac_pt_TOOLCHAIN_PATH_CC=$ac_cv_path_ac_pt_TOOLCHAIN_PATH_CC
+if test -n "$ac_pt_TOOLCHAIN_PATH_CC"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_pt_TOOLCHAIN_PATH_CC" >&5
+$as_echo "$ac_pt_TOOLCHAIN_PATH_CC" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+  if test "x$ac_pt_TOOLCHAIN_PATH_CC" = x; then
+    TOOLCHAIN_PATH_CC=""
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    TOOLCHAIN_PATH_CC=$ac_pt_TOOLCHAIN_PATH_CC
+  fi
+else
+  TOOLCHAIN_PATH_CC="$ac_cv_path_TOOLCHAIN_PATH_CC"
+fi
 
       CC=$TOOLCHAIN_PATH_CC
       PATH="$PATH_save"
     fi
 
-    # AC_PATH_PROGS can't be run multiple times with the same variable,
+    # AC_PATH_TOOL can't be run multiple times with the same variable,
     # so create a new name for this run.
     if test "x$CC" = x; then
-      for ac_prog in $SEARCH_LIST
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
+      if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}$SEARCH_LIST", so it can be a program name with args.
+set dummy ${ac_tool_prefix}$SEARCH_LIST; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_POTENTIAL_CC+:} false; then :
@@ -33218,8 +33994,62 @@ $as_echo "no" >&6; }
 fi
 
 
-  test -n "$POTENTIAL_CC" && break
+fi
+if test -z "$ac_cv_path_POTENTIAL_CC"; then
+  ac_pt_POTENTIAL_CC=$POTENTIAL_CC
+  # Extract the first word of "$SEARCH_LIST", so it can be a program name with args.
+set dummy $SEARCH_LIST; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ac_pt_POTENTIAL_CC+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ac_pt_POTENTIAL_CC in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ac_pt_POTENTIAL_CC="$ac_pt_POTENTIAL_CC" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ac_pt_POTENTIAL_CC="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
 done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ac_pt_POTENTIAL_CC=$ac_cv_path_ac_pt_POTENTIAL_CC
+if test -n "$ac_pt_POTENTIAL_CC"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_pt_POTENTIAL_CC" >&5
+$as_echo "$ac_pt_POTENTIAL_CC" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+  if test "x$ac_pt_POTENTIAL_CC" = x; then
+    POTENTIAL_CC=""
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    POTENTIAL_CC=$ac_pt_POTENTIAL_CC
+  fi
+else
+  POTENTIAL_CC="$ac_cv_path_POTENTIAL_CC"
+fi
 
       CC=$POTENTIAL_CC
     fi
@@ -34425,10 +35255,9 @@ done
     if test -n "$TOOLCHAIN_PATH"; then
       PATH_save="$PATH"
       PATH="$TOOLCHAIN_PATH"
-      for ac_prog in $SEARCH_LIST
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
+      if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}$SEARCH_LIST", so it can be a program name with args.
+set dummy ${ac_tool_prefix}$SEARCH_LIST; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_TOOLCHAIN_PATH_CXX+:} false; then :
@@ -34467,20 +35296,73 @@ $as_echo "no" >&6; }
 fi
 
 
-  test -n "$TOOLCHAIN_PATH_CXX" && break
+fi
+if test -z "$ac_cv_path_TOOLCHAIN_PATH_CXX"; then
+  ac_pt_TOOLCHAIN_PATH_CXX=$TOOLCHAIN_PATH_CXX
+  # Extract the first word of "$SEARCH_LIST", so it can be a program name with args.
+set dummy $SEARCH_LIST; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ac_pt_TOOLCHAIN_PATH_CXX+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ac_pt_TOOLCHAIN_PATH_CXX in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ac_pt_TOOLCHAIN_PATH_CXX="$ac_pt_TOOLCHAIN_PATH_CXX" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ac_pt_TOOLCHAIN_PATH_CXX="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
 done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ac_pt_TOOLCHAIN_PATH_CXX=$ac_cv_path_ac_pt_TOOLCHAIN_PATH_CXX
+if test -n "$ac_pt_TOOLCHAIN_PATH_CXX"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_pt_TOOLCHAIN_PATH_CXX" >&5
+$as_echo "$ac_pt_TOOLCHAIN_PATH_CXX" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+  if test "x$ac_pt_TOOLCHAIN_PATH_CXX" = x; then
+    TOOLCHAIN_PATH_CXX=""
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    TOOLCHAIN_PATH_CXX=$ac_pt_TOOLCHAIN_PATH_CXX
+  fi
+else
+  TOOLCHAIN_PATH_CXX="$ac_cv_path_TOOLCHAIN_PATH_CXX"
+fi
 
       CXX=$TOOLCHAIN_PATH_CXX
       PATH="$PATH_save"
     fi
 
-    # AC_PATH_PROGS can't be run multiple times with the same variable,
+    # AC_PATH_TOOL can't be run multiple times with the same variable,
     # so create a new name for this run.
     if test "x$CXX" = x; then
-      for ac_prog in $SEARCH_LIST
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
+      if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}$SEARCH_LIST", so it can be a program name with args.
+set dummy ${ac_tool_prefix}$SEARCH_LIST; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_POTENTIAL_CXX+:} false; then :
@@ -34519,8 +35401,62 @@ $as_echo "no" >&6; }
 fi
 
 
-  test -n "$POTENTIAL_CXX" && break
+fi
+if test -z "$ac_cv_path_POTENTIAL_CXX"; then
+  ac_pt_POTENTIAL_CXX=$POTENTIAL_CXX
+  # Extract the first word of "$SEARCH_LIST", so it can be a program name with args.
+set dummy $SEARCH_LIST; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ac_pt_POTENTIAL_CXX+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ac_pt_POTENTIAL_CXX in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ac_pt_POTENTIAL_CXX="$ac_pt_POTENTIAL_CXX" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ac_pt_POTENTIAL_CXX="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
 done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ac_pt_POTENTIAL_CXX=$ac_cv_path_ac_pt_POTENTIAL_CXX
+if test -n "$ac_pt_POTENTIAL_CXX"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_pt_POTENTIAL_CXX" >&5
+$as_echo "$ac_pt_POTENTIAL_CXX" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+  if test "x$ac_pt_POTENTIAL_CXX" = x; then
+    POTENTIAL_CXX=""
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    POTENTIAL_CXX=$ac_pt_POTENTIAL_CXX
+  fi
+else
+  POTENTIAL_CXX="$ac_cv_path_POTENTIAL_CXX"
+fi
 
       CXX=$POTENTIAL_CXX
     fi
@@ -49060,7 +49996,7 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
         SHARED_LIBRARY_FLAGS="-dynamiclib -compatibility_version 1.0.0 -current_version 1.0.0 $PICFLAG"
         JVM_CFLAGS="$JVM_CFLAGS $PICFLAG"
       fi
-      SET_EXECUTABLE_ORIGIN='-Wl,-rpath,@loader_path/.'
+      SET_EXECUTABLE_ORIGIN='-Wl,-rpath,@loader_path$(or $1,/.)'
       SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
       SET_SHARED_LIBRARY_NAME='-Wl,-install_name,@rpath/$1'
       SET_SHARED_LIBRARY_MAPFILE='-Wl,-exported_symbols_list,$1'
@@ -49080,7 +50016,7 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
       # Linking is different on MacOSX
       PICFLAG=''
       SHARED_LIBRARY_FLAGS="-dynamiclib -compatibility_version 1.0.0 -current_version 1.0.0 $PICFLAG"
-      SET_EXECUTABLE_ORIGIN='-Wl,-rpath,@loader_path/.'
+      SET_EXECUTABLE_ORIGIN='-Wl,-rpath,@loader_path$(or $1,/.)'
       SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
       SET_SHARED_LIBRARY_NAME='-Wl,-install_name,@rpath/$1'
       SET_SHARED_LIBRARY_MAPFILE='-Wl,-exported_symbols_list,$1'
@@ -52629,12 +53565,12 @@ $as_echo "no, forced" >&6; }
     # Only enable AOT on linux-X64.
     if test "x$OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU" = "xlinux-x86_64"; then
       if test -e "$HOTSPOT_TOPDIR/src/jdk.aot"; then
-        if test -e "$HOTSPOT_TOPDIR/src/jdk.vm.compiler"; then
+        if test -e "$HOTSPOT_TOPDIR/src/jdk.internal.vm.compiler"; then
           ENABLE_AOT="true"
         else
           ENABLE_AOT="false"
           if test "x$enable_aot" = "xyes"; then
-            as_fn_error $? "Cannot build AOT without hotspot/src/jdk.vm.compiler sources. Remove --enable-aot." "$LINENO" 5
+            as_fn_error $? "Cannot build AOT without hotspot/src/jdk.internal.vm.compiler sources. Remove --enable-aot." "$LINENO" 5
           fi
         fi
       else
@@ -64365,8 +65301,8 @@ $as_echo "$JVM_FEATURES" >&6; }
     JVM_FEATURES_jvmci=""
   fi
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if jdk.vm.compiler should be built" >&5
-$as_echo_n "checking if jdk.vm.compiler should be built... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if jdk.internal.vm.compiler should be built" >&5
+$as_echo_n "checking if jdk.internal.vm.compiler should be built... " >&6; }
   if   [[ " $JVM_FEATURES " =~ " graal " ]]  ; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, forced" >&5
 $as_echo "yes, forced" >&6; }
@@ -64998,24 +65934,8 @@ fi
 
 
   if test "$MEMORY_SIZE" -gt "3000"; then
-
-  $ECHO "Check if jvm arg is ok: -d64" >&5
-  $ECHO "Command: $SJAVAC_SERVER_JAVA -d64 -version" >&5
-  OUTPUT=`$SJAVAC_SERVER_JAVA -d64 -version 2>&1`
-  FOUND_WARN=`$ECHO "$OUTPUT" | $GREP -i warn`
-  FOUND_VERSION=`$ECHO $OUTPUT | $GREP " version \""`
-  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-    SJAVAC_SERVER_JAVA_FLAGS="$SJAVAC_SERVER_JAVA_FLAGS -d64"
-    JVM_ARG_OK=true
-  else
-    $ECHO "Arg failed:" >&5
-    $ECHO "$OUTPUT" >&5
-    JVM_ARG_OK=false
-  fi
-
-    if test "$JVM_ARG_OK" = true; then
+    if "$JAVA" -version 2>&1 | $GREP -q "64-Bit"; then
       JVM_64BIT=true
-      JVM_ARG_OK=false
     fi
   fi
 

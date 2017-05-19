@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,7 @@ getBooleanAttribute(const jarAttribute* attributes, const char* name) {
  * convert them to JVM TI capabilities.
  */
 void
-convertCapabilityAtrributes(const jarAttribute* attributes, JPLISAgent* agent) {
+convertCapabilityAttributes(const jarAttribute* attributes, JPLISAgent* agent) {
     /* set redefineClasses capability */
     if (getBooleanAttribute(attributes, "Can-Redefine-Classes")) {
         addRedefineClassesCapability(agent);
@@ -229,7 +229,7 @@ DEF_Agent_OnLoad(JavaVM *vm, char *tail, void * reserved) {
         /*
          * Convert JAR attributes into agent capabilities
          */
-        convertCapabilityAtrributes(attributes, agent);
+        convertCapabilityAttributes(attributes, agent);
 
         /*
          * Track (record) the agent class name and options data
@@ -386,7 +386,7 @@ DEF_Agent_OnAttach(JavaVM* vm, char *args, void * reserved) {
         /*
          * Convert JAR attributes into agent capabilities
          */
-        convertCapabilityAtrributes(attributes, agent);
+        convertCapabilityAttributes(attributes, agent);
 
         /*
          * Create the java.lang.instrument.Instrumentation instance
@@ -435,6 +435,109 @@ JNIEXPORT void JNICALL
 DEF_Agent_OnUnload(JavaVM *vm) {
 }
 
+/**
+ * Invoked by the java launcher to load an agent in the main executable JAR.
+ * The Launcher-Agent-Class attribute in the main manifest of the JAR file
+ * is the agent class.
+ *
+ * Returns JNI_OK if the agent is loaded and initialized; JNI_ERR if this
+ * function fails, possibly with a pending exception.
+ */
+jint loadAgent(JNIEnv* env, jstring path) {
+    JavaVM* vm;
+    JPLISAgent* agent;
+    const char* jarfile = NULL;
+    jarAttribute* attributes = NULL;
+    char* agentClass = NULL;
+    char* bootClassPath;
+    int oldLen, newLen;
+    jint result = JNI_ERR;
+
+    if ((*env)->GetJavaVM(env, &vm) < 0) {
+        return JNI_ERR;
+    }
+
+    // create JPLISAgent with JVMTI environment
+    if (createNewJPLISAgent(vm, &agent) != JPLIS_INIT_ERROR_NONE) {
+        return JNI_ERR;
+    }
+
+    // get path to JAR file as UTF-8 string
+    jarfile = (*env)->GetStringUTFChars(env, path, NULL);
+    if (jarfile == NULL) {
+        return JNI_ERR;
+    }
+
+    // read the attributes in the main section of JAR manifest
+    attributes = readAttributes(jarfile);
+    if (attributes == NULL) {
+        goto releaseAndReturn;
+    }
+
+    // Launcher-Agent-Class is required
+    agentClass = getAttribute(attributes, "Launcher-Agent-Class");
+    if (agentClass == NULL) {
+        goto releaseAndReturn;
+    }
+
+    // The value of Launcher-Agent-Class is in UTF-8, convert it to modified UTF-8
+    oldLen = (int) strlen(agentClass);
+    newLen = modifiedUtf8LengthOfUtf8(agentClass, oldLen);
+    if (newLen == oldLen) {
+        agentClass = strdup(agentClass);
+    } else {
+        char* str = (char*) malloc(newLen + 1);
+        if (str != NULL) {
+            convertUtf8ToModifiedUtf8(agentClass, oldLen, str, newLen);
+        }
+        agentClass = str;
+    }
+    if (agentClass == NULL) {
+         jthrowable oome = createThrowable(env, "java/lang/OutOfMemoryError", NULL);
+         if (oome != NULL) (*env)->Throw(env, oome);
+         goto releaseAndReturn;
+    }
+
+    // Boot-Class-Path
+    bootClassPath = getAttribute(attributes, "Boot-Class-Path");
+    if (bootClassPath != NULL) {
+        appendBootClassPath(agent, jarfile, bootClassPath);
+    }
+
+    // Can-XXXX capabilities
+    convertCapabilityAttributes(attributes, agent);
+
+    // Create the java.lang.instrument.Instrumentation object
+    if (!createInstrumentationImpl(env, agent)) {
+        goto releaseAndReturn;
+    }
+
+    // Enable the ClassFileLoadHook
+    if (!setLivePhaseEventHandlers(agent)) {
+        goto releaseAndReturn;
+    }
+
+    // invoke the agentmain method
+    if (!startJavaAgent(agent, env, agentClass, "", agent->mAgentmainCaller)) {
+        goto releaseAndReturn;
+    }
+
+    // initialization complete
+    result = JNI_OK;
+
+    releaseAndReturn:
+        if (agentClass != NULL) {
+            free(agentClass);
+        }
+        if (attributes != NULL) {
+            freeAttributes(attributes);
+        }
+        if (jarfile != NULL) {
+            (*env)->ReleaseStringUTFChars(env, path, jarfile);
+        }
+
+    return result;
+}
 
 /*
  *  JVMTI callback support

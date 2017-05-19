@@ -22,16 +22,14 @@
  */
 
 /**
- *  @test
- *  @bug 4446294
- *  @summary JDI spec/impl: default "home" for CommandLineLaunch isn't java.home
+ * @test
+ * @bug 4446294
+ * @summary JDI spec/impl: default "home" for CommandLineLaunch isn't java.home
+ * @author Tim Bell (based on "HomeTest.java" by Eugene I. Latkin)
  *
- *  @author Tim Bell (based on "HomeTest.java" by Eugene I. Latkin)
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g HomeTest.java
- *  @run driver HomeTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g HomeTest.java
+ * @run driver HomeTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.connect.*;
