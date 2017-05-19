@@ -3197,13 +3197,6 @@ public class DecimalFormat extends NumberFormat {
         isCurrencyFormat = false;
         useExponentialNotation = false;
 
-        // Two variables are used to record the subrange of the pattern
-        // occupied by phase 1.  This is used during the processing of the
-        // second pattern (the one representing negative numbers) to ensure
-        // that no deviation exists in phase 1 between the two patterns.
-        int phaseOneStart = 0;
-        int phaseOneLength = 0;
-
         int start = 0;
         for (int j = 1; j >= 0 && start < pattern.length(); --j) {
             boolean inQuote = false;
@@ -3254,9 +3247,6 @@ public class DecimalFormat extends NumberFormat {
                             ch == groupingSeparator ||
                             ch == decimalSeparator) {
                             phase = 1;
-                            if (j == 1) {
-                                phaseOneStart = pos;
-                            }
                             --pos; // Reprocess this character
                             continue;
                         } else if (ch == CURRENCY_SIGN) {
@@ -3327,17 +3317,29 @@ public class DecimalFormat extends NumberFormat {
                     break;
 
                 case 1:
-                    // Phase one must be identical in the two sub-patterns. We
-                    // enforce this by doing a direct comparison. While
-                    // processing the first sub-pattern, we just record its
-                    // length. While processing the second, we compare
-                    // characters.
-                    if (j == 1) {
-                        ++phaseOneLength;
-                    } else {
-                        if (--phaseOneLength == 0) {
-                            phase = 2;
-                            affix = suffix;
+                    // The negative subpattern (j = 0) serves only to specify the
+                    // negative prefix and suffix, so all the phase 1 characters
+                    // e.g. digits, zeroDigit, groupingSeparator,
+                    // decimalSeparator, exponent are ignored
+                    if (j == 0) {
+                        while (pos < pattern.length()) {
+                            char negPatternChar = pattern.charAt(pos);
+                            if (negPatternChar == digit
+                                    || negPatternChar == zeroDigit
+                                    || negPatternChar == groupingSeparator
+                                    || negPatternChar == decimalSeparator) {
+                                ++pos;
+                            } else if (pattern.regionMatches(pos, exponent,
+                                    0, exponent.length())) {
+                                pos = pos + exponent.length();
+                            } else {
+                                // Not a phase 1 character, consider it as
+                                // suffix and parse it in phase 2
+                                --pos; //process it again in outer loop
+                                phase = 2;
+                                affix = suffix;
+                                break;
+                            }
                         }
                         continue;
                     }
@@ -3391,7 +3393,6 @@ public class DecimalFormat extends NumberFormat {
                          while (pos < pattern.length() &&
                                pattern.charAt(pos) == zeroDigit) {
                             ++minExponentDigits;
-                            ++phaseOneLength;
                             ++pos;
                         }
 
@@ -3410,7 +3411,6 @@ public class DecimalFormat extends NumberFormat {
                         phase = 2;
                         affix = suffix;
                         --pos;
-                        --phaseOneLength;
                         continue;
                     }
                     break;
