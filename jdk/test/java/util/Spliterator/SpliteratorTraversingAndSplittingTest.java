@@ -24,7 +24,7 @@
 /**
  * @test
  * @summary Spliterator traversing and splitting tests
- * @library ../stream/bootlib
+ * @library /lib/testlibrary/bootlib
  * @build java.base/java.util.SpliteratorOfIntDataBuilder
  *        java.base/java.util.SpliteratorTestHelper
  * @run testng SpliteratorTraversingAndSplittingTest
