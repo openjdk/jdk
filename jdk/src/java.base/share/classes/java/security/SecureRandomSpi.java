@@ -211,8 +211,6 @@ public abstract class SecureRandomSpi implements java.io.Serializable {
      * {@code SecureRandom}.
      *
      * @return the string representation
-     *
-     * @since 9
      */
     @Override
     public String toString() {

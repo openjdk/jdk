@@ -91,11 +91,13 @@ class DefaultPublisher<T> implements Flow.Publisher<T> {
                         for (long i = 0; i < nbItemsDemanded && !done.get(); i++) {
                             try {
                                 Optional<T> item = Objects.requireNonNull(supplier.get());
-                                item.ifPresentOrElse(subscriber::onNext, () -> {
+                                if (item.isPresent()) {
+                                    subscriber.onNext(item.get());
+                                } else {
                                     if (done.compareAndSet(false, true)) {
                                         subscriber.onComplete();
                                     }
-                                });
+                                }
                             } catch (RuntimeException e) {
                                 if (done.compareAndSet(false, true)) {
                                     subscriber.onError(e);

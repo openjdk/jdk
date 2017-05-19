@@ -26,7 +26,7 @@
  * @bug 4847959 6191402
  * @summary Test newly-generified APIs
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean GenericTest
  * @run build GenericTest
  * @run main GenericTest

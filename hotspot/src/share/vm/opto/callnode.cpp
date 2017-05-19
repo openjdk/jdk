@@ -784,8 +784,8 @@ bool CallNode::may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase) {
       }
       // May modify (by reflection) if an boxing object is passed
       // as argument or returned.
-      if (returns_pointer() && (proj_out(TypeFunc::Parms) != NULL)) {
-        Node* proj = proj_out(TypeFunc::Parms);
+      Node* proj = returns_pointer() ? proj_out(TypeFunc::Parms) : NULL;
+      if (proj != NULL) {
         const TypeInstPtr* inst_t = phase->type(proj)->isa_instptr();
         if ((inst_t != NULL) && (!inst_t->klass_is_exact() ||
                                  (inst_t->klass() == boxing_klass))) {

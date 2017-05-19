@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -378,7 +378,17 @@ class Inflater {
 
     /**
      * Closes the decompressor when garbage is collected.
+     *
+     * @deprecated The {@code finalize} method has been deprecated.
+     *     Subclasses that override {@code finalize} in order to perform cleanup
+     *     should be modified to use alternative cleanup mechanisms and
+     *     to remove the overriding {@code finalize} method.
+     *     When overriding the {@code finalize} method, its implementation must explicitly
+     *     ensure that {@code super.finalize()} is invoked as described in {@link Object#finalize}.
+     *     See the specification for {@link Object#finalize()} for further
+     *     information about migration options.
      */
+    @Deprecated(since="9")
     protected void finalize() {
         end();
     }

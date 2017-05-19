@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Make sure that "UTC" is an alias of "Etc/UTC" as defined in the tzdata backward.
  * @modules java.base/sun.util.calendar
  * @compile -XDignore.symbol.file UTCAliasTest.java
+ * @run main UTCAliasTest
  */
 
 import java.util.*;
