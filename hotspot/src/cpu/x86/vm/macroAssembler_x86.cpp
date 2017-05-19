@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -5128,6 +5128,43 @@ void MacroAssembler::vxorps(XMMRegister dst, XMMRegister nds, AddressLiteral src
   }
 }
 
+
+void MacroAssembler::resolve_jobject(Register value,
+                                     Register thread,
+                                     Register tmp) {
+  assert_different_registers(value, thread, tmp);
+  Label done, not_weak;
+  testptr(value, value);
+  jcc(Assembler::zero, done);                // Use NULL as-is.
+  testptr(value, JNIHandles::weak_tag_mask); // Test for jweak tag.
+  jcc(Assembler::zero, not_weak);
+  // Resolve jweak.
+  movptr(value, Address(value, -JNIHandles::weak_tag_value));
+  verify_oop(value);
+#if INCLUDE_ALL_GCS
+  if (UseG1GC) {
+    g1_write_barrier_pre(noreg /* obj */,
+                         value /* pre_val */,
+                         thread /* thread */,
+                         tmp /* tmp */,
+                         true /* tosca_live */,
+                         true /* expand_call */);
+  }
+#endif // INCLUDE_ALL_GCS
+  jmp(done);
+  bind(not_weak);
+  // Resolve (untagged) jobject.
+  movptr(value, Address(value, 0));
+  verify_oop(value);
+  bind(done);
+}
+
+void MacroAssembler::clear_jweak_tag(Register possibly_jweak) {
+  const int32_t inverted_jweak_mask = ~static_cast<int32_t>(JNIHandles::weak_tag_mask);
+  STATIC_ASSERT(inverted_jweak_mask == -2); // otherwise check this code
+  // The inverted mask is sign-extended
+  andptr(possibly_jweak, inverted_jweak_mask);
+}
 
 //////////////////////////////////////////////////////////////////////////////////
 #if INCLUDE_ALL_GCS

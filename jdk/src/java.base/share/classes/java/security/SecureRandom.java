@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import sun.security.util.Debug;
  *
  * <p>A cryptographically strong random number minimally complies with the
  * statistical random number generator tests specified in
- * <a href="http://csrc.nist.gov/publications/fips/fips140-2/fips1402.pdf">
+ * <a href="http://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.140-2.pdf">
  * <i>FIPS 140-2, Security Requirements for Cryptographic Modules</i></a>,
  * section 4.9.1.
  * Additionally, {@code SecureRandom} must produce non-deterministic output.
@@ -64,8 +64,8 @@ import sun.security.util.Debug;
  * <blockquote><pre>
  * SecureRandom r1 = new SecureRandom();
  * SecureRandom r2 = SecureRandom.getInstance("NativePRNG");
- * SecureRandom r3 = SecureRandom("DRBG",
- *         DrbgParameters.Instantiation(128, RESEED_ONLY, null));</pre>
+ * SecureRandom r3 = SecureRandom.getInstance("DRBG",
+ *         DrbgParameters.instantiation(128, RESEED_ONLY, null));</pre>
  * </blockquote>
  *
  * <p> The third statement above returns a {@code SecureRandom} object of the
@@ -651,8 +651,6 @@ public class SecureRandom extends java.util.Random {
      * {@code SecureRandom}.
      *
      * @return the string representation
-     *
-     * @since 9
      */
     @Override
     public String toString() {

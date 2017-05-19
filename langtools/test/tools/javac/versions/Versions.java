@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4981566 5028634 5094412 6304984 7025786 7025789 8001112 8028545 8000961 8030610
+ * @bug 4981566 5028634 5094412 6304984 7025786 7025789 8001112 8028545 8000961 8030610 8028546
  * @summary Check interpretation of -target and -source options
  * @modules java.compiler
  *          jdk.compiler
@@ -69,6 +69,7 @@ public class Versions {
         check("53.0", "-source 1.7");
         check("53.0", "-source 1.8");
         check("53.0", "-source 1.9");
+        check("53.0", "-source 1.10");
 
         check_source_target("50.0", "6", "6");
         check_source_target("51.0", "6", "7");
@@ -80,6 +81,7 @@ public class Versions {
         check_source_target("53.0", "7", "9");
         check_source_target("53.0", "8", "9");
         check_source_target("53.0", "9", "9");
+        check_source_target("53.0", "10", "10");
 
         checksrc16("-source 1.6");
         checksrc16("-source 6");
@@ -93,19 +95,26 @@ public class Versions {
         checksrc18("-source 8");
         checksrc18("-source 1.8", "-target 1.8");
         checksrc18("-source 8", "-target 8");
-        checksrc19();
         checksrc19("-source 1.9");
         checksrc19("-source 9");
         checksrc19("-source 1.9", "-target 1.9");
         checksrc19("-source 9", "-target 9");
-        checksrc19("-target 1.9");
-        checksrc19("-target 9");
+
+        checksrc110();
+        checksrc110("-source 1.10");
+        checksrc110("-source 10");
+        checksrc110("-source 1.10", "-target 1.10");
+        checksrc110("-source 10", "-target 10");
+        checksrc110("-target 1.10");
+        checksrc110("-target 10");
 
         fail("-source 7", "-target 1.6", "Base.java");
         fail("-source 8", "-target 1.6", "Base.java");
         fail("-source 8", "-target 1.7", "Base.java");
         fail("-source 9", "-target 1.7", "Base.java");
         fail("-source 9", "-target 1.8", "Base.java");
+        fail("-source 10", "-target 1.7", "Base.java");
+        fail("-source 10", "-target 1.8", "Base.java");
 
         fail("-source 1.5", "-target 1.5", "Base.java");
         fail("-source 1.4", "-target 1.4", "Base.java");
@@ -200,6 +209,11 @@ public class Versions {
     protected void checksrc19(String... args) {
         printargs("checksrc19", args);
         checksrc18(args);
+    }
+
+    protected void checksrc110(String... args) {
+        printargs("checksrc110", args);
+        checksrc19(args);
     }
 
     protected void pass(String... args) {

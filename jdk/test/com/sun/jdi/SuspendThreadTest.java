@@ -22,16 +22,14 @@
  */
 
 /**
- *  @test
- *  @bug 6485605
- *  @summary com.sun.jdi.InternalException: Inconsistent suspend policy in internal event handler
+ * @test
+ * @bug 6485605
+ * @summary com.sun.jdi.InternalException: Inconsistent suspend policy in internal event handler
+ * @author jjh
  *
- *  @author jjh
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g SuspendThreadTest.java
- *  @run driver SuspendThreadTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g SuspendThreadTest.java
+ * @run driver SuspendThreadTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

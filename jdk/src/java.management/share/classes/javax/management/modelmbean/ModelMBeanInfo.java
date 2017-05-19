@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,7 +165,8 @@ public interface ModelMBeanInfo
      * following.  Note that when the Type in this table is Number, a String
      * that is the decimal representation of a Long can also be used.</P>
      *
-     * <table border="1" cellpadding="5" summary="ModelMBean Fields">
+     * <table border="1" cellpadding="5">
+     * <caption style="display:none">ModelMBean Fields</caption>
      * <tr><th>Name</th><th>Type</th><th>Meaning</th></tr>
      * <tr><td>name</td><td>String</td>
      *     <td>MBean name.</td></tr>
