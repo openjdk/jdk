@@ -80,25 +80,33 @@ public class CheckPackageAccess {
         }
 
         void test() {
-            System.out.println("Testing module " + moduleName);
+            final boolean isModulePresent =
+                        ModuleLayer.boot().findModule(moduleName).isPresent();
+            System.out.format("Testing module: %1$s. Module is%2$s present.\n",
+                        moduleName, isModulePresent ? "" : " NOT");
 
-            // access to exported pkg should pass
-            testNonRestricted(exports);
+            if (isModulePresent) {
 
-            // access to opened pkg should pass
-            opens.ifPresent(Test::testNonRestricted);
+                // access to exported pkg should pass
+                testNonRestricted(exports);
 
-            // access to concealed pkg should fail
-            testRestricted(conceals);
+                // access to opened pkg should pass
+                opens.ifPresent(Test::testNonRestricted);
 
-            // access to qualified export pkg should fail
-            qualExports.ifPresent(Test::testRestricted);
+                // access to concealed pkg should fail
+                testRestricted(conceals);
 
-            // access to qualified open pkg should fail
-            qualOpens.ifPresent(Test::testRestricted);
+                // access to qualified export pkg should fail
+                qualExports.ifPresent(Test::testRestricted);
 
-            // access to qualified opened pkg that is also exported should pass
-            qualOpensAndExports.ifPresent(Test::testNonRestricted);
+                // access to qualified open pkg should fail
+                qualOpens.ifPresent(Test::testRestricted);
+
+                // access to qualified opened pkg that is also exported should pass
+                qualOpensAndExports.ifPresent(Test::testNonRestricted);
+            } else {
+                System.out.println("Skipping tests for module.");
+            }
         }
 
         private static void testRestricted(String pkg) {

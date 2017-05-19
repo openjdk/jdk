@@ -26,7 +26,7 @@
  * @bug 4894801
  * @summary Test that ObjectName.getInstance(ObjectName) preserves key order
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean ObjectNameGetInstanceTest
  * @run build ObjectNameGetInstanceTest
  * @run main ObjectNameGetInstanceTest

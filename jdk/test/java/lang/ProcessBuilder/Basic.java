@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  *      6464154 6523983 6206031 4960438 6631352 6631966 6850957 6850958
  *      4947220 7018606 7034570 4244896 5049299 8003488 8054494 8058464
  *      8067796
+ * @key intermittent
  * @summary Basic tests for Process and Environment Variable code
  * @modules java.base/java.lang:open
  * @run main/othervm/timeout=300 Basic
@@ -310,7 +311,7 @@ public class Basic {
             if (action.equals("sleep")) {
                 Thread.sleep(10 * 60 * 1000L);
             } else if (action.equals("pid")) {
-                System.out.println(ProcessHandle.current().getPid());
+                System.out.println(ProcessHandle.current().pid());
             } else if (action.equals("testIO")) {
                 String expected = "standard input";
                 char[] buf = new char[expected.length()+1];
@@ -1234,7 +1235,7 @@ public class Basic {
             Process p = pb.start();
             String s = commandOutput(p);
             long actualPid = Long.valueOf(s.trim());
-            long expectedPid = p.getPid();
+            long expectedPid = p.pid();
             equal(actualPid, expectedPid);
         } catch (Throwable t) {
             unexpected(t);
@@ -1244,7 +1245,7 @@ public class Basic {
         // Test the default implementation of Process.getPid
         DelegatingProcess p = new DelegatingProcess(null);
         THROWS(UnsupportedOperationException.class,
-                () -> p.getPid(),
+                () -> p.pid(),
                 () -> p.toHandle(),
                 () -> p.supportsNormalTermination(),
                 () -> p.children(),
@@ -2242,7 +2243,7 @@ public class Basic {
                 // Child process waits until it gets input
                 String s = p.toString();
                 check(s.contains("not exited"));
-                check(s.contains("pid=" + p.getPid() + ","));
+                check(s.contains("pid=" + p.pid() + ","));
 
                 new PrintStream(p.getOutputStream()).print("standard input");
                 p.getOutputStream().close();
@@ -2250,7 +2251,7 @@ public class Basic {
                 // Check the toString after it exits
                 int exitValue = p.waitFor();
                 s = p.toString();
-                check(s.contains("pid=" + p.getPid() + ","));
+                check(s.contains("pid=" + p.pid() + ","));
                 check(s.contains("exitValue=" + exitValue) &&
                         !s.contains("not exited"));
             }
