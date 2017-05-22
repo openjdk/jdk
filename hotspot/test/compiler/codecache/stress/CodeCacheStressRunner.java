@@ -23,7 +23,7 @@
 
 package compiler.codecache.stress;
 
-import jdk.test.lib.wrappers.TimeLimitedRunner;
+import jdk.test.lib.TimeLimitedRunner;
 import jdk.test.lib.Utils;
 
 public class CodeCacheStressRunner {
