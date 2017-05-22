@@ -1228,6 +1228,16 @@ public class JOptionPane extends JComponent implements Accessible
                                         messageType, icon, null, null);
     }
 
+    private static boolean checkFrameForComponent(Component parentComponent) {
+        if (parentComponent == null) {
+            return false;
+        }
+        if (parentComponent instanceof Frame) {
+            return true;
+        }
+        return checkFrameForComponent(parentComponent.getParent());
+    }
+
     /**
      * Brings up an internal dialog panel with a specified icon, where
      * the initial choice is determined by the <code>initialValue</code>
@@ -1288,31 +1298,38 @@ public class JOptionPane extends JComponent implements Accessible
                 getFocusOwner();
 
         pane.setInitialValue(initialValue);
+        if (checkFrameForComponent(parentComponent)) {
+            JInternalFrame dialog =
+                    pane.createInternalFrame(parentComponent, title);
+            pane.selectInitialValue();
+            dialog.setVisible(true);
 
-        JInternalFrame dialog =
-            pane.createInternalFrame(parentComponent, title);
-        pane.selectInitialValue();
-        dialog.setVisible(true);
-
-        /* Since all input will be blocked until this dialog is dismissed,
-         * make sure its parent containers are visible first (this component
-         * is tested below).  This is necessary for JApplets, because
-         * because an applet normally isn't made visible until after its
-         * start() method returns -- if this method is called from start(),
-         * the applet will appear to hang while an invisible modal frame
-         * waits for input.
-         */
-        if (dialog.isVisible() && !dialog.isShowing()) {
-            Container parent = dialog.getParent();
-            while (parent != null) {
-                if (parent.isVisible() == false) {
-                    parent.setVisible(true);
+            /* Since all input will be blocked until this dialog is dismissed,
+             * make sure its parent containers are visible first (this component
+             * is tested below).  This is necessary for JApplets, because
+             * because an applet normally isn't made visible until after its
+             * start() method returns -- if this method is called from start(),
+             * the applet will appear to hang while an invisible modal frame
+             * waits for input.
+             */
+            if (dialog.isVisible() && !dialog.isShowing()) {
+                Container parent = dialog.getParent();
+                while (parent != null) {
+                    if (parent.isVisible() == false) {
+                        parent.setVisible(true);
+                    }
+                    parent = parent.getParent();
                 }
-                parent = parent.getParent();
             }
-        }
 
-        AWTAccessor.getContainerAccessor().startLWModal(dialog);
+            AWTAccessor.getContainerAccessor().startLWModal(dialog);
+        } else {
+            pane.setComponentOrientation(getRootFrame().getComponentOrientation());
+            int style = styleFromMessageType(messageType);
+            JDialog dialog = pane.createDialog(parentComponent, title, style);
+            pane.selectInitialValue();
+            dialog.setVisible(true);
+        }
 
         if (parentComponent instanceof JInternalFrame) {
             try {
