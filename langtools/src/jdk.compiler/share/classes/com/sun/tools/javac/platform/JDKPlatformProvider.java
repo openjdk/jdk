@@ -66,7 +66,7 @@ public class JDKPlatformProvider implements PlatformProvider {
 
     @Override
     public PlatformDescription getPlatform(String platformName, String options) {
-        return new PlatformDescriptionImpl(platformName);
+        return new PlatformDescriptionImpl(platformName.equals("10") ? "9" : platformName);
     }
 
     private static final String[] symbolFileLocation = { "lib", "ct.sym" };
@@ -92,6 +92,10 @@ public class JDKPlatformProvider implements PlatformProvider {
                 }
             } catch (IOException | ProviderNotFoundException ex) {
             }
+        }
+
+        if (SUPPORTED_JAVA_PLATFORM_VERSIONS.contains("9")) {
+            SUPPORTED_JAVA_PLATFORM_VERSIONS.add("10");
         }
     }
 
