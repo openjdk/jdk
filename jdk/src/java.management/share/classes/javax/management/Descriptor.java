@@ -96,7 +96,7 @@ import javax.management.openmbean.OpenType;
  * of the mapped Java type, called <em>opendata</em>(J) in the <a
  * href="MXBean.html#mapping-rules">MXBean type mapping rules</a>.</p>
  *
- * <table border="1" cellpadding="5">
+ * <table class="striped">
  * <caption style="display:none">Descriptor Fields</caption>
  *
  * <tr><th>Name</th><th>Type</th><th>Used in</th><th>Meaning</th></tr>
@@ -331,7 +331,7 @@ import javax.management.openmbean.OpenType;
  * interest outside Model MBeans, for example.  But only Model MBeans have
  * a predefined behavior for these fields.</p>
  *
- * <table border="1" cellpadding="5">
+ * <table class="striped">
  * <caption style="display:none">ModelMBean Fields</caption>
  *
  * <tr><th>Name</th><th>Type</th><th>Used in</th><th>Meaning</th></tr>

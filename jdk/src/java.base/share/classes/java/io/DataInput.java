@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,8 +59,9 @@ package java.io;
  * far left-hand column.
  *
  * <blockquote>
- *   <table border="1" cellspacing="0" cellpadding="8"
- *          summary="Bit values and bytes">
+ *   <table class="plain">
+ *     <caption style="display:none">Bit values and bytes</caption>
+ *     <tbody>
  *     <tr>
  *       <th colspan="9"><span style="font-weight:normal">
  *         All characters in the range {@code '\u005Cu0001'} to
@@ -71,7 +72,7 @@ package java.io;
  *       <th colspan="8" id="bit_a">Bit Values</th>
  *     </tr>
  *     <tr>
- *       <th id="byte1_a">Byte 1</th>
+ *       <th id="byte1_a" style="text-align:left">Byte 1</th>
  *       <td style="text-align:center">0
  *       <td colspan="7" style="text-align:center">bits 6-0
  *     </tr>
@@ -86,14 +87,14 @@ package java.io;
  *       <th colspan="8" id="bit_b">Bit Values</th>
  *     </tr>
  *     <tr>
- *       <th id="byte1_b">Byte 1</th>
+ *       <th id="byte1_b" style="text-align:left">Byte 1</th>
  *       <td style="text-align:center">1
  *       <td style="text-align:center">1
  *       <td style="text-align:center">0
  *       <td colspan="5" style="text-align:center">bits 10-6
  *     </tr>
  *     <tr>
- *       <th id="byte2_a">Byte 2</th>
+ *       <th id="byte2_a" style="text-align:left">Byte 2</th>
  *       <td style="text-align:center">1
  *       <td style="text-align:center">0
  *       <td colspan="6" style="text-align:center">bits 5-0
@@ -108,7 +109,7 @@ package java.io;
  *       <th colspan="8"id="bit_c">Bit Values</th>
  *     </tr>
  *     <tr>
- *       <th id="byte1_c">Byte 1</th>
+ *       <th id="byte1_c" style="text-align:left">Byte 1</th>
  *       <td style="text-align:center">1
  *       <td style="text-align:center">1
  *       <td style="text-align:center">1
@@ -116,17 +117,18 @@ package java.io;
  *       <td colspan="4" style="text-align:center">bits 15-12
  *     </tr>
  *     <tr>
- *       <th id="byte2_b">Byte 2</th>
+ *       <th id="byte2_b" style="text-align:left">Byte 2</th>
  *       <td style="text-align:center">1
  *       <td style="text-align:center">0
  *       <td colspan="6" style="text-align:center">bits 11-6
  *     </tr>
  *     <tr>
- *       <th id="byte3">Byte 3</th>
+ *       <th id="byte3" style="text-align:left">Byte 3</th>
  *       <td style="text-align:center">1
  *       <td style="text-align:center">0
  *       <td colspan="6" style="text-align:center">bits 5-0
  *     </tr>
+ *     </tbody>
  *   </table>
  * </blockquote>
  * <p>
