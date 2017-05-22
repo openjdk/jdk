@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -9566,7 +9566,9 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * Determines if the specified character is ISO-LATIN-1 white space.
      * This method returns {@code true} for the following five
      * characters only:
-     * <table summary="truechars">
+     * <table class="borderless">
+     * <caption style="display:none">truechars</caption>
+     * <tbody>
      * <tr><td>{@code '\t'}</td>            <td>{@code U+0009}</td>
      *     <td>{@code HORIZONTAL TABULATION}</td></tr>
      * <tr><td>{@code '\n'}</td>            <td>{@code U+000A}</td>
@@ -9577,6 +9579,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      *     <td>{@code CARRIAGE RETURN}</td></tr>
      * <tr><td>{@code ' '}</td>  <td>{@code U+0020}</td>
      *     <td>{@code SPACE}</td></tr>
+     * </tbody>
      * </table>
      *
      * @param      ch   the character to be tested.

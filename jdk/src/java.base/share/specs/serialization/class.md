@@ -241,13 +241,7 @@ The `toString` method returns a printable representation with name and type.
 ## 4.5 Inspecting Serializable Classes
 
 The program *serialver* can be used to find out if a class is serializable and
-to get its `serialVersionUID`. When invoked with the-show option, it puts up a
-simple user interface. To find out if a class is serializable and to find out
-its *serialVersionUID*`,` enter its full class name, then press either the
-Enter or the Show button. The string printed can be copied and pasted into the
-evolved class.
-
->   ![*serialver, Serial Version Inspector program*](images/class.gif)
+to get its `serialVersionUID`. 
 
 When invoked on the command line with one or more class names, serialver prints
 the `serialVersionUID` for each class in a form suitable for copying into an

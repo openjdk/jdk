@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,13 +79,15 @@ import java.util.stream.StreamSupport;
  *
  * <h3><a id="sum">Summary of regular-expression constructs</a></h3>
  *
- * <table border="0" cellpadding="1" cellspacing="0"
- *  summary="Regular expression constructs, and what they match">
- *
+ * <table class="borderless">
+ * <caption style="display:none">Regular expression constructs, and what they match</caption>
+ * <thead>
  * <tr style="text-align:left">
  * <th style="text-align:left" id="construct">Construct</th>
  * <th style="text-align:left" id="matches">Matches</th>
  * </tr>
+ * </thead>
+ * <tbody>
  *
  * <tr><th>&nbsp;</th></tr>
  * <tr style="text-align:left"><th colspan="2" id="characters">Characters</th></tr>
@@ -383,6 +385,7 @@ import java.util.stream.StreamSupport;
  * <tr><td style="vertical-align:top" headers="construct special">{@code (?>}<i>X</i>{@code )}</td>
  *     <td headers="matches"><i>X</i>, as an independent, non-capturing group</td></tr>
  *
+ * </tbody>
  * </table>
  *
  * <hr>
@@ -429,8 +432,9 @@ import java.util.stream.StreamSupport;
  *    <p> The precedence of character-class operators is as follows, from
  *    highest to lowest:
  *
- *    <blockquote><table border="0" cellpadding="1" cellspacing="0"
- *                 summary="Precedence of character class operators.">
+ *    <blockquote><table>
+ *      <caption style="display:none">Precedence of character class operators.</caption>
+ *      <tbody>
  *      <tr><th>1&nbsp;&nbsp;&nbsp;&nbsp;</th>
  *        <td>Literal escape&nbsp;&nbsp;&nbsp;&nbsp;</td>
  *        <td>{@code \x}</td></tr>
@@ -446,6 +450,7 @@ import java.util.stream.StreamSupport;
  *      <tr><th>5&nbsp;&nbsp;&nbsp;&nbsp;</th>
  *        <td>Intersection</td>
  *        <td>{@code [a-z&&[aeiou]]}</td></tr>
+ *      </tbody>
  *    </table></blockquote>
  *
  *    <p> Note that a different set of metacharacters are in effect inside
@@ -496,7 +501,9 @@ import java.util.stream.StreamSupport;
  * left to right.  In the expression {@code ((A)(B(C)))}, for example, there
  * are four such groups: </p>
  *
- * <blockquote><table cellpadding=1 cellspacing=0 summary="Capturing group numberings">
+ * <blockquote><table>
+ * <caption style="display:none">Capturing group numberings</caption>
+ * <tbody>
  * <tr><th>1&nbsp;&nbsp;&nbsp;&nbsp;</th>
  *     <td>{@code ((A)(B(C)))}</td></tr>
  * <tr><th>2&nbsp;&nbsp;&nbsp;&nbsp;</th>
@@ -505,6 +512,7 @@ import java.util.stream.StreamSupport;
  *     <td>{@code (B(C))}</td></tr>
  * <tr><th>4&nbsp;&nbsp;&nbsp;&nbsp;</th>
  *     <td>{@code (C)}</td></tr>
+ * </tbody>
  * </table></blockquote>
  *
  * <p> Group zero always stands for the entire expression.
@@ -641,12 +649,15 @@ import java.util.stream.StreamSupport;
  * of <a href="http://www.unicode.org/reports/tr18/"><i>Unicode Regular Expression
  * </i></a>, when {@link #UNICODE_CHARACTER_CLASS} flag is specified.
  *
- * <table border="0" cellpadding="1" cellspacing="0"
- *  summary="predefined and posix character classes in Unicode mode">
+ * <table>
+ * <caption style="display:none">predefined and posix character classes in Unicode mode</caption>
+ * <thead>
  * <tr style="text-align:left">
  * <th style="text-align:left" id="predef_classes">Classes</th>
  * <th style="text-align:left" id="predef_matches">Matches</th>
- *</tr>
+ * </tr>
+ * </thead>
+ * <tbody>
  * <tr><td>{@code \p{Lower}}</td>
  *     <td>A lowercase character:{@code \p{IsLowercase}}</td></tr>
  * <tr><td>{@code \p{Upper}}</td>
@@ -685,6 +696,7 @@ import java.util.stream.StreamSupport;
  *     <td>A word character: {@code [\p{Alpha}\p{gc=Mn}\p{gc=Me}\p{gc=Mc}\p{Digit}\p{gc=Pc}\p{IsJoin_Control}]}</td></tr>
  * <tr><td>{@code \W}</td>
  *     <td>A non-word character: {@code [^\w]}</td></tr>
+ * </tbody>
  * </table>
  * <p>
  * <a id="jcc">
@@ -1207,11 +1219,14 @@ public final class Pattern
      * <p> The input {@code "boo:and:foo"}, for example, yields the following
      * results with these parameters:
      *
-     * <blockquote><table cellpadding=1 cellspacing=0
-     *              summary="Split examples showing regex, limit, and result">
+     * <blockquote><table>
+     * <caption>Split examples showing regex, limit, and result</caption>
+     * <thead>
      * <tr><th style="text-align:left"><i>Regex&nbsp;&nbsp;&nbsp;&nbsp;</i></th>
      *     <th style="text-align:left"><i>Limit&nbsp;&nbsp;&nbsp;&nbsp;</i></th>
      *     <th style="text-align:left"><i>Result&nbsp;&nbsp;&nbsp;&nbsp;</i></th></tr>
+     * </thead>
+     * <tbody>
      * <tr><td style="text-align:center">:</td>
      *     <td style="text-align:center">2</td>
      *     <td>{@code { "boo", "and:foo" }}</td></tr>
@@ -1230,6 +1245,7 @@ public final class Pattern
      * <tr><td style="text-align:center">o</td>
      *     <td style="text-align:center">0</td>
      *     <td>{@code { "b", "", ":and:f" }}</td></tr>
+     * </tbody>
      * </table></blockquote>
      *
      * @param  input
@@ -1294,14 +1310,18 @@ public final class Pattern
      * <p> The input {@code "boo:and:foo"}, for example, yields the following
      * results with these expressions:
      *
-     * <blockquote><table cellpadding=1 cellspacing=0
-     *              summary="Split examples showing regex and result">
+     * <blockquote><table>
+     * <caption style="display:none">Split examples showing regex and result</caption>
+     * <thead>
      * <tr><th style="text-align:left"><i>Regex&nbsp;&nbsp;&nbsp;&nbsp;</i></th>
      *     <th style="text-align:left"><i>Result</i></th></tr>
+     * </thead>
+     * <tbody>
      * <tr><td style="text-align:center">:</td>
      *     <td>{@code { "boo", "and", "foo" }}</td></tr>
      * <tr><td style="text-align:center">o</td>
      *     <td>{@code { "b", "", ":and:f" }}</td></tr>
+     * </tbody>
      * </table></blockquote>
      *
      *
