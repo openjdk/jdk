@@ -55,7 +55,6 @@ COPYRIGHT_URL := {@docroot}/../legal/cpyr.html
 LICENSE_URL := http://www.oracle.com/technetwork/java/javase/terms/license/java9speclicense.html
 REDISTRIBUTION_URL := http://www.oracle.com/technetwork/java/redist-137594.html
 
-
 # In order to get a specific ordering it's necessary to specify the total
 # ordering of tags as the tags are otherwise ordered in order of definition.
 JAVADOC_TAGS := \
@@ -211,10 +210,10 @@ endef
 SetupApiDocsGeneration = $(NamedParamsMacroTemplate)
 define SetupApiDocsGenerationBody
 
-  # Figure out all modules, both specified and transitive, that will be processed
-  # by javadoc.
-  $1_TRANSITIVE_MODULES := $$(call FindTransitiveDepsForModules, $$($1_MODULES))
-  $1_ALL_MODULES := $$(sort $$($1_MODULES) $$($1_TRANSITIVE_MODULES))
+  # Figure out all modules, both specified and transitive indirect exports, that
+  # will be processed by javadoc.
+  $1_INDIRECT_EXPORTS := $$(call FindTransitiveIndirectDepsForModules, $$($1_MODULES))
+  $1_ALL_MODULES := $$(sort $$($1_MODULES) $$($1_INDIRECT_EXPORTS))
 
   ifeq ($$(ENABLE_FULL_DOCS), true)
     # Tell the ModuleGraph taglet to generate html links to soon-to-be-created
@@ -334,7 +333,8 @@ $(eval $(call SetupApiDocsGeneration, JDK_API, \
 ################################################################################
 # Setup generation of the Java SE API documentation (javadoc + modulegraph)
 
-# The Java SE module scope is just java.se.ee and it's transitive modules.
+# The Java SE module scope is just java.se.ee and it's transitive indirect
+# exports.
 JAVASE_JAVADOC_MODULES := java.se.ee
 
 JAVASE_JAVADOC_OVERVIEW := $(JDK_TOPDIR)/src/java.base/share/classes/overview-core.html
