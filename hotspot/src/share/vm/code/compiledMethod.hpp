@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -271,6 +271,8 @@ public:
   virtual address handler_table_end() const = 0;
   bool handler_table_contains(address addr) const { return handler_table_begin() <= addr && addr < handler_table_end(); }
   int handler_table_size() const { return handler_table_end() - handler_table_begin(); }
+
+  virtual address exception_begin() const = 0;
 
   virtual address nul_chk_table_begin() const = 0;
   virtual address nul_chk_table_end() const = 0;

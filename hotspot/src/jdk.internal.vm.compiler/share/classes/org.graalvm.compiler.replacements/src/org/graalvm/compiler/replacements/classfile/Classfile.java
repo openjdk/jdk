@@ -48,6 +48,7 @@ public class Classfile {
 
     private static final int MAJOR_VERSION_JAVA7 = 51;
     private static final int MAJOR_VERSION_JAVA9 = 53;
+    private static final int MAGIC = 0xCAFEBABE;
 
     /**
      * Creates a {@link Classfile} by parsing the class file bytes for {@code type} loadable from
@@ -60,7 +61,7 @@ public class Classfile {
 
         // magic
         int magic = stream.readInt();
-        assert magic == 0xCAFEBABE;
+        assert magic == MAGIC;
 
         int minor = stream.readUnsignedShort();
         int major = stream.readUnsignedShort();
@@ -129,7 +130,7 @@ public class Classfile {
             String attributeName = cp.get(Utf8.class, stream.readUnsignedShort()).value;
             int attributeLength = stream.readInt();
             if (code == null && attributeName.equals("Code")) {
-                ResolvedJavaMethod method = ClassfileBytecodeProvider.findMethod(type, name, descriptor, isStatic);
+                ResolvedJavaMethod method = cp.context.findMethod(type, name, descriptor, isStatic);
                 // Even if we will discard the Code attribute (see below), we still
                 // need to parse it to reach the following class file content.
                 code = new ClassfileBytecode(method, stream, cp);

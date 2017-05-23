@@ -54,4 +54,13 @@ public @interface Snippet {
     @Target(ElementType.PARAMETER)
     public @interface ConstantParameter {
     }
+
+    /**
+     * Denotes a snippet parameter that will bound to a non-null value during snippet template
+     * instantiation.
+     */
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.PARAMETER)
+    public @interface NonNullParameter {
+    }
 }

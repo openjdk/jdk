@@ -32,6 +32,7 @@ import org.graalvm.compiler.core.common.cfg.BlockMap;
 import org.graalvm.compiler.lir.StandardOp.BlockEndOp;
 import org.graalvm.compiler.lir.StandardOp.LabelOp;
 import org.graalvm.compiler.lir.gen.LIRGenerator;
+import org.graalvm.compiler.options.OptionValues;
 
 /**
  * This class implements the overall container for the LIR graph and directs its construction,
@@ -59,18 +60,25 @@ public final class LIR extends LIRGenerator.VariableProvider {
 
     private boolean hasArgInCallerFrame;
 
+    private final OptionValues options;
+
     /**
      * Creates a new LIR instance for the specified compilation.
      */
-    public LIR(AbstractControlFlowGraph<?> cfg, AbstractBlockBase<?>[] linearScanOrder, AbstractBlockBase<?>[] codeEmittingOrder) {
+    public LIR(AbstractControlFlowGraph<?> cfg, AbstractBlockBase<?>[] linearScanOrder, AbstractBlockBase<?>[] codeEmittingOrder, OptionValues options) {
         this.cfg = cfg;
         this.codeEmittingOrder = codeEmittingOrder;
         this.linearScanOrder = linearScanOrder;
         this.lirInstructions = new BlockMap<>(cfg);
+        this.options = options;
     }
 
     public AbstractControlFlowGraph<?> getControlFlowGraph() {
         return cfg;
+    }
+
+    public OptionValues getOptions() {
+        return options;
     }
 
     /**

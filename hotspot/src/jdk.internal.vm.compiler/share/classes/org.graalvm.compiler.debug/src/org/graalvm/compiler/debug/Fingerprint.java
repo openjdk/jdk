@@ -22,6 +22,8 @@
  */
 package org.graalvm.compiler.debug;
 
+import static org.graalvm.compiler.debug.Debug.DEBUG_OPTIONS;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -29,7 +31,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.graalvm.compiler.options.Option;
-import org.graalvm.compiler.options.OptionValue;
+import org.graalvm.compiler.options.OptionKey;
 
 /**
  * Facility for fingerprinting execution.
@@ -38,19 +40,19 @@ public class Fingerprint implements AutoCloseable {
 
     public static class Options {
         @Option(help = "Enables execution fingerprinting.")//
-        public static final OptionValue<Boolean> UseFingerprinting = new OptionValue<>(false);
+        public static final OptionKey<Boolean> UseFingerprinting = new OptionKey<>(false);
 
         @Option(help = "Limit number of events shown in fingerprinting error message.")//
-        public static final OptionValue<Integer> FingerprintErrorEventTailLength = new OptionValue<>(50);
+        public static final OptionKey<Integer> FingerprintErrorEventTailLength = new OptionKey<>(50);
 
         @Option(help = "Fingerprinting event at which to execute breakpointable code.")//
-        public static final OptionValue<Integer> FingerprintingBreakpointEvent = new OptionValue<>(-1);
+        public static final OptionKey<Integer> FingerprintingBreakpointEvent = new OptionKey<>(-1);
     }
 
     /**
      * Determines whether fingerprinting is enabled.
      */
-    public static final boolean ENABLED = Options.UseFingerprinting.getValue();
+    public static final boolean ENABLED = Options.UseFingerprinting.getValue(DEBUG_OPTIONS);
 
     private static final ThreadLocal<Fingerprint> current = ENABLED ? new ThreadLocal<>() : null;
 
@@ -112,7 +114,7 @@ public class Fingerprint implements AutoCloseable {
         }
     }
 
-    private static final int BREAKPOINT_EVENT = Options.FingerprintingBreakpointEvent.getValue();
+    private static final int BREAKPOINT_EVENT = Options.FingerprintingBreakpointEvent.getValue(DEBUG_OPTIONS);
 
     /**
      * Submits an execution event for the purpose of recording or verifying a fingerprint. This must
@@ -136,7 +138,7 @@ public class Fingerprint implements AutoCloseable {
         return index == -1 ? events.size() : index;
     }
 
-    private static final int MAX_EVENT_TAIL_IN_ERROR_MESSAGE = Options.FingerprintErrorEventTailLength.getValue();
+    private static final int MAX_EVENT_TAIL_IN_ERROR_MESSAGE = Options.FingerprintErrorEventTailLength.getValue(DEBUG_OPTIONS);
 
     private String tail() {
         int start = Math.max(index - MAX_EVENT_TAIL_IN_ERROR_MESSAGE, 0);

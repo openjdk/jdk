@@ -1842,7 +1842,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     }
 
     // Load (object->mark() | 1) into swap_reg %r0
-    __ ldr(rscratch1, Address(obj_reg, 0));
+    __ ldr(rscratch1, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
     __ orr(swap_reg, rscratch1, 1);
 
     // Save (object->mark() | 1) into BasicLock's displaced header
@@ -1850,7 +1850,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
     // src -> dest iff dest == r0 else r0 <- dest
     { Label here;
-      __ cmpxchgptr(r0, lock_reg, obj_reg, rscratch1, lock_done, /*fallthrough*/NULL);
+      __ cmpxchg_obj_header(r0, lock_reg, obj_reg, rscratch1, lock_done, /*fallthrough*/NULL);
     }
 
     // Hmm should this move to the slow path code area???
@@ -2029,7 +2029,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
     // Atomic swap old header if oop still contains the stack lock
     Label succeed;
-    __ cmpxchgptr(r0, old_hdr, obj_reg, rscratch1, succeed, &slow_path_unlock);
+    __ cmpxchg_obj_header(r0, old_hdr, obj_reg, rscratch1, succeed, &slow_path_unlock);
     __ bind(succeed);
 
     // slow path re-enters here

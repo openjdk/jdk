@@ -136,12 +136,13 @@ class ObjectSynchronizer : AllStatic {
                               ObjectMonitor** freeHeadp,
                               ObjectMonitor** freeTailp);
   static void oops_do(OopClosure* f);
+  // Process oops in thread local used monitors
+  static void thread_local_used_oops_do(Thread* thread, OopClosure* f);
 
   // debugging
   static void sanity_checks(const bool verbose,
                             const unsigned int cache_line_size,
                             int *error_cnt_ptr, int *warning_cnt_ptr);
-  static void verify() PRODUCT_RETURN;
   static int  verify_objmon_isinpool(ObjectMonitor *addr) PRODUCT_RETURN0;
 
  private:
@@ -157,6 +158,14 @@ class ObjectSynchronizer : AllStatic {
   static ObjectMonitor * volatile gOmInUseList;
   // count of entries in gOmInUseList
   static int gOmInUseCount;
+
+  // Process oops in all monitors
+  static void global_oops_do(OopClosure* f);
+  // Process oops in all global used monitors (i.e. moribund thread's monitors)
+  static void global_used_oops_do(OopClosure* f);
+  // Process oops in monitors on the given list
+  static void list_oops_do(ObjectMonitor* list, OopClosure* f);
+
 };
 
 // ObjectLocker enforced balanced locking and can never thrown an

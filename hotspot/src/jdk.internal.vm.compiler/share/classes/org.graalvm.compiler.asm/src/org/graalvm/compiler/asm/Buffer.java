@@ -22,6 +22,8 @@
  */
 package org.graalvm.compiler.asm;
 
+import org.graalvm.compiler.core.common.NumUtil;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;

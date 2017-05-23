@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,8 +138,8 @@ IRT_END
 // Allocation
 
 IRT_ENTRY(void, InterpreterRuntime::_new(JavaThread* thread, ConstantPool* pool, int index))
-  Klass* k_oop = pool->klass_at(index, CHECK);
-  instanceKlassHandle klass (THREAD, k_oop);
+  Klass* k = pool->klass_at(index, CHECK);
+  InstanceKlass* klass = InstanceKlass::cast(k);
 
   // Make sure we are not instantiating an abstract klass
   klass->check_valid_for_instantiation(true, CHECK);
@@ -461,8 +461,8 @@ IRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
     Exceptions::debug_check_abort(h_exception);
 
     // exception handler lookup
-    KlassHandle h_klass(THREAD, h_exception->klass());
-    handler_bci = Method::fast_exception_handler_bci_for(h_method, h_klass, current_bci, THREAD);
+    Klass* klass = h_exception->klass();
+    handler_bci = Method::fast_exception_handler_bci_for(h_method, klass, current_bci, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       // We threw an exception while trying to find the exception handler.
       // Transfer the new exception to the exception handle which will
@@ -1080,15 +1080,15 @@ ConstantPoolCacheEntry *cp_entry))
     // non-static field accessors have an object, but we need a handle
     h_obj = Handle(thread, obj);
   }
-  instanceKlassHandle h_cp_entry_f1(thread, (Klass*)cp_entry->f1_as_klass());
-  jfieldID fid = jfieldIDWorkaround::to_jfieldID(h_cp_entry_f1, cp_entry->f2_as_index(), is_static);
-  JvmtiExport::post_field_access(thread, method(thread), bcp(thread), h_cp_entry_f1, h_obj, fid);
+  InstanceKlass* cp_entry_f1 = InstanceKlass::cast(cp_entry->f1_as_klass());
+  jfieldID fid = jfieldIDWorkaround::to_jfieldID(cp_entry_f1, cp_entry->f2_as_index(), is_static);
+  JvmtiExport::post_field_access(thread, method(thread), bcp(thread), cp_entry_f1, h_obj, fid);
 IRT_END
 
 IRT_ENTRY(void, InterpreterRuntime::post_field_modification(JavaThread *thread,
   oopDesc* obj, ConstantPoolCacheEntry *cp_entry, jvalue *value))
 
-  Klass* k = (Klass*)cp_entry->f1_as_klass();
+  Klass* k = cp_entry->f1_as_klass();
 
   // check the access_flags for the field in the klass
   InstanceKlass* ik = InstanceKlass::cast(k);
@@ -1113,8 +1113,7 @@ IRT_ENTRY(void, InterpreterRuntime::post_field_modification(JavaThread *thread,
   bool is_static = (obj == NULL);
 
   HandleMark hm(thread);
-  instanceKlassHandle h_klass(thread, k);
-  jfieldID fid = jfieldIDWorkaround::to_jfieldID(h_klass, cp_entry->f2_as_index(), is_static);
+  jfieldID fid = jfieldIDWorkaround::to_jfieldID(ik, cp_entry->f2_as_index(), is_static);
   jvalue fvalue;
 #ifdef _LP64
   fvalue = *value;
@@ -1138,7 +1137,7 @@ IRT_ENTRY(void, InterpreterRuntime::post_field_modification(JavaThread *thread,
     h_obj = Handle(thread, obj);
   }
 
-  JvmtiExport::post_raw_field_modification(thread, method(thread), bcp(thread), h_klass, h_obj,
+  JvmtiExport::post_raw_field_modification(thread, method(thread), bcp(thread), ik, h_obj,
                                            fid, sig_type, &fvalue);
 IRT_END
 

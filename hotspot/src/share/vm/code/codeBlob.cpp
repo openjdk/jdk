@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,14 +131,6 @@ RuntimeBlob::RuntimeBlob(const char* name, int header_size, int size, int frame_
   : CodeBlob(name, compiler_none, CodeBlobLayout((address) this, size, header_size, locs_size, size), frame_complete, 0, NULL, false /* caller_must_gc_arguments */)
 {
   assert(locs_size   == round_to(locs_size,   oopSize), "unaligned size");
-  assert(!UseRelocIndex, "no space allocated for reloc index yet");
-
-  // Note: If UseRelocIndex is enabled, there needs to be (at least) one
-  //       extra word for the relocation information, containing the reloc
-  //       index table length. Unfortunately, the reloc index table imple-
-  //       mentation is not easily understandable and thus it is not clear
-  //       what exactly the format is supposed to be. For now, we just turn
-  //       off the use of this table (gri 7/6/2000).
 }
 
 
@@ -209,7 +201,6 @@ const ImmutableOopMap* CodeBlob::oop_map_for_return_address(address return_addre
 }
 
 void CodeBlob::print_code() {
-  HandleMark hm;
   ResourceMark m;
   Disassembler::decode(this, tty);
 }

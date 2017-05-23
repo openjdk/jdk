@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,7 @@ class JvmtiTagMap :  public CHeapObj<mtInternal> {
 
   // deprecated heap iteration functions
   void iterate_over_heap(jvmtiHeapObjectFilter object_filter,
-                         KlassHandle klass,
+                         Klass* klass,
                          jvmtiHeapObjectCallback heap_object_callback,
                          const void* user_data);
 
@@ -107,12 +107,12 @@ class JvmtiTagMap :  public CHeapObj<mtInternal> {
 
   // advanced (JVMTI 1.1) heap iteration functions
   void iterate_through_heap(jint heap_filter,
-                            KlassHandle klass,
+                            Klass* klass,
                             const jvmtiHeapCallbacks* callbacks,
                             const void* user_data);
 
   void follow_references(jint heap_filter,
-                         KlassHandle klass,
+                         Klass* klass,
                          jobject initial_object,
                          const jvmtiHeapCallbacks* callbacks,
                          const void* user_data);

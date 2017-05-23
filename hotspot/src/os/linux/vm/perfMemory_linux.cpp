@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
@@ -1166,14 +1167,9 @@ static void mmap_attach_shared(const char* user, int vmid, PerfMemory::PerfMemor
   *addr = mapAddress;
   *sizep = size;
 
-  if (PerfTraceMemOps) {
-    tty->print("mapped " SIZE_FORMAT " bytes for vmid %d at "
-               INTPTR_FORMAT "\n", size, vmid, p2i((void*)mapAddress));
-  }
+  log_debug(perf, memops)("mapped " SIZE_FORMAT " bytes for vmid %d at "
+                          INTPTR_FORMAT "\n", size, vmid, p2i((void*)mapAddress));
 }
-
-
-
 
 // create the PerfData memory region
 //

@@ -877,7 +877,8 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
   // Calculate stack size if it's not specified by caller.
   size_t stack_size = os::Posix::get_initial_stack_size(thr_type, req_stack_size);
-  pthread_attr_setstacksize(&attr, stack_size);
+  int status = pthread_attr_setstacksize(&attr, stack_size);
+  assert_status(status == 0, status, "pthread_attr_setstacksize");
 
   // Configure libc guard page.
   pthread_attr_setguardsize(&attr, os::Aix::default_guard_size(thr_type));
@@ -1576,7 +1577,7 @@ void os::jvm_path(char *buf, jint buflen) {
   Dl_info dlinfo;
   int ret = dladdr(CAST_FROM_FN_PTR(void *, os::jvm_path), &dlinfo);
   assert(ret != 0, "cannot locate libjvm");
-  char* rp = realpath((char *)dlinfo.dli_fname, buf);
+  char* rp = os::Posix::realpath((char *)dlinfo.dli_fname, buf, buflen);
   assert(rp != NULL, "error in realpath(): maybe the 'path' argument is too long?");
 
   strncpy(saved_jvm_path, buf, sizeof(saved_jvm_path));

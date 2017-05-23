@@ -24,6 +24,7 @@ package org.graalvm.compiler.lir.gen;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.Variable;
+import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.PlatformKind;
@@ -40,6 +41,9 @@ public abstract class ArithmeticLIRGenerator implements ArithmeticLIRGeneratorTo
         return lirGen;
     }
 
+    public OptionValues getOptions() {
+        return getLIRGen().getResult().getLIR().getOptions();
+    }
     // automatic derived reference handling
 
     protected abstract boolean isNumericInteger(PlatformKind kind);

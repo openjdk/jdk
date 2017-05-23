@@ -55,6 +55,7 @@ class Linux {
   static bool _supports_fast_thread_cpu_time;
 
   static GrowableArray<int>* _cpu_to_node;
+  static GrowableArray<int>* _nindex_to_node;
 
   // 0x00000000 = uninitialized,
   // 0x01000000 = kernel version unknown,
@@ -84,7 +85,9 @@ class Linux {
   static void set_libpthread_version(const char *s) { _libpthread_version = s; }
 
   static void rebuild_cpu_to_node_map();
+  static void rebuild_nindex_to_node_map();
   static GrowableArray<int>* cpu_to_node()    { return _cpu_to_node; }
+  static GrowableArray<int>* nindex_to_node()  { return _nindex_to_node; }
 
   static size_t find_large_page_size();
   static size_t setup_large_page_size();
@@ -219,28 +222,41 @@ class Linux {
   typedef int (*sched_getcpu_func_t)(void);
   typedef int (*numa_node_to_cpus_func_t)(int node, unsigned long *buffer, int bufferlen);
   typedef int (*numa_max_node_func_t)(void);
+  typedef int (*numa_num_configured_nodes_func_t)(void);
   typedef int (*numa_available_func_t)(void);
   typedef int (*numa_tonode_memory_func_t)(void *start, size_t size, int node);
   typedef void (*numa_interleave_memory_func_t)(void *start, size_t size, unsigned long *nodemask);
   typedef void (*numa_set_bind_policy_func_t)(int policy);
+  typedef int (*numa_bitmask_isbitset_func_t)(struct bitmask *bmp, unsigned int n);
+  typedef int (*numa_distance_func_t)(int node1, int node2);
 
   static sched_getcpu_func_t _sched_getcpu;
   static numa_node_to_cpus_func_t _numa_node_to_cpus;
   static numa_max_node_func_t _numa_max_node;
+  static numa_num_configured_nodes_func_t _numa_num_configured_nodes;
   static numa_available_func_t _numa_available;
   static numa_tonode_memory_func_t _numa_tonode_memory;
   static numa_interleave_memory_func_t _numa_interleave_memory;
   static numa_set_bind_policy_func_t _numa_set_bind_policy;
+  static numa_bitmask_isbitset_func_t _numa_bitmask_isbitset;
+  static numa_distance_func_t _numa_distance;
   static unsigned long* _numa_all_nodes;
+  static struct bitmask* _numa_all_nodes_ptr;
+  static struct bitmask* _numa_nodes_ptr;
 
   static void set_sched_getcpu(sched_getcpu_func_t func) { _sched_getcpu = func; }
   static void set_numa_node_to_cpus(numa_node_to_cpus_func_t func) { _numa_node_to_cpus = func; }
   static void set_numa_max_node(numa_max_node_func_t func) { _numa_max_node = func; }
+  static void set_numa_num_configured_nodes(numa_num_configured_nodes_func_t func) { _numa_num_configured_nodes = func; }
   static void set_numa_available(numa_available_func_t func) { _numa_available = func; }
   static void set_numa_tonode_memory(numa_tonode_memory_func_t func) { _numa_tonode_memory = func; }
   static void set_numa_interleave_memory(numa_interleave_memory_func_t func) { _numa_interleave_memory = func; }
   static void set_numa_set_bind_policy(numa_set_bind_policy_func_t func) { _numa_set_bind_policy = func; }
+  static void set_numa_bitmask_isbitset(numa_bitmask_isbitset_func_t func) { _numa_bitmask_isbitset = func; }
+  static void set_numa_distance(numa_distance_func_t func) { _numa_distance = func; }
   static void set_numa_all_nodes(unsigned long* ptr) { _numa_all_nodes = ptr; }
+  static void set_numa_all_nodes_ptr(struct bitmask **ptr) { _numa_all_nodes_ptr = *ptr; }
+  static void set_numa_nodes_ptr(struct bitmask **ptr) { _numa_nodes_ptr = *ptr; }
   static int sched_getcpu_syscall(void);
  public:
   static int sched_getcpu()  { return _sched_getcpu != NULL ? _sched_getcpu() : -1; }
@@ -248,6 +264,9 @@ class Linux {
     return _numa_node_to_cpus != NULL ? _numa_node_to_cpus(node, buffer, bufferlen) : -1;
   }
   static int numa_max_node() { return _numa_max_node != NULL ? _numa_max_node() : -1; }
+  static int numa_num_configured_nodes() {
+    return _numa_num_configured_nodes != NULL ? _numa_num_configured_nodes() : -1;
+  }
   static int numa_available() { return _numa_available != NULL ? _numa_available() : -1; }
   static int numa_tonode_memory(void *start, size_t size, int node) {
     return _numa_tonode_memory != NULL ? _numa_tonode_memory(start, size, node) : -1;
@@ -262,7 +281,25 @@ class Linux {
       _numa_set_bind_policy(policy);
     }
   }
+  static int numa_distance(int node1, int node2) {
+    return _numa_distance != NULL ? _numa_distance(node1, node2) : -1;
+  }
   static int get_node_by_cpu(int cpu_id);
+  static int get_existing_num_nodes();
+  // Check if numa node is configured (non-zero memory node).
+  static bool isnode_in_configured_nodes(unsigned int n) {
+    if (_numa_bitmask_isbitset != NULL && _numa_all_nodes_ptr != NULL) {
+      return _numa_bitmask_isbitset(_numa_all_nodes_ptr, n);
+    } else
+      return 0;
+  }
+  // Check if numa node exists in the system (including zero memory nodes).
+  static bool isnode_in_existing_nodes(unsigned int n) {
+    if (_numa_bitmask_isbitset != NULL && _numa_nodes_ptr != NULL) {
+      return _numa_bitmask_isbitset(_numa_nodes_ptr, n);
+    } else
+      return 0;
+  }
 };
 
 

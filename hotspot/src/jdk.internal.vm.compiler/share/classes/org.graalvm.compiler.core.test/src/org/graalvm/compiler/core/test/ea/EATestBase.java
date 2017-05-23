@@ -160,7 +160,7 @@ public class EATestBase extends GraalCompilerTest {
             new InliningPhase(new CanonicalizerPhase()).apply(graph, context);
             new DeadCodeEliminationPhase().apply(graph);
             new CanonicalizerPhase().apply(graph, context);
-            new PartialEscapePhase(iterativeEscapeAnalysis, false, new CanonicalizerPhase(), null).apply(graph, context);
+            new PartialEscapePhase(iterativeEscapeAnalysis, false, new CanonicalizerPhase(), null, graph.getOptions()).apply(graph, context);
             returnNodes = graph.getNodes(ReturnNode.TYPE).snapshot();
         } catch (Throwable e) {
             throw Debug.handle(e);

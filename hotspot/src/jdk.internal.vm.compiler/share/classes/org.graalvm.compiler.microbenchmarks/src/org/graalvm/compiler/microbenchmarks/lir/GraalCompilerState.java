@@ -73,7 +73,7 @@ import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.nodes.spi.LoweringProvider;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
-import org.graalvm.compiler.options.DerivedOptionValue;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
@@ -105,11 +105,10 @@ public abstract class GraalCompilerState {
     /**
      * The graph processed by the benchmark.
      */
+    private final OptionValues options;
     private StructuredGraph graph;
     private final Backend backend;
     private final Providers providers;
-    private final DerivedOptionValue<Suites> suites;
-    private final DerivedOptionValue<LIRSuites> lirSuites;
 
     /**
      * We only allow inner classes to subclass this to ensure that the {@link Setup} methods are
@@ -117,14 +116,13 @@ public abstract class GraalCompilerState {
      */
     @SuppressWarnings("try")
     protected GraalCompilerState() {
+        this.options = Graal.getRequiredCapability(OptionValues.class);
         this.backend = Graal.getRequiredCapability(RuntimeProvider.class).getHostBackend();
         this.providers = backend.getProviders();
-        this.suites = new DerivedOptionValue<>(this::createSuites);
-        this.lirSuites = new DerivedOptionValue<>(this::createLIRSuites);
 
         // Ensure a debug configuration for this thread is initialized
         if (Debug.isEnabled() && DebugScope.getConfig() == null) {
-            DebugEnvironment.initialize(System.out);
+            DebugEnvironment.ensureInitialized(options);
         }
 
     }
@@ -248,26 +246,20 @@ public abstract class GraalCompilerState {
         return structuredGraph;
     }
 
-    protected Suites createSuites() {
-        Suites ret = backend.getSuites().getDefaultSuites().copy();
-        return ret;
+    protected OptionValues getOptions() {
+        return options;
     }
 
-    protected LIRSuites createLIRSuites() {
-        LIRSuites ret = backend.getSuites().getDefaultLIRSuites().copy();
-        return ret;
+    protected Suites createSuites(OptionValues opts) {
+        return backend.getSuites().getDefaultSuites(opts).copy();
+    }
+
+    protected LIRSuites createLIRSuites(OptionValues opts) {
+        return backend.getSuites().getDefaultLIRSuites(opts).copy();
     }
 
     protected Backend getBackend() {
         return backend;
-    }
-
-    protected Suites getSuites() {
-        return suites.getValue();
-    }
-
-    protected LIRSuites getOriginalLIRSuites() {
-        return lirSuites.getValue();
     }
 
     protected Providers getProviders() {
@@ -323,8 +315,8 @@ public abstract class GraalCompilerState {
     /**
      * Copies the {@link #originalGraph original graph} and prepares the {@link #request}.
      *
-     * The {@link Suites} can be changed by overriding {@link #createSuites()}. {@link LIRSuites}
-     * can be changed by overriding {@link #createLIRSuites()}.
+     * The {@link Suites} can be changed by overriding {@link #createSuites}. {@link LIRSuites} can
+     * be changed by overriding {@link #createLIRSuites}.
      */
     protected final void prepareRequest() {
         assert originalGraph != null : "call initialzeMethod first";
@@ -333,7 +325,7 @@ public abstract class GraalCompilerState {
         assert !graph.isFrozen();
         ResolvedJavaMethod installedCodeOwner = graph.method();
         request = new Request<>(graph, installedCodeOwner, getProviders(), getBackend(), getDefaultGraphBuilderSuite(), OptimisticOptimizations.ALL,
-                        graph.getProfilingInfo(), getSuites(), getOriginalLIRSuites(), new CompilationResult(), CompilationResultBuilderFactory.Default);
+                        graph.getProfilingInfo(), createSuites(getOptions()), createLIRSuites(getOptions()), new CompilationResult(), CompilationResultBuilderFactory.Default);
     }
 
     /**
@@ -384,11 +376,15 @@ public abstract class GraalCompilerState {
         codeEmittingOrder = ComputeBlockOrder.computeCodeEmittingOrder(blocks.length, startBlock);
         linearScanOrder = ComputeBlockOrder.computeLinearScanOrder(blocks.length, startBlock);
 
-        LIR lir = new LIR(cfg, linearScanOrder, codeEmittingOrder);
+        LIR lir = new LIR(cfg, linearScanOrder, codeEmittingOrder, getGraphOptions());
         FrameMapBuilder frameMapBuilder = request.backend.newFrameMapBuilder(registerConfig);
         lirGenRes = request.backend.newLIRGenerationResult(graph.compilationId(), lir, frameMapBuilder, request.graph, stub);
         lirGenTool = request.backend.newLIRGenerator(lirGenRes);
         nodeLirGen = request.backend.newNodeLIRBuilder(request.graph, lirGenTool);
+    }
+
+    protected OptionValues getGraphOptions() {
+        return graph.getOptions();
     }
 
     private static ControlFlowGraph deepCopy(ControlFlowGraph cfg) {
@@ -422,7 +418,7 @@ public abstract class GraalCompilerState {
     /**
      * Executes the {@link PreAllocationStage}.
      *
-     * {@link LIRPhase phases} can be changed by overriding {@link #createLIRSuites()}.
+     * {@link LIRPhase phases} can be changed by overriding {@link #createLIRSuites}.
      */
     protected final void preAllocationStage() {
         applyLIRPhase(getLIRSuites().getPreAllocationOptimizationStage(), createPreAllocationOptimizationContext());
@@ -435,20 +431,20 @@ public abstract class GraalCompilerState {
     /**
      * Executes the {@link AllocationStage}.
      *
-     * {@link LIRPhase phases} can be changed by overriding {@link #createLIRSuites()}.
+     * {@link LIRPhase phases} can be changed by overriding {@link #createLIRSuites}.
      */
     protected final void allocationStage() {
         applyLIRPhase(getLIRSuites().getAllocationStage(), createAllocationContext());
     }
 
     protected AllocationContext createAllocationContext() {
-        return new AllocationContext(lirGenTool.getSpillMoveFactory(), request.backend.newRegisterAllocationConfig(registerConfig));
+        return new AllocationContext(lirGenTool.getSpillMoveFactory(), request.backend.newRegisterAllocationConfig(registerConfig, null));
     }
 
     /**
      * Executes the {@link PostAllocationStage}.
      *
-     * {@link LIRPhase phases} can be changed by overriding {@link #createLIRSuites()}.
+     * {@link LIRPhase phases} can be changed by overriding {@link #createLIRSuites}.
      */
     protected final void postAllocationStage() {
         applyLIRPhase(getLIRSuites().getPostAllocationOptimizationStage(), createPostAllocationOptimizationContext());

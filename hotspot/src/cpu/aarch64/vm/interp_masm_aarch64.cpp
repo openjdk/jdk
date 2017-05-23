@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -270,12 +270,22 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
 
   get_constant_pool(result);
   // load pointer for resolved_references[] objArray
-  ldr(result, Address(result, ConstantPool::resolved_references_offset_in_bytes()));
+  ldr(result, Address(result, ConstantPool::cache_offset_in_bytes()));
+  ldr(result, Address(result, ConstantPoolCache::resolved_references_offset_in_bytes()));
   // JNIHandles::resolve(obj);
   ldr(result, Address(result, 0));
   // Add in the index
   add(result, result, tmp);
   load_heap_oop(result, Address(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
+}
+
+void InterpreterMacroAssembler::load_resolved_klass_at_offset(
+                             Register cpool, Register index, Register klass, Register temp) {
+  add(temp, cpool, index, LSL, LogBytesPerWord);
+  ldrh(temp, Address(temp, sizeof(ConstantPool))); // temp = resolved_klass_index
+  ldr(klass, Address(cpool,  ConstantPool::resolved_klasses_offset_in_bytes())); // klass = cpool->_resolved_klasses
+  add(klass, klass, temp, LSL, LogBytesPerWord);
+  ldr(klass, Address(klass, Array<Klass*>::base_offset_in_bytes()));
 }
 
 // Generate a subtype check: branch to ok_is_subtype if sub_klass is a
@@ -682,7 +692,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     }
 
     // Load (object->mark() | 1) into swap_reg
-    ldr(rscratch1, Address(obj_reg, 0));
+    ldr(rscratch1, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
     orr(swap_reg, rscratch1, 1);
 
     // Save (object->mark() | 1) into BasicLock's displaced header
@@ -694,14 +704,14 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     Label fail;
     if (PrintBiasedLockingStatistics) {
       Label fast;
-      cmpxchgptr(swap_reg, lock_reg, obj_reg, rscratch1, fast, &fail);
+      cmpxchg_obj_header(swap_reg, lock_reg, obj_reg, rscratch1, fast, &fail);
       bind(fast);
       atomic_incw(Address((address)BiasedLocking::fast_path_entry_count_addr()),
                   rscratch2, rscratch1, tmp);
       b(done);
       bind(fail);
     } else {
-      cmpxchgptr(swap_reg, lock_reg, obj_reg, rscratch1, done, /*fallthrough*/NULL);
+      cmpxchg_obj_header(swap_reg, lock_reg, obj_reg, rscratch1, done, /*fallthrough*/NULL);
     }
 
     // Test if the oopMark is an obvious stack pointer, i.e.,
@@ -791,7 +801,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
     cbz(header_reg, done);
 
     // Atomic swap back the old header
-    cmpxchgptr(swap_reg, header_reg, obj_reg, rscratch1, done, /*fallthrough*/NULL);
+    cmpxchg_obj_header(swap_reg, header_reg, obj_reg, rscratch1, done, /*fallthrough*/NULL);
 
     // Call the runtime routine for slow case.
     str(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes())); // restore obj

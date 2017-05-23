@@ -22,12 +22,14 @@
  */
 package org.graalvm.compiler.nodes;
 
+import static jdk.vm.ci.code.BytecodeFrame.getPlaceholderBciName;
+import static jdk.vm.ci.code.BytecodeFrame.isPlaceholderBci;
 import static org.graalvm.compiler.nodeinfo.InputType.Association;
 import static org.graalvm.compiler.nodeinfo.InputType.State;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_0;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_IGNORED;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
-import static jdk.vm.ci.code.BytecodeFrame.getPlaceholderBciName;
-import static jdk.vm.ci.code.BytecodeFrame.isPlaceholderBci;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_IGNORED;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -78,7 +80,7 @@ public final class FrameState extends VirtualState implements IterableNodeType {
      */
     public static final ValueNode TWO_SLOT_MARKER = new TwoSlotMarker();
 
-    @NodeInfo
+    @NodeInfo(cycles = CYCLES_IGNORED, size = SIZE_IGNORED)
     private static final class TwoSlotMarker extends ValueNode {
         public static final NodeClass<TwoSlotMarker> TYPE = NodeClass.create(TwoSlotMarker.class);
 
@@ -105,7 +107,7 @@ public final class FrameState extends VirtualState implements IterableNodeType {
      */
     @OptionalInput NodeInputList<ValueNode> values;
 
-    @OptionalInput(Association) NodeInputList<MonitorIdNode> monitorIds;
+    @Input(Association) NodeInputList<MonitorIdNode> monitorIds;
 
     @OptionalInput(State) NodeInputList<EscapeObjectState> virtualObjectMappings;
 
@@ -135,6 +137,7 @@ public final class FrameState extends VirtualState implements IterableNodeType {
         }
         assert stackSize >= 0;
         this.outerFrameState = outerFrameState;
+        assert outerFrameState == null || outerFrameState.bci >= 0;
         this.code = code;
         this.bci = bci;
         this.localsSize = localsSize;
@@ -234,7 +237,7 @@ public final class FrameState extends VirtualState implements IterableNodeType {
     }
 
     public void setOuterFrameState(FrameState x) {
-        assert x == null || !x.isDeleted();
+        assert x == null || (!x.isDeleted() && x.bci >= 0);
         updateUsages(this.outerFrameState, x);
         this.outerFrameState = x;
     }
@@ -593,7 +596,7 @@ public final class FrameState extends VirtualState implements IterableNodeType {
          * The outermost FrameState should have a method that matches StructuredGraph.method except
          * when it's a substitution or it's null.
          */
-        assertTrue(outerFrameState != null || graph() == null || graph().method() == null || code == null || Objects.equals(code.getMethod(), graph().method()) ||
+        assertTrue(outerFrameState != null || graph() == null || graph().method() == null || code == null || Objects.equals(graph().method(), code.getMethod()) ||
                         graph().method().getAnnotation(MethodSubstitution.class) != null, "wrong outerFrameState %s != %s", code == null ? "null" : code.getMethod(), graph().method());
         if (monitorIds() != null && monitorIds().size() > 0) {
             int depth = outerLockDepth();

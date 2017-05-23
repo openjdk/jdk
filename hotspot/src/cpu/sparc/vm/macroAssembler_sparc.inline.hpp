@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,19 +45,11 @@ inline void MacroAssembler::pd_patch_instruction(address branch, address target)
 
 // Use the right loads/stores for the platform
 inline void MacroAssembler::ld_ptr( Register s1, Register s2, Register d ) {
-#ifdef _LP64
   Assembler::ldx(s1, s2, d);
-#else
-             ld( s1, s2, d);
-#endif
 }
 
 inline void MacroAssembler::ld_ptr( Register s1, int simm13a, Register d ) {
-#ifdef _LP64
   Assembler::ldx(s1, simm13a, d);
-#else
-             ld( s1, simm13a, d);
-#endif
 }
 
 #ifdef ASSERT
@@ -68,35 +60,19 @@ inline void MacroAssembler::ld_ptr( Register s1, ByteSize simm13a, Register d ) 
 #endif
 
 inline void MacroAssembler::ld_ptr( Register s1, RegisterOrConstant s2, Register d ) {
-#ifdef _LP64
   ldx(s1, s2, d);
-#else
-  ld( s1, s2, d);
-#endif
 }
 
 inline void MacroAssembler::ld_ptr(const Address& a, Register d, int offset) {
-#ifdef _LP64
   ldx(a, d, offset);
-#else
-  ld( a, d, offset);
-#endif
 }
 
 inline void MacroAssembler::st_ptr( Register d, Register s1, Register s2 ) {
-#ifdef _LP64
   Assembler::stx(d, s1, s2);
-#else
-             st( d, s1, s2);
-#endif
 }
 
 inline void MacroAssembler::st_ptr( Register d, Register s1, int simm13a ) {
-#ifdef _LP64
   Assembler::stx(d, s1, simm13a);
-#else
-             st( d, s1, simm13a);
-#endif
 }
 
 #ifdef ASSERT
@@ -107,84 +83,44 @@ inline void MacroAssembler::st_ptr( Register d, Register s1, ByteSize simm13a ) 
 #endif
 
 inline void MacroAssembler::st_ptr( Register d, Register s1, RegisterOrConstant s2 ) {
-#ifdef _LP64
   stx(d, s1, s2);
-#else
-  st( d, s1, s2);
-#endif
 }
 
 inline void MacroAssembler::st_ptr(Register d, const Address& a, int offset) {
-#ifdef _LP64
   stx(d, a, offset);
-#else
-  st( d, a, offset);
-#endif
 }
 
 // Use the right loads/stores for the platform
 inline void MacroAssembler::ld_long( Register s1, Register s2, Register d ) {
-#ifdef _LP64
   Assembler::ldx(s1, s2, d);
-#else
-  Assembler::ldd(s1, s2, d);
-#endif
 }
 
 inline void MacroAssembler::ld_long( Register s1, int simm13a, Register d ) {
-#ifdef _LP64
   Assembler::ldx(s1, simm13a, d);
-#else
-  Assembler::ldd(s1, simm13a, d);
-#endif
 }
 
 inline void MacroAssembler::ld_long( Register s1, RegisterOrConstant s2, Register d ) {
-#ifdef _LP64
   ldx(s1, s2, d);
-#else
-  ldd(s1, s2, d);
-#endif
 }
 
 inline void MacroAssembler::ld_long(const Address& a, Register d, int offset) {
-#ifdef _LP64
   ldx(a, d, offset);
-#else
-  ldd(a, d, offset);
-#endif
 }
 
 inline void MacroAssembler::st_long( Register d, Register s1, Register s2 ) {
-#ifdef _LP64
   Assembler::stx(d, s1, s2);
-#else
-  Assembler::std(d, s1, s2);
-#endif
 }
 
 inline void MacroAssembler::st_long( Register d, Register s1, int simm13a ) {
-#ifdef _LP64
   Assembler::stx(d, s1, simm13a);
-#else
-  Assembler::std(d, s1, simm13a);
-#endif
 }
 
 inline void MacroAssembler::st_long( Register d, Register s1, RegisterOrConstant s2 ) {
-#ifdef _LP64
   stx(d, s1, s2);
-#else
-  std(d, s1, s2);
-#endif
 }
 
 inline void MacroAssembler::st_long( Register d, const Address& a, int offset ) {
-#ifdef _LP64
   stx(d, a, offset);
-#else
-  std(d, a, offset);
-#endif
 }
 
 inline void MacroAssembler::stbool(Register d, const Address& a) { stb(d, a); }
@@ -207,45 +143,25 @@ inline void MacroAssembler::casx( Register s1, Register s2, Register d) { casxa(
 // Functions for isolating 64 bit atomic swaps for LP64
 // cas_ptr will perform cas for 32 bit VM's and casx for 64 bit VM's
 inline void MacroAssembler::cas_ptr(  Register s1, Register s2, Register d) {
-#ifdef _LP64
   casx( s1, s2, d );
-#else
-  cas( s1, s2, d );
-#endif
 }
 
 // Functions for isolating 64 bit shifts for LP64
 
 inline void MacroAssembler::sll_ptr( Register s1, Register s2, Register d ) {
-#ifdef _LP64
   Assembler::sllx(s1, s2, d);
-#else
-  Assembler::sll( s1, s2, d);
-#endif
 }
 
 inline void MacroAssembler::sll_ptr( Register s1, int imm6a,   Register d ) {
-#ifdef _LP64
   Assembler::sllx(s1, imm6a, d);
-#else
-  Assembler::sll( s1, imm6a, d);
-#endif
 }
 
 inline void MacroAssembler::srl_ptr( Register s1, Register s2, Register d ) {
-#ifdef _LP64
   Assembler::srlx(s1, s2, d);
-#else
-  Assembler::srl( s1, s2, d);
-#endif
 }
 
 inline void MacroAssembler::srl_ptr( Register s1, int imm6a,   Register d ) {
-#ifdef _LP64
   Assembler::srlx(s1, imm6a, d);
-#else
-  Assembler::srl( s1, imm6a, d);
-#endif
 }
 
 inline void MacroAssembler::sll_ptr( Register s1, RegisterOrConstant s2, Register d ) {
@@ -277,11 +193,7 @@ inline void MacroAssembler::br( Condition c, bool a, Predict p, Label& L ) {
 // Branch that tests either xcc or icc depending on the
 // architecture compiled (LP64 or not)
 inline void MacroAssembler::brx( Condition c, bool a, Predict p, address d, relocInfo::relocType rt ) {
-#ifdef _LP64
     Assembler::bp(c, a, xcc, p, d, rt);
-#else
-    MacroAssembler::br(c, a, p, d, rt);
-#endif
 }
 
 inline void MacroAssembler::brx( Condition c, bool a, Predict p, Label& L ) {
@@ -338,7 +250,6 @@ inline void MacroAssembler::call( address d, relocInfo::relocType rt ) {
 }
 
 inline void MacroAssembler::call( address d, RelocationHolder const& rspec ) {
-#ifdef _LP64
   intptr_t disp;
   // NULL is ok because it will be relocated later.
   // Must change NULL to a reachable address in order to
@@ -355,9 +266,6 @@ inline void MacroAssembler::call( address d, RelocationHolder const& rspec ) {
   } else {
     Assembler::call(d, rspec);
   }
-#else
-  Assembler::call( d, rspec );
-#endif
 }
 
 inline void MacroAssembler::call( Label& L,   relocInfo::relocType rt ) {
@@ -414,12 +322,7 @@ inline void MacroAssembler::cmp(  Register s1, int simm13a ) { subcc( s1, simm13
 // 2 instructions.  All PCs in the CodeCache are within 2 Gig of each other.
 inline intptr_t MacroAssembler::load_pc_address( Register reg, int bytes_to_skip ) {
   intptr_t thepc = (intptr_t)pc() + 2*BytesPerInstWord + bytes_to_skip;
-#ifdef _LP64
   Unimplemented();
-#else
-  Assembler::sethi(   thepc & ~0x3ff, reg, internal_word_Relocation::spec((address)thepc));
-             add(reg, thepc &  0x3ff, reg, internal_word_Relocation::spec((address)thepc));
-#endif
   return thepc;
 }
 
@@ -554,7 +457,6 @@ inline void MacroAssembler::store_ptr_argument( Register s, Argument& a ) {
 }
 
 
-#ifdef _LP64
 inline void MacroAssembler::store_float_argument( FloatRegister s, Argument& a ) {
   if (a.is_float_register())
 // V9 ABI has F1, F3, F5 are used to pass instead of O0, O1, O2
@@ -579,7 +481,6 @@ inline void MacroAssembler::store_long_argument( Register s, Argument& a ) {
   else
     stx(s, a.as_address());
 }
-#endif
 
 inline void MacroAssembler::round_to( Register r, int modulus ) {
   assert_not_delayed();
@@ -640,22 +541,13 @@ inline void MacroAssembler::clrx( Register s1, int simm13a) { stx( G0, s1, simm1
 inline void MacroAssembler::clruw( Register s, Register d ) { srl( s, G0, d); }
 inline void MacroAssembler::clruwu( Register d ) { srl( d, G0, d); }
 
-#ifdef _LP64
 // Make all 32 bit loads signed so 64 bit registers maintain proper sign
 inline void MacroAssembler::ld(  Register s1, Register s2, Register d)      { ldsw( s1, s2, d); }
 inline void MacroAssembler::ld(  Register s1, int simm13a, Register d)      { ldsw( s1, simm13a, d); }
-#else
-inline void MacroAssembler::ld(  Register s1, Register s2, Register d)      { lduw( s1, s2, d); }
-inline void MacroAssembler::ld(  Register s1, int simm13a, Register d)      { lduw( s1, simm13a, d); }
-#endif
 
 #ifdef ASSERT
   // ByteSize is only a class when ASSERT is defined, otherwise it's an int.
-# ifdef _LP64
 inline void MacroAssembler::ld(Register s1, ByteSize simm13a, Register d) { ldsw( s1, in_bytes(simm13a), d); }
-# else
-inline void MacroAssembler::ld(Register s1, ByteSize simm13a, Register d) { lduw( s1, in_bytes(simm13a), d); }
-# endif
 #endif
 
 inline void MacroAssembler::ld(  const Address& a, Register d, int offset) {

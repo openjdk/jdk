@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.lir.alloc;
 
-import java.util.List;
+import java.util.ArrayList;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
@@ -68,7 +68,7 @@ public class SaveCalleeSaveRegisters extends PreAllocationOptimizationPhase {
 
     private static RegisterMap<Variable> saveAtEntry(LIR lir, LIRGeneratorTool lirGen, RegisterArray calleeSaveRegisters, Architecture arch) {
         AbstractBlockBase<?> startBlock = lir.getControlFlowGraph().getStartBlock();
-        List<LIRInstruction> instructions = lir.getLIRforBlock(startBlock);
+        ArrayList<LIRInstruction> instructions = lir.getLIRforBlock(startBlock);
         int insertionIndex = 1;
         LIRInsertionBuffer buffer = new LIRInsertionBuffer();
         buffer.init(instructions);
@@ -92,7 +92,7 @@ public class SaveCalleeSaveRegisters extends PreAllocationOptimizationPhase {
     }
 
     private static void restoreAtExit(LIR lir, LIRGeneratorTool.MoveFactory moveFactory, RegisterMap<Variable> calleeSaveRegisters, AbstractBlockBase<?> block) {
-        List<LIRInstruction> instructions = lir.getLIRforBlock(block);
+        ArrayList<LIRInstruction> instructions = lir.getLIRforBlock(block);
         int insertionIndex = instructions.size() - 1;
         LIRInsertionBuffer buffer = new LIRInsertionBuffer();
         buffer.init(instructions);

@@ -36,13 +36,11 @@ import org.graalvm.compiler.hotspot.HotSpotDebugInfoBuilder;
 import org.graalvm.compiler.hotspot.HotSpotLIRGenerator;
 import org.graalvm.compiler.hotspot.HotSpotLockStack;
 import org.graalvm.compiler.hotspot.HotSpotNodeLIRBuilder;
-import org.graalvm.compiler.hotspot.nodes.DirectCompareAndSwapNode;
 import org.graalvm.compiler.hotspot.nodes.HotSpotDirectCallTargetNode;
 import org.graalvm.compiler.hotspot.nodes.HotSpotIndirectCallTargetNode;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.amd64.AMD64BreakpointOp;
-import org.graalvm.compiler.lir.amd64.AMD64Move.CompareAndSwapOp;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodes.BreakpointNode;
 import org.graalvm.compiler.nodes.CallTargetNode.InvokeKind;
@@ -183,19 +181,6 @@ public class AMD64HotSpotNodeLIRBuilder extends AMD64NodeLIRBuilder implements H
         } else {
             super.visitFullInfopointNode(i);
         }
-    }
-
-    @Override
-    public void visitDirectCompareAndSwap(DirectCompareAndSwapNode x) {
-        Value expected = gen.loadNonConst(operand(x.expectedValue()));
-        Variable newVal = gen.load(operand(x.newValue()));
-        assert expected.getValueKind().equals(newVal.getValueKind());
-
-        RegisterValue raxLocal = AMD64.rax.asValue(expected.getValueKind());
-        gen.emitMove(raxLocal, expected);
-        append(new CompareAndSwapOp((AMD64Kind) expected.getPlatformKind(), raxLocal, getGen().asAddressValue(operand(x.getAddress())), raxLocal, newVal));
-
-        setResult(x, gen.emitMove(raxLocal));
     }
 
     @Override

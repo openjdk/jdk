@@ -32,18 +32,24 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
 import org.graalvm.compiler.api.replacements.MethodSubstitutionRegistry;
 import org.graalvm.compiler.bytecode.BytecodeProvider;
+import org.graalvm.compiler.debug.Assertions;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
+import org.graalvm.util.EconomicMap;
+import org.graalvm.util.Equivalence;
+import org.graalvm.util.MapCursor;
+import org.graalvm.util.Pair;
+import org.graalvm.util.UnmodifiableEconomicMap;
+import org.graalvm.util.UnmodifiableMapCursor;
 
 import jdk.vm.ci.meta.MetaUtil;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -501,14 +507,14 @@ public class InvocationPlugins {
      * Plugin registrations for already resolved methods. If non-null, then {@link #registrations}
      * is null and no further registrations can be made.
      */
-    private final Map<ResolvedJavaMethod, InvocationPlugin> resolvedRegistrations;
+    private final UnmodifiableEconomicMap<ResolvedJavaMethod, InvocationPlugin> resolvedRegistrations;
 
     /**
      * Map from class names in {@linkplain MetaUtil#toInternalName(String) internal} form to the
      * invocation plugin bindings for the class. Tf non-null, then {@link #resolvedRegistrations}
      * will be null.
      */
-    private final Map<String, ClassPlugins> registrations;
+    private final EconomicMap<String, ClassPlugins> registrations;
 
     /**
      * Deferred registrations as well as the guard for delimiting the initial registration phase.
@@ -538,7 +544,7 @@ public class InvocationPlugins {
         /**
          * Maps method names to binding lists.
          */
-        private final Map<String, Binding> bindings = new HashMap<>();
+        private final EconomicMap<String, Binding> bindings = EconomicMap.create(Equivalence.DEFAULT);
 
         /**
          * Gets the invocation plugin for a given method.
@@ -656,6 +662,26 @@ public class InvocationPlugins {
                         return res;
                     }
                 }
+                if (testExtensions != null) {
+                    // Avoid the synchronization in the common case that there
+                    // are no test extensions.
+                    synchronized (this) {
+                        if (testExtensions != null) {
+                            List<Binding> bindings = testExtensions.get(internalName);
+                            if (bindings != null) {
+                                String name = method.getName();
+                                String descriptor = method.getSignature().toMethodDescriptor();
+                                for (Binding b : bindings) {
+                                    if (b.isStatic == method.isStatic() &&
+                                                    b.name.equals(name) &&
+                                                    descriptor.startsWith(b.argumentsDescriptor)) {
+                                        return b.plugin;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             } else {
                 // Supporting plugins for bridge methods would require including
                 // the return type in the registered signature. Until needed,
@@ -692,6 +718,88 @@ public class InvocationPlugins {
                     }
                     deferredRegistrations = null;
                 }
+            }
+        }
+    }
+
+    private volatile EconomicMap<String, List<Binding>> testExtensions;
+
+    private static int findBinding(List<Binding> list, Binding key) {
+        for (int i = 0; i < list.size(); i++) {
+            Binding b = list.get(i);
+            if (b.isStatic == key.isStatic && b.name.equals(key.name) && b.argumentsDescriptor.equals(key.argumentsDescriptor)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Extends the plugins in this object with those from {@code other}. The added plugins should be
+     * {@linkplain #removeTestPlugins(InvocationPlugins) removed} after the test.
+     *
+     * This extension mechanism exists only for tests that want to add extra invocation plugins
+     * after the compiler has been initialized.
+     *
+     * @param ignored if non-null, the bindings from {@code other} already in this object prior to
+     *            calling this method are added to this list. These bindings are not added to this
+     *            object.
+     */
+    public synchronized void addTestPlugins(InvocationPlugins other, List<Pair<String, Binding>> ignored) {
+        assert resolvedRegistrations == null : "registration is closed";
+        EconomicMap<String, List<Binding>> otherBindings = other.getBindings(true, false);
+        if (otherBindings.isEmpty()) {
+            return;
+        }
+        if (testExtensions == null) {
+            testExtensions = EconomicMap.create();
+        }
+        MapCursor<String, List<Binding>> c = otherBindings.getEntries();
+        while (c.advance()) {
+            String declaringClass = c.getKey();
+            List<Binding> bindings = testExtensions.get(declaringClass);
+            if (bindings == null) {
+                bindings = new ArrayList<>();
+                testExtensions.put(declaringClass, bindings);
+            }
+            for (Binding b : c.getValue()) {
+                int index = findBinding(bindings, b);
+                if (index != -1) {
+                    if (ignored != null) {
+                        ignored.add(Pair.create(declaringClass, b));
+                    }
+                } else {
+                    bindings.add(b);
+                }
+            }
+        }
+    }
+
+    /**
+     * Removes the plugins from {@code other} in this object that were added by
+     * {@link #addTestPlugins}.
+     */
+    public synchronized void removeTestPlugins(InvocationPlugins other) {
+        assert resolvedRegistrations == null : "registration is closed";
+        if (testExtensions != null) {
+            MapCursor<String, List<Binding>> c = other.getBindings(false).getEntries();
+            while (c.advance()) {
+                String declaringClass = c.getKey();
+                List<Binding> bindings = testExtensions.get(declaringClass);
+                if (bindings != null) {
+                    for (Binding b : c.getValue()) {
+                        int index = findBinding(bindings, b);
+                        if (index != -1) {
+                            bindings.remove(index);
+                        }
+                    }
+                    if (bindings.isEmpty()) {
+                        testExtensions.removeKey(declaringClass);
+                    }
+                }
+            }
+            if (testExtensions.isEmpty()) {
+                testExtensions = null;
             }
         }
     }
@@ -749,7 +857,7 @@ public class InvocationPlugins {
     public InvocationPlugins(InvocationPlugins parent) {
         InvocationPlugins p = parent;
         this.parent = p;
-        this.registrations = new HashMap<>();
+        this.registrations = EconomicMap.create();
         this.resolvedRegistrations = null;
     }
 
@@ -761,7 +869,7 @@ public class InvocationPlugins {
         this.parent = parent;
         this.registrations = null;
         this.deferredRegistrations = null;
-        Map<ResolvedJavaMethod, InvocationPlugin> map = new HashMap<>(plugins.size());
+        EconomicMap<ResolvedJavaMethod, InvocationPlugin> map = EconomicMap.create(plugins.size());
 
         for (Map.Entry<ResolvedJavaMethod, InvocationPlugin> entry : plugins.entrySet()) {
             map.put(entry.getKey(), entry.getValue());
@@ -831,15 +939,26 @@ public class InvocationPlugins {
      * @return a map from class names in {@linkplain MetaUtil#toInternalName(String) internal} form
      *         to the invocation plugin bindings for methods in the class
      */
-    public Map<String, List<Binding>> getBindings(boolean includeParents) {
-        Map<String, List<Binding>> res = new HashMap<>();
+    public EconomicMap<String, List<Binding>> getBindings(boolean includeParents) {
+        return getBindings(includeParents, true);
+    }
+
+    /**
+     * Gets the set of registered invocation plugins.
+     *
+     * @return a map from class names in {@linkplain MetaUtil#toInternalName(String) internal} form
+     *         to the invocation plugin bindings for methods in the class
+     */
+    private EconomicMap<String, List<Binding>> getBindings(boolean includeParents, boolean flushDeferrables) {
+        EconomicMap<String, List<Binding>> res = EconomicMap.create(Equivalence.DEFAULT);
         if (parent != null && includeParents) {
-            res.putAll(parent.getBindings(true));
+            res.putAll(parent.getBindings(true, flushDeferrables));
         }
         if (resolvedRegistrations != null) {
-            for (Map.Entry<ResolvedJavaMethod, InvocationPlugin> e : resolvedRegistrations.entrySet()) {
-                ResolvedJavaMethod method = e.getKey();
-                InvocationPlugin plugin = e.getValue();
+            UnmodifiableMapCursor<ResolvedJavaMethod, InvocationPlugin> cursor = resolvedRegistrations.getEntries();
+            while (cursor.advance()) {
+                ResolvedJavaMethod method = cursor.getKey();
+                InvocationPlugin plugin = cursor.getValue();
                 String type = method.getDeclaringClass().getName();
                 List<Binding> bindings = res.get(type);
                 if (bindings == null) {
@@ -849,28 +968,50 @@ public class InvocationPlugins {
                 bindings.add(new Binding(method, plugin));
             }
         } else {
-            flushDeferrables();
-            for (Map.Entry<String, ClassPlugins> e : registrations.entrySet()) {
-                String type = e.getKey();
-                ClassPlugins cp = e.getValue();
+            if (flushDeferrables) {
+                flushDeferrables();
+            }
+            MapCursor<String, ClassPlugins> classes = registrations.getEntries();
+            while (classes.advance()) {
+                String type = classes.getKey();
+                ClassPlugins cp = classes.getValue();
                 collectBindingsTo(res, type, cp);
             }
             for (LateClassPlugins lcp = lateRegistrations; lcp != null; lcp = lcp.next) {
                 String type = lcp.className;
                 collectBindingsTo(res, type, lcp);
             }
+            if (testExtensions != null) {
+                // Avoid the synchronization in the common case that there
+                // are no test extensions.
+                synchronized (this) {
+                    if (testExtensions != null) {
+                        MapCursor<String, List<Binding>> c = testExtensions.getEntries();
+                        while (c.advance()) {
+                            String name = c.getKey();
+                            List<Binding> bindings = res.get(name);
+                            if (bindings == null) {
+                                bindings = new ArrayList<>();
+                                res.put(name, bindings);
+                            }
+                            bindings.addAll(c.getValue());
+                        }
+                    }
+                }
+            }
         }
         return res;
     }
 
-    private static void collectBindingsTo(Map<String, List<Binding>> res, String type, ClassPlugins cp) {
-        for (Map.Entry<String, Binding> e : cp.bindings.entrySet()) {
+    private static void collectBindingsTo(EconomicMap<String, List<Binding>> res, String type, ClassPlugins cp) {
+        MapCursor<String, Binding> methods = cp.bindings.getEntries();
+        while (methods.advance()) {
             List<Binding> bindings = res.get(type);
             if (bindings == null) {
                 bindings = new ArrayList<>();
                 res.put(type, bindings);
             }
-            for (Binding b = e.getValue(); b != null; b = b.next) {
+            for (Binding b = methods.getValue(); b != null; b = b.next) {
                 bindings.add(b);
             }
         }
@@ -886,10 +1027,11 @@ public class InvocationPlugins {
 
     @Override
     public String toString() {
+        UnmodifiableMapCursor<String, List<Binding>> entries = getBindings(false, false).getEntries();
         List<String> all = new ArrayList<>();
-        for (Map.Entry<String, List<Binding>> e : getBindings(false).entrySet()) {
-            String c = MetaUtil.internalNameToJava(e.getKey(), true, false);
-            for (Binding b : e.getValue()) {
+        while (entries.advance()) {
+            String c = MetaUtil.internalNameToJava(entries.getKey(), true, false);
+            for (Binding b : entries.getValue()) {
                 all.add(c + '.' + b);
             }
         }
@@ -922,6 +1064,9 @@ public class InvocationPlugins {
         static final Class<?>[][] SIGS;
 
         static {
+            if (!Assertions.ENABLED) {
+                throw new GraalError("%s must only be used in assertions", Checks.class.getName());
+            }
             ArrayList<Class<?>[]> sigs = new ArrayList<>(MAX_ARITY);
             for (Method method : InvocationPlugin.class.getDeclaredMethods()) {
                 if (!Modifier.isStatic(method.getModifiers()) && method.getName().equals("apply")) {

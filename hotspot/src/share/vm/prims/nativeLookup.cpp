@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,7 +175,7 @@ address NativeLookup::lookup_style(const methodHandle& method, char* pure_name, 
   }
 
   // Otherwise call static method findNative in ClassLoader
-  KlassHandle   klass (THREAD, SystemDictionary::ClassLoader_klass());
+  Klass*   klass = SystemDictionary::ClassLoader_klass();
   Handle name_arg = java_lang_String::create_from_str(jni_name, CHECK_NULL);
 
   JavaValue result(T_LONG);
@@ -345,9 +345,8 @@ address NativeLookup::lookup_entry_prefixed(const methodHandle& method, bool& in
     int wrapper_name_len = (int)strlen(wrapper_name);
     TempNewSymbol wrapper_symbol = SymbolTable::probe(wrapper_name, wrapper_name_len);
     if (wrapper_symbol != NULL) {
-      KlassHandle kh(method->method_holder());
-      Method* wrapper_method = kh()->lookup_method(wrapper_symbol,
-                                                                  method->signature());
+      Klass* k = method->method_holder();
+      Method* wrapper_method = k->lookup_method(wrapper_symbol, method->signature());
       if (wrapper_method != NULL && !wrapper_method->is_native()) {
         // we found a wrapper method, use its native entry
         method->set_is_prefixed_native();
@@ -402,7 +401,7 @@ address NativeLookup::base_library_lookup(const char* class_name, const char* me
 
   // Find the class
   Klass* k = SystemDictionary::resolve_or_fail(c_name, true, CATCH);
-  instanceKlassHandle klass (THREAD, k);
+  InstanceKlass* klass  = InstanceKlass::cast(k);
 
   // Find method and invoke standard lookup
   methodHandle method (THREAD,

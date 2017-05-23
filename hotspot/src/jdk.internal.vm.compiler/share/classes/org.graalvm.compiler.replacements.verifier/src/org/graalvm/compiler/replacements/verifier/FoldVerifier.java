@@ -30,6 +30,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.type.TypeKind;
 import javax.tools.Diagnostic.Kind;
 
 import org.graalvm.compiler.api.replacements.Fold;
@@ -53,7 +54,11 @@ public final class FoldVerifier extends AbstractVerifier {
         }
 
         ExecutableElement foldMethod = (ExecutableElement) element;
-        if (foldMethod.getModifiers().contains(Modifier.PRIVATE)) {
+        if (foldMethod.getReturnType().getKind() == TypeKind.VOID) {
+            env.getMessager().printMessage(Kind.ERROR,
+                            String.format("A @%s method must not be void as it won't yield a compile-time constant (the reason for supporting folding!).", Fold.class.getSimpleName()), element,
+                            annotation);
+        } else if (foldMethod.getModifiers().contains(Modifier.PRIVATE)) {
             env.getMessager().printMessage(Kind.ERROR, String.format("A @%s method must not be private.", Fold.class.getSimpleName()), element, annotation);
         } else {
             generator.addPlugin(new GeneratedFoldPlugin(foldMethod));
