@@ -166,6 +166,16 @@ ec_GFp_pt_add_jm_aff(const mp_int *px, const mp_int *py, const mp_int *pz,
         MP_CHECKOK(group->meth->field_mul(A, qx, A, group->meth));
         MP_CHECKOK(group->meth->field_mul(B, qy, B, group->meth));
 
+        /*
+         * Additional checks for point equality and point at infinity
+         */
+        if (mp_cmp(px, A) == 0 && mp_cmp(py, B) == 0) {
+            /* POINT_DOUBLE(P) */
+            MP_CHECKOK(ec_GFp_pt_dbl_jm(px, py, pz, paz4, rx, ry, rz, raz4,
+                                        scratch, group));
+            goto CLEANUP;
+        }
+
         /* C = A - px, D = B - py */
         MP_CHECKOK(group->meth->field_sub(A, px, C, group->meth));
         MP_CHECKOK(group->meth->field_sub(B, py, D, group->meth));
