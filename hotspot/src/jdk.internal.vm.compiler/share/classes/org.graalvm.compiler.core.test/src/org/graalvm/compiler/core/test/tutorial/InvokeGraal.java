@@ -23,7 +23,7 @@
 package org.graalvm.compiler.core.test.tutorial;
 
 import static org.graalvm.compiler.core.common.CompilationRequestIdentifier.asCompilationRequest;
-
+import static org.graalvm.compiler.core.test.GraalCompilerTest.getInitialOptions;
 import java.lang.reflect.Method;
 
 import org.graalvm.compiler.api.test.Graal;
@@ -38,6 +38,7 @@ import org.graalvm.compiler.lir.asm.CompilationResultBuilderFactory;
 import org.graalvm.compiler.lir.phases.LIRSuites;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
@@ -83,6 +84,7 @@ public class InvokeGraal {
     protected InstalledCode compileAndInstallMethod(ResolvedJavaMethod method) {
         /* Create a unique compilation identifier, visible in IGV. */
         CompilationIdentifier compilationId = backend.getCompilationIdentifier(method);
+        OptionValues options = getInitialOptions();
         try (Scope s = Debug.scope("compileAndInstallMethod", new DebugDumpScope(String.valueOf(compilationId), true))) {
 
             /*
@@ -91,7 +93,7 @@ public class InvokeGraal {
              * that we want the compilation to make optimistic assumptions about runtime state such
              * as the loaded class hierarchy.
              */
-            StructuredGraph graph = new StructuredGraph(method, AllowAssumptions.YES, compilationId);
+            StructuredGraph graph = new StructuredGraph.Builder(getInitialOptions(), AllowAssumptions.YES).method(method).compilationId(compilationId).build();
 
             /*
              * The phases used to build the graph. Usually this is just the GraphBuilderPhase. If
@@ -103,12 +105,12 @@ public class InvokeGraal {
              * The optimization phases that are applied to the graph. This is the main configuration
              * point for Graal. Add or remove phases to customize your compilation.
              */
-            Suites suites = backend.getSuites().getDefaultSuites();
+            Suites suites = backend.getSuites().getDefaultSuites(options);
 
             /*
              * The low-level phases that are applied to the low-level representation.
              */
-            LIRSuites lirSuites = backend.getSuites().getDefaultLIRSuites();
+            LIRSuites lirSuites = backend.getSuites().getDefaultLIRSuites(options);
 
             /*
              * We want Graal to perform all speculative optimistic optimizations, using the

@@ -35,12 +35,16 @@ include $(SPEC)
 include MakeBase.gmk
 include TestFilesCompilation.gmk
 
+$(eval $(call IncludeCustomExtension, hotspot, test/JtregNative.gmk))
+
 ################################################################################
 # Targets for building the native tests themselves.
 ################################################################################
 
 # Add more directories here when needed.
-BUILD_HOTSPOT_JTREG_NATIVE_SRC := \
+BUILD_HOTSPOT_JTREG_NATIVE_SRC += \
+    $(HOTSPOT_TOPDIR)/test/gc/g1/TestJNIWeakG1 \
+    $(HOTSPOT_TOPDIR)/test/gc/stress/gclocker \
     $(HOTSPOT_TOPDIR)/test/native_sanity \
     $(HOTSPOT_TOPDIR)/test/runtime/jni/8025979 \
     $(HOTSPOT_TOPDIR)/test/runtime/jni/8033445 \
@@ -53,6 +57,7 @@ BUILD_HOTSPOT_JTREG_NATIVE_SRC := \
     $(HOTSPOT_TOPDIR)/test/runtime/modules/getModuleJNI \
     $(HOTSPOT_TOPDIR)/test/runtime/SameObject \
     $(HOTSPOT_TOPDIR)/test/runtime/BoolReturn \
+    $(HOTSPOT_TOPDIR)/test/runtime/noClassDefFoundMsg \
     $(HOTSPOT_TOPDIR)/test/compiler/floatingpoint/ \
     $(HOTSPOT_TOPDIR)/test/compiler/calls \
     $(HOTSPOT_TOPDIR)/test/serviceability/jvmti/GetNamedModule \
@@ -65,6 +70,7 @@ BUILD_HOTSPOT_JTREG_NATIVE_SRC := \
     $(HOTSPOT_TOPDIR)/test/serviceability/jvmti/ModuleAwareAgents/ClassFileLoadHook \
     $(HOTSPOT_TOPDIR)/test/serviceability/jvmti/ModuleAwareAgents/ClassLoadPrepare \
     $(HOTSPOT_TOPDIR)/test/serviceability/jvmti/ModuleAwareAgents/ThreadStart \
+    $(HOTSPOT_TOPDIR)/test/serviceability/jvmti/StartPhase/AllowedFunctions \
     #
 
 # Add conditional directories here when needed.
@@ -91,6 +97,7 @@ ifeq ($(TOOLCHAIN_TYPE), solstudio)
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libMAAClassFileLoadHook := -lc
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libMAAClassLoadPrepare := -lc
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libMAAThreadStart := -lc
+    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAllowedFunctions := -lc
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), linux)

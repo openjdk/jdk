@@ -86,9 +86,9 @@ public class DegeneratedLoopsTest extends GraalCompilerTest {
             HighTierContext context = getDefaultHighTierContext();
             new InliningPhase(new CanonicalizerPhase()).apply(graph, context);
             new CanonicalizerPhase().apply(graph, context);
-            Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "Graph");
+            Debug.dump(Debug.BASIC_LEVEL, graph, "Graph");
             StructuredGraph referenceGraph = parseEager(REFERENCE_SNIPPET, AllowAssumptions.YES);
-            Debug.dump(Debug.BASIC_LOG_LEVEL, referenceGraph, "ReferenceGraph");
+            Debug.dump(Debug.BASIC_LEVEL, referenceGraph, "ReferenceGraph");
             assertEquals(referenceGraph, graph);
         } catch (Throwable e) {
             throw Debug.handle(e);

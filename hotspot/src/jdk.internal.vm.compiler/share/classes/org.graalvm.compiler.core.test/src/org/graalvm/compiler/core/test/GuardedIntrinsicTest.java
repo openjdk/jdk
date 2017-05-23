@@ -24,10 +24,6 @@ package org.graalvm.compiler.core.test;
 
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.ConstantNode;
@@ -39,12 +35,15 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.debug.OpaqueNode;
 import org.graalvm.compiler.nodes.extended.LoadHubNode;
 import org.graalvm.compiler.nodes.extended.LoadMethodNode;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
+import org.graalvm.compiler.options.OptionValues;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -111,15 +110,14 @@ public class GuardedIntrinsicTest extends GraalCompilerTest {
     private StructuredGraph parsedForCompile;
 
     @Override
-    protected StructuredGraph parseForCompile(ResolvedJavaMethod method, CompilationIdentifier compilationId) {
-        graph = super.parseForCompile(method, compilationId);
+    protected StructuredGraph parseForCompile(ResolvedJavaMethod method, CompilationIdentifier compilationId, OptionValues options) {
+        graph = super.parseForCompile(method, compilationId, options);
         parsedForCompile = (StructuredGraph) graph.copy();
         return graph;
     }
 
     @Override
-    protected GraphBuilderConfiguration editGraphBuilderConfiguration(GraphBuilderConfiguration conf) {
-        InvocationPlugins invocationPlugins = conf.getPlugins().getInvocationPlugins();
+    protected void registerInvocationPlugins(InvocationPlugins invocationPlugins) {
         Registration r = new Registration(invocationPlugins, Super.class);
 
         r.register1("getAge", Receiver.class, new InvocationPlugin() {
@@ -131,7 +129,7 @@ public class GuardedIntrinsicTest extends GraalCompilerTest {
                 return true;
             }
         });
-        return super.editGraphBuilderConfiguration(conf);
+        super.registerInvocationPlugins(invocationPlugins);
     }
 
     public static int referenceMakeSuperAge() {
@@ -209,7 +207,7 @@ public class GuardedIntrinsicTest extends GraalCompilerTest {
         @Override
         public int hashCode() {
             int result = ((identity == null) ? 0 : identity.hashCode());
-            return result + object.hashCode();
+            return result + System.identityHashCode(object);
         }
     }
 

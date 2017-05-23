@@ -38,7 +38,6 @@ import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.FloatingReadPhase;
 import org.graalvm.compiler.phases.common.GuardLoweringPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
-import org.graalvm.compiler.phases.common.ValueAnchorCleanupPhase;
 import org.graalvm.compiler.phases.tiers.MidTierContext;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
 
@@ -148,7 +147,7 @@ public class IfCanonicalizerTest extends GraalCompilerTest {
 
     @Test
     public void test6() {
-        testCombinedIf("test6Snippet", 3);
+        testCombinedIf("test6Snippet", 4);
         test("test6Snippet", new int[]{0});
     }
 
@@ -197,6 +196,33 @@ public class IfCanonicalizerTest extends GraalCompilerTest {
         return (n < 0) ? 1 : (n >= 1024) ? 1024 : n + 1;
     }
 
+    @Test
+    public void test10() {
+        // Exercise NormalizeCompareNode with long values
+        test("test10Snippet", 0, 1);
+    }
+
+    public static long test10Snippet(int x, int y) {
+        return (x < y) ? -1L : ((x == y) ? 0L : 1L);
+    }
+
+    @Test
+    public void test11() {
+        test("test11Snippet", 0, 1);
+    }
+
+    public static long test11Snippet(int x, int y) {
+        long normalizeCompare = normalizeCompareLong(x, y);
+        if (normalizeCompare == 0) {
+            return 5;
+        }
+        return 1;
+    }
+
+    private static Long normalizeCompareLong(int x, int y) {
+        return (x < y) ? -1L : ((x == y) ? 0L : 1L);
+    }
+
     private void testCombinedIf(String snippet, int count) {
         StructuredGraph graph = parseEager(snippet, AllowAssumptions.YES);
         PhaseContext context = new PhaseContext(getProviders());
@@ -205,7 +231,6 @@ public class IfCanonicalizerTest extends GraalCompilerTest {
         MidTierContext midContext = new MidTierContext(getProviders(), getTargetProvider(), OptimisticOptimizations.ALL, graph.getProfilingInfo());
         new GuardLoweringPhase().apply(graph, midContext);
         new LoweringPhase(new CanonicalizerPhase(), LoweringTool.StandardLoweringStage.MID_TIER).apply(graph, midContext);
-        new ValueAnchorCleanupPhase().apply(graph);
         new CanonicalizerPhase().apply(graph, context);
         assertDeepEquals(count, graph.getNodes().filter(IfNode.class).count());
     }
@@ -219,7 +244,7 @@ public class IfCanonicalizerTest extends GraalCompilerTest {
                 n.replaceFirstInput(param, constant);
             }
         }
-        Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "Graph");
+        Debug.dump(Debug.BASIC_LEVEL, graph, "Graph");
         new CanonicalizerPhase().apply(graph, new PhaseContext(getProviders()));
         for (FrameState fs : param.usages().filter(FrameState.class).snapshot()) {
             fs.replaceFirstInput(param, null);

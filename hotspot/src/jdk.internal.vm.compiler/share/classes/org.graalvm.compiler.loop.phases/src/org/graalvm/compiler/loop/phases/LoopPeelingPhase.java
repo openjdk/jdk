@@ -45,7 +45,7 @@ public class LoopPeelingPhase extends LoopPhase<LoopPolicies> {
                     if (getPolicies().shouldPeel(loop, data.getCFG(), context.getMetaAccess())) {
                         Debug.log("Peeling %s", loop);
                         LoopTransformations.peel(loop);
-                        Debug.dump(Debug.INFO_LOG_LEVEL, graph, "Peeling %s", loop);
+                        Debug.dump(Debug.DETAILED_LEVEL, graph, "Peeling %s", loop);
                     }
                 }
                 data.deleteUnusedNodes();

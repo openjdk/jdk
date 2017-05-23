@@ -26,15 +26,14 @@ package org.graalvm.compiler.core.amd64;
 import static org.graalvm.compiler.asm.amd64.AMD64Assembler.OperandSize.QWORD;
 import static org.graalvm.compiler.asm.amd64.AMD64Assembler.OperandSize.WORD;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.VirtualStackSlot;
 import org.graalvm.compiler.lir.amd64.AMD64LIRInstruction;
 import org.graalvm.compiler.lir.amd64.AMD64Move.AMD64PushPopStackMove;
 import org.graalvm.compiler.lir.framemap.FrameMapBuilder;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool.MoveFactory;
+import org.graalvm.util.Equivalence;
+import org.graalvm.util.EconomicMap;
 
 import jdk.vm.ci.amd64.AMD64Kind;
 import jdk.vm.ci.code.Architecture;
@@ -61,7 +60,7 @@ public abstract class AMD64MoveFactoryBase implements MoveFactory {
     public static final class BackupSlotProvider {
 
         private final FrameMapBuilder frameMapBuilder;
-        private Map<PlatformKind.Key, RegisterBackupPair> categorized;
+        private EconomicMap<PlatformKind.Key, RegisterBackupPair> categorized;
 
         public BackupSlotProvider(FrameMapBuilder frameMapBuilder) {
             this.frameMapBuilder = frameMapBuilder;
@@ -70,7 +69,7 @@ public abstract class AMD64MoveFactoryBase implements MoveFactory {
         protected RegisterBackupPair getScratchRegister(PlatformKind kind) {
             PlatformKind.Key key = kind.getKey();
             if (categorized == null) {
-                categorized = new HashMap<>();
+                categorized = EconomicMap.create(Equivalence.DEFAULT);
             } else if (categorized.containsKey(key)) {
                 return categorized.get(key);
             }

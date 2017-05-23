@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,16 +36,19 @@ import java.util.Map;
 import jdk.tools.jaotc.binformat.Symbol.Binding;
 import jdk.tools.jaotc.binformat.Symbol.Kind;
 import jdk.tools.jaotc.binformat.elf.JELFRelocObject;
+import jdk.tools.jaotc.binformat.macho.JMachORelocObject;
+import jdk.tools.jaotc.binformat.pecoff.JPECoffRelocObject;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
+import org.graalvm.compiler.options.OptionValues;
 
 /**
  * A format-agnostic container class that holds various components of a binary.
  *
  * <p>
  * This class holds information necessary to create platform-specific binary containers such as
- * ELFContainer for Linux and Solaris operating systems or yet-to be created MachOContainer for Mac
- * OS or PEContainer for MS Windows operating systems.
+ * ELFContainer for Linux and Solaris operating systems or MachOContainer for Mac OS or PEContainer
+ * for MS Windows operating systems.
  *
  * <p>
  * Method APIs provided by this class are used to construct and populate platform-independent
@@ -56,6 +59,7 @@ import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
  * Methods to record and access code section contents, symbols and relocations are provided.
  */
 public class BinaryContainer implements SymbolTable {
+    private final OptionValues graalOptions;
 
     private final int codeSegmentSize;
 
@@ -257,36 +261,40 @@ public class BinaryContainer implements SymbolTable {
      * Allocates a {@code BinaryContainer} object whose content will be generated in a file with the
      * prefix {@code prefix}. It also initializes internal code container, symbol table and
      * relocation tables.
+     *
+     * @param graalOptions
      */
-    public BinaryContainer(GraalHotSpotVMConfig graalHotSpotVMConfig, GraphBuilderConfiguration graphBuilderConfig, String jvmVersion) {
+    public BinaryContainer(OptionValues graalOptions, GraalHotSpotVMConfig graalHotSpotVMConfig, GraphBuilderConfiguration graphBuilderConfig, String jvmVersion) {
+        this.graalOptions = graalOptions;
+
         this.codeSegmentSize = graalHotSpotVMConfig.codeSegmentSize;
         this.codeEntryAlignment = graalHotSpotVMConfig.codeEntryAlignment;
 
         // read only, code
         codeContainer = new CodeContainer(".text", this);
-        extLinkageContainer = new CodeContainer(".hotspot.linkage.plt", this);
+        extLinkageContainer = new CodeContainer(".hs.plt.linkage", this);
 
         // read only, info
         configContainer = new ReadOnlyDataContainer(".config", this);
-        metaspaceNamesContainer = new ReadOnlyDataContainer(".metaspace.names", this);
+        metaspaceNamesContainer = new ReadOnlyDataContainer(".meta.names", this);
         methodsOffsetsContainer = new ReadOnlyDataContainer(".methods.offsets", this);
-        klassesOffsetsContainer = new ReadOnlyDataContainer(".klasses.offsets", this);
-        klassesDependenciesContainer = new ReadOnlyDataContainer(".klasses.dependencies", this);
+        klassesOffsetsContainer = new ReadOnlyDataContainer(".kls.offsets", this);
+        klassesDependenciesContainer = new ReadOnlyDataContainer(".kls.dependencies", this);
 
         headerContainer = new HeaderContainer(jvmVersion, new ReadOnlyDataContainer(".header", this));
         stubsOffsetsContainer = new ReadOnlyDataContainer(".stubs.offsets", this);
         codeSegmentsContainer = new ReadOnlyDataContainer(".code.segments", this);
-        constantDataContainer = new ReadOnlyDataContainer(".method.constdata", this);
+        constantDataContainer = new ReadOnlyDataContainer(".meth.constdata", this);
 
         // needs relocation patching at load time by the loader
-        methodMetadataContainer = new ReadOnlyDataContainer(".method.metadata", this);
+        methodMetadataContainer = new ReadOnlyDataContainer(".meth.metadata", this);
 
         // writable sections
-        metaspaceGotContainer = new ByteContainer(".metaspace.got", this);
+        metaspaceGotContainer = new ByteContainer(".meta.got", this);
         metadataGotContainer = new ByteContainer(".metadata.got", this);
-        methodStateContainer = new ByteContainer(".method.state", this);
+        methodStateContainer = new ByteContainer(".meth.state", this);
         oopGotContainer = new ByteContainer(".oop.got", this);
-        extLinkageGOTContainer = new ByteContainer(".hotspot.linkage.got", this);
+        extLinkageGOTContainer = new ByteContainer(".hs.got.linkage", this);
 
         addGlobalSymbols();
 
@@ -303,17 +311,17 @@ public class BinaryContainer implements SymbolTable {
                                    graalHotSpotVMConfig.useCMSGC,
                                    graalHotSpotVMConfig.useTLAB,
                                    graalHotSpotVMConfig.useBiasedLocking,
-                                   TieredAOT.getValue(),
+                                   TieredAOT.getValue(graalOptions),
                                    graalHotSpotVMConfig.enableContended,
                                    graalHotSpotVMConfig.restrictContended,
                                    graphBuilderConfig.omitAssertions()
         };
 
-        int[] intFlags         = { graalHotSpotVMConfig.getOopEncoding().shift,
-                                   graalHotSpotVMConfig.getKlassEncoding().shift,
+        int[] intFlags         = { graalHotSpotVMConfig.getOopEncoding().getShift(),
+                                   graalHotSpotVMConfig.getKlassEncoding().getShift(),
                                    graalHotSpotVMConfig.contendedPaddingWidth,
                                    graalHotSpotVMConfig.fieldsAllocationStyle,
-                                   1 << graalHotSpotVMConfig.getOopEncoding().alignment,
+                                   1 << graalHotSpotVMConfig.logMinObjAlignment(),
                                    graalHotSpotVMConfig.codeSegmentSize,
         };
         // @formatter:on
@@ -497,11 +505,20 @@ public class BinaryContainer implements SymbolTable {
         switch (osName) {
             case "Linux":
             case "SunOS":
-                JELFRelocObject elfso = new JELFRelocObject(this, outputFileName, aotVersion);
-                elfso.createELFRelocObject(relocationTable, symbolTable.values());
+                JELFRelocObject elfobj = new JELFRelocObject(this, outputFileName, aotVersion);
+                elfobj.createELFRelocObject(relocationTable, symbolTable.values());
+                break;
+            case "Mac OS X":
+                JMachORelocObject machobj = new JMachORelocObject(this, outputFileName);
+                machobj.createMachORelocObject(relocationTable, symbolTable.values());
                 break;
             default:
-                throw new InternalError("Unsupported platform: " + osName);
+                if (osName.startsWith("Windows")) {
+                    JPECoffRelocObject pecoffobj = new JPECoffRelocObject(this, outputFileName, aotVersion);
+                    pecoffobj.createPECoffRelocObject(relocationTable, symbolTable.values());
+                    break;
+                } else
+                    throw new InternalError("Unsupported platform: " + osName);
         }
     }
 
@@ -742,11 +759,11 @@ public class BinaryContainer implements SymbolTable {
     }
 
     /**
-     * Add constant data as follows. - Adding the data to the method.constdata section
+     * Add constant data as follows. - Adding the data to the meth.constdata section
      *
      * @param data
      * @param alignment
-     * @return the offset in the method.constdata of the data
+     * @return the offset in the meth.constdata of the data
      */
     public int addConstantData(byte[] data, int alignment) {
         // Get the current length of the metaspaceNameContainer

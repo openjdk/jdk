@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.nodes.memory;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
+import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.nodes.extended.GuardedNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 

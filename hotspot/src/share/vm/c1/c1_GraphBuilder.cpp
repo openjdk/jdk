@@ -4311,6 +4311,8 @@ void GraphBuilder::print_inlining(ciMethod* callee, const char* msg, bool succes
   }
 #endif // INCLUDE_TRACE
 
+  CompileTask::print_inlining_ul(callee, scope()->level(), bci(), msg);
+
   if (!compilation()->directive()->PrintInliningOption) {
     return;
   }

@@ -52,28 +52,58 @@ public enum NodeCycles {
     CYCLES_0(0),
     CYCLES_1(1),
     CYCLES_2(2),
-    CYCLES_3(3),
     CYCLES_4(4),
-    CYCLES_5(5),
-    CYCLES_6(6),
     CYCLES_8(8),
-    CYCLES_10(10),
-    CYCLES_15(15),
-    CYCLES_20(20),
-    CYCLES_30(30),
-    CYCLES_40(40),
-    CYCLES_50(50),
-    CYCLES_80(80),
-    CYCLES_100(100),
-    CYCLES_200(200),
-    CYCLES_500(500);
+    CYCLES_16(16),
+    CYCLES_32(32),
+    CYCLES_64(64),
+    CYCLES_128(128),
+    CYCLES_256(256),
+    CYCLES_512(512),
+    CYCLES_1024(1024);
 
-    public final int estimatedCPUCycles;
+    public final int value;
 
-    NodeCycles(int estimatedCPUCycles) {
-        this.estimatedCPUCycles = estimatedCPUCycles;
+    NodeCycles(int value) {
+        this.value = value;
     }
 
     public static final int IGNORE_CYCLES_CONTRACT_FACTOR = 0xFFFF;
 
+    public static NodeCycles compute(NodeCycles base, int opCount) {
+        assert opCount >= 0;
+        if (opCount == 0) {
+            return CYCLES_0;
+        }
+        assert base.ordinal() > CYCLES_0.ordinal();
+        int log2 = log2(base.value * opCount);
+        NodeCycles[] values = values();
+        for (int i = base.ordinal(); i < values.length; i++) {
+            if (log2(values[i].value) == log2) {
+                return values[i];
+            }
+        }
+        return CYCLES_1024;
+    }
+
+    public static NodeCycles compute(int rawValue) {
+        assert rawValue >= 0;
+        if (rawValue == 0) {
+            return CYCLES_0;
+        }
+        NodeCycles[] values = values();
+        for (int i = CYCLES_0.ordinal(); i < values.length - 1; i++) {
+            if (values[i].value >= rawValue && rawValue <= values[i + 1].value) {
+                int r1 = values[i].value;
+                int r2 = values[i + 1].value;
+                int diff = r2 - r1;
+                return rawValue - r1 > diff / 2 ? values[i + 1] : values[i];
+            }
+        }
+        return CYCLES_1024;
+    }
+
+    private static int log2(int val) {
+        return (Integer.SIZE - 1) - Integer.numberOfLeadingZeros(val);
+    }
 }

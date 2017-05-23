@@ -42,7 +42,7 @@ public class TTY {
     /**
      * Support for thread-local suppression of {@link TTY}.
      */
-    public static class Filter {
+    public static class Filter implements AutoCloseable {
 
         private LogStream previous;
         private final Thread thread = Thread.currentThread();
@@ -88,6 +88,16 @@ public class TTY {
         }
 
         /**
+         * Creates an object that will overwrite {@link TTY} for the current thread with a custom
+         * log stream. To revert the overwritten state to how it was before this call, the
+         * {@link #remove()} method must be called on this filter object.
+         */
+        public Filter(LogStream newStream) {
+            previous = out();
+            log.set(newStream);
+        }
+
+        /**
          * Reverts the suppression state of {@link TTY} to how it was before this object was
          * constructed.
          */
@@ -96,6 +106,11 @@ public class TTY {
             if (previous != null) {
                 log.set(previous);
             }
+        }
+
+        @Override
+        public void close() {
+            remove();
         }
     }
 

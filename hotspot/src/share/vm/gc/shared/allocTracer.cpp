@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,19 +28,19 @@
 #include "trace/tracing.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-void AllocTracer::send_allocation_outside_tlab_event(KlassHandle klass, size_t alloc_size) {
+void AllocTracer::send_allocation_outside_tlab_event(Klass* klass, size_t alloc_size) {
   EventObjectAllocationOutsideTLAB event;
   if (event.should_commit()) {
-    event.set_objectClass(klass());
+    event.set_objectClass(klass);
     event.set_allocationSize(alloc_size);
     event.commit();
   }
 }
 
-void AllocTracer::send_allocation_in_new_tlab_event(KlassHandle klass, size_t tlab_size, size_t alloc_size) {
+void AllocTracer::send_allocation_in_new_tlab_event(Klass* klass, size_t tlab_size, size_t alloc_size) {
   EventObjectAllocationInNewTLAB event;
   if (event.should_commit()) {
-    event.set_objectClass(klass());
+    event.set_objectClass(klass);
     event.set_allocationSize(alloc_size);
     event.set_tlabSize(tlab_size);
     event.commit();

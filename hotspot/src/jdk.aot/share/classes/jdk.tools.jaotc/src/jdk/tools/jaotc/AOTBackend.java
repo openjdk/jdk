@@ -23,17 +23,12 @@
 
 package jdk.tools.jaotc;
 
-import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
-import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
-
 import java.util.ListIterator;
 
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.GraalCompiler;
-import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.Debug.Scope;
-import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.hotspot.HotSpotBackend;
 import org.graalvm.compiler.hotspot.HotSpotCompiledCodeBuilder;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
@@ -43,8 +38,7 @@ import org.graalvm.compiler.lir.phases.LIRSuites;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
-import org.graalvm.compiler.options.OptionValue;
-import org.graalvm.compiler.options.OptionValue.OverrideScope;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.PhaseSuite;
@@ -60,19 +54,18 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.TriState;
 
 public class AOTBackend {
-
     private final Main main;
-
+    private final OptionValues graalOptions;
     private final HotSpotBackend backend;
-
     private final HotSpotProviders providers;
     private final HotSpotCodeCacheProvider codeCache;
     private final PhaseSuite<HighTierContext> graphBuilderSuite;
     private final HighTierContext highTierContext;
     private final GraalFilters filters;
 
-    public AOTBackend(Main main, HotSpotBackend backend, GraalFilters filters) {
+    public AOTBackend(Main main, OptionValues graalOptions, HotSpotBackend backend, GraalFilters filters) {
         this.main = main;
+        this.graalOptions = graalOptions;
         this.backend = backend;
         this.filters = filters;
         providers = backend.getProviders();
@@ -85,25 +78,27 @@ public class AOTBackend {
         return graphBuilderSuite;
     }
 
+    public HotSpotBackend getBackend() {
+        return backend;
+    }
+
     private Suites getSuites() {
         // create suites every time, as we modify options for the compiler
-        return backend.getSuites().getDefaultSuites();
+        return backend.getSuites().getDefaultSuites(graalOptions);
     }
 
     private LIRSuites getLirSuites() {
         // create suites every time, as we modify options for the compiler
-        return backend.getSuites().getDefaultLIRSuites();
+        return backend.getSuites().getDefaultLIRSuites(graalOptions);
     }
 
     @SuppressWarnings("try")
     public CompilationResult compileMethod(ResolvedJavaMethod resolvedMethod) {
-        try (OverrideScope s = OptionValue.override(ImmutableCode, true, GeneratePIC, true)) {
-            StructuredGraph graph = buildStructuredGraph(resolvedMethod);
-            if (graph != null) {
-                return compileGraph(resolvedMethod, graph);
-            }
-            return null;
+        StructuredGraph graph = buildStructuredGraph(resolvedMethod);
+        if (graph != null) {
+            return compileGraph(resolvedMethod, graph);
         }
+        return null;
     }
 
     /**
@@ -115,7 +110,7 @@ public class AOTBackend {
     @SuppressWarnings("try")
     private StructuredGraph buildStructuredGraph(ResolvedJavaMethod javaMethod) {
         try (Scope s = Debug.scope("AOTParseMethod")) {
-            StructuredGraph graph = new StructuredGraph(javaMethod, StructuredGraph.AllowAssumptions.NO, false, CompilationIdentifier.INVALID_COMPILATION_ID);
+            StructuredGraph graph = new StructuredGraph.Builder(graalOptions).method(javaMethod).useProfilingInfo(false).build();
             graphBuilderSuite.apply(graph, highTierContext);
             return graph;
         } catch (Throwable e) {
@@ -195,7 +190,7 @@ public class AOTBackend {
 
     public void printCompiledMethod(HotSpotResolvedJavaMethod resolvedMethod, CompilationResult compResult) {
         // This is really not installing the method.
-        InstalledCode installedCode = codeCache.addCode(resolvedMethod, HotSpotCompiledCodeBuilder.createCompiledCode(null, null, compResult), null, null);
+        InstalledCode installedCode = codeCache.addCode(resolvedMethod, HotSpotCompiledCodeBuilder.createCompiledCode(codeCache, null, null, compResult), null, null);
         String disassembly = codeCache.disassemble(installedCode);
         if (disassembly != null) {
             main.printlnDebug(disassembly);

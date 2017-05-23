@@ -22,10 +22,10 @@
  */
 package org.graalvm.compiler.asm.amd64;
 
-import static org.graalvm.compiler.asm.NumUtil.isByte;
-import static org.graalvm.compiler.asm.NumUtil.isInt;
-import static org.graalvm.compiler.asm.NumUtil.isShiftCount;
-import static org.graalvm.compiler.asm.NumUtil.isUByte;
+import static org.graalvm.compiler.core.common.NumUtil.isByte;
+import static org.graalvm.compiler.core.common.NumUtil.isInt;
+import static org.graalvm.compiler.core.common.NumUtil.isShiftCount;
+import static org.graalvm.compiler.core.common.NumUtil.isUByte;
 import static org.graalvm.compiler.asm.amd64.AMD64AsmOptions.UseAddressNop;
 import static org.graalvm.compiler.asm.amd64.AMD64AsmOptions.UseNormalNop;
 import static org.graalvm.compiler.asm.amd64.AMD64Assembler.AMD64BinaryArithmetic.ADD;
@@ -58,7 +58,7 @@ import static jdk.vm.ci.code.MemoryBarriers.STORE_LOAD;
 
 import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.asm.Label;
-import org.graalvm.compiler.asm.NumUtil;
+import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.asm.amd64.AMD64Address.Scale;
 
 import jdk.vm.ci.amd64.AMD64;
@@ -2494,6 +2494,24 @@ public class AMD64Assembler extends Assembler {
         emitByte(0xC0 | encode);
     }
 
+    void pcmpestri(Register dst, AMD64Address src, int imm8) {
+        assert supports(CPUFeature.SSE4_2);
+        AMD64InstructionAttr attributes = new AMD64InstructionAttr(AvxVectorLen.AVX_128bit, /* rexVexW */ false, /* legacyMode */ false, /* noMaskReg */ false, /* usesVl */ false, target);
+        simdPrefix(dst, Register.None, src, VexSimdPrefix.VEX_SIMD_66, VexOpcode.VEX_OPCODE_0F_3A, attributes);
+        emitByte(0x61);
+        emitOperandHelper(dst, src, 0);
+        emitByte(imm8);
+    }
+
+    void pcmpestri(Register dst, Register src, int imm8) {
+        assert supports(CPUFeature.SSE4_2);
+        AMD64InstructionAttr attributes = new AMD64InstructionAttr(AvxVectorLen.AVX_128bit, /* rexVexW */ false, /* legacyMode */ false, /* noMaskReg */ false, /* usesVl */ false, target);
+        int encode = simdPrefixAndEncode(dst, Register.None, src, VexSimdPrefix.VEX_SIMD_66, VexOpcode.VEX_OPCODE_0F_3A, attributes);
+        emitByte(0x61);
+        emitByte(0xC0 | encode);
+        emitByte(imm8);
+    }
+
     public final void push(Register src) {
         int encode = prefixAndEncode(src.encoding);
         emitByte(0x50 | encode);
@@ -2628,6 +2646,16 @@ public class AMD64Assembler extends Assembler {
         AMD64InstructionAttr attributes = new AMD64InstructionAttr(AvxVectorLen.AVX_128bit, /* rexVexW */ false, /* legacyMode */ false, /* noMaskReg */ false, /* usesVl */ false, target);
         // XMM2 is for /2 encoding: 66 0F 73 /2 ib
         int encode = simdPrefixAndEncode(AMD64.xmm2, dst, dst, VexSimdPrefix.VEX_SIMD_66, VexOpcode.VEX_OPCODE_0F, attributes);
+        emitByte(0x73);
+        emitByte(0xC0 | encode);
+        emitByte(imm8);
+    }
+
+    public final void psrldq(Register dst, int imm8) {
+        assert isUByte(imm8) : "invalid value";
+        assert dst.getRegisterCategory().equals(AMD64.XMM);
+        AMD64InstructionAttr attributes = new AMD64InstructionAttr(AvxVectorLen.AVX_128bit, /* rexVexW */ false, /* legacyMode */ false, /* noMaskReg */ false, /* usesVl */ false, target);
+        int encode = simdPrefixAndEncode(AMD64.xmm3, dst, dst, VexSimdPrefix.VEX_SIMD_66, VexOpcode.VEX_OPCODE_0F, attributes);
         emitByte(0x73);
         emitByte(0xC0 | encode);
         emitByte(imm8);
@@ -3320,6 +3348,13 @@ public class AMD64Assembler extends Assembler {
         } else {
             throw new InternalError("should not reach here");
         }
+    }
+
+    public final void movdl(Register dst, AMD64Address src) {
+        AMD64InstructionAttr attributes = new AMD64InstructionAttr(AvxVectorLen.AVX_128bit, /* rexVexW */ false, /* legacyMode */ false, /* noMaskReg */ false, /* usesVl */ false, target);
+        simdPrefix(dst, Register.None, src, VexSimdPrefix.VEX_SIMD_66, VexOpcode.VEX_OPCODE_0F, attributes);
+        emitByte(0x6E);
+        emitOperandHelper(dst, src, 0);
     }
 
     public final void movddup(Register dst, Register src) {

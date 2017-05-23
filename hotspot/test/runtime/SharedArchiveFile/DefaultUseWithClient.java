@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test DefaultUseWithClient
  * @summary Test default behavior of sharing with -client
+ * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -31,15 +32,13 @@
  * @bug 8032224
  */
 
-import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
 import java.io.File;
 
 public class DefaultUseWithClient {
     public static void main(String[] args) throws Exception {
-        String fileName = "DefaultUseWithClient.jsa";
-
         // On 32-bit windows CDS should be on by default in "-client" config
         // Skip this test on any other platform
         boolean is32BitWindows = (Platform.isWindows() && Platform.is32bit());
@@ -48,29 +47,7 @@ public class DefaultUseWithClient {
             return;
         }
 
-        // create the archive
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-           "-XX:+UnlockDiagnosticVMOptions",
-           "-XX:SharedArchiveFile=./" + fileName,
-           "-Xshare:dump");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldHaveExitValue(0);
-
-        pb = ProcessTools.createJavaProcessBuilder(
-           "-XX:+UnlockDiagnosticVMOptions",
-           "-XX:SharedArchiveFile=./" + fileName,
-           "-client",
-           "-XX:+PrintSharedSpaces",
-           "-version");
-
-        output = new OutputAnalyzer(pb.start());
-        try {
-            output.shouldContain("sharing");
-        } catch (RuntimeException e) {
-            // if sharing failed due to ASLR or similar reasons,
-            // check whether sharing was attempted at all (UseSharedSpaces)
-            output.shouldContain("UseSharedSpaces:");
-        }
-        output.shouldHaveExitValue(0);
+        CDSTestUtils.createArchiveAndCheck();
+        CDSTestUtils.runWithArchiveAndCheck("-client", "-XX:+PrintSharedSpaces");
    }
 }

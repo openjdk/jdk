@@ -325,7 +325,12 @@ JNI_ENTRY(jclass, jni_DefineClass(JNIEnv *env, const char *name, jobject loaderR
     if (str_len > Symbol::max_length()) {
       // It's impossible to create this class;  the name cannot fit
       // into the constant pool.
-      THROW_MSG_0(vmSymbols::java_lang_NoClassDefFoundError(), name);
+      Exceptions::fthrow(THREAD_AND_LOCATION,
+                         vmSymbols::java_lang_NoClassDefFoundError(),
+                         "Class name exceeds maximum length of %d: %s",
+                         Symbol::max_length(),
+                         name);
+      return 0;
     }
     class_name = SymbolTable::new_symbol(name, CHECK_NULL);
   }
@@ -378,16 +383,24 @@ JNI_ENTRY(jclass, jni_FindClass(JNIEnv *env, const char *name))
 
   // Sanity check the name:  it cannot be null or larger than the maximum size
   // name we can fit in the constant pool.
-  if (name == NULL || (int)strlen(name) > Symbol::max_length()) {
-    THROW_MSG_0(vmSymbols::java_lang_NoClassDefFoundError(), name);
+  if (name == NULL) {
+    THROW_MSG_0(vmSymbols::java_lang_NoClassDefFoundError(), "No class name given");
+  }
+  if ((int)strlen(name) > Symbol::max_length()) {
+    Exceptions::fthrow(THREAD_AND_LOCATION,
+                       vmSymbols::java_lang_NoClassDefFoundError(),
+                       "Class name exceeds maximum length of %d: %s",
+                       Symbol::max_length(),
+                       name);
+    return 0;
   }
 
   //%note jni_3
   Handle loader;
   Handle protection_domain;
   // Find calling class
-  instanceKlassHandle k (THREAD, thread->security_get_caller_class(0));
-  if (k.not_null()) {
+  Klass* k = thread->security_get_caller_class(0);
+  if (k != NULL) {
     loader = Handle(THREAD, k->class_loader());
     // Special handling to make sure JNI_OnLoad and JNI_OnUnload are executed
     // in the correct class context.
@@ -395,9 +408,9 @@ JNI_ENTRY(jclass, jni_FindClass(JNIEnv *env, const char *name))
         k->name() == vmSymbols::java_lang_ClassLoader_NativeLibrary()) {
       JavaValue result(T_OBJECT);
       JavaCalls::call_static(&result, k,
-                                      vmSymbols::getFromClass_name(),
-                                      vmSymbols::void_class_signature(),
-                                      thread);
+                             vmSymbols::getFromClass_name(),
+                             vmSymbols::void_class_signature(),
+                             thread);
       if (HAS_PENDING_EXCEPTION) {
         Handle ex(thread, thread->pending_exception());
         CLEAR_PENDING_EXCEPTION;
@@ -455,12 +468,11 @@ JNI_ENTRY(jmethodID, jni_FromReflectedMethod(JNIEnv *env, jobject method))
     mirror = java_lang_reflect_Method::clazz(reflected);
     slot   = java_lang_reflect_Method::slot(reflected);
   }
-  Klass* k     = java_lang_Class::as_Klass(mirror);
+  Klass* k1 = java_lang_Class::as_Klass(mirror);
 
-  KlassHandle k1(THREAD, k);
   // Make sure class is initialized before handing id's out to methods
-  k1()->initialize(CHECK_NULL);
-  Method* m = InstanceKlass::cast(k1())->method_with_idnum(slot);
+  k1->initialize(CHECK_NULL);
+  Method* m = InstanceKlass::cast(k1)->method_with_idnum(slot);
   ret = m==NULL? NULL : m->jmethod_id();  // return NULL if reflected method deleted
   return ret;
 JNI_END
@@ -479,18 +491,17 @@ JNI_ENTRY(jfieldID, jni_FromReflectedField(JNIEnv *env, jobject field))
   // field is a handle to a java.lang.reflect.Field object
   oop reflected   = JNIHandles::resolve_non_null(field);
   oop mirror      = java_lang_reflect_Field::clazz(reflected);
-  Klass* k      = java_lang_Class::as_Klass(mirror);
+  Klass* k1       = java_lang_Class::as_Klass(mirror);
   int slot        = java_lang_reflect_Field::slot(reflected);
   int modifiers   = java_lang_reflect_Field::modifiers(reflected);
 
-  KlassHandle k1(THREAD, k);
   // Make sure class is initialized before handing id's out to fields
-  k1()->initialize(CHECK_NULL);
+  k1->initialize(CHECK_NULL);
 
   // First check if this is a static field
   if (modifiers & JVM_ACC_STATIC) {
-    intptr_t offset = InstanceKlass::cast(k1())->field_offset( slot );
-    JNIid* id = InstanceKlass::cast(k1())->jni_id_for(offset);
+    intptr_t offset = InstanceKlass::cast(k1)->field_offset( slot );
+    JNIid* id = InstanceKlass::cast(k1)->jni_id_for(offset);
     assert(id != NULL, "corrupt Field object");
     debug_only(id->set_is_static_field_id();)
     // A jfieldID for a static field is a JNIid specifying the field holder and the offset within the Klass*
@@ -501,9 +512,9 @@ JNI_ENTRY(jfieldID, jni_FromReflectedField(JNIEnv *env, jobject field))
   // The slot is the index of the field description in the field-array
   // The jfieldID is the offset of the field within the object
   // It may also have hash bits for k, if VerifyJNIFields is turned on.
-  intptr_t offset = InstanceKlass::cast(k1())->field_offset( slot );
-  assert(InstanceKlass::cast(k1())->contains_field_offset(offset), "stay within object");
-  ret = jfieldIDWorkaround::to_instance_jfieldID(k1(), offset);
+  intptr_t offset = InstanceKlass::cast(k1)->field_offset( slot );
+  assert(InstanceKlass::cast(k1)->contains_field_offset(offset), "stay within object");
+  ret = jfieldIDWorkaround::to_instance_jfieldID(k1, offset);
   return ret;
 JNI_END
 
@@ -677,8 +688,7 @@ JNI_ENTRY_NO_PRESERVE(void, jni_ExceptionDescribe(JNIEnv *env))
         JavaValue result(T_VOID);
         JavaCalls::call_virtual(&result,
                                 ex,
-                                KlassHandle(THREAD,
-                                  SystemDictionary::Throwable_klass()),
+                                SystemDictionary::Throwable_klass(),
                                 vmSymbols::printStackTrace_name(),
                                 vmSymbols::void_method_signature(),
                                 THREAD);
@@ -1155,11 +1165,9 @@ static void jni_invoke_nonstatic(JNIEnv *env, JavaValue* result, jobject receive
       }
     } else {
       // interface call
-      KlassHandle h_holder(THREAD, holder);
-
       int itbl_index = m->itable_index();
       Klass* k = h_recv->klass();
-      selected_method = InstanceKlass::cast(k)->method_at_itable(h_holder(), itbl_index, CHECK);
+      selected_method = InstanceKlass::cast(k)->method_at_itable(holder, itbl_index, CHECK);
     }
   }
 
@@ -1191,14 +1199,14 @@ static void jni_invoke_nonstatic(JNIEnv *env, JavaValue* result, jobject receive
 
 
 static instanceOop alloc_object(jclass clazz, TRAPS) {
-  KlassHandle k(THREAD, java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz)));
+  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz));
   if (k == NULL) {
     ResourceMark rm(THREAD);
     THROW_(vmSymbols::java_lang_InstantiationException(), NULL);
   }
-  k()->check_valid_for_instantiation(false, CHECK_NULL);
-  InstanceKlass::cast(k())->initialize(CHECK_NULL);
-  instanceOop ih = InstanceKlass::cast(k())->allocate_instance(THREAD);
+  k->check_valid_for_instantiation(false, CHECK_NULL);
+  k->initialize(CHECK_NULL);
+  instanceOop ih = InstanceKlass::cast(k)->allocate_instance(THREAD);
   return ih;
 }
 
@@ -1337,26 +1345,25 @@ static jmethodID get_method_id(JNIEnv *env, jclass clazz, const char *name_str,
     THROW_MSG_0(vmSymbols::java_lang_NoSuchMethodError(), name_str);
   }
 
-  KlassHandle klass(THREAD,
-               java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz)));
+  Klass* klass = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz));
 
   // Make sure class is linked and initialized before handing id's out to
   // Method*s.
-  klass()->initialize(CHECK_NULL);
+  klass->initialize(CHECK_NULL);
 
   Method* m;
   if (name == vmSymbols::object_initializer_name() ||
       name == vmSymbols::class_initializer_name()) {
     // Never search superclasses for constructors
     if (klass->is_instance_klass()) {
-      m = InstanceKlass::cast(klass())->find_method(name, signature);
+      m = InstanceKlass::cast(klass)->find_method(name, signature);
     } else {
       m = NULL;
     }
   } else {
     m = klass->lookup_method(name, signature);
     if (m == NULL &&  klass->is_instance_klass()) {
-      m = InstanceKlass::cast(klass())->lookup_method_in_ordered_interfaces(name, signature);
+      m = InstanceKlass::cast(klass)->lookup_method_in_ordered_interfaces(name, signature);
     }
   }
   if (m == NULL || (m->is_static() != is_static)) {
@@ -1878,8 +1885,8 @@ JNI_ENTRY(ResultType, \
   JavaValue jvalue(Tag); \
   JNI_ArgumentPusherVaArg ap(methodID, args); \
   /* Make sure class is initialized before trying to invoke its method */ \
-  KlassHandle k(THREAD, java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls))); \
-  k()->initialize(CHECK_0); \
+  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls)); \
+  k->initialize(CHECK_0); \
   jni_invoke_static(env, &jvalue, NULL, JNI_STATIC, methodID, &ap, CHECK_0); \
   va_end(args); \
   ret = jvalue.get_##ResultType(); \
@@ -2036,20 +2043,19 @@ JNI_ENTRY(jfieldID, jni_GetFieldID(JNIEnv *env, jclass clazz,
   if (fieldname == NULL || signame == NULL) {
     THROW_MSG_0(vmSymbols::java_lang_NoSuchFieldError(), (char*) name);
   }
-  KlassHandle k(THREAD,
-                java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz)));
+  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz));
   // Make sure class is initialized before handing id's out to fields
-  k()->initialize(CHECK_NULL);
+  k->initialize(CHECK_NULL);
 
   fieldDescriptor fd;
-  if (!k()->is_instance_klass() ||
-      !InstanceKlass::cast(k())->find_field(fieldname, signame, false, &fd)) {
+  if (!k->is_instance_klass() ||
+      !InstanceKlass::cast(k)->find_field(fieldname, signame, false, &fd)) {
     THROW_MSG_0(vmSymbols::java_lang_NoSuchFieldError(), (char*) name);
   }
 
   // A jfieldID for a non-static field is simply the offset of the field within the instanceOop
   // It may also have hash bits for k, if VerifyJNIFields is turned on.
-  ret = jfieldIDWorkaround::to_instance_jfieldID(k(), fd.offset());
+  ret = jfieldIDWorkaround::to_instance_jfieldID(k, fd.offset());
   return ret;
 JNI_END
 
@@ -2291,14 +2297,13 @@ JNI_ENTRY(jfieldID, jni_GetStaticFieldID(JNIEnv *env, jclass clazz,
   if (fieldname == NULL || signame == NULL) {
     THROW_MSG_0(vmSymbols::java_lang_NoSuchFieldError(), (char*) name);
   }
-  KlassHandle k(THREAD,
-                java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz)));
+  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz));
   // Make sure class is initialized before handing id's out to static fields
-  k()->initialize(CHECK_NULL);
+  k->initialize(CHECK_NULL);
 
   fieldDescriptor fd;
-  if (!k()->is_instance_klass() ||
-      !InstanceKlass::cast(k())->find_field(fieldname, signame, true, &fd)) {
+  if (!k->is_instance_klass() ||
+      !InstanceKlass::cast(k)->find_field(fieldname, signame, true, &fd)) {
     THROW_MSG_0(vmSymbols::java_lang_NoSuchFieldError(), (char*) name);
   }
 
@@ -2602,11 +2607,10 @@ JNI_ENTRY(jobjectArray, jni_NewObjectArray(JNIEnv *env, jsize length, jclass ele
  HOTSPOT_JNI_NEWOBJECTARRAY_ENTRY(env, length, elementClass, initialElement);
   jobjectArray ret = NULL;
   DT_RETURN_MARK(NewObjectArray, jobjectArray, (const jobjectArray&)ret);
-  KlassHandle ek(THREAD, java_lang_Class::as_Klass(JNIHandles::resolve_non_null(elementClass)));
-  Klass* ako = ek()->array_klass(CHECK_NULL);
-  KlassHandle ak = KlassHandle(THREAD, ako);
-  ObjArrayKlass::cast(ak())->initialize(CHECK_NULL);
-  objArrayOop result = ObjArrayKlass::cast(ak())->allocate(length, CHECK_NULL);
+  Klass* ek = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(elementClass));
+  Klass* ak = ek->array_klass(CHECK_NULL);
+  ObjArrayKlass::cast(ak)->initialize(CHECK_NULL);
+  objArrayOop result = ObjArrayKlass::cast(ak)->allocate(length, CHECK_NULL);
   oop initial_value = JNIHandles::resolve(initialElement);
   if (initial_value != NULL) {  // array already initialized with NULL
     for (int index = 0; index < length; index++) {
@@ -2935,8 +2939,7 @@ DEFINE_SETSCALARARRAYREGION(T_DOUBLE,  jdouble,  Double,  double
 // is not native.  Ask JVM TI what prefixes have been specified.  Then check
 // to see if the native method is now wrapped with the prefixes.  See the
 // SetNativeMethodPrefix(es) functions in the JVM TI Spec for details.
-static Method* find_prefixed_native(KlassHandle k,
-                                      Symbol* name, Symbol* signature, TRAPS) {
+static Method* find_prefixed_native(Klass* k, Symbol* name, Symbol* signature, TRAPS) {
 #if INCLUDE_JVMTI
   ResourceMark rm(THREAD);
   Method* method;
@@ -2957,7 +2960,7 @@ static Method* find_prefixed_native(KlassHandle k,
     if (trial_name == NULL) {
       continue; // no such symbol, so this prefix wasn't used, try the next prefix
     }
-    method = k()->lookup_method(trial_name, signature);
+    method = k->lookup_method(trial_name, signature);
     if (method == NULL) {
       continue; // signature doesn't match, try the next prefix
     }
@@ -2973,13 +2976,13 @@ static Method* find_prefixed_native(KlassHandle k,
   return NULL; // not found
 }
 
-static bool register_native(KlassHandle k, Symbol* name, Symbol* signature, address entry, TRAPS) {
-  Method* method = k()->lookup_method(name, signature);
+static bool register_native(Klass* k, Symbol* name, Symbol* signature, address entry, TRAPS) {
+  Method* method = k->lookup_method(name, signature);
   if (method == NULL) {
     ResourceMark rm;
     stringStream st;
     st.print("Method %s name or signature does not match",
-             Method::name_and_sig_as_C_string(k(), name, signature));
+             Method::name_and_sig_as_C_string(k, name, signature));
     THROW_MSG_(vmSymbols::java_lang_NoSuchMethodError(), st.as_string(), false);
   }
   if (!method->is_native()) {
@@ -2989,7 +2992,7 @@ static bool register_native(KlassHandle k, Symbol* name, Symbol* signature, addr
       ResourceMark rm;
       stringStream st;
       st.print("Method %s is not declared as native",
-               Method::name_and_sig_as_C_string(k(), name, signature));
+               Method::name_and_sig_as_C_string(k, name, signature));
       THROW_MSG_(vmSymbols::java_lang_NoSuchMethodError(), st.as_string(), false);
     }
   }
@@ -3020,7 +3023,7 @@ JNI_ENTRY(jint, jni_RegisterNatives(JNIEnv *env, jclass clazz,
   jint ret = 0;
   DT_RETURN_MARK(RegisterNatives, jint, (const jint&)ret);
 
-  KlassHandle h_k(thread, java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz)));
+  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz));
 
   for (int index = 0; index < nMethods; index++) {
     const char* meth_name = methods[index].name;
@@ -3036,12 +3039,12 @@ JNI_ENTRY(jint, jni_RegisterNatives(JNIEnv *env, jclass clazz,
     if (name == NULL || signature == NULL) {
       ResourceMark rm;
       stringStream st;
-      st.print("Method %s.%s%s not found", h_k()->external_name(), meth_name, meth_sig);
+      st.print("Method %s.%s%s not found", k->external_name(), meth_name, meth_sig);
       // Must return negative value on failure
       THROW_MSG_(vmSymbols::java_lang_NoSuchMethodError(), st.as_string(), -1);
     }
 
-    bool res = register_native(h_k, name, signature,
+    bool res = register_native(k, name, signature,
                                (address) methods[index].fnPtr, THREAD);
     if (!res) {
       ret = -1;

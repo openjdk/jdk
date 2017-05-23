@@ -28,16 +28,15 @@ import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.OUTGOING;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.REG;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.STACK;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.List;
-import java.util.Set;
 
 import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 import org.graalvm.compiler.lir.framemap.FrameMap;
-import org.graalvm.compiler.lir.ssa.SSAUtil;
+import org.graalvm.util.EconomicSet;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.RegisterSaveLayout;
@@ -57,23 +56,6 @@ public class StandardOp {
      * must be the last operation in the block.
      */
     public interface BlockEndOp {
-        void setOutgoingValues(Value[] values);
-
-        int getOutgoingSize();
-
-        Value getOutgoingValue(int idx);
-
-        int addOutgoingValues(Value[] values);
-
-        void clearOutgoingValues();
-
-        void forEachOutgoingValue(InstructionValueProcedure proc);
-
-        /**
-         * The number of {@link SSAUtil phi} operands in the {@link #getOutgoingValue outgoing}
-         * array.
-         */
-        int getPhiSize();
     }
 
     public interface NullCheck {
@@ -124,9 +106,6 @@ public class StandardOp {
             numbPhis = numPhis;
         }
 
-        /**
-         * @see BlockEndOp#getPhiSize
-         */
         public int getPhiSize() {
             return numbPhis;
         }
@@ -192,87 +171,14 @@ public class StandardOp {
         }
     }
 
-    public abstract static class AbstractBlockEndOp extends LIRInstruction implements BlockEndOp {
-        public static final LIRInstructionClass<AbstractBlockEndOp> TYPE = LIRInstructionClass.create(AbstractBlockEndOp.class);
-        public static final EnumSet<OperandFlag> outgoingFlags = EnumSet.of(REG, STACK, CONST, OUTGOING);
-
-        @Alive({REG, STACK, CONST, OUTGOING}) private Value[] outgoingValues;
-        private int numberOfPhis;
-
-        protected AbstractBlockEndOp(LIRInstructionClass<? extends AbstractBlockEndOp> c) {
-            super(c);
-            this.outgoingValues = Value.NO_VALUES;
-        }
-
-        public void setPhiValues(Value[] values) {
-            setOutgoingValues(values);
-            setNumberOfPhis(values.length);
-        }
-
-        private void setNumberOfPhis(int numPhis) {
-            assert numberOfPhis == 0;
-            numberOfPhis = numPhis;
-        }
-
-        @Override
-        public int getPhiSize() {
-            return numberOfPhis;
-        }
-
-        @Override
-        public void setOutgoingValues(Value[] values) {
-            assert this.outgoingValues.length == 0;
-            assert values != null;
-            this.outgoingValues = values;
-        }
-
-        @Override
-        public int getOutgoingSize() {
-            return outgoingValues.length;
-        }
-
-        @Override
-        public Value getOutgoingValue(int idx) {
-            assert checkRange(idx);
-            return outgoingValues[idx];
-        }
-
-        @Override
-        public void clearOutgoingValues() {
-            outgoingValues = Value.NO_VALUES;
-        }
-
-        @Override
-        public int addOutgoingValues(Value[] values) {
-            if (outgoingValues.length == 0) {
-                setOutgoingValues(values);
-                return values.length;
-            }
-            int t = outgoingValues.length + values.length;
-            Value[] newArray = new Value[t];
-            System.arraycopy(outgoingValues, 0, newArray, 0, outgoingValues.length);
-            System.arraycopy(values, 0, newArray, outgoingValues.length, values.length);
-            outgoingValues = newArray;
-            return t;
-        }
-
-        private boolean checkRange(int idx) {
-            return idx < outgoingValues.length;
-        }
-
-        @Override
-        public void forEachOutgoingValue(InstructionValueProcedure proc) {
-            for (int i = 0; i < outgoingValues.length; i++) {
-                outgoingValues[i] = proc.doValue(this, outgoingValues[i], OperandMode.ALIVE, outgoingFlags);
-            }
-        }
-    }
-
     /**
      * LIR operation that is an unconditional jump to a {@link #destination()}.
      */
-    public static class JumpOp extends AbstractBlockEndOp {
+    public static class JumpOp extends LIRInstruction implements BlockEndOp {
         public static final LIRInstructionClass<JumpOp> TYPE = LIRInstructionClass.create(JumpOp.class);
+        public static final EnumSet<OperandFlag> outgoingFlags = EnumSet.of(REG, STACK, CONST, OUTGOING);
+
+        @Alive({REG, STACK, CONST, OUTGOING}) private Value[] outgoingValues;
 
         private final LabelRef destination;
 
@@ -283,6 +189,7 @@ public class StandardOp {
         protected JumpOp(LIRInstructionClass<? extends JumpOp> c, LabelRef destination) {
             super(c);
             this.destination = destination;
+            this.outgoingValues = Value.NO_VALUES;
         }
 
         @Override
@@ -294,6 +201,29 @@ public class StandardOp {
 
         public LabelRef destination() {
             return destination;
+        }
+
+        public void setPhiValues(Value[] values) {
+            assert this.outgoingValues.length == 0;
+            assert values != null;
+            this.outgoingValues = values;
+        }
+
+        public int getPhiSize() {
+            return outgoingValues.length;
+        }
+
+        public Value getOutgoingValue(int idx) {
+            assert checkRange(idx);
+            return outgoingValues[idx];
+        }
+
+        public void clearOutgoingValues() {
+            outgoingValues = Value.NO_VALUES;
+        }
+
+        private boolean checkRange(int idx) {
+            return idx < outgoingValues.length;
         }
     }
 
@@ -309,6 +239,16 @@ public class StandardOp {
     public interface MoveOp {
 
         AllocatableValue getResult();
+
+        // Checkstyle: stop
+        static MoveOp asMoveOp(LIRInstruction op) {
+            return (MoveOp) op;
+        }
+        // Checkstyle: resume
+
+        static boolean isMoveOp(LIRInstruction op) {
+            return op.isMoveOp();
+        }
     }
 
     /**
@@ -317,6 +257,16 @@ public class StandardOp {
     public interface ValueMoveOp extends MoveOp {
 
         AllocatableValue getInput();
+
+        // Checkstyle: stop
+        static ValueMoveOp asValueMoveOp(LIRInstruction op) {
+            return (ValueMoveOp) op;
+        }
+        // Checkstyle: resume
+
+        static boolean isValueMoveOp(LIRInstruction op) {
+            return op.isValueMoveOp();
+        }
     }
 
     /**
@@ -325,17 +275,27 @@ public class StandardOp {
     public interface LoadConstantOp extends MoveOp {
 
         Constant getConstant();
+
+        // Checkstyle: stop
+        static LoadConstantOp asLoadConstantOp(LIRInstruction op) {
+            return (LoadConstantOp) op;
+        }
+        // Checkstyle: resume
+
+        static boolean isLoadConstantOp(LIRInstruction op) {
+            return op.isLoadConstantOp();
+        }
     }
 
     /**
      * An operation that saves registers to the stack. The set of saved registers can be
-     * {@linkplain #remove(Set) pruned} and a mapping from registers to the frame slots in which
-     * they are saved can be {@linkplain #getMap(FrameMap) retrieved}.
+     * {@linkplain #remove(EconomicSet) pruned} and a mapping from registers to the frame slots in
+     * which they are saved can be {@linkplain #getMap(FrameMap) retrieved}.
      */
     public interface SaveRegistersOp {
 
         /**
-         * Determines if the {@link #remove(Set)} operation is supported for this object.
+         * Determines if the {@link #remove(EconomicSet)} operation is supported for this object.
          */
         boolean supportsRemove();
 
@@ -347,7 +307,7 @@ public class StandardOp {
          * @throws UnsupportedOperationException if removal is not {@linkplain #supportsRemove()
          *             supported}
          */
-        int remove(Set<Register> doNotSave);
+        int remove(EconomicSet<Register> doNotSave);
 
         /**
          * Gets a map from the saved registers saved by this operation to the frame slots in which
@@ -384,13 +344,13 @@ public class StandardOp {
         }
 
         public void replace(LIR lir, LIRInstruction replacement) {
-            List<LIRInstruction> instructions = lir.getLIRforBlock(block);
+            ArrayList<LIRInstruction> instructions = lir.getLIRforBlock(block);
             assert instructions.get(index).equals(this) : String.format("Replacing the wrong instruction: %s instead of %s", instructions.get(index), this);
             instructions.set(index, replacement);
         }
 
         public void remove(LIR lir) {
-            List<LIRInstruction> instructions = lir.getLIRforBlock(block);
+            ArrayList<LIRInstruction> instructions = lir.getLIRforBlock(block);
             assert instructions.get(index).equals(this) : String.format("Removing the wrong instruction: %s instead of %s", instructions.get(index), this);
             instructions.remove(index);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,14 +107,6 @@ class FieldStreamBase : public StackObj {
     init_generic_signature_start_slot();
     assert(klass == field_holder(), "");
   }
-  FieldStreamBase(instanceKlassHandle klass) {
-    _fields = klass->fields();
-    _constants = klass->constants();
-    _index = 0;
-    _limit = klass->java_fields_count();
-    init_generic_signature_start_slot();
-    assert(klass == field_holder(), "");
-  }
 
   // accessors
   int index() const                 { return _index; }
@@ -196,7 +188,7 @@ class FieldStreamBase : public StackObj {
 // Iterate over only the internal fields
 class JavaFieldStream : public FieldStreamBase {
  public:
-  JavaFieldStream(instanceKlassHandle k): FieldStreamBase(k->fields(), k->constants(), 0, k->java_fields_count()) {}
+  JavaFieldStream(const InstanceKlass* k): FieldStreamBase(k->fields(), k->constants(), 0, k->java_fields_count()) {}
 
   int name_index() const {
     assert(!field()->is_internal(), "regular only");
@@ -245,7 +237,6 @@ class JavaFieldStream : public FieldStreamBase {
 class InternalFieldStream : public FieldStreamBase {
  public:
   InternalFieldStream(InstanceKlass* k):      FieldStreamBase(k->fields(), k->constants(), k->java_fields_count(), 0) {}
-  InternalFieldStream(instanceKlassHandle k): FieldStreamBase(k->fields(), k->constants(), k->java_fields_count(), 0) {}
 };
 
 
@@ -253,7 +244,6 @@ class AllFieldStream : public FieldStreamBase {
  public:
   AllFieldStream(Array<u2>* fields, const constantPoolHandle& constants): FieldStreamBase(fields, constants) {}
   AllFieldStream(InstanceKlass* k):      FieldStreamBase(k->fields(), k->constants()) {}
-  AllFieldStream(instanceKlassHandle k): FieldStreamBase(k->fields(), k->constants()) {}
 };
 
 #endif // SHARE_VM_OOPS_FIELDSTREAMS_HPP

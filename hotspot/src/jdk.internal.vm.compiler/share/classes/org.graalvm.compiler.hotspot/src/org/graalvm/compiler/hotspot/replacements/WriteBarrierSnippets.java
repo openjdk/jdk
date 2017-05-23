@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.hotspot.replacements;
 
-import static org.graalvm.compiler.core.common.GraalOptions.SnippetCounters;
+import static jdk.vm.ci.code.MemoryBarriers.STORE_LOAD;
 import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfig.INJECTED_VMCONFIG;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.arrayBaseOffset;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.arrayIndexScale;
@@ -43,19 +43,20 @@ import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.LIKELY_P
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.NOT_FREQUENT_PROBABILITY;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.probability;
 import static org.graalvm.compiler.replacements.SnippetTemplate.DEFAULT_REPLACER;
-import static jdk.vm.ci.code.MemoryBarriers.STORE_LOAD;
 
+import org.graalvm.api.word.LocationIdentity;
+import org.graalvm.api.word.Pointer;
+import org.graalvm.api.word.Unsigned;
+import org.graalvm.api.word.WordFactory;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.Snippet.ConstantParameter;
+import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.core.common.GraalOptions;
-import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
 import org.graalvm.compiler.graph.Node.ConstantNodeParameter;
 import org.graalvm.compiler.graph.Node.NodeIntrinsic;
-import org.graalvm.compiler.hotspot.CompressEncoding;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.hotspot.meta.HotSpotRegistersProvider;
-import org.graalvm.compiler.hotspot.nodes.CompressionNode;
 import org.graalvm.compiler.hotspot.nodes.G1ArrayRangePostWriteBarrier;
 import org.graalvm.compiler.hotspot.nodes.G1ArrayRangePreWriteBarrier;
 import org.graalvm.compiler.hotspot.nodes.G1PostWriteBarrier;
@@ -63,9 +64,10 @@ import org.graalvm.compiler.hotspot.nodes.G1PreWriteBarrier;
 import org.graalvm.compiler.hotspot.nodes.G1ReferentFieldReadBarrier;
 import org.graalvm.compiler.hotspot.nodes.GetObjectAddressNode;
 import org.graalvm.compiler.hotspot.nodes.GraalHotSpotVMConfigNode;
+import org.graalvm.compiler.hotspot.nodes.HotSpotCompressionNode;
 import org.graalvm.compiler.hotspot.nodes.SerialArrayRangeWriteBarrier;
 import org.graalvm.compiler.hotspot.nodes.SerialWriteBarrier;
-import org.graalvm.compiler.hotspot.nodes.type.NarrowOopStamp;
+import org.graalvm.compiler.hotspot.nodes.VMErrorNode;
 import org.graalvm.compiler.nodes.NamedLocationIdentity;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -78,16 +80,16 @@ import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode.Address;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
+import org.graalvm.compiler.nodes.type.NarrowOopStamp;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.replacements.Log;
 import org.graalvm.compiler.replacements.SnippetCounter;
+import org.graalvm.compiler.replacements.SnippetCounter.Group;
 import org.graalvm.compiler.replacements.SnippetTemplate.AbstractTemplates;
 import org.graalvm.compiler.replacements.SnippetTemplate.Arguments;
 import org.graalvm.compiler.replacements.SnippetTemplate.SnippetInfo;
 import org.graalvm.compiler.replacements.Snippets;
-import org.graalvm.compiler.replacements.nodes.DirectObjectStoreNode;
 import org.graalvm.compiler.replacements.nodes.DirectStoreNode;
-import org.graalvm.compiler.word.Pointer;
-import org.graalvm.compiler.word.Unsigned;
 import org.graalvm.compiler.word.Word;
 
 import jdk.vm.ci.code.Register;
@@ -96,41 +98,55 @@ import jdk.vm.ci.meta.JavaKind;
 
 public class WriteBarrierSnippets implements Snippets {
 
-    private static final SnippetCounter.Group countersWriteBarriers = SnippetCounters.getValue() ? new SnippetCounter.Group("WriteBarriers") : null;
-    private static final SnippetCounter serialWriteBarrierCounter = new SnippetCounter(countersWriteBarriers, "serialWriteBarrier", "Number of Serial Write Barriers");
-    private static final SnippetCounter g1AttemptedPreWriteBarrierCounter = new SnippetCounter(countersWriteBarriers, "g1AttemptedPreWriteBarrier", "Number of attempted G1 Pre Write Barriers");
-    private static final SnippetCounter g1EffectivePreWriteBarrierCounter = new SnippetCounter(countersWriteBarriers, "g1EffectivePreWriteBarrier", "Number of effective G1 Pre Write Barriers");
-    private static final SnippetCounter g1ExecutedPreWriteBarrierCounter = new SnippetCounter(countersWriteBarriers, "g1ExecutedPreWriteBarrier", "Number of executed G1 Pre Write Barriers");
-    private static final SnippetCounter g1AttemptedPostWriteBarrierCounter = new SnippetCounter(countersWriteBarriers, "g1AttemptedPostWriteBarrier", "Number of attempted G1 Post Write Barriers");
-    private static final SnippetCounter g1EffectiveAfterXORPostWriteBarrierCounter = new SnippetCounter(countersWriteBarriers, "g1EffectiveAfterXORPostWriteBarrier",
-                    "Number of effective G1 Post Write Barriers (after passing the XOR test)");
-    private static final SnippetCounter g1EffectiveAfterNullPostWriteBarrierCounter = new SnippetCounter(countersWriteBarriers, "g1EffectiveAfterNullPostWriteBarrier",
-                    "Number of effective G1 Post Write Barriers (after passing the NULL test)");
-    private static final SnippetCounter g1ExecutedPostWriteBarrierCounter = new SnippetCounter(countersWriteBarriers, "g1ExecutedPostWriteBarrier", "Number of executed G1 Post Write Barriers");
+    static class Counters {
+        Counters(SnippetCounter.Group.Factory factory) {
+            Group countersWriteBarriers = factory.createSnippetCounterGroup("WriteBarriers");
+            serialWriteBarrierCounter = new SnippetCounter(countersWriteBarriers, "serialWriteBarrier", "Number of Serial Write Barriers");
+            g1AttemptedPreWriteBarrierCounter = new SnippetCounter(countersWriteBarriers, "g1AttemptedPreWriteBarrier", "Number of attempted G1 Pre Write Barriers");
+            g1EffectivePreWriteBarrierCounter = new SnippetCounter(countersWriteBarriers, "g1EffectivePreWriteBarrier", "Number of effective G1 Pre Write Barriers");
+            g1ExecutedPreWriteBarrierCounter = new SnippetCounter(countersWriteBarriers, "g1ExecutedPreWriteBarrier", "Number of executed G1 Pre Write Barriers");
+            g1AttemptedPostWriteBarrierCounter = new SnippetCounter(countersWriteBarriers, "g1AttemptedPostWriteBarrier", "Number of attempted G1 Post Write Barriers");
+            g1EffectiveAfterXORPostWriteBarrierCounter = new SnippetCounter(countersWriteBarriers, "g1EffectiveAfterXORPostWriteBarrier",
+                            "Number of effective G1 Post Write Barriers (after passing the XOR test)");
+            g1EffectiveAfterNullPostWriteBarrierCounter = new SnippetCounter(countersWriteBarriers, "g1EffectiveAfterNullPostWriteBarrier",
+                            "Number of effective G1 Post Write Barriers (after passing the NULL test)");
+            g1ExecutedPostWriteBarrierCounter = new SnippetCounter(countersWriteBarriers, "g1ExecutedPostWriteBarrier", "Number of executed G1 Post Write Barriers");
+
+        }
+
+        final SnippetCounter serialWriteBarrierCounter;
+        final SnippetCounter g1AttemptedPreWriteBarrierCounter;
+        final SnippetCounter g1EffectivePreWriteBarrierCounter;
+        final SnippetCounter g1ExecutedPreWriteBarrierCounter;
+        final SnippetCounter g1AttemptedPostWriteBarrierCounter;
+        final SnippetCounter g1EffectiveAfterXORPostWriteBarrierCounter;
+        final SnippetCounter g1EffectiveAfterNullPostWriteBarrierCounter;
+        final SnippetCounter g1ExecutedPostWriteBarrierCounter;
+    }
 
     public static final LocationIdentity GC_CARD_LOCATION = NamedLocationIdentity.mutable("GC-Card");
     public static final LocationIdentity GC_LOG_LOCATION = NamedLocationIdentity.mutable("GC-Log");
     public static final LocationIdentity GC_INDEX_LOCATION = NamedLocationIdentity.mutable("GC-Index");
 
-    private static void serialWriteBarrier(Pointer ptr) {
-        serialWriteBarrierCounter.inc();
+    private static void serialWriteBarrier(Pointer ptr, Counters counters) {
+        counters.serialWriteBarrierCounter.inc();
         final long startAddress = GraalHotSpotVMConfigNode.cardTableAddress();
         Word base = (Word) ptr.unsignedShiftRight(cardTableShift(INJECTED_VMCONFIG));
         if (((int) startAddress) == startAddress && GraalHotSpotVMConfigNode.isCardTableAddressConstant()) {
             base.writeByte((int) startAddress, (byte) 0, GC_CARD_LOCATION);
         } else {
-            base.writeByte(Word.unsigned(startAddress), (byte) 0, GC_CARD_LOCATION);
+            base.writeByte(WordFactory.unsigned(startAddress), (byte) 0, GC_CARD_LOCATION);
         }
     }
 
     @Snippet
-    public static void serialImpreciseWriteBarrier(Object object) {
-        serialWriteBarrier(Word.objectToTrackedPointer(object));
+    public static void serialImpreciseWriteBarrier(Object object, @ConstantParameter Counters counters) {
+        serialWriteBarrier(Word.objectToTrackedPointer(object), counters);
     }
 
     @Snippet
-    public static void serialPreciseWriteBarrier(Address address) {
-        serialWriteBarrier(Word.fromAddress(address));
+    public static void serialPreciseWriteBarrier(Address address, @ConstantParameter Counters counters) {
+        serialWriteBarrier(Word.fromAddress(address), counters);
     }
 
     @Snippet
@@ -154,26 +170,27 @@ public class WriteBarrierSnippets implements Snippets {
 
     @Snippet
     public static void g1PreWriteBarrier(Address address, Object object, Object expectedObject, @ConstantParameter boolean doLoad, @ConstantParameter boolean nullCheck,
-                    @ConstantParameter Register threadRegister, @ConstantParameter boolean trace) {
+                    @ConstantParameter Register threadRegister, @ConstantParameter boolean trace, @ConstantParameter Counters counters) {
         if (nullCheck) {
             NullCheckNode.nullCheck(address);
         }
         Word thread = registerAsWord(threadRegister);
         verifyOop(object);
         Object fixedExpectedObject = FixedValueAnchorNode.getObject(expectedObject);
-        Pointer field = Word.fromAddress(address);
+        Word field = Word.fromAddress(address);
         Pointer previousOop = Word.objectToTrackedPointer(fixedExpectedObject);
         byte markingValue = thread.readByte(g1SATBQueueMarkingOffset(INJECTED_VMCONFIG));
         int gcCycle = 0;
         if (trace) {
-            gcCycle = (int) Word.unsigned(HotSpotReplacementsUtil.gcTotalCollectionsAddress(INJECTED_VMCONFIG)).readLong(0);
+            Pointer gcTotalCollectionsAddress = WordFactory.pointer(HotSpotReplacementsUtil.gcTotalCollectionsAddress(INJECTED_VMCONFIG));
+            gcCycle = (int) gcTotalCollectionsAddress.readLong(0);
             log(trace, "[%d] G1-Pre Thread %p Object %p\n", gcCycle, thread.rawValue(), Word.objectToTrackedPointer(object).rawValue());
             log(trace, "[%d] G1-Pre Thread %p Expected Object %p\n", gcCycle, thread.rawValue(), Word.objectToTrackedPointer(fixedExpectedObject).rawValue());
             log(trace, "[%d] G1-Pre Thread %p Field %p\n", gcCycle, thread.rawValue(), field.rawValue());
             log(trace, "[%d] G1-Pre Thread %p Marking %d\n", gcCycle, thread.rawValue(), markingValue);
             log(trace, "[%d] G1-Pre Thread %p DoLoad %d\n", gcCycle, thread.rawValue(), doLoad ? 1L : 0L);
         }
-        g1AttemptedPreWriteBarrierCounter.inc();
+        counters.g1AttemptedPreWriteBarrierCounter.inc();
         // If the concurrent marker is enabled, the barrier is issued.
         if (probability(NOT_FREQUENT_PROBABILITY, markingValue != (byte) 0)) {
             // If the previous value has to be loaded (before the write), the load is issued.
@@ -185,10 +202,10 @@ public class WriteBarrierSnippets implements Snippets {
                     verifyOop(previousOop.toObject());
                 }
             }
-            g1EffectivePreWriteBarrierCounter.inc();
+            counters.g1EffectivePreWriteBarrierCounter.inc();
             // If the previous value is null the barrier should not be issued.
             if (probability(FREQUENT_PROBABILITY, previousOop.notEqual(0))) {
-                g1ExecutedPreWriteBarrierCounter.inc();
+                counters.g1ExecutedPreWriteBarrierCounter.inc();
                 // If the thread-local SATB buffer is full issue a native call which will
                 // initialize a new one and add the entry.
                 Word indexAddress = thread.add(g1SATBQueueIndexOffset(INJECTED_VMCONFIG));
@@ -209,7 +226,7 @@ public class WriteBarrierSnippets implements Snippets {
 
     @Snippet
     public static void g1PostWriteBarrier(Address address, Object object, Object value, @ConstantParameter boolean usePrecise, @ConstantParameter Register threadRegister,
-                    @ConstantParameter boolean trace) {
+                    @ConstantParameter boolean trace, @ConstantParameter Counters counters) {
         Word thread = registerAsWord(threadRegister);
         Object fixedValue = FixedValueAnchorNode.getObject(value);
         verifyOop(object);
@@ -223,7 +240,8 @@ public class WriteBarrierSnippets implements Snippets {
         }
         int gcCycle = 0;
         if (trace) {
-            gcCycle = (int) Word.unsigned(HotSpotReplacementsUtil.gcTotalCollectionsAddress(INJECTED_VMCONFIG)).readLong(0);
+            Pointer gcTotalCollectionsAddress = WordFactory.pointer(HotSpotReplacementsUtil.gcTotalCollectionsAddress(INJECTED_VMCONFIG));
+            gcCycle = (int) gcTotalCollectionsAddress.readLong(0);
             log(trace, "[%d] G1-Post Thread: %p Object: %p\n", gcCycle, thread.rawValue(), Word.objectToTrackedPointer(object).rawValue());
             log(trace, "[%d] G1-Post Thread: %p Field: %p\n", gcCycle, thread.rawValue(), oop.rawValue());
         }
@@ -241,27 +259,27 @@ public class WriteBarrierSnippets implements Snippets {
         if (((int) startAddress) == startAddress && GraalHotSpotVMConfigNode.isCardTableAddressConstant()) {
             displacement = (int) startAddress;
         } else {
-            cardBase = cardBase.add(Word.unsigned(startAddress));
+            cardBase = cardBase.add(WordFactory.unsigned(startAddress));
         }
         Word cardAddress = (Word) cardBase.add(displacement);
 
-        g1AttemptedPostWriteBarrierCounter.inc();
+        counters.g1AttemptedPostWriteBarrierCounter.inc();
         if (probability(FREQUENT_PROBABILITY, xorResult.notEqual(0))) {
-            g1EffectiveAfterXORPostWriteBarrierCounter.inc();
+            counters.g1EffectiveAfterXORPostWriteBarrierCounter.inc();
 
             // If the written value is not null continue with the barrier addition.
             if (probability(FREQUENT_PROBABILITY, writtenValue.notEqual(0))) {
                 byte cardByte = cardAddress.readByte(0, GC_CARD_LOCATION);
-                g1EffectiveAfterNullPostWriteBarrierCounter.inc();
+                counters.g1EffectiveAfterNullPostWriteBarrierCounter.inc();
 
                 // If the card is already dirty, (hence already enqueued) skip the insertion.
                 if (probability(NOT_FREQUENT_PROBABILITY, cardByte != g1YoungCardValue(INJECTED_VMCONFIG))) {
                     MembarNode.memoryBarrier(STORE_LOAD, GC_CARD_LOCATION);
                     byte cardByteReload = cardAddress.readByte(0, GC_CARD_LOCATION);
                     if (probability(NOT_FREQUENT_PROBABILITY, cardByteReload != dirtyCardValue(INJECTED_VMCONFIG))) {
-                        log(trace, "[%d] G1-Post Thread: %p Card: %p \n", gcCycle, thread.rawValue(), Word.unsigned(cardByte).rawValue());
+                        log(trace, "[%d] G1-Post Thread: %p Card: %p \n", gcCycle, thread.rawValue(), WordFactory.unsigned((int) cardByte).rawValue());
                         cardAddress.writeByte(0, (byte) 0, GC_CARD_LOCATION);
-                        g1ExecutedPostWriteBarrierCounter.inc();
+                        counters.g1ExecutedPostWriteBarrierCounter.inc();
 
                         // If the thread local card queue is full, issue a native call which will
                         // initialize a new one and add the card entry.
@@ -301,16 +319,16 @@ public class WriteBarrierSnippets implements Snippets {
         int header = arrayBaseOffset(JavaKind.Object);
 
         for (int i = startIndex; i < length; i++) {
-            long address = dstAddr + header + (i * scale);
-            Pointer oop = Word.objectToTrackedPointer(Word.unsigned(address).readObject(0, BarrierType.NONE));
+            Word address = WordFactory.pointer(dstAddr + header + (i * scale));
+            Pointer oop = Word.objectToTrackedPointer(address.readObject(0, BarrierType.NONE));
             verifyOop(oop.toObject());
             if (oop.notEqual(0)) {
                 if (indexValue != 0) {
                     indexValue = indexValue - wordSize();
-                    Word logAddress = bufferAddress.add(Word.unsigned(indexValue));
+                    Word logAddress = bufferAddress.add(WordFactory.unsigned(indexValue));
                     // Log the object to be marked as well as update the SATB's buffer next index.
                     logAddress.writeWord(0, oop, GC_LOG_LOCATION);
-                    indexAddress.writeWord(0, Word.unsigned(indexValue), GC_INDEX_LOCATION);
+                    indexAddress.writeWord(0, WordFactory.unsigned(indexValue), GC_INDEX_LOCATION);
                 } else {
                     g1PreBarrierStub(G1WBPRECALL, oop.toObject());
                 }
@@ -339,7 +357,7 @@ public class WriteBarrierSnippets implements Snippets {
         long count = end - start + 1;
 
         while (count-- > 0) {
-            Word cardAddress = Word.unsigned((start + cardStart) + count);
+            Word cardAddress = WordFactory.unsigned((start + cardStart) + count);
             byte cardByte = cardAddress.readByte(0, GC_CARD_LOCATION);
             // If the card is already dirty, (hence already enqueued) skip the insertion.
             if (probability(NOT_FREQUENT_PROBABILITY, cardByte != g1YoungCardValue(INJECTED_VMCONFIG))) {
@@ -351,11 +369,11 @@ public class WriteBarrierSnippets implements Snippets {
                     // initialize a new one and add the card entry.
                     if (indexValue != 0) {
                         indexValue = indexValue - wordSize();
-                        Word logAddress = bufferAddress.add(Word.unsigned(indexValue));
+                        Word logAddress = bufferAddress.add(WordFactory.unsigned(indexValue));
                         // Log the object to be scanned as well as update
                         // the card queue's next index.
                         logAddress.writeWord(0, cardAddress, GC_LOG_LOCATION);
-                        indexAddress.writeWord(0, Word.unsigned(indexValue), GC_INDEX_LOCATION);
+                        indexAddress.writeWord(0, WordFactory.unsigned(indexValue), GC_INDEX_LOCATION);
                     } else {
                         g1PostBarrierStub(G1WBPOSTCALL, cardAddress);
                     }
@@ -386,10 +404,12 @@ public class WriteBarrierSnippets implements Snippets {
         private final SnippetInfo g1ArrayRangePostWriteBarrier = snippet(WriteBarrierSnippets.class, "g1ArrayRangePostWriteBarrier", GC_CARD_LOCATION, GC_INDEX_LOCATION, GC_LOG_LOCATION);
 
         private final CompressEncoding oopEncoding;
+        private final Counters counters;
 
-        public Templates(HotSpotProviders providers, TargetDescription target, CompressEncoding oopEncoding) {
-            super(providers, providers.getSnippetReflection(), target);
+        public Templates(OptionValues options, SnippetCounter.Group.Factory factory, HotSpotProviders providers, TargetDescription target, CompressEncoding oopEncoding) {
+            super(options, providers, providers.getSnippetReflection(), target);
             this.oopEncoding = oopEncoding;
+            this.counters = new Counters(factory);
         }
 
         public void lower(SerialWriteBarrier writeBarrier, LoweringTool tool) {
@@ -402,6 +422,7 @@ public class WriteBarrierSnippets implements Snippets {
                 OffsetAddressNode address = (OffsetAddressNode) writeBarrier.getAddress();
                 args.add("object", address.getBase());
             }
+            args.addConst("counters", counters);
             template(args).instantiate(providers.getMetaAccess(), writeBarrier, DEFAULT_REPLACER, args);
         }
 
@@ -426,14 +447,15 @@ public class WriteBarrierSnippets implements Snippets {
             ValueNode expected = writeBarrierPre.getExpectedObject();
             if (expected != null && expected.stamp() instanceof NarrowOopStamp) {
                 assert oopEncoding != null;
-                expected = CompressionNode.uncompress(expected, oopEncoding);
+                expected = HotSpotCompressionNode.uncompress(expected, oopEncoding);
             }
             args.add("expectedObject", expected);
 
             args.addConst("doLoad", writeBarrierPre.doLoad());
             args.addConst("nullCheck", writeBarrierPre.getNullCheck());
             args.addConst("threadRegister", registers.getThreadRegister());
-            args.addConst("trace", traceBarrier());
+            args.addConst("trace", traceBarrier(writeBarrierPre.graph()));
+            args.addConst("counters", counters);
             template(args).instantiate(providers.getMetaAccess(), writeBarrierPre, DEFAULT_REPLACER, args);
         }
 
@@ -450,14 +472,15 @@ public class WriteBarrierSnippets implements Snippets {
             ValueNode expected = readBarrier.getExpectedObject();
             if (expected != null && expected.stamp() instanceof NarrowOopStamp) {
                 assert oopEncoding != null;
-                expected = CompressionNode.uncompress(expected, oopEncoding);
+                expected = HotSpotCompressionNode.uncompress(expected, oopEncoding);
             }
 
             args.add("expectedObject", expected);
             args.addConst("doLoad", readBarrier.doLoad());
             args.addConst("nullCheck", false);
             args.addConst("threadRegister", registers.getThreadRegister());
-            args.addConst("trace", traceBarrier());
+            args.addConst("trace", traceBarrier(readBarrier.graph()));
+            args.addConst("counters", counters);
             template(args).instantiate(providers.getMetaAccess(), readBarrier, DEFAULT_REPLACER, args);
         }
 
@@ -480,13 +503,14 @@ public class WriteBarrierSnippets implements Snippets {
             ValueNode value = writeBarrierPost.getValue();
             if (value.stamp() instanceof NarrowOopStamp) {
                 assert oopEncoding != null;
-                value = CompressionNode.uncompress(value, oopEncoding);
+                value = HotSpotCompressionNode.uncompress(value, oopEncoding);
             }
             args.add("value", value);
 
             args.addConst("usePrecise", writeBarrierPost.usePrecise());
             args.addConst("threadRegister", registers.getThreadRegister());
-            args.addConst("trace", traceBarrier());
+            args.addConst("trace", traceBarrier(writeBarrierPost.graph()));
+            args.addConst("counters", counters);
             template(args).instantiate(providers.getMetaAccess(), writeBarrierPost, DEFAULT_REPLACER, args);
         }
 
@@ -530,9 +554,10 @@ public class WriteBarrierSnippets implements Snippets {
         }
     }
 
-    public static boolean traceBarrier() {
-        return GraalOptions.GCDebugStartCycle.getValue() > 0 &&
-                        ((int) Word.unsigned(HotSpotReplacementsUtil.gcTotalCollectionsAddress(INJECTED_VMCONFIG)).readLong(0) > GraalOptions.GCDebugStartCycle.getValue());
+    public static boolean traceBarrier(StructuredGraph graph) {
+        return GraalOptions.GCDebugStartCycle.getValue(graph.getOptions()) > 0 &&
+                        ((int) ((Pointer) WordFactory.pointer(HotSpotReplacementsUtil.gcTotalCollectionsAddress(INJECTED_VMCONFIG))).readLong(0) > GraalOptions.GCDebugStartCycle.getValue(
+                                        graph.getOptions()));
     }
 
     /**
@@ -544,7 +569,7 @@ public class WriteBarrierSnippets implements Snippets {
     public static void validateObject(Object parent, Object child) {
         if (verifyOops(INJECTED_VMCONFIG) && child != null && !validateOop(VALIDATE_OBJECT, parent, child)) {
             log(true, "Verification ERROR, Parent: %p Child: %p\n", Word.objectToTrackedPointer(parent).rawValue(), Word.objectToTrackedPointer(child).rawValue());
-            DirectObjectStoreNode.storeObject(null, 0, 0, null, LocationIdentity.any(), JavaKind.Object);
+            VMErrorNode.vmError("Verification ERROR, Parent: %p\n", Word.objectToTrackedPointer(parent).rawValue());
         }
     }
 

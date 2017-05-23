@@ -165,21 +165,6 @@ void TemplateInterpreterGenerator::generate_all() {
     }
   }
 
-  { CodeletMark cm(_masm, "continuation entry points");
-    Interpreter::_continuation_entry =
-      EntryPoint(
-                 generate_continuation_for(btos),
-                 generate_continuation_for(ztos),
-                 generate_continuation_for(ctos),
-                 generate_continuation_for(stos),
-                 generate_continuation_for(atos),
-                 generate_continuation_for(itos),
-                 generate_continuation_for(ltos),
-                 generate_continuation_for(ftos),
-                 generate_continuation_for(dtos),
-                 generate_continuation_for(vtos)
-                 );
-  }
 
   { CodeletMark cm(_masm, "safepoint entry points");
     Interpreter::_safept_entry =

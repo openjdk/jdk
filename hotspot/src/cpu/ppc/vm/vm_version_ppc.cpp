@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,18 +172,27 @@ void VM_Version::initialize() {
 
   assert(AllocatePrefetchStyle >= 0, "AllocatePrefetchStyle should be positive");
 
-  // Implementation does not use any of the vector instructions
-  // available with Power8. Their exploitation is still pending.
+  // If defined(VM_LITTLE_ENDIAN) and running on Power8 or newer hardware,
+  // the implementation uses the vector instructions available with Power8.
+  // In all other cases, the implementation uses only generally available instructions.
   if (!UseCRC32Intrinsics) {
     if (FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
       FLAG_SET_DEFAULT(UseCRC32Intrinsics, true);
     }
   }
 
-  if (UseCRC32CIntrinsics) {
-    if (!FLAG_IS_DEFAULT(UseCRC32CIntrinsics))
-      warning("CRC32C intrinsics are not available on this CPU");
-    FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
+  // Implementation does not use any of the vector instructions available with Power8.
+  // Their exploitation is still pending (aka "work in progress").
+  if (!UseCRC32CIntrinsics) {
+    if (FLAG_IS_DEFAULT(UseCRC32CIntrinsics)) {
+      FLAG_SET_DEFAULT(UseCRC32CIntrinsics, true);
+    }
+  }
+
+  // TODO: Provide implementation.
+  if (UseAdler32Intrinsics) {
+    warning("Adler32Intrinsics not available on this CPU.");
+    FLAG_SET_DEFAULT(UseAdler32Intrinsics, false);
   }
 
   // The AES intrinsic stubs require AES instruction support.
@@ -243,11 +252,6 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA1Intrinsics, false);
     FLAG_SET_DEFAULT(UseSHA256Intrinsics, false);
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
-  }
-
-  if (UseAdler32Intrinsics) {
-    warning("Adler32Intrinsics not available on this CPU.");
-    FLAG_SET_DEFAULT(UseAdler32Intrinsics, false);
   }
 
   if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {

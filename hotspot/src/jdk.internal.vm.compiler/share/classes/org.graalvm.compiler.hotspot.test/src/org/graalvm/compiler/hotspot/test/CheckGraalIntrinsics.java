@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,12 @@
  */
 package org.graalvm.compiler.hotspot.test;
 
-import static org.graalvm.compiler.core.common.util.Util.JAVA_SPECIFICATION_VERSION;
-
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -44,7 +41,10 @@ import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Binding;
 import org.graalvm.compiler.runtime.RuntimeProvider;
+import org.graalvm.compiler.serviceprovider.JDK9Method;
 import org.graalvm.compiler.test.GraalTest;
+import org.graalvm.util.EconomicMap;
+import org.graalvm.util.MapCursor;
 import org.junit.Test;
 
 import jdk.vm.ci.hotspot.HotSpotVMConfigStore;
@@ -55,11 +55,10 @@ import jdk.vm.ci.meta.MethodHandleAccessProvider.IntrinsicMethod;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 /**
- * Checks the set of intrinsics implemented by Graal against the set of intrinsics declared by
- * HotSpot. The purpose of this test is to detect when new intrinsics are added to HotSpot and
- * process them appropriately in Graal. This will be achieved by working through
- * {@link #TO_BE_INVESTIGATED} and either implementing the intrinsic or moving it to {@link #IGNORE}
- * .
+ * Checks the intrinsics implemented by Graal against the set of intrinsics declared by HotSpot. The
+ * purpose of this test is to detect when new intrinsics are added to HotSpot and process them
+ * appropriately in Graal. This will be achieved by working through {@link #TO_BE_INVESTIGATED} and
+ * either implementing the intrinsic or moving it to {@link #IGNORE} .
  */
 public class CheckGraalIntrinsics extends GraalTest {
 
@@ -74,11 +73,12 @@ public class CheckGraalIntrinsics extends GraalTest {
         return false;
     }
 
-    public static InvocationPlugin findPlugin(Map<String, List<Binding>> bindings, VMIntrinsicMethod intrinsic) {
-        for (Map.Entry<String, List<Binding>> e : bindings.entrySet()) {
+    public static InvocationPlugin findPlugin(EconomicMap<String, List<Binding>> bindings, VMIntrinsicMethod intrinsic) {
+        MapCursor<String, List<Binding>> cursor = bindings.getEntries();
+        while (cursor.advance()) {
             // Match format of VMIntrinsicMethod.declaringClass
-            String type = MetaUtil.internalNameToJava(e.getKey(), true, false).replace('.', '/');
-            for (Binding binding : e.getValue()) {
+            String type = MetaUtil.internalNameToJava(cursor.getKey(), true, false).replace('.', '/');
+            for (Binding binding : cursor.getValue()) {
                 if (match(type, binding, intrinsic)) {
                     return binding.plugin;
                 }
@@ -246,21 +246,21 @@ public class CheckGraalIntrinsics extends GraalTest {
                         "jdk/internal/misc/Unsafe.allocateUninitializedArray0(Ljava/lang/Class;I)Ljava/lang/Object;",
                         "jdk/internal/misc/Unsafe.compareAndExchangeByteAcquire(Ljava/lang/Object;JBB)B",
                         "jdk/internal/misc/Unsafe.compareAndExchangeByteRelease(Ljava/lang/Object;JBB)B",
-                        "jdk/internal/misc/Unsafe.compareAndExchangeByte(Ljava/lang/Object;JBB)B",
+                        "jdk/internal/misc/Unsafe.compareAndExchangeByteVolatile(Ljava/lang/Object;JBB)B",
                         "jdk/internal/misc/Unsafe.compareAndExchangeIntAcquire(Ljava/lang/Object;JII)I",
                         "jdk/internal/misc/Unsafe.compareAndExchangeIntRelease(Ljava/lang/Object;JII)I",
-                        "jdk/internal/misc/Unsafe.compareAndExchangeInt(Ljava/lang/Object;JII)I",
+                        "jdk/internal/misc/Unsafe.compareAndExchangeIntVolatile(Ljava/lang/Object;JII)I",
                         "jdk/internal/misc/Unsafe.compareAndExchangeLongAcquire(Ljava/lang/Object;JJJ)J",
                         "jdk/internal/misc/Unsafe.compareAndExchangeLongRelease(Ljava/lang/Object;JJJ)J",
-                        "jdk/internal/misc/Unsafe.compareAndExchangeLong(Ljava/lang/Object;JJJ)J",
+                        "jdk/internal/misc/Unsafe.compareAndExchangeLongVolatile(Ljava/lang/Object;JJJ)J",
                         "jdk/internal/misc/Unsafe.compareAndExchangeObjectAcquire(Ljava/lang/Object;JLjava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;",
                         "jdk/internal/misc/Unsafe.compareAndExchangeObjectRelease(Ljava/lang/Object;JLjava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;",
-                        "jdk/internal/misc/Unsafe.compareAndExchangeObject(Ljava/lang/Object;JLjava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;",
+                        "jdk/internal/misc/Unsafe.compareAndExchangeObjectVolatile(Ljava/lang/Object;JLjava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;",
                         "jdk/internal/misc/Unsafe.compareAndExchangeShortAcquire(Ljava/lang/Object;JSS)S",
                         "jdk/internal/misc/Unsafe.compareAndExchangeShortRelease(Ljava/lang/Object;JSS)S",
-                        "jdk/internal/misc/Unsafe.compareAndExchangeShort(Ljava/lang/Object;JSS)S",
-                        "jdk/internal/misc/Unsafe.compareAndSetByte(Ljava/lang/Object;JBB)Z",
-                        "jdk/internal/misc/Unsafe.compareAndSetShort(Ljava/lang/Object;JSS)Z",
+                        "jdk/internal/misc/Unsafe.compareAndExchangeShortVolatile(Ljava/lang/Object;JSS)S",
+                        "jdk/internal/misc/Unsafe.compareAndSwapByte(Ljava/lang/Object;JBB)Z",
+                        "jdk/internal/misc/Unsafe.compareAndSwapShort(Ljava/lang/Object;JSS)Z",
                         "jdk/internal/misc/Unsafe.copyMemory0(Ljava/lang/Object;JLjava/lang/Object;JJ)V",
                         "jdk/internal/misc/Unsafe.getAndAddByte(Ljava/lang/Object;JB)B",
                         "jdk/internal/misc/Unsafe.getAndAddShort(Ljava/lang/Object;JS)S",
@@ -295,26 +295,26 @@ public class CheckGraalIntrinsics extends GraalTest {
                         "jdk/internal/misc/Unsafe.putObjectOpaque(Ljava/lang/Object;JLjava/lang/Object;)V",
                         "jdk/internal/misc/Unsafe.putShortOpaque(Ljava/lang/Object;JS)V",
                         "jdk/internal/misc/Unsafe.unpark(Ljava/lang/Object;)V",
-                        "jdk/internal/misc/Unsafe.weakCompareAndSetBytePlain(Ljava/lang/Object;JBB)Z",
-                        "jdk/internal/misc/Unsafe.weakCompareAndSetByteAcquire(Ljava/lang/Object;JBB)Z",
-                        "jdk/internal/misc/Unsafe.weakCompareAndSetByteRelease(Ljava/lang/Object;JBB)Z",
-                        "jdk/internal/misc/Unsafe.weakCompareAndSetByte(Ljava/lang/Object;JBB)Z",
-                        "jdk/internal/misc/Unsafe.weakCompareAndSetIntPlain(Ljava/lang/Object;JII)Z",
-                        "jdk/internal/misc/Unsafe.weakCompareAndSetIntAcquire(Ljava/lang/Object;JII)Z",
-                        "jdk/internal/misc/Unsafe.weakCompareAndSetIntRelease(Ljava/lang/Object;JII)Z",
-                        "jdk/internal/misc/Unsafe.weakCompareAndSetInt(Ljava/lang/Object;JII)Z",
-                        "jdk/internal/misc/Unsafe.weakCompareAndSetLongPlain(Ljava/lang/Object;JJJ)Z",
-                        "jdk/internal/misc/Unsafe.weakCompareAndSetLongAcquire(Ljava/lang/Object;JJJ)Z",
-                        "jdk/internal/misc/Unsafe.weakCompareAndSetLongRelease(Ljava/lang/Object;JJJ)Z",
-                        "jdk/internal/misc/Unsafe.weakCompareAndSetLong(Ljava/lang/Object;JJJ)Z",
-                        "jdk/internal/misc/Unsafe.weakCompareAndSetObjectPlain(Ljava/lang/Object;JLjava/lang/Object;Ljava/lang/Object;)Z",
-                        "jdk/internal/misc/Unsafe.weakCompareAndSetObjectAcquire(Ljava/lang/Object;JLjava/lang/Object;Ljava/lang/Object;)Z",
-                        "jdk/internal/misc/Unsafe.weakCompareAndSetObjectRelease(Ljava/lang/Object;JLjava/lang/Object;Ljava/lang/Object;)Z",
-                        "jdk/internal/misc/Unsafe.weakCompareAndSetObject(Ljava/lang/Object;JLjava/lang/Object;Ljava/lang/Object;)Z",
-                        "jdk/internal/misc/Unsafe.weakCompareAndSetShortPlain(Ljava/lang/Object;JSS)Z",
-                        "jdk/internal/misc/Unsafe.weakCompareAndSetShortAcquire(Ljava/lang/Object;JSS)Z",
-                        "jdk/internal/misc/Unsafe.weakCompareAndSetShortRelease(Ljava/lang/Object;JSS)Z",
-                        "jdk/internal/misc/Unsafe.weakCompareAndSetShort(Ljava/lang/Object;JSS)Z",
+                        "jdk/internal/misc/Unsafe.weakCompareAndSwapByte(Ljava/lang/Object;JBB)Z",
+                        "jdk/internal/misc/Unsafe.weakCompareAndSwapByteAcquire(Ljava/lang/Object;JBB)Z",
+                        "jdk/internal/misc/Unsafe.weakCompareAndSwapByteRelease(Ljava/lang/Object;JBB)Z",
+                        "jdk/internal/misc/Unsafe.weakCompareAndSwapByteVolatile(Ljava/lang/Object;JBB)Z",
+                        "jdk/internal/misc/Unsafe.weakCompareAndSwapInt(Ljava/lang/Object;JII)Z",
+                        "jdk/internal/misc/Unsafe.weakCompareAndSwapIntAcquire(Ljava/lang/Object;JII)Z",
+                        "jdk/internal/misc/Unsafe.weakCompareAndSwapIntRelease(Ljava/lang/Object;JII)Z",
+                        "jdk/internal/misc/Unsafe.weakCompareAndSwapIntVolatile(Ljava/lang/Object;JII)Z",
+                        "jdk/internal/misc/Unsafe.weakCompareAndSwapLong(Ljava/lang/Object;JJJ)Z",
+                        "jdk/internal/misc/Unsafe.weakCompareAndSwapLongAcquire(Ljava/lang/Object;JJJ)Z",
+                        "jdk/internal/misc/Unsafe.weakCompareAndSwapLongRelease(Ljava/lang/Object;JJJ)Z",
+                        "jdk/internal/misc/Unsafe.weakCompareAndSwapLongVolatile(Ljava/lang/Object;JJJ)Z",
+                        "jdk/internal/misc/Unsafe.weakCompareAndSwapObject(Ljava/lang/Object;JLjava/lang/Object;Ljava/lang/Object;)Z",
+                        "jdk/internal/misc/Unsafe.weakCompareAndSwapObjectAcquire(Ljava/lang/Object;JLjava/lang/Object;Ljava/lang/Object;)Z",
+                        "jdk/internal/misc/Unsafe.weakCompareAndSwapObjectRelease(Ljava/lang/Object;JLjava/lang/Object;Ljava/lang/Object;)Z",
+                        "jdk/internal/misc/Unsafe.weakCompareAndSwapObjectVolatile(Ljava/lang/Object;JLjava/lang/Object;Ljava/lang/Object;)Z",
+                        "jdk/internal/misc/Unsafe.weakCompareAndSwapShort(Ljava/lang/Object;JSS)Z",
+                        "jdk/internal/misc/Unsafe.weakCompareAndSwapShortAcquire(Ljava/lang/Object;JSS)Z",
+                        "jdk/internal/misc/Unsafe.weakCompareAndSwapShortRelease(Ljava/lang/Object;JSS)Z",
+                        "jdk/internal/misc/Unsafe.weakCompareAndSwapShortVolatile(Ljava/lang/Object;JSS)Z",
                         "jdk/internal/util/Preconditions.checkIndex(IILjava/util/function/BiFunction;)I",
                         "jdk/jfr/internal/JVM.counterTime()J",
                         "jdk/jfr/internal/JVM.getBufferWriter()Ljava/lang/Object;",
@@ -368,7 +368,7 @@ public class CheckGraalIntrinsics extends GraalTest {
         if (!config.useCRC32Intrinsics) {
             // Registration of the CRC32 plugins is guarded by UseCRC32Intrinsics
             add(IGNORE, "java/util/zip/CRC32.update(II)I");
-            if (JAVA_SPECIFICATION_VERSION < 9) {
+            if (JDK9Method.JAVA_SPECIFICATION_VERSION < 9) {
                 add(IGNORE,
                                 "java/util/zip/CRC32.updateByteBuffer(IJII)I",
                                 "java/util/zip/CRC32.updateBytes(I[BII)I");
@@ -380,7 +380,7 @@ public class CheckGraalIntrinsics extends GraalTest {
                                 "java/util/zip/CRC32C.updateDirectByteBuffer(IJII)I");
             }
         } else {
-            if (JAVA_SPECIFICATION_VERSION >= 9) {
+            if (JDK9Method.JAVA_SPECIFICATION_VERSION >= 9) {
                 add(TO_BE_INVESTIGATED,
                                 "java/util/zip/CRC32C.updateBytes(I[BII)I",
                                 "java/util/zip/CRC32C.updateDirectByteBuffer(IJII)I");
@@ -389,7 +389,7 @@ public class CheckGraalIntrinsics extends GraalTest {
 
         if (!config.useAESIntrinsics) {
             // Registration of the AES plugins is guarded by UseAESIntrinsics
-            if (JAVA_SPECIFICATION_VERSION < 9) {
+            if (JDK9Method.JAVA_SPECIFICATION_VERSION < 9) {
                 add(IGNORE,
                                 "com/sun/crypto/provider/AESCrypt.decryptBlock([BI[BI)V",
                                 "com/sun/crypto/provider/AESCrypt.encryptBlock([BI[BI)V",
@@ -405,7 +405,7 @@ public class CheckGraalIntrinsics extends GraalTest {
         }
         if (!config.useMultiplyToLenIntrinsic()) {
             // Registration of the AES plugins is guarded by UseAESIntrinsics
-            if (JAVA_SPECIFICATION_VERSION < 9) {
+            if (JDK9Method.JAVA_SPECIFICATION_VERSION < 9) {
                 add(IGNORE, "java/math/BigInteger.multiplyToLen([II[II[I)[I");
             } else {
                 add(IGNORE, "java/math/BigInteger.implMultiplyToLen([II[II[I)[I");
@@ -435,7 +435,7 @@ public class CheckGraalIntrinsics extends GraalTest {
         List<VMIntrinsicMethod> intrinsics = store.getIntrinsics();
 
         List<String> missing = new ArrayList<>();
-        Map<String, List<Binding>> bindings = invocationPlugins.getBindings(true);
+        EconomicMap<String, List<Binding>> bindings = invocationPlugins.getBindings(true);
         for (VMIntrinsicMethod intrinsic : intrinsics) {
             InvocationPlugin plugin = findPlugin(bindings, intrinsic);
             if (plugin == null) {

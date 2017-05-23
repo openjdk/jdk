@@ -22,14 +22,14 @@
  */
 package org.graalvm.compiler.lir.alloc.trace.lsra;
 
-import static org.graalvm.compiler.lir.LIRValueUtil.asVirtualStackSlot;
-import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
-import static org.graalvm.compiler.lir.LIRValueUtil.isVirtualStackSlot;
 import static jdk.vm.ci.code.ValueUtil.asRegister;
 import static jdk.vm.ci.code.ValueUtil.asStackSlot;
 import static jdk.vm.ci.code.ValueUtil.isIllegal;
 import static jdk.vm.ci.code.ValueUtil.isRegister;
 import static jdk.vm.ci.code.ValueUtil.isStackSlot;
+import static org.graalvm.compiler.lir.LIRValueUtil.asVirtualStackSlot;
+import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
+import static org.graalvm.compiler.lir.LIRValueUtil.isVirtualStackSlot;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -66,9 +66,9 @@ final class TraceLocalMoveResolver {
     private int insertIdx;
     private LIRInsertionBuffer insertionBuffer; // buffer where moves are inserted
 
-    private final List<TraceInterval> mappingFrom;
-    private final List<Constant> mappingFromOpr;
-    private final List<TraceInterval> mappingTo;
+    private final ArrayList<TraceInterval> mappingFrom;
+    private final ArrayList<Constant> mappingFromOpr;
+    private final ArrayList<TraceInterval> mappingTo;
     private final int[] registerBlocked;
 
     private int[] stackBlocked;
@@ -293,7 +293,6 @@ final class TraceLocalMoveResolver {
             return true;
         }
         if (from != null && isRegister(from) && isRegister(to) && asRegister(from).equals(asRegister(to))) {
-            assert LIRKind.verifyMoveKinds(to.getValueKind(), from.getValueKind()) : String.format("Same register but Kind mismatch %s <- %s", to, from);
             return true;
         }
         return false;
@@ -325,7 +324,7 @@ final class TraceLocalMoveResolver {
 
     private void insertMove(TraceInterval fromInterval, TraceInterval toInterval) {
         assert !fromInterval.operand.equals(toInterval.operand) : "from and to interval equal: " + fromInterval;
-        assert LIRKind.verifyMoveKinds(toInterval.kind(), fromInterval.kind()) : "move between different types";
+        assert LIRKind.verifyMoveKinds(toInterval.kind(), fromInterval.kind(), allocator.getRegisterAllocationConfig()) : "move between different types";
         assert insertIdx != -1 : "must setup insert position first";
 
         insertionBuffer.append(insertIdx, createMove(fromInterval.operand, toInterval.operand, fromInterval.location(), toInterval.location()));
@@ -537,8 +536,8 @@ final class TraceLocalMoveResolver {
         }
 
         assert !fromInterval.operand.equals(toInterval.operand) : "from and to interval equal: " + fromInterval;
-        assert LIRKind.verifyMoveKinds(toInterval.kind(), fromInterval.kind()) : String.format("Kind mismatch: %s vs. %s, from=%s, to=%s", fromInterval.kind(), toInterval.kind(), fromInterval,
-                        toInterval);
+        assert LIRKind.verifyMoveKinds(toInterval.kind(), fromInterval.kind(), allocator.getRegisterAllocationConfig()) : String.format("Kind mismatch: %s vs. %s, from=%s, to=%s", fromInterval.kind(),
+                        toInterval.kind(), fromInterval, toInterval);
         mappingFrom.add(fromInterval);
         mappingFromOpr.add(null);
         mappingTo.add(toInterval);

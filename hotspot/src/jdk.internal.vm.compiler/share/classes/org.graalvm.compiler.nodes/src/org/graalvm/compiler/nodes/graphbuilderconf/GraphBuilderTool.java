@@ -26,6 +26,7 @@ import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.StampProvider;
+import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.meta.Assumptions;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
@@ -37,19 +38,12 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 public interface GraphBuilderTool {
 
     /**
-     * Raw operation for adding a node to the graph.
-     *
-     * @return either the node added or an equivalent node
-     */
-    <T extends ValueNode> T append(T value);
-
-    /**
      * Adds the given node to the graph and also adds recursively all referenced inputs.
      *
      * @param value the node to be added to the graph
      * @return either the node added or an equivalent node
      */
-    <T extends ValueNode> T recursiveAppend(T value);
+    <T extends ValueNode> T append(T value);
 
     StampProvider getStampProvider();
 
@@ -67,6 +61,10 @@ public interface GraphBuilderTool {
      * Gets the graph being constructed.
      */
     StructuredGraph getGraph();
+
+    default OptionValues getOptions() {
+        return getGraph().getOptions();
+    }
 
     /**
      * Determines if this parsing context is within the bytecode of an intrinsic or a method inlined

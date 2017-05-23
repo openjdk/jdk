@@ -45,12 +45,12 @@ public abstract class BackendTest extends GraalCompilerTest {
     @SuppressWarnings("try")
     protected LIRGenerationResult getLIRGenerationResult(final StructuredGraph graph) {
         try (Scope s = Debug.scope("FrontEnd")) {
-            GraalCompiler.emitFrontEnd(getProviders(), getBackend(), graph, getDefaultGraphBuilderSuite(), OptimisticOptimizations.NONE, graph.getProfilingInfo(), getSuites());
+            GraalCompiler.emitFrontEnd(getProviders(), getBackend(), graph, getDefaultGraphBuilderSuite(), OptimisticOptimizations.NONE, graph.getProfilingInfo(), createSuites(graph.getOptions()));
         } catch (Throwable e) {
             throw Debug.handle(e);
         }
 
-        LIRGenerationResult lirGen = GraalCompiler.emitLIR(getBackend(), graph, null, null, getLIRSuites());
+        LIRGenerationResult lirGen = GraalCompiler.emitLIR(getBackend(), graph, null, null, createLIRSuites(graph.getOptions()));
         return lirGen;
     }
 

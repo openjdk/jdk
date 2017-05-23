@@ -153,6 +153,87 @@ public final class ShortCircuitOrNode extends LogicNode implements IterableNodeT
                 }
             }
         }
+
+        if (forX instanceof ShortCircuitOrNode) {
+            ShortCircuitOrNode inner = (ShortCircuitOrNode) forX;
+            if (forY == inner.getX()) {
+                return optimizeShortCircuit(inner, this.xNegated, this.yNegated, true);
+            } else if (forY == inner.getY()) {
+                return optimizeShortCircuit(inner, this.xNegated, this.yNegated, false);
+            }
+        } else if (forY instanceof ShortCircuitOrNode) {
+            ShortCircuitOrNode inner = (ShortCircuitOrNode) forY;
+            if (inner.getX() == forX) {
+                return optimizeShortCircuit(inner, this.yNegated, this.xNegated, true);
+            } else if (inner.getY() == forX) {
+                return optimizeShortCircuit(inner, this.yNegated, this.xNegated, false);
+            }
+        }
         return this;
+    }
+
+    private static LogicNode optimizeShortCircuit(ShortCircuitOrNode inner, boolean innerNegated, boolean matchNegated, boolean matchIsInnerX) {
+        boolean innerMatchNegated;
+        if (matchIsInnerX) {
+            innerMatchNegated = inner.isXNegated();
+        } else {
+            innerMatchNegated = inner.isYNegated();
+        }
+        if (!innerNegated) {
+            // The four digit results of the expression used in the 16 subsequent formula comments
+            // correspond to results when using the following truth table for inputs a and b
+            // and testing all 4 possible input combinations:
+            // _ 1234
+            // a 1100
+            // b 1010
+            if (innerMatchNegated == matchNegated) {
+                // ( (!a ||!b) ||!a) => 0111 (!a ||!b)
+                // ( (!a || b) ||!a) => 1011 (!a || b)
+                // ( ( a ||!b) || a) => 1101 ( a ||!b)
+                // ( ( a || b) || a) => 1110 ( a || b)
+                // Only the inner or is relevant, the outer or never adds information.
+                return inner;
+            } else {
+                // ( ( a || b) ||!a) => 1111 (true)
+                // ( (!a ||!b) || a) => 1111 (true)
+                // ( (!a || b) || a) => 1111 (true)
+                // ( ( a ||!b) ||!a) => 1111 (true)
+                // The result of the expression is always true.
+                return LogicConstantNode.tautology();
+            }
+        } else {
+            if (innerMatchNegated == matchNegated) {
+                // (!(!a ||!b) ||!a) => 1011 (!a || b)
+                // (!(!a || b) ||!a) => 0111 (!a ||!b)
+                // (!( a ||!b) || a) => 1110 ( a || b)
+                // (!( a || b) || a) => 1101 ( a ||!b)
+                boolean newInnerXNegated = inner.isXNegated();
+                boolean newInnerYNegated = inner.isYNegated();
+                double newProbability = inner.getShortCircuitProbability();
+                if (matchIsInnerX) {
+                    newInnerYNegated = !newInnerYNegated;
+                } else {
+                    newInnerXNegated = !newInnerXNegated;
+                    newProbability = 1.0 - newProbability;
+                }
+                // The expression can be transformed into a single or.
+                return new ShortCircuitOrNode(inner.getX(), newInnerXNegated, inner.getY(), newInnerYNegated, newProbability);
+            } else {
+                // (!(!a ||!b) || a) => 1100 (a)
+                // (!(!a || b) || a) => 1100 (a)
+                // (!( a ||!b) ||!a) => 0011 (!a)
+                // (!( a || b) ||!a) => 0011 (!a)
+                LogicNode result = inner.getY();
+                if (matchIsInnerX) {
+                    result = inner.getX();
+                }
+                // Only the second part of the outer or is relevant.
+                if (matchNegated) {
+                    return LogicNegationNode.create(result);
+                } else {
+                    return result;
+                }
+            }
+        }
     }
 }

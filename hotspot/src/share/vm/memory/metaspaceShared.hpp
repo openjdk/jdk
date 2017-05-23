@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,22 +32,11 @@
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 
-#define DEFAULT_VTBL_LIST_SIZE          (17)  // number of entries in the shared space vtable list.
-#define DEFAULT_VTBL_VIRTUALS_COUNT     (200) // maximum number of virtual functions
-// If virtual functions are added to Metadata,
-// this number needs to be increased.  Also,
-// SharedMiscCodeSize will need to be increased.
-// The following 2 sizes were based on
-// MetaspaceShared::generate_vtable_methods()
-#define DEFAULT_VTBL_METHOD_SIZE        (16)  // conservative size of the mov1 and jmp instructions
-// for the x64 platform
-#define DEFAULT_VTBL_COMMON_CODE_SIZE   (1*K) // conservative size of the "common_code" for the x64 platform
-
 #define DEFAULT_SHARED_READ_WRITE_SIZE  (NOT_LP64(6*M) LP64_ONLY(10*M))
 #define MIN_SHARED_READ_WRITE_SIZE      (NOT_LP64(6*M) LP64_ONLY(10*M))
 
-#define DEFAULT_SHARED_READ_ONLY_SIZE   (NOT_LP64(6*M) LP64_ONLY(10*M))
-#define MIN_SHARED_READ_ONLY_SIZE       (NOT_LP64(6*M) LP64_ONLY(10*M))
+#define DEFAULT_SHARED_READ_ONLY_SIZE   (NOT_LP64(8*M) LP64_ONLY(13*M))
+#define MIN_SHARED_READ_ONLY_SIZE       (NOT_LP64(8*M) LP64_ONLY(13*M))
 
 // the MIN_SHARED_MISC_DATA_SIZE and MIN_SHARED_MISC_CODE_SIZE estimates are based on
 // the sizes required for dumping the archive using the default classlist. The sizes
@@ -72,8 +61,8 @@
 
 #define LargeSharedArchiveSize          (300*M)
 #define HugeSharedArchiveSize           (800*M)
-#define ReadOnlyRegionPercentage        0.4
-#define ReadWriteRegionPercentage       0.55
+#define ReadOnlyRegionPercentage        0.52
+#define ReadWriteRegionPercentage       0.43
 #define MiscDataRegionPercentage        0.03
 #define MiscCodeRegionPercentage        0.02
 #define LargeThresholdClassCount        5000
@@ -121,8 +110,6 @@ class MetaspaceShared : AllStatic {
   static ReservedSpace* _shared_rs;
   static int _max_alignment;
   static MetaspaceSharedStats _stats;
-  static bool _link_classes_made_progress;
-  static bool _check_classes_made_progress;
   static bool _has_error_classes;
   static bool _archive_loading_failed;
   static bool _remapped_readwrite;
@@ -134,13 +121,6 @@ class MetaspaceShared : AllStatic {
   static SharedMiscRegion _mc;
   static SharedMiscRegion _od;
  public:
-  enum {
-    vtbl_list_size         = DEFAULT_VTBL_LIST_SIZE,
-    num_virtuals           = DEFAULT_VTBL_VIRTUALS_COUNT,
-    vtbl_method_size       = DEFAULT_VTBL_METHOD_SIZE,
-    vtbl_common_code_size  = DEFAULT_VTBL_COMMON_CODE_SIZE
-  };
-
   enum {
     ro = 0,  // read-only shared space in the heap
     rw = 1,  // read-write shared space in the heap
@@ -194,10 +174,12 @@ class MetaspaceShared : AllStatic {
 
   static bool is_string_region(int idx) NOT_CDS_RETURN_(false);
 
-  static void generate_vtable_methods(void** vtbl_list,
-                                      void** vtable,
-                                      char** md_top, char* md_end,
-                                      char** mc_top, char* mc_end);
+  static intptr_t* allocate_cpp_vtable_clones(intptr_t* top, intptr_t* end);
+  static intptr_t* clone_cpp_vtables(intptr_t* p);
+  static void zero_cpp_vtable_clones_for_writing();
+  static void patch_cpp_vtable_pointers();
+  static bool is_valid_shared_method(const Method* m);
+
   static void serialize(SerializeClosure* sc, GrowableArray<MemRegion> *string_space,
                         size_t* space_size);
 
@@ -218,10 +200,8 @@ class MetaspaceShared : AllStatic {
   static void print_shared_spaces();
 
   static bool try_link_class(InstanceKlass* ik, TRAPS);
-  static void link_one_shared_class(Klass* obj, TRAPS);
-  static void check_one_shared_class(Klass* obj);
-  static void check_shared_class_loader_type(Klass* obj);
   static void link_and_cleanup_shared_classes(TRAPS);
+  static void check_shared_class_loader_type(Klass* obj);
 
   static int count_class(const char* classlist_file);
   static void estimate_regions_size() NOT_CDS_RETURN;

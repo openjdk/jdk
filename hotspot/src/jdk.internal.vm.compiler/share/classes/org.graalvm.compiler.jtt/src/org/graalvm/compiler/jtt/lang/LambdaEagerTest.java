@@ -22,20 +22,19 @@
  */
 package org.graalvm.compiler.jtt.lang;
 
+import static org.graalvm.compiler.core.common.GraalOptions.InlineEverything;
+
 import java.util.EnumSet;
 import java.util.function.IntBinaryOperator;
+
+import org.graalvm.compiler.core.test.GraalCompilerTest;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.options.OptionValues;
+import org.junit.Test;
 
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.meta.DeoptimizationReason;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-
-import org.junit.Test;
-
-import org.graalvm.compiler.core.common.GraalOptions;
-import org.graalvm.compiler.core.test.GraalCompilerTest;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.options.OptionValue;
-import org.graalvm.compiler.options.OptionValue.OverrideScope;
 
 public class LambdaEagerTest extends GraalCompilerTest {
 
@@ -81,9 +80,8 @@ public class LambdaEagerTest extends GraalCompilerTest {
 
     @Override
     @SuppressWarnings("try")
-    protected InstalledCode getCode(ResolvedJavaMethod installedCodeOwner, StructuredGraph graph, boolean forceCompile) {
-        try (OverrideScope scope = OptionValue.override(GraalOptions.InlineEverything, true)) {
-            return super.getCode(installedCodeOwner, graph, forceCompile);
-        }
+    protected InstalledCode getCode(ResolvedJavaMethod installedCodeOwner, StructuredGraph graph, boolean forceCompile, boolean installAsDefault, OptionValues options) {
+        assert graph == null;
+        return super.getCode(installedCodeOwner, graph, forceCompile, installAsDefault, new OptionValues(options, InlineEverything, true));
     }
 }
