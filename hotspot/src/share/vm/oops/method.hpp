@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,11 +122,6 @@ class Method : public Metadata {
   // CDS and vtbl checking can create an empty Method to get vtbl pointer.
   Method(){}
 
-  // The Method vtable is restored by this call when the Method is in the
-  // shared archive.  See patch_klass_vtables() in metaspaceShared.cpp for
-  // all the gory details.  SA, dtrace and pstack helpers distinguish metadata
-  // by their vtable.
-  void restore_vtable() { guarantee(is_method(), "vtable restored by this call"); }
   bool is_method() const volatile { return true; }
 
   void restore_unshareable_info(TRAPS);
@@ -328,7 +323,7 @@ class Method : public Metadata {
   // exception handler which caused the exception to be thrown, which
   // is needed for proper retries. See, for example,
   // InterpreterRuntime::exception_handler_for_exception.
-  static int fast_exception_handler_bci_for(methodHandle mh, KlassHandle ex_klass, int throw_bci, TRAPS);
+  static int fast_exception_handler_bci_for(methodHandle mh, Klass* ex_klass, int throw_bci, TRAPS);
 
   // method data access
   MethodData* method_data() const              {
@@ -818,8 +813,7 @@ class Method : public Metadata {
   static void print_jmethod_ids(ClassLoaderData* loader_data, outputStream* out) PRODUCT_RETURN;
 
   // Get this method's jmethodID -- allocate if it doesn't exist
-  jmethodID jmethod_id()                            { methodHandle this_h(this);
-                                                      return InstanceKlass::get_jmethod_id(method_holder(), this_h); }
+  jmethodID jmethod_id()                            { return method_holder()->get_jmethod_id(this); }
 
   // Lookup the jmethodID for this method.  Return NULL if not found.
   // NOTE that this function can be called from a signal handler

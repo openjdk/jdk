@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,14 +114,8 @@ static void pd_conjoint_jints_atomic(jint* from, jint* to, size_t count) {
 }
 
 static void pd_conjoint_jlongs_atomic(jlong* from, jlong* to, size_t count) {
-#ifdef _LP64
   assert(BytesPerLong == BytesPerOop, "jlongs and oops must be the same size");
   pd_conjoint_oops_atomic((oop*)from, (oop*)to, count);
-#else
-  // Guarantee use of ldd/std via some asm code, because compiler won't.
-  // See solaris_sparc.il.
-  _Copy_conjoint_jlongs_atomic(from, to, count);
-#endif
 }
 
 static void pd_conjoint_oops_atomic(oop* from, oop* to, size_t count) {
@@ -162,7 +156,6 @@ static void pd_arrayof_conjoint_oops(HeapWord* from, HeapWord* to, size_t count)
 }
 
 static void pd_fill_to_words(HeapWord* tohw, size_t count, juint value) {
-#ifdef _LP64
   guarantee(mask_bits((uintptr_t)tohw, right_n_bits(LogBytesPerLong)) == 0,
          "unaligned fill words");
   julong* to = (julong*)tohw;
@@ -170,12 +163,6 @@ static void pd_fill_to_words(HeapWord* tohw, size_t count, juint value) {
   while (count-- > 0) {
     *to++ = v;
   }
-#else // _LP64
-  juint* to = (juint*)tohw;
-  while (count-- > 0) {
-    *to++ = value;
-  }
-#endif // _LP64
 }
 
 typedef void (*_zero_Fn)(HeapWord* to, size_t count);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -662,13 +662,6 @@ void oopDesc::incr_age() {
   } else {
     set_mark(mark()->incr_age());
   }
-}
-
-int oopDesc::ms_adjust_pointers() {
-  debug_only(int check_size = size());
-  int s = klass()->oop_ms_adjust_pointers(this);
-  assert(s == check_size, "should be the same");
-  return s;
 }
 
 #if INCLUDE_ALL_GCS

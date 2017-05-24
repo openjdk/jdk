@@ -22,16 +22,16 @@
  */
 package org.graalvm.compiler.hotspot.meta;
 
-import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.RegisterEffect.PRESERVES_REGISTERS;
-import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.Transition.SAFEPOINT;
 import static jdk.vm.ci.hotspot.HotSpotCallingConventionType.JavaCall;
 import static jdk.vm.ci.hotspot.HotSpotCallingConventionType.JavaCallee;
+import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.RegisterEffect.PRESERVES_REGISTERS;
+import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.Transition.SAFEPOINT;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
 import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage;
 import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.RegisterEffect;
@@ -40,8 +40,10 @@ import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkageImpl;
 import org.graalvm.compiler.hotspot.HotSpotGraalRuntimeProvider;
 import org.graalvm.compiler.hotspot.stubs.ForeignCallStub;
 import org.graalvm.compiler.hotspot.stubs.Stub;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.word.Word;
 import org.graalvm.compiler.word.WordTypes;
+import org.graalvm.util.EconomicMap;
 
 import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.CodeCacheProvider;
@@ -64,7 +66,7 @@ public abstract class HotSpotForeignCallsProviderImpl implements HotSpotForeignC
     protected final HotSpotJVMCIRuntimeProvider jvmciRuntime;
     protected final HotSpotGraalRuntimeProvider runtime;
 
-    protected final Map<ForeignCallDescriptor, HotSpotForeignCallLinkage> foreignCalls = new HashMap<>();
+    protected final EconomicMap<ForeignCallDescriptor, HotSpotForeignCallLinkage> foreignCalls = EconomicMap.create();
     protected final MetaAccessProvider metaAccess;
     protected final CodeCacheProvider codeCache;
     protected final WordTypes wordTypes;
@@ -144,9 +146,9 @@ public abstract class HotSpotForeignCallsProviderImpl implements HotSpotForeignC
      *            cannot be re-executed.
      * @param killedLocations the memory locations killed by the foreign call
      */
-    public void linkForeignCall(HotSpotProviders providers, ForeignCallDescriptor descriptor, long address, boolean prependThread, Transition transition, boolean reexecutable,
-                    LocationIdentity... killedLocations) {
-        ForeignCallStub stub = new ForeignCallStub(jvmciRuntime, providers, address, descriptor, prependThread, transition, reexecutable, killedLocations);
+    public void linkForeignCall(OptionValues options, HotSpotProviders providers, ForeignCallDescriptor descriptor, long address, boolean prependThread, Transition transition,
+                    boolean reexecutable, LocationIdentity... killedLocations) {
+        ForeignCallStub stub = new ForeignCallStub(options, jvmciRuntime, providers, address, descriptor, prependThread, transition, reexecutable, killedLocations);
         HotSpotForeignCallLinkage linkage = stub.getLinkage();
         HotSpotForeignCallLinkage targetLinkage = stub.getTargetLinkage();
         linkage.setCompiledStub(stub);
@@ -197,5 +199,18 @@ public abstract class HotSpotForeignCallsProviderImpl implements HotSpotForeignC
     @Override
     public LIRKind getValueKind(JavaKind javaKind) {
         return LIRKind.fromJavaKind(codeCache.getTarget().arch, javaKind);
+    }
+
+    @Override
+    public List<Stub> getStubs() {
+        List<Stub> stubs = new ArrayList<>();
+        for (HotSpotForeignCallLinkage linkage : foreignCalls.getValues()) {
+            if (linkage.isCompiledStub()) {
+                Stub stub = linkage.getStub();
+                assert stub != null;
+                stubs.add(stub);
+            }
+        }
+        return stubs;
     }
 }

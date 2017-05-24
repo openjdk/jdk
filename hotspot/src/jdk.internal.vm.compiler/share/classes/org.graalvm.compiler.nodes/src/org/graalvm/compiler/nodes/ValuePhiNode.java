@@ -22,8 +22,6 @@
  */
 package org.graalvm.compiler.nodes;
 
-import java.util.stream.Collectors;
-
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
@@ -32,6 +30,7 @@ import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.spi.ArrayLengthProvider;
 import org.graalvm.compiler.nodes.type.StampTool;
 import org.graalvm.compiler.nodes.util.GraphUtil;
+import org.graalvm.util.CollectionsUtil;
 
 /**
  * Value {@link PhiNode}s merge data flow values at control flow merges.
@@ -102,11 +101,13 @@ public class ValuePhiNode extends PhiNode implements ArrayLengthProvider {
     public boolean verify() {
         Stamp s = null;
         for (ValueNode input : values()) {
+            assert input != null;
             if (s == null) {
                 s = input.stamp();
             } else {
                 if (!s.isCompatible(input.stamp())) {
-                    fail("Phi Input Stamps are not compatible. Phi:%s inputs:%s", this, values().stream().map(x -> x.toString() + ":" + x.stamp()).collect(Collectors.joining(", ")));
+                    fail("Phi Input Stamps are not compatible. Phi:%s inputs:%s", this,
+                                    CollectionsUtil.mapAndJoin(values(), x -> x.toString() + ":" + x.stamp(), ", "));
                 }
             }
         }

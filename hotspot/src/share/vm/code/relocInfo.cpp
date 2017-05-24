@@ -191,139 +191,18 @@ bool RelocIterator::addr_in_const() const {
 }
 
 
-static inline int num_cards(int code_size) {
-  return (code_size-1) / indexCardSize;
-}
-
-
-int RelocIterator::locs_and_index_size(int code_size, int locs_size) {
-  if (!UseRelocIndex)  return locs_size;   // no index
-  code_size = round_to(code_size, oopSize);
-  locs_size = round_to(locs_size, oopSize);
-  int index_size = num_cards(code_size) * sizeof(RelocIndexEntry);
-  // format of indexed relocs:
-  //   relocation_begin:   relocInfo ...
-  //   index:              (addr,reloc#) ...
-  //                       indexSize           :relocation_end
-  return locs_size + index_size + BytesPerInt;
-}
-
-
-void RelocIterator::create_index(relocInfo* dest_begin, int dest_count, relocInfo* dest_end) {
-  address relocation_begin = (address)dest_begin;
-  address relocation_end   = (address)dest_end;
-  int     total_size       = relocation_end - relocation_begin;
-  int     locs_size        = dest_count * sizeof(relocInfo);
-  if (!UseRelocIndex) {
-    Copy::fill_to_bytes(relocation_begin + locs_size, total_size-locs_size, 0);
-    return;
-  }
-  int     index_size       = total_size - locs_size - BytesPerInt;      // find out how much space is left
-  int     ncards           = index_size / sizeof(RelocIndexEntry);
-  assert(total_size == locs_size + index_size + BytesPerInt, "checkin'");
-  assert(index_size >= 0 && index_size % sizeof(RelocIndexEntry) == 0, "checkin'");
-  jint*   index_size_addr  = (jint*)relocation_end - 1;
-
-  assert(sizeof(jint) == BytesPerInt, "change this code");
-
-  *index_size_addr = index_size;
-  if (index_size != 0) {
-    assert(index_size > 0, "checkin'");
-
-    RelocIndexEntry* index = (RelocIndexEntry *)(relocation_begin + locs_size);
-    assert(index == (RelocIndexEntry*)index_size_addr - ncards, "checkin'");
-
-    // walk over the relocations, and fill in index entries as we go
-    RelocIterator iter;
-    const address    initial_addr    = NULL;
-    relocInfo* const initial_current = dest_begin - 1;  // biased by -1 like elsewhere
-
-    iter._code    = NULL;
-    iter._addr    = initial_addr;
-    iter._limit   = (address)(intptr_t)(ncards * indexCardSize);
-    iter._current = initial_current;
-    iter._end     = dest_begin + dest_count;
-
-    int i = 0;
-    address next_card_addr = (address)indexCardSize;
-    int addr_offset = 0;
-    int reloc_offset = 0;
-    while (true) {
-      // Checkpoint the iterator before advancing it.
-      addr_offset  = iter._addr    - initial_addr;
-      reloc_offset = iter._current - initial_current;
-      if (!iter.next())  break;
-      while (iter.addr() >= next_card_addr) {
-        index[i].addr_offset  = addr_offset;
-        index[i].reloc_offset = reloc_offset;
-        i++;
-        next_card_addr += indexCardSize;
-      }
-    }
-    while (i < ncards) {
-      index[i].addr_offset  = addr_offset;
-      index[i].reloc_offset = reloc_offset;
-      i++;
-    }
-  }
-}
-
-
 void RelocIterator::set_limits(address begin, address limit) {
-  int index_size = 0;
-  if (UseRelocIndex && _code != NULL) {
-    index_size = ((jint*)_end)[-1];
-    _end = (relocInfo*)( (address)_end - index_size - BytesPerInt );
-  }
-
   _limit = limit;
 
   // the limit affects this next stuff:
   if (begin != NULL) {
-#ifdef ASSERT
-    // In ASSERT mode we do not actually use the index, but simply
-    // check that its contents would have led us to the right answer.
-    address addrCheck = _addr;
-    relocInfo* infoCheck = _current;
-#endif // ASSERT
-    if (index_size > 0) {
-      // skip ahead
-      RelocIndexEntry* index       = (RelocIndexEntry*)_end;
-      RelocIndexEntry* index_limit = (RelocIndexEntry*)((address)index + index_size);
-      assert(_addr == _code->code_begin(), "_addr must be unadjusted");
-      int card = (begin - _addr) / indexCardSize;
-      if (card > 0) {
-        if (index+card-1 < index_limit)  index += card-1;
-        else                             index = index_limit - 1;
-#ifdef ASSERT
-        addrCheck = _addr    + index->addr_offset;
-        infoCheck = _current + index->reloc_offset;
-#else
-        // Advance the iterator immediately to the last valid state
-        // for the previous card.  Calling "next" will then advance
-        // it to the first item on the required card.
-        _addr    += index->addr_offset;
-        _current += index->reloc_offset;
-#endif // ASSERT
-      }
-    }
-
     relocInfo* backup;
     address    backup_addr;
     while (true) {
       backup      = _current;
       backup_addr = _addr;
-#ifdef ASSERT
-      if (backup == infoCheck) {
-        assert(backup_addr == addrCheck, "must match"); addrCheck = NULL; infoCheck = NULL;
-      } else {
-        assert(addrCheck == NULL || backup_addr <= addrCheck, "must not pass addrCheck");
-      }
-#endif // ASSERT
       if (!next() || addr() >= begin) break;
     }
-    assert(addrCheck == NULL || addrCheck == backup_addr, "must have matched addrCheck");
-    assert(infoCheck == NULL || infoCheck == backup,      "must have matched infoCheck");
     // At this point, either we are at the first matching record,
     // or else there is no such record, and !has_current().
     // In either case, revert to the immediatly preceding state.

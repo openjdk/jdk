@@ -27,6 +27,8 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Queue;
 
+import org.graalvm.compiler.debug.Debug;
+
 public abstract class NodeWorkList implements Iterable<Node> {
 
     protected final Queue<Node> worklist;
@@ -70,20 +72,19 @@ public abstract class NodeWorkList implements Iterable<Node> {
     }
 
     public static final class IterativeNodeWorkList extends NodeWorkList {
-
         private static final int EXPLICIT_BITMAP_THRESHOLD = 10;
         protected NodeBitMap inQueue;
 
-        private int iterationLimit = Integer.MAX_VALUE;
+        private int iterationLimit;
         private Node firstNoChange;
         private Node lastPull;
         private Node lastChain;
 
         public IterativeNodeWorkList(Graph graph, boolean fill, int iterationLimitPerNode) {
             super(graph, fill);
-            if (iterationLimitPerNode > 0) {
-                iterationLimit = iterationLimitPerNode * graph.getNodeCount();
-            }
+            assert iterationLimitPerNode > 0;
+            long limit = (long) iterationLimitPerNode * graph.getNodeCount();
+            iterationLimit = (int) Long.min(Integer.MAX_VALUE, limit);
         }
 
         @Override
@@ -92,7 +93,11 @@ public abstract class NodeWorkList implements Iterable<Node> {
                 @Override
                 public boolean hasNext() {
                     dropDeleted();
-                    return iterationLimit > 0 && !worklist.isEmpty();
+                    if (iterationLimit <= 0) {
+                        Debug.log(Debug.INFO_LEVEL, "Exceeded iteration limit in IterativeNodeWorkList");
+                        return false;
+                    }
+                    return !worklist.isEmpty();
                 }
 
                 @Override
@@ -137,7 +142,7 @@ public abstract class NodeWorkList implements Iterable<Node> {
                         }
                     }
                 }
-                assert checkInfiniteWork(node) : "Readded " + node;
+                assert checkInfiniteWork(node) : "Re-added " + node;
                 if (inQueue != null) {
                     inQueue.markAndGrow(node);
                 }

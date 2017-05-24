@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /* @test LimitSharedSizes
  * @summary Test handling of limits on shared space size
+ * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
  * @library /test/lib /runtime/CommandLine/OptionsValidation/common
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -30,6 +31,7 @@
  * @run main LimitSharedSizes
  */
 
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
@@ -127,7 +129,7 @@ public class LimitSharedSizes {
 
         // test with sizes which just meet the minimum required sizes
         // the following tests also attempt to use the shared archive
-        new SharedSizeTestData(Region.RO, Platform.is64bit() ? "10M":"9M", Result.VALID_ARCHIVE),
+        new SharedSizeTestData(Region.RO, Platform.is64bit() ? "14M":"9M", Result.VALID_ARCHIVE),
         new SharedSizeTestData(Region.RW, Platform.is64bit() ? "12M":"7M", Result.VALID_ARCHIVE),
         new SharedSizeTestData(Region.MD, Platform.is64bit() ? "4M":"2M", Result.VALID_ARCHIVE),
         new SharedSizeTestData(Region.MC, "120k", Result.VALID_ARCHIVE),
@@ -149,7 +151,7 @@ public class LimitSharedSizes {
                option,
                "-Xshare:dump");
 
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
+            OutputAnalyzer output = CDSTestUtils.executeAndLog(pb, "dump" + counter);
 
             switch (td.getResult()) {
                 case VALID:
@@ -166,22 +168,14 @@ public class LimitSharedSizes {
                          "-XX:+PrintSharedArchiveAndExit",
                          "-version");
 
-                      try {
-                          output = new OutputAnalyzer(pb.start());
-                          output.shouldContain("archive is valid");
-                      } catch (RuntimeException e) {
-                          // if sharing failed due to ASLR or similar reasons,
-                          // check whether sharing was attempted at all (UseSharedSpaces)
-                          if ((output.getOutput().contains("Unable to use shared archive") ||
-                               output.getOutput().contains("Unable to map ReadOnly shared space at required address.") ||
-                               output.getOutput().contains("Unable to map ReadWrite shared space at required address.") ||
-                               output.getOutput().contains("Unable to reserve shared space at required address")) &&
-                               output.getExitValue() == 1) {
-                               System.out.println("Unable to use shared archive: test not executed; assumed passed");
-                               continue;
-                          }
+                      output = CDSTestUtils.executeAndLog(pb, "use" + counter);
+                      if(CDSTestUtils.isUnableToMap(output)) {
+                          System.out.println("Unable to use shared archive: " +
+                                             "test not executed; assumed passed");
+                          continue;
+                      } else {
+                          output.shouldHaveExitValue(0);
                       }
-                      output.shouldHaveExitValue(0);
                   }
                 }
                 break;

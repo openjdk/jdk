@@ -78,7 +78,7 @@ public class StampTool {
     public static Stamp unsignedCompare(Stamp stamp, Stamp stamp2) {
         IntegerStamp x = (IntegerStamp) stamp;
         IntegerStamp y = (IntegerStamp) stamp2;
-        if (x == x.unrestricted() && y == y.unrestricted()) {
+        if (x.isUnrestricted() && y.isUnrestricted()) {
             // Don't know anything.
             return null;
         }

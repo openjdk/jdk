@@ -34,9 +34,9 @@ import static jdk.vm.ci.code.ValueUtil.isStackSlot;
 import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.asm.amd64.AMD64Address;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.ConditionFlag;
+import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.asm.amd64.AMD64MacroAssembler;
 import org.graalvm.compiler.debug.GraalError;
-import org.graalvm.compiler.hotspot.CompressEncoding;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.StandardOp.LoadConstantOp;
@@ -67,7 +67,7 @@ public class AMD64HotSpotMove {
 
         @Override
         public void emitCode(CompilationResultBuilder crb, AMD64MacroAssembler masm) {
-            if (GeneratePIC.getValue()) {
+            if (GeneratePIC.getValue(crb.getOptions())) {
                 throw GraalError.shouldNotReachHere("Object constant load should not be happening directly");
             }
             boolean compressed = input.isCompressed();
@@ -146,7 +146,7 @@ public class AMD64HotSpotMove {
 
         @Override
         public void emitCode(CompilationResultBuilder crb, AMD64MacroAssembler masm) {
-            if (GeneratePIC.getValue()) {
+            if (GeneratePIC.getValue(crb.getOptions())) {
                 throw GraalError.shouldNotReachHere("Metaspace constant load should not be happening directly");
             }
             boolean compressed = input.isCompressed();
@@ -204,7 +204,7 @@ public class AMD64HotSpotMove {
             AMD64Move.move(AMD64Kind.QWORD, crb, masm, result, input);
 
             Register resReg = asRegister(result);
-            if (encoding.base != 0 || GeneratePIC.getValue()) {
+            if (encoding.hasBase() || GeneratePIC.getValue(crb.getOptions())) {
                 Register baseReg = asRegister(baseRegister);
                 if (!nonNull) {
                     masm.testq(resReg, resReg);
@@ -213,8 +213,8 @@ public class AMD64HotSpotMove {
                 masm.subq(resReg, baseReg);
             }
 
-            if (encoding.shift != 0) {
-                masm.shrq(resReg, encoding.shift);
+            if (encoding.hasShift()) {
+                masm.shrq(resReg, encoding.getShift());
             }
         }
     }
@@ -243,15 +243,15 @@ public class AMD64HotSpotMove {
             AMD64Move.move(AMD64Kind.DWORD, crb, masm, result, input);
 
             Register resReg = asRegister(result);
-            if (encoding.shift != 0) {
-                masm.shlq(resReg, encoding.shift);
+            if (encoding.getShift() != 0) {
+                masm.shlq(resReg, encoding.getShift());
             }
 
-            if (encoding.base != 0 || GeneratePIC.getValue()) {
+            if (encoding.hasBase() || GeneratePIC.getValue(crb.getOptions())) {
                 if (nonNull) {
                     masm.addq(resReg, asRegister(baseRegister));
                 } else {
-                    if (encoding.shift == 0) {
+                    if (!encoding.hasShift()) {
                         // if encoding.shift != 0, the flags are already set by the shlq
                         masm.testq(resReg, resReg);
                     }
@@ -268,17 +268,17 @@ public class AMD64HotSpotMove {
     public static void decodeKlassPointer(CompilationResultBuilder crb, AMD64MacroAssembler masm, Register register, Register scratch, AMD64Address address, GraalHotSpotVMConfig config) {
         CompressEncoding encoding = config.getKlassEncoding();
         masm.movl(register, address);
-        if (encoding.shift != 0) {
-            assert encoding.alignment == encoding.shift : "Decode algorithm is wrong";
-            masm.shlq(register, encoding.alignment);
+        if (encoding.getShift() != 0) {
+            masm.shlq(register, encoding.getShift());
         }
-        if (GeneratePIC.getValue() || encoding.base != 0) {
-            if (GeneratePIC.getValue()) {
+        boolean pic = GeneratePIC.getValue(crb.getOptions());
+        if (pic || encoding.hasBase()) {
+            if (pic) {
                 masm.movq(scratch, masm.getPlaceholder(-1));
                 crb.recordMark(config.MARKID_NARROW_KLASS_BASE_ADDRESS);
             } else {
-                assert encoding.base != 0;
-                masm.movq(scratch, encoding.base);
+                assert encoding.getBase() != 0;
+                masm.movq(scratch, encoding.getBase());
             }
             masm.addq(register, scratch);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,172 +22,114 @@
  */
 package org.graalvm.compiler.nodes.calc;
 
+import jdk.vm.ci.meta.ConstantReflectionProvider;
+import jdk.vm.ci.meta.MetaAccessProvider;
+import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.type.IntegerStamp;
-import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
+import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.LogicConstantNode;
-import org.graalvm.compiler.nodes.LogicNegationNode;
 import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.util.GraphUtil;
 
 import jdk.vm.ci.code.CodeUtil;
-import jdk.vm.ci.meta.ConstantReflectionProvider;
-import jdk.vm.ci.meta.TriState;
+import org.graalvm.compiler.options.OptionValues;
 
 @NodeInfo(shortName = "|<|")
-public final class IntegerBelowNode extends CompareNode {
+public final class IntegerBelowNode extends IntegerLowerThanNode {
     public static final NodeClass<IntegerBelowNode> TYPE = NodeClass.create(IntegerBelowNode.class);
+    private static final BelowOp OP = new BelowOp();
 
     public IntegerBelowNode(ValueNode x, ValueNode y) {
-        super(TYPE, Condition.BT, false, x, y);
+        super(TYPE, x, y, OP);
         assert x.stamp() instanceof IntegerStamp;
         assert y.stamp() instanceof IntegerStamp;
     }
 
-    public static LogicNode create(ValueNode x, ValueNode y, ConstantReflectionProvider constantReflection) {
-        LogicNode result = CompareNode.tryConstantFold(Condition.BT, x, y, constantReflection, false);
-        if (result != null) {
-            return result;
-        } else {
-            result = findSynonym(x, y);
-            if (result != null) {
-                return result;
-            }
-            return new IntegerBelowNode(x, y);
+    public static LogicNode create(ValueNode x, ValueNode y) {
+        return OP.create(x, y);
+    }
+
+    public static LogicNode create(ConstantReflectionProvider constantReflection, MetaAccessProvider metaAccess, OptionValues options, Integer smallestCompareWidth, ValueNode x, ValueNode y) {
+        LogicNode value = OP.canonical(constantReflection, metaAccess, options, smallestCompareWidth, OP.getCondition(), false, x, y);
+        if (value != null) {
+            return value;
         }
+        return create(x, y);
     }
 
     @Override
-    public ValueNode canonical(CanonicalizerTool tool, ValueNode forX, ValueNode forY) {
-        ValueNode result = super.canonical(tool, forX, forY);
-        if (result != this) {
-            return result;
-        }
-        LogicNode synonym = findSynonym(forX, forY);
-        if (synonym != null) {
-            return synonym;
-        }
-        if (forX.isConstant() && forX.asJavaConstant().asLong() == 0) {
-            // 0 |<| y is the same as 0 != y
-            return LogicNegationNode.create(CompareNode.createCompareNode(Condition.EQ, forX, forY, tool.getConstantReflection()));
+    public Node canonical(CanonicalizerTool tool, ValueNode forX, ValueNode forY) {
+        ValueNode value = OP.canonical(tool.getConstantReflection(), tool.getMetaAccess(), tool.getOptions(), tool.smallestCompareWidth(), OP.getCondition(), false, forX, forY);
+        if (value != null) {
+            return value;
         }
         return this;
     }
 
-    private static LogicNode findSynonym(ValueNode forX, ValueNode forY) {
-        if (GraphUtil.unproxify(forX) == GraphUtil.unproxify(forY)) {
-            return LogicConstantNode.contradiction();
-        } else if (forX.stamp() instanceof IntegerStamp && forY.stamp() instanceof IntegerStamp) {
-            IntegerStamp xStamp = (IntegerStamp) forX.stamp();
-            IntegerStamp yStamp = (IntegerStamp) forY.stamp();
-            if (yStamp.isPositive()) {
-                if (xStamp.isPositive() && xStamp.upperBound() < yStamp.lowerBound()) {
-                    return LogicConstantNode.tautology();
-                } else if (xStamp.isStrictlyNegative() || xStamp.lowerBound() >= yStamp.upperBound()) {
-                    return LogicConstantNode.contradiction();
-                }
-            }
+    public static class BelowOp extends LowerOp {
+        @Override
+        protected CompareNode duplicateModified(ValueNode newX, ValueNode newY, boolean unorderedIsTrue) {
+            assert newX.stamp() instanceof IntegerStamp && newY.stamp() instanceof IntegerStamp;
+            return new IntegerBelowNode(newX, newY);
         }
-        return null;
-    }
 
-    @Override
-    protected CompareNode duplicateModified(ValueNode newX, ValueNode newY) {
-        return new IntegerBelowNode(newX, newY);
-    }
-
-    @Override
-    public Stamp getSucceedingStampForX(boolean negated) {
-        Stamp xStampGeneric = getX().stamp();
-        Stamp yStampGeneric = getY().stamp();
-        if (xStampGeneric instanceof IntegerStamp) {
-            IntegerStamp xStamp = (IntegerStamp) xStampGeneric;
-            int bits = xStamp.getBits();
-            if (yStampGeneric instanceof IntegerStamp) {
-                IntegerStamp yStamp = (IntegerStamp) yStampGeneric;
-                assert yStamp.getBits() == bits;
-                if (negated) {
-                    // x >= y
-                    if (xStamp.isPositive() && yStamp.isPositive()) {
-                        long xLowerBound = xStamp.lowerBound();
-                        long yLowerBound = yStamp.lowerBound();
-                        if (yLowerBound > xLowerBound) {
-                            return StampFactory.forIntegerWithMask(bits, yLowerBound, xStamp.upperBound(), xStamp);
-                        }
-                    }
-                } else {
-                    // x < y
-                    if (yStamp.isStrictlyPositive()) {
-                        // x >= 0 && x < y
-                        long xUpperBound = xStamp.upperBound();
-                        long yUpperBound = yStamp.upperBound();
-                        if (yUpperBound <= xUpperBound || !xStamp.isPositive()) {
-                            return StampFactory.forIntegerWithMask(bits, Math.max(0, xStamp.lowerBound()), Math.min(xUpperBound, yUpperBound - 1), xStamp);
-                        }
-                    }
-                }
-            }
+        @Override
+        protected long upperBound(IntegerStamp stamp) {
+            return stamp.unsignedUpperBound();
         }
-        return null;
-    }
 
-    @Override
-    public Stamp getSucceedingStampForY(boolean negated) {
-        Stamp xStampGeneric = getX().stamp();
-        Stamp yStampGeneric = getY().stamp();
-        if (xStampGeneric instanceof IntegerStamp) {
-            IntegerStamp xStamp = (IntegerStamp) xStampGeneric;
-            int bits = xStamp.getBits();
-            if (yStampGeneric instanceof IntegerStamp) {
-                IntegerStamp yStamp = (IntegerStamp) yStampGeneric;
-                assert yStamp.getBits() == bits;
-                if (negated) {
-                    // y <= x
-                    if (xStamp.isPositive()) {
-                        long xUpperBound = xStamp.upperBound();
-                        long yUpperBound = yStamp.upperBound();
-                        if (xUpperBound < yUpperBound || !yStamp.isPositive()) {
-                            return StampFactory.forIntegerWithMask(bits, Math.max(0, yStamp.lowerBound()), Math.min(xUpperBound, yUpperBound), yStamp);
-                        }
-                    }
-                } else {
-                    // y > x
-                    if (xStamp.isPositive() && yStamp.isPositive()) {
-                        long xLowerBound = xStamp.lowerBound();
-                        long yLowerBound = yStamp.lowerBound();
-                        if (xLowerBound == CodeUtil.maxValue(bits)) {
-                            return null;
-                        } else if (xLowerBound >= yLowerBound) {
-                            assert xLowerBound != CodeUtil.maxValue(bits);
-                            return StampFactory.forIntegerWithMask(bits, xLowerBound + 1, yStamp.upperBound(), yStamp);
-                        }
-                    }
-                }
-            }
+        @Override
+        protected long lowerBound(IntegerStamp stamp) {
+            return stamp.unsignedLowerBound();
         }
-        return null;
-    }
 
-    @Override
-    public TriState tryFold(Stamp xStampGeneric, Stamp yStampGeneric) {
-        if (xStampGeneric instanceof IntegerStamp) {
-            IntegerStamp xStamp = (IntegerStamp) xStampGeneric;
-            if (yStampGeneric instanceof IntegerStamp) {
-                IntegerStamp yStamp = (IntegerStamp) yStampGeneric;
-                if (yStamp.isPositive()) {
-                    if (xStamp.isPositive() && xStamp.upperBound() < yStamp.lowerBound()) {
-                        return TriState.TRUE;
-                    } else if (xStamp.isStrictlyNegative() || xStamp.lowerBound() >= yStamp.upperBound()) {
-                        return TriState.FALSE;
-                    }
-                }
-            }
+        @Override
+        protected int compare(long a, long b) {
+            return Long.compareUnsigned(a, b);
         }
-        return TriState.UNKNOWN;
+
+        @Override
+        protected long min(long a, long b) {
+            return NumUtil.minUnsigned(a, b);
+        }
+
+        @Override
+        protected long max(long a, long b) {
+            return NumUtil.maxUnsigned(a, b);
+        }
+
+        @Override
+        protected long cast(long a, int bits) {
+            return CodeUtil.zeroExtend(a, bits);
+        }
+
+        @Override
+        protected long minValue(int bits) {
+            return 0;
+        }
+
+        @Override
+        protected long maxValue(int bits) {
+            return NumUtil.maxValueUnsigned(bits);
+        }
+
+        @Override
+        protected IntegerStamp forInteger(int bits, long min, long max) {
+            return StampFactory.forUnsignedInteger(bits, min, max);
+        }
+
+        @Override
+        protected Condition getCondition() {
+            return Condition.BT;
+        }
+
+        @Override
+        protected IntegerLowerThanNode createNode(ValueNode x, ValueNode y) {
+            return new IntegerBelowNode(x, y);
+        }
     }
 }

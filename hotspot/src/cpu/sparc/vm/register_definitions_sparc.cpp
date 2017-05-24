@@ -166,7 +166,6 @@ REGISTER_DEFINITION(Register, I5_savedSP);
 REGISTER_DEFINITION(Register, O5_savedSP);
 REGISTER_DEFINITION(Register, IdispatchAddress);
 REGISTER_DEFINITION(Register, ImethodDataPtr);
-REGISTER_DEFINITION(Register, IdispatchTables);
 REGISTER_DEFINITION(Register, Lmethod);
 REGISTER_DEFINITION(Register, Llocals);
 REGISTER_DEFINITION(Register, Oexception);

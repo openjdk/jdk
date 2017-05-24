@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ void G1CodeBlobClosure::HeapRegionGatheringOopClosure::do_oop_work(T* p) {
   if (!oopDesc::is_null(oop_or_narrowoop)) {
     oop o = oopDesc::decode_heap_oop_not_null(oop_or_narrowoop);
     HeapRegion* hr = _g1h->heap_region_containing(o);
-    assert(!_g1h->obj_in_cs(o) || hr->rem_set()->strong_code_roots_list_contains(_nm), "if o still in collection set then evacuation failed and nm must already be in the remset");
+    assert(!_g1h->is_in_cset(o) || hr->rem_set()->strong_code_roots_list_contains(_nm), "if o still in collection set then evacuation failed and nm must already be in the remset");
     hr->add_strong_code_root(_nm);
   }
 }

@@ -26,6 +26,7 @@ import org.graalvm.compiler.java.DefaultSuitesProvider;
 import org.graalvm.compiler.lir.amd64.phases.StackMoveOptimizationPhase;
 import org.graalvm.compiler.lir.phases.LIRSuites;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.tiers.CompilerConfiguration;
 
 public class AMD64SuitesProvider extends DefaultSuitesProvider {
@@ -35,9 +36,9 @@ public class AMD64SuitesProvider extends DefaultSuitesProvider {
     }
 
     @Override
-    public LIRSuites createLIRSuites() {
-        LIRSuites lirSuites = super.createLIRSuites();
-        if (StackMoveOptimizationPhase.Options.LIROptStackMoveOptimizer.getValue()) {
+    public LIRSuites createLIRSuites(OptionValues options) {
+        LIRSuites lirSuites = super.createLIRSuites(options);
+        if (StackMoveOptimizationPhase.Options.LIROptStackMoveOptimizer.getValue(options)) {
             /* Note: this phase must be inserted <b>after</b> RedundantMoveElimination */
             lirSuites.getPostAllocationOptimizationStage().appendPhase(new StackMoveOptimizationPhase());
         }

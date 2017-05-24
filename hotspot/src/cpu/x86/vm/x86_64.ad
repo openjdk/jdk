@@ -536,7 +536,7 @@ source %{
 #define __ _masm.
 
 static int clear_avx_size() {
-  return (Compile::current()->max_vector_size() > 16) ? 3 : 0;  // vzeroupper
+  return (VM_Version::supports_vzeroupper()) ? 3: 0;  // vzeroupper
 }
 
 // !!!!! Special hack to get all types of calls to specify the byte offset
@@ -919,7 +919,7 @@ int MachPrologNode::reloc() const
 void MachEpilogNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 {
   Compile* C = ra_->C;
-  if (C->max_vector_size() > 16) {
+  if (VM_Version::supports_vzeroupper()) {
     st->print("vzeroupper");
     st->cr(); st->print("\t");
   }
@@ -955,11 +955,9 @@ void MachEpilogNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
   Compile* C = ra_->C;
   MacroAssembler _masm(&cbuf);
 
-  if (C->max_vector_size() > 16) {
-    // Clear upper bits of YMM registers when current compiled code uses
-    // wide vectors to avoid AVX <-> SSE transition penalty during call.
-    __ vzeroupper();
-  }
+  // Clear upper bits of YMM registers when current compiled code uses
+  // wide vectors to avoid AVX <-> SSE transition penalty during call.
+  __ vzeroupper();
 
   int framesize = C->frame_size_in_bytes();
   assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
@@ -2092,12 +2090,11 @@ encode %{
 
   enc_class clear_avx %{
     debug_only(int off0 = cbuf.insts_size());
-    if (ra_->C->max_vector_size() > 16) {
-      // Clear upper bits of YMM registers when current compiled code uses
-      // wide vectors to avoid AVX <-> SSE transition penalty during call.
-      MacroAssembler _masm(&cbuf);
-      __ vzeroupper();
-    }
+    // Clear upper bits of YMM registers to avoid AVX <-> SSE transition penalty
+    // Clear upper bits of YMM registers when current compiled code uses
+    // wide vectors to avoid AVX <-> SSE transition penalty during call.
+    MacroAssembler _masm(&cbuf);
+    __ vzeroupper();
     debug_only(int off1 = cbuf.insts_size());
     assert(off1 - off0 == clear_avx_size(), "correct size prediction");
   %}
@@ -12116,7 +12113,7 @@ instruct CallLeafNoFPDirect(method meth)
 
   ins_cost(300);
   format %{ "call_leaf_nofp,runtime " %}
-  ins_encode(Java_To_Runtime(meth));
+  ins_encode(clear_avx, Java_To_Runtime(meth));
   ins_pipe(pipe_slow);
 %}
 

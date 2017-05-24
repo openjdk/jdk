@@ -129,7 +129,7 @@ public class MethodInvocation {
         InlineableGraph ig = (InlineableGraph) elem;
         final double invokeProbability = probability * callee.probabilityAt(index);
         final double invokeRelevance = relevance * callee.relevanceAt(index);
-        return new CallsiteHolderExplorable(ig.getGraph(), invokeProbability, invokeRelevance, freshlyInstantiatedArguments);
+        return new CallsiteHolderExplorable(ig.getGraph(), invokeProbability, invokeRelevance, freshlyInstantiatedArguments, null);
     }
 
     @Override

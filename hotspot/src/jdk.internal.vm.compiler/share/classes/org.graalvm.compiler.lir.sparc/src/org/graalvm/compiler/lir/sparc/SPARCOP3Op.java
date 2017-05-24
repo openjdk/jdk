@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.Opcode;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 
+import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Value;
 
@@ -49,32 +50,32 @@ public final class SPARCOP3Op extends SPARCLIRInstruction implements SPARCTailDe
     public static final SizeEstimate SIZE = SizeEstimate.create(1);
 
     @Opcode private final Op3s op3;
-    @Use({REG}) protected Value rs1;
+    @Use({REG}) protected AllocatableValue rs1;
     @Use({REG, CONST}) protected Value rs2;
-    @Def({REG}) protected Value rd;
+    @Def({REG}) protected AllocatableValue rd;
     @State protected LIRFrameState state;
 
-    public static SPARCOP3Op newUnary(Op3s op3, Value rs2, Value rd) {
+    public static SPARCOP3Op newUnary(Op3s op3, Value rs2, AllocatableValue rd) {
         return newUnary(op3, rs2, rd, null);
     }
 
-    public static SPARCOP3Op newUnary(Op3s op3, Value rs2, Value rd, LIRFrameState state) {
+    public static SPARCOP3Op newUnary(Op3s op3, Value rs2, AllocatableValue rd, LIRFrameState state) {
         return new SPARCOP3Op(op3, g0.asValue(LIRKind.value(rs2.getPlatformKind())), rs2, rd, state);
     }
 
-    public static SPARCOP3Op newBinaryVoid(Op3s op3, Value rs1, Value rs2) {
+    public static SPARCOP3Op newBinaryVoid(Op3s op3, AllocatableValue rs1, Value rs2) {
         return newBinaryVoid(op3, rs1, rs2, null);
     }
 
-    public static SPARCOP3Op newBinaryVoid(Op3s op3, Value rs1, Value rs2, LIRFrameState state) {
+    public static SPARCOP3Op newBinaryVoid(Op3s op3, AllocatableValue rs1, Value rs2, LIRFrameState state) {
         return new SPARCOP3Op(op3, rs1, rs2, g0.asValue(LIRKind.value(rs2.getPlatformKind())), state);
     }
 
-    public SPARCOP3Op(Op3s op3, Value rs1, Value rs2, Value rd) {
+    public SPARCOP3Op(Op3s op3, AllocatableValue rs1, Value rs2, AllocatableValue rd) {
         this(op3, rs1, rs2, rd, null);
     }
 
-    public SPARCOP3Op(Op3s op3, Value rs1, Value rs2, Value rd, LIRFrameState state) {
+    public SPARCOP3Op(Op3s op3, AllocatableValue rs1, Value rs2, AllocatableValue rd, LIRFrameState state) {
         super(TYPE, SIZE);
         this.op3 = op3;
         this.rs1 = rs1;

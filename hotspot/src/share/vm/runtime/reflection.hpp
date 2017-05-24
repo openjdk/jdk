@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,12 +82,12 @@ class Reflection: public AllStatic {
 
   // Verification
   static VerifyClassAccessResults verify_class_access(const Klass* current_class,
-                                                      const Klass* new_class,
+                                                      const InstanceKlass* new_class,
                                                       bool classloader_only);
   // Return an error message specific to the specified Klass*'s and result.
   // This function must be called from within a block containing a ResourceMark.
   static char*    verify_class_access_msg(const Klass* current_class,
-                                          const Klass* new_class,
+                                          const InstanceKlass* new_class,
                                           const VerifyClassAccessResults result);
 
   static bool     verify_field_access(const Klass* current_class,
@@ -103,8 +103,8 @@ class Reflection: public AllStatic {
   // If inner_is_member, require the inner to be a member of the outer.
   // If !inner_is_member, require the inner to be anonymous (a non-member).
   // Caller is responsible for figuring out in advance which case must be true.
-  static void check_for_inner_class(instanceKlassHandle outer,
-                                    instanceKlassHandle inner,
+  static void check_for_inner_class(const InstanceKlass* outer,
+                                    const InstanceKlass* inner,
                                     bool inner_is_member,
                                     TRAPS);
 

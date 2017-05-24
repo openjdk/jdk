@@ -61,7 +61,7 @@ public abstract class GeneratedInvocationPlugin implements InvocationPlugin {
             // the injected argument of the call to the @Fold annotated method will be non-null.
             return true;
         }
-        throw new AssertionError("must pass null to injected argument of " + foldAnnotatedMethod.format("%H.%n(%p)"));
+        throw new AssertionError("must pass null to injected argument of " + foldAnnotatedMethod.format("%H.%n(%p)") + ", not " + arg);
     }
 
     private static Method getExecuteMethod() {

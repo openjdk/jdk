@@ -25,7 +25,10 @@ package org.graalvm.compiler.serviceprovider.processor;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -53,6 +56,7 @@ import org.graalvm.compiler.serviceprovider.ServiceProvider;
 public class ServiceProviderProcessor extends AbstractProcessor {
 
     private final Set<TypeElement> processed = new HashSet<>();
+    private final Map<TypeElement, String> serviceProviders = new HashMap<>();
 
     @Override
     public SourceVersion getSupportedSourceVersion() {
@@ -82,23 +86,22 @@ public class ServiceProviderProcessor extends AbstractProcessor {
             } catch (MirroredTypeException ex) {
                 TypeMirror serviceInterface = ex.getTypeMirror();
                 if (verifyAnnotation(serviceInterface, serviceProvider)) {
-                    String interfaceName = ex.getTypeMirror().toString();
-                    createProviderFile(serviceProvider, interfaceName);
+                    if (serviceProvider.getNestingKind().isNested()) {
+                        /*
+                         * This is a simplifying constraint that means we don't have to process the
+                         * qualified name to insert '$' characters at the relevant positions.
+                         */
+                        String msg = String.format("Service provider class %s must be a top level class", serviceProvider.getSimpleName());
+                        processingEnv.getMessager().printMessage(Kind.ERROR, msg, serviceProvider);
+                    } else {
+                        serviceProviders.put(serviceProvider, ex.getTypeMirror().toString());
+                    }
                 }
             }
         }
     }
 
-    private void createProviderFile(TypeElement serviceProvider, String interfaceName) {
-        if (serviceProvider.getNestingKind().isNested()) {
-            // This is a simplifying constraint that means we don't have to
-            // processed the qualified name to insert '$' characters at
-            // the relevant positions.
-            String msg = String.format("Service provider class %s must be a top level class", serviceProvider.getSimpleName());
-            processingEnv.getMessager().printMessage(Kind.ERROR, msg, serviceProvider);
-            return;
-        }
-
+    private void writeProviderFile(TypeElement serviceProvider, String interfaceName) {
         String filename = "META-INF/providers/" + serviceProvider.getQualifiedName();
         try {
             FileObject file = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", filename, serviceProvider);
@@ -114,7 +117,7 @@ public class ServiceProviderProcessor extends AbstractProcessor {
      * Determines if a given exception is (most likely) caused by
      * <a href="https://bugs.eclipse.org/bugs/show_bug.cgi?id=367599">Bug 367599</a>.
      */
-    public static boolean isBug367599(Throwable t) {
+    private static boolean isBug367599(Throwable t) {
         if (t instanceof FilerException) {
             for (StackTraceElement ste : t.getStackTrace()) {
                 if (ste.toString().contains("org.eclipse.jdt.internal.apt.pluggable.core.filer.IdeFilerImpl.create")) {
@@ -123,15 +126,16 @@ public class ServiceProviderProcessor extends AbstractProcessor {
                 }
             }
         }
-        if (t.getCause() != null) {
-            return isBug367599(t.getCause());
-        }
-        return false;
+        return t.getCause() != null && isBug367599(t.getCause());
     }
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         if (roundEnv.processingOver()) {
+            for (Entry<TypeElement, String> e : serviceProviders.entrySet()) {
+                writeProviderFile(e.getKey(), e.getValue());
+            }
+            serviceProviders.clear();
             return true;
         }
 

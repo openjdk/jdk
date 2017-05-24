@@ -25,6 +25,7 @@ package org.graalvm.compiler.java;
 import org.graalvm.compiler.lir.phases.LIRSuites;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.tiers.CompilerConfiguration;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
@@ -41,8 +42,8 @@ public class DefaultSuitesProvider extends SuitesProviderBase {
     }
 
     @Override
-    public Suites createSuites() {
-        return Suites.createSuites(compilerConfiguration);
+    public Suites createSuites(OptionValues options) {
+        return Suites.createSuites(compilerConfiguration, options);
     }
 
     protected PhaseSuite<HighTierContext> createGraphBuilderSuite(Plugins plugins) {
@@ -52,7 +53,7 @@ public class DefaultSuitesProvider extends SuitesProviderBase {
     }
 
     @Override
-    public LIRSuites createLIRSuites() {
-        return Suites.createLIRSuites(compilerConfiguration);
+    public LIRSuites createLIRSuites(OptionValues options) {
+        return Suites.createLIRSuites(compilerConfiguration, options);
     }
 }

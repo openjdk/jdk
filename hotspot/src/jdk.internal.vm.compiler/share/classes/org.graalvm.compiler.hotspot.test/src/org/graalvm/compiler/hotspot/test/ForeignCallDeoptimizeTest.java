@@ -30,9 +30,9 @@ import org.graalvm.compiler.hotspot.meta.HotSpotForeignCallsProviderImpl;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.extended.ForeignCallNode;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -43,11 +43,9 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 public class ForeignCallDeoptimizeTest extends GraalCompilerTest {
 
     @Override
-    protected Plugins getDefaultGraphBuilderPlugins() {
+    protected void registerInvocationPlugins(InvocationPlugins invocationPlugins) {
         ForeignCallsProvider foreignCalls = ((HotSpotProviders) getProviders()).getForeignCalls();
-
-        Plugins ret = super.getDefaultGraphBuilderPlugins();
-        ret.getInvocationPlugins().register(new InvocationPlugin() {
+        invocationPlugins.register(new InvocationPlugin() {
 
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode arg) {
@@ -56,7 +54,7 @@ public class ForeignCallDeoptimizeTest extends GraalCompilerTest {
                 return true;
             }
         }, ForeignCallDeoptimizeTest.class, "testCallInt", int.class);
-        return ret;
+        super.registerInvocationPlugins(invocationPlugins);
     }
 
     public static int testCallInt(int value) {

@@ -266,14 +266,14 @@ private:
 
 public:
   JvmtiClassFileLoadEventMark(JavaThread *thread, Symbol* name,
-     Handle class_loader, Handle prot_domain, KlassHandle *class_being_redefined) : JvmtiThreadEventMark(thread) {
+     Handle class_loader, Handle prot_domain, Klass* class_being_redefined) : JvmtiThreadEventMark(thread) {
       _class_name = name != NULL? name->as_utf8() : NULL;
       _jloader = (jobject)to_jobject(class_loader());
       _protection_domain = (jobject)to_jobject(prot_domain());
       if (class_being_redefined == NULL) {
         _class_being_redefined = NULL;
       } else {
-        _class_being_redefined = (jclass)to_jclass((*class_being_redefined)());
+        _class_being_redefined = (jclass)to_jclass(class_being_redefined);
       }
   };
   const char *class_name() {
@@ -734,7 +734,7 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
   JvmtiEnv *           _curr_env;
   JvmtiCachedClassFileData ** _cached_class_file_ptr;
   JvmtiThreadState *   _state;
-  KlassHandle *        _h_class_being_redefined;
+  Klass*               _class_being_redefined;
   JvmtiClassLoadKind   _load_kind;
   bool                 _has_been_modified;
 
@@ -757,9 +757,9 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
 
     _state = _thread->jvmti_thread_state();
     if (_state != NULL) {
-      _h_class_being_redefined = _state->get_class_being_redefined();
+      _class_being_redefined = _state->get_class_being_redefined();
       _load_kind = _state->get_class_load_kind();
-      Klass* klass = (_h_class_being_redefined == NULL) ? NULL : (*_h_class_being_redefined)();
+      Klass* klass = (_class_being_redefined == NULL) ? NULL : _class_being_redefined;
       if (_load_kind != jvmti_class_load_kind_load && klass != NULL) {
         ModuleEntry* module_entry = InstanceKlass::cast(klass)->module();
         assert(module_entry != NULL, "module_entry should always be set");
@@ -782,7 +782,7 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
       _state->clear_class_being_redefined();
     } else {
       // redefine and retransform will always set the thread state
-      _h_class_being_redefined = (KlassHandle *) NULL;
+      _class_being_redefined = NULL;
       _load_kind = jvmti_class_load_kind_load;
     }
   }
@@ -827,7 +827,7 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
     jint new_len = 0;
     JvmtiClassFileLoadEventMark jem(_thread, _h_name, _class_loader,
                                     _h_protection_domain,
-                                    _h_class_being_redefined);
+                                    _class_being_redefined);
     JvmtiJavaThreadEventTransition jet(_thread);
     jvmtiEventClassFileLoadHook callback = env->callbacks()->ClassFileLoadHook;
     if (callback != NULL) {
@@ -1154,7 +1154,6 @@ void JvmtiExport::post_class_load(JavaThread *thread, Klass* klass) {
     return;
   }
   HandleMark hm(thread);
-  KlassHandle kh(thread, klass);
 
   EVT_TRIG_TRACE(JVMTI_EVENT_CLASS_LOAD, ("[%s] Trg Class Load triggered",
                       JvmtiTrace::safe_get_thread_name(thread)));
@@ -1171,8 +1170,8 @@ void JvmtiExport::post_class_load(JavaThread *thread, Klass* klass) {
       }
       EVT_TRACE(JVMTI_EVENT_CLASS_LOAD, ("[%s] Evt Class Load sent %s",
                                          JvmtiTrace::safe_get_thread_name(thread),
-                                         kh()==NULL? "NULL" : kh()->external_name() ));
-      JvmtiClassEventMark jem(thread, kh());
+                                         klass==NULL? "NULL" : klass->external_name() ));
+      JvmtiClassEventMark jem(thread, klass);
       JvmtiJavaThreadEventTransition jet(thread);
       jvmtiEventClassLoad callback = env->callbacks()->ClassLoad;
       if (callback != NULL) {
@@ -1188,7 +1187,6 @@ void JvmtiExport::post_class_prepare(JavaThread *thread, Klass* klass) {
     return;
   }
   HandleMark hm(thread);
-  KlassHandle kh(thread, klass);
 
   EVT_TRIG_TRACE(JVMTI_EVENT_CLASS_PREPARE, ("[%s] Trg Class Prepare triggered",
                       JvmtiTrace::safe_get_thread_name(thread)));
@@ -1205,8 +1203,8 @@ void JvmtiExport::post_class_prepare(JavaThread *thread, Klass* klass) {
       }
       EVT_TRACE(JVMTI_EVENT_CLASS_PREPARE, ("[%s] Evt Class Prepare sent %s",
                                             JvmtiTrace::safe_get_thread_name(thread),
-                                            kh()==NULL? "NULL" : kh()->external_name() ));
-      JvmtiClassEventMark jem(thread, kh());
+                                            klass==NULL? "NULL" : klass->external_name() ));
+      JvmtiClassEventMark jem(thread, klass);
       JvmtiJavaThreadEventTransition jet(thread);
       jvmtiEventClassPrepare callback = env->callbacks()->ClassPrepare;
       if (callback != NULL) {
@@ -1222,7 +1220,6 @@ void JvmtiExport::post_class_unload(Klass* klass) {
   }
   Thread *thread = Thread::current();
   HandleMark hm(thread);
-  KlassHandle kh(thread, klass);
 
   EVT_TRIG_TRACE(EXT_EVENT_CLASS_UNLOAD, ("[?] Trg Class Unload triggered" ));
   if (JvmtiEventController::is_enabled((jvmtiEvent)EXT_EVENT_CLASS_UNLOAD)) {
@@ -1243,12 +1240,12 @@ void JvmtiExport::post_class_unload(Klass* klass) {
       }
       if (env->is_enabled((jvmtiEvent)EXT_EVENT_CLASS_UNLOAD)) {
         EVT_TRACE(EXT_EVENT_CLASS_UNLOAD, ("[?] Evt Class Unload sent %s",
-                  kh()==NULL? "NULL" : kh()->external_name() ));
+                  klass==NULL? "NULL" : klass->external_name() ));
 
         // do everything manually, since this is a proxy - needs special care
         JNIEnv* jni_env = real_thread->jni_environment();
         jthread jt = (jthread)JNIHandles::make_local(real_thread, real_thread->threadObj());
-        jclass jk = (jclass)JNIHandles::make_local(real_thread, kh()->java_mirror());
+        jclass jk = (jclass)JNIHandles::make_local(real_thread, klass->java_mirror());
 
         // Before we call the JVMTI agent, we have to set the state in the
         // thread for which we are proxying.
@@ -1594,7 +1591,7 @@ void JvmtiExport::post_exception_throw(JavaThread *thread, Method* method, addre
           current_bci = st.bci();
           do {
             should_repeat = false;
-            KlassHandle eh_klass(thread, exception_handle()->klass());
+            Klass* eh_klass = exception_handle()->klass();
             current_bci = Method::fast_exception_handler_bci_for(
               current_mh, eh_klass, current_bci, THREAD);
             if (HAS_PENDING_EXCEPTION) {
@@ -1742,7 +1739,6 @@ void JvmtiExport::post_field_access_by_jni(JavaThread *thread, oop obj,
   if (!fd.is_field_access_watched()) return;
 
   HandleMark hm(thread);
-  KlassHandle h_klass(thread, klass);
   Handle h_obj;
   if (!is_static) {
     // non-static field accessors have an object, but we need a handle
@@ -1752,11 +1748,11 @@ void JvmtiExport::post_field_access_by_jni(JavaThread *thread, oop obj,
   post_field_access(thread,
                     thread->last_frame().interpreter_frame_method(),
                     thread->last_frame().interpreter_frame_bcp(),
-                    h_klass, h_obj, fieldID);
+                    klass, h_obj, fieldID);
 }
 
 void JvmtiExport::post_field_access(JavaThread *thread, Method* method,
-  address location, KlassHandle field_klass, Handle object, jfieldID field) {
+  address location, Klass* field_klass, Handle object, jfieldID field) {
 
   HandleMark hm(thread);
   methodHandle mh(thread, method);
@@ -1778,7 +1774,7 @@ void JvmtiExport::post_field_access(JavaThread *thread, Method* method,
 
       JvmtiEnv *env = ets->get_env();
       JvmtiLocationEventMark jem(thread, mh, location);
-      jclass field_jclass = jem.to_jclass(field_klass());
+      jclass field_jclass = jem.to_jclass(field_klass);
       jobject field_jobject = jem.to_jobject(object());
       JvmtiJavaThreadEventTransition jet(thread);
       jvmtiEventFieldAccess callback = env->callbacks()->FieldAccess;
@@ -1846,22 +1842,21 @@ void JvmtiExport::post_field_modification_by_jni(JavaThread *thread, oop obj,
     assert(obj != NULL, "non-static needs an object");
     h_obj = Handle(thread, obj);
   }
-  KlassHandle h_klass(thread, klass);
   post_field_modification(thread,
                           thread->last_frame().interpreter_frame_method(),
                           thread->last_frame().interpreter_frame_bcp(),
-                          h_klass, h_obj, fieldID, sig_type, value);
+                          klass, h_obj, fieldID, sig_type, value);
 }
 
 void JvmtiExport::post_raw_field_modification(JavaThread *thread, Method* method,
-  address location, KlassHandle field_klass, Handle object, jfieldID field,
+  address location, Klass* field_klass, Handle object, jfieldID field,
   char sig_type, jvalue *value) {
 
   if (sig_type == 'I' || sig_type == 'Z' || sig_type == 'B' || sig_type == 'C' || sig_type == 'S') {
     // 'I' instructions are used for byte, char, short and int.
     // determine which it really is, and convert
     fieldDescriptor fd;
-    bool found = JvmtiEnv::get_field_descriptor(field_klass(), field, &fd);
+    bool found = JvmtiEnv::get_field_descriptor(field_klass, field, &fd);
     // should be found (if not, leave as is)
     if (found) {
       jint ival = value->i;
@@ -1916,7 +1911,7 @@ void JvmtiExport::post_raw_field_modification(JavaThread *thread, Method* method
 }
 
 void JvmtiExport::post_field_modification(JavaThread *thread, Method* method,
-  address location, KlassHandle field_klass, Handle object, jfieldID field,
+  address location, Klass* field_klass, Handle object, jfieldID field,
   char sig_type, jvalue *value_ptr) {
 
   HandleMark hm(thread);
@@ -1942,7 +1937,7 @@ void JvmtiExport::post_field_modification(JavaThread *thread, Method* method,
 
       JvmtiEnv *env = ets->get_env();
       JvmtiLocationEventMark jem(thread, mh, location);
-      jclass field_jclass = jem.to_jclass(field_klass());
+      jclass field_jclass = jem.to_jclass(field_klass);
       jobject field_jobject = jem.to_jobject(object());
       JvmtiJavaThreadEventTransition jet(thread);
       jvmtiEventFieldModification callback = env->callbacks()->FieldModification;

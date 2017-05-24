@@ -22,8 +22,8 @@
  */
 package org.graalvm.compiler.core.common.spi;
 
+import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.core.common.LocationIdentity;
 
 import jdk.vm.ci.code.ValueKindFactory;
 

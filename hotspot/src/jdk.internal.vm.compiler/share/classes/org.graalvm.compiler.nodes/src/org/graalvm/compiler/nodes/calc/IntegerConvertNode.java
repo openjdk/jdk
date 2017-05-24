@@ -28,6 +28,7 @@ import java.util.function.Function;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.IntegerConvertOp;
 import org.graalvm.compiler.core.common.type.IntegerStamp;
+import org.graalvm.compiler.core.common.type.PrimitiveStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
@@ -37,6 +38,7 @@ import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.ArithmeticLIRLowerable;
+import org.graalvm.compiler.nodes.spi.StampInverter;
 
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
@@ -45,7 +47,7 @@ import jdk.vm.ci.meta.ConstantReflectionProvider;
  * An {@code IntegerConvert} converts an integer to an integer of different width.
  */
 @NodeInfo
-public abstract class IntegerConvertNode<OP, REV> extends UnaryNode implements ArithmeticOperation, ConvertNode, ArithmeticLIRLowerable {
+public abstract class IntegerConvertNode<OP, REV> extends UnaryNode implements ArithmeticOperation, ConvertNode, ArithmeticLIRLowerable, StampInverter {
     @SuppressWarnings("rawtypes") public static final NodeClass<IntegerConvertNode> TYPE = NodeClass.create(IntegerConvertNode.class);
 
     protected final SerializableIntegerConvertFunction<OP> getOp;
@@ -64,6 +66,7 @@ public abstract class IntegerConvertNode<OP, REV> extends UnaryNode implements A
         this.getReverseOp = getReverseOp;
         this.inputBits = inputBits;
         this.resultBits = resultBits;
+        assert ((PrimitiveStamp) input.stamp()).getBits() == inputBits;
     }
 
     public int getInputBits() {
@@ -146,14 +149,19 @@ public abstract class IntegerConvertNode<OP, REV> extends UnaryNode implements A
             result = new NarrowNode(input, fromStamp.getBits(), toStamp.getBits());
         } else if (zeroExtend) {
             // toStamp.getBits() > fromStamp.getBits()
-            result = new ZeroExtendNode(input, toStamp.getBits());
+            result = ZeroExtendNode.create(input, toStamp.getBits());
         } else {
             // toStamp.getBits() > fromStamp.getBits()
-            result = new SignExtendNode(input, toStamp.getBits());
+            result = SignExtendNode.create(input, toStamp.getBits());
         }
 
         IntegerStamp resultStamp = (IntegerStamp) result.stamp();
         assert toStamp.getBits() == resultStamp.getBits();
         return result;
+    }
+
+    @Override
+    public Stamp invertStamp(Stamp outStamp) {
+        return getArithmeticOp().invertStamp(inputBits, resultBits, outStamp);
     }
 }

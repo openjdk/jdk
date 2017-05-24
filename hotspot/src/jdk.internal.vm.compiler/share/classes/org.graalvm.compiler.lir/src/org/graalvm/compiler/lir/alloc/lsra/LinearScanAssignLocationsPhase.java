@@ -22,23 +22,21 @@
  */
 package org.graalvm.compiler.lir.alloc.lsra;
 
-import static org.graalvm.compiler.core.common.GraalOptions.DetailedAsserts;
+import static jdk.vm.ci.code.ValueUtil.isIllegal;
 import static org.graalvm.compiler.lir.LIRValueUtil.isJavaConstant;
 import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
 import static org.graalvm.compiler.lir.LIRValueUtil.isVariable;
 import static org.graalvm.compiler.lir.LIRValueUtil.isVirtualStackSlot;
-import static jdk.vm.ci.code.ValueUtil.isIllegal;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.List;
 
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.InstructionValueProcedure;
-import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstruction.OperandFlag;
 import org.graalvm.compiler.lir.LIRInstruction.OperandMode;
@@ -47,7 +45,7 @@ import org.graalvm.compiler.lir.StandardOp.MoveOp;
 import org.graalvm.compiler.lir.StandardOp.ValueMoveOp;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
-import org.graalvm.compiler.lir.phases.AllocationPhase;
+import org.graalvm.compiler.lir.phases.AllocationPhase.AllocationContext;
 
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.AllocatableValue;
@@ -56,7 +54,7 @@ import jdk.vm.ci.meta.Value;
 /**
  * Phase 7: Assign register numbers back to LIR.
  */
-public class LinearScanAssignLocationsPhase extends AllocationPhase {
+public class LinearScanAssignLocationsPhase extends LinearScanAllocationPhase {
 
     protected final LinearScan allocator;
 
@@ -83,7 +81,7 @@ public class LinearScanAssignLocationsPhase extends AllocationPhase {
         assert interval != null : "interval must exist";
 
         if (opId != -1) {
-            if (DetailedAsserts.getValue()) {
+            if (allocator.detailedAsserts) {
                 AbstractBlockBase<?> block = allocator.blockForId(opId);
                 if (block.getSuccessorCount() <= 1 && opId == allocator.getLastLirInstructionId(block)) {
                     /*
@@ -116,14 +114,7 @@ public class LinearScanAssignLocationsPhase extends AllocationPhase {
         return interval.location();
     }
 
-    /**
-     * @param op
-     * @param operand
-     * @param valueMode
-     * @param flags
-     * @see InstructionValueProcedure#doValue(LIRInstruction, Value, OperandMode, EnumSet)
-     */
-    private Value debugInfoProcedure(LIRInstruction op, Value operand, OperandMode valueMode, EnumSet<OperandFlag> flags) {
+    private Value debugInfoProcedure(LIRInstruction op, Value operand) {
         if (isVirtualStackSlot(operand)) {
             return operand;
         }
@@ -158,11 +149,7 @@ public class LinearScanAssignLocationsPhase extends AllocationPhase {
         return result;
     }
 
-    private void computeDebugInfo(final LIRInstruction op, LIRFrameState info) {
-        info.forEachState(op, this::debugInfoProcedure);
-    }
-
-    private void assignLocations(List<LIRInstruction> instructions) {
+    private void assignLocations(ArrayList<LIRInstruction> instructions) {
         int numInst = instructions.size();
         boolean hasDead = false;
 
@@ -185,6 +172,22 @@ public class LinearScanAssignLocationsPhase extends AllocationPhase {
         }
     }
 
+    private final InstructionValueProcedure assignProc = new InstructionValueProcedure() {
+        @Override
+        public Value doValue(LIRInstruction instruction, Value value, OperandMode mode, EnumSet<OperandFlag> flags) {
+            if (isVariable(value)) {
+                return colorLirOperand(instruction, (Variable) value, mode);
+            }
+            return value;
+        }
+    };
+    private final InstructionValueProcedure debugInfoProc = new InstructionValueProcedure() {
+        @Override
+        public Value doValue(LIRInstruction instruction, Value value, OperandMode mode, EnumSet<OperandFlag> flags) {
+            return debugInfoProcedure(instruction, value);
+        }
+    };
+
     /**
      * Assigns the operand of an {@link LIRInstruction}.
      *
@@ -194,10 +197,9 @@ public class LinearScanAssignLocationsPhase extends AllocationPhase {
     protected boolean assignLocations(LIRInstruction op) {
         assert op != null;
 
-        InstructionValueProcedure assignProc = (inst, operand, mode, flags) -> isVariable(operand) ? colorLirOperand(inst, (Variable) operand, mode) : operand;
         // remove useless moves
-        if (op instanceof MoveOp) {
-            AllocatableValue result = ((MoveOp) op).getResult();
+        if (MoveOp.isMoveOp(op)) {
+            AllocatableValue result = MoveOp.asMoveOp(op).getResult();
             if (isVariable(result) && allocator.isMaterialized(result, op.id(), OperandMode.DEF)) {
                 /*
                  * This happens if a materializable interval is originally not spilled but then
@@ -214,11 +216,11 @@ public class LinearScanAssignLocationsPhase extends AllocationPhase {
         op.forEachOutput(assignProc);
 
         // compute reference map and debug information
-        op.forEachState((inst, state) -> computeDebugInfo(inst, state));
+        op.forEachState(debugInfoProc);
 
         // remove useless moves
-        if (op instanceof ValueMoveOp) {
-            ValueMoveOp move = (ValueMoveOp) op;
+        if (ValueMoveOp.isValueMoveOp(op)) {
+            ValueMoveOp move = ValueMoveOp.asValueMoveOp(op);
             if (move.getInput().equals(move.getResult())) {
                 return true;
             }

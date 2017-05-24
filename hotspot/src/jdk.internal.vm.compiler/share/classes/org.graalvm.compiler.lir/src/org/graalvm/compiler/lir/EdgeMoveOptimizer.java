@@ -94,16 +94,16 @@ public final class EdgeMoveOptimizer extends PostAllocationOptimizationPhase {
             assert op1 != null;
             assert op2 != null;
 
-            if (op1 instanceof ValueMoveOp && op2 instanceof ValueMoveOp) {
-                ValueMoveOp move1 = (ValueMoveOp) op1;
-                ValueMoveOp move2 = (ValueMoveOp) op2;
+            if (ValueMoveOp.isValueMoveOp(op1) && ValueMoveOp.isValueMoveOp(op2)) {
+                ValueMoveOp move1 = ValueMoveOp.asValueMoveOp(op1);
+                ValueMoveOp move2 = ValueMoveOp.asValueMoveOp(op2);
                 if (move1.getInput().equals(move2.getInput()) && move1.getResult().equals(move2.getResult())) {
                     // these moves are exactly equal and can be optimized
                     return true;
                 }
-            } else if (op1 instanceof LoadConstantOp && op2 instanceof LoadConstantOp) {
-                LoadConstantOp move1 = (LoadConstantOp) op1;
-                LoadConstantOp move2 = (LoadConstantOp) op2;
+            } else if (LoadConstantOp.isLoadConstantOp(op1) && LoadConstantOp.isLoadConstantOp(op2)) {
+                LoadConstantOp move1 = LoadConstantOp.asLoadConstantOp(op1);
+                LoadConstantOp move2 = LoadConstantOp.asLoadConstantOp(op2);
                 if (move1.getConstant().equals(move2.getConstant()) && move1.getResult().equals(move2.getResult())) {
                     // these moves are exactly equal and can be optimized
                     return true;
@@ -134,7 +134,7 @@ public final class EdgeMoveOptimizer extends PostAllocationOptimizationPhase {
             for (AbstractBlockBase<?> pred : block.getPredecessors()) {
                 assert pred != null;
                 assert ir.getLIRforBlock(pred) != null;
-                List<LIRInstruction> predInstructions = ir.getLIRforBlock(pred);
+                ArrayList<LIRInstruction> predInstructions = ir.getLIRforBlock(pred);
 
                 if (pred.getSuccessorCount() != 1) {
                     // this can happen with switch-statements where multiple edges are between
@@ -191,7 +191,7 @@ public final class EdgeMoveOptimizer extends PostAllocationOptimizationPhase {
             edgeInstructionSeqences.clear();
             int numSux = block.getSuccessorCount();
 
-            List<LIRInstruction> instructions = ir.getLIRforBlock(block);
+            ArrayList<LIRInstruction> instructions = ir.getLIRforBlock(block);
 
             assert numSux == 2 : "method should not be called otherwise";
 
@@ -217,7 +217,7 @@ public final class EdgeMoveOptimizer extends PostAllocationOptimizationPhase {
 
             // setup a list with the lir-instructions of all successors
             for (AbstractBlockBase<?> sux : block.getSuccessors()) {
-                List<LIRInstruction> suxInstructions = ir.getLIRforBlock(sux);
+                ArrayList<LIRInstruction> suxInstructions = ir.getLIRforBlock(sux);
 
                 assert suxInstructions.get(0) instanceof StandardOp.LabelOp : "block must start with label";
 

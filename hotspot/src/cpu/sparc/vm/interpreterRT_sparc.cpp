@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,47 +53,24 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_long() {
   Argument  jni_arg(jni_offset(), false);
   Register  Rtmp = O0;
 
-#ifdef _LP64
   __ ldx(Llocals, Interpreter::local_offset_in_bytes(offset() + 1), Rtmp);
   __ store_long_argument(Rtmp, jni_arg);
-#else
-  __ ld(Llocals, Interpreter::local_offset_in_bytes(offset() + 1), Rtmp);
-  __ store_argument(Rtmp, jni_arg);
-  __ ld(Llocals, Interpreter::local_offset_in_bytes(offset() + 0), Rtmp);
-  Argument successor(jni_arg.successor());
-  __ store_argument(Rtmp, successor);
-#endif
 }
 
 
 void InterpreterRuntime::SignatureHandlerGenerator::pass_float() {
   Argument  jni_arg(jni_offset(), false);
-#ifdef _LP64
   FloatRegister  Rtmp = F0;
   __ ldf(FloatRegisterImpl::S, Llocals, Interpreter::local_offset_in_bytes(offset()), Rtmp);
   __ store_float_argument(Rtmp, jni_arg);
-#else
-  Register     Rtmp = O0;
-  __ ld(Llocals, Interpreter::local_offset_in_bytes(offset()), Rtmp);
-  __ store_argument(Rtmp, jni_arg);
-#endif
 }
 
 
 void InterpreterRuntime::SignatureHandlerGenerator::pass_double() {
   Argument  jni_arg(jni_offset(), false);
-#ifdef _LP64
   FloatRegister  Rtmp = F0;
   __ ldf(FloatRegisterImpl::D, Llocals, Interpreter::local_offset_in_bytes(offset() + 1), Rtmp);
   __ store_double_argument(Rtmp, jni_arg);
-#else
-  Register  Rtmp = O0;
-  __ ld(Llocals, Interpreter::local_offset_in_bytes(offset() + 1), Rtmp);
-  __ store_argument(Rtmp, jni_arg);
-  __ ld(Llocals, Interpreter::local_offset_in_bytes(offset()), Rtmp);
-  Argument successor(jni_arg.successor());
-  __ store_argument(Rtmp, successor);
-#endif
 }
 
 void InterpreterRuntime::SignatureHandlerGenerator::pass_object() {
@@ -171,7 +148,6 @@ class SlowSignatureHandler: public NativeSignatureIterator {
     add_signature( non_float );
    }
 
-#ifdef _LP64
   virtual void pass_float()  {
     *_to++ = *(jint *)(_from+Interpreter::local_offset_in_bytes(0));
     _from -= Interpreter::stackElementSize;
@@ -190,23 +166,6 @@ class SlowSignatureHandler: public NativeSignatureIterator {
     _from -= 2*Interpreter::stackElementSize;
     add_signature( long_sig );
   }
-#else
-   // pass_double() is pass_long() and pass_float() only _LP64
-  virtual void pass_long() {
-    _to[0] = *(intptr_t*)(_from+Interpreter::local_offset_in_bytes(1));
-    _to[1] = *(intptr_t*)(_from+Interpreter::local_offset_in_bytes(0));
-    _to += 2;
-    _from -= 2*Interpreter::stackElementSize;
-    add_signature( non_float );
-  }
-
-  virtual void pass_float() {
-    *_to++ = *(jint *)(_from+Interpreter::local_offset_in_bytes(0));
-    _from -= Interpreter::stackElementSize;
-    add_signature( non_float );
-  }
-
-#endif // _LP64
 
   virtual void add_signature( intptr_t sig_type ) {
     if ( _argcount < (sizeof (intptr_t))*4 ) {

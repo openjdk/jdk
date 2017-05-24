@@ -109,8 +109,8 @@ public class AArch64HotSpotRegisterAllocationConfig extends RegisterAllocationCo
     };
     // @formatter:on
 
-    public AArch64HotSpotRegisterAllocationConfig(RegisterConfig registerConfig) {
-        super(registerConfig);
+    public AArch64HotSpotRegisterAllocationConfig(RegisterConfig registerConfig, String[] allocationRestrictedTo) {
+        super(registerConfig, allocationRestrictedTo);
     }
 
     @Override

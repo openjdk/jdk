@@ -27,6 +27,7 @@ import org.graalvm.compiler.api.replacements.Snippet.ConstantParameter;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
+import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.code.Register;
 
@@ -35,8 +36,8 @@ import jdk.vm.ci.code.Register;
  */
 public class NullPointerExceptionStub extends CreateExceptionStub {
 
-    public NullPointerExceptionStub(HotSpotProviders providers, HotSpotForeignCallLinkage linkage) {
-        super("createNullPointerException", providers, linkage);
+    public NullPointerExceptionStub(OptionValues options, HotSpotProviders providers, HotSpotForeignCallLinkage linkage) {
+        super("createNullPointerException", options, providers, linkage);
     }
 
     @Override
