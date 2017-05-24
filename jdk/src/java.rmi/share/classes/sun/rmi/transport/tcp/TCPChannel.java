@@ -296,16 +296,12 @@ public class TCPChannel implements Channel {
                     out.flush();
                 }
             } catch (IOException e) {
+                try {
+                    conn.close();
+                } catch (Exception ex) {}
                 if (e instanceof RemoteException) {
                     throw (RemoteException) e;
                 } else {
-                    if (conn != null
-                            && e instanceof java.net.SocketTimeoutException)
-                    {
-                        try {
-                            conn.close();
-                        } catch (Exception ex) {}
-                    }
                     throw new ConnectIOException(
                         "error during JRMP connection establishment", e);
                 }
