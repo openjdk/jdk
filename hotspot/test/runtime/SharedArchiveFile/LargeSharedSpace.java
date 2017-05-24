@@ -40,7 +40,6 @@ import jdk.test.lib.Platform;
 
 public class LargeSharedSpace {
     public static void main(String[] args) throws Exception {
-       ProcessBuilder pb;
        OutputAnalyzer output;
 
        // Test case 1: -XX:SharedMiscCodeSize=1066924031
