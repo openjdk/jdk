@@ -232,7 +232,7 @@ public class XMLErrorResources_sv extends ListResourceBundle
       "Axeltravers underst\u00F6ds inte: {0}"},
 
     { ER_NO_DTMIDS_AVAIL,
-      "Inga fler DTM-ID:n \u00E4r tillg\u00E4ngliga"},
+      "Inga fler DTM-id:n \u00E4r tillg\u00E4ngliga"},
 
     { ER_NOT_SUPPORTED,
       "Underst\u00F6ds inte: {0}"},
