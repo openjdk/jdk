@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -348,7 +348,7 @@ class VM_RedefineClasses: public VM_Operation {
   static int             _matching_methods_length;
   static int             _deleted_methods_length;
   static int             _added_methods_length;
-  static Klass*          _the_class_oop;
+  static Klass*          _the_class;
 
   // The instance fields are used to pass information from
   // doit_prologue() to doit() and doit_epilogue().
@@ -371,7 +371,7 @@ class VM_RedefineClasses: public VM_Operation {
   intArray *                  _operands_index_map_p;
 
   // ptr to _class_count scratch_classes
-  Klass**                     _scratch_classes;
+  InstanceKlass**             _scratch_classes;
   jvmtiError                  _res;
 
   // Performance measurement support. These timers do not cover all
@@ -393,7 +393,7 @@ class VM_RedefineClasses: public VM_Operation {
   // the restrictions of RedefineClasses. Normalize the order of
   // overloaded methods as needed.
   jvmtiError compare_and_normalize_class_versions(
-    instanceKlassHandle the_class, instanceKlassHandle scratch_class);
+    InstanceKlass* the_class, InstanceKlass* scratch_class);
 
   // Figure out which new methods match old methods in name and signature,
   // which methods have been added, and which are no longer present
@@ -405,14 +405,14 @@ class VM_RedefineClasses: public VM_Operation {
   // In addition to marking methods as old and/or obsolete, this routine
   // counts the number of methods that are EMCP (Equivalent Module Constant Pool).
   int check_methods_and_mark_as_obsolete();
-  void transfer_old_native_function_registrations(instanceKlassHandle the_class);
+  void transfer_old_native_function_registrations(InstanceKlass* the_class);
 
   // Install the redefinition of a class
   void redefine_single_class(jclass the_jclass,
-    Klass* scratch_class_oop, TRAPS);
+    InstanceKlass* scratch_class_oop, TRAPS);
 
-  void swap_annotations(instanceKlassHandle new_class,
-                        instanceKlassHandle scratch_class);
+  void swap_annotations(InstanceKlass* new_class,
+                        InstanceKlass* scratch_class);
 
   // Increment the classRedefinedCount field in the specific InstanceKlass
   // and in all direct and indirect subclasses.
@@ -437,18 +437,18 @@ class VM_RedefineClasses: public VM_Operation {
   bool merge_constant_pools(const constantPoolHandle& old_cp,
     const constantPoolHandle& scratch_cp, constantPoolHandle *merge_cp_p,
     int *merge_cp_length_p, TRAPS);
-  jvmtiError merge_cp_and_rewrite(instanceKlassHandle the_class,
-    instanceKlassHandle scratch_class, TRAPS);
+  jvmtiError merge_cp_and_rewrite(InstanceKlass* the_class,
+    InstanceKlass* scratch_class, TRAPS);
   u2 rewrite_cp_ref_in_annotation_data(
     AnnotationArray* annotations_typeArray, int &byte_i_ref,
     const char * trace_mesg, TRAPS);
-  bool rewrite_cp_refs(instanceKlassHandle scratch_class, TRAPS);
+  bool rewrite_cp_refs(InstanceKlass* scratch_class, TRAPS);
   bool rewrite_cp_refs_in_annotation_struct(
     AnnotationArray* class_annotations, int &byte_i_ref, TRAPS);
   bool rewrite_cp_refs_in_annotations_typeArray(
     AnnotationArray* annotations_typeArray, int &byte_i_ref, TRAPS);
   bool rewrite_cp_refs_in_class_annotations(
-    instanceKlassHandle scratch_class, TRAPS);
+    InstanceKlass* scratch_class, TRAPS);
   bool rewrite_cp_refs_in_element_value(
     AnnotationArray* class_annotations, int &byte_i_ref, TRAPS);
   bool rewrite_cp_refs_in_type_annotations_typeArray(
@@ -463,31 +463,31 @@ class VM_RedefineClasses: public VM_Operation {
   bool skip_type_annotation_type_path(
     AnnotationArray* type_annotations_typeArray, int &byte_i_ref, TRAPS);
   bool rewrite_cp_refs_in_fields_annotations(
-    instanceKlassHandle scratch_class, TRAPS);
+    InstanceKlass* scratch_class, TRAPS);
   void rewrite_cp_refs_in_method(methodHandle method,
     methodHandle * new_method_p, TRAPS);
-  bool rewrite_cp_refs_in_methods(instanceKlassHandle scratch_class, TRAPS);
+  bool rewrite_cp_refs_in_methods(InstanceKlass* scratch_class, TRAPS);
   bool rewrite_cp_refs_in_methods_annotations(
-    instanceKlassHandle scratch_class, TRAPS);
+    InstanceKlass* scratch_class, TRAPS);
   bool rewrite_cp_refs_in_methods_default_annotations(
-    instanceKlassHandle scratch_class, TRAPS);
+    InstanceKlass* scratch_class, TRAPS);
   bool rewrite_cp_refs_in_methods_parameter_annotations(
-    instanceKlassHandle scratch_class, TRAPS);
+    InstanceKlass* scratch_class, TRAPS);
   bool rewrite_cp_refs_in_class_type_annotations(
-    instanceKlassHandle scratch_class, TRAPS);
+    InstanceKlass* scratch_class, TRAPS);
   bool rewrite_cp_refs_in_fields_type_annotations(
-    instanceKlassHandle scratch_class, TRAPS);
+    InstanceKlass* scratch_class, TRAPS);
   bool rewrite_cp_refs_in_methods_type_annotations(
-    instanceKlassHandle scratch_class, TRAPS);
+    InstanceKlass* scratch_class, TRAPS);
   void rewrite_cp_refs_in_stack_map_table(const methodHandle& method, TRAPS);
   void rewrite_cp_refs_in_verification_type_info(
          address& stackmap_addr_ref, address stackmap_end, u2 frame_i,
          u1 frame_size, TRAPS);
   void set_new_constant_pool(ClassLoaderData* loader_data,
-         instanceKlassHandle scratch_class,
+         InstanceKlass* scratch_class,
          constantPoolHandle scratch_cp, int scratch_cp_length, TRAPS);
 
-  void flush_dependent_code(instanceKlassHandle k_h, TRAPS);
+  void flush_dependent_code(InstanceKlass* ik, TRAPS);
 
   // lock classes to redefine since constant pool merging isn't thread safe.
   void lock_classes();

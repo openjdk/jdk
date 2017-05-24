@@ -22,10 +22,10 @@
  */
 package org.graalvm.compiler.nodes.java;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_20;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_2;
 import static jdk.vm.ci.code.MemoryBarriers.LOAD_STORE;
 import static jdk.vm.ci.code.MemoryBarriers.STORE_STORE;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_2;
 
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
@@ -39,11 +39,11 @@ import org.graalvm.compiler.nodes.spi.Virtualizable;
 import org.graalvm.compiler.nodes.spi.VirtualizerTool;
 import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
 
-@NodeInfo(cycles = CYCLES_20, size = SIZE_2)
+@NodeInfo(cycles = CYCLES_2, size = SIZE_2)
 public class FinalFieldBarrierNode extends FixedWithNextNode implements Virtualizable, Lowerable {
     public static final NodeClass<FinalFieldBarrierNode> TYPE = NodeClass.create(FinalFieldBarrierNode.class);
 
-    @Input private ValueNode value;
+    @OptionalInput private ValueNode value;
 
     public FinalFieldBarrierNode(ValueNode value) {
         super(TYPE, StampFactory.forVoid());
@@ -56,7 +56,7 @@ public class FinalFieldBarrierNode extends FixedWithNextNode implements Virtuali
 
     @Override
     public void virtualize(VirtualizerTool tool) {
-        if (tool.getAlias(value) instanceof VirtualObjectNode) {
+        if (value != null && tool.getAlias(value) instanceof VirtualObjectNode) {
             tool.delete();
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,31 +52,19 @@ inline void Atomic::dec_ptr(volatile void*     dest) { (void)add_ptr(-1, dest); 
 // For Sun Studio - implementation is in solaris_x86_[32/64].il.
 // For gcc - implementation is just below.
 
-// The lock prefix can be omitted for certain instructions on uniprocessors; to
-// facilitate this, os::is_MP() is passed as an additional argument.  64-bit
-// processors are assumed to be multi-threaded and/or multi-core, so the extra
-// argument is unnecessary.
-#ifndef _LP64
-#define IS_MP_DECL() , int is_mp
-#define IS_MP_ARG()  , (int) os::is_MP()
-#else
-#define IS_MP_DECL()
-#define IS_MP_ARG()
-#endif // _LP64
-
 extern "C" {
-  jint _Atomic_add(jint add_value, volatile jint* dest IS_MP_DECL());
+  jint _Atomic_add(jint add_value, volatile jint* dest);
   jint _Atomic_xchg(jint exchange_value, volatile jint* dest);
   jbyte _Atomic_cmpxchg_byte(jbyte exchange_value, volatile jbyte* dest,
-                       jbyte compare_value IS_MP_DECL());
+                             jbyte compare_value);
   jint _Atomic_cmpxchg(jint exchange_value, volatile jint* dest,
-                       jint compare_value IS_MP_DECL());
+                       jint compare_value);
   jlong _Atomic_cmpxchg_long(jlong exchange_value, volatile jlong* dest,
-                             jlong compare_value IS_MP_DECL());
+                             jlong compare_value);
 }
 
 inline jint     Atomic::add    (jint     add_value, volatile jint*     dest) {
-  return _Atomic_add(add_value, dest IS_MP_ARG());
+  return _Atomic_add(add_value, dest);
 }
 
 inline jint     Atomic::xchg       (jint     exchange_value, volatile jint*     dest) {
@@ -85,15 +73,15 @@ inline jint     Atomic::xchg       (jint     exchange_value, volatile jint*     
 
 #define VM_HAS_SPECIALIZED_CMPXCHG_BYTE
 inline jbyte    Atomic::cmpxchg    (jbyte    exchange_value, volatile jbyte*    dest, jbyte    compare_value, cmpxchg_memory_order order) {
-  return _Atomic_cmpxchg_byte(exchange_value, dest, compare_value IS_MP_ARG());
+  return _Atomic_cmpxchg_byte(exchange_value, dest, compare_value);
 }
 
 inline jint     Atomic::cmpxchg    (jint     exchange_value, volatile jint*     dest, jint     compare_value, cmpxchg_memory_order order) {
-  return _Atomic_cmpxchg(exchange_value, dest, compare_value IS_MP_ARG());
+  return _Atomic_cmpxchg(exchange_value, dest, compare_value);
 }
 
 inline jlong    Atomic::cmpxchg    (jlong    exchange_value, volatile jlong*    dest, jlong    compare_value, cmpxchg_memory_order order) {
-  return _Atomic_cmpxchg_long(exchange_value, dest, compare_value IS_MP_ARG());
+  return _Atomic_cmpxchg_long(exchange_value, dest, compare_value);
 }
 
 
@@ -174,25 +162,23 @@ inline void Atomic::store(jlong store_value, volatile jlong* dest) {
 #endif // AMD64
 
 #ifdef _GNU_SOURCE
-// Add a lock prefix to an instruction on an MP machine
-#define LOCK_IF_MP(mp) "cmp $0, " #mp "; je 1f; lock; 1: "
 
 extern "C" {
-  inline jint _Atomic_add(jint add_value, volatile jint* dest, int mp) {
+  inline jint _Atomic_add(jint add_value, volatile jint* dest) {
     jint addend = add_value;
-    __asm__ volatile (  LOCK_IF_MP(%3) "xaddl %0,(%2)"
+    __asm__ volatile ("lock xaddl %0,(%2)"
                     : "=r" (addend)
-                    : "0" (addend), "r" (dest), "r" (mp)
+                    : "0" (addend), "r" (dest)
                     : "cc", "memory");
     return addend + add_value;
   }
 
 #ifdef AMD64
-  inline jlong _Atomic_add_long(jlong add_value, volatile jlong* dest, int mp) {
+  inline jlong _Atomic_add_long(jlong add_value, volatile jlong* dest) {
     intptr_t addend = add_value;
-    __asm__ __volatile__ (LOCK_IF_MP(%3) "xaddq %0,(%2)"
+    __asm__ __volatile__ ("lock xaddq %0,(%2)"
                         : "=r" (addend)
-                        : "0" (addend), "r" (dest), "r" (mp)
+                        : "0" (addend), "r" (dest)
                         : "cc", "memory");
     return addend + add_value;
   }
@@ -215,35 +201,35 @@ extern "C" {
     return exchange_value;
   }
 
-  inline jint _Atomic_cmpxchg(jint exchange_value, volatile jint* dest, jint compare_value, int mp) {
-    __asm__ volatile (LOCK_IF_MP(%4) "cmpxchgl %1,(%3)"
+  inline jint _Atomic_cmpxchg(jint exchange_value, volatile jint* dest, jint compare_value) {
+    __asm__ volatile ("lock cmpxchgl %1,(%3)"
                     : "=a" (exchange_value)
-                    : "r" (exchange_value), "a" (compare_value), "r" (dest), "r" (mp)
+                    : "r" (exchange_value), "a" (compare_value), "r" (dest)
                     : "cc", "memory");
     return exchange_value;
   }
 
 
-  inline jbyte _Atomic_cmpxchg_byte(jbyte exchange_value, volatile jbyte* dest, jbyte compare_value, int mp) {
-    __asm__ volatile (LOCK_IF_MP(%4) "cmpxchgb %1,(%3)"
+  inline jbyte _Atomic_cmpxchg_byte(jbyte exchange_value, volatile jbyte* dest, jbyte compare_value) {
+    __asm__ volatile ("lock cmpxchgb %1,(%3)"
                     : "=a" (exchange_value)
-                    : "q" (exchange_value), "a" (compare_value), "r" (dest), "r" (mp)
+                    : "q" (exchange_value), "a" (compare_value), "r" (dest)
                     : "cc", "memory");
     return exchange_value;
   }
 
   // This is the interface to the atomic instruction in solaris_i486.s.
-  jlong _Atomic_cmpxchg_long_gcc(jlong exchange_value, volatile jlong* dest, jlong compare_value, int mp);
+  jlong _Atomic_cmpxchg_long_gcc(jlong exchange_value, volatile jlong* dest, jlong compare_value);
 
-  inline jlong _Atomic_cmpxchg_long(jlong exchange_value, volatile jlong* dest, jlong compare_value, int mp) {
+  inline jlong _Atomic_cmpxchg_long(jlong exchange_value, volatile jlong* dest, jlong compare_value) {
 #ifdef AMD64
-    __asm__ __volatile__ (LOCK_IF_MP(%4) "cmpxchgq %1,(%3)"
+    __asm__ __volatile__ ("lock cmpxchgq %1,(%3)"
                         : "=a" (exchange_value)
-                        : "r" (exchange_value), "a" (compare_value), "r" (dest), "r" (mp)
+                        : "r" (exchange_value), "a" (compare_value), "r" (dest)
                         : "cc", "memory");
     return exchange_value;
 #else
-    return _Atomic_cmpxchg_long_gcc(exchange_value, dest, compare_value, os::is_MP());
+    return _Atomic_cmpxchg_long_gcc(exchange_value, dest, compare_value);
 
     #if 0
     // The code below does not work presumably because of the bug in gcc
@@ -255,23 +241,19 @@ extern "C" {
     volatile jlong_accessor evl, cvl, rv;
     evl.long_value = exchange_value;
     cvl.long_value = compare_value;
-    int mp = os::is_MP();
 
-    __asm__ volatile ("cmp $0, %%esi\n\t"
-       "je 1f \n\t"
-       "lock\n\t"
-       "1: cmpxchg8b (%%edi)\n\t"
+    __asm__ volatile (
+       "lock cmpxchg8b (%%edi)\n\t"
        : "=a"(cvl.words[0]),   "=d"(cvl.words[1])
        : "a"(cvl.words[0]), "d"(cvl.words[1]),
          "b"(evl.words[0]), "c"(evl.words[1]),
-         "D"(dest), "S"(mp)
+         "D"(dest)
        :  "cc", "memory");
     return cvl.long_value;
     #endif // if 0
 #endif // AMD64
   }
 }
-#undef LOCK_IF_MP
 
 #endif // _GNU_SOURCE
 

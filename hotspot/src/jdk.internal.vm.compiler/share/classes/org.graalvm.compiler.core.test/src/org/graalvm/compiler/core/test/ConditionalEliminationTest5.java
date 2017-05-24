@@ -22,14 +22,13 @@
  */
 package org.graalvm.compiler.core.test;
 
+import org.graalvm.compiler.api.directives.GraalDirectives;
+import org.junit.Ignore;
 import org.junit.Test;
 
-import org.graalvm.compiler.api.directives.GraalDirectives;
-
 /**
- * Collection of tests for
- * {@link org.graalvm.compiler.phases.common.DominatorConditionalEliminationPhase} including those
- * that triggered bugs in this phase.
+ * Collection of tests for {@link org.graalvm.compiler.phases.common.ConditionalEliminationPhase}
+ * including those that triggered bugs in this phase.
  */
 public class ConditionalEliminationTest5 extends ConditionalEliminationTestBase {
 
@@ -39,26 +38,30 @@ public class ConditionalEliminationTest5 extends ConditionalEliminationTestBase 
     interface B extends A {
     }
 
+    interface C extends B {
+
+    }
+
     static final class DistinctA {
     }
 
     static final class DistinctB {
     }
 
-    public static int reference1Snippet(Object a) {
+    public static void reference1Snippet(Object a) {
         if (a instanceof B) {
-            return 1;
+            sink1 = 1;
         }
-        return 2;
+        sink2 = 2;
     }
 
-    public static int test1Snippet(Object a) {
+    public static void test1Snippet(Object a) {
         if (a instanceof B) {
             if (a instanceof A) {
-                return 1;
+                sink1 = 1;
             }
         }
-        return 2;
+        sink2 = 2;
     }
 
     @Test
@@ -66,21 +69,21 @@ public class ConditionalEliminationTest5 extends ConditionalEliminationTestBase 
         testConditionalElimination("test1Snippet", "reference1Snippet");
     }
 
-    public static int reference2Snippet(A a) {
+    public static void reference2Snippet(A a) {
         if (a instanceof B) {
-            return 1;
+            sink1 = 1;
         }
-        return 2;
+        sink2 = 2;
     }
 
-    public static int test2Snippet(A a) {
+    public static void test2Snippet(A a) {
         if (a instanceof B) {
             B newVal = (B) a;
             if (newVal != null) {
-                return 1;
+                sink1 = 1;
             }
         }
-        return 2;
+        sink2 = 2;
     }
 
     @Test
@@ -89,65 +92,104 @@ public class ConditionalEliminationTest5 extends ConditionalEliminationTestBase 
     }
 
     @SuppressWarnings("unused")
-    public static int reference3Snippet(Object a, Object b) {
+    public static void reference3Snippet(Object a, Object b) {
         if (a instanceof DistinctA) {
             DistinctA proxyA = (DistinctA) a;
             if (b instanceof DistinctB) {
-                return 1;
+                sink1 = 1;
             }
         }
-        return 2;
+        sink2 = 2;
     }
 
     @SuppressWarnings("all")
-    public static int test3Snippet(Object a, Object b) {
+    public static void test3Snippet(Object a, Object b) {
         if (a instanceof DistinctA) {
             DistinctA proxyA = (DistinctA) a;
             if (b instanceof DistinctB) {
                 if (proxyA == b) {
-                    return 42;
+                    sink0 = 42;
                 }
-                return 1;
+                sink1 = 1;
             }
         }
-        return 2;
+        sink2 = 2;
     }
 
     @Test
     public void test3() {
-        testConditionalElimination("test3Snippet", "reference3Snippet", true);
+        testConditionalElimination("test3Snippet", "reference3Snippet", true, false);
     }
 
-    public static int reference4Snippet(Object a) {
+    public static void reference4Snippet(Object a) {
         if (!(a instanceof B)) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
-        return 1;
+        sink1 = 1;
     }
 
-    public static int test4Snippet1(Object a) {
+    public static void test4Snippet1(Object a) {
         if (!(a instanceof B)) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         if (!(a instanceof A)) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
-        return 1;
+        sink1 = 1;
     }
 
-    public static int test4Snippet2(Object a) {
+    public static void test4Snippet2(Object a) {
         if (!(a instanceof A)) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
         if (!(a instanceof B)) {
-            GraalDirectives.deoptimize();
+            GraalDirectives.deoptimizeAndInvalidate();
         }
-        return 1;
+        sink1 = 1;
+    }
+
+    @SuppressWarnings({"cast", "unused"})
+    public static void test4Snippet3(Object a) {
+        Object pi = (A) a;
+        if (!(a instanceof B)) {
+            GraalDirectives.deoptimizeAndInvalidate();
+        }
+        sink1 = 1;
+    }
+
+    public static void test4Snippet4(Object a) {
+        if (!(a instanceof A)) {
+            GraalDirectives.deoptimizeAndInvalidate();
+        }
+        if (!(((A) a) instanceof B)) {
+            GraalDirectives.deoptimizeAndInvalidate();
+        }
+        sink1 = 1;
+    }
+
+    @SuppressWarnings({"cast"})
+    public static void test4Snippet5(Object a) {
+        Object pi = (A) a;
+        if (pi == null) {
+            GraalDirectives.deoptimizeAndInvalidate();
+        }
+        if (!(a instanceof B)) {
+            GraalDirectives.deoptimizeAndInvalidate();
+        }
+        sink1 = 1;
     }
 
     @Test
     public void test4() {
         testConditionalElimination("test4Snippet1", "reference4Snippet");
         testConditionalElimination("test4Snippet2", "reference4Snippet");
+        testConditionalElimination("test4Snippet3", "reference4Snippet");
+        testConditionalElimination("test4Snippet5", "reference4Snippet");
+    }
+
+    @Ignore
+    @Test
+    public void test5() {
+        testConditionalElimination("test4Snippet4", "reference4Snippet", false, true);
     }
 }

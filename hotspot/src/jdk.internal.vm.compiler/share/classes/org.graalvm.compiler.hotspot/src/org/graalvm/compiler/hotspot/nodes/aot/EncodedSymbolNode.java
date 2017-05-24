@@ -22,6 +22,10 @@
  */
 package org.graalvm.compiler.hotspot.nodes.aot;
 
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_IGNORED;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_IGNORED;
+
+import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
@@ -37,15 +41,15 @@ import org.graalvm.compiler.word.Word;
 
 import jdk.vm.ci.meta.Constant;
 
-@NodeInfo
+@NodeInfo(cycles = CYCLES_IGNORED, size = SIZE_IGNORED)
 public final class EncodedSymbolNode extends FloatingNode implements Canonicalizable {
 
     public static final NodeClass<EncodedSymbolNode> TYPE = NodeClass.create(EncodedSymbolNode.class);
 
     @OptionalInput protected ValueNode value;
 
-    public EncodedSymbolNode(ValueNode value) {
-        super(TYPE, null);
+    public EncodedSymbolNode(@InjectedNodeParameter Stamp stamp, ValueNode value) {
+        super(TYPE, stamp);
         assert value != null;
         this.value = value;
     }
@@ -61,6 +65,6 @@ public final class EncodedSymbolNode extends FloatingNode implements Canonicaliz
         return this;
     }
 
-    @NodeIntrinsic(setStampFromReturnType = true)
+    @NodeIntrinsic
     public static native Word encode(Object constant);
 }

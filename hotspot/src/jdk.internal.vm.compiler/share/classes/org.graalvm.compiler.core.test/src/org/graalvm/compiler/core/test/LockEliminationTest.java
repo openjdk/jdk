@@ -25,7 +25,8 @@ package org.graalvm.compiler.core.test;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 import org.junit.Test;
-
+import org.graalvm.compiler.loop.DefaultLoopPolicies;
+import org.graalvm.compiler.loop.phases.LoopFullUnrollPhase;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.java.MonitorExitNode;
@@ -35,7 +36,6 @@ import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.common.LockEliminationPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
-import org.graalvm.compiler.phases.common.ValueAnchorCleanupPhase;
 import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
@@ -92,6 +92,26 @@ public class LockEliminationTest extends GraalCompilerTest {
         assertDeepEquals(1, graph.getNodes().filter(MonitorExitNode.class).count());
     }
 
+    public void testUnrolledSyncSnippet(Object a) {
+        for (int i = 0; i < 3; i++) {
+            synchronized (a) {
+
+            }
+        }
+    }
+
+    @Test
+    public void testUnrolledSync() {
+        StructuredGraph graph = getGraph("testUnrolledSyncSnippet");
+        CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
+        canonicalizer.apply(graph, new PhaseContext(getProviders()));
+        HighTierContext context = getDefaultHighTierContext();
+        new LoopFullUnrollPhase(canonicalizer, new DefaultLoopPolicies()).apply(graph, context);
+        new LockEliminationPhase().apply(graph);
+        assertDeepEquals(1, graph.getNodes().filter(RawMonitorEnterNode.class).count());
+        assertDeepEquals(1, graph.getNodes().filter(MonitorExitNode.class).count());
+    }
+
     private StructuredGraph getGraph(String snippet) {
         ResolvedJavaMethod method = getResolvedJavaMethod(snippet);
         StructuredGraph graph = parseEager(method, AllowAssumptions.YES);
@@ -101,7 +121,6 @@ public class LockEliminationTest extends GraalCompilerTest {
         new CanonicalizerPhase().apply(graph, context);
         new DeadCodeEliminationPhase().apply(graph);
         new LoweringPhase(new CanonicalizerPhase(), LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, context);
-        new ValueAnchorCleanupPhase().apply(graph);
         new LockEliminationPhase().apply(graph);
         return graph;
     }

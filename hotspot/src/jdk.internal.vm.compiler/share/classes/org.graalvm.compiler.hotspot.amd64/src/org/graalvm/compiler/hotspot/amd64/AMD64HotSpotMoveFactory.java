@@ -40,11 +40,13 @@ public class AMD64HotSpotMoveFactory extends AMD64MoveFactory {
     }
 
     @Override
-    public boolean canInlineConstant(JavaConstant c) {
+    public boolean canInlineConstant(Constant c) {
         if (HotSpotCompressedNullConstant.COMPRESSED_NULL.equals(c)) {
             return true;
         } else if (c instanceof HotSpotObjectConstant) {
             return ((HotSpotObjectConstant) c).isCompressed();
+        } else if (c instanceof HotSpotMetaspaceConstant) {
+            return ((HotSpotMetaspaceConstant) c).isCompressed();
         } else {
             return super.canInlineConstant(c);
         }

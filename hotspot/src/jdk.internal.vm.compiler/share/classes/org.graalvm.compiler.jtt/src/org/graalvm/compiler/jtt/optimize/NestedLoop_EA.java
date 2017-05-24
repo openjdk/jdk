@@ -29,6 +29,7 @@ import org.junit.Test;
 import org.graalvm.compiler.jtt.JTTTest;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.virtual.CommitAllocationNode;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
@@ -38,13 +39,13 @@ import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
 public class NestedLoop_EA extends JTTTest {
 
     @Override
-    protected Suites createSuites() {
-        Suites suites = super.createSuites();
+    protected Suites createSuites(OptionValues options) {
+        Suites suites = super.createSuites(options);
         ListIterator<BasePhase<? super HighTierContext>> position = suites.getHighTier().findPhase(PartialEscapePhase.class);
         CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
         // incremental canonicalizer of PEA is missing some important canonicalization (TODO?)
         position.add(canonicalizer);
-        position.add(new PartialEscapePhase(true, canonicalizer));
+        position.add(new PartialEscapePhase(true, canonicalizer, options));
         return suites;
     }
 

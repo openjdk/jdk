@@ -40,7 +40,8 @@ public interface InvocationPlugin extends GraphBuilderPlugin {
 
     /**
      * The receiver in a non-static method. The class literal for this interface must be used with
-     * {@link InvocationPlugins#put} to denote the receiver argument for such a non-static method.
+     * {@link InvocationPlugins#put(InvocationPlugin, boolean, boolean, Class, String, Class...)} to
+     * denote the receiver argument for such a non-static method.
      */
     public interface Receiver {
         /**
@@ -137,6 +138,22 @@ public interface InvocationPlugin extends GraphBuilderPlugin {
     }
 
     /**
+     * @see #execute
+     */
+    default boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, InvocationPlugin.Receiver receiver, ValueNode arg1, ValueNode arg2, ValueNode arg3, ValueNode arg4, ValueNode arg5,
+                    ValueNode arg6) {
+        return defaultHandler(b, targetMethod, receiver, arg1, arg2, arg3, arg4, arg5, arg6);
+    }
+
+    /**
+     * @see #execute
+     */
+    default boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, InvocationPlugin.Receiver receiver, ValueNode arg1, ValueNode arg2, ValueNode arg3, ValueNode arg4, ValueNode arg5,
+                    ValueNode arg6, ValueNode arg7) {
+        return defaultHandler(b, targetMethod, receiver, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+    }
+
+    /**
      * Executes this plugin against a set of invocation arguments.
      *
      * The default implementation in {@link InvocationPlugin} dispatches to the {@code apply(...)}
@@ -185,6 +202,12 @@ public interface InvocationPlugin extends GraphBuilderPlugin {
                 return apply(b, targetMethod, null, argsIncludingReceiver[0], argsIncludingReceiver[1], argsIncludingReceiver[2], argsIncludingReceiver[3]);
             } else if (argsIncludingReceiver.length == 5) {
                 return apply(b, targetMethod, null, argsIncludingReceiver[0], argsIncludingReceiver[1], argsIncludingReceiver[2], argsIncludingReceiver[3], argsIncludingReceiver[4]);
+            } else if (argsIncludingReceiver.length == 6) {
+                return apply(b, targetMethod, null, argsIncludingReceiver[0], argsIncludingReceiver[1], argsIncludingReceiver[2], argsIncludingReceiver[3], argsIncludingReceiver[4],
+                                argsIncludingReceiver[5]);
+            } else if (argsIncludingReceiver.length == 7) {
+                return apply(b, targetMethod, null, argsIncludingReceiver[0], argsIncludingReceiver[1], argsIncludingReceiver[2], argsIncludingReceiver[3], argsIncludingReceiver[4],
+                                argsIncludingReceiver[5], argsIncludingReceiver[6]);
             } else {
                 return defaultHandler(b, targetMethod, receiver, argsIncludingReceiver);
             }

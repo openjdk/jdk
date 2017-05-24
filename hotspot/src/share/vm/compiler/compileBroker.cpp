@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -683,7 +683,7 @@ JavaThread* CompileBroker::make_thread(const char* name, CompileQueue* queue, Co
                                        AbstractCompiler* comp, bool compiler_thread, TRAPS) {
   JavaThread* thread = NULL;
   Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_Thread(), true, CHECK_0);
-  instanceKlassHandle klass (THREAD, k);
+  InstanceKlass* klass = InstanceKlass::cast(k);
   instanceHandle thread_oop = klass->allocate_instance_handle(CHECK_0);
   Handle string = java_lang_String::create_from_str(name, CHECK_0);
 
@@ -1052,8 +1052,8 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
 
   // lock, make sure that the compilation
   // isn't prohibited in a straightforward way.
-  AbstractCompiler *comp = CompileBroker::compiler(comp_level);
-  if (!comp->can_compile_method(method) ||
+  AbstractCompiler* comp = CompileBroker::compiler(comp_level);
+  if (comp == NULL || !comp->can_compile_method(method) ||
       compilation_is_prohibited(method, osr_bci, comp_level, directive->ExcludeOption)) {
     return NULL;
   }
@@ -1726,6 +1726,31 @@ static void codecache_print(bool detailed)
   tty->print("%s", s.as_string());
 }
 
+// wrapper for CodeCache::print_summary() using outputStream
+static void codecache_print(outputStream* out, bool detailed) {
+  ResourceMark rm;
+  stringStream s;
+
+  // Dump code cache into a buffer
+  {
+    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    CodeCache::print_summary(&s, detailed);
+  }
+
+  char* remaining_log = s.as_string();
+  while (*remaining_log != '\0') {
+    char* eol = strchr(remaining_log, '\n');
+    if (eol == NULL) {
+      out->print_cr("%s", remaining_log);
+      remaining_log = remaining_log + strlen(remaining_log);
+    } else {
+      *eol = '\0';
+      out->print_cr("%s", remaining_log);
+      remaining_log = eol + 1;
+    }
+  }
+}
+
 void CompileBroker::post_compile(CompilerThread* thread, CompileTask* task, EventCompilation& event, bool success, ciEnv* ci_env) {
 
   if (success) {
@@ -1765,6 +1790,7 @@ CompilerDirectives* DirectivesStack::_bottom = NULL;
 // Compile a method.
 //
 void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
+  task->print_ul();
   if (PrintCompilation) {
     ResourceMark rm;
     task->print_tty();
@@ -1938,9 +1964,13 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     tty->print_cr("time: %d inlined: %d bytes", (int)time.milliseconds(), task->num_inlined_bytecodes());
   }
 
-  if (PrintCodeCacheOnCompilation)
+  Log(compilation, codecache) log;
+  if (log.is_debug()) {
+    codecache_print(log.debug_stream(), /* detailed= */ false);
+  }
+  if (PrintCodeCacheOnCompilation) {
     codecache_print(/* detailed= */ false);
-
+  }
   // Disable compilation, if required.
   switch (compilable) {
   case ciEnv::MethodCompilable_never:

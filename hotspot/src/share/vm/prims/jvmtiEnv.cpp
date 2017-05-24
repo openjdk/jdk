@@ -416,21 +416,20 @@ JvmtiEnv::RetransformClasses(jint class_count, const jclass* classes) {
       return JVMTI_ERROR_UNMODIFIABLE_CLASS;
     }
 
-    Klass* k_oop = java_lang_Class::as_Klass(k_mirror);
-    KlassHandle klass(current_thread, k_oop);
+    Klass* klass = java_lang_Class::as_Klass(k_mirror);
 
     jint status = klass->jvmti_class_status();
     if (status & (JVMTI_CLASS_STATUS_ERROR)) {
       return JVMTI_ERROR_INVALID_CLASS;
     }
 
-    instanceKlassHandle ikh(current_thread, k_oop);
-    if (ikh->get_cached_class_file_bytes() == NULL) {
+    InstanceKlass* ik = InstanceKlass::cast(klass);
+    if (ik->get_cached_class_file_bytes() == NULL) {
       // Not cached, we need to reconstitute the class file from the
       // VM representation. We don't attach the reconstituted class
       // bytes to the InstanceKlass here because they have not been
       // validated and we're not at a safepoint.
-      JvmtiClassFileReconstituter reconstituter(ikh);
+      JvmtiClassFileReconstituter reconstituter(ik);
       if (reconstituter.get_error() != JVMTI_ERROR_NONE) {
         return reconstituter.get_error();
       }
@@ -440,8 +439,8 @@ JvmtiEnv::RetransformClasses(jint class_count, const jclass* classes) {
                                                        reconstituter.class_file_bytes();
     } else {
       // it is cached, get it from the cache
-      class_definitions[index].class_byte_count = ikh->get_cached_class_file_len();
-      class_definitions[index].class_bytes      = ikh->get_cached_class_file_bytes();
+      class_definitions[index].class_byte_count = ik->get_cached_class_file_len();
+      class_definitions[index].class_bytes      = ik->get_cached_class_file_bytes();
     }
     class_definitions[index].klass              = jcls;
   }
@@ -683,8 +682,6 @@ JvmtiEnv::AddToSystemClassLoaderSearch(const char* segment) {
       return JVMTI_ERROR_INTERNAL;
     }
 
-    instanceKlassHandle loader_ik(THREAD, loader->klass());
-
     // Invoke the appendToClassPathForInstrumentation method - if the method
     // is not found it means the loader doesn't support adding to the class path
     // in the live phase.
@@ -692,7 +689,7 @@ JvmtiEnv::AddToSystemClassLoaderSearch(const char* segment) {
       JavaValue res(T_VOID);
       JavaCalls::call_special(&res,
                               loader,
-                              loader_ik,
+                              loader->klass(),
                               vmSymbols::appendToClassPathForInstrumentation_name(),
                               vmSymbols::appendToClassPathForInstrumentation_signature(),
                               path,
@@ -1797,7 +1794,7 @@ JvmtiEnv::ForceEarlyReturnVoid(JavaThread* java_thread) {
 jvmtiError
 JvmtiEnv::FollowReferences(jint heap_filter, jclass klass, jobject initial_object, const jvmtiHeapCallbacks* callbacks, const void* user_data) {
   // check klass if provided
-  Klass* k_oop = NULL;
+  Klass* k = NULL;
   if (klass != NULL) {
     oop k_mirror = JNIHandles::resolve_external_guard(klass);
     if (k_mirror == NULL) {
@@ -1806,8 +1803,8 @@ JvmtiEnv::FollowReferences(jint heap_filter, jclass klass, jobject initial_objec
     if (java_lang_Class::is_primitive(k_mirror)) {
       return JVMTI_ERROR_NONE;
     }
-    k_oop = java_lang_Class::as_Klass(k_mirror);
-    if (k_oop == NULL) {
+    k = java_lang_Class::as_Klass(k_mirror);
+    if (klass == NULL) {
       return JVMTI_ERROR_INVALID_CLASS;
     }
   }
@@ -1821,10 +1818,9 @@ JvmtiEnv::FollowReferences(jint heap_filter, jclass klass, jobject initial_objec
 
   Thread *thread = Thread::current();
   HandleMark hm(thread);
-  KlassHandle kh (thread, k_oop);
 
   TraceTime t("FollowReferences", TRACETIME_LOG(Debug, jvmti, objecttagging));
-  JvmtiTagMap::tag_map_for(this)->follow_references(heap_filter, kh, initial_object, callbacks, user_data);
+  JvmtiTagMap::tag_map_for(this)->follow_references(heap_filter, k, initial_object, callbacks, user_data);
   return JVMTI_ERROR_NONE;
 } /* end FollowReferences */
 
@@ -1835,7 +1831,7 @@ JvmtiEnv::FollowReferences(jint heap_filter, jclass klass, jobject initial_objec
 jvmtiError
 JvmtiEnv::IterateThroughHeap(jint heap_filter, jclass klass, const jvmtiHeapCallbacks* callbacks, const void* user_data) {
   // check klass if provided
-  Klass* k_oop = NULL;
+  Klass* k = NULL;
   if (klass != NULL) {
     oop k_mirror = JNIHandles::resolve_external_guard(klass);
     if (k_mirror == NULL) {
@@ -1844,18 +1840,14 @@ JvmtiEnv::IterateThroughHeap(jint heap_filter, jclass klass, const jvmtiHeapCall
     if (java_lang_Class::is_primitive(k_mirror)) {
       return JVMTI_ERROR_NONE;
     }
-    k_oop = java_lang_Class::as_Klass(k_mirror);
-    if (k_oop == NULL) {
+    k = java_lang_Class::as_Klass(k_mirror);
+    if (k == NULL) {
       return JVMTI_ERROR_INVALID_CLASS;
     }
   }
 
-  Thread *thread = Thread::current();
-  HandleMark hm(thread);
-  KlassHandle kh (thread, k_oop);
-
   TraceTime t("IterateThroughHeap", TRACETIME_LOG(Debug, jvmti, objecttagging));
-  JvmtiTagMap::tag_map_for(this)->iterate_through_heap(heap_filter, kh, callbacks, user_data);
+  JvmtiTagMap::tag_map_for(this)->iterate_through_heap(heap_filter, k, callbacks, user_data);
   return JVMTI_ERROR_NONE;
 } /* end IterateThroughHeap */
 
@@ -1932,7 +1924,7 @@ JvmtiEnv::IterateOverHeap(jvmtiHeapObjectFilter object_filter, jvmtiHeapObjectCa
   TraceTime t("IterateOverHeap", TRACETIME_LOG(Debug, jvmti, objecttagging));
   Thread *thread = Thread::current();
   HandleMark hm(thread);
-  JvmtiTagMap::tag_map_for(this)->iterate_over_heap(object_filter, KlassHandle(), heap_object_callback, user_data);
+  JvmtiTagMap::tag_map_for(this)->iterate_over_heap(object_filter, NULL, heap_object_callback, user_data);
   return JVMTI_ERROR_NONE;
 } /* end IterateOverHeap */
 
@@ -1946,13 +1938,10 @@ JvmtiEnv::IterateOverInstancesOfClass(oop k_mirror, jvmtiHeapObjectFilter object
     // DO PRIMITIVE CLASS PROCESSING
     return JVMTI_ERROR_NONE;
   }
-  Klass* k_oop = java_lang_Class::as_Klass(k_mirror);
-  if (k_oop == NULL) {
+  Klass* klass = java_lang_Class::as_Klass(k_mirror);
+  if (klass == NULL) {
     return JVMTI_ERROR_INVALID_CLASS;
   }
-  Thread *thread = Thread::current();
-  HandleMark hm(thread);
-  KlassHandle klass (thread, k_oop);
   TraceTime t("IterateOverInstancesOfClass", TRACETIME_LOG(Debug, jvmti, objecttagging));
   JvmtiTagMap::tag_map_for(this)->iterate_over_heap(object_filter, klass, heap_object_callback, user_data);
   return JVMTI_ERROR_NONE;
@@ -2431,9 +2420,9 @@ JvmtiEnv::GetClassMethods(oop k_mirror, jint* method_count_ptr, jmethodID** meth
     *methods_ptr = (jmethodID*) jvmtiMalloc(0 * sizeof(jmethodID));
     return JVMTI_ERROR_NONE;
   }
-  instanceKlassHandle instanceK_h(current_thread, k);
+  InstanceKlass* ik = InstanceKlass::cast(k);
   // Allocate the result and fill it in
-  int result_length = instanceK_h->methods()->length();
+  int result_length = ik->methods()->length();
   jmethodID* result_list = (jmethodID*)jvmtiMalloc(result_length * sizeof(jmethodID));
   int index;
   bool jmethodids_found = true;
@@ -2442,8 +2431,8 @@ JvmtiEnv::GetClassMethods(oop k_mirror, jint* method_count_ptr, jmethodID** meth
     // Use the original method ordering indices stored in the class, so we can emit
     // jmethodIDs in the order they appeared in the class file
     for (index = 0; index < result_length; index++) {
-      Method* m = instanceK_h->methods()->at(index);
-      int original_index = instanceK_h->method_ordering()->at(index);
+      Method* m = ik->methods()->at(index);
+      int original_index = ik->method_ordering()->at(index);
       assert(original_index >= 0 && original_index < result_length, "invalid original method index");
       jmethodID id;
       if (jmethodids_found) {
@@ -2452,7 +2441,7 @@ JvmtiEnv::GetClassMethods(oop k_mirror, jint* method_count_ptr, jmethodID** meth
           // If we find an uninitialized value, make sure there is
           // enough space for all the uninitialized values we might
           // find.
-          instanceK_h->ensure_space_for_methodids(index);
+          ik->ensure_space_for_methodids(index);
           jmethodids_found = false;
           id = m->jmethod_id();
         }
@@ -2464,7 +2453,7 @@ JvmtiEnv::GetClassMethods(oop k_mirror, jint* method_count_ptr, jmethodID** meth
   } else {
     // otherwise just copy in any order
     for (index = 0; index < result_length; index++) {
-      Method* m = instanceK_h->methods()->at(index);
+      Method* m = ik->methods()->at(index);
       jmethodID id;
       if (jmethodids_found) {
         id = m->find_jmethod_id_or_null();
@@ -2472,7 +2461,7 @@ JvmtiEnv::GetClassMethods(oop k_mirror, jint* method_count_ptr, jmethodID** meth
           // If we find an uninitialized value, make sure there is
           // enough space for all the uninitialized values we might
           // find.
-          instanceK_h->ensure_space_for_methodids(index);
+          ik->ensure_space_for_methodids(index);
           jmethodids_found = false;
           id = m->jmethod_id();
         }
@@ -2517,11 +2506,11 @@ JvmtiEnv::GetClassFields(oop k_mirror, jint* field_count_ptr, jfieldID** fields_
   }
 
 
-  instanceKlassHandle instanceK_h(current_thread, k);
+  InstanceKlass* ik = InstanceKlass::cast(k);
 
   int result_count = 0;
   // First, count the fields.
-  FilteredFieldStream flds(instanceK_h, true, true);
+  FilteredFieldStream flds(ik, true, true);
   result_count = flds.field_count();
 
   // Allocate the result and fill it in
@@ -2530,9 +2519,9 @@ JvmtiEnv::GetClassFields(oop k_mirror, jint* field_count_ptr, jfieldID** fields_
   // this is the reverse order of what FieldStream hands out.
   int id_index = (result_count - 1);
 
-  for (FilteredFieldStream src_st(instanceK_h, true, true); !src_st.eos(); src_st.next()) {
+  for (FilteredFieldStream src_st(ik, true, true); !src_st.eos(); src_st.next()) {
     result_list[id_index--] = jfieldIDWorkaround::to_jfieldID(
-                                            instanceK_h, src_st.offset(),
+                                            ik, src_st.offset(),
                                             src_st.access_flags().is_static());
   }
   assert(id_index == -1, "just checking");
@@ -2597,10 +2586,7 @@ JvmtiEnv::GetClassVersionNumbers(oop k_mirror, jint* minor_version_ptr, jint* ma
   if (java_lang_Class::is_primitive(k_mirror)) {
     return JVMTI_ERROR_ABSENT_INFORMATION;
   }
-  Klass* k_oop = java_lang_Class::as_Klass(k_mirror);
-  Thread *thread = Thread::current();
-  HandleMark hm(thread);
-  KlassHandle klass(thread, k_oop);
+  Klass* klass = java_lang_Class::as_Klass(k_mirror);
 
   jint status = klass->jvmti_class_status();
   if (status & (JVMTI_CLASS_STATUS_ERROR)) {
@@ -2610,7 +2596,7 @@ JvmtiEnv::GetClassVersionNumbers(oop k_mirror, jint* minor_version_ptr, jint* ma
     return JVMTI_ERROR_ABSENT_INFORMATION;
   }
 
-  instanceKlassHandle ik(thread, k_oop);
+  InstanceKlass* ik = InstanceKlass::cast(klass);
   *minor_version_ptr = ik->minor_version();
   *major_version_ptr = ik->major_version();
 
@@ -2628,11 +2614,9 @@ JvmtiEnv::GetConstantPool(oop k_mirror, jint* constant_pool_count_ptr, jint* con
     return JVMTI_ERROR_ABSENT_INFORMATION;
   }
 
-  Klass* k_oop = java_lang_Class::as_Klass(k_mirror);
+  Klass* klass = java_lang_Class::as_Klass(k_mirror);
   Thread *thread = Thread::current();
-  HandleMark hm(thread);
   ResourceMark rm(thread);
-  KlassHandle klass(thread, k_oop);
 
   jint status = klass->jvmti_class_status();
   if (status & (JVMTI_CLASS_STATUS_ERROR)) {
@@ -2642,8 +2626,8 @@ JvmtiEnv::GetConstantPool(oop k_mirror, jint* constant_pool_count_ptr, jint* con
     return JVMTI_ERROR_ABSENT_INFORMATION;
   }
 
-  instanceKlassHandle ikh(thread, k_oop);
-  JvmtiConstantPoolReconstituter reconstituter(ikh);
+  InstanceKlass* ik = InstanceKlass::cast(klass);
+  JvmtiConstantPoolReconstituter reconstituter(ik);
   if (reconstituter.get_error() != JVMTI_ERROR_NONE) {
     return reconstituter.get_error();
   }
@@ -2662,7 +2646,7 @@ JvmtiEnv::GetConstantPool(oop k_mirror, jint* constant_pool_count_ptr, jint* con
     return reconstituter.get_error();
   }
 
-  constantPoolHandle  constants(thread, ikh->constants());
+  constantPoolHandle  constants(thread, ik->constants());
   *constant_pool_count_ptr      = constants->length();
   *constant_pool_byte_count_ptr = cpool_size;
   *constant_pool_bytes_ptr      = cpool_bytes;

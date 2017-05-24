@@ -290,7 +290,7 @@ static int pre_call_resets_size() {
   if (C->in_24_bit_fp_mode()) {
     size += 6; // fldcw
   }
-  if (C->max_vector_size() > 16) {
+  if (VM_Version::supports_vzeroupper()) {
     size += 3; // vzeroupper
   }
   return size;
@@ -1884,7 +1884,6 @@ encode %{
     }
   %}
 
-
   enc_class pre_call_resets %{
     // If method sets FPU control word restore it here
     debug_only(int off0 = cbuf.insts_size());
@@ -1892,12 +1891,10 @@ encode %{
       MacroAssembler _masm(&cbuf);
       __ fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_std()));
     }
-    if (ra_->C->max_vector_size() > 16) {
-      // Clear upper bits of YMM registers when current compiled code uses
-      // wide vectors to avoid AVX <-> SSE transition penalty during call.
-      MacroAssembler _masm(&cbuf);
-      __ vzeroupper();
-    }
+    // Clear upper bits of YMM registers when current compiled code uses
+    // wide vectors to avoid AVX <-> SSE transition penalty during call.
+    MacroAssembler _masm(&cbuf);
+    __ vzeroupper();
     debug_only(int off1 = cbuf.insts_size());
     assert(off1 - off0 == pre_call_resets_size(), "correct size prediction");
   %}
@@ -13072,7 +13069,7 @@ instruct CallLeafNoFPDirect(method meth) %{
   ins_cost(300);
   format %{ "CALL_LEAF_NOFP,runtime " %}
   opcode(0xE8); /* E8 cd */
-  ins_encode(Java_To_Runtime(meth));
+  ins_encode(pre_call_resets, Java_To_Runtime(meth));
   ins_pipe( pipe_slow );
 %}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,8 +157,8 @@ bool DirtyCardQueueSet::apply_closure_to_buffer(CardTableEntryClosure* cl,
   if (cl == NULL) return true;
   bool result = true;
   void** buf = BufferNode::make_buffer_from_node(node);
-  size_t limit = DirtyCardQueue::byte_index_to_index(buffer_size());
-  size_t i = DirtyCardQueue::byte_index_to_index(node->index());
+  size_t i = node->index();
+  size_t limit = buffer_size();
   for ( ; i < limit; ++i) {
     jbyte* card_ptr = static_cast<jbyte*>(buf[i]);
     assert(card_ptr != NULL, "invariant");
@@ -168,9 +168,8 @@ bool DirtyCardQueueSet::apply_closure_to_buffer(CardTableEntryClosure* cl,
     }
   }
   if (consume) {
-    size_t new_index = DirtyCardQueue::index_to_byte_index(i);
-    assert(new_index <= buffer_size(), "invariant");
-    node->set_index(new_index);
+    assert(i <= buffer_size(), "invariant");
+    node->set_index(i);
   }
   return result;
 }
@@ -301,9 +300,7 @@ void DirtyCardQueueSet::abandon_logs() {
 
 void DirtyCardQueueSet::concatenate_log(DirtyCardQueue& dcq) {
   if (!dcq.is_empty()) {
-    enqueue_complete_buffer(
-      BufferNode::make_node_from_buffer(dcq.get_buf(), dcq.get_index()));
-    dcq.reinitialize();
+    dcq.flush();
   }
 }
 

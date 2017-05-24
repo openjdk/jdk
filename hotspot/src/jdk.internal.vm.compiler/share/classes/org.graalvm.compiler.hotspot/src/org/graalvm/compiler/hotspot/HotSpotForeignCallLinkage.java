@@ -24,7 +24,7 @@ package org.graalvm.compiler.hotspot;
 
 import jdk.vm.ci.meta.InvokeTarget;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
+import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
 import org.graalvm.compiler.core.target.Backend;
 import org.graalvm.compiler.hotspot.stubs.Stub;
@@ -95,6 +95,11 @@ public interface HotSpotForeignCallLinkage extends ForeignCallLinkage, InvokeTar
      * Determines if this is a call to a compiled {@linkplain Stub stub}.
      */
     boolean isCompiledStub();
+
+    /**
+     * Gets the stub, if any, this foreign call links to.
+     */
+    Stub getStub();
 
     void finalizeAddress(Backend backend);
 

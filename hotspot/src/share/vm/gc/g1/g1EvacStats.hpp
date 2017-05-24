@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,12 +53,12 @@ class G1EvacStats : public PLABStats {
 
   virtual void log_plab_allocation();
 
+  virtual size_t compute_desired_plab_sz();
+
  public:
   G1EvacStats(const char* description, size_t desired_plab_sz_, unsigned wt);
 
   ~G1EvacStats();
-
-  virtual void adjust_desired_plab_sz();
 
   uint regions_filled() const { return _regions_filled; }
   size_t region_end_waste() const { return _region_end_waste; }

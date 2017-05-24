@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,14 +47,6 @@ void PrivilegedElement::oops_do(OopClosure* f) {
   PrivilegedElement *cur = this;
   do {
     f->do_oop((oop*) &cur->_privileged_context);
-    cur = cur->_next;
-  } while(cur != NULL);
-}
-
-void PrivilegedElement::classes_do(KlassClosure* f) {
-  PrivilegedElement *cur = this;
-  do {
-    f->do_klass(cur->_klass);
     cur = cur->_next;
   } while(cur != NULL);
 }

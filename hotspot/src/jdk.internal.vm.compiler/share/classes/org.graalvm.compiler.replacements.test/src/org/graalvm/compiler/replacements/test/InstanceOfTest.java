@@ -50,7 +50,7 @@ import jdk.vm.ci.meta.JavaTypeProfile;
 public class InstanceOfTest extends TypeCheckTest {
 
     public InstanceOfTest() {
-        getSuites().getHighTier().findPhase(AbstractInliningPhase.class).remove();
+        createSuites(getInitialOptions()).getHighTier().findPhase(AbstractInliningPhase.class).remove();
     }
 
     @Override
@@ -488,7 +488,7 @@ public class InstanceOfTest extends TypeCheckTest {
         try (Scope s = Debug.scope("InstanceOfTest", getMetaAccess().lookupJavaMethod(getMethod(snippet)))) {
             StructuredGraph graph = parseEager(snippet, AllowAssumptions.YES);
             compile(graph.method(), graph);
-            Debug.dump(Debug.BASIC_LOG_LEVEL, graph, snippet);
+            Debug.dump(Debug.BASIC_LEVEL, graph, snippet);
             return graph;
         } catch (Throwable e) {
             throw Debug.handle(e);

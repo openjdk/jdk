@@ -47,7 +47,7 @@ public class BC_getfield1 extends JTTTest {
     @Test
     public void run1() throws Throwable {
         // tests that the null check isn't removed along with the read
-        runTest(EMPTY, true, true, "test", (Object) null);
+        runTest(getInitialOptions(), EMPTY, true, true, "test", (Object) null);
     }
 
     @Test

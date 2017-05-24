@@ -42,6 +42,7 @@ import org.graalvm.compiler.code.DataSection;
 import org.graalvm.compiler.code.SourceMapping;
 import org.graalvm.compiler.graph.NodeSourcePosition;
 
+import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.DebugInfo;
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.code.site.ConstantReference;
@@ -61,13 +62,13 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 public class HotSpotCompiledCodeBuilder {
 
-    public static HotSpotCompiledCode createCompiledCode(ResolvedJavaMethod method, HotSpotCompilationRequest compRequest, CompilationResult compResult) {
+    public static HotSpotCompiledCode createCompiledCode(CodeCacheProvider codeCache, ResolvedJavaMethod method, HotSpotCompilationRequest compRequest, CompilationResult compResult) {
         String name = compResult.getName();
 
         byte[] targetCode = compResult.getTargetCode();
         int targetCodeSize = compResult.getTargetCodeSize();
 
-        Site[] sites = getSortedSites(compResult);
+        Site[] sites = getSortedSites(codeCache, compResult);
 
         Assumption[] assumptions = compResult.getAssumptions();
 
@@ -201,7 +202,7 @@ public class HotSpotCompiledCodeBuilder {
      * {@code DebugInformationRecorder::add_new_pc_offset}). In addition, it expects
      * {@link Infopoint} PCs to be unique.
      */
-    private static Site[] getSortedSites(CompilationResult target) {
+    private static Site[] getSortedSites(CodeCacheProvider codeCache, CompilationResult target) {
         List<Site> sites = new ArrayList<>(
                         target.getExceptionHandlers().size() + target.getInfopoints().size() + target.getDataPatches().size() + target.getMarks().size() + target.getSourceMappings().size());
         sites.addAll(target.getExceptionHandlers());
@@ -214,9 +215,11 @@ public class HotSpotCompiledCodeBuilder {
          * can really be represented and recording the end PC seems to give the best results and
          * corresponds with what C1 and C2 do.
          */
-        for (SourceMapping source : target.getSourceMappings()) {
-            sites.add(new Infopoint(source.getEndOffset(), new DebugInfo(source.getSourcePosition()), InfopointReason.BYTECODE_POSITION));
-            assert verifySourcePositionReceivers(source.getSourcePosition());
+        if (codeCache.shouldDebugNonSafepoints()) {
+            for (SourceMapping source : target.getSourceMappings()) {
+                sites.add(new Infopoint(source.getEndOffset(), new DebugInfo(source.getSourcePosition()), InfopointReason.BYTECODE_POSITION));
+                assert verifySourcePositionReceivers(source.getSourcePosition());
+            }
         }
 
         SiteComparator c = new SiteComparator();

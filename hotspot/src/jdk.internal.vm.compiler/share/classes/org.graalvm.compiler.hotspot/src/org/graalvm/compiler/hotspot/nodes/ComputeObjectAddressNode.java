@@ -22,12 +22,12 @@
  */
 package org.graalvm.compiler.hotspot.nodes;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_3;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_2;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_1;
 
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodeinfo.NodeSize;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.debug.ControlFlowAnchored;
@@ -40,7 +40,7 @@ import jdk.vm.ci.meta.JavaKind;
  * A high-level intrinsic for getting an address inside of an object. During lowering it will be
  * moved next to any uses to avoid creating a derived pointer that is live across a safepoint.
  */
-@NodeInfo(cycles = CYCLES_3, size = SIZE_2)
+@NodeInfo(cycles = CYCLES_1, size = NodeSize.SIZE_1)
 public final class ComputeObjectAddressNode extends FixedWithNextNode implements Lowerable, ControlFlowAnchored {
     public static final NodeClass<ComputeObjectAddressNode> TYPE = NodeClass.create(ComputeObjectAddressNode.class);
 
