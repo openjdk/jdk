@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  *          java.management
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions DumpSymbolAndStringTable
  */
-
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.JDKToolFinder;
@@ -42,7 +42,7 @@ public class DumpSymbolAndStringTable {
 
         ProcessBuilder pb = new ProcessBuilder();
         pb.command(new String[] {JDKToolFinder.getJDKTool("jcmd"), pid, "VM.symboltable", "-verbose"});
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        OutputAnalyzer output = CDSTestUtils.executeAndLog(pb, "jcmd-symboltable");
         try {
             output.shouldContain("24 2: DumpSymbolAndStringTable\n");
         } catch (RuntimeException e) {
@@ -50,7 +50,7 @@ public class DumpSymbolAndStringTable {
         }
 
         pb.command(new String[] {JDKToolFinder.getJDKTool("jcmd"), pid, "VM.stringtable", "-verbose"});
-        output = new OutputAnalyzer(pb.start());
+        output = CDSTestUtils.executeAndLog(pb, "jcmd-stringtable");
         try {
             output.shouldContain("16: java.lang.String\n");
         } catch (RuntimeException e) {
