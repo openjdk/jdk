@@ -396,9 +396,7 @@ void SafepointSynchronize::begin() {
   GCLocker::set_jni_lock_count(_current_jni_active_count);
 
   if (log_is_enabled(Debug, safepoint)) {
-    VM_Operation *op = VMThread::vm_operation();
-    log_debug(safepoint)("Entering safepoint region: %s",
-                         (op != NULL) ? op->name() : "no vm operation");
+    log_debug(safepoint)("Entering safepoint region: %s", VMThread::vm_safepoint_description());
   }
 
   RuntimeService::record_safepoint_synchronized();
@@ -845,10 +843,8 @@ void SafepointSynchronize::print_safepoint_timeout(SafepointTimeoutReason reason
   // To debug the long safepoint, specify both DieOnSafepointTimeout &
   // ShowMessageBoxOnError.
   if (DieOnSafepointTimeout) {
-    VM_Operation *op = VMThread::vm_operation();
     fatal("Safepoint sync time longer than " INTX_FORMAT "ms detected when executing %s.",
-          SafepointTimeoutDelay,
-          op != NULL ? op->name() : "no vm operation");
+          SafepointTimeoutDelay, VMThread::vm_safepoint_description());
   }
 }
 
