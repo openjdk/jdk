@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128 8154513 8170015 8170368 8172102 8172103  8165405 8173073 8173848 8174041 8173916 8174028 8174262 8174797 8177079
+ * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128 8154513 8170015 8170368 8172102 8172103  8165405 8173073 8173848 8174041 8173916 8174028 8174262 8174797 8177079 8180508
  * @summary Simple jshell tool tests
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -202,7 +203,7 @@ public class ToolSimpleTest extends ReplToolTesting {
     @Test
     public void testUnknownCommand() {
         test((a) -> assertCommand(a, "/unknown",
-                "|  No such command or snippet id: /unknown\n" +
+                "|  Invalid command: /unknown\n" +
                 "|  Type /help for help."));
     }
 
@@ -275,9 +276,25 @@ public class ToolSimpleTest extends ReplToolTesting {
     }
 
     @Test
+    public void testDropRange() {
+        test(false, new String[]{"--no-startup"},
+                a -> assertVariable(a, "int", "a"),
+                a -> assertMethod(a, "int b() { return 0; }", "()int", "b"),
+                a -> assertClass(a, "class A {}", "class", "A"),
+                a -> assertImport(a, "import java.util.stream.*;", "", "java.util.stream.*"),
+                a -> assertCommand(a, "for (int i = 0; i < 10; ++i) {}", ""),
+                a -> assertCommand(a, "/drop 3-5 b 1",
+                        "|  dropped class A\n" +
+                        "|  dropped method b()\n" +
+                        "|  dropped variable a\n"),
+                a -> assertCommand(a, "/list", "")
+        );
+    }
+
+    @Test
     public void testDropNegative() {
         test(false, new String[]{"--no-startup"},
-                a -> assertCommandOutputStartsWith(a, "/drop 0", "|  No such snippet: 0"),
+                a -> assertCommandOutputStartsWith(a, "/drop 0", "|  No snippet with id: 0"),
                 a -> assertCommandOutputStartsWith(a, "/drop a", "|  No such snippet: a"),
                 a -> assertCommandCheckOutput(a, "/drop",
                         assertStartsWith("|  In the /drop argument, please specify an import, variable, method, or class to drop.")),
@@ -292,27 +309,23 @@ public class ToolSimpleTest extends ReplToolTesting {
 
     @Test
     public void testAmbiguousDrop() {
-        Consumer<String> check = s -> {
-            assertTrue(s.startsWith("|  The argument references more than one import, variable, method, or class"), s);
-            int lines = s.split("\n").length;
-            assertEquals(lines, 5, "Expected 3 ambiguous keys, but found: " + (lines - 2) + "\n" + s);
-        };
         test(
                 a -> assertVariable(a, "int", "a"),
                 a -> assertMethod(a, "int a() { return 0; }", "()int", "a"),
                 a -> assertClass(a, "class a {}", "class", "a"),
-                a -> assertCommandCheckOutput(a, "/drop a", check),
-                a -> assertCommandCheckOutput(a, "/vars", assertVariables()),
-                a -> assertCommandCheckOutput(a, "/methods", assertMethods()),
-                a -> assertCommandCheckOutput(a, "/types", assertClasses()),
-                a -> assertCommandCheckOutput(a, "/imports", assertImports())
+                a -> assertCommand(a, "/drop a",
+                        "|  dropped variable a\n" +
+                        "|  dropped method a()\n" +
+                        "|  dropped class a")
         );
         test(
                 a -> assertMethod(a, "int a() { return 0; }", "()int", "a"),
                 a -> assertMethod(a, "double a(int a) { return 0; }", "(int)double", "a"),
                 a -> assertMethod(a, "double a(double a) { return 0; }", "(double)double", "a"),
-                a -> assertCommandCheckOutput(a, "/drop a", check),
-                a -> assertCommandCheckOutput(a, "/methods", assertMethods())
+                a -> assertCommand(a, "/drop a",
+                        "|  dropped method a()\n" +
+                        "|  dropped method a(int)\n" +
+                        "|  dropped method a(double)\n")
         );
     }
 
@@ -402,12 +415,14 @@ public class ToolSimpleTest extends ReplToolTesting {
         String arg = "qqqq";
         List<String> startVarList = new ArrayList<>(START_UP);
         startVarList.add("int aardvark");
+        startVarList.add("int weevil");
         test(
                 a -> assertCommandCheckOutput(a, "/list -all",
                         s -> checkLineToList(s, START_UP)),
                 a -> assertCommandOutputStartsWith(a, "/list " + arg,
                         "|  No such snippet: " + arg),
                 a -> assertVariable(a, "int", "aardvark"),
+                a -> assertVariable(a, "int", "weevil"),
                 a -> assertCommandOutputContains(a, "/list aardvark", "aardvark"),
                 a -> assertCommandCheckOutput(a, "/list -start",
                         s -> checkLineToList(s, START_UP)),
@@ -415,6 +430,11 @@ public class ToolSimpleTest extends ReplToolTesting {
                         s -> checkLineToList(s, startVarList)),
                 a -> assertCommandOutputStartsWith(a, "/list s3",
                         "s3 : import"),
+                a -> assertCommandCheckOutput(a, "/list 1-2 s3",
+                        s -> {
+                            assertTrue(Pattern.matches(".*aardvark.*\\R.*weevil.*\\R.*s3.*import.*", s.trim()),
+                                    "No match: " + s);
+                        }),
                 a -> assertCommandOutputStartsWith(a, "/list " + arg,
                         "|  No such snippet: " + arg)
         );
@@ -438,6 +458,8 @@ public class ToolSimpleTest extends ReplToolTesting {
                 a -> assertCommandCheckOutput(a, "/vars -start",
                         s -> checkLineToList(s, startVarList)),
                 a -> assertCommandOutputStartsWith(a, "/vars -all",
+                        "|    int aardvark = 0\n|    int a = "),
+                a -> assertCommandOutputStartsWith(a, "/vars 1-4",
                         "|    int aardvark = 0\n|    int a = "),
                 a -> assertCommandOutputStartsWith(a, "/vars f",
                         "|  This command does not accept the snippet 'f'"),

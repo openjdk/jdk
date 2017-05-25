@@ -38,7 +38,7 @@ $(eval $(call ReadImportMetaData))
 ################################################################################
 
 # Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, , Javadoc.gmk))
+$(eval $(call IncludeCustomExtension, , Docs.gmk))
 
 ################################################################################
 # Javadoc settings
@@ -48,11 +48,8 @@ $(eval $(call IncludeCustomExtension, , Javadoc.gmk))
 MODULES_SOURCE_PATH := $(call PathList, $(call GetModuleSrcPath) \
     $(SUPPORT_OUTPUTDIR)/rmic/* $(JDK_TOPDIR)/src/*/share/doc/stub)
 
-# Should we use -Xdocrootparent? Allow custom to overwrite.
-DOCROOTPARENT_FLAG ?= TRUE
-
 # URLs
-JAVADOC_BASE_URL := http://www.oracle.com/pls/topic/lookup?ctx=javase9&id=homepage
+JAVADOC_BASE_URL := http://www.oracle.com/pls/topic/lookup?ctx=javase9&amp;id=homepage
 BUG_SUBMIT_URL := http://bugreport.java.com/bugreport/
 COPYRIGHT_URL := {@docroot}/../legal/cpyr.html
 LICENSE_URL := http://www.oracle.com/technetwork/java/javase/terms/license/java9speclicense.html
@@ -130,7 +127,7 @@ JAVADOC_BOTTOM := \
     <span style="font-size:smaller"> \
     <a href="$(BUG_SUBMIT_URL)">Submit a bug or feature</a><br> \
     For further API reference and developer documentation, see \
-    <a href="$(JAVADOC_BASE_URL)/index.html" target="_blank">Java SE \
+    <a href="$(JAVADOC_BASE_URL)" target="_blank">Java SE \
     Documentation</a>. That documentation contains more detailed, \
     developer-targeted descriptions, with conceptual overviews, definitions \
     of terms, workarounds, and working code examples.<br> \
@@ -163,6 +160,11 @@ JDK_JAVADOC_DOC_TITLE := Java&trade; Platform, Standard Edition Development Kit 
 
 JAVASE_JAVADOC_DOC_TITLE := Java&trade; Platform, Standard Edition \
     $(VERSION_SPECIFICATION)<br>API Specification
+
+################################################################################
+
+JDK_DOCS_INDEX_HTML_TITLE := Java&trade; Platform, Standard Edition Development Kit \
+    (JDK&trade;) $(VERSION_SPECIFICATION) Specification<br>$(DRAFT_MARKER_TITLE)
 
 ################################################################################
 # Functions
@@ -230,10 +232,6 @@ define SetupApiDocsGenerationBody
   # Create a string like "-Xdoclint:all,-syntax,-html,..."
   $1_OPTIONS += -Xdoclint:all,$$(call CommaList, $$(addprefix -, \
       $$(JAVADOC_DISABLED_DOCLINT)))
-
-  ifeq ($$($$DOCROOTPARENT_FLAG), TRUE)
-    $1_OPTIONS += -Xdocrootparent $$(JAVADOC_BASE_URL)
-  endif
 
   $1_OPTIONS += -doctitle '$$($1_DOC_TITLE)'
   $1_OPTIONS += -windowtitle '$$($1_WINDOW_TITLE)'
@@ -321,7 +319,7 @@ JDK_JAVADOC_OVERVIEW := $(JDK_TOPDIR)/src/java.base/share/classes/overview-core.
 $(eval $(call SetupApiDocsGeneration, JDK_API, \
     MODULES := $(JDK_JAVADOC_MODULES), \
     NAME := JDK, \
-    TARGET_DIR := $(JAVADOC_OUTPUTDIR)/api, \
+    TARGET_DIR := $(DOCS_OUTPUTDIR)/api, \
     OVERVIEW := $(JDK_JAVADOC_OVERVIEW), \
     DOC_TITLE := $(JDK_JAVADOC_DOC_TITLE), \
     WINDOW_TITLE := $(JAVADOC_WINDOW_TITLE), \
@@ -357,6 +355,18 @@ $(eval $(call SetupApiDocsGeneration, JAVASE_API, \
 # JAVASE_API_MODULEGRAPH_TARGETS.
 
 ################################################################################
+
+JDK_DOCS_INDEX_HTML := $(DOCS_OUTPUTDIR)/index.html
+
+$(JDK_DOCS_INDEX_HTML): $(BUILD_JIGSAW_TOOLS)
+	$(call LogInfo, Generating docs bundle index page)
+	$(MKDIR) -p $(@D)
+	$(TOOL_GEN_DOCS_BUNDLE_PAGE) --title '$(JDK_DOCS_INDEX_HTML_TITLE)' \
+		--output $@
+
+JDK_DOCS_INDEX_HTML_TARGETS := $(JDK_DOCS_INDEX_HTML)
+
+################################################################################
 # Copy JDK specs files
 
 # For all html documentation in $module/share/specs directories, copy it
@@ -367,13 +377,15 @@ COPY_SPEC_FILTER := %.html %.gif %.jpg %.mib %.css
 
 $(foreach m, $(ALL_MODULES), \
   $(eval SPECS_$m := $(call FindModuleSpecsDirs, $m)) \
-  $(if $(SPECS_$m), \
-    $(eval $(call SetupCopyFiles, COPY_$m, \
-        SRC := $(SPECS_$m), \
-        FILES := $(filter $(COPY_SPEC_FILTER), $(call CacheFind, $(SPECS_$m))), \
-        DEST := $(JAVADOC_OUTPUTDIR)/specs/, \
-    )) \
-    $(eval JDK_SPECS_TARGETS += $(COPY_$m)) \
+  $(foreach d, $(SPECS_$m), \
+    $(if $(filter $(COPY_SPEC_FILTER), $(call CacheFind, $d)), \
+      $(eval $(call SetupCopyFiles, COPY_$m, \
+          SRC := $d, \
+          FILES := $(filter $(COPY_SPEC_FILTER), $(call CacheFind, $d)), \
+          DEST := $(DOCS_OUTPUTDIR)/specs/, \
+      )) \
+      $(eval JDK_SPECS_TARGETS += $(COPY_$m)) \
+    ) \
   ) \
 )
 
@@ -382,7 +394,7 @@ GLOBAL_SPECS_RESOURCES_DIR := $(JDK_TOPDIR)/make/data/docs-resources/specs
 $(eval $(call SetupCopyFiles, COPY_GLOBAL_RESOURCES, \
     SRC := $(GLOBAL_SPECS_RESOURCES_DIR), \
     FILES := $(call CacheFind, $(GLOBAL_SPECS_RESOURCES_DIR)), \
-    DEST := $(JAVADOC_OUTPUTDIR)/specs/, \
+    DEST := $(DOCS_OUTPUTDIR)/specs/, \
 ))
 JDK_SPECS_TARGETS += $(COPY_GLOBAL_RESOURCES)
 
@@ -390,7 +402,7 @@ ifeq ($(ENABLE_FULL_DOCS), true)
   # For all markdown files in $module/share/specs directories, convert them to
   # html.
 
-  GLOBAL_SPECS_DEFAULT_CSS_FILE := $(JAVADOC_OUTPUTDIR)/specs/resources/jdk-default.css
+  GLOBAL_SPECS_DEFAULT_CSS_FILE := $(DOCS_OUTPUTDIR)/specs/resources/jdk-default.css
 
   $(foreach m, $(ALL_MODULES), \
     $(eval SPECS_$m := $(call FindModuleSpecsDirs, $m)) \
@@ -399,7 +411,7 @@ ifeq ($(ENABLE_FULL_DOCS), true)
         $(eval $(call SetupProcessMarkdown, CONVERT_MARKDOWN_$m_$(patsubst $(TOPDIR)/%,%,$d), \
             SRC := $d, \
             FILES := $(filter %.md, $(call CacheFind, $d)), \
-            DEST := $(JAVADOC_OUTPUTDIR)/specs/, \
+            DEST := $(DOCS_OUTPUTDIR)/specs/, \
             CSS := $(GLOBAL_SPECS_DEFAULT_CSS_FILE), \
         )) \
       ) \
@@ -413,7 +425,7 @@ endif
 JDWP_PROTOCOL := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/jdwp-protocol.html
 $(eval $(call SetupCopyFiles, COPY_JDWP_PROTOCOL, \
     FILES := $(JDWP_PROTOCOL), \
-    DEST := $(JAVADOC_OUTPUTDIR)/specs/jdwp, \
+    DEST := $(DOCS_OUTPUTDIR)/specs/jdwp, \
 ))
 JDK_SPECS_TARGETS += $(COPY_JDWP_PROTOCOL)
 
@@ -421,7 +433,7 @@ JDK_SPECS_TARGETS += $(COPY_JDWP_PROTOCOL)
 JVMTI_HTML := $(HOTSPOT_OUTPUTDIR)/variant-$(JVM_VARIANT_MAIN)/gensrc/jvmtifiles/jvmti.html
 $(eval $(call SetupCopyFiles, COPY_JVMTI_HTML, \
     FILES := $(JVMTI_HTML), \
-    DEST := $(JAVADOC_OUTPUTDIR)/specs, \
+    DEST := $(DOCS_OUTPUTDIR)/specs, \
 ))
 JDK_SPECS_TARGETS += $(COPY_JVMTI_HTML)
 
@@ -432,7 +444,7 @@ JAVADOC_ZIP_NAME := jdk-$(VERSION_STRING)-docs.zip
 JAVADOC_ZIP_FILE := $(OUTPUT_ROOT)/bundles/$(JAVADOC_ZIP_NAME)
 
 $(eval $(call SetupZipArchive, BUILD_JAVADOC_ZIP, \
-    SRC := $(JAVADOC_OUTPUTDIR), \
+    SRC := $(DOCS_OUTPUTDIR), \
     ZIP := $(JAVADOC_ZIP_FILE), \
     EXTRA_DEPS := $(JDK_API_JAVADOC_TARGETS) $(JDK_API_MODULEGRAPH_TARGETS) \
         $(JDK_SPECS_TARGETS), \
@@ -442,20 +454,23 @@ ZIP_TARGETS += $(BUILD_JAVADOC_ZIP)
 
 ################################################################################
 
-docs-jdk-api-javadoc: $(JDK_API_JAVADOC_TARGETS)
+docs-jdk-api-javadoc: $(JDK_API_JAVADOC_TARGETS) $(JDK_API_CUSTOM_TARGETS)
 
 docs-jdk-api-modulegraph: $(JDK_API_MODULEGRAPH_TARGETS)
 
-docs-javase-api-javadoc: $(JAVASE_API_JAVADOC_TARGETS)
+docs-javase-api-javadoc: $(JAVASE_API_JAVADOC_TARGETS) $(JAVASE_API_CUSTOM_TARGETS)
 
 docs-javase-api-modulegraph: $(JAVASE_API_MODULEGRAPH_TARGETS)
 
 docs-jdk-specs: $(JDK_SPECS_TARGETS)
 
+docs-jdk-index: $(JDK_DOCS_INDEX_HTML_TARGETS)
+
 docs-zip: $(ZIP_TARGETS)
 
 all: docs-jdk-api-javadoc docs-jdk-api-modulegraph docs-javase-api-javadoc \
-    docs-javase-api-modulegraph docs-jdk-specs docs-zip
+    docs-javase-api-modulegraph docs-jdk-specs docs-jdk-index docs-zip
 
 .PHONY: default all docs-jdk-api-javadoc docs-jdk-api-modulegraph \
-    docs-javase-api-javadoc docs-javase-api-modulegraph docs-jdk-specs docs-zip
+    docs-javase-api-javadoc docs-javase-api-modulegraph docs-jdk-specs \
+    docs-jdk-index docs-zip
