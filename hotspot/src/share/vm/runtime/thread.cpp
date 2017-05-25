@@ -2275,7 +2275,7 @@ void JavaThread::java_suspend() {
     }
   }
 
-  VM_ForceSafepoint vm_suspend;
+  VM_ThreadSuspend vm_suspend;
   VMThread::execute(&vm_suspend);
 }
 
