@@ -315,7 +315,11 @@ oop StringTable::intern(const char* utf8_string, TRAPS) {
 }
 
 void StringTable::unlink_or_oops_do(BoolObjectClosure* is_alive, OopClosure* f, int* processed, int* removed) {
-  buckets_unlink_or_oops_do(is_alive, f, 0, the_table()->table_size(), processed, removed);
+  BucketUnlinkContext context;
+  buckets_unlink_or_oops_do(is_alive, f, 0, the_table()->table_size(), &context);
+  _the_table->bulk_free_entries(&context);
+  *processed = context._num_processed;
+  *removed = context._num_removed;
 }
 
 void StringTable::possibly_parallel_unlink_or_oops_do(BoolObjectClosure* is_alive, OopClosure* f, int* processed, int* removed) {
@@ -324,6 +328,7 @@ void StringTable::possibly_parallel_unlink_or_oops_do(BoolObjectClosure* is_aliv
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
   const int limit = the_table()->table_size();
 
+  BucketUnlinkContext context;
   for (;;) {
     // Grab next set of buckets to scan
     int start_idx = Atomic::add(ClaimChunkSize, &_parallel_claimed_idx) - ClaimChunkSize;
@@ -333,8 +338,11 @@ void StringTable::possibly_parallel_unlink_or_oops_do(BoolObjectClosure* is_aliv
     }
 
     int end_idx = MIN2(limit, start_idx + ClaimChunkSize);
-    buckets_unlink_or_oops_do(is_alive, f, start_idx, end_idx, processed, removed);
+    buckets_unlink_or_oops_do(is_alive, f, start_idx, end_idx, &context);
   }
+  _the_table->bulk_free_entries(&context);
+  *processed = context._num_processed;
+  *removed = context._num_removed;
 }
 
 void StringTable::buckets_oops_do(OopClosure* f, int start_idx, int end_idx) {
@@ -360,7 +368,7 @@ void StringTable::buckets_oops_do(OopClosure* f, int start_idx, int end_idx) {
   }
 }
 
-void StringTable::buckets_unlink_or_oops_do(BoolObjectClosure* is_alive, OopClosure* f, int start_idx, int end_idx, int* processed, int* removed) {
+void StringTable::buckets_unlink_or_oops_do(BoolObjectClosure* is_alive, OopClosure* f, int start_idx, int end_idx, BucketUnlinkContext* context) {
   const int limit = the_table()->table_size();
 
   assert(0 <= start_idx && start_idx <= limit,
@@ -384,10 +392,9 @@ void StringTable::buckets_unlink_or_oops_do(BoolObjectClosure* is_alive, OopClos
         p = entry->next_addr();
       } else {
         *p = entry->next();
-        the_table()->free_entry(entry);
-        (*removed)++;
+        context->free_entry(entry);
       }
-      (*processed)++;
+      context->_num_processed++;
       entry = *p;
     }
   }

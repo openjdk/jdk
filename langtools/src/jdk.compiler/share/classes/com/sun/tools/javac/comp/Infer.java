@@ -1889,10 +1889,13 @@ public class Infer {
                     Type i = n_i.data.first();
                     for (Node n_j : nodes) {
                         Type j = n_j.data.first();
-                        UndetVar uv_i = (UndetVar)inferenceContext.asUndetVar(i);
-                        if (Type.containsAny(uv_i.getBounds(InferenceBound.values()), List.of(j))) {
-                            //update i's bound dependencies
-                            n_i.addDependency(n_j);
+                        // don't compare a variable to itself
+                        if (i != j) {
+                            UndetVar uv_i = (UndetVar)inferenceContext.asUndetVar(i);
+                            if (Type.containsAny(uv_i.getBounds(InferenceBound.values()), List.of(j))) {
+                                //update i's bound dependencies
+                                n_i.addDependency(n_j);
+                            }
                         }
                     }
                 }

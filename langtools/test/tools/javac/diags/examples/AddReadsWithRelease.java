@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,31 +20,9 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.testlibrary;
 
-import java.net.URL;
-import java.net.URLClassLoader;
+// key: compiler.err.add.reads.with.release
+// options: --add-reads java.base=java.compiler --release 9
 
-/**
- * An url classloader, which trying to load class from provided URL[] first,
- * and using parent classloader in case it failed
- */
-public class ParentLastURLClassLoader extends URLClassLoader {
-
-    public ParentLastURLClassLoader(URL urls[], ClassLoader parent) {
-        super(urls, parent);
-    }
-
-    @Override
-    public Class<?> loadClass(String name) throws ClassNotFoundException {
-        try {
-            Class<?> c = findClass(name);
-            if (c != null) {
-                return c;
-            }
-        } catch (ClassNotFoundException e) {
-            // ignore
-        }
-        return super.loadClass(name);
-    }
+class AddReadsWithRelease {
 }

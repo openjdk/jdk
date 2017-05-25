@@ -1945,7 +1945,7 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
             if (can_be_compiled(m, comp_level)) {
               if (++_codecache_sweep_counter == CompileTheWorldSafepointInterval) {
                 // Give sweeper a chance to keep up with CTW
-                VM_ForceSafepoint op;
+                VM_CTWThreshold op;
                 VMThread::execute(&op);
                 _codecache_sweep_counter = 0;
               }

@@ -20,8 +20,8 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 
-include-before: '[CONTENTS](index.html) | [PREV](changelog.html) | [NEXT](output.html)'
-include-after: '[CONTENTS](index.html) | [PREV](changelog.html) | [NEXT](output.html)'
+include-before: '[CONTENTS](index.html) | [PREV](index.html) | [NEXT](output.html)'
+include-after: '[CONTENTS](index.html) | [PREV](index.html) | [NEXT](output.html)'
 
 title: 'Java Object Serialization Specification: 1 - System Architecture'
 ---

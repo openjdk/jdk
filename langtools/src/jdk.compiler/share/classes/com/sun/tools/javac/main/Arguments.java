@@ -300,7 +300,8 @@ public class Arguments {
                 Option.XBOOTCLASSPATH_PREPEND,
                 Option.ENDORSEDDIRS, Option.DJAVA_ENDORSED_DIRS,
                 Option.EXTDIRS, Option.DJAVA_EXT_DIRS,
-                Option.SOURCE, Option.TARGET);
+                Option.SOURCE, Option.TARGET,
+                Option.SYSTEM, Option.UPGRADE_MODULE_PATH);
 
         if (platformString != null) {
             PlatformDescription platformDescription = PlatformUtils.lookupPlatformDescription(platformString);
@@ -331,7 +332,12 @@ public class Arguments {
                 try {
                     StandardJavaFileManager sfm = (StandardJavaFileManager) fm;
 
-                    sfm.setLocationFromPaths(StandardLocation.PLATFORM_CLASS_PATH, platformCP);
+                    if (Source.instance(context).allowModules()) {
+                        sfm.handleOption("--system", Arrays.asList("none").iterator());
+                        sfm.setLocationFromPaths(StandardLocation.UPGRADE_MODULE_PATH, platformCP);
+                    } else {
+                        sfm.setLocationFromPaths(StandardLocation.PLATFORM_CLASS_PATH, platformCP);
+                    }
                 } catch (IOException ex) {
                     log.printLines(PrefixKind.JAVAC, "msg.io");
                     ex.printStackTrace(log.getWriter(WriterKind.NOTICE));

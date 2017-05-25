@@ -1063,7 +1063,7 @@ static void InduceScavenge(Thread * Self, const char * Whence) {
     // Must VM_Operation instance be heap allocated as the op will be enqueue and posted
     // to the VMthread and have a lifespan longer than that of this activation record.
     // The VMThread will delete the op when completed.
-    VMThread::execute(new VM_ForceAsyncSafepoint());
+    VMThread::execute(new VM_ScavengeMonitors());
 
     if (ObjectMonitor::Knob_Verbose) {
       tty->print_cr("INFO: Monitor scavenge - STW posted @%s (%d)",

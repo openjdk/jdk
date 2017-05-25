@@ -25,14 +25,14 @@
  * @test
  * @bug 4686717
  * @summary Test MulticastSocket.setLoopbackMode
- * @library /lib/testlibrary
- * @build jdk.testlibrary.NetworkConfiguration
+ * @library /test/lib
  * @run main/othervm SetLoopbackMode
  */
+
 import java.net.*;
 import java.io.IOException;
 import java.util.Enumeration;
-import jdk.testlibrary.NetworkConfiguration;
+import jdk.test.lib.NetworkConfiguration;
 
 public class SetLoopbackMode {
 

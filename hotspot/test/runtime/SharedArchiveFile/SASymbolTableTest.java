@@ -95,17 +95,11 @@ public class SASymbolTableTest {
                     "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.tools=ALL-UNNAMED",
                     "SASymbolTableTestAgent",
                     Long.toString(pid));
-            OutputAnalyzer output = ProcessTools.executeProcess(tool);
-            System.out.println("STDOUT[");
-            System.out.println(output.getOutput());
+            OutputAnalyzer output = CDSTestUtils.executeAndLog(tool, "tool");
             if (output.getStdout().contains("connected too early")) {
                 System.out.println("SymbolTable not created by VM - test skipped");
                 return;
             }
-            System.out.println("]");
-            System.out.println("STDERR[");
-            System.out.print(output.getStderr());
-            System.out.println("]");
             output.shouldHaveExitValue(0);
         } catch (Exception ex) {
             throw new RuntimeException("Test ERROR " + ex, ex);

@@ -277,7 +277,10 @@ ALL_TARGETS += $(HOTSPOT_VARIANT_TARGETS) $(HOTSPOT_VARIANT_GENSRC_TARGETS) \
 demos-jdk:
 	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileDemos.gmk)
 
-ALL_TARGETS += demos-jdk
+test-image-demos-jdk:
+	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileDemos.gmk images)
+
+ALL_TARGETS += demos-jdk test-image-demos-jdk
 
 ################################################################################
 # Jigsaw specific data and analysis targets.
@@ -363,29 +366,32 @@ ALL_TARGETS += store-source-revision create-source-revision-tracker bootcycle-im
 # If building full docs, to complete docs-*-api we need both the javadoc and
 # modulegraph targets.
 docs-jdk-api-javadoc:
-	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-jdk-api-javadoc)
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Docs.gmk docs-jdk-api-javadoc)
 
 docs-jdk-api-modulegraph:
-	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-jdk-api-modulegraph)
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Docs.gmk docs-jdk-api-modulegraph)
 
 docs-javase-api-javadoc:
-	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-javase-api-javadoc)
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Docs.gmk docs-javase-api-javadoc)
 
 docs-javase-api-modulegraph:
-	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-javase-api-modulegraph)
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Docs.gmk docs-javase-api-modulegraph)
 
 docs-jdk-specs:
-	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-jdk-specs)
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Docs.gmk docs-jdk-specs)
+
+docs-jdk-index:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Docs.gmk docs-jdk-index)
 
 docs-zip:
-	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-zip)
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Docs.gmk docs-zip)
 
 update-build-docs:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f UpdateBuildDocs.gmk)
 
 ALL_TARGETS += docs-jdk-api-javadoc docs-jdk-api-modulegraph \
     docs-javase-api-javadoc docs-javase-api-modulegraph docs-jdk-specs \
-    docs-zip update-build-docs
+    docs-jdk-index docs-zip update-build-docs
 
 ################################################################################
 # Cross compilation support
@@ -631,6 +637,7 @@ else
   # jdk libs, even though they don't need to. To avoid warnings, make sure they
   # aren't built until after libjava and libjvm are available to link to.
   demos-jdk: java.base-libs exploded-image-optimize
+  test-image-demos-jdk: demos-jdk
 
   # Declare dependency from <module>-java to <module>-gensrc
   $(foreach m, $(GENSRC_MODULES), $(eval $m-java: $m-gensrc))
@@ -793,6 +800,8 @@ else
   # The gensrc steps for hotspot and jdk.jdi create html spec files.
   docs-jdk-specs: hotspot-$(JVM_VARIANT_MAIN)-gensrc jdk.jdi-gensrc
 
+  docs-jdk-index: exploded-image buildtools-modules
+
   docs-zip: docs-jdk
 
   test: jdk-image test-image
@@ -922,7 +931,7 @@ ifeq ($(ENABLE_FULL_DOCS), true)
   docs-javase-api: docs-javase-api-modulegraph
 endif
 
-docs-jdk: docs-jdk-api docs-jdk-specs
+docs-jdk: docs-jdk-api docs-jdk-specs docs-jdk-index
 docs-javase: docs-javase-api
 
 # alias for backwards compatibility
@@ -963,7 +972,8 @@ docs-image: docs-jdk
 
 # This target builds the test image
 test-image: prepare-test-image test-image-hotspot-jtreg-native \
-    test-image-jdk-jtreg-native test-image-failure-handler test-image-hotspot-gtest
+    test-image-jdk-jtreg-native test-image-failure-handler test-image-hotspot-gtest \
+    test-image-demos-jdk
 
 # all-images builds all our deliverables as images.
 all-images: product-images test-image docs-image

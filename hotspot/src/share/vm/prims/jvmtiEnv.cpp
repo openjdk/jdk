@@ -985,8 +985,8 @@ JvmtiEnv::SuspendThreadList(jint request_count, const jthread* request_list, jvm
     results[i] = JVMTI_ERROR_NONE;  // indicate successful suspend
   }
   if (needSafepoint > 0) {
-    VM_ForceSafepoint vfs;
-    VMThread::execute(&vfs);
+    VM_ThreadsSuspendJVMTI tsj;
+    VMThread::execute(&tsj);
   }
   // per-thread suspend results returned via results parameter
   return JVMTI_ERROR_NONE;

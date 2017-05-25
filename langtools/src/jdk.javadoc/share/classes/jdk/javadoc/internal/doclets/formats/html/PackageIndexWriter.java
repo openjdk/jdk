@@ -29,11 +29,12 @@ import java.util.*;
 
 import javax.lang.model.element.PackageElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
+import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -112,8 +113,8 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
             SortedSet<PackageElement> list = groupPackageMap.get(groupname);
             if (list != null && !list.isEmpty()) {
                 addIndexContents(list,
-                                 groupname, configuration.getText("doclet.Member_Table_Summary",
-                                                                  groupname, configuration.getText("doclet.packages")), body);
+                        groupname, configuration.getText("doclet.Member_Table_Summary",
+                                groupname, configuration.getText("doclet.packages")), body);
             }
         }
     }
@@ -131,7 +132,9 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
         Content tbody = new HtmlTree(HtmlTag.TBODY);
         addPackagesList(packages, tbody);
         table.addContent(tbody);
-        Content div = HtmlTree.DIV(HtmlStyle.contentContainer, table);
+        Content anchor = getMarkerAnchor(text);
+        Content div = HtmlTree.DIV(HtmlStyle.contentContainer, anchor);
+        div.addContent(table);
         if (configuration.allowTag(HtmlTag.MAIN)) {
             htmlTree.addContent(div);
         } else {

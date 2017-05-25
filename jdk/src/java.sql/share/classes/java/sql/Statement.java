@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -686,7 +686,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      *         more results
      * @exception SQLException if a database access error occurs,
      * this method is called on a closed <code>Statement</code> or the argument
-         *         supplied is not one of the following:
+     *         supplied is not one of the following:
      *        <code>Statement.CLOSE_CURRENT_RESULT</code>,
      *        <code>Statement.KEEP_CURRENT_RESULT</code> or
      *        <code>Statement.CLOSE_ALL_RESULTS</code>
@@ -1379,16 +1379,20 @@ public interface Statement extends Wrapper, AutoCloseable {
      * single quote within the string will be replaced by two single quotes.
      *
      * <blockquote>
-     * <table border = 1 cellspacing=0 cellpadding=5 >
+     * <table class="striped" >
      * <caption>Examples of the conversion:</caption>
+     * <thead>
      * <tr><th>Value</th><th>Result</th></tr>
-     * <tr> <td align='center'>Hello</td> <td align='center'>'Hello'</td> </tr>
-     * <tr> <td align='center'>G'Day</td> <td align='center'>'G''Day'</td> </tr>
-     * <tr> <td align='center'>'G''Day'</td>
-     * <td align='center'>'''G''''Day'''</td> </tr>
-     * <tr> <td align='center'>I'''M</td> <td align='center'>'I''''''M'</td>
+     * </thead>
+     * <tbody style="text-align:center">
+     * <tr> <td>Hello</td> <td>'Hello'</td> </tr>
+     * <tr> <td>G'Day</td> <td>'G''Day'</td> </tr>
+     * <tr> <td>'G''Day'</td>
+     * <td>'''G''''Day'''</td> </tr>
+     * <tr> <td>I'''M</td> <td>'I''''''M'</td>
      * </tr>
      *
+     * </tbody>
      * </table>
      * </blockquote>
      * @implNote
@@ -1446,52 +1450,56 @@ public interface Statement extends Wrapper, AutoCloseable {
      * <li>The length of {@code identifier} is less than 1 or greater than 128 characters
      * </ul>
      * <blockquote>
-     * <table border = 1 cellspacing=0 cellpadding=5 >
+     * <table class="striped" >
      * <caption>Examples of the conversion:</caption>
+     * <thead>
      * <tr>
      * <th>identifier</th>
      * <th>alwaysQuote</th>
      * <th>Result</th></tr>
+     * </thead>
+     * <tbody>
      * <tr>
-     * <td align='center'>Hello</td>
-     * <td align='center'>false</td>
-     * <td align='center'>Hello</td>
+     * <td>Hello</td>
+     * <td>false</td>
+     * <td>Hello</td>
      * </tr>
      * <tr>
-     * <td align='center'>Hello</td>
-     * <td align='center'>true</td>
-     * <td align='center'>"Hello"</td>
+     * <td>Hello</td>
+     * <td>true</td>
+     * <td>"Hello"</td>
      * </tr>
      * <tr>
-     * <td align='center'>G'Day</td>
-     * <td align='center'>false</td>
-     * <td align='center'>"G'Day"</td>
+     * <td>G'Day</td>
+     * <td>false</td>
+     * <td>"G'Day"</td>
      * </tr>
      * <tr>
-     * <td align='center'>"Bruce Wayne"</td>
-     * <td align='center'>false</td>
-     * <td align='center'>"Bruce Wayne"</td>
+     * <td>"Bruce Wayne"</td>
+     * <td>false</td>
+     * <td>"Bruce Wayne"</td>
      * </tr>
      * <tr>
-     * <td align='center'>"Bruce Wayne"</td>
-     * <td align='center'>true</td>
-     * <td align='center'>"Bruce Wayne"</td>
+     * <td>"Bruce Wayne"</td>
+     * <td>true</td>
+     * <td>"Bruce Wayne"</td>
      * </tr>
      * <tr>
-     * <td align='center'>GoodDay$</td>
-     * <td align='center'>false</td>
-     * <td align='center'>"GoodDay$"</td>
+     * <td>GoodDay$</td>
+     * <td>false</td>
+     * <td>"GoodDay$"</td>
      * </tr>
      * <tr>
-     * <td align='center'>Hello"World</td>
-     * <td align='center'>false</td>
-     * <td align='center'>SQLException</td>
+     * <td>Hello"World</td>
+     * <td>false</td>
+     * <td>SQLException</td>
      * </tr>
      * <tr>
-     * <td align='center'>"Hello"World"</td>
-     * <td align='center'>false</td>
-     * <td align='center'>SQLException</td>
+     * <td>"Hello"World"</td>
+     * <td>false</td>
+     * <td>SQLException</td>
      * </tr>
+     * </tbody>
      * </table>
      * </blockquote>
      * @implNote
@@ -1542,36 +1550,40 @@ public interface Statement extends Wrapper, AutoCloseable {
      * </ul>
      *
      * <blockquote>
-     * <table border = 1 cellspacing=0 cellpadding=5 >
+     * <table class="striped" >
      * <caption>Examples of the conversion:</caption>
+     * <thead>
      * <tr>
      * <th>identifier</th>
      * <th>Simple Identifier</th>
+     * </thead>
      *
+     * <tbody>
      * <tr>
-     * <td align='center'>Hello</td>
-     * <td align='center'>true</td>
+     * <td>Hello</td>
+     * <td>true</td>
      * </tr>
      * <tr>
-     * <td align='center'>G'Day</td>
-     * <td align='center'>false</td>
+     * <td>G'Day</td>
+     * <td>false</td>
      * </tr>
      * <tr>
-     * <td align='center'>"Bruce Wayne"</td>
-     * <td align='center'>false</td>
+     * <td>"Bruce Wayne"</td>
+     * <td>false</td>
      * </tr>
      * <tr>
-     * <td align='center'>GoodDay$</td>
-     * <td align='center'>false</td>
+     * <td>GoodDay$</td>
+     * <td>false</td>
      * </tr>
      * <tr>
-     * <td align='center'>Hello"World</td>
-     * <td align='center'>false</td>
+     * <td>Hello"World</td>
+     * <td>false</td>
      * </tr>
      * <tr>
-     * <td align='center'>"Hello"World"</td>
-     * <td align='center'>false</td>
+     * <td>"Hello"World"</td>
+     * <td>false</td>
      * </tr>
+     * </tbody>
      * </table>
      * </blockquote>
      * @implNote JDBC driver implementations may need to provide their own
@@ -1597,19 +1609,23 @@ public interface Statement extends Wrapper, AutoCloseable {
     * by two single quotes.
     *
     * <blockquote>
-    * <table border = 1 cellspacing=0 cellpadding=5 >
+    * <table class="striped">
     * <caption>Examples of the conversion:</caption>
+    * <thead>
     * <tr>
     * <th>Value</th>
     * <th>Result</th>
     * </tr>
-    * <tr> <td align='center'>Hello</td> <td align='center'>N'Hello'</td> </tr>
-    * <tr> <td align='center'>G'Day</td> <td align='center'>N'G''Day'</td> </tr>
-    * <tr> <td align='center'>'G''Day'</td>
-    * <td align='center'>N'''G''''Day'''</td> </tr>
-    * <tr> <td align='center'>I'''M</td> <td align='center'>N'I''''''M'</td>
-    * <tr> <td align='center'>N'Hello'</td> <td align='center'>N'N''Hello'''</td> </tr>
+    * </thead>
+    * <tbody>
+    * <tr> <td>Hello</td> <td>N'Hello'</td> </tr>
+    * <tr> <td>G'Day</td> <td>N'G''Day'</td> </tr>
+    * <tr> <td>'G''Day'</td>
+    * <td>N'''G''''Day'''</td> </tr>
+    * <tr> <td>I'''M</td> <td>N'I''''''M'</td>
+    * <tr> <td>N'Hello'</td> <td>N'N''Hello'''</td> </tr>
     *
+    * </tbody>
     * </table>
     * </blockquote>
     * @implNote

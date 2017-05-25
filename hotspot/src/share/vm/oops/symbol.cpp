@@ -66,22 +66,6 @@ void Symbol::operator delete(void *p) {
 }
 
 // ------------------------------------------------------------------
-// Symbol::equals
-//
-// Compares the symbol with a string of the given length.
-bool Symbol::equals(const char* str, int len) const {
-  int l = utf8_length();
-  if (l != len) return false;
-  while (l-- > 0) {
-    if (str[l] != (char) byte_at(l))
-      return false;
-  }
-  assert(l == -1, "we should be at the beginning");
-  return true;
-}
-
-
-// ------------------------------------------------------------------
 // Symbol::starts_with
 //
 // Tests if the symbol starts with the specified prefix of the given

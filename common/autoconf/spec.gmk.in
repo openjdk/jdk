@@ -271,9 +271,6 @@ BUNDLES_OUTPUTDIR=$(BUILD_OUTPUT)/bundles
 TESTMAKE_OUTPUTDIR=$(BUILD_OUTPUT)/test-make
 MAKESUPPORT_OUTPUTDIR=$(BUILD_OUTPUT)/make-support
 
-# By default, output javadoc directly into image
-JAVADOC_OUTPUTDIR = $(DOCS_IMAGE_DIR)
-
 # This does not get overridden in a bootcycle build
 CONFIGURESUPPORT_OUTPUTDIR:=@CONFIGURESUPPORT_OUTPUTDIR@
 BUILDJDK_OUTPUTDIR=$(BUILD_OUTPUT)/buildjdk
@@ -819,6 +816,8 @@ INTERIM_IMAGE_DIR := $(SUPPORT_OUTPUTDIR)/interim-image
 # Docs image
 DOCS_IMAGE_SUBDIR := docs
 DOCS_IMAGE_DIR = $(IMAGES_OUTPUTDIR)/$(DOCS_IMAGE_SUBDIR)
+# Output docs directly into image
+DOCS_OUTPUTDIR := $(DOCS_IMAGE_DIR)
 
 # Macosx bundles directory definitions
 JDK_MACOSX_BUNDLE_SUBDIR=jdk-bundle

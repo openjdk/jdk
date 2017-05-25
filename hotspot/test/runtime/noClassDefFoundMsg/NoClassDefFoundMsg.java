@@ -31,7 +31,7 @@
  * @run main/native NoClassDefFoundMsg
  */
 
-import jdk.test.lib.InMemoryJavaCompiler;
+import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.internal.misc.Unsafe;
 
 public class NoClassDefFoundMsg {
