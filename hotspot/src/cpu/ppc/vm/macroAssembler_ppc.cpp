@@ -2498,14 +2498,20 @@ void MacroAssembler::rtm_abort_ratio_calculation(Register rtm_counters_Reg,
   //   All transactions = total_count *  RTMTotalCountIncrRate
   //   Set no_rtm bit if (Aborted transactions >= All transactions * RTMAbortRatio)
   ld(R0, RTMLockingCounters::abort_count_offset(), rtm_counters_Reg);
-  cmpdi(CCR0, R0, RTMAbortThreshold);
-  blt(CCR0, L_check_always_rtm2);
+  if (is_simm(RTMAbortThreshold, 16)) {   // cmpdi can handle 16bit immediate only.
+    cmpdi(CCR0, R0, RTMAbortThreshold);
+    blt(CCR0, L_check_always_rtm2);  // reload of rtm_counters_Reg not necessary
+  } else {
+    load_const_optimized(rtm_counters_Reg, RTMAbortThreshold);
+    cmpd(CCR0, R0, rtm_counters_Reg);
+    blt(CCR0, L_check_always_rtm1);  // reload of rtm_counters_Reg required
+  }
   mulli(R0, R0, 100);
 
   const Register tmpReg = rtm_counters_Reg;
   ld(tmpReg, RTMLockingCounters::total_count_offset(), rtm_counters_Reg);
-  mulli(tmpReg, tmpReg, RTMTotalCountIncrRate);
-  mulli(tmpReg, tmpReg, RTMAbortRatio);
+  mulli(tmpReg, tmpReg, RTMTotalCountIncrRate); // allowable range: int16
+  mulli(tmpReg, tmpReg, RTMAbortRatio);         // allowable range: int16
   cmpd(CCR0, R0, tmpReg);
   blt(CCR0, L_check_always_rtm1); // jump to reload
   if (method_data != NULL) {
@@ -2521,7 +2527,13 @@ void MacroAssembler::rtm_abort_ratio_calculation(Register rtm_counters_Reg,
   load_const_optimized(rtm_counters_Reg, (address)rtm_counters, R0); // reload
   bind(L_check_always_rtm2);
   ld(tmpReg, RTMLockingCounters::total_count_offset(), rtm_counters_Reg);
-  cmpdi(CCR0, tmpReg, RTMLockingThreshold / RTMTotalCountIncrRate);
+  int64_t thresholdValue = RTMLockingThreshold / RTMTotalCountIncrRate;
+  if (is_simm(thresholdValue, 16)) {   // cmpdi can handle 16bit immediate only.
+    cmpdi(CCR0, tmpReg, thresholdValue);
+  } else {
+    load_const_optimized(R0, thresholdValue);
+    cmpd(CCR0, tmpReg, R0);
+  }
   blt(CCR0, L_done);
   if (method_data != NULL) {
     // Set rtm_state to "always rtm" in MDO.
@@ -2620,7 +2632,7 @@ void MacroAssembler::rtm_stack_locking(ConditionRegister flag,
   if (PrintPreciseRTMLockingStatistics || profile_rtm) {
     Label L_noincrement;
     if (RTMTotalCountIncrRate > 1) {
-      branch_on_random_using_tb(tmp, (int)RTMTotalCountIncrRate, L_noincrement);
+      branch_on_random_using_tb(tmp, RTMTotalCountIncrRate, L_noincrement);
     }
     assert(stack_rtm_counters != NULL, "should not be NULL when profiling RTM");
     load_const_optimized(tmp, (address)stack_rtm_counters->total_count_addr(), R0);
@@ -2687,7 +2699,7 @@ void MacroAssembler::rtm_inflated_locking(ConditionRegister flag,
   if (PrintPreciseRTMLockingStatistics || profile_rtm) {
     Label L_noincrement;
     if (RTMTotalCountIncrRate > 1) {
-      branch_on_random_using_tb(R0, (int)RTMTotalCountIncrRate, L_noincrement);
+      branch_on_random_using_tb(R0, RTMTotalCountIncrRate, L_noincrement);
     }
     assert(rtm_counters != NULL, "should not be NULL when profiling RTM");
     load_const(R0, (address)rtm_counters->total_count_addr(), tmpReg);
