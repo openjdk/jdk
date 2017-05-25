@@ -594,6 +594,15 @@ suite = {
       "workingSets" : "Graal,LIR,SPARC",
     },
 
+    "org.graalvm.api.word" : {
+      "subDir" : "share/classes",
+      "sourceDirs" : ["src"],
+      "dependencies" : [],
+      "checkstyle" : "org.graalvm.compiler.graph",
+      "javaCompliance" : "1.8",
+      "workingSets" : "API",
+    },
+
     "org.graalvm.compiler.word" : {
       "subDir" : "share/classes",
       "sourceDirs" : ["src"],
@@ -703,7 +712,6 @@ suite = {
         "org.graalvm.compiler.bytecode",
         "org.graalvm.compiler.lir",
       ],
-      "generatedDependencies" : ["org.graalvm.compiler.serviceprovider"],
       "checkstyle" : "org.graalvm.compiler.graph",
       "javaCompliance" : "1.8",
       "annotationProcessors" : [
@@ -950,6 +958,7 @@ suite = {
       "sourceDirs" : ["src"],
       "dependencies" : [
         "org.graalvm.compiler.debug",
+        "org.graalvm.api.word",
       ],
       "annotationProcessors" : ["GRAAL_OPTIONS_PROCESSOR"],
       "checkstyle" : "org.graalvm.compiler.graph",
