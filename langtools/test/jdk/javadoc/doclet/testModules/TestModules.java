@@ -25,6 +25,7 @@
  * @test
  * @bug 8154119 8154262 8156077 8157987 8154261 8154817 8135291 8155995 8162363
  *      8168766 8168688 8162674 8160196 8175799 8174974 8176778 8177562 8175218 8175823 8166306
+ *      8178043
  * @summary Test modules support in javadoc.
  * @author bpatel
  * @library ../lib
@@ -326,6 +327,54 @@ public class TestModules extends JavadocTester {
         checkAllModulesLink(false);
     }
 
+    /**
+     * Test -group option for modules. The overview-summary.html page should group the modules accordingly.
+     */
+    @Test
+    void testGroupOption() {
+        javadoc("-d", "out-group", "--show-module-contents=all",
+                "-tag", "regular:a:Regular Tag:",
+                "-tag", "moduletag:s:Module Tag:",
+                "--module-source-path", testSrc,
+                "-group", "Module Group A", "moduleA*",
+                "-group", "Module Group B & C", "moduleB*:moduleC*",
+                "-group", "Java SE Modules", "java*",
+                "--module", "moduleA,moduleB,moduleC,moduletags",
+                "moduleA/concealedpkgmdlA", "testpkgmdlA", "testpkg2mdlB", "testpkgmdlB", "testpkgmdlC",
+                "testpkgmdltags");
+        checkExit(Exit.OK);
+        checkGroupOption();
+    }
+
+    /**
+     * Test -group option for unnamed modules. The overview-summary.html page should group the packages accordingly.
+     */
+    @Test
+    void testUnnamedModuleGroupOption() {
+        javadoc("-d", "out-groupnomodule", "-use",
+                "-overview", testSrc("overview.html"),
+                "-sourcepath", testSrc,
+                "-group", "Package Group 0", "testpkgnomodule",
+                "-group", "Package Group 1", "testpkgnomodule1",
+                "testpkgnomodule", "testpkgnomodule1");
+        checkExit(Exit.OK);
+        checkUnnamedModuleGroupOption();
+    }
+
+    /**
+     * Test -group option for a single module.
+     */
+    @Test
+    void testGroupOptionSingleModule() {
+        javadoc("-d", "out-groupsinglemodule", "-use",
+                "--module-source-path", testSrc,
+                "-group", "Module Group B", "moduleB*",
+                "--module", "moduleB",
+                "testpkg2mdlB", "testpkgmdlB");
+        checkExit(Exit.OK);
+        //checkOverviewSummaryPackages();
+    }
+
     void checkDescription(boolean found) {
         checkOutput("moduleA-summary.html", found,
                 "<!-- ============ MODULE DESCRIPTION =========== -->\n"
@@ -346,8 +395,10 @@ public class TestModules extends JavadocTester {
                 + "<div class=\"contentContainer\">\n"
                 + "<div class=\"block\">The overview summary page header.</div>\n"
                 + "</div>\n"
-                + "<div class=\"contentContainer\">\n"
-                + "<table class=\"overviewSummary\" summary=\"Module Summary table, listing modules, and an explanation\">\n"
+                + "<div class=\"contentContainer\"><a name=\"Modules\">\n"
+                + "<!--   -->\n"
+                + "</a>\n"
+                + "<table class=\"overviewSummary\" summary=\"Modules table, listing modules, and an explanation\">\n"
                 + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>");
         checkOutput("overview-summary.html", false,
                 "</table>\n"
@@ -355,8 +406,10 @@ public class TestModules extends JavadocTester {
                 + "<div class=\"contentContainer\">\n"
                 + "<div class=\"block\">The overview summary page header.</div>\n"
                 + "</div>\n"
-                + "<div class=\"contentContainer\">\n"
-                + "<table class=\"overviewSummary\" summary=\"Module Summary table, listing modules, and an explanation\">\n"
+                + "<div class=\"contentContainer\"><a name=\"Modules\">\n"
+                + "<!--   -->\n"
+                + "</a>\n"
+                + "<table class=\"overviewSummary\" summary=\"Modules table, listing modules, and an explanation\">\n"
                 + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>");
     }
 
@@ -405,7 +458,9 @@ public class TestModules extends JavadocTester {
                 + "<div class=\"contentContainer\">\n"
                 + "<div class=\"block\">The overview summary page header.</div>\n"
                 + "</div>\n"
-                + "<div class=\"contentContainer\">\n"
+                + "<div class=\"contentContainer\"><a id=\"Modules\">\n"
+                + "<!--   -->\n"
+                + "</a>\n"
                 + "<table class=\"overviewSummary\">\n"
                 + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>");
         checkOutput("overview-summary.html", false,
@@ -416,7 +471,9 @@ public class TestModules extends JavadocTester {
                 + "<div class=\"contentContainer\">\n"
                 + "<div class=\"block\">The overview summary page header.</div>\n"
                 + "</div>\n"
-                + "<div class=\"contentContainer\">\n"
+                + "<div class=\"contentContainer\"><a id=\"Modules\">\n"
+                + "<!--   -->\n"
+                + "</a>\n"
                 + "<table class=\"overviewSummary\">\n"
                 + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>");
     }
@@ -495,7 +552,7 @@ public class TestModules extends JavadocTester {
 
     void checkOverviewSummaryModules() {
         checkOutput("overview-summary.html", true,
-                "<table class=\"overviewSummary\" summary=\"Module Summary table, listing modules, and an explanation\">\n"
+                "<table class=\"overviewSummary\" summary=\"Modules table, listing modules, and an explanation\">\n"
                 + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Module</th>\n"
@@ -512,7 +569,7 @@ public class TestModules extends JavadocTester {
 
     void checkOverviewSummaryPackages() {
         checkOutput("overview-summary.html", false,
-                "<table class=\"overviewSummary\" summary=\"Module Summary table, listing modules, and an explanation\">\n"
+                "<table class=\"overviewSummary\" summary=\"Modules table, listing modules, and an explanation\">\n"
                 + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">Module</th>\n"
@@ -523,7 +580,9 @@ public class TestModules extends JavadocTester {
                 + "<div class=\"contentContainer\">\n"
                 + "<div class=\"block\">The overview summary page header.</div>\n"
                 + "</div>\n"
-                + "<div class=\"contentContainer\">\n"
+                + "<div class=\"contentContainer\"><a name=\"Packages\">\n"
+                + "<!--   -->\n"
+                + "</a>\n"
                 + "<table class=\"overviewSummary\" summary=\"Packages table, listing packages, and an explanation\">\n"
                 + "<caption><span>Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>");
         checkOutput("overview-summary.html", true,
@@ -537,7 +596,9 @@ public class TestModules extends JavadocTester {
                 + "<div class=\"contentContainer\">\n"
                 + "<div class=\"block\">The overview summary page header.</div>\n"
                 + "</div>\n"
-                + "<div class=\"contentContainer\">\n"
+                + "<div class=\"contentContainer\"><a name=\"Packages\">\n"
+                + "<!--   -->\n"
+                + "</a>\n"
                 + "<table class=\"overviewSummary\" summary=\"Packages table, listing packages, and an explanation\">\n"
                 + "<caption><span>Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>");
     }
@@ -574,7 +635,9 @@ public class TestModules extends JavadocTester {
                 + "<div class=\"contentContainer\">\n"
                 + "<div class=\"block\">The overview summary page header.</div>\n"
                 + "</div>\n"
-                + "<div class=\"contentContainer\">\n"
+                + "<div class=\"contentContainer\"><a id=\"Packages\">\n"
+                + "<!--   -->\n"
+                + "</a>\n"
                 + "<table class=\"overviewSummary\">\n"
                 + "<caption><span>Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>");
         checkOutput("overview-summary.html", true,
@@ -591,7 +654,9 @@ public class TestModules extends JavadocTester {
                 + "<div class=\"contentContainer\">\n"
                 + "<div class=\"block\">The overview summary page header.</div>\n"
                 + "</div>\n"
-                + "<div class=\"contentContainer\">\n"
+                + "<div class=\"contentContainer\"><a id=\"Packages\">\n"
+                + "<!--   -->\n"
+                + "</a>\n"
                 + "<table class=\"overviewSummary\">\n"
                 + "<caption><span>Packages</span><span class=\"tabEnd\">&nbsp;</span></caption>");
     }
@@ -973,5 +1038,55 @@ public class TestModules extends JavadocTester {
                 + "<!--   -->\n"
                 + "</a>",
                 "<caption><span>Concealed</span><span class=\"tabEnd\">&nbsp;</span></caption>");
+    }
+
+    void checkGroupOption() {
+        checkOutput("overview-summary.html", true,
+                "<div class=\"contentContainer\"><a name=\"ModuleGroupA\">\n"
+                + "<!--   -->\n"
+                + "</a>\n"
+                + "<table class=\"overviewSummary\" summary=\"Module Group A table, listing modules, and an explanation\">\n"
+                + "<caption><span>Module Group A</span><span class=\"tabEnd\">&nbsp;</span></caption>",
+                "<div class=\"contentContainer\"><a name=\"ModuleGroupB&amp;C\">\n"
+                + "<!--   -->\n"
+                + "</a>\n"
+                + "<table class=\"overviewSummary\" summary=\"Module Group B &amp; C table, listing modules, and an explanation\">\n"
+                + "<caption><span>Module Group B & C</span><span class=\"tabEnd\">&nbsp;</span></caption>",
+                "<div class=\"contentContainer\"><a name=\"OtherModules\">\n"
+                + "<!--   -->\n"
+                + "</a>\n"
+                + "<table class=\"overviewSummary\" summary=\"Other Modules table, listing modules, and an explanation\">\n"
+                + "<caption><span>Other Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>");
+        checkOutput("overview-summary.html", false,
+                "<table class=\"overviewSummary\" summary=\"Modules table, listing modules, and an explanation\">\n"
+                + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>",
+                "Java SE Modules");
+    }
+
+    void checkUnnamedModuleGroupOption() {
+        checkOutput("overview-summary.html", true,
+                "<div class=\"contentContainer\"><a name=\"PackageGroup0\">\n"
+                + "<!--   -->\n"
+                + "</a>\n"
+                + "<table class=\"overviewSummary\" summary=\"Package Group 0 table, listing packages, and an explanation\">\n"
+                + "<caption><span>Package Group 0</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<tr>",
+                "<div class=\"contentContainer\"><a name=\"PackageGroup1\">\n"
+                + "<!--   -->\n"
+                + "</a>\n"
+                + "<table class=\"overviewSummary\" summary=\"Package Group 1 table, listing packages, and an explanation\">\n"
+                + "<caption><span>Package Group 1</span><span class=\"tabEnd\">&nbsp;</span></caption>");
+    }
+
+    void checkGroupOptionSingleModule() {
+        checkOutput("overview-summary.html", true,
+                "<div class=\"contentContainer\"><a name=\"ModuleGroupB\">\n"
+                + "<!--   -->\n"
+                + "</a>\n"
+                + "<table class=\"overviewSummary\" summary=\"Module Group B table, listing modules, and an explanation\">\n"
+                + "<caption><span>Module Group B</span><span class=\"tabEnd\">&nbsp;</span></caption>");
+        checkOutput("overview-summary.html", false,
+                "<table class=\"overviewSummary\" summary=\"Modules table, listing modules, and an explanation\">\n"
+                + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>");
     }
 }

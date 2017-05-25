@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,10 @@
  * questions.
  */
 
-package jdk.testlibrary;
+package jdk.test.lib;
 
 import java.util.Collection;
-import java.util.Formatter;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -32,32 +32,28 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
- * A log manager designed specifically to allow collecting ordered log messages
+ * A logger designed specifically to allow collecting ordered log messages
  * in a multi-threaded environment without involving any kind of locking.
  * <p>
  * It is particularly useful in situations when one needs to assert various
  * details about the tested thread state or the locks it hold while also wanting
  * to produce diagnostic log messages.
  * <p>
- * The log manager does not provide any guarantees about the completness of the
+ * The logger does not provide any guarantees about the completness of the
  * logs written from different threads - it is up to the caller to make sure
  * {@code toString()} method is called only when all the activity has ceased
  * and the per-thread logs contain all the necessary data.
  *
  * @author Jaroslav Bachorik
  **/
-public class LockFreeLogManager {
+public class LockFreeLogger {
     private final AtomicInteger logCntr = new AtomicInteger(0);
     private final Collection<Map<Integer, String>> allRecords = new ConcurrentLinkedQueue<>();
-    private final ThreadLocal<Map<Integer, String>> records = new ThreadLocal<Map<Integer, String>>() {
-        @Override
-        protected Map<Integer, String> initialValue() {
-            Map<Integer, String> m = new ConcurrentHashMap<>();
-            allRecords.add(m);
-            return m;
-        }
+    private final ThreadLocal<Map<Integer, String>> records = ThreadLocal.withInitial(ConcurrentHashMap::new);
 
-    };
+    public LockFreeLogger() {
+        allRecords.add(records.get());
+    }
 
     /**
      * Log a message
@@ -66,9 +62,7 @@ public class LockFreeLogManager {
      */
     public void log(String format, Object ... params) {
         int id = logCntr.getAndIncrement();
-        try (Formatter formatter = new Formatter()) {
-            records.get().put(id, formatter.format(format, params).toString());
-        }
+        records.get().put(id, String.format(format, params));
     }
 
     /**
@@ -82,9 +76,9 @@ public class LockFreeLogManager {
     @Override
     public String toString() {
         return allRecords.stream()
-            .flatMap(m->m.entrySet().stream())
-            .sorted((l, r)->l.getKey().compareTo(r.getKey()))
-            .map(e->e.getValue())
+            .flatMap(m -> m.entrySet().stream())
+            .sorted(Comparator.comparing(Map.Entry::getKey))
+            .map(Map.Entry::getValue)
             .collect(Collectors.joining());
     }
 }
