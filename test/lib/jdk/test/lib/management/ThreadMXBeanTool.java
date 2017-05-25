@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,11 @@
  * questions.
  */
 
-package jdk.testlibrary.management;
+package jdk.test.lib.management;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
-import java.util.concurrent.TimeoutException;
 
 /**
  * A few utility methods to use ThreadMXBean.
@@ -34,7 +33,7 @@ import java.util.concurrent.TimeoutException;
 public final class ThreadMXBeanTool {
 
     /**
-     * Waits until {@link Thread} is in the certain {@link State}
+     * Waits until {@link Thread} is in the certain {@link Thread.State}
      * and blocking on {@code object}.
      *
      * @param state The thread state

@@ -275,7 +275,7 @@ class MallocHeader VALUE_OBJ_CLASS_SPEC {
     if (level == NMT_detail) {
       size_t bucket_idx;
       size_t pos_idx;
-      if (record_malloc_site(stack, size, &bucket_idx, &pos_idx)) {
+      if (record_malloc_site(stack, size, &bucket_idx, &pos_idx, flags)) {
         assert(bucket_idx <= MAX_MALLOCSITE_TABLE_SIZE, "Overflow bucket index");
         assert(pos_idx <= MAX_BUCKET_LENGTH, "Overflow bucket position index");
         _bucket_idx = bucket_idx;
@@ -299,7 +299,7 @@ class MallocHeader VALUE_OBJ_CLASS_SPEC {
     _size = size;
   }
   bool record_malloc_site(const NativeCallStack& stack, size_t size,
-    size_t* bucket_idx, size_t* pos_idx) const;
+    size_t* bucket_idx, size_t* pos_idx, MEMFLAGS flags) const;
 };
 
 

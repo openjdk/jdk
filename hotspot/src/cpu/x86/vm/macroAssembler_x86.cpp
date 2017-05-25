@@ -1492,7 +1492,7 @@ void MacroAssembler::rtm_stack_locking(Register objReg, Register tmpReg, Registe
     Label L_noincrement;
     if (RTMTotalCountIncrRate > 1) {
       // tmpReg, scrReg and flags are killed
-      branch_on_random_using_rdtsc(tmpReg, scrReg, (int)RTMTotalCountIncrRate, L_noincrement);
+      branch_on_random_using_rdtsc(tmpReg, scrReg, RTMTotalCountIncrRate, L_noincrement);
     }
     assert(stack_rtm_counters != NULL, "should not be NULL when profiling RTM");
     atomic_incptr(ExternalAddress((address)stack_rtm_counters->total_count_addr()), scrReg);
@@ -1553,7 +1553,7 @@ void MacroAssembler::rtm_inflated_locking(Register objReg, Register boxReg, Regi
     Label L_noincrement;
     if (RTMTotalCountIncrRate > 1) {
       // tmpReg, scrReg and flags are killed
-      branch_on_random_using_rdtsc(tmpReg, scrReg, (int)RTMTotalCountIncrRate, L_noincrement);
+      branch_on_random_using_rdtsc(tmpReg, scrReg, RTMTotalCountIncrRate, L_noincrement);
     }
     assert(rtm_counters != NULL, "should not be NULL when profiling RTM");
     atomic_incptr(ExternalAddress((address)rtm_counters->total_count_addr()), scrReg);

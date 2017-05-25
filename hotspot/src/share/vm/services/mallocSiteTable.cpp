@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,7 @@ bool MallocSiteTable::initialize() {
 
   // Instantiate hash entry for hashtable entry allocation callsite
   MallocSiteHashtableEntry* entry = ::new ((void*)_hash_entry_allocation_site)
-    MallocSiteHashtableEntry(*stack);
+    MallocSiteHashtableEntry(*stack, mtNMT);
 
   // Add the allocation site to hashtable.
   int index = hash_to_index(stack->hash());
@@ -134,14 +134,15 @@ bool MallocSiteTable::walk(MallocSiteWalker* walker) {
  *  Under any of above circumstances, caller should handle the situation.
  */
 MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, size_t* bucket_idx,
-  size_t* pos_idx) {
+  size_t* pos_idx, MEMFLAGS flags) {
+  assert(flags != mtNone, "Should have a real memory type");
   unsigned int index = hash_to_index(key.hash());
   *bucket_idx = (size_t)index;
   *pos_idx = 0;
 
   // First entry for this hash bucket
   if (_table[index] == NULL) {
-    MallocSiteHashtableEntry* entry = new_entry(key);
+    MallocSiteHashtableEntry* entry = new_entry(key, flags);
     // OOM check
     if (entry == NULL) return NULL;
 
@@ -156,13 +157,12 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, size_t* b
   MallocSiteHashtableEntry* head = _table[index];
   while (head != NULL && (*pos_idx) <= MAX_BUCKET_LENGTH) {
     MallocSite* site = head->data();
-    if (site->equals(key)) {
-      // found matched entry
+    if (site->flags() == flags && site->equals(key)) {
       return head->data();
     }
 
     if (head->next() == NULL && (*pos_idx) < MAX_BUCKET_LENGTH) {
-      MallocSiteHashtableEntry* entry = new_entry(key);
+      MallocSiteHashtableEntry* entry = new_entry(key, flags);
       // OOM check
       if (entry == NULL) return NULL;
       if (head->atomic_insert(entry)) {
@@ -191,10 +191,10 @@ MallocSite* MallocSiteTable::malloc_site(size_t bucket_idx, size_t pos_idx) {
 // Allocates MallocSiteHashtableEntry object. Special call stack
 // (pre-installed allocation site) has to be used to avoid infinite
 // recursion.
-MallocSiteHashtableEntry* MallocSiteTable::new_entry(const NativeCallStack& key) {
+MallocSiteHashtableEntry* MallocSiteTable::new_entry(const NativeCallStack& key, MEMFLAGS flags) {
   void* p = AllocateHeap(sizeof(MallocSiteHashtableEntry), mtNMT,
     *hash_entry_allocation_stack(), AllocFailStrategy::RETURN_NULL);
-  return ::new (p) MallocSiteHashtableEntry(key);
+  return ::new (p) MallocSiteHashtableEntry(key, flags);
 }
 
 void MallocSiteTable::reset() {

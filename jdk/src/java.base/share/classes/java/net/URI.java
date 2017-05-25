@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,11 +83,11 @@ import java.lang.NullPointerException;  // for javadoc
  * not begin with a slash character ({@code '/'}).  Opaque URIs are not
  * subject to further parsing.  Some examples of opaque URIs are:
  *
- * <blockquote><table cellpadding=0 cellspacing=0 summary="layout">
- * <tr><td>{@code mailto:java-net@java.sun.com}<td></tr>
- * <tr><td>{@code news:comp.lang.java}<td></tr>
- * <tr><td>{@code urn:isbn:096139210x}</td></tr>
- * </table></blockquote>
+ * <blockquote><ul style="list-style-type:none">
+ * <li>{@code mailto:java-net@java.sun.com}</li>
+ * <li>{@code news:comp.lang.java}</li>
+ * <li>{@code urn:isbn:096139210x}</li>
+ * </ul></blockquote>
  *
  * <p> A <i>hierarchical</i> URI is either an absolute URI whose
  * scheme-specific part begins with a slash character, or a relative URI, that
@@ -132,8 +132,12 @@ import java.lang.NullPointerException;  // for javadoc
  *
  * <p> All told, then, a URI instance has the following nine components:
  *
- * <blockquote><table summary="Describes the components of a URI:scheme,scheme-specific-part,authority,user-info,host,port,path,query,fragment">
+ * <blockquote><table class="borderless">
+ * <caption style="display:none">Describes the components of a URI:scheme,scheme-specific-part,authority,user-info,host,port,path,query,fragment</caption>
+ * <thead>
  * <tr><th><i>Component</i></th><th><i>Type</i></th></tr>
+ * </thead>
+ * <tbody>
  * <tr><td>scheme</td><td>{@code String}</td></tr>
  * <tr><td>scheme-specific-part&nbsp;&nbsp;&nbsp;&nbsp;</td><td>{@code String}</td></tr>
  * <tr><td>authority</td><td>{@code String}</td></tr>
@@ -143,6 +147,7 @@ import java.lang.NullPointerException;  // for javadoc
  * <tr><td>path</td><td>{@code String}</td></tr>
  * <tr><td>query</td><td>{@code String}</td></tr>
  * <tr><td>fragment</td><td>{@code String}</td></tr>
+ * </tbody>
  * </table></blockquote>
  *
  * In a given instance any particular component is either <i>undefined</i> or
@@ -248,7 +253,9 @@ import java.lang.NullPointerException;  // for javadoc
  * which are taken from that specification, are used below to describe these
  * constraints:
  *
- * <blockquote><table cellspacing=2 summary="Describes categories alpha,digit,alphanum,unreserved,punct,reserved,escaped,and other">
+ * <blockquote><table>
+ * <caption style="display:none">Describes categories alpha,digit,alphanum,unreserved,punct,reserved,escaped,and other</caption>
+ *   <tbody>
  *   <tr><th valign=top><i>alpha</i></th>
  *       <td>The US-ASCII alphabetic characters,
  *        {@code 'A'}&nbsp;through&nbsp;{@code 'Z'}
@@ -279,6 +286,7 @@ import java.lang.NullPointerException;  // for javadoc
  *           java.lang.Character#isSpaceChar(char) Character.isSpaceChar}
  *           method)&nbsp;&nbsp;<i>(<b>Deviation from RFC 2396</b>, which is
  *           limited to US-ASCII)</i></td></tr>
+ * </tbody>
  * </table></blockquote>
  *
  * <p><a id="legal-chars"></a> The set of all legal URI characters consists of

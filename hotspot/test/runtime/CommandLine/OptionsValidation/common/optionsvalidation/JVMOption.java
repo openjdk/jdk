@@ -29,7 +29,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import jdk.test.lib.DynamicVMOption;
+import jdk.test.lib.management.DynamicVMOption;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.dcmd.CommandExecutor;
@@ -383,7 +383,11 @@ public abstract class JVMOption {
             runJava.add(VMType);
         }
 
-        if (GCType != null) {
+        if (GCType != null &&
+            !(prepend.contains("-XX:+UseConcMarkSweepGC") ||
+              prepend.contains("-XX:+UseSerialGC") ||
+              prepend.contains("-XX:+UseParallelGC") ||
+              prepend.contains("-XX:+UseG1GC"))) {
             runJava.add(GCType);
         }
 

@@ -26,6 +26,8 @@
 package com.sun.tools.javac.platform;
 
 import java.io.IOException;
+import java.net.URI;
+import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -41,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Stream;
 
 import javax.annotation.processing.Processor;
 
@@ -63,7 +66,7 @@ public class JDKPlatformProvider implements PlatformProvider {
 
     @Override
     public PlatformDescription getPlatform(String platformName, String options) {
-        return new PlatformDescriptionImpl(platformName);
+        return new PlatformDescriptionImpl(platformName.equals("10") ? "9" : platformName);
     }
 
     private static final String[] symbolFileLocation = { "lib", "ct.sym" };
@@ -90,9 +93,10 @@ public class JDKPlatformProvider implements PlatformProvider {
             } catch (IOException | ProviderNotFoundException ex) {
             }
         }
-        // Workaround until full support for --release 9 distinct from --release 10
-        SUPPORTED_JAVA_PLATFORM_VERSIONS.add(targetNumericVersion(Target.JDK1_9));
-        SUPPORTED_JAVA_PLATFORM_VERSIONS.add(targetNumericVersion(Target.DEFAULT));
+
+        if (SUPPORTED_JAVA_PLATFORM_VERSIONS.contains("9")) {
+            SUPPORTED_JAVA_PLATFORM_VERSIONS.add("10");
+        }
     }
 
     private static String targetNumericVersion(Target target) {
@@ -110,12 +114,6 @@ public class JDKPlatformProvider implements PlatformProvider {
 
         @Override
         public Collection<Path> getPlatformPath() {
-            // Comparison should be == Target.DEFAULT once --release 9
-            // is distinct from 10
-            if (Target.lookup(version).compareTo(Target.JDK1_9)  >=  0) {
-                return null;
-            }
-
             List<Path> paths = new ArrayList<>();
             Path file = findCtSym();
             // file == ${jdk.home}/lib/ct.sym
@@ -132,7 +130,21 @@ public class JDKPlatformProvider implements PlatformProvider {
                 try (DirectoryStream<Path> dir = Files.newDirectoryStream(root)) {
                     for (Path section : dir) {
                         if (section.getFileName().toString().contains(version)) {
-                            paths.add(section);
+                            Path systemModules = section.resolve("system-modules");
+
+                            if (Files.isRegularFile(systemModules)) {
+                                Path modules =
+                                        FileSystems.getFileSystem(URI.create("jrt:/"))
+                                                   .getPath("modules");
+                                try (Stream<String> lines =
+                                        Files.lines(systemModules, Charset.forName("UTF-8"))) {
+                                    lines.map(line -> modules.resolve(line))
+                                         .filter(mod -> Files.exists(mod))
+                                         .forEach(mod -> paths.add(mod));
+                                }
+                            } else {
+                                paths.add(section);
+                            }
                         }
                     }
                 } catch (IOException ex) {

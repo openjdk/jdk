@@ -789,4 +789,82 @@ ul.ui-autocomplete  li {
     z-index: 1;
 }
 
+/*
+ * Styles for user-provided tables.
+ *
+ * borderless:
+ *      No borders, vertical margins, styled caption.
+ *      This style is provided for use with existing doc comments.
+ *      In general, borderless tables should not be used for layout purposes.
+ *
+ * plain:
+ *      Plain borders around table and cells, vertical margins, styled caption.
+ *      Best for small tables or for complex tables for tables with cells that span
+ *      rows and columns, when the "striped" style does not work well.
+ *
+ * striped:
+ *      Borders around the table and vertical borders between cells, striped rows,
+ *      vertical margins, styled caption.
+ *      Best for tables that have a header row, and a body containing a series of simple rows.
+ */
 
+table.borderless,
+table.plain,
+table.striped {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+table.borderless > caption,
+table.plain > caption,
+table.striped > caption {
+    font-weight: bold;
+    font-size: smaller;
+}
+
+table.borderless th, table.borderless td,
+table.plain th, table.plain td,
+table.striped th, table.striped td {
+    padding: 2px 5px;
+}
+
+table.borderless,
+table.borderless > thead > tr > th, table.borderless > tbody > tr > th, table.borderless > tr > th,
+table.borderless > thead > tr > td, table.borderless > tbody > tr > td, table.borderless > tr > td {
+    border: none;
+}
+table.borderless > thead > tr, table.borderless > tbody > tr, table.borderless > tr {
+    background-color: transparent;
+}
+
+table.plain {
+    border-collapse: collapse;
+    border: 1px solid black;
+}
+table.plain > thead > tr, table.plain > tbody tr, table.plain > tr {
+    background-color: transparent;
+}
+table.plain > thead > tr > th, table.plain > tbody > tr > th, table.plain > tr > th,
+table.plain > thead > tr > td, table.plain > tbody > tr > td, table.plain > tr > td {
+    border: 1px solid black;
+}
+
+table.striped {
+    border-collapse: collapse;
+    border: 1px solid black;
+}
+table.striped > thead {
+    background-color: #DDD;
+    border: 1px solid black;
+}
+table.striped > tbody > tr:nth-child(even) {
+    background-color: #EEE
+}
+table.striped > tbody > tr:nth-child(odd) {
+    background-color: #FFF
+}
+table.striped > thead > tr > th, table.striped > tbody > tr > th,
+table.striped > tbody > tr > td, table.striped > tbody > tr > td {
+    border-left: 1px solid black;
+    border-right: 1px solid black;
+}

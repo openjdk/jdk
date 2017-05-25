@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,31 +21,30 @@
  * questions.
  */
 
-package jdk.testlibrary;
+package jdk.test.lib.classloader;
 
-import java.io.*;
-
+import java.util.function.Predicate;
 /**
- * Common library for various test serialization utility functions.
+ * A classloader, which using target classloader in case provided condition
+ * for class name is met, and using parent otherwise
  */
-public final class SerializationUtils {
-    /*
-     * Serialize an object into byte array.
-     */
-    public static byte[] serialize(Object obj) throws Exception {
-        try (ByteArrayOutputStream bs = new ByteArrayOutputStream();
-                ObjectOutputStream out = new ObjectOutputStream(bs);) {
-            out.writeObject(obj);
-            return bs.toByteArray();
-        }
+public class FilterClassLoader extends ClassLoader {
+
+    private final ClassLoader target;
+    private final Predicate<String> condition;
+
+    public FilterClassLoader(ClassLoader target, ClassLoader parent,
+            Predicate<String> condition) {
+        super(parent);
+        this.condition = condition;
+        this.target = target;
     }
 
-    /*
-     * Deserialize an object from byte array.
-     */
-    public static Object deserialize(byte[] ba) throws Exception {
-        try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(ba));) {
-            return in.readObject();
+    @Override
+    public Class<?> loadClass(String name) throws ClassNotFoundException {
+        if (condition.test(name)) {
+            return target.loadClass(name);
         }
+        return super.loadClass(name);
     }
 }

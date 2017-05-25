@@ -21,7 +21,7 @@
  * questions.
  */
 
-package jdk.testlibrary;
+package jdk.test.lib;
 
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
@@ -35,8 +35,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import static java.net.NetworkInterface.getNetworkInterfaces;
 import static java.util.Collections.list;
@@ -47,17 +47,12 @@ import static java.util.Collections.list;
  */
 public class NetworkConfiguration {
 
-    static final boolean isWindows =
-            System.getProperty("os.name").startsWith("Windows");
-    static final boolean isMacOS =
-            System.getProperty("os.name").contains("OS X");
-
     private Map<NetworkInterface,List<Inet4Address>> ip4Interfaces;
     private Map<NetworkInterface,List<Inet6Address>> ip6Interfaces;
 
-    private NetworkConfiguration(Map<NetworkInterface,List<Inet4Address>> ip4Interfaces,
-                                 Map<NetworkInterface,List<Inet6Address>> ip6Interfaces)
-    {
+    private NetworkConfiguration(
+            Map<NetworkInterface,List<Inet4Address>> ip4Interfaces,
+            Map<NetworkInterface,List<Inet6Address>> ip6Interfaces) {
         this.ip4Interfaces = ip4Interfaces;
         this.ip6Interfaces = ip6Interfaces;
     }
@@ -74,44 +69,38 @@ public class NetworkConfiguration {
      * Returns a stream of interfaces suitable for IPv4 functional tests.
      */
     public Stream<NetworkInterface> ip4Interfaces() {
-        return ip4Interfaces.keySet().stream()
-                .filter(NetworkConfiguration::isNotExcludedInterface)
-                .filter(hasIp4Addresses);
+        return ip4Interfaces.keySet()
+                            .stream()
+                            .filter(NetworkConfiguration::isNotExcludedInterface)
+                            .filter(hasIp4Addresses);
     }
 
     /**
      * Returns a stream of interfaces suitable for IPv6 functional tests.
      */
     public Stream<NetworkInterface> ip6Interfaces() {
-        return ip6Interfaces.keySet().stream()
-                .filter(NetworkConfiguration::isNotExcludedInterface)
-                .filter(hasIp6Addresses);
+        return ip6Interfaces.keySet()
+                            .stream()
+                            .filter(NetworkConfiguration::isNotExcludedInterface)
+                            .filter(hasIp6Addresses);
     }
 
     private static boolean isNotExcludedInterface(NetworkInterface nif) {
-        if (isMacOS && nif.getName().contains("awdl"))
+        if (Platform.isOSX() && nif.getName().contains("awdl")) {
             return false;
+        }
         String dName = nif.getDisplayName();
-        if (isWindows && dName != null && dName.contains("Teredo"))
+        if (Platform.isWindows() && dName != null && dName.contains("Teredo")) {
             return false;
+        }
         return true;
     }
 
-    private final Predicate<NetworkInterface> hasIp4Addresses = nif -> {
-        Optional<?> addr = ip4Interfaces.get(nif).stream()
-                .filter(a -> !a.isAnyLocalAddress())
-                .findAny();
+    private final Predicate<NetworkInterface> hasIp4Addresses = nif ->
+            ip4Interfaces.get(nif).stream().anyMatch(a -> !a.isAnyLocalAddress());
 
-        return addr.isPresent();
-    };
-
-    private final Predicate<NetworkInterface> hasIp6Addresses = nif -> {
-        Optional<?> addr = ip6Interfaces.get(nif).stream()
-                .filter(a -> !a.isAnyLocalAddress())
-                .findAny();
-
-        return addr.isPresent();
-    };
+    private final Predicate<NetworkInterface> hasIp6Addresses = nif ->
+            ip6Interfaces.get(nif).stream().anyMatch(a -> !a.isAnyLocalAddress());
 
 
     /**
@@ -130,14 +119,10 @@ public class NetworkConfiguration {
 
     private final Predicate<NetworkInterface> supportsIp4Multicast = nif -> {
         try {
-            if (!nif.supportsMulticast() || nif.isLoopback())
+            if (!nif.supportsMulticast() || nif.isLoopback()) {
                 return false;
-
-            Optional<?> addr = ip4Interfaces.get(nif).stream()
-                    .filter(a -> !a.isAnyLocalAddress())
-                    .findAny();
-
-            return addr.isPresent();
+            }
+            return hasIp4Addresses.test(nif);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -145,14 +130,11 @@ public class NetworkConfiguration {
 
     private final Predicate<NetworkInterface> supportsIp6Multicast = nif -> {
         try {
-            if (!nif.supportsMulticast() || nif.isLoopback())
+            if (!nif.supportsMulticast() || nif.isLoopback()) {
                 return false;
+            }
 
-            Optional<?> addr = ip6Interfaces.get(nif).stream()
-                    .filter(a -> !a.isAnyLocalAddress())
-                    .findAny();
-
-            return addr.isPresent();
+            return hasIp6Addresses.test(nif);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -170,14 +152,14 @@ public class NetworkConfiguration {
      * Returns all IPv4 addresses on all "functional" interfaces.
      */
     public Stream<Inet4Address> ip4Addresses() {
-        return ip4Interfaces().flatMap(nif -> ip4Addresses(nif));
+        return ip4Interfaces().flatMap(this::ip4Addresses);
     }
 
     /**
      * Returns all IPv6 addresses on all "functional" interfaces.
      */
     public Stream<Inet6Address> ip6Addresses() {
-        return ip6Interfaces().flatMap(nif -> ip6Addresses(nif));
+        return ip6Interfaces().flatMap(this::ip6Addresses);
     }
 
     /**
@@ -204,18 +186,20 @@ public class NetworkConfiguration {
         List<NetworkInterface> nifs = list(getNetworkInterfaces());
         for (NetworkInterface nif : nifs) {
             // ignore interfaces that are down
-            if (!nif.isUp() || nif.isPointToPoint())
+            if (!nif.isUp() || nif.isPointToPoint()) {
                 continue;
+            }
 
             List<Inet4Address> ip4Addresses = new LinkedList<>();
             List<Inet6Address> ip6Addresses = new LinkedList<>();
             ip4Interfaces.put(nif, ip4Addresses);
             ip6Interfaces.put(nif, ip6Addresses);
             for (InetAddress addr : list(nif.getInetAddresses())) {
-                if (addr instanceof Inet4Address)
-                    ip4Addresses.add((Inet4Address)addr);
-                else if (addr instanceof Inet6Address)
-                    ip6Addresses.add((Inet6Address)addr);
+                if (addr instanceof Inet4Address) {
+                    ip4Addresses.add((Inet4Address) addr);
+                } else if (addr instanceof Inet6Address) {
+                    ip6Addresses.add((Inet6Address) addr);
+                }
             }
         }
         return new NetworkConfiguration(ip4Interfaces, ip6Interfaces);
@@ -223,28 +207,49 @@ public class NetworkConfiguration {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        interfaces().forEach(nif -> sb.append(interfaceInformation(nif)));
-        return sb.toString();
+        return interfaces().map(NetworkConfiguration::interfaceInformation)
+                           .collect(Collectors.joining());
     }
 
     /** Returns detailed information for the given interface. */
     public static String interfaceInformation(NetworkInterface nif) {
         StringBuilder sb = new StringBuilder();
         try {
-            sb.append("Display name: " + nif.getDisplayName() + "\n");
-            sb.append("Name: " + nif.getName() + "\n");
-            for (InetAddress inetAddress : list(nif.getInetAddresses()))
-                sb.append("InetAddress: " + inetAddress + "\n");
-            sb.append("Up? " + nif.isUp() + "\n");
-            sb.append("Loopback? " + nif.isLoopback() + "\n");
-            sb.append("PointToPoint? " + nif.isPointToPoint() + "\n");
-            sb.append("Supports multicast? " + nif.supportsMulticast() + "\n");
-            sb.append("Virtual? " + nif.isVirtual() + "\n");
-            sb.append("Hardware address: " +
-                    Arrays.toString(nif.getHardwareAddress()) + "\n");
-            sb.append("MTU: " + nif.getMTU() + "\n");
-            sb.append("Index: " + nif.getIndex() + "\n");
+            sb.append("Display name: ")
+              .append(nif.getDisplayName())
+              .append("\n");
+            sb.append("Name: ")
+              .append(nif.getName())
+              .append("\n");
+            for (InetAddress inetAddress : list(nif.getInetAddresses())) {
+                sb.append("InetAddress: ")
+                  .append(inetAddress)
+                  .append("\n");
+            }
+            sb.append("Up? ")
+              .append(nif.isUp())
+              .append("\n");
+            sb.append("Loopback? ")
+              .append(nif.isLoopback())
+              .append("\n");
+            sb.append("PointToPoint? ")
+              .append(nif.isPointToPoint())
+              .append("\n");
+            sb.append("Supports multicast? ")
+              .append(nif.supportsMulticast())
+              .append("\n");
+            sb.append("Virtual? ")
+              .append(nif.isVirtual())
+              .append("\n");
+            sb.append("Hardware address: ")
+              .append(Arrays.toString(nif.getHardwareAddress()))
+              .append("\n");
+            sb.append("MTU: ")
+              .append(nif.getMTU())
+              .append("\n");
+            sb.append("Index: ")
+              .append(nif.getIndex())
+              .append("\n");
             sb.append("\n");
             return sb.toString();
         } catch (IOException e) {
@@ -256,9 +261,9 @@ public class NetworkConfiguration {
     public static void printSystemConfiguration(PrintStream out) {
         try {
             out.println("*** all system network interface configuration ***");
-            List<NetworkInterface> nifs = list(getNetworkInterfaces());
-            for (NetworkInterface nif : nifs)
+            for (NetworkInterface nif : list(getNetworkInterfaces())) {
                 out.print(interfaceInformation(nif));
+            }
             out.println("*** end ***");
         } catch (IOException e) {
             throw new UncheckedIOException(e);
