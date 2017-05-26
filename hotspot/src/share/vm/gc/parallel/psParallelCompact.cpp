@@ -30,6 +30,7 @@
 #include "code/codeCache.hpp"
 #include "gc/parallel/gcTaskManager.hpp"
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
+#include "gc/parallel/parMarkBitMap.inline.hpp"
 #include "gc/parallel/pcTasks.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
 #include "gc/parallel/psCompactionManager.inline.hpp"
@@ -3153,6 +3154,14 @@ ParMarkBitMapClosure::IterationStatus
 UpdateOnlyClosure::do_addr(HeapWord* addr, size_t words) {
   do_addr(addr);
   return ParMarkBitMap::incomplete;
+}
+
+FillClosure::FillClosure(ParCompactionManager* cm, PSParallelCompact::SpaceId space_id) :
+  ParMarkBitMapClosure(PSParallelCompact::mark_bitmap(), cm),
+  _start_array(PSParallelCompact::start_array(space_id))
+{
+  assert(space_id == PSParallelCompact::old_space_id,
+         "cannot use FillClosure in the young gen");
 }
 
 ParMarkBitMapClosure::IterationStatus

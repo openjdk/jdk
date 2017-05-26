@@ -40,6 +40,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/bitMap.inline.hpp"
 
 
 Compiler::Compiler() : AbstractCompiler(compiler_c1) {

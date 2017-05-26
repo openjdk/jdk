@@ -30,6 +30,7 @@
 #include "gc/g1/g1ConcurrentMarkObjArrayProcessor.inline.hpp"
 #include "gc/g1/suspendibleThreadSet.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
+#include "utilities/bitMap.inline.hpp"
 
 inline bool G1ConcurrentMark::par_mark(oop obj) {
   return _nextMarkBitMap->parMark((HeapWord*)obj);
