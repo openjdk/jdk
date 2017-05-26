@@ -261,7 +261,7 @@ void ClassFileParser::parse_constant_pool_entries(const ClassFileStream* const s
       case JVM_CONSTANT_Utf8 : {
         cfs->guarantee_more(2, CHECK);  // utf8_length
         u2  utf8_length = cfs->get_u2_fast();
-        const u1* utf8_buffer = cfs->get_u1_buffer();
+        const u1* utf8_buffer = cfs->current();
         assert(utf8_buffer != NULL, "null utf8 buffer");
         // Got utf8 string, guarantee utf8_length+1 bytes, set stream position forward.
         cfs->guarantee_more(utf8_length+1, CHECK);  // utf8 string, tag/access_flags
@@ -1305,7 +1305,7 @@ void ClassFileParser::parse_field_attributes(const ClassFileStream* const cfs,
             "Multiple RuntimeVisibleAnnotations attributes for field in class file %s", CHECK);
         }
         runtime_visible_annotations_length = attribute_length;
-        runtime_visible_annotations = cfs->get_u1_buffer();
+        runtime_visible_annotations = cfs->current();
         assert(runtime_visible_annotations != NULL, "null visible annotations");
         cfs->guarantee_more(runtime_visible_annotations_length, CHECK);
         parse_annotations(cp,
@@ -1323,7 +1323,7 @@ void ClassFileParser::parse_field_attributes(const ClassFileStream* const cfs,
         runtime_invisible_annotations_exists = true;
         if (PreserveAllAnnotations) {
           runtime_invisible_annotations_length = attribute_length;
-          runtime_invisible_annotations = cfs->get_u1_buffer();
+          runtime_invisible_annotations = cfs->current();
           assert(runtime_invisible_annotations != NULL, "null invisible annotations");
         }
         cfs->skip_u1(attribute_length, CHECK);
@@ -1333,7 +1333,7 @@ void ClassFileParser::parse_field_attributes(const ClassFileStream* const cfs,
             "Multiple RuntimeVisibleTypeAnnotations attributes for field in class file %s", CHECK);
         }
         runtime_visible_type_annotations_length = attribute_length;
-        runtime_visible_type_annotations = cfs->get_u1_buffer();
+        runtime_visible_type_annotations = cfs->current();
         assert(runtime_visible_type_annotations != NULL, "null visible type annotations");
         cfs->skip_u1(runtime_visible_type_annotations_length, CHECK);
       } else if (attribute_name == vmSymbols::tag_runtime_invisible_type_annotations()) {
@@ -1345,7 +1345,7 @@ void ClassFileParser::parse_field_attributes(const ClassFileStream* const cfs,
         }
         if (PreserveAllAnnotations) {
           runtime_invisible_type_annotations_length = attribute_length;
-          runtime_invisible_type_annotations = cfs->get_u1_buffer();
+          runtime_invisible_type_annotations = cfs->current();
           assert(runtime_invisible_type_annotations != NULL, "null invisible type annotations");
         }
         cfs->skip_u1(attribute_length, CHECK);
@@ -1699,19 +1699,13 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
 }
 
 
-static void copy_u2_with_conversion(u2* dest, const u2* src, int length) {
-  while (length-- > 0) {
-    *dest++ = Bytes::get_Java_u2((u1*) (src++));
-  }
-}
-
-const u2* ClassFileParser::parse_exception_table(const ClassFileStream* const cfs,
-                                                 u4 code_length,
-                                                 u4 exception_table_length,
-                                                 TRAPS) {
+const void* ClassFileParser::parse_exception_table(const ClassFileStream* const cfs,
+                                                   u4 code_length,
+                                                   u4 exception_table_length,
+                                                   TRAPS) {
   assert(cfs != NULL, "invariant");
 
-  const u2* const exception_table_start = cfs->get_u2_buffer();
+  const void* const exception_table_start = cfs->current();
   assert(exception_table_start != NULL, "null exception table");
 
   cfs->guarantee_more(8 * exception_table_length, CHECK_NULL); // start_pc,
@@ -1829,13 +1823,13 @@ static void copy_lvt_element(const Classfile_LVT_Element* const src,
 
 // Function is used to parse both attributes:
 // LocalVariableTable (LVT) and LocalVariableTypeTable (LVTT)
-const u2* ClassFileParser::parse_localvariable_table(const ClassFileStream* cfs,
-                                                     u4 code_length,
-                                                     u2 max_locals,
-                                                     u4 code_attribute_length,
-                                                     u2* const localvariable_table_length,
-                                                     bool isLVTT,
-                                                     TRAPS) {
+const void* ClassFileParser::parse_localvariable_table(const ClassFileStream* cfs,
+                                                       u4 code_length,
+                                                       u2 max_locals,
+                                                       u4 code_attribute_length,
+                                                       u2* const localvariable_table_length,
+                                                       bool isLVTT,
+                                                       TRAPS) {
   const char* const tbl_name = (isLVTT) ? "LocalVariableTypeTable" : "LocalVariableTable";
   *localvariable_table_length = cfs->get_u2(CHECK_NULL);
   const unsigned int size =
@@ -1849,7 +1843,7 @@ const u2* ClassFileParser::parse_localvariable_table(const ClassFileStream* cfs,
                        "%s has wrong length in class file %s", tbl_name, CHECK_NULL);
   }
 
-  const u2* const localvariable_table_start = cfs->get_u2_buffer();
+  const void* const localvariable_table_start = cfs->current();
   assert(localvariable_table_start != NULL, "null local variable table");
   if (!_need_verify) {
     cfs->skip_u2_fast(size);
@@ -1953,7 +1947,7 @@ static const u1* parse_stackmap_table(const ClassFileStream* const cfs,
     return NULL;
   }
 
-  const u1* const stackmap_table_start = cfs->get_u1_buffer();
+  const u1* const stackmap_table_start = cfs->current();
   assert(stackmap_table_start != NULL, "null stackmap table");
 
   // check code_attribute_length first
@@ -1965,10 +1959,10 @@ static const u1* parse_stackmap_table(const ClassFileStream* const cfs,
   return stackmap_table_start;
 }
 
-const u2* ClassFileParser::parse_checked_exceptions(const ClassFileStream* const cfs,
-                                                    u2* const checked_exceptions_length,
-                                                    u4 method_attribute_length,
-                                                    TRAPS) {
+const void* ClassFileParser::parse_checked_exceptions(const ClassFileStream* const cfs,
+                                                      u2* const checked_exceptions_length,
+                                                      u4 method_attribute_length,
+                                                      TRAPS) {
   assert(cfs != NULL, "invariant");
   assert(checked_exceptions_length != NULL, "invariant");
 
@@ -1976,7 +1970,7 @@ const u2* ClassFileParser::parse_checked_exceptions(const ClassFileStream* const
   *checked_exceptions_length = cfs->get_u2_fast();
   const unsigned int size =
     (*checked_exceptions_length) * sizeof(CheckedExceptionElement) / sizeof(u2);
-  const u2* const checked_exceptions_start = cfs->get_u2_buffer();
+  const void* const checked_exceptions_start = cfs->current();
   assert(checked_exceptions_start != NULL, "null checked exceptions");
   if (!_need_verify) {
     cfs->skip_u2_fast(size);
@@ -2143,10 +2137,10 @@ void ClassFileParser::ClassAnnotationCollector::apply_to(InstanceKlass* ik) {
 void ClassFileParser::copy_localvariable_table(const ConstMethod* cm,
                                                int lvt_cnt,
                                                u2* const localvariable_table_length,
-                                               const u2**const localvariable_table_start,
+                                               const void** const localvariable_table_start,
                                                int lvtt_cnt,
                                                u2* const localvariable_type_table_length,
-                                               const u2**const localvariable_type_table_start,
+                                               const void** const localvariable_type_table_start,
                                                TRAPS) {
 
   ResourceMark rm(THREAD);
@@ -2341,10 +2335,10 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
   u4 code_length = 0;
   const u1* code_start = 0;
   u2 exception_table_length = 0;
-  const u2* exception_table_start = NULL;
+  const void* exception_table_start = NULL; // (potentially unaligned) pointer to array of u2 elements
   Array<int>* exception_handlers = Universe::the_empty_int_array();
   u2 checked_exceptions_length = 0;
-  const u2* checked_exceptions_start = NULL;
+  const void* checked_exceptions_start = NULL; // (potentially unaligned) pointer to array of u2 elements
   CompressedLineNumberWriteStream* linenumber_table = NULL;
   int linenumber_table_length = 0;
   int total_lvt_length = 0;
@@ -2354,9 +2348,9 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
   u2 max_lvt_cnt = INITIAL_MAX_LVT_NUMBER;
   u2 max_lvtt_cnt = INITIAL_MAX_LVT_NUMBER;
   u2* localvariable_table_length = NULL;
-  const u2** localvariable_table_start = NULL;
+  const void** localvariable_table_start = NULL; // (potentially unaligned) pointer to array of LVT attributes
   u2* localvariable_type_table_length = NULL;
-  const u2** localvariable_type_table_start = NULL;
+  const void** localvariable_type_table_start = NULL; // (potentially unaligned) pointer to LVTT attributes
   int method_parameters_length = -1;
   const u1* method_parameters_data = NULL;
   bool method_parameters_seen = false;
@@ -2433,7 +2427,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
                            code_length, CHECK_NULL);
       }
       // Code pointer
-      code_start = cfs->get_u1_buffer();
+      code_start = cfs->current();
       assert(code_start != NULL, "null code start");
       cfs->guarantee_more(code_length, CHECK_NULL);
       cfs->skip_u1_fast(code_length);
@@ -2497,17 +2491,17 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
             localvariable_table_length = NEW_RESOURCE_ARRAY_IN_THREAD(
               THREAD, u2,  INITIAL_MAX_LVT_NUMBER);
             localvariable_table_start = NEW_RESOURCE_ARRAY_IN_THREAD(
-              THREAD, const u2*, INITIAL_MAX_LVT_NUMBER);
+              THREAD, const void*, INITIAL_MAX_LVT_NUMBER);
             localvariable_type_table_length = NEW_RESOURCE_ARRAY_IN_THREAD(
               THREAD, u2,  INITIAL_MAX_LVT_NUMBER);
             localvariable_type_table_start = NEW_RESOURCE_ARRAY_IN_THREAD(
-              THREAD, const u2*, INITIAL_MAX_LVT_NUMBER);
+              THREAD, const void*, INITIAL_MAX_LVT_NUMBER);
             lvt_allocated = true;
           }
           if (lvt_cnt == max_lvt_cnt) {
             max_lvt_cnt <<= 1;
             localvariable_table_length = REALLOC_RESOURCE_ARRAY(u2, localvariable_table_length, lvt_cnt, max_lvt_cnt);
-            localvariable_table_start  = REALLOC_RESOURCE_ARRAY(const u2*, localvariable_table_start, lvt_cnt, max_lvt_cnt);
+            localvariable_table_start  = REALLOC_RESOURCE_ARRAY(const void*, localvariable_table_start, lvt_cnt, max_lvt_cnt);
           }
           localvariable_table_start[lvt_cnt] =
             parse_localvariable_table(cfs,
@@ -2526,18 +2520,18 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
             localvariable_table_length = NEW_RESOURCE_ARRAY_IN_THREAD(
               THREAD, u2,  INITIAL_MAX_LVT_NUMBER);
             localvariable_table_start = NEW_RESOURCE_ARRAY_IN_THREAD(
-              THREAD, const u2*, INITIAL_MAX_LVT_NUMBER);
+              THREAD, const void*, INITIAL_MAX_LVT_NUMBER);
             localvariable_type_table_length = NEW_RESOURCE_ARRAY_IN_THREAD(
               THREAD, u2,  INITIAL_MAX_LVT_NUMBER);
             localvariable_type_table_start = NEW_RESOURCE_ARRAY_IN_THREAD(
-              THREAD, const u2*, INITIAL_MAX_LVT_NUMBER);
+              THREAD, const void*, INITIAL_MAX_LVT_NUMBER);
             lvt_allocated = true;
           }
           // Parse local variable type table
           if (lvtt_cnt == max_lvtt_cnt) {
             max_lvtt_cnt <<= 1;
             localvariable_type_table_length = REALLOC_RESOURCE_ARRAY(u2, localvariable_type_table_length, lvtt_cnt, max_lvtt_cnt);
-            localvariable_type_table_start  = REALLOC_RESOURCE_ARRAY(const u2*, localvariable_type_table_start, lvtt_cnt, max_lvtt_cnt);
+            localvariable_type_table_start  = REALLOC_RESOURCE_ARRAY(const void*, localvariable_type_table_start, lvtt_cnt, max_lvtt_cnt);
           }
           localvariable_type_table_start[lvtt_cnt] =
             parse_localvariable_table(cfs,
@@ -2594,7 +2588,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
           "Invalid MethodParameters method attribute length %u in class file",
           method_attribute_length, CHECK_NULL);
       }
-      method_parameters_data = cfs->get_u1_buffer();
+      method_parameters_data = cfs->current();
       cfs->skip_u2_fast(method_parameters_length);
       cfs->skip_u2_fast(method_parameters_length);
       // ignore this attribute if it cannot be reflected
@@ -2634,7 +2628,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
             CHECK_NULL);
         }
         runtime_visible_annotations_length = method_attribute_length;
-        runtime_visible_annotations = cfs->get_u1_buffer();
+        runtime_visible_annotations = cfs->current();
         assert(runtime_visible_annotations != NULL, "null visible annotations");
         cfs->guarantee_more(runtime_visible_annotations_length, CHECK_NULL);
         parse_annotations(cp,
@@ -2653,7 +2647,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
         runtime_invisible_annotations_exists = true;
         if (PreserveAllAnnotations) {
           runtime_invisible_annotations_length = method_attribute_length;
-          runtime_invisible_annotations = cfs->get_u1_buffer();
+          runtime_invisible_annotations = cfs->current();
           assert(runtime_invisible_annotations != NULL, "null invisible annotations");
         }
         cfs->skip_u1(method_attribute_length, CHECK_NULL);
@@ -2664,7 +2658,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
             CHECK_NULL);
         }
         runtime_visible_parameter_annotations_length = method_attribute_length;
-        runtime_visible_parameter_annotations = cfs->get_u1_buffer();
+        runtime_visible_parameter_annotations = cfs->current();
         assert(runtime_visible_parameter_annotations != NULL, "null visible parameter annotations");
         cfs->skip_u1(runtime_visible_parameter_annotations_length, CHECK_NULL);
       } else if (method_attribute_name == vmSymbols::tag_runtime_invisible_parameter_annotations()) {
@@ -2676,7 +2670,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
         runtime_invisible_parameter_annotations_exists = true;
         if (PreserveAllAnnotations) {
           runtime_invisible_parameter_annotations_length = method_attribute_length;
-          runtime_invisible_parameter_annotations = cfs->get_u1_buffer();
+          runtime_invisible_parameter_annotations = cfs->current();
           assert(runtime_invisible_parameter_annotations != NULL,
             "null invisible parameter annotations");
         }
@@ -2688,7 +2682,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
             CHECK_NULL);
         }
         annotation_default_length = method_attribute_length;
-        annotation_default = cfs->get_u1_buffer();
+        annotation_default = cfs->current();
         assert(annotation_default != NULL, "null annotation default");
         cfs->skip_u1(annotation_default_length, CHECK_NULL);
       } else if (method_attribute_name == vmSymbols::tag_runtime_visible_type_annotations()) {
@@ -2698,7 +2692,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
             CHECK_NULL);
         }
         runtime_visible_type_annotations_length = method_attribute_length;
-        runtime_visible_type_annotations = cfs->get_u1_buffer();
+        runtime_visible_type_annotations = cfs->current();
         assert(runtime_visible_type_annotations != NULL, "null visible type annotations");
         // No need for the VM to parse Type annotations
         cfs->skip_u1(runtime_visible_type_annotations_length, CHECK_NULL);
@@ -2712,7 +2706,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
         }
         if (PreserveAllAnnotations) {
           runtime_invisible_type_annotations_length = method_attribute_length;
-          runtime_invisible_type_annotations = cfs->get_u1_buffer();
+          runtime_invisible_type_annotations = cfs->current();
           assert(runtime_invisible_type_annotations != NULL, "null invisible type annotations");
         }
         cfs->skip_u1(method_attribute_length, CHECK_NULL);
@@ -2808,10 +2802,10 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
 
   // Copy exception table
   if (exception_table_length > 0) {
-    int size =
-      exception_table_length * sizeof(ExceptionTableElement) / sizeof(u2);
-    copy_u2_with_conversion((u2*) m->exception_table_start(),
-                            exception_table_start, size);
+    Copy::conjoint_swap_if_needed<Endian::JAVA>(exception_table_start,
+                                                m->exception_table_start(),
+                                                exception_table_length * sizeof(ExceptionTableElement),
+                                                sizeof(u2));
   }
 
   // Copy method parameters
@@ -2827,11 +2821,10 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
 
   // Copy checked exceptions
   if (checked_exceptions_length > 0) {
-    const int size =
-      checked_exceptions_length * sizeof(CheckedExceptionElement) / sizeof(u2);
-    copy_u2_with_conversion((u2*) m->checked_exceptions_start(),
-                            checked_exceptions_start,
-                            size);
+    Copy::conjoint_swap_if_needed<Endian::JAVA>(checked_exceptions_start,
+                                                m->checked_exceptions_start(),
+                                                checked_exceptions_length * sizeof(CheckedExceptionElement),
+                                                sizeof(u2));
   }
 
   // Copy class file LVT's/LVTT's into the HotSpot internal LVT.
@@ -3030,7 +3023,7 @@ void ClassFileParser::parse_classfile_source_debug_extension_attribute(const Cla
                                                                        TRAPS) {
   assert(cfs != NULL, "invariant");
 
-  const u1* const sde_buffer = cfs->get_u1_buffer();
+  const u1* const sde_buffer = cfs->current();
   assert(sde_buffer != NULL, "null sde buffer");
 
   // Don't bother storing it if there is no way to retrieve it
@@ -3322,7 +3315,7 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
       } else {
         parsed_innerclasses_attribute = true;
       }
-      inner_classes_attribute_start = cfs->get_u1_buffer();
+      inner_classes_attribute_start = cfs->current();
       inner_classes_attribute_length = attribute_length;
       cfs->skip_u1(inner_classes_attribute_length, CHECK);
     } else if (tag == vmSymbols::tag_synthetic()) {
@@ -3359,7 +3352,7 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
             "Multiple RuntimeVisibleAnnotations attributes in class file %s", CHECK);
         }
         runtime_visible_annotations_length = attribute_length;
-        runtime_visible_annotations = cfs->get_u1_buffer();
+        runtime_visible_annotations = cfs->current();
         assert(runtime_visible_annotations != NULL, "null visible annotations");
         cfs->guarantee_more(runtime_visible_annotations_length, CHECK);
         parse_annotations(cp,
@@ -3377,7 +3370,7 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
         runtime_invisible_annotations_exists = true;
         if (PreserveAllAnnotations) {
           runtime_invisible_annotations_length = attribute_length;
-          runtime_invisible_annotations = cfs->get_u1_buffer();
+          runtime_invisible_annotations = cfs->current();
           assert(runtime_invisible_annotations != NULL, "null invisible annotations");
         }
         cfs->skip_u1(attribute_length, CHECK);
@@ -3417,7 +3410,7 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
             "Multiple RuntimeVisibleTypeAnnotations attributes in class file %s", CHECK);
         }
         runtime_visible_type_annotations_length = attribute_length;
-        runtime_visible_type_annotations = cfs->get_u1_buffer();
+        runtime_visible_type_annotations = cfs->current();
         assert(runtime_visible_type_annotations != NULL, "null visible type annotations");
         // No need for the VM to parse Type annotations
         cfs->skip_u1(runtime_visible_type_annotations_length, CHECK);
@@ -3430,7 +3423,7 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
         }
         if (PreserveAllAnnotations) {
           runtime_invisible_type_annotations_length = attribute_length;
-          runtime_invisible_type_annotations = cfs->get_u1_buffer();
+          runtime_invisible_type_annotations = cfs->current();
           assert(runtime_invisible_type_annotations != NULL, "null invisible type annotations");
         }
         cfs->skip_u1(attribute_length, CHECK);

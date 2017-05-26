@@ -249,7 +249,7 @@ class AbstractInterpreter: AllStatic {
     return (oop*) slot_addr;
   }
   static jint* int_addr_in_slot(intptr_t* slot_addr) {
-    if ((int) sizeof(jint) < wordSize && !Bytes::is_Java_byte_ordering_different())
+    if ((int) sizeof(jint) < wordSize && !Endian::is_Java_byte_ordering_different())
       // big-endian LP64
       return (jint*)(slot_addr + 1) - 1;
     else

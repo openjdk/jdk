@@ -35,12 +35,6 @@
 class Bytes: AllStatic {
 
  public:
-  // Returns true if the byte ordering used by Java is different from the native byte ordering
-  // of the underlying machine.
-  static inline bool is_Java_byte_ordering_different() {
-    return VM_LITTLE_ENDIAN != 0;
-  }
-
   static inline u2 get_Java_u2(address p) {
     return (u2(p[0]) << 8) | u2(p[1]);
   }
