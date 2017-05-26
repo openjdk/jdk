@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_PARALLEL_PSPROMOTIONMANAGER_INLINE_HPP
 
 #include "gc/parallel/parallelScavengeHeap.hpp"
+#include "gc/parallel/parMarkBitMap.inline.hpp"
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/parallel/psPromotionLAB.inline.hpp"
 #include "gc/parallel/psPromotionManager.hpp"

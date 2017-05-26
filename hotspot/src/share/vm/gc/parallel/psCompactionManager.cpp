@@ -26,7 +26,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "gc/parallel/gcTaskManager.hpp"
 #include "gc/parallel/objectStartArray.hpp"
-#include "gc/parallel/parMarkBitMap.hpp"
+#include "gc/parallel/parMarkBitMap.inline.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/parallel/psCompactionManager.inline.hpp"
 #include "gc/parallel/psOldGen.hpp"

@@ -40,7 +40,6 @@
 #include "runtime/os.hpp"
 #include "trace/traceMacros.hpp"
 #include "utilities/accessFlags.hpp"
-#include "utilities/bitMap.inline.hpp"
 #include "utilities/macros.hpp"
 
 // An InstanceKlass is the VM level representation of a Java class.
