@@ -1185,7 +1185,6 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Klass
   Array<Method*>* methods = InstanceKlass::cast(interf)->methods();
   int nof_methods = methods->length();
   HandleMark hm;
-  assert(nof_methods > 0, "at least one method must exist for interface to be in vtable");
   Handle interface_loader (THREAD, InstanceKlass::cast(interf)->class_loader());
 
   int ime_count = method_count_for_interface(interf);
@@ -1354,8 +1353,10 @@ void visit_all_interfaces(Array<Klass*>* transitive_intf, InterfaceVisiterClosur
       }
     }
 
-    // Only count interfaces with at least one method
-    if (method_count > 0) {
+    // Visit all interfaces which either have any methods or can participate in receiver type check.
+    // We do not bother to count methods in transitive interfaces, although that would allow us to skip
+    // this step in the rare case of a zero-method interface extending another zero-method interface.
+    if (method_count > 0 || InstanceKlass::cast(intf)->transitive_interfaces()->length() > 0) {
       blk->doit(intf, method_count);
     }
   }

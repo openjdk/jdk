@@ -4198,7 +4198,7 @@ void TemplateTable::invokeinterface(int byte_no) {
   const Register Rflags  = R3_tmp;
   const Register Rklass  = R3_tmp;
 
-  prepare_invoke(byte_no, Rinterf, Rindex, Rrecv, Rflags);
+  prepare_invoke(byte_no, Rinterf, Rmethod, Rrecv, Rflags);
 
   // Special case of invokeinterface called for virtual method of
   // java.lang.Object.  See cpCacheOop.cpp for details.
@@ -4207,56 +4207,39 @@ void TemplateTable::invokeinterface(int byte_no) {
   Label notMethod;
   __ tbz(Rflags, ConstantPoolCacheEntry::is_forced_virtual_shift, notMethod);
 
-  __ mov(Rmethod, Rindex);
   invokevirtual_helper(Rmethod, Rrecv, Rflags);
   __ bind(notMethod);
 
   // Get receiver klass into Rklass - also a null check
   __ load_klass(Rklass, Rrecv);
 
+  Label no_such_interface;
+
+  // Receiver subtype check against REFC.
+  __ lookup_interface_method(// inputs: rec. class, interface
+                             Rklass, Rinterf, noreg,
+                             // outputs:  scan temp. reg1, scan temp. reg2
+                             noreg, Ritable, Rtemp,
+                             no_such_interface);
+
   // profile this call
   __ profile_virtual_call(R0_tmp, Rklass);
 
-  // Compute start of first itableOffsetEntry (which is at the end of the vtable)
-  const int base = in_bytes(Klass::vtable_start_offset());
-  assert(vtableEntry::size() == 1, "adjust the scaling in the code below");
-  __ ldr_s32(Rtemp, Address(Rklass, Klass::vtable_length_offset())); // Get length of vtable
-  __ add(Ritable, Rklass, base);
-  __ add(Ritable, Ritable, AsmOperand(Rtemp, lsl, LogBytesPerWord));
+  // Get declaring interface class from method
+  __ ldr(Rtemp, Address(Rmethod, Method::const_offset()));
+  __ ldr(Rtemp, Address(Rtemp, ConstMethod::constants_offset()));
+  __ ldr(Rinterf, Address(Rtemp, ConstantPool::pool_holder_offset_in_bytes()));
 
-  Label entry, search, interface_ok;
+  // Get itable index from method
+  __ ldr_s32(Rtemp, Address(Rmethod, Method::itable_index_offset()));
+  __ add(Rtemp, Rtemp, (-Method::itable_index_max)); // small negative constant is too large for an immediate on arm32
+  __ neg(Rindex, Rtemp);
 
-  __ b(entry);
-
-  __ bind(search);
-  __ add(Ritable, Ritable, itableOffsetEntry::size() * HeapWordSize);
-
-  __ bind(entry);
-
-  // Check that the entry is non-null.  A null entry means that the receiver
-  // class doesn't implement the interface, and wasn't the same as the
-  // receiver class checked when the interface was resolved.
-
-  __ ldr(Rtemp, Address(Ritable, itableOffsetEntry::interface_offset_in_bytes()));
-  __ cbnz(Rtemp, interface_ok);
-
-  // throw exception
-  __ call_VM(noreg, CAST_FROM_FN_PTR(address,
-                   InterpreterRuntime::throw_IncompatibleClassChangeError));
-
-  // the call_VM checks for exception, so we should never return here.
-  __ should_not_reach_here();
-
-  __ bind(interface_ok);
-
-  __ cmp(Rinterf, Rtemp);
-  __ b(search, ne);
-
-  __ ldr_s32(Rtemp, Address(Ritable, itableOffsetEntry::offset_offset_in_bytes()));
-  __ add(Rtemp, Rtemp, Rklass); // Add offset to Klass*
-  assert(itableMethodEntry::size() == 1, "adjust the scaling in the code below");
-
-  __ ldr(Rmethod, Address::indexed_ptr(Rtemp, Rindex));
+  __ lookup_interface_method(// inputs: rec. class, interface
+                             Rklass, Rinterf, Rindex,
+                             // outputs:  scan temp. reg1, scan temp. reg2
+                             Rmethod, Ritable, Rtemp,
+                             no_such_interface);
 
   // Rmethod: Method* to call
 
@@ -4278,6 +4261,13 @@ void TemplateTable::invokeinterface(int byte_no) {
 
   // do the call
   __ jump_from_interpreted(Rmethod);
+
+  // throw exception
+  __ bind(no_such_interface);
+  __ restore_method();
+  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_IncompatibleClassChangeError));
+  // the call_VM checks for exception, so we should never return here.
+  __ should_not_reach_here();
 }
 
 void TemplateTable::invokehandle(int byte_no) {

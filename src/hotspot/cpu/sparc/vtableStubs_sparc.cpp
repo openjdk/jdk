@@ -27,6 +27,7 @@
 #include "code/vtableStubs.hpp"
 #include "interp_masm_sparc.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/compiledICHolder.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klassVtable.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -140,7 +141,8 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   MacroAssembler* masm = new MacroAssembler(&cb);
 
   Register G3_Klass = G3_scratch;
-  Register G5_interface = G5;  // Passed in as an argument
+  Register G5_icholder = G5;  // Passed in as an argument
+  Register G4_interface = G4_scratch;
   Label search;
 
   // Entry arguments:
@@ -164,14 +166,26 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   }
 #endif /* PRODUCT */
 
-  Label throw_icce;
+  Label L_no_such_interface;
 
   Register L5_method = L5;
+
+  // Receiver subtype check against REFC.
+  __ ld_ptr(G5_icholder, CompiledICHolder::holder_klass_offset(), G4_interface);
   __ lookup_interface_method(// inputs: rec. class, interface, itable index
-                             G3_Klass, G5_interface, itable_index,
+                             G3_Klass, G4_interface, itable_index,
+                             // outputs: scan temp. reg1, scan temp. reg2
+                             L5_method, L2, L3,
+                             L_no_such_interface,
+                             /*return_method=*/ false);
+
+  // Get Method* and entrypoint for compiler
+  __ ld_ptr(G5_icholder, CompiledICHolder::holder_metadata_offset(), G4_interface);
+  __ lookup_interface_method(// inputs: rec. class, interface, itable index
+                             G3_Klass, G4_interface, itable_index,
                              // outputs: method, scan temp. reg
                              L5_method, L2, L3,
-                             throw_icce);
+                             L_no_such_interface);
 
 #ifndef PRODUCT
   if (DebugVtables) {
@@ -197,7 +211,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   __ JMP(G3_scratch, 0);
   __ delayed()->nop();
 
-  __ bind(throw_icce);
+  __ bind(L_no_such_interface);
   AddressLiteral icce(StubRoutines::throw_IncompatibleClassChangeError_entry());
   __ jump_to(icce, G3_scratch);
   __ delayed()->restore();
@@ -232,7 +246,7 @@ int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
                           MacroAssembler::instr_size_for_decode_klass_not_null() : 0);
       return basic + slop;
     } else {
-      const int basic = 34 * BytesPerInstWord +
+      const int basic = 54 * BytesPerInstWord +
                         // shift;add for load_klass (only shift with zero heap based)
                         (UseCompressedClassPointers ?
                           MacroAssembler::instr_size_for_decode_klass_not_null() : 0);
