@@ -242,28 +242,28 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
                      bool* const declares_nonstatic_concrete_methods,
                      TRAPS);
 
-  const u2* parse_exception_table(const ClassFileStream* const stream,
-                                  u4 code_length,
-                                  u4 exception_table_length,
-                                  TRAPS);
+  const void* parse_exception_table(const ClassFileStream* const stream,
+                                    u4 code_length,
+                                    u4 exception_table_length,
+                                    TRAPS);
 
   void parse_linenumber_table(u4 code_attribute_length,
                               u4 code_length,
                               CompressedLineNumberWriteStream**const write_stream,
                               TRAPS);
 
-  const u2* parse_localvariable_table(const ClassFileStream* const cfs,
-                                      u4 code_length,
-                                      u2 max_locals,
-                                      u4 code_attribute_length,
-                                      u2* const localvariable_table_length,
-                                      bool isLVTT,
-                                      TRAPS);
+  const void* parse_localvariable_table(const ClassFileStream* const cfs,
+                                        u4 code_length,
+                                        u2 max_locals,
+                                        u4 code_attribute_length,
+                                        u2* const localvariable_table_length,
+                                        bool isLVTT,
+                                        TRAPS);
 
-  const u2* parse_checked_exceptions(const ClassFileStream* const cfs,
-                                     u2* const checked_exceptions_length,
-                                     u4 method_attribute_length,
-                                     TRAPS);
+  const void* parse_checked_exceptions(const ClassFileStream* const cfs,
+                                       u2* const checked_exceptions_length,
+                                       u4 method_attribute_length,
+                                       TRAPS);
 
   void parse_type_array(u2 array_length,
                         u4 code_length,
@@ -462,10 +462,10 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   void copy_localvariable_table(const ConstMethod* cm,
                                 int lvt_cnt,
                                 u2* const localvariable_table_length,
-                                const u2**const localvariable_table_start,
+                                const void** const localvariable_table_start,
                                 int lvtt_cnt,
                                 u2* const localvariable_type_table_length,
-                                const u2** const localvariable_type_table_start,
+                                const void** const localvariable_type_table_start,
                                 TRAPS);
 
   void copy_method_annotations(ConstMethod* cm,
