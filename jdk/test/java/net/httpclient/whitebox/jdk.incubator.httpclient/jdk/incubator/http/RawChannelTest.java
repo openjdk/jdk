@@ -62,12 +62,14 @@ public class RawChannelTest {
      * once (socket's send buffer filled up).
      */
     private final CountDownLatch writeStall = new CountDownLatch(1);
+    private final CountDownLatch initialWriteStall = new CountDownLatch(1);
 
     /*
      * This one works similarly by providing means to ensure a read from the
      * channel will stall at least once (no more data available on the socket).
      */
     private final CountDownLatch readStall = new CountDownLatch(1);
+    private final CountDownLatch initialReadStall = new CountDownLatch(1);
 
     private final AtomicInteger writeHandles = new AtomicInteger();
     private final AtomicInteger readHandles = new AtomicInteger();
@@ -79,13 +81,21 @@ public class RawChannelTest {
         try (ServerSocket server = new ServerSocket(0)) {
             int port = server.getLocalPort();
             new TestServer(server).start();
+
             final RawChannel chan = channelOf(port);
+            initialWriteStall.await();
 
             // It's very important not to forget the initial bytes, possibly
             // left from the HTTP thingy
             int initialBytes = chan.initialByteBuffer().remaining();
             print("RawChannel has %s initial bytes", initialBytes);
             clientRead.addAndGet(initialBytes);
+
+            // tell the server we have read the initial bytes, so
+            // that it makes sure there is something for us to
+            // read next in case the initialBytes have already drained the
+            // channel dry.
+            initialReadStall.countDown();
 
             chan.registerEvent(new RawChannel.RawEvent() {
 
@@ -162,7 +172,7 @@ public class RawChannelTest {
                         total += r;
                         clientRead.addAndGet(r);
                     }
-                    print("OP_READ read %s bytes", total);
+                    print("OP_READ read %s bytes (%s total)", total, clientRead.get());
                 }
             });
             exit.await(); // All done, we need to compare results:
@@ -234,6 +244,14 @@ public class RawChannelTest {
                 throws IOException
         {
             os.write("HTTP/1.1 200 OK\r\nContent-length: 0\r\n\r\n".getBytes());
+
+            // write some initial bytes
+            byte[] initial = byteArrayOfSize(1024);
+            os.write(initial);
+            os.flush();
+            serverWritten.addAndGet(initial.length);
+            initialWriteStall.countDown();
+
             byte[] buf = new byte[1024];
             String s = "";
             while (true) {
@@ -252,12 +270,25 @@ public class RawChannelTest {
             byte[] first = byteArrayOfSize(1024);
             long total = first.length;
             os.write(first);
+            os.flush();
+
+            // wait until initial bytes were read
+            initialReadStall.await();
+
+            // make sure there is something to read, otherwise readStall
+            // will never be counted down.
+            first = byteArrayOfSize(1024);
+            os.write(first);
+            os.flush();
+            total += first.length;
+
             // Let's wait for the signal from the raw channel that its read has
             // stalled, and then continue sending a bit more stuff
             readStall.await();
             for (int i = 0; i < 32; i++) {
                 byte[] b = byteArrayOfSize(1024);
                 os.write(b);
+                os.flush();
                 total += b.length;
                 TimeUnit.MILLISECONDS.sleep(1);
             }
@@ -265,7 +296,7 @@ public class RawChannelTest {
         }
 
         private long readSlowly(InputStream is) throws Exception {
-            // Wait for the raw channel to fill up the its send buffer
+            // Wait for the raw channel to fill up its send buffer
             writeStall.await();
             long overall = 0;
             byte[] array = new byte[1024];

@@ -157,11 +157,6 @@ class PlainTunnelingConnection extends HttpConnection {
     }
 
     @Override
-    protected int readImpl(ByteBuffer buffer) throws IOException {
-        return delegate.readImpl(buffer);
-    }
-
-    @Override
     boolean isSecure() {
         return false;
     }
