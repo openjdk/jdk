@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.io.InputStreamReader;
 
 public class Main {
 
-    private static final int MAIN_VERSION = 9;
+    private static final int MAIN_VERSION = $version;
 
     public static void main(String[] args) {
         System.out.println("Main version: " + getMainVersion());
