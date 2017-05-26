@@ -27,6 +27,7 @@
 #include "code/vtableStubs.hpp"
 #include "interp_masm_x86.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/compiledICHolder.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klassVtable.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -147,7 +148,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   MacroAssembler* masm = new MacroAssembler(&cb);
 
   // Entry arguments:
-  //  rax,: Interface
+  //  rax: CompiledICHolder
   //  rcx: Receiver
 
 #ifndef PRODUCT
@@ -155,25 +156,42 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
     __ incrementl(ExternalAddress((address) SharedRuntime::nof_megamorphic_calls_addr()));
   }
 #endif /* PRODUCT */
-  // get receiver (need to skip return address on top of stack)
-
-  assert(VtableStub::receiver_location() == rcx->as_VMReg(), "receiver expected in rcx");
-
-  // get receiver klass (also an implicit null-check)
-  address npe_addr = __ pc();
-  __ movptr(rsi, Address(rcx, oopDesc::klass_offset_in_bytes()));
 
   // Most registers are in use; we'll use rax, rbx, rsi, rdi
   // (If we need to make rsi, rdi callee-save, do a push/pop here.)
-  const Register method = rbx;
-  Label throw_icce;
+  const Register recv_klass_reg     = rsi;
+  const Register holder_klass_reg   = rax; // declaring interface klass (DECC)
+  const Register resolved_klass_reg = rbx; // resolved interface klass (REFC)
+  const Register temp_reg           = rdi;
 
-  // Get Method* and entrypoint for compiler
+  const Register icholder_reg = rax;
+  __ movptr(resolved_klass_reg, Address(icholder_reg, CompiledICHolder::holder_klass_offset()));
+  __ movptr(holder_klass_reg,   Address(icholder_reg, CompiledICHolder::holder_metadata_offset()));
+
+  Label L_no_such_interface;
+
+  // get receiver klass (also an implicit null-check)
+  address npe_addr = __ pc();
+  assert(VtableStub::receiver_location() ==  rcx->as_VMReg(), "receiver expected in  rcx");
+  __ load_klass(recv_klass_reg, rcx);
+
+  // Receiver subtype check against REFC.
+  // Destroys recv_klass_reg value.
+  __ lookup_interface_method(// inputs: rec. class, interface
+                             recv_klass_reg, resolved_klass_reg, noreg,
+                             // outputs:  scan temp. reg1, scan temp. reg2
+                             recv_klass_reg, temp_reg,
+                             L_no_such_interface,
+                             /*return_method=*/false);
+
+  // Get selected method from declaring class and itable index
+  const Register method = rbx;
+  __ load_klass(recv_klass_reg, rcx); // restore recv_klass_reg
   __ lookup_interface_method(// inputs: rec. class, interface, itable index
-                             rsi, rax, itable_index,
+                             recv_klass_reg, holder_klass_reg, itable_index,
                              // outputs: method, scan temp. reg
-                             method, rdi,
-                             throw_icce);
+                             method, temp_reg,
+                             L_no_such_interface);
 
   // method (rbx): Method*
   // rcx: receiver
@@ -193,9 +211,10 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   address ame_addr = __ pc();
   __ jmp(Address(method, Method::from_compiled_offset()));
 
-  __ bind(throw_icce);
+  __ bind(L_no_such_interface);
   __ jump(RuntimeAddress(StubRoutines::throw_IncompatibleClassChangeError_entry()));
-  masm->flush();
+
+  __ flush();
 
   if (PrintMiscellaneous && (WizardMode || Verbose)) {
     tty->print_cr("itable #%d at " PTR_FORMAT "[%d] left over: %d",
@@ -220,7 +239,7 @@ int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
     return (DebugVtables ? 210 : 16) + (CountCompiledCalls ? 6 : 0);
   } else {
     // Itable stub size
-    return (DebugVtables ? 256 : 66) + (CountCompiledCalls ? 6 : 0);
+    return (DebugVtables ? 256 : 110) + (CountCompiledCalls ? 6 : 0);
   }
   // In order to tune these parameters, run the JVM with VM options
   // +PrintMiscellaneous and +WizardMode to see information about

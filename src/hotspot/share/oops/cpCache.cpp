@@ -277,14 +277,16 @@ void ConstantPoolCacheEntry::set_vtable_call(Bytecodes::Code invoke_code, const 
   set_direct_or_vtable_call(invoke_code, method, index, false);
 }
 
-void ConstantPoolCacheEntry::set_itable_call(Bytecodes::Code invoke_code, const methodHandle& method, int index) {
+void ConstantPoolCacheEntry::set_itable_call(Bytecodes::Code invoke_code,
+                                             Klass* referenced_klass,
+                                             const methodHandle& method, int index) {
   assert(method->method_holder()->verify_itable_index(index), "");
   assert(invoke_code == Bytecodes::_invokeinterface, "");
   InstanceKlass* interf = method->method_holder();
   assert(interf->is_interface(), "must be an interface");
   assert(!method->is_final_method(), "interfaces do not have final methods; cannot link to one here");
-  set_f1(interf);
-  set_f2(index);
+  set_f1(referenced_klass);
+  set_f2((intx)method());
   set_method_flags(as_TosState(method->result_type()),
                    0,  // no option bits
                    method()->size_of_parameters());
@@ -513,10 +515,23 @@ oop ConstantPoolCacheEntry::method_type_if_resolved(const constantPoolHandle& cp
 
 
 #if INCLUDE_JVMTI
+
+void log_adjust(const char* entry_type, Method* old_method, Method* new_method, bool* trace_name_printed) {
+  if (log_is_enabled(Info, redefine, class, update)) {
+    ResourceMark rm;
+    if (!(*trace_name_printed)) {
+      log_info(redefine, class, update)("adjust: name=%s", old_method->method_holder()->external_name());
+      *trace_name_printed = true;
+    }
+    log_debug(redefine, class, update, constantpool)
+          ("cpc %s entry update: %s(%s)", entry_type, new_method->name()->as_C_string(), new_method->signature()->as_C_string());
+  }
+}
+
 // RedefineClasses() API support:
 // If this ConstantPoolCacheEntry refers to old_method then update it
 // to refer to new_method.
-bool ConstantPoolCacheEntry::adjust_method_entry(Method* old_method,
+void ConstantPoolCacheEntry::adjust_method_entry(Method* old_method,
        Method* new_method, bool * trace_name_printed) {
 
   if (is_vfinal()) {
@@ -525,63 +540,35 @@ bool ConstantPoolCacheEntry::adjust_method_entry(Method* old_method,
       // match old_method so need an update
       // NOTE: can't use set_f2_as_vfinal_method as it asserts on different values
       _f2 = (intptr_t)new_method;
-      if (log_is_enabled(Info, redefine, class, update)) {
-        ResourceMark rm;
-        if (!(*trace_name_printed)) {
-          log_info(redefine, class, update)("adjust: name=%s", old_method->method_holder()->external_name());
-          *trace_name_printed = true;
-        }
-        log_debug(redefine, class, update, constantpool)
-          ("cpc vf-entry update: %s(%s)", new_method->name()->as_C_string(), new_method->signature()->as_C_string());
-      }
-      return true;
+      log_adjust("vfinal", old_method, new_method, trace_name_printed);
     }
-
-    // f1() is not used with virtual entries so bail out
-    return false;
+    return;
   }
 
-  if (_f1 == NULL) {
-    // NULL f1() means this is a virtual entry so bail out
-    // We are assuming that the vtable index does not need change.
-    return false;
-  }
+  assert (_f1 != NULL, "should not call with uninteresting entry");
 
-  if (_f1 == old_method) {
+  if (!(_f1->is_method())) {
+    // _f1 is a Klass* for an interface, _f2 is the method
+    if (f2_as_interface_method() == old_method) {
+      _f2 = (intptr_t)new_method;
+      log_adjust("interface", old_method, new_method, trace_name_printed);
+    }
+  } else if (_f1 == old_method) {
     _f1 = new_method;
-    if (log_is_enabled(Info, redefine, class, update)) {
-      ResourceMark rm;
-      if (!(*trace_name_printed)) {
-        log_info(redefine, class, update)("adjust: name=%s", old_method->method_holder()->external_name());
-        *trace_name_printed = true;
-      }
-      log_debug(redefine, class, update, constantpool)
-        ("cpc entry update: %s(%s)", new_method->name()->as_C_string(), new_method->signature()->as_C_string());
-    }
-    return true;
+    log_adjust("special, static or dynamic", old_method, new_method, trace_name_printed);
   }
-
-  return false;
 }
 
 // a constant pool cache entry should never contain old or obsolete methods
 bool ConstantPoolCacheEntry::check_no_old_or_obsolete_entries() {
-  if (is_vfinal()) {
-    // virtual and final so _f2 contains method ptr instead of vtable index
-    Metadata* f2 = (Metadata*)_f2;
-    // Return false if _f2 refers to an old or an obsolete method.
-    // _f2 == NULL || !_f2->is_method() are just as unexpected here.
-    return (f2 != NULL NOT_PRODUCT(&& f2->is_valid()) && f2->is_method() &&
-            !((Method*)f2)->is_old() && !((Method*)f2)->is_obsolete());
-  } else if (_f1 == NULL ||
-             (NOT_PRODUCT(_f1->is_valid() &&) !_f1->is_method())) {
-    // _f1 == NULL || !_f1->is_method() are OK here
+  Method* m = get_interesting_method_entry(NULL);
+  // return false if m refers to a non-deleted old or obsolete method
+  if (m != NULL) {
+    assert(m->is_valid() && m->is_method(), "m is a valid method");
+    return !m->is_old() && !m->is_obsolete(); // old is always set for old and obsolete
+  } else {
     return true;
   }
-  // return false if _f1 refers to a non-deleted old or obsolete method
-  return (NOT_PRODUCT(_f1->is_valid() &&) _f1->is_method() &&
-          (f1_as_method()->is_deleted() ||
-          (!f1_as_method()->is_old() && !f1_as_method()->is_obsolete())));
 }
 
 Method* ConstantPoolCacheEntry::get_interesting_method_entry(Klass* k) {
@@ -598,10 +585,11 @@ Method* ConstantPoolCacheEntry::get_interesting_method_entry(Klass* k) {
     return NULL;
   } else {
     if (!(_f1->is_method())) {
-      // _f1 can also contain a Klass* for an interface
-      return NULL;
+      // _f1 is a Klass* for an interface
+      m = f2_as_interface_method();
+    } else {
+      m = f1_as_method();
     }
-    m = f1_as_method();
   }
   assert(m != NULL && m->is_method(), "sanity check");
   if (m == NULL || !m->is_method() || (k != NULL && m->method_holder() != k)) {

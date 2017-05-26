@@ -822,6 +822,7 @@ void InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes::Code byte
   case CallInfo::itable_call:
     cp_cache_entry->set_itable_call(
       bytecode,
+      info.resolved_klass(),
       info.resolved_method(),
       info.itable_index());
     break;
