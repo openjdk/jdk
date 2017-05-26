@@ -1331,12 +1331,14 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     if (!transmit_report_done && should_report_bug(_id)) {
       transmit_report_done = true;
       const int fd2 = ::dup(log.fd());
-      FILE* const hs_err = ::fdopen(fd2, "r");
-      if (NULL != hs_err) {
-        ErrorReporter er;
-        er.call(hs_err, buffer, O_BUFLEN);
+      if (fd2 != -1) {
+        FILE* const hs_err = ::fdopen(fd2, "r");
+        if (NULL != hs_err) {
+          ErrorReporter er;
+          er.call(hs_err, buffer, O_BUFLEN);
+          ::fclose(hs_err);
+        }
       }
-      ::fclose(hs_err);
     }
 
     if (log.fd() != defaultStream::output_fd()) {
