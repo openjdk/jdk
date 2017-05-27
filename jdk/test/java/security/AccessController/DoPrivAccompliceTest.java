@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,76 +23,90 @@
  * questions.
  */
 
-import java.io.File;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+import jdk.testlibrary.JarUtils;
+
 import java.io.FileWriter;
 import java.io.IOException;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /*
  * @test
  * @bug 8048362
- * @compile ../../../lib/testlibrary/JavaToolUtils.java
- *                             DoPrivAccomplice.java DoPrivTest.java
  * @summary Tests the doPrivileged with accomplice Generate two jars
  * (DoPrivTest.jar and DoPrivAccomplice.jar) and grant permission to
- * DoPrivAccmplice.jar for reading user.home property from a PrivilagedAction.
- * Run DoPrivTest.jar and try to access user.home property using
+ * DoPrivAccmplice.jar for reading user.name property from a PrivilagedAction.
+ * Run DoPrivTest.jar and try to access user.name property using
  * DoPrivAccmplice.jar.
- * @modules jdk.compiler
+ *
+ * @library /test/lib /lib/testlibrary
+ *
  * @run main/othervm DoPrivAccompliceTest
  */
 
 public class DoPrivAccompliceTest {
+    private static final String ACTION_SOURCE = DoPrivAccomplice.class.getName();
+    private static final String TEST_SOURCE = DoPrivTest.class.getName();
 
-    private static final String PWD = System.getProperty("test.classes", "./");
-    private static final String ACTION_SOURCE = "DoPrivAccomplice";
-    private static final String TEST_SOURCE = "DoPrivTest";
-
-    public static void createPolicyFile(URI codebaseURL) throws IOException {
-        String codebase = codebaseURL.toString();
+    private static void createPolicyFile(Path jarFile, Path policy) {
+        String codebase = jarFile.toFile().toURI().toString();
         String quotes = "\"";
         StringBuilder policyFile = new StringBuilder();
-        policyFile.append("grant codeBase ").append(quotes).
-                append(codebase).append(quotes).append("{\n").
-                append("permission java.util.PropertyPermission ").
-                append(quotes).append("user.name").append(quotes).
-                append(",").append(quotes).append("read").append(quotes).
-                append(";\n};");
-        try (FileWriter writer = new FileWriter(new File(PWD, "java.policy"))) {
+        policyFile.append("grant codeBase ")
+                  .append(quotes).append(codebase).append(quotes)
+                  .append("{\n")
+                  .append("permission java.util.PropertyPermission ")
+                  .append(quotes).append("user.name").append(quotes)
+                  .append(",")
+                  .append(quotes).append("read").append(quotes)
+                  .append(";\n};");
+        try (FileWriter writer = new FileWriter(policy.toFile())) {
             writer.write(policyFile.toString());
-            writer.close();
         } catch (IOException e) {
-            System.err.println("Error while creating policy file");
-            throw e;
+            throw new Error("Error while creating policy file " + policy, e);
         }
     }
 
     public static void main(String[] args) throws Exception {
-        final File class1 = new File(PWD, ACTION_SOURCE + ".class");
-        final File class2 = new File(PWD, TEST_SOURCE + ".class");
-        final File jarFile1 = new File(PWD, ACTION_SOURCE + ".jar");
-        final File jarFile2 = new File(PWD, TEST_SOURCE + ".jar");
-        System.out.println("Compilation successfull");
-        JavaToolUtils.createJar(jarFile1, Arrays.asList(new File[]{class1}));
+        // copy class files to pwd
+        ClassFileInstaller.main(ACTION_SOURCE, TEST_SOURCE);
+        Path pwd = Paths.get(".");
+        Path jarFile1 = pwd.resolve(ACTION_SOURCE + ".jar").toAbsolutePath();
+        Path jarFile2 = pwd.resolve(TEST_SOURCE + ".jar").toAbsolutePath();
+        Path policy = pwd.resolve("java.policy").toAbsolutePath();
+
+        JarUtils.createJar(jarFile1.toString(), ACTION_SOURCE + ".class");
         System.out.println("Created jar file " + jarFile1);
-        JavaToolUtils.createJar(jarFile2, Arrays.asList(new File[]{class2}));
+        JarUtils.createJar(jarFile2.toString(), TEST_SOURCE + ".class");
         System.out.println("Created jar file " + jarFile2);
-        createPolicyFile(jarFile1.toURI());
 
-        List<String> commands = new ArrayList<>();
-        final String pathSepartor = System.getProperty("path.separator");
-        commands.add("-Djava.security.manager");
-        commands.add("-Djava.security.policy=" + PWD + "/java.policy");
-        commands.add("-classpath");
-        commands.add(PWD + "/" + TEST_SOURCE + ".jar" + pathSepartor
-                + PWD + "/" + ACTION_SOURCE + ".jar");
-        commands.add(TEST_SOURCE);
-        if (JavaToolUtils.runJava(commands) == 0) {
-            System.out.println("Test PASSES");
-        }
+
+        String pathSepartor = System.getProperty("path.separator");
+        String[] commands = {
+                "-Djava.security.manager",
+                "-Djava.security.policy=" + policy,
+                "-classpath", jarFile1 + pathSepartor + jarFile2,
+                TEST_SOURCE
+        };
+
+        String userName = System.getProperty("user.name");
+
+        createPolicyFile(jarFile1, policy);
+        System.out.println("Created policy for " + jarFile1);
+        ProcessTools.executeTestJava(commands)
+                    .shouldHaveExitValue(0)
+                    .shouldContain(userName)
+                    .stderrShouldBeEmpty();
+
+        createPolicyFile(jarFile2, policy);
+        System.out.println("Created policy for " + jarFile2);
+        ProcessTools.executeTestJava(commands)
+                    .shouldNotHaveExitValue(0)
+                    .shouldNotContain(userName)
+                    .stderrShouldContain("java.security.AccessControlException");
+
+        System.out.println("Test PASSES");
     }
-
 }
