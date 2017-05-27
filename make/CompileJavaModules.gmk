@@ -199,6 +199,8 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
   java.desktop_EXCLUDES += com/sun/java/swing/plaf/gtk
+else 
+  java.desktop_EXCLUDES += com/sun/java/swing/plaf/windows
 endif
 
 ifdef BUILD_HEADLESS_ONLY
