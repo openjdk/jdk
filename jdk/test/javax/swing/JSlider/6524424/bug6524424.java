@@ -23,6 +23,7 @@
 
 /* @test
  * @bug 6524424
+ * @requires (os.family == "windows")
  * @summary JSlider Clicking In Tracks Behavior Inconsistent For Different Tick Spacings
  * @author Pavel Porvatov
  * @modules java.desktop/com.sun.java.swing.plaf.windows

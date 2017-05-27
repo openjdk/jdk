@@ -23,6 +23,7 @@
 
 /* @test
    @bug 6824600
+   @requires (os.family == "windows")
    @summary OOM occurs when setLookAndFeel() is executed in Windows L&F(XP style)
    @author Pavel Porvatov
    @modules java.desktop/com.sun.java.swing.plaf.windows

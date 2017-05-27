@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8046391
+ * @requires (os.family == "windows")
  * @summary JFileChooser hangs if displayed in Windows L&F
  * @author Alexey Ivanov
  * @library ../../../../lib/testlibrary
