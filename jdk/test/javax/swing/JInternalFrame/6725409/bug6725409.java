@@ -24,6 +24,7 @@
 /* @test
  * @key headful
  * @bug 6725409
+ * @requires (os.family == "windows")
  * @summary Checks that JInternalFrame's system menu
  *          can be localized during run-time
  * @author Mikhail Lapshin
