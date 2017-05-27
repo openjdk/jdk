@@ -83,6 +83,7 @@
   LOG_TAG(logging) \
   LOG_TAG(mark) \
   LOG_TAG(marking) \
+  LOG_TAG(membername) \
   LOG_TAG(memops) \
   LOG_TAG(methodcomparator) \
   LOG_TAG(metadata) \
@@ -128,6 +129,7 @@
   LOG_TAG(subclass) \
   LOG_TAG(survivor) \
   LOG_TAG(sweep) \
+  LOG_TAG(table) \
   LOG_TAG(task) \
   DEBUG_ONLY(LOG_TAG(test)) \
   LOG_TAG(thread) \

@@ -56,6 +56,7 @@ class CallInfo : public StackObj {
   int          _call_index;             // vtable or itable index of selected class method (if any)
   Handle       _resolved_appendix;      // extra argument in constant pool (if CPCE::has_appendix)
   Handle       _resolved_method_type;   // MethodType (for invokedynamic and invokehandle call sites)
+  Handle       _resolved_method_name;   // Object holding the ResolvedMethodName
 
   void set_static(Klass* resolved_klass, const methodHandle& resolved_method, TRAPS);
   void set_interface(Klass* resolved_klass, Klass* selected_klass,
@@ -88,8 +89,9 @@ class CallInfo : public StackObj {
   }
 
   // utility to extract an effective CallInfo from a method and an optional receiver limit
-  // does not queue the method for compilation
-  CallInfo(Method* resolved_method, Klass* resolved_klass = NULL);
+  // does not queue the method for compilation.  This also creates a ResolvedMethodName
+  // object for the resolved_method.
+  CallInfo(Method* resolved_method, Klass* resolved_klass, TRAPS);
 
   Klass*  resolved_klass() const                 { return _resolved_klass; }
   Klass*  selected_klass() const                 { return _selected_klass; }
@@ -97,6 +99,9 @@ class CallInfo : public StackObj {
   methodHandle selected_method() const           { return _selected_method; }
   Handle       resolved_appendix() const         { return _resolved_appendix; }
   Handle       resolved_method_type() const      { return _resolved_method_type; }
+  Handle       resolved_method_name() const      { return _resolved_method_name; }
+  // Materialize a java.lang.invoke.ResolvedMethodName for this resolved_method
+  void     set_resolved_method_name(TRAPS);
 
   BasicType    result_type() const               { return selected_method()->result_type(); }
   CallKind     call_kind() const                 { return _call_kind; }

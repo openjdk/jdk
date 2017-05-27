@@ -56,6 +56,7 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayKlass.hpp"
+#include "prims/resolvedMethodTable.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/commandLineFlagConstraintList.hpp"
@@ -685,6 +686,8 @@ jint universe_init() {
   if (strlen(VerifySubSet) > 0) {
     Universe::initialize_verify_flags();
   }
+
+  ResolvedMethodTable::create_table();
 
   return JNI_OK;
 }

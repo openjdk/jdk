@@ -2131,17 +2131,6 @@ void InstanceKlass::release_C_heap_structures() {
     FreeHeap(jmeths);
   }
 
-  // Deallocate MemberNameTable
-  {
-    Mutex* lock_or_null = SafepointSynchronize::is_at_safepoint() ? NULL : MemberNameTable_lock;
-    MutexLockerEx ml(lock_or_null, Mutex::_no_safepoint_check_flag);
-    MemberNameTable* mnt = member_names();
-    if (mnt != NULL) {
-      delete mnt;
-      set_member_names(NULL);
-    }
-  }
-
   // Release dependencies.
   // It is desirable to use DC::remove_all_dependents() here, but, unfortunately,
   // it is not safe (see JDK-8143408). The problem is that the klass dependency
@@ -2768,32 +2757,6 @@ nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_le
     return best;
   }
   return NULL;
-}
-
-oop InstanceKlass::add_member_name(Handle mem_name, bool intern) {
-  jweak mem_name_wref = JNIHandles::make_weak_global(mem_name);
-  MutexLocker ml(MemberNameTable_lock);
-  DEBUG_ONLY(NoSafepointVerifier nsv);
-
-  // Check if method has been redefined while taking out MemberNameTable_lock, if so
-  // return false.  We cannot cache obsolete methods. They will crash when the function
-  // is called!
-  Method* method = (Method*)java_lang_invoke_MemberName::vmtarget(mem_name());
-  if (method->is_obsolete()) {
-    return NULL;
-  } else if (method->is_old()) {
-    // Replace method with redefined version
-    java_lang_invoke_MemberName::set_vmtarget(mem_name(), method_with_idnum(method->method_idnum()));
-  }
-
-  if (_member_names == NULL) {
-    _member_names = new (ResourceObj::C_HEAP, mtClass) MemberNameTable(idnum_allocated_count());
-  }
-  if (intern) {
-    return _member_names->find_or_add_member_name(mem_name_wref);
-  } else {
-    return _member_names->add_member_name(mem_name_wref);
-  }
 }
 
 // -----------------------------------------------------------------------------------------------------

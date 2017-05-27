@@ -42,8 +42,10 @@
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc/shared/gcLocker.hpp"
+#include "gc/shared/gcTraceTime.inline.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreter.hpp"
+#include "logging/log.hpp"
 #include "memory/filemap.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -57,6 +59,7 @@
 #include "oops/symbol.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "prims/jvmtiEnvBase.hpp"
+#include "prims/resolvedMethodTable.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/biasedLocking.hpp"
@@ -1915,23 +1918,43 @@ public:
 // Assumes classes in the SystemDictionary are only unloaded at a safepoint
 // Note: anonymous classes are not in the SD.
 bool SystemDictionary::do_unloading(BoolObjectClosure* is_alive,
-                                    bool clean_previous_versions) {
-  // First, mark for unload all ClassLoaderData referencing a dead class loader.
-  bool unloading_occurred = ClassLoaderDataGraph::do_unloading(is_alive,
-                                                               clean_previous_versions);
+                                    GCTimer* gc_timer,
+                                    bool do_cleaning) {
+
+
+  bool unloading_occurred;
+  {
+    GCTraceTime(Debug, gc, phases) t("ClassLoaderData", gc_timer);
+
+    // First, mark for unload all ClassLoaderData referencing a dead class loader.
+    unloading_occurred = ClassLoaderDataGraph::do_unloading(is_alive,
+                                                            do_cleaning);
+  }
+
   if (unloading_occurred) {
+    GCTraceTime(Debug, gc, phases) t("Dictionary", gc_timer);
     dictionary()->do_unloading();
     constraints()->purge_loader_constraints();
     resolution_errors()->purge_resolution_errors();
   }
-  // Oops referenced by the system dictionary may get unreachable independently
-  // of the class loader (eg. cached protection domain oops). So we need to
-  // explicitly unlink them here instead of in Dictionary::do_unloading.
-  dictionary()->unlink(is_alive);
+
+  {
+    GCTraceTime(Debug, gc, phases) t("ProtectionDomainCacheTable", gc_timer);
+    // Oops referenced by the system dictionary may get unreachable independently
+    // of the class loader (eg. cached protection domain oops). So we need to
+    // explicitly unlink them here instead of in Dictionary::do_unloading.
+    dictionary()->unlink(is_alive);
 #ifdef ASSERT
-  VerifySDReachableAndLiveClosure cl(is_alive);
-  dictionary()->oops_do(&cl);
+    VerifySDReachableAndLiveClosure cl(is_alive);
+    dictionary()->oops_do(&cl);
 #endif
+  }
+
+  if (do_cleaning) {
+    GCTraceTime(Debug, gc, phases) t("ResolvedMethodTable", gc_timer);
+    ResolvedMethodTable::unlink(is_alive);
+  }
+
   return unloading_occurred;
 }
 
@@ -1945,6 +1968,10 @@ void SystemDictionary::roots_oops_do(OopClosure* strong, OopClosure* weak) {
 
   // Visit extra methods
   invoke_method_table()->oops_do(strong);
+
+  if (weak != NULL) {
+    ResolvedMethodTable::oops_do(weak);
+  }
 }
 
 void SystemDictionary::oops_do(OopClosure* f) {
@@ -1957,6 +1984,8 @@ void SystemDictionary::oops_do(OopClosure* f) {
 
   // Visit extra methods
   invoke_method_table()->oops_do(f);
+
+  ResolvedMethodTable::oops_do(f);
 }
 
 // Just the classes from defining class loaders
@@ -2526,9 +2555,8 @@ static methodHandle unpack_method_and_appendix(Handle mname,
                                                TRAPS) {
   methodHandle empty;
   if (mname.not_null()) {
-    Metadata* vmtarget = java_lang_invoke_MemberName::vmtarget(mname());
-    if (vmtarget != NULL && vmtarget->is_method()) {
-      Method* m = (Method*)vmtarget;
+    Method* m = java_lang_invoke_MemberName::vmtarget(mname());
+    if (m != NULL) {
       oop appendix = appendix_box->obj_at(0);
       if (TraceMethodHandles) {
     #ifndef PRODUCT

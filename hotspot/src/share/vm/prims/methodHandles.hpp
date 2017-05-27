@@ -63,14 +63,13 @@ class MethodHandles: AllStatic {
   // working with member names
   static Handle resolve_MemberName(Handle mname, Klass* caller, TRAPS); // compute vmtarget/vmindex from name/type
   static void expand_MemberName(Handle mname, int suppress, TRAPS);  // expand defc/name/type if missing
-  static Handle new_MemberName(TRAPS);  // must be followed by init_MemberName
-  static oop init_MemberName(Handle mname_h, Handle target_h); // compute vmtarget/vmindex from target
+  static oop init_MemberName(Handle mname_h, Handle target_h, TRAPS); // compute vmtarget/vmindex from target
   static oop init_field_MemberName(Handle mname_h, fieldDescriptor& fd, bool is_setter = false);
-  static oop init_method_MemberName(Handle mname_h, CallInfo& info, bool intern = true);
+  static oop init_method_MemberName(Handle mname_h, CallInfo& info);
   static int method_ref_kind(Method* m, bool do_dispatch_if_possible = true);
   static int find_MemberNames(Klass* k, Symbol* name, Symbol* sig,
                               int mflags, Klass* caller,
-                              int skip, objArrayHandle results);
+                              int skip, objArrayHandle results, TRAPS);
   // bit values for suppress argument to expand_MemberName:
   enum { _suppress_defc = 1, _suppress_name = 2, _suppress_type = 4 };
 
@@ -225,24 +224,6 @@ public:
   MethodHandlesAdapterGenerator(CodeBuffer* code) : StubCodeGenerator(code, PrintMethodHandleStubs) {}
 
   void generate();
-};
-
-//------------------------------------------------------------------------------
-// MemberNameTable
-//
-
-class MemberNameTable : public GrowableArray<jweak> {
- public:
-  MemberNameTable(int methods_cnt);
-  ~MemberNameTable();
-  oop add_member_name(jweak mem_name_ref);
-  oop find_or_add_member_name(jweak mem_name_ref);
-
-#if INCLUDE_JVMTI
-  // RedefineClasses() API support:
-  // If a MemberName refers to old_method then update it to refer to new_method.
-  void adjust_method_entries(InstanceKlass* holder, bool * trace_name_printed);
-#endif // INCLUDE_JVMTI
 };
 
 #endif // SHARE_VM_PRIMS_METHODHANDLES_HPP

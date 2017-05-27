@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/defaultMethods.hpp"
+#include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -131,7 +132,7 @@ void CallInfo::set_common(Klass* resolved_klass,
 }
 
 // utility query for unreflecting a method
-CallInfo::CallInfo(Method* resolved_method, Klass* resolved_klass) {
+CallInfo::CallInfo(Method* resolved_method, Klass* resolved_klass, TRAPS) {
   Klass* resolved_method_holder = resolved_method->method_holder();
   if (resolved_klass == NULL) { // 2nd argument defaults to holder of 1st
     resolved_klass = resolved_method_holder;
@@ -180,7 +181,17 @@ CallInfo::CallInfo(Method* resolved_method, Klass* resolved_klass) {
   _call_kind  = kind;
   _call_index = index;
   _resolved_appendix = Handle();
+  // Find or create a ResolvedMethod instance for this Method*
+  set_resolved_method_name(CHECK);
+
   DEBUG_ONLY(verify());
+}
+
+void CallInfo::set_resolved_method_name(TRAPS) {
+  Method* m = _resolved_method();
+  assert(m != NULL, "Should already have a Method*");
+  oop rmethod_name = java_lang_invoke_ResolvedMethodName::find_resolved_method(m, CHECK);
+  _resolved_method_name = Handle(THREAD, rmethod_name);
 }
 
 #ifdef ASSERT

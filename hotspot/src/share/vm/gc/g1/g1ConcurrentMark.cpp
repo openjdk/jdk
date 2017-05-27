@@ -1752,7 +1752,7 @@ void G1ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
   // Unload Klasses, String, Symbols, Code Cache, etc.
   if (ClassUnloadingWithConcurrentMark) {
     GCTraceTime(Debug, gc, phases) debug("Class Unloading", _gc_timer_cm);
-    bool purged_classes = SystemDictionary::do_unloading(&g1_is_alive, false /* Defer klass cleaning */);
+    bool purged_classes = SystemDictionary::do_unloading(&g1_is_alive, _gc_timer_cm, false /* Defer cleaning */);
     g1h->complete_cleaning(&g1_is_alive, purged_classes);
   } else {
     GCTraceTime(Debug, gc, phases) debug("Cleanup", _gc_timer_cm);
