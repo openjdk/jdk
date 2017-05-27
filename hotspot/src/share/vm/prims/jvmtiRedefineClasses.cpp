@@ -43,6 +43,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
+#include "prims/resolvedMethodTable.hpp"
 #include "prims/methodComparator.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/relocator.hpp"
@@ -67,6 +68,7 @@ VM_RedefineClasses::VM_RedefineClasses(jint class_count,
   _class_count = class_count;
   _class_defs = class_defs;
   _class_load_kind = class_load_kind;
+  _any_class_has_resolved_methods = false;
   _res = JVMTI_ERROR_NONE;
 }
 
@@ -200,6 +202,12 @@ void VM_RedefineClasses::doit() {
   // are redefined are marked as old.
   MethodDataCleaner clean_weak_method_links;
   ClassLoaderDataGraph::classes_do(&clean_weak_method_links);
+
+  // JSR-292 support
+  if (_any_class_has_resolved_methods) {
+    bool trace_name_printed = false;
+    ResolvedMethodTable::adjust_method_entries(&trace_name_printed);
+  }
 
   // Disable any dependent concurrent compilations
   SystemDictionary::notice_modification();
@@ -3823,6 +3831,8 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
   compute_added_deleted_matching_methods();
   update_jmethod_ids();
 
+  _any_class_has_resolved_methods = the_class->has_resolved_methods() || _any_class_has_resolved_methods;
+
   // Attach new constant pool to the original klass. The original
   // klass still refers to the old constant pool (for now).
   scratch_class->constants()->set_pool_holder(the_class);
@@ -4036,13 +4046,6 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
   // that reference methods of the evolved class.
   AdjustCpoolCacheAndVtable adjust_cpool_cache_and_vtable(THREAD);
   ClassLoaderDataGraph::classes_do(&adjust_cpool_cache_and_vtable);
-
-  // JSR-292 support
-  MemberNameTable* mnt = the_class->member_names();
-  if (mnt != NULL) {
-    bool trace_name_printed = false;
-    mnt->adjust_method_entries(the_class, &trace_name_printed);
-  }
 
   if (the_class->oop_map_cache() != NULL) {
     // Flush references to any obsolete methods from the oop map cache

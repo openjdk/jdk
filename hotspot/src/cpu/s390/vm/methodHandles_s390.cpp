@@ -200,10 +200,13 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
                      Address(method_temp,
                              NONZERO(java_lang_invoke_LambdaForm::vmentry_offset_in_bytes())));
   __ verify_oop(method_temp);
-  // The following assumes that a method is normally compressed in the vmtarget field.
+  __ load_heap_oop(method_temp,
+          Address(method_temp,
+                  NONZERO(java_lang_invoke_MemberName::method_offset_in_bytes())));
+  __ verify_oop(method_temp);
   __ z_lg(method_temp,
           Address(method_temp,
-                  NONZERO(java_lang_invoke_MemberName::vmtarget_offset_in_bytes())));
+                  NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset_in_bytes())));
 
   if (VerifyMethodHandles && !for_compiler_entry) {
     // Make sure recv is already on stack.
@@ -371,7 +374,8 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
 
   Address  member_clazz(   member_reg, NONZERO(java_lang_invoke_MemberName::clazz_offset_in_bytes()));
   Address  member_vmindex( member_reg, NONZERO(java_lang_invoke_MemberName::vmindex_offset_in_bytes()));
-  Address  member_vmtarget(member_reg, NONZERO(java_lang_invoke_MemberName::vmtarget_offset_in_bytes()));
+  Address  member_vmtarget(member_reg, NONZERO(java_lang_invoke_MemberName::method_offset_in_bytes()));
+  Address  vmtarget_method(Z_method, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset_in_bytes()));
   Register temp1_recv_klass = temp1;
 
   if (iid != vmIntrinsics::_linkToStatic) {
@@ -424,7 +428,8 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       if (VerifyMethodHandles) {
         verify_ref_kind(_masm, JVM_REF_invokeSpecial, member_reg, temp3);
       }
-      __ z_lg(Z_method, member_vmtarget);
+      __ load_heap_oop(Z_method, member_vmtarget);
+      __ z_lg(Z_method, vmtarget_method);
       method_is_live = true;
       break;
 
@@ -432,7 +437,8 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       if (VerifyMethodHandles) {
         verify_ref_kind(_masm, JVM_REF_invokeStatic, member_reg, temp3);
       }
-      __ z_lg(Z_method, member_vmtarget);
+      __ load_heap_oop(Z_method, member_vmtarget);
+      __ z_lg(Z_method, vmtarget_method);
       method_is_live = true;
       break;
 

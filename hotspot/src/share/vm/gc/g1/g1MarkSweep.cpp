@@ -165,7 +165,7 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
     GCTraceTime(Debug, gc, phases) trace("Class Unloading", gc_timer());
 
     // Unload classes and purge the SystemDictionary.
-    bool purged_class = SystemDictionary::do_unloading(&GenMarkSweep::is_alive);
+    bool purged_class = SystemDictionary::do_unloading(&GenMarkSweep::is_alive, gc_timer());
 
     g1h->complete_cleaning(&GenMarkSweep::is_alive, purged_class);
   } else {

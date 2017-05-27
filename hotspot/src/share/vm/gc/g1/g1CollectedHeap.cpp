@@ -74,6 +74,7 @@
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/resolvedMethodTable.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/init.hpp"
 #include "runtime/orderAccess.inline.hpp"
@@ -3843,12 +3844,36 @@ public:
   }
 };
 
+class G1ResolvedMethodCleaningTask : public StackObj {
+  BoolObjectClosure* _is_alive;
+  volatile jint      _resolved_method_task_claimed;
+public:
+  G1ResolvedMethodCleaningTask(BoolObjectClosure* is_alive) :
+      _is_alive(is_alive), _resolved_method_task_claimed(0) {}
+
+  bool claim_resolved_method_task() {
+    if (_resolved_method_task_claimed) {
+      return false;
+    }
+    return Atomic::cmpxchg(1, (jint*)&_resolved_method_task_claimed, 0) == 0;
+  }
+
+  // These aren't big, one thread can do it all.
+  void work() {
+    if (claim_resolved_method_task()) {
+      ResolvedMethodTable::unlink(_is_alive);
+    }
+  }
+};
+
+
 // To minimize the remark pause times, the tasks below are done in parallel.
 class G1ParallelCleaningTask : public AbstractGangTask {
 private:
   G1StringAndSymbolCleaningTask _string_symbol_task;
   G1CodeCacheUnloadingTask      _code_cache_task;
   G1KlassCleaningTask           _klass_cleaning_task;
+  G1ResolvedMethodCleaningTask  _resolved_method_cleaning_task;
 
 public:
   // The constructor is run in the VMThread.
@@ -3856,7 +3881,8 @@ public:
       AbstractGangTask("Parallel Cleaning"),
       _string_symbol_task(is_alive, true, true, G1StringDedup::is_enabled()),
       _code_cache_task(num_workers, is_alive, unloading_occurred),
-      _klass_cleaning_task(is_alive) {
+      _klass_cleaning_task(is_alive),
+      _resolved_method_cleaning_task(is_alive) {
   }
 
   // The parallel work done by all worker threads.
@@ -3869,6 +3895,9 @@ public:
 
     // Clean the Strings and Symbols.
     _string_symbol_task.work(worker_id);
+
+    // Clean unreferenced things in the ResolvedMethodTable
+    _resolved_method_cleaning_task.work();
 
     // Wait for all workers to finish the first code cache cleaning pass.
     _code_cache_task.barrier_wait(worker_id);

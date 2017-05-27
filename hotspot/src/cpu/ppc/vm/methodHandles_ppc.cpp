@@ -174,8 +174,9 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
   __ verify_oop(method_temp);
   __ load_heap_oop_not_null(method_temp, NONZERO(java_lang_invoke_LambdaForm::vmentry_offset_in_bytes()), method_temp, temp2);
   __ verify_oop(method_temp);
-  // The following assumes that a Method* is normally compressed in the vmtarget field:
-  __ ld(method_temp, NONZERO(java_lang_invoke_MemberName::vmtarget_offset_in_bytes()), method_temp);
+  __ load_heap_oop_not_null(method_temp, NONZERO(java_lang_invoke_MemberName::method_offset_in_bytes()), method_temp);
+  __ verify_oop(method_temp);
+  __ ld(method_temp, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset_in_bytes()), method_temp);
 
   if (VerifyMethodHandles && !for_compiler_entry) {
     // Make sure recv is already on stack.
@@ -361,14 +362,16 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       if (VerifyMethodHandles) {
         verify_ref_kind(_masm, JVM_REF_invokeSpecial, member_reg, temp2);
       }
-      __ ld(R19_method, NONZERO(java_lang_invoke_MemberName::vmtarget_offset_in_bytes()), member_reg);
+      __ load_heap_oop(member_reg, NONZERO(java_lang_invoke_MemberName::method_offset_in_bytes()), member_reg);
+      __ ld(R19_method, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset_in_bytes()), member_reg);
       break;
 
     case vmIntrinsics::_linkToStatic:
       if (VerifyMethodHandles) {
         verify_ref_kind(_masm, JVM_REF_invokeStatic, member_reg, temp2);
       }
-      __ ld(R19_method, NONZERO(java_lang_invoke_MemberName::vmtarget_offset_in_bytes()), member_reg);
+      __ load_heap_oop(member_reg, NONZERO(java_lang_invoke_MemberName::method_offset_in_bytes()), member_reg);
+      __ ld(R19_method, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset_in_bytes()), member_reg);
       break;
 
     case vmIntrinsics::_linkToVirtual:

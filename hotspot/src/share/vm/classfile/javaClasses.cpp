@@ -45,6 +45,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "oops/typeArrayOop.hpp"
+#include "prims/resolvedMethodTable.hpp"
 #include "runtime/fieldDescriptor.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
@@ -2228,11 +2229,11 @@ Method* java_lang_StackFrameInfo::get_method(Handle stackFrame, InstanceKlass* h
   return method;
 }
 
-void java_lang_StackFrameInfo::set_method_and_bci(Handle stackFrame, const methodHandle& method, int bci) {
+void java_lang_StackFrameInfo::set_method_and_bci(Handle stackFrame, const methodHandle& method, int bci, TRAPS) {
   // set Method* or mid/cpref
   Handle mname(Thread::current(), stackFrame->obj_field(_memberName_offset));
   InstanceKlass* ik = method->method_holder();
-  CallInfo info(method(), ik);
+  CallInfo info(method(), ik, CHECK);
   MethodHandles::init_method_MemberName(mname, info);
   // set bci
   java_lang_StackFrameInfo::set_bci(stackFrame(), bci);
@@ -3083,9 +3084,9 @@ oop java_lang_invoke_DirectMethodHandle::member(oop dmh) {
 }
 
 void java_lang_invoke_DirectMethodHandle::compute_offsets() {
-  Klass* klass_oop = SystemDictionary::DirectMethodHandle_klass();
-  if (klass_oop != NULL) {
-    compute_offset(_member_offset, klass_oop, vmSymbols::member_name(), vmSymbols::java_lang_invoke_MemberName_signature());
+  Klass* k = SystemDictionary::DirectMethodHandle_klass();
+  if (k != NULL) {
+    compute_offset(_member_offset, k, vmSymbols::member_name(), vmSymbols::java_lang_invoke_MemberName_signature());
   }
 }
 
@@ -3098,36 +3099,43 @@ int java_lang_invoke_MemberName::_clazz_offset;
 int java_lang_invoke_MemberName::_name_offset;
 int java_lang_invoke_MemberName::_type_offset;
 int java_lang_invoke_MemberName::_flags_offset;
-int java_lang_invoke_MemberName::_vmtarget_offset;
-int java_lang_invoke_MemberName::_vmloader_offset;
+int java_lang_invoke_MemberName::_method_offset;
 int java_lang_invoke_MemberName::_vmindex_offset;
+
+int java_lang_invoke_ResolvedMethodName::_vmtarget_offset;
+int java_lang_invoke_ResolvedMethodName::_vmholder_offset;
 
 int java_lang_invoke_LambdaForm::_vmentry_offset;
 
 void java_lang_invoke_MethodHandle::compute_offsets() {
-  Klass* klass_oop = SystemDictionary::MethodHandle_klass();
-  if (klass_oop != NULL) {
-    compute_offset(_type_offset, klass_oop, vmSymbols::type_name(), vmSymbols::java_lang_invoke_MethodType_signature());
-    compute_offset(_form_offset, klass_oop, vmSymbols::form_name(), vmSymbols::java_lang_invoke_LambdaForm_signature());
+  Klass* k = SystemDictionary::MethodHandle_klass();
+  if (k != NULL) {
+    compute_offset(_type_offset, k, vmSymbols::type_name(), vmSymbols::java_lang_invoke_MethodType_signature());
+    compute_offset(_form_offset, k, vmSymbols::form_name(), vmSymbols::java_lang_invoke_LambdaForm_signature());
   }
 }
 
 void java_lang_invoke_MemberName::compute_offsets() {
-  Klass* klass_oop = SystemDictionary::MemberName_klass();
-  if (klass_oop != NULL) {
-    compute_offset(_clazz_offset,     klass_oop, vmSymbols::clazz_name(),     vmSymbols::class_signature());
-    compute_offset(_name_offset,      klass_oop, vmSymbols::name_name(),      vmSymbols::string_signature());
-    compute_offset(_type_offset,      klass_oop, vmSymbols::type_name(),      vmSymbols::object_signature());
-    compute_offset(_flags_offset,     klass_oop, vmSymbols::flags_name(),     vmSymbols::int_signature());
-    MEMBERNAME_INJECTED_FIELDS(INJECTED_FIELD_COMPUTE_OFFSET);
-  }
+  Klass* k = SystemDictionary::MemberName_klass();
+  assert (k != NULL, "jdk mismatch");
+  compute_offset(_clazz_offset,   k, vmSymbols::clazz_name(),   vmSymbols::class_signature());
+  compute_offset(_name_offset,    k, vmSymbols::name_name(),    vmSymbols::string_signature());
+  compute_offset(_type_offset,    k, vmSymbols::type_name(),    vmSymbols::object_signature());
+  compute_offset(_flags_offset,   k, vmSymbols::flags_name(),   vmSymbols::int_signature());
+  compute_offset(_method_offset,  k, vmSymbols::method_name(),  vmSymbols::java_lang_invoke_ResolvedMethodName_signature());
+  MEMBERNAME_INJECTED_FIELDS(INJECTED_FIELD_COMPUTE_OFFSET);
+}
+
+void java_lang_invoke_ResolvedMethodName::compute_offsets() {
+  Klass* k = SystemDictionary::ResolvedMethodName_klass();
+  assert(k != NULL, "jdk mismatch");
+  RESOLVEDMETHOD_INJECTED_FIELDS(INJECTED_FIELD_COMPUTE_OFFSET);
 }
 
 void java_lang_invoke_LambdaForm::compute_offsets() {
-  Klass* klass_oop = SystemDictionary::LambdaForm_klass();
-  if (klass_oop != NULL) {
-    compute_offset(_vmentry_offset, klass_oop, vmSymbols::vmentry_name(), vmSymbols::java_lang_invoke_MemberName_signature());
-  }
+  Klass* k = SystemDictionary::LambdaForm_klass();
+  assert (k != NULL, "jdk mismatch");
+  compute_offset(_vmentry_offset, k, vmSymbols::vmentry_name(), vmSymbols::java_lang_invoke_MemberName_signature());
 }
 
 bool java_lang_invoke_LambdaForm::is_instance(oop obj) {
@@ -3195,9 +3203,12 @@ void java_lang_invoke_MemberName::set_flags(oop mname, int flags) {
   mname->int_field_put(_flags_offset, flags);
 }
 
-Metadata* java_lang_invoke_MemberName::vmtarget(oop mname) {
+
+// Return vmtarget from ResolvedMethodName method field through indirection
+Method* java_lang_invoke_MemberName::vmtarget(oop mname) {
   assert(is_instance(mname), "wrong type");
-  return (Metadata*)mname->address_field(_vmtarget_offset);
+  oop method = mname->obj_field(_method_offset);
+  return method == NULL ? NULL : java_lang_invoke_ResolvedMethodName::vmtarget(method);
 }
 
 bool java_lang_invoke_MemberName::is_method(oop mname) {
@@ -3205,32 +3216,9 @@ bool java_lang_invoke_MemberName::is_method(oop mname) {
   return (flags(mname) & (MN_IS_METHOD | MN_IS_CONSTRUCTOR)) > 0;
 }
 
-void java_lang_invoke_MemberName::set_vmtarget(oop mname, Metadata* ref) {
+void java_lang_invoke_MemberName::set_method(oop mname, oop resolved_method) {
   assert(is_instance(mname), "wrong type");
-  // check the type of the vmtarget
-  oop dependency = NULL;
-  if (ref != NULL) {
-    switch (flags(mname) & (MN_IS_METHOD |
-                            MN_IS_CONSTRUCTOR |
-                            MN_IS_FIELD)) {
-    case MN_IS_METHOD:
-    case MN_IS_CONSTRUCTOR:
-      assert(ref->is_method(), "should be a method");
-      dependency = ((Method*)ref)->method_holder()->java_mirror();
-      break;
-    case MN_IS_FIELD:
-      assert(ref->is_klass(), "should be a class");
-      dependency = ((Klass*)ref)->java_mirror();
-      break;
-    default:
-      ShouldNotReachHere();
-    }
-  }
-  mname->address_field_put(_vmtarget_offset, (address)ref);
-  // Add a reference to the loader (actually mirror because anonymous classes will not have
-  // distinct loaders) to ensure the metadata is kept alive
-  // This mirror may be different than the one in clazz field.
-  mname->obj_field_put(_vmloader_offset, dependency);
+  mname->obj_field_put(_method_offset, resolved_method);
 }
 
 intptr_t java_lang_invoke_MemberName::vmindex(oop mname) {
@@ -3243,13 +3231,37 @@ void java_lang_invoke_MemberName::set_vmindex(oop mname, intptr_t index) {
   mname->address_field_put(_vmindex_offset, (address) index);
 }
 
-bool java_lang_invoke_MemberName::equals(oop mn1, oop mn2) {
-  if (mn1 == mn2) {
-     return true;
+
+Method* java_lang_invoke_ResolvedMethodName::vmtarget(oop resolved_method) {
+  assert(is_instance(resolved_method), "wrong type");
+  Method* m = (Method*)resolved_method->address_field(_vmtarget_offset);
+  assert(m->is_method(), "must be");
+  return m;
+}
+
+// Used by redefinition to change Method* to new Method* with same hash (name, signature)
+void java_lang_invoke_ResolvedMethodName::set_vmtarget(oop resolved_method, Method* m) {
+  assert(is_instance(resolved_method), "wrong type");
+  resolved_method->address_field_put(_vmtarget_offset, (address)m);
+}
+
+oop java_lang_invoke_ResolvedMethodName::find_resolved_method(const methodHandle& m, TRAPS) {
+  // lookup ResolvedMethod oop in the table, or create a new one and intern it
+  oop resolved_method = ResolvedMethodTable::find_method(m());
+  if (resolved_method == NULL) {
+    InstanceKlass* k = SystemDictionary::ResolvedMethodName_klass();
+    if (!k->is_initialized()) {
+      k->initialize(CHECK_NULL);
+    }
+    oop new_resolved_method = k->allocate_instance(CHECK_NULL);
+    new_resolved_method->address_field_put(_vmtarget_offset, (address)m());
+    // Add a reference to the loader (actually mirror because anonymous classes will not have
+    // distinct loaders) to ensure the metadata is kept alive.
+    // This mirror may be different than the one in clazz field.
+    new_resolved_method->obj_field_put(_vmholder_offset, m->method_holder()->java_mirror());
+    resolved_method = ResolvedMethodTable::add_method(Handle(THREAD, new_resolved_method));
   }
-  return (vmtarget(mn1) == vmtarget(mn2) && flags(mn1) == flags(mn2) &&
-          vmindex(mn1) == vmindex(mn2) &&
-          clazz(mn1) == clazz(mn2));
+  return resolved_method;
 }
 
 oop java_lang_invoke_LambdaForm::vmentry(oop lform) {
@@ -3856,6 +3868,7 @@ void JavaClasses::compute_offsets() {
   java_lang_invoke_MethodHandle::compute_offsets();
   java_lang_invoke_DirectMethodHandle::compute_offsets();
   java_lang_invoke_MemberName::compute_offsets();
+  java_lang_invoke_ResolvedMethodName::compute_offsets();
   java_lang_invoke_LambdaForm::compute_offsets();
   java_lang_invoke_MethodType::compute_offsets();
   java_lang_invoke_CallSite::compute_offsets();

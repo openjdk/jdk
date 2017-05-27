@@ -1005,10 +1005,33 @@ class java_lang_invoke_LambdaForm: AllStatic {
 // Interface to java.lang.invoke.MemberName objects
 // (These are a private interface for Java code to query the class hierarchy.)
 
+#define RESOLVEDMETHOD_INJECTED_FIELDS(macro)                                   \
+  macro(java_lang_invoke_ResolvedMethodName, vmholder, object_signature, false) \
+  macro(java_lang_invoke_ResolvedMethodName, vmtarget, intptr_signature, false)
+
+class java_lang_invoke_ResolvedMethodName : AllStatic {
+  friend class JavaClasses;
+
+  static int _vmtarget_offset;
+  static int _vmholder_offset;
+
+  static void compute_offsets();
+ public:
+  static int vmtarget_offset_in_bytes() { return _vmtarget_offset; }
+
+  static Method* vmtarget(oop resolved_method);
+  static void set_vmtarget(oop resolved_method, Method* method);
+
+  // find or create resolved member name
+  static oop find_resolved_method(const methodHandle& m, TRAPS);
+
+  static bool is_instance(oop resolved_method);
+};
+
+
 #define MEMBERNAME_INJECTED_FIELDS(macro)                               \
-  macro(java_lang_invoke_MemberName, vmloader, object_signature, false) \
-  macro(java_lang_invoke_MemberName, vmindex,  intptr_signature, false) \
-  macro(java_lang_invoke_MemberName, vmtarget, intptr_signature, false)
+  macro(java_lang_invoke_MemberName, vmindex,  intptr_signature, false)
+
 
 class java_lang_invoke_MemberName: AllStatic {
   friend class JavaClasses;
@@ -1019,14 +1042,13 @@ class java_lang_invoke_MemberName: AllStatic {
   //    private String     name;        // may be null if not yet materialized
   //    private Object     type;        // may be null if not yet materialized
   //    private int        flags;       // modifier bits; see reflect.Modifier
-  //    private intptr     vmtarget;    // VM-specific target value
+  //    private ResolvedMethodName method;    // holds VM-specific target value
   //    private intptr_t   vmindex;     // member index within class or interface
   static int _clazz_offset;
   static int _name_offset;
   static int _type_offset;
   static int _flags_offset;
-  static int _vmtarget_offset;
-  static int _vmloader_offset;
+  static int _method_offset;
   static int _vmindex_offset;
 
   static void compute_offsets();
@@ -1045,8 +1067,9 @@ class java_lang_invoke_MemberName: AllStatic {
   static int            flags(oop mname);
   static void       set_flags(oop mname, int flags);
 
-  static Metadata*      vmtarget(oop mname);
-  static void       set_vmtarget(oop mname, Metadata* target);
+  // Link through ResolvedMethodName field to get Method*
+  static Method*        vmtarget(oop mname);
+  static void       set_method(oop mname, oop method);
 
   static intptr_t       vmindex(oop mname);
   static void       set_vmindex(oop mname, intptr_t index);
@@ -1078,10 +1101,8 @@ class java_lang_invoke_MemberName: AllStatic {
   static int type_offset_in_bytes()             { return _type_offset; }
   static int name_offset_in_bytes()             { return _name_offset; }
   static int flags_offset_in_bytes()            { return _flags_offset; }
-  static int vmtarget_offset_in_bytes()         { return _vmtarget_offset; }
+  static int method_offset_in_bytes()           { return _method_offset; }
   static int vmindex_offset_in_bytes()          { return _vmindex_offset; }
-
-  static bool equals(oop mt1, oop mt2);
 };
 
 
@@ -1358,7 +1379,7 @@ private:
 public:
   // Setters
   static void set_declaringClass(oop info, oop value);
-  static void set_method_and_bci(Handle stackFrame, const methodHandle& method, int bci);
+  static void set_method_and_bci(Handle stackFrame, const methodHandle& method, int bci, TRAPS);
   static void set_bci(oop info, int value);
 
   static void set_version(oop info, short value);
@@ -1472,6 +1493,7 @@ class InjectedField {
 #define ALL_INJECTED_FIELDS(macro)          \
   CLASS_INJECTED_FIELDS(macro)              \
   CLASSLOADER_INJECTED_FIELDS(macro)        \
+  RESOLVEDMETHOD_INJECTED_FIELDS(macro)     \
   MEMBERNAME_INJECTED_FIELDS(macro)         \
   CALLSITECONTEXT_INJECTED_FIELDS(macro)    \
   STACKFRAMEINFO_INJECTED_FIELDS(macro)     \

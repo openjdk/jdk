@@ -673,21 +673,6 @@ JVM_ENTRY(jobject, JVM_Clone(JNIEnv* env, jobject handle))
   bs->write_region(MemRegion((HeapWord*)new_obj_oop, size));
 
   Handle new_obj(THREAD, new_obj_oop);
-  // Special handling for MemberNames.  Since they contain Method* metadata, they
-  // must be registered so that RedefineClasses can fix metadata contained in them.
-  if (java_lang_invoke_MemberName::is_instance(new_obj()) &&
-      java_lang_invoke_MemberName::is_method(new_obj())) {
-    Method* method = (Method*)java_lang_invoke_MemberName::vmtarget(new_obj());
-    // MemberName may be unresolved, so doesn't need registration until resolved.
-    if (method != NULL) {
-      methodHandle m(THREAD, method);
-      // This can safepoint and redefine method, so need both new_obj and method
-      // in a handle, for two different reasons.  new_obj can move, method can be
-      // deleted if nothing is using it on the stack.
-      m->method_holder()->add_member_name(new_obj, false);
-    }
-  }
-
   // Caution: this involves a java upcall, so the clone should be
   // "gc-robust" by this stage.
   if (klass->has_finalizer()) {

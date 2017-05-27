@@ -668,7 +668,7 @@ C2V_VMENTRY(jobject, getResolvedJavaMethod, (JNIEnv *, jobject, jobject base, jl
   oop base_object = JNIHandles::resolve(base);
   if (base_object == NULL) {
     method = *((Method**)(offset));
-  } else if (base_object->is_a(SystemDictionary::MemberName_klass())) {
+  } else if (base_object->is_a(SystemDictionary::ResolvedMethodName_klass())) {
     method = (Method*) (intptr_t) base_object->long_field(offset);
   } else if (base_object->is_a(SystemDictionary::HotSpotResolvedJavaMethodImpl_klass())) {
     method = *((Method**)(HotSpotResolvedJavaMethodImpl::metaspaceMethod(base_object) + offset));

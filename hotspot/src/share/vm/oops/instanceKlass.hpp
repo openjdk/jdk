@@ -66,7 +66,6 @@ class fieldDescriptor;
 class jniIdMapBase;
 class JNIid;
 class JvmtiCachedClassFieldMap;
-class MemberNameTable;
 class SuperTypeClosure;
 
 // This is used in iterators below.
@@ -219,7 +218,8 @@ class InstanceKlass: public Klass {
     _misc_is_scratch_class                    = 1 << 11, // class is the redefined scratch class
     _misc_is_shared_boot_class                = 1 << 12, // defining class loader is boot class loader
     _misc_is_shared_platform_class            = 1 << 13, // defining class loader is platform class loader
-    _misc_is_shared_app_class                 = 1 << 14  // defining class loader is app class loader
+    _misc_is_shared_app_class                 = 1 << 14, // defining class loader is app class loader
+    _misc_has_resolved_methods                = 1 << 15  // resolved methods table entries added for this class
   };
   u2 loader_type_bits() {
     return _misc_is_shared_boot_class|_misc_is_shared_platform_class|_misc_is_shared_app_class;
@@ -229,7 +229,6 @@ class InstanceKlass: public Klass {
   u2              _major_version;        // major version number of class file
   Thread*         _init_thread;          // Pointer to current thread doing initialization (to handle recusive initialization)
   OopMapCache*    volatile _oop_map_cache;   // OopMapCache for all methods in the klass (allocated lazily)
-  MemberNameTable* _member_names;        // Member names
   JNIid*          _jni_ids;              // First JNI identifier for static fields in this class
   jmethodID*      volatile _methods_jmethod_ids;  // jmethodIDs corresponding to method_idnum, or NULL if none
   intptr_t        _dep_context;          // packed DependencyContext structure
@@ -747,6 +746,13 @@ class InstanceKlass: public Klass {
     _misc_flags |= _misc_is_scratch_class;
   }
 
+  bool has_resolved_methods() const {
+    return (_misc_flags & _misc_has_resolved_methods) != 0;
+  }
+
+  void set_has_resolved_methods() {
+    _misc_flags |= _misc_has_resolved_methods;
+  }
 private:
 
   void set_kind(unsigned kind) {
@@ -1333,11 +1339,6 @@ public:
 
   // jvm support
   jint compute_modifier_flags(TRAPS) const;
-
-  // JSR-292 support
-  MemberNameTable* member_names() { return _member_names; }
-  void set_member_names(MemberNameTable* member_names) { _member_names = member_names; }
-  oop add_member_name(Handle member_name, bool intern);
 
 public:
   // JVMTI support

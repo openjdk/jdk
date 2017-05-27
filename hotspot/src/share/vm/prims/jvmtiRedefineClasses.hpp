@@ -374,6 +374,11 @@ class VM_RedefineClasses: public VM_Operation {
   InstanceKlass**             _scratch_classes;
   jvmtiError                  _res;
 
+  // Set if any of the InstanceKlasses have entries in the ResolvedMethodTable
+  // to avoid walking after redefinition if the redefined classes do not
+  // have any entries.
+  bool _any_class_has_resolved_methods;
+
   // Performance measurement support. These timers do not cover all
   // the work done for JVM/TI RedefineClasses() but they do cover
   // the heavy lifting.
