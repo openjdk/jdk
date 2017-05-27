@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,11 @@
  * questions.
  */
 
-import com.oracle.testlibrary.jsr292.Helper;
-import com.oracle.testlibrary.jsr292.CodeCacheOverflowProcessor;
+import jdk.testlibrary.TimeLimitedRunner;
+import jdk.testlibrary.Utils;
+import test.java.lang.invoke.lib.CodeCacheOverflowProcessor;
+import test.java.lang.invoke.lib.Helper;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
@@ -32,8 +35,6 @@ import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
-import jdk.testlibrary.Utils;
-import jdk.testlibrary.TimeLimitedRunner;
 
 /**
  * Lambda forms caching test case class. Contains all necessary test routines to
@@ -44,7 +45,8 @@ import jdk.testlibrary.TimeLimitedRunner;
  */
 public abstract class LambdaFormTestCase {
 
-    private static final long TIMEOUT = Helper.IS_THOROUGH ? 0L : (long) (Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT) * 0.9);
+    private static final long TIMEOUT = Helper.IS_THOROUGH ?
+            0L : (long) (Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT) * 0.9);
 
     /**
      * Reflection link to {@code j.l.i.MethodHandle.internalForm} method. It is
@@ -92,7 +94,8 @@ public abstract class LambdaFormTestCase {
         long failCounter;
         boolean passed;
 
-        TestRun(Function<TestMethods, LambdaFormTestCase> ctor, Collection<TestMethods> testMethods) {
+        TestRun(Function<TestMethods, LambdaFormTestCase> ctor,
+                Collection<TestMethods> testMethods) {
             this.ctor = ctor;
             this.testMethods = testMethods;
             long testCaseNum = testMethods.size();
@@ -175,10 +178,12 @@ public abstract class LambdaFormTestCase {
      * object.
      * @param testMethods list of test methods
      */
-    public static void runTests(Function<TestMethods, LambdaFormTestCase> ctor, Collection<TestMethods> testMethods) {
+    public static void runTests(Function<TestMethods, LambdaFormTestCase> ctor,
+                                Collection<TestMethods> testMethods) {
         LambdaFormTestCase.TestRun run
                 = new LambdaFormTestCase.TestRun(ctor, testMethods);
-        TimeLimitedRunner runner = new TimeLimitedRunner(TIMEOUT, 4.0d, run::doIteration);
+        TimeLimitedRunner runner
+                = new TimeLimitedRunner(TIMEOUT, 4.0d, run::doIteration);
         try {
             runner.call();
         } catch (Exception ex) {
