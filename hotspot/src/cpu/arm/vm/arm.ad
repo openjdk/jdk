@@ -11752,9 +11752,13 @@ instruct ShouldNotReachHere( )
 
   size(4);
   // Use the following format syntax
-  format %{ "breakpoint   ; ShouldNotReachHere" %}
+  format %{ "ShouldNotReachHere" %}
   ins_encode %{
-    __ breakpoint();
+#ifdef AARCH64
+    __ dpcs1(0xdead);
+#else
+    __ udf(0xdead);
+#endif
   %}
   ins_pipe(tail_call);
 %}

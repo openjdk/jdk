@@ -116,7 +116,8 @@ class CheckCastPPNode: public ConstraintCastNode {
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual int   Opcode() const;
   virtual uint  ideal_reg() const { return Op_RegP; }
-};
+  bool depends_only_on_test() const { return !type()->isa_rawptr() && ConstraintCastNode::depends_only_on_test(); }
+ };
 
 
 //------------------------------CastX2PNode-------------------------------------

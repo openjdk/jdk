@@ -47,6 +47,7 @@
 #include "opto/opaquenode.hpp"
 #include "opto/parse.hpp"
 #include "opto/runtime.hpp"
+#include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
 #include "prims/nativeLookup.hpp"
 #include "prims/unsafe.hpp"
@@ -238,8 +239,8 @@ class LibraryCallKit : public GraphKit {
   bool inline_notify(vmIntrinsics::ID id);
   Node* generate_min_max(vmIntrinsics::ID id, Node* x, Node* y);
   // This returns Type::AnyPtr, RawPtr, or OopPtr.
-  int classify_unsafe_addr(Node* &base, Node* &offset);
-  Node* make_unsafe_address(Node* base, Node* offset);
+  int classify_unsafe_addr(Node* &base, Node* &offset, BasicType type);
+  Node* make_unsafe_address(Node*& base, Node* offset, BasicType type = T_ILLEGAL);
   // Helper for inline_unsafe_access.
   // Generates the guards that check whether the result of
   // Unsafe.getObject should be recorded in an SATB log buffer.
@@ -2072,7 +2073,7 @@ LibraryCallKit::generate_min_max(vmIntrinsics::ID id, Node* x0, Node* y0) {
 }
 
 inline int
-LibraryCallKit::classify_unsafe_addr(Node* &base, Node* &offset) {
+LibraryCallKit::classify_unsafe_addr(Node* &base, Node* &offset, BasicType type) {
   const TypePtr* base_type = TypePtr::NULL_PTR;
   if (base != NULL)  base_type = _gvn.type(base)->isa_ptr();
   if (base_type == NULL) {
@@ -2087,7 +2088,7 @@ LibraryCallKit::classify_unsafe_addr(Node* &base, Node* &offset) {
     return Type::RawPtr;
   } else if (base_type->isa_oopptr()) {
     // Base is never null => always a heap address.
-    if (base_type->ptr() == TypePtr::NotNull) {
+    if (!TypePtr::NULL_PTR->higher_equal(base_type)) {
       return Type::OopPtr;
     }
     // Offset is small => always a heap address.
@@ -2096,6 +2097,10 @@ LibraryCallKit::classify_unsafe_addr(Node* &base, Node* &offset) {
         base_type->offset() == 0 &&     // (should always be?)
         offset_type->_lo >= 0 &&
         !MacroAssembler::needs_explicit_null_check(offset_type->_hi)) {
+      return Type::OopPtr;
+    } else if (type == T_OBJECT) {
+      // off heap access to an oop doesn't make any sense. Has to be on
+      // heap.
       return Type::OopPtr;
     }
     // Otherwise, it might either be oop+off or NULL+addr.
@@ -2106,11 +2111,23 @@ LibraryCallKit::classify_unsafe_addr(Node* &base, Node* &offset) {
   }
 }
 
-inline Node* LibraryCallKit::make_unsafe_address(Node* base, Node* offset) {
-  int kind = classify_unsafe_addr(base, offset);
+inline Node* LibraryCallKit::make_unsafe_address(Node*& base, Node* offset, BasicType type) {
+  Node* uncasted_base = base;
+  int kind = classify_unsafe_addr(uncasted_base, offset, type);
   if (kind == Type::RawPtr) {
-    return basic_plus_adr(top(), base, offset);
+    return basic_plus_adr(top(), uncasted_base, offset);
+  } else if (kind == Type::AnyPtr) {
+    assert(base == uncasted_base, "unexpected base change");
+    // We don't know if it's an on heap or off heap access. Fall back
+    // to raw memory access.
+    Node* raw = _gvn.transform(new CheckCastPPNode(control(), base, TypeRawPtr::BOTTOM));
+    return basic_plus_adr(top(), raw, offset);
   } else {
+    assert(base == uncasted_base, "unexpected base change");
+    // We know it's an on heap access so base can't be null
+    if (TypePtr::NULL_PTR->higher_equal(_gvn.type(base))) {
+      base = must_be_not_null(base, true);
+    }
     return basic_plus_adr(base, offset);
   }
 }
@@ -2342,7 +2359,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
          "fieldOffset must be byte-scaled");
   // 32-bit machines ignore the high half!
   offset = ConvL2X(offset);
-  adr = make_unsafe_address(base, offset);
+  adr = make_unsafe_address(base, offset, type);
   if (_gvn.type(base)->isa_ptr() != TypePtr::NULL_PTR) {
     heap_base_oop = base;
   } else if (type == T_OBJECT) {
@@ -2753,7 +2770,7 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
   assert(Unsafe_field_offset_to_byte_offset(11) == 11, "fieldOffset must be byte-scaled");
   // 32-bit machines ignore the high half of long offsets
   offset = ConvL2X(offset);
-  Node* adr = make_unsafe_address(base, offset);
+  Node* adr = make_unsafe_address(base, offset, type);
   const TypePtr *adr_type = _gvn.type(adr)->isa_ptr();
 
   Compile::AliasType* alias_type = C->alias_type(adr_type);
