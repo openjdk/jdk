@@ -187,6 +187,9 @@ TOOLCHAIN_MISC_CHECKS
 # Setup the JTReg Regression Test Harness.
 TOOLCHAIN_SETUP_JTREG
 
+# Setup Jib dependency tool
+TOOLCHAIN_SETUP_JIB
+
 FLAGS_SETUP_INIT_FLAGS
 
 # Now we can test some aspects on the target using configure macros.
