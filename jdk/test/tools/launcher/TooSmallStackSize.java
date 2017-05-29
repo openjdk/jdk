@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,15 +155,21 @@ public class TooSmallStackSize extends TestHelper {
         checkStack("16k");
 
         /*
-         * Try with a 32k stack size, which is the size that the launcher will
+         * Try with a 64k stack size, which is the size that the launcher will
          * set to if you try setting to anything smaller. This should produce the same
          * result as setting to 16k if the fix for 6762191 is in place.
          */
-        String min_stack_allowed = checkStack("32k");
+        String min_stack_allowed = checkStack("64k");
 
         /*
          * Try again with a the minimum stack size that was given in the error message
          */
         checkMinStackAllowed(min_stack_allowed);
+
+        /*
+         * Try again with a size that is not OS page aligned. This is to help test that
+         * asserts added for 8176768 are not triggered.
+         */
+        checkMinStackAllowed("513k");
     }
 }
