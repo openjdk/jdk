@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @library /test/lib / /testlibrary
  * @modules java.base/jdk.internal.misc
- * @requires vm.bits == "64" & os.arch == "amd64" & os.family == "linux"
+ * @requires vm.bits == "64" & (os.arch == "amd64" | os.arch == "x86_64")
  * @build compiler.aot.cli.SingleAOTLibraryTest
  *        compiler.aot.AotCompiler
  * @run driver compiler.aot.AotCompiler -libname libSingleAOTLibraryTest.so

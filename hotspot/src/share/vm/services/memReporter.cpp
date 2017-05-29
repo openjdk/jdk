@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,11 +43,16 @@ void MemReporterBase::print_total(size_t reserved, size_t committed) const {
     amount_in_current_scale(reserved), scale, amount_in_current_scale(committed), scale);
 }
 
-void MemReporterBase::print_malloc(size_t amount, size_t count) const {
+void MemReporterBase::print_malloc(size_t amount, size_t count, MEMFLAGS flag) const {
   const char* scale = current_scale();
   outputStream* out = output();
-  out->print("(malloc=" SIZE_FORMAT "%s",
-    amount_in_current_scale(amount), scale);
+  if (flag != mtNone) {
+    out->print("(malloc=" SIZE_FORMAT "%s type=%s",
+      amount_in_current_scale(amount), scale, NMTUtil::flag_to_name(flag));
+  } else {
+    out->print("(malloc=" SIZE_FORMAT "%s",
+      amount_in_current_scale(amount), scale);
+  }
 
   if (count > 0) {
     out->print(" #" SIZE_FORMAT "", count);
@@ -200,7 +205,10 @@ void MemDetailReporter::report_malloc_sites() {
     const NativeCallStack* stack = malloc_site->call_stack();
     stack->print_on(out);
     out->print("%29s", " ");
-    print_malloc(malloc_site->size(), malloc_site->count());
+    MEMFLAGS flag = malloc_site->flags();
+    assert((flag >= 0 && flag < (int)mt_number_of_types) && flag != mtNone,
+      "Must have a valid memory type");
+    print_malloc(malloc_site->size(), malloc_site->count(),flag);
     out->print_cr("\n");
   }
 }

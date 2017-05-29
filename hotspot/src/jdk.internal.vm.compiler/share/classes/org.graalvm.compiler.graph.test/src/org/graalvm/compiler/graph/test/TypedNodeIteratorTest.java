@@ -33,14 +33,15 @@ import static org.junit.Assert.fail;
 import java.util.Iterator;
 
 import org.junit.Test;
-
+import org.graalvm.compiler.api.test.Graal;
 import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.IterableNodeType;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.options.OptionValues;
 
-public class TypedNodeIteratorTest {
+public class TypedNodeIteratorTest extends GraphTest {
 
     @NodeInfo(cycles = CYCLES_IGNORED, size = SIZE_IGNORED)
     static final class TestNode extends Node implements IterableNodeType, TestNodeInterface {
@@ -61,16 +62,21 @@ public class TypedNodeIteratorTest {
 
     @Test
     public void singleNodeTest() {
-        Graph graph = new Graph();
+        getOptions();
+        Graph graph = new Graph(getOptions());
         graph.add(new TestNode("a"));
         assertTrue(graph.hasNode(TestNode.TYPE));
         assertEquals("a", toString(graph.getNodes(TestNode.TYPE)));
     }
 
+    static OptionValues getOptions() {
+        return Graal.getRequiredCapability(OptionValues.class);
+    }
+
     @Test
     public void deletingNodeTest() {
         TestNode testNode = new TestNode("a");
-        Graph graph = new Graph();
+        Graph graph = new Graph(getOptions());
         graph.add(testNode);
         testNode.safeDelete();
         assertEquals("", toString(graph.getNodes(TestNode.TYPE)));
@@ -79,7 +85,7 @@ public class TypedNodeIteratorTest {
     @Test
     public void deleteAndAddTest() {
         TestNode testNode = new TestNode("b");
-        Graph graph = new Graph();
+        Graph graph = new Graph(getOptions());
         graph.add(new TestNode("a"));
         graph.add(testNode);
         testNode.safeDelete();
@@ -90,7 +96,7 @@ public class TypedNodeIteratorTest {
 
     @Test
     public void iteratorBehaviorTest() {
-        Graph graph = new Graph();
+        Graph graph = new Graph(getOptions());
         graph.add(new TestNode("a"));
         Iterator<TestNode> iterator = graph.getNodes(TestNode.TYPE).iterator();
         assertTrue(iterator.hasNext());
@@ -109,7 +115,7 @@ public class TypedNodeIteratorTest {
 
     @Test
     public void complicatedIterationTest() {
-        Graph graph = new Graph();
+        Graph graph = new Graph(getOptions());
         graph.add(new TestNode("a"));
         for (TestNode tn : graph.getNodes(TestNode.TYPE)) {
             String name = tn.getName();
@@ -148,7 +154,7 @@ public class TypedNodeIteratorTest {
 
     @Test
     public void addingNodeDuringIterationTest() {
-        Graph graph = new Graph();
+        Graph graph = new Graph(getOptions());
         graph.add(new TestNode("a"));
         StringBuilder sb = new StringBuilder();
         int z = 0;

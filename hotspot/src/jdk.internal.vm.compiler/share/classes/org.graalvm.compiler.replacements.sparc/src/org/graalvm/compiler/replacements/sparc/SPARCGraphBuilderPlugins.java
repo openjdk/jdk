@@ -70,7 +70,7 @@ public class SPARCGraphBuilderPlugins {
         r.register1("bitCount", type, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
-                b.push(JavaKind.Int, b.recursiveAppend(new BitCountNode(value).canonical(null)));
+                b.push(JavaKind.Int, b.append(new BitCountNode(value).canonical(null)));
                 return true;
             }
         });
@@ -87,7 +87,7 @@ public class SPARCGraphBuilderPlugins {
         r.register2("pow", Double.TYPE, Double.TYPE, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
-                b.push(JavaKind.Double, b.recursiveAppend(BinaryMathIntrinsicNode.create(x, y, BinaryMathIntrinsicNode.BinaryOperation.POW)));
+                b.push(JavaKind.Double, b.append(BinaryMathIntrinsicNode.create(x, y, BinaryMathIntrinsicNode.BinaryOperation.POW)));
                 return true;
             }
         });
@@ -97,7 +97,7 @@ public class SPARCGraphBuilderPlugins {
         r.register1(name, Double.TYPE, new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode value) {
-                b.push(JavaKind.Double, b.recursiveAppend(UnaryMathIntrinsicNode.create(value, operation)));
+                b.push(JavaKind.Double, b.append(UnaryMathIntrinsicNode.create(value, operation)));
                 return true;
             }
         });

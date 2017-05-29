@@ -73,7 +73,9 @@
 # include <pwd.h>
 # include <poll.h>
 # include <ucontext.h>
+#ifndef AMD64
 # include <fpu_control.h>
+#endif
 
 #ifdef AMD64
 #define REG_SP REG_RSP

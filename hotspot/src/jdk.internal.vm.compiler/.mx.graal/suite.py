@@ -47,6 +47,7 @@ suite = {
       "sha1" : "476d9a44cd19d6b55f81571077dfa972a4f8a083",
       "bootClassPathAgent" : "true",
     },
+
     "ASM5" : {
       "sha1" : "0da08b8cce7bbf903602a25a3a163ae252435795",
       "urls" : ["https://lafo.ssw.uni-linz.ac.at/pub/graal-external-deps/asm-5.0.4.jar"],
@@ -62,13 +63,6 @@ suite = {
   "projects" : {
 
     # ------------- Graal -------------
-    "org.graalvm.compiler.common" : {
-      "subDir" : "share/classes",
-      "sourceDirs" : ["src"],
-      "checkstyle" : "org.graalvm.compiler.graph",
-      "javaCompliance" : "1.8",
-      "workingSets" : "API,Graal",
-    },
 
     "org.graalvm.compiler.serviceprovider" : {
       "subDir" : "share/classes",
@@ -92,7 +86,9 @@ suite = {
       "subDir" : "share/classes",
       "dependencies" : ["JVMCI_SERVICES", "JVMCI_API"],
       "sourceDirs" : ["src"],
+      "dependencies" : ["org.graalvm.util"],
       "checkstyle" : "org.graalvm.compiler.graph",
+      "uses" : ["org.graalvm.compiler.options.OptionDescriptors"],
       "javaCompliance" : "1.8",
       "workingSets" : "Graal",
     },
@@ -124,6 +120,11 @@ suite = {
       "subDir" : "share/classes",
       "sourceDirs" : ["src"],
       "checkstyle" : "org.graalvm.compiler.graph",
+      "uses" : [
+        "org.graalvm.compiler.debug.DebugConfigCustomizer",
+        "org.graalvm.compiler.debug.DebugInitializationParticipant",
+        "org.graalvm.compiler.debug.TTYStreamProvider",
+      ],
       "dependencies" : [
         "JVMCI_API",
         "org.graalvm.compiler.serviceprovider",
@@ -151,7 +152,6 @@ suite = {
       "sourceDirs" : ["src"],
       "dependencies" : [
         "org.graalvm.compiler.graph",
-        "org.graalvm.compiler.common",
       ],
       "annotationProcessors" : ["GRAAL_SERVICEPROVIDER_PROCESSOR"],
       "checkstyle" : "org.graalvm.compiler.graph",
@@ -159,9 +159,21 @@ suite = {
       "workingSets" : "Graal",
     },
 
-    "org.graalvm.compiler.api.collections" : {
+    "org.graalvm.util" : {
       "subDir" : "share/classes",
       "sourceDirs" : ["src"],
+      "checkstyle" : "org.graalvm.compiler.graph",
+      "javaCompliance" : "1.8",
+      "workingSets" : "API,Graal",
+    },
+
+    "org.graalvm.util.test" : {
+      "subDir" : "share/classes",
+      "sourceDirs" : ["src"],
+      "dependencies" : [
+        "mx:JUNIT",
+        "org.graalvm.util",
+      ],
       "checkstyle" : "org.graalvm.compiler.graph",
       "javaCompliance" : "1.8",
       "workingSets" : "API,Graal",
@@ -227,7 +239,13 @@ suite = {
         "JVMCI_HOTSPOT",
         "org.graalvm.compiler.api.runtime",
         "org.graalvm.compiler.replacements",
+        "org.graalvm.compiler.printer",
         "org.graalvm.compiler.runtime",
+      ],
+      "imports" : [
+        # All other internal packages are exported dynamically -
+        # see org.graalvm.compiler.hotspot.HotSpotGraalJVMCIServiceLocator
+        "jdk.internal.module",
       ],
       "checkstyle" : "org.graalvm.compiler.graph",
       "annotationProcessors" : [
@@ -372,7 +390,6 @@ suite = {
       "dependencies" : [
         "org.graalvm.compiler.nodeinfo",
         "org.graalvm.compiler.core.common",
-        "org.graalvm.compiler.api.collections",
       ],
       "javaCompliance" : "1.8",
       "annotationProcessors" : [
@@ -401,6 +418,7 @@ suite = {
       "sourceDirs" : ["src"],
       "dependencies" : [
         "JVMCI_API",
+        "org.graalvm.compiler.core.common"
       ],
       "checkstyle" : "org.graalvm.compiler.graph",
       "javaCompliance" : "1.8",
@@ -411,7 +429,6 @@ suite = {
       "subDir" : "share/classes",
       "sourceDirs" : ["src"],
       "dependencies" : [
-        "org.graalvm.compiler.debug",
         "org.graalvm.compiler.asm",
       ],
       "checkstyle" : "org.graalvm.compiler.graph",
@@ -434,9 +451,7 @@ suite = {
       "subDir" : "share/classes",
       "sourceDirs" : ["src"],
       "dependencies" : [
-        "org.graalvm.compiler.debug",
         "org.graalvm.compiler.asm",
-        "org.graalvm.compiler.common"
       ],
       "checkstyle" : "org.graalvm.compiler.graph",
       "javaCompliance" : "1.8",
@@ -579,6 +594,15 @@ suite = {
       "workingSets" : "Graal,LIR,SPARC",
     },
 
+    "org.graalvm.api.word" : {
+      "subDir" : "share/classes",
+      "sourceDirs" : ["src"],
+      "dependencies" : [],
+      "checkstyle" : "org.graalvm.compiler.graph",
+      "javaCompliance" : "1.8",
+      "workingSets" : "API",
+    },
+
     "org.graalvm.compiler.word" : {
       "subDir" : "share/classes",
       "sourceDirs" : ["src"],
@@ -688,7 +712,6 @@ suite = {
         "org.graalvm.compiler.bytecode",
         "org.graalvm.compiler.lir",
       ],
-      "generatedDependencies" : ["org.graalvm.compiler.serviceprovider"],
       "checkstyle" : "org.graalvm.compiler.graph",
       "javaCompliance" : "1.8",
       "annotationProcessors" : [
@@ -767,6 +790,18 @@ suite = {
       "workingSets" : "Graal",
     },
 
+    "org.graalvm.compiler.loop.test" : {
+      "subDir" : "share/classes",
+      "sourceDirs" : ["src"],
+      "dependencies" : [
+        "org.graalvm.compiler.loop",
+        "org.graalvm.compiler.core.test"
+      ],
+      "checkstyle" : "org.graalvm.compiler.graph",
+      "javaCompliance" : "1.8",
+      "workingSets" : "Graal,Test",
+    },
+
     "org.graalvm.compiler.loop.phases" : {
       "subDir" : "share/classes",
       "sourceDirs" : ["src"],
@@ -787,6 +822,7 @@ suite = {
         "org.graalvm.compiler.virtual",
         "org.graalvm.compiler.loop.phases",
       ],
+      "uses" : ["org.graalvm.compiler.core.match.MatchStatementSet"],
       "checkstyle" : "org.graalvm.compiler.graph",
       "javaCompliance" : "1.8",
       "annotationProcessors" : [
@@ -922,6 +958,7 @@ suite = {
       "sourceDirs" : ["src"],
       "dependencies" : [
         "org.graalvm.compiler.debug",
+        "org.graalvm.api.word",
       ],
       "annotationProcessors" : ["GRAAL_OPTIONS_PROCESSOR"],
       "checkstyle" : "org.graalvm.compiler.graph",
@@ -949,6 +986,7 @@ suite = {
       "subDir" : "share/classes",
       "sourceDirs" : ["src"],
       "dependencies" : [
+        "org.graalvm.util",
         "mx:JUNIT",
       ],
       "checkstyle" : "org.graalvm.compiler.graph",
@@ -969,6 +1007,7 @@ suite = {
         "JAVA_ALLOCATION_INSTRUMENTER",
         "ASM_TREE5",
       ],
+      "uses" : ["org.graalvm.compiler.options.OptionDescriptors"],
       "annotationProcessors" : ["GRAAL_NODEINFO_PROCESSOR"],
       "checkstyle" : "org.graalvm.compiler.graph",
       "javaCompliance" : "1.8",
@@ -987,21 +1026,6 @@ suite = {
       "workingSets" : "Graal,Test",
       "jacoco" : "exclude",
       "findbugs" : "false",
-    },
-
-    # ------------- Salver -------------
-
-    "org.graalvm.compiler.salver" : {
-      "subDir" : "share/classes",
-      "sourceDirs" : ["src"],
-      "dependencies" : ["org.graalvm.compiler.phases"],
-      "annotationProcessors" : [
-        "GRAAL_OPTIONS_PROCESSOR",
-        "GRAAL_SERVICEPROVIDER_PROCESSOR",
-      ],
-      "checkstyle" : "org.graalvm.compiler.graph",
-      "javaCompliance" : "1.8",
-      "workingSets" : "Graal",
     },
 
     # ------------- AOT -------------
@@ -1133,7 +1157,6 @@ suite = {
         "org.graalvm.compiler.replacements.amd64",
         "org.graalvm.compiler.core.sparc",
         "org.graalvm.compiler.replacements.sparc",
-        "org.graalvm.compiler.salver",
       ],
       "distDependencies" : [
         "GRAAL_API",
@@ -1257,7 +1280,6 @@ suite = {
         "org.graalvm.compiler.replacements.amd64",
         "org.graalvm.compiler.core.sparc",
         "org.graalvm.compiler.replacements.sparc",
-        "org.graalvm.compiler.salver",
         "org.graalvm.compiler.hotspot.aarch64",
         "org.graalvm.compiler.hotspot.amd64",
         "org.graalvm.compiler.hotspot.sparc",

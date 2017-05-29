@@ -23,10 +23,10 @@
 package org.graalvm.compiler.replacements.nodes;
 
 import static org.graalvm.compiler.nodeinfo.InputType.Memory;
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_100;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_50;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_1024;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1024;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
+import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
@@ -57,7 +57,7 @@ import jdk.vm.ci.meta.Value;
 /**
  * Compares two arrays with the same length.
  */
-@NodeInfo(cycles = CYCLES_100, size = SIZE_50)
+@NodeInfo(cycles = CYCLES_1024, size = SIZE_1024)
 public final class ArrayEqualsNode extends FixedWithNextNode implements LIRLowerable, Canonicalizable, Virtualizable, MemoryAccess {
 
     public static final NodeClass<ArrayEqualsNode> TYPE = NodeClass.create(ArrayEqualsNode.class);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,18 +58,17 @@ public:
   static void universe_init() NOT_AOT_RETURN;
   static void set_narrow_klass_shift() NOT_AOT_RETURN;
   static bool contains(address p) NOT_AOT({ return false; });
-  static void load_for_klass(instanceKlassHandle, Thread* thread) NOT_AOT_RETURN;
+  static void load_for_klass(InstanceKlass* ik, Thread* thread) NOT_AOT_RETURN;
   static bool find_klass(InstanceKlass* ik) NOT_AOT({ return false; });
   static uint64_t get_saved_fingerprint(InstanceKlass* ik) NOT_AOT({ return 0; });
   static void oops_do(OopClosure* f) NOT_AOT_RETURN;
   static void metadata_do(void f(Metadata*)) NOT_AOT_RETURN;
-  static address exception_begin(JavaThread* thread, CodeBlob* blob, address return_address) NOT_AOT({ return NULL; });
 
   NOT_PRODUCT( static void print_statistics() NOT_AOT_RETURN; )
 
 #ifdef HOTSWAP
   // Flushing and deoptimization in case of evolution
-  static void flush_evol_dependents_on(instanceKlassHandle dependee) NOT_AOT_RETURN;
+  static void flush_evol_dependents_on(InstanceKlass* dependee) NOT_AOT_RETURN;
 #endif // HOTSWAP
 
 };

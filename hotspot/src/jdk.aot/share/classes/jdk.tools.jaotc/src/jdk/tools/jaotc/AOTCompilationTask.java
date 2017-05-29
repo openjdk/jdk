@@ -33,6 +33,7 @@ import org.graalvm.compiler.debug.DebugEnvironment;
 import org.graalvm.compiler.debug.Management;
 import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.debug.internal.DebugScope;
+import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
@@ -54,6 +55,8 @@ public class AOTCompilationTask implements Runnable, Comparable<Object> {
 
     private final Main main;
 
+    private OptionValues graalOptions;
+
     /**
      * The compilation id of this task.
      */
@@ -73,9 +76,10 @@ public class AOTCompilationTask implements Runnable, Comparable<Object> {
      */
     private CompiledMethodInfo result;
 
-    public AOTCompilationTask(Main main, AOTCompiledClass holder, ResolvedJavaMethod method, AOTBackend aotBackend) {
+    public AOTCompilationTask(Main main, OptionValues graalOptions, AOTCompiledClass holder, ResolvedJavaMethod method, AOTBackend aotBackend) {
         this.main = main;
-        this.id = ids.getAndIncrement();
+        this.graalOptions = graalOptions;
+        this.id = ids.incrementAndGet();
         this.holder = holder;
         this.method = method;
         this.aotBackend = aotBackend;
@@ -91,14 +95,14 @@ public class AOTCompilationTask implements Runnable, Comparable<Object> {
 
         // Ensure a debug configuration for this thread is initialized
         if (Debug.isEnabled() && DebugScope.getConfig() == null) {
-            DebugEnvironment.initialize(TTY.out);
+            DebugEnvironment.ensureInitialized(graalOptions);
         }
         AOTCompiler.logCompilation(MiscUtils.uniqueMethodName(method), "Compiling");
 
         final long threadId = Thread.currentThread().getId();
 
-        final boolean printCompilation = GraalCompilerOptions.PrintCompilation.getValue() && !TTY.isSuppressed();
-        final boolean printAfterCompilation = GraalCompilerOptions.PrintAfterCompilation.getValue() && !TTY.isSuppressed();
+        final boolean printCompilation = GraalCompilerOptions.PrintCompilation.getValue(graalOptions) && !TTY.isSuppressed();
+        final boolean printAfterCompilation = GraalCompilerOptions.PrintAfterCompilation.getValue(graalOptions) && !TTY.isSuppressed();
         if (printCompilation) {
             TTY.println(getMethodDescription() + "...");
         }
@@ -123,11 +127,7 @@ public class AOTCompilationTask implements Runnable, Comparable<Object> {
             final long allocatedBytesAfter = threadMXBean.getThreadAllocatedBytes(threadId);
             final long allocatedBytes = (allocatedBytesAfter - allocatedBytesBefore) / 1024;
 
-            if (printAfterCompilation) {
-                TTY.println(getMethodDescription() + String.format(" | %4dms %5dB %5dkB", stop - start, targetCodeSize, allocatedBytes));
-            } else if (printCompilation) {
-                TTY.println(String.format("%-6d JVMCI %-70s %-45s %-50s | %4dms %5dB %5dkB", getId(), "", "", "", stop - start, targetCodeSize, allocatedBytes));
-            }
+            TTY.println(getMethodDescription() + String.format(" | %4dms %5dB %5dkB", stop - start, targetCodeSize, allocatedBytes));
         }
 
         if (compResult == null) {
@@ -141,11 +141,11 @@ public class AOTCompilationTask implements Runnable, Comparable<Object> {
             aotBackend.printCompiledMethod((HotSpotResolvedJavaMethod) method, compResult);
         }
 
-        result = new CompiledMethodInfo(compResult, new AOTHotSpotResolvedJavaMethod((HotSpotResolvedJavaMethod) method));
+        result = new CompiledMethodInfo(compResult, new AOTHotSpotResolvedJavaMethod((HotSpotResolvedJavaMethod) method, aotBackend.getBackend()));
     }
 
     private String getMethodDescription() {
-        return String.format("%-6d JVMCI %-70s %-45s %-50s %s", getId(), method.getDeclaringClass().getName(), method.getName(), method.getSignature().toMethodDescriptor(),
+        return String.format("%-6d aot %s %s", getId(), MiscUtils.uniqueMethodName(method),
                         getEntryBCI() == JVMCICompiler.INVOCATION_ENTRY_BCI ? "" : "(OSR@" + getEntryBCI() + ") ");
     }
 

@@ -245,6 +245,7 @@ oop StringTable::intern(Handle string_or_null, jchar* name,
   assert(!Universe::heap()->is_in_reserved(name),
          "proposed name of symbol must be stable");
 
+  HandleMark hm(THREAD);  // cleanup strings created
   Handle string;
   // try to reuse the string if possible
   if (!string_or_null.is_null()) {

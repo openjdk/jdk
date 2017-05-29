@@ -31,8 +31,9 @@ import org.graalvm.compiler.hotspot.FingerprintUtil;
 import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.spi.Replacements;
 import org.graalvm.compiler.options.Option;
+import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
-import org.graalvm.compiler.options.OptionValue;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.common.inlining.InliningUtil;
 import org.graalvm.compiler.phases.common.inlining.info.InlineInfo;
 import org.graalvm.compiler.phases.common.inlining.policy.GreedyInliningPolicy;
@@ -44,11 +45,11 @@ public class AOTInliningPolicy extends GreedyInliningPolicy {
     public static class Options {
         // @formatter:off
         @Option(help = "", type = OptionType.Expert)
-        public static final OptionValue<Double> AOTInliningDepthToSizeRate = new OptionValue<>(2.5);
+        public static final OptionKey<Double> AOTInliningDepthToSizeRate = new OptionKey<>(2.5);
         @Option(help = "", type = OptionType.Expert)
-        public static final OptionValue<Integer> AOTInliningSizeMaximum = new OptionValue<>(300);
+        public static final OptionKey<Integer> AOTInliningSizeMaximum = new OptionKey<>(300);
         @Option(help = "", type = OptionType.Expert)
-        public static final OptionValue<Integer> AOTInliningSizeMinimum = new OptionValue<>(50);
+        public static final OptionKey<Integer> AOTInliningSizeMinimum = new OptionKey<>(50);
         // @formatter:on
     }
 
@@ -56,8 +57,8 @@ public class AOTInliningPolicy extends GreedyInliningPolicy {
         super(hints);
     }
 
-    protected double maxInliningSize(int inliningDepth) {
-        return Math.max(Options.AOTInliningSizeMaximum.getValue() / (inliningDepth * Options.AOTInliningDepthToSizeRate.getValue()), Options.AOTInliningSizeMinimum.getValue());
+    protected double maxInliningSize(int inliningDepth, OptionValues options) {
+        return Math.max(Options.AOTInliningSizeMaximum.getValue(options) / (inliningDepth * Options.AOTInliningDepthToSizeRate.getValue(options)), Options.AOTInliningSizeMinimum.getValue(options));
     }
 
     @Override
@@ -74,7 +75,8 @@ public class AOTInliningPolicy extends GreedyInliningPolicy {
         final double probability = invocation.probability();
         final double relevance = invocation.relevance();
 
-        if (InlineEverything.getValue()) {
+        OptionValues options = info.graph().getOptions();
+        if (InlineEverything.getValue(options)) {
             InliningUtil.logInlinedMethod(info, inliningDepth, fullyProcessed, "inline everything");
             return true;
         }
@@ -92,12 +94,12 @@ public class AOTInliningPolicy extends GreedyInliningPolicy {
         double inliningBonus = getInliningBonus(info);
         int nodes = info.determineNodeCount();
 
-        if (nodes < TrivialInliningSize.getValue() * inliningBonus) {
+        if (nodes < TrivialInliningSize.getValue(options) * inliningBonus) {
             InliningUtil.logInlinedMethod(info, inliningDepth, fullyProcessed, "trivial (relevance=%f, probability=%f, bonus=%f, nodes=%d)", relevance, probability, inliningBonus, nodes);
             return true;
         }
 
-        double maximumNodes = computeMaximumSize(relevance, (int) (maxInliningSize(inliningDepth) * inliningBonus));
+        double maximumNodes = computeMaximumSize(relevance, (int) (maxInliningSize(inliningDepth, options) * inliningBonus));
         if (nodes <= maximumNodes) {
             InliningUtil.logInlinedMethod(info, inliningDepth, fullyProcessed, "relevance-based (relevance=%f, probability=%f, bonus=%f, nodes=%d <= %f)", relevance, probability, inliningBonus,
                             nodes, maximumNodes);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,9 +86,10 @@ void CompileTask::initialize(int compile_id,
                              bool is_blocking) {
   assert(!_lock->is_locked(), "bad locking");
 
+  Thread* thread = Thread::current();
   _compile_id = compile_id;
   _method = method();
-  _method_holder = JNIHandles::make_global(method->method_holder()->klass_holder());
+  _method_holder = JNIHandles::make_global(Handle(thread, method->method_holder()->klass_holder()));
   _osr_bci = osr_bci;
   _is_blocking = is_blocking;
   JVMCI_ONLY(_has_waiter = CompileBroker::compiler(comp_level)->is_jvmci();)
@@ -115,7 +116,7 @@ void CompileTask::initialize(int compile_id,
       } else {
         _hot_method = hot_method();
         // only add loader or mirror if different from _method_holder
-        _hot_method_holder = JNIHandles::make_global(hot_method->method_holder()->klass_holder());
+        _hot_method_holder = JNIHandles::make_global(Handle(thread, hot_method->method_holder()->klass_holder()));
       }
     }
   }

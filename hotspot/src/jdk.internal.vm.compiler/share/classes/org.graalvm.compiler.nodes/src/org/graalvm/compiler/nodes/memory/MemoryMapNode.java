@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.nodes.memory;
 
-import static org.graalvm.compiler.core.common.LocationIdentity.any;
+import static org.graalvm.api.word.LocationIdentity.any;
 import static org.graalvm.compiler.nodeinfo.InputType.Extension;
 import static org.graalvm.compiler.nodeinfo.InputType.Memory;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_0;
@@ -30,12 +30,9 @@ import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_0;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import org.graalvm.compiler.core.common.CollectionsFactory;
-import org.graalvm.compiler.core.common.LocationIdentity;
+import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.NodeInputList;
@@ -45,6 +42,9 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import org.graalvm.util.Equivalence;
+import org.graalvm.util.EconomicMap;
+import org.graalvm.util.MapCursor;
 
 @NodeInfo(allowedUsageTypes = {Extension, Memory}, cycles = CYCLES_0, size = SIZE_0)
 public final class MemoryMapNode extends FloatingNode implements MemoryMap, MemoryNode, LIRLowerable {
@@ -53,7 +53,7 @@ public final class MemoryMapNode extends FloatingNode implements MemoryMap, Memo
     protected final List<LocationIdentity> locationIdentities;
     @Input(Memory) NodeInputList<ValueNode> nodes;
 
-    private boolean checkOrder(Map<LocationIdentity, MemoryNode> mmap) {
+    private boolean checkOrder(EconomicMap<LocationIdentity, MemoryNode> mmap) {
         for (int i = 0; i < locationIdentities.size(); i++) {
             LocationIdentity locationIdentity = locationIdentities.get(i);
             ValueNode n = nodes.get(i);
@@ -62,10 +62,18 @@ public final class MemoryMapNode extends FloatingNode implements MemoryMap, Memo
         return true;
     }
 
-    public MemoryMapNode(Map<LocationIdentity, MemoryNode> mmap) {
+    public MemoryMapNode(EconomicMap<LocationIdentity, MemoryNode> mmap) {
         super(TYPE, StampFactory.forVoid());
-        locationIdentities = new ArrayList<>(mmap.keySet());
-        nodes = new NodeInputList<>(this, mmap.values());
+        int size = mmap.size();
+        locationIdentities = new ArrayList<>(size);
+        nodes = new NodeInputList<>(this, size);
+        int index = 0;
+        MapCursor<LocationIdentity, MemoryNode> cursor = mmap.getEntries();
+        while (cursor.advance()) {
+            locationIdentities.add(cursor.getKey());
+            nodes.initialize(index, (ValueNode) cursor.getValue());
+            index++;
+        }
         assert checkOrder(mmap);
     }
 
@@ -100,8 +108,8 @@ public final class MemoryMapNode extends FloatingNode implements MemoryMap, Memo
         return locationIdentities;
     }
 
-    public Map<LocationIdentity, MemoryNode> toMap() {
-        HashMap<LocationIdentity, MemoryNode> res = CollectionsFactory.newMap(locationIdentities.size());
+    public EconomicMap<LocationIdentity, MemoryNode> toMap() {
+        EconomicMap<LocationIdentity, MemoryNode> res = EconomicMap.create(Equivalence.DEFAULT, locationIdentities.size());
         for (int i = 0; i < nodes.size(); i++) {
             res.put(locationIdentities.get(i), (MemoryNode) nodes.get(i));
         }

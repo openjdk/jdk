@@ -22,19 +22,16 @@
  */
 package org.graalvm.compiler.phases.common.inlining;
 
-import static org.graalvm.compiler.core.common.GraalOptions.UseGraalInstrumentation;
 import static jdk.vm.ci.meta.DeoptimizationAction.InvalidateReprofile;
 import static jdk.vm.ci.meta.DeoptimizationReason.NullCheckException;
+import static org.graalvm.compiler.core.common.GraalOptions.HotSpotPrintInlining;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.function.Function;
 
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
+import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.TypeReference;
@@ -48,6 +45,7 @@ import org.graalvm.compiler.debug.internal.method.MethodMetricsInlineeScopeInfo;
 import org.graalvm.compiler.graph.GraalGraphError;
 import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Graph.DuplicationReplacement;
+import org.graalvm.compiler.graph.Graph.NodeEventScope;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeInputList;
 import org.graalvm.compiler.graph.NodeSourcePosition;
@@ -59,14 +57,11 @@ import org.graalvm.compiler.nodes.AbstractMergeNode;
 import org.graalvm.compiler.nodes.BeginNode;
 import org.graalvm.compiler.nodes.CallTargetNode;
 import org.graalvm.compiler.nodes.CallTargetNode.InvokeKind;
-import org.graalvm.compiler.nodes.ControlSinkNode;
 import org.graalvm.compiler.nodes.DeoptimizeNode;
-import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.FixedGuardNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.FrameState;
-import org.graalvm.compiler.nodes.GuardedValueNode;
 import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.InvokeNode;
 import org.graalvm.compiler.nodes.InvokeWithExceptionNode;
@@ -74,7 +69,6 @@ import org.graalvm.compiler.nodes.KillingBeginNode;
 import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.MergeNode;
 import org.graalvm.compiler.nodes.ParameterNode;
-import org.graalvm.compiler.nodes.PhiNode;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StartNode;
@@ -82,9 +76,7 @@ import org.graalvm.compiler.nodes.StateSplit;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.UnwindNode;
 import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.ValuePhiNode;
 import org.graalvm.compiler.nodes.calc.IsNullNode;
-import org.graalvm.compiler.nodes.debug.instrumentation.InstrumentationNode;
 import org.graalvm.compiler.nodes.extended.ForeignCallNode;
 import org.graalvm.compiler.nodes.extended.GuardingNode;
 import org.graalvm.compiler.nodes.java.ExceptionObjectNode;
@@ -95,6 +87,13 @@ import org.graalvm.compiler.nodes.spi.Replacements;
 import org.graalvm.compiler.nodes.type.StampTool;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.common.inlining.info.InlineInfo;
+import org.graalvm.compiler.phases.common.util.HashSetNodeEventListener;
+import org.graalvm.compiler.phases.util.ValueMergeUtil;
+import org.graalvm.util.EconomicMap;
+import org.graalvm.util.EconomicSet;
+import org.graalvm.util.Equivalence;
+import org.graalvm.util.UnmodifiableEconomicMap;
+import org.graalvm.util.UnmodifiableMapCursor;
 
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.meta.Assumptions;
@@ -105,7 +104,7 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
-public class InliningUtil {
+public class InliningUtil extends ValueMergeUtil {
 
     private static final String inliningDecisionsScopeString = "InliningDecisions";
 
@@ -117,7 +116,9 @@ public class InliningUtil {
     }
 
     private static void printInlining(final ResolvedJavaMethod method, final Invoke invoke, final int inliningDepth, final boolean success, final String msg, final Object... args) {
-        Util.printInlining(method, invoke.bci(), inliningDepth, success, msg, args);
+        if (HotSpotPrintInlining.getValue(invoke.asNode().getOptions())) {
+            Util.printInlining(method, invoke.bci(), inliningDepth, success, msg, args);
+        }
     }
 
     public static void logInlinedMethod(InlineInfo info, int inliningDepth, boolean allowLogging, String msg, Object... args) {
@@ -213,7 +214,8 @@ public class InliningUtil {
             sb.append(methodName(frameState.outerFrameState(), frameState.outerFrameState().bci));
             sb.append("->");
         }
-        sb.append(frameState.getMethod().format("%h.%n"));
+        ResolvedJavaMethod method = frameState.getMethod();
+        sb.append(method != null ? method.format("%h.%n") : "?");
         sb.append("@").append(bci);
         return sb.toString();
     }
@@ -225,14 +227,14 @@ public class InliningUtil {
         invoke.asNode().replaceFirstInput(oldCallTarget, newCallTarget);
     }
 
-    public static GuardedValueNode createAnchoredReceiver(StructuredGraph graph, GuardingNode anchor, ResolvedJavaType commonType, ValueNode receiver, boolean exact) {
+    public static PiNode createAnchoredReceiver(StructuredGraph graph, GuardingNode anchor, ResolvedJavaType commonType, ValueNode receiver, boolean exact) {
         return createAnchoredReceiver(graph, anchor, receiver,
                         exact ? StampFactory.objectNonNull(TypeReference.createExactTrusted(commonType)) : StampFactory.objectNonNull(TypeReference.createTrusted(graph.getAssumptions(), commonType)));
     }
 
-    private static GuardedValueNode createAnchoredReceiver(StructuredGraph graph, GuardingNode anchor, ValueNode receiver, Stamp stamp) {
+    private static PiNode createAnchoredReceiver(StructuredGraph graph, GuardingNode anchor, ValueNode receiver, Stamp stamp) {
         // to avoid that floating reads on receiver fields float above the type check
-        return graph.unique(new GuardedValueNode(receiver, anchor, stamp));
+        return graph.unique(new PiNode(receiver, stamp, (ValueNode) anchor));
     }
 
     /**
@@ -267,16 +269,14 @@ public class InliningUtil {
      * @param inlineGraph the graph that the invoke will be replaced with
      * @param receiverNullCheck true if a null check needs to be generated for non-static inlinings,
      *            false if no such check is required
-     * @param canonicalizedNodes if non-null then append to this list any nodes which should be
-     *            canonicalized after inlining
      * @param inlineeMethod the actual method being inlined. Maybe be null for snippets.
      */
     @SuppressWarnings("try")
-    public static Map<Node, Node> inline(Invoke invoke, StructuredGraph inlineGraph, boolean receiverNullCheck, List<Node> canonicalizedNodes, ResolvedJavaMethod inlineeMethod) {
-        MethodMetricsInlineeScopeInfo m = MethodMetricsInlineeScopeInfo.create();
+    public static UnmodifiableEconomicMap<Node, Node> inline(Invoke invoke, StructuredGraph inlineGraph, boolean receiverNullCheck, ResolvedJavaMethod inlineeMethod) {
+        FixedNode invokeNode = invoke.asNode();
+        StructuredGraph graph = invokeNode.graph();
+        MethodMetricsInlineeScopeInfo m = MethodMetricsInlineeScopeInfo.create(graph.getOptions());
         try (Debug.Scope s = Debug.methodMetricsScope("InlineEnhancement", m, false)) {
-            FixedNode invokeNode = invoke.asNode();
-            StructuredGraph graph = invokeNode.graph();
             if (Fingerprint.ENABLED) {
                 Fingerprint.submit("inlining %s into %s: %s", formatGraph(inlineGraph), formatGraph(invoke.asNode().graph()), inlineGraph.getNodes().snapshot());
             }
@@ -291,6 +291,7 @@ public class InliningUtil {
 
             ArrayList<Node> nodes = new ArrayList<>(inlineGraph.getNodes().count());
             ArrayList<ReturnNode> returnNodes = new ArrayList<>(4);
+            ArrayList<InvokeNode> partialIntrinsicExits = new ArrayList<>();
             UnwindNode unwindNode = null;
             final StartNode entryPointNode = inlineGraph.start();
             FixedNode firstCFGNode = entryPointNode.next();
@@ -304,6 +305,15 @@ public class InliningUtil {
                     nodes.add(node);
                     if (node instanceof ReturnNode) {
                         returnNodes.add((ReturnNode) node);
+                    } else if (node instanceof InvokeNode) {
+                        InvokeNode invokeInInlineGraph = (InvokeNode) node;
+                        if (invokeInInlineGraph.bci() == BytecodeFrame.UNKNOWN_BCI) {
+                            ResolvedJavaMethod target1 = invoke.callTarget().targetMethod();
+                            ResolvedJavaMethod target2 = invokeInInlineGraph.callTarget().targetMethod();
+                            assert target1.equals(target2) : String.format("invoke in inlined method expected to be partial intrinsic exit (i.e., call to %s), not a call to %s",
+                                            target1.format("%H.%n(%p)"), target2.format("%H.%n(%p)"));
+                            partialIntrinsicExits.add(invokeInInlineGraph);
+                        }
                     } else if (node instanceof UnwindNode) {
                         assert unwindNode == null;
                         unwindNode = (UnwindNode) node;
@@ -328,7 +338,7 @@ public class InliningUtil {
             assert invokeNode.successors().first() != null : invoke;
             assert invokeNode.predecessor() != null;
 
-            Map<Node, Node> duplicates = graph.addDuplicates(nodes, inlineGraph, inlineGraph.getNodeCount(), localReplacement);
+            UnmodifiableEconomicMap<Node, Node> duplicates = graph.addDuplicates(nodes, inlineGraph, inlineGraph.getNodeCount(), localReplacement);
 
             FrameState stateAfter = invoke.stateAfter();
             assert stateAfter == null || stateAfter.isAlive();
@@ -360,30 +370,18 @@ public class InliningUtil {
             for (int i = 0; i < returnNodes.size(); i++) {
                 returnNodes.set(i, (ReturnNode) duplicates.get(returnNodes.get(i)));
             }
+            for (InvokeNode exit : partialIntrinsicExits) {
+                // A partial intrinsic exit must be replaced with a call to
+                // the intrinsified method.
+                InvokeNode dup = (InvokeNode) duplicates.get(exit);
+                InvokeNode repl = graph.add(new InvokeNode(invoke.callTarget(), invoke.bci()));
+                dup.intrinsify(repl);
+            }
             if (unwindNode != null) {
                 unwindNode = (UnwindNode) duplicates.get(unwindNode);
             }
 
-            if (UseGraalInstrumentation.getValue()) {
-                detachInstrumentation(invoke);
-            }
-            ValueNode returnValue = finishInlining(invoke, graph, firstCFGNode, returnNodes, unwindNode, inlineGraph.getAssumptions(), inlineGraph, canonicalizedNodes);
-            if (canonicalizedNodes != null) {
-                if (returnValue != null) {
-                    for (Node usage : returnValue.usages()) {
-                        canonicalizedNodes.add(usage);
-                    }
-                }
-                for (ParameterNode parameter : inlineGraph.getNodes(ParameterNode.TYPE)) {
-                    for (Node usage : parameter.usages()) {
-                        Node duplicate = duplicates.get(usage);
-                        if (duplicate != null && duplicate.isAlive()) {
-                            canonicalizedNodes.add(duplicate);
-                        }
-                    }
-                }
-            }
-
+            finishInlining(invoke, graph, firstCFGNode, returnNodes, unwindNode, inlineGraph.getAssumptions(), inlineGraph);
             GraphUtil.killCFG(invokeNode);
 
             if (Debug.isMethodMeterEnabled() && m != null) {
@@ -393,8 +391,34 @@ public class InliningUtil {
         }
     }
 
-    public static ValueNode finishInlining(Invoke invoke, StructuredGraph graph, FixedNode firstNode, List<ReturnNode> returnNodes, UnwindNode unwindNode, Assumptions inlinedAssumptions,
-                    StructuredGraph inlineGraph, List<Node> canonicalizedNodes) {
+    /**
+     * Inline {@code inlineGraph} into the current replacoing the node {@code Invoke} and return the
+     * set of nodes which should be canonicalized. The set should only contain nodes which modified
+     * by the inlining since the current graph and {@code inlineGraph} are expected to already be
+     * canonical.
+     *
+     * @param invoke
+     * @param inlineGraph
+     * @param receiverNullCheck
+     * @param inlineeMethod
+     * @return the set of nodes to canonicalize
+     */
+    @SuppressWarnings("try")
+    public static EconomicSet<Node> inlineForCanonicalization(Invoke invoke, StructuredGraph inlineGraph, boolean receiverNullCheck, ResolvedJavaMethod inlineeMethod) {
+        HashSetNodeEventListener listener = new HashSetNodeEventListener();
+        /*
+         * This code relies on the fact that Graph.addDuplicates doesn't trigger the
+         * NodeEventListener to track only nodes which were modified into the process of inlining
+         * the graph into the current graph.
+         */
+        try (NodeEventScope nes = invoke.asNode().graph().trackNodeEvents(listener)) {
+            InliningUtil.inline(invoke, inlineGraph, receiverNullCheck, inlineeMethod);
+        }
+        return listener.getNodes();
+    }
+
+    private static ValueNode finishInlining(Invoke invoke, StructuredGraph graph, FixedNode firstNode, List<ReturnNode> returnNodes, UnwindNode unwindNode, Assumptions inlinedAssumptions,
+                    StructuredGraph inlineGraph) {
         FixedNode invokeNode = invoke.asNode();
         FrameState stateAfter = invoke.stateAfter();
         assert stateAfter == null || stateAfter.isAlive();
@@ -445,7 +469,7 @@ public class InliningUtil {
             } else {
                 AbstractMergeNode merge = graph.add(new MergeNode());
                 merge.setStateAfter(stateAfter);
-                returnValue = mergeReturns(merge, returnNodes, canonicalizedNodes);
+                returnValue = mergeReturns(merge, returnNodes);
                 invokeNode.replaceAtUsages(returnValue);
                 merge.setNext(n);
             }
@@ -462,14 +486,16 @@ public class InliningUtil {
                 assumptions.record(inlinedAssumptions);
             }
         } else {
-            assert inlinedAssumptions == null : "cannot inline graph which makes assumptions into a graph that doesn't";
+            assert inlinedAssumptions == null : String.format("cannot inline graph (%s) which makes assumptions into a graph (%s) that doesn't", inlineGraph, graph);
         }
 
         // Copy inlined methods from inlinee to caller
         graph.updateMethods(inlineGraph);
 
         // Update the set of accessed fields
-        graph.updateFields(inlineGraph);
+        if (GraalOptions.GeneratePIC.getValue(graph.getOptions())) {
+            graph.updateFields(inlineGraph);
+        }
 
         if (inlineGraph.hasUnsafeAccess()) {
             graph.markUnsafeAccess();
@@ -487,7 +513,7 @@ public class InliningUtil {
     }
 
     @SuppressWarnings("try")
-    private static void updateSourcePositions(Invoke invoke, StructuredGraph inlineGraph, Map<Node, Node> duplicates) {
+    private static void updateSourcePositions(Invoke invoke, StructuredGraph inlineGraph, UnmodifiableEconomicMap<Node, Node> duplicates) {
         if (inlineGraph.mayHaveNodeSourcePosition() && invoke.stateAfter() != null) {
             if (invoke.asNode().getNodeSourcePosition() == null) {
                 // Temporarily ignore the assert below.
@@ -498,13 +524,16 @@ public class InliningUtil {
             NodeSourcePosition invokePos = invoke.asNode().getNodeSourcePosition();
             assert invokePos != null : "missing source information";
 
-            Map<NodeSourcePosition, NodeSourcePosition> posMap = new HashMap<>();
-            for (Entry<Node, Node> entry : duplicates.entrySet()) {
-                NodeSourcePosition pos = entry.getKey().getNodeSourcePosition();
+            EconomicMap<NodeSourcePosition, NodeSourcePosition> posMap = EconomicMap.create(Equivalence.DEFAULT);
+            UnmodifiableMapCursor<Node, Node> cursor = duplicates.getEntries();
+            while (cursor.advance()) {
+                NodeSourcePosition pos = cursor.getKey().getNodeSourcePosition();
                 if (pos != null) {
                     NodeSourcePosition callerPos = pos.addCaller(constantReceiver, invokePos);
-                    posMap.putIfAbsent(callerPos, callerPos);
-                    entry.getValue().setNodeSourcePosition(posMap.get(callerPos));
+                    if (!posMap.containsKey(callerPos)) {
+                        posMap.put(callerPos, callerPos);
+                    }
+                    cursor.getValue().setNodeSourcePosition(posMap.get(callerPos));
                 }
             }
         }
@@ -517,7 +546,8 @@ public class InliningUtil {
         }
     }
 
-    protected static void processFrameStates(Invoke invoke, StructuredGraph inlineGraph, Map<Node, Node> duplicates, FrameState stateAtExceptionEdge, boolean alwaysDuplicateStateAfter) {
+    protected static void processFrameStates(Invoke invoke, StructuredGraph inlineGraph, UnmodifiableEconomicMap<Node, Node> duplicates, FrameState stateAtExceptionEdge,
+                    boolean alwaysDuplicateStateAfter) {
         FrameState stateAtReturn = invoke.stateAfter();
         FrameState outerFrameState = null;
         JavaKind invokeReturnKind = invoke.asNode().getStackKind();
@@ -670,57 +700,28 @@ public class InliningUtil {
         return nonReplaceableFrameState;
     }
 
-    public static ValueNode mergeReturns(AbstractMergeNode merge, List<? extends ReturnNode> returnNodes, List<Node> canonicalizedNodes) {
-        return mergeValueProducers(merge, returnNodes, canonicalizedNodes, returnNode -> returnNode.result());
-    }
-
-    public static <T extends ControlSinkNode> ValueNode mergeValueProducers(AbstractMergeNode merge, List<? extends T> valueProducers, List<Node> canonicalizedNodes,
-                    Function<T, ValueNode> valueFunction) {
-        ValueNode singleResult = null;
-        PhiNode phiResult = null;
-        for (T valueProducer : valueProducers) {
-            ValueNode result = valueFunction.apply(valueProducer);
-            if (result != null) {
-                if (phiResult == null && (singleResult == null || singleResult == result)) {
-                    /* Only one result value, so no need yet for a phi node. */
-                    singleResult = result;
-                } else if (phiResult == null) {
-                    /* Found a second result value, so create phi node. */
-                    phiResult = merge.graph().addWithoutUnique(new ValuePhiNode(result.stamp().unrestricted(), merge));
-                    if (canonicalizedNodes != null) {
-                        canonicalizedNodes.add(phiResult);
-                    }
-                    for (int i = 0; i < merge.forwardEndCount(); i++) {
-                        phiResult.addInput(singleResult);
-                    }
-                    phiResult.addInput(result);
-
-                } else {
-                    /* Multiple return values, just add to existing phi node. */
-                    phiResult.addInput(result);
-                }
-            }
-
-            // create and wire up a new EndNode
-            EndNode endNode = merge.graph().add(new EndNode());
-            merge.addForwardEnd(endNode);
-            valueProducer.replaceAndDelete(endNode);
-        }
-
-        if (phiResult != null) {
-            assert phiResult.verify();
-            phiResult.inferStamp();
-            return phiResult;
-        } else {
-            return singleResult;
-        }
-    }
-
-    private static boolean checkContainsOnlyInvalidOrAfterFrameState(Map<Node, Node> duplicates) {
-        for (Node node : duplicates.values()) {
+    /**
+     * Ensure that all states are either {@link BytecodeFrame#INVALID_FRAMESTATE_BCI} or one of
+     * {@link BytecodeFrame#AFTER_BCI} or {@link BytecodeFrame#BEFORE_BCI}. Mixing of before and
+     * after isn't allowed.
+     */
+    private static boolean checkContainsOnlyInvalidOrAfterFrameState(UnmodifiableEconomicMap<Node, Node> duplicates) {
+        int okBci = BytecodeFrame.INVALID_FRAMESTATE_BCI;
+        for (Node node : duplicates.getValues()) {
             if (node instanceof FrameState) {
                 FrameState frameState = (FrameState) node;
-                assert frameState.bci == BytecodeFrame.AFTER_BCI || frameState.bci == BytecodeFrame.INVALID_FRAMESTATE_BCI : node.toString(Verbosity.Debugger);
+                if (frameState.bci == BytecodeFrame.INVALID_FRAMESTATE_BCI) {
+                    continue;
+                }
+                if (frameState.bci == BytecodeFrame.AFTER_BCI || frameState.bci == BytecodeFrame.BEFORE_BCI) {
+                    if (okBci == BytecodeFrame.INVALID_FRAMESTATE_BCI) {
+                        okBci = frameState.bci;
+                    } else {
+                        assert okBci == frameState.bci : node.toString(Verbosity.Debugger);
+                    }
+                } else {
+                    assert false : node.toString(Verbosity.Debugger);
+                }
             }
         }
         return true;
@@ -734,25 +735,33 @@ public class InliningUtil {
         MethodCallTargetNode callTarget = (MethodCallTargetNode) invoke.callTarget();
         assert !callTarget.isStatic() : callTarget.targetMethod();
         StructuredGraph graph = callTarget.graph();
-        ValueNode firstParam = callTarget.arguments().get(0);
-        if (firstParam.getStackKind() == JavaKind.Object) {
-            Stamp paramStamp = firstParam.stamp();
-            Stamp stamp = paramStamp.join(StampFactory.objectNonNull(TypeReference.create(graph.getAssumptions(), callTarget.targetMethod().getDeclaringClass())));
-            if (!StampTool.isPointerNonNull(firstParam)) {
-                LogicNode condition = graph.unique(IsNullNode.create(firstParam));
-                FixedGuardNode fixedGuard = graph.add(new FixedGuardNode(condition, NullCheckException, InvalidateReprofile, true));
-                PiNode nonNullReceiver = graph.unique(new PiNode(firstParam, stamp, fixedGuard));
-                graph.addBeforeFixed(invoke.asNode(), fixedGuard);
-                callTarget.replaceFirstInput(firstParam, nonNullReceiver);
-                return nonNullReceiver;
+        ValueNode oldReceiver = callTarget.arguments().get(0);
+        ValueNode newReceiver = oldReceiver;
+        if (newReceiver.getStackKind() == JavaKind.Object) {
+
+            if (invoke.getInvokeKind() == InvokeKind.Special) {
+                Stamp paramStamp = newReceiver.stamp();
+                Stamp stamp = paramStamp.join(StampFactory.object(TypeReference.create(graph.getAssumptions(), callTarget.targetMethod().getDeclaringClass())));
+                if (!stamp.equals(paramStamp)) {
+                    // The verifier and previous optimizations guarantee unconditionally that the
+                    // receiver is at least of the type of the method holder for a special invoke.
+                    newReceiver = graph.unique(new PiNode(newReceiver, stamp));
+                }
             }
-            if (!stamp.equals(paramStamp)) {
-                PiNode cast = graph.unique(new PiNode(firstParam, stamp));
-                callTarget.replaceFirstInput(firstParam, cast);
-                return cast;
+
+            if (!StampTool.isPointerNonNull(newReceiver)) {
+                LogicNode condition = graph.unique(IsNullNode.create(newReceiver));
+                FixedGuardNode fixedGuard = graph.add(new FixedGuardNode(condition, NullCheckException, InvalidateReprofile, true));
+                PiNode nonNullReceiver = graph.unique(new PiNode(newReceiver, StampFactory.objectNonNull(), fixedGuard));
+                graph.addBeforeFixed(invoke.asNode(), fixedGuard);
+                newReceiver = nonNullReceiver;
             }
         }
-        return firstParam;
+
+        if (newReceiver != oldReceiver) {
+            callTarget.replaceFirstInput(oldReceiver, newReceiver);
+        }
+        return newReceiver;
     }
 
     public static boolean canIntrinsify(Replacements replacements, ResolvedJavaMethod target, int invokeBci) {
@@ -797,24 +806,7 @@ public class InliningUtil {
      * This method exclude InstrumentationNode from inlining heuristics.
      */
     public static int getNodeCount(StructuredGraph graph) {
-        if (UseGraalInstrumentation.getValue()) {
-            return graph.getNodeCount() - graph.getNodes().filter(InstrumentationNode.class).count();
-        } else {
-            return graph.getNodeCount();
-        }
-    }
-
-    /**
-     * This method detach the instrumentation attached to the given Invoke. It is called when the
-     * given Invoke is inlined.
-     */
-    public static void detachInstrumentation(Invoke invoke) {
-        FixedNode invokeNode = invoke.asNode();
-        for (InstrumentationNode instrumentation : invokeNode.usages().filter(InstrumentationNode.class).snapshot()) {
-            if (instrumentation.getTarget() == invoke) {
-                instrumentation.replaceFirstInput(instrumentation.getTarget(), null);
-            }
-        }
+        return graph.getNodeCount();
     }
 
 }

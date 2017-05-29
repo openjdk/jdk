@@ -58,7 +58,7 @@ public abstract class AbstractInliningPolicy implements InliningPolicy {
     }
 
     protected boolean isIntrinsic(Replacements replacements, InlineInfo info) {
-        if (AlwaysInlineIntrinsics.getValue()) {
+        if (AlwaysInlineIntrinsics.getValue(info.graph().getOptions())) {
             return onlyIntrinsics(replacements, info);
         } else {
             return onlyForcedIntrinsics(replacements, info);

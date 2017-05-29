@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,9 @@ inline size_t G1BlockOffsetTablePart::block_size(const HeapWord* p) const {
 inline HeapWord* G1BlockOffsetTablePart::block_at_or_preceding(const void* addr,
                                                                bool has_max_index,
                                                                size_t max_index) const {
-  assert(_bot->offset_array(0) == 0, "objects can't cross covered areas");
+  assert(_object_can_span || _bot->offset_array(_bot->index_for(_space->bottom())) == 0,
+         "Object crossed region boundary, found offset %u instead of 0",
+         (uint) _bot->offset_array(_bot->index_for(_space->bottom())));
   size_t index = _bot->index_for(addr);
   // We must make sure that the offset table entry we use is valid.  If
   // "addr" is past the end, start at the last known one and go forward.

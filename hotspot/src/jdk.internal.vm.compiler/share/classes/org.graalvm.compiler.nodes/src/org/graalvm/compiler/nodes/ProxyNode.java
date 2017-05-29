@@ -27,7 +27,6 @@ import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_0;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_0;
 
 import org.graalvm.compiler.core.common.type.Stamp;
-import org.graalvm.compiler.graph.IterableNodeType;
 import org.graalvm.compiler.graph.Node.ValueNumberable;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
@@ -39,7 +38,7 @@ import org.graalvm.compiler.nodes.extended.GuardingNode;
  * live on entry to the loop) and is (potentially) used after the loop.
  */
 @NodeInfo(cycles = CYCLES_0, size = SIZE_0)
-public abstract class ProxyNode extends FloatingNode implements IterableNodeType, ValueNumberable {
+public abstract class ProxyNode extends FloatingNode implements ValueNumberable {
 
     public static final NodeClass<ProxyNode> TYPE = NodeClass.create(ProxyNode.class);
     @Input(Association) LoopExitNode loopExit;

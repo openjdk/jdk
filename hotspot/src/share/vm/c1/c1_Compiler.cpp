@@ -40,6 +40,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/bitMap.inline.hpp"
 
 
 Compiler::Compiler() : AbstractCompiler(compiler_c1) {
@@ -212,7 +213,7 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:
   case vmIntrinsics::_updateByteBufferCRC32:
-#ifdef SPARC
+#if defined(SPARC) || defined(S390) || defined(PPC64)
   case vmIntrinsics::_updateBytesCRC32C:
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
 #endif

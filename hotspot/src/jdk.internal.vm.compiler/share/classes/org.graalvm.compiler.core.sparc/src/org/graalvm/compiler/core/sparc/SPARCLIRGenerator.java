@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,16 +194,16 @@ public abstract class SPARCLIRGenerator extends LIRGenerator {
     @Override
     public void emitCompareBranch(PlatformKind cmpKind, Value x, Value y, Condition cond, boolean unorderedIsTrue, LabelRef trueDestination, LabelRef falseDestination,
                     double trueDestinationProbability) {
-        Value left;
+        AllocatableValue left;
         Value right;
         Condition actualCondition;
         if (isJavaConstant(x)) {
             left = load(y);
-            right = loadNonConst(x);
+            right = loadSimm13(x);
             actualCondition = cond.mirror();
         } else {
             left = load(x);
-            right = loadNonConst(y);
+            right = loadSimm13(y);
             actualCondition = cond;
         }
         SPARCKind actualCmpKind = (SPARCKind) cmpKind;
@@ -234,9 +234,9 @@ public abstract class SPARCLIRGenerator extends LIRGenerator {
     private void emitIntegerTest(Value a, Value b) {
         assert ((SPARCKind) a.getPlatformKind()).isInteger();
         if (LIRValueUtil.isVariable(b)) {
-            append(SPARCOP3Op.newBinaryVoid(Op3s.Andcc, load(b), loadNonConst(a)));
+            append(SPARCOP3Op.newBinaryVoid(Op3s.Andcc, load(b), loadSimm13(a)));
         } else {
-            append(SPARCOP3Op.newBinaryVoid(Op3s.Andcc, load(a), loadNonConst(b)));
+            append(SPARCOP3Op.newBinaryVoid(Op3s.Andcc, load(a), loadSimm13(b)));
         }
     }
 
@@ -248,6 +248,23 @@ public abstract class SPARCLIRGenerator extends LIRGenerator {
             }
         }
         return load(value);
+    }
+
+    public Value loadSimm13(Value value) {
+        if (isJavaConstant(value)) {
+            JavaConstant c = asJavaConstant(value);
+            if (c.isNull() || SPARCAssembler.isSimm13(c)) {
+                return value;
+            }
+        }
+        return load(value);
+    }
+
+    @Override
+    public Value loadNonConst(Value value) {
+        // SPARC does not support a proper way of loadNonConst. Please use the appropriate
+        // loadSimm11 or loadSimm13 variants.
+        throw GraalError.shouldNotReachHere("This operation is not available for SPARC.");
     }
 
     @Override
@@ -304,24 +321,24 @@ public abstract class SPARCLIRGenerator extends LIRGenerator {
     private boolean emitIntegerCompare(SPARCKind cmpKind, Value a, Value b) {
         boolean mirrored;
         assert cmpKind.isInteger();
-        Value left;
+        AllocatableValue left;
         Value right;
         if (LIRValueUtil.isVariable(b)) {
             left = load(b);
-            right = loadNonConst(a);
+            right = loadSimm13(a);
             mirrored = true;
         } else {
             left = load(a);
-            right = loadNonConst(b);
+            right = loadSimm13(b);
             mirrored = false;
         }
         int compareBytes = cmpKind.getSizeInBytes();
         // SPARC compares 32 or 64 bits
         if (compareBytes < left.getPlatformKind().getSizeInBytes()) {
-            left = arithmeticLIRGen.emitSignExtend(left, compareBytes * 8, XWORD.getSizeInBytes() * 8);
+            left = asAllocatable(arithmeticLIRGen.emitSignExtend(left, cmpKind.getSizeInBits(), XWORD.getSizeInBits()));
         }
         if (compareBytes < right.getPlatformKind().getSizeInBytes()) {
-            right = arithmeticLIRGen.emitSignExtend(right, compareBytes * 8, XWORD.getSizeInBytes() * 8);
+            right = arithmeticLIRGen.emitSignExtend(right, cmpKind.getSizeInBits(), XWORD.getSizeInBits());
         }
         append(SPARCOP3Op.newBinaryVoid(Subcc, left, right));
         return mirrored;
@@ -365,10 +382,10 @@ public abstract class SPARCLIRGenerator extends LIRGenerator {
 
     @Override
     public void emitStrategySwitch(SwitchStrategy strategy, Variable key, LabelRef[] keyTargets, LabelRef defaultTarget) {
-        AllocatableValue scratchValue = newVariable(key.getValueKind());
+        Variable scratchValue = newVariable(key.getValueKind());
         AllocatableValue base = AllocatableValue.ILLEGAL;
         for (Constant c : strategy.getKeyConstants()) {
-            if (!(c instanceof JavaConstant) || !getMoveFactory().canInlineConstant((JavaConstant) c)) {
+            if (!getMoveFactory().canInlineConstant(c)) {
                 base = constantTableBaseProvider.getConstantTableBase();
                 break;
             }
@@ -376,7 +393,7 @@ public abstract class SPARCLIRGenerator extends LIRGenerator {
         append(createStrategySwitchOp(base, strategy, keyTargets, defaultTarget, key, scratchValue));
     }
 
-    protected StrategySwitchOp createStrategySwitchOp(AllocatableValue base, SwitchStrategy strategy, LabelRef[] keyTargets, LabelRef defaultTarget, Variable key, AllocatableValue scratchValue) {
+    protected StrategySwitchOp createStrategySwitchOp(AllocatableValue base, SwitchStrategy strategy, LabelRef[] keyTargets, LabelRef defaultTarget, Variable key, Variable scratchValue) {
         return new StrategySwitchOp(base, strategy, keyTargets, defaultTarget, key, scratchValue);
     }
 
@@ -396,7 +413,7 @@ public abstract class SPARCLIRGenerator extends LIRGenerator {
     @Override
     public Variable emitByteSwap(Value input) {
         Variable result = newVariable(LIRKind.combine(input));
-        append(new SPARCByteSwapOp(this, result, input));
+        append(new SPARCByteSwapOp(this, result, asAllocatable(input)));
         return result;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,11 +100,7 @@
 
     // size of each block, in order of increasing address:
     register_save_words                          = 16,
-#ifdef _LP64
     callee_aggregate_return_pointer_words        =  0,
-#else
-    callee_aggregate_return_pointer_words        =  1,
-#endif
     callee_register_argument_save_area_words     =  6,
     // memory_parameter_words                    = <arbitrary>,
 

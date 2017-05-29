@@ -22,16 +22,20 @@
  */
 package org.graalvm.compiler.nodes;
 
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_IGNORED;
+
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
-import org.graalvm.compiler.nodeinfo.NodeCycles;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodeinfo.NodeSize;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 /** A node that results in a platform dependent pause instruction being emitted. */
-@NodeInfo(cycles = NodeCycles.CYCLES_500, size = NodeSize.SIZE_1)
+// @formatter:off
+@NodeInfo(cycles = CYCLES_IGNORED,
+          size = NodeSize.SIZE_1)
+// @formatter:on
 public final class PauseNode extends FixedWithNextNode implements LIRLowerable {
 
     public static final NodeClass<PauseNode> TYPE = NodeClass.create(PauseNode.class);

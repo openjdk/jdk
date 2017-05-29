@@ -164,9 +164,6 @@ public:
                                  CompactStringTableWriter* ch_table);
   static void serialize(SerializeClosure* soc, GrowableArray<MemRegion> *string_space,
                         size_t* space_size);
-  static void reverse() {
-    the_table()->Hashtable<oop, mtSymbol>::reverse();
-  }
 
   // Rehash the symbol table if it gets out of balance
   static void rehash_table();

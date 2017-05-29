@@ -24,15 +24,12 @@ package org.graalvm.compiler.core.test;
 
 import jdk.vm.ci.meta.JavaConstant;
 
-import static org.graalvm.compiler.core.common.CompilationIdentifier.INVALID_COMPILATION_ID;
-
 import org.junit.Assert;
 import org.junit.Test;
 
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.debug.OpaqueNode;
@@ -55,7 +52,7 @@ public class LongNodeChainTest extends GraalCompilerTest {
 
     private void longAddChain(boolean reverse) {
         HighTierContext context = getDefaultHighTierContext();
-        StructuredGraph graph = new StructuredGraph(AllowAssumptions.NO, INVALID_COMPILATION_ID);
+        StructuredGraph graph = new StructuredGraph.Builder(getInitialOptions()).build();
         ValueNode constant = graph.unique(ConstantNode.forPrimitive(JavaConstant.INT_1));
         ValueNode value = null;
         if (reverse) {

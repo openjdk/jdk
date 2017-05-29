@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,21 +159,12 @@
 
  public:
 
-#ifdef _LP64
   static LIR_Opr as_long_opr(Register r) {
     return as_long_single_opr(r);
   }
   static LIR_Opr as_pointer_opr(Register r) {
     return as_long_single_opr(r);
   }
-#else
-  static LIR_Opr as_long_opr(Register r) {
-    return as_long_pair_opr(r);
-  }
-  static LIR_Opr as_pointer_opr(Register r) {
-    return as_opr(r);
-  }
-#endif
   static LIR_Opr as_float_opr(FloatRegister r) {
     return LIR_OprFact::single_fpu(r->encoding());
   }

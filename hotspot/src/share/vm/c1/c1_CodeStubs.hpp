@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #include "c1/c1_LIR.hpp"
 #include "c1/c1_Runtime1.hpp"
 #include "code/nativeInst.hpp"
-#include "utilities/array.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
 class CodeEmitInfo;

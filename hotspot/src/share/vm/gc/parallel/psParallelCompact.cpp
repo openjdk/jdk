@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "code/codeCache.hpp"
 #include "gc/parallel/gcTaskManager.hpp"
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
+#include "gc/parallel/parMarkBitMap.inline.hpp"
 #include "gc/parallel/pcTasks.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
 #include "gc/parallel/psCompactionManager.inline.hpp"
@@ -2119,7 +2120,7 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
     GCTraceTime(Debug, gc, phases) tm_m("Class Unloading", &_gc_timer);
 
     // Follow system dictionary roots and unload classes.
-    bool purged_class = SystemDictionary::do_unloading(is_alive_closure());
+    bool purged_class = SystemDictionary::do_unloading(is_alive_closure(), &_gc_timer);
 
     // Unload nmethods.
     CodeCache::do_unloading(is_alive_closure(), purged_class);
@@ -3153,6 +3154,14 @@ ParMarkBitMapClosure::IterationStatus
 UpdateOnlyClosure::do_addr(HeapWord* addr, size_t words) {
   do_addr(addr);
   return ParMarkBitMap::incomplete;
+}
+
+FillClosure::FillClosure(ParCompactionManager* cm, PSParallelCompact::SpaceId space_id) :
+  ParMarkBitMapClosure(PSParallelCompact::mark_bitmap(), cm),
+  _start_array(PSParallelCompact::start_array(space_id))
+{
+  assert(space_id == PSParallelCompact::old_space_id,
+         "cannot use FillClosure in the young gen");
 }
 
 ParMarkBitMapClosure::IterationStatus

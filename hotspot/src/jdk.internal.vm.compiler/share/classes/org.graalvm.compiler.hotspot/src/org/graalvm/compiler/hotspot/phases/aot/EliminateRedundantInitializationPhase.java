@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,160 +22,30 @@
  */
 package org.graalvm.compiler.hotspot.phases.aot;
 
-import static org.graalvm.compiler.nodes.ConstantNode.getConstantNodes;
+import static org.graalvm.util.CollectionsUtil.anyMatch;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map.Entry;
+import java.util.Iterator;
+import java.util.List;
 
 import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.hotspot.nodes.aot.InitializeKlassNode;
-import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.AbstractMergeNode;
+import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.cfg.Block;
-import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.phases.BasePhase;
+import org.graalvm.compiler.phases.graph.MergeableState;
+import org.graalvm.compiler.phases.graph.PostOrderNodeIterator;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
+import org.graalvm.util.EconomicSet;
 
 import jdk.vm.ci.hotspot.HotSpotMetaspaceConstant;
 import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.meta.ResolvedJavaType;
 
 public class EliminateRedundantInitializationPhase extends BasePhase<PhaseContext> {
-    /**
-     * Find blocks with class initializing nodes for the class identified the by the constant node.
-     * Return the map of a block to a list of initializing nodes in that block.
-     *
-     * @param cfg an instance of the {@link ControlFlowGraph}.
-     * @param constant common input to the instances of {@link InitializeKlassNode}.
-     * @return map of blocks to lists of initializing nodes.
-     */
-    private static HashMap<Block, ArrayList<Node>> findBlocksWithInitializers(ControlFlowGraph cfg, ConstantNode constant) {
-        // node is ConstantNode representing a metaspace constant (a klass reference).
-        // InitializeKlassNodes for the same class would share the same ConstantNode input.
-        NodeIterable<?> initializers = constant.usages().filter(InitializeKlassNode.class);
-        // Map the found nodes to blocks
-        HashMap<Block, ArrayList<Node>> blockToInits = new HashMap<>();
-        for (Node i : initializers) {
-            Block b = cfg.blockFor(i);
-            ArrayList<Node> initsInBlock = blockToInits.get(b);
-            if (initsInBlock == null) {
-                initsInBlock = new ArrayList<>();
-            }
-            initsInBlock.add(i);
-            blockToInits.put(b, initsInBlock);
-        }
-        return blockToInits;
-    }
-
-    /**
-     * Process the block-to-initializers map and produce a list of blocks that contain more than one
-     * instance of {@link InitializeKlassNode}.
-     *
-     * @param blockToInits a map of blocks to lists of {@link InitializeKlassNode} instances.
-     * @return list of blocks that contain multiple instances of {@link InitializeKlassNode}.
-     */
-    private static ArrayList<Block> findBlocksWithMultipleInitializers(HashMap<Block, ArrayList<Node>> blockToInits) {
-        ArrayList<Block> result = new ArrayList<>();
-        // Select the blocks from the blocksToInits map that have more than one InitializeKlassNode
-        for (Entry<Block, ArrayList<Node>> e : blockToInits.entrySet()) {
-            if (e.getValue().size() > 1) {
-                result.add(e.getKey());
-            }
-        }
-        return result;
-    }
-
-    /**
-     * Iterate through blocks with multiple instances of {@link InitializeKlassNode} and identify
-     * redundant instances. Remove redundant instances from the block-to-list-of-initializer map.
-     *
-     * @param blockToInits a map of blocks to lists of {@link InitializeKlassNode} instances.
-     * @param blocksWithMultipleInits a list of blocks that contain multiple instances of
-     *            {@link InitializeKlassNode}.
-     * @param constant common input to the instances of {@link InitializeKlassNode}.
-     * @return list of {@link InitializeKlassNode} instances that can be removed.
-     */
-    private static ArrayList<Node> findRedundantLocalInitializers(HashMap<Block, ArrayList<Node>> blockToInits, ArrayList<Block> blocksWithMultipleInits, ConstantNode constant) {
-        ArrayList<Node> result = new ArrayList<>();
-        for (Block b : blocksWithMultipleInits) {
-            // First initializer for our constant in the block
-            InitializeKlassNode first = null;
-            for (Node n : b.getNodes()) {
-                if (n instanceof InitializeKlassNode) {
-                    InitializeKlassNode i = (InitializeKlassNode) n;
-                    if (i.value() == constant) {
-                        if (first == null) {
-                            // First instance of {@link InitializeKlassNode} stays.
-                            first = i;
-                        } else {
-                            // All the following instances of {@link InitializeKlassNode} can be
-                            // removed.
-                            result.add(i);
-                        }
-                    }
-                }
-            }
-            assert first != null;
-
-            // Replace the entry in the initsInBlock map to contain just a single initializer
-            ArrayList<Node> initsInBlock = new ArrayList<>();
-            initsInBlock.add(first);
-            blockToInits.put(b, initsInBlock);
-        }
-        return result;
-    }
-
-    /**
-     * Find cases when one {@link InitializeKlassNode} instance dominates another. The dominated
-     * instance can be removed.
-     *
-     * @param blockToInits a map of blocks to lists of {@link InitializeKlassNode} instances.
-     * @return list of {@link InitializeKlassNode} instances that can be removed.
-     */
-    private static ArrayList<Node> findRedundantGlobalInitializers(HashMap<Block, ArrayList<Node>> blockToInits) {
-        ArrayList<Node> result = new ArrayList<>();
-        for (Entry<Block, ArrayList<Node>> e : blockToInits.entrySet()) {
-            Block currentBlock = e.getKey();
-            ArrayList<Node> nodesInCurrent = e.getValue();
-            if (nodesInCurrent != null) { // if the list is null, the initializer has already been
-                                          // eliminated.
-                for (Block d : currentBlock.getDominated()) {
-                    ArrayList<Node> nodesInDominated = blockToInits.get(d);
-                    if (nodesInDominated != null) { // if the list is null, the initializer has
-                                                    // already been eliminated.
-                        assert nodesInDominated.size() == 1;
-                        Node n = nodesInDominated.iterator().next();
-                        result.add(n);
-                        blockToInits.put(d, null);
-                    }
-                }
-            }
-        }
-        return result;
-    }
-
-    /**
-     * Compute the list of redundant {@link InitializeKlassNode} instances that have the common
-     * {@link ConstantNode}.
-     *
-     * @param cfg an instance of the {@link ControlFlowGraph}.
-     * @param constant common input to the instances of {@link InitializeKlassNode}.
-     * @return list of {@link InitializeKlassNode} instances that can be removed.
-     */
-    private static ArrayList<Node> processConstantNode(ControlFlowGraph cfg, ConstantNode constant) {
-        HashMap<Block, ArrayList<Node>> blockToInits = findBlocksWithInitializers(cfg, constant);
-        ArrayList<Block> blocksWithMultipleInits = findBlocksWithMultipleInitializers(blockToInits);
-        ArrayList<Node> redundantInits = findRedundantLocalInitializers(blockToInits, blocksWithMultipleInits, constant);
-        // At this point each block has at most one initializer for this constant
-        if (blockToInits.size() > 1) {
-            redundantInits.addAll(findRedundantGlobalInitializers(blockToInits));
-        }
-        return redundantInits;
-    }
-
     /**
      * Find each {@link Invoke} that has a corresponding {@link InitializeKlassNode}. These
      * {@link InitializeKlassNode} are redundant and are removed.
@@ -192,25 +62,175 @@ public class EliminateRedundantInitializationPhase extends BasePhase<PhaseContex
     }
 
     /**
+     * Remove redundant {@link InitializeKlassNode} instances from the graph.
+     *
+     * @param graph the program graph
+     */
+    private static void removeRedundantInits(StructuredGraph graph) {
+        // Find and remove redundant instances of {@link InitializeKlassNode} from the graph.
+        List<InitializeKlassNode> redundantInits = findRedundantInits(graph);
+        for (InitializeKlassNode n : redundantInits) {
+            graph.removeFixed(n);
+        }
+    }
+
+    /**
      * Find {@link InitializeKlassNode} instances that can be removed because there is an existing
      * dominating initialization.
      *
-     * @param graph the program graph.
+     * @param graph the program graph
      */
-    private static void removeRedundantInits(StructuredGraph graph) {
-        // Create cfg, we need blocks and dominators.
-        ControlFlowGraph cfg = ControlFlowGraph.compute(graph, true, false, true, false);
-        ArrayList<Node> redundantInits = new ArrayList<>();
-        for (ConstantNode node : getConstantNodes(graph)) {
-            Constant constant = node.asConstant();
-            if (constant instanceof HotSpotMetaspaceConstant) {
-                redundantInits.addAll(processConstantNode(cfg, node));
+    private static List<InitializeKlassNode> findRedundantInits(StructuredGraph graph) {
+        EliminateRedundantInitializationIterator i = new EliminateRedundantInitializationIterator(graph.start(), new InitializedTypes());
+        i.apply();
+        return i.getRedundantInits();
+    }
+
+    /**
+     * State for {@link EliminateRedundantInitializationIterator}.
+     */
+    private static class InitializedTypes extends MergeableState<InitializedTypes> implements Cloneable {
+        private EconomicSet<ResolvedJavaType> types;
+
+        InitializedTypes() {
+            types = EconomicSet.create();
+        }
+
+        private InitializedTypes(EconomicSet<ResolvedJavaType> types) {
+            this.types = types;
+        }
+
+        @Override
+        public InitializedTypes clone() {
+            return new InitializedTypes(EconomicSet.create(types));
+        }
+
+        public boolean contains(ResolvedJavaType type) {
+            if (type.isInterface()) {
+                // Check for exact match for interfaces
+                return types.contains(type);
+            }
+            // For other types see if there is the same type or a subtype
+            return anyMatch(types, t -> type.isAssignableFrom(t));
+        }
+
+        public void add(ResolvedJavaType type) {
+            types.add(type);
+        }
+
+        /**
+         * Merge two given types. Interfaces have to be the same to merge successfully. For other
+         * types the answer is the LCA.
+         *
+         * @param a initialized type
+         * @param b initialized type
+         * @return lowest common type that is initialized if either a or b are initialized, null if
+         *         no such type exists.
+         */
+        private static ResolvedJavaType merge(ResolvedJavaType a, ResolvedJavaType b) {
+            // We want exact match for interfaces
+            if (a.isInterface() || b.isInterface()) {
+                if (a.equals(b)) {
+                    return a;
+                } else {
+                    return null;
+                }
+            } else {
+                // And LCA for other types
+                ResolvedJavaType c = a.findLeastCommonAncestor(b);
+                if (c.isJavaLangObject()) {
+                    // Not a very useful type, always initialized, don't pollute the sets.
+                    return null;
+                }
+                return c;
             }
         }
-        // Remove redundant instances of {@link InitializeKlassNode} from the graph.
-        for (Node n : redundantInits) {
-            graph.removeFixed((FixedWithNextNode) n);
+
+        /**
+         * Merge two sets of types. Essentially a computation of the LCA for each element of the
+         * cartesian product of the input sets. Interfaces have to match exactly.
+         *
+         * @param a set of initialized types
+         * @param b set of initialized types
+         * @return set of common types that would be initialized if types in either a or b are
+         *         initialized
+         */
+        private static EconomicSet<ResolvedJavaType> merge(EconomicSet<ResolvedJavaType> a, EconomicSet<ResolvedJavaType> b) {
+            EconomicSet<ResolvedJavaType> c = EconomicSet.create();
+            for (ResolvedJavaType ta : a) {
+                for (ResolvedJavaType tb : b) {
+                    ResolvedJavaType tc = merge(ta, tb);
+                    if (tc != null) {
+                        c.add(tc);
+                        if (tc.isInterface()) {
+                            // Interface is not going merge with anything else, so bail out early.
+                            break;
+                        }
+                    }
+                }
+            }
+            return c;
         }
+
+        @Override
+        public boolean merge(AbstractMergeNode merge, List<InitializedTypes> withStates) {
+            for (InitializedTypes ts : withStates) {
+                types = merge(types, ts.types);
+            }
+            return true;
+        }
+
+        protected static String toString(EconomicSet<ResolvedJavaType> types) {
+            StringBuilder b = new StringBuilder();
+            b.append("[");
+            Iterator<ResolvedJavaType> i = types.iterator();
+            while (i.hasNext()) {
+                ResolvedJavaType t = i.next();
+                b.append(t.toString());
+                if (i.hasNext()) {
+                    b.append(",");
+                }
+            }
+            b.append("]");
+            return b.toString();
+        }
+
+        @Override
+        public String toString() {
+            return toString(types);
+        }
+    }
+
+    /**
+     * Do data flow analysis of class initializations. Collect redundant initialization nodes.
+     */
+    private static class EliminateRedundantInitializationIterator extends PostOrderNodeIterator<InitializedTypes> {
+        private List<InitializeKlassNode> redundantInits = new ArrayList<>();
+
+        public List<InitializeKlassNode> getRedundantInits() {
+            return redundantInits;
+        }
+
+        EliminateRedundantInitializationIterator(FixedNode start, InitializedTypes initialState) {
+            super(start, initialState);
+        }
+
+        @Override
+        protected void node(FixedNode node) {
+            if (node instanceof InitializeKlassNode) {
+                InitializeKlassNode i = (InitializeKlassNode) node;
+                Constant c = i.value().asConstant();
+                assert c != null : "Klass should be a constant at this point";
+                HotSpotMetaspaceConstant klass = (HotSpotMetaspaceConstant) c;
+                ResolvedJavaType t = klass.asResolvedJavaType();
+                if (state.contains(t)) {
+                    redundantInits.add(i);
+                } else {
+                    state.add(t);
+                }
+            }
+        }
+
     }
 
     @Override

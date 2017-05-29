@@ -152,39 +152,19 @@ address JNI_FastGetField::generate_fast_get_long_field() {
   __ ld_ptr (O1, 0, O5);
   __ add (O5, O4, O5);
 
-#ifndef _LP64
-  assert(count < LIST_CAPACITY-1, "LIST_CAPACITY too small");
-  speculative_load_pclist[count++] = __ pc();
-  __ ld (O5, 0, G2);
-
-  speculative_load_pclist[count] = __ pc();
-  __ ld (O5, 4, O3);
-#else
   assert(count < LIST_CAPACITY, "LIST_CAPACITY too small");
   speculative_load_pclist[count] = __ pc();
   __ ldx (O5, 0, O3);
-#endif
 
   __ ld (cnt_addr, G1);
   __ cmp (G1, G4);
   __ br (Assembler::notEqual, false, Assembler::pn, label2);
   __ delayed()->mov (O7, G1);
 
-#ifndef _LP64
-  __ mov (G2, O0);
-  __ retl ();
-  __ delayed()->mov (O3, O1);
-#else
   __ retl ();
   __ delayed()->mov (O3, O0);
-#endif
 
-#ifndef _LP64
-  slowcase_entry_pclist[count-1] = __ pc();
-  slowcase_entry_pclist[count++] = __ pc() ;
-#else
   slowcase_entry_pclist[count++] = __ pc();
-#endif
 
   __ bind (label1);
   __ mov (O7, G1);

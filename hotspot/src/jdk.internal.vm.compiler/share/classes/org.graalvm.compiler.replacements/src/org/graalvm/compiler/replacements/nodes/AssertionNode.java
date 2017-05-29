@@ -25,6 +25,7 @@ package org.graalvm.compiler.replacements.nodes;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_UNKNOWN;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_UNKNOWN;
 
+import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node;
@@ -48,20 +49,20 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 public final class AssertionNode extends FixedWithNextNode implements Lowerable, Canonicalizable, LIRLowerable {
 
     public static final NodeClass<AssertionNode> TYPE = NodeClass.create(AssertionNode.class);
-    @Input ValueNode value;
+    @Input ValueNode condition;
 
     protected final boolean compileTimeAssertion;
     protected final String message;
 
-    public AssertionNode(boolean compileTimeAssertion, ValueNode value, String message) {
+    public AssertionNode(boolean compileTimeAssertion, ValueNode condition, String message) {
         super(TYPE, StampFactory.forVoid());
-        this.value = value;
+        this.condition = condition;
         this.compileTimeAssertion = compileTimeAssertion;
         this.message = message;
     }
 
-    public ValueNode value() {
-        return value;
+    public ValueNode condition() {
+        return condition;
     }
 
     public String message() {
@@ -70,7 +71,7 @@ public final class AssertionNode extends FixedWithNextNode implements Lowerable,
 
     @Override
     public Node canonical(CanonicalizerTool tool) {
-        if (value.isConstant() && value.asJavaConstant().asInt() != 0) {
+        if (condition.isConstant() && condition.asJavaConstant().asInt() != 0) {
             return null;
         }
         /*
@@ -83,22 +84,31 @@ public final class AssertionNode extends FixedWithNextNode implements Lowerable,
     @Override
     public void lower(LoweringTool tool) {
         if (!compileTimeAssertion) {
-            tool.getLowerer().lower(this, tool);
+            if (GraalOptions.ImmutableCode.getValue(getOptions())) {
+                // Snippet assertions are disabled for AOT
+                graph().removeFixed(this);
+            } else {
+                tool.getLowerer().lower(this, tool);
+            }
         }
     }
 
     @Override
     public void generate(NodeLIRBuilderTool generator) {
         assert compileTimeAssertion;
-        if (value.isConstant()) {
-            if (value.asJavaConstant().asInt() == 0) {
+        if (GraalOptions.ImmutableCode.getValue(getOptions())) {
+            // Snippet assertions are disabled for AOT
+            return;
+        }
+        if (condition.isConstant()) {
+            if (condition.asJavaConstant().asInt() == 0) {
                 throw new GraalError("%s: failed compile-time assertion: %s", this, message);
             }
         } else {
-            throw new GraalError("%s: failed compile-time assertion (value %s): %s", this, value, message);
+            throw new GraalError("%s: failed compile-time assertion (value %s): %s", this, condition, message);
         }
     }
 
     @NodeIntrinsic
-    public static native void assertion(@ConstantNodeParameter boolean compileTimeAssertion, boolean value, @ConstantNodeParameter String message);
+    public static native void assertion(@ConstantNodeParameter boolean compileTimeAssertion, boolean condition, @ConstantNodeParameter String message);
 }

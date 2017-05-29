@@ -36,7 +36,6 @@ import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.FloatingReadPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
-import org.graalvm.compiler.phases.common.OptimizeGuardAnchorsPhase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
 
 /* consider
@@ -93,10 +92,9 @@ public class ReadAfterCheckCastTest extends GraphScheduleTest {
             CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
             new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, context);
             new FloatingReadPhase().apply(graph);
-            new OptimizeGuardAnchorsPhase().apply(graph);
             canonicalizer.apply(graph, context);
 
-            Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "After lowering");
+            Debug.dump(Debug.BASIC_LEVEL, graph, "After lowering");
 
             for (FloatingReadNode node : graph.getNodes(ParameterNode.TYPE).first().usages().filter(FloatingReadNode.class)) {
                 // Checking that the parameter a is not directly used for the access to field

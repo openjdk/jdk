@@ -122,7 +122,7 @@ class Bytecode: public StackObj {
   static void assert_constant_size(int required_size, int where, Bytecodes::Code bc, bool is_wide = false) NOT_DEBUG_RETURN;
   static void assert_native_index(Bytecodes::Code bc, bool is_wide = false) NOT_DEBUG_RETURN;
   static bool can_use_native_byte_order(Bytecodes::Code bc, bool is_wide = false) {
-    return (!Bytes::is_Java_byte_ordering_different() || Bytecodes::native_byte_order(bc /*, is_wide*/));
+    return (!Endian::is_Java_byte_ordering_different() || Bytecodes::native_byte_order(bc /*, is_wide*/));
   }
 };
 

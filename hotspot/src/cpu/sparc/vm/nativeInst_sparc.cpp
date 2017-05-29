@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,8 +236,6 @@ void NativeCall::test() {
 
 //-------------------------------------------------------------------
 
-#ifdef _LP64
-
 void NativeFarCall::set_destination(address dest) {
   // Address materialized in the instruction stream, so nothing to do.
   return;
@@ -290,8 +288,6 @@ void NativeFarCall::test() {
 }
 // End code for unit testing implementation of NativeFarCall class
 
-#endif // _LP64
-
 //-------------------------------------------------------------------
 
 
@@ -304,18 +300,9 @@ void NativeMovConstReg::verify() {
 
   // verify the pattern "sethi %hi22(imm), reg ;  add reg, %lo10(imm), reg"
   Register rd = inv_rd(i0);
-#ifndef _LP64
-  if (!(is_op2(i0, Assembler::sethi_op2) && rd != G0 &&
-        is_op3(i1, Assembler::add_op3, Assembler::arith_op) &&
-        inv_immed(i1) && (unsigned)get_simm13(i1) < (1 << 10) &&
-        rd == inv_rs1(i1) && rd == inv_rd(i1))) {
-    fatal("not a set_metadata");
-  }
-#else
   if (!is_op2(i0, Assembler::sethi_op2) && rd != G0 ) {
     fatal("not a set_metadata");
   }
-#endif
 }
 
 
@@ -324,23 +311,13 @@ void NativeMovConstReg::print() {
 }
 
 
-#ifdef _LP64
 intptr_t NativeMovConstReg::data() const {
   return data64(addr_at(sethi_offset), long_at(add_offset));
 }
-#else
-intptr_t NativeMovConstReg::data() const {
-  return data32(long_at(sethi_offset), long_at(add_offset));
-}
-#endif
 
 
 void NativeMovConstReg::set_data(intptr_t x) {
-#ifdef _LP64
   set_data64_sethi(addr_at(sethi_offset), x);
-#else
-  set_long_at(sethi_offset, set_data32_sethi(  long_at(sethi_offset), x));
-#endif
   set_long_at(add_offset,   set_data32_simm13( long_at(add_offset),   x));
 
   // also store the value into an oop_Relocation cell, if any
@@ -508,20 +485,12 @@ void NativeMovConstRegPatching::print() {
 
 
 int NativeMovConstRegPatching::data() const {
-#ifdef _LP64
   return data64(addr_at(sethi_offset), long_at(add_offset));
-#else
-  return data32(long_at(sethi_offset), long_at(add_offset));
-#endif
 }
 
 
 void NativeMovConstRegPatching::set_data(int x) {
-#ifdef _LP64
   set_data64_sethi(addr_at(sethi_offset), x);
-#else
-  set_long_at(sethi_offset, set_data32_sethi(long_at(sethi_offset), x));
-#endif
   set_long_at(add_offset, set_data32_simm13(long_at(add_offset), x));
 
   // also store the value into an oop_Relocation cell, if any
@@ -758,21 +727,12 @@ void NativeJump::verify() {
   assert((int)jmpl_offset == (int)NativeMovConstReg::add_offset, "sethi size ok");
   // verify the pattern "sethi %hi22(imm), treg ;  jmpl treg, %lo10(imm), lreg"
   Register rd = inv_rd(i0);
-#ifndef _LP64
-  if (!(is_op2(i0, Assembler::sethi_op2) && rd != G0 &&
-        (is_op3(i1, Assembler::jmpl_op3, Assembler::arith_op)) &&
-        inv_immed(i1) && (unsigned)get_simm13(i1) < (1 << 10) &&
-        rd == inv_rs1(i1))) {
-    fatal("not a jump_to instruction");
-  }
-#else
   // In LP64, the jump instruction location varies for non relocatable
   // jumps, for example is could be sethi, xor, jmp instead of the
   // 7 instructions for sethi.  So let's check sethi only.
   if (!is_op2(i0, Assembler::sethi_op2) && rd != G0 ) {
     fatal("not a jump_to instruction");
   }
-#endif
 }
 
 

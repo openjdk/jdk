@@ -42,7 +42,6 @@ import org.graalvm.compiler.core.common.util.Util;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.Variable;
-
 import jdk.vm.ci.code.RegisterValue;
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.meta.AllocatableValue;
@@ -54,20 +53,6 @@ import jdk.vm.ci.meta.ValueKind;
  * Represents an interval in the {@linkplain LinearScan linear scan register allocator}.
  */
 public final class Interval {
-
-    /**
-     * A pair of intervals.
-     */
-    static final class Pair {
-
-        public final Interval first;
-        public final Interval second;
-
-        Pair(Interval first, Interval second) {
-            this.first = first;
-            this.second = second;
-        }
-    }
 
     /**
      * A set of interval lists, one per {@linkplain RegisterBinding binding} type.
@@ -196,7 +181,7 @@ public final class Interval {
             Interval prev = null;
             Interval cur = list;
             while (cur != i) {
-                assert cur != null && cur != Interval.EndMarker : "interval has not been found in list: " + i;
+                assert cur != null && !cur.isEndMarker() : "interval has not been found in list: " + i;
                 prev = cur;
                 cur = cur.next;
             }
@@ -448,6 +433,8 @@ public final class Interval {
         }
     }
 
+    protected static final int END_MARKER_OPERAND_NUMBER = Integer.MIN_VALUE;
+
     /**
      * The {@linkplain RegisterValue register} or {@linkplain Variable variable} for this interval
      * prior to register allocation.
@@ -493,7 +480,8 @@ public final class Interval {
     private Range current;
 
     /**
-     * Link to next interval in a sorted list of intervals that ends with {@link #EndMarker}.
+     * Link to next interval in a sorted list of intervals that ends with
+     * LinearScan.intervalEndMarker.
      */
     Interval next;
 
@@ -569,6 +557,11 @@ public final class Interval {
             assert newLocation.getValueKind().equals(this.kind);
         }
         this.location = newLocation;
+    }
+
+    /** Returns true is this is the sentinel interval that denotes the end of an interval list. */
+    public boolean isEndMarker() {
+        return operandNumber == END_MARKER_OPERAND_NUMBER;
     }
 
     /**
@@ -701,7 +694,7 @@ public final class Interval {
     }
 
     void nextRange() {
-        assert this != EndMarker : "not allowed on sentinel";
+        assert !this.isEndMarker() : "not allowed on sentinel";
         current = current.next;
     }
 
@@ -714,7 +707,7 @@ public final class Interval {
     }
 
     boolean currentAtEnd() {
-        return current == Range.EndMarker;
+        return current.isEndMarker();
     }
 
     boolean currentIntersects(Interval it) {
@@ -725,12 +718,7 @@ public final class Interval {
         return current.intersectsAt(it.current);
     }
 
-    /**
-     * Sentinel interval to denote the end of an interval list.
-     */
-    static final Interval EndMarker = new Interval(Value.ILLEGAL, -1);
-
-    Interval(AllocatableValue operand, int operandNumber) {
+    Interval(AllocatableValue operand, int operandNumber, Interval intervalEndMarker, Range rangeEndMarker) {
         assert operand != null;
         this.operand = operand;
         this.operandNumber = operandNumber;
@@ -740,10 +728,10 @@ public final class Interval {
             assert isIllegal(operand) || isVariable(operand);
         }
         this.kind = LIRKind.Illegal;
-        this.first = Range.EndMarker;
+        this.first = rangeEndMarker;
         this.usePosList = new UsePosList(4);
-        this.current = Range.EndMarker;
-        this.next = EndMarker;
+        this.current = rangeEndMarker;
+        this.next = intervalEndMarker;
         this.cachedTo = -1;
         this.spillState = SpillState.NoDefinitionFound;
         this.spillDefinitionPos = -1;
@@ -780,10 +768,10 @@ public final class Interval {
     }
 
     int calcTo() {
-        assert first != Range.EndMarker : "interval has no range";
+        assert !first.isEndMarker() : "interval has no range";
 
         Range r = first;
-        while (r.next != Range.EndMarker) {
+        while (!r.next.isEndMarker()) {
             r = r.next;
         }
         return r.to;
@@ -1043,12 +1031,12 @@ public final class Interval {
         return prev;
     }
 
-    public void addUsePos(int pos, RegisterPriority registerPriority) {
+    public void addUsePos(int pos, RegisterPriority registerPriority, boolean detailedAsserts) {
         assert covers(pos, LIRInstruction.OperandMode.USE) : String.format("use position %d not covered by live range of interval %s", pos, this);
 
         // do not add use positions for precolored intervals because they are never used
         if (registerPriority != RegisterPriority.None && isVariable(operand)) {
-            if (DetailedAsserts.getValue()) {
+            if (detailedAsserts) {
                 for (int i = 0; i < usePosList.size(); i++) {
                     assert pos <= usePosList.usePos(i) : "already added a use-position with lower position";
                     if (i > 0) {
@@ -1071,11 +1059,11 @@ public final class Interval {
 
     public void addRange(int from, int to) {
         assert from < to : "invalid range";
-        assert first() == Range.EndMarker || to < first().next.from : "not inserting at begin of interval";
+        assert first().isEndMarker() || to < first().next.from : "not inserting at begin of interval";
         assert from <= first().to : "not inserting at begin of interval";
 
         if (first.from <= to) {
-            assert first != Range.EndMarker;
+            assert !first.isEndMarker();
             // join intersecting ranges
             first.from = Math.min(from, first().from);
             first.to = Math.max(to, first().to);
@@ -1130,21 +1118,21 @@ public final class Interval {
         // split the ranges
         Range prev = null;
         Range cur = first;
-        while (cur != Range.EndMarker && cur.to <= splitPos) {
+        while (!cur.isEndMarker() && cur.to <= splitPos) {
             prev = cur;
             cur = cur.next;
         }
-        assert cur != Range.EndMarker : "split interval after end of last range";
+        assert !cur.isEndMarker() : "split interval after end of last range";
 
         if (cur.from < splitPos) {
             result.first = new Range(splitPos, cur.to, cur.next);
             cur.to = splitPos;
-            cur.next = Range.EndMarker;
+            cur.next = allocator.rangeEndMarker;
 
         } else {
             assert prev != null : "split before start of first range";
             result.first = cur;
-            prev.next = Range.EndMarker;
+            prev.next = allocator.rangeEndMarker;
         }
         result.current = result.first;
         cachedTo = -1; // clear cached value
@@ -1152,7 +1140,7 @@ public final class Interval {
         // split list of use positions
         result.usePosList = usePosList.splitAt(splitPos);
 
-        if (DetailedAsserts.getValue()) {
+        if (DetailedAsserts.getValue(allocator.getOptions())) {
             for (int i = 0; i < usePosList.size(); i++) {
                 assert usePosList.usePos(i) < splitPos;
             }
@@ -1184,7 +1172,7 @@ public final class Interval {
         result.addRange(first.from, splitPos);
 
         if (splitPos == first.to) {
-            assert first.next != Range.EndMarker : "must not be at end";
+            assert !first.next.isEndMarker() : "must not be at end";
             first = first.next;
         } else {
             first.from = splitPos;
@@ -1197,10 +1185,10 @@ public final class Interval {
     boolean covers(int opId, LIRInstruction.OperandMode mode) {
         Range cur = first;
 
-        while (cur != Range.EndMarker && cur.to < opId) {
+        while (!cur.isEndMarker() && cur.to < opId) {
             cur = cur.next;
         }
-        if (cur != Range.EndMarker) {
+        if (!cur.isEndMarker()) {
             assert cur.to != cur.next.from : "ranges not separated";
 
             if (mode == LIRInstruction.OperandMode.DEF) {
@@ -1219,7 +1207,7 @@ public final class Interval {
         assert from() <= holeFrom && holeTo <= to() : "index out of interval";
 
         Range cur = first;
-        while (cur != Range.EndMarker) {
+        while (!cur.isEndMarker()) {
             assert cur.to < cur.next.from : "no space between ranges";
 
             // hole-range starts before this range . hole
@@ -1249,7 +1237,7 @@ public final class Interval {
     public String toString() {
         String from = "?";
         String to = "?";
-        if (first != null && first != Range.EndMarker) {
+        if (first != null && !first.isEndMarker()) {
             from = String.valueOf(from());
             // to() may cache a computed value, modifying the current object, which is a bad idea
             // for a printing function. Compute it directly instead.
@@ -1289,7 +1277,7 @@ public final class Interval {
 
         // print ranges
         Range cur = first;
-        while (cur != Range.EndMarker) {
+        while (!cur.isEndMarker()) {
             if (cur != first) {
                 buf.append(", ");
             }
