@@ -1804,9 +1804,9 @@ operand cmpOp_vcmppd() %{
 
 instruct ShouldNotReachHere() %{
   match(Halt);
-  format %{ "int3\t# ShouldNotReachHere" %}
+  format %{ "ud2\t# ShouldNotReachHere" %}
   ins_encode %{
-    __ int3();
+    __ ud2();
   %}
   ins_pipe(pipe_slow);
 %}

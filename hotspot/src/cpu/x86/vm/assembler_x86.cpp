@@ -3321,6 +3321,11 @@ void Assembler::pause() {
   emit_int8((unsigned char)0x90);
 }
 
+void Assembler::ud2() {
+  emit_int8(0x0F);
+  emit_int8(0x0B);
+}
+
 void Assembler::pcmpestri(XMMRegister dst, Address src, int imm8) {
   assert(VM_Version::supports_sse4_2(), "");
   InstructionMark im(this);

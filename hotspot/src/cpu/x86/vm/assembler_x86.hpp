@@ -1554,6 +1554,9 @@ private:
 
   void pause();
 
+  // Undefined Instruction
+  void ud2();
+
   // SSE4.2 string instructions
   void pcmpestri(XMMRegister xmm1, XMMRegister xmm2, int imm8);
   void pcmpestri(XMMRegister xmm1, Address src, int imm8);

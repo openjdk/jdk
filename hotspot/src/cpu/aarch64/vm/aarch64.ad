@@ -15387,9 +15387,9 @@ instruct ShouldNotReachHere() %{
   format %{ "ShouldNotReachHere" %}
 
   ins_encode %{
-    // TODO
-    // implement proper trap call here
-    __ brk(999);
+    // +1 so NativeInstruction::is_sigill_zombie_not_entrant() doesn't
+    // return true
+    __ dpcs1(0xdead + 1);
   %}
 
   ins_pipe(pipe_class_default);
