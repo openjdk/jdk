@@ -31,6 +31,9 @@ import org.graalvm.compiler.core.common.FieldsScanner;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.lir.LIRInstruction.OperandFlag;
 import org.graalvm.compiler.lir.LIRInstruction.OperandMode;
+import org.graalvm.compiler.lir.StandardOp.LoadConstantOp;
+import org.graalvm.compiler.lir.StandardOp.MoveOp;
+import org.graalvm.compiler.lir.StandardOp.ValueMoveOp;
 
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.meta.Value;
@@ -49,6 +52,10 @@ public class LIRInstructionClass<T> extends LIRIntrospection<T> {
     private final Values temps;
     private final Values defs;
     private final Fields states;
+
+    private final boolean isMoveOp;
+    private final boolean isValueMoveOp;
+    private final boolean isLoadConstantOp;
 
     private String opcodeConstant;
     private int opcodeIndex;
@@ -78,6 +85,10 @@ public class LIRInstructionClass<T> extends LIRIntrospection<T> {
         } else {
             opcodeIndex = ifs.data.indexOf(ifs.opcodeField);
         }
+
+        isMoveOp = MoveOp.class.isAssignableFrom(clazz);
+        isValueMoveOp = ValueMoveOp.class.isAssignableFrom(clazz);
+        isLoadConstantOp = LoadConstantOp.class.isAssignableFrom(clazz);
     }
 
     @SuppressWarnings("unchecked")
@@ -345,5 +356,17 @@ public class LIRInstructionClass<T> extends LIRIntrospection<T> {
         }
 
         return result.toString();
+    }
+
+    final boolean isMoveOp() {
+        return isMoveOp;
+    }
+
+    final boolean isValueMoveOp() {
+        return isValueMoveOp;
+    }
+
+    final boolean isLoadConstantOp() {
+        return isLoadConstantOp;
     }
 }

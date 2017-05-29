@@ -24,13 +24,16 @@ package org.graalvm.compiler.nodes;
 
 import static org.graalvm.compiler.nodeinfo.InputType.Association;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_1;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
 
 import java.util.Collections;
 
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
+import org.graalvm.compiler.nodeinfo.NodeCycles;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodeinfo.NodeSize;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 /**
@@ -134,5 +137,22 @@ public final class LoopEndNode extends AbstractEndNode {
     @Override
     public Iterable<? extends Node> cfgSuccessors() {
         return Collections.emptyList();
+    }
+
+    @Override
+    public NodeCycles estimatedNodeCycles() {
+        if (canSafepoint()) {
+            // jmp+read
+            return CYCLES_2;
+        }
+        return super.estimatedNodeCycles();
+    }
+
+    @Override
+    public NodeSize estimatedNodeSize() {
+        if (canSafepoint()) {
+            return NodeSize.SIZE_2;
+        }
+        return super.estimatedNodeSize();
     }
 }

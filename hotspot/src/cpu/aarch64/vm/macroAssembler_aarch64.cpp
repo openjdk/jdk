@@ -515,7 +515,7 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
     mov(rscratch1, markOopDesc::biased_lock_mask_in_place | markOopDesc::age_mask_in_place | markOopDesc::epoch_mask_in_place);
     andr(swap_reg, swap_reg, rscratch1);
     orr(tmp_reg, swap_reg, rthread);
-    cmpxchgptr(swap_reg, tmp_reg, obj_reg, rscratch1, here, slow_case);
+    cmpxchg_obj_header(swap_reg, tmp_reg, obj_reg, rscratch1, here, slow_case);
     // If the biasing toward our thread failed, this means that
     // another thread succeeded in biasing it toward itself and we
     // need to revoke that bias. The revocation will occur in the
@@ -542,7 +542,7 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
     Label here;
     load_prototype_header(tmp_reg, obj_reg);
     orr(tmp_reg, rthread, tmp_reg);
-    cmpxchgptr(swap_reg, tmp_reg, obj_reg, rscratch1, here, slow_case);
+    cmpxchg_obj_header(swap_reg, tmp_reg, obj_reg, rscratch1, here, slow_case);
     // If the biasing toward our thread failed, then another thread
     // succeeded in biasing it toward itself and we need to revoke that
     // bias. The revocation will occur in the runtime in the slow case.
@@ -569,7 +569,7 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
   {
     Label here, nope;
     load_prototype_header(tmp_reg, obj_reg);
-    cmpxchgptr(swap_reg, tmp_reg, obj_reg, rscratch1, here, &nope);
+    cmpxchg_obj_header(swap_reg, tmp_reg, obj_reg, rscratch1, here, &nope);
     bind(here);
 
     // Fall through to the normal CAS-based lock, because no matter what
@@ -2139,6 +2139,12 @@ void MacroAssembler::cmpxchgptr(Register oldv, Register newv, Register addr, Reg
   }
   if (fail)
     b(*fail);
+}
+
+void MacroAssembler::cmpxchg_obj_header(Register oldv, Register newv, Register obj, Register tmp,
+                                        Label &succeed, Label *fail) {
+  assert(oopDesc::mark_offset_in_bytes() == 0, "assumption");
+  cmpxchgptr(oldv, newv, obj, tmp, succeed, fail);
 }
 
 void MacroAssembler::cmpxchgw(Register oldv, Register newv, Register addr, Register tmp,

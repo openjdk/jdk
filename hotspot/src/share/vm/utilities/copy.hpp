@@ -229,6 +229,16 @@ class Copy : AllStatic {
   }
 
   /**
+   * Copy elements
+   *
+   * @param src address of source
+   * @param dst address of destination
+   * @param byte_count number of bytes to copy
+   * @param elem_size size of the elements to copy-swap
+   */
+  static void conjoint_copy(const void* src, void* dst, size_t byte_count, size_t elem_size);
+
+  /**
    * Copy and *unconditionally* byte swap elements
    *
    * @param src address of source
@@ -236,7 +246,24 @@ class Copy : AllStatic {
    * @param byte_count number of bytes to copy
    * @param elem_size size of the elements to copy-swap
    */
-  static void conjoint_swap(address src, address dst, size_t byte_count, size_t elem_size);
+  static void conjoint_swap(const void* src, void* dst, size_t byte_count, size_t elem_size);
+
+  /**
+   * Copy and byte swap elements from the specified endian to the native (cpu) endian if needed (if they differ)
+   *
+   * @param src address of source
+   * @param dst address of destination
+   * @param byte_count number of bytes to copy
+   * @param elem_size size of the elements to copy-swap
+   */
+  template <Endian::Order endian>
+  static void conjoint_swap_if_needed(const void* src, void* dst, size_t byte_count, size_t elem_size) {
+    if (Endian::NATIVE != endian) {
+      conjoint_swap(src, dst, byte_count, elem_size);
+    } else {
+      conjoint_copy(src, dst, byte_count, elem_size);
+    }
+  }
 
   // Fill methods
 

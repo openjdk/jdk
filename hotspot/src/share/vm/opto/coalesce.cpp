@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -292,9 +292,9 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
               // Copy any flags as well
               _phc.clone_projs(pred, pred->end_idx(), m, copy, _phc._lrg_map);
             } else {
-              int ireg = m->ideal_reg();
+              uint ireg = m->ideal_reg();
               if (ireg == 0 || ireg == Op_RegFlags) {
-                assert(false, "attempted to spill a non-spillable item: %d: %s, ireg = %d, spill_type: %s",
+                assert(false, "attempted to spill a non-spillable item: %d: %s, ireg = %u, spill_type: %s",
                        m->_idx, m->Name(), ireg, MachSpillCopyNode::spill_type(MachSpillCopyNode::PhiInput));
                 C->record_method_not_compilable("attempted to spill a non-spillable item");
                 return;
@@ -333,9 +333,9 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
               b->insert_node(copy, l++);
               l += _phc.clone_projs(b, l, m, copy, _phc._lrg_map);
             } else {
-              int ireg = m->ideal_reg();
+              uint ireg = m->ideal_reg();
               if (ireg == 0 || ireg == Op_RegFlags) {
-                assert(false, "attempted to spill a non-spillable item: %d: %s, ireg = %d, spill_type: %s",
+                assert(false, "attempted to spill a non-spillable item: %d: %s, ireg = %u, spill_type: %s",
                        m->_idx, m->Name(), ireg, MachSpillCopyNode::spill_type(MachSpillCopyNode::TwoAddress));
                 C->record_method_not_compilable("attempted to spill a non-spillable item");
                 return;
@@ -387,9 +387,9 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
               if( k < b->_num_succs )
                 continue;     // Live out; do not pre-split
               // Split the lrg at this use
-              int ireg = inp->ideal_reg();
+              uint ireg = inp->ideal_reg();
               if (ireg == 0 || ireg == Op_RegFlags) {
-                assert(false, "attempted to spill a non-spillable item: %d: %s, ireg = %d, spill_type: %s",
+                assert(false, "attempted to spill a non-spillable item: %d: %s, ireg = %u, spill_type: %s",
                        inp->_idx, inp->Name(), ireg, MachSpillCopyNode::spill_type(MachSpillCopyNode::DebugUse));
                 C->record_method_not_compilable("attempted to spill a non-spillable item");
                 return;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,13 @@
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/instanceClassLoaderKlass.hpp"
+#include "oops/instanceMirrorKlass.hpp"
+#include "oops/instanceRefKlass.hpp"
+#include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/typeArrayKlass.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/os.hpp"
 #include "runtime/signature.hpp"
@@ -56,8 +61,6 @@ ReservedSpace* MetaspaceShared::_shared_rs = NULL;
 
 MetaspaceSharedStats MetaspaceShared::_stats;
 
-bool MetaspaceShared::_link_classes_made_progress;
-bool MetaspaceShared::_check_classes_made_progress;
 bool MetaspaceShared::_has_error_classes;
 bool MetaspaceShared::_archive_loading_failed = false;
 bool MetaspaceShared::_remapped_readwrite = false;
@@ -169,18 +172,11 @@ address MetaspaceShared::cds_i2i_entry_code_buffers(size_t total_size) {
 // Global object for holding classes that have been loaded.  Since this
 // is run at a safepoint just before exit, this is the entire set of classes.
 static GrowableArray<Klass*>* _global_klass_objects;
-static void collect_classes(Klass* k) {
-  _global_klass_objects->append_if_missing(k);
-  if (k->is_instance_klass()) {
-    // Add in the array classes too
-    InstanceKlass* ik = InstanceKlass::cast(k);
-    ik->array_klasses_do(collect_classes);
+class CollectClassesClosure : public KlassClosure {
+  void do_klass(Klass* k) {
+    _global_klass_objects->append_if_missing(k);
   }
-}
-
-static void collect_classes2(Klass* k, ClassLoaderData* class_data) {
-  collect_classes(k);
-}
+};
 
 static void remove_unshareable_in_classes() {
   for (int i = 0; i < _global_klass_objects->length(); i++) {
@@ -229,83 +225,242 @@ static void rewrite_nofast_bytecodes_and_calculate_fingerprints() {
   }
 }
 
-// Patch C++ vtable pointer in metadata.
-
-// Klass and other metadata objects contain references to c++ vtables in the
-// JVM library.
-// Fix them to point to our constructed vtables.  However, don't iterate
-// across the space while doing this, as that causes the vtables to be
-// patched, undoing our useful work.  Instead, iterate to make a list,
-// then use the list to do the fixing.
+// Objects of the Metadata types (such as Klass and ConstantPool) have C++ vtables.
+// (In GCC this is the field <Type>::_vptr, i.e., first word in the object.)
 //
-// Our constructed vtables:
-// Dump time:
-//  1. init_self_patching_vtbl_list: table of pointers to current virtual method addrs
-//  2. generate_vtable_methods: create jump table, appended to above vtbl_list
-//  3. patch_klass_vtables: for Klass list, patch the vtable entry in klass and
-//     associated metadata to point to jump table rather than to current vtbl
-// Table layout: NOTE FIXED SIZE
-//   1. vtbl pointers
-//   2. #Klass X #virtual methods per Klass
-//   1 entry for each, in the order:
-//   Klass1:method1 entry, Klass1:method2 entry, ... Klass1:method<num_virtuals> entry
-//   Klass2:method1 entry, Klass2:method2 entry, ... Klass2:method<num_virtuals> entry
-//   ...
-//   Klass<vtbl_list_size>:method1 entry, Klass<vtbl_list_size>:method2 entry,
-//       ... Klass<vtbl_list_size>:method<num_virtuals> entry
-//  Sample entry: (Sparc):
-//   save(sp, -256, sp)
-//   ba,pt common_code
-//   mov XXX, %L0       %L0 gets: Klass index <<8 + method index (note: max method index 255)
+// Addresses of the vtables and the methods may be different across JVM runs,
+// if libjvm.so is dynamically loaded at a different base address.
 //
-// Restore time:
-//   1. initialize_shared_space: reserve space for table
-//   2. init_self_patching_vtbl_list: update pointers to NEW virtual method addrs in text
+// To ensure that the Metadata objects in the CDS archive always have the correct vtable:
 //
-// Execution time:
-//   First virtual method call for any object of these metadata types:
-//   1. object->klass
-//   2. vtable entry for that klass points to the jump table entries
-//   3. branches to common_code with %O0/klass, %L0: Klass index <<8 + method index
-//   4. common_code:
-//      Get address of new vtbl pointer for this Klass from updated table
-//      Update new vtbl pointer in the Klass: future virtual calls go direct
-//      Jump to method, using new vtbl pointer and method index
+// + at dump time:  we redirect the _vptr to point to our own vtables inside
+//                  the CDS image
+// + at run time:   we clone the actual contents of the vtables from libjvm.so
+//                  into our own tables.
 
+// Currently, the archive contain ONLY the following types of objects that have C++ vtables.
+#define CPP_VTABLE_PATCH_TYPES_DO(f) \
+  f(ConstantPool) \
+  f(InstanceKlass) \
+  f(InstanceClassLoaderKlass) \
+  f(InstanceMirrorKlass) \
+  f(InstanceRefKlass) \
+  f(Method) \
+  f(ObjArrayKlass) \
+  f(TypeArrayKlass)
 
-static void* find_matching_vtbl_ptr(void** vtbl_list, void* new_vtable_start, void* obj) {
-  void* old_vtbl_ptr = *(void**)obj;
-  for (int i = 0; i < MetaspaceShared::vtbl_list_size; i++) {
-    if (vtbl_list[i] == old_vtbl_ptr) {
-      return (void**)new_vtable_start + i * MetaspaceShared::num_virtuals;
-    }
+class CppVtableInfo {
+  intptr_t _vtable_size;
+  intptr_t _cloned_vtable[1];
+public:
+  static int num_slots(int vtable_size) {
+    return 1 + vtable_size; // Need to add the space occupied by _vtable_size;
   }
-  ShouldNotReachHere();
-  return NULL;
+  int vtable_size()           { return int(uintx(_vtable_size)); }
+  void set_vtable_size(int n) { _vtable_size = intptr_t(n); }
+  intptr_t* cloned_vtable()   { return &_cloned_vtable[0]; }
+  void zero()                 { memset(_cloned_vtable, 0, sizeof(intptr_t) * vtable_size()); }
+  // Returns the address of the next CppVtableInfo that can be placed immediately after this CppVtableInfo
+  intptr_t* next(int vtable_size) {
+    return &_cloned_vtable[vtable_size];
+  }
+};
+
+template <class T> class CppVtableCloner : public T {
+  static intptr_t* vtable_of(Metadata& m) {
+    return *((intptr_t**)&m);
+  }
+  static CppVtableInfo* _info;
+
+  static int get_vtable_length(const char* name);
+
+public:
+  // Allocate and initialize the C++ vtable, starting from top, but do not go past end.
+  static intptr_t* allocate(const char* name, intptr_t* top, intptr_t* end);
+
+  // Clone the vtable to ...
+  static intptr_t* clone_vtable(const char* name, CppVtableInfo* info);
+
+  static void zero_vtable_clone() {
+    assert(DumpSharedSpaces, "dump-time only");
+    _info->zero();
+  }
+
+  // Switch the vtable pointer to point to the cloned vtable.
+  static void patch(Metadata* obj) {
+    assert(DumpSharedSpaces, "dump-time only");
+    *(void**)obj = (void*)(_info->cloned_vtable());
+  }
+
+  static bool is_valid_shared_object(const T* obj) {
+    intptr_t* vptr = *(intptr_t**)obj;
+    return vptr == _info->cloned_vtable();
+  }
+};
+
+template <class T> CppVtableInfo* CppVtableCloner<T>::_info = NULL;
+
+template <class T>
+intptr_t* CppVtableCloner<T>::allocate(const char* name, intptr_t* top, intptr_t* end) {
+  int n = get_vtable_length(name);
+  _info = (CppVtableInfo*)top;
+  intptr_t* next = _info->next(n);
+
+  if (next > end) {
+    report_out_of_shared_space(SharedMiscData);
+  }
+  _info->set_vtable_size(n);
+
+  intptr_t* p = clone_vtable(name, _info);
+  assert(p == next, "must be");
+
+  return p;
 }
 
-// Assumes the vtable is in first slot in object.
-static void patch_klass_vtables(void** vtbl_list, void* new_vtable_start) {
+template <class T>
+intptr_t* CppVtableCloner<T>::clone_vtable(const char* name, CppVtableInfo* info) {
+  if (!DumpSharedSpaces) {
+    assert(_info == 0, "_info is initialized only at dump time");
+    _info = info; // Remember it -- it will be used by MetaspaceShared::is_valid_shared_method()
+  }
+  T tmp; // Allocate temporary dummy metadata object to get to the original vtable.
+  int n = info->vtable_size();
+  intptr_t* srcvtable = vtable_of(tmp);
+  intptr_t* dstvtable = info->cloned_vtable();
+
+  // We already checked (and, if necessary, adjusted n) when the vtables were allocated, so we are
+  // safe to do memcpy.
+  if (PrintSharedSpaces) {
+    tty->print_cr("Copying %3d vtable entries for %s", n, name);
+  }
+  memcpy(dstvtable, srcvtable, sizeof(intptr_t) * n);
+  return dstvtable + n;
+}
+
+// To determine the size of the vtable for each type, we use the following
+// trick by declaring 2 subclasses:
+//
+//   class CppVtableTesterA: public InstanceKlass {virtual int   last_virtual_method() {return 1;}    };
+//   class CppVtableTesterB: public InstanceKlass {virtual void* last_virtual_method() {return NULL}; };
+//
+// CppVtableTesterA and CppVtableTesterB's vtables have the following properties:
+// - Their size (N+1) is exactly one more than the size of InstanceKlass's vtable (N)
+// - The first N entries have are exactly the same as in InstanceKlass's vtable.
+// - Their last entry is different.
+//
+// So to determine the value of N, we just walk CppVtableTesterA and CppVtableTesterB's tables
+// and find the first entry that's different.
+//
+// This works on all C++ compilers supported by Oracle, but you may need to tweak it for more
+// esoteric compilers.
+
+template <class T> class CppVtableTesterB: public T {
+public:
+  virtual int last_virtual_method() {return 1;}
+};
+
+template <class T> class CppVtableTesterA : public T {
+public:
+  virtual void* last_virtual_method() {
+    // Make this different than CppVtableTesterB::last_virtual_method so the C++
+    // compiler/linker won't alias the two functions.
+    return NULL;
+  }
+};
+
+template <class T>
+int CppVtableCloner<T>::get_vtable_length(const char* name) {
+  CppVtableTesterA<T> a;
+  CppVtableTesterB<T> b;
+
+  intptr_t* avtable = vtable_of(a);
+  intptr_t* bvtable = vtable_of(b);
+
+  // Start at slot 1, because slot 0 may be RTTI (on Solaris/Sparc)
+  int vtable_len = 1;
+  for (; ; vtable_len++) {
+    if (avtable[vtable_len] != bvtable[vtable_len]) {
+      break;
+    }
+  }
+  if (PrintSharedSpaces) {
+    tty->print_cr("Found   %3d vtable entries for %s", vtable_len, name);
+  }
+
+  return vtable_len;
+}
+
+#define ALLOC_CPP_VTABLE_CLONE(c) \
+  top = CppVtableCloner<c>::allocate(#c, top, end);
+
+#define CLONE_CPP_VTABLE(c) \
+  p = CppVtableCloner<c>::clone_vtable(#c, (CppVtableInfo*)p);
+
+#define ZERO_CPP_VTABLE(c) \
+ CppVtableCloner<c>::zero_vtable_clone();
+
+// This can be called at both dump time and run time.
+intptr_t* MetaspaceShared::clone_cpp_vtables(intptr_t* p) {
+  assert(DumpSharedSpaces || UseSharedSpaces, "sanity");
+  CPP_VTABLE_PATCH_TYPES_DO(CLONE_CPP_VTABLE);
+  return p;
+}
+
+void MetaspaceShared::zero_cpp_vtable_clones_for_writing() {
+  assert(DumpSharedSpaces, "dump-time only");
+  CPP_VTABLE_PATCH_TYPES_DO(ZERO_CPP_VTABLE);
+}
+
+// Allocate and initialize the C++ vtables, starting from top, but do not go past end.
+intptr_t* MetaspaceShared::allocate_cpp_vtable_clones(intptr_t* top, intptr_t* end) {
+  assert(DumpSharedSpaces, "dump-time only");
+  // Layout (each slot is a intptr_t):
+  //   [number of slots in the first vtable = n1]
+  //   [ <n1> slots for the first vtable]
+  //   [number of slots in the first second = n2]
+  //   [ <n2> slots for the second vtable]
+  //   ...
+  // The order of the vtables is the same as the CPP_VTAB_PATCH_TYPES_DO macro.
+  CPP_VTABLE_PATCH_TYPES_DO(ALLOC_CPP_VTABLE_CLONE);
+  return top;
+}
+
+// Switch the vtable pointer to point to the cloned vtable. We assume the
+// vtable pointer is in first slot in object.
+void MetaspaceShared::patch_cpp_vtable_pointers() {
   int n = _global_klass_objects->length();
   for (int i = 0; i < n; i++) {
     Klass* obj = _global_klass_objects->at(i);
-    // Note is_instance_klass() is a virtual call in debug.  After patching vtables
-    // all virtual calls on the dummy vtables will restore the original!
     if (obj->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(obj);
-      *(void**)ik = find_matching_vtbl_ptr(vtbl_list, new_vtable_start, ik);
+      if (ik->is_class_loader_instance_klass()) {
+        CppVtableCloner<InstanceClassLoaderKlass>::patch(ik);
+      } else if (ik->is_reference_instance_klass()) {
+        CppVtableCloner<InstanceRefKlass>::patch(ik);
+      } else if (ik->is_mirror_instance_klass()) {
+        CppVtableCloner<InstanceMirrorKlass>::patch(ik);
+      } else {
+        CppVtableCloner<InstanceKlass>::patch(ik);
+      }
       ConstantPool* cp = ik->constants();
-      *(void**)cp = find_matching_vtbl_ptr(vtbl_list, new_vtable_start, cp);
+      CppVtableCloner<ConstantPool>::patch(cp);
       for (int j = 0; j < ik->methods()->length(); j++) {
         Method* m = ik->methods()->at(j);
-        *(void**)m = find_matching_vtbl_ptr(vtbl_list, new_vtable_start, m);
+        CppVtableCloner<Method>::patch(m);
+        assert(CppVtableCloner<Method>::is_valid_shared_object(m), "must be");
       }
+    } else if (obj->is_objArray_klass()) {
+      CppVtableCloner<ObjArrayKlass>::patch(obj);
     } else {
-      // Array klasses
-      Klass* k = obj;
-      *(void**)k = find_matching_vtbl_ptr(vtbl_list, new_vtable_start, k);
+      assert(obj->is_typeArray_klass(), "sanity");
+      CppVtableCloner<TypeArrayKlass>::patch(obj);
     }
   }
+}
+
+bool MetaspaceShared::is_valid_shared_method(const Method* m) {
+  assert(is_in_shared_space(m), "must be");
+  return CppVtableCloner<Method>::is_valid_shared_object(m);
 }
 
 // Closure for serializing initialization data out to a data area to be
@@ -567,12 +722,8 @@ void VM_PopulateDumpSharedSpace::doit() {
   // Gather systemDictionary classes in a global array and do everything to
   // that so we don't have to walk the SystemDictionary again.
   _global_klass_objects = new GrowableArray<Klass*>(1000);
-  Universe::basic_type_classes_do(collect_classes);
-
-  // Need to call SystemDictionary::classes_do(void f(Klass*, ClassLoaderData*))
-  // as we may have some classes with NULL ClassLoaderData* in the dictionary. Other
-  // variants of SystemDictionary::classes_do will skip those classes.
-  SystemDictionary::classes_do(collect_classes2);
+  CollectClassesClosure collect_classes;
+  ClassLoaderDataGraph::loaded_classes_do(&collect_classes);
 
   tty->print_cr("Number of classes %d", _global_klass_objects->length());
   {
@@ -618,24 +769,12 @@ void VM_PopulateDumpSharedSpace::doit() {
   char* od_top = MetaspaceShared::optional_data_region()->alloc_top();
   char* od_end = _od_vs.high();
 
-  // Reserve space for the list of Klass*s whose vtables are used
-  // for patching others as needed.
+  char* vtbl_list = md_top;
+  md_top = (char*)MetaspaceShared::allocate_cpp_vtable_clones((intptr_t*)md_top, (intptr_t*)md_end);
 
-  void** vtbl_list = (void**)md_top;
-  int vtbl_list_size = MetaspaceShared::vtbl_list_size;
-  Universe::init_self_patching_vtbl_list(vtbl_list, vtbl_list_size);
-
-  md_top += vtbl_list_size * sizeof(void*);
-  void* vtable = md_top;
-
-  // Reserve space for a new dummy vtable for klass objects in the
-  // heap.  Generate self-patching vtable entries.
-
-  MetaspaceShared::generate_vtable_methods(vtbl_list, &vtable,
-                                     &md_top, md_end,
-                                     &mc_top, mc_end);
-
-  guarantee(md_top <= md_end, "Insufficient space for vtables.");
+  // We don't use MC section anymore. We will remove it in a future RFE. For now, put one
+  // byte inside so the region writing/mapping code works.
+  mc_top ++;
 
   // Reorder the system dictionary.  (Moving the symbols affects
   // how the hash table indices are calculated.)
@@ -643,7 +782,6 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   SystemDictionary::reorder_dictionary();
   NOT_PRODUCT(SystemDictionary::verify();)
-  SystemDictionary::reverse();
   SystemDictionary::copy_buckets(&md_top, md_end);
 
   SystemDictionary::copy_table(&md_top, md_end);
@@ -709,20 +847,19 @@ void VM_PopulateDumpSharedSpace::doit() {
   tty->print_cr("total   : " SIZE_FORMAT_W(9) " [100.0%% of total] out of " SIZE_FORMAT_W(9) " bytes [%5.1f%% used]",
                  total_bytes, total_alloced, total_u_perc);
 
-  // Update the vtable pointers in all of the Klass objects in the
-  // heap. They should point to newly generated vtable.
-  patch_klass_vtables(vtbl_list, vtable);
+  // During patching, some virtual methods may be called, so at this point
+  // the vtables must contain valid methods (as filled in by CppVtableCloner::allocate).
+  MetaspaceShared::patch_cpp_vtable_pointers();
 
-  // dunno what this is for.
-  char* saved_vtbl = (char*)os::malloc(vtbl_list_size * sizeof(void*), mtClass);
-  memmove(saved_vtbl, vtbl_list, vtbl_list_size * sizeof(void*));
-  memset(vtbl_list, 0, vtbl_list_size * sizeof(void*));
+  // The vtable clones contain addresses of the current process.
+  // We don't want to write these addresses into the archive.
+  MetaspaceShared::zero_cpp_vtable_clones_for_writing();
 
   // Create and write the archive file that maps the shared spaces.
 
   FileMapInfo* mapinfo = new FileMapInfo();
   mapinfo->populate_header(MetaspaceShared::max_alignment());
-  mapinfo->set_misc_data_patching_start((char*)vtbl_list);
+  mapinfo->set_misc_data_patching_start(vtbl_list);
   mapinfo->set_cds_i2i_entry_code_buffers(MetaspaceShared::cds_i2i_entry_code_buffers());
   mapinfo->set_cds_i2i_entry_code_buffers_size(MetaspaceShared::cds_i2i_entry_code_buffers_size());
 
@@ -757,8 +894,8 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   mapinfo->close();
 
-  memmove(vtbl_list, saved_vtbl, vtbl_list_size * sizeof(void*));
-  os::free(saved_vtbl);
+  // Restore the vtable in case we invoke any virtual methods.
+  MetaspaceShared::clone_cpp_vtables((intptr_t*)vtbl_list);
 
   if (PrintSharedSpaces) {
     DumpAllocClosure dac;
@@ -770,23 +907,40 @@ void VM_PopulateDumpSharedSpace::doit() {
 #undef fmt_space
 }
 
+class LinkSharedClassesClosure : public KlassClosure {
+  Thread* THREAD;
+  bool    _made_progress;
+ public:
+  LinkSharedClassesClosure(Thread* thread) : THREAD(thread), _made_progress(false) {}
 
-void MetaspaceShared::link_one_shared_class(Klass* k, TRAPS) {
-  if (k->is_instance_klass()) {
-    InstanceKlass* ik = InstanceKlass::cast(k);
-    // Link the class to cause the bytecodes to be rewritten and the
-    // cpcache to be created. Class verification is done according
-    // to -Xverify setting.
-    _link_classes_made_progress |= try_link_class(ik, THREAD);
-    guarantee(!HAS_PENDING_EXCEPTION, "exception in link_class");
-  }
-}
+  void reset()               { _made_progress = false; }
+  bool made_progress() const { return _made_progress; }
 
-void MetaspaceShared::check_one_shared_class(Klass* k) {
-  if (k->is_instance_klass() && InstanceKlass::cast(k)->check_sharing_error_state()) {
-    _check_classes_made_progress = true;
+  void do_klass(Klass* k) {
+    if (k->is_instance_klass()) {
+      InstanceKlass* ik = InstanceKlass::cast(k);
+      // Link the class to cause the bytecodes to be rewritten and the
+      // cpcache to be created. Class verification is done according
+      // to -Xverify setting.
+      _made_progress |= MetaspaceShared::try_link_class(ik, THREAD);
+      guarantee(!HAS_PENDING_EXCEPTION, "exception in link_class");
+    }
   }
-}
+};
+
+class CheckSharedClassesClosure : public KlassClosure {
+  bool    _made_progress;
+ public:
+  CheckSharedClassesClosure() : _made_progress(false) {}
+
+  void reset()               { _made_progress = false; }
+  bool made_progress() const { return _made_progress; }
+  void do_klass(Klass* k) {
+    if (k->is_instance_klass() && InstanceKlass::cast(k)->check_sharing_error_state()) {
+      _made_progress = true;
+    }
+  }
+};
 
 void MetaspaceShared::check_shared_class_loader_type(Klass* k) {
   if (k->is_instance_klass()) {
@@ -801,21 +955,23 @@ void MetaspaceShared::check_shared_class_loader_type(Klass* k) {
 void MetaspaceShared::link_and_cleanup_shared_classes(TRAPS) {
   // We need to iterate because verification may cause additional classes
   // to be loaded.
+  LinkSharedClassesClosure link_closure(THREAD);
   do {
-    _link_classes_made_progress = false;
-    SystemDictionary::classes_do(link_one_shared_class, THREAD);
+    link_closure.reset();
+    ClassLoaderDataGraph::loaded_classes_do(&link_closure);
     guarantee(!HAS_PENDING_EXCEPTION, "exception in link_class");
-  } while (_link_classes_made_progress);
+  } while (link_closure.made_progress());
 
   if (_has_error_classes) {
     // Mark all classes whose super class or interfaces failed verification.
+    CheckSharedClassesClosure check_closure;
     do {
       // Not completely sure if we need to do this iteratively. Anyway,
       // we should come here only if there are unverifiable classes, which
       // shouldn't happen in normal cases. So better safe than sorry.
-      _check_classes_made_progress = false;
-      SystemDictionary::classes_do(check_one_shared_class);
-    } while (_check_classes_made_progress);
+      check_closure.reset();
+      ClassLoaderDataGraph::loaded_classes_do(&check_closure);
+    } while (check_closure.made_progress());
 
     if (IgnoreUnverifiableClassesDuringDump) {
       // This is useful when running JCK or SQE tests. You should not
@@ -924,6 +1080,11 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
 
     VMThread::execute(&op);
   }
+
+  if (PrintSystemDictionaryAtExit) {
+    SystemDictionary::print();
+  }
+
   // Since various initialization steps have been undone by this process,
   // it is not reasonable to continue running a java process.
   exit(0);
@@ -1134,19 +1295,7 @@ void MetaspaceShared::initialize_shared_spaces() {
   _cds_i2i_entry_code_buffers_size = mapinfo->cds_i2i_entry_code_buffers_size();
   char* buffer = mapinfo->misc_data_patching_start();
 
-  // Skip over (reserve space for) a list of addresses of C++ vtables
-  // for Klass objects.  They get filled in later.
-
-  void** vtbl_list = (void**)buffer;
-  buffer += MetaspaceShared::vtbl_list_size * sizeof(void*);
-  Universe::init_self_patching_vtbl_list(vtbl_list, vtbl_list_size);
-
-  // Skip over (reserve space for) dummy C++ vtables Klass objects.
-  // They are used as is.
-
-  intptr_t vtable_size = *(intptr_t*)buffer;
-  buffer += sizeof(intptr_t);
-  buffer += vtable_size;
+  buffer = (char*)clone_cpp_vtables((intptr_t*)buffer);
 
   int sharedDictionaryLen = *(intptr_t*)buffer;
   buffer += sizeof(intptr_t);

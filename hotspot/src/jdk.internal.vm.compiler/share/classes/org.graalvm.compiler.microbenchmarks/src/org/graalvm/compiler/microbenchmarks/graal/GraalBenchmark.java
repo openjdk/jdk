@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,8 @@ import org.openjdk.jmh.annotations.Warmup;
 public class GraalBenchmark {
 
     public static class Defaults {
-        public static final int MEASUREMENT_ITERATIONS = 10;
-        public static final int WARMUP_ITERATIONS = 10;
+        public static final int MEASUREMENT_ITERATIONS = 5;
+        public static final int WARMUP_ITERATIONS = 5;
         public static final int FORKS = 1;
     }
 }

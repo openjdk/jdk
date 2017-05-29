@@ -1013,20 +1013,8 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   return true;
 }
 
-// defined for >= Solaris 10. This allows builds on earlier versions
-// of Solaris to take advantage of the newly reserved Solaris JVM signals.
-// With SIGJVM1, SIGJVM2, ASYNC_SIGNAL is SIGJVM2. Previously INTERRUPT_SIGNAL
-// was SIGJVM1.
-//
-#if !defined(SIGJVM1)
-  #define SIGJVM1 39
-  #define SIGJVM2 40
-#endif
-
 debug_only(static bool signal_sets_initialized = false);
 static sigset_t unblocked_sigs, vm_sigs, allowdebug_blocked_sigs;
-
-int os::Solaris::_SIGasync = ASYNC_SIGNAL;
 
 bool os::Solaris::is_sig_ignored(int sig) {
   struct sigaction oact;
@@ -1038,12 +1026,6 @@ bool os::Solaris::is_sig_ignored(int sig) {
   } else {
     return false;
   }
-}
-
-// Note: SIGRTMIN is a macro that calls sysconf() so it will
-// dynamically detect SIGRTMIN value for the system at runtime, not buildtime
-static bool isJVM1available() {
-  return SIGJVM1 < SIGRTMIN;
 }
 
 void os::Solaris::signal_sets_init() {
@@ -1068,12 +1050,7 @@ void os::Solaris::signal_sets_init() {
   sigaddset(&unblocked_sigs, SIGSEGV);
   sigaddset(&unblocked_sigs, SIGBUS);
   sigaddset(&unblocked_sigs, SIGFPE);
-
-  // Always true on Solaris 10+
-  guarantee(isJVM1available(), "SIGJVM1/2 missing!");
-  os::Solaris::set_SIGasync(SIGJVM2);
-
-  sigaddset(&unblocked_sigs, os::Solaris::SIGasync());
+  sigaddset(&unblocked_sigs, ASYNC_SIGNAL);
 
   if (!ReduceSignalUsage) {
     if (!os::Solaris::is_sig_ignored(SHUTDOWN1_SIGNAL)) {
@@ -1918,7 +1895,6 @@ void os::print_memory_info(outputStream* st) {
 
 // Moved from whole group, because we need them here for diagnostic
 // prints.
-#define OLDMAXSIGNUM 32
 static int Maxsignum = 0;
 static int *ourSigFlags = NULL;
 
@@ -2011,7 +1987,6 @@ void os::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
   print_signal_handler(st, SHUTDOWN1_SIGNAL , buf, buflen);
   print_signal_handler(st, SHUTDOWN2_SIGNAL , buf, buflen);
   print_signal_handler(st, SHUTDOWN3_SIGNAL, buf, buflen);
-  print_signal_handler(st, os::Solaris::SIGasync(), buf, buflen);
 }
 
 static char saved_jvm_path[MAXPATHLEN] = { 0 };
@@ -2034,7 +2009,9 @@ void os::jvm_path(char *buf, jint buflen) {
   int ret = dladdr(CAST_FROM_FN_PTR(void *, os::jvm_path), &dlinfo);
   assert(ret != 0, "cannot locate libjvm");
   if (ret != 0 && dlinfo.dli_fname != NULL) {
-    realpath((char *)dlinfo.dli_fname, buf);
+    if (os::Posix::realpath((char *)dlinfo.dli_fname, buf, buflen) == NULL) {
+      return;
+    }
   } else {
     buf[0] = '\0';
     return;
@@ -2065,7 +2042,9 @@ void os::jvm_path(char *buf, jint buflen) {
         p = strrchr(buf, '/');
         assert(strstr(p, "/libjvm") == p, "invalid library name");
 
-        realpath(java_home_var, buf);
+        if (os::Posix::realpath(java_home_var, buf, buflen) == NULL) {
+          return;
+        }
         // determine if this is a legacy image or modules image
         // modules image doesn't have "jre" subdirectory
         len = strlen(buf);
@@ -2082,7 +2061,9 @@ void os::jvm_path(char *buf, jint buflen) {
           snprintf(buf + len, buflen-len, "/hotspot/libjvm.so");
         } else {
           // Go back to path of .so
-          realpath((char *)dlinfo.dli_fname, buf);
+          if (os::Posix::realpath((char *)dlinfo.dli_fname, buf, buflen) == NULL) {
+            return;
+          }
         }
       }
     }
@@ -2173,14 +2154,12 @@ void os::signal_raise(int signal_number) {
 
 // a counter for each possible signal value
 static int Sigexit = 0;
-static int Maxlibjsigsigs;
 static jint *pending_signals = NULL;
 static int *preinstalled_sigs = NULL;
 static struct sigaction *chainedsigactions = NULL;
 static sema_t sig_sem;
 typedef int (*version_getting_t)();
 version_getting_t os::Solaris::get_libjsig_version = NULL;
-static int libjsigversion = NULL;
 
 int os::sigexitnum_pd() {
   assert(Sigexit > 0, "signal memory not yet initialized");
@@ -2192,8 +2171,6 @@ void os::Solaris::init_signal_mem() {
   Maxsignum = SIGRTMAX;
   Sigexit = Maxsignum+1;
   assert(Maxsignum >0, "Unable to obtain max signal number");
-
-  Maxlibjsigsigs = Maxsignum;
 
   // pending_signals has one int per signal
   // The additional signal is for SIGEXIT - exit signal to signal_thread
@@ -3558,7 +3535,7 @@ void os::Solaris::SR_handler(Thread* thread, ucontext_t* uc) {
 
       // get current set of blocked signals and unblock resume signal
       pthread_sigmask(SIG_BLOCK, NULL, &suspend_set);
-      sigdelset(&suspend_set, os::Solaris::SIGasync());
+      sigdelset(&suspend_set, ASYNC_SIGNAL);
 
       sr_semaphore.signal();
       // wait here until we are resumed
@@ -3613,7 +3590,7 @@ bool os::message_box(const char* title, const char* message) {
 }
 
 static int sr_notify(OSThread* osthread) {
-  int status = thr_kill(osthread->thread_id(), os::Solaris::SIGasync());
+  int status = thr_kill(osthread->thread_id(), ASYNC_SIGNAL);
   assert_status(status == 0, status, "thr_kill");
   return status;
 }
@@ -3758,7 +3735,7 @@ void os::os_exception_wrapper(java_call_t f, JavaValue* value,
 //
 // This routine may recognize any of the following kinds of signals:
 // SIGBUS, SIGSEGV, SIGILL, SIGFPE, BREAK_SIGNAL, SIGPIPE, SIGXFSZ,
-// os::Solaris::SIGasync
+// ASYNC_SIGNAL.
 // It should be consulted by handlers for any of those signals.
 //
 // The caller of this routine must pass in the three arguments supplied
@@ -3793,7 +3770,7 @@ get_signal_t os::Solaris::get_signal_action = NULL;
 struct sigaction* os::Solaris::get_chained_signal_action(int sig) {
   struct sigaction *actp = NULL;
 
-  if ((libjsig_is_loaded)  && (sig <= Maxlibjsigsigs)) {
+  if ((libjsig_is_loaded)  && (sig <= Maxsignum)) {
     // Retrieve the old signal handler from libjsig
     actp = (*get_signal_action)(sig);
   }
@@ -3958,6 +3935,7 @@ void os::run_periodic_checks() {
   DO_SIGNAL_CHECK(SIGBUS);
   DO_SIGNAL_CHECK(SIGPIPE);
   DO_SIGNAL_CHECK(SIGXFSZ);
+  DO_SIGNAL_CHECK(ASYNC_SIGNAL);
 
   // ReduceSignalUsage allows the user to override these handlers
   // see comments at the very top and jvm_solaris.h
@@ -3967,10 +3945,6 @@ void os::run_periodic_checks() {
     DO_SIGNAL_CHECK(SHUTDOWN3_SIGNAL);
     DO_SIGNAL_CHECK(BREAK_SIGNAL);
   }
-
-  // See comments above for using JVM1/JVM2
-  DO_SIGNAL_CHECK(os::Solaris::SIGasync());
-
 }
 
 typedef int (*os_sigaction_t)(int, const struct sigaction *, struct sigaction *);
@@ -4002,6 +3976,7 @@ void os::Solaris::check_signal_handler(int sig) {
   case SIGPIPE:
   case SIGXFSZ:
   case SIGILL:
+  case ASYNC_SIGNAL:
     jvmHandler = CAST_FROM_FN_PTR(address, signalHandler);
     break;
 
@@ -4013,16 +3988,8 @@ void os::Solaris::check_signal_handler(int sig) {
     break;
 
   default:
-    int asynsig = os::Solaris::SIGasync();
-
-    if (sig == asynsig) {
-      jvmHandler = CAST_FROM_FN_PTR(address, signalHandler);
-    } else {
       return;
-    }
-    break;
   }
-
 
   if (thisHandler != jvmHandler) {
     tty->print("Warning: %s handler ", exception_name(sig, buf, O_BUFLEN));
@@ -4055,7 +4022,6 @@ void os::Solaris::check_signal_handler(int sig) {
 }
 
 void os::Solaris::install_signal_handlers() {
-  bool libjsigdone = false;
   signal_handlers_are_installed = true;
 
   // signal-chaining
@@ -4073,7 +4039,8 @@ void os::Solaris::install_signal_handlers() {
                                          dlsym(RTLD_DEFAULT, "JVM_get_libjsig_version"));
     libjsig_is_loaded = true;
     if (os::Solaris::get_libjsig_version != NULL) {
-      libjsigversion =  (*os::Solaris::get_libjsig_version)();
+      int libjsigversion =  (*os::Solaris::get_libjsig_version)();
+      assert(libjsigversion == JSIG_VERSION_1_4_1, "libjsig version mismatch");
     }
     assert(UseSignalChaining, "should enable signal-chaining");
   }
@@ -4088,21 +4055,9 @@ void os::Solaris::install_signal_handlers() {
   set_signal_handler(SIGBUS, true, true);
   set_signal_handler(SIGILL, true, true);
   set_signal_handler(SIGFPE, true, true);
+  set_signal_handler(ASYNC_SIGNAL, true, true);
 
-
-  if (os::Solaris::SIGasync() > OLDMAXSIGNUM) {
-    // Pre-1.4.1 Libjsig limited to signal chaining signals <= 32 so
-    // can not register overridable signals which might be > 32
-    if (libjsig_is_loaded && libjsigversion <= JSIG_VERSION_1_4_1) {
-      // Tell libjsig jvm has finished setting signal handlers
-      (*end_signal_setting)();
-      libjsigdone = true;
-    }
-  }
-
-  set_signal_handler(os::Solaris::SIGasync(), true, true);
-
-  if (libjsig_is_loaded && !libjsigdone) {
+  if (libjsig_is_loaded) {
     // Tell libjsig jvm finishes setting signal handlers
     (*end_signal_setting)();
   }
@@ -4320,16 +4275,6 @@ void os::init(void) {
 
   main_thread = thr_self();
 
-  // Constant minimum stack size allowed. It must be at least
-  // the minimum of what the OS supports (thr_min_stack()), and
-  // enough to allow the thread to get to user bytecode execution.
-  Posix::_compiler_thread_min_stack_allowed = MAX2(thr_min_stack(),
-                                                   Posix::_compiler_thread_min_stack_allowed);
-  Posix::_java_thread_min_stack_allowed = MAX2(thr_min_stack(),
-                                               Posix::_java_thread_min_stack_allowed);
-  Posix::_vm_internal_thread_min_stack_allowed = MAX2(thr_min_stack(),
-                                                      Posix::_vm_internal_thread_min_stack_allowed);
-
   // dynamic lookup of functions that may not be available in our lowest
   // supported Solaris release
   void * handle = dlopen("libc.so.1", RTLD_LAZY);
@@ -4401,10 +4346,6 @@ jint os::init_2(void) {
   Solaris::signal_sets_init();
   Solaris::init_signal_mem();
   Solaris::install_signal_handlers();
-
-  if (libjsigversion < JSIG_VERSION_1_4_1) {
-    Maxlibjsigsigs = OLDMAXSIGNUM;
-  }
 
   // initialize synchronization primitives to use either thread or
   // lwp synchronization (controlled by UseLWPSynchronization)

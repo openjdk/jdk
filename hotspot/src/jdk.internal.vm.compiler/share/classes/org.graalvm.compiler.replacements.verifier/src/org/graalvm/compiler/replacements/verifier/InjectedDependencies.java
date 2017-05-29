@@ -60,23 +60,24 @@ public class InjectedDependencies implements Iterable<Dependency> {
         }
     }
 
-    private static final class StampDependency extends Dependency {
+    private static final class InjectedStampDependency extends Dependency {
 
-        private StampDependency() {
-            super("returnStamp", "org.graalvm.compiler.core.common.type.Stamp");
+        private InjectedStampDependency() {
+            super("stamp", "org.graalvm.compiler.core.common.type.Stamp");
         }
 
         @Override
         public String inject(ExecutableElement inject) {
             NodeIntrinsic nodeIntrinsic = inject.getAnnotation(NodeIntrinsic.class);
-            return String.format("injection.getReturnStamp(%s.class, %s)", GeneratedPlugin.getErasedType(inject.getReturnType()), nodeIntrinsic != null && nodeIntrinsic.returnStampIsNonNull());
+            boolean nonNull = nodeIntrinsic != null && nodeIntrinsic.injectedStampIsNonNull();
+            return String.format("injection.getInjectedStamp(%s.class, %s)", GeneratedPlugin.getErasedType(inject.getReturnType()), nonNull);
         }
     }
 
     public enum WellKnownDependency {
         CONSTANT_REFLECTION("b.getConstantReflection()", "jdk.vm.ci.meta.ConstantReflectionProvider"),
         META_ACCESS("b.getMetaAccess()", "jdk.vm.ci.meta.MetaAccessProvider"),
-        RETURN_STAMP(new StampDependency()),
+        INJECTED_STAMP(new InjectedStampDependency()),
         SNIPPET_REFLECTION(new InjectedDependency("snippetReflection", "org.graalvm.compiler.api.replacements.SnippetReflectionProvider")),
         STAMP_PROVIDER("b.getStampProvider()", "org.graalvm.compiler.nodes.spi.StampProvider"),
         STRUCTURED_GRAPH("b.getGraph()", "org.graalvm.compiler.nodes.StructuredGraph");

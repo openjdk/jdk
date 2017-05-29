@@ -2103,12 +2103,20 @@ void Assembler::jmpb(Label& L) {
 }
 
 void Assembler::ldmxcsr( Address src) {
-  NOT_LP64(assert(VM_Version::supports_sse(), ""));
-  InstructionMark im(this);
-  prefix(src);
-  emit_int8(0x0F);
-  emit_int8((unsigned char)0xAE);
-  emit_operand(as_Register(2), src);
+  if (UseAVX > 0 ) {
+    InstructionMark im(this);
+    InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ false, /* uses_vl */ false);
+    vex_prefix(src, 0, 0, VEX_SIMD_NONE, VEX_OPCODE_0F, &attributes);
+    emit_int8((unsigned char)0xAE);
+    emit_operand(as_Register(2), src);
+  } else {
+    NOT_LP64(assert(VM_Version::supports_sse(), ""));
+    InstructionMark im(this);
+    prefix(src);
+    emit_int8(0x0F);
+    emit_int8((unsigned char)0xAE);
+    emit_operand(as_Register(2), src);
+  }
 }
 
 void Assembler::leal(Register dst, Address src) {
@@ -4416,12 +4424,21 @@ void Assembler::sqrtss(XMMRegister dst, Address src) {
 }
 
 void Assembler::stmxcsr( Address dst) {
-  NOT_LP64(assert(VM_Version::supports_sse(), ""));
-  InstructionMark im(this);
-  prefix(dst);
-  emit_int8(0x0F);
-  emit_int8((unsigned char)0xAE);
-  emit_operand(as_Register(3), dst);
+  if (UseAVX > 0 ) {
+    assert(VM_Version::supports_avx(), "");
+    InstructionMark im(this);
+    InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ false, /* uses_vl */ false);
+    vex_prefix(dst, 0, 0, VEX_SIMD_NONE, VEX_OPCODE_0F, &attributes);
+    emit_int8((unsigned char)0xAE);
+    emit_operand(as_Register(3), dst);
+  } else {
+    NOT_LP64(assert(VM_Version::supports_sse(), ""));
+    InstructionMark im(this);
+    prefix(dst);
+    emit_int8(0x0F);
+    emit_int8((unsigned char)0xAE);
+    emit_operand(as_Register(3), dst);
+  }
 }
 
 void Assembler::subl(Address dst, int32_t imm32) {
@@ -6620,10 +6637,11 @@ void Assembler::vpclmulqdq(XMMRegister dst, XMMRegister nds, XMMRegister src, in
 }
 
 void Assembler::vzeroupper() {
-  assert(VM_Version::supports_avx(), "");
-  InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ false, /* uses_vl */ false);
-  (void)vex_prefix_and_encode(0, 0, 0, VEX_SIMD_NONE, VEX_OPCODE_0F, &attributes);
-  emit_int8(0x77);
+  if (VM_Version::supports_vzeroupper()) {
+    InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ false, /* uses_vl */ false);
+    (void)vex_prefix_and_encode(0, 0, 0, VEX_SIMD_NONE, VEX_OPCODE_0F, &attributes);
+    emit_int8(0x77);
+  }
 }
 
 #ifndef _LP64

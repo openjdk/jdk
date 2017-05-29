@@ -46,11 +46,15 @@ void CommandLineError::print(bool verbose, const char* msg, ...) {
 class CommandLineFlagRange_int : public CommandLineFlagRange {
   int _min;
   int _max;
+  const int* _ptr;
 
 public:
   // the "name" argument must be a string literal
-  CommandLineFlagRange_int(const char* name, int min, int max) : CommandLineFlagRange(name) {
-    _min=min, _max=max;
+  CommandLineFlagRange_int(const char* name, const int* ptr, int min, int max)
+    : CommandLineFlagRange(name), _min(min), _max(max), _ptr(ptr) {}
+
+  Flag::Error check(bool verbose = true) {
+    return check_int(*_ptr, verbose);
   }
 
   Flag::Error check_int(int value, bool verbose = true) {
@@ -73,11 +77,14 @@ public:
 class CommandLineFlagRange_intx : public CommandLineFlagRange {
   intx _min;
   intx _max;
-
+  const intx* _ptr;
 public:
   // the "name" argument must be a string literal
-  CommandLineFlagRange_intx(const char* name, intx min, intx max) : CommandLineFlagRange(name) {
-    _min=min, _max=max;
+  CommandLineFlagRange_intx(const char* name, const intx* ptr, intx min, intx max)
+    : CommandLineFlagRange(name), _min(min), _max(max), _ptr(ptr) {}
+
+  Flag::Error check(bool verbose = true) {
+    return check_intx(*_ptr, verbose);
   }
 
   Flag::Error check_intx(intx value, bool verbose = true) {
@@ -100,11 +107,15 @@ public:
 class CommandLineFlagRange_uint : public CommandLineFlagRange {
   uint _min;
   uint _max;
+  const uint* _ptr;
 
 public:
   // the "name" argument must be a string literal
-  CommandLineFlagRange_uint(const char* name, uint min, uint max) : CommandLineFlagRange(name) {
-    _min=min, _max=max;
+  CommandLineFlagRange_uint(const char* name, const uint* ptr, uint min, uint max)
+    : CommandLineFlagRange(name), _min(min), _max(max), _ptr(ptr) {}
+
+  Flag::Error check(bool verbose = true) {
+    return check_uint(*_ptr, verbose);
   }
 
   Flag::Error check_uint(uint value, bool verbose = true) {
@@ -127,11 +138,15 @@ public:
 class CommandLineFlagRange_uintx : public CommandLineFlagRange {
   uintx _min;
   uintx _max;
+  const uintx* _ptr;
 
 public:
   // the "name" argument must be a string literal
-  CommandLineFlagRange_uintx(const char* name, uintx min, uintx max) : CommandLineFlagRange(name) {
-    _min=min, _max=max;
+  CommandLineFlagRange_uintx(const char* name, const uintx* ptr, uintx min, uintx max)
+    : CommandLineFlagRange(name), _min(min), _max(max), _ptr(ptr) {}
+
+  Flag::Error check(bool verbose = true) {
+    return check_uintx(*_ptr, verbose);
   }
 
   Flag::Error check_uintx(uintx value, bool verbose = true) {
@@ -154,11 +169,15 @@ public:
 class CommandLineFlagRange_uint64_t : public CommandLineFlagRange {
   uint64_t _min;
   uint64_t _max;
+  const uint64_t* _ptr;
 
 public:
   // the "name" argument must be a string literal
-  CommandLineFlagRange_uint64_t(const char* name, uint64_t min, uint64_t max) : CommandLineFlagRange(name) {
-    _min=min, _max=max;
+  CommandLineFlagRange_uint64_t(const char* name, const uint64_t* ptr, uint64_t min, uint64_t max)
+    : CommandLineFlagRange(name), _min(min), _max(max), _ptr(ptr) {}
+
+  Flag::Error check(bool verbose = true) {
+    return check_uint64_t(*_ptr, verbose);
   }
 
   Flag::Error check_uint64_t(uint64_t value, bool verbose = true) {
@@ -181,11 +200,15 @@ public:
 class CommandLineFlagRange_size_t : public CommandLineFlagRange {
   size_t _min;
   size_t _max;
+  const size_t* _ptr;
 
 public:
   // the "name" argument must be a string literal
-  CommandLineFlagRange_size_t(const char* name, size_t min, size_t max) : CommandLineFlagRange(name) {
-    _min=min, _max=max;
+  CommandLineFlagRange_size_t(const char* name, const size_t* ptr, size_t min, size_t max)
+    : CommandLineFlagRange(name), _min(min), _max(max), _ptr(ptr) {}
+
+  Flag::Error check(bool verbose = true) {
+    return check_size_t(*_ptr, verbose);
   }
 
   Flag::Error check_size_t(size_t value, bool verbose = true) {
@@ -208,11 +231,15 @@ public:
 class CommandLineFlagRange_double : public CommandLineFlagRange {
   double _min;
   double _max;
+  const double* _ptr;
 
 public:
   // the "name" argument must be a string literal
-  CommandLineFlagRange_double(const char* name, double min, double max) : CommandLineFlagRange(name) {
-    _min=min, _max=max;
+  CommandLineFlagRange_double(const char* name, const double* ptr, double min, double max)
+    : CommandLineFlagRange(name), _min(min), _max(max), _ptr(ptr) {}
+
+  Flag::Error check(bool verbose = true) {
+    return check_double(*_ptr, verbose);
   }
 
   Flag::Error check_double(double value, bool verbose = true) {
@@ -236,53 +263,63 @@ public:
 void emit_range_no(...)                         { /* NOP */ }
 
 // No constraint emitting if function argument is NOT provided
-void emit_range_bool(const char* /*name*/)      { /* NOP */ }
-void emit_range_ccstr(const char* /*name*/)     { /* NOP */ }
-void emit_range_ccstrlist(const char* /*name*/) { /* NOP */ }
-void emit_range_int(const char* /*name*/)       { /* NOP */ }
-void emit_range_intx(const char* /*name*/)      { /* NOP */ }
-void emit_range_uint(const char* /*name*/)      { /* NOP */ }
-void emit_range_uintx(const char* /*name*/)     { /* NOP */ }
-void emit_range_uint64_t(const char* /*name*/)  { /* NOP */ }
-void emit_range_size_t(const char* /*name*/)    { /* NOP */ }
-void emit_range_double(const char* /*name*/)    { /* NOP */ }
+void emit_range_bool(const char* /*name*/, const bool* /*value*/)            { /* NOP */ }
+void emit_range_ccstr(const char* /*name*/, const ccstr* /*value*/)          { /* NOP */ }
+void emit_range_ccstrlist(const char* /*name*/, const ccstrlist* /*value*/)  { /* NOP */ }
+void emit_range_int(const char* /*name*/, const int* /*value*/)              { /* NOP */ }
+void emit_range_intx(const char* /*name*/, const intx* /*value*/)            { /* NOP */ }
+void emit_range_uint(const char* /*name*/, const uint* /*value*/)            { /* NOP */ }
+void emit_range_uintx(const char* /*name*/, const uintx* /*value*/)          { /* NOP */ }
+void emit_range_uint64_t(const char* /*name*/, const uint64_t* /*value*/)    { /* NOP */ }
+void emit_range_size_t(const char* /*name*/, const size_t* /*value*/)        { /* NOP */ }
+void emit_range_double(const char* /*name*/, const double* /*value*/)        { /* NOP */ }
 
 // CommandLineFlagRange emitting code functions if range arguments are provided
-void emit_range_int(const char* name, int min, int max)       {
-  CommandLineFlagRangeList::add(new CommandLineFlagRange_int(name, min, max));
+void emit_range_int(const char* name, const int* ptr, int min, int max)       {
+  CommandLineFlagRangeList::add(new CommandLineFlagRange_int(name, ptr, min, max));
 }
-void emit_range_intx(const char* name, intx min, intx max) {
-  CommandLineFlagRangeList::add(new CommandLineFlagRange_intx(name, min, max));
+void emit_range_intx(const char* name, const intx* ptr, intx min, intx max) {
+  CommandLineFlagRangeList::add(new CommandLineFlagRange_intx(name, ptr, min, max));
 }
-void emit_range_uint(const char* name, uint min, uint max) {
-  CommandLineFlagRangeList::add(new CommandLineFlagRange_uint(name, min, max));
+void emit_range_uint(const char* name, const uint* ptr, uint min, uint max) {
+  CommandLineFlagRangeList::add(new CommandLineFlagRange_uint(name, ptr, min, max));
 }
-void emit_range_uintx(const char* name, uintx min, uintx max) {
-  CommandLineFlagRangeList::add(new CommandLineFlagRange_uintx(name, min, max));
+void emit_range_uintx(const char* name, const uintx* ptr, uintx min, uintx max) {
+  CommandLineFlagRangeList::add(new CommandLineFlagRange_uintx(name, ptr, min, max));
 }
-void emit_range_uint64_t(const char* name, uint64_t min, uint64_t max) {
-  CommandLineFlagRangeList::add(new CommandLineFlagRange_uint64_t(name, min, max));
+void emit_range_uint64_t(const char* name, const uint64_t* ptr, uint64_t min, uint64_t max) {
+  CommandLineFlagRangeList::add(new CommandLineFlagRange_uint64_t(name, ptr, min, max));
 }
-void emit_range_size_t(const char* name, size_t min, size_t max) {
-  CommandLineFlagRangeList::add(new CommandLineFlagRange_size_t(name, min, max));
+void emit_range_size_t(const char* name, const size_t* ptr, size_t min, size_t max) {
+  CommandLineFlagRangeList::add(new CommandLineFlagRange_size_t(name, ptr, min, max));
 }
-void emit_range_double(const char* name, double min, double max) {
-  CommandLineFlagRangeList::add(new CommandLineFlagRange_double(name, min, max));
+void emit_range_double(const char* name, const double* ptr, double min, double max) {
+  CommandLineFlagRangeList::add(new CommandLineFlagRange_double(name, ptr, min, max));
 }
 
 // Generate code to call emit_range_xxx function
-#define EMIT_RANGE_PRODUCT_FLAG(type, name, value, doc)      ); emit_range_##type(#name
-#define EMIT_RANGE_COMMERCIAL_FLAG(type, name, value, doc)   ); emit_range_##type(#name
-#define EMIT_RANGE_DIAGNOSTIC_FLAG(type, name, value, doc)   ); emit_range_##type(#name
-#define EMIT_RANGE_EXPERIMENTAL_FLAG(type, name, value, doc) ); emit_range_##type(#name
-#define EMIT_RANGE_MANAGEABLE_FLAG(type, name, value, doc)   ); emit_range_##type(#name
-#define EMIT_RANGE_PRODUCT_RW_FLAG(type, name, value, doc)   ); emit_range_##type(#name
-#define EMIT_RANGE_PD_PRODUCT_FLAG(type, name, doc)          ); emit_range_##type(#name
-#define EMIT_RANGE_PD_DIAGNOSTIC_FLAG(type, name, doc)       ); emit_range_##type(#name
-#define EMIT_RANGE_DEVELOPER_FLAG(type, name, value, doc)    ); emit_range_##type(#name
-#define EMIT_RANGE_PD_DEVELOPER_FLAG(type, name, doc)        ); emit_range_##type(#name
-#define EMIT_RANGE_NOTPRODUCT_FLAG(type, name, value, doc)   ); emit_range_##type(#name
-#define EMIT_RANGE_LP64_PRODUCT_FLAG(type, name, value, doc) ); emit_range_##type(#name
+#define EMIT_RANGE_PRODUCT_FLAG(type, name, value, doc)      ); emit_range_##type(#name,&name
+#define EMIT_RANGE_COMMERCIAL_FLAG(type, name, value, doc)   ); emit_range_##type(#name,&name
+#define EMIT_RANGE_DIAGNOSTIC_FLAG(type, name, value, doc)   ); emit_range_##type(#name,&name
+#define EMIT_RANGE_EXPERIMENTAL_FLAG(type, name, value, doc) ); emit_range_##type(#name,&name
+#define EMIT_RANGE_MANAGEABLE_FLAG(type, name, value, doc)   ); emit_range_##type(#name,&name
+#define EMIT_RANGE_PRODUCT_RW_FLAG(type, name, value, doc)   ); emit_range_##type(#name,&name
+#define EMIT_RANGE_PD_PRODUCT_FLAG(type, name, doc)          ); emit_range_##type(#name,&name
+#define EMIT_RANGE_PD_DIAGNOSTIC_FLAG(type, name, doc)       ); emit_range_##type(#name,&name
+#ifndef PRODUCT
+#define EMIT_RANGE_DEVELOPER_FLAG(type, name, value, doc)    ); emit_range_##type(#name,&name
+#define EMIT_RANGE_PD_DEVELOPER_FLAG(type, name, doc)        ); emit_range_##type(#name,&name
+#define EMIT_RANGE_NOTPRODUCT_FLAG(type, name, value, doc)   ); emit_range_##type(#name,&name
+#else
+#define EMIT_RANGE_DEVELOPER_FLAG(type, name, value, doc)    ); emit_range_no(#name,&name
+#define EMIT_RANGE_PD_DEVELOPER_FLAG(type, name, doc)        ); emit_range_no(#name,&name
+#define EMIT_RANGE_NOTPRODUCT_FLAG(type, name, value, doc)   ); emit_range_no(#name,&name
+#endif
+#ifdef _LP64
+#define EMIT_RANGE_LP64_PRODUCT_FLAG(type, name, value, doc) ); emit_range_##type(#name,&name
+#else
+#define EMIT_RANGE_LP64_PRODUCT_FLAG(type, name, value, doc) ); emit_range_no(#name,&name
+#endif
 
 // Generate func argument to pass into emit_range_xxx functions
 #define EMIT_RANGE_CHECK(a, b)                               , a, b
@@ -411,35 +448,7 @@ bool CommandLineFlagRangeList::check_ranges() {
   bool status = true;
   for (int i=0; i<length(); i++) {
     CommandLineFlagRange* range = at(i);
-    const char* name = range->name();
-    Flag* flag = Flag::find_flag(name, strlen(name), true, true);
-    // We must check for NULL here as lp64_product flags on 32 bit architecture
-    // can generate range check (despite that they are declared as constants),
-    // but they will not be returned by Flag::find_flag()
-    if (flag != NULL) {
-      if (flag->is_int()) {
-        int value = flag->get_int();
-        if (range->check_int(value, true) != Flag::SUCCESS) status = false;
-      } else if (flag->is_uint()) {
-        uint value = flag->get_uint();
-        if (range->check_uint(value, true) != Flag::SUCCESS) status = false;
-      } else if (flag->is_intx()) {
-        intx value = flag->get_intx();
-        if (range->check_intx(value, true) != Flag::SUCCESS) status = false;
-      } else if (flag->is_uintx()) {
-        uintx value = flag->get_uintx();
-        if (range->check_uintx(value, true) != Flag::SUCCESS) status = false;
-      } else if (flag->is_uint64_t()) {
-        uint64_t value = flag->get_uint64_t();
-        if (range->check_uint64_t(value, true) != Flag::SUCCESS) status = false;
-      } else if (flag->is_size_t()) {
-        size_t value = flag->get_size_t();
-        if (range->check_size_t(value, true) != Flag::SUCCESS) status = false;
-      } else if (flag->is_double()) {
-        double value = flag->get_double();
-        if (range->check_double(value, true) != Flag::SUCCESS) status = false;
-      }
-    }
+    if (range->check(true) != Flag::SUCCESS) status = false;
   }
   return status;
 }

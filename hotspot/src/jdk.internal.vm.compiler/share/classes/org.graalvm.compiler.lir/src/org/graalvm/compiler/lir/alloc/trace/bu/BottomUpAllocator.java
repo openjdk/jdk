@@ -22,21 +22,20 @@
  */
 package org.graalvm.compiler.lir.alloc.trace.bu;
 
+import static jdk.vm.ci.code.ValueUtil.asAllocatableValue;
+import static jdk.vm.ci.code.ValueUtil.asRegister;
+import static jdk.vm.ci.code.ValueUtil.isIllegal;
+import static jdk.vm.ci.code.ValueUtil.isRegister;
 import static org.graalvm.compiler.core.common.GraalOptions.DetailedAsserts;
 import static org.graalvm.compiler.lir.LIRValueUtil.asVariable;
 import static org.graalvm.compiler.lir.LIRValueUtil.isConstantValue;
 import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
 import static org.graalvm.compiler.lir.LIRValueUtil.isVariable;
-import static jdk.vm.ci.code.ValueUtil.asAllocatableValue;
-import static jdk.vm.ci.code.ValueUtil.asRegister;
-import static jdk.vm.ci.code.ValueUtil.isIllegal;
-import static jdk.vm.ci.code.ValueUtil.isRegister;
 
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.List;
 
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig.AllocatableRegisters;
@@ -55,10 +54,12 @@ import org.graalvm.compiler.lir.LIRValueUtil;
 import org.graalvm.compiler.lir.RedundantMoveElimination;
 import org.graalvm.compiler.lir.StandardOp;
 import org.graalvm.compiler.lir.StandardOp.BlockEndOp;
+import org.graalvm.compiler.lir.StandardOp.JumpOp;
 import org.graalvm.compiler.lir.StandardOp.LabelOp;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.VirtualStackSlot;
 import org.graalvm.compiler.lir.alloc.OutOfRegistersException;
+import org.graalvm.compiler.lir.alloc.trace.GlobalLivenessInfo;
 import org.graalvm.compiler.lir.alloc.trace.TraceAllocationPhase;
 import org.graalvm.compiler.lir.alloc.trace.TraceAllocationPhase.TraceAllocationContext;
 import org.graalvm.compiler.lir.alloc.trace.TraceGlobalMoveResolutionPhase;
@@ -67,8 +68,6 @@ import org.graalvm.compiler.lir.alloc.trace.TraceRegisterAllocationPhase;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool.MoveFactory;
 import org.graalvm.compiler.lir.ssa.SSAUtil;
-import org.graalvm.compiler.lir.ssa.SSAUtil.PhiValueVisitor;
-import org.graalvm.compiler.lir.ssi.SSIUtil;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.RegisterArray;
@@ -115,8 +114,10 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
     private final ArrayList<LIRInstruction> insertInstructionsAfter;
     private final boolean neverSpillConstants;
 
+    private final GlobalLivenessInfo livenessInfo;
+
     public BottomUpAllocator(TargetDescription target, LIRGenerationResult lirGenRes, MoveFactory spillMoveFactory, RegisterAllocationConfig registerAllocationConfig,
-                    AllocatableValue[] cachedStackSlots, TraceBuilderResult resultTraces, boolean neverSpillConstant) {
+                    AllocatableValue[] cachedStackSlots, TraceBuilderResult resultTraces, boolean neverSpillConstant, GlobalLivenessInfo livenessInfo) {
         this.target = target;
         this.lirGenRes = lirGenRes;
         this.spillMoveFactory = spillMoveFactory;
@@ -125,13 +126,14 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
         this.registerAttributes = registerAllocationConfig.getRegisterConfig().getAttributesMap();
         this.allocatedBlocks = new BitSet(lirGenRes.getLIR().getControlFlowGraph().getBlocks().length);
         this.resultTraces = resultTraces;
-        this.moveResolver = new TraceGlobalMoveResolver(lirGenRes, spillMoveFactory, target.arch);
+        this.moveResolver = new TraceGlobalMoveResolver(lirGenRes, spillMoveFactory, registerAllocationConfig, target.arch);
         this.neverSpillConstants = neverSpillConstant;
+        this.livenessInfo = livenessInfo;
 
         this.insertInstructionsBefore = new ArrayList<>(4);
         this.insertInstructionsAfter = new ArrayList<>(4);
 
-        if (TraceRegisterAllocationPhase.Options.TraceRACacheStackSlots.getValue()) {
+        if (TraceRegisterAllocationPhase.Options.TraceRACacheStackSlots.getValue(lirGenRes.getLIR().getOptions())) {
             this.stackSlots = cachedStackSlots;
         } else {
             this.stackSlots = new AllocatableValue[lirGenRes.getLIR().numVariables()];
@@ -166,16 +168,6 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
         stackSlots[variableIndex] = slot;
         TraceRegisterAllocationPhase.allocatedStackSlots.increment();
         return slot;
-    }
-
-    private final PhiValueVisitor resolveLoopBackEdgeVisitor = (Value in, Value out) -> {
-        resolveBackEdge(in, out);
-    };
-
-    private void resolveBackEdge(Value in, Value out) {
-        if (!isIllegal(in) && !TraceGlobalMoveResolver.isMoveToSelf(out, in)) {
-            TraceGlobalMoveResolutionPhase.addMapping(moveResolver, out, in);
-        }
     }
 
     @Override
@@ -217,7 +209,7 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
                 Debug.log("inserting moves at end of fromBlock B%d", fromBlock.getId());
             }
 
-            List<LIRInstruction> instructions = lir.getLIRforBlock(fromBlock);
+            ArrayList<LIRInstruction> instructions = lir.getLIRforBlock(fromBlock);
             LIRInstruction instr = instructions.get(instructions.size() - 1);
             if (instr instanceof StandardOp.JumpOp) {
                 // insert moves before branch
@@ -231,7 +223,7 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
                 Debug.log("inserting moves at beginning of toBlock B%d", toBlock.getId());
             }
 
-            if (DetailedAsserts.getValue()) {
+            if (DetailedAsserts.getValue(getLIR().getOptions())) {
                 assert lir.getLIRforBlock(fromBlock).get(0) instanceof StandardOp.LabelOp : "block does not start with a label";
 
                 /*
@@ -327,6 +319,7 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
                 Debug.log("insert after %s", move);
             } else {
                 Debug.log("Block end op. No from %s to %s necessary.", src, dst);
+                requireResolution = true;
             }
         }
 
@@ -352,93 +345,172 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
         @SuppressWarnings("try")
         private void allocateTrace(Trace trace) {
             try (Scope s = Debug.scope("BottomUpAllocator", trace.getBlocks()); Indent indent = Debug.logAndIndent("%s (Trace%d)", trace, trace.getId())) {
-                AbstractBlockBase<?> successorBlock = null;
-                for (int i = trace.getBlocks().length - 1; i >= 0; i--) {
-                    AbstractBlockBase<?> block = trace.getBlocks()[i];
+                AbstractBlockBase<?>[] blocks = trace.getBlocks();
+                int lastBlockIdx = blocks.length - 1;
+                AbstractBlockBase<?> successorBlock = blocks[lastBlockIdx];
+                // handle last block
+                allocateBlock(successorBlock);
+                // handle remaining blocks
+                for (int i = lastBlockIdx - 1; i >= 0; i--) {
+                    AbstractBlockBase<?> block = blocks[i];
                     // handle PHIs
-                    if (successorBlock != null) {
-                        resolvePhis(successorBlock, block);
+                    resolvePhis(block, successorBlock);
+                    boolean needResolution = allocateBlock(block);
+
+                    if (needResolution) {
+                        // resolve local data flow
+                        resolveIntraTraceEdge(block, successorBlock);
                     }
-                    allocateBlock(block);
                     successorBlock = block;
                 }
-                resolveLocalDataFlow(trace);
+                resolveLoopBackEdge(trace);
             } catch (Throwable e) {
                 throw Debug.handle(e);
             }
         }
 
+        private final ArrayList<LIRInstruction> phiResolutionMoves = new ArrayList<>();
+
         /**
-         * Resolve phi values, i.e. set the current location of values in the predecessors block
+         * Resolve phi values, i.e., set the current location of values in the predecessors block
          * (which is not yet allocated) to the location of the variable defined by the phi in the
          * successor (which is already allocated). For constant inputs we insert moves.
          */
-        private void resolvePhis(AbstractBlockBase<?> successorBlock, AbstractBlockBase<?> block) {
-            // Note that we are only visiting PHI values, not transient SSI values.
-            phiVisitor.loads.clear();
-            SSAUtil.forEachPhiValuePair(getLIR(), successorBlock, block, phiVisitor);
-            if (phiVisitor.loads.size() > 0) {
-                ArrayList<LIRInstruction> instructions = getLIR().getLIRforBlock(block);
-                instructions.addAll(instructions.size() - 1, phiVisitor.loads);
-            }
-        }
+        private void resolvePhis(AbstractBlockBase<?> from, AbstractBlockBase<?> to) {
+            if (SSAUtil.isMerge(to)) {
+                JumpOp jump = SSAUtil.phiOut(getLIR(), from);
+                LabelOp label = SSAUtil.phiIn(getLIR(), to);
 
-        private final PhiVisitor phiVisitor = new PhiVisitor();
+                assert phiResolutionMoves.isEmpty();
 
-        private final class PhiVisitor implements PhiValueVisitor {
-
-            private final ArrayList<LIRInstruction> loads = new ArrayList<>();
-
-            @Override
-            public void visit(Value phiIn, Value phiOut) {
-                assert isStackSlotValue(phiIn) || isRegister(phiIn) : "PHI defined values is not a register or stack slot: " + phiIn;
-                AllocatableValue in = asAllocatableValue(phiIn);
-
-                AllocatableValue dest = isRegister(in) ? getCurrentValue(asRegister(in)) : in;
-                final LIRInstruction load;
-                if (isConstantValue(phiOut)) {
-                    // insert move from constant
-                    load = spillMoveFactory.createLoad(dest, LIRValueUtil.asConstant(phiOut));
-                } else {
-                    assert isVariable(phiOut) : "Not a variable or constant: " + phiOut;
-                    // insert move from variable
-                    load = spillMoveFactory.createMove(dest, asVariable(phiOut));
+                for (int i = 0; i < label.getPhiSize(); i++) {
+                    visitPhiValuePair(jump.getOutgoingValue(i), label.getIncomingValue(i));
                 }
-                Debug.log("Inserting load %s", load);
-                loads.add(load);
-                return;
-            }
-        }
-
-        private void resolveLocalDataFlow(Trace trace) {
-            for (AbstractBlockBase<?> block : trace.getBlocks()) {
-                for (AbstractBlockBase<?> pred : block.getPredecessors()) {
-                    if (resultTraces.getTraceForBlock(pred).equals(trace)) {
-                        resolveFindInsertPos(pred, block);
-                        SSIUtil.forEachValuePair(getLIR(), block, pred, resolveLoopBackEdgeVisitor);
-                        moveResolver.resolveAndAppendMoves();
-                    }
+                if (!phiResolutionMoves.isEmpty()) {
+                    ArrayList<LIRInstruction> instructions = getLIR().getLIRforBlock(from);
+                    instructions.addAll(instructions.size() - 1, phiResolutionMoves);
+                    phiResolutionMoves.clear();
                 }
             }
         }
 
+        private void visitPhiValuePair(Value phiOut, Value phiIn) {
+            assert isStackSlotValue(phiIn) || isRegister(phiIn) : "PHI defined values is not a register or stack slot: " + phiIn;
+            AllocatableValue in = asAllocatableValue(phiIn);
+
+            AllocatableValue dest = isRegister(in) ? getCurrentValue(asRegister(in)) : in;
+            final LIRInstruction move;
+            if (isConstantValue(phiOut)) {
+                // insert move from constant
+                move = spillMoveFactory.createLoad(dest, LIRValueUtil.asConstant(phiOut));
+            } else {
+                assert isVariable(phiOut) : "Not a variable or constant: " + phiOut;
+                // insert move from variable
+                move = spillMoveFactory.createMove(dest, asVariable(phiOut));
+            }
+            Debug.log("Inserting load %s", move);
+            phiResolutionMoves.add(move);
+        }
+
+        private boolean requireResolution;
+
+        /**
+         * Intra-trace edges, i.e., edge where both, the source and the target block are in the same
+         * trace, are either
+         * <ul>
+         * <li><em>immediate forward edges</em>, i.e., an edge from {@code i}th block of the trace
+         * to the {@code (i+1)}th block, or
+         * <li>a <em>loop back-edge</em> from the last block of the trace to the loop header.
+         * </ul>
+         * This property is guaranteed due to splitting of <em>critical edge</em>.
+         *
+         * Since forward edges are handled locally during bottom-up allocation we only need to check
+         * for the second case.
+         */
+        private void resolveLoopBackEdge(Trace trace) {
+            AbstractBlockBase<?>[] blocks = trace.getBlocks();
+            AbstractBlockBase<?> endBlock = blocks[blocks.length - 1];
+            if (endBlock.isLoopEnd()) {
+                assert endBlock.getSuccessorCount() == 1;
+                AbstractBlockBase<?> targetBlock = endBlock.getSuccessors()[0];
+                assert targetBlock.isLoopHeader() : String.format("Successor %s or loop end %s is not a loop header?", targetBlock, endBlock);
+                if (resultTraces.getTraceForBlock(targetBlock).equals(trace)) {
+                    resolveLoopBackEdge(endBlock, targetBlock);
+                }
+            }
+        }
+
+        private void resolveLoopBackEdge(AbstractBlockBase<?> from, AbstractBlockBase<?> to) {
+            assert resultTraces.getTraceForBlock(from).equals(resultTraces.getTraceForBlock(to)) : "Not on the same trace? " + from + " -> " + to;
+            resolveFindInsertPos(from, to);
+            LIR lir = getLIR();
+
+            if (SSAUtil.isMerge(to)) {
+                JumpOp blockEnd = SSAUtil.phiOut(lir, from);
+                LabelOp label = SSAUtil.phiIn(lir, to);
+
+                for (int i = 0; i < label.getPhiSize(); i++) {
+                    Value incomingValue = label.getIncomingValue(i);
+                    Value outgoingValue = blockEnd.getOutgoingValue(i);
+                    resolveValuePair(incomingValue, outgoingValue);
+                }
+            }
+            resolveTraceEdge(from, to);
+            moveResolver.resolveAndAppendMoves();
+        }
+
+        private void resolveIntraTraceEdge(AbstractBlockBase<?> from, AbstractBlockBase<?> to) {
+            assert resultTraces.getTraceForBlock(from).equals(resultTraces.getTraceForBlock(to)) : "Not on the same trace? " + from + " -> " + to;
+            resolveFindInsertPos(from, to);
+            resolveTraceEdge(from, to);
+            moveResolver.resolveAndAppendMoves();
+        }
+
+        private void resolveTraceEdge(AbstractBlockBase<?> from, AbstractBlockBase<?> to) {
+            Value[] out = livenessInfo.getOutLocation(from);
+            Value[] in = livenessInfo.getInLocation(to);
+
+            assert out != null;
+            assert in != null;
+            assert out.length == in.length;
+
+            for (int i = 0; i < out.length; i++) {
+                Value incomingValue = in[i];
+                Value outgoingValue = out[i];
+                resolveValuePair(incomingValue, outgoingValue);
+            }
+        }
+
+        private void resolveValuePair(Value incomingValue, Value outgoingValue) {
+            if (!isIllegal(incomingValue) && !TraceGlobalMoveResolver.isMoveToSelf(outgoingValue, incomingValue)) {
+                TraceGlobalMoveResolutionPhase.addMapping(moveResolver, outgoingValue, incomingValue);
+            }
+        }
+
+        /**
+         * @return {@code true} if the block requires data-flow resolution.
+         */
         @SuppressWarnings("try")
-        private void allocateBlock(AbstractBlockBase<?> block) {
+        private boolean allocateBlock(AbstractBlockBase<?> block) {
+            // might be set in insertSpillMoveAfter
+            requireResolution = false;
+
             try (Indent indent = Debug.logAndIndent("handle block %s", block)) {
                 currentInstructions = getLIR().getLIRforBlock(block);
                 for (currentInstructionIndex = currentInstructions.size() - 1; currentInstructionIndex >= 0; currentInstructionIndex--) {
                     LIRInstruction inst = currentInstructions.get(currentInstructionIndex);
                     if (inst != null) {
                         inst.setId(currentOpId);
-                        allocateInstruction(inst);
+                        allocateInstruction(inst, block);
                     }
                 }
                 allocatedBlocks.set(block.getId());
             }
+            return requireResolution;
         }
 
         @SuppressWarnings("try")
-        private void allocateInstruction(LIRInstruction op) {
+        private void allocateInstruction(LIRInstruction op, AbstractBlockBase<?> block) {
             assert op != null && op.id() == currentOpId;
             try (Indent indent = Debug.logAndIndent("handle inst: %d: %s", op.id(), op)) {
                 try (Indent indent1 = Debug.logAndIndent("output pos")) {
@@ -461,6 +533,9 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
                     // should have
                     op.forEachTemp(allocStackOrRegisterProcedure);
                     op.forEachOutput(allocStackOrRegisterProcedure);
+                    if (op instanceof LabelOp) {
+                        processIncoming(block, op);
+                    }
                 }
                 try (Indent indent1 = Debug.logAndIndent("input pos")) {
 
@@ -472,6 +547,9 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
                     op.forEachInput(allocRegisterProcedure);
 
                     op.forEachAlive(allocStackOrRegisterProcedure);
+                    if (op instanceof BlockEndOp) {
+                        processOutgoing(block, op);
+                    }
                     op.forEachState(allocStackOrRegisterProcedure);
                     op.forEachInput(allocStackOrRegisterProcedure);
                 }
@@ -482,13 +560,32 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
             }
         }
 
+        private void processIncoming(AbstractBlockBase<?> block, LIRInstruction instruction) {
+            int[] vars = livenessInfo.getBlockIn(block);
+            Value[] locs = new Value[vars.length];
+            for (int i = 0; i < vars.length; i++) {
+                int varNum = vars[i];
+                if (varNum >= 0) {
+                    locs[i] = allocStackOrRegister(instruction, livenessInfo.getVariable(varNum), OperandMode.DEF, LabelOp.incomingFlags);
+                }
+            }
+            livenessInfo.setInLocations(block, locs);
+        }
+
+        private void processOutgoing(AbstractBlockBase<?> block, LIRInstruction instruction) {
+            int[] vars = livenessInfo.getBlockOut(block);
+            Value[] locs = new Value[vars.length];
+            for (int i = 0; i < vars.length; i++) {
+                locs[i] = allocStackOrRegister(instruction, livenessInfo.getVariable(vars[i]), OperandMode.ALIVE, JumpOp.outgoingFlags);
+            }
+            livenessInfo.setOutLocations(block, locs);
+        }
+
         private void spillCallerSavedRegisters() {
             for (Register reg : callerSaveRegs) {
                 if (attributes(reg).isAllocatable()) {
                     evacuateRegisterAndSpill(reg);
                     assert checkRegisterUsage(reg);
-                    evacuateRegisterAndSpill(reg);
-                    // setCurrentValue(reg, reg.asValue());
                     setLastRegisterUsage(reg, currentOpId);
                 }
             }

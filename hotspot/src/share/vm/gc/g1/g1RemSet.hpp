@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,18 +149,18 @@ public:
   // If oops_in_heap_closure is not NULL, a true result is returned
   // if the given card contains oops that have references into the
   // current collection set.
-  virtual bool refine_card(jbyte* card_ptr,
-                           uint worker_i,
-                           G1ParPushHeapRSClosure* oops_in_heap_closure);
+  bool refine_card(jbyte* card_ptr,
+                   uint worker_i,
+                   G1ParPushHeapRSClosure* oops_in_heap_closure);
 
   // Print accumulated summary info from the start of the VM.
-  virtual void print_summary_info();
+  void print_summary_info();
 
   // Print accumulated summary info from the last time called.
-  virtual void print_periodic_summary_info(const char* header, uint period_count);
+  void print_periodic_summary_info(const char* header, uint period_count);
 
   // Prepare remembered set for verification.
-  virtual void prepare_for_verify();
+  void prepare_for_verify();
 
   size_t conc_refine_cards() const {
     return _conc_refine_cards;

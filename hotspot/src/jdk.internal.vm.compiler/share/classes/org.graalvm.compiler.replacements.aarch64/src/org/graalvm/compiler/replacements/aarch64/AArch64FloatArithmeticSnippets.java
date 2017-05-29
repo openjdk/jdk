@@ -35,6 +35,7 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.RemNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.replacements.SnippetTemplate;
 import org.graalvm.compiler.replacements.SnippetTemplate.Arguments;
@@ -53,8 +54,8 @@ public class AArch64FloatArithmeticSnippets extends SnippetTemplate.AbstractTemp
     private final SnippetTemplate.SnippetInfo drem;
     private final SnippetTemplate.SnippetInfo frem;
 
-    public AArch64FloatArithmeticSnippets(Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
-        super(providers, snippetReflection, target);
+    public AArch64FloatArithmeticSnippets(OptionValues options, Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
+        super(options, providers, snippetReflection, target);
         drem = snippet(AArch64FloatArithmeticSnippets.class, "dremSnippet");
         frem = snippet(AArch64FloatArithmeticSnippets.class, "fremSnippet");
     }

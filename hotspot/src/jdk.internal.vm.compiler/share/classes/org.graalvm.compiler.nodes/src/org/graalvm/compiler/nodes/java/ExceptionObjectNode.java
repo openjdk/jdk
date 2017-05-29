@@ -23,10 +23,10 @@
 package org.graalvm.compiler.nodes.java;
 
 import static org.graalvm.compiler.nodeinfo.InputType.Memory;
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_10;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_8;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_8;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
+import org.graalvm.api.word.LocationIdentity;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.TypeReference;
 import org.graalvm.compiler.graph.NodeClass;
@@ -47,7 +47,7 @@ import jdk.vm.ci.meta.MetaAccessProvider;
  * The entry to an exception handler with the exception coming from a call (as opposed to a local
  * throw instruction or implicit exception).
  */
-@NodeInfo(allowedUsageTypes = Memory, cycles = CYCLES_10, size = SIZE_8)
+@NodeInfo(allowedUsageTypes = Memory, cycles = CYCLES_8, size = SIZE_8)
 public final class ExceptionObjectNode extends BeginStateSplitNode implements Lowerable, MemoryCheckpoint.Single {
     public static final NodeClass<ExceptionObjectNode> TYPE = NodeClass.create(ExceptionObjectNode.class);
 
@@ -68,7 +68,7 @@ public final class ExceptionObjectNode extends BeginStateSplitNode implements Lo
              * deopts can float in between the begin node and the load exception node.
              */
             LocationIdentity locationsKilledByInvoke = ((InvokeWithExceptionNode) predecessor()).getLocationIdentity();
-            AbstractBeginNode entry = graph().add(new KillingBeginNode(locationsKilledByInvoke));
+            AbstractBeginNode entry = graph().add(KillingBeginNode.create(locationsKilledByInvoke));
             LoadExceptionObjectNode loadException = graph().add(new LoadExceptionObjectNode(stamp()));
 
             loadException.setStateAfter(stateAfter());

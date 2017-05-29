@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
 #define thread_(field_name) in_bytes(JavaThread::field_name ## _offset()), R16_thread
 #define method_(field_name) in_bytes(Method::field_name ## _offset()), R19_method
 
-  virtual void check_and_handle_popframe(Register java_thread);
-  virtual void check_and_handle_earlyret(Register java_thread);
+  virtual void check_and_handle_popframe(Register scratch_reg);
+  virtual void check_and_handle_earlyret(Register scratch_reg);
 
   // Base routine for all dispatches.
   void dispatch_base(TosState state, address* table);
@@ -78,6 +78,9 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   // Load object from cpool->resolved_references(index).
   void load_resolved_reference_at_index(Register result, Register index, Label *is_null = NULL);
+
+  // load cpool->resolved_klass_at(index)
+  void load_resolved_klass_at_offset(Register Rcpool, Register Roffset, Register Rklass);
 
   void load_receiver(Register Rparam_count, Register Rrecv_dst);
 

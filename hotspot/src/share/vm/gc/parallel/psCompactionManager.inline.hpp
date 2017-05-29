@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_GC_PARALLEL_PSCOMPACTIONMANAGER_INLINE_HPP
 #define SHARE_VM_GC_PARALLEL_PSCOMPACTIONMANAGER_INLINE_HPP
 
+#include "gc/parallel/parMarkBitMap.hpp"
 #include "gc/parallel/psCompactionManager.hpp"
 #include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ void MethodHandles::verify_klass(MacroAssembler* _masm,
                                  Register temp_reg, Register temp2_reg,
                                  const char* error_message) {
   InstanceKlass** klass_addr = SystemDictionary::well_known_klass_addr(klass_id);
-  KlassHandle klass = SystemDictionary::well_known_klass(klass_id);
+  Klass* klass = SystemDictionary::well_known_klass(klass_id);
   bool did_save = false;
   if (temp_reg == noreg || temp2_reg == noreg) {
     temp_reg = L1;
@@ -181,8 +181,9 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
   __ verify_oop(method_temp);
   __ load_heap_oop(Address(method_temp, NONZERO(java_lang_invoke_LambdaForm::vmentry_offset_in_bytes())),  method_temp);
   __ verify_oop(method_temp);
-  // the following assumes that a Method* is normally compressed in the vmtarget field:
-  __ ld_ptr(       Address(method_temp, NONZERO(java_lang_invoke_MemberName::vmtarget_offset_in_bytes())), method_temp);
+  __ load_heap_oop(Address(method_temp, NONZERO(java_lang_invoke_MemberName::method_offset_in_bytes())), method_temp);
+  __ verify_oop(method_temp);
+  __ ld_ptr(       Address(method_temp, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset_in_bytes())),   method_temp);
 
   if (VerifyMethodHandles && !for_compiler_entry) {
     // make sure recv is already on stack
@@ -332,7 +333,8 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
 
     Address member_clazz(    member_reg, NONZERO(java_lang_invoke_MemberName::clazz_offset_in_bytes()));
     Address member_vmindex(  member_reg, NONZERO(java_lang_invoke_MemberName::vmindex_offset_in_bytes()));
-    Address member_vmtarget( member_reg, NONZERO(java_lang_invoke_MemberName::vmtarget_offset_in_bytes()));
+    Address member_vmtarget( member_reg, NONZERO(java_lang_invoke_MemberName::method_offset_in_bytes()));
+    Address vmtarget_method( G5_method, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset_in_bytes()));
 
     Register temp1_recv_klass = temp1;
     if (iid != vmIntrinsics::_linkToStatic) {
@@ -384,14 +386,16 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       if (VerifyMethodHandles) {
         verify_ref_kind(_masm, JVM_REF_invokeSpecial, member_reg, temp2);
       }
-      __ ld_ptr(member_vmtarget, G5_method);
+      __ load_heap_oop(member_vmtarget, G5_method);
+      __ ld_ptr(vmtarget_method, G5_method);
       break;
 
     case vmIntrinsics::_linkToStatic:
       if (VerifyMethodHandles) {
         verify_ref_kind(_masm, JVM_REF_invokeStatic, member_reg, temp2);
       }
-      __ ld_ptr(member_vmtarget, G5_method);
+      __ load_heap_oop(member_vmtarget, G5_method);
+      __ ld_ptr(vmtarget_method, G5_method);
       break;
 
     case vmIntrinsics::_linkToVirtual:

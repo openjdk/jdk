@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ class STWGCTimer;
 // declared at end
 class PreservedMark;
 class MarkAndPushClosure;
+class AdjustPointerClosure;
 
 class MarkSweep : AllStatic {
   //
@@ -64,16 +65,6 @@ class MarkSweep : AllStatic {
   class FollowStackClosure: public VoidClosure {
    public:
     virtual void do_void();
-  };
-
-  class AdjustPointerClosure: public OopsInGenClosure {
-   public:
-    template <typename T> void do_oop_nv(T* p);
-    virtual void do_oop(oop* p);
-    virtual void do_oop(narrowOop* p);
-
-    // This closure provides its own oop verification code.
-    debug_only(virtual bool should_verify_oops() { return false; })
   };
 
   // Used for java/lang/ref handling
@@ -199,6 +190,17 @@ public:
   void set_ref_processor(ReferenceProcessor* rp) {
     set_ref_processor_internal(rp);
   }
+};
+
+class AdjustPointerClosure: public OopsInGenClosure {
+ public:
+  template <typename T> void do_oop_nv(T* p);
+  virtual void do_oop(oop* p);
+  virtual void do_oop(narrowOop* p);
+  virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
+
+  // This closure provides its own oop verification code.
+  debug_only(virtual bool should_verify_oops() { return false; })
 };
 
 class PreservedMark VALUE_OBJ_CLASS_SPEC {

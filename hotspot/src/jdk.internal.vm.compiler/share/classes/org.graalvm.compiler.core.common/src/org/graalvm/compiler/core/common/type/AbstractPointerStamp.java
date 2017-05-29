@@ -59,8 +59,8 @@ public abstract class AbstractPointerStamp extends Stamp {
         return result;
     }
 
-    @Override
-    public Stamp join(Stamp stamp) {
+    protected Stamp defaultPointerJoin(Stamp stamp) {
+        assert getClass() == stamp.getClass();
         AbstractPointerStamp other = (AbstractPointerStamp) stamp;
         boolean joinNonNull = this.nonNull || other.nonNull;
         boolean joinAlwaysNull = this.alwaysNull || other.alwaysNull;
@@ -87,6 +87,42 @@ public abstract class AbstractPointerStamp extends Stamp {
     @Override
     public Stamp unrestricted() {
         return copyWith(false, false);
+    }
+
+    public static Stamp pointerNonNull(Stamp stamp) {
+        AbstractPointerStamp pointer = (AbstractPointerStamp) stamp;
+        return pointer.asNonNull();
+    }
+
+    public static Stamp pointerMaybeNull(Stamp stamp) {
+        AbstractPointerStamp pointer = (AbstractPointerStamp) stamp;
+        return pointer.asMaybeNull();
+    }
+
+    public static Stamp pointerAlwaysNull(Stamp stamp) {
+        AbstractPointerStamp pointer = (AbstractPointerStamp) stamp;
+        return pointer.asAlwaysNull();
+    }
+
+    public Stamp asNonNull() {
+        if (isEmpty()) {
+            return this;
+        }
+        return copyWith(true, false);
+    }
+
+    public Stamp asMaybeNull() {
+        if (isEmpty()) {
+            return this;
+        }
+        return copyWith(false, false);
+    }
+
+    public Stamp asAlwaysNull() {
+        if (isEmpty()) {
+            return this;
+        }
+        return copyWith(false, true);
     }
 
     @Override

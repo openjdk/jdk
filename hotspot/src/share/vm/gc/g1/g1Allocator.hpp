@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -312,12 +312,19 @@ public:
   virtual void waste(size_t& wasted, size_t& undo_wasted);
 };
 
+// G1ArchiveRegionMap is a boolean array used to mark G1 regions as
+// archive regions.  This allows a quick check for whether an object
+// should not be marked because it is in an archive region.
+class G1ArchiveRegionMap : public G1BiasedMappedArray<bool> {
+protected:
+  bool default_value() const { return false; }
+};
+
 // G1ArchiveAllocator is used to allocate memory in archive
 // regions. Such regions are not modifiable by GC, being neither
 // scavenged nor compacted, or even marked in the object header.
 // They can contain no pointers to non-archive heap regions,
 class G1ArchiveAllocator : public CHeapObj<mtGC> {
-
 protected:
   G1CollectedHeap* _g1h;
 
@@ -378,6 +385,24 @@ public:
     _summary_bytes_used = 0;
   }
 
+  // Create the _archive_region_map which is used to identify archive objects.
+  static inline void enable_archive_object_check();
+
+  // Set the regions containing the specified address range as archive/non-archive.
+  static inline void set_range_archive(MemRegion range, bool is_archive);
+
+  static inline bool is_archive_object(oop object);
+
+private:
+  static bool _archive_check_enabled;
+  static G1ArchiveRegionMap  _archive_region_map;
+
+  // Check if an object is in an archive region using the _archive_region_map.
+  static inline bool in_archive_range(oop object);
+
+  // Check if archive object checking is enabled, to avoid calling in_archive_range
+  // unnecessarily.
+  static inline bool archive_check_enabled();
 };
 
 #endif // SHARE_VM_GC_G1_G1ALLOCATOR_HPP

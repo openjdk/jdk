@@ -132,8 +132,11 @@ public class MethodCallTargetNode extends CallTargetNode implements IterableNode
             return targetMethod;
         }
 
-        Assumptions assumptions = receiver.graph().getAssumptions();
-        TypeReference type = StampTool.typeReferenceOrNull(receiver);
+        return devirtualizeCall(invokeKind, targetMethod, contextType, receiver.graph().getAssumptions(), receiver.stamp());
+    }
+
+    public static ResolvedJavaMethod devirtualizeCall(InvokeKind invokeKind, ResolvedJavaMethod targetMethod, ResolvedJavaType contextType, Assumptions assumptions, Stamp receiverStamp) {
+        TypeReference type = StampTool.typeReferenceOrNull(receiverStamp);
         if (type == null && invokeKind == InvokeKind.Virtual) {
             // For virtual calls, we are guaranteed to receive a correct receiver type.
             type = TypeReference.createTrusted(assumptions, targetMethod.getDeclaringClass());
@@ -155,7 +158,6 @@ public class MethodCallTargetNode extends CallTargetNode implements IterableNode
                 return uniqueConcreteMethod.getResult();
             }
         }
-
         return null;
     }
 
@@ -239,8 +241,8 @@ public class MethodCallTargetNode extends CallTargetNode implements IterableNode
                 LogicNode condition = graph().addOrUniqueWithInputs(InstanceOfNode.create(speculatedType, receiver, getProfile(), anchor));
                 FixedGuardNode guard = graph().add(new FixedGuardNode(condition, DeoptimizationReason.OptimizedTypeCheckViolated, DeoptimizationAction.InvalidateRecompile, false));
                 graph().addBeforeFixed(invoke().asNode(), guard);
-                PiNode piNode = graph().unique(new PiNode(receiver, StampFactory.objectNonNull(speculatedType), guard));
-                arguments().set(0, piNode);
+                ValueNode valueNode = graph().addOrUnique(new PiNode(receiver, StampFactory.objectNonNull(speculatedType), guard));
+                arguments().set(0, valueNode);
                 if (speculatedType.isExact()) {
                     setInvokeKind(InvokeKind.Special);
                 } else {

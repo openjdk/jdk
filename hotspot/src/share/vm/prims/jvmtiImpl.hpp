@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -497,7 +497,7 @@ class JvmtiDeferredEvent VALUE_OBJ_CLASS_SPEC {
 /**
  * Events enqueued on this queue wake up the Service thread which dequeues
  * and posts the events.  The Service_lock is required to be held
- * when operating on the queue (except for the "pending" events).
+ * when operating on the queue.
  */
 class JvmtiDeferredEventQueue : AllStatic {
   friend class JvmtiDeferredEvent;
@@ -519,24 +519,12 @@ class JvmtiDeferredEventQueue : AllStatic {
 
   static QueueNode* _queue_head;             // Hold Service_lock to access
   static QueueNode* _queue_tail;             // Hold Service_lock to access
-  static volatile QueueNode* _pending_list;  // Uses CAS for read/update
-
-  // Transfers events from the _pending_list to the _queue.
-  static void process_pending_events() NOT_JVMTI_RETURN;
 
  public:
   // Must be holding Service_lock when calling these
   static bool has_events() NOT_JVMTI_RETURN_(false);
   static void enqueue(const JvmtiDeferredEvent& event) NOT_JVMTI_RETURN;
   static JvmtiDeferredEvent dequeue() NOT_JVMTI_RETURN_(JvmtiDeferredEvent());
-
-  // Used to enqueue events without using a lock, for times (such as during
-  // safepoint) when we can't or don't want to lock the Service_lock.
-  //
-  // Events will be held off to the side until there's a call to
-  // dequeue(), enqueue(), or process_pending_events() (all of which require
-  // the holding of the Service_lock), and will be enqueued at that time.
-  static void add_pending_event(const JvmtiDeferredEvent&) NOT_JVMTI_RETURN;
 };
 
 // Utility macro that checks for NULL pointers:

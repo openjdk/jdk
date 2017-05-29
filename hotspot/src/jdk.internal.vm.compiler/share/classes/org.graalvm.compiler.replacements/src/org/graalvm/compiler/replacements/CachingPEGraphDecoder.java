@@ -22,11 +22,7 @@
  */
 package org.graalvm.compiler.replacements;
 
-import static org.graalvm.compiler.core.common.CompilationIdentifier.INVALID_COMPILATION_ID;
 import static org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext.CompilationContext.INLINE_AFTER_PARSING;
-
-import java.util.HashMap;
-import java.util.Map;
 
 import org.graalvm.compiler.bytecode.BytecodeProvider;
 import org.graalvm.compiler.debug.Debug;
@@ -36,12 +32,19 @@ import org.graalvm.compiler.nodes.GraphEncoder;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
+import org.graalvm.compiler.nodes.graphbuilderconf.InlineInvokePlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext;
+import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
+import org.graalvm.compiler.nodes.graphbuilderconf.LoopExplosionPlugin;
+import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
+import org.graalvm.compiler.nodes.graphbuilderconf.ParameterPlugin;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.ConvertDeoptimizeToGuardPhase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
 import org.graalvm.compiler.phases.util.Providers;
+import org.graalvm.util.EconomicMap;
 
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -56,17 +59,19 @@ public class CachingPEGraphDecoder extends PEGraphDecoder {
     protected final GraphBuilderConfiguration graphBuilderConfig;
     protected final OptimisticOptimizations optimisticOpts;
     private final AllowAssumptions allowAssumptions;
-    private final Map<ResolvedJavaMethod, EncodedGraph> graphCache;
+    private final EconomicMap<ResolvedJavaMethod, EncodedGraph> graphCache;
 
-    public CachingPEGraphDecoder(Providers providers, GraphBuilderConfiguration graphBuilderConfig, OptimisticOptimizations optimisticOpts, AllowAssumptions allowAssumptions,
-                    Architecture architecture) {
-        super(providers.getMetaAccess(), providers.getConstantReflection(), providers.getConstantFieldProvider(), providers.getStampProvider(), architecture);
+    public CachingPEGraphDecoder(Architecture architecture, StructuredGraph graph, Providers providers, GraphBuilderConfiguration graphBuilderConfig, OptimisticOptimizations optimisticOpts,
+                    AllowAssumptions allowAssumptions, OptionValues options, LoopExplosionPlugin loopExplosionPlugin, InvocationPlugins invocationPlugins, InlineInvokePlugin[] inlineInvokePlugins,
+                    ParameterPlugin parameterPlugin, NodePlugin[] nodePlugins) {
+        super(architecture, graph, providers.getMetaAccess(), providers.getConstantReflection(), providers.getConstantFieldProvider(), providers.getStampProvider(), options, loopExplosionPlugin,
+                        invocationPlugins, inlineInvokePlugins, parameterPlugin, nodePlugins);
 
         this.providers = providers;
         this.graphBuilderConfig = graphBuilderConfig;
         this.optimisticOpts = optimisticOpts;
         this.allowAssumptions = allowAssumptions;
-        this.graphCache = new HashMap<>();
+        this.graphCache = EconomicMap.create();
     }
 
     protected GraphBuilderPhase.Instance createGraphBuilderPhaseInstance(IntrinsicContext initialIntrinsicContext) {
@@ -76,22 +81,22 @@ public class CachingPEGraphDecoder extends PEGraphDecoder {
 
     @SuppressWarnings("try")
     private EncodedGraph createGraph(ResolvedJavaMethod method, BytecodeProvider intrinsicBytecodeProvider) {
-        StructuredGraph graph = new StructuredGraph(method, allowAssumptions, INVALID_COMPILATION_ID);
-        try (Debug.Scope scope = Debug.scope("createGraph", graph)) {
+        StructuredGraph graphToEncode = new StructuredGraph.Builder(options, allowAssumptions).useProfilingInfo(false).method(method).build();
+        try (Debug.Scope scope = Debug.scope("createGraph", graphToEncode)) {
             IntrinsicContext initialIntrinsicContext = intrinsicBytecodeProvider != null ? new IntrinsicContext(method, method, intrinsicBytecodeProvider, INLINE_AFTER_PARSING) : null;
             GraphBuilderPhase.Instance graphBuilderPhaseInstance = createGraphBuilderPhaseInstance(initialIntrinsicContext);
-            graphBuilderPhaseInstance.apply(graph);
+            graphBuilderPhaseInstance.apply(graphToEncode);
 
             PhaseContext context = new PhaseContext(providers);
-            new CanonicalizerPhase().apply(graph, context);
+            new CanonicalizerPhase().apply(graphToEncode, context);
             /*
              * ConvertDeoptimizeToGuardPhase reduces the number of merges in the graph, so that
              * fewer frame states will be created. This significantly reduces the number of nodes in
              * the initial graph.
              */
-            new ConvertDeoptimizeToGuardPhase().apply(graph, context);
+            new ConvertDeoptimizeToGuardPhase().apply(graphToEncode, context);
 
-            EncodedGraph encodedGraph = GraphEncoder.encodeSingleGraph(graph, architecture);
+            EncodedGraph encodedGraph = GraphEncoder.encodeSingleGraph(graphToEncode, architecture);
             graphCache.put(method, encodedGraph);
             return encodedGraph;
 

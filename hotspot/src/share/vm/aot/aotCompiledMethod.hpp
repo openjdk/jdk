@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,7 +176,7 @@ private:
   virtual bool is_alive() const { return _is_alive(); }
   virtual bool is_in_use() const { return state() == in_use; }
 
-  address exception_begin() { return (address) _code + _meta->exception_handler_offset(); }
+  address exception_begin() const { return (address) _code + _meta->exception_handler_offset(); }
 
   virtual const char* name() const { return _name; }
 
@@ -240,7 +240,7 @@ private:
 
 #ifdef HOTSWAP
   // Flushing and deoptimization in case of evolution
-  void flush_evol_dependents_on(instanceKlassHandle dependee);
+  void flush_evol_dependents_on(InstanceKlass* dependee);
 #endif // HOTSWAP
 
   virtual void metadata_do(void f(Metadata*));

@@ -31,10 +31,10 @@ import sun.hotspot.WhiteBox;
 
 public class ModuleHelper {
 
-    public static void DefineModule(Object module, String version, String location,
-                                    String[] pkgs) throws Throwable {
+    public static void DefineModule(Object module, boolean is_open, String version,
+                                    String location, String[] pkgs) throws Throwable {
         WhiteBox wb = WhiteBox.getWhiteBox();
-        wb.DefineModule(module, version, location, pkgs);
+        wb.DefineModule(module, is_open, version, location, pkgs);
     }
 
     public static void AddModuleExports(Object from, String pkg, Object to) throws Throwable {
@@ -53,11 +53,6 @@ public class ModuleHelper {
         WhiteBox wb = WhiteBox.getWhiteBox();
         wb.AddModulePackage(m, pkg);
         java.lang.ModuleHelper.addPackageNoSync((Module)m, pkg);
-    }
-
-    public static Module GetModuleByPackageName(Object ldr, String pkg) throws Throwable {
-        WhiteBox wb = WhiteBox.getWhiteBox();
-        return (Module)wb.GetModuleByPackageName(ldr, pkg);
     }
 
     public static void AddModuleExportsToAllUnnamed(Object m, String pkg) throws Throwable {

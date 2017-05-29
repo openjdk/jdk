@@ -28,7 +28,6 @@ import static jdk.vm.ci.code.ValueUtil.asRegister;
 
 import org.graalvm.compiler.asm.aarch64.AArch64Address;
 import org.graalvm.compiler.asm.aarch64.AArch64MacroAssembler;
-import org.graalvm.compiler.asm.aarch64.AArch64MacroAssembler.AArch64ExceptionCode;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.Opcode;
 import org.graalvm.compiler.lir.aarch64.AArch64LIRInstruction;
@@ -54,9 +53,9 @@ final class AArch64HotSpotPatchReturnAddressOp extends AArch64LIRInstruction {
     @Override
     public void emitCode(CompilationResultBuilder crb, AArch64MacroAssembler masm) {
         final int frameSize = crb.frameMap.frameSize();
-        // XXX where is lr exactly?
-        AArch64Address lrAddress = AArch64Address.createUnscaledImmediateAddress(sp, frameSize);
-        masm.brk(AArch64ExceptionCode.BREAKPOINT); // XXX
+        // LR is saved in the {fp, lr} pair above the frame
+        AArch64Address lrAddress = AArch64Address.createUnscaledImmediateAddress(sp,
+                        frameSize + crb.target.wordSize);
         masm.str(64, asRegister(address), lrAddress);
     }
 }

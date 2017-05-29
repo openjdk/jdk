@@ -180,10 +180,26 @@ private:
 
 public:
   void         print(outputStream* st = tty, const char* msg = NULL, bool short_form = false, bool cr = true);
+  void         print_ul(const char* msg = NULL){
+    Log(jit, compilation) log;
+    if (log.is_debug()) {
+      print(log.debug_stream(), msg, /* short form */ true, /* cr */ true);
+    }
+  }
   static void  print(outputStream* st, const nmethod* nm, const char* msg = NULL, bool short_form = false, bool cr = true) {
     print_impl(st, nm->method(), nm->compile_id(), nm->comp_level(),
                            nm->is_osr_method(), nm->is_osr_method() ? nm->osr_entry_bci() : -1, /*is_blocking*/ false,
                            msg, short_form, cr);
+  }
+  static void  print_ul(const nmethod* nm, const char* msg = NULL) {
+    Log(jit, compilation) log;
+    if (log.is_debug()) {
+      print_impl(log.debug_stream(), nm->method(), nm->compile_id(),
+                 nm->comp_level(), nm->is_osr_method(),
+                 nm->is_osr_method() ? nm->osr_entry_bci() : -1,
+                 /*is_blocking*/ false,
+                 msg, /* short form */ true, /* cr */ true);
+    }
   }
 
   static void  print_inline_indent(int inline_level, outputStream* st = tty);
@@ -205,6 +221,12 @@ public:
   static void print_inlining_inner(outputStream* st, ciMethod* method, int inline_level, int bci, const char* msg = NULL);
   static void print_inlining_tty(ciMethod* method, int inline_level, int bci, const char* msg = NULL) {
     print_inlining_inner(tty, method, inline_level, bci, msg);
+  }
+  static void print_inlining_ul(ciMethod* method, int inline_level, int bci, const char* msg = NULL) {
+    Log(jit, inlining) log;
+    if (log.is_debug()) {
+      print_inlining_inner(log.debug_stream(), method, inline_level, bci, msg);
+    }
   }
 };
 

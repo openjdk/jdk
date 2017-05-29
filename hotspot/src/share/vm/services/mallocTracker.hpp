@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,8 @@
  */
 class MemoryCounter VALUE_OBJ_CLASS_SPEC {
  private:
-  size_t   _count;
-  size_t   _size;
+  volatile size_t   _count;
+  volatile size_t   _size;
 
   DEBUG_ONLY(size_t   _peak_count;)
   DEBUG_ONLY(size_t   _peak_size; )
@@ -53,26 +53,28 @@ class MemoryCounter VALUE_OBJ_CLASS_SPEC {
   }
 
   inline void allocate(size_t sz) {
-    Atomic::add(1, (volatile MemoryCounterType*)&_count);
+    Atomic::add(1, &_count);
     if (sz > 0) {
-      Atomic::add((MemoryCounterType)sz, (volatile MemoryCounterType*)&_size);
+      Atomic::add(sz, &_size);
       DEBUG_ONLY(_peak_size = MAX2(_peak_size, _size));
     }
     DEBUG_ONLY(_peak_count = MAX2(_peak_count, _count);)
   }
 
   inline void deallocate(size_t sz) {
-    assert(_count > 0, "Negative counter");
-    assert(_size >= sz, "Negative size");
-    Atomic::add(-1, (volatile MemoryCounterType*)&_count);
+    assert(_count > 0, "Nothing allocated yet");
+    assert(_size >= sz, "deallocation > allocated");
+    Atomic::add(-1, &_count);
     if (sz > 0) {
-      Atomic::add(-(MemoryCounterType)sz, (volatile MemoryCounterType*)&_size);
+      // unary minus operator applied to unsigned type, result still unsigned
+      #pragma warning(suppress: 4146)
+      Atomic::add(-sz, &_size);
     }
   }
 
   inline void resize(long sz) {
     if (sz != 0) {
-      Atomic::add((MemoryCounterType)sz, (volatile MemoryCounterType*)&_size);
+      Atomic::add(sz, &_size);
       DEBUG_ONLY(_peak_size = MAX2(_size, _peak_size);)
     }
   }
@@ -273,7 +275,7 @@ class MallocHeader VALUE_OBJ_CLASS_SPEC {
     if (level == NMT_detail) {
       size_t bucket_idx;
       size_t pos_idx;
-      if (record_malloc_site(stack, size, &bucket_idx, &pos_idx)) {
+      if (record_malloc_site(stack, size, &bucket_idx, &pos_idx, flags)) {
         assert(bucket_idx <= MAX_MALLOCSITE_TABLE_SIZE, "Overflow bucket index");
         assert(pos_idx <= MAX_BUCKET_LENGTH, "Overflow bucket position index");
         _bucket_idx = bucket_idx;
@@ -297,7 +299,7 @@ class MallocHeader VALUE_OBJ_CLASS_SPEC {
     _size = size;
   }
   bool record_malloc_site(const NativeCallStack& stack, size_t size,
-    size_t* bucket_idx, size_t* pos_idx) const;
+    size_t* bucket_idx, size_t* pos_idx, MEMFLAGS flags) const;
 };
 
 

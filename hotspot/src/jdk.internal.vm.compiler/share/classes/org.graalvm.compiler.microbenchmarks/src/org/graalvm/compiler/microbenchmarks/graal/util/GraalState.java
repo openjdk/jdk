@@ -29,6 +29,7 @@ import org.openjdk.jmh.annotations.State;
 
 import org.graalvm.compiler.api.test.Graal;
 import org.graalvm.compiler.core.target.Backend;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.runtime.RuntimeProvider;
 
@@ -38,11 +39,13 @@ import org.graalvm.compiler.runtime.RuntimeProvider;
 @State(Scope.Benchmark)
 public class GraalState {
 
+    public final OptionValues options;
     public final Backend backend;
     public final Providers providers;
     public final MetaAccessProvider metaAccess;
 
     public GraalState() {
+        options = Graal.getRequiredCapability(OptionValues.class);
         backend = Graal.getRequiredCapability(RuntimeProvider.class).getHostBackend();
         providers = backend.getProviders();
         metaAccess = providers.getMetaAccess();

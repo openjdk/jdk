@@ -33,6 +33,7 @@ import java.util.Set;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.bytecode.BytecodeDisassembler;
 import org.graalvm.compiler.debug.GraalDebugConfig.Options;
+import org.graalvm.compiler.debug.internal.DebugScope;
 import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeMap;
@@ -50,6 +51,8 @@ import org.graalvm.compiler.nodes.StructuredGraph.ScheduleResult;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
+import org.graalvm.util.EconomicSet;
+import org.graalvm.util.Equivalence;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
@@ -60,7 +63,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 public class IdealGraphPrinter extends BasicIdealGraphPrinter implements GraphPrinter {
 
     private final boolean tryToSchedule;
-    private final SnippetReflectionProvider snippetReflection;
+    private SnippetReflectionProvider snippetReflection;
 
     /**
      * Creates a new {@link IdealGraphPrinter} that writes to the specified output stream.
@@ -68,10 +71,14 @@ public class IdealGraphPrinter extends BasicIdealGraphPrinter implements GraphPr
      * @param tryToSchedule If false, no scheduling is done, which avoids exceptions for
      *            non-schedulable graphs.
      */
-    public IdealGraphPrinter(OutputStream stream, boolean tryToSchedule, SnippetReflectionProvider snippetReflection) {
+    public IdealGraphPrinter(OutputStream stream, boolean tryToSchedule) {
         super(stream);
         this.begin();
         this.tryToSchedule = tryToSchedule;
+    }
+
+    @Override
+    public void setSnippetReflectionProvider(SnippetReflectionProvider snippetReflection) {
         this.snippetReflection = snippetReflection;
     }
 
@@ -109,15 +116,15 @@ public class IdealGraphPrinter extends BasicIdealGraphPrinter implements GraphPr
     @Override
     public void print(Graph graph, String title, Map<Object, Object> properties) {
         beginGraph(title);
-        Set<Node> noBlockNodes = Node.newSet();
+        EconomicSet<Node> noBlockNodes = EconomicSet.create(Equivalence.IDENTITY);
         ScheduleResult schedule = null;
         if (graph instanceof StructuredGraph) {
             StructuredGraph structuredGraph = (StructuredGraph) graph;
             schedule = structuredGraph.getLastSchedule();
             if (schedule == null && tryToSchedule) {
-                if (Options.PrintIdealGraphSchedule.getValue()) {
+                if (Options.PrintGraphWithSchedule.getValue(DebugScope.getConfig().getOptions())) {
                     try {
-                        SchedulePhase schedulePhase = new SchedulePhase();
+                        SchedulePhase schedulePhase = new SchedulePhase(graph.getOptions());
                         schedulePhase.apply(structuredGraph);
                         schedule = structuredGraph.getLastSchedule();
                     } catch (Throwable t) {
@@ -158,7 +165,7 @@ public class IdealGraphPrinter extends BasicIdealGraphPrinter implements GraphPr
         flush();
     }
 
-    private List<Edge> printNodes(Graph graph, NodeMap<Block> nodeToBlock, Set<Node> noBlockNodes) {
+    private List<Edge> printNodes(Graph graph, NodeMap<Block> nodeToBlock, EconomicSet<Node> noBlockNodes) {
         ArrayList<Edge> edges = new ArrayList<>();
 
         NodeMap<Set<Entry<String, Integer>>> colors = graph.createNodeMap();
@@ -224,6 +231,13 @@ public class IdealGraphPrinter extends BasicIdealGraphPrinter implements GraphPr
                 printProperty("hasPredecessor", "true");
             }
 
+            try {
+                printProperty("NodeCost-Size", node.estimatedNodeSize().toString());
+                printProperty("NodeCost-Cycles", node.estimatedNodeCycles().toString());
+            } catch (Throwable t) {
+                props.put("node-cost-exception", t.getMessage());
+            }
+
             for (Entry<Object, Object> entry : props.entrySet()) {
                 String key = entry.getKey().toString();
                 Object value = entry.getValue();
@@ -287,7 +301,7 @@ public class IdealGraphPrinter extends BasicIdealGraphPrinter implements GraphPr
         endSuccessors();
         beginBlockNodes();
 
-        Set<Node> nodes = Node.newSet();
+        EconomicSet<Node> nodes = EconomicSet.create(Equivalence.IDENTITY);
 
         if (nodeToBlock != null) {
             for (Node n : graph.getNodes()) {
@@ -308,7 +322,7 @@ public class IdealGraphPrinter extends BasicIdealGraphPrinter implements GraphPr
                 }
             }
 
-            Set<Node> snapshot = Node.newSet(nodes);
+            EconomicSet<Node> snapshot = EconomicSet.create(Equivalence.IDENTITY, nodes);
             // add all framestates and phis to their blocks
             for (Node node : snapshot) {
                 if (node instanceof StateSplit && ((StateSplit) node).stateAfter() != null) {
@@ -329,7 +343,7 @@ public class IdealGraphPrinter extends BasicIdealGraphPrinter implements GraphPr
         endBlock();
     }
 
-    private void printNoBlock(Set<Node> noBlockNodes) {
+    private void printNoBlock(EconomicSet<Node> noBlockNodes) {
         if (!noBlockNodes.isEmpty()) {
             beginBlock("noBlock");
             beginBlockNodes();

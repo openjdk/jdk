@@ -97,6 +97,11 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   double _cur_string_dedup_fixup_time_ms;
 
+  double _cur_prepare_tlab_time_ms;
+  double _cur_resize_tlab_time_ms;
+
+  double _cur_derived_pointer_table_update_time_ms;
+
   double _cur_clear_ct_time_ms;
   double _cur_expand_heap_time_ms;
   double _cur_ref_proc_time_ms;
@@ -117,6 +122,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _recorded_preserve_cm_referents_time_ms;
 
   double _recorded_merge_pss_time_ms;
+
+  double _recorded_start_new_cset_time_ms;
 
   double _recorded_total_free_cset_time_ms;
 
@@ -171,6 +178,18 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   size_t sum_thread_work_items(GCParPhases phase);
 
  public:
+
+  void record_prepare_tlab_time_ms(double ms) {
+    _cur_prepare_tlab_time_ms = ms;
+  }
+
+  void record_resize_tlab_time_ms(double ms) {
+    _cur_resize_tlab_time_ms = ms;
+  }
+
+  void record_derived_pointer_table_update_time(double ms) {
+    _cur_derived_pointer_table_update_time_ms = ms;
+  }
 
   void record_clear_ct_time(double ms) {
     _cur_clear_ct_time_ms = ms;
@@ -257,6 +276,10 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void record_merge_pss_time_ms(double time_ms) {
     _recorded_merge_pss_time_ms = time_ms;
+  }
+
+  void record_start_new_cset_time_ms(double time_ms) {
+    _recorded_start_new_cset_time_ms = time_ms;
   }
 
   void record_cur_collection_start_sec(double time_ms) {

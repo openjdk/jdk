@@ -26,16 +26,18 @@ import static jdk.vm.ci.common.InitTimer.timer;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.graalvm.compiler.debug.Assertions;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.options.Option;
+import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
-import org.graalvm.compiler.options.OptionValue;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.tiers.CompilerConfiguration;
 import org.graalvm.compiler.serviceprovider.GraalServices;
+import org.graalvm.util.EconomicMap;
 
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.common.InitTimer;
@@ -52,7 +54,7 @@ public abstract class CompilerConfigurationFactory implements Comparable<Compile
         @Option(help = "Names the Graal compiler configuration to use. If ommitted, the compiler configuration " +
                        "with the highest auto-selection priority is used. To see the set of available configurations, " +
                        "supply the value 'help' to this option.", type = OptionType.Expert)
-        public static final OptionValue<String> CompilerConfiguration = new OptionValue<>(null);
+        public static final OptionKey<String> CompilerConfiguration = new OptionKey<>(null);
         // @formatter:on
     }
 
@@ -91,7 +93,7 @@ public abstract class CompilerConfigurationFactory implements Comparable<Compile
 
     public static class DefaultBackendMap implements BackendMap {
 
-        private final IdentityHashMap<Class<? extends Architecture>, HotSpotBackendFactory> backends = new IdentityHashMap<>();
+        private final EconomicMap<Class<? extends Architecture>, HotSpotBackendFactory> backends = EconomicMap.create();
 
         @SuppressWarnings("try")
         public DefaultBackendMap(String backendName) {
@@ -124,18 +126,11 @@ public abstract class CompilerConfigurationFactory implements Comparable<Compile
         return 0;
     }
 
-    @SuppressWarnings("all")
-    private static boolean assertionsEnabled() {
-        boolean assertionsEnabled = false;
-        assert assertionsEnabled = true;
-        return assertionsEnabled;
-    }
-
     /**
      * List used to assert uniqueness of {@link #name} and {@link #autoSelectionPriority} across all
      * {@link CompilerConfigurationFactory} instances.
      */
-    private static final List<CompilerConfigurationFactory> factories = assertionsEnabled() ? new ArrayList<>() : null;
+    private static final List<CompilerConfigurationFactory> factories = Assertions.ENABLED ? new ArrayList<>() : null;
 
     private static boolean checkAndAddNewFactory(CompilerConfigurationFactory factory) {
         for (CompilerConfigurationFactory other : factories) {
@@ -169,10 +164,10 @@ public abstract class CompilerConfigurationFactory implements Comparable<Compile
      * @param name the name of the compiler configuration to select (optional)
      */
     @SuppressWarnings("try")
-    public static CompilerConfigurationFactory selectFactory(String name) {
+    public static CompilerConfigurationFactory selectFactory(String name, OptionValues options) {
         CompilerConfigurationFactory factory = null;
         try (InitTimer t = timer("CompilerConfigurationFactory.selectFactory")) {
-            String value = name == null ? Options.CompilerConfiguration.getValue() : name;
+            String value = name == null ? Options.CompilerConfiguration.getValue(options) : name;
             if ("help".equals(value)) {
                 System.out.println("The available Graal compiler configurations are:");
                 for (CompilerConfigurationFactory candidate : getAllCandidates()) {

@@ -154,7 +154,7 @@ public final class NodeBitMap implements NodeIterable<Node> {
         if (bits.length < other.bits.length) {
             bits = Arrays.copyOf(bits, other.bits.length);
         }
-        for (int i = 0; i < bits.length; i++) {
+        for (int i = 0; i < Math.min(bits.length, other.bits.length); i++) {
             bits[i] |= other.bits[i];
         }
     }
@@ -181,44 +181,47 @@ public final class NodeBitMap implements NodeIterable<Node> {
         }
     }
 
-    private static class MarkedNodeIterator implements Iterator<Node> {
+    protected int nextMarkedNodeId(int fromNodeId) {
+        assert fromNodeId >= 0;
+        int wordIndex = fromNodeId >> SHIFT;
+        int wordsInUse = bits.length;
+        if (wordIndex < wordsInUse) {
+            long word = bits[wordIndex] & (0xFFFFFFFFFFFFFFFFL << fromNodeId);
+            while (true) {
+                if (word != 0) {
+                    return wordIndex * Long.SIZE + Long.numberOfTrailingZeros(word);
+                }
+                if (++wordIndex == wordsInUse) {
+                    break;
+                }
+                word = bits[wordIndex];
+            }
+        }
+        return -2;
+    }
 
-        private final NodeBitMap visited;
-        private Iterator<Node> nodes;
-        private Node nextNode;
+    private class MarkedNodeIterator implements Iterator<Node> {
+        private int nextNodeId;
 
-        MarkedNodeIterator(NodeBitMap visited, Iterator<Node> nodes) {
-            this.visited = visited;
-            this.nodes = nodes;
+        MarkedNodeIterator() {
+            nextNodeId = -1;
             forward();
         }
 
         private void forward() {
-            do {
-                if (!nodes.hasNext()) {
-                    nextNode = null;
-                    return;
-                }
-                nextNode = nodes.next();
-                if (visited.isNew(nextNode)) {
-                    nextNode = null;
-                    return;
-                }
-            } while (!visited.isMarked(nextNode));
+            nextNodeId = NodeBitMap.this.nextMarkedNodeId(nextNodeId + 1);
         }
 
         @Override
         public boolean hasNext() {
-            return nextNode != null;
+            return nextNodeId >= 0;
         }
 
         @Override
         public Node next() {
-            try {
-                return nextNode;
-            } finally {
-                forward();
-            }
+            Node result = graph.getNode(nextNodeId);
+            forward();
+            return result;
         }
 
         @Override
@@ -230,7 +233,7 @@ public final class NodeBitMap implements NodeIterable<Node> {
 
     @Override
     public Iterator<Node> iterator() {
-        return new MarkedNodeIterator(NodeBitMap.this, graph().getNodes().iterator());
+        return new MarkedNodeIterator();
     }
 
     public NodeBitMap copy() {

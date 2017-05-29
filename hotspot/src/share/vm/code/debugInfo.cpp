@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,7 +224,7 @@ void ConstantOopWriteValue::print_on(outputStream* st) const {
 // ConstantOopReadValue
 
 ConstantOopReadValue::ConstantOopReadValue(DebugInfoReadStream* stream) {
-  _value = Handle(stream->read_oop());
+  _value = Handle(Thread::current(), stream->read_oop());
   assert(_value() == NULL ||
          Universe::heap()->is_in_reserved(_value()), "Should be in heap");
 }

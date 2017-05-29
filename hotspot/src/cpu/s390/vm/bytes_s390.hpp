@@ -42,12 +42,6 @@ class Bytes: AllStatic {
   //
   // In short, it makes no sense on z/Architecture to piecemeal get or put unaligned data.
 
-  // Returns true if the byte ordering used by Java is different from
-  // the native byte ordering of the underlying machine.
-  // z/Arch is big endian, thus, a swap between native and Java ordering
-  // is always a no-op.
-  static inline bool is_Java_byte_ordering_different() { return false; }
-
   // Only swap on little endian machines => suffix `_le'.
   static inline u2   swap_u2_le(u2 x) { return x; }
   static inline u4   swap_u4_le(u4 x) { return x; }

@@ -29,6 +29,14 @@ public interface DebugDumpHandler extends Closeable {
     void dump(Object object, String message);
 
     /**
+     * Add arbitrary capability for use by the handler.
+     *
+     * @param capability
+     */
+    default void addCapability(Object capability) {
+    }
+
+    /**
      * Flushes and releases resources managed by this dump handler. A subsequent call to
      * {@link #dump(Object, String)} will create and open new resources. That is, this method can be
      * used to reset the handler.

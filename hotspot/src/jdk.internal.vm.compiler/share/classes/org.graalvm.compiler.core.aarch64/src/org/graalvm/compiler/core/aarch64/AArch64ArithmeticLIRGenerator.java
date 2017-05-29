@@ -23,13 +23,16 @@
 
 package org.graalvm.compiler.core.aarch64;
 
-import static org.graalvm.compiler.lir.LIRValueUtil.asJavaConstant;
-import static org.graalvm.compiler.lir.LIRValueUtil.isJavaConstant;
 import static jdk.vm.ci.aarch64.AArch64.sp;
 import static jdk.vm.ci.aarch64.AArch64Kind.DWORD;
 import static jdk.vm.ci.aarch64.AArch64Kind.QWORD;
+import static org.graalvm.compiler.lir.LIRValueUtil.asJavaConstant;
+import static org.graalvm.compiler.lir.LIRValueUtil.isJavaConstant;
+import static org.graalvm.compiler.lir.aarch64.AArch64BitManipulationOp.BitManipulationOpCode.BSR;
+import static org.graalvm.compiler.lir.aarch64.AArch64BitManipulationOp.BitManipulationOpCode.CLZ;
+import static org.graalvm.compiler.lir.aarch64.AArch64BitManipulationOp.BitManipulationOpCode.CTZ;
 
-import org.graalvm.compiler.asm.NumUtil;
+import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.asm.aarch64.AArch64MacroAssembler;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
@@ -41,12 +44,12 @@ import org.graalvm.compiler.lir.aarch64.AArch64AddressValue;
 import org.graalvm.compiler.lir.aarch64.AArch64ArithmeticLIRGeneratorTool;
 import org.graalvm.compiler.lir.aarch64.AArch64ArithmeticOp;
 import org.graalvm.compiler.lir.aarch64.AArch64BitManipulationOp;
-import org.graalvm.compiler.lir.aarch64.AArch64BitManipulationOp.BitManipulationOpCode;
 import org.graalvm.compiler.lir.aarch64.AArch64Move.LoadOp;
 import org.graalvm.compiler.lir.aarch64.AArch64Move.StoreConstantOp;
 import org.graalvm.compiler.lir.aarch64.AArch64Move.StoreOp;
 import org.graalvm.compiler.lir.aarch64.AArch64ReinterpretOp;
 import org.graalvm.compiler.lir.aarch64.AArch64SignExtendOp;
+import org.graalvm.compiler.lir.aarch64.AArch64Unary;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGenerator;
 
 import jdk.vm.ci.aarch64.AArch64Kind;
@@ -91,11 +94,30 @@ public class AArch64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implem
         }
     }
 
+    protected Value emitExtendMemory(boolean isSigned, AArch64Kind memoryKind, int resultBits, AArch64AddressValue address, LIRFrameState state) {
+        // Issue a zero extending load of the proper bit size and set the result to
+        // the proper kind.
+        Variable result = getLIRGen().newVariable(LIRKind.value(resultBits == 32 ? AArch64Kind.DWORD : AArch64Kind.QWORD));
+
+        int targetSize = resultBits <= 32 ? 32 : 64;
+        switch (memoryKind) {
+            case BYTE:
+            case WORD:
+            case DWORD:
+            case QWORD:
+                getLIRGen().append(new AArch64Unary.MemoryOp(isSigned, targetSize,
+                                memoryKind.getSizeInBytes() * 8, result, address, state));
+                break;
+            default:
+                throw GraalError.shouldNotReachHere();
+        }
+        return result;
+    }
+
     @Override
     public Value emitMul(Value a, Value b, boolean setFlags) {
-        // TODO (das) setFlags handling - should be handled higher up. Ask for ideas at mailing list
-        assert !setFlags : "Set flags on multiplication is not supported";
-        return emitBinary(LIRKind.combine(a, b), getOpCode(a, AArch64ArithmeticOp.MUL, AArch64ArithmeticOp.FMUL), true, a, b);
+        AArch64ArithmeticOp intOp = setFlags ? AArch64ArithmeticOp.MULVS : AArch64ArithmeticOp.MUL;
+        return emitBinary(LIRKind.combine(a, b), getOpCode(a, intOp, AArch64ArithmeticOp.FMUL), true, a, b);
     }
 
     @Override
@@ -223,7 +245,7 @@ public class AArch64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implem
 
     @Override
     public Value emitZeroExtend(Value inputVal, int fromBits, int toBits) {
-        assert fromBits <= toBits && (toBits == 32 || toBits == 64);
+        assert fromBits <= toBits && toBits <= 64;
         if (fromBits == toBits) {
             return inputVal;
         }
@@ -235,11 +257,21 @@ public class AArch64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implem
 
     @Override
     public Value emitSignExtend(Value inputVal, int fromBits, int toBits) {
-        assert fromBits <= toBits && (toBits == 32 || toBits == 64);
+        LIRKind resultKind = getResultLirKind(toBits, inputVal);
+        assert fromBits <= toBits && toBits <= 64;
         if (fromBits == toBits) {
             return inputVal;
+        } else if (isJavaConstant(inputVal)) {
+            JavaConstant javaConstant = asJavaConstant(inputVal);
+            long constant;
+            if (javaConstant.isNull()) {
+                constant = 0;
+            } else {
+                constant = javaConstant.asLong();
+            }
+            int shiftCount = QWORD.getSizeInBytes() * 8 - fromBits;
+            return new ConstantValue(resultKind, JavaConstant.forLong((constant << shiftCount) >> shiftCount));
         }
-        LIRKind resultKind = getResultLirKind(toBits, inputVal);
         Variable result = getLIRGen().newVariable(resultKind);
         getLIRGen().append(new AArch64SignExtendOp(result, getLIRGen().asAllocatable(inputVal), fromBits, toBits));
         return result;
@@ -249,7 +281,8 @@ public class AArch64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implem
         if (resultBitSize == 64) {
             return LIRKind.combine(inputValues).changeType(QWORD);
         } else {
-            assert resultBitSize == 32;
+            // FIXME: I have no idea what this assert was ever for
+            // assert resultBitSize == 32;
             return LIRKind.combine(inputValues).changeType(DWORD);
         }
     }
@@ -352,8 +385,8 @@ public class AArch64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implem
     }
 
     @Override
-    public Value emitBitScanForward(Value inputVal) {
-        return emitBitManipulation(AArch64BitManipulationOp.BitManipulationOpCode.BSF, inputVal);
+    public Variable emitBitScanForward(Value value) {
+        throw GraalError.unimplemented();
     }
 
     @Override
@@ -362,27 +395,23 @@ public class AArch64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implem
     }
 
     @Override
-    public Value emitBitScanReverse(Value inputVal) {
-        // TODO (das) old implementation said to use emitCountLeadingZeros instead - need extra node
-        // for that though
-        return emitBitManipulation(BitManipulationOpCode.BSR, inputVal);
+    public Value emitBitScanReverse(Value value) {
+        Variable result = getLIRGen().newVariable(LIRKind.combine(value).changeType(AArch64Kind.DWORD));
+        getLIRGen().append(new AArch64BitManipulationOp(BSR, result, getLIRGen().asAllocatable(value)));
+        return result;
     }
 
     @Override
     public Value emitCountLeadingZeros(Value value) {
-        return emitBitManipulation(BitManipulationOpCode.CLZ, value);
+        Variable result = getLIRGen().newVariable(LIRKind.combine(value).changeType(AArch64Kind.DWORD));
+        getLIRGen().append(new AArch64BitManipulationOp(CLZ, result, getLIRGen().asAllocatable(value)));
+        return result;
     }
 
     @Override
     public Value emitCountTrailingZeros(Value value) {
-        throw GraalError.unimplemented();
-    }
-
-    private Variable emitBitManipulation(AArch64BitManipulationOp.BitManipulationOpCode op, Value inputVal) {
-        assert isNumericInteger(inputVal.getPlatformKind());
-        AllocatableValue input = getLIRGen().asAllocatable(inputVal);
-        Variable result = getLIRGen().newVariable(LIRKind.combine(input));
-        getLIRGen().append(new AArch64BitManipulationOp(op, result, input));
+        Variable result = getLIRGen().newVariable(LIRKind.combine(value).changeType(AArch64Kind.DWORD));
+        getLIRGen().append(new AArch64BitManipulationOp(CTZ, result, getLIRGen().asAllocatable(value)));
         return result;
     }
 

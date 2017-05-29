@@ -25,48 +25,48 @@ package org.graalvm.compiler.virtual.phases.ea;
 import static org.graalvm.compiler.core.common.GraalOptions.EscapeAnalysisIterations;
 import static org.graalvm.compiler.core.common.GraalOptions.EscapeAnalyzeOnly;
 
-import java.util.Set;
-
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.ScheduleResult;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
 import org.graalvm.compiler.options.Option;
+import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
-import org.graalvm.compiler.options.OptionValue;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
+import org.graalvm.util.EconomicSet;
 
 public class PartialEscapePhase extends EffectsPhase<PhaseContext> {
 
     static class Options {
         //@formatter:off
         @Option(help = "", type = OptionType.Debug)
-        public static final OptionValue<Boolean> OptEarlyReadElimination = new OptionValue<>(true);
+        public static final OptionKey<Boolean> OptEarlyReadElimination = new OptionKey<>(true);
         //@formatter:on
     }
 
     private final boolean readElimination;
     private final BasePhase<PhaseContext> cleanupPhase;
 
-    public PartialEscapePhase(boolean iterative, CanonicalizerPhase canonicalizer) {
-        this(iterative, Options.OptEarlyReadElimination.getValue(), canonicalizer, null);
+    public PartialEscapePhase(boolean iterative, CanonicalizerPhase canonicalizer, OptionValues options) {
+        this(iterative, Options.OptEarlyReadElimination.getValue(options), canonicalizer, null, options);
     }
 
-    public PartialEscapePhase(boolean iterative, CanonicalizerPhase canonicalizer, BasePhase<PhaseContext> cleanupPhase) {
-        this(iterative, Options.OptEarlyReadElimination.getValue(), canonicalizer, cleanupPhase);
+    public PartialEscapePhase(boolean iterative, CanonicalizerPhase canonicalizer, BasePhase<PhaseContext> cleanupPhase, OptionValues options) {
+        this(iterative, Options.OptEarlyReadElimination.getValue(options), canonicalizer, cleanupPhase, options);
     }
 
-    public PartialEscapePhase(boolean iterative, boolean readElimination, CanonicalizerPhase canonicalizer, BasePhase<PhaseContext> cleanupPhase) {
-        super(iterative ? EscapeAnalysisIterations.getValue() : 1, canonicalizer);
+    public PartialEscapePhase(boolean iterative, boolean readElimination, CanonicalizerPhase canonicalizer, BasePhase<PhaseContext> cleanupPhase, OptionValues options) {
+        super(iterative ? EscapeAnalysisIterations.getValue(options) : 1, canonicalizer);
         this.readElimination = readElimination;
         this.cleanupPhase = cleanupPhase;
     }
 
     @Override
-    protected void postIteration(StructuredGraph graph, PhaseContext context, Set<Node> changedNodes) {
+    protected void postIteration(StructuredGraph graph, PhaseContext context, EconomicSet<Node> changedNodes) {
         super.postIteration(graph, context, changedNodes);
         if (cleanupPhase != null) {
             cleanupPhase.apply(graph, context);
@@ -75,7 +75,7 @@ public class PartialEscapePhase extends EffectsPhase<PhaseContext> {
 
     @Override
     protected void run(StructuredGraph graph, PhaseContext context) {
-        if (VirtualUtil.matches(graph, EscapeAnalyzeOnly.getValue())) {
+        if (VirtualUtil.matches(graph, EscapeAnalyzeOnly.getValue(graph.getOptions()))) {
             if (readElimination || graph.hasVirtualizableAllocation()) {
                 runAnalysis(graph, context);
             }

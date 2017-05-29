@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
 
 class Rewriter: public StackObj {
  private:
-  instanceKlassHandle _klass;
+  InstanceKlass*      _klass;
   constantPoolHandle  _pool;
   Array<Method*>*     _methods;
   GrowableArray<int>  _cp_map;
@@ -188,7 +188,7 @@ class Rewriter: public StackObj {
   }
 
   // All the work goes in here:
-  Rewriter(instanceKlassHandle klass, const constantPoolHandle& cpool, Array<Method*>* methods, TRAPS);
+  Rewriter(InstanceKlass* klass, const constantPoolHandle& cpool, Array<Method*>* methods, TRAPS);
 
   void compute_index_maps();
   void make_constant_pool_cache(TRAPS);
@@ -211,7 +211,7 @@ class Rewriter: public StackObj {
   static methodHandle rewrite_jsrs(methodHandle m, TRAPS);
  public:
   // Driver routine:
-  static void rewrite(instanceKlassHandle klass, TRAPS);
+  static void rewrite(InstanceKlass* klass, TRAPS);
 };
 
 #endif // SHARE_VM_INTERPRETER_REWRITER_HPP

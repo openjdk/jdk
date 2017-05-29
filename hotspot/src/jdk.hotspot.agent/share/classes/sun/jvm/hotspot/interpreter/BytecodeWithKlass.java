@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,12 +37,7 @@ public class BytecodeWithKlass extends BytecodeWithCPIndex {
   }
 
   public Symbol getClassName() {
-    ConstantPool.CPSlot obj = method().getConstants().getSlotAt(index());
-    if (obj.isUnresolved()) {
-      return obj.getSymbol();
-    } else {
-      return obj.getKlass().getName();
-    }
+    return method().getConstants().getKlassNameAt(index());
   }
 
   public String toString() {

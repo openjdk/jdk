@@ -46,7 +46,7 @@ public final class TraceRegisterAllocationPolicy {
 
         public final TraceAllocationPhase<TraceAllocationContext> getAllocator() {
             if (allocator == null) {
-                allocator = initAllocator(target, lirGenRes, spillMoveFactory, registerAllocationConfig, cachedStackSlots, resultTraces, neverSpillConstants, strategies);
+                allocator = initAllocator(target, lirGenRes, spillMoveFactory, registerAllocationConfig, cachedStackSlots, resultTraces, neverSpillConstants, livenessInfo, strategies);
             }
             return allocator;
         }
@@ -71,7 +71,7 @@ public final class TraceRegisterAllocationPolicy {
         @SuppressWarnings("hiding")
         protected abstract TraceAllocationPhase<TraceAllocationContext> initAllocator(TargetDescription target, LIRGenerationResult lirGenRes, MoveFactory spillMoveFactory,
                         RegisterAllocationConfig registerAllocationConfig, AllocatableValue[] cachedStackSlots, TraceBuilderResult resultTraces, boolean neverSpillConstant,
-                        ArrayList<AllocationStrategy> strategies);
+                        GlobalLivenessInfo livenessInfo, ArrayList<AllocationStrategy> strategies);
     }
 
     private final TargetDescription target;
@@ -81,11 +81,12 @@ public final class TraceRegisterAllocationPolicy {
     private final AllocatableValue[] cachedStackSlots;
     private final TraceBuilderResult resultTraces;
     private final boolean neverSpillConstants;
+    private final GlobalLivenessInfo livenessInfo;
 
     private final ArrayList<AllocationStrategy> strategies;
 
     public TraceRegisterAllocationPolicy(TargetDescription target, LIRGenerationResult lirGenRes, MoveFactory spillMoveFactory, RegisterAllocationConfig registerAllocationConfig,
-                    AllocatableValue[] cachedStackSlots, TraceBuilderResult resultTraces, boolean neverSpillConstant) {
+                    AllocatableValue[] cachedStackSlots, TraceBuilderResult resultTraces, boolean neverSpillConstant, GlobalLivenessInfo livenessInfo) {
         this.target = target;
         this.lirGenRes = lirGenRes;
         this.spillMoveFactory = spillMoveFactory;
@@ -93,6 +94,7 @@ public final class TraceRegisterAllocationPolicy {
         this.cachedStackSlots = cachedStackSlots;
         this.resultTraces = resultTraces;
         this.neverSpillConstants = neverSpillConstant;
+        this.livenessInfo = livenessInfo;
 
         this.strategies = new ArrayList<>(3);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #include "c1/c1_Canonicalizer.hpp"
 #include "c1/c1_Optimizer.hpp"
 #include "c1/c1_ValueMap.hpp"
-#include "c1/c1_ValueSet.hpp"
+#include "c1/c1_ValueSet.inline.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "memory/resourceArea.hpp"
 #include "utilities/bitMap.inline.hpp"

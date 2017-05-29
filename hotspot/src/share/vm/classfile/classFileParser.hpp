@@ -81,6 +81,10 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   mutable ClassLoaderData* _loader_data;
   const InstanceKlass* _host_klass;
   GrowableArray<Handle>* _cp_patches; // overrides for CP entries
+  int _num_patched_klasses;
+  int _max_num_patched_klasses;
+  int _orig_cp_size;
+  int _first_patched_klass_resolved_index;
 
   // Metadata created before the instance klass is created.  Must be deallocated
   // if not transferred to the InstanceKlass upon successful class loading
@@ -238,28 +242,28 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
                      bool* const declares_nonstatic_concrete_methods,
                      TRAPS);
 
-  const u2* parse_exception_table(const ClassFileStream* const stream,
-                                  u4 code_length,
-                                  u4 exception_table_length,
-                                  TRAPS);
+  const void* parse_exception_table(const ClassFileStream* const stream,
+                                    u4 code_length,
+                                    u4 exception_table_length,
+                                    TRAPS);
 
   void parse_linenumber_table(u4 code_attribute_length,
                               u4 code_length,
                               CompressedLineNumberWriteStream**const write_stream,
                               TRAPS);
 
-  const u2* parse_localvariable_table(const ClassFileStream* const cfs,
-                                      u4 code_length,
-                                      u2 max_locals,
-                                      u4 code_attribute_length,
-                                      u2* const localvariable_table_length,
-                                      bool isLVTT,
-                                      TRAPS);
+  const void* parse_localvariable_table(const ClassFileStream* const cfs,
+                                        u4 code_length,
+                                        u2 max_locals,
+                                        u4 code_attribute_length,
+                                        u2* const localvariable_table_length,
+                                        bool isLVTT,
+                                        TRAPS);
 
-  const u2* parse_checked_exceptions(const ClassFileStream* const cfs,
-                                     u2* const checked_exceptions_length,
-                                     u4 method_attribute_length,
-                                     TRAPS);
+  const void* parse_checked_exceptions(const ClassFileStream* const cfs,
+                                       u2* const checked_exceptions_length,
+                                       u4 method_attribute_length,
+                                       TRAPS);
 
   void parse_type_array(u2 array_length,
                         u4 code_length,
@@ -311,6 +315,10 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   void classfile_parse_error(const char* msg,
                              int index,
                              const char *name,
+                             TRAPS) const;
+  void classfile_parse_error(const char* msg,
+                             const char* name,
+                             const char* signature,
                              TRAPS) const;
 
   inline void guarantee_property(bool b, const char* msg, TRAPS) const {
@@ -430,6 +438,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
     return patch;
   }
 
+  void patch_class(ConstantPool* cp, int class_index, Klass* k, Symbol* name);
   void patch_constant_pool(ConstantPool* cp,
                            int index,
                            Handle patch,
@@ -453,10 +462,10 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   void copy_localvariable_table(const ConstMethod* cm,
                                 int lvt_cnt,
                                 u2* const localvariable_table_length,
-                                const u2**const localvariable_table_start,
+                                const void** const localvariable_table_start,
                                 int lvtt_cnt,
                                 u2* const localvariable_type_table_length,
-                                const u2** const localvariable_type_table_start,
+                                const void** const localvariable_type_table_start,
                                 TRAPS);
 
   void copy_method_annotations(ConstMethod* cm,
