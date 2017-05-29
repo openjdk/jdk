@@ -450,13 +450,18 @@ define DeclareRunTestRecipe
   run-test-$1:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk run-test TEST="$1")
 
+  exploded-run-test-$1:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk run-test \
+	    TEST="$1" JDK_IMAGE_DIR=$(JDK_OUTPUTDIR))
+
 endef
 
 # ALL_NAMED_TESTS is defined in FindTests.gmk
 $(foreach t, $(ALL_NAMED_TESTS), $(eval $(call DeclareRunTestRecipe,$t)))
 ALL_TEST_TARGETS := $(addprefix run-test-, $(ALL_NAMED_TESTS))
+ALL_EXPLODED_TEST_TARGETS := $(addprefix exploded-run-test-, $(ALL_NAMED_TESTS))
 
-ALL_TARGETS += $(ALL_TEST_TARGETS)
+ALL_TARGETS += $(ALL_TEST_TARGETS) $(ALL_EXPLODED_TEST_TARGETS)
 
 ################################################################################
 # Build tests
@@ -484,6 +489,10 @@ test-image-jdk-jtreg-native:
 
 run-test:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk run-test TEST="$(TEST)")
+
+exploded-run-test:
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk run-test \
+	    TEST="$(TEST)" JDK_IMAGE_DIR=$(JDK_OUTPUTDIR))
 
 ifeq ($(BUILD_GTEST), true)
   test-image-hotspot-gtest:
@@ -514,7 +523,7 @@ ALL_TARGETS += prepare-test-image build-test-hotspot-jtreg-native \
     test-image-hotspot-jtreg-native build-test-jdk-jtreg-native \
     test-image-jdk-jtreg-native build-test-lib build-test-failure-handler \
     test-failure-handler test-image-failure-handler test-image-hotspot-gtest \
-    run-test
+    run-test exploded-run-test
 
 ################################################################################
 # Run tests
@@ -807,9 +816,11 @@ else
   test: jdk-image test-image
 
   run-test: jdk-image test-image
+  exploded-run-test: exploded-image test-image
 
   # Declare dependency for all generated test targets
   $(foreach t, $(ALL_TEST_TARGETS), $(eval $t: jdk-image test-image))
+  $(foreach t, $(ALL_EXPLODED_TEST_TARGETS), $(eval $t: exploded-image test-image))
 
   create-buildjdk-copy: jdk.jlink-java java.base-gendata \
       $(addsuffix -java, $(INTERIM_IMAGE_MODULES))

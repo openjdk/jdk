@@ -29,13 +29,15 @@
 </div>
 <h2 id="using-the-run-test-framework">Using the run-test framework</h2>
 <p>This new way of running tests is developer-centric. It assumes that you have built a jdk locally and want to test it. Running common test targets is simple, and more complex ad-hoc combination of tests is possible. The user interface is forgiving, and clearly report errors it cannot resolve.</p>
+<p>The main target &quot;run-test&quot; uses the jdk-image as the tested product. There is also an alternate target &quot;exploded-run-test&quot; that uses the exploded image instead. Not all tests will run successfully on the exploded image, but using this target can greatly improve rebuild times for certain workflows.</p>
 <p>Some example command-lines:</p>
 <pre><code>$ make run-test-tier1
 $ make run-test-jdk_lang JTREG=&quot;JOBS=8&quot;
 $ make run-test TEST=jdk_lang
 $ make run-test-only TEST=&quot;gtest:LogTagSet gtest:LogTagSetDescriptions&quot; GTEST=&quot;REPEAT=-1&quot;
 $ make run-test TEST=&quot;hotspot/test:hotspot_gc&quot; JTREG=&quot;JOBS=1;TIMEOUT=8;VM_OTIONS=-XshowSettings -Xlog:gc+ref=debug&quot;
-$ make run-test TEST=&quot;jtreg:hotspot/test:hotspot_gc hotspot/test/native_sanity/JniVersion.java&quot;</code></pre>
+$ make run-test TEST=&quot;jtreg:hotspot/test:hotspot_gc hotspot/test/native_sanity/JniVersion.java&quot;
+$ make exploded-run-test TEST=hotspot_tier1</code></pre>
 <h2 id="test-selection">Test selection</h2>
 <p>All functionality is available using the run-test make target. In this use case, the test or tests to be executed is controlled using the <code>TEST</code> variable. To speed up subsequent test runs with no source code changes, run-test-only can be used instead, which do not depend on the source and test image build.</p>
 <p>For some common top-level tests, direct make targets have been generated. This includes all JTreg test groups, the hotspot gtest, and custom tests (if present). This means that <code>make run-test-tier1</code> is equivalent to <code>make run-test TEST=&quot;tier1&quot;</code>, but the latter is more tab-completion friendly. For more complex test runs, the <code>run-test TEST=&quot;x&quot;</code> solution needs to be used.</p>
