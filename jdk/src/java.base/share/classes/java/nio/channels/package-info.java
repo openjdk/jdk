@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * performing I/O operations, such as files and sockets; defines selectors, for
  * multiplexed, non-blocking I/O operations.
  *
- * <a name="channels"></a>
+ * <a id="channels"></a>
  *
  * <blockquote><table cellspacing=1 cellpadding=0 summary="Lists channels and their descriptions">
  * <tr><th align="left">Channels</th><th align="left">Description</th></tr>
@@ -136,7 +136,7 @@
  * file channel connected to the same underlying file as the {@link java.io}
  * class.
  *
- * <a name="multiplex"></a>
+ * <a id="multiplex"></a>
  * <blockquote><table cellspacing=1 cellpadding=0 summary="Lists multiplexed, non-blocking channels and their descriptions">
  * <tr><th align="left">Multiplexed, non-blocking I/O</th><th align="left"><p>Description</th></tr>
  * <tr><td valign=top>{@link java.nio.channels.SelectableChannel}</td>
@@ -222,7 +222,7 @@
  * directly; custom channel classes should extend the appropriate {@link
  * java.nio.channels.SelectableChannel} subclasses defined in this package.
  *
- * <a name="async"></a>
+ * <a id="async"></a>
  *
  * <blockquote><table cellspacing=1 cellpadding=0 summary="Lists asynchronous channels and their descriptions">
  * <tr><th align="left">Asynchronous I/O</th><th align="left">Description</th></tr>
