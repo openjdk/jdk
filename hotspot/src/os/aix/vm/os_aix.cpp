@@ -1380,39 +1380,7 @@ void os::print_os_info(outputStream* st) {
   st->print_cr("AIX kernel version %u.%u.%u.%u",
                (ver >> 24) & 0xFF, (ver >> 16) & 0xFF, (ver >> 8) & 0xFF, ver & 0xFF);
 
-  // rlimit
-  st->print("rlimit:");
-  struct rlimit rlim;
-
-  st->print(" STACK ");
-  getrlimit(RLIMIT_STACK, &rlim);
-  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%uk", rlim.rlim_cur >> 10);
-
-  st->print(", CORE ");
-  getrlimit(RLIMIT_CORE, &rlim);
-  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%uk", rlim.rlim_cur >> 10);
-
-  st->print(", NPROC ");
-  st->print("%d", sysconf(_SC_CHILD_MAX));
-
-  st->print(", NOFILE ");
-  getrlimit(RLIMIT_NOFILE, &rlim);
-  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%d", rlim.rlim_cur);
-
-  st->print(", AS ");
-  getrlimit(RLIMIT_AS, &rlim);
-  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%uk", rlim.rlim_cur >> 10);
-
-  // Print limits on DATA, because it limits the C-heap.
-  st->print(", DATA ");
-  getrlimit(RLIMIT_DATA, &rlim);
-  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%uk", rlim.rlim_cur >> 10);
-  st->cr();
+  os::Posix::print_rlimit_info(st);
 
   // load average
   st->print("load average:");
