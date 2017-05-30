@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,25 +21,6 @@
  * questions.
  */
 
-import java.io.*;
-import java.net.*;
-
-public class B5077773 {
-
-    public static void main(String[] args) throws Exception {
-        URLClassLoader loader =  new URLClassLoader (new URL[] {new URL("file:foo.jar")});
-        /* This test will fail if the file below is removed from rt.jar */
-        InputStream is = loader.getResourceAsStream ("javax/swing/text/rtf/charsets/mac.txt");
-        if (is == null) {
-            System.out.println ("could not find mac.txt");
-            return;
-        }
-        int c=0;
-        while ((is.read()) != -1) {
-            c++;
-        }
-        if (c == 26) /* size of bad file */  {
-            throw new RuntimeException ("Wrong mac.txt file was loaded");
-        }
-    }
-}
+grant {
+    permission java.lang.RuntimePermission "createClassLoader";
+};

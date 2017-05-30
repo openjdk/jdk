@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,26 @@
  * questions.
  */
 
+import jdk.test.lib.process.ProcessTools;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 /**
  * @test
- * @bug 5086147
- * @requires (os.family == "windows")
- * @run main B5086147
- * @summary File,URI,URL conversions are strange for UNC path
+ * @bug 6449565
+ * @library /test/lib
+ * @build jdk.test.lib.process.ProcessTools
+ * @run main OldSocketImplTestDriver
+ * @summary Test driver for OdlSocketImpl
  */
-
-import java.io.File;
-import java.net.URI;
-
-public class B5086147 {
-    public static final void main( String[] aaParamters ) throws Exception{
-        File file = new File( "\\\\somehost\\someshare\\somefile.ext" );
-        URI uri = file.toURI();
-
-        if (!(uri.toURL().toURI().equals(uri))) {
-            throw new RuntimeException("Test failed : (uri.toURL().toURI().equals(uri)) isn't hold");
-        }
+public class OldSocketImplTestDriver {
+    public static void main(String[] args) throws Throwable {
+        Path jar = Paths.get(System.getProperty("test.src"),
+                "OldSocketImpl.jar");
+        ProcessTools.executeTestJava("-cp", jar.toString(), "OldSocketImpl")
+                    .outputTo(System.out)
+                    .errorTo(System.out)
+                    .shouldHaveExitValue(0);
     }
 }
