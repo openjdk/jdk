@@ -5148,7 +5148,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1496083682
+DATE_WHEN_GENERATED=1496178074
 
 ###############################################################################
 #
@@ -51056,6 +51056,74 @@ $as_echo "$JDK_ARCH_ABI_PROP_NAME" >&6; }
   fi
 
 
+  # Optional POSIX functionality needed by the JVM
+  #
+  # Check if clock_gettime is available and in which library. This indicates
+  # availability of CLOCK_MONOTONIC for hotspot. But we don't need to link, so
+  # don't let it update LIBS.
+  save_LIBS="$LIBS"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing clock_gettime" >&5
+$as_echo_n "checking for library containing clock_gettime... " >&6; }
+if ${ac_cv_search_clock_gettime+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char clock_gettime ();
+int
+main ()
+{
+return clock_gettime ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' rt; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_cxx_try_link "$LINENO"; then :
+  ac_cv_search_clock_gettime=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_clock_gettime+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_clock_gettime+:} false; then :
+
+else
+  ac_cv_search_clock_gettime=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_clock_gettime" >&5
+$as_echo "$ac_cv_search_clock_gettime" >&6; }
+ac_res=$ac_cv_search_clock_gettime
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  HAS_CLOCK_GETTIME=true
+fi
+
+  if test "x$LIBS" = "x-lrt "; then
+    CLOCK_GETTIME_IN_LIBRT=true
+  fi
+  LIBS="$save_LIBS"
+
+
   # Special extras...
   if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     if test "x$OPENJDK_TARGET_CPU_ARCH" = "xsparc"; then
@@ -51439,6 +51507,16 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
   else
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -DDEBUG"
   fi
+
+  # Optional POSIX functionality needed by the VM
+
+  if test "x$HAS_CLOCK_GETTIME" = "xtrue"; then
+    JVM_CFLAGS="$JVM_CFLAGS -DSUPPORTS_CLOCK_MONOTONIC"
+    if test "x$CLOCK_GETTIME_IN_LIBRT" = "xtrue"; then
+      JVM_CFLAGS="$JVM_CFLAGS -DNEEDS_LIBRT"
+    fi
+  fi
+
 
   # Set some additional per-OS defines.
   if test "x$OPENJDK_TARGET_OS" = xlinux; then
@@ -52257,6 +52335,16 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
   else
     OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK -DDEBUG"
   fi
+
+  # Optional POSIX functionality needed by the VM
+
+  if test "x$HAS_CLOCK_GETTIME" = "xtrue"; then
+    OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -DSUPPORTS_CLOCK_MONOTONIC"
+    if test "x$CLOCK_GETTIME_IN_LIBRT" = "xtrue"; then
+      OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -DNEEDS_LIBRT"
+    fi
+  fi
+
 
   # Set some additional per-OS defines.
   if test "x$OPENJDK_BUILD_OS" = xlinux; then
