@@ -259,7 +259,6 @@ class Solaris {
 
   static sigset_t* unblocked_signals();
   static sigset_t* vm_signals();
-  static sigset_t* allowdebug_blocked_signals();
 
   // %%% Following should be promoted to os.hpp:
   // Trace number of created threads

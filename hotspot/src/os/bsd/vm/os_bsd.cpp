@@ -162,7 +162,6 @@ sigset_t SR_sigset;
 // utility functions
 
 static int SR_initialize();
-static void unpackTime(timespec* absTime, bool isAbsolute, jlong time);
 
 julong os::available_memory() {
   return Bsd::available_memory();
@@ -533,7 +532,7 @@ extern "C" void breakpoint() {
 // signal support
 
 debug_only(static bool signal_sets_initialized = false);
-static sigset_t unblocked_sigs, vm_sigs, allowdebug_blocked_sigs;
+static sigset_t unblocked_sigs, vm_sigs;
 
 bool os::Bsd::is_sig_ignored(int sig) {
   struct sigaction oact;
@@ -564,7 +563,6 @@ void os::Bsd::signal_sets_init() {
   // In reality, though, unblocking these signals is really a nop, since
   // these signals are not blocked by default.
   sigemptyset(&unblocked_sigs);
-  sigemptyset(&allowdebug_blocked_sigs);
   sigaddset(&unblocked_sigs, SIGILL);
   sigaddset(&unblocked_sigs, SIGSEGV);
   sigaddset(&unblocked_sigs, SIGBUS);
@@ -574,15 +572,13 @@ void os::Bsd::signal_sets_init() {
   if (!ReduceSignalUsage) {
     if (!os::Bsd::is_sig_ignored(SHUTDOWN1_SIGNAL)) {
       sigaddset(&unblocked_sigs, SHUTDOWN1_SIGNAL);
-      sigaddset(&allowdebug_blocked_sigs, SHUTDOWN1_SIGNAL);
+
     }
     if (!os::Bsd::is_sig_ignored(SHUTDOWN2_SIGNAL)) {
       sigaddset(&unblocked_sigs, SHUTDOWN2_SIGNAL);
-      sigaddset(&allowdebug_blocked_sigs, SHUTDOWN2_SIGNAL);
     }
     if (!os::Bsd::is_sig_ignored(SHUTDOWN3_SIGNAL)) {
       sigaddset(&unblocked_sigs, SHUTDOWN3_SIGNAL);
-      sigaddset(&allowdebug_blocked_sigs, SHUTDOWN3_SIGNAL);
     }
   }
   // Fill in signals that are blocked by all but the VM thread.
@@ -606,12 +602,6 @@ sigset_t* os::Bsd::unblocked_signals() {
 sigset_t* os::Bsd::vm_signals() {
   assert(signal_sets_initialized, "Not initialized");
   return &vm_sigs;
-}
-
-// These are signals that are blocked during cond_wait to allow debugger in
-sigset_t* os::Bsd::allowdebug_blocked_signals() {
-  assert(signal_sets_initialized, "Not initialized");
-  return &allowdebug_blocked_sigs;
 }
 
 void os::Bsd::hotspot_sigmask(Thread* thread) {
@@ -3404,7 +3394,6 @@ extern void report_error(char* file_name, int line_no, char* title,
 // this is called _before_ the most of global arguments have been parsed
 void os::init(void) {
   char dummy;   // used to get a guess on initial stack address
-//  first_hrtime = gethrtime();
 
   // With BsdThreads the JavaMain thread pid (primordial thread)
   // is different than the pid of the java launcher thread.
@@ -3445,6 +3434,8 @@ void os::init(void) {
   // binding of all symbols now, thus binding when alignment is known-good.
   _dyld_bind_fully_image_containing_address((const void *) &os::init);
 #endif
+
+  os::Posix::init();
 }
 
 // To install functions for atexit system call
@@ -3456,6 +3447,9 @@ extern "C" {
 
 // this is called _after_ the global arguments have been parsed
 jint os::init_2(void) {
+
+  os::Posix::init_2();
+
   // Allocate a single page and mark it as readable for safepoint polling
   address polling_page = (address) ::mmap(NULL, Bsd::page_size(), PROT_READ, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
   guarantee(polling_page != MAP_FAILED, "os::init_2: failed to allocate polling page");
@@ -3523,7 +3517,7 @@ jint os::init_2(void) {
     // the future if the appropriate cleanup code can be added to the
     // VM_Exit VMOperation's doit method.
     if (atexit(perfMemory_exit_helper) != 0) {
-      warning("os::init2 atexit(perfMemory_exit_helper) failed");
+      warning("os::init_2 atexit(perfMemory_exit_helper) failed");
     }
   }
 
@@ -4027,365 +4021,6 @@ void os::pause() {
                 "Could not open pause file '%s', continuing immediately.\n", filename);
   }
 }
-
-
-// Refer to the comments in os_solaris.cpp park-unpark. The next two
-// comment paragraphs are worth repeating here:
-//
-// Assumption:
-//    Only one parker can exist on an event, which is why we allocate
-//    them per-thread. Multiple unparkers can coexist.
-//
-// _Event serves as a restricted-range semaphore.
-//   -1 : thread is blocked, i.e. there is a waiter
-//    0 : neutral: thread is running or ready,
-//        could have been signaled after a wait started
-//    1 : signaled - thread is running or ready
-//
-
-// utility to compute the abstime argument to timedwait:
-// millis is the relative timeout time
-// abstime will be the absolute timeout time
-// TODO: replace compute_abstime() with unpackTime()
-
-static struct timespec* compute_abstime(struct timespec* abstime,
-                                        jlong millis) {
-  if (millis < 0)  millis = 0;
-  struct timeval now;
-  int status = gettimeofday(&now, NULL);
-  assert(status == 0, "gettimeofday");
-  jlong seconds = millis / 1000;
-  millis %= 1000;
-  if (seconds > 50000000) { // see man cond_timedwait(3T)
-    seconds = 50000000;
-  }
-  abstime->tv_sec = now.tv_sec  + seconds;
-  long       usec = now.tv_usec + millis * 1000;
-  if (usec >= 1000000) {
-    abstime->tv_sec += 1;
-    usec -= 1000000;
-  }
-  abstime->tv_nsec = usec * 1000;
-  return abstime;
-}
-
-void os::PlatformEvent::park() {       // AKA "down()"
-  // Transitions for _Event:
-  //   -1 => -1 : illegal
-  //    1 =>  0 : pass - return immediately
-  //    0 => -1 : block; then set _Event to 0 before returning
-
-  // Invariant: Only the thread associated with the Event/PlatformEvent
-  // may call park().
-  // TODO: assert that _Assoc != NULL or _Assoc == Self
-  assert(_nParked == 0, "invariant");
-
-  int v;
-  for (;;) {
-    v = _Event;
-    if (Atomic::cmpxchg(v-1, &_Event, v) == v) break;
-  }
-  guarantee(v >= 0, "invariant");
-  if (v == 0) {
-    // Do this the hard way by blocking ...
-    int status = pthread_mutex_lock(_mutex);
-    assert_status(status == 0, status, "mutex_lock");
-    guarantee(_nParked == 0, "invariant");
-    ++_nParked;
-    while (_Event < 0) {
-      status = pthread_cond_wait(_cond, _mutex);
-      // for some reason, under 2.7 lwp_cond_wait() may return ETIME ...
-      // Treat this the same as if the wait was interrupted
-      if (status == ETIMEDOUT) { status = EINTR; }
-      assert_status(status == 0 || status == EINTR, status, "cond_wait");
-    }
-    --_nParked;
-
-    _Event = 0;
-    status = pthread_mutex_unlock(_mutex);
-    assert_status(status == 0, status, "mutex_unlock");
-    // Paranoia to ensure our locked and lock-free paths interact
-    // correctly with each other.
-    OrderAccess::fence();
-  }
-  guarantee(_Event >= 0, "invariant");
-}
-
-int os::PlatformEvent::park(jlong millis) {
-  // Transitions for _Event:
-  //   -1 => -1 : illegal
-  //    1 =>  0 : pass - return immediately
-  //    0 => -1 : block; then set _Event to 0 before returning
-
-  guarantee(_nParked == 0, "invariant");
-
-  int v;
-  for (;;) {
-    v = _Event;
-    if (Atomic::cmpxchg(v-1, &_Event, v) == v) break;
-  }
-  guarantee(v >= 0, "invariant");
-  if (v != 0) return OS_OK;
-
-  // We do this the hard way, by blocking the thread.
-  // Consider enforcing a minimum timeout value.
-  struct timespec abst;
-  compute_abstime(&abst, millis);
-
-  int ret = OS_TIMEOUT;
-  int status = pthread_mutex_lock(_mutex);
-  assert_status(status == 0, status, "mutex_lock");
-  guarantee(_nParked == 0, "invariant");
-  ++_nParked;
-
-  // Object.wait(timo) will return because of
-  // (a) notification
-  // (b) timeout
-  // (c) thread.interrupt
-  //
-  // Thread.interrupt and object.notify{All} both call Event::set.
-  // That is, we treat thread.interrupt as a special case of notification.
-  // We ignore spurious OS wakeups unless FilterSpuriousWakeups is false.
-  // We assume all ETIME returns are valid.
-  //
-  // TODO: properly differentiate simultaneous notify+interrupt.
-  // In that case, we should propagate the notify to another waiter.
-
-  while (_Event < 0) {
-    status = pthread_cond_timedwait(_cond, _mutex, &abst);
-    assert_status(status == 0 || status == EINTR ||
-                  status == ETIMEDOUT,
-                  status, "cond_timedwait");
-    if (!FilterSpuriousWakeups) break;                 // previous semantics
-    if (status == ETIMEDOUT) break;
-    // We consume and ignore EINTR and spurious wakeups.
-  }
-  --_nParked;
-  if (_Event >= 0) {
-    ret = OS_OK;
-  }
-  _Event = 0;
-  status = pthread_mutex_unlock(_mutex);
-  assert_status(status == 0, status, "mutex_unlock");
-  assert(_nParked == 0, "invariant");
-  // Paranoia to ensure our locked and lock-free paths interact
-  // correctly with each other.
-  OrderAccess::fence();
-  return ret;
-}
-
-void os::PlatformEvent::unpark() {
-  // Transitions for _Event:
-  //    0 => 1 : just return
-  //    1 => 1 : just return
-  //   -1 => either 0 or 1; must signal target thread
-  //         That is, we can safely transition _Event from -1 to either
-  //         0 or 1.
-  // See also: "Semaphores in Plan 9" by Mullender & Cox
-  //
-  // Note: Forcing a transition from "-1" to "1" on an unpark() means
-  // that it will take two back-to-back park() calls for the owning
-  // thread to block. This has the benefit of forcing a spurious return
-  // from the first park() call after an unpark() call which will help
-  // shake out uses of park() and unpark() without condition variables.
-
-  if (Atomic::xchg(1, &_Event) >= 0) return;
-
-  // Wait for the thread associated with the event to vacate
-  int status = pthread_mutex_lock(_mutex);
-  assert_status(status == 0, status, "mutex_lock");
-  int AnyWaiters = _nParked;
-  assert(AnyWaiters == 0 || AnyWaiters == 1, "invariant");
-  status = pthread_mutex_unlock(_mutex);
-  assert_status(status == 0, status, "mutex_unlock");
-  if (AnyWaiters != 0) {
-    // Note that we signal() *after* dropping the lock for "immortal" Events.
-    // This is safe and avoids a common class of  futile wakeups.  In rare
-    // circumstances this can cause a thread to return prematurely from
-    // cond_{timed}wait() but the spurious wakeup is benign and the victim
-    // will simply re-test the condition and re-park itself.
-    // This provides particular benefit if the underlying platform does not
-    // provide wait morphing.
-    status = pthread_cond_signal(_cond);
-    assert_status(status == 0, status, "cond_signal");
-  }
-}
-
-
-// JSR166
-// -------------------------------------------------------
-
-// The solaris and bsd implementations of park/unpark are fairly
-// conservative for now, but can be improved. They currently use a
-// mutex/condvar pair, plus a a count.
-// Park decrements count if > 0, else does a condvar wait.  Unpark
-// sets count to 1 and signals condvar.  Only one thread ever waits
-// on the condvar. Contention seen when trying to park implies that someone
-// is unparking you, so don't wait. And spurious returns are fine, so there
-// is no need to track notifications.
-
-#define MAX_SECS 100000000
-
-// This code is common to bsd and solaris and will be moved to a
-// common place in dolphin.
-//
-// The passed in time value is either a relative time in nanoseconds
-// or an absolute time in milliseconds. Either way it has to be unpacked
-// into suitable seconds and nanoseconds components and stored in the
-// given timespec structure.
-// Given time is a 64-bit value and the time_t used in the timespec is only
-// a signed-32-bit value (except on 64-bit Bsd) we have to watch for
-// overflow if times way in the future are given. Further on Solaris versions
-// prior to 10 there is a restriction (see cond_timedwait) that the specified
-// number of seconds, in abstime, is less than current_time  + 100,000,000.
-// As it will be 28 years before "now + 100000000" will overflow we can
-// ignore overflow and just impose a hard-limit on seconds using the value
-// of "now + 100,000,000". This places a limit on the timeout of about 3.17
-// years from "now".
-
-static void unpackTime(struct timespec* absTime, bool isAbsolute, jlong time) {
-  assert(time > 0, "convertTime");
-
-  struct timeval now;
-  int status = gettimeofday(&now, NULL);
-  assert(status == 0, "gettimeofday");
-
-  time_t max_secs = now.tv_sec + MAX_SECS;
-
-  if (isAbsolute) {
-    jlong secs = time / 1000;
-    if (secs > max_secs) {
-      absTime->tv_sec = max_secs;
-    } else {
-      absTime->tv_sec = secs;
-    }
-    absTime->tv_nsec = (time % 1000) * NANOSECS_PER_MILLISEC;
-  } else {
-    jlong secs = time / NANOSECS_PER_SEC;
-    if (secs >= MAX_SECS) {
-      absTime->tv_sec = max_secs;
-      absTime->tv_nsec = 0;
-    } else {
-      absTime->tv_sec = now.tv_sec + secs;
-      absTime->tv_nsec = (time % NANOSECS_PER_SEC) + now.tv_usec*1000;
-      if (absTime->tv_nsec >= NANOSECS_PER_SEC) {
-        absTime->tv_nsec -= NANOSECS_PER_SEC;
-        ++absTime->tv_sec; // note: this must be <= max_secs
-      }
-    }
-  }
-  assert(absTime->tv_sec >= 0, "tv_sec < 0");
-  assert(absTime->tv_sec <= max_secs, "tv_sec > max_secs");
-  assert(absTime->tv_nsec >= 0, "tv_nsec < 0");
-  assert(absTime->tv_nsec < NANOSECS_PER_SEC, "tv_nsec >= nanos_per_sec");
-}
-
-void Parker::park(bool isAbsolute, jlong time) {
-  // Ideally we'd do something useful while spinning, such
-  // as calling unpackTime().
-
-  // Optional fast-path check:
-  // Return immediately if a permit is available.
-  // We depend on Atomic::xchg() having full barrier semantics
-  // since we are doing a lock-free update to _counter.
-  if (Atomic::xchg(0, &_counter) > 0) return;
-
-  Thread* thread = Thread::current();
-  assert(thread->is_Java_thread(), "Must be JavaThread");
-  JavaThread *jt = (JavaThread *)thread;
-
-  // Optional optimization -- avoid state transitions if there's an interrupt pending.
-  // Check interrupt before trying to wait
-  if (Thread::is_interrupted(thread, false)) {
-    return;
-  }
-
-  // Next, demultiplex/decode time arguments
-  struct timespec absTime;
-  if (time < 0 || (isAbsolute && time == 0)) { // don't wait at all
-    return;
-  }
-  if (time > 0) {
-    unpackTime(&absTime, isAbsolute, time);
-  }
-
-
-  // Enter safepoint region
-  // Beware of deadlocks such as 6317397.
-  // The per-thread Parker:: mutex is a classic leaf-lock.
-  // In particular a thread must never block on the Threads_lock while
-  // holding the Parker:: mutex.  If safepoints are pending both the
-  // the ThreadBlockInVM() CTOR and DTOR may grab Threads_lock.
-  ThreadBlockInVM tbivm(jt);
-
-  // Don't wait if cannot get lock since interference arises from
-  // unblocking.  Also. check interrupt before trying wait
-  if (Thread::is_interrupted(thread, false) || pthread_mutex_trylock(_mutex) != 0) {
-    return;
-  }
-
-  int status;
-  if (_counter > 0)  { // no wait needed
-    _counter = 0;
-    status = pthread_mutex_unlock(_mutex);
-    assert_status(status == 0, status, "invariant");
-    // Paranoia to ensure our locked and lock-free paths interact
-    // correctly with each other and Java-level accesses.
-    OrderAccess::fence();
-    return;
-  }
-
-#ifdef ASSERT
-  // Don't catch signals while blocked; let the running threads have the signals.
-  // (This allows a debugger to break into the running thread.)
-  sigset_t oldsigs;
-  sigset_t* allowdebug_blocked = os::Bsd::allowdebug_blocked_signals();
-  pthread_sigmask(SIG_BLOCK, allowdebug_blocked, &oldsigs);
-#endif
-
-  OSThreadWaitState osts(thread->osthread(), false /* not Object.wait() */);
-  jt->set_suspend_equivalent();
-  // cleared by handle_special_suspend_equivalent_condition() or java_suspend_self()
-
-  if (time == 0) {
-    status = pthread_cond_wait(_cond, _mutex);
-  } else {
-    status = pthread_cond_timedwait(_cond, _mutex, &absTime);
-  }
-  assert_status(status == 0 || status == EINTR ||
-                status == ETIMEDOUT,
-                status, "cond_timedwait");
-
-#ifdef ASSERT
-  pthread_sigmask(SIG_SETMASK, &oldsigs, NULL);
-#endif
-
-  _counter = 0;
-  status = pthread_mutex_unlock(_mutex);
-  assert_status(status == 0, status, "invariant");
-  // Paranoia to ensure our locked and lock-free paths interact
-  // correctly with each other and Java-level accesses.
-  OrderAccess::fence();
-
-  // If externally suspended while waiting, re-suspend
-  if (jt->handle_special_suspend_equivalent_condition()) {
-    jt->java_suspend_self();
-  }
-}
-
-void Parker::unpark() {
-  int status = pthread_mutex_lock(_mutex);
-  assert_status(status == 0, status, "invariant");
-  const int s = _counter;
-  _counter = 1;
-  status = pthread_mutex_unlock(_mutex);
-  assert_status(status == 0, status, "invariant");
-  if (s < 1) {
-    status = pthread_cond_signal(_cond);
-    assert_status(status == 0, status, "invariant");
-  }
-}
-
 
 // Darwin has no "environ" in a dynamic library.
 #ifdef __APPLE__
