@@ -1014,7 +1014,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 }
 
 debug_only(static bool signal_sets_initialized = false);
-static sigset_t unblocked_sigs, vm_sigs, allowdebug_blocked_sigs;
+static sigset_t unblocked_sigs, vm_sigs;
 
 bool os::Solaris::is_sig_ignored(int sig) {
   struct sigaction oact;
@@ -1045,7 +1045,6 @@ void os::Solaris::signal_sets_init() {
   // In reality, though, unblocking these signals is really a nop, since
   // these signals are not blocked by default.
   sigemptyset(&unblocked_sigs);
-  sigemptyset(&allowdebug_blocked_sigs);
   sigaddset(&unblocked_sigs, SIGILL);
   sigaddset(&unblocked_sigs, SIGSEGV);
   sigaddset(&unblocked_sigs, SIGBUS);
@@ -1055,15 +1054,12 @@ void os::Solaris::signal_sets_init() {
   if (!ReduceSignalUsage) {
     if (!os::Solaris::is_sig_ignored(SHUTDOWN1_SIGNAL)) {
       sigaddset(&unblocked_sigs, SHUTDOWN1_SIGNAL);
-      sigaddset(&allowdebug_blocked_sigs, SHUTDOWN1_SIGNAL);
     }
     if (!os::Solaris::is_sig_ignored(SHUTDOWN2_SIGNAL)) {
       sigaddset(&unblocked_sigs, SHUTDOWN2_SIGNAL);
-      sigaddset(&allowdebug_blocked_sigs, SHUTDOWN2_SIGNAL);
     }
     if (!os::Solaris::is_sig_ignored(SHUTDOWN3_SIGNAL)) {
       sigaddset(&unblocked_sigs, SHUTDOWN3_SIGNAL);
-      sigaddset(&allowdebug_blocked_sigs, SHUTDOWN3_SIGNAL);
     }
   }
   // Fill in signals that are blocked by all but the VM thread.
@@ -1090,13 +1086,6 @@ sigset_t* os::Solaris::vm_signals() {
   assert(signal_sets_initialized, "Not initialized");
   return &vm_sigs;
 }
-
-// These are signals that are blocked during cond_wait to allow debugger in
-sigset_t* os::Solaris::allowdebug_blocked_signals() {
-  assert(signal_sets_initialized, "Not initialized");
-  return &allowdebug_blocked_sigs;
-}
-
 
 void _handle_uncaught_cxx_exception() {
   VMError::report_and_die("An uncaught C++ exception");
@@ -5352,14 +5341,6 @@ void Parker::park(bool isAbsolute, jlong time) {
     return;
   }
 
-#ifdef ASSERT
-  // Don't catch signals while blocked; let the running threads have the signals.
-  // (This allows a debugger to break into the running thread.)
-  sigset_t oldsigs;
-  sigset_t* allowdebug_blocked = os::Solaris::allowdebug_blocked_signals();
-  pthread_sigmask(SIG_BLOCK, allowdebug_blocked, &oldsigs);
-#endif
-
   OSThreadWaitState osts(thread->osthread(), false /* not Object.wait() */);
   jt->set_suspend_equivalent();
   // cleared by handle_special_suspend_equivalent_condition() or java_suspend_self()
@@ -5383,9 +5364,6 @@ void Parker::park(bool isAbsolute, jlong time) {
                 status == ETIME || status == ETIMEDOUT,
                 status, "cond_timedwait");
 
-#ifdef ASSERT
-  pthread_sigmask(SIG_SETMASK, &oldsigs, NULL);
-#endif
   _counter = 0;
   status = os::Solaris::mutex_unlock(_mutex);
   assert_status(status == 0, status, "mutex_unlock");

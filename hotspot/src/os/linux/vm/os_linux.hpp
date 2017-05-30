@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,7 +160,6 @@ class Linux {
 
   static sigset_t* unblocked_signals();
   static sigset_t* vm_signals();
-  static sigset_t* allowdebug_blocked_signals();
 
   // For signal-chaining
   static struct sigaction *get_chained_signal_action(int sig);
@@ -206,13 +205,6 @@ class Linux {
   static void initialize_os_info();
   static bool os_version_is_known();
   static uint32_t os_version();
-
-  // pthread_cond clock suppport
- private:
-  static pthread_condattr_t _condattr[1];
-
- public:
-  static pthread_condattr_t* condAttr() { return _condattr; }
 
   // Stack repair handling
 
@@ -299,67 +291,6 @@ class Linux {
       return _numa_bitmask_isbitset(_numa_nodes_ptr, n);
     } else
       return 0;
-  }
-};
-
-
-class PlatformEvent : public CHeapObj<mtInternal> {
- private:
-  double CachePad[4];   // increase odds that _mutex is sole occupant of cache line
-  volatile int _Event;
-  volatile int _nParked;
-  pthread_mutex_t _mutex[1];
-  pthread_cond_t  _cond[1];
-  double PostPad[2];
-  Thread * _Assoc;
-
- public:       // TODO-FIXME: make dtor private
-  ~PlatformEvent() { guarantee(0, "invariant"); }
-
- public:
-  PlatformEvent() {
-    int status;
-    status = pthread_cond_init(_cond, os::Linux::condAttr());
-    assert_status(status == 0, status, "cond_init");
-    status = pthread_mutex_init(_mutex, NULL);
-    assert_status(status == 0, status, "mutex_init");
-    _Event   = 0;
-    _nParked = 0;
-    _Assoc   = NULL;
-  }
-
-  // Use caution with reset() and fired() -- they may require MEMBARs
-  void reset() { _Event = 0; }
-  int  fired() { return _Event; }
-  void park();
-  void unpark();
-  int  park(jlong millis); // relative timed-wait only
-  void SetAssociation(Thread * a) { _Assoc = a; }
-};
-
-class PlatformParker : public CHeapObj<mtInternal> {
- protected:
-  enum {
-    REL_INDEX = 0,
-    ABS_INDEX = 1
-  };
-  int _cur_index;  // which cond is in use: -1, 0, 1
-  pthread_mutex_t _mutex[1];
-  pthread_cond_t  _cond[2]; // one for relative times and one for abs.
-
- public:       // TODO-FIXME: make dtor private
-  ~PlatformParker() { guarantee(0, "invariant"); }
-
- public:
-  PlatformParker() {
-    int status;
-    status = pthread_cond_init(&_cond[REL_INDEX], os::Linux::condAttr());
-    assert_status(status == 0, status, "cond_init rel");
-    status = pthread_cond_init(&_cond[ABS_INDEX], NULL);
-    assert_status(status == 0, status, "cond_init abs");
-    status = pthread_mutex_init(_mutex, NULL);
-    assert_status(status == 0, status, "mutex_init");
-    _cur_index = -1; // mark as unused
   }
 };
 
