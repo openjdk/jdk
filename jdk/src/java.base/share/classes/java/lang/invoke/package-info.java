@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,13 +44,13 @@
  * </li>
  * </ul>
  *
- * <h1><a name="jvm_mods"></a>Summary of relevant Java Virtual Machine changes</h1>
+ * <h1><a id="jvm_mods"></a>Summary of relevant Java Virtual Machine changes</h1>
  * The following low-level information summarizes relevant parts of the
  * Java Virtual Machine specification.  For full details, please see the
  * current version of that specification.
  *
  * Each occurrence of an {@code invokedynamic} instruction is called a <em>dynamic call site</em>.
- * <h2><a name="indyinsn"></a>{@code invokedynamic} instructions</h2>
+ * <h2><a id="indyinsn"></a>{@code invokedynamic} instructions</h2>
  * A dynamic call site is originally in an unlinked state.  In this state, there is
  * no target method for the call site to invoke.
  * <p>

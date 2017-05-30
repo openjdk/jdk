@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@
  * the contents of which can be used to extend the platform's default
  * implementations or to construct alternative implementations.
  *
- * <a name="buffers"> </a>
+ * <a id="buffers"> </a>
  *
  * <blockquote><table cellspacing=1 cellpadding=0 summary="Description of the various buffers">
  *   <tr><th align="left">Buffers</th><th align="left">Description</th></tr>
