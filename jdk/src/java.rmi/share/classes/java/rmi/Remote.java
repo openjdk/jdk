@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,8 @@ package java.rmi;
  * <code>java.rmi.activation.Activatable</code>.
  *
  * <p>For complete details on RMI, see the <a
- href=../../../platform/rmi/spec/rmiTOC.html>RMI Specification</a> which describes the RMI API and system.
+ * href="{@docRoot}/../specs/rmi/index.html">RMI Specification</a> which
+ * describes the RMI API and system.
  *
  * @since   1.1
  * @author  Ann Wollrath

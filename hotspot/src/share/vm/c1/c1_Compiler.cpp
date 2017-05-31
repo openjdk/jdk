@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,7 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
   }
 
   switch (id) {
-  case vmIntrinsics::_compareAndSwapLong:
+  case vmIntrinsics::_compareAndSetLong:
     if (!VM_Version::supports_cx8()) return false;
     break;
   case vmIntrinsics::_getAndAddInt:
@@ -217,8 +217,8 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
 #endif
   case vmIntrinsics::_vectorizedMismatch:
-  case vmIntrinsics::_compareAndSwapInt:
-  case vmIntrinsics::_compareAndSwapObject:
+  case vmIntrinsics::_compareAndSetInt:
+  case vmIntrinsics::_compareAndSetObject:
   case vmIntrinsics::_getCharStringU:
   case vmIntrinsics::_putCharStringU:
 #ifdef TRACE_HAVE_INTRINSICS

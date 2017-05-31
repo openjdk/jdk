@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -290,7 +290,7 @@ class Properties extends Hashtable<Object,Object> {
      * specifies that the key is {@code "cheeses"} and the associated
      * element is the empty string {@code ""}.
      * <p>
-     * <a name="unicodeescapes"></a>
+     * <a id="unicodeescapes"></a>
      * Characters in keys and elements can be represented in escape
      * sequences similar to those used for character and string literals
      * (see sections 3.3 and 3.10.6 of
@@ -471,7 +471,7 @@ class Properties extends Hashtable<Object,Object> {
                 if (inStream != null) {
                     //The line below is equivalent to calling a
                     //ISO8859-1 decoder.
-                    c = (char) (0xff & inByteBuf[inOff++]);
+                    c = (char)(inByteBuf[inOff++] & 0xFF);
                 } else {
                     c = inCharBuf[inOff++];
                 }
@@ -494,8 +494,25 @@ class Properties extends Hashtable<Object,Object> {
                 if (isNewLine) {
                     isNewLine = false;
                     if (c == '#' || c == '!') {
+                        // Comment, quickly consume the rest of the line,
+                        // resume on line-break and backslash.
+                        if (inStream != null) {
+                            while (inOff < inLimit) {
+                                byte b = inByteBuf[inOff++];
+                                if (b == '\n' || b == '\r' || b == '\\') {
+                                    c = (char)(b & 0xFF);
+                                    break;
+                                }
+                            }
+                        } else {
+                            while (inOff < inLimit) {
+                                c = inCharBuf[inOff++];
+                                if (c == '\n' || c == '\r' || c == '\\') {
+                                    break;
+                                }
+                            }
+                        }
                         isCommentLine = true;
-                        continue;
                     }
                 }
 
