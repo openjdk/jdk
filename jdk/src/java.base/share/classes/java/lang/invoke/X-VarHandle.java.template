@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,7 +125,7 @@ final class VarHandle$Type$s {
 
         @ForceInline
         static boolean compareAndSet(FieldInstanceReadWrite handle, Object holder, $type$ expected, $type$ value) {
-            return UNSAFE.compareAndSwap$Type$(Objects.requireNonNull(handle.receiverType.cast(holder)),
+            return UNSAFE.compareAndSet$Type$(Objects.requireNonNull(handle.receiverType.cast(holder)),
                                                handle.fieldOffset,
                                                {#if[Object]?handle.fieldType.cast(expected):expected},
                                                {#if[Object]?handle.fieldType.cast(value):value});
@@ -133,7 +133,7 @@ final class VarHandle$Type$s {
 
         @ForceInline
         static $type$ compareAndExchange(FieldInstanceReadWrite handle, Object holder, $type$ expected, $type$ value) {
-            return UNSAFE.compareAndExchange$Type$Volatile(Objects.requireNonNull(handle.receiverType.cast(holder)),
+            return UNSAFE.compareAndExchange$Type$(Objects.requireNonNull(handle.receiverType.cast(holder)),
                                                handle.fieldOffset,
                                                {#if[Object]?handle.fieldType.cast(expected):expected},
                                                {#if[Object]?handle.fieldType.cast(value):value});
@@ -157,7 +157,7 @@ final class VarHandle$Type$s {
 
         @ForceInline
         static boolean weakCompareAndSetPlain(FieldInstanceReadWrite handle, Object holder, $type$ expected, $type$ value) {
-            return UNSAFE.weakCompareAndSwap$Type$(Objects.requireNonNull(handle.receiverType.cast(holder)),
+            return UNSAFE.weakCompareAndSet$Type$Plain(Objects.requireNonNull(handle.receiverType.cast(holder)),
                                                handle.fieldOffset,
                                                {#if[Object]?handle.fieldType.cast(expected):expected},
                                                {#if[Object]?handle.fieldType.cast(value):value});
@@ -165,7 +165,7 @@ final class VarHandle$Type$s {
 
         @ForceInline
         static boolean weakCompareAndSet(FieldInstanceReadWrite handle, Object holder, $type$ expected, $type$ value) {
-            return UNSAFE.weakCompareAndSwap$Type$Volatile(Objects.requireNonNull(handle.receiverType.cast(holder)),
+            return UNSAFE.weakCompareAndSet$Type$(Objects.requireNonNull(handle.receiverType.cast(holder)),
                                                handle.fieldOffset,
                                                {#if[Object]?handle.fieldType.cast(expected):expected},
                                                {#if[Object]?handle.fieldType.cast(value):value});
@@ -173,7 +173,7 @@ final class VarHandle$Type$s {
 
         @ForceInline
         static boolean weakCompareAndSetAcquire(FieldInstanceReadWrite handle, Object holder, $type$ expected, $type$ value) {
-            return UNSAFE.weakCompareAndSwap$Type$Acquire(Objects.requireNonNull(handle.receiverType.cast(holder)),
+            return UNSAFE.weakCompareAndSet$Type$Acquire(Objects.requireNonNull(handle.receiverType.cast(holder)),
                                                handle.fieldOffset,
                                                {#if[Object]?handle.fieldType.cast(expected):expected},
                                                {#if[Object]?handle.fieldType.cast(value):value});
@@ -181,7 +181,7 @@ final class VarHandle$Type$s {
 
         @ForceInline
         static boolean weakCompareAndSetRelease(FieldInstanceReadWrite handle, Object holder, $type$ expected, $type$ value) {
-            return UNSAFE.weakCompareAndSwap$Type$Release(Objects.requireNonNull(handle.receiverType.cast(holder)),
+            return UNSAFE.weakCompareAndSet$Type$Release(Objects.requireNonNull(handle.receiverType.cast(holder)),
                                                handle.fieldOffset,
                                                {#if[Object]?handle.fieldType.cast(expected):expected},
                                                {#if[Object]?handle.fieldType.cast(value):value});
@@ -275,7 +275,7 @@ final class VarHandle$Type$s {
                                        handle.fieldOffset,
                                        value);
         }
-        
+
         @ForceInline
         static $type$ getAndBitwiseXor(FieldInstanceReadWrite handle, Object holder, $type$ value) {
             return UNSAFE.getAndBitwiseXor$Type$(Objects.requireNonNull(handle.receiverType.cast(holder)),
@@ -392,7 +392,7 @@ final class VarHandle$Type$s {
 
         @ForceInline
         static boolean compareAndSet(FieldStaticReadWrite handle, $type$ expected, $type$ value) {
-            return UNSAFE.compareAndSwap$Type$(handle.base,
+            return UNSAFE.compareAndSet$Type$(handle.base,
                                                handle.fieldOffset,
                                                {#if[Object]?handle.fieldType.cast(expected):expected},
                                                {#if[Object]?handle.fieldType.cast(value):value});
@@ -401,7 +401,7 @@ final class VarHandle$Type$s {
 
         @ForceInline
         static $type$ compareAndExchange(FieldStaticReadWrite handle, $type$ expected, $type$ value) {
-            return UNSAFE.compareAndExchange$Type$Volatile(handle.base,
+            return UNSAFE.compareAndExchange$Type$(handle.base,
                                                handle.fieldOffset,
                                                {#if[Object]?handle.fieldType.cast(expected):expected},
                                                {#if[Object]?handle.fieldType.cast(value):value});
@@ -425,7 +425,7 @@ final class VarHandle$Type$s {
 
         @ForceInline
         static boolean weakCompareAndSetPlain(FieldStaticReadWrite handle, $type$ expected, $type$ value) {
-            return UNSAFE.weakCompareAndSwap$Type$(handle.base,
+            return UNSAFE.weakCompareAndSet$Type$Plain(handle.base,
                                                handle.fieldOffset,
                                                {#if[Object]?handle.fieldType.cast(expected):expected},
                                                {#if[Object]?handle.fieldType.cast(value):value});
@@ -433,7 +433,7 @@ final class VarHandle$Type$s {
 
         @ForceInline
         static boolean weakCompareAndSet(FieldStaticReadWrite handle, $type$ expected, $type$ value) {
-            return UNSAFE.weakCompareAndSwap$Type$Volatile(handle.base,
+            return UNSAFE.weakCompareAndSet$Type$(handle.base,
                                                handle.fieldOffset,
                                                {#if[Object]?handle.fieldType.cast(expected):expected},
                                                {#if[Object]?handle.fieldType.cast(value):value});
@@ -441,7 +441,7 @@ final class VarHandle$Type$s {
 
         @ForceInline
         static boolean weakCompareAndSetAcquire(FieldStaticReadWrite handle, $type$ expected, $type$ value) {
-            return UNSAFE.weakCompareAndSwap$Type$Acquire(handle.base,
+            return UNSAFE.weakCompareAndSet$Type$Acquire(handle.base,
                                                handle.fieldOffset,
                                                {#if[Object]?handle.fieldType.cast(expected):expected},
                                                {#if[Object]?handle.fieldType.cast(value):value});
@@ -449,7 +449,7 @@ final class VarHandle$Type$s {
 
         @ForceInline
         static boolean weakCompareAndSetRelease(FieldStaticReadWrite handle, $type$ expected, $type$ value) {
-            return UNSAFE.weakCompareAndSwap$Type$Release(handle.base,
+            return UNSAFE.weakCompareAndSet$Type$Release(handle.base,
                                                handle.fieldOffset,
                                                {#if[Object]?handle.fieldType.cast(expected):expected},
                                                {#if[Object]?handle.fieldType.cast(value):value});
@@ -689,7 +689,7 @@ final class VarHandle$Type$s {
 #else[Object]
             $type$[] array = ($type$[]) oarray;
 #end[Object]
-            return UNSAFE.compareAndSwap$Type$(array,
+            return UNSAFE.compareAndSet$Type$(array,
                     (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
                     {#if[Object]?handle.componentType.cast(expected):expected},
                     {#if[Object]?handle.componentType.cast(value):value});
@@ -702,7 +702,7 @@ final class VarHandle$Type$s {
 #else[Object]
             $type$[] array = ($type$[]) oarray;
 #end[Object]
-            return UNSAFE.compareAndExchange$Type$Volatile(array,
+            return UNSAFE.compareAndExchange$Type$(array,
                     (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
                     {#if[Object]?handle.componentType.cast(expected):expected},
                     {#if[Object]?handle.componentType.cast(value):value});
@@ -741,7 +741,7 @@ final class VarHandle$Type$s {
 #else[Object]
             $type$[] array = ($type$[]) oarray;
 #end[Object]
-            return UNSAFE.weakCompareAndSwap$Type$(array,
+            return UNSAFE.weakCompareAndSet$Type$Plain(array,
                     (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
                     {#if[Object]?handle.componentType.cast(expected):expected},
                     {#if[Object]?handle.componentType.cast(value):value});
@@ -754,7 +754,7 @@ final class VarHandle$Type$s {
 #else[Object]
             $type$[] array = ($type$[]) oarray;
 #end[Object]
-            return UNSAFE.weakCompareAndSwap$Type$Volatile(array,
+            return UNSAFE.weakCompareAndSet$Type$(array,
                     (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
                     {#if[Object]?handle.componentType.cast(expected):expected},
                     {#if[Object]?handle.componentType.cast(value):value});
@@ -767,7 +767,7 @@ final class VarHandle$Type$s {
 #else[Object]
             $type$[] array = ($type$[]) oarray;
 #end[Object]
-            return UNSAFE.weakCompareAndSwap$Type$Acquire(array,
+            return UNSAFE.weakCompareAndSet$Type$Acquire(array,
                     (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
                     {#if[Object]?handle.componentType.cast(expected):expected},
                     {#if[Object]?handle.componentType.cast(value):value});
@@ -780,7 +780,7 @@ final class VarHandle$Type$s {
 #else[Object]
             $type$[] array = ($type$[]) oarray;
 #end[Object]
-            return UNSAFE.weakCompareAndSwap$Type$Release(array,
+            return UNSAFE.weakCompareAndSet$Type$Release(array,
                     (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
                     {#if[Object]?handle.componentType.cast(expected):expected},
                     {#if[Object]?handle.componentType.cast(value):value});
@@ -897,7 +897,7 @@ final class VarHandle$Type$s {
                                        (((long) Preconditions.checkIndex(index, array.length, AIOOBE_SUPPLIER)) << handle.ashift) + handle.abase,
                                        value);
         }
-        
+
         @ForceInline
         static $type$ getAndBitwiseXor(Array handle, Object oarray, int index, $type$ value) {
             $type$[] array = ($type$[]) oarray;

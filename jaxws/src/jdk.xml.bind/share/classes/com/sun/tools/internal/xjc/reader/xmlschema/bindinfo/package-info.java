@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,12 @@
  * questions.
  */
 
+/**
+ * Object Model that represents customization declarations.
+ * <a href="http://relaxngcc.sourceforge.net/">RelaxNGCC</a> is used to parse
+ * XML syntax into this representation, and the other parts of XJC will use
+ * this object model.
+ */
 @XmlSchema(elementFormDefault = QUALIFIED, namespace=Const.JAXB_NSURI)
 package com.sun.tools.internal.xjc.reader.xmlschema.bindinfo;
 
