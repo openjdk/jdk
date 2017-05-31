@@ -76,7 +76,7 @@ import java.util.NoSuchElementException;
  *     BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8);
  * </pre>
  *
- * <a name="interop"></a><h2>Interoperability</h2>
+ * <a id="interop"></a><h2>Interoperability</h2>
  * <p> Paths associated with the default {@link
  * java.nio.file.spi.FileSystemProvider provider} are generally interoperable
  * with the {@link java.io.File java.io.File} class. Paths created by other

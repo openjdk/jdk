@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,11 +36,12 @@ import jdk.test.lib.apps.LingeredApp;
 /*
  * @test
  * @summary Unit test for jinfo utility
- * @modules java.base/jdk.internal.misc
+ *
  * @library /test/lib
- * @build jdk.test.lib.*
- * @build jdk.test.lib.apps.*
- * @build jdk.test.lib.process.*
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ *          jdk.jcmd
+ *
  * @run main JInfoTest
  */
 public class JInfoTest {
@@ -88,8 +89,8 @@ public class JInfoTest {
             LingeredApp.startApp(params, app2);
             OutputAnalyzer output = jinfo("JInfoTestLingeredApp");
             output.shouldHaveExitValue(0);
-            // "HotSpot(TM)" written once per proc
-            documentMatch(output.getStdout(), ".*HotSpot\\(TM\\).*HotSpot\\(TM\\).*");
+            // "Runtime Environment" written once per proc
+            documentMatch(output.getStdout(), ".*Runtime Environment.*Runtime Environment.*");
         } finally {
             JInfoTestLingeredApp.stopApp(app1);
             JInfoTestLingeredApp.stopApp(app2);

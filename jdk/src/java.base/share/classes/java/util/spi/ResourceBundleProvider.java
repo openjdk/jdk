@@ -57,6 +57,7 @@ import java.util.ResourceBundle;
  * @see <a href="../ResourceBundle.html#RBP_support">
  *     ResourceBundleProvider Service Providers</a>
  * @since 9
+ * @spec JPMS
  */
 public interface ResourceBundleProvider {
     /**

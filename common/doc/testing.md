@@ -7,6 +7,11 @@ built a jdk locally and want to test it. Running common test targets is simple,
 and more complex ad-hoc combination of tests is possible. The user interface is
 forgiving, and clearly report errors it cannot resolve.
 
+The main target "run-test" uses the jdk-image as the tested product. There is
+also an alternate target "exploded-run-test" that uses the exploded image
+instead. Not all tests will run successfully on the exploded image, but using
+this target can greatly improve rebuild times for certain workflows.
+
 Some example command-lines:
 
     $ make run-test-tier1
@@ -15,6 +20,7 @@ Some example command-lines:
     $ make run-test-only TEST="gtest:LogTagSet gtest:LogTagSetDescriptions" GTEST="REPEAT=-1"
     $ make run-test TEST="hotspot/test:hotspot_gc" JTREG="JOBS=1;TIMEOUT=8;VM_OTIONS=-XshowSettings -Xlog:gc+ref=debug"
     $ make run-test TEST="jtreg:hotspot/test:hotspot_gc hotspot/test/native_sanity/JniVersion.java"
+    $ make exploded-run-test TEST=hotspot_tier1
 
 ## Test selection
 

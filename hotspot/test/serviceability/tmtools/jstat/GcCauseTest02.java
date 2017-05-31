@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,39 +25,19 @@
  * @test
  * @summary Test checks output displayed with jstat -gccause.
  *          Test scenario:
- *          tests forces debuggee application eat ~70% of heap and runs jstat.
- *          jstat should show that ~70% of heap (OC/OU ~= 70%).
+ *          test forces debuggee application eat ~70% of heap and runs jstat.
+ *          jstat should show actual usage of old gen (OC/OU ~= old gen usage).
  * @requires vm.opt.ExplicitGCInvokesConcurrent != true
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @library ../share
- * @run main/othervm -XX:+UsePerfData -XX:InitialHeapSize=128M -XX:MaxHeapSize=128M -XX:MaxMetaspaceSize=128M GcCauseTest02
+ * @run main/othervm -XX:+UsePerfData -XX:MaxNewSize=4m -XX:MaxHeapSize=128M -XX:MaxMetaspaceSize=128M GcCauseTest02
  */
 import utils.*;
 
 public class GcCauseTest02 {
 
-    private final static float targetMemoryUsagePercent = 0.7f;
-
     public static void main(String[] args) throws Exception {
-
-        // We will be running "jstat -gc" tool
-        JstatGcCauseTool jstatGcTool = new JstatGcCauseTool(ProcessHandle.current().getPid());
-
-        // Run once and get the  results asserting that they are reasonable
-        JstatGcCauseResults measurement1 = jstatGcTool.measure();
-        measurement1.assertConsistency();
-
-        GcProvoker gcProvoker = new GcProvoker();
-
-        // Eat metaspace and heap then run the tool again and get the results  asserting that they are reasonable
-        gcProvoker.allocateAvailableMetaspaceAndHeap(targetMemoryUsagePercent);
-        // Collect garbage. Also update VM statistics
-        System.gc();
-        JstatGcCauseResults measurement2 = jstatGcTool.measure();
-        measurement2.assertConsistency();
-
-        // Assert that space has been utilized acordingly
-        JstatResults.assertSpaceUtilization(measurement2, targetMemoryUsagePercent);
+        new GarbageProducerTest(new JstatGcCauseTool(ProcessHandle.current().pid())).run();
     }
 }

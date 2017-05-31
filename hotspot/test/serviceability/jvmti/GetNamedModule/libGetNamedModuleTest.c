@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ extern "C" {
 #define FAILED 2
 
 static const char *EXC_CNAME = "java/lang/Exception";
-static const char* MOD_CNAME = "Ljava/lang/reflect/Module;";
+static const char* MOD_CNAME = "Ljava/lang/Module;";
 
 static jvmtiEnv *jvmti = NULL;
 static jint result = PASSED;
@@ -115,7 +115,7 @@ jobject get_class_loader(jclass cls) {
 }
 
 static
-jclass jlrM(JNIEnv *env) {
+jclass jlM(JNIEnv *env) {
     jclass cls = NULL;
 
     cls = JNI_ENV_PTR(env)->FindClass(JNI_ENV_ARG(env, MOD_CNAME));
@@ -142,7 +142,7 @@ jobject get_module_loader(JNIEnv *env, jobject module) {
     jobject loader = NULL;
 
     if (cl_method == NULL) {
-        cl_method = get_method(env, jlrM(env), "getClassLoader", "()Ljava/lang/ClassLoader;");
+        cl_method = get_method(env, jlM(env), "getClassLoader", "()Ljava/lang/ClassLoader;");
     }
     loader = (jobject)JNI_ENV_PTR(env)->CallObjectMethod(JNI_ENV_ARG(env, module), cl_method);
     return loader;
@@ -157,7 +157,7 @@ const char* get_module_name(JNIEnv *env, jobject module) {
     const char *nstr = NULL;
 
     if (method == NULL) {
-        method = get_method(env, jlrM(env), "getName", "()Ljava/lang/String;");
+        method = get_method(env, jlM(env), "getName", "()Ljava/lang/String;");
     }
     jstr = (jstring)JNI_ENV_PTR(env)->CallObjectMethod(JNI_ENV_ARG(env, module), method);
     if (jstr != NULL) {
@@ -183,7 +183,7 @@ jvmtiError get_module(JNIEnv *env,
     err = (*jvmti)->GetNamedModule(jvmti, loader, pkg_name, module_ptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("    Error in GetNamedModule for package \"%s\": %s (%d)\n",
-               pkg_name, TranslateError(err), err);
+               name, TranslateError(err), err);
         return err;
     }
     printf("    returned module: %p\n", *module_ptr);

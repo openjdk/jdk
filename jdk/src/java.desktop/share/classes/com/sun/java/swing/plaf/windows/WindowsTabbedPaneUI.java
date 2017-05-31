@@ -63,6 +63,7 @@ public class WindowsTabbedPaneUI extends BasicTabbedPaneUI {
 
     private boolean contentOpaque = true;
 
+    @SuppressWarnings("deprecation")
     protected void installDefaults() {
         super.installDefaults();
         contentOpaque = UIManager.getBoolean("TabbedPane.contentOpaque");
