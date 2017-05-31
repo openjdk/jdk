@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,9 +61,9 @@ import sun.security.jca.GetInstance.Instance;
  * <li>{@code HmacSHA256}</li>
  * </ul>
  * These algorithms are described in the
- * <a href="{@docRoot}/../technotes/guides/security/StandardNames.html#Mac">
+ * <a href="{@docRoot}/../specs/security/standard-names.html#mac-algorithms">
  * Mac section</a> of the
- * Java Cryptography Architecture Standard Algorithm Name Documentation.
+ * Java Security Standard Algorithm Names Specification.
  * Consult the release documentation for your implementation to see if any
  * other algorithms are supported.
  *
@@ -162,8 +162,8 @@ public class Mac implements Cloneable {
      *
      * @param algorithm the standard name of the requested MAC algorithm.
      * See the Mac section in the <a href=
-     *   "{@docRoot}/../technotes/guides/security/StandardNames.html#Mac">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     *   "{@docRoot}/../specs/security/standard-names.html#mac-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
      * @return the new {@code Mac} object
@@ -206,8 +206,8 @@ public class Mac implements Cloneable {
      *
      * @param algorithm the standard name of the requested MAC algorithm.
      * See the Mac section in the <a href=
-     *   "{@docRoot}/../technotes/guides/security/StandardNames.html#Mac">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     *   "{@docRoot}/../specs/security/standard-names.html#mac-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
      * @param provider the name of the provider.
@@ -247,8 +247,8 @@ public class Mac implements Cloneable {
      *
      * @param algorithm the standard name of the requested MAC algorithm.
      * See the Mac section in the <a href=
-     *   "{@docRoot}/../technotes/guides/security/StandardNames.html#Mac">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     *   "{@docRoot}/../specs/security/standard-names.html#mac-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
      * @param provider the provider.

@@ -26,7 +26,7 @@
  * @bug 4914805
  * @summary Ensure that the right exception is thrown for illegal MBeans
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean NotAnMBeanTest
  * @run build NotAnMBeanTest
  * @run main NotAnMBeanTest
