@@ -456,6 +456,11 @@ jboolean JLI_AddArgsFromEnvVar(JLI_List args, const char *var_name) {
             env++;
         }
 
+        // Trailing space
+        if (*env == '\0') {
+            break;
+        }
+
         arg = p;
         while (*env != '\0' && !isspace(*env)) {
             if (*env == '"' || *env == '\'') {

@@ -311,8 +311,7 @@ class PlainHttpConnection extends HttpConnection implements AsyncConnection {
         }
     }
 
-    @Override
-    protected int readImpl(ByteBuffer buf) throws IOException {
+    private int readImpl(ByteBuffer buf) throws IOException {
         int mark = buf.position();
         int n;
         // FIXME: this hack works in conjunction with the corresponding change

@@ -116,11 +116,11 @@ caption  {
   margin-bottom:10px;
 }
 
-tr:nth-child(even) {
+tr:nth-child(even), tr:nth-child(even) th[scope=row] {
   background: #DDD;
 }
 
-tr:nth-child(odd) {
+tr:nth-child(odd), tr:nth-child(odd) th[scope=row] {
   background: #FFF;
 }
 
