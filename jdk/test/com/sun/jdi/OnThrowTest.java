@@ -22,16 +22,15 @@
  */
 
 /*
- *   @test       OnThrowTest.java
- *   @bug        6263814
- *   @summary    Test for -agentlib::[onthrow,launch]
- *   @author     Kelly O'Hair
+ * @test       OnThrowTest.java
+ * @bug        6263814
+ * @summary    Test for -agentlib::[onthrow,launch]
+ * @author     Kelly O'Hair
  *
- *  @modules jdk.jdi
- *  @run compile -g OnThrowTest.java
- *  @run compile -g OnThrowTarget.java
- *  @run compile -g VMConnection.java
- *  @run driver OnThrowTest
+ * @run compile -g OnThrowTest.java
+ * @run compile -g OnThrowTarget.java
+ * @run compile -g VMConnection.java
+ * @run driver OnThrowTest
  */
 
 import java.io.File;

@@ -26,7 +26,7 @@
  * @bug 6335337
  * @summary Test correctness of mxbean flag in descriptor.
  * @author Luis-Miguel Alventosa
- * @modules java.management
+ *
  * @run clean MXBeanFlagTest
  * @run build MXBeanFlagTest
  * @run main MXBeanFlagTest

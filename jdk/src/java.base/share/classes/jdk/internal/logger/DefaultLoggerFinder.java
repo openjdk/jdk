@@ -30,10 +30,10 @@ import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.Objects;
 import java.lang.System.LoggerFinder;
 import java.lang.System.Logger;
 import java.lang.ref.ReferenceQueue;
-import java.lang.reflect.Module;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Collection;
@@ -155,6 +155,8 @@ public class DefaultLoggerFinder extends LoggerFinder {
 
     @Override
     public final Logger getLogger(String name,  Module module) {
+        Objects.requireNonNull(name, "name");
+        Objects.requireNonNull(module, "module");
         checkPermission();
         return demandLoggerFor(name, module);
     }

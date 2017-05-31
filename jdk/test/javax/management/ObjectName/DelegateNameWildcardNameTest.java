@@ -27,7 +27,7 @@
  * @summary Test that MBeanServerDelegate.DELEGATE_NAME and ObjectName.WILDCARD
  *          public constants have been initialized properly.
  * @author Luis-Miguel Alventosa
- * @modules java.management
+ *
  * @run clean DelegateNameWildcardNameTest
  * @run build DelegateNameWildcardNameTest
  * @run main DelegateNameWildcardNameTest

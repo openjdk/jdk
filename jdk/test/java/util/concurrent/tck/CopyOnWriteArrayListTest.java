@@ -44,7 +44,6 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import junit.framework.Test;
-import junit.framework.TestSuite;
 
 public class CopyOnWriteArrayListTest extends JSR166TestCase {
 

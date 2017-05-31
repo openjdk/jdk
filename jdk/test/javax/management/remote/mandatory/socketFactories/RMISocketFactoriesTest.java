@@ -26,7 +26,7 @@
  * @bug 7654321
  * @summary Tests the use of the custom RMI socket factories.
  * @author Luis-Miguel Alventosa
- * @modules java.management.rmi
+ *
  * @run clean RMISocketFactoriesTest
  * @run build RMISocketFactoriesTest RMIClientFactory RMIServerFactory
  * @run main RMISocketFactoriesTest test_server_factory
