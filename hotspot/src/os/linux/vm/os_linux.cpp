@@ -2819,17 +2819,20 @@ int os::Linux::sched_getcpu_syscall(void) {
 extern "C" JNIEXPORT void numa_warn(int number, char *where, ...) { }
 extern "C" JNIEXPORT void numa_error(char *where) { }
 
-
-// If we are running with libnuma version > 2, then we should
-// be trying to use symbols with versions 1.1
-// If we are running with earlier version, which did not have symbol versions,
-// we should use the base version.
+// Handle request to load libnuma symbol version 1.1 (API v1). If it fails
+// load symbol from base version instead.
 void* os::Linux::libnuma_dlsym(void* handle, const char *name) {
   void *f = dlvsym(handle, name, "libnuma_1.1");
   if (f == NULL) {
     f = dlsym(handle, name);
   }
   return f;
+}
+
+// Handle request to load libnuma symbol version 1.2 (API v2) only.
+// Return NULL if the symbol is not defined in this particular version.
+void* os::Linux::libnuma_v2_dlsym(void* handle, const char* name) {
+  return dlvsym(handle, name, "libnuma_1.2");
 }
 
 bool os::Linux::libnuma_init() {
@@ -2858,6 +2861,8 @@ bool os::Linux::libnuma_init() {
                                             libnuma_dlsym(handle, "numa_tonode_memory")));
       set_numa_interleave_memory(CAST_TO_FN_PTR(numa_interleave_memory_func_t,
                                                 libnuma_dlsym(handle, "numa_interleave_memory")));
+      set_numa_interleave_memory_v2(CAST_TO_FN_PTR(numa_interleave_memory_v2_func_t,
+                                                libnuma_v2_dlsym(handle, "numa_interleave_memory")));
       set_numa_set_bind_policy(CAST_TO_FN_PTR(numa_set_bind_policy_func_t,
                                               libnuma_dlsym(handle, "numa_set_bind_policy")));
       set_numa_bitmask_isbitset(CAST_TO_FN_PTR(numa_bitmask_isbitset_func_t,
@@ -2984,6 +2989,7 @@ os::Linux::numa_num_configured_nodes_func_t os::Linux::_numa_num_configured_node
 os::Linux::numa_available_func_t os::Linux::_numa_available;
 os::Linux::numa_tonode_memory_func_t os::Linux::_numa_tonode_memory;
 os::Linux::numa_interleave_memory_func_t os::Linux::_numa_interleave_memory;
+os::Linux::numa_interleave_memory_v2_func_t os::Linux::_numa_interleave_memory_v2;
 os::Linux::numa_set_bind_policy_func_t os::Linux::_numa_set_bind_policy;
 os::Linux::numa_bitmask_isbitset_func_t os::Linux::_numa_bitmask_isbitset;
 os::Linux::numa_distance_func_t os::Linux::_numa_distance;
