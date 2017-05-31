@@ -22,7 +22,7 @@
  */
 
 import jdk.testlibrary.OutputAnalyzer;
-import jdk.testlibrary.JarUtils;
+import jdk.test.lib.util.JarUtils;
 
 /**
  * @test
