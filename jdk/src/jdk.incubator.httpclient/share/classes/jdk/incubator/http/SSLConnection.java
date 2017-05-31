@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,28 +162,16 @@ class SSLConnection extends HttpConnection {
 
     @Override
     protected ByteBuffer readImpl() throws IOException {
-        ByteBuffer dst = ByteBuffer.allocate(8192);
-        int n = readImpl(dst);
+        WrapperResult r = sslDelegate.recvData(ByteBuffer.allocate(8192));
+        // TODO: check for closure
+        int n = r.result.bytesProduced();
         if (n > 0) {
-            return dst;
+            return r.buf;
         } else if (n == 0) {
             return Utils.EMPTY_BYTEBUFFER;
         } else {
             return null;
         }
-    }
-
-    @Override
-    protected int readImpl(ByteBuffer buf) throws IOException {
-        // TODO: need to ensure that buf is big enough for application data
-        WrapperResult r = sslDelegate.recvData(buf);
-        // TODO: check for closure
-        String s = "Receive) ";
-        //debugPrint(s, r.buf);
-        if (r.result.bytesProduced() > 0) {
-            assert buf == r.buf;
-        }
-        return r.result.bytesProduced();
     }
 
     @Override

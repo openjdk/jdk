@@ -56,7 +56,7 @@ public class ExtLink implements Taglet {
 
     static final String TAG_NAME = "extLink";
 
-    static final String URL = "https://www.oracle.com/pls/topic/lookup?ctx=javase9&id=";
+    static final String URL = "https://www.oracle.com/pls/topic/lookup?ctx=javase9&amp;id=";
 
     static final Pattern TAG_PATTERN = Pattern.compile("(\\s*)(?<name>\\w+)(\\s+)(?<desc>.*)");
 

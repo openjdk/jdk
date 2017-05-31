@@ -26,121 +26,146 @@ questions.
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta http-equiv="content-type" content="text/html;" charset="utf-8">
-  <style type="text/css">
-table {
-  border-collapse: collapse;
-}
-table {
-  border: 1px solid black;
-}
-th ,td {
-  border: 0px solid black;
-}
-thead th {
-  background-color: #DDD;
-}
-tbody > tr:nth-child(even) {
-    background-color: #EEE
-}
-tbody > tr:nth-child(odd) {
-    background-color: #FFF
-}
-th, td {
-  font-family: sans-serif; /* could eventually be DejaVu */
-  font-size: small;
-  padding: 5px 10px;
-  vertical-align:top;
-}
-td a {
-  text-decoration: none;
-}
-tr th {
-  text-align:left;
-}
-caption {
-  font-size: smaller;
-  font-weight: bold;
-}
-</style>
 <title>@HEADER_TITLE@</title>
+
+<meta http-equiv="content-type" content="text/html;" charset="utf-8">
+<link rel="stylesheet" href="resources/jdk-default.css" type="text/css" />
+<style type="text/css">
+
+table a { text-decoration: none }
+table { border: none }
+th, td { border: 2px solid white; }
+thead th { background-color: #DDD }
+tbody th { background-color: #EEE }
+
+table div.javase, ul.key span.javase { background-color: #C6E7F3 }
+table div.jdk, ul.key span.jdk { background-color: #ECE1C5 }
+table div.javafx, ul.key span.javafx { background-color: #ECEDCC }
+table div.jcp, ul.key span.jcp { background-color: #E9E9E9 }
+td div { padding: 3px 5px; color: blue }
+table tbody td div a { padding: 0 .5em; margin: 0: 1em; }
+table tbody td div a:link { color: black }
+table tbody td div a:visited { color: black }
+table tbody td div a[href]:hover { color: black; text-decoration: underline }
+td { padding: 0 }
+table tbody td div a { padding: 0 .5em; margin: 0: 1em }
+
+.key { font-size: smaller; }
+ul.key li { display:inline-block; padding: 0 1em }
+ul.key span {
+  border: 1px solid black;
+  font-family: DejaVu Sans Mono, monospace;
+}
+ul.key span:before { content: " " }
+ul.key span:after { content: " " }
+
+caption {
+  text-align: center;
+}
+
+tr:nth-child(even), tr:nth-child(even) th[scope=row] {
+  background-color: #EEE;
+}
+tr:nth-child(odd), tr:nth-child(odd) th[scope=row] {
+  background-color: #EEE;
+}
+
+</style>
 </head>
-<body>
 
 <h1>@HEADER_TITLE@</h1>
 
 <ul>
 <li><a href="api/index.html">JDK API Specification</a></li>
-<li>Java Language Specification</li>
-<li>Java Virtual Machine Specification</li>
+<li><a href="https://docs.oracle.com/javase/specs/">
+    Java Language and Virtual Machine Specifications</a></li>
+<li><a href="https://www.oracle.com/pls/topic/lookup?ctx=javase9&id=tools_reference_overview">
+    Tools Reference</a></li>
 </ul>
 
+
 <table>
-<caption>Modules</caption>
+<caption style="display:none">JDK Modules</caption>
 <thead>
 <tr>
   <th scope="col">Group</th>
-  <th scope="col">Java SE</th>
-  <th scope="col">JDK</th>
-  <th scope="col">JavaFX</th>
+  <th scope="col">Modules</th>
 </tr>
 </thead>
 <tbody>
 <tr>
   <th scope="row">Foundation</th>
-  <td>@CORE_MODULES@</td>
+  <td>@JAVA_BASE@</td>
 </tr>
 <tr>
-<th scope="row">Security</th>
-  <td>@SECURITY_MODULES@</td>
-</tr>
-<tr>
-<th scope="row">Instrumentation and<br>Management</th>
-  <td>@INSTRUMENT_MGMT_MODULES@</td>
-</tr>
-<tr>
-<th scope="row">Integration</th>
+  <th scope="row">Integration</th>
   <td>@INTEGRATION_MODULES@</td>
 </tr>
 <tr>
   <th scope="row">User Interface</th>
-  <td>@UI_TOOLKITS_MODULES@</td>
+  <td>@UI_MODULES@</td>
 </tr>
 <tr>
-  <th scope="row">Compiler and Scripting</th>
-  <td>@COMPILER_SCRIPTING_MODULES@</td>
+  <th scope="row">Compilation</th>
+  <td>@COMPILER_MODULES@</td>
 </tr>
 <tr>
-  <th scope="row">Debugging</th>
-  <td>@DEBUG_MODULES@</td>
+  <th scope="row">Scripting</th>
+  <td>@SCRIPTING_MODULES@</td>
 </tr>
 <tr>
-  <th scope="row">Tools and Tool APIs</th>
-  <td>@TOOL_MODULES@</td>
+  <th scope="row">Security</th>
+  <td>@SECURITY_MODULES@</td>
 </tr>
 <tr>
-  <th scope="row">Incubating Features</th>
+  <th scope="row">Management</th>
+  <td>@MANAGEMENT_MODULES@</td>
+</tr>
+<tr>
+  <th scope="row">Instrumentation</th>
+  <td>@INSTRUMENT_MODULES@</td>
+</tr>
+<tr>
+  <th scope="row">Serviceability</th>
+  <td>@SVC_MODULES@</td>
+</tr>
+<tr>
+  <th scope="row">Packaging</th>
+  <td>@PACKAGING_MODULES@</td>
+</tr>
+<tr>
+  <th scope="row">Incubator</th>
   <td>@INCUBATOR_MODULES@</td>
+</tr>
+<tr>
+  <th scope="row">Non-Java SE</th>
+  <td>@OTHER_MODULES@</td>
 </tr>
 <tr>
   <th scope="row">Java EE</th>
   <td>@JAVA_EE_MODULES@</td>
 </tr>
 <tr>
-  <th scope="row"></th>
-  <th scope="row">Outside Java SE</th>
-  <th scope="row">JDK</th>
-  <th scope="row">JavaFX</th>
-</tr>
-<tr>
-  <th scope="row">Others</th>
-  <td>@OTHER_MODULES@</td>
+  <th scope="row">Aggregator</th>
+  <td>@AGGREGATOR_MODULES@</td>
 </tr>
 </tbody>
 </table>
 
+<p class="key">Key:
+<ul class="key">
+<li><span class="javase">&nbsp;</span>&nbsp; Java SE
+<li><span class="jdk">&nbsp;</span>&nbsp; JDK
+<li><span class="javafx">&nbsp;</span>&nbsp; JavaFX
+<li><span class="jcp">&nbsp;</span>&nbsp; Non-Java SE
+<li><i>italic</i> No Exported API (e.g. a tool or provider)</li>
+</ul>
+
 <p>
-<hr/>
-<a href="legal/cpyr.html">Copyright</a>&copy; 1993, 2017, Oracle and/or its affiliates. All rights reserved.</p>
+<hr>
+<a href="legal/cpyr.html">Copyright</a> &copy 1993, 2017, Oracle and/or its affiliates. All rights reserved.</p>
+
 </body>
 </html>
+	
+	
