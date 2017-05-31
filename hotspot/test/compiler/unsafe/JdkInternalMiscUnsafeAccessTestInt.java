@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,32 +198,32 @@ public class JdkInternalMiscUnsafeAccessTestInt {
 
         // Compare
         {
-            boolean r = UNSAFE.compareAndSwapInt(base, offset, 0x01234567, 0x89ABCDEF);
-            assertEquals(r, true, "success compareAndSwap int");
+            boolean r = UNSAFE.compareAndSetInt(base, offset, 0x01234567, 0x89ABCDEF);
+            assertEquals(r, true, "success compareAndSet int");
             int x = UNSAFE.getInt(base, offset);
-            assertEquals(x, 0x89ABCDEF, "success compareAndSwap int value");
+            assertEquals(x, 0x89ABCDEF, "success compareAndSet int value");
         }
 
         {
-            boolean r = UNSAFE.compareAndSwapInt(base, offset, 0x01234567, 0xCAFEBABE);
-            assertEquals(r, false, "failing compareAndSwap int");
+            boolean r = UNSAFE.compareAndSetInt(base, offset, 0x01234567, 0xCAFEBABE);
+            assertEquals(r, false, "failing compareAndSet int");
             int x = UNSAFE.getInt(base, offset);
-            assertEquals(x, 0x89ABCDEF, "failing compareAndSwap int value");
+            assertEquals(x, 0x89ABCDEF, "failing compareAndSet int value");
         }
 
         // Advanced compare
         {
-            int r = UNSAFE.compareAndExchangeIntVolatile(base, offset, 0x89ABCDEF, 0x01234567);
-            assertEquals(r, 0x89ABCDEF, "success compareAndExchangeVolatile int");
+            int r = UNSAFE.compareAndExchangeInt(base, offset, 0x89ABCDEF, 0x01234567);
+            assertEquals(r, 0x89ABCDEF, "success compareAndExchange int");
             int x = UNSAFE.getInt(base, offset);
-            assertEquals(x, 0x01234567, "success compareAndExchangeVolatile int value");
+            assertEquals(x, 0x01234567, "success compareAndExchange int value");
         }
 
         {
-            int r = UNSAFE.compareAndExchangeIntVolatile(base, offset, 0x89ABCDEF, 0xCAFEBABE);
-            assertEquals(r, 0x01234567, "failing compareAndExchangeVolatile int");
+            int r = UNSAFE.compareAndExchangeInt(base, offset, 0x89ABCDEF, 0xCAFEBABE);
+            assertEquals(r, 0x01234567, "failing compareAndExchange int");
             int x = UNSAFE.getInt(base, offset);
-            assertEquals(x, 0x01234567, "failing compareAndExchangeVolatile int value");
+            assertEquals(x, 0x01234567, "failing compareAndExchange int value");
         }
 
         {
@@ -257,41 +257,41 @@ public class JdkInternalMiscUnsafeAccessTestInt {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapInt(base, offset, 0x01234567, 0x89ABCDEF);
+                success = UNSAFE.weakCompareAndSetIntPlain(base, offset, 0x01234567, 0x89ABCDEF);
             }
-            assertEquals(success, true, "weakCompareAndSwap int");
+            assertEquals(success, true, "weakCompareAndSetPlain int");
             int x = UNSAFE.getInt(base, offset);
-            assertEquals(x, 0x89ABCDEF, "weakCompareAndSwap int value");
+            assertEquals(x, 0x89ABCDEF, "weakCompareAndSetPlain int value");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapIntAcquire(base, offset, 0x89ABCDEF, 0x01234567);
+                success = UNSAFE.weakCompareAndSetIntAcquire(base, offset, 0x89ABCDEF, 0x01234567);
             }
-            assertEquals(success, true, "weakCompareAndSwapAcquire int");
+            assertEquals(success, true, "weakCompareAndSetAcquire int");
             int x = UNSAFE.getInt(base, offset);
-            assertEquals(x, 0x01234567, "weakCompareAndSwapAcquire int");
+            assertEquals(x, 0x01234567, "weakCompareAndSetAcquire int");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapIntRelease(base, offset, 0x01234567, 0x89ABCDEF);
+                success = UNSAFE.weakCompareAndSetIntRelease(base, offset, 0x01234567, 0x89ABCDEF);
             }
-            assertEquals(success, true, "weakCompareAndSwapRelease int");
+            assertEquals(success, true, "weakCompareAndSetRelease int");
             int x = UNSAFE.getInt(base, offset);
-            assertEquals(x, 0x89ABCDEF, "weakCompareAndSwapRelease int");
+            assertEquals(x, 0x89ABCDEF, "weakCompareAndSetRelease int");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapIntVolatile(base, offset, 0x89ABCDEF, 0x01234567);
+                success = UNSAFE.weakCompareAndSetInt(base, offset, 0x89ABCDEF, 0x01234567);
             }
-            assertEquals(success, true, "weakCompareAndSwapVolatile int");
+            assertEquals(success, true, "weakCompareAndSet int");
             int x = UNSAFE.getInt(base, offset);
-            assertEquals(x, 0x01234567, "weakCompareAndSwapVolatile int");
+            assertEquals(x, 0x01234567, "weakCompareAndSet int");
         }
 
         UNSAFE.putInt(base, offset, 0x89ABCDEF);
@@ -324,4 +324,3 @@ public class JdkInternalMiscUnsafeAccessTestInt {
         }
     }
 }
-

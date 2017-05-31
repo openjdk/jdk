@@ -519,7 +519,7 @@ public class SubmissionPublisherTest extends JSR166TestCase {
         s1.request = false;
         p.subscribe(s1);
         s1.awaitSubscribe();
-        assertTrue(p.estimateMinimumDemand() == 0);
+        assertEquals(0, p.estimateMinimumDemand());
         TestSubscriber s2 = new TestSubscriber();
         p.subscribe(s2);
         p.submit(1);

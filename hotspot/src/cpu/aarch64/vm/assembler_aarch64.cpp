@@ -1,8 +1,7 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
- * reserved.  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE
- * HEADER.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -21,7 +20,6 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
 #include <stdio.h>
