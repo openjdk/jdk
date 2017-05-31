@@ -22,15 +22,13 @@
  */
 
 /**
- *  @test
- *  @summary Test stepping through lambdas
+ * @test
+ * @summary Test stepping through lambdas
+ * @author Staffan Larsen
  *
- *  @author Staffan Larsen
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g LambdaStepTest.java
- *  @run driver LambdaStepTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g LambdaStepTest.java
+ * @run driver LambdaStepTest
  */
 import com.sun.jdi.LocalVariable;
 import com.sun.jdi.ObjectReference;

@@ -27,7 +27,6 @@
  * @summary Test that attributes and operations appear in the same order
  * in MBeanInfo as they did in the Standard MBean or MXBean Interface.
  * @author Eamonn McManus
- * @modules java.management
  */
 
 /*

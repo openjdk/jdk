@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,23 +165,50 @@ public class ForwardingJavaFileManager<M extends JavaFileManager> implements Jav
         fileManager.close();
     }
 
+    /**
+     * @since 9
+     * @spec JPMS
+     */
     public Location getLocationForModule(Location location, String moduleName) throws IOException {
         return fileManager.getLocationForModule(location, moduleName);
     }
 
-    public Location getLocationForModule(Location location, JavaFileObject fo, String pkgName) throws IOException {
-        return fileManager.getLocationForModule(location, fo, pkgName);
+    /**
+     * @since 9
+     * @spec JPMS
+     */
+    public Location getLocationForModule(Location location, JavaFileObject fo) throws IOException {
+        return fileManager.getLocationForModule(location, fo);
     }
 
+    /**
+     * @since 9
+     * @spec JPMS
+     */
     public <S> ServiceLoader<S> getServiceLoader(Location location, Class<S> service) throws  IOException {
         return fileManager.getServiceLoader(location, service);
     }
 
+    /**
+     * @since 9
+     * @spec JPMS
+     */
     public String inferModuleName(Location location) throws IOException {
         return fileManager.inferModuleName(location);
     }
 
+    /**
+     * @since 9
+     * @spec JPMS
+     */
     public Iterable<Set<Location>> listLocationsForModules(Location location) throws IOException {
         return fileManager.listLocationsForModules(location);
+    }
+
+    /**
+     * @since 9
+     */
+    public boolean contains(Location location, FileObject fo) throws IOException {
+        return fileManager.contains(location, fo);
     }
 }

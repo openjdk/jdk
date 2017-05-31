@@ -33,7 +33,6 @@
 
 import java.io.*;
 import java.lang.instrument.*;
-import java.lang.reflect.Module;
 import java.security.ProtectionDomain;
 
 public class BootstrapClassPathTest {
